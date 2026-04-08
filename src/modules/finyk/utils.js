@@ -90,11 +90,15 @@ export function getRecvPaid(recv, transactions) {
   return getReceivablePaid(recv, transactions);
 }
 
-// Сума витрат по категорії (з виключенням боргових/прихованих транзакцій)
-export function calcCategorySpent(txs, categoryId) {
+// Сума витрат по категорії (з виключенням боргових/прихованих транзакцій).
+// txCategories — ручні категорії з операцій (override), інакше ліміти не збігаються з UI.
+export function calcCategorySpent(txs, categoryId, txCategories = {}) {
   return Math.round(
     txs
-      .filter(t => t.amount < 0 && getCategory(t.description, t.mcc).id === categoryId)
+      .filter(t =>
+        t.amount < 0 &&
+        getCategory(t.description, t.mcc, txCategories[t.id]).id === categoryId
+      )
       .reduce((sum, t) => sum + Math.abs(t.amount / 100), 0)
   );
 }

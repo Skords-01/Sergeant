@@ -40,7 +40,7 @@ function FlowRow({ flow }) {
 
 export function Overview({ mono, storage, onNavigate }) {
   const { realTx, loadingTx, clientInfo, accounts, transactions } = mono;
-  const { budgets, subscriptions, manualDebts, receivables, hiddenAccounts, excludedTxIds, monthlyPlan, networthHistory, saveNetworthSnapshot } = storage;
+  const { budgets, subscriptions, manualDebts, receivables, hiddenAccounts, excludedTxIds, monthlyPlan, networthHistory, saveNetworthSnapshot, txCategories } = storage;
 
   // Показуємо скелетон якщо дані ще не завантажились вперше
   if (loadingTx && realTx.length === 0) {
@@ -75,8 +75,8 @@ export function Overview({ mono, storage, onNavigate }) {
   const limitBudgets = budgets.filter(b => b.type === "limit");
   const goalBudgets = budgets.filter(b => b.type === "goal");
   const catSpends = useMemo(() => MCC_CATEGORIES.filter(c => c.id !== "income").map(cat => ({
-    ...cat, spent: calcCategorySpent(statTx, cat.id)
-  })).filter(c => c.spent > 0).sort((a, b) => b.spent - a.spent), [statTx]);
+    ...cat, spent: calcCategorySpent(statTx, cat.id, txCategories)
+  })).filter(c => c.spent > 0).sort((a, b) => b.spent - a.spent), [statTx, txCategories]);
 
   // Зберігаємо знімок нетворсу раз при завантаженні свіжих даних
   useEffect(() => {
@@ -86,9 +86,9 @@ export function Overview({ mono, storage, onNavigate }) {
   }, [accounts]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const budgetAlerts = useMemo(() => limitBudgets.filter(b => {
-    const s = calcCategorySpent(statTx, b.categoryId);
+    const s = calcCategorySpent(statTx, b.categoryId, txCategories);
     return b.limit > 0 && s / b.limit >= 0.8;
-  }), [limitBudgets, statTx]);
+  }), [limitBudgets, statTx, txCategories]);
 
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
@@ -204,7 +204,7 @@ export function Overview({ mono, storage, onNavigate }) {
           <div className="space-y-1.5">
             {budgetAlerts.map((b, i) => {
               const cat = MCC_CATEGORIES.find(c => c.id === b.categoryId);
-              const s = calcCategorySpent(statTx, b.categoryId);
+              const s = calcCategorySpent(statTx, b.categoryId, txCategories);
               const pct = Math.round(s / b.limit * 100);
               return (
                 <div key={i} className={cn("rounded-2xl px-4 py-3 flex items-center justify-between border", pct >= 100 ? "bg-danger/8 border-danger/20" : "bg-warning/8 border-warning/20")}>
@@ -311,7 +311,7 @@ export function Overview({ mono, storage, onNavigate }) {
             <div className="text-xs font-medium text-subtle">Ліміти</div>
             {limitBudgets.map((b, i) => {
               const cat = MCC_CATEGORIES.find(c => c.id === b.categoryId);
-              const bspent = calcCategorySpent(statTx, b.categoryId);
+              const bspent = calcCategorySpent(statTx, b.categoryId, txCategories);
               const pct = Math.min(100, b.limit > 0 ? Math.round(bspent / b.limit * 100) : 0);
               const over = pct >= 90;
               return (

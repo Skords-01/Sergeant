@@ -5,7 +5,7 @@ import { cn } from "@shared/lib/cn";
 
 export function Chat({ mono, storage }) {
   const { realTx, clientInfo, accounts, transactions } = mono;
-  const { budgets, manualDebts, receivables, hiddenAccounts, excludedTxIds } = storage;
+  const { budgets, manualDebts, receivables, hiddenAccounts, excludedTxIds, txCategories } = storage;
   const statTx = realTx.filter(t => !excludedTxIds.has(t.id));
 
   const [messages, setMessages] = useState([{ role: "assistant", text: "Привіт! 👋 Запитай мене про свої фінанси — я бачу твої транзакції, бюджети та борги." }]);
@@ -29,7 +29,7 @@ export function Chat({ mono, storage }) {
   }).join(", ");
 
   const topTx = statTx.slice(0, 15).map(t =>
-    `${t.description}(${getCategory(t.description, t.mcc).label.slice(3)}): ${(t.amount / 100).toFixed(0)}₴`
+    `${t.description}(${getCategory(t.description, t.mcc, txCategories[t.id]).label.slice(3)}): ${(t.amount / 100).toFixed(0)}₴`
   ).join("; ");
 
   const context = `Ім'я: ${clientInfo?.name}. На картках: ${monoTotal.toFixed(0)}₴. Витрати місяця: ${spent.toFixed(0)}₴. Дохід: ${income.toFixed(0)}₴. Борги: ${totalDebt.toFixed(0)}₴. Бюджети: ${bdgStr || "не налаштовані"}. Транзакції: ${topTx}.`;

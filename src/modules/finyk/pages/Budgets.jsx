@@ -8,7 +8,7 @@ const formInp = "w-full h-10 rounded-xl border border-line bg-bg px-3 text-sm te
 
 export function Budgets({ mono, storage }) {
   const { realTx } = mono;
-  const { budgets, setBudgets, excludedTxIds, monthlyPlan, setMonthlyPlan } = storage;
+  const { budgets, setBudgets, excludedTxIds, monthlyPlan, setMonthlyPlan, txCategories } = storage;
   const statTx = realTx.filter(t => !excludedTxIds.has(t.id));
   const [editIdx, setEditIdx] = useState(null);
   const [showForm, setShowForm] = useState(false);
@@ -17,7 +17,7 @@ export function Budgets({ mono, storage }) {
 
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  const calcSpent = (budget) => calcCategorySpent(statTx, budget.categoryId);
+  const calcSpent = (budget) => calcCategorySpent(statTx, budget.categoryId, txCategories);
   const limitBudgets = budgets.filter(b => b.type === "limit");
   const goalBudgets = budgets.filter(b => b.type === "goal");
   const planIncome = Number(monthlyPlan?.income || 0);
