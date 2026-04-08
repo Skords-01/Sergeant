@@ -455,6 +455,24 @@ export function useMonobank() {
     } catch {}
   };
 
+  const clearTxCache = () => {
+    try {
+      localStorage.removeItem(CACHE_KEY);
+      localStorage.removeItem(LAST_GOOD_KEY);
+    } catch {}
+    setTransactions([]);
+    setLastUpdated(null);
+    setSyncState(s => ({
+      ...s,
+      status: "idle",
+      source: "none",
+      lastError: "",
+      accountsTotal: s.accountsTotal || 0,
+      accountsOk: 0,
+    }));
+    setError("");
+  };
+
   return {
     token,
     clientInfo,
@@ -471,6 +489,7 @@ export function useMonobank() {
     fetchMonth,
     historyTx,
     loadingHistory,
+    clearTxCache,
     disconnect,
   };
 }

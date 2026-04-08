@@ -16,7 +16,7 @@ function Section({ title, children }) {
 }
 
 export function Settings({ mono, storage }) {
-  const { accounts, token, clientInfo } = mono;
+  const { accounts, token, clientInfo, clearTxCache } = mono;
   const { hiddenAccounts, toggleHideAccount, exportData, importData } = storage;
 
   const [syncOpen, setSyncOpen] = useState(false);
@@ -123,6 +123,22 @@ export function Settings({ mono, storage }) {
               />
             </label>
           </div>
+        </Section>
+
+        {/* Cache */}
+        <Section title="🧹 Кеш">
+          <p className="text-xs text-subtle -mt-1">
+            Якщо Monobank “зріже” частину запитів і список операцій виглядає дивно — можна очистити кеш і оновити знову.
+          </p>
+          <Button
+            variant="ghost"
+            className="w-full h-12"
+            onClick={() => {
+              if (confirm("Очистити кеш транзакцій?")) clearTxCache?.();
+            }}
+          >
+            🧹 Очистити кеш транзакцій
+          </Button>
         </Section>
 
         {/* About */}
