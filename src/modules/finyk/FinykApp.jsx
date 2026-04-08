@@ -130,6 +130,7 @@ export default function App() {
   // Swipe + pull-to-refresh
   const touchStartX = useRef(null);
   const touchStartY = useRef(null);
+  const pullEligibleRef = useRef(false);
   const contentRef = useRef(null);
   const [pullDist, setPullDist] = useState(0);
   const [pullRefreshing, setPullRefreshing] = useState(false);
@@ -137,9 +138,13 @@ export default function App() {
   const handleTouchStart = (e) => {
     touchStartX.current = e.touches[0].clientX;
     touchStartY.current = e.touches[0].clientY;
+    const scrollTop = contentRef.current?.scrollTop ?? 1;
+    // Pull-to-refresh only if gesture starts at the top.
+    pullEligibleRef.current = scrollTop <= 0;
   };
   const handleTouchMove = (e) => {
     if (touchStartY.current === null) return;
+    if (!pullEligibleRef.current) return;
     const dy = e.touches[0].clientY - touchStartY.current;
     const dx = e.touches[0].clientX - touchStartX.current;
     const scrollTop = contentRef.current?.scrollTop ?? 1;
@@ -152,7 +157,7 @@ export default function App() {
     const dx = touchStartX.current - e.changedTouches[0].clientX;
     const dy = touchStartY.current - e.changedTouches[0].clientY;
 
-    if (pullDist >= 52 && !pullRefreshing) {
+    if (pullEligibleRef.current && pullDist >= 52 && !pullRefreshing) {
       setPullRefreshing(true);
       mono.refresh().finally(() => { setPullRefreshing(false); setPullDist(0); });
     } else {
@@ -160,6 +165,7 @@ export default function App() {
     }
     touchStartX.current = null;
     touchStartY.current = null;
+    pullEligibleRef.current = false;
 
     if (Math.abs(dx) < 70 || Math.abs(dy) > Math.abs(dx) * 0.7) return;
     const curIdx = NAV_IDS.indexOf(page);
