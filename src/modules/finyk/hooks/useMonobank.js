@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { TX_CACHE_TTL, CURRENCY } from "../constants";
 
 const CACHE_KEY = "finto_tx_cache";
@@ -153,9 +153,39 @@ export function useMonobank() {
     accountsOk: 0,
   });
 
+  const lastAutoRefreshAtRef = useRef(0);
+
   useEffect(() => {
     if (token) connect(token, false);
   }, []);
+
+  // Авто-оновлення: раз на годину, тільки коли вкладка активна (щоб не ловити зайві ліміти Mono)
+  useEffect(() => {
+    if (!token || !clientInfo) return;
+
+    const HOUR = 60 * 60 * 1000;
+
+    const maybeRefresh = () => {
+      if (document.visibilityState !== "visible") return;
+      if (!navigator.onLine) return;
+      if (connecting || loadingTx) return;
+
+      const now = Date.now();
+      if (now - lastAutoRefreshAtRef.current < HOUR) return;
+      lastAutoRefreshAtRef.current = now;
+      refresh();
+    };
+
+    const id = setInterval(maybeRefresh, HOUR);
+    document.addEventListener("visibilitychange", maybeRefresh);
+    window.addEventListener("online", maybeRefresh);
+
+    return () => {
+      clearInterval(id);
+      document.removeEventListener("visibilitychange", maybeRefresh);
+      window.removeEventListener("online", maybeRefresh);
+    };
+  }, [token, clientInfo, connecting, loadingTx]);
 
   const fetchAllTx = async (tok, allAccounts) => {
     const targetAccounts = allAccounts.filter(a => a.currencyCode === CURRENCY.UAH);
