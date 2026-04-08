@@ -1,0 +1,219 @@
+{
+  "schemaVersion": 1,
+  "source": {
+    "name": "GymUp-style catalog (manual/seed)",
+    "notes": "Seed dataset. Extend with your GymUp list later."
+  },
+  "muscleGroups": [
+    "chest",
+    "back",
+    "shoulders",
+    "legs",
+    "glutes",
+    "arms",
+    "core",
+    "full_body",
+    "cardio"
+  ],
+  "muscles": [
+    "pectoralis_major",
+    "pectoralis_minor",
+    "serratus_anterior",
+    "latissimus_dorsi",
+    "trapezius",
+    "rhomboids",
+    "upper_back",
+    "rear_deltoid",
+    "front_deltoid",
+    "lateral_deltoid",
+    "biceps",
+    "triceps",
+    "forearms",
+    "rectus_abdominis",
+    "obliques",
+    "erector_spinae",
+    "quadriceps",
+    "hamstrings",
+    "calves",
+    "gluteus_maximus",
+    "gluteus_medius",
+    "adductors",
+    "abductors"
+  ],
+  "equipment": [
+    "bodyweight",
+    "dumbbell",
+    "barbell",
+    "kettlebell",
+    "cable",
+    "machine",
+    "band",
+    "bench",
+    "pullup_bar"
+  ],
+  "exercises": [
+    {
+      "id": "push_up",
+      "name": { "uk": "Віджимання", "en": "Push-up" },
+      "primaryGroup": "chest",
+      "muscles": {
+        "primary": ["pectoralis_major"],
+        "secondary": ["triceps", "front_deltoid"],
+        "stabilizers": ["core", "serratus_anterior"]
+      },
+      "equipment": ["bodyweight"],
+      "mechanics": { "force": "push", "movement": "compound", "plane": "horizontal" },
+      "level": "beginner",
+      "description": "Базова вправа для грудних м’язів. Тримай корпус як «планку», лопатки стабільні, лікті ~45° до корпуса.",
+      "tips": [
+        "Не провалюй поперек — напруж прес і сідниці",
+        "Опускайся до контрольованої глибини без «плюху»"
+      ],
+      "aliases": ["віджимання від підлоги"]
+    },
+    {
+      "id": "bench_press_barbell",
+      "name": { "uk": "Жим штанги лежачи", "en": "Barbell Bench Press" },
+      "primaryGroup": "chest",
+      "muscles": {
+        "primary": ["pectoralis_major"],
+        "secondary": ["triceps", "front_deltoid"],
+        "stabilizers": ["upper_back"]
+      },
+      "equipment": ["barbell", "bench"],
+      "mechanics": { "force": "push", "movement": "compound", "plane": "horizontal" },
+      "level": "intermediate",
+      "description": "Силова вправа на груди. Контрольована траєкторія, стабільні лопатки, упор стопами.",
+      "tips": [
+        "Зведи лопатки й тримай груди «вгору»",
+        "Не відривай таз від лави"
+      ]
+    },
+    {
+      "id": "incline_db_press",
+      "name": { "uk": "Жим гантелей на похилій", "en": "Incline Dumbbell Press" },
+      "primaryGroup": "chest",
+      "muscles": {
+        "primary": ["pectoralis_major"],
+        "secondary": ["triceps", "front_deltoid"]
+      },
+      "equipment": ["dumbbell", "bench"],
+      "mechanics": { "force": "push", "movement": "compound", "plane": "incline" },
+      "level": "intermediate",
+      "description": "Варіант жиму з більшою амплітудою і навантаженням на верхню частину грудей."
+    },
+    {
+      "id": "pull_up",
+      "name": { "uk": "Підтягування", "en": "Pull-up" },
+      "primaryGroup": "back",
+      "muscles": {
+        "primary": ["latissimus_dorsi"],
+        "secondary": ["biceps", "rear_deltoid", "rhomboids"],
+        "stabilizers": ["core"]
+      },
+      "equipment": ["pullup_bar"],
+      "mechanics": { "force": "pull", "movement": "compound", "plane": "vertical" },
+      "level": "intermediate",
+      "description": "Базова вертикальна тяга. Рухайся грудьми до перекладини, не «ривай» плечима.",
+      "tips": [
+        "Починай з депресії лопаток",
+        "Не розгойдуйся"
+      ]
+    },
+    {
+      "id": "lat_pulldown",
+      "name": { "uk": "Тяга верхнього блока", "en": "Lat Pulldown" },
+      "primaryGroup": "back",
+      "muscles": {
+        "primary": ["latissimus_dorsi"],
+        "secondary": ["biceps", "rear_deltoid", "rhomboids"]
+      },
+      "equipment": ["cable"],
+      "mechanics": { "force": "pull", "movement": "compound", "plane": "vertical" },
+      "level": "beginner",
+      "description": "Альтернатива підтягуванням. Тягни ліктями вниз, не «ламай» кисті."
+    },
+    {
+      "id": "row_cable_seated",
+      "name": { "uk": "Тяга блока сидячи", "en": "Seated Cable Row" },
+      "primaryGroup": "back",
+      "muscles": {
+        "primary": ["rhomboids", "trapezius"],
+        "secondary": ["latissimus_dorsi", "biceps", "rear_deltoid"]
+      },
+      "equipment": ["cable"],
+      "mechanics": { "force": "pull", "movement": "compound", "plane": "horizontal" },
+      "level": "beginner",
+      "description": "Горизонтальна тяга на середину спини. Спина нейтральна, рух з лопаток."
+    },
+    {
+      "id": "overhead_press_barbell",
+      "name": { "uk": "Жим штанги стоячи", "en": "Overhead Press" },
+      "primaryGroup": "shoulders",
+      "muscles": {
+        "primary": ["front_deltoid", "lateral_deltoid"],
+        "secondary": ["triceps"],
+        "stabilizers": ["core", "upper_back"]
+      },
+      "equipment": ["barbell"],
+      "mechanics": { "force": "push", "movement": "compound", "plane": "vertical" },
+      "level": "intermediate",
+      "description": "Силовий жим над головою. Не прогинай поперек — ребра «вниз»."
+    },
+    {
+      "id": "lateral_raise_db",
+      "name": { "uk": "Розведення гантелей в сторони", "en": "Dumbbell Lateral Raise" },
+      "primaryGroup": "shoulders",
+      "muscles": {
+        "primary": ["lateral_deltoid"],
+        "secondary": ["trapezius"]
+      },
+      "equipment": ["dumbbell"],
+      "mechanics": { "force": "pull", "movement": "isolation", "plane": "frontal" },
+      "level": "beginner",
+      "description": "Ізоляція на середню дельту. Підіймай ліктями, не «задирай» плечі."
+    },
+    {
+      "id": "squat_barbell",
+      "name": { "uk": "Присідання зі штангою", "en": "Barbell Squat" },
+      "primaryGroup": "legs",
+      "muscles": {
+        "primary": ["quadriceps"],
+        "secondary": ["gluteus_maximus", "adductors"],
+        "stabilizers": ["erector_spinae", "core"]
+      },
+      "equipment": ["barbell"],
+      "mechanics": { "force": "push", "movement": "compound", "plane": "sagittal" },
+      "level": "intermediate",
+      "description": "Базова вправа на ноги. Коліна по лінії носків, корпус стабільний."
+    },
+    {
+      "id": "romanian_deadlift",
+      "name": { "uk": "Румунська тяга", "en": "Romanian Deadlift" },
+      "primaryGroup": "legs",
+      "muscles": {
+        "primary": ["hamstrings"],
+        "secondary": ["gluteus_maximus", "erector_spinae"]
+      },
+      "equipment": ["barbell"],
+      "mechanics": { "force": "pull", "movement": "compound", "plane": "hinge" },
+      "level": "intermediate",
+      "description": "Шарнірний рух (hinge). Відводь таз назад, штанга близько до ніг, спина нейтральна."
+    },
+    {
+      "id": "plank",
+      "name": { "uk": "Планка", "en": "Plank" },
+      "primaryGroup": "core",
+      "muscles": {
+        "primary": ["rectus_abdominis"],
+        "secondary": ["obliques"],
+        "stabilizers": ["gluteus_maximus", "shoulders"]
+      },
+      "equipment": ["bodyweight"],
+      "mechanics": { "force": "isometric", "movement": "isolation", "plane": "anti_extension" },
+      "level": "beginner",
+      "description": "Ізометрична стабілізація корпуса. Тіло в лінію, дихай рівно."
+    }
+  ]
+}
+
