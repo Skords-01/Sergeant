@@ -2,8 +2,8 @@ import { useState, useMemo } from "react";
 import { TxRow } from "../components/TxRow";
 import { getCategory, getIncomeCategory } from "../utils";
 import { MCC_CATEGORIES } from "../constants";
-import { Skeleton } from "@shared/components/ui/Skeleton";
-import { cn } from "@shared/lib/cn";
+import { Skeleton } from "../components/ui/Skeleton";
+import { cn } from "../lib/cn";
 
 const now = new Date();
 
@@ -68,23 +68,6 @@ export function Transactions({ mono, storage }) {
     return matchFilter && matchSearch;
   }), [txsToShow, filter, search, creditAccIds]);
 
-  const exportCSV = () => {
-    const rows = [["Дата", "Опис", "Сума (₴)", "Категорія"]];
-    filtered.forEach(t => {
-      const d = new Date(t.time * 1000).toLocaleDateString("uk-UA");
-      const cat = getEffectiveCat(t).label.replace(/^[^\s]+\s/, "");
-      rows.push([d, `"${(t.description || "").replace(/"/g, "'")}"`, (t.amount / 100).toFixed(2), cat]);
-    });
-    const csv = rows.map(r => r.join(",")).join("\n");
-    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `finyk-${monthLabel}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
   const syncColor = syncState?.status === "error"
     ? "text-danger" : syncState?.status === "partial"
       ? "text-warning" : "text-subtle";
@@ -101,11 +84,6 @@ export function Transactions({ mono, storage }) {
             <button onClick={() => goMonth(1)} disabled={isCurrentMonth} className="w-8 h-8 flex items-center justify-center rounded-xl text-subtle hover:text-text hover:bg-panelHi transition-colors text-lg disabled:opacity-30">›</button>
           </div>
           <div className="flex items-center gap-1.5">
-            {filtered.length > 0 && (
-              <button onClick={exportCSV} className="text-xs px-3 py-2 rounded-full border border-line text-subtle hover:text-text hover:border-muted transition-colors min-h-[36px]" title="Завантажити CSV">
-                ↓ CSV
-              </button>
-            )}
             {hiddenTxIds.length > 0 && (
               <button onClick={() => setShowHidden(v => !v)} className={cn("text-xs px-3 py-2 rounded-full border border-line transition-colors min-h-[36px]", showHidden ? "text-primary border-primary" : "text-subtle")}>
                 {showHidden ? "👁" : `🗑 ${hiddenTxIds.length}`}

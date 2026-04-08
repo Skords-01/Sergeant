@@ -2,16 +2,15 @@ import { useState, useEffect, useRef, lazy, Suspense } from "react";
 import { useMonobank } from "./hooks/useMonobank";
 import { useStorage } from "./hooks/useStorage";
 import { PAGES } from "./constants";
-import { Button } from "@shared/components/ui/Button";
-import { Input } from "@shared/components/ui/Input";
+import { Button } from "./components/ui/Button";
+import { Input } from "./components/ui/Input";
 import { SyncModal } from "./components/SyncModal";
-import { Skeleton } from "@shared/components/ui/Skeleton";
-import { cn } from "@shared/lib/cn";
+import { Skeleton } from "./components/ui/Skeleton";
+import { cn } from "./lib/cn";
 
 const Overview       = lazy(() => import("./pages/Overview").then(m => ({ default: m.Overview })));
 const Transactions   = lazy(() => import("./pages/Transactions").then(m => ({ default: m.Transactions })));
 const Budgets        = lazy(() => import("./pages/Budgets").then(m => ({ default: m.Budgets })));
-const PaymentsCalendar = lazy(() => import("./pages/PaymentsCalendar").then(m => ({ default: m.PaymentsCalendar })));
 const Assets         = lazy(() => import("./pages/Assets").then(m => ({ default: m.Assets })));
 const Settings       = lazy(() => import("./pages/Settings").then(m => ({ default: m.Settings })));
 
@@ -41,7 +40,10 @@ const NAV_ICONS = {
   ),
   budgets: (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+      <line x1="16" y1="2" x2="16" y2="6"/>
+      <line x1="8" y1="2" x2="8" y2="6"/>
+      <line x1="3" y1="10" x2="21" y2="10"/>
     </svg>
   ),
   assets: (
@@ -61,7 +63,7 @@ const NAV_ICONS = {
 const NAV_ITEMS = [
   { id: "overview",     label: "Огляд" },
   { id: "transactions", label: "Операції" },
-  { id: "budgets",      label: "Бюджети" },
+  { id: "budgets",      label: "Планування" },
   { id: "assets",       label: "Активи" },
   { id: "settings",     label: "Налаш." },
 ];
@@ -70,7 +72,11 @@ const NAV_IDS = NAV_ITEMS.map(n => n.id);
 const ALL_PAGE_IDS = [...PAGES.map(p => p.id), "settings"];
 
 function useHashRouter(defaultPage = "overview") {
-  const getPage = () => window.location.hash.replace("#/", "") || defaultPage;
+  const getPage = () => {
+    let p = window.location.hash.replace("#/", "") || defaultPage;
+    if (p === "payments") p = "budgets";
+    return p;
+  };
   const [page, setPageState] = useState(getPage);
   useEffect(() => {
     const handler = () => setPageState(getPage());
@@ -101,6 +107,12 @@ export default function App() {
       const ok = storage.loadFromUrl();
       if (ok) showToast("✅ Налаштування синхронізовано!");
       else showToast("❌ Не вдалось завантажити синк-дані", "error");
+    }
+  }, []);
+
+  useEffect(() => {
+    if (window.location.hash === "#/payments") {
+      window.history.replaceState(null, "", `${window.location.pathname}#/budgets`);
     }
   }, []);
 
@@ -309,7 +321,6 @@ export default function App() {
           {page === "overview"     && <Overview      mono={mono} storage={storage} onNavigate={handleNavigate} />}
           {page === "transactions" && <Transactions  mono={mono} storage={storage} />}
           {page === "budgets"      && <Budgets       mono={mono} storage={storage} />}
-          {page === "payments"     && <PaymentsCalendar mono={mono} storage={storage} />}
           {page === "assets"       && <Assets        mono={mono} storage={storage} />}
           {page === "settings"     && <Settings      mono={mono} storage={storage} />}
         </Suspense>

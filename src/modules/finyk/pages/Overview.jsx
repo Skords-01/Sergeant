@@ -3,8 +3,8 @@ import { CategoryChart } from "../components/CategoryChart";
 import { NetworthChart } from "../components/NetworthChart";
 import { MCC_CATEGORIES, CURRENCY } from "../constants";
 import { getDebtPaid, getRecvPaid, calcCategorySpent, getMonoTotals } from "../utils";
-import { Skeleton } from "@shared/components/ui/Skeleton";
-import { cn } from "@shared/lib/cn";
+import { Skeleton } from "../components/ui/Skeleton";
+import { cn } from "../lib/cn";
 
 const parseLocalDate = (isoDate) => {
   const [y, m, d] = (isoDate || "").split("-").map(Number);
@@ -297,7 +297,7 @@ export function Overview({ mono, storage, onNavigate }) {
           <div className="bg-panel border border-line/60 rounded-2xl overflow-hidden shadow-card">
             <div className="px-5 pt-4 pb-2 flex items-center justify-between">
               <span className="text-xs font-medium text-subtle">Найближчі платежі</span>
-              <button onClick={() => onNavigate("payments")} className="text-xs text-primary/80 hover:text-primary transition-colors py-2 px-1 min-h-[36px]">Усі →</button>
+              <button onClick={() => onNavigate("budgets")} className="text-xs text-primary/80 hover:text-primary transition-colors py-2 px-1 min-h-[36px]">Усі →</button>
             </div>
             <div className="px-5 pb-3">
               {plannedFlows.slice(0, 5).map(f => <FlowRow key={f.id} flow={f} />)}

@@ -1,9 +1,8 @@
 import { useState } from "react";
-import { Button } from "@shared/components/ui/Button";
-import { Input } from "@shared/components/ui/Input";
+import { Button } from "../components/ui/Button";
 import { SyncModal } from "../components/SyncModal";
 import { getAccountLabel } from "../utils";
-import { cn } from "@shared/lib/cn";
+import { cn } from "../lib/cn";
 
 function Section({ title, children }) {
   return (
@@ -18,21 +17,9 @@ function Section({ title, children }) {
 
 export function Settings({ mono, storage }) {
   const { accounts, token, clientInfo } = mono;
-  const { hiddenAccounts, toggleHideAccount, monthlyPlan, setMonthlyPlan, exportData, importData } = storage;
+  const { hiddenAccounts, toggleHideAccount, exportData, importData } = storage;
 
   const [syncOpen, setSyncOpen] = useState(false);
-  const [plan, setPlan] = useState({
-    income: monthlyPlan?.income ?? "",
-    expense: monthlyPlan?.expense ?? "",
-    savings: monthlyPlan?.savings ?? "",
-  });
-  const [planSaved, setPlanSaved] = useState(false);
-
-  const savePlan = () => {
-    setMonthlyPlan(plan);
-    setPlanSaved(true);
-    setTimeout(() => setPlanSaved(false), 2000);
-  };
 
   const uahAccounts = accounts.filter(a => a.currencyCode === 980);
 
@@ -41,45 +28,9 @@ export function Settings({ mono, storage }) {
       {syncOpen && <SyncModal storage={storage} onClose={() => setSyncOpen(false)} />}
       <div className="px-4 pt-4 pb-16 space-y-4 max-w-2xl mx-auto">
 
-        {/* Monthly plan */}
-        <Section title="📌 Місячний план">
-          <p className="text-xs text-subtle -mt-1">Використовується для розрахунку Пульсу та Плану/Факту</p>
-          <div className="grid grid-cols-3 gap-2">
-            <div>
-              <div className="text-xs text-subtle mb-1.5">Дохід ₴</div>
-              <Input
-                type="number"
-                placeholder="0"
-                value={plan.income}
-                onChange={e => setPlan(p => ({ ...p, income: e.target.value }))}
-              />
-            </div>
-            <div>
-              <div className="text-xs text-subtle mb-1.5">Витрати ₴</div>
-              <Input
-                type="number"
-                placeholder="0"
-                value={plan.expense}
-                onChange={e => setPlan(p => ({ ...p, expense: e.target.value }))}
-              />
-            </div>
-            <div>
-              <div className="text-xs text-subtle mb-1.5">Заощадж. ₴</div>
-              <Input
-                type="number"
-                placeholder="0"
-                value={plan.savings}
-                onChange={e => setPlan(p => ({ ...p, savings: e.target.value }))}
-              />
-            </div>
-          </div>
-          <Button
-            className={cn("w-full transition-all", planSaved && "bg-success border-success")}
-            onClick={savePlan}
-          >
-            {planSaved ? "✓ Збережено" : "Зберегти план"}
-          </Button>
-        </Section>
+        <p className="text-xs text-subtle px-1 -mt-1">
+          Місячний план, ліміти та календар оплат — у розділі <a href="#/budgets" className="text-primary font-medium underline underline-offset-2">Планування</a>.
+        </p>
 
         {/* Accounts */}
         {uahAccounts.length > 0 && (
