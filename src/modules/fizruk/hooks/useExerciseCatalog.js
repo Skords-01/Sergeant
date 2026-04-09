@@ -13,6 +13,7 @@ function norm(s) {
 export function useExerciseCatalog() {
   const baseExercises = catalog.exercises || [];
   const primaryGroupsUk = catalog.labels?.primaryGroupsUk || {};
+  const muscleGroupsUk = catalog.labels?.muscleGroupsUk || {};
   const [customExercises, setCustomExercises] = useState([]);
 
   useEffect(() => {
@@ -69,6 +70,6 @@ export function useExerciseCatalog() {
     persistCustom(next);
   }, [customExercises, persistCustom]);
 
-  return { catalog, exercises, search, primaryGroupsUk, addExercise, customExercises };
+  return { catalog, exercises, search, primaryGroupsUk, muscleGroupsUk, addExercise, customExercises };
 }
 

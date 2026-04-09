@@ -33,18 +33,8 @@ function parseCsv(s) {
     .filter(Boolean);
 }
 
-function proxyImg(src) {
-  if (!src) return src;
-  const s = src.toString().trim();
-  if (!s || s.toLowerCase() === "nan") return null;
-  if (s.startsWith("data:")) return s;
-  if (s.startsWith("/")) return s;
-  // Upstream often returns 404 for these; we still keep proxy for future sources/hosts.
-  return `/api/img?url=${encodeURIComponent(s)}`;
-}
-
 export function Workouts() {
-  const { search, primaryGroupsUk, addExercise } = useExerciseCatalog();
+  const { search, primaryGroupsUk, muscleGroupsUk, addExercise } = useExerciseCatalog();
   const [q, setQ] = useState("");
   const [selected, setSelected] = useState(null);
   const [open, setOpen] = useState(() => ({}));
@@ -53,6 +43,7 @@ export function Workouts() {
     nameUk: "",
     nameEn: "",
     primaryGroup: "chest",
+    muscleGroup: "Chest",
     musclesPrimary: "",
     equipment: "bodyweight",
     description: "",
@@ -112,7 +103,7 @@ export function Workouts() {
         <div className="bg-panel border border-line/60 rounded-2xl shadow-card overflow-hidden">
           {grouped.length === 0 ? (
             <div className="p-6 text-center text-sm text-subtle">
-              Нічого не знайдено
+              Поки немає вправ. Додай першу через кнопку “+ Додати”.
             </div>
           ) : (
             grouped.map(g => {
@@ -198,31 +189,16 @@ export function Workouts() {
                 {((selected.images || []).filter(Boolean).length) > 0 && (
                   <div className="mb-4 -mx-5 px-5 overflow-x-auto no-scrollbar">
                     <div className="flex gap-3">
-                      {selected.images.slice(0, 8).map((src) => {
-                        const p = proxyImg(src);
-                        if (!p) return null;
-                        return (
+                      {selected.images.slice(0, 8).map((src) => (
                         <img
                           key={src}
-                          src={p}
+                          src={src}
                           alt={selected?.name?.uk || selected?.name?.en || "exercise"}
                           loading="lazy"
                           className="h-40 w-40 rounded-2xl object-cover border border-line bg-bg"
-                          onError={(e) => {
-                            const img = e.currentTarget;
-                            if (img.dataset.fallback === "1") return;
-                            img.dataset.fallback = "1";
-                            img.src = src;
-                          }}
                         />
-                      )})}
+                      ))}
                     </div>
-                  </div>
-                )}
-
-                {((selected.images || []).filter(Boolean).length) > 0 && (
-                  <div className="text-xs text-subtle -mt-2 mb-4">
-                    Якщо картинки не вантажаться — джерело може блокувати. Можна додати свої URL при ручному створенні вправи.
                   </div>
                 )}
 
@@ -355,6 +331,19 @@ export function Workouts() {
                       </select>
                     </div>
                   </div>
+                  
+                  <div className="rounded-2xl border border-line bg-panelHi px-3">
+                    <div className="text-[10px] font-bold text-subtle uppercase tracking-widest pt-2">Група мʼязів (як у GymUp)</div>
+                    <select
+                      className="w-full h-10 bg-transparent text-sm text-text outline-none"
+                      value={form.muscleGroup}
+                      onChange={e => setForm(f => ({ ...f, muscleGroup: e.target.value }))}
+                    >
+                      {Object.keys(muscleGroupsUk).map(id => (
+                        <option key={id} value={id}>{muscleGroupsUk[id]}</option>
+                      ))}
+                    </select>
+                  </div>
 
                   <Input
                     placeholder="Основні мʼязи (через кому), напр: pectoralis_major, triceps"
@@ -391,6 +380,8 @@ export function Workouts() {
                         name: { uk: nameUk, en: (form.nameEn || "").trim() || nameUk },
                         primaryGroup: form.primaryGroup,
                         primaryGroupUk: primaryGroupsUk[form.primaryGroup] || form.primaryGroup,
+                        muscleGroup: form.muscleGroup,
+                        muscleGroupUk: muscleGroupsUk[form.muscleGroup] || form.muscleGroup,
                         muscles: { primary: parseCsv(form.musclesPrimary), secondary: [], stabilizers: [] },
                         equipment: [form.equipment],
                         equipmentUk: [EQUIPMENT_OPTIONS.find(x => x.id === form.equipment)?.label || form.equipment],
@@ -403,6 +394,7 @@ export function Workouts() {
                         nameUk: "",
                         nameEn: "",
                         primaryGroup: "chest",
+                        muscleGroup: "Chest",
                         musclesPrimary: "",
                         equipment: "bodyweight",
                         description: "",
