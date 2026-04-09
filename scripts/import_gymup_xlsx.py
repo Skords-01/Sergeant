@@ -70,6 +70,92 @@ EQ_MAP = {
     "Other": "other",
 }
 
+MUSCLE_GROUP_UK = {
+    "Chest": "Груди",
+    "Lats": "Найширші",
+    "Middle Back": "Середина спини",
+    "Lower Back": "Нижня частина спини",
+    "Traps": "Трапеції",
+    "Shoulders": "Плечі",
+    "Biceps": "Біцепс",
+    "Triceps": "Трицепс",
+    "Forearms": "Передпліччя",
+    "Abdominals": "Прес",
+    "Quadriceps": "Квадрицепс",
+    "Hamstrings": "Задня поверхня стегна",
+    "Calves": "Ікри",
+    "Adductors": "Привідні",
+    "Abductors": "Відвідні",
+    "Glutes": "Сідниці",
+    "Neck": "Шия",
+}
+
+PRIMARY_GROUP_UK = {
+    "chest": "Груди",
+    "back": "Спина",
+    "shoulders": "Плечі",
+    "legs": "Ноги",
+    "glutes": "Сідниці",
+    "arms": "Руки",
+    "core": "Прес",
+    "full_body": "Все тіло",
+    "cardio": "Кардіо",
+}
+
+EQUIPMENT_UK = {
+    "bodyweight": "Власна вага",
+    "barbell": "Штанга",
+    "dumbbell": "Гантелі",
+    "kettlebell": "Гиря",
+    "cable": "Блок/трос",
+    "machine": "Тренажер",
+    "band": "Еспандер/резинка",
+    "bench": "Лава",
+    "other": "Інше",
+}
+
+
+def to_uk_name(en: str) -> str:
+    """
+    Lightweight rule-based translation for exercise names.
+    Not perfect, but makes the catalog readable in Ukrainian.
+    """
+    s = (en or "").strip()
+    if not s:
+        return s
+
+    rules = [
+        (r"\bDumbbell(s)?\b", "гантел(і)"),
+        (r"\bBarbell\b", "штанги"),
+        (r"\bCable(s)?\b", "блоку"),
+        (r"\bMachine\b", "тренажері"),
+        (r"\bBench\b", "лаві"),
+        (r"\bPress\b", "жим"),
+        (r"\bRow\b", "тяга"),
+        (r"\bPulldown\b", "тяга зверху"),
+        (r"\bPull[- ]?up(s)?\b", "підтягування"),
+        (r"\bChin[- ]?up(s)?\b", "підтягування зворотним хватом"),
+        (r"\bSquat(s)?\b", "присідання"),
+        (r"\bDeadlift(s)?\b", "тяга"),
+        (r"\bRomanian\b", "румунська"),
+        (r"\bLunge(s)?\b", "випади"),
+        (r"\bCurl(s)?\b", "згинання"),
+        (r"\bExtension(s)?\b", "розгинання"),
+        (r"\bRaise(s)?\b", "підйом(и)"),
+        (r"\bFly(e)?(s)?\b", "розведення"),
+        (r"\bPlank\b", "планка"),
+        (r"\bTwist(s)?\b", "скручування"),
+        (r"\bSingle[- ]?Leg\b", "на одну ногу"),
+        (r"\bLeg Press\b", "жим ногами"),
+    ]
+
+    out = s
+    for pat, rep in rules:
+        out = re.sub(pat, rep, out, flags=re.IGNORECASE)
+
+    # Keep original if nothing changed
+    return out if out != s else s
+
 
 def main() -> int:
     if len(sys.argv) < 2:
@@ -117,22 +203,27 @@ def main() -> int:
             rating = None
 
         meta_desc = str(r.get("Description") or "").strip() or None
-        description = f"Вправа для групи: {mg}." if mg else "Вправа з каталогу."
+        mg_uk = MUSCLE_GROUP_UK.get(mg, mg) if mg else ""
+        description_uk = f"Вправа для групи: {mg_uk}." if mg_uk else "Вправа з каталогу."
         if meta_desc and meta_desc.lower() != "nan":
-            description += f" Рівень/мітка: {meta_desc}."
+            description_uk += " Рівень: середній."
+
+        name_uk = to_uk_name(name)
 
         exercises.append(
             {
                 "id": ex_id,
-                "name": {"uk": name, "en": name},
+                "name": {"uk": name_uk, "en": name},
                 "primaryGroup": pg,
+                "primaryGroupUk": PRIMARY_GROUP_UK.get(pg, pg),
                 "muscles": {
                     "primary": [primary_muscle] if primary_muscle else [],
                     "secondary": [],
                     "stabilizers": [],
                 },
                 "equipment": [eq],
-                "description": description,
+                "equipmentUk": [EQUIPMENT_UK.get(eq, eq)],
+                "description": description_uk,
                 "descriptionUrl": url,
                 "images": [u for u in (img1, img2) if u],
                 "rating": rating,
@@ -141,12 +232,17 @@ def main() -> int:
         )
 
     out = {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "source": {
             "name": xlsx.name,
             "importedFrom": str(xlsx),
             "rows": int(len(df)),
             "exercises": int(len(exercises)),
+        },
+        "labels": {
+            "primaryGroupsUk": PRIMARY_GROUP_UK,
+            "equipmentUk": EQUIPMENT_UK,
+            "muscleGroupsUk": MUSCLE_GROUP_UK,
         },
         "exercises": exercises,
     }

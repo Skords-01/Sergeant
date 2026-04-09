@@ -9,6 +9,7 @@ function norm(s) {
 
 export function useExerciseCatalog() {
   const exercises = catalog.exercises || [];
+  const primaryGroupsUk = catalog.labels?.primaryGroupsUk || {};
 
   const search = (query) => {
     const q = norm(query);
@@ -20,16 +21,18 @@ export function useExerciseCatalog() {
       const aliases = (ex?.aliases || []).map(norm).join(" ");
       const desc = norm(ex?.description);
       const group = norm(ex?.primaryGroup);
+      const groupUk = norm(ex?.primaryGroupUk);
       return (
         nameUk.includes(q) ||
         nameEn.includes(q) ||
         aliases.includes(q) ||
         desc.includes(q) ||
-        group.includes(q)
+        group.includes(q) ||
+        groupUk.includes(q)
       );
     });
   };
 
-  return { catalog, exercises, search };
+  return { catalog, exercises, search, primaryGroupsUk };
 }
 

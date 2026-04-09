@@ -5,10 +5,33 @@ import { cn } from "@shared/lib/cn";
 import { useExerciseCatalog } from "../hooks/useExerciseCatalog";
 
 export function Workouts() {
-  const { search } = useExerciseCatalog();
+  const { search, primaryGroupsUk } = useExerciseCatalog();
   const [q, setQ] = useState("");
   const [selected, setSelected] = useState(null);
-  const list = useMemo(() => search(q).slice(0, 80), [q]);
+  const [open, setOpen] = useState(() => ({}));
+  const list = useMemo(() => search(q), [q]);
+
+  const grouped = useMemo(() => {
+    const m = new Map();
+    for (const ex of list) {
+      const gid = ex.primaryGroup || "full_body";
+      if (!m.has(gid)) m.set(gid, []);
+      m.get(gid).push(ex);
+    }
+    // stable group order (common first)
+    const order = ["chest", "back", "shoulders", "arms", "core", "legs", "glutes", "full_body", "cardio"];
+    const entries = Array.from(m.entries()).sort((a, b) => {
+      const ai = order.indexOf(a[0]);
+      const bi = order.indexOf(b[0]);
+      return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi) || a[0].localeCompare(b[0]);
+    });
+    return entries.map(([gid, items]) => ({
+      id: gid,
+      label: primaryGroupsUk[gid] || gid,
+      items: items.slice(0, 80),
+      total: items.length,
+    }));
+  }, [list, primaryGroupsUk]);
 
   return (
     <div className="flex-1 overflow-y-auto">
@@ -32,30 +55,59 @@ export function Workouts() {
         </div>
 
         <div className="bg-panel border border-line/60 rounded-2xl shadow-card overflow-hidden">
-          {list.length === 0 ? (
+          {grouped.length === 0 ? (
             <div className="p-6 text-center text-sm text-subtle">
               Нічого не знайдено
             </div>
           ) : (
-            list.map(ex => (
-              <button
-                key={ex.id}
-                onClick={() => setSelected(ex)}
-                className="w-full text-left px-4 py-3 border-b border-line last:border-0 hover:bg-panelHi transition-colors"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="text-sm font-semibold text-text truncate">{ex?.name?.uk || ex?.name?.en}</div>
-                    <div className="text-xs text-subtle mt-0.5">
-                      Основна група: <span className="font-semibold text-muted">{ex.primaryGroup}</span>
+            grouped.map(g => {
+              const isOpen = open[g.id] ?? true;
+              return (
+                <div key={g.id} className="border-b border-line last:border-0">
+                  <button
+                    onClick={() => setOpen(o => ({ ...o, [g.id]: !isOpen }))}
+                    className="w-full flex items-center justify-between px-4 py-3 bg-panelHi/60 hover:bg-panelHi transition-colors"
+                  >
+                    <div className="text-sm font-bold text-text">{g.label}</div>
+                    <div className="text-xs text-muted flex items-center gap-2">
+                      <span>{g.total}</span>
+                      <span className="text-lg leading-none">{isOpen ? "▾" : "▸"}</span>
                     </div>
-                  </div>
-                  <div className="shrink-0 text-xs text-muted">
-                    {ex.level || ""}
-                  </div>
+                  </button>
+                  {isOpen && (
+                    <div>
+                      {g.items.map(ex => (
+                        <button
+                          key={ex.id}
+                          onClick={() => setSelected(ex)}
+                          className="w-full text-left px-4 py-3 border-t border-line hover:bg-panelHi transition-colors"
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <div className="text-sm font-semibold text-text truncate">{ex?.name?.uk || ex?.name?.en}</div>
+                              <div className="text-xs text-subtle mt-0.5">
+                                Мʼязи:{" "}
+                                <span className="font-semibold text-muted">
+                                  {(ex?.muscles?.primary || []).join(", ") || "—"}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="shrink-0 text-xs text-muted">
+                              {ex.rating ? ex.rating.toFixed(1) : ""}
+                            </div>
+                          </div>
+                        </button>
+                      ))}
+                      {g.total > g.items.length && (
+                        <div className="px-4 py-3 text-xs text-subtle border-t border-line">
+                          Показано {g.items.length} з {g.total} (уточни пошук щоб звузити)
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
-              </button>
-            ))
+              );
+            })
           )}
         </div>
 
@@ -76,7 +128,7 @@ export function Workouts() {
                   <div className="min-w-0">
                     <div className="text-lg font-extrabold text-text leading-tight">{selected?.name?.uk || selected?.name?.en}</div>
                     <div className="text-xs text-subtle mt-1">
-                      Основна група: <span className="font-semibold text-muted">{selected.primaryGroup}</span>
+                      Основна група: <span className="font-semibold text-muted">{selected.primaryGroupUk || selected.primaryGroup}</span>
                       {selected.level ? <> · рівень: <span className="font-semibold text-muted">{selected.level}</span></> : null}
                     </div>
                   </div>
@@ -113,7 +165,7 @@ export function Workouts() {
                 <div className="mt-4 space-y-2">
                   <div className="text-xs font-bold text-subtle uppercase tracking-widest">Обладнання</div>
                   <div className="flex flex-wrap gap-1.5">
-                    {(selected.equipment || []).map(eq => (
+                    {(selected.equipmentUk || selected.equipment || []).map(eq => (
                       <span key={eq} className="text-xs px-3 py-1.5 rounded-full border border-line bg-bg text-muted font-semibold">
                         {eq}
                       </span>
