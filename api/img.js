@@ -20,6 +20,21 @@ function isAllowedUrl(raw) {
   }
 }
 
+function getQueryUrl(req) {
+  const q = req.query || {};
+  let url = q.url;
+  if (Array.isArray(url)) url = url[0];
+  if (typeof url === "string" && url) return url;
+
+  try {
+    const u = new URL(req.url, "http://local");
+    const v = u.searchParams.get("url");
+    if (v) return v;
+  } catch {}
+
+  return null;
+}
+
 export default async function handler(req, res) {
   const origin = req.headers.origin;
   if (ALLOWED_ORIGINS.includes(origin)) {
@@ -31,8 +46,8 @@ export default async function handler(req, res) {
   if (req.method === "OPTIONS") return res.status(200).end();
   if (req.method !== "GET") return res.status(405).json({ error: "Method not allowed" });
 
-  const url = req.query.url;
-  if (!url || typeof url !== "string") {
+  const url = getQueryUrl(req);
+  if (!url) {
     return res.status(400).json({ error: "Missing url" });
   }
   if (!isAllowedUrl(url)) {

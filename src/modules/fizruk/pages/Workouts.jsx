@@ -202,6 +202,12 @@ export function Workouts() {
                           alt={selected?.name?.uk || selected?.name?.en || "exercise"}
                           loading="lazy"
                           className="h-40 w-40 rounded-2xl object-cover border border-line bg-bg"
+                          onError={(e) => {
+                            const img = e.currentTarget;
+                            if (img.dataset.fallback === "1") return;
+                            img.dataset.fallback = "1";
+                            img.src = src;
+                          }}
                         />
                       ))}
                     </div>
