@@ -14,7 +14,7 @@ function buildDataFromStatuses(statusByMuscle) {
   return out;
 }
 
-export function BodyAtlas({ statusByMuscle }) {
+export function BodyAtlas({ statusByMuscle, height = 320, showLegend = true }) {
   const [view, setView] = useState("anterior"); // anterior | posterior
   const [selected, setSelected] = useState(null);
   const containerRef = useRef(null);
@@ -65,15 +65,17 @@ export function BodyAtlas({ statusByMuscle }) {
             Ззаду
           </button>
         </div>
-        <div className="flex items-center gap-2 text-xs text-subtle">
-          <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-success" /> готово</span>
-          <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-warning" /> норм</span>
-          <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-danger" /> рано</span>
-        </div>
+        {showLegend && (
+          <div className="flex items-center gap-2 text-xs text-subtle">
+            <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-success" /> готово</span>
+            <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-warning" /> норм</span>
+            <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-danger" /> рано</span>
+          </div>
+        )}
       </div>
 
       <div className="bg-bg border border-line rounded-2xl p-3">
-        <div ref={containerRef} className="w-full h-[320px]" />
+        <div ref={containerRef} className="w-full" style={{ height }} />
       </div>
 
       {selected && (
