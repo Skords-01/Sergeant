@@ -1,4 +1,7 @@
+import { useCallback, useEffect, useMemo, useState } from "react";
 import catalog from "../data/exercises.gymup.json";
+
+const CUSTOM_KEY = "fizruk_custom_exercises_v1";
 
 function norm(s) {
   return (s || "")
@@ -8,8 +11,34 @@ function norm(s) {
 }
 
 export function useExerciseCatalog() {
-  const exercises = catalog.exercises || [];
+  const baseExercises = catalog.exercises || [];
   const primaryGroupsUk = catalog.labels?.primaryGroupsUk || {};
+  const [customExercises, setCustomExercises] = useState([]);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(CUSTOM_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) setCustomExercises(parsed);
+    } catch {}
+  }, []);
+
+  const persistCustom = useCallback((next) => {
+    setCustomExercises(next);
+    try { localStorage.setItem(CUSTOM_KEY, JSON.stringify(next)); } catch {}
+  }, []);
+
+  const exercises = useMemo(() => {
+    const merged = [...customExercises, ...baseExercises];
+    const seen = new Set();
+    return merged.filter(ex => {
+      const id = ex?.id;
+      if (!id || seen.has(id)) return false;
+      seen.add(id);
+      return true;
+    });
+  }, [customExercises, baseExercises]);
 
   const search = (query) => {
     const q = norm(query);
@@ -33,6 +62,13 @@ export function useExerciseCatalog() {
     });
   };
 
-  return { catalog, exercises, search, primaryGroupsUk };
+  const addExercise = useCallback((ex) => {
+    if (!ex?.id) throw new Error("id is required");
+    if (!ex?.name?.uk) throw new Error("name.uk is required");
+    const next = [{ ...ex, _custom: true }, ...customExercises.filter(x => x?.id !== ex.id)];
+    persistCustom(next);
+  }, [customExercises, persistCustom]);
+
+  return { catalog, exercises, search, primaryGroupsUk, addExercise, customExercises };
 }
 

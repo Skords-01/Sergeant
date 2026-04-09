@@ -4,11 +4,51 @@ import { Button } from "@shared/components/ui/Button";
 import { cn } from "@shared/lib/cn";
 import { useExerciseCatalog } from "../hooks/useExerciseCatalog";
 
+const EQUIPMENT_OPTIONS = [
+  { id: "bodyweight", label: "Власна вага" },
+  { id: "barbell", label: "Штанга" },
+  { id: "dumbbell", label: "Гантелі" },
+  { id: "kettlebell", label: "Гиря" },
+  { id: "cable", label: "Блок/трос" },
+  { id: "machine", label: "Тренажер" },
+  { id: "band", label: "Еспандер/резинка" },
+  { id: "bench", label: "Лава" },
+  { id: "other", label: "Інше" },
+];
+
+function slugify(s) {
+  return (s || "")
+    .toString()
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/_+/g, "_")
+    .replace(/^_+|_+$/g, "");
+}
+
+function parseCsv(s) {
+  return (s || "")
+    .split(",")
+    .map(x => x.trim())
+    .filter(Boolean);
+}
+
 export function Workouts() {
-  const { search, primaryGroupsUk } = useExerciseCatalog();
+  const { search, primaryGroupsUk, addExercise } = useExerciseCatalog();
   const [q, setQ] = useState("");
   const [selected, setSelected] = useState(null);
   const [open, setOpen] = useState(() => ({}));
+  const [addOpen, setAddOpen] = useState(false);
+  const [form, setForm] = useState(() => ({
+    nameUk: "",
+    nameEn: "",
+    primaryGroup: "chest",
+    musclesPrimary: "",
+    equipment: "bodyweight",
+    description: "",
+    imageUrl1: "",
+    imageUrl2: "",
+  }));
   const list = useMemo(() => search(q), [q]);
 
   const grouped = useMemo(() => {
@@ -36,7 +76,12 @@ export function Workouts() {
   return (
     <div className="flex-1 overflow-y-auto">
       <div className="max-w-2xl mx-auto px-4 pt-4 pb-16">
-        <div className="text-sm font-semibold text-muted mb-3">Каталог вправ</div>
+        <div className="flex items-center justify-between gap-3 mb-3">
+          <div className="text-sm font-semibold text-muted">Каталог вправ</div>
+          <Button size="sm" className="h-9 px-4" onClick={() => setAddOpen(true)}>
+            + Додати
+          </Button>
+        </div>
 
         <div className="relative mb-3">
           <Input
@@ -140,6 +185,22 @@ export function Workouts() {
                   </button>
                 </div>
 
+                {(selected.images?.length || 0) > 0 && (
+                  <div className="mb-4 -mx-5 px-5 overflow-x-auto no-scrollbar">
+                    <div className="flex gap-3">
+                      {selected.images.slice(0, 5).map((src) => (
+                        <img
+                          key={src}
+                          src={src}
+                          alt={selected?.name?.uk || selected?.name?.en || "exercise"}
+                          loading="lazy"
+                          className="h-40 w-40 rounded-2xl object-cover border border-line bg-bg"
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {selected.description && (
                   <div className="text-sm text-text leading-relaxed mb-4">
                     {selected.description}
@@ -198,6 +259,137 @@ export function Workouts() {
                     }}
                   >
                     📋 Копіювати назву
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Add exercise sheet */}
+        {addOpen && (
+          <div className="fixed inset-0 z-50 flex items-end" onClick={() => setAddOpen(false)}>
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+            <div
+              className="relative w-full bg-panel border-t border-line rounded-t-3xl shadow-soft"
+              style={{ paddingBottom: "env(safe-area-inset-bottom, 16px)" }}
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="flex justify-center pt-3 pb-1">
+                <div className="w-10 h-1 bg-line rounded-full" />
+              </div>
+              <div className="px-5 pb-6">
+                <div className="flex items-start justify-between gap-3 mb-3">
+                  <div className="min-w-0">
+                    <div className="text-lg font-extrabold text-text leading-tight">Додати вправу</div>
+                    <div className="text-xs text-subtle mt-1">Збережеться локально на цьому пристрої</div>
+                  </div>
+                  <button
+                    onClick={() => setAddOpen(false)}
+                    className="w-8 h-8 flex items-center justify-center rounded-full bg-panelHi text-muted hover:text-text text-lg transition-colors"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <div className="space-y-2">
+                  <Input
+                    placeholder="Назва (укр) *"
+                    value={form.nameUk}
+                    onChange={e => setForm(f => ({ ...f, nameUk: e.target.value }))}
+                  />
+                  <Input
+                    placeholder="Назва (англ, опц.)"
+                    value={form.nameEn}
+                    onChange={e => setForm(f => ({ ...f, nameEn: e.target.value }))}
+                  />
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="rounded-2xl border border-line bg-panelHi px-3">
+                      <div className="text-[10px] font-bold text-subtle uppercase tracking-widest pt-2">Основна група</div>
+                      <select
+                        className="w-full h-10 bg-transparent text-sm text-text outline-none"
+                        value={form.primaryGroup}
+                        onChange={e => setForm(f => ({ ...f, primaryGroup: e.target.value }))}
+                      >
+                        {Object.keys(primaryGroupsUk).map(id => (
+                          <option key={id} value={id}>{primaryGroupsUk[id]}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="rounded-2xl border border-line bg-panelHi px-3">
+                      <div className="text-[10px] font-bold text-subtle uppercase tracking-widest pt-2">Обладнання</div>
+                      <select
+                        className="w-full h-10 bg-transparent text-sm text-text outline-none"
+                        value={form.equipment}
+                        onChange={e => setForm(f => ({ ...f, equipment: e.target.value }))}
+                      >
+                        {EQUIPMENT_OPTIONS.map(o => (
+                          <option key={o.id} value={o.id}>{o.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <Input
+                    placeholder="Основні мʼязи (через кому), напр: pectoralis_major, triceps"
+                    value={form.musclesPrimary}
+                    onChange={e => setForm(f => ({ ...f, musclesPrimary: e.target.value }))}
+                  />
+                  <Input
+                    placeholder="Опис"
+                    value={form.description}
+                    onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+                  />
+                  <Input
+                    placeholder="Картинка URL 1 (опц.)"
+                    value={form.imageUrl1}
+                    onChange={e => setForm(f => ({ ...f, imageUrl1: e.target.value }))}
+                  />
+                  <Input
+                    placeholder="Картинка URL 2 (опц.)"
+                    value={form.imageUrl2}
+                    onChange={e => setForm(f => ({ ...f, imageUrl2: e.target.value }))}
+                  />
+                </div>
+
+                <div className="mt-5 grid grid-cols-2 gap-2">
+                  <Button
+                    className="h-12"
+                    onClick={() => {
+                      const nameUk = (form.nameUk || "").trim();
+                      if (!nameUk) return;
+                      const id = `custom_${slugify(nameUk) || Date.now()}`;
+                      const images = [form.imageUrl1, form.imageUrl2].map(s => (s || "").trim()).filter(Boolean);
+                      addExercise({
+                        id,
+                        name: { uk: nameUk, en: (form.nameEn || "").trim() || nameUk },
+                        primaryGroup: form.primaryGroup,
+                        primaryGroupUk: primaryGroupsUk[form.primaryGroup] || form.primaryGroup,
+                        muscles: { primary: parseCsv(form.musclesPrimary), secondary: [], stabilizers: [] },
+                        equipment: [form.equipment],
+                        equipmentUk: [EQUIPMENT_OPTIONS.find(x => x.id === form.equipment)?.label || form.equipment],
+                        description: (form.description || "").trim(),
+                        images,
+                        source: "manual",
+                      });
+                      setAddOpen(false);
+                      setForm({
+                        nameUk: "",
+                        nameEn: "",
+                        primaryGroup: "chest",
+                        musclesPrimary: "",
+                        equipment: "bodyweight",
+                        description: "",
+                        imageUrl1: "",
+                        imageUrl2: "",
+                      });
+                    }}
+                  >
+                    Зберегти
+                  </Button>
+                  <Button variant="ghost" className="h-12" onClick={() => setAddOpen(false)}>
+                    Скасувати
                   </Button>
                 </div>
               </div>
