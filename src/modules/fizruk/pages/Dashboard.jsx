@@ -1,6 +1,7 @@
 import { useRecovery } from "../hooks/useRecovery";
 import { useWorkouts } from "../hooks/useWorkouts";
 import { BodyAtlas } from "../components/BodyAtlas";
+import { cn } from "@shared/lib/cn";
 
 export function Dashboard() {
   const today = new Date().toLocaleDateString("uk-UA", { weekday: "long", day: "numeric", month: "long" });
