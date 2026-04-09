@@ -35,9 +35,12 @@ function parseCsv(s) {
 
 function proxyImg(src) {
   if (!src) return src;
-  if (src.startsWith("data:")) return src;
-  if (src.startsWith("/")) return src;
-  return `/api/img?url=${encodeURIComponent(src)}`;
+  const s = src.toString().trim();
+  if (!s || s.toLowerCase() === "nan") return null;
+  if (s.startsWith("data:")) return s;
+  if (s.startsWith("/")) return s;
+  // Upstream often returns 404 for these; we still keep proxy for future sources/hosts.
+  return `/api/img?url=${encodeURIComponent(s)}`;
 }
 
 export function Workouts() {
@@ -192,13 +195,16 @@ export function Workouts() {
                   </button>
                 </div>
 
-                {(selected.images?.length || 0) > 0 && (
+                {((selected.images || []).filter(Boolean).length) > 0 && (
                   <div className="mb-4 -mx-5 px-5 overflow-x-auto no-scrollbar">
                     <div className="flex gap-3">
-                      {selected.images.slice(0, 5).map((src) => (
+                      {selected.images.slice(0, 8).map((src) => {
+                        const p = proxyImg(src);
+                        if (!p) return null;
+                        return (
                         <img
                           key={src}
-                          src={proxyImg(src)}
+                          src={p}
                           alt={selected?.name?.uk || selected?.name?.en || "exercise"}
                           loading="lazy"
                           className="h-40 w-40 rounded-2xl object-cover border border-line bg-bg"
@@ -209,8 +215,14 @@ export function Workouts() {
                             img.src = src;
                           }}
                         />
-                      ))}
+                      )})}
                     </div>
+                  </div>
+                )}
+
+                {((selected.images || []).filter(Boolean).length) > 0 && (
+                  <div className="text-xs text-subtle -mt-2 mb-4">
+                    Якщо картинки не вантажаться — джерело може блокувати. Можна додати свої URL при ручному створенні вправи.
                   </div>
                 )}
 

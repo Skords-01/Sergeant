@@ -193,8 +193,11 @@ def main() -> int:
         eq = EQ_MAP.get(eq_raw, "other")
 
         url = str(r.get("Description_URL") or "").strip() or None
-        img1 = str(r.get("Exercise_Image") or "").strip() or None
-        img2 = str(r.get("Exercise_Image1") or "").strip() or None
+
+        img1_raw = r.get("Exercise_Image")
+        img2_raw = r.get("Exercise_Image1")
+        img1 = None if pd.isna(img1_raw) else str(img1_raw).strip() or None
+        img2 = None if pd.isna(img2_raw) else str(img2_raw).strip() or None
 
         rating = r.get("Rating")
         try:
@@ -225,7 +228,7 @@ def main() -> int:
                 "equipmentUk": [EQUIPMENT_UK.get(eq, eq)],
                 "description": description_uk,
                 "descriptionUrl": url,
-                "images": [u for u in (img1, img2) if u],
+                "images": [u for u in (img1, img2) if u and u.lower() != "nan"],
                 "rating": rating,
                 "source": "bodybuilding.com",
             }
