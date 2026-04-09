@@ -46,11 +46,11 @@ export function Overview({ mono, storage, onNavigate }) {
   if (loadingTx && realTx.length === 0) {
     return (
       <div className="flex-1 overflow-y-auto">
-        <div className="px-4 pt-4 pb-6 space-y-3 max-w-2xl mx-auto">
-          <Skeleton className="h-[168px]" />
-          <Skeleton className="h-[120px] opacity-80" />
-          <Skeleton className="h-[110px] opacity-60" />
-          <Skeleton className="h-[90px] opacity-40" />
+        <div className="px-4 pt-4 pb-6 space-y-4 max-w-4xl mx-auto">
+          <Skeleton className="h-[168px] rounded-3xl" />
+          <Skeleton className="h-[120px] opacity-80 rounded-2xl" />
+          <Skeleton className="h-[110px] opacity-60 rounded-2xl" />
+          <Skeleton className="h-[90px] opacity-40 rounded-2xl" />
         </div>
       </div>
     );
@@ -148,15 +148,26 @@ export function Overview({ mono, storage, onNavigate }) {
 
   return (
     <div className="flex-1 overflow-y-auto overscroll-contain">
-      <div className="px-4 pt-4 pb-6 space-y-3 max-w-2xl mx-auto">
+      <div className="px-4 pt-4 pb-6 space-y-4 max-w-4xl mx-auto">
 
         {/* ── Hero ── */}
-        <div className="rounded-3xl bg-hero border border-line p-5 shadow-float">
-          <div className="text-xs text-subtle font-medium">
-            {dateLabel} &nbsp;·&nbsp; {firstName}
+        <div className="rounded-3xl bg-gradient-to-br from-panel via-panel to-emerald-500/[0.06] border border-line p-5 shadow-float">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="inline-flex w-10 h-10 rounded-xl bg-emerald-500/12 text-emerald-600 items-center justify-center border border-emerald-500/15" aria-hidden>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="2" y="5" width="20" height="14" rx="2" />
+                <line x1="2" y1="10" x2="22" y2="10" />
+              </svg>
+            </span>
+            <div>
+              <div className="text-xs text-subtle font-medium">Огляд</div>
+              <div className="text-sm font-semibold text-text leading-tight">
+                {dateLabel} · {firstName}
+              </div>
+            </div>
           </div>
           <div className={cn(
-            "text-[44px] font-bold tracking-tight leading-none mt-2.5 tabular-nums",
+            "text-[44px] font-bold tracking-tight leading-none mt-2 tabular-nums",
             networth >= 0 ? "text-text" : "text-danger"
           )}>
             {networth.toLocaleString("uk-UA", { maximumFractionDigits: 0 })}

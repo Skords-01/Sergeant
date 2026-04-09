@@ -39,7 +39,7 @@ export function Budgets({ mono, storage }) {
 
   return (
     <div className="flex-1 overflow-y-auto">
-      <div className="max-w-2xl mx-auto px-4 pt-4 pb-[calc(88px+env(safe-area-inset-bottom,0px))] space-y-3">
+      <div className="max-w-4xl mx-auto px-4 pt-4 pb-[calc(88px+env(safe-area-inset-bottom,0px))] space-y-3">
 
         {/* Monthly plan */}
         <div className="bg-panel border border-line rounded-xl p-4">

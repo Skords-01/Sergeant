@@ -59,6 +59,7 @@ export function Dashboard({ onOpenAtlas }) {
     try { return localStorage.getItem(SELECTED_TEMPLATE_KEY) || ""; } catch { return ""; }
   });
   const [planConfirmOpen, setPlanConfirmOpen] = useState(false);
+  const [pendingPicks, setPendingPicks] = useState(null);
 
   useEffect(() => {
     if (selectedTemplateId) return;
@@ -145,6 +146,25 @@ export function Dashboard({ onOpenAtlas }) {
     [workouts],
   );
 
+  const monthCompletedCount = useMemo(() => {
+    const now = new Date();
+    return (workouts || []).filter(w => {
+      if (!w.endedAt) return false;
+      const d = new Date(w.startedAt);
+      return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+    }).length;
+  }, [workouts]);
+
+  const avgDurationSec = useMemo(() => {
+    const done = (workouts || []).filter(w => w.endedAt);
+    if (!done.length) return 0;
+    const sum = done.reduce((s, w) => s + workoutDurationSec(w), 0);
+    return Math.round(sum / done.length);
+  }, [workouts]);
+
+  const picksFromTemplate = (tpl) =>
+    (tpl?.exerciseIds || []).map(id => exercises.find(e => e.id === id)).filter(Boolean);
+
   const startWorkoutFromPlan = (picks) => {
     const w = createWorkout();
     for (const ex of picks) {
@@ -164,15 +184,24 @@ export function Dashboard({ onOpenAtlas }) {
     window.location.hash = "#workouts";
   };
 
-  const onClickStartPlan = () => {
-    const picks = plan.picked;
-    if (!picks.length) return;
+  const tryStartPlan = (picks) => {
+    if (!picks?.length) return;
     const risky = picks.some(ex => recoveryConflictsForExercise(ex, rec.by).hasWarning);
     if (risky) {
+      setPendingPicks(picks);
       setPlanConfirmOpen(true);
       return;
     }
+    setPendingPicks(null);
     startWorkoutFromPlan(picks);
+  };
+
+  const onClickStartPlan = () => tryStartPlan(plan.picked);
+
+  const onQuickStartTemplate = (tpl) => {
+    setSelectedTemplateId(tpl.id);
+    try { localStorage.setItem(SELECTED_TEMPLATE_KEY, tpl.id); } catch {}
+    tryStartPlan(picksFromTemplate(tpl));
   };
 
   const kpi = [
@@ -210,43 +239,192 @@ export function Dashboard({ onOpenAtlas }) {
     <div className="flex-1 overflow-y-auto">
       <div className="max-w-4xl mx-auto px-4 pt-4 pb-16 space-y-4">
 
-        <section
-          className="rounded-3xl border border-line bg-gradient-to-br from-panel via-panel to-panelHi p-5 shadow-float"
-          aria-label="Огляд Фізрука"
-        >
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-start gap-3 min-w-0">
-              <div className="shrink-0 w-12 h-12 rounded-2xl bg-success/12 flex items-center justify-center text-success" aria-hidden>
-                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M6.5 6.5h11M6.5 17.5h11M3 12h18M6 9l-3 3 3 3M18 9l3 3-3 3" />
-                </svg>
-              </div>
-              <div>
-                <div className="text-xs text-subtle capitalize">{today}</div>
-                <h1 className="text-2xl sm:text-3xl font-extrabold text-text tracking-tight mt-0.5">Фізрук</h1>
-                <p className="text-sm text-muted mt-0.5">Відновлення, план і статистика в одному місці</p>
-              </div>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto sm:justify-end">
-              <Button
-                className="w-full sm:w-auto min-h-[48px] shrink-0 !bg-success !text-white hover:!bg-success/90 border-0 shadow-md font-semibold"
-                onClick={onClickStartPlan}
-                disabled={!plan.picked.length}
-                aria-label="Почати тренування за планом"
-              >
-                + Почати тренування
-              </Button>
-              <Button
-                variant="ghost"
-                className="w-full sm:w-auto min-h-[48px]"
-                onClick={() => { window.location.hash = "#workouts"; }}
-                aria-label="Відкрити журнал тренувань"
-              >
-                Журнал
-              </Button>
-            </div>
+        <section className="space-y-3" aria-label="Привітання">
+          <div>
+            <p className="text-sm text-subtle capitalize">{today}</p>
+            <h1 className="text-2xl font-bold text-text mt-1">Готовий до тренування?</h1>
+            <p className="text-sm text-muted mt-0.5">Швидкий старт за шаблоном або поточний план нижче</p>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button
+              className="w-full sm:w-auto min-h-[48px] shrink-0 !bg-success !text-white hover:!bg-success/90 border-0 shadow-md font-semibold"
+              onClick={onClickStartPlan}
+              disabled={!plan.picked.length}
+              aria-label="Почати тренування за обраним шаблоном"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="opacity-95" aria-hidden>
+                <polygon points="5 3 19 12 5 21 5 3" />
+              </svg>
+              Почати тренування
+            </Button>
+            <Button
+              variant="ghost"
+              className="w-full sm:w-auto min-h-[48px] border border-line"
+              onClick={() => { window.location.hash = "#workouts"; }}
+              aria-label="Відкрити журнал тренувань"
+            >
+              Журнал
+            </Button>
           </div>
         </section>
+
+        <section className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card" aria-label="Статус відновлення">
+          <div className="flex items-center justify-between gap-2 mb-3">
+            <h2 className="text-base font-semibold text-text flex items-center gap-2">
+              <span className="text-sky-600" aria-hidden>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10" />
+                  <circle cx="12" cy="12" r="6" />
+                  <circle cx="12" cy="12" r="2" />
+                </svg>
+              </span>
+              Статус відновлення
+            </h2>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-9 min-h-[40px] px-3 text-xs"
+              onClick={() => onOpenAtlas?.()}
+              aria-label="Відкрити атлас мʼязів"
+            >
+              Атлас
+            </Button>
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            {(rec.list || []).slice(0, 6).map(m => (
+              <div
+                key={m.id}
+                className={cn(
+                  "p-3 rounded-xl text-center transition-colors",
+                  m.status === "green" && "bg-success/10",
+                  m.status === "yellow" && "bg-warning/10",
+                  m.status === "red" && "bg-danger/10",
+                )}
+              >
+                <div
+                  className={cn(
+                    "w-2 h-2 rounded-full mx-auto mb-1",
+                    m.status === "green" && "bg-success",
+                    m.status === "yellow" && "bg-warning",
+                    m.status === "red" && "bg-danger",
+                  )}
+                />
+                <p className="text-xs font-medium text-text line-clamp-2">{m.label}</p>
+                <p className="text-[10px] text-subtle mt-0.5">
+                  {m.daysSince == null ? "—" : m.daysSince === 0 ? "Сьогодні" : `${m.daysSince}д тому`}
+                </p>
+              </div>
+            ))}
+            {(rec.list || []).length === 0 && (
+              <p className="text-xs text-subtle col-span-3 text-center py-2">Додай тренування — тут зʼявляться мʼязи</p>
+            )}
+          </div>
+          <div className="mt-4 pt-3 border-t border-line/60">
+            <BodyAtlas statusByMuscle={statusByMuscle} height={140} showLegend={false} />
+          </div>
+        </section>
+
+        <section className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card" aria-label="Швидкий старт">
+          <h2 className="text-base font-semibold text-text flex items-center gap-2 mb-3">
+            <span className="text-sky-600" aria-hidden>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="5 3 19 12 5 21 5 3" />
+              </svg>
+            </span>
+            Швидкий старт
+          </h2>
+          {templates.length === 0 ? (
+            <p className="text-sm text-subtle text-center py-3">
+              Немає шаблонів —{" "}
+              <button
+                type="button"
+                className="font-semibold text-text underline"
+                onClick={() => {
+                  try { sessionStorage.setItem("fizruk_workouts_mode", "templates"); } catch {}
+                  window.location.hash = "#workouts";
+                }}
+              >
+                створи в «Тренування → Шаблони»
+              </button>
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {templates.map(tpl => {
+                const n = (tpl.exerciseIds || []).length;
+                const active = tpl.id === selectedTemplateId;
+                return (
+                  <button
+                    key={tpl.id}
+                    type="button"
+                    onClick={() => onQuickStartTemplate(tpl)}
+                    className={cn(
+                      "w-full flex items-center justify-between gap-3 p-3 rounded-xl text-left transition-colors min-h-[52px]",
+                      "bg-panelHi hover:bg-panelHi/80 border",
+                      active ? "border-success/40 ring-1 ring-success/20" : "border-line/80",
+                    )}
+                  >
+                    <div className="min-w-0">
+                      <p className="font-medium text-text truncate">{tpl.name}</p>
+                      <p className="text-xs text-subtle">{n} {n === 1 ? "вправа" : "вправ"}</p>
+                    </div>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="text-muted shrink-0" aria-hidden>
+                      <path d="M9 18l6-6-6-6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </section>
+
+        <section className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card" aria-label="Рекомендовані мʼязи">
+          <h2 className="text-base font-semibold text-text mb-3">Рекомендовані мʼязи</h2>
+          <div className="flex flex-wrap gap-2">
+            {(plan.focus || []).slice(0, 6).map(m => (
+              <span
+                key={m.id}
+                className="px-3 py-1.5 bg-success/10 text-success text-sm rounded-full font-medium border border-success/15"
+              >
+                {m.label}{m.daysSince == null ? "" : ` · ${m.daysSince}д`}
+              </span>
+            ))}
+            {(plan.focus || []).length === 0 && (
+              <span className="text-xs text-subtle">Поки немає даних для фокусу</span>
+            )}
+          </div>
+          {(plan.avoid || []).length > 0 && (
+            <p className="text-xs text-muted mt-3 leading-relaxed">
+              Уникати сьогодні:{" "}
+              <span className="text-warning font-medium">{plan.avoid.map(x => x.label).join(", ")}</span>
+            </p>
+          )}
+        </section>
+
+        <div className="grid grid-cols-3 gap-3" role="list" aria-label="Коротка статистика">
+          <div className="bg-panel border border-line/60 rounded-2xl p-3 shadow-card text-center">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="mx-auto text-orange-500" aria-hidden>
+              <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.5-.5-3-1.5-4.5 2 2.5 2.5 5 1.5 7.5-1 2.5-3 4-5.5 4-3 0-5-2.5-5-5.5 0-3 2-5.5 5-7 0 3 1 5.5 3 7.5z" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            <p className="text-xl font-bold text-text mt-1 tabular-nums">{monthCompletedCount}</p>
+            <p className="text-[10px] text-subtle leading-tight mt-0.5">Цього місяця</p>
+          </div>
+          <div className="bg-panel border border-line/60 rounded-2xl p-3 shadow-card text-center">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="mx-auto text-sky-600" aria-hidden>
+              <rect x="3" y="4" width="18" height="18" rx="2" strokeWidth="1.7" />
+              <path d="M16 2v4M8 2v4M3 10h18" strokeWidth="1.7" strokeLinecap="round" />
+            </svg>
+            <p className="text-xl font-bold text-text mt-1 tabular-nums">{streakDays}</p>
+            <p className="text-[10px] text-subtle leading-tight mt-0.5">Днів поспіль</p>
+          </div>
+          <div className="bg-panel border border-line/60 rounded-2xl p-3 shadow-card text-center">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="mx-auto text-success" aria-hidden>
+              <circle cx="12" cy="12" r="10" strokeWidth="1.7" />
+              <path d="M12 6v6l4 2" strokeWidth="1.7" strokeLinecap="round" />
+            </svg>
+            <p className="text-xl font-bold text-text mt-1 tabular-nums">{avgDurationSec ? formatDurShort(avgDurationSec) : "—"}</p>
+            <p className="text-[10px] text-subtle leading-tight mt-0.5">Сер. тривалість</p>
+          </div>
+        </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3" role="list" aria-label="Ключові показники">
           {kpi.map(card => (
@@ -346,22 +524,6 @@ export function Dashboard({ onOpenAtlas }) {
         </div>
 
         <div className="bg-panel border border-line/60 rounded-2xl p-5 shadow-card">
-          <div className="flex items-center justify-between mb-3">
-            <div className="text-xs font-medium text-subtle">Статус відновлення</div>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-9 min-h-[44px] px-4"
-              onClick={() => onOpenAtlas?.()}
-              aria-label="Відкрити атлас мʼязів"
-            >
-              Атлас
-            </Button>
-          </div>
-          <BodyAtlas statusByMuscle={statusByMuscle} height={160} showLegend={false} />
-        </div>
-
-        <div className="bg-panel border border-line/60 rounded-2xl p-5 shadow-card">
           <div className="text-xs font-medium text-subtle mb-3">План на сьогодні</div>
           <div className="rounded-2xl border border-line bg-panelHi px-3">
             <div className="text-[10px] font-bold text-subtle uppercase tracking-widest pt-2">Мій шаблон</div>
@@ -405,24 +567,6 @@ export function Dashboard({ onOpenAtlas }) {
             <div className="text-sm text-subtle text-center py-4">Додай перше тренування, щоб статистика була точнішою</div>
           ) : null}
 
-          <div className="mt-3 space-y-2">
-            <div className="text-xs text-subtle">Фокус (готові мʼязи):</div>
-            <div className="flex flex-wrap gap-2">
-              {(plan.focus || []).slice(0, 4).map(m => (
-                <span key={m.id} className="text-xs px-3 py-1.5 rounded-full border border-line text-muted bg-bg">
-                  {m.label}{m.daysSince == null ? "" : ` · ${m.daysSince}д`}
-                </span>
-              ))}
-              {(plan.focus || []).length === 0 && (
-                <span className="text-xs text-subtle">—</span>
-              )}
-            </div>
-
-            {(plan.avoid || []).length ? (
-              <div className="text-xs text-warning mt-2">Уникай сьогодні: {plan.avoid.map(x => x.label).join(", ")}</div>
-            ) : null}
-          </div>
-
           <div className="mt-4">
             <div className="text-xs text-subtle mb-2">
               Вправи з шаблону{plan.templateName ? ` «${plan.templateName}»` : ""}:
@@ -451,7 +595,7 @@ export function Dashboard({ onOpenAtlas }) {
           <div className="mt-3 flex gap-2">
             <Button
               className="flex-1 h-12 min-h-[44px]"
-              onClick={onClickStartPlan}
+              onClick={() => tryStartPlan(plan.picked)}
               disabled={!plan.picked.length}
             >
               Стартувати тренування
@@ -485,9 +629,14 @@ export function Dashboard({ onOpenAtlas }) {
 
       {planConfirmOpen && (
         <div className="fixed inset-0 z-[70] flex items-end justify-center" role="dialog" aria-modal="true" aria-labelledby="plan-confirm-title">
-          <button type="button" className="absolute inset-0 bg-black/60 backdrop-blur-sm" aria-label="Закрити" onClick={() => setPlanConfirmOpen(false)} />
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            aria-label="Закрити"
+            onClick={() => { setPlanConfirmOpen(false); setPendingPicks(null); }}
+          />
           <div
-            className="relative w-full max-w-2xl bg-panel border-t border-line rounded-t-3xl p-5 shadow-soft"
+            className="relative w-full max-w-4xl bg-panel border-t border-line rounded-t-3xl p-5 shadow-soft"
             style={{ paddingBottom: "env(safe-area-inset-bottom, 16px)" }}
           >
             <div id="plan-confirm-title" className="text-lg font-extrabold text-text">Увага</div>
@@ -495,14 +644,16 @@ export function Dashboard({ onOpenAtlas }) {
               У цьому шаблоні є вправи на мʼязи, які ще відновлюються. Продовжити старт тренування?
             </p>
             <div className="flex gap-2 mt-4">
-              <Button variant="ghost" className="flex-1 h-12 min-h-[44px]" onClick={() => setPlanConfirmOpen(false)}>
+              <Button variant="ghost" className="flex-1 h-12 min-h-[44px]" onClick={() => { setPlanConfirmOpen(false); setPendingPicks(null); }}>
                 Скасувати
               </Button>
               <Button
                 className="flex-1 h-12 min-h-[44px]"
                 onClick={() => {
+                  const picks = pendingPicks?.length ? pendingPicks : plan.picked;
                   setPlanConfirmOpen(false);
-                  startWorkoutFromPlan(plan.picked);
+                  setPendingPicks(null);
+                  startWorkoutFromPlan(picks);
                 }}
               >
                 Продовжити

@@ -10,20 +10,25 @@ const MODULES = [
   {
     id: "finyk",
     label: "ФІНІК",
-    desc: "Фінанси",
+    desc: "Особисті фінанси",
+    gradient: "from-emerald-500/12 to-teal-500/8",
+    iconClass: "bg-emerald-500/12 text-emerald-600",
     icon: (
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/>
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="2" y="5" width="20" height="14" rx="2" />
+        <line x1="2" y1="10" x2="22" y2="10" />
       </svg>
     ),
   },
   {
     id: "fizruk",
     label: "ФІЗРУК",
-    desc: "Спорт",
+    desc: "Фітнес і тренування",
+    gradient: "from-sky-500/12 to-indigo-500/8",
+    iconClass: "bg-sky-500/12 text-sky-600",
     icon: (
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="5" r="2"/><path d="M12 7v8m-4-5h8M9 20l3-5 3 5"/>
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M6.5 6.5h11M6.5 17.5h11M3 12h18M6 9l-3 3 3 3M18 9l3 3-3 3" />
       </svg>
     ),
   },
@@ -72,11 +77,16 @@ export default function App() {
       {/* Back to hub */}
       <div className="shrink-0 absolute top-0 left-0 z-50 p-2" style={{ paddingTop: "env(safe-area-inset-top, 8px)" }}>
         <button
+          type="button"
           onClick={() => setActiveModule(null)}
-          className="w-9 h-9 flex items-center justify-center rounded-xl bg-panel/80 backdrop-blur border border-line text-subtle hover:text-text transition-colors text-sm"
-          title="До головного меню"
+          className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-2xl bg-panel/90 backdrop-blur-md border border-line/80 text-muted hover:text-text shadow-card transition-colors"
+          title="До вибору модуля"
+          aria-label="До вибору модуля"
         >
-          ⌂
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+            <polyline points="9 22 9 12 15 12 15 22" />
+          </svg>
         </button>
       </div>
 

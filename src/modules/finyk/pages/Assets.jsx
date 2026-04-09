@@ -70,7 +70,7 @@ export function Assets({ mono, storage }) {
             <span className="text-sm font-bold">Погашення: {label}</span>
           </div>
           <div className="flex-1 overflow-y-auto">
-            <div className="max-w-2xl mx-auto px-4 pt-4 pb-[calc(88px+env(safe-area-inset-bottom,0px))]">
+            <div className="max-w-4xl mx-auto px-4 pt-4 pb-[calc(88px+env(safe-area-inset-bottom,0px))]">
               <div className="bg-panel border border-line rounded-xl p-4 mb-3">
                 <div className="text-xs text-subtle mb-1">{label}</div>
                 <div className="text-2xl font-extrabold text-danger">−{remaining.toLocaleString("uk-UA", { maximumFractionDigits: 0 })} ₴ залишок боргу</div>
@@ -123,7 +123,7 @@ export function Assets({ mono, storage }) {
           <span className="text-sm font-bold">{isDebt ? "Транзакції по пасиву" : "Транзакції по активу"}</span>
         </div>
         <div className="flex-1 overflow-y-auto">
-          <div className="max-w-2xl mx-auto px-4 pt-4 pb-[calc(88px+env(safe-area-inset-bottom,0px))]">
+          <div className="max-w-4xl mx-auto px-4 pt-4 pb-[calc(88px+env(safe-area-inset-bottom,0px))]">
             <div className="bg-panel border border-line rounded-xl p-4 mb-4">
               <div className="text-xs text-subtle">{item?.emoji} {item?.name}</div>
               <div className={cn("text-2xl font-extrabold mt-1", isDebt ? "text-danger" : "text-success")}>
@@ -151,7 +151,7 @@ export function Assets({ mono, storage }) {
 
   return (
     <div className="flex-1 overflow-y-auto">
-      <div className="max-w-2xl mx-auto px-4 pt-4 pb-[calc(88px+env(safe-area-inset-bottom,0px))] space-y-1">
+      <div className="max-w-4xl mx-auto px-4 pt-4 pb-[calc(88px+env(safe-area-inset-bottom,0px))] space-y-1">
 
         {/* Networth */}
         <div className="bg-panel border border-line rounded-xl p-5 mb-3">

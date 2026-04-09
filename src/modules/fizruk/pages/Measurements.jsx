@@ -27,7 +27,7 @@ export function Measurements() {
 
   return (
     <div className="flex-1 overflow-y-auto">
-      <div className="max-w-2xl mx-auto px-4 pt-4 pb-[calc(88px+env(safe-area-inset-bottom,0px))] space-y-3">
+      <div className="max-w-4xl mx-auto px-4 pt-4 pb-[calc(88px+env(safe-area-inset-bottom,0px))] space-y-3">
         <div className="text-sm font-semibold text-muted">Заміри</div>
 
         <div className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card">

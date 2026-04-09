@@ -41,7 +41,7 @@ export function Atlas() {
 
   return (
     <div className="flex-1 overflow-y-auto">
-      <div className="max-w-2xl mx-auto px-4 pt-4 pb-16 space-y-3">
+      <div className="max-w-4xl mx-auto px-4 pt-4 pb-16 space-y-3">
         <div className="bg-panel border border-line/60 rounded-2xl p-5 shadow-card">
           <div className="text-xs font-medium text-subtle mb-3">Атлас мʼязів</div>
           <BodyAtlas statusByMuscle={statusByMuscle} height={520} />

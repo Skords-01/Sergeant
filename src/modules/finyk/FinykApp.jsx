@@ -16,10 +16,10 @@ const Settings       = lazy(() => import("./pages/Settings").then(m => ({ defaul
 
 function PageLoader() {
   return (
-    <div className="flex-1 overflow-y-auto px-4 pt-4 pb-6 space-y-3 max-w-2xl mx-auto w-full">
-      <Skeleton className="h-40" />
-      <Skeleton className="h-28 opacity-80" />
-      <Skeleton className="h-24 opacity-60" />
+    <div className="flex-1 overflow-y-auto px-4 pt-4 pb-6 space-y-3 max-w-4xl mx-auto w-full">
+      <Skeleton className="h-40 rounded-3xl" />
+      <Skeleton className="h-28 opacity-80 rounded-2xl" />
+      <Skeleton className="h-24 opacity-60 rounded-2xl" />
     </div>
   );
 }
@@ -177,14 +177,20 @@ export default function App() {
   // ── Login screen ──────────────────────────────────────────────────────
   if (!clientInfo) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-5 bg-bg">
+      <div className="min-h-dvh flex items-center justify-center p-5 bg-bg" style={{ paddingTop: "env(safe-area-inset-top, 0px)", paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
         <div className="w-full max-w-sm">
           <div className="text-center mb-8">
+            <div className="inline-flex w-16 h-16 rounded-2xl bg-emerald-500/12 text-emerald-600 items-center justify-center mb-4 mx-auto shadow-card border border-emerald-500/15">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <rect x="2" y="5" width="20" height="14" rx="2" />
+                <line x1="2" y1="10" x2="22" y2="10" />
+              </svg>
+            </div>
             <div className="text-[28px] font-semibold tracking-wide text-text mb-1">ФІНІК</div>
-            <div className="text-sm text-subtle">Персональний фінансист</div>
+            <div className="text-sm text-muted">Персональний фінансист</div>
           </div>
 
-          <div className="bg-panel border border-line rounded-3xl p-6 shadow-card">
+          <div className="bg-panel border border-line rounded-3xl p-6 shadow-float">
             <div className="text-xs text-subtle mb-1">Mono → Налаштування → Інші → API</div>
             <div className="relative mt-3">
               <Input
@@ -212,7 +218,7 @@ export default function App() {
               <p className="mt-3 text-sm text-danger bg-danger/10 rounded-xl px-3 py-2">{error}</p>
             )}
 
-            <Button className="mt-4 w-full h-12 text-base" onClick={() => connect(tokenInput.trim())} disabled={connecting}>
+            <Button className="mt-4 w-full h-12 min-h-[48px] text-base !bg-emerald-600 !text-white hover:!bg-emerald-700 border-0 shadow-md" onClick={() => connect(tokenInput.trim())} disabled={connecting}>
               {connecting ? "Підключення..." : "Підключити →"}
             </Button>
             <p className="mt-3 text-center text-xs text-subtle">🔒 Токен зберігається лише у твоєму браузері</p>
@@ -228,8 +234,19 @@ export default function App() {
 
       {/* Header */}
       <div className="shrink-0 bg-panel/95 backdrop-blur-md border-b border-line/60 z-20" style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}>
-        <div className="flex h-14 items-center justify-between px-5">
-          <span className="text-[16px] font-semibold tracking-wide text-text">ФІНІК</span>
+        <div className="flex h-14 items-center justify-between px-4 sm:px-5 gap-3">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="shrink-0 w-9 h-9 rounded-xl bg-emerald-500/12 flex items-center justify-center text-emerald-600 border border-emerald-500/15" aria-hidden>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="2" y="5" width="20" height="14" rx="2" />
+                <line x1="2" y1="10" x2="22" y2="10" />
+              </svg>
+            </div>
+            <div className="min-w-0">
+              <span className="text-[16px] font-semibold tracking-wide text-text block leading-tight">ФІНІК</span>
+              <span className="text-[10px] text-subtle font-medium hidden sm:block truncate">Monobank · бюджети</span>
+            </div>
+          </div>
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-2 text-xs text-subtle select-none">
               <span className={cn("w-2 h-2 rounded-full", syncTone.dot)} />
@@ -273,9 +290,9 @@ export default function App() {
                     key={p.id}
                     onClick={() => handleNavigate(p.id)}
                     className={cn(
-                      "w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium transition-colors",
+                      "w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium transition-colors min-h-[44px]",
                       page === p.id
-                        ? "bg-text/6 text-text"
+                        ? "bg-emerald-500/10 text-text border border-emerald-500/20"
                         : "text-muted hover:bg-panelHi hover:text-text"
                     )}
                   >
@@ -358,16 +375,20 @@ export default function App() {
             return (
               <button
                 key={item.id}
+                type="button"
                 onClick={() => handleNavigate(item.id)}
                 className={cn(
-                  "flex-1 flex flex-col items-center justify-center gap-1 transition-all",
-                  active ? "text-text" : "text-muted"
+                  "relative flex-1 flex flex-col items-center justify-center gap-1 transition-all min-h-[48px]",
+                  active ? "text-text" : "text-muted",
                 )}
               >
-                {NAV_ICONS[item.id]}
+                {active && (
+                  <span className="absolute top-0 left-1/2 -translate-x-1/2 w-9 h-0.5 rounded-full bg-emerald-500/90" aria-hidden />
+                )}
+                <span className={cn(active && "text-emerald-600")}>{NAV_ICONS[item.id]}</span>
                 <span className={cn(
                   "text-[11px] leading-none font-semibold",
-                  active ? "text-text" : "text-muted"
+                  active ? "text-text" : "text-muted",
                 )}>
                   {item.label}
                 </span>

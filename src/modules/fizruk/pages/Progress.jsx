@@ -182,7 +182,7 @@ export function Progress() {
 
   return (
     <div className="flex-1 overflow-y-auto">
-      <div className="max-w-2xl mx-auto px-4 pt-4 pb-16 space-y-3">
+      <div className="max-w-4xl mx-auto px-4 pt-4 pb-16 space-y-3">
         <div className="text-sm font-semibold text-muted">Прогрес</div>
 
         {!hasAny && (

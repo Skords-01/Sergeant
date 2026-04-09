@@ -209,7 +209,7 @@ export function Workouts() {
 
   return (
     <div className="flex-1 overflow-y-auto">
-      <div className="max-w-2xl mx-auto px-4 pt-4 pb-[calc(88px+env(safe-area-inset-bottom,0px))]">
+      <div className="max-w-4xl mx-auto px-4 pt-4 pb-[calc(88px+env(safe-area-inset-bottom,0px))]">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-3">
           <div className="text-sm font-semibold text-muted">Тренування</div>
           <div className="flex flex-wrap items-center gap-2">
@@ -1018,7 +1018,7 @@ export function Workouts() {
             aria-live="polite"
             aria-label={`Відпочинок, залишилось ${restTimer.remaining} секунд`}
           >
-            <div className="pointer-events-auto max-w-2xl mx-auto flex items-center justify-between gap-3 rounded-2xl border border-line bg-panel px-4 py-3 shadow-float">
+            <div className="pointer-events-auto max-w-4xl mx-auto flex items-center justify-between gap-3 rounded-2xl border border-line bg-panel px-4 py-3 shadow-float">
               <div>
                 <div className="text-[10px] font-bold text-subtle uppercase tracking-widest">Відпочинок</div>
                 <div className="text-3xl font-extrabold tabular-nums text-text leading-tight">{formatRestClock(restTimer.remaining)}</div>
@@ -1037,7 +1037,7 @@ export function Workouts() {
             role="region"
             aria-label="Підсумок тренування"
           >
-            <div className="pointer-events-auto max-w-2xl mx-auto">
+            <div className="pointer-events-auto max-w-4xl mx-auto">
               {finishFlash.step === "wellbeing" && (
                 <div className="rounded-2xl border border-line bg-panel p-4 shadow-float space-y-4 max-h-[min(70vh,520px)] overflow-y-auto">
                   <div className="text-sm font-bold text-text">Самопочуття</div>

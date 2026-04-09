@@ -77,7 +77,7 @@ export function Exercise({ exerciseId }) {
   if (!exerciseId) {
     return (
       <div className="flex-1 overflow-y-auto">
-        <div className="max-w-2xl mx-auto px-4 pt-4 pb-16">
+        <div className="max-w-4xl mx-auto px-4 pt-4 pb-16">
           <div className="bg-panel border border-line/60 rounded-2xl p-5 shadow-card text-sm text-subtle">Невірний ID вправи</div>
         </div>
       </div>
@@ -86,7 +86,7 @@ export function Exercise({ exerciseId }) {
 
   return (
     <div className="flex-1 overflow-y-auto">
-      <div className="max-w-2xl mx-auto px-4 pt-4 pb-16 space-y-3">
+      <div className="max-w-4xl mx-auto px-4 pt-4 pb-16 space-y-3">
         <div className="bg-panel border border-line/60 rounded-2xl p-5 shadow-card">
           <div className="text-xs text-subtle">Профіль вправи</div>
           <div className="text-xl font-extrabold text-text mt-1">{ex?.name?.uk || ex?.name?.en || history?.[0]?.item?.nameUk || "Вправа"}</div>

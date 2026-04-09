@@ -56,11 +56,12 @@ export default function FizrukApp() {
     <div className="h-dvh flex flex-col bg-bg text-text overflow-hidden">
       {/* Header */}
       <div className="shrink-0 bg-panel/95 backdrop-blur-md border-b border-line/60 z-20" style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}>
-        <div className="flex h-14 items-center px-5 gap-3">
+        <div className="flex h-14 items-center px-4 sm:px-5 gap-3">
           {isAtlas || isExercise ? (
             <button
+              type="button"
               onClick={() => setHash("dashboard")}
-              className="w-10 h-10 -ml-2 flex items-center justify-center rounded-full text-muted hover:text-text transition-colors"
+              className="w-10 h-10 min-w-[40px] min-h-[40px] -ml-1 flex items-center justify-center rounded-xl text-muted hover:text-text hover:bg-panelHi transition-colors"
               aria-label="Назад"
             >
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -68,11 +69,20 @@ export default function FizrukApp() {
               </svg>
             </button>
           ) : (
-            <div className="w-10" />
+            <div className="shrink-0 w-9 h-9 rounded-xl bg-sky-500/12 flex items-center justify-center text-sky-600 border border-sky-500/15" aria-hidden>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M6.5 6.5h11M6.5 17.5h11M3 12h18M6 9l-3 3 3 3M18 9l3 3-3 3" />
+              </svg>
+            </div>
           )}
-          <span className="text-[16px] font-semibold tracking-wide text-text">
-            {isAtlas ? "Атлас" : isExercise ? "Вправа" : "ФІЗРУК"}
-          </span>
+          <div className="min-w-0 flex-1">
+            <span className="text-[16px] font-semibold tracking-wide text-text block leading-tight">
+              {isAtlas ? "Атлас" : isExercise ? "Вправа" : "ФІЗРУК"}
+            </span>
+            {!isAtlas && !isExercise && (
+              <span className="text-[10px] text-subtle font-medium hidden sm:block truncate">Тренування · прогрес</span>
+            )}
+          </div>
         </div>
       </div>
 
@@ -90,18 +100,28 @@ export default function FizrukApp() {
       {!isAtlas && !isExercise && (
         <nav className="shrink-0 bg-panel/95 backdrop-blur-md border-t border-line/60" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
           <div className="flex h-[58px]">
-            {NAV.map(item => (
-              <button
-                key={item.id}
-                onClick={() => setHash(item.id)}
-                className={cn("flex-1 flex flex-col items-center justify-center gap-1 transition-all", page === item.id ? "text-text" : "text-muted")}
-              >
-                {item.icon}
-                <span className={cn("text-[11px] leading-none font-semibold", page === item.id ? "text-text" : "text-muted")}>
-                  {item.label}
-                </span>
-              </button>
-            ))}
+            {NAV.map(item => {
+              const active = page === item.id;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => setHash(item.id)}
+                  className={cn(
+                    "relative flex-1 flex flex-col items-center justify-center gap-1 transition-all min-h-[48px]",
+                    active ? "text-text" : "text-muted",
+                  )}
+                >
+                  {active && (
+                    <span className="absolute top-0 left-1/2 -translate-x-1/2 w-9 h-0.5 rounded-full bg-sky-600/90" aria-hidden />
+                  )}
+                  <span className={cn(active && "text-sky-600")}>{item.icon}</span>
+                  <span className={cn("text-[11px] leading-none font-semibold", active ? "text-text" : "text-muted")}>
+                    {item.label}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </nav>
       )}
