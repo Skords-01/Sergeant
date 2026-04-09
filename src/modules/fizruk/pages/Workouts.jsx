@@ -41,7 +41,6 @@ export function Workouts() {
   const [addOpen, setAddOpen] = useState(false);
   const [form, setForm] = useState(() => ({
     nameUk: "",
-    nameEn: "",
     primaryGroup: "chest",
     muscleGroup: "Chest",
     musclesPrimary: "",
@@ -299,11 +298,6 @@ export function Workouts() {
                     value={form.nameUk}
                     onChange={e => setForm(f => ({ ...f, nameUk: e.target.value }))}
                   />
-                  <Input
-                    placeholder="Назва (англ, опц.)"
-                    value={form.nameEn}
-                    onChange={e => setForm(f => ({ ...f, nameEn: e.target.value }))}
-                  />
 
                   <div className="grid grid-cols-2 gap-2">
                     <div className="rounded-2xl border border-line bg-panelHi px-3">
@@ -377,7 +371,7 @@ export function Workouts() {
                       const images = [form.imageUrl1, form.imageUrl2].map(s => (s || "").trim()).filter(Boolean);
                       addExercise({
                         id,
-                        name: { uk: nameUk, en: (form.nameEn || "").trim() || nameUk },
+                        name: { uk: nameUk, en: nameUk },
                         primaryGroup: form.primaryGroup,
                         primaryGroupUk: primaryGroupsUk[form.primaryGroup] || form.primaryGroup,
                         muscleGroup: form.muscleGroup,
@@ -392,7 +386,6 @@ export function Workouts() {
                       setAddOpen(false);
                       setForm({
                         nameUk: "",
-                        nameEn: "",
                         primaryGroup: "chest",
                         muscleGroup: "Chest",
                         musclesPrimary: "",
