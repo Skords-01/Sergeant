@@ -35,8 +35,10 @@ export function BodyAtlas({ statusByMuscle, height = 320, showLegend = true }) {
       // green as "ready" baseline
       bodyColor: "#16a34a",
       highlightedColors: ["#b45309", "#dc2626"],
-      svgStyle: { width: "100%", height: "100%" },
-      style: { width: "100%" },
+      // body-highlighter sometimes injects an SVG with its own height;
+      // enforce scaling by constraining container and SVG.
+      svgStyle: { width: "100%", height: "100%", maxHeight: "100%", display: "block" },
+      style: { width: "100%", height: "100%" },
       onClick: ({ muscle, data: mdata }) => {
         setSelected({ muscle, ...mdata });
       },
@@ -75,7 +77,11 @@ export function BodyAtlas({ statusByMuscle, height = 320, showLegend = true }) {
       </div>
 
       <div className="bg-bg border border-line rounded-2xl p-3">
-        <div ref={containerRef} className="w-full" style={{ height }} />
+        <div
+          ref={containerRef}
+          className="w-full overflow-hidden"
+          style={{ height, maxHeight: height }}
+        />
       </div>
 
       {selected && (
