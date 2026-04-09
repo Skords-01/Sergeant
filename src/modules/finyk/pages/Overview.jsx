@@ -2,7 +2,7 @@ import { useMemo, useEffect } from "react";
 import { CategoryChart } from "../components/CategoryChart";
 import { NetworthChart } from "../components/NetworthChart";
 import { MCC_CATEGORIES, CURRENCY } from "../constants";
-import { getDebtPaid, getRecvPaid, calcCategorySpent, getMonoTotals, fmtAmt, fmtDate } from "../utils";
+import { getDebtPaid, getRecvPaid, calcCategorySpent, getMonoTotals } from "../utils";
 import { Skeleton } from "@shared/components/ui/Skeleton";
 import { cn } from "@shared/lib/cn";
 
@@ -241,62 +241,22 @@ export function Overview({ mono, storage, onNavigate, showBalance = true }) {
           </div>
         </div>
 
-        {recentTx.length > 0 && (
-          <div className="bg-panel border border-line/60 rounded-2xl overflow-hidden shadow-card">
-            <div className="px-4 pt-4 pb-2 flex items-center justify-between">
-              <span className="text-base font-semibold text-text">Останні операції</span>
-              <button type="button" onClick={() => onNavigate("transactions")} className="text-xs font-medium text-emerald-600 hover:text-emerald-700 py-2 px-1 min-h-[40px]">
-                Усі →
-              </button>
-            </div>
-            <div className="px-4 pb-3 space-y-0 divide-y divide-line/60">
-              {recentTx.map(t => (
-                <div key={t.id} className="flex items-center justify-between gap-3 py-3 first:pt-0">
-                  <div className="min-w-0">
-                    <p className="font-medium text-sm text-text truncate">{t.description || "Операція"}</p>
-                    <p className="text-xs text-subtle mt-0.5">{fmtDate(t.time)}</p>
-                  </div>
-                  <span className={cn("font-semibold text-sm tabular-nums shrink-0", t.amount > 0 ? "text-success" : "text-text")}>
-                    {showBalance ? fmtAmt(t.amount, CURRENCY.UAH) : "••••"}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {limitBudgets.length > 0 && (
-          <div className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card">
-            <div className="text-base font-semibold text-text mb-3">Виконання бюджету</div>
-            <div className="space-y-4">
-              {limitBudgets.slice(0, 3).map((b, i) => {
-                const cat = MCC_CATEGORIES.find(c => c.id === b.categoryId);
-                const s = calcCategorySpent(statTx, b.categoryId, txCategories);
-                const pct = b.limit > 0 ? Math.min(100, Math.round((s / b.limit) * 100)) : 0;
-                const bar = budgetPreviewColors[i % budgetPreviewColors.length];
-                return (
-                  <div key={`${b.categoryId}-${i}`}>
-                    <div className="flex justify-between text-sm mb-1.5 gap-2">
-                      <span className="font-medium truncate">{cat?.label || b.categoryId}</span>
-                      <span className="text-muted tabular-nums text-xs shrink-0">
-                        {showBalance ? `${s.toLocaleString("uk-UA")} / ${b.limit.toLocaleString("uk-UA")} ₴` : "••••"}
-                      </span>
-                    </div>
-                    <div className="h-2 bg-panelHi rounded-full overflow-hidden">
-                      <div
-                        className={cn("h-full rounded-full transition-all duration-700", bar)}
-                        style={{ width: `${pct}%` }}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-            <button type="button" onClick={() => onNavigate("budgets")} className="w-full mt-4 text-sm font-medium text-emerald-600 py-2 min-h-[44px] rounded-xl hover:bg-emerald-500/5 transition-colors">
-              Усі бюджети →
-            </button>
-          </div>
-        )}
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => onNavigate("transactions")}
+            className="flex-1 min-w-[140px] min-h-[44px] rounded-2xl border border-line bg-panel px-4 py-2.5 text-sm font-medium text-text shadow-card hover:border-emerald-500/30 hover:bg-emerald-500/[0.04] transition-colors"
+          >
+            Операції →
+          </button>
+          <button
+            type="button"
+            onClick={() => onNavigate("budgets")}
+            className="flex-1 min-w-[140px] min-h-[44px] rounded-2xl border border-line bg-panel px-4 py-2.5 text-sm font-medium text-text shadow-card hover:border-emerald-500/30 hover:bg-emerald-500/[0.04] transition-colors"
+          >
+            Бюджети →
+          </button>
+        </div>
 
         {/* ── Networth chart ── */}
         {networthHistory.length >= 2 && (
