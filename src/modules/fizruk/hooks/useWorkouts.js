@@ -45,11 +45,17 @@ export function useWorkouts() {
 
   const endWorkout = useCallback((id) => {
     const nowIso = new Date().toISOString();
+    let ended = null;
     persist(workouts.map(w => {
       if (w.id !== id) return w;
-      if (w.endedAt) return w;
-      return { ...w, endedAt: nowIso };
+      if (w.endedAt) {
+        ended = w;
+        return w;
+      }
+      ended = { ...w, endedAt: nowIso };
+      return ended;
     }));
+    return ended;
   }, [persist, workouts]);
 
   const updateWorkout = useCallback((id, patch) => {

@@ -3,7 +3,9 @@ import { Input } from "@shared/components/ui/Input";
 import { Button } from "@shared/components/ui/Button";
 import { cn } from "@shared/lib/cn";
 import { useExerciseCatalog } from "../hooks/useExerciseCatalog";
+import { useRecovery } from "../hooks/useRecovery";
 import { useWorkouts } from "../hooks/useWorkouts";
+import { recoveryConflictsForExercise, recoveryConflictsForWorkoutItem } from "../lib/recoveryConflict";
 
 const ACTIVE_WORKOUT_KEY = "fizruk_active_workout_id_v1";
 
@@ -34,8 +36,34 @@ function toggleArr(arr, value) {
   return a.includes(value) ? a.filter(x => x !== value) : [...a, value];
 }
 
+function summarizeWorkoutForFinish(w) {
+  if (!w?.startedAt) return null;
+  const start = Date.parse(w.startedAt);
+  const end = Date.now();
+  if (!Number.isFinite(start)) return null;
+  const durationSec = Math.max(0, Math.floor((end - start) / 1000));
+  const items = (w.items || []).length;
+  let tonnageKg = 0;
+  for (const it of w.items || []) {
+    if (it.type === "strength") {
+      for (const s of it.sets || []) {
+        tonnageKg += (Number(s.weightKg) || 0) * (Number(s.reps) || 0);
+      }
+    }
+  }
+  return { durationSec, items, tonnageKg };
+}
+
+function formatDurShort(sec) {
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  if (m <= 0) return `${s} с`;
+  return `${m} хв ${s} с`;
+}
+
 export function Workouts() {
-  const { search, primaryGroupsUk, musclesUk, musclesByPrimaryGroup, addExercise } = useExerciseCatalog();
+  const { search, primaryGroupsUk, musclesUk, musclesByPrimaryGroup, addExercise, removeExercise } = useExerciseCatalog();
+  const rec = useRecovery();
   const { workouts, createWorkout, deleteWorkout, endWorkout, addItem, updateItem, removeItem } = useWorkouts();
   const [q, setQ] = useState("");
   const [selected, setSelected] = useState(null);
@@ -47,6 +75,8 @@ export function Workouts() {
   });
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickQ, setPickQ] = useState("");
+  const [pendingPick, setPendingPick] = useState(null);
+  const [finishFlash, setFinishFlash] = useState(null);
   const [form, setForm] = useState(() => ({
     nameUk: "",
     primaryGroup: "chest",
@@ -82,6 +112,29 @@ export function Workouts() {
       else localStorage.setItem(ACTIVE_WORKOUT_KEY, activeWorkoutId);
     } catch {}
   }, [activeWorkoutId]);
+
+  useEffect(() => {
+    if (!pickerOpen) setPendingPick(null);
+  }, [pickerOpen]);
+
+  const addExerciseToActive = (ex) => {
+    if (!activeWorkoutId) return;
+    const isCardio = ex.primaryGroup === "cardio";
+    addItem(activeWorkoutId, {
+      exerciseId: ex.id,
+      nameUk: ex?.name?.uk || ex?.name?.en,
+      primaryGroup: ex.primaryGroup,
+      musclesPrimary: ex?.muscles?.primary || [],
+      musclesSecondary: ex?.muscles?.secondary || [],
+      type: isCardio ? "distance" : "strength",
+      sets: isCardio ? undefined : [{ weightKg: 0, reps: 0 }],
+      durationSec: isCardio ? 0 : 0,
+      distanceM: isCardio ? 0 : 0,
+    });
+    setPickerOpen(false);
+    setPickQ("");
+    setPendingPick(null);
+  };
 
   const lastByExerciseId = useMemo(() => {
     const out = {};
@@ -184,7 +237,11 @@ export function Workouts() {
                       <Button
                         size="sm"
                         className="h-9 px-4"
-                        onClick={() => endWorkout(activeWorkout.id)}
+                        onClick={() => {
+                          const sum = summarizeWorkoutForFinish(activeWorkout);
+                          endWorkout(activeWorkout.id);
+                          if (sum) setFinishFlash({ collapsed: false, ...sum });
+                        }}
                       >
                         Завершити
                       </Button>
@@ -239,8 +296,20 @@ export function Workouts() {
                               {it.nameUk}
                             </button>
                             <div className="text-xs text-subtle mt-0.5">
-                              Мʼязи: <span className="font-semibold text-muted">{(it.musclesPrimary || []).join(", ") || "—"}</span>
+                              Мʼязи: <span className="font-semibold text-muted">{(it.musclesPrimary || []).map(id => musclesUk?.[id] || id).join(", ") || "—"}</span>
                             </div>
+                            {(() => {
+                              const cf = recoveryConflictsForWorkoutItem(it, rec.by);
+                              if (!cf.hasWarning) return null;
+                              const redL = cf.red.map(x => x.label).join(", ");
+                              const yelL = cf.yellow.map(x => x.label).join(", ");
+                              return (
+                                <div className="text-[11px] mt-1.5 rounded-xl border border-warning/40 bg-warning/10 px-2 py-1.5 text-warning leading-snug">
+                                  {cf.red.length ? <>Рано навантажувати: <span className="font-semibold">{redL}</span>. </> : null}
+                                  {cf.yellow.length ? <>Краще почекати: <span className="font-semibold">{yelL}</span>.</> : null}
+                                </div>
+                              );
+                            })()}
                           </div>
                           <button
                             className="text-xs text-danger/80 hover:text-danger"
@@ -425,7 +494,9 @@ export function Workouts() {
                   </button>
                   {isOpen && (
                     <div>
-                      {g.items.map(ex => (
+                      {g.items.map(ex => {
+                        const catCf = recoveryConflictsForExercise(ex, rec.by);
+                        return (
                         <button
                           key={ex.id}
                           onClick={() => setSelected(ex)}
@@ -433,11 +504,14 @@ export function Workouts() {
                         >
                           <div className="flex items-start justify-between gap-3">
                             <div className="min-w-0">
-                              <div className="text-sm font-semibold text-text truncate">{ex?.name?.uk || ex?.name?.en}</div>
+                              <div className="text-sm font-semibold text-text truncate flex items-center gap-2">
+                                {ex?.name?.uk || ex?.name?.en}
+                                {catCf.hasWarning ? <span className="text-warning shrink-0" title="Мʼязи ще відновлюються">⚠</span> : null}
+                              </div>
                               <div className="text-xs text-subtle mt-0.5">
                                 Мʼязи:{" "}
                                 <span className="font-semibold text-muted">
-                                  {(ex?.muscles?.primary || []).join(", ") || "—"}
+                                  {(ex?.muscles?.primary || []).map(id => musclesUk?.[id] || id).join(", ") || "—"}
                                 </span>
                               </div>
                             </div>
@@ -446,7 +520,7 @@ export function Workouts() {
                             </div>
                           </div>
                         </button>
-                      ))}
+                      );})}
                       {g.total > g.items.length && (
                         <div className="px-4 py-3 text-xs text-subtle border-t border-line">
                           Показано {g.items.length} з {g.total} (уточни пошук щоб звузити)
@@ -489,6 +563,17 @@ export function Workouts() {
                   </button>
                 </div>
 
+                {(() => {
+                  const cf = recoveryConflictsForExercise(selected, rec.by);
+                  if (!cf.hasWarning) return null;
+                  return (
+                    <div className="mb-4 rounded-2xl border border-warning/40 bg-warning/10 px-3 py-2.5 text-xs text-warning leading-snug">
+                      {cf.red.length ? <div><span className="font-semibold">Рано:</span> {cf.red.map(x => x.label).join(", ")}</div> : null}
+                      {cf.yellow.length ? <div className="mt-1"><span className="font-semibold">Краще почекати:</span> {cf.yellow.map(x => x.label).join(", ")}</div> : null}
+                    </div>
+                  );
+                })()}
+
                 {((selected.images || []).filter(Boolean).length) > 0 && (
                   <div className="mb-4 -mx-5 px-5 overflow-x-auto no-scrollbar">
                     <div className="flex gap-3">
@@ -516,12 +601,12 @@ export function Workouts() {
                   <div className="flex flex-wrap gap-1.5">
                     {(selected?.muscles?.primary || []).map(m => (
                       <span key={m} className="text-xs px-3 py-1.5 rounded-full border border-line bg-bg text-muted font-semibold">
-                        {m} · основний
+                        {musclesUk?.[m] || m} · основний
                       </span>
                     ))}
                     {(selected?.muscles?.secondary || []).map(m => (
                       <span key={m} className="text-xs px-3 py-1.5 rounded-full border border-line bg-bg text-subtle font-semibold">
-                        {m}
+                        {musclesUk?.[m] || m}
                       </span>
                     ))}
                   </div>
@@ -550,6 +635,21 @@ export function Workouts() {
                     </ul>
                   </div>
                 ) : null}
+
+                {(selected._custom || selected.source === "manual" || String(selected.id || "").startsWith("custom_")) && (
+                  <div className="mt-4">
+                    <Button
+                      variant="danger"
+                      className="w-full h-12"
+                      onClick={() => {
+                        if (!confirm("Видалити цю вправу з каталогу?")) return;
+                        if (removeExercise(selected.id)) setSelected(null);
+                      }}
+                    >
+                      Видалити з каталогу
+                    </Button>
+                  </div>
+                )}
 
                 <div className="mt-5 grid grid-cols-2 gap-2">
                   <Button className="h-12" onClick={() => setSelected(null)}>
@@ -762,37 +862,127 @@ export function Workouts() {
                   />
                 </div>
 
+                {pendingPick && (
+                  <div className="mb-3 rounded-2xl border border-warning/50 bg-warning/10 p-4">
+                    <div className="text-sm font-bold text-warning mb-2">Мʼязи ще відновлюються</div>
+                    {(() => {
+                      const cf = recoveryConflictsForExercise(pendingPick, rec.by);
+                      return (
+                        <div className="text-xs text-warning/90 leading-relaxed space-y-1">
+                          {cf.red.length ? <div><span className="font-semibold">Рано навантажувати:</span> {cf.red.map(x => x.label).join(", ")}</div> : null}
+                          {cf.yellow.length ? <div><span className="font-semibold">Краще почекати:</span> {cf.yellow.map(x => x.label).join(", ")}</div> : null}
+                        </div>
+                      );
+                    })()}
+                    <div className="flex gap-2 mt-3">
+                      <Button className="flex-1 h-11" onClick={() => addExerciseToActive(pendingPick)}>
+                        Все одно додати
+                      </Button>
+                      <Button variant="ghost" className="flex-1 h-11" onClick={() => setPendingPick(null)}>
+                        Назад
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
                 <div className="bg-bg border border-line rounded-2xl overflow-hidden max-h-[55vh] overflow-y-auto">
-                  {pickList.map(ex => (
+                  {pickList.map(ex => {
+                    const pickCf = recoveryConflictsForExercise(ex, rec.by);
+                    return (
                     <button
                       key={ex.id}
-                      className="w-full text-left px-4 py-3 border-b border-line last:border-0 hover:bg-panelHi transition-colors"
+                      className={cn(
+                        "w-full text-left px-4 py-3 border-b border-line last:border-0 hover:bg-panelHi transition-colors",
+                        pickCf.hasWarning && "border-l-4 border-l-warning/70"
+                      )}
                       onClick={() => {
                         if (!activeWorkoutId) return;
-                        addItem(activeWorkoutId, {
-                          exerciseId: ex.id,
-                          nameUk: ex?.name?.uk || ex?.name?.en,
-                          primaryGroup: ex.primaryGroup,
-                          musclesPrimary: ex?.muscles?.primary || [],
-                          musclesSecondary: ex?.muscles?.secondary || [],
-                          type: "strength",
-                          sets: [{ weightKg: 0, reps: 0 }],
-                          durationSec: 0,
-                          distanceM: 0,
-                        });
-                        setPickerOpen(false);
-                        setPickQ("");
+                        if (pickCf.hasWarning) {
+                          setPendingPick(ex);
+                          return;
+                        }
+                        addExerciseToActive(ex);
                       }}
                     >
-                      <div className="text-sm font-semibold text-text truncate">{ex?.name?.uk || ex?.name?.en}</div>
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div className="text-sm font-semibold text-text truncate">{ex?.name?.uk || ex?.name?.en}</div>
+                        {pickCf.hasWarning ? (
+                          <span className="text-warning text-xs shrink-0">⚠</span>
+                        ) : null}
+                      </div>
                       <div className="text-xs text-subtle mt-0.5">{ex.primaryGroupUk || ex.primaryGroup}</div>
                     </button>
-                  ))}
+                  );})}
                   {pickList.length === 0 && (
                     <div className="p-6 text-center text-sm text-subtle">Нічого не знайдено</div>
                   )}
                 </div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {finishFlash && (
+          <div
+            className="fixed left-0 right-0 z-[60] px-4 pointer-events-none"
+            style={{ bottom: "calc(58px + env(safe-area-inset-bottom, 0px))" }}
+          >
+            <div className="pointer-events-auto max-w-2xl mx-auto">
+              {finishFlash.collapsed ? (
+                <button
+                  type="button"
+                  className="w-full flex items-center justify-between gap-3 rounded-2xl border border-line bg-panel px-4 py-2.5 shadow-float text-left"
+                  onClick={() => setFinishFlash(f => f && ({ ...f, collapsed: false }))}
+                >
+                  <span className="text-sm font-semibold text-text">✓ Тренування завершено</span>
+                  <span className="text-xs text-subtle tabular-nums">{formatDurShort(finishFlash.durationSec)}</span>
+                </button>
+              ) : (
+                <div className="rounded-2xl border border-line bg-panel p-4 shadow-float space-y-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <div className="text-sm font-bold text-text">Тренування завершено</div>
+                      <div className="text-xs text-subtle mt-1">
+                        Тривалість: <span className="font-semibold text-muted tabular-nums">{formatDurShort(finishFlash.durationSec)}</span>
+                        {" · "}
+                        Вправ: <span className="font-semibold text-muted">{finishFlash.items}</span>
+                        {finishFlash.tonnageKg > 0 ? (
+                          <>
+                            {" · "}
+                            Обʼєм: <span className="font-semibold text-muted tabular-nums">{Math.round(finishFlash.tonnageKg)} кг×повт</span>
+                          </>
+                        ) : null}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        type="button"
+                        className="w-9 h-9 rounded-full bg-panelHi text-muted hover:text-text text-sm"
+                        aria-label="Згорнути"
+                        onClick={() => setFinishFlash(f => f && ({ ...f, collapsed: true }))}
+                      >
+                        ⌄
+                      </button>
+                      <button
+                        type="button"
+                        className="w-9 h-9 rounded-full bg-panelHi text-muted hover:text-text text-lg leading-none"
+                        aria-label="Закрити"
+                        onClick={() => setFinishFlash(null)}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="ghost" className="flex-1 h-10" onClick={() => setFinishFlash(f => f && ({ ...f, collapsed: true }))}>
+                      Згорнути
+                    </Button>
+                    <Button className="flex-1 h-10" onClick={() => setFinishFlash(null)}>
+                      Ок
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}

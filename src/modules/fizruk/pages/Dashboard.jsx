@@ -5,6 +5,7 @@ import { useExerciseCatalog } from "../hooks/useExerciseCatalog";
 import { useRecovery } from "../hooks/useRecovery";
 import { useWorkouts } from "../hooks/useWorkouts";
 import { BodyAtlas } from "../components/BodyAtlas";
+import { recoveryConflictsForExercise } from "../lib/recoveryConflict";
 
 const TEMPLATE_KEY = "fizruk_plan_template_v1";
 
@@ -218,18 +219,22 @@ export function Dashboard({ onOpenAtlas }) {
               className="flex-1 h-12"
               onClick={() => {
                 if (!plan.picked.length) return;
+                const picks = plan.picked.slice(0, 6);
+                const risky = picks.some(ex => recoveryConflictsForExercise(ex, rec.by).hasWarning);
+                if (risky && !confirm("У плані є вправи на мʼязи, які ще відновлюються. Продовжити?")) return;
                 const w = createWorkout();
-                for (const ex of plan.picked.slice(0, 6)) {
+                for (const ex of picks) {
+                  const isCardio = ex.primaryGroup === "cardio";
                   addItem(w.id, {
                     exerciseId: ex.id,
                     nameUk: ex?.name?.uk || ex?.name?.en,
                     primaryGroup: ex.primaryGroup,
                     musclesPrimary: ex?.muscles?.primary || [],
                     musclesSecondary: ex?.muscles?.secondary || [],
-                    type: ex.primaryGroup === "cardio" ? "distance" : "strength",
-                    sets: [{ weightKg: 0, reps: 0 }],
+                    type: isCardio ? "distance" : "strength",
+                    sets: isCardio ? undefined : [{ weightKg: 0, reps: 0 }],
                     durationSec: 0,
-                    distanceM: 0,
+                    distanceM: isCardio ? 0 : 0,
                   });
                 }
                 window.location.hash = "#workouts";

@@ -71,6 +71,14 @@ export function useExerciseCatalog() {
     persistCustom(next);
   }, [customExercises, persistCustom]);
 
-  return { catalog, exercises, search, primaryGroupsUk, musclesUk, musclesByPrimaryGroup, addExercise, customExercises };
+  const removeExercise = useCallback((id) => {
+    if (!id) return false;
+    const next = customExercises.filter(x => x?.id !== id);
+    if (next.length === customExercises.length) return false;
+    persistCustom(next);
+    return true;
+  }, [customExercises, persistCustom]);
+
+  return { catalog, exercises, search, primaryGroupsUk, musclesUk, musclesByPrimaryGroup, addExercise, removeExercise, customExercises };
 }
 
