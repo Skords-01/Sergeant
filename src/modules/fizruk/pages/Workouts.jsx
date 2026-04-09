@@ -1,9 +1,11 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Input } from "@shared/components/ui/Input";
 import { Button } from "@shared/components/ui/Button";
 import { cn } from "@shared/lib/cn";
 import { useExerciseCatalog } from "../hooks/useExerciseCatalog";
 import { useWorkouts } from "../hooks/useWorkouts";
+
+const ACTIVE_WORKOUT_KEY = "fizruk_active_workout_id_v1";
 
 const EQUIPMENT_OPTIONS = [
   { id: "bodyweight", label: "Власна вага" },
@@ -40,7 +42,9 @@ export function Workouts() {
   const [open, setOpen] = useState(() => ({}));
   const [addOpen, setAddOpen] = useState(false);
   const [mode, setMode] = useState("catalog"); // catalog | log
-  const [activeWorkoutId, setActiveWorkoutId] = useState(null);
+  const [activeWorkoutId, setActiveWorkoutId] = useState(() => {
+    try { return localStorage.getItem(ACTIVE_WORKOUT_KEY) || null; } catch { return null; }
+  });
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickQ, setPickQ] = useState("");
   const [form, setForm] = useState(() => ({
@@ -60,6 +64,13 @@ export function Workouts() {
   const list = useMemo(() => search(q), [q]);
   const pickList = useMemo(() => search(pickQ).slice(0, 60), [pickQ]);
   const activeWorkout = workouts.find(w => w.id === activeWorkoutId) || null;
+
+  useEffect(() => {
+    try {
+      if (!activeWorkoutId) localStorage.removeItem(ACTIVE_WORKOUT_KEY);
+      else localStorage.setItem(ACTIVE_WORKOUT_KEY, activeWorkoutId);
+    } catch {}
+  }, [activeWorkoutId]);
 
   const lastByExerciseId = useMemo(() => {
     const out = {};
@@ -163,7 +174,7 @@ export function Workouts() {
                     onClick={() => {
                       if (confirm("Видалити тренування?")) {
                         deleteWorkout(activeWorkout.id);
-                        setActiveWorkoutId(null);
+                        setActiveWorkoutId(prev => (prev === activeWorkout.id ? null : prev));
                       }
                     }}
                   >
@@ -194,7 +205,14 @@ export function Workouts() {
                         )}
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0">
-                            <div className="text-sm font-semibold text-text truncate">{it.nameUk}</div>
+                            <button
+                              className="text-sm font-semibold text-text truncate text-left hover:underline"
+                              onClick={() => {
+                                if (it.exerciseId) window.location.hash = `#exercise/${it.exerciseId}`;
+                              }}
+                            >
+                              {it.nameUk}
+                            </button>
                             <div className="text-xs text-subtle mt-0.5">
                               Мʼязи: <span className="font-semibold text-muted">{(it.musclesPrimary || []).join(", ") || "—"}</span>
                             </div>
@@ -731,6 +749,7 @@ export function Workouts() {
                           nameUk: ex?.name?.uk || ex?.name?.en,
                           primaryGroup: ex.primaryGroup,
                           musclesPrimary: ex?.muscles?.primary || [],
+                          musclesSecondary: ex?.muscles?.secondary || [],
                           type: "strength",
                           sets: [{ weightKg: 0, reps: 0 }],
                           durationSec: 0,

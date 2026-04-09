@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Dashboard } from "./pages/Dashboard";
 import { Atlas } from "./pages/Atlas";
+import { Exercise } from "./pages/Exercise";
 import { Workouts } from "./pages/Workouts";
 import { Progress } from "./pages/Progress";
 import { Measurements } from "./pages/Measurements";
@@ -25,18 +26,40 @@ const NAV = [
   },
 ];
 
+function parseHash() {
+  const raw = (window.location.hash || "").replace(/^#/, "").trim();
+  if (!raw) return { page: "dashboard" };
+  const [page, ...rest] = raw.split("/").filter(Boolean);
+  if (page === "exercise" && rest[0]) return { page, exerciseId: rest[0] };
+  return { page };
+}
+
+function setHash(next) {
+  const h = next ? `#${next}` : "#dashboard";
+  if (window.location.hash === h) return;
+  window.location.hash = h;
+}
+
 export default function FizrukApp() {
-  const [page, setPage] = useState("dashboard");
+  const [route, setRoute] = useState(() => parseHash());
+  const page = route.page || "dashboard";
   const isAtlas = page === "atlas";
+  const isExercise = page === "exercise";
+
+  useEffect(() => {
+    const onHash = () => setRoute(parseHash());
+    window.addEventListener("hashchange", onHash);
+    return () => window.removeEventListener("hashchange", onHash);
+  }, []);
 
   return (
     <div className="h-dvh flex flex-col bg-bg text-text overflow-hidden">
       {/* Header */}
       <div className="shrink-0 bg-panel/95 backdrop-blur-md border-b border-line/60 z-20" style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}>
         <div className="flex h-14 items-center px-5 gap-3">
-          {isAtlas ? (
+          {isAtlas || isExercise ? (
             <button
-              onClick={() => setPage("dashboard")}
+              onClick={() => setHash("dashboard")}
               className="w-10 h-10 -ml-2 flex items-center justify-center rounded-full text-muted hover:text-text transition-colors"
               aria-label="Назад"
             >
@@ -48,28 +71,29 @@ export default function FizrukApp() {
             <div className="w-10" />
           )}
           <span className="text-[16px] font-semibold tracking-wide text-text">
-            {isAtlas ? "Атлас" : "ФІЗРУК"}
+            {isAtlas ? "Атлас" : isExercise ? "Вправа" : "ФІЗРУК"}
           </span>
         </div>
       </div>
 
       {/* Page content */}
       <div className="flex-1 overflow-hidden flex flex-col">
-        {page === "dashboard" && <Dashboard onOpenAtlas={() => setPage("atlas")} />}
+        {page === "dashboard" && <Dashboard onOpenAtlas={() => setHash("atlas")} />}
         {page === "atlas" && <Atlas />}
-        {page === "workouts"  && <Workouts />}
-        {page === "progress"  && <Progress />}
-        {page === "measurements"  && <Measurements />}
+        {page === "workouts" && <Workouts />}
+        {page === "progress" && <Progress />}
+        {page === "measurements" && <Measurements />}
+        {page === "exercise" && <Exercise exerciseId={route.exerciseId} />}
       </div>
 
       {/* Bottom nav */}
-      {!isAtlas && (
+      {!isAtlas && !isExercise && (
         <nav className="shrink-0 bg-panel/95 backdrop-blur-md border-t border-line/60" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
           <div className="flex h-[58px]">
             {NAV.map(item => (
               <button
                 key={item.id}
-                onClick={() => setPage(item.id)}
+                onClick={() => setHash(item.id)}
                 className={cn("flex-1 flex flex-col items-center justify-center gap-1 transition-all", page === item.id ? "text-text" : "text-muted")}
               >
                 {item.icon}

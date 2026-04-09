@@ -1,13 +1,31 @@
 import { Button } from "@shared/components/ui/Button";
 import { cn } from "@shared/lib/cn";
+import { useMemo, useState } from "react";
+import { useExerciseCatalog } from "../hooks/useExerciseCatalog";
 import { useRecovery } from "../hooks/useRecovery";
 import { useWorkouts } from "../hooks/useWorkouts";
 import { BodyAtlas } from "../components/BodyAtlas";
 
+const TEMPLATE_KEY = "fizruk_plan_template_v1";
+
+const TEMPLATES = [
+  { id: "full_body", label: "Full body", groups: ["full_body", "legs", "back", "chest", "shoulders", "core", "arms", "glutes"] },
+  { id: "upper", label: "Upper", groups: ["chest", "back", "shoulders", "arms", "core"] },
+  { id: "lower", label: "Lower", groups: ["legs", "glutes", "core"] },
+  { id: "push", label: "Push", groups: ["chest", "shoulders", "arms", "core"] },
+  { id: "pull", label: "Pull", groups: ["back", "arms", "core"] },
+  { id: "legs", label: "Legs", groups: ["legs", "glutes", "core"] },
+  { id: "cardio", label: "Cardio", groups: ["cardio"] },
+];
+
 export function Dashboard({ onOpenAtlas }) {
   const today = new Date().toLocaleDateString("uk-UA", { weekday: "long", day: "numeric", month: "long" });
   const rec = useRecovery();
-  const { workouts } = useWorkouts();
+  const { workouts, createWorkout, addItem } = useWorkouts();
+  const { exercises, primaryGroupsUk, musclesUk } = useExerciseCatalog();
+  const [templateId, setTemplateId] = useState(() => {
+    try { return localStorage.getItem(TEMPLATE_KEY) || "full_body"; } catch { return "full_body"; }
+  });
 
   const monthCount = (() => {
     const now = new Date();
@@ -71,6 +89,42 @@ export function Dashboard({ onOpenAtlas }) {
     return out;
   })();
 
+  const plan = useMemo(() => {
+    const t = TEMPLATES.find(x => x.id === templateId) || TEMPLATES[0];
+    const readyIds = new Set((rec.ready || []).map(x => x.id).filter(Boolean));
+    const avoidIds = new Set((rec.avoid || []).map(x => x.id).filter(Boolean));
+
+    const scored = (exercises || [])
+      .filter(ex => t.groups.includes(ex.primaryGroup || "full_body"))
+      .map(ex => {
+        const primary = ex?.muscles?.primary || [];
+        const secondary = ex?.muscles?.secondary || [];
+        const bad = primary.some(id => avoidIds.has(id));
+        const scoreReady = primary.filter(id => readyIds.has(id)).length * 2 + secondary.filter(id => readyIds.has(id)).length;
+        const score = scoreReady + (bad ? -3 : 0);
+        return { ex, score, bad, primary };
+      })
+      .filter(x => x.score > 0 || (t.id === "cardio" && (x.ex.primaryGroup === "cardio")))
+      .sort((a, b) => (b.score - a.score) || (a.bad - b.bad));
+
+    const picked = [];
+    const usedPrimary = new Set();
+    for (const s of scored) {
+      if (picked.length >= 6) break;
+      const key = s.ex.id;
+      if (!key) continue;
+      // prefer variety: do not repeat the same primary muscle twice if we have options
+      const p0 = s.primary?.[0];
+      if (p0 && usedPrimary.has(p0) && picked.length < 4) continue;
+      picked.push(s.ex);
+      if (p0) usedPrimary.add(p0);
+    }
+
+    const focus = (rec.ready || []).slice(0, 4).map(m => ({ id: m.id, label: musclesUk?.[m.id] || m.label || m.id, daysSince: m.daysSince }));
+    const avoid = (rec.avoid || []).slice(0, 4).map(m => ({ id: m.id, label: musclesUk?.[m.id] || m.label || m.id }));
+    return { template: t, picked, focus, avoid };
+  }, [templateId, rec.ready, rec.avoid, exercises, musclesUk]);
+
   return (
     <div className="flex-1 overflow-y-auto">
       <div className="max-w-2xl mx-auto px-4 pt-4 pb-16 space-y-3">
@@ -98,21 +152,100 @@ export function Dashboard({ onOpenAtlas }) {
 
         <div className="bg-panel border border-line/60 rounded-2xl p-5 shadow-card">
           <div className="text-xs font-medium text-subtle mb-3">План на сьогодні</div>
-          {rec.ready?.length ? (
-            <div className="space-y-2">
-              {rec.ready.slice(0, 3).map(m => (
-                <div key={m.id} className="flex items-center justify-between">
-                  <div className="text-sm font-semibold text-text">{m.label}</div>
-                  <div className="text-xs text-subtle">{m.daysSince == null ? "—" : `${m.daysSince} дн`}</div>
-                </div>
+          <div className="rounded-2xl border border-line bg-panelHi px-3">
+            <div className="text-[10px] font-bold text-subtle uppercase tracking-widest pt-2">Шаблон</div>
+            <select
+              className="w-full h-10 bg-transparent text-sm text-text outline-none"
+              value={templateId}
+              onChange={(e) => {
+                const v = e.target.value;
+                setTemplateId(v);
+                try { localStorage.setItem(TEMPLATE_KEY, v); } catch {}
+              }}
+            >
+              {TEMPLATES.map(t => (
+                <option key={t.id} value={t.id}>{t.label}</option>
               ))}
-              {rec.avoid?.length ? (
-                <div className="text-xs text-warning mt-2">Уникай сьогодні: {rec.avoid.map(x => x.label).join(", ")}</div>
-              ) : null}
+            </select>
+          </div>
+
+          {!workouts?.length ? (
+            <div className="text-sm text-subtle text-center py-6">Додай перше тренування, щоб план став точнішим</div>
+          ) : null}
+
+          <div className="mt-3 space-y-2">
+            <div className="text-xs text-subtle">Фокус (готові мʼязи):</div>
+            <div className="flex flex-wrap gap-2">
+              {(plan.focus || []).slice(0, 4).map(m => (
+                <span key={m.id} className="text-xs px-3 py-1.5 rounded-full border border-line text-muted bg-bg">
+                  {m.label}{m.daysSince == null ? "" : ` · ${m.daysSince}д`}
+                </span>
+              ))}
+              {(plan.focus || []).length === 0 && (
+                <span className="text-xs text-subtle">—</span>
+              )}
             </div>
-          ) : (
-            <div className="text-sm text-subtle text-center py-6">Додай перше тренування, щоб зʼявились рекомендації</div>
-          )}
+
+            {(plan.avoid || []).length ? (
+              <div className="text-xs text-warning mt-2">Уникай сьогодні: {plan.avoid.map(x => x.label).join(", ")}</div>
+            ) : null}
+          </div>
+
+          <div className="mt-4">
+            <div className="text-xs text-subtle mb-2">Рекомендовані вправи:</div>
+            {plan.picked.length ? (
+              <div className="space-y-2">
+                {plan.picked.slice(0, 6).map(ex => (
+                  <button
+                    key={ex.id}
+                    className="w-full text-left border border-line rounded-2xl p-3 bg-bg hover:bg-panelHi transition-colors"
+                    onClick={() => { window.location.hash = `#exercise/${ex.id}`; }}
+                  >
+                    <div className="text-sm font-semibold text-text truncate">{ex?.name?.uk || ex?.name?.en}</div>
+                    <div className="text-xs text-subtle mt-0.5">{primaryGroupsUk?.[ex.primaryGroup] || ex.primaryGroup}</div>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="text-sm text-subtle text-center py-6">
+                Додай вправи в каталозі (з мʼязами), щоб я міг запропонувати план
+              </div>
+            )}
+          </div>
+
+          <div className="mt-3 flex gap-2">
+            <Button
+              className="flex-1 h-12"
+              onClick={() => {
+                if (!plan.picked.length) return;
+                const w = createWorkout();
+                for (const ex of plan.picked.slice(0, 6)) {
+                  addItem(w.id, {
+                    exerciseId: ex.id,
+                    nameUk: ex?.name?.uk || ex?.name?.en,
+                    primaryGroup: ex.primaryGroup,
+                    musclesPrimary: ex?.muscles?.primary || [],
+                    musclesSecondary: ex?.muscles?.secondary || [],
+                    type: ex.primaryGroup === "cardio" ? "distance" : "strength",
+                    sets: [{ weightKg: 0, reps: 0 }],
+                    durationSec: 0,
+                    distanceM: 0,
+                  });
+                }
+                window.location.hash = "#workouts";
+              }}
+              disabled={!plan.picked.length}
+            >
+              Стартувати тренування
+            </Button>
+            <Button
+              variant="ghost"
+              className="h-12 px-4"
+              onClick={() => { window.location.hash = "#workouts"; }}
+            >
+              Журнал
+            </Button>
+          </div>
         </div>
 
         <div className="bg-panel border border-line/60 rounded-2xl p-5 shadow-card">
