@@ -9,7 +9,7 @@ const now = new Date();
 
 export function Transactions({ mono, storage, showBalance = true }) {
   const { realTx, loadingTx, lastUpdated, refresh, syncState, accounts, fetchMonth, historyTx, loadingHistory } = mono;
-  const { hiddenTxIds, hideTx, excludedTxIds, txCategories, overrideCategory } = storage;
+  const { hiddenTxIds, hideTx, excludedTxIds, txCategories, overrideCategory, txSplits, setSplitTx } = storage;
   const [filter, setFilter] = useState("all");
   const [showHidden, setShowHidden] = useState(false);
   const [search, setSearch] = useState("");
@@ -49,9 +49,13 @@ export function Transactions({ mono, storage, showBalance = true }) {
   const catSpends = useMemo(() =>
     MCC_CATEGORIES.filter(c => c.id !== "income").map(cat => ({
       ...cat,
-      spent: Math.round(statTx.filter(t => t.amount < 0 && getEffectiveCat(t).id === cat.id).reduce((s, t) => s + Math.abs(t.amount / 100), 0))
+      spent: Math.round(statTx.filter(t => t.amount < 0).reduce((s, t) => {
+        const splits = txSplits?.[t.id];
+        if (splits && splits.length > 0) return s + splits.filter(sp => sp.categoryId === cat.id).reduce((ss, sp) => ss + (sp.amount || 0), 0);
+        return getEffectiveCat(t).id === cat.id ? s + Math.abs(t.amount / 100) : s;
+      }, 0))
     })).filter(c => c.spent > 0).sort((a, b) => b.spent - a.spent),
-    [statTx]
+    [statTx, txSplits]
   );
 
   const txsToShow = useMemo(
@@ -184,6 +188,8 @@ export function Transactions({ mono, storage, showBalance = true }) {
               onCatChange={overrideCategory}
               accounts={accounts}
               hideAmount={!showBalance}
+              txSplits={txSplits}
+              onSplitChange={setSplitTx}
             />
           ))}
         </div>

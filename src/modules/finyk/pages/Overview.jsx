@@ -2,7 +2,7 @@ import { useMemo, useEffect } from "react";
 import { CategoryChart } from "../components/CategoryChart";
 import { NetworthChart } from "../components/NetworthChart";
 import { MCC_CATEGORIES, CURRENCY } from "../constants";
-import { getDebtPaid, getRecvPaid, calcCategorySpent, getMonoTotals } from "../utils";
+import { getDebtPaid, getRecvPaid, calcCategorySpent, getMonoTotals, getTxStatAmount } from "../utils";
 import { Skeleton } from "@shared/components/ui/Skeleton";
 import { cn } from "@shared/lib/cn";
 
@@ -42,7 +42,7 @@ function FlowRow({ flow, showAmount = true }) {
 
 export function Overview({ mono, storage, onNavigate, showBalance = true }) {
   const { realTx, loadingTx, clientInfo, accounts, transactions } = mono;
-  const { budgets, subscriptions, manualDebts, receivables, hiddenAccounts, excludedTxIds, monthlyPlan, networthHistory, saveNetworthSnapshot, txCategories } = storage;
+  const { budgets, subscriptions, manualDebts, receivables, hiddenAccounts, excludedTxIds, monthlyPlan, networthHistory, saveNetworthSnapshot, txCategories, txSplits } = storage;
 
   // Показуємо скелетон якщо дані ще не завантажились вперше
   if (loadingTx && realTx.length === 0) {
@@ -63,7 +63,7 @@ export function Overview({ mono, storage, onNavigate, showBalance = true }) {
   const daysPassed = now.getDate();
 
   const statTx = useMemo(() => realTx.filter(t => !excludedTxIds.has(t.id)), [realTx, excludedTxIds]);
-  const spent = useMemo(() => statTx.filter(t => t.amount < 0).reduce((s, t) => s + Math.abs(t.amount / 100), 0), [statTx]);
+  const spent = useMemo(() => statTx.filter(t => t.amount < 0).reduce((s, t) => s + getTxStatAmount(t, txSplits), 0), [statTx, txSplits]);
   const income = useMemo(() => statTx.filter(t => t.amount > 0).reduce((s, t) => s + t.amount / 100, 0), [statTx]);
   const projectedSpend = daysPassed > 0 ? (spent / daysPassed) * daysInMonth : 0;
 
@@ -77,8 +77,8 @@ export function Overview({ mono, storage, onNavigate, showBalance = true }) {
   const limitBudgets = budgets.filter(b => b.type === "limit");
   const goalBudgets = budgets.filter(b => b.type === "goal");
   const catSpends = useMemo(() => MCC_CATEGORIES.filter(c => c.id !== "income").map(cat => ({
-    ...cat, spent: calcCategorySpent(statTx, cat.id, txCategories)
-  })).filter(c => c.spent > 0).sort((a, b) => b.spent - a.spent), [statTx, txCategories]);
+    ...cat, spent: calcCategorySpent(statTx, cat.id, txCategories, txSplits)
+  })).filter(c => c.spent > 0).sort((a, b) => b.spent - a.spent), [statTx, txCategories, txSplits]);
 
   const recentTx = useMemo(
     () => [...statTx].sort((a, b) => (b.time || 0) - (a.time || 0)).slice(0, 5),
@@ -95,9 +95,9 @@ export function Overview({ mono, storage, onNavigate, showBalance = true }) {
   }, [accounts]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const budgetAlerts = useMemo(() => limitBudgets.filter(b => {
-    const s = calcCategorySpent(statTx, b.categoryId, txCategories);
+    const s = calcCategorySpent(statTx, b.categoryId, txCategories, txSplits);
     return b.limit > 0 && s / b.limit >= 0.8;
-  }), [limitBudgets, statTx, txCategories]);
+  }), [limitBudgets, statTx, txCategories, txSplits]);
 
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
@@ -274,7 +274,7 @@ export function Overview({ mono, storage, onNavigate, showBalance = true }) {
           <div className="space-y-1.5">
             {budgetAlerts.map((b, i) => {
               const cat = MCC_CATEGORIES.find(c => c.id === b.categoryId);
-              const s = calcCategorySpent(statTx, b.categoryId, txCategories);
+              const s = calcCategorySpent(statTx, b.categoryId, txCategories, txSplits);
               const pct = Math.round(s / b.limit * 100);
               return (
                 <div key={i} className={cn("rounded-2xl px-4 py-3 flex items-center justify-between border", pct >= 100 ? "bg-danger/8 border-danger/20" : "bg-warning/8 border-warning/20")}>
@@ -393,7 +393,7 @@ export function Overview({ mono, storage, onNavigate, showBalance = true }) {
             <div className="text-xs font-medium text-subtle">Ліміти</div>
             {limitBudgets.map((b, i) => {
               const cat = MCC_CATEGORIES.find(c => c.id === b.categoryId);
-              const bspent = calcCategorySpent(statTx, b.categoryId, txCategories);
+              const bspent = calcCategorySpent(statTx, b.categoryId, txCategories, txSplits);
               const pct = Math.min(100, b.limit > 0 ? Math.round(bspent / b.limit * 100) : 0);
               const over = pct >= 90;
               return (

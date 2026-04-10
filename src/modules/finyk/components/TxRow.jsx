@@ -3,6 +3,8 @@ import { getCategory, getIncomeCategory, fmtAmt, fmtDate } from "../utils";
 import { MCC_CATEGORIES, INCOME_CATEGORIES, INTERNAL_TRANSFER_ID, CURRENCY } from "../constants";
 import { cn } from "@shared/lib/cn";
 
+const splitInp = "flex-1 text-xs h-9 rounded-xl border border-line bg-panelHi px-2 text-text outline-none focus:border-primary/50 transition-colors";
+
 const INCOME_ICONS = {
   in_salary:          "💰",
   in_freelance:       "💻",
@@ -18,8 +20,10 @@ function getAccountShortName(acc) {
   return typeMap[acc.type] || acc.type || "Рахунок";
 }
 
-export function TxRow({ tx, onClick, highlighted, onHide, hidden, overrideCatId, onCatChange, accounts, hideAmount = false }) {
+export function TxRow({ tx, onClick, highlighted, onHide, hidden, overrideCatId, onCatChange, accounts, hideAmount = false, txSplits, onSplitChange }) {
   const [catPicker, setCatPicker] = useState(false);
+  const [splitEditor, setSplitEditor] = useState(false);
+  const [draftSplits, setDraftSplits] = useState([]);
   const isIncome = tx.amount > 0;
   const cat = isIncome
     ? getIncomeCategory(tx.description, overrideCatId)
@@ -32,6 +36,31 @@ export function TxRow({ tx, onClick, highlighted, onHide, hidden, overrideCatId,
   const account = accounts?.find(a => a.id === tx._accountId);
   const isCreditCard = account?.creditLimit > 0;
   const accountName = getAccountShortName(account);
+
+  const existingSplits = txSplits?.[tx.id] || [];
+  const totalAmt = Math.abs(tx.amount / 100);
+
+  const openSplitEditor = () => {
+    setDraftSplits(
+      existingSplits.length > 0
+        ? existingSplits.map(s => ({ ...s }))
+        : [
+            { categoryId: cat.id, amount: totalAmt },
+            { categoryId: INTERNAL_TRANSFER_ID, amount: 0 },
+          ]
+    );
+    setSplitEditor(true);
+    setCatPicker(false);
+  };
+
+  const splitsTotal = draftSplits.reduce((s, p) => s + (parseFloat(p.amount) || 0), 0);
+  const remaining = Math.round((totalAmt - splitsTotal) * 100) / 100;
+
+  const saveSplits = () => {
+    const valid = draftSplits.filter(s => s.categoryId && (parseFloat(s.amount) || 0) > 0);
+    onSplitChange?.(tx.id, valid.length >= 2 ? valid : null);
+    setSplitEditor(false);
+  };
 
   return (
     <div className={cn("border-b border-line last:border-0", highlighted && "bg-primary/5 rounded-xl border-0 my-0.5")}>
@@ -60,6 +89,9 @@ export function TxRow({ tx, onClick, highlighted, onHide, hidden, overrideCatId,
               {overrideCatId && cat.id !== INTERNAL_TRANSFER_ID && (
                 <span className="text-[9px] bg-text/8 text-muted px-1.5 py-0.5 rounded-full font-semibold">змін.</span>
               )}
+              {existingSplits.length > 0 && (
+                <span className="text-[9px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-semibold">⅔ спліт</span>
+              )}
               {isCreditCard && (
                 <span className="text-[9px] bg-danger/8 text-danger px-1.5 py-0.5 rounded-full font-semibold">💳 {accountName}</span>
               )}
@@ -82,9 +114,19 @@ export function TxRow({ tx, onClick, highlighted, onHide, hidden, overrideCatId,
               </div>
             )}
           </div>
+          {onSplitChange && !isIncome && (
+            <button
+              onClick={e => { e.stopPropagation(); openSplitEditor(); }}
+              className={cn(
+                "w-9 h-9 flex items-center justify-center rounded-xl transition-colors text-sm font-bold",
+                splitEditor ? "text-primary bg-primary/8" : existingSplits.length > 0 ? "text-primary/70 bg-primary/5" : "text-subtle/60 hover:text-subtle hover:bg-panelHi"
+              )}
+              title="Розподілити транзакцію"
+            >⅔</button>
+          )}
           {onCatChange && (
             <button
-              onClick={e => { e.stopPropagation(); setCatPicker(v => !v); }}
+              onClick={e => { e.stopPropagation(); setCatPicker(v => !v); setSplitEditor(false); }}
               className={cn(
                 "w-9 h-9 flex items-center justify-center rounded-xl transition-colors",
                 catPicker ? "text-primary bg-primary/8" : "text-subtle/60 hover:text-subtle hover:bg-panelHi"
@@ -111,6 +153,59 @@ export function TxRow({ tx, onClick, highlighted, onHide, hidden, overrideCatId,
           )}
         </div>
       </div>
+
+      {/* Split editor */}
+      {splitEditor && onSplitChange && (
+        <div className="pb-3 px-2 space-y-2">
+          <div className="text-xs text-subtle font-medium">
+            Розподіл · {totalAmt.toLocaleString("uk-UA", { minimumFractionDigits: 2 })} ₴ всього
+          </div>
+          {draftSplits.map((sp, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <select
+                value={sp.categoryId}
+                onChange={e => setDraftSplits(prev => prev.map((p, j) => j === i ? { ...p, categoryId: e.target.value } : p))}
+                className={splitInp}
+              >
+                {MCC_CATEGORIES.map(c => (
+                  <option key={c.id} value={c.id}>{c.label}</option>
+                ))}
+              </select>
+              <input
+                type="number"
+                value={sp.amount || ""}
+                onChange={e => setDraftSplits(prev => prev.map((p, j) => j === i ? { ...p, amount: parseFloat(e.target.value) || 0 } : p))}
+                className="w-24 text-xs h-9 rounded-xl border border-line bg-panelHi px-2 text-right text-text outline-none focus:border-primary/50 transition-colors"
+                placeholder="₴"
+              />
+              {draftSplits.length > 2 && (
+                <button onClick={() => setDraftSplits(prev => prev.filter((_, j) => j !== i))} className="text-danger/50 hover:text-danger text-sm shrink-0">✕</button>
+              )}
+            </div>
+          ))}
+          <div className={cn("text-xs px-1 tabular-nums", Math.abs(remaining) < 0.01 ? "text-success" : "text-warning")}>
+            {Math.abs(remaining) < 0.01 ? "✓ Суми збігаються" : `Залишок: ${remaining.toLocaleString("uk-UA", { minimumFractionDigits: 2 })} ₴`}
+          </div>
+          <button
+            onClick={() => setDraftSplits(prev => [...prev, { categoryId: "other", amount: Math.max(0, Math.round(remaining * 100) / 100) }])}
+            className="text-xs text-primary/70 hover:text-primary transition-colors"
+          >+ Додати частину</button>
+          <div className="flex gap-2 pt-1">
+            <button
+              onClick={saveSplits}
+              disabled={Math.abs(remaining) >= 0.01}
+              className="flex-1 text-xs py-2 rounded-xl bg-primary text-white disabled:opacity-40 transition-opacity"
+            >Зберегти</button>
+            {existingSplits.length > 0 && (
+              <button
+                onClick={() => { onSplitChange(tx.id, null); setSplitEditor(false); }}
+                className="text-xs py-2 px-3 rounded-xl border border-danger/30 text-danger/70 hover:text-danger transition-colors"
+              >Видалити</button>
+            )}
+            <button onClick={() => setSplitEditor(false)} className="text-xs py-2 px-3 rounded-xl border border-line text-subtle hover:text-text transition-colors">✕</button>
+          </div>
+        </div>
+      )}
 
       {/* Category picker */}
       {catPicker && (

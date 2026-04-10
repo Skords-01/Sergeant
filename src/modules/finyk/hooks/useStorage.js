@@ -22,6 +22,7 @@ export function useStorage() {
   const [txCategories, setTxCategories] = usePersist("finto_tx_cats", {});
   const [monoDebtLinkedTxIds, setMonoDebtLinkedTxIds] = usePersist("finto_mono_debt_linked", {});
   const [networthHistory, setNetworthHistory] = usePersist("finto_networth_history", []);
+  const [txSplits, setTxSplits] = usePersist("finto_tx_splits", {});
 
   const toggleHideAccount = (id) => setHiddenAccounts(h => h.includes(id) ? h.filter(x => x !== id) : [...h, id]);
 
@@ -47,6 +48,14 @@ export function useStorage() {
   const hideTx = (id) => setHiddenTxIds(ids =>
     ids.includes(id) ? ids.filter(x => x !== id) : [...ids, id]
   );
+
+  const setSplitTx = (txId, splits) => {
+    setTxSplits(prev =>
+      splits && splits.length >= 2
+        ? { ...prev, [txId]: splits }
+        : Object.fromEntries(Object.entries(prev).filter(([k]) => k !== txId))
+    );
+  };
 
   const overrideCategory = (txId, catId) => {
     setTxCategories(prev =>
@@ -118,13 +127,18 @@ export function useStorage() {
     .filter(([, catId]) => catId === INTERNAL_TRANSFER_ID)
     .map(([txId]) => txId);
 
-  // Всі ID що треба виключити зі статистики
+  // ID транзакцій прив'язаних до пасивів — для відстеження погашення в Assets
+  // НЕ виключаємо зі статистики, щоб вони відображались у категорії "Борги та кредити"
+  const debtLinkedTxIds = new Set([
+    ...manualDebts.flatMap(d => d.linkedTxIds || []),
+    ...Object.values(monoDebtLinkedTxIds).flat(),
+  ]);
+
+  // Зі статистики виключаємо: приховані, внутрішні перекази, дебіторку (щоб повернення боргу не рахувалось як дохід)
   const excludedTxIds = new Set([
     ...hiddenTxIds,
     ...transferTxIds,
-    ...manualDebts.flatMap(d => d.linkedTxIds || []),
     ...receivables.flatMap(r => r.linkedTxIds || []),
-    ...Object.values(monoDebtLinkedTxIds).flat(),
   ]);
 
   return {
@@ -140,9 +154,11 @@ export function useStorage() {
     exportData, importData,
     generateSyncLink, loadFromUrl,
     excludedTxIds,
-    debtTxIds: excludedTxIds, // зворотна сумісність
+    debtTxIds: debtLinkedTxIds, // зворотна сумісність
     txCategories, overrideCategory,
+    txSplits, setSplitTx,
     monoDebtLinkedTxIds, toggleMonoDebtTx,
+    debtLinkedTxIds,
     networthHistory,
     saveNetworthSnapshot: (networth) => {
       const key = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}`;
