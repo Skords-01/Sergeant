@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useStorage } from "../modules/finyk/hooks/useStorage";
 import { useMonobank } from "../modules/finyk/hooks/useMonobank";
-import { getCategory, getMonoTotals, getDebtPaid } from "../modules/finyk/utils";
+import { getCategory, getMonoTotals, getDebtPaid, getTxStatAmount } from "../modules/finyk/utils";
 import { cn } from "@shared/lib/cn";
 
 // Читаємо дані Фізрука з localStorage без монтування модуля
@@ -43,7 +43,7 @@ function buildContext(storage, mono) {
   // Витрати і дохід місяця
   if (realTx?.length > 0) {
     const statTx = realTx.filter(t => !excludedTxIds?.has(t.id));
-    const spent = statTx.filter(t => t.amount < 0).reduce((s, t) => s + Math.abs(t.amount / 100), 0);
+    const spent = statTx.filter(t => t.amount < 0).reduce((s, t) => s + getTxStatAmount(t, storage.txSplits), 0);
     const income = statTx.filter(t => t.amount > 0).reduce((s, t) => s + t.amount / 100, 0);
     parts.push(`Витрати місяця: ${spent.toFixed(0)}₴, дохід: ${income.toFixed(0)}₴`);
 
@@ -51,7 +51,7 @@ function buildContext(storage, mono) {
     const catMap = {};
     statTx.filter(t => t.amount < 0).forEach(t => {
       const cat = getCategory(t.description, t.mcc, txCategories?.[t.id])?.label || "Інше";
-      catMap[cat] = (catMap[cat] || 0) + Math.abs(t.amount / 100);
+      catMap[cat] = (catMap[cat] || 0) + getTxStatAmount(t, storage.txSplits);
     });
     const topCats = Object.entries(catMap).sort((a, b) => b[1] - a[1]).slice(0, 4)
       .map(([k, v]) => `${k}: ${v.toFixed(0)}₴`).join(", ");
