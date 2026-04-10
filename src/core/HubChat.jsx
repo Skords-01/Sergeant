@@ -312,11 +312,22 @@ function getUkVoice() {
     || null;
 }
 
+// iOS Safari блокує speechSynthesis.speak() якщо виклик не з user gesture.
+// Цей трюк "розблоковує" аудіо: пустий utterance з обробника кліку.
+function unlockTTS() {
+  if (typeof window === "undefined" || !window.speechSynthesis) return;
+  const utter = new SpeechSynthesisUtterance("");
+  utter.volume = 0;
+  utter.lang = "uk-UA";
+  window.speechSynthesis.speak(utter);
+}
+
 function speak(text) {
   if (typeof window === "undefined" || !window.speechSynthesis) return;
-  window.speechSynthesis.cancel();
   const clean = cleanTextForSpeech(text);
   if (!clean) return;
+
+  window.speechSynthesis.cancel();
 
   const doSpeak = () => {
     const utter = new SpeechSynthesisUtterance(clean);
@@ -328,12 +339,11 @@ function speak(text) {
     window.speechSynthesis.speak(utter);
   };
 
-  // iOS Safari: voices load async, getVoices() may return [] on first call
-  if (window.speechSynthesis.getVoices().length > 0) {
+  const voices = window.speechSynthesis.getVoices();
+  if (voices.length > 0) {
     doSpeak();
   } else {
     window.speechSynthesis.addEventListener("voiceschanged", doSpeak, { once: true });
-    // Fallback timeout якщо voiceschanged не спрацює
     setTimeout(() => {
       if (window.speechSynthesis.speaking) return;
       doSpeak();
@@ -392,12 +402,17 @@ export function HubChat({ onClose }) {
 
   const sendRef = useRef(null);
 
-  const { listening, toggle: toggleMic, supported: speechSupported } = useSpeech((text) => {
+  const { listening, toggle: rawToggleMic, supported: speechSupported } = useSpeech((text) => {
     if (text.trim()) {
       lastWasVoice.current = true;
       sendRef.current?.(text.trim());
     }
   });
+
+  const toggleMic = useCallback(() => {
+    unlockTTS();
+    rawToggleMic();
+  }, [rawToggleMic]);
 
   const hasData = useMemo(() => {
     try { const c = ls("finyk_tx_cache", null); return !!(c?.txs?.length); } catch { return false; }
@@ -532,6 +547,20 @@ export function HubChat({ onClose }) {
                   : "bg-panel border border-line text-text rounded-bl-sm",
               )}>
                 {m.text}
+                {m.role === "assistant" && m.text && m.text.length > 3 && (
+                  <button
+                    onClick={() => { speak(m.text); setSpeaking(true); }}
+                    className="mt-1.5 flex items-center gap-1 text-[11px] text-subtle hover:text-text transition-colors"
+                    title="Озвучити"
+                  >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                      <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+                      <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+                    </svg>
+                    Озвучити
+                  </button>
+                )}
               </div>
             </div>
           ))}
