@@ -304,22 +304,41 @@ function cleanTextForSpeech(text) {
     .trim();
 }
 
+function getUkVoice() {
+  const voices = window.speechSynthesis.getVoices();
+  return voices.find(v => v.lang === "uk-UA")
+    || voices.find(v => v.lang.startsWith("uk"))
+    || voices.find(v => v.lang.startsWith("ru"))
+    || null;
+}
+
 function speak(text) {
   if (typeof window === "undefined" || !window.speechSynthesis) return;
   window.speechSynthesis.cancel();
   const clean = cleanTextForSpeech(text);
   if (!clean) return;
 
-  const utter = new SpeechSynthesisUtterance(clean);
-  utter.lang = "uk-UA";
-  utter.rate = 1.05;
-  utter.pitch = 1;
+  const doSpeak = () => {
+    const utter = new SpeechSynthesisUtterance(clean);
+    utter.lang = "uk-UA";
+    utter.rate = 1.0;
+    utter.pitch = 1;
+    const voice = getUkVoice();
+    if (voice) utter.voice = voice;
+    window.speechSynthesis.speak(utter);
+  };
 
-  const voices = window.speechSynthesis.getVoices();
-  const ukVoice = voices.find(v => v.lang.startsWith("uk"));
-  if (ukVoice) utter.voice = ukVoice;
-
-  window.speechSynthesis.speak(utter);
+  // iOS Safari: voices load async, getVoices() may return [] on first call
+  if (window.speechSynthesis.getVoices().length > 0) {
+    doSpeak();
+  } else {
+    window.speechSynthesis.addEventListener("voiceschanged", doSpeak, { once: true });
+    // Fallback timeout якщо voiceschanged не спрацює
+    setTimeout(() => {
+      if (window.speechSynthesis.speaking) return;
+      doSpeak();
+    }, 500);
+  }
 }
 
 function stopSpeaking() {
