@@ -150,9 +150,20 @@ function useSpeech(onResult) {
 export function HubChat({ onClose }) {
   const storage = useStorage();
   const mono = useMonobank();
-  const [messages, setMessages] = useState([
-    { role: "assistant", text: "Привіт! Я бачу твої фінанси та тренування. Запитуй — відповім коротко 💬" },
-  ]);
+  const [messages, setMessages] = useState(() => {
+    try {
+      const saved = localStorage.getItem("hub_chat_history");
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return [{ role: "assistant", text: "Привіт! Я бачу твої фінанси та тренування. Запитуй — відповім коротко 💬" }];
+  });
+
+  // Зберігаємо лише останні 40 повідомлень
+  useEffect(() => {
+    try {
+      localStorage.setItem("hub_chat_history", JSON.stringify(messages.slice(-40)));
+    } catch {}
+  }, [messages]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const chatRef = useRef(null);
@@ -219,14 +230,29 @@ export function HubChat({ onClose }) {
               <div className="text-[10px] text-subtle">Фінік · Фізрук</div>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="w-9 h-9 flex items-center justify-center rounded-xl text-muted hover:text-text hover:bg-panelHi transition-colors"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-            </svg>
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => {
+                const fresh = [{ role: "assistant", text: "Історію очищено. Чим можу допомогти?" }];
+                setMessages(fresh);
+                try { localStorage.removeItem("hub_chat_history"); } catch {}
+              }}
+              className="w-9 h-9 flex items-center justify-center rounded-xl text-muted hover:text-danger hover:bg-danger/8 transition-colors"
+              title="Очистити чат"
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/>
+              </svg>
+            </button>
+            <button
+              onClick={onClose}
+              className="w-9 h-9 flex items-center justify-center rounded-xl text-muted hover:text-text hover:bg-panelHi transition-colors"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          </div>
         </div>
 
         {/* Messages */}
