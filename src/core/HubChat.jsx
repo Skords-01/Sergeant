@@ -250,7 +250,7 @@ function executeAction(action) {
 }
 
 // ──────────────────────────────────────────────
-// 3. Speech
+// 3. Speech Recognition (input)
 // ──────────────────────────────────────────────
 
 function useSpeech(onResult) {
@@ -288,6 +288,47 @@ function useSpeech(onResult) {
 }
 
 // ──────────────────────────────────────────────
+// 3b. Speech Synthesis (output)
+// ──────────────────────────────────────────────
+
+const VOICE_KEYWORDS = /голосом|вголос|скажи|озвуч|прочитай/i;
+
+function cleanTextForSpeech(text) {
+  return text
+    .replace(/✅/g, "")
+    .replace(/\[.*?\]/g, "")
+    .replace(/id:\S+/g, "")
+    .replace(/https?:\/\/\S+/g, "")
+    .replace(/[_*#~`|]/g, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
+function speak(text) {
+  if (typeof window === "undefined" || !window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  const clean = cleanTextForSpeech(text);
+  if (!clean) return;
+
+  const utter = new SpeechSynthesisUtterance(clean);
+  utter.lang = "uk-UA";
+  utter.rate = 1.05;
+  utter.pitch = 1;
+
+  const voices = window.speechSynthesis.getVoices();
+  const ukVoice = voices.find(v => v.lang.startsWith("uk"));
+  if (ukVoice) utter.voice = ukVoice;
+
+  window.speechSynthesis.speak(utter);
+}
+
+function stopSpeaking() {
+  if (typeof window !== "undefined" && window.speechSynthesis) {
+    window.speechSynthesis.cancel();
+  }
+}
+
+// ──────────────────────────────────────────────
 // 4. Chat component
 // ──────────────────────────────────────────────
 
@@ -313,17 +354,29 @@ export function HubChat({ onClose }) {
 
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [speaking, setSpeaking] = useState(false);
   const chatRef = useRef(null);
   const inputRef = useRef(null);
+  const lastWasVoice = useRef(false);
 
   useEffect(() => { if (chatRef.current) chatRef.current.scrollTop = chatRef.current.scrollHeight; }, [messages, loading]);
   useEffect(() => { setTimeout(() => inputRef.current?.focus(), 100); }, []);
+
+  // Відстежуємо чи speechSynthesis ще говорить
+  useEffect(() => {
+    if (!speaking) return;
+    const id = setInterval(() => {
+      if (!window.speechSynthesis?.speaking) setSpeaking(false);
+    }, 300);
+    return () => clearInterval(id);
+  }, [speaking]);
 
   const sendRef = useRef(null);
   sendRef.current = send;
 
   const { listening, toggle: toggleMic, supported: speechSupported } = useSpeech((text) => {
     if (text.trim()) {
+      lastWasVoice.current = true;
       sendRef.current(text.trim());
     }
   });
@@ -332,9 +385,17 @@ export function HubChat({ onClose }) {
     try { const c = ls("finyk_tx_cache", null); return !!(c?.txs?.length); } catch { return false; }
   }, []);
 
+  const maybeSpeak = useCallback((text) => {
+    speak(text);
+    setSpeaking(true);
+  }, []);
+
   const send = async (text) => {
     const msg = (text || input).trim();
     if (!msg || loading) return;
+
+    const shouldSpeak = lastWasVoice.current || VOICE_KEYWORDS.test(msg);
+    lastWasVoice.current = false;
 
     const userMsg = { role: "user", text: msg };
     const next = [...messages, userMsg];
@@ -358,7 +419,6 @@ export function HubChat({ onClose }) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
 
-      // Якщо є tool_calls — виконуємо і відправляємо результат для фінальної відповіді
       if (data.tool_calls && data.tool_calls.length > 0) {
         const toolResults = data.tool_calls.map(tc => ({
           tool_use_id: tc.id,
@@ -383,14 +443,15 @@ export function HubChat({ onClose }) {
           if (res2.ok && data2.text) followUp = data2.text;
         } catch {}
 
-        setMessages(m => [...m, {
-          role: "assistant",
-          text: followUp ? `${actionsText}\n\n${followUp}` : actionsText,
-        }]);
+        const fullText = followUp ? `${actionsText}\n\n${followUp}` : actionsText;
+        setMessages(m => [...m, { role: "assistant", text: fullText }]);
+        if (shouldSpeak) maybeSpeak(followUp || actionsText);
 
         window.dispatchEvent(new Event("storage"));
       } else {
-        setMessages(m => [...m, { role: "assistant", text: data.text || "Немає відповіді." }]);
+        const reply = data.text || "Немає відповіді.";
+        setMessages(m => [...m, { role: "assistant", text: reply }]);
+        if (shouldSpeak) maybeSpeak(reply);
       }
     } catch (e) {
       setMessages(m => [...m, { role: "assistant", text: `Помилка: ${e.message}` }]);
@@ -400,6 +461,8 @@ export function HubChat({ onClose }) {
   };
 
   const clearChat = () => {
+    stopSpeaking();
+    setSpeaking(false);
     setMessages([{ role: "assistant", text: "Чат очищено." }]);
     try { localStorage.removeItem("hub_chat_history"); } catch {}
   };
@@ -484,7 +547,17 @@ export function HubChat({ onClose }) {
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && send()}
           />
-          {speechSupported && (
+          {speaking ? (
+            <button
+              onClick={() => { stopSpeaking(); setSpeaking(false); }}
+              className="w-11 h-11 rounded-full flex items-center justify-center shrink-0 transition-all border bg-warning/15 border-warning text-warning animate-pulse"
+              title="Зупинити озвучення"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                <rect x="6" y="6" width="12" height="12" rx="2" />
+              </svg>
+            </button>
+          ) : speechSupported ? (
             <button
               onClick={toggleMic}
               className={cn(
@@ -493,7 +566,7 @@ export function HubChat({ onClose }) {
                   ? "bg-danger text-white border-danger animate-pulse"
                   : "bg-panel border-line text-muted hover:text-text hover:border-muted",
               )}
-              title={listening ? "Зупинити" : "Голосовий ввід"}
+              title={listening ? "Зупинити запис" : "Голосовий ввід"}
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill={listening ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
@@ -501,7 +574,7 @@ export function HubChat({ onClose }) {
                 <line x1="12" y1="19" x2="12" y2="23" /><line x1="8" y1="23" x2="16" y2="23" />
               </svg>
             </button>
-          )}
+          ) : null}
           <button
             onClick={() => send()}
             disabled={loading || !input.trim()}
