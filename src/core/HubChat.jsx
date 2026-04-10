@@ -20,8 +20,14 @@ function getFizrukContext() {
 
 function buildContext(storage, mono) {
   const { budgets, manualDebts, receivables, subscriptions, monthlyPlan, excludedTxIds, txCategories } = storage;
-  const { realTx, accounts, transactions, hiddenAccounts, clientInfo } = mono;
+  const { realTx, accounts, transactions, hiddenAccounts, clientInfo, lastUpdated } = mono;
   const parts = [];
+
+  // Дата оновлення даних
+  if (lastUpdated) {
+    const fmt = new Intl.DateTimeFormat("uk-UA", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }).format(lastUpdated);
+    parts.push(`Дані станом на: ${fmt}`);
+  }
 
   // Ім'я
   if (clientInfo?.name) parts.push(`Користувач: ${clientInfo.name}`);
@@ -150,6 +156,14 @@ function useSpeech(onResult) {
 export function HubChat({ onClose }) {
   const storage = useStorage();
   const mono = useMonobank();
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    if (refreshing || mono.loadingTx) return;
+    setRefreshing(true);
+    try { await mono.refresh(); } finally { setRefreshing(false); }
+  };
+
   const [messages, setMessages] = useState(() => {
     try {
       const saved = localStorage.getItem("hub_chat_history");
@@ -227,10 +241,30 @@ export function HubChat({ onClose }) {
             <span className="text-2xl leading-none">🤖</span>
             <div>
               <div className="text-sm font-semibold text-text">Асистент</div>
-              <div className="text-[10px] text-subtle">Фінік · Фізрук</div>
+              <div className="text-[10px] text-subtle">
+                {mono.loadingTx || refreshing
+                  ? "Оновлення даних…"
+                  : mono.lastUpdated
+                  ? `Дані: ${new Intl.DateTimeFormat("uk-UA", { hour: "2-digit", minute: "2-digit" }).format(mono.lastUpdated)}`
+                  : "Фінік · Фізрук"}
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-1">
+            <button
+              onClick={handleRefresh}
+              disabled={refreshing || mono.loadingTx}
+              className="w-9 h-9 flex items-center justify-center rounded-xl text-muted hover:text-primary hover:bg-primary/8 transition-colors disabled:opacity-40"
+              title="Оновити дані з Monobank"
+            >
+              <svg
+                width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                className={refreshing || mono.loadingTx ? "animate-spin" : ""}
+              >
+                <polyline points="23 4 23 10 17 10"/>
+                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+              </svg>
+            </button>
             <button
               onClick={() => {
                 const fresh = [{ role: "assistant", text: "Історію очищено. Чим можу допомогти?" }];
