@@ -19,8 +19,8 @@ function getFizrukContext() {
 }
 
 function buildContext(storage, mono) {
-  const { budgets, manualDebts, receivables, subscriptions, monthlyPlan, excludedTxIds, txCategories } = storage;
-  const { realTx, accounts, transactions, hiddenAccounts, clientInfo, lastUpdated } = mono;
+  const { budgets, manualDebts, receivables, subscriptions, monthlyPlan, excludedTxIds, txCategories, hiddenAccounts } = storage;
+  const { realTx, accounts, transactions, clientInfo, lastUpdated } = mono;
   const parts = [];
 
   // Дата оновлення даних
