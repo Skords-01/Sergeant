@@ -167,6 +167,13 @@ export function Dashboard({ onOpenAtlas }) {
     return Math.round(sum / done.length);
   }, [workouts]);
 
+  const greeting = useMemo(() => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Доброго ранку";
+    if (hour < 18) return "Доброго дня";
+    return "Доброго вечора";
+  }, []);
+
   const picksFromTemplate = (tpl) =>
     (tpl?.exerciseIds || []).map(id => exercises.find(e => e.id === id)).filter(Boolean);
 
@@ -250,14 +257,52 @@ export function Dashboard({ onOpenAtlas }) {
           aria-label="Привітання"
         >
           <p className="text-[11px] font-bold tracking-widest uppercase text-accent">
-            СЬОГОДНІ {new Date().toLocaleDateString("uk-UA", { day: "numeric", month: "long" }).toUpperCase()}
+            {greeting} · {today}
           </p>
-          <h1 className="text-[28px] font-black text-white mt-3 leading-tight">
-            Твій прогрес<br />зібраний в одному<br />спокійному місці
-          </h1>
-          <p className="text-sm text-white/55 mt-3 leading-relaxed">
-            Логуй підходи, запускай шаблони і дивись, як росте обсяг.
-          </p>
+          <div className="mt-4 grid grid-cols-3 gap-2">
+            <div className="rounded-2xl bg-white/10 border border-white/15 p-3 text-center">
+              <p className="text-[10px] uppercase tracking-wide text-white/60">Тиждень</p>
+              <p className="text-xl font-black text-white tabular-nums mt-1">{dashMetrics.week}</p>
+            </div>
+            <div className="rounded-2xl bg-white/10 border border-white/15 p-3 text-center">
+              <p className="text-[10px] uppercase tracking-wide text-white/60">План</p>
+              <p className="text-xl font-black text-white tabular-nums mt-1">{plan.picked.length}</p>
+            </div>
+            <div className="rounded-2xl bg-white/10 border border-white/15 p-3 text-center">
+              <p className="text-[10px] uppercase tracking-wide text-white/60">Сер. час</p>
+              <p className="text-xl font-black text-white tabular-nums mt-1">{avgDurationSec ? formatDurShort(avgDurationSec) : "—"}</p>
+            </div>
+          </div>
+          <div className="mt-4 grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => { window.location.hash = "#workouts"; }}
+              className="rounded-xl border border-white/20 bg-white/10 py-2.5 text-sm font-semibold text-white active:scale-[0.98]"
+            >
+              Тренування
+            </button>
+            <button
+              type="button"
+              onClick={() => { window.location.hash = "#progress"; }}
+              className="rounded-xl border border-white/20 bg-white/10 py-2.5 text-sm font-semibold text-white active:scale-[0.98]"
+            >
+              Прогрес
+            </button>
+            <button
+              type="button"
+              onClick={() => { window.location.hash = "#measurements"; }}
+              className="rounded-xl border border-white/20 bg-white/10 py-2.5 text-sm font-semibold text-white active:scale-[0.98]"
+            >
+              Заміри
+            </button>
+            <button
+              type="button"
+              onClick={() => onOpenAtlas?.()}
+              className="rounded-xl border border-white/20 bg-white/10 py-2.5 text-sm font-semibold text-white active:scale-[0.98]"
+            >
+              Атлас
+            </button>
+          </div>
           <div className="mt-6 flex flex-col gap-3">
             <button
               type="button"
