@@ -167,6 +167,13 @@ export function Dashboard({ onOpenAtlas }) {
     return Math.round(sum / done.length);
   }, [workouts]);
 
+  const greeting = useMemo(() => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Доброго ранку";
+    if (hour < 18) return "Доброго дня";
+    return "Доброго вечора";
+  }, []);
+
   const picksFromTemplate = (tpl) =>
     (tpl?.exerciseIds || []).map(id => exercises.find(e => e.id === id)).filter(Boolean);
 
@@ -250,14 +257,24 @@ export function Dashboard({ onOpenAtlas }) {
           aria-label="Привітання"
         >
           <p className="text-[11px] font-bold tracking-widest uppercase text-accent">
-            СЬОГОДНІ {new Date().toLocaleDateString("uk-UA", { day: "numeric", month: "long" }).toUpperCase()}
+            {greeting} · {today}
           </p>
           <h1 className="text-[28px] font-black text-white mt-3 leading-tight">
-            Твій прогрес<br />зібраний в одному<br />спокійному місці
+            Готовий до нового<br />кроку в тренуваннях?
           </h1>
           <p className="text-sm text-white/55 mt-3 leading-relaxed">
-            Логуй підходи, запускай шаблони і дивись, як росте обсяг.
+            Цього тижня завершено {dashMetrics.week} тренувань, а в плані зараз {plan.picked.length} {plan.picked.length === 1 ? "вправа" : "вправ"}.
           </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <span className="px-3 py-1.5 rounded-full bg-white/10 border border-white/15 text-xs text-white/90">
+              Фокус: {(plan.focus || []).slice(0, 2).map(m => m.label).join(", ") || "потрібні нові дані"}
+            </span>
+            {(plan.avoid || []).length > 0 && (
+              <span className="px-3 py-1.5 rounded-full bg-warning/20 border border-warning/30 text-xs text-white">
+                Обережно: {(plan.avoid || []).slice(0, 2).map(m => m.label).join(", ")}
+              </span>
+            )}
+          </div>
           <div className="mt-6 flex flex-col gap-3">
             <button
               type="button"
