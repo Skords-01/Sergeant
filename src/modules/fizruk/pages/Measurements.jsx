@@ -25,6 +25,14 @@ export function Measurements() {
     return out;
   }, [entries, latest]);
 
+  const stats = useMemo(() => {
+    const latestAt = latest?.at ? new Date(latest.at).toLocaleDateString("uk-UA", { day: "numeric", month: "short" }) : "—";
+    const filledLatest = latest
+      ? MEASURE_FIELDS.filter(f => latest[f.id] != null && latest[f.id] !== "").length
+      : 0;
+    return { latestAt, filledLatest };
+  }, [latest]);
+
   return (
     <div className="flex-1 overflow-y-auto">
       <div className="max-w-4xl mx-auto px-4 pt-4 pb-[calc(88px+env(safe-area-inset-bottom,0px))] space-y-3">
@@ -47,6 +55,38 @@ export function Measurements() {
             </div>
           </div>
         </section>
+
+        <div className="grid grid-cols-3 gap-2">
+          <a
+            href="https://www.wikihow.com/Take-Body-Measurements"
+            target="_blank"
+            rel="noreferrer"
+            className="bg-panel border border-line/60 rounded-2xl p-3 shadow-card text-center flex flex-col items-center justify-center min-h-[76px]"
+          >
+            <div className="text-[10px] font-semibold text-subtle uppercase tracking-widest">Підказка</div>
+            <div className="text-sm font-bold text-success mt-1">Як робити заміри</div>
+          </a>
+          <div className="bg-panel border border-line/60 rounded-2xl p-3 shadow-card text-center min-h-[76px]">
+            <div className="text-[10px] font-semibold text-subtle uppercase tracking-widest">Останній</div>
+            <div className="text-sm font-bold text-text mt-1">{stats.latestAt}</div>
+          </div>
+          <div className="bg-panel border border-line/60 rounded-2xl p-3 shadow-card text-center min-h-[76px]">
+            <div className="text-[10px] font-semibold text-subtle uppercase tracking-widest">Полів</div>
+            <div className="text-lg font-extrabold text-text tabular-nums mt-1">{stats.filledLatest}</div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-2">
+          <a
+            href="https://www.wikihow.com/Take-Body-Measurements"
+            target="_blank"
+            rel="noreferrer"
+            className="bg-panel border border-line/60 rounded-2xl p-3 shadow-card text-center flex flex-col items-center justify-center min-h-[76px]"
+          >
+            <div className="text-[10px] font-semibold text-subtle uppercase tracking-widest">Підказка</div>
+            <div className="text-sm font-bold text-success mt-1">Як робити заміри</div>
+          </a>
+        </div>
 
         <div className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card">
           <div className="text-xs font-bold text-subtle uppercase tracking-widest mb-3">Додати замір</div>
@@ -88,8 +128,9 @@ export function Measurements() {
           <div className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card">
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-xs font-bold text-subtle uppercase tracking-widest">Останній замір</div>
-                <div className="text-xs text-subtle mt-1">{new Date(latest.at).toLocaleString("uk-UA", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}</div>
+                <div className="text-xs font-bold text-subtle uppercase tracking-widest">
+                  Останній замір <span className="ml-1 normal-case tracking-normal font-medium text-subtle">· {stats.latestAt}</span>
+                </div>
               </div>
               <div className="text-xs text-subtle">
                 {Object.keys(deltas).length ? "Δ від попереднього" : ""}
