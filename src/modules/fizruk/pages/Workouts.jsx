@@ -80,9 +80,10 @@ function mondayStartMs(d) {
 }
 
 export function Workouts() {
-  const { search, primaryGroupsUk, musclesUk, musclesByPrimaryGroup, addExercise, removeExercise } = useExerciseCatalog();
+  const { exercises, search, primaryGroupsUk, musclesUk, musclesByPrimaryGroup, addExercise, removeExercise } = useExerciseCatalog();
   const rec = useRecovery();
-  const { workouts, createWorkout, deleteWorkout, endWorkout, addItem, updateItem, removeItem } = useWorkouts();
+  const { workouts, createWorkout, updateWorkout, deleteWorkout, endWorkout, addItem, updateItem, removeItem } = useWorkouts();
+  const templateApi = useWorkoutTemplates();
   const [q, setQ] = useState("");
   const [selected, setSelected] = useState(null);
   const [open, setOpen] = useState(() => ({}));
@@ -576,6 +577,17 @@ export function Workouts() {
                     ))
                   )}
                 </div>
+
+                {!activeWorkout.endedAt && (
+                  <div className="mt-3">
+                    <textarea
+                      className="w-full min-h-[72px] rounded-2xl border border-line bg-bg px-3 py-2.5 text-sm text-text placeholder:text-subtle outline-none focus:border-muted transition-colors resize-none"
+                      placeholder="Нотатки до тренування (необов'язково)…"
+                      value={activeWorkout.note || ""}
+                      onChange={e => updateWorkout(activeWorkout.id, { note: e.target.value })}
+                    />
+                  </div>
+                )}
               </div>
             )}
 
@@ -607,6 +619,9 @@ export function Workouts() {
                       )}
                     </div>
                   </div>
+                  {w.note && (
+                    <div className="text-xs text-subtle mt-1 italic line-clamp-2">{w.note}</div>
+                  )}
                 </button>
               ))}
               {(workouts || []).length === 0 && (

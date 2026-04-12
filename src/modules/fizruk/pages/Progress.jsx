@@ -3,7 +3,10 @@ import { Button } from "@shared/components/ui/Button";
 import { cn } from "@shared/lib/cn";
 import { useExerciseCatalog } from "../hooks/useExerciseCatalog";
 import { useMeasurements } from "../hooks/useMeasurements";
+import { usePushups } from "../hooks/usePushups";
 import { useWorkouts } from "../hooks/useWorkouts";
+import { MiniLineChart } from "../components/MiniLineChart";
+import { WellbeingChart } from "../components/WellbeingChart";
 
 const WORKOUTS_KEY = "fizruk_workouts_v1";
 const MEASUREMENTS_KEY = "fizruk_measurements_v1";
@@ -20,7 +23,7 @@ function epley1rm(weightKg, reps) {
 
 function weekStartMs(d) {
   const x = new Date(d);
-  const day = (x.getDay() + 6) % 7; // Monday=0
+  const day = (x.getDay() + 6) % 7;
   x.setHours(0, 0, 0, 0);
   x.setDate(x.getDate() - day);
   return x.getTime();
@@ -30,6 +33,7 @@ export function Progress() {
   const { workouts } = useWorkouts();
   const { entries } = useMeasurements();
   const { exercises, musclesUk } = useExerciseCatalog();
+  const { history: pushupHistory } = usePushups();
   const fileRef = useRef(null);
 
   const meas = useMemo(() => {
@@ -44,9 +48,29 @@ export function Progress() {
     return { latest, prev, delta };
   }, [entries]);
 
+  const weightTrend = useMemo(() => {
+    return [...(entries || [])]
+      .sort((a, b) => a.at.localeCompare(b.at))
+      .slice(-8)
+      .map(e => ({
+        value: e.weightKg != null && e.weightKg !== "" ? Number(e.weightKg) : null,
+        label: new Date(e.at).toLocaleDateString("uk-UA", { day: "numeric", month: "short" }),
+      }));
+  }, [entries]);
+
+  const fatTrend = useMemo(() => {
+    return [...(entries || [])]
+      .sort((a, b) => a.at.localeCompare(b.at))
+      .slice(-8)
+      .map(e => ({
+        value: e.bodyFatPct != null && e.bodyFatPct !== "" ? Number(e.bodyFatPct) : null,
+        label: new Date(e.at).toLocaleDateString("uk-UA", { day: "numeric", month: "short" }),
+      }));
+  }, [entries]);
+
   const weeklyByMuscle = useMemo(() => {
     const now = Date.now();
-    const weeks = new Map(); // weekStartMs -> { muscleId -> tonnagePoints }
+    const weeks = new Map();
     const DAY = 24 * 60 * 60 * 1000;
     const cutoff = now - (28 * DAY);
 
@@ -108,6 +132,44 @@ export function Progress() {
       .slice(0, 12);
   }, [workouts, exercises]);
 
+  const quickStats = useMemo(() => {
+    const done = (workouts || []).filter(w => w.endedAt);
+    const latestTs = done.reduce((mx, w) => {
+      const ts = w.startedAt ? Date.parse(w.startedAt) : NaN;
+      return Number.isFinite(ts) ? Math.max(mx, ts) : mx;
+    }, 0);
+    const latestWorkoutAt = latestTs
+      ? new Date(latestTs).toLocaleDateString("uk-UA", { day: "numeric", month: "short" })
+      : "—";
+    return {
+      doneCount: done.length,
+      prsCount: prs.length,
+      latestWorkoutAt,
+    };
+  }, [workouts, prs.length]);
+
+  const pushupStats = useMemo(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
+    const monthAgo = new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10);
+    const week = (pushupHistory || []).filter(d => d.date >= weekAgo).reduce((s, d) => s + d.total, 0);
+    const month = (pushupHistory || []).filter(d => d.date >= monthAgo).reduce((s, d) => s + d.total, 0);
+    const todayCount = (pushupHistory || []).find(d => d.date === today)?.total ?? 0;
+    return { todayCount, week, month };
+  }, [pushupHistory]);
+
+  const wellbeingData = useMemo(() => {
+    return (workouts || [])
+      .filter(w => w.endedAt && (w.wellbeing?.energy != null || w.wellbeing?.mood != null))
+      .slice(0, 14)
+      .reverse()
+      .map(w => ({
+        label: new Date(w.startedAt).toLocaleDateString("uk-UA", { day: "numeric", month: "short" }),
+        energy: w.wellbeing?.energy ?? null,
+        mood: w.wellbeing?.mood ?? null,
+      }));
+  }, [workouts]);
+
   const exportJson = () => {
     const payload = {
       schemaVersion: 1,
@@ -147,24 +209,6 @@ export function Progress() {
     window.location.reload();
   };
 
-  const hasAny = (workouts?.length || 0) > 0 || (entries?.length || 0) > 0;
-
-  const quickStats = useMemo(() => {
-    const done = (workouts || []).filter(w => w.endedAt);
-    const latestTs = done.reduce((mx, w) => {
-      const ts = w.startedAt ? Date.parse(w.startedAt) : NaN;
-      return Number.isFinite(ts) ? Math.max(mx, ts) : mx;
-    }, 0);
-    const latestWorkoutAt = latestTs
-      ? new Date(latestTs).toLocaleDateString("uk-UA", { day: "numeric", month: "short" })
-      : "—";
-    return {
-      doneCount: done.length,
-      prsCount: prs.length,
-      latestWorkoutAt,
-    };
-  }, [workouts, prs.length]);
-
   const exportCsv = () => {
     const rows = [["startedAt", "endedAt", "workout_id", "exercise", "type", "detail", "energy_1_5", "mood_1_5"]];
     for (const w of workouts || []) {
@@ -196,9 +240,13 @@ export function Progress() {
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   };
 
+  const hasAny = (workouts?.length || 0) > 0 || (entries?.length || 0) > 0;
+
   return (
     <div className="flex-1 overflow-y-auto">
       <div className="max-w-4xl mx-auto px-4 pt-4 pb-[calc(88px+env(safe-area-inset-bottom,0px))] space-y-3">
+
+        {/* Hero */}
         <section
           className="rounded-3xl p-4 border border-line/20"
           style={{ background: "linear-gradient(135deg, #0f2d1a 0%, #1e4d2b 100%)" }}
@@ -221,47 +269,18 @@ export function Progress() {
           </div>
         </section>
 
+        {/* Quick stats */}
         <div className="grid grid-cols-3 gap-2">
           <div className="bg-panel border border-line/60 rounded-2xl p-3 shadow-card text-center">
-            <div className="text-[10px] font-semibold text-subtle uppercase tracking-widest">Тренувань</div>
+            <div className="text-[10px] font-bold text-subtle uppercase tracking-widest">Завершено</div>
             <div className="text-lg font-extrabold text-text tabular-nums mt-1">{quickStats.doneCount}</div>
           </div>
           <div className="bg-panel border border-line/60 rounded-2xl p-3 shadow-card text-center">
-            <div className="text-[10px] font-semibold text-subtle uppercase tracking-widest">PR вправ</div>
+            <div className="text-[10px] font-bold text-subtle uppercase tracking-widest">PR вправ</div>
             <div className="text-lg font-extrabold text-text tabular-nums mt-1">{quickStats.prsCount}</div>
           </div>
           <div className="bg-panel border border-line/60 rounded-2xl p-3 shadow-card text-center">
-            <div className="text-[10px] font-semibold text-subtle uppercase tracking-widest">Останнє</div>
-            <div className="text-sm font-bold text-text mt-1">{quickStats.latestWorkoutAt}</div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-3 gap-2">
-          <div className="bg-panel border border-line/60 rounded-2xl p-3 shadow-card text-center">
-            <div className="text-[10px] font-semibold text-subtle uppercase tracking-widest">Тренувань</div>
-            <div className="text-lg font-extrabold text-text tabular-nums mt-1">{quickStats.doneCount}</div>
-          </div>
-          <div className="bg-panel border border-line/60 rounded-2xl p-3 shadow-card text-center">
-            <div className="text-[10px] font-semibold text-subtle uppercase tracking-widest">PR вправ</div>
-            <div className="text-lg font-extrabold text-text tabular-nums mt-1">{quickStats.prsCount}</div>
-          </div>
-          <div className="bg-panel border border-line/60 rounded-2xl p-3 shadow-card text-center">
-            <div className="text-[10px] font-semibold text-subtle uppercase tracking-widest">Останнє</div>
-            <div className="text-sm font-bold text-text mt-1">{quickStats.latestWorkoutAt}</div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-3 gap-2">
-          <div className="bg-panel border border-line/60 rounded-2xl p-3 shadow-card text-center">
-            <div className="text-[10px] font-semibold text-subtle uppercase tracking-widest">Тренувань</div>
-            <div className="text-lg font-extrabold text-text tabular-nums mt-1">{quickStats.doneCount}</div>
-          </div>
-          <div className="bg-panel border border-line/60 rounded-2xl p-3 shadow-card text-center">
-            <div className="text-[10px] font-semibold text-subtle uppercase tracking-widest">PR вправ</div>
-            <div className="text-lg font-extrabold text-text tabular-nums mt-1">{quickStats.prsCount}</div>
-          </div>
-          <div className="bg-panel border border-line/60 rounded-2xl p-3 shadow-card text-center">
-            <div className="text-[10px] font-semibold text-subtle uppercase tracking-widest">Останнє</div>
+            <div className="text-[10px] font-bold text-subtle uppercase tracking-widest">Останнє</div>
             <div className="text-sm font-bold text-text mt-1">{quickStats.latestWorkoutAt}</div>
           </div>
         </div>
@@ -274,9 +293,31 @@ export function Progress() {
           </div>
         )}
 
+        {/* Pushup stats */}
+        {pushupStats.month > 0 && (
+          <div className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card">
+            <div className="text-xs font-bold text-subtle uppercase tracking-widest mb-3">Відтискання</div>
+            <div className="grid grid-cols-3 gap-2">
+              <div className="bg-bg border border-line rounded-xl p-2.5 text-center">
+                <div className="text-[10px] text-subtle uppercase tracking-wide">Сьогодні</div>
+                <div className="text-lg font-black text-text tabular-nums">{pushupStats.todayCount}</div>
+              </div>
+              <div className="bg-bg border border-line rounded-xl p-2.5 text-center">
+                <div className="text-[10px] text-subtle uppercase tracking-wide">Тиждень</div>
+                <div className="text-lg font-black text-text tabular-nums">{pushupStats.week}</div>
+              </div>
+              <div className="bg-bg border border-line rounded-xl p-2.5 text-center">
+                <div className="text-[10px] text-subtle uppercase tracking-wide">Місяць</div>
+                <div className="text-lg font-black text-text tabular-nums">{pushupStats.month}</div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Weight + fat cards */}
         <div className="grid grid-cols-2 gap-3">
           <div className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card">
-            <div className="text-[10px] font-semibold text-subtle uppercase tracking-widest">Вага</div>
+            <div className="text-[10px] font-bold text-subtle uppercase tracking-widest">Вага</div>
             <div className="text-2xl font-extrabold text-text mt-1 tabular-nums">
               {meas.latest?.weightKg != null ? `${meas.latest.weightKg} кг` : "—"}
             </div>
@@ -289,7 +330,7 @@ export function Progress() {
             </div>
           </div>
           <div className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card">
-            <div className="text-[10px] font-semibold text-subtle uppercase tracking-widest">% жиру</div>
+            <div className="text-[10px] font-bold text-subtle uppercase tracking-widest">% жиру</div>
             <div className="text-2xl font-extrabold text-text mt-1 tabular-nums">
               {meas.latest?.bodyFatPct != null ? `${meas.latest.bodyFatPct}%` : "—"}
             </div>
@@ -303,8 +344,33 @@ export function Progress() {
           </div>
         </div>
 
+        {/* Weight trend chart */}
+        {weightTrend.filter(d => d.value != null).length >= 2 && (
+          <div className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card">
+            <div className="text-xs font-bold text-subtle uppercase tracking-widest mb-3">Тренд ваги</div>
+            <MiniLineChart data={weightTrend} unit="кг" color="rgb(22 163 74)" />
+          </div>
+        )}
+
+        {/* Body fat trend chart */}
+        {fatTrend.filter(d => d.value != null).length >= 2 && (
+          <div className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card">
+            <div className="text-xs font-bold text-subtle uppercase tracking-widest mb-3">Тренд % жиру</div>
+            <MiniLineChart data={fatTrend} unit="%" color="rgb(234 179 8)" />
+          </div>
+        )}
+
+        {/* Wellbeing chart */}
+        {wellbeingData.length >= 2 && (
+          <div className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card">
+            <div className="text-xs font-bold text-subtle uppercase tracking-widest mb-3">Самопочуття</div>
+            <WellbeingChart data={wellbeingData} />
+          </div>
+        )}
+
+        {/* Muscle volume bars */}
         <div className="bg-panel border border-line/60 rounded-2xl p-5 shadow-card">
-          <div className="text-xs font-medium text-subtle mb-3">Обʼєм по мʼязах (цей тиждень)</div>
+          <div className="text-xs font-bold text-subtle uppercase tracking-widest mb-3">Обʼєм по мʼязах</div>
           {weeklyByMuscle.top.length === 0 ? (
             <div className="text-sm text-subtle text-center py-6">Немає даних за останні 4 тижні</div>
           ) : (
@@ -324,8 +390,9 @@ export function Progress() {
           )}
         </div>
 
+        {/* PR list */}
         <div className="bg-panel border border-line/60 rounded-2xl p-5 shadow-card">
-          <div className="text-xs font-medium text-subtle mb-3">PR (оцінка 1RM)</div>
+          <div className="text-xs font-bold text-subtle uppercase tracking-widest mb-3">Рекорди (PR)</div>
           {prs.length === 0 ? (
             <div className="text-sm text-subtle text-center py-6">Поки немає силових PR</div>
           ) : (
@@ -349,15 +416,21 @@ export function Progress() {
           )}
         </div>
 
+        {/* Data management */}
         <div className="bg-panel border border-line/60 rounded-2xl p-5 shadow-card">
-          <div className="text-xs font-medium text-subtle mb-3">Дані</div>
+          <div className="text-xs font-bold text-subtle uppercase tracking-widest mb-3">Дані</div>
+          <button
+            type="button"
+            className="w-full py-4 rounded-full font-bold text-[15px] bg-accent mb-2 transition-all active:scale-[0.98]"
+            style={{ color: "#0f2d1a" }}
+            onClick={exportJson}
+          >
+            Експорт (backup)
+          </button>
           <div className="grid grid-cols-2 gap-2">
-            <Button className="h-12 min-h-[44px]" onClick={exportJson}>Експорт (backup)</Button>
-            <Button className="h-12 min-h-[44px]" variant="ghost" onClick={() => fileRef.current?.click()}>Імпорт</Button>
+            <Button className="h-12 min-h-[44px] rounded-full" variant="ghost" onClick={() => fileRef.current?.click()}>Імпорт</Button>
+            <Button className="h-12 min-h-[44px] rounded-full" variant="ghost" onClick={exportCsv}>CSV</Button>
           </div>
-          <Button className="w-full h-12 min-h-[44px] mt-2" variant="ghost" onClick={exportCsv}>
-            Експорт тренувань (CSV)
-          </Button>
           <input
             ref={fileRef}
             type="file"
@@ -376,6 +449,7 @@ export function Progress() {
             Порада: роби експорт перед великими змінами/оновленнями.
           </div>
         </div>
+
       </div>
     </div>
   );
