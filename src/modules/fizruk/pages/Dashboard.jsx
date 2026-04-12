@@ -260,51 +260,24 @@ export function Dashboard({ onOpenAtlas }) {
           <p className="text-[11px] font-bold tracking-widest uppercase text-accent">
             {greeting} · {today}
           </p>
+          <h1 className="text-[26px] font-black text-white mt-3 leading-tight">
+            Твій прогрес<br />зібраний в одному місці
+          </h1>
           <div className="mt-4 grid grid-cols-3 gap-2">
             <div className="rounded-2xl bg-white/10 border border-white/15 p-3 text-center">
               <p className="text-[10px] uppercase tracking-wide text-white/60">Тиждень</p>
               <p className="text-xl font-black text-white tabular-nums mt-1">{dashMetrics.week}</p>
             </div>
             <div className="rounded-2xl bg-white/10 border border-white/15 p-3 text-center">
-              <p className="text-[10px] uppercase tracking-wide text-white/60">План</p>
-              <p className="text-xl font-black text-white tabular-nums mt-1">{plan.picked.length}</p>
+              <p className="text-[10px] uppercase tracking-wide text-white/60">Серія</p>
+              <p className="text-xl font-black text-white tabular-nums mt-1">{streakDays}</p>
             </div>
             <div className="rounded-2xl bg-white/10 border border-white/15 p-3 text-center">
               <p className="text-[10px] uppercase tracking-wide text-white/60">Сер. час</p>
               <p className="text-xl font-black text-white tabular-nums mt-1">{avgDurationSec ? formatDurShort(avgDurationSec) : "—"}</p>
             </div>
           </div>
-          <div className="mt-4 grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => { window.location.hash = "#workouts"; }}
-              className="rounded-xl border border-white/20 bg-white/10 py-2.5 text-sm font-semibold text-white active:scale-[0.98]"
-            >
-              Тренування
-            </button>
-            <button
-              type="button"
-              onClick={() => { window.location.hash = "#progress"; }}
-              className="rounded-xl border border-white/20 bg-white/10 py-2.5 text-sm font-semibold text-white active:scale-[0.98]"
-            >
-              Прогрес
-            </button>
-            <button
-              type="button"
-              onClick={() => { window.location.hash = "#measurements"; }}
-              className="rounded-xl border border-white/20 bg-white/10 py-2.5 text-sm font-semibold text-white active:scale-[0.98]"
-            >
-              Заміри
-            </button>
-            <button
-              type="button"
-              onClick={() => onOpenAtlas?.()}
-              className="rounded-xl border border-white/20 bg-white/10 py-2.5 text-sm font-semibold text-white active:scale-[0.98]"
-            >
-              Атлас
-            </button>
-          </div>
-          <div className="mt-6 flex flex-col gap-3">
+          <div className="mt-5 flex flex-col gap-3">
             <button
               type="button"
               className="w-full py-4 rounded-full font-bold text-[15px] bg-accent transition-all active:scale-[0.98]"
@@ -313,13 +286,13 @@ export function Dashboard({ onOpenAtlas }) {
                 if (plan.picked.length) {
                   onClickStartPlan();
                 } else {
-                  try { sessionStorage.setItem("fizruk_workouts_mode", "templates"); } catch {}
+                  try { sessionStorage.setItem("fizruk_workouts_mode", "log"); } catch {}
                   window.location.hash = "#workouts";
                 }
               }}
-              aria-label="Почати тренування за обраним шаблоном"
+              aria-label="Почати тренування"
             >
-              {plan.picked.length ? "Запланувати тренування" : "Створити шаблон"}
+              Почати тренування
             </button>
             <button
               type="button"
@@ -328,9 +301,9 @@ export function Dashboard({ onOpenAtlas }) {
                 try { sessionStorage.setItem("fizruk_workouts_mode", "templates"); } catch {}
                 window.location.hash = "#workouts";
               }}
-              aria-label="Відкрити шаблони"
+              aria-label="Мої шаблони"
             >
-              Відкрити шаблони
+              Мої шаблони
             </button>
           </div>
         </section>

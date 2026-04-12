@@ -72,7 +72,7 @@ function formatRestClock(sec) {
 }
 
 export function Workouts() {
-  const { search, primaryGroupsUk, musclesUk, musclesByPrimaryGroup, addExercise, removeExercise } = useExerciseCatalog();
+  const { exercises, search, primaryGroupsUk, musclesUk, musclesByPrimaryGroup, addExercise, removeExercise } = useExerciseCatalog();
   const rec = useRecovery();
   const { workouts, createWorkout, deleteWorkout, endWorkout, addItem, updateItem, removeItem } = useWorkouts();
   const templateApi = useWorkoutTemplates();
