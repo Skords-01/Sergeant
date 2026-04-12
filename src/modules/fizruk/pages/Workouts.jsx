@@ -10,6 +10,8 @@ import { useWorkouts } from "../hooks/useWorkouts";
 import { recoveryConflictsForExercise, recoveryConflictsForWorkoutItem } from "../lib/recoveryConflict";
 
 const ACTIVE_WORKOUT_KEY = "fizruk_active_workout_id_v1";
+const SHEET_BOTTOM_PADDING = "calc(env(safe-area-inset-bottom, 16px) + 72px)";
+const SHEET_Z = "z-[100]";
 
 const EQUIPMENT_OPTIONS = [
   { id: "bodyweight", label: "Власна вага" },
@@ -207,11 +209,34 @@ export function Workouts() {
     }));
   }, [list, primaryGroupsUk]);
 
+  const finishedCount = useMemo(() => (workouts || []).filter(w => w.endedAt).length, [workouts]);
+
   return (
     <div className="flex-1 overflow-y-auto">
       <div className="max-w-4xl mx-auto px-4 pt-4 pb-[calc(88px+env(safe-area-inset-bottom,0px))]">
+        <section
+          className="rounded-3xl p-4 mb-3 border border-line/20"
+          style={{ background: "linear-gradient(135deg, #0f2d1a 0%, #1e4d2b 100%)" }}
+          aria-label="Огляд тренувань"
+        >
+          <div className="text-[11px] font-bold tracking-widest uppercase text-accent">Тренування</div>
+          <div className="grid grid-cols-3 gap-2 mt-3">
+            <div className="rounded-xl bg-white/10 border border-white/15 p-2.5 text-center">
+              <div className="text-[10px] uppercase tracking-wide text-white/60">Всього</div>
+              <div className="text-lg font-black text-white tabular-nums">{workouts.length}</div>
+            </div>
+            <div className="rounded-xl bg-white/10 border border-white/15 p-2.5 text-center">
+              <div className="text-[10px] uppercase tracking-wide text-white/60">Завершено</div>
+              <div className="text-lg font-black text-white tabular-nums">{finishedCount}</div>
+            </div>
+            <div className="rounded-xl bg-white/10 border border-white/15 p-2.5 text-center">
+              <div className="text-[10px] uppercase tracking-wide text-white/60">Активне</div>
+              <div className="text-lg font-black text-white tabular-nums">{activeWorkout ? 1 : 0}</div>
+            </div>
+          </div>
+        </section>
+
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-3">
-          <div className="text-sm font-semibold text-muted">Тренування</div>
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
@@ -617,11 +642,11 @@ export function Workouts() {
 
         {/* Details sheet */}
         {selected && (
-          <div className="fixed inset-0 z-[100] flex items-end" onClick={() => setSelected(null)}>
+          <div className={cn("fixed inset-0 flex items-end", SHEET_Z)} onClick={() => setSelected(null)}>
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
             <div
               className="relative w-full bg-panel border-t border-line rounded-t-3xl shadow-soft"
-              style={{ paddingBottom: "env(safe-area-inset-bottom, 16px)" }}
+              style={{ paddingBottom: SHEET_BOTTOM_PADDING }}
               onClick={e => e.stopPropagation()}
             >
               <div className="flex justify-center pt-3 pb-1">
@@ -753,11 +778,11 @@ export function Workouts() {
 
         {/* Add exercise sheet */}
         {addOpen && (
-          <div className="fixed inset-0 z-[100] flex items-end" onClick={() => setAddOpen(false)} role="presentation">
+          <div className={cn("fixed inset-0 flex items-end", SHEET_Z)} onClick={() => setAddOpen(false)} role="presentation">
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
             <div
               className="relative w-full bg-panel border-t border-line rounded-t-3xl shadow-soft max-h-[92dvh] flex flex-col"
-              style={{ paddingBottom: "env(safe-area-inset-bottom, 16px)" }}
+              style={{ paddingBottom: SHEET_BOTTOM_PADDING }}
               onClick={e => e.stopPropagation()}
               role="dialog"
               aria-modal="true"
@@ -918,11 +943,11 @@ export function Workouts() {
 
         {/* Exercise picker for workout */}
         {pickerOpen && (
-          <div className="fixed inset-0 z-[100] flex items-end" onClick={() => setPickerOpen(false)}>
+          <div className={cn("fixed inset-0 flex items-end", SHEET_Z)} onClick={() => setPickerOpen(false)}>
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
             <div
               className="relative w-full bg-panel border-t border-line rounded-t-3xl shadow-soft"
-              style={{ paddingBottom: "env(safe-area-inset-bottom, 16px)" }}
+              style={{ paddingBottom: SHEET_BOTTOM_PADDING }}
               onClick={e => e.stopPropagation()}
             >
               <div className="flex justify-center pt-3 pb-1">
