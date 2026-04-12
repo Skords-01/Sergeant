@@ -149,6 +149,22 @@ export function Progress() {
 
   const hasAny = (workouts?.length || 0) > 0 || (entries?.length || 0) > 0;
 
+  const quickStats = useMemo(() => {
+    const done = (workouts || []).filter(w => w.endedAt);
+    const latestTs = done.reduce((mx, w) => {
+      const ts = w.startedAt ? Date.parse(w.startedAt) : NaN;
+      return Number.isFinite(ts) ? Math.max(mx, ts) : mx;
+    }, 0);
+    const latestWorkoutAt = latestTs
+      ? new Date(latestTs).toLocaleDateString("uk-UA", { day: "numeric", month: "short" })
+      : "—";
+    return {
+      doneCount: done.length,
+      prsCount: prs.length,
+      latestWorkoutAt,
+    };
+  }, [workouts, prs.length]);
+
   const exportCsv = () => {
     const rows = [["startedAt", "endedAt", "workout_id", "exercise", "type", "detail", "energy_1_5", "mood_1_5"]];
     for (const w of workouts || []) {
@@ -184,6 +200,21 @@ export function Progress() {
     <div className="flex-1 overflow-y-auto">
       <div className="max-w-4xl mx-auto px-4 pt-4 pb-[calc(88px+env(safe-area-inset-bottom,0px))] space-y-3">
         <div className="text-sm font-semibold text-muted">Прогрес</div>
+
+        <div className="grid grid-cols-3 gap-2">
+          <div className="bg-panel border border-line/60 rounded-2xl p-3 shadow-card text-center">
+            <div className="text-[10px] font-semibold text-subtle uppercase tracking-widest">Тренувань</div>
+            <div className="text-lg font-extrabold text-text tabular-nums mt-1">{quickStats.doneCount}</div>
+          </div>
+          <div className="bg-panel border border-line/60 rounded-2xl p-3 shadow-card text-center">
+            <div className="text-[10px] font-semibold text-subtle uppercase tracking-widest">PR вправ</div>
+            <div className="text-lg font-extrabold text-text tabular-nums mt-1">{quickStats.prsCount}</div>
+          </div>
+          <div className="bg-panel border border-line/60 rounded-2xl p-3 shadow-card text-center">
+            <div className="text-[10px] font-semibold text-subtle uppercase tracking-widest">Останнє</div>
+            <div className="text-sm font-bold text-text mt-1">{quickStats.latestWorkoutAt}</div>
+          </div>
+        </div>
 
         {!hasAny && (
           <div className="bg-panel border border-line/60 rounded-2xl p-8 shadow-card text-center">

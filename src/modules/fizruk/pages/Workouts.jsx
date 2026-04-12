@@ -69,6 +69,14 @@ function formatRestClock(sec) {
   return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
+function mondayStartMs(d) {
+  const x = new Date(d);
+  const day = (x.getDay() + 6) % 7;
+  x.setHours(0, 0, 0, 0);
+  x.setDate(x.getDate() - day);
+  return x.getTime();
+}
+
 export function Workouts() {
   const { search, primaryGroupsUk, musclesUk, musclesByPrimaryGroup, addExercise, removeExercise } = useExerciseCatalog();
   const rec = useRecovery();
@@ -103,6 +111,20 @@ export function Workouts() {
   const list = useMemo(() => search(q), [search, q]);
   const pickList = useMemo(() => search(pickQ).slice(0, 60), [search, pickQ]);
   const activeWorkout = workouts.find(w => w.id === activeWorkoutId) || null;
+  const workoutQuickStats = useMemo(() => {
+    const done = (workouts || []).filter(w => w.endedAt);
+    const weekStart = mondayStartMs(Date.now());
+    const thisWeekDone = done.filter(w => {
+      const ts = w.startedAt ? Date.parse(w.startedAt) : NaN;
+      return Number.isFinite(ts) && ts >= weekStart;
+    }).length;
+    const activeItems = (activeWorkout?.items || []).length;
+    return {
+      doneCount: done.length,
+      thisWeekDone,
+      activeItems,
+    };
+  }, [workouts, activeWorkout]);
 
   const activeDuration = useMemo(() => {
     if (!activeWorkout?.startedAt) return null;
@@ -247,6 +269,21 @@ export function Workouts() {
 
         {mode === "log" && (
           <div className="space-y-3">
+            <div className="grid grid-cols-3 gap-2">
+              <div className="bg-panel border border-line/60 rounded-2xl p-3 shadow-card text-center">
+                <div className="text-[10px] font-semibold text-subtle uppercase tracking-widest">Завершено</div>
+                <div className="text-lg font-extrabold text-text tabular-nums mt-1">{workoutQuickStats.doneCount}</div>
+              </div>
+              <div className="bg-panel border border-line/60 rounded-2xl p-3 shadow-card text-center">
+                <div className="text-[10px] font-semibold text-subtle uppercase tracking-widest">Цей тиждень</div>
+                <div className="text-lg font-extrabold text-text tabular-nums mt-1">{workoutQuickStats.thisWeekDone}</div>
+              </div>
+              <div className="bg-panel border border-line/60 rounded-2xl p-3 shadow-card text-center">
+                <div className="text-[10px] font-semibold text-subtle uppercase tracking-widest">В активному</div>
+                <div className="text-lg font-extrabold text-text tabular-nums mt-1">{workoutQuickStats.activeItems}</div>
+              </div>
+            </div>
+
             <div className="flex gap-2">
               <Button
                 className="flex-1 h-12"
@@ -266,6 +303,27 @@ export function Workouts() {
                 + Вправа
               </Button>
             </div>
+
+            {!activeWorkout && (
+              <div className="bg-panel border border-line/60 rounded-2xl p-5 shadow-card text-center">
+                <div className="text-sm font-semibold text-text">Немає активного тренування</div>
+                <div className="text-xs text-subtle mt-1">Створи нове або запусти готовий шаблон</div>
+                <div className="mt-3 flex gap-2">
+                  <Button
+                    className="flex-1 h-11"
+                    onClick={() => {
+                      const w = createWorkout();
+                      setActiveWorkoutId(w.id);
+                    }}
+                  >
+                    + Нове
+                  </Button>
+                  <Button variant="ghost" className="flex-1 h-11" onClick={() => setMode("templates")}>
+                    Шаблони
+                  </Button>
+                </div>
+              </div>
+            )}
 
             {activeWorkout && (
               <div className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card">
@@ -513,7 +571,16 @@ export function Workouts() {
                     <div className="text-sm font-semibold text-text">
                       {new Date(w.startedAt).toLocaleDateString("uk-UA", { month: "short", day: "numeric" })}
                     </div>
-                    <div className="text-xs text-subtle">{(w.items || []).length} вправ</div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-subtle">{(w.items || []).length} вправ</span>
+                      {activeWorkoutId === w.id ? (
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-success/15 text-success border border-success/20">Активне</span>
+                      ) : w.endedAt ? (
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-panelHi text-subtle border border-line">Завершене</span>
+                      ) : (
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-warning/10 text-warning border border-warning/20">Чернетка</span>
+                      )}
+                    </div>
                   </div>
                 </button>
               ))}
