@@ -28,7 +28,25 @@ export function Measurements() {
   return (
     <div className="flex-1 overflow-y-auto">
       <div className="max-w-4xl mx-auto px-4 pt-4 pb-[calc(88px+env(safe-area-inset-bottom,0px))] space-y-3">
-        <div className="text-sm font-semibold text-muted">Заміри</div>
+        <section
+          className="rounded-3xl p-4 border border-line/20"
+          style={{ background: "linear-gradient(135deg, #0f2d1a 0%, #1e4d2b 100%)" }}
+          aria-label="Огляд замірів"
+        >
+          <div className="text-[11px] font-bold tracking-widest uppercase text-accent">Заміри</div>
+          <div className="grid grid-cols-2 gap-2 mt-3">
+            <div className="rounded-xl bg-white/10 border border-white/15 p-3 text-center">
+              <div className="text-[10px] uppercase tracking-wide text-white/60">Записів</div>
+              <div className="text-lg font-black text-white tabular-nums">{entries.length}</div>
+            </div>
+            <div className="rounded-xl bg-white/10 border border-white/15 p-3 text-center">
+              <div className="text-[10px] uppercase tracking-wide text-white/60">Останній</div>
+              <div className="text-sm font-bold text-white tabular-nums mt-0.5">
+                {latest ? new Date(latest.at).toLocaleDateString("uk-UA", { day: "numeric", month: "short" }) : "—"}
+              </div>
+            </div>
+          </div>
+        </section>
 
         <div className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card">
           <div className="text-xs font-bold text-subtle uppercase tracking-widest mb-3">Додати замір</div>
@@ -126,4 +144,3 @@ export function Measurements() {
     </div>
   );
 }
-

@@ -183,7 +183,27 @@ export function Progress() {
   return (
     <div className="flex-1 overflow-y-auto">
       <div className="max-w-4xl mx-auto px-4 pt-4 pb-[calc(88px+env(safe-area-inset-bottom,0px))] space-y-3">
-        <div className="text-sm font-semibold text-muted">Прогрес</div>
+        <section
+          className="rounded-3xl p-4 border border-line/20"
+          style={{ background: "linear-gradient(135deg, #0f2d1a 0%, #1e4d2b 100%)" }}
+          aria-label="Огляд прогресу"
+        >
+          <div className="text-[11px] font-bold tracking-widest uppercase text-accent">Прогрес</div>
+          <div className="grid grid-cols-3 gap-2 mt-3">
+            <div className="rounded-xl bg-white/10 border border-white/15 p-2.5 text-center">
+              <div className="text-[10px] uppercase tracking-wide text-white/60">Тренувань</div>
+              <div className="text-lg font-black text-white tabular-nums">{workouts.length}</div>
+            </div>
+            <div className="rounded-xl bg-white/10 border border-white/15 p-2.5 text-center">
+              <div className="text-[10px] uppercase tracking-wide text-white/60">PR</div>
+              <div className="text-lg font-black text-white tabular-nums">{prs.length}</div>
+            </div>
+            <div className="rounded-xl bg-white/10 border border-white/15 p-2.5 text-center">
+              <div className="text-[10px] uppercase tracking-wide text-white/60">Заміри</div>
+              <div className="text-lg font-black text-white tabular-nums">{entries.length}</div>
+            </div>
+          </div>
+        </section>
 
         {!hasAny && (
           <div className="bg-panel border border-line/60 rounded-2xl p-8 shadow-card text-center">
