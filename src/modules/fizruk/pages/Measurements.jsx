@@ -107,8 +107,10 @@ export function Measurements() {
             ))}
           </div>
           <div className="mt-3">
-            <Button
-              className="w-full h-12"
+            <button
+              type="button"
+              className="w-full py-4 rounded-full font-bold text-[15px] bg-accent transition-all active:scale-[0.98]"
+              style={{ color: "#0f2d1a" }}
               onClick={() => {
                 const payload = {};
                 for (const f of MEASURE_FIELDS) {
@@ -119,8 +121,8 @@ export function Measurements() {
                 setForm(Object.fromEntries(MEASURE_FIELDS.map(f => [f.id, ""])));
               }}
             >
-              Зберегти
-            </Button>
+              Зберегти замір
+            </button>
           </div>
         </div>
 

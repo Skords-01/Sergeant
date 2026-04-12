@@ -335,14 +335,19 @@ export function Progress() {
         </div>
 
         <div className="bg-panel border border-line/60 rounded-2xl p-5 shadow-card">
-          <div className="text-xs font-medium text-subtle mb-3">Дані</div>
+          <div className="text-xs font-bold text-subtle uppercase tracking-widest mb-3">Дані</div>
+          <button
+            type="button"
+            className="w-full py-4 rounded-full font-bold text-[15px] bg-accent mb-2 transition-all active:scale-[0.98]"
+            style={{ color: "#0f2d1a" }}
+            onClick={exportJson}
+          >
+            Експорт (backup)
+          </button>
           <div className="grid grid-cols-2 gap-2">
-            <Button className="h-12 min-h-[44px]" onClick={exportJson}>Експорт (backup)</Button>
-            <Button className="h-12 min-h-[44px]" variant="ghost" onClick={() => fileRef.current?.click()}>Імпорт</Button>
+            <Button className="h-12 min-h-[44px] rounded-full" variant="ghost" onClick={() => fileRef.current?.click()}>Імпорт</Button>
+            <Button className="h-12 min-h-[44px] rounded-full" variant="ghost" onClick={exportCsv}>CSV</Button>
           </div>
-          <Button className="w-full h-12 min-h-[44px] mt-2" variant="ghost" onClick={exportCsv}>
-            Експорт тренувань (CSV)
-          </Button>
           <input
             ref={fileRef}
             type="file"

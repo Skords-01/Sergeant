@@ -87,31 +87,47 @@ export function Exercise({ exerciseId }) {
   return (
     <div className="flex-1 overflow-y-auto">
       <div className="max-w-4xl mx-auto px-4 pt-4 pb-[calc(88px+env(safe-area-inset-bottom,0px))] space-y-3">
-        <div className="bg-panel border border-line/60 rounded-2xl p-5 shadow-card">
-          <div className="text-xs text-subtle">Профіль вправи</div>
-          <div className="text-xl font-extrabold text-text mt-1">{ex?.name?.uk || ex?.name?.en || history?.[0]?.item?.nameUk || "Вправа"}</div>
-          <div className="text-xs text-subtle mt-1">
-            {muscleLabels.length ? <>Мʼязи: <span className="font-semibold text-muted">{muscleLabels.join(", ")}</span></> : "Додай мʼязи в каталозі, щоб аналітика була точнішою"}
-          </div>
-        </div>
+
+        <section
+          className="rounded-3xl p-5 border border-line/20"
+          style={{ background: "linear-gradient(135deg, #0f2d1a 0%, #1e4d2b 100%)" }}
+          aria-label="Профіль вправи"
+        >
+          <p className="text-[11px] font-bold tracking-widest uppercase text-accent">Профіль вправи</p>
+          <h1 className="text-2xl font-black text-white mt-2 leading-tight">
+            {ex?.name?.uk || ex?.name?.en || history?.[0]?.item?.nameUk || "Вправа"}
+          </h1>
+          {muscleLabels.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mt-3">
+              {muscleLabels.map(m => (
+                <span key={m} className="text-xs font-medium px-2.5 py-1 rounded-full bg-white/15 text-white/80 border border-white/20">
+                  {m}
+                </span>
+              ))}
+            </div>
+          )}
+          {muscleLabels.length === 0 && (
+            <p className="text-xs text-white/50 mt-2">Додай мʼязи в каталозі для точнішої аналітики</p>
+          )}
+        </section>
 
         <div className="grid grid-cols-2 gap-3">
           <div className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card">
-            <div className="text-[10px] font-semibold text-subtle uppercase tracking-widest">Best 1RM (оцінка)</div>
+            <div className="text-[10px] font-bold text-subtle uppercase tracking-widest">Best 1RM (оцінка)</div>
             <div className="text-2xl font-extrabold text-text mt-1 tabular-nums">{best.best1rm ? `${fmt(best.best1rm, 0)} кг` : "—"}</div>
             <div className="text-xs text-subtle mt-1">
               {best.bestSet ? `${best.bestSet.weightKg ?? 0}×${best.bestSet.reps ?? 0}` : "Немає силових сетів"}
             </div>
           </div>
           <div className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card">
-            <div className="text-[10px] font-semibold text-subtle uppercase tracking-widest">Рекомендація</div>
+            <div className="text-[10px] font-bold text-subtle uppercase tracking-widest">Рекомендація</div>
             <div className="text-2xl font-extrabold text-text mt-1 tabular-nums">{suggestedNext ? `${fmt(suggestedNext.weightKg, 1)} кг` : "—"}</div>
             <div className="text-xs text-subtle mt-1">{suggestedNext ? `на ~${suggestedNext.reps} повторів` : "Заповни останній сет, щоб зʼявилась прогресія"}</div>
           </div>
         </div>
 
         <div className="bg-panel border border-line/60 rounded-2xl p-5 shadow-card">
-          <div className="text-xs font-medium text-subtle mb-3">Історія</div>
+          <div className="text-xs font-bold text-subtle uppercase tracking-widest mb-3">Історія сетів</div>
           {history.length === 0 ? (
             <div className="text-sm text-subtle text-center py-6">Ще немає записів по цій вправі</div>
           ) : (
@@ -140,9 +156,14 @@ export function Exercise({ exerciseId }) {
           )}
 
           <div className="mt-3">
-            <Button variant="ghost" className="w-full h-12" onClick={() => (window.location.hash = "#workouts")}>
+            <button
+              type="button"
+              className="w-full py-4 rounded-full font-bold text-[15px] bg-accent"
+              style={{ color: "#0f2d1a" }}
+              onClick={() => (window.location.hash = "#workouts")}
+            >
               Перейти до журналу
-            </Button>
+            </button>
           </div>
         </div>
       </div>

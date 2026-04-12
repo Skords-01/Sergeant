@@ -240,7 +240,7 @@ export function Workouts() {
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
-              className={cn("text-xs px-3 py-2.5 min-h-[44px] rounded-full border transition-colors", mode === "catalog" ? "bg-text text-white border-text" : "border-line text-subtle hover:text-text")}
+              className={cn("text-xs px-3 py-2.5 min-h-[44px] rounded-full border transition-colors", mode === "catalog" ? "bg-forest text-white border-forest" : "border-line text-subtle hover:text-text")}
               onClick={() => setMode("catalog")}
               aria-pressed={mode === "catalog"}
             >
@@ -248,7 +248,7 @@ export function Workouts() {
             </button>
             <button
               type="button"
-              className={cn("text-xs px-3 py-2.5 min-h-[44px] rounded-full border transition-colors", mode === "log" ? "bg-text text-white border-text" : "border-line text-subtle hover:text-text")}
+              className={cn("text-xs px-3 py-2.5 min-h-[44px] rounded-full border transition-colors", mode === "log" ? "bg-forest text-white border-forest" : "border-line text-subtle hover:text-text")}
               onClick={() => setMode("log")}
               aria-pressed={mode === "log"}
             >
@@ -256,7 +256,7 @@ export function Workouts() {
             </button>
             <button
               type="button"
-              className={cn("text-xs px-3 py-2.5 min-h-[44px] rounded-full border transition-colors", mode === "templates" ? "bg-text text-white border-text" : "border-line text-subtle hover:text-text")}
+              className={cn("text-xs px-3 py-2.5 min-h-[44px] rounded-full border transition-colors", mode === "templates" ? "bg-forest text-white border-forest" : "border-line text-subtle hover:text-text")}
               onClick={() => setMode("templates")}
               aria-pressed={mode === "templates"}
             >
@@ -273,18 +273,20 @@ export function Workouts() {
         {mode === "log" && (
           <div className="space-y-3">
             <div className="flex gap-2">
-              <Button
-                className="flex-1 h-12"
+              <button
+                type="button"
+                className="flex-1 py-3.5 rounded-full font-bold text-[15px] bg-accent transition-all active:scale-[0.98]"
+                style={{ color: "#0f2d1a" }}
                 onClick={() => {
                   const w = createWorkout();
                   setActiveWorkoutId(w.id);
                 }}
               >
                 + Нове тренування
-              </Button>
+              </button>
               <Button
                 variant="ghost"
-                className="h-12 px-4"
+                className="h-[52px] px-4 rounded-full"
                 onClick={() => setPickerOpen(true)}
                 disabled={!activeWorkoutId}
               >
