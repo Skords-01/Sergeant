@@ -21,6 +21,7 @@ import {
 } from "../lib/workoutStats";
 
 const SELECTED_TEMPLATE_KEY = "fizruk_selected_template_id_v1";
+const SHEET_BOTTOM_PADDING = "calc(env(safe-area-inset-bottom, 16px) + 72px)";
 
 function formatDurShort(sec) {
   const m = Math.floor(sec / 60);
@@ -725,7 +726,7 @@ export function Dashboard({ onOpenAtlas }) {
       </div>
 
       {planConfirmOpen && (
-        <div className="fixed inset-0 z-[70] flex items-end justify-center" role="dialog" aria-modal="true" aria-labelledby="plan-confirm-title">
+        <div className="fixed inset-0 z-[100] flex items-end justify-center" role="dialog" aria-modal="true" aria-labelledby="plan-confirm-title">
           <button
             type="button"
             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
@@ -734,7 +735,7 @@ export function Dashboard({ onOpenAtlas }) {
           />
           <div
             className="relative w-full max-w-4xl bg-panel border-t border-line rounded-t-3xl p-5 shadow-soft"
-            style={{ paddingBottom: "env(safe-area-inset-bottom, 16px)" }}
+            style={{ paddingBottom: SHEET_BOTTOM_PADDING }}
           >
             <div id="plan-confirm-title" className="text-lg font-extrabold text-text">Увага</div>
             <p className="text-sm text-subtle mt-2 leading-relaxed">
@@ -762,7 +763,7 @@ export function Dashboard({ onOpenAtlas }) {
 
       {/* Pushup modal */}
       {pushupModalOpen && (
-        <div className="fixed inset-0 z-[70] flex items-end justify-center" role="dialog" aria-modal="true" aria-labelledby="pushup-modal-title">
+        <div className="fixed inset-0 z-[100] flex items-end justify-center" role="dialog" aria-modal="true" aria-labelledby="pushup-modal-title">
           <button
             type="button"
             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
@@ -771,7 +772,7 @@ export function Dashboard({ onOpenAtlas }) {
           />
           <div
             className="relative w-full max-w-4xl bg-panel border-t border-line rounded-t-3xl p-5 shadow-soft"
-            style={{ paddingBottom: "env(safe-area-inset-bottom, 16px)" }}
+            style={{ paddingBottom: SHEET_BOTTOM_PADDING }}
           >
             <div className="w-10 h-1 bg-line rounded-full mx-auto mb-4" aria-hidden />
             <div id="pushup-modal-title" className="text-lg font-extrabold text-text mb-4">Додати відтискання</div>
