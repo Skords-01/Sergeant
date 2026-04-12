@@ -259,21 +259,49 @@ export function Dashboard({ onOpenAtlas }) {
           <p className="text-[11px] font-bold tracking-widest uppercase text-accent">
             {greeting} · {today}
           </p>
-          <h1 className="text-[28px] font-black text-white mt-3 leading-tight">
-            Готовий до нового<br />кроку в тренуваннях?
-          </h1>
-          <p className="text-sm text-white/55 mt-3 leading-relaxed">
-            Цього тижня завершено {dashMetrics.week} тренувань, а в плані зараз {plan.picked.length} {plan.picked.length === 1 ? "вправа" : "вправ"}.
-          </p>
-          <div className="mt-4 flex flex-wrap gap-2">
-            <span className="px-3 py-1.5 rounded-full bg-white/10 border border-white/15 text-xs text-white/90">
-              Фокус: {(plan.focus || []).slice(0, 2).map(m => m.label).join(", ") || "потрібні нові дані"}
-            </span>
-            {(plan.avoid || []).length > 0 && (
-              <span className="px-3 py-1.5 rounded-full bg-warning/20 border border-warning/30 text-xs text-white">
-                Обережно: {(plan.avoid || []).slice(0, 2).map(m => m.label).join(", ")}
-              </span>
-            )}
+          <div className="mt-4 grid grid-cols-3 gap-2">
+            <div className="rounded-2xl bg-white/10 border border-white/15 p-3 text-center">
+              <p className="text-[10px] uppercase tracking-wide text-white/60">Тиждень</p>
+              <p className="text-xl font-black text-white tabular-nums mt-1">{dashMetrics.week}</p>
+            </div>
+            <div className="rounded-2xl bg-white/10 border border-white/15 p-3 text-center">
+              <p className="text-[10px] uppercase tracking-wide text-white/60">План</p>
+              <p className="text-xl font-black text-white tabular-nums mt-1">{plan.picked.length}</p>
+            </div>
+            <div className="rounded-2xl bg-white/10 border border-white/15 p-3 text-center">
+              <p className="text-[10px] uppercase tracking-wide text-white/60">Сер. час</p>
+              <p className="text-xl font-black text-white tabular-nums mt-1">{avgDurationSec ? formatDurShort(avgDurationSec) : "—"}</p>
+            </div>
+          </div>
+          <div className="mt-4 grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => { window.location.hash = "#workouts"; }}
+              className="rounded-xl border border-white/20 bg-white/10 py-2.5 text-sm font-semibold text-white active:scale-[0.98]"
+            >
+              Тренування
+            </button>
+            <button
+              type="button"
+              onClick={() => { window.location.hash = "#progress"; }}
+              className="rounded-xl border border-white/20 bg-white/10 py-2.5 text-sm font-semibold text-white active:scale-[0.98]"
+            >
+              Прогрес
+            </button>
+            <button
+              type="button"
+              onClick={() => { window.location.hash = "#measurements"; }}
+              className="rounded-xl border border-white/20 bg-white/10 py-2.5 text-sm font-semibold text-white active:scale-[0.98]"
+            >
+              Заміри
+            </button>
+            <button
+              type="button"
+              onClick={() => onOpenAtlas?.()}
+              className="rounded-xl border border-white/20 bg-white/10 py-2.5 text-sm font-semibold text-white active:scale-[0.98]"
+            >
+              Атлас
+            </button>
           </div>
           <div className="mt-6 flex flex-col gap-3">
             <button
