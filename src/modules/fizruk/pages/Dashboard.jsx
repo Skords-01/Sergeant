@@ -307,18 +307,27 @@ export function Dashboard({ onOpenAtlas }) {
           <div className="mt-6 flex flex-col gap-3">
             <button
               type="button"
-              className="w-full py-4 rounded-full font-bold text-[15px] bg-accent disabled:opacity-40 transition-all active:scale-[0.98]"
+              className="w-full py-4 rounded-full font-bold text-[15px] bg-accent transition-all active:scale-[0.98]"
               style={{ color: "#0f2d1a" }}
-              onClick={onClickStartPlan}
-              disabled={!plan.picked.length}
+              onClick={() => {
+                if (plan.picked.length) {
+                  onClickStartPlan();
+                } else {
+                  try { sessionStorage.setItem("fizruk_workouts_mode", "templates"); } catch {}
+                  window.location.hash = "#workouts";
+                }
+              }}
               aria-label="Почати тренування за обраним шаблоном"
             >
-              Запланувати тренування
+              {plan.picked.length ? "Запланувати тренування" : "Створити шаблон"}
             </button>
             <button
               type="button"
               className="w-full py-4 rounded-full font-semibold text-[15px] text-white border border-white/25 transition-colors active:bg-white/10"
-              onClick={() => { window.location.hash = "#workouts"; }}
+              onClick={() => {
+                try { sessionStorage.setItem("fizruk_workouts_mode", "templates"); } catch {}
+                window.location.hash = "#workouts";
+              }}
               aria-label="Відкрити шаблони"
             >
               Відкрити шаблони

@@ -75,6 +75,7 @@ export function Workouts() {
   const { search, primaryGroupsUk, musclesUk, musclesByPrimaryGroup, addExercise, removeExercise } = useExerciseCatalog();
   const rec = useRecovery();
   const { workouts, createWorkout, deleteWorkout, endWorkout, addItem, updateItem, removeItem } = useWorkouts();
+  const templateApi = useWorkoutTemplates();
   const [q, setQ] = useState("");
   const [selected, setSelected] = useState(null);
   const [open, setOpen] = useState(() => ({}));

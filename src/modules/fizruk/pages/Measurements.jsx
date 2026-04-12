@@ -36,57 +36,23 @@ export function Measurements() {
   return (
     <div className="flex-1 overflow-y-auto">
       <div className="max-w-4xl mx-auto px-4 pt-4 pb-[calc(88px+env(safe-area-inset-bottom,0px))] space-y-3">
-        <section
-          className="rounded-3xl p-4 border border-line/20"
-          style={{ background: "linear-gradient(135deg, #0f2d1a 0%, #1e4d2b 100%)" }}
-          aria-label="Огляд замірів"
+        <a
+          href="https://www.wikihow.com/Take-Body-Measurements"
+          target="_blank"
+          rel="noreferrer"
+          className="flex items-center gap-3 bg-panel border border-line/60 rounded-2xl p-4 shadow-card"
         >
-          <div className="text-[11px] font-bold tracking-widest uppercase text-accent">Заміри</div>
-          <div className="grid grid-cols-2 gap-2 mt-3">
-            <div className="rounded-xl bg-white/10 border border-white/15 p-3 text-center">
-              <div className="text-[10px] uppercase tracking-wide text-white/60">Записів</div>
-              <div className="text-lg font-black text-white tabular-nums">{entries.length}</div>
-            </div>
-            <div className="rounded-xl bg-white/10 border border-white/15 p-3 text-center">
-              <div className="text-[10px] uppercase tracking-wide text-white/60">Останній</div>
-              <div className="text-sm font-bold text-white tabular-nums mt-0.5">
-                {latest ? new Date(latest.at).toLocaleDateString("uk-UA", { day: "numeric", month: "short" }) : "—"}
-              </div>
-            </div>
+          <div className="shrink-0 w-10 h-10 rounded-xl bg-success/10 flex items-center justify-center text-success">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <path d="M12 8v4M12 16h.01" />
+            </svg>
           </div>
-        </section>
-
-        <div className="grid grid-cols-3 gap-2">
-          <a
-            href="https://www.wikihow.com/Take-Body-Measurements"
-            target="_blank"
-            rel="noreferrer"
-            className="bg-panel border border-line/60 rounded-2xl p-3 shadow-card text-center flex flex-col items-center justify-center min-h-[76px]"
-          >
-            <div className="text-[10px] font-semibold text-subtle uppercase tracking-widest">Підказка</div>
-            <div className="text-sm font-bold text-success mt-1">Як робити заміри</div>
-          </a>
-          <div className="bg-panel border border-line/60 rounded-2xl p-3 shadow-card text-center min-h-[76px]">
-            <div className="text-[10px] font-semibold text-subtle uppercase tracking-widest">Останній</div>
-            <div className="text-sm font-bold text-text mt-1">{stats.latestAt}</div>
+          <div className="min-w-0">
+            <div className="text-xs font-bold text-subtle uppercase tracking-widest">Мануал</div>
+            <div className="text-sm font-semibold text-success mt-0.5">Як правильно робити заміри →</div>
           </div>
-          <div className="bg-panel border border-line/60 rounded-2xl p-3 shadow-card text-center min-h-[76px]">
-            <div className="text-[10px] font-semibold text-subtle uppercase tracking-widest">Полів</div>
-            <div className="text-lg font-extrabold text-text tabular-nums mt-1">{stats.filledLatest}</div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 gap-2">
-          <a
-            href="https://www.wikihow.com/Take-Body-Measurements"
-            target="_blank"
-            rel="noreferrer"
-            className="bg-panel border border-line/60 rounded-2xl p-3 shadow-card text-center flex flex-col items-center justify-center min-h-[76px]"
-          >
-            <div className="text-[10px] font-semibold text-subtle uppercase tracking-widest">Підказка</div>
-            <div className="text-sm font-bold text-success mt-1">Як робити заміри</div>
-          </a>
-        </div>
+        </a>
 
         <div className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card">
           <div className="text-xs font-bold text-subtle uppercase tracking-widest mb-3">Додати замір</div>
