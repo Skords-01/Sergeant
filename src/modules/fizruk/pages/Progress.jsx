@@ -251,6 +251,21 @@ export function Progress() {
           </div>
         </div>
 
+        <div className="grid grid-cols-3 gap-2">
+          <div className="bg-panel border border-line/60 rounded-2xl p-3 shadow-card text-center">
+            <div className="text-[10px] font-semibold text-subtle uppercase tracking-widest">Тренувань</div>
+            <div className="text-lg font-extrabold text-text tabular-nums mt-1">{quickStats.doneCount}</div>
+          </div>
+          <div className="bg-panel border border-line/60 rounded-2xl p-3 shadow-card text-center">
+            <div className="text-[10px] font-semibold text-subtle uppercase tracking-widest">PR вправ</div>
+            <div className="text-lg font-extrabold text-text tabular-nums mt-1">{quickStats.prsCount}</div>
+          </div>
+          <div className="bg-panel border border-line/60 rounded-2xl p-3 shadow-card text-center">
+            <div className="text-[10px] font-semibold text-subtle uppercase tracking-widest">Останнє</div>
+            <div className="text-sm font-bold text-text mt-1">{quickStats.latestWorkoutAt}</div>
+          </div>
+        </div>
+
         {!hasAny && (
           <div className="bg-panel border border-line/60 rounded-2xl p-8 shadow-card text-center">
             <div className="text-3xl mb-3">📈</div>

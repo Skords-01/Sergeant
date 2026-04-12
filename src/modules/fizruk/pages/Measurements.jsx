@@ -26,12 +26,13 @@ export function Measurements() {
   }, [entries, latest]);
 
   const stats = useMemo(() => {
+    const total = entries?.length || 0;
     const latestAt = latest?.at ? new Date(latest.at).toLocaleDateString("uk-UA", { day: "numeric", month: "short" }) : "—";
     const filledLatest = latest
       ? MEASURE_FIELDS.filter(f => latest[f.id] != null && latest[f.id] !== "").length
       : 0;
-    return { latestAt, filledLatest };
-  }, [latest]);
+    return { total, latestAt, filledLatest };
+  }, [entries, latest]);
 
   return (
     <div className="flex-1 overflow-y-auto">
@@ -86,6 +87,21 @@ export function Measurements() {
             <div className="text-[10px] font-semibold text-subtle uppercase tracking-widest">Підказка</div>
             <div className="text-sm font-bold text-success mt-1">Як робити заміри</div>
           </a>
+        </div>
+
+        <div className="grid grid-cols-3 gap-2">
+          <div className="bg-panel border border-line/60 rounded-2xl p-3 shadow-card text-center">
+            <div className="text-[10px] font-semibold text-subtle uppercase tracking-widest">Записів</div>
+            <div className="text-lg font-extrabold text-text tabular-nums mt-1">{stats.total}</div>
+          </div>
+          <div className="bg-panel border border-line/60 rounded-2xl p-3 shadow-card text-center">
+            <div className="text-[10px] font-semibold text-subtle uppercase tracking-widest">Останній</div>
+            <div className="text-sm font-bold text-text mt-1">{stats.latestAt}</div>
+          </div>
+          <div className="bg-panel border border-line/60 rounded-2xl p-3 shadow-card text-center">
+            <div className="text-[10px] font-semibold text-subtle uppercase tracking-widest">Полів</div>
+            <div className="text-lg font-extrabold text-text tabular-nums mt-1">{stats.filledLatest}</div>
+          </div>
         </div>
 
         <div className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card">
