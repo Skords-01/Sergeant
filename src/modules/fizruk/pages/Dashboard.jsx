@@ -3,6 +3,7 @@ import { cn } from "@shared/lib/cn";
 import { useEffect, useMemo, useState } from "react";
 import { WeeklyVolumeChart } from "../components/WeeklyVolumeChart";
 import { useExerciseCatalog } from "../hooks/useExerciseCatalog";
+import { usePushups } from "../hooks/usePushups";
 import { useRecovery } from "../hooks/useRecovery";
 import { useWorkoutTemplates } from "../hooks/useWorkoutTemplates";
 import { useWorkouts } from "../hooks/useWorkouts";
@@ -54,6 +55,10 @@ export function Dashboard({ onOpenAtlas }) {
   const { workouts, createWorkout, addItem } = useWorkouts();
   const { exercises, primaryGroupsUk, musclesUk } = useExerciseCatalog();
   const { templates } = useWorkoutTemplates();
+
+  const { todayCount: pushupsToday, addReps: addPushupReps, recentHistory: pushupsHistory } = usePushups();
+  const [pushupInput, setPushupInput] = useState("");
+  const [pushupModalOpen, setPushupModalOpen] = useState(false);
 
   const [selectedTemplateId, setSelectedTemplateId] = useState(() => {
     try { return localStorage.getItem(SELECTED_TEMPLATE_KEY) || ""; } catch { return ""; }
@@ -239,39 +244,93 @@ export function Dashboard({ onOpenAtlas }) {
     <div className="flex-1 overflow-y-auto">
       <div className="max-w-4xl mx-auto px-4 pt-4 pb-[calc(88px+env(safe-area-inset-bottom,0px))] space-y-4">
 
-        <section className="space-y-3" aria-label="Привітання">
-          <div>
-            <p className="text-sm text-subtle capitalize">{today}</p>
-            <h1 className="text-2xl font-bold text-text mt-1">Готовий до тренування?</h1>
-            <p className="text-sm text-muted mt-0.5">Швидкий старт за шаблоном або поточний план нижче</p>
-          </div>
-          <div className="flex flex-col sm:flex-row gap-2">
-            <Button
-              className="w-full sm:w-auto min-h-[48px] shrink-0 !bg-success !text-white hover:!bg-success/90 border-0 shadow-md font-semibold"
+        <section
+          className="rounded-3xl p-6 overflow-hidden"
+          style={{ background: "linear-gradient(135deg, #0f2d1a 0%, #1e4d2b 100%)" }}
+          aria-label="Привітання"
+        >
+          <p className="text-[11px] font-bold tracking-widest uppercase text-accent">
+            СЬОГОДНІ {new Date().toLocaleDateString("uk-UA", { day: "numeric", month: "long" }).toUpperCase()}
+          </p>
+          <h1 className="text-[28px] font-black text-white mt-3 leading-tight">
+            Твій прогрес<br />зібраний в одному<br />спокійному місці
+          </h1>
+          <p className="text-sm text-white/55 mt-3 leading-relaxed">
+            Логуй підходи, запускай шаблони і дивись, як росте обсяг.
+          </p>
+          <div className="mt-6 flex flex-col gap-3">
+            <button
+              type="button"
+              className="w-full py-4 rounded-full font-bold text-[15px] bg-accent disabled:opacity-40 transition-all active:scale-[0.98]"
+              style={{ color: "#0f2d1a" }}
               onClick={onClickStartPlan}
               disabled={!plan.picked.length}
               aria-label="Почати тренування за обраним шаблоном"
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="opacity-95" aria-hidden>
-                <polygon points="5 3 19 12 5 21 5 3" />
-              </svg>
-              Почати тренування
-            </Button>
-            <Button
-              variant="ghost"
-              className="w-full sm:w-auto min-h-[48px] border border-line"
+              Запланувати тренування
+            </button>
+            <button
+              type="button"
+              className="w-full py-4 rounded-full font-semibold text-[15px] text-white border border-white/25 transition-colors active:bg-white/10"
               onClick={() => { window.location.hash = "#workouts"; }}
-              aria-label="Відкрити журнал тренувань"
+              aria-label="Відкрити шаблони"
             >
-              Журнал
-            </Button>
+              Відкрити шаблони
+            </button>
           </div>
+        </section>
+
+        {/* Pushup tracker widget */}
+        <section className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card" aria-label="Відтискання">
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <p className="text-xs font-bold text-subtle uppercase tracking-widest">Відтискання сьогодні</p>
+              <p className="text-4xl font-black text-text tabular-nums mt-1">{pushupsToday}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => { setPushupInput(""); setPushupModalOpen(true); }}
+              className="shrink-0 w-14 h-14 rounded-2xl bg-accent flex items-center justify-center transition-transform active:scale-95"
+              style={{ color: "#0f2d1a" }}
+              aria-label="Додати відтискання"
+            >
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Mini 7-day bar chart */}
+          {pushupsHistory.some(d => d.total > 0) && (
+            <div className="mt-4 pt-3 border-t border-line/60">
+              <p className="text-[10px] text-subtle mb-2">Останні 7 днів</p>
+              <div className="flex items-end gap-1 h-10">
+                {pushupsHistory.map((d) => {
+                  const max = Math.max(...pushupsHistory.map(x => x.total), 1);
+                  const isToday = d.date === new Date().toISOString().slice(0, 10);
+                  const pct = d.total / max;
+                  return (
+                    <div key={d.date} className="flex-1 flex flex-col items-center gap-0.5">
+                      <div
+                        className={cn("w-full rounded-t-sm transition-all", isToday ? "bg-accent" : "bg-success/30")}
+                        style={{ height: `${Math.max(pct * 32, d.total > 0 ? 4 : 0)}px` }}
+                        title={`${d.date}: ${d.total}`}
+                      />
+                      <span className="text-[8px] text-subtle">
+                        {new Date(d.date + "T12:00:00").toLocaleDateString("uk-UA", { weekday: "narrow" })}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </section>
 
         <section className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card" aria-label="Статус відновлення">
           <div className="flex items-center justify-between gap-2 mb-3">
             <h2 className="text-base font-semibold text-text flex items-center gap-2">
-              <span className="text-sky-600" aria-hidden>
+              <span className="text-success" aria-hidden>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="12" cy="12" r="10" />
                   <circle cx="12" cy="12" r="6" />
@@ -324,21 +383,14 @@ export function Dashboard({ onOpenAtlas }) {
           </div>
         </section>
 
-        <section className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card" aria-label="Швидкий старт">
-          <h2 className="text-base font-semibold text-text flex items-center gap-2 mb-3">
-            <span className="text-sky-600" aria-hidden>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polygon points="5 3 19 12 5 21 5 3" />
-              </svg>
-            </span>
-            Швидкий старт
-          </h2>
+        <section className="rounded-3xl p-4 border border-green-200/60" style={{ background: "#f0fdf4" }} aria-label="Швидкий старт">
+          <p className="text-xs font-bold text-green-700 uppercase tracking-widest mb-3">ШВИДКИЙ СТАРТ</p>
           {templates.length === 0 ? (
-            <p className="text-sm text-subtle text-center py-3">
+            <p className="text-sm text-green-800/60 text-center py-3">
               Немає шаблонів —{" "}
               <button
                 type="button"
-                className="font-semibold text-text underline"
+                className="font-semibold text-green-800 underline"
                 onClick={() => {
                   try { sessionStorage.setItem("fizruk_workouts_mode", "templates"); } catch {}
                   window.location.hash = "#workouts";
@@ -358,14 +410,14 @@ export function Dashboard({ onOpenAtlas }) {
                     type="button"
                     onClick={() => onQuickStartTemplate(tpl)}
                     className={cn(
-                      "w-full flex items-center justify-between gap-3 p-3 rounded-xl text-left transition-colors min-h-[52px]",
-                      "bg-panelHi hover:bg-panelHi/80 border",
-                      active ? "border-success/40 ring-1 ring-success/20" : "border-line/80",
+                      "w-full flex items-center justify-between gap-3 p-4 rounded-2xl text-left transition-colors min-h-[56px]",
+                      "bg-white shadow-sm border",
+                      active ? "border-success/40 ring-1 ring-success/20" : "border-green-100",
                     )}
                   >
                     <div className="min-w-0">
-                      <p className="font-medium text-text truncate">{tpl.name}</p>
-                      <p className="text-xs text-subtle">{n} {n === 1 ? "вправа" : "вправ"}</p>
+                      <p className="font-semibold text-text truncate">{tpl.name}</p>
+                      <p className="text-xs text-muted mt-0.5">{n} {n === 1 ? "вправа" : "вправ"}</p>
                     </div>
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="text-muted shrink-0" aria-hidden>
                       <path d="M9 18l6-6-6-6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -409,7 +461,7 @@ export function Dashboard({ onOpenAtlas }) {
             <p className="text-[10px] text-subtle leading-tight mt-0.5">Цього місяця</p>
           </div>
           <div className="bg-panel border border-line/60 rounded-2xl p-3 shadow-card text-center">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="mx-auto text-sky-600" aria-hidden>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="mx-auto text-success" aria-hidden>
               <rect x="3" y="4" width="18" height="18" rx="2" strokeWidth="1.7" />
               <path d="M16 2v4M8 2v4M3 10h18" strokeWidth="1.7" strokeLinecap="round" />
             </svg>
@@ -659,6 +711,70 @@ export function Dashboard({ onOpenAtlas }) {
                 Продовжити
               </Button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Pushup modal */}
+      {pushupModalOpen && (
+        <div className="fixed inset-0 z-[70] flex items-end justify-center" role="dialog" aria-modal="true" aria-labelledby="pushup-modal-title">
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            aria-label="Закрити"
+            onClick={() => setPushupModalOpen(false)}
+          />
+          <div
+            className="relative w-full max-w-4xl bg-panel border-t border-line rounded-t-3xl p-5 shadow-soft"
+            style={{ paddingBottom: "env(safe-area-inset-bottom, 16px)" }}
+          >
+            <div className="w-10 h-1 bg-line rounded-full mx-auto mb-4" aria-hidden />
+            <div id="pushup-modal-title" className="text-lg font-extrabold text-text mb-4">Додати відтискання</div>
+
+            {/* Quick-add buttons */}
+            <div className="flex gap-2 mb-4">
+              {[5, 10, 15, 20, 25].map(n => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => { addPushupReps(n); setPushupModalOpen(false); }}
+                  className="flex-1 py-3 rounded-2xl font-bold text-sm bg-success/10 text-success border border-success/20 transition-colors active:bg-success/20"
+                >
+                  +{n}
+                </button>
+              ))}
+            </div>
+
+            <p className="text-xs text-subtle mb-2 text-center">або введи кількість вручну</p>
+            <div className="flex gap-2">
+              <input
+                type="number"
+                inputMode="numeric"
+                min="1"
+                max="999"
+                value={pushupInput}
+                onChange={e => setPushupInput(e.target.value)}
+                placeholder="Скільки?"
+                className="flex-1 h-12 rounded-2xl border border-line bg-panelHi px-4 text-base text-text outline-none focus:border-muted"
+                onKeyDown={e => {
+                  if (e.key === "Enter" && pushupInput) {
+                    addPushupReps(Number(pushupInput));
+                    setPushupModalOpen(false);
+                  }
+                }}
+                autoFocus
+              />
+              <button
+                type="button"
+                className="h-12 px-6 rounded-2xl font-bold text-[15px] bg-accent disabled:opacity-40"
+                style={{ color: "#0f2d1a" }}
+                disabled={!pushupInput || Number(pushupInput) <= 0}
+                onClick={() => { addPushupReps(Number(pushupInput)); setPushupModalOpen(false); }}
+              >
+                Додати
+              </button>
+            </div>
+            <p className="text-xs text-subtle mt-3 text-center">Сьогодні: <span className="font-bold text-text">{pushupsToday}</span></p>
           </div>
         </div>
       )}

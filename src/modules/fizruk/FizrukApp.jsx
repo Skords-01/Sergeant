@@ -73,18 +73,21 @@ export default function FizrukApp() {
               </svg>
             </button>
           ) : (
-            <div className="shrink-0 w-9 h-9 rounded-xl bg-sky-500/12 flex items-center justify-center text-sky-600 border border-sky-500/15" aria-hidden>
+            <div className="shrink-0 w-9 h-9 rounded-xl bg-success/10 flex items-center justify-center text-success border border-success/20" aria-hidden>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M6.5 6.5h11M6.5 17.5h11M3 12h18M6 9l-3 3 3 3M18 9l3 3-3 3" />
               </svg>
             </div>
           )}
           <div className="min-w-0 flex-1">
+            {!isAtlas && !isExercise && (
+              <span className="text-[9px] text-success/70 font-bold tracking-widest uppercase block leading-none mb-0.5">ОСОБИСТИЙ ЖУРНАЛ</span>
+            )}
             <span className="text-[16px] font-semibold tracking-wide text-text block leading-tight">
               {isAtlas ? "Атлас" : isExercise ? "Вправа" : "ФІЗРУК"}
             </span>
             {!isAtlas && !isExercise && (
-              <span className="text-[10px] text-subtle font-medium hidden sm:block truncate">Тренування · прогрес</span>
+              <span className="text-[10px] text-subtle font-medium truncate">Тренування · прогрес</span>
             )}
           </div>
         </div>
@@ -117,9 +120,9 @@ export default function FizrukApp() {
                   )}
                 >
                   {active && (
-                    <span className="absolute top-0 left-1/2 -translate-x-1/2 w-9 h-0.5 rounded-full bg-sky-600/90" aria-hidden />
+                    <span className="absolute top-0 left-1/2 -translate-x-1/2 w-9 h-0.5 rounded-full bg-success" aria-hidden />
                   )}
-                  <span className={cn(active && "text-sky-600")}>{item.icon}</span>
+                  <span className={cn(active && "text-success")}>{item.icon}</span>
                   <span className={cn("text-[11px] leading-none font-semibold", active ? "text-text" : "text-muted")}>
                     {item.label}
                   </span>

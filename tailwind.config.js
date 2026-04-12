@@ -18,6 +18,8 @@ export default {
         success:  "#16a34a",   // green
         danger:   "#dc2626",   // red
         warning:  "#b45309",   // amber
+        accent:   "#a3e635",   // lime-green CTA (hero buttons)
+        forest:   "#0f2d1a",   // dark green hero card background
       },
       borderRadius: {
         "2xl": "16px",
@@ -34,6 +36,7 @@ export default {
         glow:  "0 0 0 3px rgba(22,163,74,0.15)",
       },
       backgroundImage: {
+        "forest-grad": "linear-gradient(135deg, #0f2d1a 0%, #1e4d2b 100%)",
         "hero":    "linear-gradient(150deg, #eef3fc 0%, #f8faff 100%)",
         "hero-g":  "linear-gradient(150deg, #f0f5ff 0%, #ffffff 100%)",
         "pulse-ok":"linear-gradient(135deg, rgba(22,163,74,.07) 0%, transparent 70%)",
