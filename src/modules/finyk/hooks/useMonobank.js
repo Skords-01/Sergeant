@@ -3,6 +3,11 @@ import { TX_CACHE_TTL, CURRENCY } from "../constants";
 
 const CACHE_KEY = "finyk_tx_cache";
 const INFO_CACHE_KEY = "finyk_info_cache";
+const TOKEN_KEY = "finyk_token";
+
+function reportSilentError(scope, error) {
+  console.warn(`[finyk] ${scope}`, error);
+}
 
 // Міграція старих ключів
 try {
@@ -139,7 +144,16 @@ async function fetchStatementWithRetry(tok, accId, from, to, maxAttempts = 3) {
 export function useMonobank() {
   const [token, setToken] = useState(() => {
     try {
-      return localStorage.getItem("finyk_token") || "";
+      const sessionToken = sessionStorage.getItem(TOKEN_KEY);
+      if (sessionToken) return sessionToken;
+
+      const legacyToken = localStorage.getItem(TOKEN_KEY);
+      if (legacyToken) {
+        sessionStorage.setItem(TOKEN_KEY, legacyToken);
+        localStorage.removeItem(TOKEN_KEY);
+        return legacyToken;
+      }
+      return "";
     } catch {
       return "";
     }
@@ -338,7 +352,11 @@ export function useMonobank() {
       let info;
       const infoCache = localStorage.getItem(INFO_CACHE_KEY);
       if (!forceRefresh && infoCache) {
-        info = JSON.parse(infoCache);
+        const parsed = JSON.parse(infoCache);
+        if (parsed?.token && parsed.token !== cleanToken) {
+          throw new Error("Кеш профілю належить іншому токену");
+        }
+        info = parsed?.info || parsed;
       } else {
         const res = await fetch(`/api/mono?path=${encodeURIComponent("/personal/client-info")}`, {
           headers: { "X-Token": cleanToken },
@@ -357,15 +375,20 @@ export function useMonobank() {
 
         info = await res.json();
         try {
-          localStorage.setItem(INFO_CACHE_KEY, JSON.stringify(info));
-        } catch {}
+          localStorage.setItem(INFO_CACHE_KEY, JSON.stringify({ token: cleanToken, info }));
+        } catch (e) {
+          reportSilentError("save client-info cache", e);
+        }
       }
 
       setClientInfo(info);
       setAccounts(info.accounts || []);
       try {
-        localStorage.setItem("finyk_token", cleanToken);
-      } catch {}
+        sessionStorage.setItem(TOKEN_KEY, cleanToken);
+        localStorage.removeItem(TOKEN_KEY);
+      } catch (e) {
+        reportSilentError("save token", e);
+      }
       setToken(cleanToken);
 
       const cache = forceRefresh ? null : loadCache();
@@ -435,11 +458,13 @@ export function useMonobank() {
         const info = await res.json();
         setClientInfo(info);
         setAccounts(info.accounts || []);
-        try { localStorage.setItem(INFO_CACHE_KEY, JSON.stringify(info)); } catch {}
+        try { localStorage.setItem(INFO_CACHE_KEY, JSON.stringify({ token, info })); } catch (e) { reportSilentError("refresh info cache", e); }
         await fetchAllTx(token, info.accounts || []);
         return;
       }
-    } catch {}
+    } catch (e) {
+      reportSilentError("refresh client-info", e);
+    }
     await fetchAllTx(token, accounts);
   };
 
@@ -457,11 +482,15 @@ export function useMonobank() {
       accountsOk: 0,
     });
     try {
+      sessionStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(TOKEN_KEY); // legacy fallback
       localStorage.removeItem("finto_token");
       localStorage.removeItem(CACHE_KEY);
       localStorage.removeItem(LAST_GOOD_KEY);
       localStorage.removeItem(INFO_CACHE_KEY);
-    } catch {}
+    } catch (e) {
+      reportSilentError("disconnect cleanup", e);
+    }
   };
 
   const clearTxCache = () => {

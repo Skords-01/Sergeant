@@ -1,6 +1,10 @@
 import { useState, useEffect } from "react";
 import { DEFAULT_SUBSCRIPTIONS, INTERNAL_TRANSFER_ID } from "../constants";
 
+function reportSilentError(scope, error) {
+  console.warn(`[finyk] ${scope}`, error);
+}
+
 // Одноразова міграція ключів finto_* → finyk_*
 const LEGACY_KEYS = [
   ["finto_hidden",           "finyk_hidden"],
@@ -116,7 +120,7 @@ export function useStorage() {
     const reader = new FileReader();
     reader.onload = (e) => {
       try { applyData(JSON.parse(e.target.result)); alert("Дані імпортовано!"); }
-      catch { alert("Помилка: невірний формат файлу"); }
+      catch (err) { reportSilentError("import data", err); alert("Помилка: невірний формат файлу"); }
     };
     reader.readAsText(file);
   };
@@ -144,7 +148,7 @@ export function useStorage() {
       if (data.mp) setMonthlyPlan(data.mp);
       window.history.replaceState({}, "", window.location.pathname);
       return true;
-    } catch { return false; }
+    } catch (err) { reportSilentError("load sync from url", err); return false; }
   };
 
   // Транзакції позначені як внутрішній переказ — виключаємо зі статистики
