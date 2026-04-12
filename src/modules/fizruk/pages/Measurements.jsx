@@ -25,58 +25,11 @@ export function Measurements() {
     return out;
   }, [entries, latest]);
 
-  const stats = useMemo(() => {
-    const total = entries?.length || 0;
-    const latestAt = latest?.at ? new Date(latest.at).toLocaleDateString("uk-UA", { day: "numeric", month: "short" }) : "—";
-    const filledLatest = latest
-      ? MEASURE_FIELDS.filter(f => latest[f.id] != null && latest[f.id] !== "").length
-      : 0;
-    return { total, latestAt, filledLatest };
-  }, [entries, latest]);
+  const latestAt = latest?.at ? new Date(latest.at).toLocaleDateString("uk-UA", { day: "numeric", month: "short" }) : "—";
 
   return (
     <div className="flex-1 overflow-y-auto">
       <div className="max-w-4xl mx-auto px-4 pt-4 pb-[calc(88px+env(safe-area-inset-bottom,0px))] space-y-3">
-        <section
-          className="rounded-3xl p-4 border border-line/20"
-          style={{ background: "linear-gradient(135deg, #0f2d1a 0%, #1e4d2b 100%)" }}
-          aria-label="Огляд замірів"
-        >
-          <div className="text-[11px] font-bold tracking-widest uppercase text-accent">Заміри</div>
-          <div className="grid grid-cols-2 gap-2 mt-3">
-            <div className="rounded-xl bg-white/10 border border-white/15 p-3 text-center">
-              <div className="text-[10px] uppercase tracking-wide text-white/60">Записів</div>
-              <div className="text-lg font-black text-white tabular-nums">{entries.length}</div>
-            </div>
-            <div className="rounded-xl bg-white/10 border border-white/15 p-3 text-center">
-              <div className="text-[10px] uppercase tracking-wide text-white/60">Останній</div>
-              <div className="text-sm font-bold text-white tabular-nums mt-0.5">
-                {latest ? new Date(latest.at).toLocaleDateString("uk-UA", { day: "numeric", month: "short" }) : "—"}
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <div className="grid grid-cols-3 gap-2">
-          <a
-            href="https://www.wikihow.com/Take-Body-Measurements"
-            target="_blank"
-            rel="noreferrer"
-            className="bg-panel border border-line/60 rounded-2xl p-3 shadow-card text-center flex flex-col items-center justify-center min-h-[76px]"
-          >
-            <div className="text-[10px] font-semibold text-subtle uppercase tracking-widest">Підказка</div>
-            <div className="text-sm font-bold text-success mt-1">Як робити заміри</div>
-          </a>
-          <div className="bg-panel border border-line/60 rounded-2xl p-3 shadow-card text-center min-h-[76px]">
-            <div className="text-[10px] font-semibold text-subtle uppercase tracking-widest">Останній</div>
-            <div className="text-sm font-bold text-text mt-1">{stats.latestAt}</div>
-          </div>
-          <div className="bg-panel border border-line/60 rounded-2xl p-3 shadow-card text-center min-h-[76px]">
-            <div className="text-[10px] font-semibold text-subtle uppercase tracking-widest">Полів</div>
-            <div className="text-lg font-extrabold text-text tabular-nums mt-1">{stats.filledLatest}</div>
-          </div>
-        </div>
-
         <div className="grid grid-cols-1 gap-2">
           <a
             href="https://www.wikihow.com/Take-Body-Measurements"
@@ -87,21 +40,6 @@ export function Measurements() {
             <div className="text-[10px] font-semibold text-subtle uppercase tracking-widest">Підказка</div>
             <div className="text-sm font-bold text-success mt-1">Як робити заміри</div>
           </a>
-        </div>
-
-        <div className="grid grid-cols-3 gap-2">
-          <div className="bg-panel border border-line/60 rounded-2xl p-3 shadow-card text-center">
-            <div className="text-[10px] font-semibold text-subtle uppercase tracking-widest">Записів</div>
-            <div className="text-lg font-extrabold text-text tabular-nums mt-1">{stats.total}</div>
-          </div>
-          <div className="bg-panel border border-line/60 rounded-2xl p-3 shadow-card text-center">
-            <div className="text-[10px] font-semibold text-subtle uppercase tracking-widest">Останній</div>
-            <div className="text-sm font-bold text-text mt-1">{stats.latestAt}</div>
-          </div>
-          <div className="bg-panel border border-line/60 rounded-2xl p-3 shadow-card text-center">
-            <div className="text-[10px] font-semibold text-subtle uppercase tracking-widest">Полів</div>
-            <div className="text-lg font-extrabold text-text tabular-nums mt-1">{stats.filledLatest}</div>
-          </div>
         </div>
 
         <div className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card">
@@ -145,7 +83,7 @@ export function Measurements() {
             <div className="flex items-center justify-between">
               <div>
                 <div className="text-xs font-bold text-subtle uppercase tracking-widest">
-                  Останній замір <span className="ml-1 normal-case tracking-normal font-medium text-subtle">· {stats.latestAt}</span>
+                  Останній замір <span className="ml-1 normal-case tracking-normal font-medium text-subtle">· {latestAt}</span>
                 </div>
               </div>
               <div className="text-xs text-subtle">
