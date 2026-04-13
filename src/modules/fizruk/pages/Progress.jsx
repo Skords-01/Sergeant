@@ -8,13 +8,12 @@ import { useWorkouts } from "../hooks/useWorkouts";
 import { MiniLineChart } from "../components/MiniLineChart";
 import { WellbeingChart } from "../components/WellbeingChart";
 import { WeeklyVolumeChart } from "../components/WeeklyVolumeChart";
+import {
+  applyFizrukFullBackupPayload,
+  buildFizrukFullBackupPayload,
+  FIZRUK_RESET_KEYS,
+} from "../lib/fizrukStorage";
 import { weeklyVolumeSeriesNow } from "../lib/workoutStats";
-
-const WORKOUTS_KEY = "fizruk_workouts_v1";
-const MEASUREMENTS_KEY = "fizruk_measurements_v1";
-const CUSTOM_EX_KEY = "fizruk_custom_exercises_v1";
-const TEMPLATES_KEY = "fizruk_workout_templates_v1";
-const SELECTED_TEMPLATE_KEY = "fizruk_selected_template_id_v1";
 
 function epley1rm(weightKg, reps) {
   const w = Number(weightKg) || 0;
@@ -175,17 +174,7 @@ export function Progress() {
   }, [workouts]);
 
   const exportJson = () => {
-    const payload = {
-      schemaVersion: 1,
-      exportedAt: new Date().toISOString(),
-      data: {
-        [WORKOUTS_KEY]: localStorage.getItem(WORKOUTS_KEY),
-        [MEASUREMENTS_KEY]: localStorage.getItem(MEASUREMENTS_KEY),
-        [CUSTOM_EX_KEY]: localStorage.getItem(CUSTOM_EX_KEY),
-        [TEMPLATES_KEY]: localStorage.getItem(TEMPLATES_KEY),
-        [SELECTED_TEMPLATE_KEY]: localStorage.getItem(SELECTED_TEMPLATE_KEY),
-      },
-    };
+    const payload = buildFizrukFullBackupPayload();
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
@@ -197,17 +186,13 @@ export function Progress() {
   const importJson = async (file) => {
     const text = await file.text();
     const parsed = JSON.parse(text);
-    const d = parsed?.data || {};
-    for (const k of [WORKOUTS_KEY, MEASUREMENTS_KEY, CUSTOM_EX_KEY, TEMPLATES_KEY, SELECTED_TEMPLATE_KEY]) {
-      const v = d[k];
-      if (typeof v === "string") localStorage.setItem(k, v);
-    }
+    applyFizrukFullBackupPayload(parsed);
     window.location.reload();
   };
 
   const resetAll = () => {
     if (!confirm("Скинути всі дані Фізрука на цьому пристрої?")) return;
-    for (const k of [WORKOUTS_KEY, MEASUREMENTS_KEY, CUSTOM_EX_KEY, TEMPLATES_KEY, SELECTED_TEMPLATE_KEY, "fizruk_active_workout_id_v1", "fizruk_plan_template_v1"]) {
+    for (const k of FIZRUK_RESET_KEYS) {
       try { localStorage.removeItem(k); } catch {}
     }
     window.location.reload();

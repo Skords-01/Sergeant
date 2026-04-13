@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import catalog from "../data/exercises.gymup.json";
-
-const CUSTOM_KEY = "fizruk_custom_exercises_v1";
+import {
+  CUSTOM_EXERCISES_KEY,
+  parseCustomExercisesFromStorage,
+  serializeCustomExercisesToStorage,
+} from "../lib/fizrukStorage";
 
 function norm(s) {
   return (s || "")
@@ -11,24 +13,39 @@ function norm(s) {
 }
 
 export function useExerciseCatalog() {
-  const baseExercises = catalog.exercises || [];
-  const primaryGroupsUk = catalog.labels?.primaryGroupsUk || {};
-  const musclesUk = catalog.labels?.musclesUk || {};
-  const musclesByPrimaryGroup = catalog.labels?.musclesByPrimaryGroup || {};
+  const [catalogData, setCatalogData] = useState(null);
   const [customExercises, setCustomExercises] = useState([]);
 
   useEffect(() => {
+    let cancelled = false;
+    import("../data/exercises.gymup.json")
+      .then((m) => {
+        if (!cancelled) setCatalogData(m.default || m);
+      })
+      .catch(() => {
+        if (!cancelled) setCatalogData({ exercises: [], labels: {} });
+      });
+    return () => { cancelled = true; };
+  }, []);
+
+  const baseExercises = catalogData?.exercises || [];
+  const primaryGroupsUk = catalogData?.labels?.primaryGroupsUk || {};
+  const musclesUk = catalogData?.labels?.musclesUk || {};
+  const musclesByPrimaryGroup = catalogData?.labels?.musclesByPrimaryGroup || {};
+
+  useEffect(() => {
     try {
-      const raw = localStorage.getItem(CUSTOM_KEY);
-      if (!raw) return;
-      const parsed = JSON.parse(raw);
+      const raw = localStorage.getItem(CUSTOM_EXERCISES_KEY);
+      const parsed = parseCustomExercisesFromStorage(raw);
       if (Array.isArray(parsed)) setCustomExercises(parsed);
     } catch {}
   }, []);
 
   const persistCustom = useCallback((next) => {
     setCustomExercises(next);
-    try { localStorage.setItem(CUSTOM_KEY, JSON.stringify(next)); } catch {}
+    try {
+      localStorage.setItem(CUSTOM_EXERCISES_KEY, serializeCustomExercisesToStorage(next));
+    } catch {}
   }, []);
 
   const exercises = useMemo(() => {
@@ -79,6 +96,7 @@ export function useExerciseCatalog() {
     return true;
   }, [customExercises, persistCustom]);
 
-  return { catalog, exercises, search, primaryGroupsUk, musclesUk, musclesByPrimaryGroup, addExercise, removeExercise, customExercises };
-}
+  const catalog = catalogData || { exercises: [], labels: {} };
 
+  return { catalog, exercises, search, primaryGroupsUk, musclesUk, musclesByPrimaryGroup, addExercise, removeExercise, customExercises, catalogLoading: !catalogData };
+}
