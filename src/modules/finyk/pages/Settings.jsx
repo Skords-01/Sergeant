@@ -86,7 +86,9 @@ export function Settings({ mono, storage, showToast }) {
         {/* Accounts */}
         {uahAccounts.length > 0 && (
           <Section title="💳 Рахунки">
-            <p className="text-xs text-subtle -mt-1">Сховані рахунки не враховуються у балансі та нетворсі</p>
+            <p className="text-xs text-subtle -mt-1">
+              У статистиці та нетворсі враховуються лише рахунки в UAH; інші валюти не враховані. Сховані рахунки не враховуються у балансі та нетворсі.
+            </p>
             <div className="space-y-0 -mx-4">
               {uahAccounts.map(acc => {
                 const hidden = hiddenAccounts.includes(acc.id);

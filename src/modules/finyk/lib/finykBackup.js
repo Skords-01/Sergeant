@@ -80,3 +80,55 @@ export function normalizeFinykBackup(parsed) {
 
   return out;
 }
+
+/**
+ * Дані з ?sync= (компактні ключі b,s,a… або повний JSON бекапу).
+ * @param {unknown} data — об'єкт після JSON.parse з URL
+ * @returns {object} те саме, що normalizeFinykBackup, для applyData
+ */
+export function normalizeFinykSyncPayload(data) {
+  if (data == null || typeof data !== "object" || Array.isArray(data)) {
+    throw new Error("Некоректні дані синку");
+  }
+
+  const has = (k) => Object.prototype.hasOwnProperty.call(data, k);
+  const looksLikeFullBackup =
+    has("version") ||
+    has("budgets") ||
+    has("subscriptions") ||
+    has("manualAssets") ||
+    has("manualDebts") ||
+    has("receivables") ||
+    has("hiddenAccounts") ||
+    has("hiddenTxIds") ||
+    has("monthlyPlan") ||
+    has("txCategories") ||
+    has("txSplits") ||
+    has("monoDebtLinkedTxIds") ||
+    has("networthHistory");
+
+  if (looksLikeFullBackup) {
+    const withVer = has("version") ? data : { ...data, version: 1 };
+    return normalizeFinykBackup(withVer);
+  }
+
+  const v = typeof data.v === "number" ? data.v : 1;
+  if (v < 1 || v > 99) {
+    throw new Error("Невідома версія синку");
+  }
+
+  const full = { version: FINYK_BACKUP_VERSION };
+  if (has("b")) full.budgets = data.b;
+  if (has("s")) full.subscriptions = data.s;
+  if (has("a")) full.manualAssets = data.a;
+  if (has("d")) full.manualDebts = data.d;
+  if (has("r")) full.receivables = data.r;
+  if (has("h")) full.hiddenAccounts = data.h;
+  if (has("mp")) full.monthlyPlan = data.mp;
+  if (has("tc")) full.txCategories = data.tc;
+  if (has("ts")) full.txSplits = data.ts;
+  if (has("md")) full.monoDebtLinkedTxIds = data.md;
+  if (has("nh")) full.networthHistory = data.nh;
+
+  return normalizeFinykBackup(full);
+}

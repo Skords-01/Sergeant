@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { DEFAULT_SUBSCRIPTIONS, INTERNAL_TRANSFER_ID } from "../constants";
 import { notifyFinykRoutineCalendarSync } from "../hubRoutineSync.js";
-import { normalizeFinykBackup, FINYK_BACKUP_VERSION } from "../lib/finykBackup.js";
+import { normalizeFinykBackup, normalizeFinykSyncPayload, FINYK_BACKUP_VERSION } from "../lib/finykBackup.js";
 
 function reportSilentError(scope, error) {
   console.warn(`[finyk] ${scope}`, error);
@@ -202,19 +202,9 @@ export function useStorage({ onImportFeedback } = {}) {
       const params = new URLSearchParams(window.location.search);
       const encoded = params.get("sync");
       if (!encoded) return false;
-      const data = JSON.parse(decodeURIComponent(atob(encoded)));
-      if (data.b) setBudgets(data.b);
-      if (data.s) setSubscriptions(data.s);
-      if (data.a) setManualAssets(data.a);
-      if (data.d) setManualDebts(data.d);
-      if (data.r) setReceivables(data.r);
-      if (data.h) setHiddenAccounts(data.h);
-      if (data.mp) setMonthlyPlan(data.mp);
-      if (data.tc) setTxCategories(data.tc);
-      if (data.ts) setTxSplits(data.ts);
-      if (data.md) setMonoDebtLinkedTxIds(data.md);
-      if (data.nh) setNetworthHistory(data.nh);
-      notifyFinykRoutineCalendarSync();
+      const raw = JSON.parse(decodeURIComponent(atob(encoded)));
+      const normalized = normalizeFinykSyncPayload(raw);
+      applyData(normalized);
       window.history.replaceState({}, "", window.location.pathname);
       return true;
     } catch (err) {
