@@ -42,6 +42,22 @@ export function useWorkouts() {
     return w;
   }, [persist]);
 
+  /** Тренування з заданим часом початку (наприклад занесення заднім числом). */
+  const createWorkoutWithTimes = useCallback(
+    ({ startedAt }) => {
+      const w = {
+        id: uid("w"),
+        startedAt: startedAt || new Date().toISOString(),
+        endedAt: null,
+        items: [],
+        note: "",
+      };
+      persist((prev) => [w, ...prev]);
+      return w;
+    },
+    [persist],
+  );
+
   const endWorkout = useCallback((id) => {
     const nowIso = new Date().toISOString();
     let ended = null;
@@ -104,6 +120,7 @@ export function useWorkouts() {
   return {
     workouts: sorted,
     createWorkout,
+    createWorkoutWithTimes,
     updateWorkout,
     deleteWorkout,
     endWorkout,

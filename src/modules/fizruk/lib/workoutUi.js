@@ -9,8 +9,9 @@ export const FIZRUK_SHEET_PAD_CLASS = "fizruk-sheet-pad";
 export function summarizeWorkoutForFinish(w) {
   if (!w?.startedAt) return null;
   const start = Date.parse(w.startedAt);
-  const end = Date.now();
+  const end = w.endedAt ? Date.parse(w.endedAt) : Date.now();
   if (!Number.isFinite(start)) return null;
+  if (!Number.isFinite(end)) return null;
   const durationSec = Math.max(0, Math.floor((end - start) / 1000));
   const items = (w.items || []).length;
   let tonnageKg = 0;

@@ -264,14 +264,8 @@ export function Dashboard({ onOpenAtlas }) {
               className="w-full py-4 rounded-full font-bold text-[15px] bg-accent transition-all active:scale-[0.98]"
               style={{ color: "#0f2d1a" }}
               onClick={() => {
-                if (plan.picked.length) {
-                  onClickStartPlan();
-                } else {
-                  const w = createWorkout();
-                  try { localStorage.setItem(ACTIVE_WORKOUT_KEY, w.id); } catch {}
-                  try { sessionStorage.setItem("fizruk_workouts_mode", "log"); } catch {}
-                  window.location.hash = "#workouts";
-                }
+                try { sessionStorage.setItem("fizruk_workouts_mode", "log"); } catch {}
+                window.location.hash = "#workouts";
               }}
               aria-label="Почати тренування"
             >
