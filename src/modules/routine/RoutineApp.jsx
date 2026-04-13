@@ -19,7 +19,10 @@ import {
   habitScheduledOnDate,
 } from "./lib/hubCalendarAggregate.js";
 import { FINYK_SUB_GROUP_LABEL } from "./lib/finykSubscriptionCalendar.js";
-import { HUB_FINYK_ROUTINE_SYNC_EVENT, HUB_FINYK_TX_CACHE_EVENT } from "../finyk/hubRoutineSync.js";
+import {
+  HUB_FINYK_ROUTINE_SYNC_EVENT,
+  HUB_FINYK_TX_CACHE_EVENT,
+} from "../finyk/hubRoutineSync.js";
 import { ROUTINE_THEME as C } from "./lib/routineConstants.js";
 import { emptyHabitDraft } from "./lib/routineDraftUtils.js";
 import { RoutineBottomNav } from "./components/RoutineBottomNav.jsx";
@@ -141,7 +144,10 @@ export default function RoutineApp({ onBackToHub, onOpenModule } = {}) {
   const [mainTab, setMainTab] = useState("calendar");
   const [timeMode, setTimeMode] = useState("today");
   const now = todayDate();
-  const [monthCursor, setMonthCursor] = useState(() => ({ y: now.getFullYear(), m: now.getMonth() }));
+  const [monthCursor, setMonthCursor] = useState(() => ({
+    y: now.getFullYear(),
+    m: now.getMonth(),
+  }));
   const [selectedDay, setSelectedDay] = useState(() => dateKeyFromDate(now));
   const [tagFilter, setTagFilter] = useState(null);
   const [listQuery, setListQuery] = useState("");
@@ -208,7 +214,8 @@ export default function RoutineApp({ onBackToHub, onOpenModule } = {}) {
     const q = listQuery.trim().toLowerCase();
     if (q) {
       ev = ev.filter((e) => {
-        const hay = `${e.title} ${e.subtitle} ${(e.tagLabels || []).join(" ")} ${e.note || ""}`.toLowerCase();
+        const hay =
+          `${e.title} ${e.subtitle} ${(e.tagLabels || []).join(" ")} ${e.note || ""}`.toLowerCase();
         return hay.includes(q);
       });
     }
@@ -216,7 +223,8 @@ export default function RoutineApp({ onBackToHub, onOpenModule } = {}) {
   }, [events, tagFilter, listQuery]);
 
   const listEvents = useMemo(() => {
-    if (timeMode === "month") return filtered.filter((e) => e.date === selectedDay);
+    if (timeMode === "month")
+      return filtered.filter((e) => e.date === selectedDay);
     return filtered;
   }, [filtered, timeMode, selectedDay]);
 
@@ -309,7 +317,11 @@ export default function RoutineApp({ onBackToHub, onOpenModule } = {}) {
     return false;
   }, [range.startKey, range.endKey, routine.habits, routine.completions]);
 
-  const monthTitle = new Date(monthCursor.y, monthCursor.m, 1).toLocaleDateString("uk-UA", {
+  const monthTitle = new Date(
+    monthCursor.y,
+    monthCursor.m,
+    1,
+  ).toLocaleDateString("uk-UA", {
     month: "long",
     year: "numeric",
   });
@@ -320,14 +332,22 @@ export default function RoutineApp({ onBackToHub, onOpenModule } = {}) {
     if (timeMode === "today") return "Сьогодні";
     if (timeMode === "tomorrow") return "Завтра";
     if (timeMode === "day") {
-      return parseDateKey(selectedDay).toLocaleDateString("uk-UA", { weekday: "long", day: "numeric", month: "long" });
+      return parseDateKey(selectedDay).toLocaleDateString("uk-UA", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+      });
     }
     if (timeMode === "week") return "Цей тиждень";
     return monthTitle;
   }, [timeMode, monthTitle, selectedDay]);
 
   const fmtUk = (key) =>
-    parseDateKey(key).toLocaleDateString("uk-UA", { weekday: "long", day: "numeric", month: "long" });
+    parseDateKey(key).toLocaleDateString("uk-UA", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+    });
 
   const headlineDate = useMemo(() => {
     const t0 = todayDate();
@@ -370,25 +390,58 @@ export default function RoutineApp({ onBackToHub, onOpenModule } = {}) {
               aria-label="До вибору модуля"
               title="До хабу"
             >
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <svg
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden
+              >
                 <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
                 <polyline points="9 22 9 12 15 12 15 22" />
               </svg>
             </button>
           ) : (
-            <div className={cn("shrink-0 w-10 h-10 rounded-xl flex items-center justify-center border", C.iconBox)} aria-hidden>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden>
+            <div
+              className={cn(
+                "shrink-0 w-10 h-10 rounded-xl flex items-center justify-center border",
+                C.iconBox,
+              )}
+              aria-hidden
+            >
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.6"
+                aria-hidden
+              >
                 <rect x="3" y="4" width="18" height="18" rx="2" />
                 <path d="M8 14h.01M12 14h.01M16 14h.01" />
               </svg>
             </div>
           )}
           <div className="min-w-0 flex-1">
-            <span className={cn("text-[9px] font-bold tracking-widest uppercase block leading-none mb-0.5", C.eyebrow)}>
+            <span
+              className={cn(
+                "text-[9px] font-bold tracking-widest uppercase block leading-none mb-0.5",
+                C.eyebrow,
+              )}
+            >
               Hub календар
             </span>
-            <span className="text-[16px] font-semibold tracking-wide text-text block leading-tight">РУТИНА</span>
-            <span className="text-[10px] text-subtle font-medium truncate">Звички · план Фізрука · один розклад</span>
+            <span className="text-[16px] font-semibold tracking-wide text-text block leading-tight">
+              РУТИНА
+            </span>
+            <span className="text-[10px] text-subtle font-medium truncate">
+              Звички · план Фізрука · один розклад
+            </span>
           </div>
           <button
             type="button"
@@ -405,7 +458,10 @@ export default function RoutineApp({ onBackToHub, onOpenModule } = {}) {
         </div>
       </div>
 
-      <RoutineStorageToast message={storageErrorToast} onDismiss={() => setStorageErrorToast(null)} />
+      <RoutineStorageToast
+        message={storageErrorToast}
+        onDismiss={() => setStorageErrorToast(null)}
+      />
 
       <div className="flex-1 overflow-hidden flex flex-col min-h-0">
         <main

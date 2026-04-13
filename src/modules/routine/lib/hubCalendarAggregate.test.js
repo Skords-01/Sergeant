@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { buildHubCalendarEvents, habitScheduledOnDate } from "./hubCalendarAggregate.js";
+import {
+  buildHubCalendarEvents,
+  habitScheduledOnDate,
+} from "./hubCalendarAggregate.js";
 
 function base(over = {}) {
   return {

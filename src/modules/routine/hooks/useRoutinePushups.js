@@ -1,11 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { addPushupReps, loadRoutineState, ROUTINE_EVENT } from "../lib/routineStorage.js";
+import {
+  addPushupReps,
+  loadRoutineState,
+  ROUTINE_EVENT,
+} from "../lib/routineStorage.js";
 import { dateKeyFromDate } from "../lib/hubCalendarAggregate.js";
 
 const HISTORY_DAYS = 30;
 
 function buildHistory(pushupsByDate, days) {
-  const data = pushupsByDate && typeof pushupsByDate === "object" ? pushupsByDate : {};
+  const data =
+    pushupsByDate && typeof pushupsByDate === "object" ? pushupsByDate : {};
   const result = [];
   const now = new Date();
   for (let i = days - 1; i >= 0; i--) {
@@ -32,7 +37,10 @@ export function useRoutinePushups() {
 
   const today = dateKeyFromDate(new Date());
   const data = useMemo(
-    () => (state.pushupsByDate && typeof state.pushupsByDate === "object" ? state.pushupsByDate : {}),
+    () =>
+      state.pushupsByDate && typeof state.pushupsByDate === "object"
+        ? state.pushupsByDate
+        : {},
     [state.pushupsByDate],
   );
   const todayCount = data[today] ?? 0;

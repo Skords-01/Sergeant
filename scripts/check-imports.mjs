@@ -9,10 +9,22 @@ const MODULE_ROOTS = [
 ];
 
 const forbidden = [
-  { re: /from\s+["']\.\/components\/ui\//g, hint: "Використовуй @shared/components/ui/* замість ./components/ui/*" },
-  { re: /from\s+["']\.\.\/components\/ui\//g, hint: "Використовуй @shared/components/ui/* замість ../components/ui/*" },
-  { re: /from\s+["']\.\/lib\/cn["']/g, hint: "Використовуй @shared/lib/cn замість ./lib/cn" },
-  { re: /from\s+["']\.\.\/lib\/cn["']/g, hint: "Використовуй @shared/lib/cn замість ../lib/cn" },
+  {
+    re: /from\s+["']\.\/components\/ui\//g,
+    hint: "Використовуй @shared/components/ui/* замість ./components/ui/*",
+  },
+  {
+    re: /from\s+["']\.\.\/components\/ui\//g,
+    hint: "Використовуй @shared/components/ui/* замість ../components/ui/*",
+  },
+  {
+    re: /from\s+["']\.\/lib\/cn["']/g,
+    hint: "Використовуй @shared/lib/cn замість ./lib/cn",
+  },
+  {
+    re: /from\s+["']\.\.\/lib\/cn["']/g,
+    hint: "Використовуй @shared/lib/cn замість ../lib/cn",
+  },
 ];
 
 function walk(dir) {
@@ -34,7 +46,6 @@ function isTextFile(p) {
 let failures = [];
 
 for (const moduleRoot of MODULE_ROOTS) {
-  const label = path.relative(repoRoot, moduleRoot).replaceAll("\\", "/");
   for (const file of walk(moduleRoot)) {
     if (!isTextFile(file)) continue;
     const rel = path.relative(repoRoot, file).replaceAll("\\", "/");
@@ -49,7 +60,9 @@ for (const moduleRoot of MODULE_ROOTS) {
 }
 
 if (failures.length) {
-  console.error("❌ Forbidden imports detected in modules:\n" + failures.join("\n") + "\n");
+  console.error(
+    "❌ Forbidden imports detected in modules:\n" + failures.join("\n") + "\n",
+  );
   process.exit(1);
 } else {
   console.log("✅ Import check passed.");

@@ -4,6 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "vite",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "lint": "eslint . && node scripts/check-imports.mjs",
     "lint:imports": "node scripts/check-imports.mjs",
     "build": "node scripts/check-imports.mjs && vite build",
@@ -14,9 +16,9 @@
   "dependencies": {
     "body-highlighter": "^3.0.2",
     "clsx": "^2.1.1",
-    "react-markdown": "^9.0.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-markdown": "^9.0.1",
     "tailwind-merge": "^2.6.0"
   },
   "devDependencies": {
@@ -24,10 +26,12 @@
     "@vitejs/plugin-react": "^4.0.0",
     "autoprefixer": "^10.4.21",
     "eslint": "^9.15.0",
+    "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-react": "^7.37.2",
     "eslint-plugin-react-hooks": "^5.0.0",
     "globals": "^15.12.0",
     "postcss": "^8.5.6",
+    "prettier": "^3.8.2",
     "tailwindcss": "^3.4.17",
     "vite": "^4.4.0",
     "vitest": "^3.0.0"

@@ -13,7 +13,13 @@ describe("workoutTonnageKg", () => {
   it("sums strength sets", () => {
     const w = {
       items: [
-        { type: "strength", sets: [{ weightKg: 50, reps: 10 }, { weightKg: 50, reps: 8 }] },
+        {
+          type: "strength",
+          sets: [
+            { weightKg: 50, reps: 10 },
+            { weightKg: 50, reps: 8 },
+          ],
+        },
       ],
     };
     expect(workoutTonnageKg(w)).toBe(50 * 10 + 50 * 8);
@@ -35,8 +41,16 @@ describe("personalRecordsExerciseCount", () => {
     const workouts = [
       {
         items: [
-          { exerciseId: "a", type: "strength", sets: [{ weightKg: 50, reps: 10 }] },
-          { exerciseId: "b", type: "strength", sets: [{ weightKg: 50, reps: 5 }] },
+          {
+            exerciseId: "a",
+            type: "strength",
+            sets: [{ weightKg: 50, reps: 10 }],
+          },
+          {
+            exerciseId: "b",
+            type: "strength",
+            sets: [{ weightKg: 50, reps: 5 }],
+          },
         ],
       },
     ];

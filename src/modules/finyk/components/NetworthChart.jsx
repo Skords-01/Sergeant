@@ -1,7 +1,7 @@
 export function NetworthChart({ data }) {
   if (!data || data.length < 2) return null;
 
-  const values = data.map(d => d.networth);
+  const values = data.map((d) => d.networth);
   const min = Math.min(...values);
   const max = Math.max(...values);
   const range = max - min || 1;
@@ -30,7 +30,20 @@ export function NetworthChart({ data }) {
     return `${Math.round(v)}`;
   };
 
-  const MONTH_UK = ["Січ","Лют","Бер","Квіт","Трав","Черв","Лип","Серп","Вер","Жовт","Лист","Груд"];
+  const MONTH_UK = [
+    "Січ",
+    "Лют",
+    "Бер",
+    "Квіт",
+    "Трав",
+    "Черв",
+    "Лип",
+    "Серп",
+    "Вер",
+    "Жовт",
+    "Лист",
+    "Груд",
+  ];
   const monthLabel = (m) => {
     const [, month] = m.split("-");
     return MONTH_UK[parseInt(month, 10) - 1] || m;
@@ -49,9 +62,14 @@ export function NetworthChart({ data }) {
         {/* Zero line if negative values exist */}
         {min < 0 && max > 0 && (
           <line
-            x1={PAD.left} y1={py(0)}
-            x2={W - PAD.right} y2={py(0)}
-            stroke="currentColor" strokeOpacity="0.15" strokeWidth="1" strokeDasharray="3 3"
+            x1={PAD.left}
+            y1={py(0)}
+            x2={W - PAD.right}
+            y2={py(0)}
+            stroke="currentColor"
+            strokeOpacity="0.15"
+            strokeWidth="1"
+            strokeDasharray="3 3"
           />
         )}
 
@@ -74,7 +92,8 @@ export function NetworthChart({ data }) {
             <circle cx={px(i)} cy={py(d.networth)} r="3" fill={color} />
             {/* Month label */}
             <text
-              x={px(i)} y={H - 4}
+              x={px(i)}
+              y={H - 4}
               textAnchor="middle"
               fontSize="8"
               fill="currentColor"

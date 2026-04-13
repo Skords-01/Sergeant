@@ -55,11 +55,11 @@ export function WorkoutTemplatesSection({
   const addEx = (ex) => {
     if (!ex?.id) return;
     if (orderIds.includes(ex.id)) return;
-    setOrderIds(o => [...o, ex.id]);
+    setOrderIds((o) => [...o, ex.id]);
   };
 
   const move = (idx, dir) => {
-    setOrderIds(o => {
+    setOrderIds((o) => {
       const j = idx + dir;
       if (j < 0 || j >= o.length) return o;
       const next = [...o];
@@ -69,13 +69,16 @@ export function WorkoutTemplatesSection({
   };
 
   const removeAt = (idx) => {
-    setOrderIds(o => o.filter((_, i) => i !== idx));
+    setOrderIds((o) => o.filter((_, i) => i !== idx));
   };
 
   return (
     <div className="space-y-3">
       <div className="text-xs text-subtle leading-relaxed">
-        Шаблони — лише твої: додай назву й послідовність вправ з каталогу. План на головній будується з цих шаблонів. Щоб стартувати тренування зі списку нижче — натисни «Почати» біля шаблону (відкриється журнал з активним тренуванням).
+        Шаблони — лише твої: додай назву й послідовність вправ з каталогу. План
+        на головній будується з цих шаблонів. Щоб стартувати тренування зі
+        списку нижче — натисни «Почати» біля шаблону (відкриється журнал з
+        активним тренуванням).
       </div>
 
       {!editingId && (
@@ -89,14 +92,21 @@ export function WorkoutTemplatesSection({
           <Input
             placeholder="Назва (за замовчуванням — «Мій шаблон»)"
             value={name}
-            onChange={e => setName(e.target.value)}
+            onChange={(e) => setName(e.target.value)}
             aria-label="Назва шаблону"
           />
           <div>
-            <div className="text-[10px] font-bold text-subtle uppercase tracking-widest mb-2">Додати вправу з каталогу</div>
-            <Input placeholder="Пошук…" value={q} onChange={e => setQ(e.target.value)} aria-label="Пошук вправи для шаблону" />
+            <div className="text-[10px] font-bold text-subtle uppercase tracking-widest mb-2">
+              Додати вправу з каталогу
+            </div>
+            <Input
+              placeholder="Пошук…"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              aria-label="Пошук вправи для шаблону"
+            />
             <div className="mt-2 max-h-40 overflow-y-auto rounded-xl border border-line divide-y divide-line">
-              {pickList.map(ex => (
+              {pickList.map((ex) => (
                 <button
                   key={ex.id}
                   type="button"
@@ -106,22 +116,37 @@ export function WorkoutTemplatesSection({
                   {ex?.name?.uk || ex?.name?.en}
                 </button>
               ))}
-              {pickList.length === 0 && <div className="p-3 text-xs text-subtle text-center">Нічого не знайдено</div>}
+              {pickList.length === 0 && (
+                <div className="p-3 text-xs text-subtle text-center">
+                  Нічого не знайдено
+                </div>
+              )}
             </div>
           </div>
 
           <div>
-            <div className="text-[10px] font-bold text-subtle uppercase tracking-widest mb-2">Порядок ({orderIds.length})</div>
+            <div className="text-[10px] font-bold text-subtle uppercase tracking-widest mb-2">
+              Порядок ({orderIds.length})
+            </div>
             {orderIds.length === 0 ? (
-              <div className="text-sm text-subtle text-center py-4">Додай хоча б одну вправу</div>
+              <div className="text-sm text-subtle text-center py-4">
+                Додай хоча б одну вправу
+              </div>
             ) : (
               <ul className="space-y-1">
                 {orderIds.map((id, idx) => {
                   const ex = byId.get(id);
                   return (
-                    <li key={`${id}_${idx}`} className="flex items-center gap-2 rounded-xl border border-line bg-bg px-2 py-1.5">
-                      <span className="text-xs text-subtle w-5 text-center">{idx + 1}</span>
-                      <span className="flex-1 text-sm truncate min-w-0">{ex?.name?.uk || ex?.name?.en || id}</span>
+                    <li
+                      key={`${id}_${idx}`}
+                      className="flex items-center gap-2 rounded-xl border border-line bg-bg px-2 py-1.5"
+                    >
+                      <span className="text-xs text-subtle w-5 text-center">
+                        {idx + 1}
+                      </span>
+                      <span className="flex-1 text-sm truncate min-w-0">
+                        {ex?.name?.uk || ex?.name?.en || id}
+                      </span>
                       <button
                         type="button"
                         className="min-w-[44px] min-h-[44px] text-subtle hover:text-text"
@@ -154,10 +179,22 @@ export function WorkoutTemplatesSection({
           </div>
 
           <div className="flex gap-2">
-            <Button className="flex-1 h-12 min-h-[44px]" onClick={save} disabled={!orderIds.length}>
+            <Button
+              className="flex-1 h-12 min-h-[44px]"
+              onClick={save}
+              disabled={!orderIds.length}
+            >
               Зберегти
             </Button>
-            <Button variant="ghost" className="flex-1 h-12 min-h-[44px]" onClick={() => { setEditingId(null); setOrderIds([]); setName(""); }}>
+            <Button
+              variant="ghost"
+              className="flex-1 h-12 min-h-[44px]"
+              onClick={() => {
+                setEditingId(null);
+                setOrderIds([]);
+                setName("");
+              }}
+            >
               Скасувати
             </Button>
           </div>
@@ -166,16 +203,27 @@ export function WorkoutTemplatesSection({
 
       <div className="bg-panel border border-line/60 rounded-2xl shadow-card overflow-hidden">
         <div className="px-4 py-3 bg-panelHi/60 border-b border-line">
-          <div className="text-xs font-bold text-subtle uppercase tracking-widest">Збережені шаблони</div>
+          <div className="text-xs font-bold text-subtle uppercase tracking-widest">
+            Збережені шаблони
+          </div>
         </div>
         {(templates || []).length === 0 ? (
-          <div className="p-6 text-center text-sm text-subtle">Поки немає шаблонів</div>
+          <div className="p-6 text-center text-sm text-subtle">
+            Поки немає шаблонів
+          </div>
         ) : (
-          (templates || []).map(t => (
-            <div key={t.id} className="px-4 py-3 border-b border-line last:border-0 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          (templates || []).map((t) => (
+            <div
+              key={t.id}
+              className="px-4 py-3 border-b border-line last:border-0 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
+            >
               <div className="min-w-0 flex-1">
-                <div className="text-sm font-semibold text-text truncate">{t.name}</div>
-                <div className="text-xs text-subtle">{(t.exerciseIds || []).length} вправ</div>
+                <div className="text-sm font-semibold text-text truncate">
+                  {t.name}
+                </div>
+                <div className="text-xs text-subtle">
+                  {(t.exerciseIds || []).length} вправ
+                </div>
               </div>
               <div className="flex flex-wrap gap-1.5 shrink-0 justify-end">
                 {typeof onStartTemplate === "function" && (
@@ -188,7 +236,12 @@ export function WorkoutTemplatesSection({
                     Почати
                   </Button>
                 )}
-                <Button size="sm" variant="ghost" className="h-10 min-w-[44px] px-3" onClick={() => startEdit(t)}>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-10 min-w-[44px] px-3"
+                  onClick={() => startEdit(t)}
+                >
                   Змінити
                 </Button>
                 <Button

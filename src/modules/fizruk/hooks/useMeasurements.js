@@ -45,18 +45,26 @@ export function useMeasurements() {
 
   const persist = useCallback((next) => {
     setEntries(next);
-    try { localStorage.setItem(KEY, JSON.stringify(next)); } catch {}
+    try {
+      localStorage.setItem(KEY, JSON.stringify(next));
+    } catch {}
   }, []);
 
-  const addEntry = useCallback((entry) => {
-    const e = { id: uid(), at: new Date().toISOString(), ...entry };
-    persist([e, ...entries]);
-    return e;
-  }, [persist, entries]);
+  const addEntry = useCallback(
+    (entry) => {
+      const e = { id: uid(), at: new Date().toISOString(), ...entry };
+      persist([e, ...entries]);
+      return e;
+    },
+    [persist, entries],
+  );
 
-  const deleteEntry = useCallback((id) => {
-    persist(entries.filter(e => e.id !== id));
-  }, [persist, entries]);
+  const deleteEntry = useCallback(
+    (id) => {
+      persist(entries.filter((e) => e.id !== id));
+    },
+    [persist, entries],
+  );
 
   const sorted = useMemo(() => {
     return [...entries].sort((a, b) => (b.at || "").localeCompare(a.at || ""));
@@ -64,4 +72,3 @@ export function useMeasurements() {
 
   return { entries: sorted, addEntry, deleteEntry };
 }
-

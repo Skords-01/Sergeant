@@ -35,19 +35,25 @@ export function WellbeingChart({ data }) {
 
   const MAX_SCORE = 5;
 
-  const colorEnergy = "rgb(22 163 74)";   // success green
-  const colorMood = "rgb(168 85 247)";     // purple-500
+  const colorEnergy = "rgb(22 163 74)"; // success green
+  const colorMood = "rgb(168 85 247)"; // purple-500
 
   return (
     <div className="w-full">
       {/* Legend */}
       <div className="flex items-center gap-4 mb-2 text-[11px] text-subtle">
         <span className="flex items-center gap-1.5">
-          <span className="inline-block w-2.5 h-2.5 rounded-sm" style={{ background: colorEnergy }} />
+          <span
+            className="inline-block w-2.5 h-2.5 rounded-sm"
+            style={{ background: colorEnergy }}
+          />
           Енергія
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="inline-block w-2.5 h-2.5 rounded-sm" style={{ background: colorMood }} />
+          <span
+            className="inline-block w-2.5 h-2.5 rounded-sm"
+            style={{ background: colorMood }}
+          />
           Настрій
         </span>
       </div>
@@ -59,18 +65,29 @@ export function WellbeingChart({ data }) {
         aria-label="Графік самопочуття"
       >
         {/* Horizontal guide lines at 1,2,3,4,5 */}
-        {[1, 3, 5].map(score => {
+        {[1, 3, 5].map((score) => {
           const y = padT + innerH - ((score - 1) / (MAX_SCORE - 1)) * innerH;
           return (
-            <line key={score} x1={padL} x2={w - padR} y1={y} y2={y}
-              stroke="currentColor" className="text-line/50" strokeWidth="1" strokeDasharray="3 4" />
+            <line
+              key={score}
+              x1={padL}
+              x2={w - padR}
+              y1={y}
+              y2={y}
+              stroke="currentColor"
+              className="text-line/50"
+              strokeWidth="1"
+              strokeDasharray="3 4"
+            />
           );
         })}
 
         {data.map((d, i) => {
           const cx = padL + i * groupW + groupW / 2;
-          const energyH = d.energy != null ? ((d.energy - 1) / (MAX_SCORE - 1)) * innerH : 0;
-          const moodH = d.mood != null ? ((d.mood - 1) / (MAX_SCORE - 1)) * innerH : 0;
+          const energyH =
+            d.energy != null ? ((d.energy - 1) / (MAX_SCORE - 1)) * innerH : 0;
+          const moodH =
+            d.mood != null ? ((d.mood - 1) / (MAX_SCORE - 1)) * innerH : 0;
           const baseY = padT + innerH;
 
           return (

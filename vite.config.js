@@ -7,7 +7,7 @@ export default defineConfig({
   resolve: {
     alias: {
       "@shared": resolve(__dirname, "src/shared"),
-      "@finyk":  resolve(__dirname, "src/modules/finyk"),
+      "@finyk": resolve(__dirname, "src/modules/finyk"),
       "@fizruk": resolve(__dirname, "src/modules/fizruk"),
     },
   },

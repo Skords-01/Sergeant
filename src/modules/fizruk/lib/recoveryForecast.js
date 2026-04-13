@@ -12,11 +12,15 @@ function localDateKey(ms) {
  * Для кожного м'яза з навантаженням — перша дата (YYYY-MM-DD локальний день), коли статус стане «повністю відновлений» (green).
  * Якщо вже green зараз — сьогодні; якщо за MAX_DAYS не досягнуто — null.
  */
-export function forecastFullRecoveryByDate(workouts, musclesUk, nowMs = Date.now()) {
+export function forecastFullRecoveryByDate(
+  workouts,
+  musclesUk,
+  nowMs = Date.now(),
+) {
   const out = {};
 
   const byNow = computeRecoveryBy(workouts, musclesUk, nowMs);
-  const ids = Object.keys(byNow).filter(id => byNow[id].lastAt != null);
+  const ids = Object.keys(byNow).filter((id) => byNow[id].lastAt != null);
 
   for (const id of ids) {
     if (isFullyRecovered(byNow[id])) {

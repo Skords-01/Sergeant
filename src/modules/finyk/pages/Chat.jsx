@@ -1,38 +1,89 @@
 import { useState, useRef, useEffect } from "react";
-import { MCC_CATEGORIES } from "../constants";
-import { getCategory, isMonoDebt, getMonoDebt, calcDebtRemaining, calcCategorySpent, getMonoTotals } from "../utils";
+import { mergeExpenseCategoryDefinitions } from "../constants";
+import {
+  getCategory,
+  calcDebtRemaining,
+  calcCategorySpent,
+  getMonoTotals,
+  resolveExpenseCategoryMeta,
+} from "../utils";
 import { cn } from "@shared/lib/cn";
 
 export function Chat({ mono, storage }) {
   const { realTx, clientInfo, accounts, transactions } = mono;
-  const { budgets, manualDebts, receivables, hiddenAccounts, excludedTxIds, txCategories, setBudgets, setManualDebts, setReceivables, hideTx, overrideCategory } = storage;
-  const statTx = realTx.filter(t => !excludedTxIds.has(t.id));
+  const {
+    budgets,
+    manualDebts,
+    hiddenAccounts,
+    excludedTxIds,
+    txCategories,
+    txSplits,
+    customCategories,
+    setBudgets,
+    setManualDebts,
+    setReceivables,
+    hideTx,
+    overrideCategory,
+  } = storage;
+  const statTx = realTx.filter((t) => !excludedTxIds.has(t.id));
 
-  const [messages, setMessages] = useState([{ role: "assistant", text: "Привіт! 👋 Запитай мене про свої фінанси — я бачу твої транзакції, бюджети та борги." }]);
+  const [messages, setMessages] = useState([
+    {
+      role: "assistant",
+      text: "Привіт! 👋 Запитай мене про свої фінанси — я бачу твої транзакції, бюджети та борги.",
+    },
+  ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const chatRef = useRef(null);
 
-  useEffect(() => { if (chatRef.current) chatRef.current.scrollTop = chatRef.current.scrollHeight; }, [messages]);
+  useEffect(() => {
+    if (chatRef.current)
+      chatRef.current.scrollTop = chatRef.current.scrollHeight;
+  }, [messages]);
 
-  const { balance: monoTotal, debt: monoTotalDebt } = getMonoTotals(accounts, hiddenAccounts);
-  const manualDebtTotal = manualDebts.reduce((s, d) => s + calcDebtRemaining(d, transactions), 0);
+  const { balance: monoTotal, debt: monoTotalDebt } = getMonoTotals(
+    accounts,
+    hiddenAccounts,
+  );
+  const manualDebtTotal = manualDebts.reduce(
+    (s, d) => s + calcDebtRemaining(d, transactions),
+    0,
+  );
   const totalDebt = monoTotalDebt + manualDebtTotal;
-  const spent = statTx.filter(t => t.amount < 0).reduce((s, t) => s + Math.abs(t.amount / 100), 0);
-  const income = statTx.filter(t => t.amount > 0).reduce((s, t) => s + t.amount / 100, 0);
+  const spent = statTx
+    .filter((t) => t.amount < 0)
+    .reduce((s, t) => s + Math.abs(t.amount / 100), 0);
+  const income = statTx
+    .filter((t) => t.amount > 0)
+    .reduce((s, t) => s + t.amount / 100, 0);
 
-  const bdgStr = budgets.map(b => {
-    const cat = MCC_CATEGORIES.find(c => c.id === b.categoryId);
-    return b.type === "limit"
-      ? `${cat?.label}: ${calcCategorySpent(statTx, b.categoryId)}/${b.limit}₴`
-      : `Ціль ${b.name}: ${b.savedAmount || 0}/${b.targetAmount}₴`;
-  }).join(", ");
+  const bdgStr = budgets
+    .map((b) => {
+      const cat = resolveExpenseCategoryMeta(b.categoryId, customCategories);
+      return b.type === "limit"
+        ? `${cat?.label}: ${calcCategorySpent(statTx, b.categoryId, txCategories, txSplits, customCategories)}/${b.limit}₴`
+        : `Ціль ${b.name}: ${b.savedAmount || 0}/${b.targetAmount}₴`;
+    })
+    .join(", ");
 
-  const topTx = statTx.slice(0, 15).map(t =>
-    `[id:${t.id}] ${t.description}(${getCategory(t.description, t.mcc, txCategories[t.id]).label.slice(3)}): ${(t.amount / 100).toFixed(0)}₴`
-  ).join("; ");
+  const topTx = statTx
+    .slice(0, 15)
+    .map((t) => {
+      const lbl = getCategory(
+        t.description,
+        t.mcc,
+        txCategories[t.id],
+        customCategories,
+      ).label;
+      const short = lbl.length > 3 ? lbl.slice(3) : lbl;
+      return `[id:${t.id}] ${t.description}(${short}): ${(t.amount / 100).toFixed(0)}₴`;
+    })
+    .join("; ");
 
-  const catIds = MCC_CATEGORIES.map(c => `${c.id}="${c.label}"`).join(", ");
+  const catIds = mergeExpenseCategoryDefinitions(customCategories)
+    .map((c) => `${c.id}="${c.label}"`)
+    .join(", ");
 
   const context = `Ім'я: ${clientInfo?.name}. На картках: ${monoTotal.toFixed(0)}₴. Витрати місяця: ${spent.toFixed(0)}₴. Дохід: ${income.toFixed(0)}₴. Борги: ${totalDebt.toFixed(0)}₴. Бюджети: ${bdgStr || "не налаштовані"}. [Категорії]: ${catIds}. [Останні операції]: ${topTx}.`;
 
@@ -45,30 +96,51 @@ export function Chat({ mono, storage }) {
         hideTx(input.tx_id);
         return "Транзакцію приховано";
       case "create_debt":
-        setManualDebts(prev => [...prev, {
-          id: Date.now().toString(),
-          name: input.name,
-          totalAmount: input.amount,
-          emoji: input.emoji || "💸",
-          dueDate: input.due_date || "",
-          linkedTxIds: [],
-        }]);
+        setManualDebts((prev) => [
+          ...prev,
+          {
+            id: Date.now().toString(),
+            name: input.name,
+            totalAmount: input.amount,
+            emoji: input.emoji || "💸",
+            dueDate: input.due_date || "",
+            linkedTxIds: [],
+          },
+        ]);
         return "Борг додано";
       case "create_receivable":
-        setReceivables(prev => [...prev, {
-          id: Date.now().toString(),
-          name: input.name,
-          amount: input.amount,
-          emoji: "📥",
-          dueDate: "",
-          linkedTxIds: [],
-        }]);
+        setReceivables((prev) => [
+          ...prev,
+          {
+            id: Date.now().toString(),
+            name: input.name,
+            amount: input.amount,
+            emoji: "📥",
+            dueDate: "",
+            linkedTxIds: [],
+          },
+        ]);
         return "Дебіторку додано";
       case "set_budget_limit":
-        setBudgets(prev => {
-          const exists = prev.some(b => b.type === "limit" && b.categoryId === input.category_id);
-          if (exists) return prev.map(b => b.type === "limit" && b.categoryId === input.category_id ? { ...b, limit: input.limit } : b);
-          return [...prev, { id: Date.now().toString(), type: "limit", categoryId: input.category_id, limit: input.limit }];
+        setBudgets((prev) => {
+          const exists = prev.some(
+            (b) => b.type === "limit" && b.categoryId === input.category_id,
+          );
+          if (exists)
+            return prev.map((b) =>
+              b.type === "limit" && b.categoryId === input.category_id
+                ? { ...b, limit: input.limit }
+                : b,
+            );
+          return [
+            ...prev,
+            {
+              id: Date.now().toString(),
+              type: "limit",
+              categoryId: input.category_id,
+              limit: input.limit,
+            },
+          ];
         });
         return "Ліміт встановлено";
       default:
@@ -89,7 +161,10 @@ export function Chat({ mono, storage }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           context,
-          messages: nextMessages.map(m => ({ role: m.role, content: m.text })),
+          messages: nextMessages.map((m) => ({
+            role: m.role,
+            content: m.text,
+          })),
         }),
       });
       if (!res.ok) {
@@ -101,11 +176,11 @@ export function Chat({ mono, storage }) {
       // Handle tool_calls from AI
       if (data.tool_calls && data.tool_calls.length > 0) {
         if (data.text) {
-          setMessages(m => [...m, { role: "assistant", text: data.text }]);
+          setMessages((m) => [...m, { role: "assistant", text: data.text }]);
         }
 
         // Execute tools and collect results
-        const toolResults = data.tool_calls.map(tc => ({
+        const toolResults = data.tool_calls.map((tc) => ({
           tool_use_id: tc.id,
           content: executeTool(tc.name, tc.input),
         }));
@@ -116,7 +191,10 @@ export function Chat({ mono, storage }) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             context,
-            messages: nextMessages.map(m => ({ role: m.role, content: m.text })),
+            messages: nextMessages.map((m) => ({
+              role: m.role,
+              content: m.text,
+            })),
             tool_results: toolResults,
             tool_calls_raw: data.tool_calls_raw,
           }),
@@ -126,12 +204,21 @@ export function Chat({ mono, storage }) {
           throw new Error(payload2.error || `HTTP ${res2.status}`);
         }
         const data2 = await res2.json();
-        setMessages(m => [...m, { role: "assistant", text: data2.text || "Готово." }]);
+        setMessages((m) => [
+          ...m,
+          { role: "assistant", text: data2.text || "Готово." },
+        ]);
       } else {
-        setMessages(m => [...m, { role: "assistant", text: data.text || "Помилка." }]);
+        setMessages((m) => [
+          ...m,
+          { role: "assistant", text: data.text || "Помилка." },
+        ]);
       }
     } catch (e) {
-      setMessages(m => [...m, { role: "assistant", text: `Помилка з'єднання з AI: ${e.message}` }]);
+      setMessages((m) => [
+        ...m,
+        { role: "assistant", text: `Помилка з'єднання з AI: ${e.message}` },
+      ]);
     } finally {
       setLoading(false);
     }
@@ -142,14 +229,22 @@ export function Chat({ mono, storage }) {
       {/* Messages */}
       <div ref={chatRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
         {messages.map((m, i) => (
-          <div key={i} className={cn("flex items-end gap-2", m.role === "user" ? "flex-row-reverse" : "flex-row")}>
-            {m.role === "assistant" && <span className="text-xl shrink-0 mb-1 leading-none">🤖</span>}
+          <div
+            key={i}
+            className={cn(
+              "flex items-end gap-2",
+              m.role === "user" ? "flex-row-reverse" : "flex-row",
+            )}
+          >
+            {m.role === "assistant" && (
+              <span className="text-xl shrink-0 mb-1 leading-none">🤖</span>
+            )}
             <div
               className={cn(
                 "max-w-[80%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap",
                 m.role === "user"
                   ? "bg-primary text-white rounded-br-sm"
-                  : "bg-panel border border-line text-text rounded-bl-sm"
+                  : "bg-panel border border-line text-text rounded-bl-sm",
               )}
             >
               {m.text}
@@ -161,7 +256,11 @@ export function Chat({ mono, storage }) {
             <span className="text-xl shrink-0 mb-1 leading-none">🤖</span>
             <div className="bg-panel border border-line rounded-2xl rounded-bl-sm px-4 py-3 flex gap-1.5 items-center">
               {[0, 0.15, 0.3].map((d, i) => (
-                <span key={i} className="w-1.5 h-1.5 bg-subtle rounded-full inline-block animate-bounce" style={{ animationDelay: `${d}s` }} />
+                <span
+                  key={i}
+                  className="w-1.5 h-1.5 bg-subtle rounded-full inline-block animate-bounce"
+                  style={{ animationDelay: `${d}s` }}
+                />
               ))}
             </div>
           </div>
@@ -170,7 +269,12 @@ export function Chat({ mono, storage }) {
 
       {/* Quick prompts */}
       <div className="flex gap-2 px-4 py-2 flex-wrap">
-        {["Скільки витратив?", "Який борг?", "Де більше витрачаю?", "Дай пораду"].map((q, i) => (
+        {[
+          "Скільки витратив?",
+          "Який борг?",
+          "Де більше витрачаю?",
+          "Дай пораду",
+        ].map((q, i) => (
           <button
             key={i}
             onClick={() => setInput(q)}
@@ -187,8 +291,8 @@ export function Chat({ mono, storage }) {
           className="flex-1 bg-panel border border-line rounded-2xl px-4 py-3 text-sm text-text outline-none focus:border-primary placeholder:text-subtle"
           placeholder="Запитай про фінанси..."
           value={input}
-          onChange={e => setInput(e.target.value)}
-          onKeyDown={e => e.key === "Enter" && send()}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && send()}
         />
         <button
           onClick={send}

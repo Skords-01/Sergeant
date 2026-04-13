@@ -75,7 +75,9 @@ function isoWeekdayFromDateKey(dateKey) {
 /** Чи потрапляє звичка на цей день згідно з датами та регулярністю */
 export function habitScheduledOnDate(habit, dateKey) {
   if (habit.archived) return false;
-  const start = habit.startDate || (habit.createdAt ? String(habit.createdAt).slice(0, 10) : dateKey);
+  const start =
+    habit.startDate ||
+    (habit.createdAt ? String(habit.createdAt).slice(0, 10) : dateKey);
   const end = habit.endDate || null;
   if (dateKey < start) return false;
   if (end && dateKey > end) return false;
@@ -117,7 +119,11 @@ function tagLabelsForHabit(state, habit) {
   return labels.length ? labels : ["Без тегу"];
 }
 
-export function buildHubCalendarEvents(state, range, { showFizruk = true, showFinykSubs = true } = {}) {
+export function buildHubCalendarEvents(
+  state,
+  range,
+  { showFizruk = true, showFinykSubs = true } = {},
+) {
   const events = [];
   const { startKey, endKey } = range;
   const days = enumerateDateKeys(startKey, endKey);
@@ -143,7 +149,10 @@ export function buildHubCalendarEvents(state, range, { showFizruk = true, showFi
     }
   }
 
-  const notes = state.completionNotes && typeof state.completionNotes === "object" ? state.completionNotes : {};
+  const notes =
+    state.completionNotes && typeof state.completionNotes === "object"
+      ? state.completionNotes
+      : {};
   const activeHabits = sortHabitsByOrder(
     state.habits.filter((h) => !h.archived),
     state.habitOrder || [],
@@ -174,7 +183,10 @@ export function buildHubCalendarEvents(state, range, { showFizruk = true, showFi
     }
   }
 
-  if (showFinykSubs && state.prefs?.showFinykSubscriptionsInCalendar !== false) {
+  if (
+    showFinykSubs &&
+    state.prefs?.showFinykSubscriptionsInCalendar !== false
+  ) {
     events.push(...buildFinykSubscriptionEvents(range));
   }
 

@@ -43,15 +43,43 @@
       "neck": "Шия"
     },
     "musclesByPrimaryGroup": {
-      "chest": ["pectoralis_major", "pectoralis_minor", "serratus_anterior", "front_deltoid", "triceps"],
-      "back": ["latissimus_dorsi", "rhomboids", "trapezius", "upper_back", "erector_spinae", "rear_deltoid", "biceps", "forearms"],
-      "shoulders": ["front_deltoid", "lateral_deltoid", "rear_deltoid", "trapezius", "triceps"],
+      "chest": [
+        "pectoralis_major",
+        "pectoralis_minor",
+        "serratus_anterior",
+        "front_deltoid",
+        "triceps"
+      ],
+      "back": [
+        "latissimus_dorsi",
+        "rhomboids",
+        "trapezius",
+        "upper_back",
+        "erector_spinae",
+        "rear_deltoid",
+        "biceps",
+        "forearms"
+      ],
+      "shoulders": [
+        "front_deltoid",
+        "lateral_deltoid",
+        "rear_deltoid",
+        "trapezius",
+        "triceps"
+      ],
       "arms": ["biceps", "triceps", "forearms"],
       "core": ["rectus_abdominis", "obliques"],
       "legs": ["quadriceps", "hamstrings", "calves", "adductors", "abductors"],
       "glutes": ["gluteus_maximus", "gluteus_medius", "hamstrings"],
       "cardio": [],
-      "full_body": ["pectoralis_major", "latissimus_dorsi", "quadriceps", "hamstrings", "gluteus_maximus", "rectus_abdominis"]
+      "full_body": [
+        "pectoralis_major",
+        "latissimus_dorsi",
+        "quadriceps",
+        "hamstrings",
+        "gluteus_maximus",
+        "rectus_abdominis"
+      ]
     }
   },
   "exercises": [
@@ -77,7 +105,10 @@
     },
     {
       "id": "incline_bench_press",
-      "name": { "uk": "Жим штанги на похилій лаві", "en": "Incline Barbell Press" },
+      "name": {
+        "uk": "Жим штанги на похилій лаві",
+        "en": "Incline Barbell Press"
+      },
       "primaryGroup": "chest",
       "muscles": {
         "primary": ["pectoralis_major", "front_deltoid"],
@@ -117,7 +148,10 @@
     },
     {
       "id": "dips_chest",
-      "name": { "uk": "Віджимання на брусах (акцент груди)", "en": "Chest Dips" },
+      "name": {
+        "uk": "Віджимання на брусах (акцент груди)",
+        "en": "Chest Dips"
+      },
       "primaryGroup": "chest",
       "muscles": {
         "primary": ["pectoralis_major", "pectoralis_minor"],
@@ -127,7 +161,10 @@
     },
     {
       "id": "pullup",
-      "name": { "uk": "Підтягування широким хватом", "en": "Wide-grip Pull-up" },
+      "name": {
+        "uk": "Підтягування широким хватом",
+        "en": "Wide-grip Pull-up"
+      },
       "primaryGroup": "back",
       "muscles": {
         "primary": ["latissimus_dorsi"],
@@ -147,7 +184,10 @@
     },
     {
       "id": "neutral_pullup",
-      "name": { "uk": "Підтягування нейтральним хватом", "en": "Neutral-grip Pull-up" },
+      "name": {
+        "uk": "Підтягування нейтральним хватом",
+        "en": "Neutral-grip Pull-up"
+      },
       "primaryGroup": "back",
       "muscles": {
         "primary": ["latissimus_dorsi", "biceps"],
@@ -177,7 +217,10 @@
     },
     {
       "id": "cable_lat_pulldown",
-      "name": { "uk": "Тяга верхнього блоку широким хватом", "en": "Lat Pulldown" },
+      "name": {
+        "uk": "Тяга верхнього блоку широким хватом",
+        "en": "Lat Pulldown"
+      },
       "primaryGroup": "back",
       "muscles": {
         "primary": ["latissimus_dorsi"],
@@ -257,7 +300,10 @@
     },
     {
       "id": "reverse_flyes",
-      "name": { "uk": "Зворотня розводка (задня дельта)", "en": "Reverse Flyes" },
+      "name": {
+        "uk": "Зворотня розводка (задня дельта)",
+        "en": "Reverse Flyes"
+      },
       "primaryGroup": "shoulders",
       "muscles": {
         "primary": ["rear_deltoid"],
@@ -327,7 +373,10 @@
     },
     {
       "id": "dips_tricep",
-      "name": { "uk": "Віджимання на брусах (акцент трицепс)", "en": "Tricep Dips" },
+      "name": {
+        "uk": "Віджимання на брусах (акцент трицепс)",
+        "en": "Tricep Dips"
+      },
       "primaryGroup": "arms",
       "muscles": {
         "primary": ["triceps"],
@@ -537,7 +586,10 @@
     },
     {
       "id": "abductor_machine",
-      "name": { "uk": "Відведення стегна в тренажері", "en": "Hip Abduction Machine" },
+      "name": {
+        "uk": "Відведення стегна в тренажері",
+        "en": "Hip Abduction Machine"
+      },
       "primaryGroup": "glutes",
       "muscles": {
         "primary": ["gluteus_medius", "abductors"],
@@ -581,7 +633,12 @@
       "primaryGroup": "cardio",
       "muscles": {
         "primary": ["quadriceps", "pectoralis_major"],
-        "secondary": ["gluteus_maximus", "hamstrings", "triceps", "rectus_abdominis"]
+        "secondary": [
+          "gluteus_maximus",
+          "hamstrings",
+          "triceps",
+          "rectus_abdominis"
+        ]
       },
       "equipment": ["bodyweight"]
     },
@@ -631,7 +688,12 @@
       "primaryGroup": "full_body",
       "muscles": {
         "primary": ["forearms", "trapezius"],
-        "secondary": ["quadriceps", "calves", "erector_spinae", "gluteus_maximus"]
+        "secondary": [
+          "quadriceps",
+          "calves",
+          "erector_spinae",
+          "gluteus_maximus"
+        ]
       },
       "equipment": ["dumbbell", "kettlebell"]
     },
@@ -687,7 +749,10 @@
     },
     {
       "id": "overhead_tricep_extension",
-      "name": { "uk": "Розгинання рук з гантеллю над головою", "en": "Overhead Tricep Extension" },
+      "name": {
+        "uk": "Розгинання рук з гантеллю над головою",
+        "en": "Overhead Tricep Extension"
+      },
       "primaryGroup": "arms",
       "muscles": {
         "primary": ["triceps"],

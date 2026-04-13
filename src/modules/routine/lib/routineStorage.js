@@ -1,6 +1,9 @@
 /** Hub «Рутина»: звички, теги, категорії (не-спорт), localStorage */
 
-import { dateKeyFromDate, habitScheduledOnDate } from "./hubCalendarAggregate.js";
+import {
+  dateKeyFromDate,
+  habitScheduledOnDate,
+} from "./hubCalendarAggregate.js";
 import { completionNoteKey } from "./completionNoteKey.js";
 
 export const ROUTINE_STORAGE_KEY = "hub_routine_v1";
@@ -27,14 +30,19 @@ function uid(prefix) {
 
 function normalizeHabit(h) {
   if (!h || typeof h !== "object") return h;
-  const created = h.createdAt ? String(h.createdAt).slice(0, 10) : dateKeyFromDate(new Date());
+  const created = h.createdAt
+    ? String(h.createdAt).slice(0, 10)
+    : dateKeyFromDate(new Date());
   return {
     ...h,
     recurrence: h.recurrence || "daily",
     startDate: h.startDate || created,
     endDate: h.endDate === undefined ? null : h.endDate,
     timeOfDay: h.timeOfDay === undefined ? "" : String(h.timeOfDay),
-    weekdays: Array.isArray(h.weekdays) && h.weekdays.length ? h.weekdays : [0, 1, 2, 3, 4, 5, 6],
+    weekdays:
+      Array.isArray(h.weekdays) && h.weekdays.length
+        ? h.weekdays
+        : [0, 1, 2, 3, 4, 5, 6],
   };
 }
 
@@ -60,16 +68,26 @@ const defaultState = () => ({
 });
 
 function migrateLegacyPushups(state) {
-  const cur = state.pushupsByDate && typeof state.pushupsByDate === "object" ? state.pushupsByDate : {};
+  const cur =
+    state.pushupsByDate && typeof state.pushupsByDate === "object"
+      ? state.pushupsByDate
+      : {};
   if (Object.keys(cur).length > 0) return { state, migrated: false };
   try {
     const raw = localStorage.getItem(FIZRUK_PUSHUPS_LEGACY);
     if (!raw) return { state, migrated: false };
     const parsed = JSON.parse(raw);
-    if (typeof parsed !== "object" || !parsed || Object.keys(parsed).length === 0) {
+    if (
+      typeof parsed !== "object" ||
+      !parsed ||
+      Object.keys(parsed).length === 0
+    ) {
       return { state, migrated: false };
     }
-    return { state: { ...state, pushupsByDate: { ...parsed } }, migrated: true };
+    return {
+      state: { ...state, pushupsByDate: { ...parsed } },
+      migrated: true,
+    };
   } catch {
     return { state, migrated: false };
   }
@@ -122,12 +140,17 @@ export function loadRoutineState() {
       tags: Array.isArray(p.tags) ? p.tags : [],
       categories: Array.isArray(p.categories) ? p.categories : [],
       habits: Array.isArray(p.habits) ? p.habits.map(normalizeHabit) : [],
-      completions: typeof p.completions === "object" && p.completions ? p.completions : {},
+      completions:
+        typeof p.completions === "object" && p.completions ? p.completions : {},
       pushupsByDate:
-        typeof p.pushupsByDate === "object" && p.pushupsByDate ? p.pushupsByDate : {},
+        typeof p.pushupsByDate === "object" && p.pushupsByDate
+          ? p.pushupsByDate
+          : {},
       habitOrder: Array.isArray(p.habitOrder) ? p.habitOrder : [],
       completionNotes:
-        typeof p.completionNotes === "object" && p.completionNotes ? p.completionNotes : {},
+        typeof p.completionNotes === "object" && p.completionNotes
+          ? p.completionNotes
+          : {},
     };
     return finalizeLoadedRoutineState(merged);
   } catch {
@@ -143,7 +166,9 @@ export function saveRoutineState(next) {
   } catch (e) {
     try {
       window.dispatchEvent(
-        new CustomEvent(ROUTINE_STORAGE_ERROR, { detail: { message: String(e?.message || e || "save failed") } }),
+        new CustomEvent(ROUTINE_STORAGE_ERROR, {
+          detail: { message: String(e?.message || e || "save failed") },
+        }),
       );
     } catch {
       /* noop */
@@ -186,7 +211,8 @@ export function createHabit(
 ) {
   const n = (name || "").trim();
   if (!n) return state;
-  const sd = (startDate && String(startDate).trim()) || dateKeyFromDate(new Date());
+  const sd =
+    (startDate && String(startDate).trim()) || dateKeyFromDate(new Date());
   const h = normalizeHabit({
     id: uid("hab"),
     name: n,
@@ -198,11 +224,21 @@ export function createHabit(
     recurrence,
     startDate: sd,
     endDate: endDate && String(endDate).trim() ? String(endDate).trim() : null,
-    timeOfDay: timeOfDay && String(timeOfDay).trim() ? String(timeOfDay).trim().slice(0, 5) : "",
-    weekdays: Array.isArray(weekdays) ? [...new Set(weekdays)].sort((a, b) => a - b) : [0, 1, 2, 3, 4, 5, 6],
+    timeOfDay:
+      timeOfDay && String(timeOfDay).trim()
+        ? String(timeOfDay).trim().slice(0, 5)
+        : "",
+    weekdays: Array.isArray(weekdays)
+      ? [...new Set(weekdays)].sort((a, b) => a - b)
+      : [0, 1, 2, 3, 4, 5, 6],
   });
   const order = [...(state.habitOrder || []), h.id];
-  const next = { ...state, habits: [...state.habits, h], completions: { ...state.completions }, habitOrder: order };
+  const next = {
+    ...state,
+    habits: [...state.habits, h],
+    completions: { ...state.completions },
+    habitOrder: order,
+  };
   saveRoutineState(next);
   return next;
 }
@@ -210,7 +246,9 @@ export function createHabit(
 export function updateHabit(state, id, patch) {
   const next = {
     ...state,
-    habits: state.habits.map((h) => (h.id === id ? normalizeHabit({ ...h, ...patch }) : h)),
+    habits: state.habits.map((h) =>
+      h.id === id ? normalizeHabit({ ...h, ...patch }) : h,
+    ),
   };
   saveRoutineState(next);
   return next;
@@ -225,7 +263,9 @@ export function setPref(state, key, value) {
 export function toggleHabitCompletion(state, habitId, dateKey) {
   const habit = state.habits.find((h) => h.id === habitId);
   if (!habit) return state;
-  const cur = Array.isArray(state.completions[habitId]) ? [...state.completions[habitId]] : [];
+  const cur = Array.isArray(state.completions[habitId])
+    ? [...state.completions[habitId]]
+    : [];
   const i = cur.indexOf(dateKey);
   if (i >= 0) {
     cur.splice(i, 1);
@@ -349,7 +389,12 @@ export function buildRoutineBackupPayload() {
 }
 
 export function applyRoutineBackupPayload(parsed) {
-  if (!parsed || parsed.kind !== "hub-routine-backup" || !parsed.data || typeof parsed.data !== "object") {
+  if (
+    !parsed ||
+    parsed.kind !== "hub-routine-backup" ||
+    !parsed.data ||
+    typeof parsed.data !== "object"
+  ) {
     throw new Error("Некоректний файл резервної копії Рутини.");
   }
   const d = parsed.data;
@@ -360,17 +405,26 @@ export function applyRoutineBackupPayload(parsed) {
     tags: Array.isArray(d.tags) ? d.tags : [],
     categories: Array.isArray(d.categories) ? d.categories : [],
     habits: Array.isArray(d.habits) ? d.habits.map(normalizeHabit) : [],
-    completions: typeof d.completions === "object" && d.completions ? d.completions : {},
-    pushupsByDate: typeof d.pushupsByDate === "object" && d.pushupsByDate ? d.pushupsByDate : {},
+    completions:
+      typeof d.completions === "object" && d.completions ? d.completions : {},
+    pushupsByDate:
+      typeof d.pushupsByDate === "object" && d.pushupsByDate
+        ? d.pushupsByDate
+        : {},
     habitOrder: Array.isArray(d.habitOrder) ? d.habitOrder : [],
-    completionNotes: typeof d.completionNotes === "object" && d.completionNotes ? d.completionNotes : {},
+    completionNotes:
+      typeof d.completionNotes === "object" && d.completionNotes
+        ? d.completionNotes
+        : {},
   };
   let s = merged;
   const mig = migrateLegacyPushups(s);
   s = mig.state;
   s = ensureHabitOrder(s).state;
   if (!saveRoutineState(s)) {
-    throw new Error("Не вдалося записати дані після імпорту (наприклад, переповнення сховища).");
+    throw new Error(
+      "Не вдалося записати дані після імпорту (наприклад, переповнення сховища).",
+    );
   }
   if (mig.migrated) {
     try {

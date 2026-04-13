@@ -13,11 +13,16 @@ export function useRecovery() {
     const by = computeRecoveryBy(workouts, musclesUk, Date.now());
 
     const list = Object.values(by)
-      .filter(x => x.id && x.label)
-      .sort((a, b) => (b.daysSince ?? 999) - (a.daysSince ?? 999) || (b.load7d - a.load7d));
+      .filter((x) => x.id && x.label)
+      .sort(
+        (a, b) =>
+          (b.daysSince ?? 999) - (a.daysSince ?? 999) || b.load7d - a.load7d,
+      );
 
-    const ready = list.filter(x => x.lastAt == null || x.status === "green").slice(0, 4);
-    const avoid = list.filter(x => x.status === "red").slice(0, 4);
+    const ready = list
+      .filter((x) => x.lastAt == null || x.status === "green")
+      .slice(0, 4);
+    const avoid = list.filter((x) => x.status === "red").slice(0, 4);
 
     return { by, list, ready, avoid };
   }, [workouts, musclesUk]);

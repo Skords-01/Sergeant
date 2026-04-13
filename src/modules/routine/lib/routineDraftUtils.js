@@ -30,8 +30,16 @@ export function habitDraftToPatch(draft) {
     categoryId: draft.categoryId || null,
     recurrence: draft.recurrence || "daily",
     startDate: draft.startDate || dateKeyFromDate(routineTodayDate()),
-    endDate: draft.endDate && String(draft.endDate).trim() ? String(draft.endDate).trim() : null,
-    timeOfDay: draft.timeOfDay && String(draft.timeOfDay).trim() ? String(draft.timeOfDay).trim().slice(0, 5) : "",
-    weekdays: Array.isArray(draft.weekdays) ? draft.weekdays : [0, 1, 2, 3, 4, 5, 6],
+    endDate:
+      draft.endDate && String(draft.endDate).trim()
+        ? String(draft.endDate).trim()
+        : null,
+    timeOfDay:
+      draft.timeOfDay && String(draft.timeOfDay).trim()
+        ? String(draft.timeOfDay).trim().slice(0, 5)
+        : "",
+    weekdays: Array.isArray(draft.weekdays)
+      ? draft.weekdays
+      : [0, 1, 2, 3, 4, 5, 6],
   };
 }

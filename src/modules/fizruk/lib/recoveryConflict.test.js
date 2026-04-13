@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { recoveryConflictsForExercise, recoveryConflictsForWorkoutItem } from "./recoveryConflict.js";
+import {
+  recoveryConflictsForExercise,
+  recoveryConflictsForWorkoutItem,
+} from "./recoveryConflict.js";
 
 describe("recoveryConflictsForExercise", () => {
   it("returns no warning when muscles empty", () => {

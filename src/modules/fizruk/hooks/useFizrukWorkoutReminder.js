@@ -6,7 +6,11 @@ const LAST_KEY = "fizruk_last_reminder_notif_day";
  * Локальне нагадування (через Notification API, якщо дозволено).
  * `enabled` — на сьогодні є запис у календарі плану.
  */
-export function useFizrukWorkoutReminder({ enabled, reminderHour, reminderMinute }) {
+export function useFizrukWorkoutReminder({
+  enabled,
+  reminderHour,
+  reminderMinute,
+}) {
   const firedRef = useRef(null);
 
   useEffect(() => {
@@ -14,7 +18,11 @@ export function useFizrukWorkoutReminder({ enabled, reminderHour, reminderMinute
 
     const tick = () => {
       const now = new Date();
-      if (now.getHours() !== reminderHour || now.getMinutes() !== reminderMinute) return;
+      if (
+        now.getHours() !== reminderHour ||
+        now.getMinutes() !== reminderMinute
+      )
+        return;
 
       const dayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
       if (firedRef.current === dayStr) return;
@@ -25,7 +33,9 @@ export function useFizrukWorkoutReminder({ enabled, reminderHour, reminderMinute
       firedRef.current = dayStr;
       try {
         localStorage.setItem(LAST_KEY, dayStr);
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
 
       new Notification("Фізрук — тренування", {
         body: "Заплановане тренування на сьогодні. Відкрий застосунок, щоб стартувати.",
@@ -40,7 +50,8 @@ export function useFizrukWorkoutReminder({ enabled, reminderHour, reminderMinute
 }
 
 export function requestNotificationPermission() {
-  if (typeof Notification === "undefined") return Promise.resolve("unsupported");
+  if (typeof Notification === "undefined")
+    return Promise.resolve("unsupported");
   if (Notification.permission === "granted") return Promise.resolve("granted");
   return Notification.requestPermission();
 }

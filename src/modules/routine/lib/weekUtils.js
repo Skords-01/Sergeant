@@ -15,4 +15,3 @@ export function startOfIsoWeek(d) {
   x.setHours(12, 0, 0, 0);
   return x;
 }
-

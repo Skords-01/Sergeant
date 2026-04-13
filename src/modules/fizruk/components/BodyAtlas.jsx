@@ -20,7 +20,10 @@ export function BodyAtlas({ statusByMuscle, height = 320, showLegend = true }) {
   const containerRef = useRef(null);
   const instRef = useRef(null);
 
-  const data = useMemo(() => buildDataFromStatuses(statusByMuscle), [statusByMuscle]);
+  const data = useMemo(
+    () => buildDataFromStatuses(statusByMuscle),
+    [statusByMuscle],
+  );
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -37,7 +40,12 @@ export function BodyAtlas({ statusByMuscle, height = 320, showLegend = true }) {
       highlightedColors: ["#b45309", "#dc2626"],
       // body-highlighter sometimes injects an SVG with its own height;
       // enforce scaling by constraining container and SVG.
-      svgStyle: { width: "100%", height: "100%", maxHeight: "100%", display: "block" },
+      svgStyle: {
+        width: "100%",
+        height: "100%",
+        maxHeight: "100%",
+        display: "block",
+      },
       style: { width: "100%", height: "100%" },
       onClick: ({ muscle, data: mdata }) => {
         setSelected({ muscle, ...mdata });
@@ -55,13 +63,23 @@ export function BodyAtlas({ statusByMuscle, height = 320, showLegend = true }) {
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <button
-            className={cn("text-xs px-3 py-2 rounded-full border transition-colors", view === "anterior" ? "bg-text text-white border-text" : "border-line text-subtle hover:text-text")}
+            className={cn(
+              "text-xs px-3 py-2 rounded-full border transition-colors",
+              view === "anterior"
+                ? "bg-text text-white border-text"
+                : "border-line text-subtle hover:text-text",
+            )}
             onClick={() => setView("anterior")}
           >
             Спереду
           </button>
           <button
-            className={cn("text-xs px-3 py-2 rounded-full border transition-colors", view === "posterior" ? "bg-text text-white border-text" : "border-line text-subtle hover:text-text")}
+            className={cn(
+              "text-xs px-3 py-2 rounded-full border transition-colors",
+              view === "posterior"
+                ? "bg-text text-white border-text"
+                : "border-line text-subtle hover:text-text",
+            )}
             onClick={() => setView("posterior")}
           >
             Ззаду
@@ -69,9 +87,15 @@ export function BodyAtlas({ statusByMuscle, height = 320, showLegend = true }) {
         </div>
         {showLegend && (
           <div className="flex items-center gap-2 text-xs text-subtle">
-            <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-success" /> готово</span>
-            <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-warning" /> норм</span>
-            <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-danger" /> рано</span>
+            <span className="inline-flex items-center gap-1">
+              <span className="w-2 h-2 rounded-full bg-success" /> готово
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <span className="w-2 h-2 rounded-full bg-warning" /> норм
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <span className="w-2 h-2 rounded-full bg-danger" /> рано
+            </span>
           </div>
         )}
       </div>
@@ -86,11 +110,14 @@ export function BodyAtlas({ statusByMuscle, height = 320, showLegend = true }) {
 
       {selected && (
         <div className="text-xs text-subtle">
-          Обрано: <span className="font-semibold text-muted">{selected.muscle}</span> · разів:{" "}
-          <span className="font-semibold text-muted">{selected.frequency || 0}</span>
+          Обрано:{" "}
+          <span className="font-semibold text-muted">{selected.muscle}</span> ·
+          разів:{" "}
+          <span className="font-semibold text-muted">
+            {selected.frequency || 0}
+          </span>
         </div>
       )}
     </div>
   );
 }
-

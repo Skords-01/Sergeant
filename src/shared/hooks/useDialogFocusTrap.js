@@ -19,7 +19,11 @@ export function useDialogFocusTrap(open, containerRef, options = {}) {
         panel.querySelectorAll(
           'button:not([disabled]), [href], input:not([disabled]), select, textarea, [tabindex]:not([tabindex="-1"])',
         ),
-      ).filter(el => !el.hasAttribute("disabled") && el.getAttribute("aria-hidden") !== "true");
+      ).filter(
+        (el) =>
+          !el.hasAttribute("disabled") &&
+          el.getAttribute("aria-hidden") !== "true",
+      );
 
     const onKeyDown = (e) => {
       if (e.key === "Escape" && onEscape) {

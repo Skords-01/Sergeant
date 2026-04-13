@@ -20,8 +20,16 @@ import {
 import { dateKeyFromDate } from "../lib/hubCalendarAggregate.js";
 import { sortHabitsByOrder } from "../lib/habitOrder.js";
 import { requestRoutineNotificationPermission } from "../hooks/useRoutineReminders.js";
-import { ROUTINE_THEME as C, RECURRENCE_OPTIONS, WEEKDAY_LABELS } from "../lib/routineConstants.js";
-import { emptyHabitDraft, habitDraftToPatch, routineTodayDate } from "../lib/routineDraftUtils.js";
+import {
+  ROUTINE_THEME as C,
+  RECURRENCE_OPTIONS,
+  WEEKDAY_LABELS,
+} from "../lib/routineConstants.js";
+import {
+  emptyHabitDraft,
+  habitDraftToPatch,
+  routineTodayDate,
+} from "../lib/routineDraftUtils.js";
 
 export function RoutineSettingsSection({
   routine,
@@ -47,7 +55,9 @@ export function RoutineSettingsSection({
       routine.habitOrder || [],
     );
     if (!q) return active;
-    return active.filter((h) => `${h.emoji} ${h.name}`.toLowerCase().includes(q));
+    return active.filter((h) =>
+      `${h.emoji} ${h.name}`.toLowerCase().includes(q),
+    );
   }, [routine.habits, routine.habitOrder, q]);
 
   const loadHabitIntoDraft = (h) => {
@@ -60,7 +70,10 @@ export function RoutineSettingsSection({
       startDate: h.startDate || dateKeyFromDate(routineTodayDate()),
       endDate: h.endDate || "",
       timeOfDay: h.timeOfDay || "",
-      weekdays: Array.isArray(h.weekdays) && h.weekdays.length ? h.weekdays : [0, 1, 2, 3, 4, 5, 6],
+      weekdays:
+        Array.isArray(h.weekdays) && h.weekdays.length
+          ? h.weekdays
+          : [0, 1, 2, 3, 4, 5, 6],
     });
   };
 
@@ -72,7 +85,10 @@ export function RoutineSettingsSection({
   const saveHabit = () => {
     const patch = habitDraftToPatch(habitDraft);
     if (!patch.name) return;
-    if (patch.recurrence === "weekly" && (!patch.weekdays || patch.weekdays.length === 0)) {
+    if (
+      patch.recurrence === "weekly" &&
+      (!patch.weekdays || patch.weekdays.length === 0)
+    ) {
       window.alert("Обери хоча б один день тижня.");
       return;
     }
@@ -94,23 +110,39 @@ export function RoutineSettingsSection({
       className="space-y-4 pb-4"
     >
       <section className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card space-y-3">
-        <h2 className="text-xs font-bold text-subtle uppercase tracking-widest">Календар</h2>
+        <h2 className="text-xs font-bold text-subtle uppercase tracking-widest">
+          Календар
+        </h2>
         <label className="flex items-center justify-between gap-3 text-sm">
           <span className="text-muted">Показувати тренування з Фізрука</span>
           <input
             type="checkbox"
             className="w-5 h-5 accent-[#e0786c]"
             checked={routine.prefs.showFizrukInCalendar !== false}
-            onChange={(ev) => setRoutine((s) => setPref(s, "showFizrukInCalendar", ev.target.checked))}
+            onChange={(ev) =>
+              setRoutine((s) =>
+                setPref(s, "showFizrukInCalendar", ev.target.checked),
+              )
+            }
           />
         </label>
         <label className="flex items-center justify-between gap-3 text-sm">
-          <span className="text-muted">Показувати планові платежі підписок Фініка</span>
+          <span className="text-muted">
+            Показувати планові платежі підписок Фініка
+          </span>
           <input
             type="checkbox"
             className="w-5 h-5 accent-[#e0786c]"
             checked={routine.prefs.showFinykSubscriptionsInCalendar !== false}
-            onChange={(ev) => setRoutine((s) => setPref(s, "showFinykSubscriptionsInCalendar", ev.target.checked))}
+            onChange={(ev) =>
+              setRoutine((s) =>
+                setPref(
+                  s,
+                  "showFinykSubscriptionsInCalendar",
+                  ev.target.checked,
+                ),
+              )
+            }
           />
         </label>
         <label className="flex items-center justify-between gap-3 text-sm">
@@ -135,21 +167,31 @@ export function RoutineSettingsSection({
           />
         </label>
         <p className="text-[10px] text-subtle leading-snug">
-          У звичці вкажи «Час нагадування». Один раз на день о цій хвилині, якщо день запланований і ще немає відмітки. Працює, поки відкрита вкладка або дозволено тло (залежить від браузера). Надійної роботи повністю у фоні без відкритої вкладки браузер не гарантує.
+          У звичці вкажи «Час нагадування». Один раз на день о цій хвилині, якщо
+          день запланований і ще немає відмітки. Працює, поки відкрита вкладка
+          або дозволено тло (залежить від браузера). Надійної роботи повністю у
+          фоні без відкритої вкладки браузер не гарантує.
         </p>
       </section>
 
       <section className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card space-y-3">
-        <h2 className="text-xs font-bold text-subtle uppercase tracking-widest">Резервна копія</h2>
-        <p className="text-[10px] text-subtle">Звички, відмітки, відтискання та нотатки — один JSON-файл.</p>
+        <h2 className="text-xs font-bold text-subtle uppercase tracking-widest">
+          Резервна копія
+        </h2>
+        <p className="text-[10px] text-subtle">
+          Звички, відмітки, відтискання та нотатки — один JSON-файл.
+        </p>
         <div className="flex flex-wrap gap-2">
           <Button
             type="button"
             className={cn("font-bold", C.primary)}
             onClick={() => {
-              const blob = new Blob([JSON.stringify(buildRoutineBackupPayload(), null, 2)], {
-                type: "application/json",
-              });
+              const blob = new Blob(
+                [JSON.stringify(buildRoutineBackupPayload(), null, 2)],
+                {
+                  type: "application/json",
+                },
+              );
               const a = document.createElement("a");
               a.href = URL.createObjectURL(blob);
               a.download = `hub-routine-backup-${new Date().toISOString().slice(0, 10)}.json`;
@@ -159,7 +201,12 @@ export function RoutineSettingsSection({
           >
             Експорт JSON
           </Button>
-          <Button type="button" variant="ghost" className="border border-line/70" onClick={() => backupRef.current?.click()}>
+          <Button
+            type="button"
+            variant="ghost"
+            className="border border-line/70"
+            onClick={() => backupRef.current?.click()}
+          >
             Імпорт
           </Button>
           <input
@@ -192,19 +239,28 @@ export function RoutineSettingsSection({
       </section>
 
       <section className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card space-y-3">
-        <h2 className="text-xs font-bold text-subtle uppercase tracking-widest">{editingId ? "Редагувати звичку" : "Нова звичка"}</h2>
+        <h2 className="text-xs font-bold text-subtle uppercase tracking-widest">
+          {editingId ? "Редагувати звичку" : "Нова звичка"}
+        </h2>
         <div className="flex gap-2 items-stretch">
           <Input
             className="routine-touch-field w-16 shrink-0 text-center"
             value={habitDraft.emoji}
-            onChange={(e) => setHabitDraft((d) => ({ ...d, emoji: e.target.value.slice(0, 4) }))}
+            onChange={(e) =>
+              setHabitDraft((d) => ({
+                ...d,
+                emoji: e.target.value.slice(0, 4),
+              }))
+            }
             aria-label="Емодзі"
           />
           <Input
             className="routine-touch-field min-w-0 flex-1"
             placeholder="Назва"
             value={habitDraft.name}
-            onChange={(e) => setHabitDraft((d) => ({ ...d, name: e.target.value }))}
+            onChange={(e) =>
+              setHabitDraft((d) => ({ ...d, name: e.target.value }))
+            }
           />
         </div>
 
@@ -213,7 +269,9 @@ export function RoutineSettingsSection({
           <select
             className="routine-touch-select mt-1"
             value={habitDraft.recurrence || "daily"}
-            onChange={(e) => setHabitDraft((d) => ({ ...d, recurrence: e.target.value }))}
+            onChange={(e) =>
+              setHabitDraft((d) => ({ ...d, recurrence: e.target.value }))
+            }
           >
             {RECURRENCE_OPTIONS.map((o) => (
               <option key={o.value} value={o.value}>
@@ -230,7 +288,9 @@ export function RoutineSettingsSection({
               type="date"
               className="routine-touch-field mt-1 w-full"
               value={habitDraft.startDate || ""}
-              onChange={(e) => setHabitDraft((d) => ({ ...d, startDate: e.target.value }))}
+              onChange={(e) =>
+                setHabitDraft((d) => ({ ...d, startDate: e.target.value }))
+              }
             />
           </label>
           <label className="block text-xs text-subtle">
@@ -239,7 +299,9 @@ export function RoutineSettingsSection({
               type="date"
               className="routine-touch-field mt-1 w-full"
               value={habitDraft.endDate || ""}
-              onChange={(e) => setHabitDraft((d) => ({ ...d, endDate: e.target.value }))}
+              onChange={(e) =>
+                setHabitDraft((d) => ({ ...d, endDate: e.target.value }))
+              }
             />
           </label>
         </div>
@@ -250,7 +312,9 @@ export function RoutineSettingsSection({
             type="time"
             className="routine-touch-field mt-1 w-full"
             value={habitDraft.timeOfDay || ""}
-            onChange={(e) => setHabitDraft((d) => ({ ...d, timeOfDay: e.target.value }))}
+            onChange={(e) =>
+              setHabitDraft((d) => ({ ...d, timeOfDay: e.target.value }))
+            }
           />
         </label>
 
@@ -276,7 +340,10 @@ export function RoutineSettingsSection({
                         return { ...d, weekdays: cur };
                       });
                     }}
-                    className={cn("min-h-[40px] px-3 rounded-xl text-xs font-semibold border transition-colors", on ? C.chipOn : C.chipOff)}
+                    className={cn(
+                      "min-h-[40px] px-3 rounded-xl text-xs font-semibold border transition-colors",
+                      on ? C.chipOn : C.chipOff,
+                    )}
                   >
                     {label}
                   </button>
@@ -286,7 +353,8 @@ export function RoutineSettingsSection({
           </div>
         )}
 
-        {(habitDraft.recurrence === "once" || habitDraft.recurrence === "monthly") && (
+        {(habitDraft.recurrence === "once" ||
+          habitDraft.recurrence === "monthly") && (
           <p className="text-[11px] text-subtle leading-snug">
             {habitDraft.recurrence === "once"
               ? "Подія зʼявиться лише в день «Початок». Кінець можна залишити порожнім."
@@ -315,7 +383,9 @@ export function RoutineSettingsSection({
                 </option>
               ))}
             </select>
-            <span className="block text-[10px] text-subtle mt-1 leading-snug">Один тег на звичку (поле tagIds у даних — масив для сумісності).</span>
+            <span className="block text-[10px] text-subtle mt-1 leading-snug">
+              Один тег на звичку (поле tagIds у даних — масив для сумісності).
+            </span>
           </label>
         )}
         {routine.categories.length > 0 && (
@@ -341,11 +411,20 @@ export function RoutineSettingsSection({
         )}
 
         <div className="flex flex-col gap-2">
-          <Button type="button" className={cn("w-full font-bold", C.primary)} onClick={saveHabit}>
+          <Button
+            type="button"
+            className={cn("w-full font-bold", C.primary)}
+            onClick={saveHabit}
+          >
             {editingId ? "Зберегти зміни" : "Додати звичку"}
           </Button>
           {editingId && (
-            <Button type="button" variant="ghost" className="w-full border border-line/70" onClick={cancelEdit}>
+            <Button
+              type="button"
+              variant="ghost"
+              className="w-full border border-line/70"
+              onClick={cancelEdit}
+            >
               Скасувати
             </Button>
           )}
@@ -353,7 +432,9 @@ export function RoutineSettingsSection({
       </section>
 
       <section className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card space-y-3">
-        <h2 className="text-xs font-bold text-subtle uppercase tracking-widest">Теги</h2>
+        <h2 className="text-xs font-bold text-subtle uppercase tracking-widest">
+          Теги
+        </h2>
         <div className="flex gap-2 items-stretch">
           <Input
             className="routine-touch-field min-w-0 flex-1"
@@ -394,26 +475,34 @@ export function RoutineSettingsSection({
       </section>
 
       <section className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card space-y-3">
-        <h2 className="text-xs font-bold text-subtle uppercase tracking-widest">Категорії</h2>
+        <h2 className="text-xs font-bold text-subtle uppercase tracking-widest">
+          Категорії
+        </h2>
         <div className="flex flex-wrap gap-2 items-stretch">
           <Input
             className="routine-touch-field w-16 shrink-0"
             placeholder="🏠"
             value={catDraft.emoji}
-            onChange={(e) => setCatDraft((d) => ({ ...d, emoji: e.target.value }))}
+            onChange={(e) =>
+              setCatDraft((d) => ({ ...d, emoji: e.target.value }))
+            }
           />
           <Input
             className="routine-touch-field min-w-0 flex-1 basis-[min(100%,14rem)]"
             placeholder="Назва категорії"
             value={catDraft.name}
-            onChange={(e) => setCatDraft((d) => ({ ...d, name: e.target.value }))}
+            onChange={(e) =>
+              setCatDraft((d) => ({ ...d, name: e.target.value }))
+            }
           />
           <Button
             type="button"
             variant="ghost"
             className="min-h-[44px] w-full min-w-0 border border-line/70 sm:w-auto sm:min-w-[7rem]"
             onClick={() => {
-              setRoutine((s) => createCategory(s, catDraft.name, catDraft.emoji));
+              setRoutine((s) =>
+                createCategory(s, catDraft.name, catDraft.emoji),
+              );
               setCatDraft({ name: "", emoji: "" });
             }}
           >
@@ -423,9 +512,13 @@ export function RoutineSettingsSection({
       </section>
 
       <section className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card space-y-2">
-        <h2 className="text-xs font-bold text-subtle uppercase tracking-widest">Активні звички</h2>
+        <h2 className="text-xs font-bold text-subtle uppercase tracking-widest">
+          Активні звички
+        </h2>
         <p className="text-[10px] text-subtle leading-snug">
-          Порядок у списку = порядок у календарі. На десктопі можна перетягнути; на телефоні — кнопки ↑↓. Для клавіатури та скрінрідерів зручніші кнопки ↑↓.
+          Порядок у списку = порядок у календарі. На десктопі можна перетягнути;
+          на телефоні — кнопки ↑↓. Для клавіатури та скрінрідерів зручніші
+          кнопки ↑↓.
         </p>
         <Input
           className="routine-touch-field w-full max-w-md"
@@ -439,9 +532,16 @@ export function RoutineSettingsSection({
         </p>
         {routine.habits.filter((h) => !h.archived).length === 0 && (
           <div className="rounded-xl border border-dashed border-line/70 bg-panelHi/50 p-4 text-center">
-            <p className="text-sm text-muted">Поки порожньо — додай першу звичку формою вище.</p>
+            <p className="text-sm text-muted">
+              Поки порожньо — додай першу звичку формою вище.
+            </p>
             {typeof onOpenCalendar === "function" && (
-              <Button type="button" variant="ghost" className="mt-3 border border-line/70" onClick={onOpenCalendar}>
+              <Button
+                type="button"
+                variant="ghost"
+                className="mt-3 border border-line/70"
+                onClick={onOpenCalendar}
+              >
                 Перейти до календаря
               </Button>
             )}
@@ -449,7 +549,10 @@ export function RoutineSettingsSection({
         )}
         <ul className="space-y-2">
           {filteredActiveHabits.map((h) => {
-            const recLabel = RECURRENCE_OPTIONS.find((o) => o.value === (h.recurrence || "daily"))?.label || "";
+            const recLabel =
+              RECURRENCE_OPTIONS.find(
+                (o) => o.value === (h.recurrence || "daily"),
+              )?.label || "";
             return (
               <li
                 key={h.id}
@@ -457,7 +560,8 @@ export function RoutineSettingsSection({
                 aria-grabbed={dragId === h.id}
                 className={cn(
                   "flex flex-col gap-2 border-b border-line/40 pb-3 last:border-0 last:pb-0 cursor-grab active:cursor-grabbing",
-                  editingId === h.id && "ring-2 ring-[#f0a090]/60 rounded-xl p-2 -mx-1",
+                  editingId === h.id &&
+                    "ring-2 ring-[#f0a090]/60 rounded-xl p-2 -mx-1",
                   dragId === h.id && "opacity-70",
                 )}
                 onDragStart={(e) => {
@@ -515,7 +619,9 @@ export function RoutineSettingsSection({
                       <button
                         type="button"
                         className="min-w-[32px] min-h-[36px] rounded-lg border border-line/70 text-xs text-muted hover:text-text"
-                        onClick={() => setRoutine((s) => moveHabitInOrder(s, h.id, -1))}
+                        onClick={() =>
+                          setRoutine((s) => moveHabitInOrder(s, h.id, -1))
+                        }
                         aria-label="Вгору в списку"
                       >
                         ↑
@@ -523,7 +629,9 @@ export function RoutineSettingsSection({
                       <button
                         type="button"
                         className="min-w-[32px] min-h-[36px] rounded-lg border border-line/70 text-xs text-muted hover:text-text"
-                        onClick={() => setRoutine((s) => moveHabitInOrder(s, h.id, 1))}
+                        onClick={() =>
+                          setRoutine((s) => moveHabitInOrder(s, h.id, 1))
+                        }
                         aria-label="Вниз в списку"
                       >
                         ↓
@@ -559,7 +667,11 @@ export function RoutineSettingsSection({
                       size="sm"
                       className="!h-9 !px-3 !text-xs text-danger border border-danger/25"
                       onClick={() => {
-                        if (window.confirm(`Видалити звичку «${h.name}»? Відмітки по днях теж зникнуть.`)) {
+                        if (
+                          window.confirm(
+                            `Видалити звичку «${h.name}»? Відмітки по днях теж зникнуть.`,
+                          )
+                        ) {
                           setRoutine((s) => deleteHabit(s, h.id));
                           if (editingId === h.id) cancelEdit();
                         }
@@ -577,8 +689,12 @@ export function RoutineSettingsSection({
 
       {routine.habits.some((h) => h.archived) && (
         <section className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card space-y-2 opacity-95">
-          <h2 className="text-xs font-bold text-subtle uppercase tracking-widest">Архів</h2>
-          <p className="text-[10px] text-subtle">Не показуються в календарі; відмітки збережені.</p>
+          <h2 className="text-xs font-bold text-subtle uppercase tracking-widest">
+            Архів
+          </h2>
+          <p className="text-[10px] text-subtle">
+            Не показуються в календарі; відмітки збережені.
+          </p>
           <ul className="space-y-2">
             {routine.habits
               .filter((h) => h.archived)
@@ -596,7 +712,9 @@ export function RoutineSettingsSection({
                       variant="ghost"
                       size="sm"
                       className="!h-9 !px-3 !text-xs border border-line/70"
-                      onClick={() => setRoutine((s) => setHabitArchived(s, h.id, false))}
+                      onClick={() =>
+                        setRoutine((s) => setHabitArchived(s, h.id, false))
+                      }
                     >
                       Відновити
                     </Button>

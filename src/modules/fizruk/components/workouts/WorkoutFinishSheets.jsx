@@ -4,9 +4,15 @@ import { cn } from "@shared/lib/cn";
 import { useDialogFocusTrap } from "@shared/hooks/useDialogFocusTrap";
 import { formatDurShort } from "../../lib/workoutUi";
 
-export function WorkoutFinishSheets({ finishFlash, setFinishFlash, updateWorkout }) {
+export function WorkoutFinishSheets({
+  finishFlash,
+  setFinishFlash,
+  updateWorkout,
+}) {
   const trapRef = useRef(null);
-  useDialogFocusTrap(!!finishFlash, trapRef, { onEscape: () => setFinishFlash(null) });
+  useDialogFocusTrap(!!finishFlash, trapRef, {
+    onEscape: () => setFinishFlash(null),
+  });
 
   if (!finishFlash) return null;
   return (
@@ -15,7 +21,10 @@ export function WorkoutFinishSheets({ finishFlash, setFinishFlash, updateWorkout
       role="region"
       aria-label="Підсумок тренування"
     >
-      <div ref={trapRef} className="pointer-events-auto max-w-4xl mx-auto fizruk-sheet">
+      <div
+        ref={trapRef}
+        className="pointer-events-auto max-w-4xl mx-auto fizruk-sheet"
+      >
         {finishFlash.step === "wellbeing" && (
           <div
             className="rounded-2xl border border-line bg-panel p-4 shadow-float space-y-4 max-h-[min(70vh,520px)] overflow-y-auto"
@@ -23,20 +32,33 @@ export function WorkoutFinishSheets({ finishFlash, setFinishFlash, updateWorkout
             aria-modal="true"
             aria-labelledby="fizruk-wellbeing-title"
           >
-            <div id="fizruk-wellbeing-title" className="text-sm font-bold text-text">Самопочуття</div>
-            <p className="text-xs text-subtle leading-relaxed">Оціни по шкалі 1–5 (можна пропустити).</p>
+            <div
+              id="fizruk-wellbeing-title"
+              className="text-sm font-bold text-text"
+            >
+              Самопочуття
+            </div>
+            <p className="text-xs text-subtle leading-relaxed">
+              Оціни по шкалі 1–5 (можна пропустити).
+            </p>
             <div>
-              <div className="text-[10px] font-bold text-subtle uppercase tracking-widest mb-2">Енергія</div>
+              <div className="text-[10px] font-bold text-subtle uppercase tracking-widest mb-2">
+                Енергія
+              </div>
               <div className="flex flex-wrap gap-2">
-                {[1, 2, 3, 4, 5].map(n => (
+                {[1, 2, 3, 4, 5].map((n) => (
                   <button
                     key={`e${n}`}
                     type="button"
                     className={cn(
                       "min-w-[44px] min-h-[44px] rounded-xl border text-sm font-semibold transition-colors",
-                      finishFlash.energy === n ? "bg-text text-white border-text" : "border-line bg-bg text-muted hover:border-muted",
+                      finishFlash.energy === n
+                        ? "bg-text text-white border-text"
+                        : "border-line bg-bg text-muted hover:border-muted",
                     )}
-                    onClick={() => setFinishFlash(f => f && ({ ...f, energy: n }))}
+                    onClick={() =>
+                      setFinishFlash((f) => f && { ...f, energy: n })
+                    }
                     aria-pressed={finishFlash.energy === n}
                   >
                     {n}
@@ -45,17 +67,23 @@ export function WorkoutFinishSheets({ finishFlash, setFinishFlash, updateWorkout
               </div>
             </div>
             <div>
-              <div className="text-[10px] font-bold text-subtle uppercase tracking-widest mb-2">Настрій</div>
+              <div className="text-[10px] font-bold text-subtle uppercase tracking-widest mb-2">
+                Настрій
+              </div>
               <div className="flex flex-wrap gap-2">
-                {[1, 2, 3, 4, 5].map(n => (
+                {[1, 2, 3, 4, 5].map((n) => (
                   <button
                     key={`m${n}`}
                     type="button"
                     className={cn(
                       "min-w-[44px] min-h-[44px] rounded-xl border text-sm font-semibold transition-colors",
-                      finishFlash.mood === n ? "bg-text text-white border-text" : "border-line bg-bg text-muted hover:border-muted",
+                      finishFlash.mood === n
+                        ? "bg-text text-white border-text"
+                        : "border-line bg-bg text-muted hover:border-muted",
                     )}
-                    onClick={() => setFinishFlash(f => f && ({ ...f, mood: n }))}
+                    onClick={() =>
+                      setFinishFlash((f) => f && { ...f, mood: n })
+                    }
                     aria-pressed={finishFlash.mood === n}
                   >
                     {n}
@@ -68,7 +96,9 @@ export function WorkoutFinishSheets({ finishFlash, setFinishFlash, updateWorkout
                 variant="ghost"
                 className="flex-1 h-12 min-h-[44px]"
                 type="button"
-                onClick={() => setFinishFlash(f => f && ({ ...f, step: "summary" }))}
+                onClick={() =>
+                  setFinishFlash((f) => f && { ...f, step: "summary" })
+                }
               >
                 Пропустити
               </Button>
@@ -85,11 +115,17 @@ export function WorkoutFinishSheets({ finishFlash, setFinishFlash, updateWorkout
                       },
                     });
                   }
-                  setFinishFlash(f => f && ({
-                    ...f,
-                    step: "summary",
-                    savedWellbeing: (f.energy || f.mood) ? { energy: f.energy, mood: f.mood } : null,
-                  }));
+                  setFinishFlash(
+                    (f) =>
+                      f && {
+                        ...f,
+                        step: "summary",
+                        savedWellbeing:
+                          f.energy || f.mood
+                            ? { energy: f.energy, mood: f.mood }
+                            : null,
+                      },
+                  );
                 }}
               >
                 Зберегти
@@ -102,10 +138,16 @@ export function WorkoutFinishSheets({ finishFlash, setFinishFlash, updateWorkout
           <button
             type="button"
             className="w-full flex items-center justify-between gap-3 rounded-2xl border border-line bg-panel px-4 py-3 min-h-[44px] shadow-float text-left"
-            onClick={() => setFinishFlash(f => f && ({ ...f, collapsed: false }))}
+            onClick={() =>
+              setFinishFlash((f) => f && { ...f, collapsed: false })
+            }
           >
-            <span className="text-sm font-semibold text-text">✓ Результати</span>
-            <span className="text-xs text-subtle tabular-nums">{formatDurShort(finishFlash.durationSec)}</span>
+            <span className="text-sm font-semibold text-text">
+              ✓ Результати
+            </span>
+            <span className="text-xs text-subtle tabular-nums">
+              {formatDurShort(finishFlash.durationSec)}
+            </span>
           </button>
         )}
 
@@ -114,8 +156,12 @@ export function WorkoutFinishSheets({ finishFlash, setFinishFlash, updateWorkout
             <div className="fizruk-summary-header">
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <div className="text-[11px] font-bold tracking-widest uppercase text-accent">Завершено</div>
-                  <div className="text-lg font-black text-white mt-1 leading-tight">Тренування виконано</div>
+                  <div className="text-[11px] font-bold tracking-widest uppercase text-accent">
+                    Завершено
+                  </div>
+                  <div className="text-lg font-black text-white mt-1 leading-tight">
+                    Тренування виконано
+                  </div>
                 </div>
                 <button
                   type="button"
@@ -128,33 +174,54 @@ export function WorkoutFinishSheets({ finishFlash, setFinishFlash, updateWorkout
               </div>
               <div className="grid grid-cols-3 gap-2 mt-3">
                 <div className="rounded-xl bg-white/10 border border-white/15 p-2.5 text-center">
-                  <div className="text-[10px] uppercase tracking-wide text-white/60">Час</div>
-                  <div className="text-sm font-black text-white tabular-nums mt-0.5">{formatDurShort(finishFlash.durationSec)}</div>
-                </div>
-                <div className="rounded-xl bg-white/10 border border-white/15 p-2.5 text-center">
-                  <div className="text-[10px] uppercase tracking-wide text-white/60">Вправ</div>
-                  <div className="text-lg font-black text-white tabular-nums">{finishFlash.items}</div>
-                </div>
-                <div className="rounded-xl bg-white/10 border border-white/15 p-2.5 text-center">
-                  <div className="text-[10px] uppercase tracking-wide text-white/60">Обʼєм</div>
+                  <div className="text-[10px] uppercase tracking-wide text-white/60">
+                    Час
+                  </div>
                   <div className="text-sm font-black text-white tabular-nums mt-0.5">
-                    {finishFlash.tonnageKg > 0 ? `${Math.round(finishFlash.tonnageKg)} кг` : "—"}
+                    {formatDurShort(finishFlash.durationSec)}
+                  </div>
+                </div>
+                <div className="rounded-xl bg-white/10 border border-white/15 p-2.5 text-center">
+                  <div className="text-[10px] uppercase tracking-wide text-white/60">
+                    Вправ
+                  </div>
+                  <div className="text-lg font-black text-white tabular-nums">
+                    {finishFlash.items}
+                  </div>
+                </div>
+                <div className="rounded-xl bg-white/10 border border-white/15 p-2.5 text-center">
+                  <div className="text-[10px] uppercase tracking-wide text-white/60">
+                    Обʼєм
+                  </div>
+                  <div className="text-sm font-black text-white tabular-nums mt-0.5">
+                    {finishFlash.tonnageKg > 0
+                      ? `${Math.round(finishFlash.tonnageKg)} кг`
+                      : "—"}
                   </div>
                 </div>
               </div>
             </div>
-            {finishFlash.savedWellbeing && (finishFlash.savedWellbeing.energy || finishFlash.savedWellbeing.mood) && (
-              <div className="px-4 py-2.5 bg-panel border-b border-line flex items-center gap-3 text-xs text-subtle">
-                <span>Самопочуття:</span>
-                <span className="font-semibold text-text">
-                  енергія {finishFlash.savedWellbeing.energy ?? "—"}/5
-                  {" · "}
-                  настрій {finishFlash.savedWellbeing.mood ?? "—"}/5
-                </span>
-              </div>
-            )}
+            {finishFlash.savedWellbeing &&
+              (finishFlash.savedWellbeing.energy ||
+                finishFlash.savedWellbeing.mood) && (
+                <div className="px-4 py-2.5 bg-panel border-b border-line flex items-center gap-3 text-xs text-subtle">
+                  <span>Самопочуття:</span>
+                  <span className="font-semibold text-text">
+                    енергія {finishFlash.savedWellbeing.energy ?? "—"}/5
+                    {" · "}
+                    настрій {finishFlash.savedWellbeing.mood ?? "—"}/5
+                  </span>
+                </div>
+              )}
             <div className="flex gap-2 p-3 bg-panel">
-              <Button variant="ghost" className="flex-1 h-12 min-h-[44px] rounded-full" type="button" onClick={() => setFinishFlash(f => f && ({ ...f, collapsed: true }))}>
+              <Button
+                variant="ghost"
+                className="flex-1 h-12 min-h-[44px] rounded-full"
+                type="button"
+                onClick={() =>
+                  setFinishFlash((f) => f && { ...f, collapsed: true })
+                }
+              >
                 Згорнути
               </Button>
               <button

@@ -19,9 +19,14 @@ export default class ModuleErrorBoundary extends Component {
       return (
         <div
           className="min-h-dvh bg-bg flex flex-col items-center justify-center p-6 text-text"
-          style={{ paddingTop: "env(safe-area-inset-top, 0px)", paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
+          style={{
+            paddingTop: "env(safe-area-inset-top, 0px)",
+            paddingBottom: "env(safe-area-inset-bottom, 0px)",
+          }}
         >
-          <p className="text-sm text-muted mb-2 text-center">Помилка в модулі</p>
+          <p className="text-sm text-muted mb-2 text-center">
+            Помилка в модулі
+          </p>
           <pre className="text-xs text-red-600 dark:text-red-400 mb-6 max-w-lg w-full overflow-auto whitespace-pre-wrap break-words">
             {this.state.error.message}
           </pre>

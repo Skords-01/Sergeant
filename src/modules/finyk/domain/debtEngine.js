@@ -3,8 +3,8 @@ function toAmountUAH(tx) {
 }
 
 function findLinkedTx(linkedTxIds = [], transactions = []) {
-  const index = new Map(transactions.map(tx => [tx.id, tx]));
-  return linkedTxIds.map(id => index.get(id)).filter(Boolean);
+  const index = new Map(transactions.map((tx) => [tx.id, tx]));
+  return linkedTxIds.map((id) => index.get(id)).filter(Boolean);
 }
 
 export function getDebtTxRole(tx) {
@@ -23,7 +23,7 @@ export function getReceivableTxRole(tx) {
 export function getDebtPaid(debt, transactions = []) {
   const linked = findLinkedTx(debt?.linkedTxIds || [], transactions);
   return linked
-    .filter(tx => tx.amount < 0)
+    .filter((tx) => tx.amount < 0)
     .reduce((sum, tx) => sum + toAmountUAH(tx), 0);
 }
 
@@ -31,7 +31,7 @@ export function getDebtPaid(debt, transactions = []) {
 export function getDebtOriginated(debt, transactions = []) {
   const linked = findLinkedTx(debt?.linkedTxIds || [], transactions);
   return linked
-    .filter(tx => tx.amount > 0)
+    .filter((tx) => tx.amount > 0)
     .reduce((sum, tx) => sum + toAmountUAH(tx), 0);
 }
 
@@ -39,7 +39,7 @@ export function getDebtOriginated(debt, transactions = []) {
 export function getReceivablePaid(receivable, transactions = []) {
   const linked = findLinkedTx(receivable?.linkedTxIds || [], transactions);
   return linked
-    .filter(tx => tx.amount > 0)
+    .filter((tx) => tx.amount > 0)
     .reduce((sum, tx) => sum + toAmountUAH(tx), 0);
 }
 
@@ -47,7 +47,7 @@ export function getReceivablePaid(receivable, transactions = []) {
 export function getReceivableOriginated(receivable, transactions = []) {
   const linked = findLinkedTx(receivable?.linkedTxIds || [], transactions);
   return linked
-    .filter(tx => tx.amount < 0)
+    .filter((tx) => tx.amount < 0)
     .reduce((sum, tx) => sum + toAmountUAH(tx), 0);
 }
 
@@ -57,13 +57,23 @@ export function getDebtEffectiveTotal(debt, transactions = []) {
 }
 
 export function getReceivableEffectiveTotal(receivable, transactions = []) {
-  return Number(receivable?.amount || 0) + getReceivableOriginated(receivable, transactions);
+  return (
+    Number(receivable?.amount || 0) +
+    getReceivableOriginated(receivable, transactions)
+  );
 }
 
 export function calcDebtRemaining(debt, transactions = []) {
-  return Math.max(0, getDebtEffectiveTotal(debt, transactions) - getDebtPaid(debt, transactions));
+  return Math.max(
+    0,
+    getDebtEffectiveTotal(debt, transactions) - getDebtPaid(debt, transactions),
+  );
 }
 
 export function calcReceivableRemaining(receivable, transactions = []) {
-  return Math.max(0, getReceivableEffectiveTotal(receivable, transactions) - getReceivablePaid(receivable, transactions));
+  return Math.max(
+    0,
+    getReceivableEffectiveTotal(receivable, transactions) -
+      getReceivablePaid(receivable, transactions),
+  );
 }

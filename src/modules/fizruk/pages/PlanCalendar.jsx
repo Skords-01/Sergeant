@@ -28,7 +28,10 @@ function dateKey(year, monthIndex, day) {
 
 export function PlanCalendar() {
   const now = new Date();
-  const [cursor, setCursor] = useState(() => ({ y: now.getFullYear(), m: now.getMonth() }));
+  const [cursor, setCursor] = useState(() => ({
+    y: now.getFullYear(),
+    m: now.getMonth(),
+  }));
 
   const { templates } = useWorkoutTemplates();
   const { musclesUk } = useExerciseCatalog();
@@ -48,7 +51,9 @@ export function PlanCalendar() {
   useDialogFocusTrap(!!sheet, sheetRef, { onEscape: () => setSheet(null) });
 
   const [notif, setNotif] = useState(() =>
-    typeof Notification !== "undefined" ? Notification.permission : "unsupported",
+    typeof Notification !== "undefined"
+      ? Notification.permission
+      : "unsupported",
   );
 
   const forecast = useMemo(
@@ -64,7 +69,7 @@ export function PlanCalendar() {
         iso,
         status: rec.by?.[id]?.status,
       }))
-      .filter(r => rec.by?.[r.id]?.lastAt != null);
+      .filter((r) => rec.by?.[r.id]?.lastAt != null);
     rows.sort((a, b) => {
       if (!a.iso && !b.iso) return a.label.localeCompare(b.label);
       if (!a.iso) return 1;
@@ -75,14 +80,23 @@ export function PlanCalendar() {
   }, [forecast, musclesUk, rec.by]);
 
   const { cells } = monthGrid(cursor.y, cursor.m);
-  const monthTitle = new Date(cursor.y, cursor.m, 1).toLocaleDateString("uk-UA", { month: "long", year: "numeric" });
+  const monthTitle = new Date(cursor.y, cursor.m, 1).toLocaleDateString(
+    "uk-UA",
+    { month: "long", year: "numeric" },
+  );
 
   const go = (delta) => {
     setCursor((c) => {
       let m = c.m + delta;
       let y = c.y;
-      if (m > 11) { m = 0; y++; }
-      if (m < 0) { m = 11; y--; }
+      if (m > 11) {
+        m = 0;
+        y++;
+      }
+      if (m < 0) {
+        m = 11;
+        y--;
+      }
       return { y, m };
     });
   };
@@ -107,11 +121,11 @@ export function PlanCalendar() {
   return (
     <div className="flex-1 overflow-y-auto">
       <div className="max-w-4xl mx-auto px-4 pt-4 pb-[calc(88px+env(safe-area-inset-bottom,0px))] space-y-4">
-
         <section className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card">
           <h2 className="text-sm font-semibold text-text mb-3">Нагадування</h2>
           <p className="text-[11px] text-subtle mb-3 leading-snug">
-            Час локального нагадування, якщо на сьогодні в календарі обрано шаблон. Потрібен дозвіл на сповіщення в браузері.
+            Час локального нагадування, якщо на сьогодні в календарі обрано
+            шаблон. Потрібен дозвіл на сповіщення в браузері.
           </p>
           <div className="flex flex-wrap items-center gap-3">
             <label className="flex items-center gap-2 text-sm">
@@ -127,9 +141,16 @@ export function PlanCalendar() {
               />
             </label>
             {notif === "granted" ? (
-              <span className="text-xs text-success font-medium">Сповіщення увімкнено</span>
+              <span className="text-xs text-success font-medium">
+                Сповіщення увімкнено
+              </span>
             ) : (
-              <Button type="button" size="sm" className="h-10" onClick={onEnableNotif}>
+              <Button
+                type="button"
+                size="sm"
+                className="h-10"
+                onClick={onEnableNotif}
+              >
                 Дозволити сповіщення
               </Button>
             )}
@@ -138,24 +159,48 @@ export function PlanCalendar() {
 
         <section className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card">
           <div className="flex items-center justify-between gap-2 mb-4">
-            <button type="button" className="w-10 h-10 rounded-xl border border-line text-lg" onClick={() => go(-1)} aria-label="Попередній місяць">‹</button>
-            <h2 className="text-base font-bold text-text capitalize">{monthTitle}</h2>
-            <button type="button" className="w-10 h-10 rounded-xl border border-line text-lg" onClick={() => go(1)} aria-label="Наступний місяць">›</button>
+            <button
+              type="button"
+              className="w-10 h-10 rounded-xl border border-line text-lg"
+              onClick={() => go(-1)}
+              aria-label="Попередній місяць"
+            >
+              ‹
+            </button>
+            <h2 className="text-base font-bold text-text capitalize">
+              {monthTitle}
+            </h2>
+            <button
+              type="button"
+              className="w-10 h-10 rounded-xl border border-line text-lg"
+              onClick={() => go(1)}
+              aria-label="Наступний місяць"
+            >
+              ›
+            </button>
           </div>
 
           <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-semibold text-subtle mb-2">
-            {WEEKDAYS.map((w) => <div key={w}>{w}</div>)}
+            {WEEKDAYS.map((w) => (
+              <div key={w}>{w}</div>
+            ))}
           </div>
           <div className="grid grid-cols-7 gap-1">
             {cells.map((day, i) => {
               if (day == null) {
-                return <div key={`e-${i}`} className="min-h-[52px] rounded-xl bg-bg/40" />;
+                return (
+                  <div
+                    key={`e-${i}`}
+                    className="min-h-[52px] rounded-xl bg-bg/40"
+                  />
+                );
               }
               const key = dateKey(cursor.y, cursor.m, day);
               const tid = days[key]?.templateId;
-              const tpl = tid ? templates.find(t => t.id === tid) : null;
+              const tpl = tid ? templates.find((t) => t.id === tid) : null;
               const isToday =
-                key === `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+                key ===
+                `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 
               return (
                 <button
@@ -164,35 +209,52 @@ export function PlanCalendar() {
                   onClick={() => openDay(day)}
                   className={cn(
                     "min-h-[52px] rounded-xl border p-1 flex flex-col items-center justify-start transition-colors",
-                    isToday ? "border-success bg-success/10" : "border-line bg-panelHi/50 hover:bg-panelHi",
+                    isToday
+                      ? "border-success bg-success/10"
+                      : "border-line bg-panelHi/50 hover:bg-panelHi",
                   )}
                 >
                   <span className="text-xs font-bold text-text">{day}</span>
                   {tpl && (
-                    <span className="text-[9px] text-subtle leading-tight line-clamp-2 mt-0.5 px-0.5">{tpl.name}</span>
+                    <span className="text-[9px] text-subtle leading-tight line-clamp-2 mt-0.5 px-0.5">
+                      {tpl.name}
+                    </span>
                   )}
                 </button>
               );
             })}
           </div>
-          <p className="text-[10px] text-subtle mt-3">Натисни день, щоб призначити або зняти шаблон.</p>
+          <p className="text-[10px] text-subtle mt-3">
+            Натисни день, щоб призначити або зняти шаблон.
+          </p>
         </section>
 
         <section className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card">
-          <h2 className="text-sm font-semibold text-text mb-1">Повне відновлення м’язів (прогноз)</h2>
+          <h2 className="text-sm font-semibold text-text mb-1">
+            Повне відновлення м’язів (прогноз)
+          </h2>
           <p className="text-[11px] text-subtle mb-3 leading-snug">
-            Орієнтовна дата, коли навантаження спаде до «зеленого» стану (модель як у блоці відновлення).
+            Орієнтовна дата, коли навантаження спаде до «зеленого» стану (модель
+            як у блоці відновлення).
           </p>
           {recoveryRows.length === 0 ? (
-            <p className="text-xs text-subtle">Немає даних — потрібні завершені тренування з вправами.</p>
+            <p className="text-xs text-subtle">
+              Немає даних — потрібні завершені тренування з вправами.
+            </p>
           ) : (
             <ul className="space-y-2 max-h-64 overflow-y-auto">
               {recoveryRows.map((r) => (
-                <li key={r.id} className="flex justify-between gap-2 text-sm border-b border-line/40 pb-2 last:border-0">
+                <li
+                  key={r.id}
+                  className="flex justify-between gap-2 text-sm border-b border-line/40 pb-2 last:border-0"
+                >
                   <span className="text-text min-w-0 truncate">{r.label}</span>
                   <span className="text-subtle tabular-nums shrink-0 text-right">
                     {r.iso
-                      ? new Date(r.iso + "T12:00:00").toLocaleDateString("uk-UA", { day: "numeric", month: "short" })
+                      ? new Date(r.iso + "T12:00:00").toLocaleDateString(
+                          "uk-UA",
+                          { day: "numeric", month: "short" },
+                        )
                       : "> 21 дн."}
                   </span>
                 </li>
@@ -203,8 +265,16 @@ export function PlanCalendar() {
       </div>
 
       {sheet && (
-        <div className="fixed inset-0 z-[100] flex items-end justify-center" role="presentation">
-          <button type="button" className="absolute inset-0 bg-black/50" aria-label="Закрити" onClick={() => setSheet(null)} />
+        <div
+          className="fixed inset-0 z-[100] flex items-end justify-center"
+          role="presentation"
+        >
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/50"
+            aria-label="Закрити"
+            onClick={() => setSheet(null)}
+          />
           <div
             ref={sheetRef}
             className="relative w-full max-w-md bg-panel border-t border-line rounded-t-3xl p-5 shadow-soft pb-8"
@@ -212,7 +282,11 @@ export function PlanCalendar() {
             aria-modal="true"
           >
             <div className="text-sm font-bold text-text mb-3">
-              {new Date(sheet.key + "T12:00:00").toLocaleDateString("uk-UA", { weekday: "long", day: "numeric", month: "long" })}
+              {new Date(sheet.key + "T12:00:00").toLocaleDateString("uk-UA", {
+                weekday: "long",
+                day: "numeric",
+                month: "long",
+              })}
             </div>
             <p className="text-xs text-subtle mb-3">Шаблон тренування</p>
             <div className="space-y-2 max-h-60 overflow-y-auto">
@@ -220,7 +294,9 @@ export function PlanCalendar() {
                 type="button"
                 className={cn(
                   "w-full text-left px-3 py-3 rounded-xl border text-sm",
-                  !sheet.templateId ? "border-success bg-success/10" : "border-line hover:bg-panelHi",
+                  !sheet.templateId
+                    ? "border-success bg-success/10"
+                    : "border-line hover:bg-panelHi",
                 )}
                 onClick={() => applySheet(null)}
               >
@@ -232,7 +308,9 @@ export function PlanCalendar() {
                   type="button"
                   className={cn(
                     "w-full text-left px-3 py-3 rounded-xl border text-sm",
-                    sheet.templateId === t.id ? "border-success bg-success/10" : "border-line hover:bg-panelHi",
+                    sheet.templateId === t.id
+                      ? "border-success bg-success/10"
+                      : "border-line hover:bg-panelHi",
                   )}
                   onClick={() => applySheet(t.id)}
                 >
@@ -241,9 +319,18 @@ export function PlanCalendar() {
               ))}
             </div>
             {templates.length === 0 && (
-              <p className="text-xs text-subtle mt-2">Спочатку створи шаблон у «Тренування → Шаблони».</p>
+              <p className="text-xs text-subtle mt-2">
+                Спочатку створи шаблон у «Тренування → Шаблони».
+              </p>
             )}
-            <Button type="button" variant="ghost" className="w-full mt-4" onClick={() => setSheet(null)}>Закрити</Button>
+            <Button
+              type="button"
+              variant="ghost"
+              className="w-full mt-4"
+              onClick={() => setSheet(null)}
+            >
+              Закрити
+            </Button>
           </div>
         </div>
       )}

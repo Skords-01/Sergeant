@@ -5,12 +5,19 @@ const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
 const TOOLS = [
   {
     name: "change_category",
-    description: "Змінити категорію транзакції. Використовуй коли користувач просить перенести транзакцію в іншу категорію.",
+    description:
+      "Змінити категорію транзакції. Використовуй коли користувач просить перенести транзакцію в іншу категорію.",
     input_schema: {
       type: "object",
       properties: {
-        tx_id: { type: "string", description: "ID транзакції з блоку [Останні операції]" },
-        category_id: { type: "string", description: "ID категорії з блоку [Категорії]" },
+        tx_id: {
+          type: "string",
+          description: "ID транзакції з блоку [Останні операції]",
+        },
+        category_id: {
+          type: "string",
+          description: "ID категорії з блоку [Категорії]",
+        },
       },
       required: ["tx_id", "category_id"],
     },
@@ -23,8 +30,14 @@ const TOOLS = [
       properties: {
         name: { type: "string", description: "Назва боргу або кому винен" },
         amount: { type: "number", description: "Сума боргу в грн" },
-        due_date: { type: "string", description: "Дата погашення YYYY-MM-DD (опціонально)" },
-        emoji: { type: "string", description: "Емодзі (опціонально, за замовчуванням 💸)" },
+        due_date: {
+          type: "string",
+          description: "Дата погашення YYYY-MM-DD (опціонально)",
+        },
+        emoji: {
+          type: "string",
+          description: "Емодзі (опціонально, за замовчуванням 💸)",
+        },
       },
       required: ["name", "amount"],
     },
@@ -66,13 +79,23 @@ const TOOLS = [
   },
   {
     name: "set_monthly_plan",
-    description: "Задати або оновити місячний фінплан (планові дохід, витрати, заощадження у грн/міс). Можна передати лише ті поля, які змінюються.",
+    description:
+      "Задати або оновити місячний фінплан (планові дохід, витрати, заощадження у грн/міс). Можна передати лише ті поля, які змінюються.",
     input_schema: {
       type: "object",
       properties: {
-        income: { type: "number", description: "Плановий дохід грн/міс (опційно)" },
-        expense: { type: "number", description: "Планові витрати грн/міс (опційно)" },
-        savings: { type: "number", description: "Планові заощадження грн/міс (опційно)" },
+        income: {
+          type: "number",
+          description: "Плановий дохід грн/міс (опційно)",
+        },
+        expense: {
+          type: "number",
+          description: "Планові витрати грн/міс (опційно)",
+        },
+        savings: {
+          type: "number",
+          description: "Планові заощадження грн/міс (опційно)",
+        },
       },
     },
   },
@@ -98,17 +121,25 @@ export default async function handler(req, res) {
   });
 
   if (req.method === "OPTIONS") return res.status(200).end();
-  if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
+  if (req.method !== "POST")
+    return res.status(405).json({ error: "Method not allowed" });
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) return res.status(500).json({ error: "ANTHROPIC_API_KEY is not set" });
+  if (!apiKey)
+    return res.status(500).json({ error: "ANTHROPIC_API_KEY is not set" });
 
   try {
-    const { context = "", messages = [], tool_results, tool_calls_raw, stream } = req.body || {};
+    const {
+      context = "",
+      messages = [],
+      tool_results,
+      tool_calls_raw,
+      stream,
+    } = req.body || {};
 
     // Другий крок: клієнт виконав tool calls і повертає результати
     if (tool_results && tool_calls_raw) {
-      const toolResultMessages = tool_results.map(r => ({
+      const toolResultMessages = tool_results.map((r) => ({
         type: "tool_result",
         tool_use_id: r.tool_use_id,
         content: String(r.content || "ok"),
@@ -117,10 +148,17 @@ export default async function handler(req, res) {
       // Беремо лише останнє user-повідомлення (питання що спричинило tool call)
       const lastUserMsg = [...(Array.isArray(messages) ? messages : [])]
         .reverse()
-        .find(m => m?.role === "user" && typeof m?.content === "string" && m.content.trim());
+        .find(
+          (m) =>
+            m?.role === "user" &&
+            typeof m?.content === "string" &&
+            m.content.trim(),
+        );
 
       const fullMessages = [
-        ...(lastUserMsg ? [{ role: "user", content: lastUserMsg.content }] : []),
+        ...(lastUserMsg
+          ? [{ role: "user", content: lastUserMsg.content }]
+          : []),
         { role: "assistant", content: tool_calls_raw },
         { role: "user", content: toolResultMessages },
       ];
@@ -150,10 +188,15 @@ export default async function handler(req, res) {
 
       const data = await response.json();
       if (!response.ok) {
-        return res.status(response.status).json({ error: data?.error?.message || "AI error" });
+        return res
+          .status(response.status)
+          .json({ error: data?.error?.message || "AI error" });
       }
 
-      const text = (data?.content || []).filter(b => b.type === "text").map(b => b.text).join("\n");
+      const text = (data?.content || [])
+        .filter((b) => b.type === "text")
+        .map((b) => b.text)
+        .join("\n");
       return res.status(200).json({ text: text || "Готово." });
     }
 
@@ -181,22 +224,33 @@ export default async function handler(req, res) {
 
     const data = await response.json();
     if (!response.ok) {
-      return res.status(response.status).json({ error: data?.error?.message || "AI error" });
+      return res
+        .status(response.status)
+        .json({ error: data?.error?.message || "AI error" });
     }
 
     const content = data?.content || [];
-    const toolUses = content.filter(b => b.type === "tool_use");
-    const textParts = content.filter(b => b.type === "text").map(b => b.text).join("\n");
+    const toolUses = content.filter((b) => b.type === "tool_use");
+    const textParts = content
+      .filter((b) => b.type === "text")
+      .map((b) => b.text)
+      .join("\n");
 
     if (toolUses.length > 0) {
       return res.status(200).json({
         text: textParts || null,
-        tool_calls: toolUses.map(t => ({ id: t.id, name: t.name, input: t.input })),
+        tool_calls: toolUses.map((t) => ({
+          id: t.id,
+          name: t.name,
+          input: t.input,
+        })),
         tool_calls_raw: content,
       });
     }
 
-    return res.status(200).json({ text: textParts || "Немає відповіді від AI." });
+    return res
+      .status(200)
+      .json({ text: textParts || "Немає відповіді від AI." });
   } catch (e) {
     return res.status(500).json({ error: e?.message || "Помилка AI сервера" });
   }
@@ -224,7 +278,9 @@ async function streamAnthropicToSse(res, apiKey, payload) {
     } catch {
       try {
         errMsg = await response.text();
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     }
     res.status(response.status).json({ error: errMsg });
     return;
@@ -261,7 +317,11 @@ async function streamAnthropicToSse(res, apiKey, payload) {
         } catch {
           continue;
         }
-        if (ev.type === "content_block_delta" && ev.delta?.type === "text_delta" && ev.delta.text) {
+        if (
+          ev.type === "content_block_delta" &&
+          ev.delta?.type === "text_delta" &&
+          ev.delta.text
+        ) {
           res.write(`data: ${JSON.stringify({ t: ev.delta.text })}\n\n`);
         }
       }
@@ -275,17 +335,24 @@ async function streamAnthropicToSse(res, apiKey, payload) {
 
 function sanitizeMessages(messages) {
   const cleaned = (Array.isArray(messages) ? messages : [])
-    .filter(m => (m?.role === "user" || m?.role === "assistant") && typeof m?.content === "string" && m.content.trim())
+    .filter(
+      (m) =>
+        (m?.role === "user" || m?.role === "assistant") &&
+        typeof m?.content === "string" &&
+        m.content.trim(),
+    )
     .slice(-12);
 
   // Anthropic вимагає чергування user/assistant і початок з user
   const result = [];
   for (const m of cleaned) {
-    if (result.length > 0 && result[result.length - 1].role === m.role) continue;
+    if (result.length > 0 && result[result.length - 1].role === m.role)
+      continue;
     result.push(m);
   }
   while (result.length > 0 && result[0].role !== "user") result.shift();
-  while (result.length > 0 && result[result.length - 1].role !== "user") result.pop();
+  while (result.length > 0 && result[result.length - 1].role !== "user")
+    result.pop();
 
   return result;
 }

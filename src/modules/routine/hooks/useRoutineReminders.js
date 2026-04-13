@@ -1,5 +1,8 @@
 import { useEffect, useRef } from "react";
-import { dateKeyFromDate, habitScheduledOnDate } from "../lib/hubCalendarAggregate.js";
+import {
+  dateKeyFromDate,
+  habitScheduledOnDate,
+} from "../lib/hubCalendarAggregate.js";
 
 export const ROUTINE_NOTIFY_PREFIX = "routine_notify_";
 

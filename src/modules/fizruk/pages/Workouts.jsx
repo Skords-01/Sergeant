@@ -12,8 +12,13 @@ import { useRecovery } from "../hooks/useRecovery";
 import { useWorkoutTemplates } from "../hooks/useWorkoutTemplates";
 import { useWorkouts } from "../hooks/useWorkouts";
 import { recoveryConflictsForExercise } from "../lib/recoveryConflict";
-import { ACTIVE_WORKOUT_KEY, FIZRUK_SHEET_PAD_CLASS, SHEET_Z, mondayStartMs, summarizeWorkoutForFinish } from "../lib/workoutUi";
-
+import {
+  ACTIVE_WORKOUT_KEY,
+  FIZRUK_SHEET_PAD_CLASS,
+  SHEET_Z,
+  mondayStartMs,
+  summarizeWorkoutForFinish,
+} from "../lib/workoutUi";
 
 const EQUIPMENT_OPTIONS = [
   { id: "bodyweight", label: "Власна вага" },
@@ -39,13 +44,31 @@ function slugify(s) {
 
 function toggleArr(arr, value) {
   const a = Array.isArray(arr) ? arr : [];
-  return a.includes(value) ? a.filter(x => x !== value) : [...a, value];
+  return a.includes(value) ? a.filter((x) => x !== value) : [...a, value];
 }
 
 export function Workouts() {
-  const { exercises, search, primaryGroupsUk, musclesUk, musclesByPrimaryGroup, addExercise, removeExercise } = useExerciseCatalog();
+  const {
+    exercises,
+    search,
+    primaryGroupsUk,
+    musclesUk,
+    musclesByPrimaryGroup,
+    addExercise,
+    removeExercise,
+  } = useExerciseCatalog();
   const rec = useRecovery();
-  const { workouts, createWorkout, createWorkoutWithTimes, updateWorkout, deleteWorkout, endWorkout, addItem, updateItem, removeItem } = useWorkouts();
+  const {
+    workouts,
+    createWorkout,
+    createWorkoutWithTimes,
+    updateWorkout,
+    deleteWorkout,
+    endWorkout,
+    addItem,
+    updateItem,
+    removeItem,
+  } = useWorkouts();
   const templateApi = useWorkoutTemplates();
   const [q, setQ] = useState("");
   const [selected, setSelected] = useState(null);
@@ -54,7 +77,11 @@ export function Workouts() {
   const [mode, setMode] = useState("catalog"); // catalog | log | templates
   const [restTimer, setRestTimer] = useState(null);
   const [activeWorkoutId, setActiveWorkoutId] = useState(() => {
-    try { return localStorage.getItem(ACTIVE_WORKOUT_KEY) || null; } catch { return null; }
+    try {
+      return localStorage.getItem(ACTIVE_WORKOUT_KEY) || null;
+    } catch {
+      return null;
+    }
   });
   const [finishFlash, setFinishFlash] = useState(null);
   const [journalLimit, setJournalLimit] = useState(12);
@@ -75,20 +102,24 @@ export function Workouts() {
   }));
   const detailsSheetRef = useRef(null);
   const addExerciseSheetRef = useRef(null);
-  useDialogFocusTrap(!!selected, detailsSheetRef, { onEscape: () => setSelected(null) });
-  useDialogFocusTrap(addOpen, addExerciseSheetRef, { onEscape: () => setAddOpen(false) });
+  useDialogFocusTrap(!!selected, detailsSheetRef, {
+    onEscape: () => setSelected(null),
+  });
+  useDialogFocusTrap(addOpen, addExerciseSheetRef, {
+    onEscape: () => setAddOpen(false),
+  });
   const suggestedMuscles = useMemo(() => {
     const g = form.primaryGroup;
     const ids = musclesByPrimaryGroup?.[g] || [];
     // show only known labels first
-    return ids.filter(id => musclesUk?.[id]);
+    return ids.filter((id) => musclesUk?.[id]);
   }, [form.primaryGroup, musclesByPrimaryGroup, musclesUk]);
   const list = useMemo(() => search(q), [search, q]);
-  const activeWorkout = workouts.find(w => w.id === activeWorkoutId) || null;
+  const activeWorkout = workouts.find((w) => w.id === activeWorkoutId) || null;
   const workoutQuickStats = useMemo(() => {
-    const done = (workouts || []).filter(w => w.endedAt);
+    const done = (workouts || []).filter((w) => w.endedAt);
     const weekStart = mondayStartMs(Date.now());
-    const thisWeekDone = done.filter(w => {
+    const thisWeekDone = done.filter((w) => {
       const ts = w.startedAt ? Date.parse(w.startedAt) : NaN;
       return Number.isFinite(ts) && ts >= weekStart;
     }).length;
@@ -104,7 +135,8 @@ export function Workouts() {
     if (!activeWorkout?.startedAt) return null;
     const start = Date.parse(activeWorkout.startedAt);
     const end = activeWorkout.endedAt ? Date.parse(activeWorkout.endedAt) : now;
-    if (!Number.isFinite(start) || !Number.isFinite(end) || end < start) return null;
+    if (!Number.isFinite(start) || !Number.isFinite(end) || end < start)
+      return null;
     const sec = Math.floor((end - start) / 1000);
     const mm = String(Math.floor(sec / 60)).padStart(2, "0");
     const ss = String(sec % 60).padStart(2, "0");
@@ -134,9 +166,11 @@ export function Workouts() {
   useEffect(() => {
     if (!restTimer || restTimer.remaining <= 0) return;
     const id = setInterval(() => {
-      setRestTimer(r => {
+      setRestTimer((r) => {
         if (!r || r.remaining <= 1) {
-          try { navigator.vibrate?.(200); } catch {}
+          try {
+            navigator.vibrate?.(200);
+          } catch {}
           return null;
         }
         return { ...r, remaining: r.remaining - 1 };
@@ -146,11 +180,15 @@ export function Workouts() {
   }, [restTimer]);
 
   // Live timer tick — only when there is an active, unfinished workout
-  useEffect(() => {
-    if (!activeWorkout || activeWorkout.endedAt) return;
-    const id = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(id);
-  }, [activeWorkout?.id, activeWorkout?.endedAt]);
+  useEffect(
+    () => {
+      if (!activeWorkout || activeWorkout.endedAt) return;
+      const id = setInterval(() => setNow(Date.now()), 1000);
+      return () => clearInterval(id);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- достатньо id/endedAt; повний об’єкт workout змінюється часто
+    [activeWorkout?.id, activeWorkout?.endedAt],
+  );
 
   const addExerciseToActive = useCallback(
     (ex) => {
@@ -178,11 +216,15 @@ export function Workouts() {
         return;
       }
       if (!activeWorkoutId) {
-        window.alert("Спочатку натисни «+ Нове» у блоці нижче, щоб з’явилось активне тренування.");
+        window.alert(
+          "Спочатку натисни «+ Нове» у блоці нижче, щоб з’явилось активне тренування.",
+        );
         return;
       }
       if (activeWorkout?.endedAt) {
-        window.alert("Це тренування вже завершено. Обери чернетку в «Останні тренування» або створи нове.");
+        window.alert(
+          "Це тренування вже завершено. Обери чернетку в «Останні тренування» або створи нове.",
+        );
         return;
       }
       addExerciseToActive(ex);
@@ -192,12 +234,18 @@ export function Workouts() {
 
   const startWorkoutFromTemplate = useCallback(
     (tpl) => {
-      const picks = (tpl?.exerciseIds || []).map((id) => exercises.find((e) => e.id === id)).filter(Boolean);
+      const picks = (tpl?.exerciseIds || [])
+        .map((id) => exercises.find((e) => e.id === id))
+        .filter(Boolean);
       if (!picks.length) {
-        window.alert("У шаблоні немає вправ з каталогу. Відредагуй шаблон і додай вправи.");
+        window.alert(
+          "У шаблоні немає вправ з каталогу. Відредагуй шаблон і додай вправи.",
+        );
         return;
       }
-      const risky = picks.some((ex) => recoveryConflictsForExercise(ex, rec.by).hasWarning);
+      const risky = picks.some(
+        (ex) => recoveryConflictsForExercise(ex, rec.by).hasWarning,
+      );
       if (risky) {
         const ok = window.confirm(
           "У шаблоні є вправи на групи мʼязів, які ще відновлюються. Почати тренування все одно?",
@@ -248,7 +296,10 @@ export function Workouts() {
         const exId = it.exerciseId;
         if (!exId) continue;
         const existing = out[exId];
-        if (!existing || (w.startedAt || "").localeCompare(existing._startedAt || "") > 0) {
+        if (
+          !existing ||
+          (w.startedAt || "").localeCompare(existing._startedAt || "") > 0
+        ) {
           out[exId] = { ...it, _startedAt: w.startedAt };
         }
       }
@@ -264,11 +315,24 @@ export function Workouts() {
       m.get(gid).push(ex);
     }
     // stable group order (common first)
-    const order = ["chest", "back", "shoulders", "arms", "core", "legs", "glutes", "full_body", "cardio"];
+    const order = [
+      "chest",
+      "back",
+      "shoulders",
+      "arms",
+      "core",
+      "legs",
+      "glutes",
+      "full_body",
+      "cardio",
+    ];
     const entries = Array.from(m.entries()).sort((a, b) => {
       const ai = order.indexOf(a[0]);
       const bi = order.indexOf(b[0]);
-      return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi) || a[0].localeCompare(b[0]);
+      return (
+        (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi) ||
+        a[0].localeCompare(b[0])
+      );
     });
     return entries.map(([gid, items]) => ({
       id: gid,
@@ -278,25 +342,42 @@ export function Workouts() {
     }));
   }, [list, primaryGroupsUk]);
 
-  const finishedCount = useMemo(() => (workouts || []).filter(w => w.endedAt).length, [workouts]);
+  const finishedCount = useMemo(
+    () => (workouts || []).filter((w) => w.endedAt).length,
+    [workouts],
+  );
 
   return (
     <div className="flex-1 overflow-y-auto">
       <div className="max-w-4xl mx-auto px-4 pt-4 fizruk-page-scroll-pad">
         <section className="fizruk-hero-card mb-3" aria-label="Огляд тренувань">
-          <div className="text-[11px] font-bold tracking-widest uppercase text-accent">Тренування</div>
+          <div className="text-[11px] font-bold tracking-widest uppercase text-accent">
+            Тренування
+          </div>
           <div className="grid grid-cols-3 gap-2 mt-3">
             <div className="rounded-xl bg-white/10 border border-white/15 p-2.5 text-center">
-              <div className="text-[10px] uppercase tracking-wide text-white/60">Всього</div>
-              <div className="text-lg font-black text-white tabular-nums">{workouts.length}</div>
+              <div className="text-[10px] uppercase tracking-wide text-white/60">
+                Всього
+              </div>
+              <div className="text-lg font-black text-white tabular-nums">
+                {workouts.length}
+              </div>
             </div>
             <div className="rounded-xl bg-white/10 border border-white/15 p-2.5 text-center">
-              <div className="text-[10px] uppercase tracking-wide text-white/60">Завершено</div>
-              <div className="text-lg font-black text-white tabular-nums">{finishedCount}</div>
+              <div className="text-[10px] uppercase tracking-wide text-white/60">
+                Завершено
+              </div>
+              <div className="text-lg font-black text-white tabular-nums">
+                {finishedCount}
+              </div>
             </div>
             <div className="rounded-xl bg-white/10 border border-white/15 p-2.5 text-center">
-              <div className="text-[10px] uppercase tracking-wide text-white/60">Активне</div>
-              <div className="text-lg font-black text-white tabular-nums">{activeWorkout ? 1 : 0}</div>
+              <div className="text-[10px] uppercase tracking-wide text-white/60">
+                Активне
+              </div>
+              <div className="text-lg font-black text-white tabular-nums">
+                {activeWorkout ? 1 : 0}
+              </div>
             </div>
           </div>
         </section>
@@ -305,7 +386,12 @@ export function Workouts() {
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
-              className={cn("text-xs px-3 py-2.5 min-h-[44px] rounded-full border transition-colors", mode === "catalog" ? "bg-forest text-white border-forest" : "border-line text-subtle hover:text-text")}
+              className={cn(
+                "text-xs px-3 py-2.5 min-h-[44px] rounded-full border transition-colors",
+                mode === "catalog"
+                  ? "bg-forest text-white border-forest"
+                  : "border-line text-subtle hover:text-text",
+              )}
               onClick={() => setMode("catalog")}
               aria-pressed={mode === "catalog"}
             >
@@ -313,7 +399,12 @@ export function Workouts() {
             </button>
             <button
               type="button"
-              className={cn("text-xs px-3 py-2.5 min-h-[44px] rounded-full border transition-colors", mode === "log" ? "bg-forest text-white border-forest" : "border-line text-subtle hover:text-text")}
+              className={cn(
+                "text-xs px-3 py-2.5 min-h-[44px] rounded-full border transition-colors",
+                mode === "log"
+                  ? "bg-forest text-white border-forest"
+                  : "border-line text-subtle hover:text-text",
+              )}
               onClick={() => setMode("log")}
               aria-pressed={mode === "log"}
             >
@@ -321,14 +412,24 @@ export function Workouts() {
             </button>
             <button
               type="button"
-              className={cn("text-xs px-3 py-2.5 min-h-[44px] rounded-full border transition-colors", mode === "templates" ? "bg-forest text-white border-forest" : "border-line text-subtle hover:text-text")}
+              className={cn(
+                "text-xs px-3 py-2.5 min-h-[44px] rounded-full border transition-colors",
+                mode === "templates"
+                  ? "bg-forest text-white border-forest"
+                  : "border-line text-subtle hover:text-text",
+              )}
               onClick={() => setMode("templates")}
               aria-pressed={mode === "templates"}
             >
               Шаблони
             </button>
             {mode === "catalog" && (
-              <Button size="sm" className="h-9 min-h-[44px] px-4" onClick={() => setAddOpen(true)} aria-label="Додати вправу в каталог">
+              <Button
+                size="sm"
+                className="h-9 min-h-[44px] px-4"
+                onClick={() => setAddOpen(true)}
+                aria-label="Додати вправу в каталог"
+              >
                 + Додати
               </Button>
             )}
@@ -339,16 +440,28 @@ export function Workouts() {
           <div className="space-y-3">
             <div className="grid grid-cols-3 gap-2">
               <div className="bg-panel border border-line/60 rounded-2xl p-3 shadow-card text-center">
-                <div className="text-[10px] font-semibold text-subtle uppercase tracking-widest">Завершено</div>
-                <div className="text-lg font-extrabold text-text tabular-nums mt-1">{workoutQuickStats.doneCount}</div>
+                <div className="text-[10px] font-semibold text-subtle uppercase tracking-widest">
+                  Завершено
+                </div>
+                <div className="text-lg font-extrabold text-text tabular-nums mt-1">
+                  {workoutQuickStats.doneCount}
+                </div>
               </div>
               <div className="bg-panel border border-line/60 rounded-2xl p-3 shadow-card text-center">
-                <div className="text-[10px] font-semibold text-subtle uppercase tracking-widest">Цей тиждень</div>
-                <div className="text-lg font-extrabold text-text tabular-nums mt-1">{workoutQuickStats.thisWeekDone}</div>
+                <div className="text-[10px] font-semibold text-subtle uppercase tracking-widest">
+                  Цей тиждень
+                </div>
+                <div className="text-lg font-extrabold text-text tabular-nums mt-1">
+                  {workoutQuickStats.thisWeekDone}
+                </div>
               </div>
               <div className="bg-panel border border-line/60 rounded-2xl p-3 shadow-card text-center">
-                <div className="text-[10px] font-semibold text-subtle uppercase tracking-widest">В активному</div>
-                <div className="text-lg font-extrabold text-text tabular-nums mt-1">{workoutQuickStats.activeItems}</div>
+                <div className="text-[10px] font-semibold text-subtle uppercase tracking-widest">
+                  В активному
+                </div>
+                <div className="text-lg font-extrabold text-text tabular-nums mt-1">
+                  {workoutQuickStats.activeItems}
+                </div>
               </div>
             </div>
 
@@ -364,11 +477,14 @@ export function Workouts() {
               {retroOpen && (
                 <div className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card space-y-3">
                   <p className="text-xs text-subtle leading-relaxed">
-                    Вкажи, коли було тренування. Потім додай вправи та впиши кг, повтори, час тощо — як занесення після факту.
+                    Вкажи, коли було тренування. Потім додай вправи та впиши кг,
+                    повтори, час тощо — як занесення після факту.
                   </p>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <div className="text-[10px] font-bold text-subtle uppercase tracking-widest mb-1">Дата</div>
+                      <div className="text-[10px] font-bold text-subtle uppercase tracking-widest mb-1">
+                        Дата
+                      </div>
                       <input
                         type="date"
                         className="w-full h-11 rounded-xl border border-line bg-panelHi px-3 text-sm text-text outline-none"
@@ -377,7 +493,9 @@ export function Workouts() {
                       />
                     </div>
                     <div>
-                      <div className="text-[10px] font-bold text-subtle uppercase tracking-widest mb-1">Час початку</div>
+                      <div className="text-[10px] font-bold text-subtle uppercase tracking-widest mb-1">
+                        Час початку
+                      </div>
                       <input
                         type="time"
                         className="w-full h-11 rounded-xl border border-line bg-panelHi px-3 text-sm text-text outline-none"
@@ -386,7 +504,11 @@ export function Workouts() {
                       />
                     </div>
                   </div>
-                  <Button type="button" className="w-full h-11" onClick={submitRetroWorkout}>
+                  <Button
+                    type="button"
+                    className="w-full h-11"
+                    onClick={submitRetroWorkout}
+                  >
                     Створити й заповнити
                   </Button>
                 </div>
@@ -395,9 +517,12 @@ export function Workouts() {
 
             {!activeWorkout && (
               <div className="bg-panel border border-line/60 rounded-2xl p-5 shadow-card text-center">
-                <div className="text-sm font-semibold text-text">Немає активного тренування</div>
+                <div className="text-sm font-semibold text-text">
+                  Немає активного тренування
+                </div>
                 <div className="text-xs text-subtle mt-1">
-                  Створи «+ Нове» або відкрий «Шаблони». Вправи з каталогу нижче додаються тапом по назві після цього.
+                  Створи «+ Нове» або відкрий «Шаблони». Вправи з каталогу нижче
+                  додаються тапом по назві після цього.
                 </div>
                 <div className="mt-3 flex gap-2">
                   <Button
@@ -409,7 +534,11 @@ export function Workouts() {
                   >
                     + Нове
                   </Button>
-                  <Button variant="ghost" className="flex-1 h-11" onClick={() => setMode("templates")}>
+                  <Button
+                    variant="ghost"
+                    className="flex-1 h-11"
+                    onClick={() => setMode("templates")}
+                  >
                     Шаблони
                   </Button>
                 </div>
@@ -445,7 +574,9 @@ export function Workouts() {
                 onDeleteWorkout={() => {
                   if (confirm("Видалити тренування?")) {
                     deleteWorkout(activeWorkout.id);
-                    setActiveWorkoutId(prev => (prev === activeWorkout.id ? null : prev));
+                    setActiveWorkoutId((prev) =>
+                      prev === activeWorkout.id ? null : prev,
+                    );
                   }
                 }}
               />
@@ -453,47 +584,64 @@ export function Workouts() {
 
             <div className="bg-panel border border-line/60 rounded-2xl shadow-card overflow-hidden">
               <div className="px-4 py-3 bg-panelHi/60 border-b border-line">
-                <div className="text-xs font-bold text-subtle uppercase tracking-widest">Останні тренування</div>
+                <div className="text-xs font-bold text-subtle uppercase tracking-widest">
+                  Останні тренування
+                </div>
               </div>
-              {(workouts || []).slice(0, journalLimit).map(w => (
+              {(workouts || []).slice(0, journalLimit).map((w) => (
                 <button
                   key={w.id}
                   onClick={() => setActiveWorkoutId(w.id)}
                   className={cn(
                     "w-full text-left px-4 py-3 border-b border-line last:border-0 hover:bg-panelHi transition-colors",
-                    activeWorkoutId === w.id && "bg-text/5"
+                    activeWorkoutId === w.id && "bg-text/5",
                   )}
                 >
                   <div className="flex items-center justify-between gap-3">
                     <div className="text-sm font-semibold text-text">
-                      {new Date(w.startedAt).toLocaleDateString("uk-UA", { month: "short", day: "numeric" })}
+                      {new Date(w.startedAt).toLocaleDateString("uk-UA", {
+                        month: "short",
+                        day: "numeric",
+                      })}
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-subtle">{(w.items || []).length} вправ</span>
+                      <span className="text-xs text-subtle">
+                        {(w.items || []).length} вправ
+                      </span>
                       {activeWorkoutId === w.id ? (
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-success/15 text-success border border-success/20">Активне</span>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-success/15 text-success border border-success/20">
+                          Активне
+                        </span>
                       ) : w.endedAt ? (
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-panelHi text-subtle border border-line">Завершене</span>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-panelHi text-subtle border border-line">
+                          Завершене
+                        </span>
                       ) : (
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-warning/10 text-warning border border-warning/20">Чернетка</span>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-warning/10 text-warning border border-warning/20">
+                          Чернетка
+                        </span>
                       )}
                     </div>
                   </div>
                   {w.note && (
-                    <div className="text-xs text-subtle mt-1 italic line-clamp-2">{w.note}</div>
+                    <div className="text-xs text-subtle mt-1 italic line-clamp-2">
+                      {w.note}
+                    </div>
                   )}
                 </button>
               ))}
               {(workouts || []).length > journalLimit && (
                 <button
-                  onClick={() => setJournalLimit(l => l + 12)}
+                  onClick={() => setJournalLimit((l) => l + 12)}
                   className="w-full py-3 text-sm font-semibold text-accent hover:text-accent/80 transition-colors"
                 >
                   Показати більше
                 </button>
               )}
               {(workouts || []).length === 0 && (
-                <div className="p-6 text-center text-sm text-subtle">Поки тренувань немає</div>
+                <div className="p-6 text-center text-sm text-subtle">
+                  Поки тренувань немає
+                </div>
               )}
             </div>
           </div>
@@ -512,116 +660,159 @@ export function Workouts() {
         )}
 
         {(mode === "catalog" || mode === "log") && (
-        <div className="relative mb-3">
-          <Input
-            placeholder="Пошук (жим, підтягування, спина...)"
-            value={q}
-            onChange={e => setQ(e.target.value)}
-          />
-          {q && (
-            <button
-              onClick={() => setQ("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-subtle hover:text-text"
-            >
-              ✕
-            </button>
-          )}
-        </div>
+          <div className="relative mb-3">
+            <Input
+              placeholder="Пошук (жим, підтягування, спина...)"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+            />
+            {q && (
+              <button
+                onClick={() => setQ("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-subtle hover:text-text"
+              >
+                ✕
+              </button>
+            )}
+          </div>
         )}
 
         {mode === "log" && (
           <p className="text-xs text-subtle mb-2 leading-relaxed">
-            Розкрий групу й тапни по вправі — додасться в активне тренування. Кнопка «ⓘ» праворуч — опис і фото без додавання.
+            Розкрий групу й тапни по вправі — додасться в активне тренування.
+            Кнопка «ⓘ» праворуч — опис і фото без додавання.
           </p>
         )}
 
         {mode !== "templates" && (
-        <div className="bg-panel border border-line/60 rounded-2xl shadow-card overflow-hidden">
-          {grouped.length === 0 ? (
-            <div className="p-6 text-center text-sm text-subtle">
-              Поки немає вправ. Додай першу через кнопку “+ Додати”.
-            </div>
-          ) : (
-            grouped.map(g => {
-              const isOpen = open[g.id] ?? false;
-              return (
-                <div key={g.id} className="border-b border-line last:border-0">
-                  <button
-                    onClick={() => setOpen(o => ({ ...o, [g.id]: !isOpen }))}
-                    className="w-full flex items-center justify-between px-4 py-3 bg-panelHi/60 hover:bg-panelHi transition-colors"
+          <div className="bg-panel border border-line/60 rounded-2xl shadow-card overflow-hidden">
+            {grouped.length === 0 ? (
+              <div className="p-6 text-center text-sm text-subtle">
+                Поки немає вправ. Додай першу через кнопку “+ Додати”.
+              </div>
+            ) : (
+              grouped.map((g) => {
+                const isOpen = open[g.id] ?? false;
+                return (
+                  <div
+                    key={g.id}
+                    className="border-b border-line last:border-0"
                   >
-                    <div className="text-sm font-bold text-text">{g.label}</div>
-                    <div className="text-xs text-muted flex items-center gap-2">
-                      <span>{g.total}</span>
-                      <span className="text-lg leading-none">{isOpen ? "▾" : "▸"}</span>
-                    </div>
-                  </button>
-                  {isOpen && (
-                    <div>
-                      {g.items.map(ex => {
-                        const catCf = recoveryConflictsForExercise(ex, rec.by);
-                        return (
-                        <div key={ex.id} className="flex border-t border-line">
-                          <button
-                            type="button"
-                            onClick={() => handleExerciseInListClick(ex)}
-                            className={cn(
-                              "flex-1 min-w-0 text-left px-4 py-3 transition-colors",
-                              mode === "log" ? "hover:bg-success/10 active:bg-success/15" : "hover:bg-panelHi",
-                            )}
-                          >
-                            <div className="flex items-start justify-between gap-3">
-                              <div className="min-w-0">
-                                <div className="text-sm font-semibold text-text truncate flex items-center gap-2">
-                                  {ex?.name?.uk || ex?.name?.en}
-                                  {catCf.hasWarning ? <span className="text-warning shrink-0" title="Мʼязи ще відновлюються">⚠</span> : null}
-                                </div>
-                                <div className="text-xs text-subtle mt-0.5">
-                                  Мʼязи:{" "}
-                                  <span className="font-semibold text-muted">
-                                    {(ex?.muscles?.primary || []).map(id => musclesUk?.[id] || id).join(", ") || "—"}
-                                  </span>
-                                </div>
-                              </div>
-                              <div className="shrink-0 text-xs text-muted tabular-nums">
-                                {ex.rating ? ex.rating.toFixed(1) : ""}
-                              </div>
-                            </div>
-                          </button>
-                          {mode === "log" && (
-                            <button
-                              type="button"
-                              className="shrink-0 w-12 min-h-[48px] flex items-center justify-center border-l border-line/80 text-muted hover:text-text hover:bg-panelHi transition-colors"
-                              aria-label="Опис і фото вправи"
-                              onClick={() => setSelected(ex)}
+                    <button
+                      onClick={() =>
+                        setOpen((o) => ({ ...o, [g.id]: !isOpen }))
+                      }
+                      className="w-full flex items-center justify-between px-4 py-3 bg-panelHi/60 hover:bg-panelHi transition-colors"
+                    >
+                      <div className="text-sm font-bold text-text">
+                        {g.label}
+                      </div>
+                      <div className="text-xs text-muted flex items-center gap-2">
+                        <span>{g.total}</span>
+                        <span className="text-lg leading-none">
+                          {isOpen ? "▾" : "▸"}
+                        </span>
+                      </div>
+                    </button>
+                    {isOpen && (
+                      <div>
+                        {g.items.map((ex) => {
+                          const catCf = recoveryConflictsForExercise(
+                            ex,
+                            rec.by,
+                          );
+                          return (
+                            <div
+                              key={ex.id}
+                              className="flex border-t border-line"
                             >
-                              <span className="text-base leading-none" aria-hidden>ⓘ</span>
-                            </button>
-                          )}
-                        </div>
-                      );})}
-                      {g.total > g.items.length && (
-                        <div className="px-4 py-3 text-xs text-subtle border-t border-line">
-                          Показано {g.items.length} з {g.total} (уточни пошук щоб звузити)
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              );
-            })
-          )}
-        </div>
+                              <button
+                                type="button"
+                                onClick={() => handleExerciseInListClick(ex)}
+                                className={cn(
+                                  "flex-1 min-w-0 text-left px-4 py-3 transition-colors",
+                                  mode === "log"
+                                    ? "hover:bg-success/10 active:bg-success/15"
+                                    : "hover:bg-panelHi",
+                                )}
+                              >
+                                <div className="flex items-start justify-between gap-3">
+                                  <div className="min-w-0">
+                                    <div className="text-sm font-semibold text-text truncate flex items-center gap-2">
+                                      {ex?.name?.uk || ex?.name?.en}
+                                      {catCf.hasWarning ? (
+                                        <span
+                                          className="text-warning shrink-0"
+                                          title="Мʼязи ще відновлюються"
+                                        >
+                                          ⚠
+                                        </span>
+                                      ) : null}
+                                    </div>
+                                    <div className="text-xs text-subtle mt-0.5">
+                                      Мʼязи:{" "}
+                                      <span className="font-semibold text-muted">
+                                        {(ex?.muscles?.primary || [])
+                                          .map((id) => musclesUk?.[id] || id)
+                                          .join(", ") || "—"}
+                                      </span>
+                                    </div>
+                                  </div>
+                                  <div className="shrink-0 text-xs text-muted tabular-nums">
+                                    {ex.rating ? ex.rating.toFixed(1) : ""}
+                                  </div>
+                                </div>
+                              </button>
+                              {mode === "log" && (
+                                <button
+                                  type="button"
+                                  className="shrink-0 w-12 min-h-[48px] flex items-center justify-center border-l border-line/80 text-muted hover:text-text hover:bg-panelHi transition-colors"
+                                  aria-label="Опис і фото вправи"
+                                  onClick={() => setSelected(ex)}
+                                >
+                                  <span
+                                    className="text-base leading-none"
+                                    aria-hidden
+                                  >
+                                    ⓘ
+                                  </span>
+                                </button>
+                              )}
+                            </div>
+                          );
+                        })}
+                        {g.total > g.items.length && (
+                          <div className="px-4 py-3 text-xs text-subtle border-t border-line">
+                            Показано {g.items.length} з {g.total} (уточни пошук
+                            щоб звузити)
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            )}
+          </div>
         )}
 
         {/* Details sheet */}
         {selected && (
-          <div className={cn("fixed inset-0 flex items-end fizruk-sheet", SHEET_Z)} onClick={() => setSelected(null)}>
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" aria-hidden />
+          <div
+            className={cn("fixed inset-0 flex items-end fizruk-sheet", SHEET_Z)}
+            onClick={() => setSelected(null)}
+          >
+            <div
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              aria-hidden
+            />
             <div
               ref={detailsSheetRef}
-              className={cn("relative w-full bg-panel border-t border-line rounded-t-3xl shadow-soft", FIZRUK_SHEET_PAD_CLASS)}
-              onClick={e => e.stopPropagation()}
+              className={cn(
+                "relative w-full bg-panel border-t border-line rounded-t-3xl shadow-soft",
+                FIZRUK_SHEET_PAD_CLASS,
+              )}
+              onClick={(e) => e.stopPropagation()}
               role="dialog"
               aria-modal="true"
               aria-labelledby="fizruk-ex-details-title"
@@ -632,10 +823,26 @@ export function Workouts() {
               <div className="px-5 pb-6">
                 <div className="flex items-start justify-between gap-3 mb-3">
                   <div className="min-w-0">
-                    <div id="fizruk-ex-details-title" className="text-lg font-extrabold text-text leading-tight">{selected?.name?.uk || selected?.name?.en}</div>
+                    <div
+                      id="fizruk-ex-details-title"
+                      className="text-lg font-extrabold text-text leading-tight"
+                    >
+                      {selected?.name?.uk || selected?.name?.en}
+                    </div>
                     <div className="text-xs text-subtle mt-1">
-                      Основна група: <span className="font-semibold text-muted">{selected.primaryGroupUk || selected.primaryGroup}</span>
-                      {selected.level ? <> · рівень: <span className="font-semibold text-muted">{selected.level}</span></> : null}
+                      Основна група:{" "}
+                      <span className="font-semibold text-muted">
+                        {selected.primaryGroupUk || selected.primaryGroup}
+                      </span>
+                      {selected.level ? (
+                        <>
+                          {" "}
+                          · рівень:{" "}
+                          <span className="font-semibold text-muted">
+                            {selected.level}
+                          </span>
+                        </>
+                      ) : null}
                     </div>
                   </div>
                   <button
@@ -651,20 +858,34 @@ export function Workouts() {
                   if (!cf.hasWarning) return null;
                   return (
                     <div className="mb-4 rounded-2xl border border-warning/40 bg-warning/10 px-3 py-2.5 text-xs text-warning leading-snug">
-                      {cf.red.length ? <div><span className="font-semibold">Рано:</span> {cf.red.map(x => x.label).join(", ")}</div> : null}
-                      {cf.yellow.length ? <div className="mt-1"><span className="font-semibold">Краще почекати:</span> {cf.yellow.map(x => x.label).join(", ")}</div> : null}
+                      {cf.red.length ? (
+                        <div>
+                          <span className="font-semibold">Рано:</span>{" "}
+                          {cf.red.map((x) => x.label).join(", ")}
+                        </div>
+                      ) : null}
+                      {cf.yellow.length ? (
+                        <div className="mt-1">
+                          <span className="font-semibold">Краще почекати:</span>{" "}
+                          {cf.yellow.map((x) => x.label).join(", ")}
+                        </div>
+                      ) : null}
                     </div>
                   );
                 })()}
 
-                {((selected.images || []).filter(Boolean).length) > 0 && (
+                {(selected.images || []).filter(Boolean).length > 0 && (
                   <div className="mb-4 -mx-5 px-5 overflow-x-auto no-scrollbar">
                     <div className="flex gap-3">
                       {selected.images.slice(0, 8).map((src) => (
                         <img
                           key={src}
                           src={src}
-                          alt={selected?.name?.uk || selected?.name?.en || "exercise"}
+                          alt={
+                            selected?.name?.uk ||
+                            selected?.name?.en ||
+                            "exercise"
+                          }
                           loading="lazy"
                           className="h-40 w-40 rounded-2xl object-cover border border-line bg-bg"
                         />
@@ -680,15 +901,23 @@ export function Workouts() {
                 )}
 
                 <div className="space-y-2">
-                  <div className="text-xs font-bold text-subtle uppercase tracking-widest">Мʼязи</div>
+                  <div className="text-xs font-bold text-subtle uppercase tracking-widest">
+                    Мʼязи
+                  </div>
                   <div className="flex flex-wrap gap-1.5">
-                    {(selected?.muscles?.primary || []).map(m => (
-                      <span key={m} className="text-xs px-3 py-1.5 rounded-full border border-line bg-bg text-muted font-semibold">
+                    {(selected?.muscles?.primary || []).map((m) => (
+                      <span
+                        key={m}
+                        className="text-xs px-3 py-1.5 rounded-full border border-line bg-bg text-muted font-semibold"
+                      >
                         {musclesUk?.[m] || m} · основний
                       </span>
                     ))}
-                    {(selected?.muscles?.secondary || []).map(m => (
-                      <span key={m} className="text-xs px-3 py-1.5 rounded-full border border-line bg-bg text-subtle font-semibold">
+                    {(selected?.muscles?.secondary || []).map((m) => (
+                      <span
+                        key={m}
+                        className="text-xs px-3 py-1.5 rounded-full border border-line bg-bg text-subtle font-semibold"
+                      >
                         {musclesUk?.[m] || m}
                       </span>
                     ))}
@@ -696,30 +925,45 @@ export function Workouts() {
                 </div>
 
                 <div className="mt-4 space-y-2">
-                  <div className="text-xs font-bold text-subtle uppercase tracking-widest">Обладнання</div>
+                  <div className="text-xs font-bold text-subtle uppercase tracking-widest">
+                    Обладнання
+                  </div>
                   <div className="flex flex-wrap gap-1.5">
-                    {(selected.equipmentUk || selected.equipment || []).map(eq => (
-                      <span key={eq} className="text-xs px-3 py-1.5 rounded-full border border-line bg-bg text-muted font-semibold">
-                        {eq}
-                      </span>
-                    ))}
+                    {(selected.equipmentUk || selected.equipment || []).map(
+                      (eq) => (
+                        <span
+                          key={eq}
+                          className="text-xs px-3 py-1.5 rounded-full border border-line bg-bg text-muted font-semibold"
+                        >
+                          {eq}
+                        </span>
+                      ),
+                    )}
                   </div>
                 </div>
 
                 {selected.tips?.length ? (
                   <div className="mt-4">
-                    <div className="text-xs font-bold text-subtle uppercase tracking-widest mb-2">Підказки</div>
+                    <div className="text-xs font-bold text-subtle uppercase tracking-widest mb-2">
+                      Підказки
+                    </div>
                     <ul className="space-y-1.5">
                       {selected.tips.map((t, i) => (
-                        <li key={i} className="text-sm text-text leading-relaxed">
-                          <span className="text-muted font-bold mr-2">•</span>{t}
+                        <li
+                          key={i}
+                          className="text-sm text-text leading-relaxed"
+                        >
+                          <span className="text-muted font-bold mr-2">•</span>
+                          {t}
                         </li>
                       ))}
                     </ul>
                   </div>
                 ) : null}
 
-                {(selected._custom || selected.source === "manual" || String(selected.id || "").startsWith("custom_")) && (
+                {(selected._custom ||
+                  selected.source === "manual" ||
+                  String(selected.id || "").startsWith("custom_")) && (
                   <div className="mt-4">
                     <Button
                       variant="danger"
@@ -744,7 +988,9 @@ export function Workouts() {
                         return;
                       }
                       if (activeWorkout?.endedAt) {
-                        window.alert("Це тренування вже завершено. Обери чернетку або створи нове.");
+                        window.alert(
+                          "Це тренування вже завершено. Обери чернетку або створи нове.",
+                        );
                         return;
                       }
                       addExerciseToActive(selected);
@@ -763,7 +1009,11 @@ export function Workouts() {
                     variant="ghost"
                     className={cn("h-12")}
                     onClick={() => {
-                      navigator.clipboard?.writeText(selected?.name?.uk || selected?.name?.en || "").catch(() => {});
+                      navigator.clipboard
+                        ?.writeText(
+                          selected?.name?.uk || selected?.name?.en || "",
+                        )
+                        .catch(() => {});
                     }}
                   >
                     📋 Копіювати назву
@@ -776,12 +1026,22 @@ export function Workouts() {
 
         {/* Add exercise sheet */}
         {addOpen && (
-          <div className={cn("fixed inset-0 flex items-end fizruk-sheet", SHEET_Z)} onClick={() => setAddOpen(false)} role="presentation">
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" aria-hidden />
+          <div
+            className={cn("fixed inset-0 flex items-end fizruk-sheet", SHEET_Z)}
+            onClick={() => setAddOpen(false)}
+            role="presentation"
+          >
+            <div
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              aria-hidden
+            />
             <div
               ref={addExerciseSheetRef}
-              className={cn("relative w-full bg-panel border-t border-line rounded-t-3xl shadow-soft max-h-[92dvh] flex flex-col", FIZRUK_SHEET_PAD_CLASS)}
-              onClick={e => e.stopPropagation()}
+              className={cn(
+                "relative w-full bg-panel border-t border-line rounded-t-3xl shadow-soft max-h-[92dvh] flex flex-col",
+                FIZRUK_SHEET_PAD_CLASS,
+              )}
+              onClick={(e) => e.stopPropagation()}
               role="dialog"
               aria-modal="true"
               aria-labelledby="add-ex-title"
@@ -792,8 +1052,15 @@ export function Workouts() {
               <div className="px-4 sm:px-5 pb-6 overflow-y-auto flex-1 min-h-0">
                 <div className="flex items-start justify-between gap-3 mb-3">
                   <div className="min-w-0">
-                    <div id="add-ex-title" className="text-lg font-extrabold text-text leading-tight">Додати вправу</div>
-                    <div className="text-xs text-subtle mt-1">Збережеться локально на цьому пристрої</div>
+                    <div
+                      id="add-ex-title"
+                      className="text-lg font-extrabold text-text leading-tight"
+                    >
+                      Додати вправу
+                    </div>
+                    <div className="text-xs text-subtle mt-1">
+                      Збережеться локально на цьому пристрої
+                    </div>
                   </div>
                   <button
                     type="button"
@@ -809,37 +1076,59 @@ export function Workouts() {
                   <Input
                     placeholder="Назва (укр) *"
                     value={form.nameUk}
-                    onChange={e => setForm(f => ({ ...f, nameUk: e.target.value }))}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, nameUk: e.target.value }))
+                    }
                     aria-label="Назва вправи українською"
                   />
 
                   <div className="rounded-2xl border border-line bg-panelHi px-3">
-                    <div className="text-[10px] font-bold text-subtle uppercase tracking-widest pt-2">Основна група</div>
+                    <div className="text-[10px] font-bold text-subtle uppercase tracking-widest pt-2">
+                      Основна група
+                    </div>
                     <select
                       className="w-full min-h-[44px] bg-transparent text-sm text-text outline-none py-2"
                       value={form.primaryGroup}
-                      onChange={e => setForm(f => ({ ...f, primaryGroup: e.target.value, musclesPrimary: [], musclesSecondary: [] }))}
+                      onChange={(e) =>
+                        setForm((f) => ({
+                          ...f,
+                          primaryGroup: e.target.value,
+                          musclesPrimary: [],
+                          musclesSecondary: [],
+                        }))
+                      }
                       aria-label="Основна група м’язів"
                     >
-                      {Object.keys(primaryGroupsUk).map(id => (
-                        <option key={id} value={id}>{primaryGroupsUk[id]}</option>
+                      {Object.keys(primaryGroupsUk).map((id) => (
+                        <option key={id} value={id}>
+                          {primaryGroupsUk[id]}
+                        </option>
                       ))}
                     </select>
                   </div>
 
                   <div className="rounded-2xl border border-line bg-panelHi px-3 py-2">
-                    <div className="text-[10px] font-bold text-subtle uppercase tracking-widest">Обладнання</div>
+                    <div className="text-[10px] font-bold text-subtle uppercase tracking-widest">
+                      Обладнання
+                    </div>
                     <div className="py-2 flex flex-wrap gap-2">
-                      {EQUIPMENT_OPTIONS.map(o => {
+                      {EQUIPMENT_OPTIONS.map((o) => {
                         const active = (form.equipment || []).includes(o.id);
                         return (
                           <button
                             key={o.id}
                             type="button"
-                            onClick={() => setForm(f => ({ ...f, equipment: toggleArr(f.equipment, o.id) }))}
+                            onClick={() =>
+                              setForm((f) => ({
+                                ...f,
+                                equipment: toggleArr(f.equipment, o.id),
+                              }))
+                            }
                             className={cn(
                               "text-xs px-3 py-2.5 min-h-[44px] rounded-full border transition-colors",
-                              active ? "bg-text text-white border-text" : "border-line bg-bg text-muted hover:border-muted hover:text-text"
+                              active
+                                ? "bg-text text-white border-text"
+                                : "border-line bg-bg text-muted hover:border-muted hover:text-text",
                             )}
                             aria-pressed={active}
                           >
@@ -849,9 +1138,11 @@ export function Workouts() {
                       })}
                     </div>
                   </div>
-                  
+
                   <div className="rounded-2xl border border-line bg-panelHi px-3 py-2">
-                    <div className="text-[10px] font-bold text-subtle uppercase tracking-widest">Основні мʼязи</div>
+                    <div className="text-[10px] font-bold text-subtle uppercase tracking-widest">
+                      Основні мʼязи
+                    </div>
                     <div className="flex flex-wrap gap-1.5 mt-2">
                       {suggestedMuscles.map((id) => (
                         <button
@@ -861,9 +1152,14 @@ export function Workouts() {
                             "text-xs px-3 py-2 min-h-[44px] rounded-full border transition-colors",
                             (form.musclesPrimary || []).includes(id)
                               ? "bg-primary border-primary text-white"
-                              : "border-line bg-bg text-muted hover:border-muted hover:text-text"
+                              : "border-line bg-bg text-muted hover:border-muted hover:text-text",
                           )}
-                          onClick={() => setForm(f => ({ ...f, musclesPrimary: toggleArr(f.musclesPrimary, id) }))}
+                          onClick={() =>
+                            setForm((f) => ({
+                              ...f,
+                              musclesPrimary: toggleArr(f.musclesPrimary, id),
+                            }))
+                          }
                         >
                           {musclesUk[id] || id}
                         </button>
@@ -872,7 +1168,9 @@ export function Workouts() {
                   </div>
 
                   <div className="rounded-2xl border border-line bg-panelHi px-3 py-2">
-                    <div className="text-[10px] font-bold text-subtle uppercase tracking-widest">Супутні мʼязи</div>
+                    <div className="text-[10px] font-bold text-subtle uppercase tracking-widest">
+                      Супутні мʼязи
+                    </div>
                     <div className="flex flex-wrap gap-1.5 mt-2">
                       {suggestedMuscles.map((id) => (
                         <button
@@ -882,9 +1180,17 @@ export function Workouts() {
                             "text-xs px-3 py-2 min-h-[44px] rounded-full border transition-colors",
                             (form.musclesSecondary || []).includes(id)
                               ? "bg-text/80 border-text/80 text-white"
-                              : "border-line bg-bg text-muted hover:border-muted hover:text-text"
+                              : "border-line bg-bg text-muted hover:border-muted hover:text-text",
                           )}
-                          onClick={() => setForm(f => ({ ...f, musclesSecondary: toggleArr(f.musclesSecondary, id) }))}
+                          onClick={() =>
+                            setForm((f) => ({
+                              ...f,
+                              musclesSecondary: toggleArr(
+                                f.musclesSecondary,
+                                id,
+                              ),
+                            }))
+                          }
                         >
                           {musclesUk[id] || id}
                         </button>
@@ -895,7 +1201,9 @@ export function Workouts() {
                   <Input
                     placeholder="Опис"
                     value={form.description}
-                    onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, description: e.target.value }))
+                    }
                   />
                 </div>
 
@@ -910,10 +1218,20 @@ export function Workouts() {
                         id,
                         name: { uk: nameUk, en: nameUk },
                         primaryGroup: form.primaryGroup,
-                        primaryGroupUk: primaryGroupsUk[form.primaryGroup] || form.primaryGroup,
-                        muscles: { primary: form.musclesPrimary || [], secondary: form.musclesSecondary || [], stabilizers: [] },
+                        primaryGroupUk:
+                          primaryGroupsUk[form.primaryGroup] ||
+                          form.primaryGroup,
+                        muscles: {
+                          primary: form.musclesPrimary || [],
+                          secondary: form.musclesSecondary || [],
+                          stabilizers: [],
+                        },
                         equipment: form.equipment || [],
-                        equipmentUk: (form.equipment || []).map(eid => EQUIPMENT_OPTIONS.find(x => x.id === eid)?.label || eid),
+                        equipmentUk: (form.equipment || []).map(
+                          (eid) =>
+                            EQUIPMENT_OPTIONS.find((x) => x.id === eid)
+                              ?.label || eid,
+                        ),
                         description: (form.description || "").trim(),
                         source: "manual",
                       });
@@ -930,7 +1248,11 @@ export function Workouts() {
                   >
                     Зберегти
                   </Button>
-                  <Button variant="ghost" className="h-12 min-h-[44px]" onClick={() => setAddOpen(false)}>
+                  <Button
+                    variant="ghost"
+                    className="h-12 min-h-[44px]"
+                    onClick={() => setAddOpen(false)}
+                  >
                     Скасувати
                   </Button>
                 </div>
@@ -939,9 +1261,16 @@ export function Workouts() {
           </div>
         )}
 
-        <RestTimerOverlay restTimer={restTimer} onCancel={() => setRestTimer(null)} />
+        <RestTimerOverlay
+          restTimer={restTimer}
+          onCancel={() => setRestTimer(null)}
+        />
 
-        <WorkoutFinishSheets finishFlash={finishFlash} setFinishFlash={setFinishFlash} updateWorkout={updateWorkout} />
+        <WorkoutFinishSheets
+          finishFlash={finishFlash}
+          setFinishFlash={setFinishFlash}
+          updateWorkout={updateWorkout}
+        />
       </div>
     </div>
   );

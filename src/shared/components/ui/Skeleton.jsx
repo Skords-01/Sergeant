@@ -7,5 +7,7 @@ export function Skeleton({ className }) {
 }
 
 export function SkeletonText({ className }) {
-  return <div className={cn("animate-pulse bg-panelHi rounded-lg h-3", className)} />;
+  return (
+    <div className={cn("animate-pulse bg-panelHi rounded-lg h-3", className)} />
+  );
 }

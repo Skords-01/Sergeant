@@ -32,12 +32,21 @@ export function ExercisePickerSheet({
 
   if (!open) return null;
   return (
-    <div className={cn("fixed inset-0 flex items-end fizruk-sheet", SHEET_Z)} onClick={onClose}>
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" aria-hidden />
+    <div
+      className={cn("fixed inset-0 flex items-end fizruk-sheet", SHEET_Z)}
+      onClick={onClose}
+    >
+      <div
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        aria-hidden
+      />
       <div
         ref={sheetRef}
-        className={cn("relative w-full bg-panel border-t border-line rounded-t-3xl shadow-soft", FIZRUK_SHEET_PAD_CLASS)}
-        onClick={e => e.stopPropagation()}
+        className={cn(
+          "relative w-full bg-panel border-t border-line rounded-t-3xl shadow-soft",
+          FIZRUK_SHEET_PAD_CLASS,
+        )}
+        onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-labelledby="ex-picker-title"
@@ -48,8 +57,15 @@ export function ExercisePickerSheet({
         <div className="px-5 pb-6">
           <div className="flex items-start justify-between gap-3 mb-3">
             <div className="min-w-0">
-              <div id="ex-picker-title" className="text-lg font-extrabold text-text leading-tight">Додати вправу в тренування</div>
-              <div className="text-xs text-subtle mt-1">Почни вводити назву</div>
+              <div
+                id="ex-picker-title"
+                className="text-lg font-extrabold text-text leading-tight"
+              >
+                Додати вправу в тренування
+              </div>
+              <div className="text-xs text-subtle mt-1">
+                Почни вводити назву
+              </div>
             </div>
             <button
               type="button"
@@ -66,28 +82,49 @@ export function ExercisePickerSheet({
               ref={searchRef}
               placeholder="Пошук вправи…"
               value={pickQ}
-              onChange={e => onPickQ(e.target.value)}
+              onChange={(e) => onPickQ(e.target.value)}
               aria-label="Пошук вправи"
             />
           </div>
 
           {pendingPick && (
             <div className="mb-3 rounded-2xl border border-warning/50 bg-warning/10 p-4">
-              <div className="text-sm font-bold text-warning mb-2">Мʼязи ще відновлюються</div>
+              <div className="text-sm font-bold text-warning mb-2">
+                Мʼязи ще відновлюються
+              </div>
               {(() => {
                 const cf = recoveryConflictsForExercise(pendingPick, recBy);
                 return (
                   <div className="text-xs text-warning/90 leading-relaxed space-y-1">
-                    {cf.red.length ? <div><span className="font-semibold">Рано навантажувати:</span> {cf.red.map(x => x.label).join(", ")}</div> : null}
-                    {cf.yellow.length ? <div><span className="font-semibold">Краще почекати:</span> {cf.yellow.map(x => x.label).join(", ")}</div> : null}
+                    {cf.red.length ? (
+                      <div>
+                        <span className="font-semibold">
+                          Рано навантажувати:
+                        </span>{" "}
+                        {cf.red.map((x) => x.label).join(", ")}
+                      </div>
+                    ) : null}
+                    {cf.yellow.length ? (
+                      <div>
+                        <span className="font-semibold">Краще почекати:</span>{" "}
+                        {cf.yellow.map((x) => x.label).join(", ")}
+                      </div>
+                    ) : null}
                   </div>
                 );
               })()}
               <div className="flex gap-2 mt-3">
-                <Button className="flex-1 h-11" onClick={() => onAddExercise(pendingPick)}>
+                <Button
+                  className="flex-1 h-11"
+                  onClick={() => onAddExercise(pendingPick)}
+                >
                   Все одно додати
                 </Button>
-                <Button variant="ghost" className="flex-1 h-11" onClick={() => onPendingPick(null)}>
+                <Button
+                  variant="ghost"
+                  className="flex-1 h-11"
+                  onClick={() => onPendingPick(null)}
+                >
                   Назад
                 </Button>
               </div>
@@ -96,10 +133,12 @@ export function ExercisePickerSheet({
 
           <div className="bg-bg border border-line rounded-2xl overflow-hidden max-h-[55vh] overflow-y-auto">
             {pickList.length === 0 && pickQ && (
-              <div className="p-6 text-center text-sm text-subtle">Нічого не знайдено</div>
+              <div className="p-6 text-center text-sm text-subtle">
+                Нічого не знайдено
+              </div>
             )}
             {pickQ
-              ? pickList.map(ex => {
+              ? pickList.map((ex) => {
                   const pickCf = recoveryConflictsForExercise(ex, recBy);
                   return (
                     <button
@@ -111,24 +150,37 @@ export function ExercisePickerSheet({
                       )}
                       onClick={() => {
                         if (!activeWorkoutId) return;
-                        if (pickCf.hasWarning) { onPendingPick(ex); return; }
+                        if (pickCf.hasWarning) {
+                          onPendingPick(ex);
+                          return;
+                        }
                         onAddExercise(ex);
                       }}
                     >
                       <div className="flex items-center gap-2 min-w-0">
-                        <div className="text-sm font-semibold text-text truncate">{ex?.name?.uk || ex?.name?.en}</div>
-                        {pickCf.hasWarning && <span className="text-warning text-xs shrink-0">⚠</span>}
+                        <div className="text-sm font-semibold text-text truncate">
+                          {ex?.name?.uk || ex?.name?.en}
+                        </div>
+                        {pickCf.hasWarning && (
+                          <span className="text-warning text-xs shrink-0">
+                            ⚠
+                          </span>
+                        )}
                       </div>
-                      <div className="text-xs text-subtle mt-0.5">{primaryGroupsUk[ex.primaryGroup] || ex.primaryGroup}</div>
+                      <div className="text-xs text-subtle mt-0.5">
+                        {primaryGroupsUk[ex.primaryGroup] || ex.primaryGroup}
+                      </div>
                     </button>
                   );
                 })
-              : pickGrouped.map(g => (
+              : pickGrouped.map((g) => (
                   <div key={g.id}>
                     <div className="px-4 py-2 bg-panelHi/80 border-b border-line sticky top-0">
-                      <span className="text-[10px] font-bold text-subtle uppercase tracking-widest">{g.label}</span>
+                      <span className="text-[10px] font-bold text-subtle uppercase tracking-widest">
+                        {g.label}
+                      </span>
                     </div>
-                    {g.items.map(ex => {
+                    {g.items.map((ex) => {
                       const pickCf = recoveryConflictsForExercise(ex, recBy);
                       return (
                         <button
@@ -136,17 +188,27 @@ export function ExercisePickerSheet({
                           type="button"
                           className={cn(
                             "w-full text-left px-4 py-3 border-b border-line last:border-0 hover:bg-panelHi transition-colors",
-                            pickCf.hasWarning && "border-l-4 border-l-warning/70",
+                            pickCf.hasWarning &&
+                              "border-l-4 border-l-warning/70",
                           )}
                           onClick={() => {
                             if (!activeWorkoutId) return;
-                            if (pickCf.hasWarning) { onPendingPick(ex); return; }
+                            if (pickCf.hasWarning) {
+                              onPendingPick(ex);
+                              return;
+                            }
                             onAddExercise(ex);
                           }}
                         >
                           <div className="flex items-center gap-2 min-w-0">
-                            <div className="text-sm font-semibold text-text truncate">{ex?.name?.uk || ex?.name?.en}</div>
-                            {pickCf.hasWarning && <span className="text-warning text-xs shrink-0">⚠</span>}
+                            <div className="text-sm font-semibold text-text truncate">
+                              {ex?.name?.uk || ex?.name?.en}
+                            </div>
+                            {pickCf.hasWarning && (
+                              <span className="text-warning text-xs shrink-0">
+                                ⚠
+                              </span>
+                            )}
                           </div>
                         </button>
                       );

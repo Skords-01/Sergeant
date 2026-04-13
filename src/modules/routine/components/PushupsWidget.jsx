@@ -20,11 +20,18 @@ export function PushupsWidget() {
 
   return (
     <>
-      <section className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card" aria-label="Відтискання">
+      <section
+        className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card"
+        aria-label="Відтискання"
+      >
         <div className="flex items-center justify-between gap-2">
           <div>
-            <p className="text-xs font-bold text-subtle uppercase tracking-widest">Відтискання сьогодні</p>
-            <p className="text-4xl font-black text-text tabular-nums mt-1">{todayCount}</p>
+            <p className="text-xs font-bold text-subtle uppercase tracking-widest">
+              Відтискання сьогодні
+            </p>
+            <p className="text-4xl font-black text-text tabular-nums mt-1">
+              {todayCount}
+            </p>
           </div>
           <button
             type="button"
@@ -35,7 +42,15 @@ export function PushupsWidget() {
             className="shrink-0 w-14 h-14 rounded-2xl flex items-center justify-center transition-transform active:scale-95 bg-[#e0786c] text-white shadow-md"
             aria-label="Додати відтискання"
           >
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+            <svg
+              width="26"
+              height="26"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+            >
               <path d="M12 5v14M5 12h14" />
             </svg>
           </button>
@@ -47,17 +62,29 @@ export function PushupsWidget() {
             <div className="flex items-end gap-1 h-10">
               {recentHistory.map((d) => {
                 const max = Math.max(...recentHistory.map((x) => x.total), 1);
-                const isToday = d.date === new Date().toISOString().slice(0, 10);
+                const isToday =
+                  d.date === new Date().toISOString().slice(0, 10);
                 const pct = d.total / max;
                 return (
-                  <div key={d.date} className="flex-1 flex flex-col items-center gap-0.5">
+                  <div
+                    key={d.date}
+                    className="flex-1 flex flex-col items-center gap-0.5"
+                  >
                     <div
-                      className={cn("w-full rounded-t-sm transition-all", isToday ? C.barToday : C.barOther)}
-                      style={{ height: `${Math.max(pct * 32, d.total > 0 ? 4 : 0)}px` }}
+                      className={cn(
+                        "w-full rounded-t-sm transition-all",
+                        isToday ? C.barToday : C.barOther,
+                      )}
+                      style={{
+                        height: `${Math.max(pct * 32, d.total > 0 ? 4 : 0)}px`,
+                      }}
                       title={`${d.date}: ${d.total}`}
                     />
                     <span className="text-[8px] text-subtle">
-                      {new Date(`${d.date}T12:00:00`).toLocaleDateString("uk-UA", { weekday: "narrow" })}
+                      {new Date(`${d.date}T12:00:00`).toLocaleDateString(
+                        "uk-UA",
+                        { weekday: "narrow" },
+                      )}
                     </span>
                   </div>
                 );
@@ -68,18 +95,37 @@ export function PushupsWidget() {
       </section>
 
       {open && (
-        <div className="routine-sheet fixed inset-0 z-[200] flex items-end justify-center" role="presentation">
-          <button type="button" className="absolute inset-0 bg-black/60 backdrop-blur-sm" aria-label="Закрити" onClick={() => setOpen(false)} />
+        <div
+          className="routine-sheet fixed inset-0 z-[200] flex items-end justify-center"
+          role="presentation"
+        >
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            aria-label="Закрити"
+            onClick={() => setOpen(false)}
+          />
           <div
             ref={ref}
             className="routine-sheet-pad relative max-h-[min(92dvh,100%)] w-full max-w-4xl overflow-y-auto overflow-x-hidden rounded-t-3xl border-t border-line bg-panel p-5 shadow-soft transition-transform duration-150 ease-out"
-            style={{ transform: keyboardInset > 0 ? `translateY(-${keyboardInset}px)` : undefined }}
+            style={{
+              transform:
+                keyboardInset > 0
+                  ? `translateY(-${keyboardInset}px)`
+                  : undefined,
+            }}
             role="dialog"
             aria-modal="true"
             aria-labelledby="routine-pushup-modal-title"
           >
-            <div className="w-10 h-1 shrink-0 rounded-full bg-line mx-auto mb-4" aria-hidden />
-            <div id="routine-pushup-modal-title" className="text-lg font-extrabold text-text mb-4">
+            <div
+              className="w-10 h-1 shrink-0 rounded-full bg-line mx-auto mb-4"
+              aria-hidden
+            />
+            <div
+              id="routine-pushup-modal-title"
+              className="text-lg font-extrabold text-text mb-4"
+            >
               Додати відтискання
             </div>
 
@@ -99,7 +145,9 @@ export function PushupsWidget() {
               ))}
             </div>
 
-            <p className="mb-2 text-center text-xs text-subtle">або введи кількість вручну</p>
+            <p className="mb-2 text-center text-xs text-subtle">
+              або введи кількість вручну
+            </p>
             <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
               <input
                 type="number"
@@ -134,7 +182,8 @@ export function PushupsWidget() {
               </button>
             </div>
             <p className="mt-3 text-center text-xs text-subtle">
-              Сьогодні: <span className="font-bold text-text">{todayCount}</span>
+              Сьогодні:{" "}
+              <span className="font-bold text-text">{todayCount}</span>
             </p>
           </div>
         </div>

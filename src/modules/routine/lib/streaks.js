@@ -1,4 +1,8 @@
-import { habitScheduledOnDate, dateKeyFromDate, parseDateKey } from "./hubCalendarAggregate.js";
+import {
+  habitScheduledOnDate,
+  dateKeyFromDate,
+  parseDateKey,
+} from "./hubCalendarAggregate.js";
 
 function dateKeyMinusDays(baseKey, daysBack) {
   const d = parseDateKey(baseKey);

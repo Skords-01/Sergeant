@@ -26,7 +26,8 @@ export function getAllowedOrigins() {
  * @param {{ allowHeaders?: string; methods?: string }} [opts]
  */
 export function setCorsHeaders(res, req, opts = {}) {
-  const { allowHeaders = "Content-Type", methods = "GET, POST, OPTIONS" } = opts;
+  const { allowHeaders = "Content-Type", methods = "GET, POST, OPTIONS" } =
+    opts;
   const origin = req.headers.origin;
   const allowed = getAllowedOrigins();
   if (origin && allowed.includes(origin)) {

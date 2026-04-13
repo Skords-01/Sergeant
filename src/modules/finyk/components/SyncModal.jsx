@@ -13,6 +13,7 @@ export function SyncModal({ storage, onClose }) {
     } catch (e) {
       console.error("generateSyncLink error:", e);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- один раз при відкритті модалки; повний storage щоразу новий об’єкт
   }, []);
 
   const copy = async () => {
@@ -42,7 +43,7 @@ export function SyncModal({ storage, onClose }) {
       <div
         className="relative w-full bg-panel border-t border-line rounded-t-3xl shadow-soft"
         style={{ paddingBottom: "env(safe-area-inset-bottom, 16px)" }}
-        onClick={e => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
       >
         {/* Drag handle */}
         <div className="flex justify-center pt-3 pb-1">
@@ -53,18 +54,24 @@ export function SyncModal({ storage, onClose }) {
           <div className="flex items-start justify-between mb-4">
             <div>
               <div className="text-lg font-bold">Синхронізація</div>
-              <div className="text-sm text-muted mt-0.5">Перенести налаштування на інший пристрій</div>
+              <div className="text-sm text-muted mt-0.5">
+                Перенести налаштування на інший пристрій
+              </div>
             </div>
             <button
               onClick={onClose}
               className="w-8 h-8 flex items-center justify-center rounded-full bg-panelHi text-muted hover:text-text text-lg transition-colors"
-            >✕</button>
+            >
+              ✕
+            </button>
           </div>
 
           {/* URL display */}
           {url && (
             <div className="mb-4 p-3 bg-bg border border-line rounded-xl">
-              <div className="text-xs text-subtle mb-1">Посилання для синхронізації</div>
+              <div className="text-xs text-subtle mb-1">
+                Посилання для синхронізації
+              </div>
               <div className="text-xs text-muted font-mono break-all leading-relaxed line-clamp-3 select-all">
                 {url}
               </div>
@@ -74,13 +81,20 @@ export function SyncModal({ storage, onClose }) {
           {/* Actions */}
           <div className="space-y-2">
             {canShare && (
-              <Button className="w-full h-12 text-base gap-2" onClick={share} disabled={!url}>
+              <Button
+                className="w-full h-12 text-base gap-2"
+                onClick={share}
+                disabled={!url}
+              >
                 <span>📤</span> Поділитися посиланням
               </Button>
             )}
             <Button
               variant="ghost"
-              className={cn("w-full h-12 text-base gap-2 transition-all", copied && "border-success text-success")}
+              className={cn(
+                "w-full h-12 text-base gap-2 transition-all",
+                copied && "border-success text-success",
+              )}
               onClick={copy}
               disabled={!url}
             >
@@ -92,16 +106,24 @@ export function SyncModal({ storage, onClose }) {
           {/* Info */}
           <div className="mt-4 rounded-xl bg-bg border border-line p-3">
             <div className="text-xs text-subtle leading-relaxed">
-              У посиланні: підписки, борги, активи, бюджети, місячний план, категорії та спліти операцій, прив’язки боргів Monobank, історія нетворсу. Без прихованих рахунків/транзакцій (вони залежать від пристрою).
+              У посиланні: підписки, борги, активи, бюджети, місячний план,
+              категорії та спліти операцій, прив’язки боргів Monobank, історія
+              нетворсу. Без прихованих рахунків/транзакцій (вони залежать від
+              пристрою).
               <br />
-              <span className="text-danger/80">Токен Monobank</span> <span className="text-subtle">не передається — ввести треба окремо.</span>
+              <span className="text-danger/80">Токен Monobank</span>{" "}
+              <span className="text-subtle">
+                не передається — ввести треба окремо.
+              </span>
             </div>
           </div>
 
           {/* Backup / Restore */}
           <div className="flex gap-2 mt-3">
             <button
-              onClick={() => { storage.exportData(); }}
+              onClick={() => {
+                storage.exportData();
+              }}
               className="flex-1 py-3 text-xs font-semibold text-muted border border-dashed border-line rounded-xl hover:border-muted hover:text-text transition-colors"
             >
               💾 Бекап JSON

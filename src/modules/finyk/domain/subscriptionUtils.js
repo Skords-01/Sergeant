@@ -10,9 +10,11 @@ export function getLastTxForSubscription(sub, transactions) {
   }
   const kw = (sub.keyword || "").trim().toLowerCase();
   if (!kw) return null;
-  return list.find(
-    (t) => t.amount < 0 && (t.description || "").toLowerCase().includes(kw),
-  ) || null;
+  return (
+    list.find(
+      (t) => t.amount < 0 && (t.description || "").toLowerCase().includes(kw),
+    ) || null
+  );
 }
 
 export function getSubscriptionAmountMeta(sub, transactions) {

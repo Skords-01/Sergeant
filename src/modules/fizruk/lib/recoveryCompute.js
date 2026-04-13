@@ -15,9 +15,14 @@ export function loadPointsForItem(item) {
   if (!item) return 0;
   if (item.type === "strength") {
     const sets = item.sets || [];
-    const tonnage = sets.reduce((s, x) => s + (Number(x.weightKg) || 0) * (Number(x.reps) || 0), 0);
-    const setCount = sets.filter(x => (Number(x.reps) || 0) > 0 || (Number(x.weightKg) || 0) > 0).length;
-    return (tonnage / 1000) + (setCount * 0.15);
+    const tonnage = sets.reduce(
+      (s, x) => s + (Number(x.weightKg) || 0) * (Number(x.reps) || 0),
+      0,
+    );
+    const setCount = sets.filter(
+      (x) => (Number(x.reps) || 0) > 0 || (Number(x.weightKg) || 0) > 0,
+    ).length;
+    return tonnage / 1000 + setCount * 0.15;
   }
   if (item.type === "time") {
     const sec = Number(item.durationSec) || 0;
@@ -26,7 +31,7 @@ export function loadPointsForItem(item) {
   if (item.type === "distance") {
     const km = (Number(item.distanceM) || 0) / 1000;
     const min = (Number(item.durationSec) || 0) / 60;
-    return km + (min / 30);
+    return km + min / 30;
   }
   return 0;
 }
@@ -34,7 +39,11 @@ export function loadPointsForItem(item) {
 /**
  * Повертає map id м'яза → стан (як у useRecovery().by).
  */
-export function computeRecoveryBy(workouts = [], musclesUk = {}, nowMs = Date.now()) {
+export function computeRecoveryBy(
+  workouts = [],
+  musclesUk = {},
+  nowMs = Date.now(),
+) {
   const WEEK = 7 * 24 * 60 * 60 * 1000;
   const DAY = 24 * 60 * 60 * 1000;
 
@@ -62,7 +71,7 @@ export function computeRecoveryBy(workouts = [], musclesUk = {}, nowMs = Date.no
   for (const w of workouts || []) {
     const t = w.startedAt ? Date.parse(w.startedAt) : NaN;
     if (!Number.isFinite(t)) continue;
-    const in7d = (nowMs - t) <= WEEK;
+    const in7d = nowMs - t <= WEEK;
     for (const it of w.items || []) {
       const ptsBase = loadPointsForItem(it);
       const ageDays = Math.max(0, (nowMs - t) / DAY);

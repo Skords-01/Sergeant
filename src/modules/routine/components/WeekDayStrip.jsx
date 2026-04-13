@@ -1,12 +1,23 @@
 import { cn } from "@shared/lib/cn";
-import { addDays, dateKeyFromDate, parseDateKey, startOfIsoWeek } from "../lib/weekUtils.js";
+import {
+  addDays,
+  dateKeyFromDate,
+  parseDateKey,
+  startOfIsoWeek,
+} from "../lib/weekUtils.js";
 
 function weekKeysFromAnchor(anchorKey) {
   const s = startOfIsoWeek(parseDateKey(anchorKey));
   return Array.from({ length: 7 }, (_, i) => dateKeyFromDate(addDays(s, i)));
 }
 
-export function WeekDayStrip({ anchorKey, selectedDay, todayKey, onSelectDay, onShiftWeek }) {
+export function WeekDayStrip({
+  anchorKey,
+  selectedDay,
+  todayKey,
+  onSelectDay,
+  onShiftWeek,
+}) {
   const keys = weekKeysFromAnchor(anchorKey);
   const short = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Нд"];
 
@@ -38,7 +49,9 @@ export function WeekDayStrip({ anchorKey, selectedDay, todayKey, onSelectDay, on
                 isToday && !isSel && "ring-1 ring-[#e0786c]/40",
               )}
             >
-              <span className="text-[9px] uppercase tracking-wide text-subtle">{short[i]}</span>
+              <span className="text-[9px] uppercase tracking-wide text-subtle">
+                {short[i]}
+              </span>
               <span className="tabular-nums text-sm text-text">{dom}</span>
             </button>
           );

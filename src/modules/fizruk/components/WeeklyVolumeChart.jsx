@@ -5,15 +5,23 @@ const LABELS_UK = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Нд"];
 
 /** Легкий area-chart без залежностей; акцент — success з tailwind. */
 export function WeeklyVolumeChart({ volumeKg, className }) {
-  const vals = Array.isArray(volumeKg) && volumeKg.length === 7 ? volumeKg : [0, 0, 0, 0, 0, 0, 0];
+  const vals =
+    Array.isArray(volumeKg) && volumeKg.length === 7
+      ? volumeKg
+      : [0, 0, 0, 0, 0, 0, 0];
   const totalVol = vals.reduce((a, v) => a + (Number(v) || 0), 0);
 
   if (totalVol <= 0) {
     return (
       <div className={cn("w-full", className)}>
         <div className="flex items-center justify-between mb-2">
-          <span className="text-xs font-semibold text-text">Тижневий обʼєм</span>
-          <span className="text-2xs text-subtle flex items-center gap-1.5" aria-hidden>
+          <span className="text-xs font-semibold text-text">
+            Тижневий обʼєм
+          </span>
+          <span
+            className="text-2xs text-subtle flex items-center gap-1.5"
+            aria-hidden
+          >
             <span className="inline-block w-2 h-2 rounded-full bg-success" />
             кг×повт
           </span>
@@ -26,7 +34,7 @@ export function WeeklyVolumeChart({ volumeKg, className }) {
     );
   }
 
-  const max = Math.max(1, ...vals.map(v => Number(v) || 0));
+  const max = Math.max(1, ...vals.map((v) => Number(v) || 0));
   const w = 320;
   const h = 120;
   const padL = 36;
@@ -44,10 +52,12 @@ export function WeeklyVolumeChart({ volumeKg, className }) {
     return { x, y, v };
   });
 
-  const lineD = points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(" ");
+  const lineD = points
+    .map((p, i) => `${i === 0 ? "M" : "L"} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`)
+    .join(" ");
   const areaD = `${lineD} L ${points[n - 1].x.toFixed(1)} ${(padT + innerH).toFixed(1)} L ${points[0].x.toFixed(1)} ${(padT + innerH).toFixed(1)} Z`;
 
-  const yTicks = [0, 0.5, 1].map(fr => ({
+  const yTicks = [0, 0.5, 1].map((fr) => ({
     y: padT + innerH * (1 - fr),
     lab: fr === 0 ? "0" : fr === 1 ? formatYAxis(max) : formatYAxis(max * 0.5),
   }));
@@ -56,7 +66,10 @@ export function WeeklyVolumeChart({ volumeKg, className }) {
     <div className={cn("w-full", className)}>
       <div className="flex items-center justify-between mb-2">
         <span className="text-xs font-semibold text-text">Тижневий обʼєм</span>
-        <span className="text-2xs text-subtle flex items-center gap-1.5" aria-hidden>
+        <span
+          className="text-2xs text-subtle flex items-center gap-1.5"
+          aria-hidden
+        >
           <span className="inline-block w-2 h-2 rounded-full bg-success" />
           кг×повт
         </span>
@@ -75,19 +88,54 @@ export function WeeklyVolumeChart({ volumeKg, className }) {
         </defs>
         {yTicks.map((t, i) => (
           <g key={i}>
-            <line x1={padL} x2={w - padR} y1={t.y} y2={t.y} stroke="currentColor" className="text-line/80" strokeWidth="1" strokeDasharray="3 4" />
-            <text x={4} y={t.y + 4} className="fill-subtle text-[9px] font-medium">{t.lab}</text>
+            <line
+              x1={padL}
+              x2={w - padR}
+              y1={t.y}
+              y2={t.y}
+              stroke="currentColor"
+              className="text-line/80"
+              strokeWidth="1"
+              strokeDasharray="3 4"
+            />
+            <text
+              x={4}
+              y={t.y + 4}
+              className="fill-subtle text-[9px] font-medium"
+            >
+              {t.lab}
+            </text>
           </g>
         ))}
         <path d={areaD} fill="url(#wvFill)" />
-        <path d={lineD} fill="none" stroke="rgb(22 163 74)" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round" />
+        <path
+          d={lineD}
+          fill="none"
+          stroke="rgb(22 163 74)"
+          strokeWidth="2.25"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
         {points.map((p, i) => (
-          <circle key={i} cx={p.x} cy={p.y} r="3.5" className="fill-success stroke-white" strokeWidth="2" />
+          <circle
+            key={i}
+            cx={p.x}
+            cy={p.y}
+            r="3.5"
+            className="fill-success stroke-white"
+            strokeWidth="2"
+          />
         ))}
         {LABELS_UK.map((lab, i) => {
           const x = padL + i * step;
           return (
-            <text key={lab} x={x} y={h - 6} textAnchor="middle" className="fill-muted text-[9px] font-semibold">
+            <text
+              key={lab}
+              x={x}
+              y={h - 6}
+              textAnchor="middle"
+              className="fill-muted text-[9px] font-semibold"
+            >
               {lab}
             </text>
           );

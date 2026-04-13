@@ -2,7 +2,9 @@ import { ChartEmptyState } from "./ChartEmptyState";
 
 /** SVG line chart for measurement trends (weight, body fat %). */
 export function MiniLineChart({ data, unit, color, metricLabel = "показник" }) {
-  const valid = (data || []).filter(d => d.value != null && Number.isFinite(Number(d.value)));
+  const valid = (data || []).filter(
+    (d) => d.value != null && Number.isFinite(Number(d.value)),
+  );
   if (valid.length === 0) {
     return (
       <ChartEmptyState
@@ -20,7 +22,7 @@ export function MiniLineChart({ data, unit, color, metricLabel = "показни
     );
   }
 
-  const vals = valid.map(d => Number(d.value));
+  const vals = valid.map((d) => Number(d.value));
   const minVal = Math.min(...vals);
   const maxVal = Math.max(...vals);
   const range = maxVal - minVal || 1;
@@ -39,7 +41,8 @@ export function MiniLineChart({ data, unit, color, metricLabel = "показни
   // Map each data point to x,y (null points get x position but no y)
   const points = data.map((d, i) => {
     const x = padL + i * step;
-    if (d.value == null || !Number.isFinite(Number(d.value))) return { x, y: null, v: null, label: d.label };
+    if (d.value == null || !Number.isFinite(Number(d.value)))
+      return { x, y: null, v: null, label: d.label };
     const pct = (Number(d.value) - minVal) / range;
     const y = padT + innerH - pct * innerH;
     return { x, y, v: Number(d.value), label: d.label };
@@ -59,16 +62,24 @@ export function MiniLineChart({ data, unit, color, metricLabel = "показни
   if (segment.length >= 2) lineSegments.push(segment);
 
   const lineD = lineSegments
-    .map(seg => seg.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(" "))
+    .map((seg) =>
+      seg
+        .map(
+          (p, i) =>
+            `${i === 0 ? "M" : "L"} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`,
+        )
+        .join(" "),
+    )
     .join(" ");
 
   // Area fill: use first complete segment
   const mainSeg = lineSegments[0] || [];
-  const areaD = mainSeg.length >= 2
-    ? `${mainSeg.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(" ")} L ${mainSeg[mainSeg.length - 1].x.toFixed(1)} ${(padT + innerH).toFixed(1)} L ${mainSeg[0].x.toFixed(1)} ${(padT + innerH).toFixed(1)} Z`
-    : "";
+  const areaD =
+    mainSeg.length >= 2
+      ? `${mainSeg.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(" ")} L ${mainSeg[mainSeg.length - 1].x.toFixed(1)} ${(padT + innerH).toFixed(1)} L ${mainSeg[0].x.toFixed(1)} ${(padT + innerH).toFixed(1)} Z`
+      : "";
 
-  const yTicks = [0, 0.5, 1].map(fr => ({
+  const yTicks = [0, 0.5, 1].map((fr) => ({
     y: padT + innerH * (1 - fr),
     lab: formatVal(minVal + fr * range, unit),
   }));
@@ -106,25 +117,66 @@ export function MiniLineChart({ data, unit, color, metricLabel = "показни
 
         {yTicks.map((t, i) => (
           <g key={i}>
-            <line x1={padL} x2={w - padR} y1={t.y} y2={t.y} stroke="currentColor" className="text-line/70" strokeWidth="1" strokeDasharray="3 4" />
-            <text x={padL - 4} y={t.y + 4} textAnchor="end" fontSize="9" className="fill-subtle font-medium">{t.lab}</text>
+            <line
+              x1={padL}
+              x2={w - padR}
+              y1={t.y}
+              y2={t.y}
+              stroke="currentColor"
+              className="text-line/70"
+              strokeWidth="1"
+              strokeDasharray="3 4"
+            />
+            <text
+              x={padL - 4}
+              y={t.y + 4}
+              textAnchor="end"
+              fontSize="9"
+              className="fill-subtle font-medium"
+            >
+              {t.lab}
+            </text>
           </g>
         ))}
 
         {areaD && <path d={areaD} fill={`url(#${gradId})`} />}
-        {lineD && <path d={lineD} fill="none" stroke={color} strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round" />}
+        {lineD && (
+          <path
+            d={lineD}
+            fill="none"
+            stroke={color}
+            strokeWidth="2.25"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        )}
 
         {points.map((p, i) => {
           if (p.y == null) return null;
           return (
-            <circle key={i} cx={p.x} cy={p.y} r="3.5" fill={color} stroke="white" strokeWidth="2" />
+            <circle
+              key={i}
+              cx={p.x}
+              cy={p.y}
+              r="3.5"
+              fill={color}
+              stroke="white"
+              strokeWidth="2"
+            />
           );
         })}
 
         {points.map((p, i) => {
           if (!labelIndices.has(i)) return null;
           return (
-            <text key={i} x={p.x} y={h - 4} textAnchor="middle" fontSize="9" className="fill-muted font-semibold">
+            <text
+              key={i}
+              x={p.x}
+              y={h - 4}
+              textAnchor="middle"
+              fontSize="9"
+              className="fill-muted font-semibold"
+            >
               {p.label}
             </text>
           );
@@ -136,8 +188,11 @@ export function MiniLineChart({ data, unit, color, metricLabel = "показни
           {lastValid.value} {unit}
         </span>
         {delta !== 0 && (
-          <span className={`text-xs font-semibold ${delta > 0 ? "text-warning" : "text-success"}`}>
-            {delta > 0 ? "+" : ""}{delta.toFixed(1)} {unit}
+          <span
+            className={`text-xs font-semibold ${delta > 0 ? "text-warning" : "text-success"}`}
+          >
+            {delta > 0 ? "+" : ""}
+            {delta.toFixed(1)} {unit}
           </span>
         )}
       </div>

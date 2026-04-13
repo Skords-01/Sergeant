@@ -8,20 +8,42 @@ function Section({ title, children }) {
   return (
     <div className="bg-panel border border-line rounded-2xl overflow-hidden shadow-card">
       <div className="px-5 pt-4 pb-2 border-b border-line">
-        <div className="text-xs font-bold text-muted uppercase tracking-widest">{title}</div>
+        <div className="text-xs font-bold text-muted uppercase tracking-widest">
+          {title}
+        </div>
       </div>
       <div className="p-4 space-y-3">{children}</div>
     </div>
   );
 }
 
-function ConfirmModal({ open, title, body, confirmLabel, danger, onConfirm, onCancel }) {
+function ConfirmModal({
+  open,
+  title,
+  body,
+  confirmLabel,
+  danger,
+  onConfirm,
+  onCancel,
+}) {
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-[120] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="finyk-confirm-title">
-      <button type="button" className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onCancel} aria-label="Закрити" />
+    <div
+      className="fixed inset-0 z-[120] flex items-center justify-center p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="finyk-confirm-title"
+    >
+      <button
+        type="button"
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        onClick={onCancel}
+        aria-label="Закрити"
+      />
       <div className="relative w-full max-w-sm bg-panel border border-line rounded-2xl shadow-soft p-5 z-10">
-        <h2 id="finyk-confirm-title" className="text-base font-bold text-text">{title}</h2>
+        <h2 id="finyk-confirm-title" className="text-base font-bold text-text">
+          {title}
+        </h2>
         {body && <p className="text-sm text-muted mt-2">{body}</p>}
         <div className="flex gap-2 mt-5">
           <button
@@ -35,7 +57,9 @@ function ConfirmModal({ open, title, body, confirmLabel, danger, onConfirm, onCa
             type="button"
             className={cn(
               "flex-1 py-3 rounded-xl text-sm font-semibold text-white transition-colors",
-              danger ? "bg-danger hover:bg-danger/90" : "bg-emerald-600 hover:bg-emerald-700",
+              danger
+                ? "bg-danger hover:bg-danger/90"
+                : "bg-emerald-600 hover:bg-emerald-700",
             )}
             onClick={onConfirm}
           >
@@ -47,14 +71,26 @@ function ConfirmModal({ open, title, body, confirmLabel, danger, onConfirm, onCa
   );
 }
 
+const catInputClass =
+  "flex-1 min-w-0 h-11 rounded-xl border border-line bg-panelHi px-3 text-sm text-text outline-none focus:border-primary/50 transition-colors";
+
 export function Settings({ mono, storage, showToast }) {
   const { accounts, token, clientInfo, clearTxCache, disconnect } = mono;
-  const { hiddenAccounts, toggleHideAccount, exportData, importData } = storage;
+  const {
+    hiddenAccounts,
+    toggleHideAccount,
+    exportData,
+    importData,
+    customCategories,
+    addCustomCategory,
+    removeCustomCategory,
+  } = storage;
 
   const [syncOpen, setSyncOpen] = useState(false);
   const [confirmKind, setConfirmKind] = useState(null);
+  const [newCategoryLabel, setNewCategoryLabel] = useState("");
 
-  const uahAccounts = accounts.filter(a => a.currencyCode === 980);
+  const uahAccounts = accounts.filter((a) => a.currencyCode === 980);
 
   return (
     <div className="flex-1 overflow-y-auto">
@@ -73,24 +109,86 @@ export function Settings({ mono, storage, showToast }) {
           if (confirmKind === "cache") clearTxCache?.();
           if (confirmKind === "disconnect") disconnect?.();
           setConfirmKind(null);
-          showToast?.(confirmKind === "cache" ? "Кеш очищено" : "Monobank відключено");
+          showToast?.(
+            confirmKind === "cache" ? "Кеш очищено" : "Monobank відключено",
+          );
         }}
       />
-      {syncOpen && <SyncModal storage={storage} onClose={() => setSyncOpen(false)} />}
+      {syncOpen && (
+        <SyncModal storage={storage} onClose={() => setSyncOpen(false)} />
+      )}
       <div className="px-4 pt-4 pb-[calc(88px+env(safe-area-inset-bottom,0px))] space-y-4 max-w-4xl mx-auto">
-
         <p className="text-xs text-subtle px-1 -mt-1">
-          Місячний план, ліміти та календар оплат — у розділі <a href="#/budgets" className="text-primary font-medium underline underline-offset-2">Планування</a>.
+          Місячний план, ліміти та календар оплат — у розділі{" "}
+          <a
+            href="#/budgets"
+            className="text-primary font-medium underline underline-offset-2"
+          >
+            Планування
+          </a>
+          .
         </p>
+
+        <Section title="📂 Власні категорії витрат">
+          <p className="text-xs text-subtle -mt-1">
+            Додаються до списку категорій у транзакціях, сплітах і лімітах
+            (можна вказати емодзі на початку назви).
+          </p>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={newCategoryLabel}
+              onChange={(e) => setNewCategoryLabel(e.target.value)}
+              placeholder="Напр. 🎨 Хобі"
+              maxLength={80}
+              className={catInputClass}
+            />
+            <Button
+              type="button"
+              className="shrink-0 h-11 px-4"
+              onClick={() => {
+                addCustomCategory(newCategoryLabel);
+                setNewCategoryLabel("");
+              }}
+            >
+              Додати
+            </Button>
+          </div>
+          {customCategories.length > 0 ? (
+            <ul className="space-y-0 -mx-4">
+              {customCategories.map((c) => (
+                <li
+                  key={c.id}
+                  className="flex items-center justify-between gap-2 px-4 py-3 border-b border-line last:border-0"
+                >
+                  <span className="text-sm font-medium truncate">
+                    {c.label}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => removeCustomCategory(c.id)}
+                    className="text-xs font-semibold text-danger/80 hover:text-danger shrink-0"
+                  >
+                    Видалити
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-xs text-subtle">Поки немає власних категорій.</p>
+          )}
+        </Section>
 
         {/* Accounts */}
         {uahAccounts.length > 0 && (
           <Section title="💳 Рахунки">
             <p className="text-xs text-subtle -mt-1">
-              У статистиці та нетворсі враховуються лише рахунки в UAH; інші валюти не враховані. Сховані рахунки не враховуються у балансі та нетворсі.
+              У статистиці та нетворсі враховуються лише рахунки в UAH; інші
+              валюти не враховані. Сховані рахунки не враховуються у балансі та
+              нетворсі.
             </p>
             <div className="space-y-0 -mx-4">
-              {uahAccounts.map(acc => {
+              {uahAccounts.map((acc) => {
                 const hidden = hiddenAccounts.includes(acc.id);
                 return (
                   <div
@@ -98,10 +196,16 @@ export function Settings({ mono, storage, showToast }) {
                     className="flex items-center justify-between px-4 py-3 border-b border-line last:border-0"
                   >
                     <div>
-                      <div className="text-sm font-medium">{getAccountLabel(acc)}</div>
+                      <div className="text-sm font-medium">
+                        {getAccountLabel(acc)}
+                      </div>
                       <div className="text-xs text-subtle mt-0.5 tabular-nums">
-                        {(acc.balance / 100).toLocaleString("uk-UA", { maximumFractionDigits: 0 })} ₴
-                        {acc.creditLimit > 0 && ` · ліміт ${(acc.creditLimit / 100).toLocaleString("uk-UA", { maximumFractionDigits: 0 })} ₴`}
+                        {(acc.balance / 100).toLocaleString("uk-UA", {
+                          maximumFractionDigits: 0,
+                        })}{" "}
+                        ₴
+                        {acc.creditLimit > 0 &&
+                          ` · ліміт ${(acc.creditLimit / 100).toLocaleString("uk-UA", { maximumFractionDigits: 0 })} ₴`}
                       </div>
                     </div>
                     <button
@@ -110,7 +214,7 @@ export function Settings({ mono, storage, showToast }) {
                         "text-xs px-3 py-1.5 rounded-xl border font-semibold transition-colors",
                         hidden
                           ? "border-subtle/50 text-subtle hover:border-muted hover:text-text"
-                          : "border-success/40 text-success hover:border-danger/40 hover:text-danger"
+                          : "border-success/40 text-success hover:border-danger/40 hover:text-danger",
                       )}
                     >
                       {hidden ? "Сховано" : "Видно"}
@@ -131,15 +235,21 @@ export function Settings({ mono, storage, showToast }) {
               </div>
               <div>
                 <div className="text-sm font-semibold">{clientInfo.name}</div>
-                <div className="text-xs text-subtle mt-0.5">{uahAccounts.length} UAH рахунків</div>
+                <div className="text-xs text-subtle mt-0.5">
+                  {uahAccounts.length} UAH рахунків
+                </div>
               </div>
             </div>
             <div className="flex items-center gap-2 p-3 bg-bg rounded-xl border border-line">
               <span className="text-xs text-subtle font-mono flex-1 truncate">
-                {token ? token.slice(0, 8) + "••••••••••••••••••" + token.slice(-4) : "—"}
+                {token
+                  ? token.slice(0, 8) + "••••••••••••••••••" + token.slice(-4)
+                  : "—"}
               </span>
               <button
-                onClick={() => navigator.clipboard?.writeText(token).catch(() => {})}
+                onClick={() =>
+                  navigator.clipboard?.writeText(token).catch(() => {})
+                }
                 className="text-xs text-muted hover:text-text transition-colors shrink-0"
               >
                 📋 Копіювати
@@ -150,8 +260,14 @@ export function Settings({ mono, storage, showToast }) {
 
         {/* Sync */}
         <Section title="🔗 Синхронізація">
-          <p className="text-xs text-subtle -mt-1">Перенести налаштування на інший пристрій через посилання</p>
-          <Button variant="ghost" className="w-full h-12" onClick={() => setSyncOpen(true)}>
+          <p className="text-xs text-subtle -mt-1">
+            Перенести налаштування на інший пристрій через посилання
+          </p>
+          <Button
+            variant="ghost"
+            className="w-full h-12"
+            onClick={() => setSyncOpen(true)}
+          >
             📤 Sync між пристроями
           </Button>
         </Section>
@@ -159,16 +275,21 @@ export function Settings({ mono, storage, showToast }) {
         {/* Data */}
         <Section title="💾 Дані">
           <p className="text-xs text-subtle -mt-1">
-            Бекап: бюджети, підписки, активи, борги, приховані рахунки/транзакції, місячний план, категорії та спліти операцій, прив’язки боргів Monobank, історія нетворсу.
+            Бекап: бюджети, підписки, активи, борги, приховані
+            рахунки/транзакції, місячний план, категорії транзакцій, власні
+            категорії витрат, спліти операцій, прив’язки боргів Monobank,
+            історія нетворсу.
           </p>
           <div className="grid grid-cols-2 gap-2">
             <Button variant="ghost" onClick={exportData} className="h-12">
               💾 Експорт JSON
             </Button>
-            <label className={cn(
-              "flex items-center justify-center h-12 rounded-2xl border border-line text-sm font-semibold text-muted",
-              "cursor-pointer hover:bg-panelHi hover:text-text transition-colors"
-            )}>
+            <label
+              className={cn(
+                "flex items-center justify-center h-12 rounded-2xl border border-line text-sm font-semibold text-muted",
+                "cursor-pointer hover:bg-panelHi hover:text-text transition-colors",
+              )}
+            >
               📥 Імпорт JSON
               <input
                 type="file"
@@ -187,7 +308,8 @@ export function Settings({ mono, storage, showToast }) {
         {/* Cache */}
         <Section title="🧹 Кеш">
           <p className="text-xs text-subtle -mt-1">
-            Якщо Monobank “зріже” частину запитів і список операцій виглядає дивно — можна очистити кеш і оновити знову.
+            Якщо Monobank “зріже” частину запитів і список операцій виглядає
+            дивно — можна очистити кеш і оновити знову.
           </p>
           <Button
             variant="ghost"
@@ -199,7 +321,10 @@ export function Settings({ mono, storage, showToast }) {
         </Section>
 
         <Section title="🚪 Вихід">
-          <p className="text-xs text-subtle -mt-1">Відключити Monobank на цьому пристрої (токен буде видалено з браузера).</p>
+          <p className="text-xs text-subtle -mt-1">
+            Відключити Monobank на цьому пристрої (токен буде видалено з
+            браузера).
+          </p>
           <Button
             variant="danger"
             className="w-full h-12"

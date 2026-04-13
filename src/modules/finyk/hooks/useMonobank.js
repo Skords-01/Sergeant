@@ -19,16 +19,24 @@ function reportSilentError(scope, error) {
 
 // Міграція старих ключів
 try {
-  for (const [o, n] of [["finto_tx_cache","finyk_tx_cache"],["finto_info_cache","finyk_info_cache"],["finto_token","finyk_token"]]) {
+  for (const [o, n] of [
+    ["finto_tx_cache", "finyk_tx_cache"],
+    ["finto_info_cache", "finyk_info_cache"],
+    ["finto_token", "finyk_token"],
+  ]) {
     const v = localStorage.getItem(o);
-    if (v !== null && localStorage.getItem(n) === null) localStorage.setItem(n, v);
+    if (v !== null && localStorage.getItem(n) === null)
+      localStorage.setItem(n, v);
     if (v !== null) localStorage.removeItem(o);
   }
 } catch {}
 
 try {
   const oldLast = localStorage.getItem("finto_tx_cache_last_good");
-  if (oldLast !== null && localStorage.getItem("finyk_tx_cache_last_good") === null) {
+  if (
+    oldLast !== null &&
+    localStorage.getItem("finyk_tx_cache_last_good") === null
+  ) {
     localStorage.setItem("finyk_tx_cache_last_good", oldLast);
   }
   if (oldLast !== null) localStorage.removeItem("finto_tx_cache_last_good");
@@ -61,7 +69,10 @@ function loadAnyCache() {
 
 function saveCache(txs) {
   try {
-    localStorage.setItem(CACHE_KEY, JSON.stringify({ txs, timestamp: Date.now() }));
+    localStorage.setItem(
+      CACHE_KEY,
+      JSON.stringify({ txs, timestamp: Date.now() }),
+    );
     notifyHubFinykCache();
   } catch {}
 }
@@ -72,7 +83,10 @@ const LAST_GOOD_KEY = "finyk_tx_cache_last_good";
 function saveLastGoodBackup(txs) {
   try {
     if (!txs || txs.length < 3) return;
-    localStorage.setItem(LAST_GOOD_KEY, JSON.stringify({ txs, timestamp: Date.now() }));
+    localStorage.setItem(
+      LAST_GOOD_KEY,
+      JSON.stringify({ txs, timestamp: Date.now() }),
+    );
   } catch {}
 }
 
@@ -89,7 +103,7 @@ function loadLastGoodBackup() {
 }
 
 function dedupeByIdSort(txs) {
-  const map = new Map(txs.map(t => [t.id, t]));
+  const map = new Map(txs.map((t) => [t.id, t]));
   return Array.from(map.values()).sort((a, b) => b.time - a.time);
 }
 
@@ -97,12 +111,17 @@ function dedupeByIdSort(txs) {
  * Зливає нові транзакції з попередніми: для рахунків, де запит впав, лишаємо старі дані.
  * Транзакції без _accountId лишаємо лише якщо є хоча б один невдалий рахунок (можливо вони з нього).
  */
-function mergeTxWithPrevious(prevTxs, fetchedByAccount, succeededAccountIds, allTargetAccountIds) {
+function mergeTxWithPrevious(
+  prevTxs,
+  fetchedByAccount,
+  succeededAccountIds,
+  allTargetAccountIds,
+) {
   const succ = new Set(succeededAccountIds);
   const flatNew = Object.values(fetchedByAccount).flat();
-  const newById = new Map(flatNew.map(t => [t.id, t]));
+  const newById = new Map(flatNew.map((t) => [t.id, t]));
 
-  const hasFailure = allTargetAccountIds.some(id => !succ.has(id));
+  const hasFailure = allTargetAccountIds.some((id) => !succ.has(id));
 
   if (!hasFailure && flatNew.length > 0) {
     return dedupeByIdSort(flatNew);
@@ -116,7 +135,7 @@ function mergeTxWithPrevious(prevTxs, fetchedByAccount, succeededAccountIds, all
     return [];
   }
 
-  const keepFromPrev = prevTxs.filter(t => {
+  const keepFromPrev = prevTxs.filter((t) => {
     if (newById.has(t.id)) return false;
     const aid = t._accountId;
     if (aid == null) return hasFailure;
@@ -127,7 +146,7 @@ function mergeTxWithPrevious(prevTxs, fetchedByAccount, succeededAccountIds, all
 }
 
 function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 async function fetchStatementWithRetry(tok, accId, from, to, maxAttempts = 3) {
@@ -136,7 +155,7 @@ async function fetchStatementWithRetry(tok, accId, from, to, maxAttempts = 3) {
     try {
       const res = await fetch(
         `/api/mono?path=${encodeURIComponent(`/personal/statement/${accId}/${from}/${to}`)}`,
-        { headers: { "X-Token": tok } }
+        { headers: { "X-Token": tok } },
       );
       if (!res.ok) {
         let message = `HTTP ${res.status}`;
@@ -195,40 +214,10 @@ export function useMonobank() {
 
   const lastAutoRefreshAtRef = useRef(0);
 
-  useEffect(() => {
-    if (token) connect(token, false);
-  }, []);
-
-  // Авто-оновлення: раз на годину, тільки коли вкладка активна (щоб не ловити зайві ліміти Mono)
-  useEffect(() => {
-    if (!token || !clientInfo) return;
-
-    const HOUR = 60 * 60 * 1000;
-
-    const maybeRefresh = () => {
-      if (document.visibilityState !== "visible") return;
-      if (!navigator.onLine) return;
-      if (connecting || loadingTx) return;
-
-      const now = Date.now();
-      if (now - lastAutoRefreshAtRef.current < HOUR) return;
-      lastAutoRefreshAtRef.current = now;
-      refresh();
-    };
-
-    const id = setInterval(maybeRefresh, HOUR);
-    document.addEventListener("visibilitychange", maybeRefresh);
-    window.addEventListener("online", maybeRefresh);
-
-    return () => {
-      clearInterval(id);
-      document.removeEventListener("visibilitychange", maybeRefresh);
-      window.removeEventListener("online", maybeRefresh);
-    };
-  }, [token, clientInfo, connecting, loadingTx]);
-
   const fetchAllTx = async (tok, allAccounts) => {
-    const targetAccounts = allAccounts.filter(a => a.currencyCode === CURRENCY.UAH);
+    const targetAccounts = allAccounts.filter(
+      (a) => a.currencyCode === CURRENCY.UAH,
+    );
     if (targetAccounts.length === 0) {
       setTransactions([]);
       setSyncState({
@@ -256,7 +245,9 @@ export function useMonobank() {
       const prevTxs = prevSnapshot?.txs || [];
       const errors = [];
       const now = new Date();
-      const from = Math.floor(new Date(now.getFullYear(), now.getMonth(), 1) / 1000);
+      const from = Math.floor(
+        new Date(now.getFullYear(), now.getMonth(), 1) / 1000,
+      );
       const to = Math.floor(Date.now() / 1000);
       let accountsOk = 0;
       const fetchedByAccount = {};
@@ -267,26 +258,41 @@ export function useMonobank() {
         const acc = targetAccounts[i];
         try {
           const txs = await fetchStatementWithRetry(tok, acc.id, from, to);
-          const tagged = txs.map(t => ({ ...t, _accountId: acc.id }));
+          const tagged = txs.map((t) => ({ ...t, _accountId: acc.id }));
           fetchedByAccount[acc.id] = tagged;
           succeededIds.push(acc.id);
           accountsOk += 1;
         } catch (e) {
-          errors.push(`${acc.id}: ${e?.message || "Помилка отримання транзакцій"}`);
+          errors.push(
+            `${acc.id}: ${e?.message || "Помилка отримання транзакцій"}`,
+          );
         }
         if (i < targetAccounts.length - 1) {
           await sleep(1200);
         }
       }
 
-      const allIds = targetAccounts.map(a => a.id);
-      let unique = mergeTxWithPrevious(prevTxs, fetchedByAccount, succeededIds, allIds);
+      const allIds = targetAccounts.map((a) => a.id);
+      let unique = mergeTxWithPrevious(
+        prevTxs,
+        fetchedByAccount,
+        succeededIds,
+        allIds,
+      );
 
       // Якщо API повернув майже нічого, а в кеші було більше — не втрачаємо дані
-      if (unique.length < Math.min(prevTxs.length, 8) && prevTxs.length > unique.length + 3) {
+      if (
+        unique.length < Math.min(prevTxs.length, 8) &&
+        prevTxs.length > unique.length + 3
+      ) {
         const backup = loadLastGoodBackup();
         if (backup && backup.txs.length > unique.length) {
-          unique = mergeTxWithPrevious(backup.txs, fetchedByAccount, succeededIds, allIds);
+          unique = mergeTxWithPrevious(
+            backup.txs,
+            fetchedByAccount,
+            succeededIds,
+            allIds,
+          );
         }
       }
 
@@ -302,7 +308,11 @@ export function useMonobank() {
         }
         const nowTs = new Date();
         setLastUpdated(nowTs);
-        setError(errors.length > 0 ? "Частина рахунків не оновилась — показано злиті дані (старі + нові)." : "");
+        setError(
+          errors.length > 0
+            ? "Частина рахунків не оновилась — показано злиті дані (старі + нові)."
+            : "",
+        );
         setSyncState({
           status: errors.length > 0 ? "partial" : "success",
           source: "network",
@@ -336,7 +346,9 @@ export function useMonobank() {
           });
         }
         if (errors.length > 0) {
-          setError("Mono API тимчасово обмежив запити. Повторіть через 1-2 хв.");
+          setError(
+            "Mono API тимчасово обмежив запити. Повторіть через 1-2 хв.",
+          );
         }
       }
     } catch (e) {
@@ -375,9 +387,12 @@ export function useMonobank() {
         }
         info = parsed?.info || parsed;
       } else {
-        const res = await fetch(`/api/mono?path=${encodeURIComponent("/personal/client-info")}`, {
-          headers: { "X-Token": cleanToken },
-        });
+        const res = await fetch(
+          `/api/mono?path=${encodeURIComponent("/personal/client-info")}`,
+          {
+            headers: { "X-Token": cleanToken },
+          },
+        );
 
         if (!res.ok) {
           let errorMessage = "Помилка з'єднання";
@@ -392,7 +407,10 @@ export function useMonobank() {
 
         info = await res.json();
         try {
-          localStorage.setItem(INFO_CACHE_KEY, JSON.stringify({ token: cleanToken, info }));
+          localStorage.setItem(
+            INFO_CACHE_KEY,
+            JSON.stringify({ token: cleanToken, info }),
+          );
         } catch (e) {
           reportSilentError("save client-info cache", e);
         }
@@ -417,8 +435,12 @@ export function useMonobank() {
           source: "cache",
           lastSuccess: new Date(cache.timestamp),
           lastError: "",
-          accountsTotal: (info.accounts || []).filter(a => a.currencyCode === CURRENCY.UAH).length,
-          accountsOk: (info.accounts || []).filter(a => a.currencyCode === CURRENCY.UAH).length,
+          accountsTotal: (info.accounts || []).filter(
+            (a) => a.currencyCode === CURRENCY.UAH,
+          ).length,
+          accountsOk: (info.accounts || []).filter(
+            (a) => a.currencyCode === CURRENCY.UAH,
+          ).length,
         });
       } else {
         await fetchAllTx(cleanToken, info.accounts || []);
@@ -446,13 +468,18 @@ export function useMonobank() {
       }
       if (raw) {
         const cached = JSON.parse(raw);
-        if (cached.txs && cached.txs.length > 0) { setHistoryTx(cached.txs); return; }
+        if (cached.txs && cached.txs.length > 0) {
+          setHistoryTx(cached.txs);
+          return;
+        }
       }
     } catch {}
 
     setLoadingHistory(true);
     try {
-      const targetAccounts = accounts.filter(a => a.currencyCode === CURRENCY.UAH);
+      const targetAccounts = accounts.filter(
+        (a) => a.currencyCode === CURRENCY.UAH,
+      );
       const from = Math.floor(new Date(year, month, 1) / 1000);
       const to = Math.floor(new Date(year, month + 1, 0, 23, 59, 59) / 1000);
       const results = [];
@@ -460,14 +487,21 @@ export function useMonobank() {
         const acc = targetAccounts[i];
         try {
           const txs = await fetchStatementWithRetry(token, acc.id, from, to);
-          results.push(txs.map(t => ({ ...t, _accountId: acc.id })));
+          results.push(txs.map((t) => ({ ...t, _accountId: acc.id })));
         } catch {}
         if (i < targetAccounts.length - 1) await sleep(800);
       }
-      const unique = Array.from(new Map(results.flat().map(t => [t.id, t])).values()).sort((a, b) => b.time - a.time);
+      const unique = Array.from(
+        new Map(results.flat().map((t) => [t.id, t])).values(),
+      ).sort((a, b) => b.time - a.time);
       setHistoryTx(unique);
       if (unique.length > 0) {
-        try { localStorage.setItem(cacheKey, JSON.stringify({ txs: unique, timestamp: Date.now() })); } catch {}
+        try {
+          localStorage.setItem(
+            cacheKey,
+            JSON.stringify({ txs: unique, timestamp: Date.now() }),
+          );
+        } catch {}
       }
     } finally {
       setLoadingHistory(false);
@@ -478,14 +512,21 @@ export function useMonobank() {
     // Не видаляємо кеш до запиту — інакше при частковій відповіді втрачаються старі транзакції
     // Також оновлюємо баланси рахунків (client-info), щоб нетворс був актуальним
     try {
-      const res = await fetch(`/api/mono?path=${encodeURIComponent("/personal/client-info")}`, {
-        headers: { "X-Token": token },
-      });
+      const res = await fetch(
+        `/api/mono?path=${encodeURIComponent("/personal/client-info")}`,
+        {
+          headers: { "X-Token": token },
+        },
+      );
       if (res.ok) {
         const info = await res.json();
         setClientInfo(info);
         setAccounts(info.accounts || []);
-        try { localStorage.setItem(INFO_CACHE_KEY, JSON.stringify({ token, info })); } catch (e) { reportSilentError("refresh info cache", e); }
+        try {
+          localStorage.setItem(INFO_CACHE_KEY, JSON.stringify({ token, info }));
+        } catch (e) {
+          reportSilentError("refresh info cache", e);
+        }
         await fetchAllTx(token, info.accounts || []);
         return;
       }
@@ -494,6 +535,41 @@ export function useMonobank() {
     }
     await fetchAllTx(token, accounts);
   };
+
+  const connectRef = useRef(null);
+  connectRef.current = connect;
+  useEffect(() => {
+    if (token) connectRef.current(token, false);
+  }, [token]);
+
+  const refreshRef = useRef(null);
+  refreshRef.current = refresh;
+  useEffect(() => {
+    if (!token || !clientInfo) return;
+
+    const HOUR = 60 * 60 * 1000;
+
+    const maybeRefresh = () => {
+      if (document.visibilityState !== "visible") return;
+      if (!navigator.onLine) return;
+      if (connecting || loadingTx) return;
+
+      const now = Date.now();
+      if (now - lastAutoRefreshAtRef.current < HOUR) return;
+      lastAutoRefreshAtRef.current = now;
+      refreshRef.current();
+    };
+
+    const id = setInterval(maybeRefresh, HOUR);
+    document.addEventListener("visibilitychange", maybeRefresh);
+    window.addEventListener("online", maybeRefresh);
+
+    return () => {
+      clearInterval(id);
+      document.removeEventListener("visibilitychange", maybeRefresh);
+      window.removeEventListener("online", maybeRefresh);
+    };
+  }, [token, clientInfo, connecting, loadingTx]);
 
   const disconnect = () => {
     setToken("");
@@ -529,7 +605,7 @@ export function useMonobank() {
     notifyHubFinykCache();
     setTransactions([]);
     setLastUpdated(null);
-    setSyncState(s => ({
+    setSyncState((s) => ({
       ...s,
       status: "idle",
       source: "none",

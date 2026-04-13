@@ -8,7 +8,8 @@ export function Atlas() {
     // Map our muscle ids to body-highlighter muscle keys.
     const map = (id) => {
       if (!id) return null;
-      if (id === "pectoralis_major" || id === "pectoralis_minor") return "chest";
+      if (id === "pectoralis_major" || id === "pectoralis_minor")
+        return "chest";
       if (id === "latissimus_dorsi") return "upper-back";
       if (id === "rhomboids" || id === "upper_back") return "upper-back";
       if (id === "erector_spinae") return "lower-back";
@@ -29,7 +30,12 @@ export function Atlas() {
       if (id === "neck") return "neck";
       return null;
     };
-    const worst = (a, b) => (a === "red" || b === "red") ? "red" : (a === "yellow" || b === "yellow") ? "yellow" : "green";
+    const worst = (a, b) =>
+      a === "red" || b === "red"
+        ? "red"
+        : a === "yellow" || b === "yellow"
+          ? "yellow"
+          : "green";
     const out = {};
     for (const m of Object.values(rec.by || {})) {
       const key = map(m.id);
@@ -42,14 +48,19 @@ export function Atlas() {
   return (
     <div className="flex-1 overflow-y-auto">
       <div className="max-w-4xl mx-auto px-4 pt-4 fizruk-page-scroll-pad space-y-3">
-
         <section
           className="rounded-3xl p-5 border border-line/20"
-          style={{ background: "linear-gradient(135deg, #0f2d1a 0%, #1e4d2b 100%)" }}
+          style={{
+            background: "linear-gradient(135deg, #0f2d1a 0%, #1e4d2b 100%)",
+          }}
           aria-label="Атлас мʼязів"
         >
-          <p className="text-[11px] font-bold tracking-widest uppercase text-accent">Атлас мʼязів</p>
-          <h1 className="text-2xl font-black text-white mt-2 leading-tight">Стан відновлення</h1>
+          <p className="text-[11px] font-bold tracking-widest uppercase text-accent">
+            Атлас мʼязів
+          </p>
+          <h1 className="text-2xl font-black text-white mt-2 leading-tight">
+            Стан відновлення
+          </h1>
           <div className="flex gap-4 mt-3">
             <div className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-success inline-block" />
@@ -67,10 +78,13 @@ export function Atlas() {
         </section>
 
         <div className="bg-panel border border-line/60 rounded-2xl p-5 shadow-card">
-          <BodyAtlas statusByMuscle={statusByMuscle} height={520} showLegend={false} />
+          <BodyAtlas
+            statusByMuscle={statusByMuscle}
+            height={520}
+            showLegend={false}
+          />
         </div>
       </div>
     </div>
   );
 }
-

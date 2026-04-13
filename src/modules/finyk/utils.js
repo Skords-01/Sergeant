@@ -1,4 +1,9 @@
-import { MCC_CATEGORIES, INCOME_CATEGORIES, CURRENCY, INTERNAL_TRANSFER_ID } from "./constants";
+import {
+  MCC_CATEGORIES,
+  INCOME_CATEGORIES,
+  CURRENCY,
+  INTERNAL_TRANSFER_ID,
+} from "./constants";
 import {
   getDebtPaid as debtEngineGetDebtPaid,
   getReceivablePaid,
@@ -8,29 +13,63 @@ import {
   getReceivableEffectiveTotal,
 } from "./domain/debtEngine";
 
-export { calcDebtRemaining, calcReceivableRemaining, getDebtEffectiveTotal, getReceivableEffectiveTotal };
+export {
+  calcDebtRemaining,
+  calcReceivableRemaining,
+  getDebtEffectiveTotal,
+  getReceivableEffectiveTotal,
+};
+
+function resolveExpenseOverride(overrideId, customCategories = []) {
+  if (!overrideId) return null;
+  const fromMcc = MCC_CATEGORIES.find((c) => c.id === overrideId);
+  if (fromMcc) return fromMcc;
+  const custom = customCategories.find((c) => c.id === overrideId);
+  if (custom) {
+    return {
+      id: custom.id,
+      label: custom.label,
+      mccs: [],
+      keywords: [],
+    };
+  }
+  return null;
+}
+
+/** Мітка категорії витрат за id (базові + користувацькі). */
+export function resolveExpenseCategoryMeta(id, customCategories = []) {
+  return resolveExpenseOverride(id, customCategories);
+}
 
 export function getIncomeCategory(desc = "", overrideId = null) {
   if (overrideId) {
-    const found = INCOME_CATEGORIES.find(c => c.id === overrideId)
-      || MCC_CATEGORIES.find(c => c.id === overrideId);
+    const found =
+      INCOME_CATEGORIES.find((c) => c.id === overrideId) ||
+      MCC_CATEGORIES.find((c) => c.id === overrideId);
     if (found) return found;
   }
   const d = desc.toLowerCase();
   for (const cat of INCOME_CATEGORIES) {
-    if (cat.keywords.some(k => d.includes(k))) return cat;
+    if (cat.keywords.some((k) => d.includes(k))) return cat;
   }
   return INCOME_CATEGORIES[INCOME_CATEGORIES.length - 1]; // in_other
 }
 
-export function getCategory(desc = "", mcc = 0, overrideId = null) {
+export function getCategory(
+  desc = "",
+  mcc = 0,
+  overrideId = null,
+  customCategories = [],
+) {
   if (overrideId) {
-    const found = MCC_CATEGORIES.find(c => c.id === overrideId);
+    const fromCustom = resolveExpenseOverride(overrideId, customCategories);
+    if (fromCustom) return fromCustom;
+    const found = MCC_CATEGORIES.find((c) => c.id === overrideId);
     if (found) return found;
   }
   for (const cat of MCC_CATEGORIES) {
     if (cat.mccs.includes(mcc)) return cat;
-    if (cat.keywords.some(k => desc.toLowerCase().includes(k))) return cat;
+    if (cat.keywords.some((k) => desc.toLowerCase().includes(k))) return cat;
   }
   return { id: "other", label: "💳 Інше", mccs: [], keywords: [] };
 }
@@ -44,7 +83,10 @@ export function fmtAmt(amount, cc = CURRENCY.UAH) {
 export function fmtDate(ts) {
   const d = new Date(ts * 1000);
   const diff = Math.floor((Date.now() - d) / 86400000);
-  const t = d.toLocaleTimeString("uk-UA", { hour: "2-digit", minute: "2-digit" });
+  const t = d.toLocaleTimeString("uk-UA", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
   if (diff === 0) return `Сьогодні, ${t}`;
   if (diff === 1) return `Вчора, ${t}`;
   return d.toLocaleDateString("uk-UA", { day: "2-digit", month: "short" });
@@ -63,13 +105,14 @@ export function getAccountLabel(acc) {
 }
 
 export function getMonoDebt(acc) {
-  if (acc.creditLimit > 0) return Math.max(0, (acc.creditLimit - acc.balance) / 100);
+  if (acc.creditLimit > 0)
+    return Math.max(0, (acc.creditLimit - acc.balance) / 100);
   if (acc.balance < 0) return Math.abs(acc.balance) / 100;
   return 0;
 }
 
 export function isMonoDebt(acc) {
-  return acc.creditLimit > 0 && (acc.creditLimit - acc.balance) > 0;
+  return acc.creditLimit > 0 && acc.creditLimit - acc.balance > 0;
 }
 
 export function daysUntil(day) {
@@ -102,38 +145,56 @@ export function getTxStatAmount(tx, txSplits = {}) {
   const splits = txSplits[tx.id];
   if (!splits || splits.length === 0) return Math.abs(tx.amount / 100);
   return splits
-    .filter(s => s.categoryId !== INTERNAL_TRANSFER_ID)
+    .filter((s) => s.categoryId !== INTERNAL_TRANSFER_ID)
     .reduce((s, p) => s + (p.amount || 0), 0);
 }
 
 // Сума витрат по категорії. txSplits дозволяє розбити одну транзакцію на декілька категорій.
-export function calcCategorySpent(txs, categoryId, txCategories = {}, txSplits = {}) {
+export function calcCategorySpent(
+  txs,
+  categoryId,
+  txCategories = {},
+  txSplits = {},
+  customCategories = [],
+) {
   return Math.round(
     txs
-      .filter(t => t.amount < 0)
+      .filter((t) => t.amount < 0)
       .reduce((sum, t) => {
         const splits = txSplits[t.id];
         if (splits && splits.length > 0) {
-          return sum + splits
-            .filter(s => s.categoryId === categoryId)
-            .reduce((s, p) => s + (p.amount || 0), 0);
+          return (
+            sum +
+            splits
+              .filter((s) => s.categoryId === categoryId)
+              .reduce((s, p) => s + (p.amount || 0), 0)
+          );
         }
-        if (getCategory(t.description, t.mcc, txCategories[t.id]).id === categoryId) {
+        if (
+          getCategory(
+            t.description,
+            t.mcc,
+            txCategories[t.id],
+            customCategories,
+          ).id === categoryId
+        ) {
           return sum + Math.abs(t.amount / 100);
         }
         return sum;
-      }, 0)
+      }, 0),
   );
 }
 
 // Підсумки по рахунках Mono
 export function getMonoTotals(accounts, hiddenAccountIds = []) {
-  const visible = accounts.filter(a => !hiddenAccountIds.includes(a.id));
+  const visible = accounts.filter((a) => !hiddenAccountIds.includes(a.id));
   const balance = visible
-    .filter(a => a.balance > 0 && !a.creditLimit && a.currencyCode === CURRENCY.UAH)
+    .filter(
+      (a) => a.balance > 0 && !a.creditLimit && a.currencyCode === CURRENCY.UAH,
+    )
     .reduce((sum, a) => sum + a.balance / 100, 0);
   const debt = accounts
-    .filter(a => isMonoDebt(a))
+    .filter((a) => isMonoDebt(a))
     .reduce((sum, a) => sum + getMonoDebt(a), 0);
   return { balance, debt };
 }

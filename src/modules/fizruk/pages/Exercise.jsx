@@ -1,5 +1,4 @@
 import { useMemo } from "react";
-import { Button } from "@shared/components/ui/Button";
 import { cn } from "@shared/lib/cn";
 import { useExerciseCatalog } from "../hooks/useExerciseCatalog";
 import { useWorkouts } from "../hooks/useWorkouts";
@@ -8,7 +7,7 @@ function epley1rm(weightKg, reps) {
   const w = Number(weightKg) || 0;
   const r = Number(reps) || 0;
   if (w <= 0 || r <= 0) return 0;
-  return w * (1 + (r / 30));
+  return w * (1 + r / 30);
 }
 
 function fmt(n, digits = 0) {
@@ -27,7 +26,10 @@ export function Exercise({ exerciseId }) {
   const { exercises, musclesUk } = useExerciseCatalog();
   const { workouts } = useWorkouts();
 
-  const ex = useMemo(() => (exercises || []).find(x => x?.id === exerciseId) || null, [exercises, exerciseId]);
+  const ex = useMemo(
+    () => (exercises || []).find((x) => x?.id === exerciseId) || null,
+    [exercises, exerciseId],
+  );
 
   const history = useMemo(() => {
     const out = [];
@@ -37,7 +39,9 @@ export function Exercise({ exerciseId }) {
         out.push({ workout: w, item: it });
       }
     }
-    return out.sort((a, b) => (b.workout?.startedAt || "").localeCompare(a.workout?.startedAt || ""));
+    return out.sort((a, b) =>
+      (b.workout?.startedAt || "").localeCompare(a.workout?.startedAt || ""),
+    );
   }, [workouts, exerciseId]);
 
   const best = useMemo(() => {
@@ -71,14 +75,16 @@ export function Exercise({ exerciseId }) {
 
   const muscleLabels = useMemo(() => {
     const ids = ex?.muscles?.primary || [];
-    return ids.map(id => musclesUk?.[id] || id).filter(Boolean);
+    return ids.map((id) => musclesUk?.[id] || id).filter(Boolean);
   }, [ex, musclesUk]);
 
   if (!exerciseId) {
     return (
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-4xl mx-auto px-4 pt-4 fizruk-page-scroll-pad">
-          <div className="bg-panel border border-line/60 rounded-2xl p-5 shadow-card text-sm text-subtle">Невірний ID вправи</div>
+          <div className="bg-panel border border-line/60 rounded-2xl p-5 shadow-card text-sm text-subtle">
+            Невірний ID вправи
+          </div>
         </div>
       </div>
     );
@@ -87,68 +93,117 @@ export function Exercise({ exerciseId }) {
   return (
     <div className="flex-1 overflow-y-auto">
       <div className="max-w-4xl mx-auto px-4 pt-4 fizruk-page-scroll-pad space-y-3">
-
         <section
           className="rounded-3xl p-5 border border-line/20"
-          style={{ background: "linear-gradient(135deg, #0f2d1a 0%, #1e4d2b 100%)" }}
+          style={{
+            background: "linear-gradient(135deg, #0f2d1a 0%, #1e4d2b 100%)",
+          }}
           aria-label="Профіль вправи"
         >
-          <p className="text-[11px] font-bold tracking-widest uppercase text-accent">Профіль вправи</p>
+          <p className="text-[11px] font-bold tracking-widest uppercase text-accent">
+            Профіль вправи
+          </p>
           <h1 className="text-2xl font-black text-white mt-2 leading-tight">
-            {ex?.name?.uk || ex?.name?.en || history?.[0]?.item?.nameUk || "Вправа"}
+            {ex?.name?.uk ||
+              ex?.name?.en ||
+              history?.[0]?.item?.nameUk ||
+              "Вправа"}
           </h1>
           {muscleLabels.length > 0 && (
             <div className="flex flex-wrap gap-1.5 mt-3">
-              {muscleLabels.map(m => (
-                <span key={m} className="text-xs font-medium px-2.5 py-1 rounded-full bg-white/15 text-white/80 border border-white/20">
+              {muscleLabels.map((m) => (
+                <span
+                  key={m}
+                  className="text-xs font-medium px-2.5 py-1 rounded-full bg-white/15 text-white/80 border border-white/20"
+                >
                   {m}
                 </span>
               ))}
             </div>
           )}
           {muscleLabels.length === 0 && (
-            <p className="text-xs text-white/50 mt-2">Додай мʼязи в каталозі для точнішої аналітики</p>
+            <p className="text-xs text-white/50 mt-2">
+              Додай мʼязи в каталозі для точнішої аналітики
+            </p>
           )}
         </section>
 
         <div className="grid grid-cols-2 gap-3">
           <div className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card">
-            <div className="text-[10px] font-bold text-subtle uppercase tracking-widest">Best 1RM (оцінка)</div>
-            <div className="text-2xl font-extrabold text-text mt-1 tabular-nums">{best.best1rm ? `${fmt(best.best1rm, 0)} кг` : "—"}</div>
+            <div className="text-[10px] font-bold text-subtle uppercase tracking-widest">
+              Best 1RM (оцінка)
+            </div>
+            <div className="text-2xl font-extrabold text-text mt-1 tabular-nums">
+              {best.best1rm ? `${fmt(best.best1rm, 0)} кг` : "—"}
+            </div>
             <div className="text-xs text-subtle mt-1">
-              {best.bestSet ? `${best.bestSet.weightKg ?? 0}×${best.bestSet.reps ?? 0}` : "Немає силових сетів"}
+              {best.bestSet
+                ? `${best.bestSet.weightKg ?? 0}×${best.bestSet.reps ?? 0}`
+                : "Немає силових сетів"}
             </div>
           </div>
           <div className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card">
-            <div className="text-[10px] font-bold text-subtle uppercase tracking-widest">Рекомендація</div>
-            <div className="text-2xl font-extrabold text-text mt-1 tabular-nums">{suggestedNext ? `${fmt(suggestedNext.weightKg, 1)} кг` : "—"}</div>
-            <div className="text-xs text-subtle mt-1">{suggestedNext ? `на ~${suggestedNext.reps} повторів` : "Заповни останній сет, щоб зʼявилась прогресія"}</div>
+            <div className="text-[10px] font-bold text-subtle uppercase tracking-widest">
+              Рекомендація
+            </div>
+            <div className="text-2xl font-extrabold text-text mt-1 tabular-nums">
+              {suggestedNext ? `${fmt(suggestedNext.weightKg, 1)} кг` : "—"}
+            </div>
+            <div className="text-xs text-subtle mt-1">
+              {suggestedNext
+                ? `на ~${suggestedNext.reps} повторів`
+                : "Заповни останній сет, щоб зʼявилась прогресія"}
+            </div>
           </div>
         </div>
 
         <div className="bg-panel border border-line/60 rounded-2xl p-5 shadow-card">
-          <div className="text-xs font-bold text-subtle uppercase tracking-widest mb-3">Історія сетів</div>
+          <div className="text-xs font-bold text-subtle uppercase tracking-widest mb-3">
+            Історія сетів
+          </div>
           {history.length === 0 ? (
-            <div className="text-sm text-subtle text-center py-6">Ще немає записів по цій вправі</div>
+            <div className="text-sm text-subtle text-center py-6">
+              Ще немає записів по цій вправі
+            </div>
           ) : (
             <div className="space-y-2">
               {history.slice(0, 20).map(({ workout, item }) => (
-                <div key={`${workout.id}_${item.id}`} className="border border-line rounded-2xl p-3 bg-bg">
+                <div
+                  key={`${workout.id}_${item.id}`}
+                  className="border border-line rounded-2xl p-3 bg-bg"
+                >
                   <div className="flex items-center justify-between gap-2">
                     <div className="text-xs text-subtle">
-                      {workout?.startedAt ? new Date(workout.startedAt).toLocaleDateString("uk-UA", { month: "short", day: "numeric", year: "2-digit" }) : "—"}
+                      {workout?.startedAt
+                        ? new Date(workout.startedAt).toLocaleDateString(
+                            "uk-UA",
+                            { month: "short", day: "numeric", year: "2-digit" },
+                          )
+                        : "—"}
                     </div>
-                    <div className={cn("text-[10px] px-2 py-1 rounded-full border", item.type === "strength" ? "border-line text-subtle" : "border-line text-subtle")}>
-                      {item.type === "strength" ? "силова" : item.type === "distance" ? "дистанція" : "час"}
+                    <div
+                      className={cn(
+                        "text-[10px] px-2 py-1 rounded-full border",
+                        item.type === "strength"
+                          ? "border-line text-subtle"
+                          : "border-line text-subtle",
+                      )}
+                    >
+                      {item.type === "strength"
+                        ? "силова"
+                        : item.type === "distance"
+                          ? "дистанція"
+                          : "час"}
                     </div>
                   </div>
                   <div className="text-sm text-text mt-2">
                     {item.type === "strength"
-                      ? (item.sets || []).map(s => `${s.weightKg ?? 0}×${s.reps ?? 0}`).join(", ") || "—"
+                      ? (item.sets || [])
+                          .map((s) => `${s.weightKg ?? 0}×${s.reps ?? 0}`)
+                          .join(", ") || "—"
                       : item.type === "distance"
                         ? `${item.distanceM ?? 0} м за ${item.durationSec ?? 0} с`
-                        : `${item.durationSec ?? 0} с`
-                    }
+                        : `${item.durationSec ?? 0} с`}
                   </div>
                 </div>
               ))}
@@ -170,4 +225,3 @@ export function Exercise({ exerciseId }) {
     </div>
   );
 }
-

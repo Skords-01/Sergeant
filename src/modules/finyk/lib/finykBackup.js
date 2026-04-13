@@ -29,7 +29,8 @@ export function normalizeFinykBackup(parsed) {
   };
   const needObj = (v, name) => {
     if (v === undefined || v === null) return;
-    if (typeof v !== "object" || Array.isArray(v)) throw new Error(`Поле «${name}» має бути об'єктом`);
+    if (typeof v !== "object" || Array.isArray(v))
+      throw new Error(`Поле «${name}» має бути об'єктом`);
     return v;
   };
 
@@ -49,7 +50,10 @@ export function normalizeFinykBackup(parsed) {
   if (ht) out.hiddenTxIds = ht;
 
   if (parsed.monthlyPlan !== undefined && parsed.monthlyPlan !== null) {
-    if (typeof parsed.monthlyPlan !== "object" || Array.isArray(parsed.monthlyPlan)) {
+    if (
+      typeof parsed.monthlyPlan !== "object" ||
+      Array.isArray(parsed.monthlyPlan)
+    ) {
       throw new Error("Поле «monthlyPlan» має бути об'єктом");
     }
     out.monthlyPlan = parsed.monthlyPlan;
@@ -74,8 +78,25 @@ export function normalizeFinykBackup(parsed) {
     }
   }
 
+  const cc = needArr(parsed.customCategories, "customCategories");
+  if (cc) {
+    for (const row of cc) {
+      if (
+        !row ||
+        typeof row !== "object" ||
+        typeof row.id !== "string" ||
+        typeof row.label !== "string"
+      ) {
+        throw new Error("Некоректний запис у customCategories");
+      }
+    }
+    out.customCategories = cc;
+  }
+
   if (Object.keys(out).length === 0) {
-    throw new Error("У файлі немає даних для імпорту (очікуйте поля бекапу ФІНІК)");
+    throw new Error(
+      "У файлі немає даних для імпорту (очікуйте поля бекапу ФІНІК)",
+    );
   }
 
   return out;
@@ -105,7 +126,8 @@ export function normalizeFinykSyncPayload(data) {
     has("txCategories") ||
     has("txSplits") ||
     has("monoDebtLinkedTxIds") ||
-    has("networthHistory");
+    has("networthHistory") ||
+    has("customCategories");
 
   if (looksLikeFullBackup) {
     const withVer = has("version") ? data : { ...data, version: 1 };
@@ -129,6 +151,7 @@ export function normalizeFinykSyncPayload(data) {
   if (has("ts")) full.txSplits = data.ts;
   if (has("md")) full.monoDebtLinkedTxIds = data.md;
   if (has("nh")) full.networthHistory = data.nh;
+  if (has("cc")) full.customCategories = data.cc;
 
   return normalizeFinykBackup(full);
 }

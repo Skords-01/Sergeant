@@ -78,7 +78,10 @@ export function useMonthlyPlan() {
     [state.days],
   );
 
-  const todayTemplateId = useMemo(() => state.days[todayKey()]?.templateId ?? null, [state.days]);
+  const todayTemplateId = useMemo(
+    () => state.days[todayKey()]?.templateId ?? null,
+    [state.days],
+  );
 
   return {
     reminderHour: state.reminderHour,

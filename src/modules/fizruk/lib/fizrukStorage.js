@@ -67,8 +67,14 @@ export function serializeCustomExercisesToStorage(exercises) {
 
 /** Full backup blob for export/import. */
 export function buildFizrukBackupPayload() {
-  const workoutsRaw = typeof localStorage !== "undefined" ? localStorage.getItem(WORKOUTS_STORAGE_KEY) : null;
-  const customRaw = typeof localStorage !== "undefined" ? localStorage.getItem(CUSTOM_EXERCISES_KEY) : null;
+  const workoutsRaw =
+    typeof localStorage !== "undefined"
+      ? localStorage.getItem(WORKOUTS_STORAGE_KEY)
+      : null;
+  const customRaw =
+    typeof localStorage !== "undefined"
+      ? localStorage.getItem(CUSTOM_EXERCISES_KEY)
+      : null;
   return {
     kind: "fizruk-backup",
     exportedAt: new Date().toISOString(),
@@ -79,20 +85,34 @@ export function buildFizrukBackupPayload() {
 }
 
 export function applyFizrukBackupPayload(data, { replace = false } = {}) {
-  if (!data || data.kind !== "fizruk-backup") throw new Error("Невірний формат файлу");
+  if (!data || data.kind !== "fizruk-backup")
+    throw new Error("Невірний формат файлу");
   const w = Array.isArray(data.workouts) ? data.workouts : [];
   const c = Array.isArray(data.customExercises) ? data.customExercises : [];
   if (replace) {
     localStorage.setItem(WORKOUTS_STORAGE_KEY, serializeWorkoutsToStorage(w));
-    localStorage.setItem(CUSTOM_EXERCISES_KEY, serializeCustomExercisesToStorage(c));
+    localStorage.setItem(
+      CUSTOM_EXERCISES_KEY,
+      serializeCustomExercisesToStorage(c),
+    );
     return { workouts: w.length, customExercises: c.length };
   }
-  const existingW = parseWorkoutsFromStorage(localStorage.getItem(WORKOUTS_STORAGE_KEY));
-  const existingC = parseCustomExercisesFromStorage(localStorage.getItem(CUSTOM_EXERCISES_KEY));
+  const existingW = parseWorkoutsFromStorage(
+    localStorage.getItem(WORKOUTS_STORAGE_KEY),
+  );
+  const existingC = parseCustomExercisesFromStorage(
+    localStorage.getItem(CUSTOM_EXERCISES_KEY),
+  );
   const mergedW = mergeWorkoutsById(existingW, w);
   const mergedC = mergeCustomById(existingC, c);
-  localStorage.setItem(WORKOUTS_STORAGE_KEY, serializeWorkoutsToStorage(mergedW));
-  localStorage.setItem(CUSTOM_EXERCISES_KEY, serializeCustomExercisesToStorage(mergedC));
+  localStorage.setItem(
+    WORKOUTS_STORAGE_KEY,
+    serializeWorkoutsToStorage(mergedW),
+  );
+  localStorage.setItem(
+    CUSTOM_EXERCISES_KEY,
+    serializeCustomExercisesToStorage(mergedC),
+  );
   return { workouts: mergedW.length, customExercises: mergedC.length };
 }
 
@@ -100,7 +120,9 @@ function mergeWorkoutsById(a, b) {
   const byId = new Map();
   for (const x of a || []) if (x?.id) byId.set(x.id, x);
   for (const x of b || []) if (x?.id) byId.set(x.id, x);
-  return [...byId.values()].sort((x, y) => (y.startedAt || "").localeCompare(x.startedAt || ""));
+  return [...byId.values()].sort((x, y) =>
+    (y.startedAt || "").localeCompare(x.startedAt || ""),
+  );
 }
 
 function mergeCustomById(a, b) {
@@ -118,7 +140,8 @@ export function buildFizrukFullBackupPayload() {
   const data = {};
   for (const k of FIZRUK_FULL_BACKUP_KEYS) {
     try {
-      data[k] = typeof localStorage !== "undefined" ? localStorage.getItem(k) : null;
+      data[k] =
+        typeof localStorage !== "undefined" ? localStorage.getItem(k) : null;
     } catch {
       data[k] = null;
     }

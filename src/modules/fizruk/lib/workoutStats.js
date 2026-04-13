@@ -24,7 +24,7 @@ function epley1rm(weightKg, reps) {
   const wg = Number(weightKg) || 0;
   const r = Number(reps) || 0;
   if (wg <= 0 || r <= 0) return 0;
-  return wg * (1 + (r / 30));
+  return wg * (1 + r / 30);
 }
 
 /** Кількість вправ, де є хоча б один зафіксований «рекорд» за оцінкою Еплі. */
@@ -80,7 +80,7 @@ export function formatCompactKg(kg) {
 }
 
 export function completedWorkoutsCount(workouts) {
-  return (workouts || []).filter(w => w.endedAt).length;
+  return (workouts || []).filter((w) => w.endedAt).length;
 }
 
 export function countCompletedInCurrentWeek(workouts) {
@@ -106,4 +106,3 @@ export function totalCompletedVolumeKg(workouts) {
   }
   return s;
 }
-

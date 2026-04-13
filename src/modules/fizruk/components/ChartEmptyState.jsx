@@ -11,7 +11,9 @@ export function ChartEmptyState({ title, hint, className }) {
       role="status"
     >
       <div className="text-sm font-semibold text-text">{title}</div>
-      {hint ? <p className="text-xs text-subtle mt-1.5 leading-relaxed">{hint}</p> : null}
+      {hint ? (
+        <p className="text-xs text-subtle mt-1.5 leading-relaxed">{hint}</p>
+      ) : null}
     </div>
   );
 }
