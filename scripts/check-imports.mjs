@@ -2,7 +2,11 @@ import fs from "node:fs";
 import path from "node:path";
 
 const repoRoot = path.resolve(process.cwd());
-const finykRoot = path.join(repoRoot, "src", "modules", "finyk");
+
+const MODULE_ROOTS = [
+  path.join(repoRoot, "src", "modules", "finyk"),
+  path.join(repoRoot, "src", "modules", "fizruk"),
+];
 
 const forbidden = [
   { re: /from\s+["']\.\/components\/ui\//g, hint: "Використовуй @shared/components/ui/* замість ./components/ui/*" },
@@ -13,6 +17,7 @@ const forbidden = [
 
 function walk(dir) {
   const out = [];
+  if (!fs.existsSync(dir)) return out;
   for (const ent of fs.readdirSync(dir, { withFileTypes: true })) {
     if (ent.name === "node_modules" || ent.name.startsWith(".")) continue;
     const p = path.join(dir, ent.name);
@@ -28,8 +33,9 @@ function isTextFile(p) {
 
 let failures = [];
 
-if (fs.existsSync(finykRoot)) {
-  for (const file of walk(finykRoot)) {
+for (const moduleRoot of MODULE_ROOTS) {
+  const label = path.relative(repoRoot, moduleRoot).replaceAll("\\", "/");
+  for (const file of walk(moduleRoot)) {
     if (!isTextFile(file)) continue;
     const rel = path.relative(repoRoot, file).replaceAll("\\", "/");
     const src = fs.readFileSync(file, "utf8");
@@ -43,9 +49,8 @@ if (fs.existsSync(finykRoot)) {
 }
 
 if (failures.length) {
-  console.error("❌ Forbidden imports detected in finyk:\n" + failures.join("\n") + "\n");
+  console.error("❌ Forbidden imports detected in modules:\n" + failures.join("\n") + "\n");
   process.exit(1);
 } else {
   console.log("✅ Import check passed.");
 }
-

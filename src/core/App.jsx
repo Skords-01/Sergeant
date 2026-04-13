@@ -1,11 +1,39 @@
-import { useState } from "react";
+import { useState, useCallback, lazy, Suspense } from "react";
 import { cn } from "@shared/lib/cn";
-import { HubChat } from "./HubChat";
 
-// Модулі — ліниво завантажуємо
-import { lazy, Suspense } from "react";
-const FinykApp  = lazy(() => import("../modules/finyk/FinykApp"));
+const HubChat = lazy(() => import("./HubChat"));
+
+const FinykApp = lazy(() => import("../modules/finyk/FinykApp"));
 const FizrukApp = lazy(() => import("../modules/fizruk/FizrukApp"));
+
+const HUB_MODULE_KEY = "hub_last_module";
+const VALID_MODULES = new Set(["finyk", "fizruk"]);
+
+function readInitialModule() {
+  if (typeof window === "undefined") return null;
+  try {
+    const q = new URLSearchParams(window.location.search).get("module");
+    if (VALID_MODULES.has(q)) return q;
+  } catch {}
+  try {
+    const s = localStorage.getItem(HUB_MODULE_KEY);
+    if (VALID_MODULES.has(s)) return s;
+  } catch {}
+  return null;
+}
+
+function persistModuleToUrlAndStorage(moduleId) {
+  try {
+    if (moduleId) localStorage.setItem(HUB_MODULE_KEY, moduleId);
+    else localStorage.removeItem(HUB_MODULE_KEY);
+  } catch {}
+  try {
+    const url = new URL(window.location.href);
+    if (moduleId) url.searchParams.set("module", moduleId);
+    else url.searchParams.delete("module");
+    window.history.replaceState(null, "", url);
+  } catch {}
+}
 
 const MODULES = [
   {
@@ -44,10 +72,19 @@ function PageLoader() {
 }
 
 export default function App() {
-  const [activeModule, setActiveModule] = useState(null);
+  const [activeModule, setActiveModule] = useState(readInitialModule);
   const [chatOpen, setChatOpen] = useState(false);
 
-  // Головний екран — вибір модуля
+  const goToHub = useCallback(() => {
+    setActiveModule(null);
+    persistModuleToUrlAndStorage(null);
+  }, []);
+
+  const openModule = useCallback((id) => {
+    setActiveModule(id);
+    persistModuleToUrlAndStorage(id);
+  }, []);
+
   if (!activeModule) {
     return (
       <div
@@ -64,7 +101,8 @@ export default function App() {
               <button
                 key={m.id}
                 type="button"
-                onClick={() => setActiveModule(m.id)}
+                onClick={() => openModule(m.id)}
+                aria-label={`Відкрити модуль ${m.label}: ${m.desc}`}
                 className={cn(
                   "group relative w-full p-6 rounded-3xl border border-line bg-panel text-left",
                   "shadow-card hover:shadow-float transition-all duration-300",
@@ -84,6 +122,7 @@ export default function App() {
                       "flex items-center justify-center w-16 h-16 rounded-2xl shrink-0 transition-colors",
                       m.iconClass,
                     )}
+                    aria-hidden
                   >
                     {m.icon}
                   </div>
@@ -108,46 +147,51 @@ export default function App() {
           </div>
         </main>
 
-        {/* Chat FAB */}
         <div className="fixed bottom-0 left-0 right-0 flex justify-center pb-6" style={{ paddingBottom: "calc(1.5rem + env(safe-area-inset-bottom,0px))" }}>
           <button
             type="button"
             onClick={() => setChatOpen(true)}
             className="flex items-center gap-2.5 px-5 h-12 rounded-full bg-primary text-white shadow-float hover:brightness-110 active:scale-95 transition-all font-medium text-sm"
+            aria-label="Відкрити асистента (фінанси та тренування)"
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
             </svg>
             Асистент
           </button>
         </div>
 
-        {chatOpen && <HubChat onClose={() => setChatOpen(false)} />}
+        {chatOpen && (
+          <Suspense fallback={null}>
+            <HubChat onClose={() => setChatOpen(false)} />
+          </Suspense>
+        )}
       </div>
     );
   }
 
   return (
     <div className="h-dvh flex flex-col bg-bg text-text overflow-hidden">
-      {/* Back to hub */}
-      <div className="shrink-0 absolute top-0 left-0 z-50 p-2" style={{ paddingTop: "env(safe-area-inset-top, 8px)" }}>
-        <button
-          type="button"
-          onClick={() => setActiveModule(null)}
-          className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-2xl bg-panel/90 backdrop-blur-md border border-line/80 text-muted hover:text-text shadow-card transition-colors"
-          title="До вибору модуля"
-          aria-label="До вибору модуля"
-        >
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-            <polyline points="9 22 9 12 15 12 15 22" />
-          </svg>
-        </button>
-      </div>
+      {activeModule !== "fizruk" && (
+        <div className="shrink-0 absolute top-0 left-0 z-50 p-2" style={{ paddingTop: "env(safe-area-inset-top, 8px)" }}>
+          <button
+            type="button"
+            onClick={goToHub}
+            className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-2xl bg-panel/90 backdrop-blur-md border border-line/80 text-muted hover:text-text shadow-card transition-colors"
+            title="До вибору модуля"
+            aria-label="До вибору модуля"
+          >
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+              <polyline points="9 22 9 12 15 12 15 22" />
+            </svg>
+          </button>
+        </div>
+      )}
 
       <Suspense fallback={<PageLoader />}>
-        {activeModule === "finyk"  && <FinykApp onBackToHub={() => setActiveModule(null)} />}
-        {activeModule === "fizruk" && <FizrukApp />}
+        {activeModule === "finyk" && <FinykApp onBackToHub={goToHub} />}
+        {activeModule === "fizruk" && <FizrukApp onBackToHub={goToHub} />}
       </Suspense>
     </div>
   );

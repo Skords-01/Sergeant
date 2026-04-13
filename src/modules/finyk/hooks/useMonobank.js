@@ -1,6 +1,14 @@
 import { useState, useEffect, useRef } from "react";
 import { TX_CACHE_TTL, CURRENCY } from "../constants";
 
+const HUB_FINYK_CACHE_EVENT = "hub-finyk-cache-updated";
+
+function notifyHubFinykCache() {
+  try {
+    window.dispatchEvent(new CustomEvent(HUB_FINYK_CACHE_EVENT));
+  } catch {}
+}
+
 const CACHE_KEY = "finyk_tx_cache";
 const INFO_CACHE_KEY = "finyk_info_cache";
 const TOKEN_KEY = "finyk_token";
@@ -16,6 +24,14 @@ try {
     if (v !== null && localStorage.getItem(n) === null) localStorage.setItem(n, v);
     if (v !== null) localStorage.removeItem(o);
   }
+} catch {}
+
+try {
+  const oldLast = localStorage.getItem("finto_tx_cache_last_good");
+  if (oldLast !== null && localStorage.getItem("finyk_tx_cache_last_good") === null) {
+    localStorage.setItem("finyk_tx_cache_last_good", oldLast);
+  }
+  if (oldLast !== null) localStorage.removeItem("finto_tx_cache_last_good");
 } catch {}
 
 function loadCache() {
@@ -46,11 +62,12 @@ function loadAnyCache() {
 function saveCache(txs) {
   try {
     localStorage.setItem(CACHE_KEY, JSON.stringify({ txs, timestamp: Date.now() }));
+    notifyHubFinykCache();
   } catch {}
 }
 
 /** Останній повний знімок — якщо поточний кеш зіпсований (мало транзакцій), відновлюємо звідси */
-const LAST_GOOD_KEY = "finto_tx_cache_last_good";
+const LAST_GOOD_KEY = "finyk_tx_cache_last_good";
 
 function saveLastGoodBackup(txs) {
   try {
@@ -414,9 +431,19 @@ export function useMonobank() {
   };
 
   const fetchMonth = async (year, month) => {
-    const cacheKey = `finto_tx_cache_${year}_${month}`;
+    const cacheKey = `finyk_tx_cache_${year}_${month}`;
+    const legacyKey = `finto_tx_cache_${year}_${month}`;
     try {
-      const raw = localStorage.getItem(cacheKey);
+      let raw = localStorage.getItem(cacheKey);
+      if (!raw) {
+        raw = localStorage.getItem(legacyKey);
+        if (raw) {
+          try {
+            localStorage.setItem(cacheKey, raw);
+            localStorage.removeItem(legacyKey);
+          } catch {}
+        }
+      }
       if (raw) {
         const cached = JSON.parse(raw);
         if (cached.txs && cached.txs.length > 0) { setHistoryTx(cached.txs); return; }
@@ -491,6 +518,7 @@ export function useMonobank() {
     } catch (e) {
       reportSilentError("disconnect cleanup", e);
     }
+    notifyHubFinykCache();
   };
 
   const clearTxCache = () => {
@@ -498,6 +526,7 @@ export function useMonobank() {
       localStorage.removeItem(CACHE_KEY);
       localStorage.removeItem(LAST_GOOD_KEY);
     } catch {}
+    notifyHubFinykCache();
     setTransactions([]);
     setLastUpdated(null);
     setSyncState(s => ({
