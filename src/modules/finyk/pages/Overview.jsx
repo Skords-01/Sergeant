@@ -40,7 +40,7 @@ function FlowRow({ flow, showAmount = true }) {
   );
 }
 
-export function Overview({ mono, storage, onNavigate, showBalance = true }) {
+export function Overview({ mono, storage, onNavigate, onCategoryClick, showBalance = true }) {
   const { realTx, loadingTx, clientInfo, accounts, transactions } = mono;
   const { budgets, subscriptions, manualDebts, receivables, hiddenAccounts, excludedTxIds, monthlyPlan, networthHistory, saveNetworthSnapshot, txCategories, txSplits } = storage;
 
@@ -445,7 +445,10 @@ export function Overview({ mono, storage, onNavigate, showBalance = true }) {
         {catSpends.length > 0 && (
           <div className="bg-panel border border-line/60 rounded-2xl p-5 shadow-card">
             <div className="text-xs font-medium text-subtle mb-4">Витрати за категоріями</div>
-            <CategoryChart data={catSpends.slice(0, 6)} />
+            <CategoryChart
+              data={catSpends.slice(0, 6)}
+              onBarClick={onCategoryClick ? (catId) => { onCategoryClick(catId); onNavigate?.("transactions"); } : undefined}
+            />
           </div>
         )}
 

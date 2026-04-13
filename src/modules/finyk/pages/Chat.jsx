@@ -5,7 +5,7 @@ import { cn } from "@shared/lib/cn";
 
 export function Chat({ mono, storage }) {
   const { realTx, clientInfo, accounts, transactions } = mono;
-  const { budgets, manualDebts, receivables, hiddenAccounts, excludedTxIds, txCategories } = storage;
+  const { budgets, manualDebts, receivables, hiddenAccounts, excludedTxIds, txCategories, setBudgets, setManualDebts, setReceivables, hideTx, overrideCategory } = storage;
   const statTx = realTx.filter(t => !excludedTxIds.has(t.id));
 
   const [messages, setMessages] = useState([{ role: "assistant", text: "Привіт! 👋 Запитай мене про свої фінанси — я бачу твої транзакції, бюджети та борги." }]);
@@ -29,10 +29,52 @@ export function Chat({ mono, storage }) {
   }).join(", ");
 
   const topTx = statTx.slice(0, 15).map(t =>
-    `${t.description}(${getCategory(t.description, t.mcc, txCategories[t.id]).label.slice(3)}): ${(t.amount / 100).toFixed(0)}₴`
+    `[id:${t.id}] ${t.description}(${getCategory(t.description, t.mcc, txCategories[t.id]).label.slice(3)}): ${(t.amount / 100).toFixed(0)}₴`
   ).join("; ");
 
-  const context = `Ім'я: ${clientInfo?.name}. На картках: ${monoTotal.toFixed(0)}₴. Витрати місяця: ${spent.toFixed(0)}₴. Дохід: ${income.toFixed(0)}₴. Борги: ${totalDebt.toFixed(0)}₴. Бюджети: ${bdgStr || "не налаштовані"}. Транзакції: ${topTx}.`;
+  const catIds = MCC_CATEGORIES.map(c => `${c.id}="${c.label}"`).join(", ");
+
+  const context = `Ім'я: ${clientInfo?.name}. На картках: ${monoTotal.toFixed(0)}₴. Витрати місяця: ${spent.toFixed(0)}₴. Дохід: ${income.toFixed(0)}₴. Борги: ${totalDebt.toFixed(0)}₴. Бюджети: ${bdgStr || "не налаштовані"}. [Категорії]: ${catIds}. [Останні операції]: ${topTx}.`;
+
+  const executeTool = (name, input) => {
+    switch (name) {
+      case "change_category":
+        overrideCategory(input.tx_id, input.category_id);
+        return "Категорію змінено";
+      case "hide_transaction":
+        hideTx(input.tx_id);
+        return "Транзакцію приховано";
+      case "create_debt":
+        setManualDebts(prev => [...prev, {
+          id: Date.now().toString(),
+          name: input.name,
+          totalAmount: input.amount,
+          emoji: input.emoji || "💸",
+          dueDate: input.due_date || "",
+          linkedTxIds: [],
+        }]);
+        return "Борг додано";
+      case "create_receivable":
+        setReceivables(prev => [...prev, {
+          id: Date.now().toString(),
+          name: input.name,
+          amount: input.amount,
+          emoji: "📥",
+          dueDate: "",
+          linkedTxIds: [],
+        }]);
+        return "Дебіторку додано";
+      case "set_budget_limit":
+        setBudgets(prev => {
+          const exists = prev.some(b => b.type === "limit" && b.categoryId === input.category_id);
+          if (exists) return prev.map(b => b.type === "limit" && b.categoryId === input.category_id ? { ...b, limit: input.limit } : b);
+          return [...prev, { id: Date.now().toString(), type: "limit", categoryId: input.category_id, limit: input.limit }];
+        });
+        return "Ліміт встановлено";
+      default:
+        return "ok";
+    }
+  };
 
   const send = async () => {
     if (!input.trim() || loading) return;
@@ -55,7 +97,39 @@ export function Chat({ mono, storage }) {
         throw new Error(payload.error || `HTTP ${res.status}`);
       }
       const data = await res.json();
-      setMessages(m => [...m, { role: "assistant", text: data.text || "Помилка." }]);
+
+      // Handle tool_calls from AI
+      if (data.tool_calls && data.tool_calls.length > 0) {
+        if (data.text) {
+          setMessages(m => [...m, { role: "assistant", text: data.text }]);
+        }
+
+        // Execute tools and collect results
+        const toolResults = data.tool_calls.map(tc => ({
+          tool_use_id: tc.id,
+          content: executeTool(tc.name, tc.input),
+        }));
+
+        // Send results back to get final AI response
+        const res2 = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            context,
+            messages: nextMessages.map(m => ({ role: m.role, content: m.text })),
+            tool_results: toolResults,
+            tool_calls_raw: data.tool_calls_raw,
+          }),
+        });
+        if (!res2.ok) {
+          const payload2 = await res2.json().catch(() => ({}));
+          throw new Error(payload2.error || `HTTP ${res2.status}`);
+        }
+        const data2 = await res2.json();
+        setMessages(m => [...m, { role: "assistant", text: data2.text || "Готово." }]);
+      } else {
+        setMessages(m => [...m, { role: "assistant", text: data.text || "Помилка." }]);
+      }
     } catch (e) {
       setMessages(m => [...m, { role: "assistant", text: `Помилка з'єднання з AI: ${e.message}` }]);
     } finally {

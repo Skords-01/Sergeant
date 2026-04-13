@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { TxRow } from "../components/TxRow";
 import { getCategory, getIncomeCategory } from "../utils";
 import { MCC_CATEGORIES } from "../constants";
@@ -7,10 +7,17 @@ import { cn } from "@shared/lib/cn";
 
 const now = new Date();
 
-export function Transactions({ mono, storage, showBalance = true }) {
+export function Transactions({ mono, storage, showBalance = true, categoryFilter, onClearCategoryFilter }) {
   const { realTx, loadingTx, lastUpdated, refresh, syncState, accounts, fetchMonth, historyTx, loadingHistory } = mono;
   const { hiddenTxIds, hideTx, excludedTxIds, txCategories, overrideCategory, txSplits, setSplitTx } = storage;
   const [filter, setFilter] = useState("all");
+
+  useEffect(() => {
+    if (categoryFilter) {
+      setFilter(categoryFilter);
+      onClearCategoryFilter?.();
+    }
+  }, [categoryFilter]);
   const [showHidden, setShowHidden] = useState(false);
   const [search, setSearch] = useState("");
   const [selMonth, setSelMonth] = useState(() => ({ year: now.getFullYear(), month: now.getMonth() }));

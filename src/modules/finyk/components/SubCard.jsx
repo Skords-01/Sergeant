@@ -1,7 +1,13 @@
+import { useState } from "react";
 import { daysUntil, fmtDate } from "../utils";
 import { cn } from "@shared/lib/cn";
 
-export function SubCard({ sub, transactions, onDelete }) {
+const EMOJI_OPTIONS = ["📱","🎵","☁️","▶️","🎬","📧","📸","🤖","🎮","📚","🏋️","💊","🔒","🌐","📡"];
+
+export function SubCard({ sub, transactions, onDelete, onEdit }) {
+  const [editing, setEditing] = useState(false);
+  const [form, setForm] = useState({ name: sub.name, emoji: sub.emoji, keyword: sub.keyword || "", billingDay: sub.billingDay, currency: sub.currency || "UAH" });
+
   const lastTx = transactions.find(
     t => t.amount < 0 && sub.keyword && (t.description || "").toLowerCase().includes(sub.keyword.toLowerCase())
   );
@@ -10,6 +16,70 @@ export function SubCard({ sub, transactions, onDelete }) {
   const currency = lastTx ? (lastTx.currencyCode === 840 ? "$" : "₴") : (sub.currency === "USD" ? "$" : "₴");
   const veryClose = days <= 1;
   const soon = days <= 3;
+
+  const saveEdit = () => {
+    if (!form.name || !form.billingDay) return;
+    onEdit?.({ ...form, billingDay: Number(form.billingDay) });
+    setEditing(false);
+  };
+
+  if (editing) {
+    return (
+      <div className="bg-panel border border-primary/30 rounded-xl p-4 mb-3 space-y-3">
+        <div className="flex gap-2 flex-wrap">
+          {EMOJI_OPTIONS.map(e => (
+            <button
+              key={e}
+              onClick={() => setForm(f => ({ ...f, emoji: e }))}
+              className={cn("text-xl w-9 h-9 rounded-lg flex items-center justify-center transition-colors", form.emoji === e ? "bg-emerald-500/15 ring-1 ring-emerald-500/40" : "hover:bg-panelHi")}
+            >{e}</button>
+          ))}
+        </div>
+        <input
+          className="w-full bg-bg border border-line rounded-xl px-3 py-2.5 text-sm text-text placeholder:text-subtle outline-none focus:border-primary/50"
+          placeholder="Назва"
+          value={form.name}
+          onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+        />
+        <input
+          className="w-full bg-bg border border-line rounded-xl px-3 py-2.5 text-sm text-text placeholder:text-subtle outline-none focus:border-primary/50"
+          placeholder="Ключове слово з транзакції"
+          value={form.keyword}
+          onChange={e => setForm(f => ({ ...f, keyword: e.target.value }))}
+        />
+        <div className="flex gap-2">
+          <input
+            className="flex-1 bg-bg border border-line rounded-xl px-3 py-2.5 text-sm text-text outline-none focus:border-primary/50"
+            placeholder="День (1-31)"
+            type="number"
+            min="1"
+            max="31"
+            value={form.billingDay}
+            onChange={e => setForm(f => ({ ...f, billingDay: e.target.value }))}
+          />
+          <select
+            className="flex-1 bg-bg border border-line rounded-xl px-3 py-2.5 text-sm text-text outline-none focus:border-primary/50"
+            value={form.currency}
+            onChange={e => setForm(f => ({ ...f, currency: e.target.value }))}
+          >
+            <option value="UAH">₴ UAH</option>
+            <option value="USD">$ USD</option>
+            <option value="EUR">€ EUR</option>
+          </select>
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={saveEdit}
+            className="flex-1 py-2.5 text-sm font-semibold bg-emerald-500/12 text-emerald-700 border border-emerald-500/25 rounded-xl hover:bg-emerald-500/20 transition-colors"
+          >Зберегти</button>
+          <button
+            onClick={() => { setForm({ name: sub.name, emoji: sub.emoji, keyword: sub.keyword || "", billingDay: sub.billingDay, currency: sub.currency || "UAH" }); setEditing(false); }}
+            className="flex-1 py-2.5 text-sm font-semibold text-muted border border-line rounded-xl hover:bg-panelHi transition-colors"
+          >Скасувати</button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -31,7 +101,10 @@ export function SubCard({ sub, transactions, onDelete }) {
           ? <div className="text-sm font-bold">{amount.toLocaleString("uk-UA", { maximumFractionDigits: 2 })}{currency}</div>
           : <div className="text-xs text-subtle">ще не списувалось</div>
         }
-        <button onClick={onDelete} className="text-subtle hover:text-danger text-sm transition-colors mt-1">🗑</button>
+        <div className="flex gap-2 mt-1">
+          {onEdit && <button onClick={() => setEditing(true)} className="text-subtle hover:text-primary text-sm transition-colors">✏️</button>}
+          <button onClick={onDelete} className="text-subtle hover:text-danger text-sm transition-colors">🗑</button>
+        </div>
       </div>
     </div>
   );

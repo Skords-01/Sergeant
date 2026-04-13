@@ -183,7 +183,13 @@ export function Assets({ mono, storage, showBalance = true }) {
         {open.subscriptions && (
           <div className="mb-3 space-y-0">
             {subscriptions.map((sub, i) => (
-              <SubCard key={sub.id} sub={sub} transactions={transactions} onDelete={() => setSubscriptions(ss => ss.filter((_, j) => j !== i))} />
+              <SubCard
+                key={sub.id}
+                sub={sub}
+                transactions={transactions}
+                onDelete={() => setSubscriptions(ss => ss.filter((_, j) => j !== i))}
+                onEdit={updated => setSubscriptions(ss => ss.map((s, j) => j === i ? { ...s, ...updated } : s))}
+              />
             ))}
             {showSubForm ? (
               <div className="bg-panel border border-line rounded-xl p-4 space-y-3 mt-2">

@@ -94,6 +94,7 @@ export default function App({ onBackToHub } = {}) {
   const [tokenInput, setTokenInput] = useState("");
   const [showToken, setShowToken] = useState(false);
   const [toast, setToast] = useState(null);
+  const [categoryFilter, setCategoryFilter] = useState(null);
   const [showBalance, setShowBalance] = useState(() => {
     try { return localStorage.getItem("finyk_show_balance_v1") !== "0"; } catch { return true; }
   });
@@ -358,8 +359,8 @@ export default function App({ onBackToHub } = {}) {
         onTouchEnd={handleTouchEnd}
       >
         <Suspense fallback={<PageLoader />}>
-          {page === "overview"     && <Overview      mono={mono} storage={storage} onNavigate={handleNavigate} showBalance={showBalance} />}
-          {page === "transactions" && <Transactions  mono={mono} storage={storage} showBalance={showBalance} />}
+          {page === "overview"     && <Overview      mono={mono} storage={storage} onNavigate={handleNavigate} onCategoryClick={catId => { setCategoryFilter(catId); handleNavigate("transactions"); }} showBalance={showBalance} />}
+          {page === "transactions" && <Transactions  mono={mono} storage={storage} showBalance={showBalance} categoryFilter={categoryFilter} onClearCategoryFilter={() => setCategoryFilter(null)} />}
           {page === "budgets"      && <Budgets       mono={mono} storage={storage} />}
           {page === "assets"       && <Assets        mono={mono} storage={storage} showBalance={showBalance} />}
           {page === "settings"     && <Settings      mono={mono} storage={storage} />}
