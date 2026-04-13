@@ -39,6 +39,7 @@ npm run dev
 | Змінна | Модуль | Опис |
 |--------|--------|------|
 | `ANTHROPIC_API_KEY` | Shared AI | Ключ Anthropic |
+| `ALLOWED_ORIGINS` | API (CORS) | Опційно: дозволені origin через кому (локально й прев’ю вже за замовчуванням) |
 
 ## Деплой
 

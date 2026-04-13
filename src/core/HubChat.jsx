@@ -3,6 +3,30 @@ import { MCC_CATEGORIES, INTERNAL_TRANSFER_ID } from "../modules/finyk/constants
 import { getCategory, getMonoTotals, getDebtPaid, getTxStatAmount, calcCategorySpent, isMonoDebt, getMonoDebt } from "../modules/finyk/utils";
 import { cn } from "@shared/lib/cn";
 
+const HUB_FINYK_CACHE_EVENT = "hub-finyk-cache-updated";
+
+function newMsgId() {
+  return globalThis.crypto?.randomUUID?.() ?? `m_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
+}
+
+function makeAssistantMsg(text) {
+  return { id: newMsgId(), role: "assistant", text };
+}
+
+function makeUserMsg(text) {
+  return { id: newMsgId(), role: "user", text };
+}
+
+function normalizeStoredMessages(raw) {
+  if (!Array.isArray(raw) || raw.length === 0) {
+    return [makeAssistantMsg("Привіт! Запитуй про фінанси чи тренування. Можу також змінювати категорії, додавати борги тощо.")];
+  }
+  return raw.map((m, i) => ({
+    ...m,
+    id: m.id || `legacy_${i}_${Date.now()}_${Math.random().toString(36).slice(2)}`,
+  }));
+}
+
 // ──────────────────────────────────────────────
 // 1. Пряме читання localStorage — єдине джерело правди
 // ──────────────────────────────────────────────
@@ -13,6 +37,15 @@ function ls(key, fallback) {
 
 function lsSet(key, value) {
   try { localStorage.setItem(key, JSON.stringify(value)); } catch {}
+}
+
+function checkHasMonoData() {
+  try {
+    const c = ls("finyk_tx_cache", null);
+    return !!(c?.txs?.length);
+  } catch {
+    return false;
+  }
 }
 
 function readAllData() {
@@ -361,20 +394,30 @@ function stopSpeaking() {
 // 4. Chat component
 // ──────────────────────────────────────────────
 
-const QUICK = [
+const QUICK_WITH_MONO = [
   "Як справи з бюджетом?",
   "Які борги маю?",
   "Скільки витратив?",
   "Порадь щось",
 ];
 
-export function HubChat({ onClose }) {
+const QUICK_NO_MONO = [
+  "Як почати тренування у Фізруку?",
+  "Що ти знаєш про мої тренування?",
+  "Порадь розминку перед залом",
+  "Порадь щось",
+];
+
+function HubChat({ onClose }) {
   const [messages, setMessages] = useState(() => {
     try {
       const saved = localStorage.getItem("hub_chat_history");
-      if (saved) { const p = JSON.parse(saved); if (Array.isArray(p) && p.length) return p; }
+      if (saved) {
+        const p = JSON.parse(saved);
+        if (Array.isArray(p) && p.length) return normalizeStoredMessages(p);
+      }
     } catch {}
-    return [{ role: "assistant", text: "Привіт! Запитуй про фінанси чи тренування. Можу також змінювати категорії, додавати борги тощо." }];
+    return normalizeStoredMessages(null);
   });
 
   useEffect(() => {
@@ -386,10 +429,72 @@ export function HubChat({ onClose }) {
   const [speaking, setSpeaking] = useState(false);
   const chatRef = useRef(null);
   const inputRef = useRef(null);
+  const panelRef = useRef(null);
   const lastWasVoice = useRef(false);
+
+  const [hasData, setHasData] = useState(() => checkHasMonoData());
+
+  useEffect(() => {
+    const refresh = () => setHasData(checkHasMonoData());
+    window.addEventListener("storage", refresh);
+    window.addEventListener(HUB_FINYK_CACHE_EVENT, refresh);
+    window.addEventListener("focus", refresh);
+    const onVis = () => {
+      if (document.visibilityState === "visible") refresh();
+    };
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      window.removeEventListener("storage", refresh);
+      window.removeEventListener(HUB_FINYK_CACHE_EVENT, refresh);
+      window.removeEventListener("focus", refresh);
+      document.removeEventListener("visibilitychange", onVis);
+    };
+  }, []);
+
+  const quickPrompts = useMemo(
+    () => (hasData ? QUICK_WITH_MONO : QUICK_NO_MONO),
+    [hasData],
+  );
 
   useEffect(() => { if (chatRef.current) chatRef.current.scrollTop = chatRef.current.scrollHeight; }, [messages, loading]);
   useEffect(() => { setTimeout(() => inputRef.current?.focus(), 100); }, []);
+
+  useEffect(() => {
+    const panel = panelRef.current;
+    if (!panel) return;
+
+    const getFocusable = () =>
+      Array.from(
+        panel.querySelectorAll(
+          'button:not([disabled]), [href], input:not([disabled]), select, textarea, [tabindex]:not([tabindex="-1"])',
+        ),
+      ).filter(el => !el.hasAttribute("disabled"));
+
+    const onKeyDown = (e) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onClose();
+        return;
+      }
+      if (e.key !== "Tab") return;
+      const nodes = getFocusable();
+      if (nodes.length === 0) return;
+      const first = nodes[0];
+      const last = nodes[nodes.length - 1];
+      if (e.shiftKey) {
+        if (document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        }
+      } else if (document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [onClose]);
 
   // Відстежуємо чи speechSynthesis ще говорить
   useEffect(() => {
@@ -414,10 +519,6 @@ export function HubChat({ onClose }) {
     rawToggleMic();
   }, [rawToggleMic]);
 
-  const hasData = useMemo(() => {
-    try { const c = ls("finyk_tx_cache", null); return !!(c?.txs?.length); } catch { return false; }
-  }, []);
-
   const maybeSpeak = useCallback((text) => {
     speak(text);
     setSpeaking(true);
@@ -430,7 +531,7 @@ export function HubChat({ onClose }) {
     const shouldSpeak = lastWasVoice.current || VOICE_KEYWORDS.test(msg);
     lastWasVoice.current = false;
 
-    const userMsg = { role: "user", text: msg };
+    const userMsg = makeUserMsg(msg);
     const next = [...messages, userMsg];
     setMessages(next);
     setInput("");
@@ -477,17 +578,17 @@ export function HubChat({ onClose }) {
         } catch {}
 
         const fullText = followUp ? `${actionsText}\n\n${followUp}` : actionsText;
-        setMessages(m => [...m, { role: "assistant", text: fullText }]);
+        setMessages(m => [...m, makeAssistantMsg(fullText)]);
         if (shouldSpeak) maybeSpeak(followUp || actionsText);
 
-        window.dispatchEvent(new Event("storage"));
+        window.dispatchEvent(new CustomEvent(HUB_FINYK_CACHE_EVENT));
       } else {
         const reply = data.text || "Немає відповіді.";
-        setMessages(m => [...m, { role: "assistant", text: reply }]);
+        setMessages(m => [...m, makeAssistantMsg(reply)]);
         if (shouldSpeak) maybeSpeak(reply);
       }
     } catch (e) {
-      setMessages(m => [...m, { role: "assistant", text: `Помилка: ${e.message}` }]);
+      setMessages(m => [...m, makeAssistantMsg(`Помилка: ${e.message}`)]);
     } finally {
       setLoading(false);
     }
@@ -497,37 +598,52 @@ export function HubChat({ onClose }) {
   const clearChat = () => {
     stopSpeaking();
     setSpeaking(false);
-    setMessages([{ role: "assistant", text: "Чат очищено." }]);
+    setMessages([makeAssistantMsg("Чат очищено.")]);
     try { localStorage.removeItem("hub_chat_history"); } catch {}
   };
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col" style={{ paddingTop: "env(safe-area-inset-top,0px)", paddingBottom: "env(safe-area-inset-bottom,0px)" }}>
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+      <div
+        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+        onClick={onClose}
+        aria-hidden
+        tabIndex={-1}
+      />
 
-      <div className="relative mt-auto flex flex-col bg-bg border-t border-line rounded-t-3xl shadow-float max-h-[92dvh]">
+      <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="hub-chat-title"
+        aria-describedby="hub-chat-privacy"
+        className="relative mt-auto flex flex-col bg-bg border-t border-line rounded-t-3xl shadow-float max-h-[92dvh] outline-none"
+      >
         <div className="flex justify-center pt-3 pb-1 shrink-0">
           <div className="w-10 h-1 bg-line rounded-full" />
         </div>
 
         {/* Header */}
         <div className="flex items-center justify-between px-4 pb-3 shrink-0 border-b border-line/60">
-          <div className="flex items-center gap-2.5">
-            <span className="text-2xl leading-none">🤖</span>
-            <div>
-              <div className="text-sm font-semibold text-text">Асистент</div>
+          <div className="flex items-center gap-2.5 min-w-0">
+            <span className="text-2xl leading-none shrink-0" aria-hidden>🤖</span>
+            <div className="min-w-0">
+              <div id="hub-chat-title" className="text-sm font-semibold text-text">Асистент</div>
               <div className={cn("text-[10px]", hasData ? "text-subtle" : "text-warning")}>
                 {hasData ? "Фінік · Фізрук" : "Mono не підключено"}
               </div>
+              <p id="hub-chat-privacy" className="text-[10px] text-subtle mt-1 leading-snug max-w-[min(100%,280px)]">
+                Запит і короткий контекст (фінанси/тренування) відправляються на сервер до AI. Не діліться чужим пристроєм без потреби.
+              </p>
             </div>
           </div>
-          <div className="flex items-center gap-1">
-            <button onClick={clearChat} className="w-9 h-9 flex items-center justify-center rounded-xl text-muted hover:text-danger hover:bg-danger/8 transition-colors" title="Очистити чат">
+          <div className="flex items-center gap-1 shrink-0">
+            <button type="button" onClick={clearChat} className="w-9 h-9 flex items-center justify-center rounded-xl text-muted hover:text-danger hover:bg-danger/8 transition-colors" title="Очистити чат" aria-label="Очистити історію чату">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6" /><path d="M10 11v6M14 11v6" />
               </svg>
             </button>
-            <button onClick={onClose} className="w-9 h-9 flex items-center justify-center rounded-xl text-muted hover:text-text hover:bg-panelHi transition-colors">
+            <button type="button" onClick={onClose} className="w-9 h-9 flex items-center justify-center rounded-xl text-muted hover:text-text hover:bg-panelHi transition-colors" aria-label="Закрити асистента">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                 <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
               </svg>
@@ -537,8 +653,8 @@ export function HubChat({ onClose }) {
 
         {/* Messages */}
         <div ref={chatRef} className="flex-1 overflow-y-auto px-4 py-3 space-y-3 min-h-0">
-          {messages.map((m, i) => (
-            <div key={i} className={cn("flex items-end gap-2", m.role === "user" ? "flex-row-reverse" : "flex-row")}>
+          {messages.map(m => (
+            <div key={m.id} className={cn("flex items-end gap-2", m.role === "user" ? "flex-row-reverse" : "flex-row")}>
               {m.role === "assistant" && <span className="text-lg shrink-0 mb-0.5 leading-none">🤖</span>}
               <div className={cn(
                 "max-w-[82%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed whitespace-pre-wrap",
@@ -549,9 +665,11 @@ export function HubChat({ onClose }) {
                 {m.text}
                 {m.role === "assistant" && m.text && m.text.length > 3 && (
                   <button
+                    type="button"
                     onClick={() => { speak(m.text); setSpeaking(true); }}
                     className="mt-1.5 flex items-center gap-1 text-[11px] text-subtle hover:text-text transition-colors"
                     title="Озвучити"
+                    aria-label="Озвучити відповідь"
                   >
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
@@ -577,9 +695,9 @@ export function HubChat({ onClose }) {
         </div>
 
         {/* Quick prompts */}
-        <div className="flex gap-2 px-4 pt-2 pb-1 overflow-x-auto scrollbar-hide shrink-0">
-          {QUICK.map((q, i) => (
-            <button key={i} onClick={() => send(q)} disabled={loading} className="text-xs px-3 py-1.5 bg-panel border border-line rounded-full text-subtle hover:text-text hover:border-muted whitespace-nowrap transition-colors shrink-0 disabled:opacity-40">
+        <div className="flex gap-2 px-4 pt-2 pb-1 overflow-x-auto scrollbar-hide shrink-0" role="group" aria-label="Швидкі запити">
+          {quickPrompts.map(q => (
+            <button key={q} type="button" onClick={() => send(q)} disabled={loading} className="text-xs px-3 py-1.5 bg-panel border border-line rounded-full text-subtle hover:text-text hover:border-muted whitespace-nowrap transition-colors shrink-0 disabled:opacity-40">
               {q}
             </button>
           ))}
@@ -594,12 +712,15 @@ export function HubChat({ onClose }) {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && send()}
+            aria-label="Повідомлення асистенту"
           />
           {speaking ? (
             <button
+              type="button"
               onClick={() => { stopSpeaking(); setSpeaking(false); }}
               className="w-11 h-11 rounded-full flex items-center justify-center shrink-0 transition-all border bg-warning/15 border-warning text-warning animate-pulse"
               title="Зупинити озвучення"
+              aria-label="Зупинити озвучення"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none">
                 <rect x="6" y="6" width="12" height="12" rx="2" />
@@ -607,6 +728,7 @@ export function HubChat({ onClose }) {
             </button>
           ) : speechSupported ? (
             <button
+              type="button"
               onClick={toggleMic}
               className={cn(
                 "w-11 h-11 rounded-full flex items-center justify-center shrink-0 transition-all border",
@@ -615,6 +737,7 @@ export function HubChat({ onClose }) {
                   : "bg-panel border-line text-muted hover:text-text hover:border-muted",
               )}
               title={listening ? "Зупинити запис" : "Голосовий ввід"}
+              aria-label={listening ? "Зупинити запис" : "Голосовий ввід"}
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill={listening ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
@@ -624,9 +747,11 @@ export function HubChat({ onClose }) {
             </button>
           ) : null}
           <button
+            type="button"
             onClick={() => send()}
             disabled={loading || !input.trim()}
             className="w-11 h-11 rounded-full bg-primary text-white flex items-center justify-center shrink-0 hover:brightness-110 transition-all disabled:opacity-40"
+            aria-label="Надіслати"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <line x1="12" y1="19" x2="12" y2="5" /><polyline points="5 12 12 5 19 12" />
@@ -637,3 +762,5 @@ export function HubChat({ onClose }) {
     </div>
   );
 }
+
+export default HubChat;

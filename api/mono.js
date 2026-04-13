@@ -1,18 +1,10 @@
+import { setCorsHeaders } from "./lib/cors.js";
+
 export default async function handler(req, res) {
-  // Безпечніші CORS налаштування
-  const origin = req.headers.origin;
-  const allowedOrigins = [
-    'http://localhost:5173', 
-    'http://localhost:4173', 
-    'https://finto-flame.vercel.app'  // Ваш справжній домен
-  ];
-  
-  if (allowedOrigins.includes(origin)) {
-    res.setHeader("Access-Control-Allow-Origin", origin);
-  }
-  
-  res.setHeader("Access-Control-Allow-Headers", "X-Token, Content-Type");
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  setCorsHeaders(res, req, {
+    allowHeaders: "X-Token, Content-Type",
+    methods: "GET, POST, OPTIONS",
+  });
   
   if (req.method === "OPTIONS") return res.status(200).end();
 
