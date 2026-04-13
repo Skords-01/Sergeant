@@ -579,6 +579,17 @@ export function Workouts() {
                     ))
                   )}
                 </div>
+
+                {!activeWorkout.endedAt && (
+                  <div className="mt-3">
+                    <textarea
+                      className="w-full min-h-[72px] rounded-2xl border border-line bg-bg px-3 py-2.5 text-sm text-text placeholder:text-subtle outline-none focus:border-muted transition-colors resize-none"
+                      placeholder="Нотатки до тренування (необов'язково)…"
+                      value={activeWorkout.note || ""}
+                      onChange={e => updateWorkout(activeWorkout.id, { note: e.target.value })}
+                    />
+                  </div>
+                )}
               </div>
             )}
 
@@ -610,6 +621,9 @@ export function Workouts() {
                       )}
                     </div>
                   </div>
+                  {w.note && (
+                    <div className="text-xs text-subtle mt-1 italic line-clamp-2">{w.note}</div>
+                  )}
                 </button>
               ))}
               {(workouts || []).length === 0 && (
