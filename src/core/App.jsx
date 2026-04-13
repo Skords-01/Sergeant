@@ -1,6 +1,7 @@
 import { useState, useCallback, lazy, Suspense } from "react";
 import { cn } from "@shared/lib/cn";
 import ModuleErrorBoundary from "./ModuleErrorBoundary";
+import { HubBackupPanel } from "./HubBackupPanel.jsx";
 
 const HubChat = lazy(() => import("./HubChat"));
 
@@ -201,6 +202,7 @@ export default function App() {
               </button>
             ))}
           </div>
+          <HubBackupPanel className="mt-6" />
         </main>
 
         <div className="fixed bottom-0 left-0 right-0 flex justify-center pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))]">

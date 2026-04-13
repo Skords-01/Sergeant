@@ -146,7 +146,6 @@ export function Overview({
   const networth = monoTotal + manualAssetTotal + totalReceivable - totalDebt;
 
   const limitBudgets = budgets.filter((b) => b.type === "limit");
-  const goalBudgets = budgets.filter((b) => b.type === "goal");
   const catSpends = useMemo(
     () =>
       mergeExpenseCategoryDefinitions(customCategories)
@@ -189,7 +188,7 @@ export function Overview({
           txSplits,
           customCategories,
         );
-        return b.limit > 0 && s / b.limit >= 0.8;
+        return b.limit > 0 && s / b.limit >= 0.6;
       }),
     [limitBudgets, statTx, txCategories, txSplits, customCategories],
   );
@@ -299,14 +298,31 @@ export function Overview({
     expenseTarget - spent - recurringOutThisMonth + recurringInThisMonth;
   const dayBudget = expenseLeft / remainingDays;
 
+  const monthBalance = income - spent;
+  const spendPct = Math.min(100, income > 0 ? (spent / income) * 100 : 0);
+  const expenseFromIncomeBarClass =
+    spendPct > 75
+      ? "bg-danger"
+      : spendPct > 50
+        ? "bg-warning"
+        : "bg-success";
+  const showMonthForecast = showBalance && daysPassed > 0 && projectedSpend > 0;
+  const forecastTrendPct = showMonthForecast
+    ? Math.min(100, Math.round((spent / projectedSpend) * 100))
+    : 0;
+  const forecastBarClass =
+    forecastTrendPct > 75
+      ? "bg-danger"
+      : forecastTrendPct > 50
+        ? "bg-warning"
+        : "bg-emerald-500";
+
   const spendPlanRatio = expenseTarget > 0 ? spent / expenseTarget : 0;
   const hasExpensePlan = expenseTarget > 0;
 
   let pulseAccentLeft;
   let pulseBg;
   let pulseColor;
-  let incomeBarClass;
-  let forecastBarClass;
   let pulseStatusText;
 
   if (hasExpensePlan) {
@@ -314,22 +330,16 @@ export function Overview({
       pulseAccentLeft = "border-l-red-500";
       pulseBg = "bg-pulse-b";
       pulseColor = "text-danger";
-      incomeBarClass = "bg-danger";
-      forecastBarClass = "bg-danger";
       pulseStatusText = "Понад 75% запланованого";
     } else if (spendPlanRatio > 0.5) {
       pulseAccentLeft = "border-l-amber-500";
       pulseBg = "bg-pulse-w";
       pulseColor = "text-warning";
-      incomeBarClass = "bg-warning";
-      forecastBarClass = "bg-warning";
       pulseStatusText = "Понад 50% запланованого";
     } else {
       pulseAccentLeft = "border-l-emerald-500";
       pulseBg = "bg-pulse-ok";
       pulseColor = "text-success";
-      incomeBarClass = "bg-success";
-      forecastBarClass = "bg-emerald-500";
       pulseStatusText = "В межах плану";
     }
   } else {
@@ -351,13 +361,6 @@ export function Overview({
       : pulseWarn
         ? "text-warning"
         : "text-danger";
-    incomeBarClass = spent > income ? "bg-danger" : "bg-success";
-    forecastBarClass =
-      spent > projectedSpend
-        ? "bg-danger"
-        : projectedSpend > 0 && spent / projectedSpend >= 0.85
-          ? "bg-warning"
-          : "bg-emerald-500";
     pulseStatusText = pulseBad
       ? "Перевитрата"
       : pulseWarn
@@ -369,16 +372,10 @@ export function Overview({
     clientInfo?.name?.split(" ")[1] ||
     clientInfo?.name?.split(" ")[0] ||
     "друже";
-  const monthBalance = income - spent;
-  const spendPct = Math.min(100, income > 0 ? (spent / income) * 100 : 0);
   const dateLabel = now.toLocaleDateString("uk-UA", {
     day: "numeric",
     month: "long",
   });
-  const showMonthForecast = showBalance && daysPassed > 0 && projectedSpend > 0;
-  const forecastTrendPct = showMonthForecast
-    ? Math.min(100, Math.round((spent / projectedSpend) * 100))
-    : 0;
 
   return (
     <div className="flex-1 overflow-y-auto overscroll-contain">
@@ -611,7 +608,7 @@ export function Overview({
               <div
                 className={cn(
                   "h-full rounded-full transition-all duration-700",
-                  incomeBarClass,
+                  expenseFromIncomeBarClass,
                 )}
                 style={{ width: showBalance ? `${spendPct}%` : "0%" }}
               />
@@ -772,7 +769,8 @@ export function Overview({
                       pct >= 100 ? "text-danger" : "text-warning",
                     )}
                   >
-                    {pct}% {pct >= 100 ? "⚠ перевищено" : "· майже ліміт"}
+                    {pct}%{" "}
+                    {pct >= 100 ? "⚠ перевищено" : "· понад 60% ліміту"}
                   </span>
                 </div>
               );
@@ -845,113 +843,6 @@ export function Overview({
                 <FlowRow key={f.id} flow={f} showAmount={showBalance} />
               ))}
             </div>
-          </div>
-        )}
-
-        {/* ── Limits ── */}
-        {limitBudgets.length > 0 && (
-          <div className="bg-panel border border-line/60 rounded-2xl p-5 shadow-card space-y-4">
-            <div className="text-xs font-medium text-subtle">Ліміти</div>
-            {limitBudgets.map((b, i) => {
-              const cat = resolveExpenseCategoryMeta(
-                b.categoryId,
-                customCategories,
-              );
-              const bspent = calcCategorySpent(
-                statTx,
-                b.categoryId,
-                txCategories,
-                txSplits,
-                customCategories,
-              );
-              const pct = Math.min(
-                100,
-                b.limit > 0 ? Math.round((bspent / b.limit) * 100) : 0,
-              );
-              const over = pct >= 90;
-              return (
-                <div key={i}>
-                  <div className="flex justify-between mb-2">
-                    <span className="text-sm font-medium">
-                      {cat?.label || "—"}
-                    </span>
-                    <span
-                      className={cn(
-                        "text-xs tabular-nums",
-                        over ? "text-danger" : "text-subtle",
-                      )}
-                    >
-                      {bspent.toLocaleString("uk-UA")} /{" "}
-                      {b.limit.toLocaleString("uk-UA")} ₴
-                    </span>
-                  </div>
-                  <div className="h-1.5 bg-bg rounded-full overflow-hidden">
-                    <div
-                      className={cn(
-                        "h-full rounded-full transition-all duration-700",
-                        over ? "bg-danger" : "bg-success",
-                      )}
-                      style={{ width: `${pct}%` }}
-                    />
-                  </div>
-                  {over && (
-                    <div className="text-[11px] text-danger mt-1">
-                      {pct}% — ліміт майже вичерпано
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
-
-        {/* ── Goals ── */}
-        {goalBudgets.length > 0 && (
-          <div className="bg-panel border border-line/60 rounded-2xl p-5 shadow-card space-y-4">
-            <div className="text-xs font-medium text-subtle">Цілі</div>
-            {goalBudgets.map((b, i) => {
-              const saved = b.savedAmount || 0;
-              const pct = Math.min(
-                100,
-                b.targetAmount > 0
-                  ? Math.round((saved / b.targetAmount) * 100)
-                  : 0,
-              );
-              const daysLeft = b.targetDate
-                ? Math.ceil((new Date(b.targetDate) - now) / 86400000)
-                : null;
-              return (
-                <div key={i}>
-                  <div className="flex justify-between mb-1.5">
-                    <span className="text-sm font-medium">
-                      {b.emoji || "🎯"} {b.name}
-                    </span>
-                    <span className="text-xs text-subtle tabular-nums">
-                      {pct}%
-                    </span>
-                  </div>
-                  <div className="h-1.5 bg-bg rounded-full overflow-hidden">
-                    <div
-                      className="h-full rounded-full bg-success transition-all duration-700"
-                      style={{ width: `${pct}%` }}
-                    />
-                  </div>
-                  <div className="flex justify-between mt-1.5">
-                    <span className="text-[11px] text-subtle/70 tabular-nums">
-                      {saved.toLocaleString("uk-UA")} /{" "}
-                      {b.targetAmount.toLocaleString("uk-UA")} ₴
-                    </span>
-                    <span className="text-[11px] text-subtle/70">
-                      {daysLeft !== null
-                        ? daysLeft > 0
-                          ? `${daysLeft} дн.`
-                          : "Прострочено"
-                        : "—"}
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
           </div>
         )}
 

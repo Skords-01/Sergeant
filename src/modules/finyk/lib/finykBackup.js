@@ -1,5 +1,75 @@
+import { DEFAULT_SUBSCRIPTIONS } from "../constants.js";
+import { notifyFinykRoutineCalendarSync } from "../hubRoutineSync.js";
+
 /** Версія формату експорту JSON (бекап). */
 export const FINYK_BACKUP_VERSION = 2;
+
+const DEFAULT_MONTHLY_PLAN = { income: "", expense: "", savings: "" };
+
+function readJsonFromLocalStorage(key, fallback) {
+  if (typeof localStorage === "undefined") return fallback;
+  try {
+    const s = localStorage.getItem(key);
+    if (s === null) return fallback;
+    return JSON.parse(s);
+  } catch {
+    return fallback;
+  }
+}
+
+/**
+ * Знімок даних Фініка з localStorage (без React), той самий зміст що й exportData.
+ */
+export function readFinykBackupFromStorage() {
+  return {
+    version: FINYK_BACKUP_VERSION,
+    budgets: readJsonFromLocalStorage("finyk_budgets", []),
+    subscriptions: readJsonFromLocalStorage("finyk_subs", DEFAULT_SUBSCRIPTIONS),
+    manualAssets: readJsonFromLocalStorage("finyk_assets", []),
+    manualDebts: readJsonFromLocalStorage("finyk_debts", []),
+    receivables: readJsonFromLocalStorage("finyk_recv", []),
+    hiddenAccounts: readJsonFromLocalStorage("finyk_hidden", []),
+    hiddenTxIds: readJsonFromLocalStorage("finyk_hidden_txs", []),
+    monthlyPlan: readJsonFromLocalStorage(
+      "finyk_monthly_plan",
+      DEFAULT_MONTHLY_PLAN,
+    ),
+    txCategories: readJsonFromLocalStorage("finyk_tx_cats", {}),
+    txSplits: readJsonFromLocalStorage("finyk_tx_splits", {}),
+    monoDebtLinkedTxIds: readJsonFromLocalStorage("finyk_mono_debt_linked", {}),
+    networthHistory: readJsonFromLocalStorage("finyk_networth_history", []),
+    customCategories: readJsonFromLocalStorage("finyk_custom_cats_v1", []),
+  };
+}
+
+const FINYK_FIELD_TO_STORAGE_KEY = {
+  budgets: "finyk_budgets",
+  subscriptions: "finyk_subs",
+  manualAssets: "finyk_assets",
+  manualDebts: "finyk_debts",
+  receivables: "finyk_recv",
+  hiddenAccounts: "finyk_hidden",
+  hiddenTxIds: "finyk_hidden_txs",
+  monthlyPlan: "finyk_monthly_plan",
+  txCategories: "finyk_tx_cats",
+  txSplits: "finyk_tx_splits",
+  monoDebtLinkedTxIds: "finyk_mono_debt_linked",
+  networthHistory: "finyk_networth_history",
+  customCategories: "finyk_custom_cats_v1",
+};
+
+/**
+ * Записує нормалізований бекап Фініка в localStorage (після normalizeFinykBackup).
+ */
+export function persistFinykNormalizedToStorage(normalized) {
+  if (typeof localStorage === "undefined") return;
+  for (const [field, storageKey] of Object.entries(FINYK_FIELD_TO_STORAGE_KEY)) {
+    if (normalized[field] !== undefined) {
+      localStorage.setItem(storageKey, JSON.stringify(normalized[field]));
+    }
+  }
+  notifyFinykRoutineCalendarSync();
+}
 
 /**
  * Перевіряє та нормалізує об'єкт бекапу для застосування в сховище.
