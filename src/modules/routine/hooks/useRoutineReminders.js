@@ -1,7 +1,25 @@
 import { useEffect, useRef } from "react";
 import { dateKeyFromDate, habitScheduledOnDate } from "../lib/hubCalendarAggregate.js";
 
-const NOTIFY_PREFIX = "routine_notify_";
+export const ROUTINE_NOTIFY_PREFIX = "routine_notify_";
+
+/** Видаляє старі ключі routine_notify_* (дата в кінці ключа). */
+export function cleanupStaleRoutineNotifyKeys(maxAgeDays = 45) {
+  try {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - maxAgeDays);
+    const cutoffKey = cutoff.toISOString().slice(0, 10);
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const k = localStorage.key(i);
+      if (!k || !k.startsWith(ROUTINE_NOTIFY_PREFIX)) continue;
+      const m = k.match(/(\d{4}-\d{2}-\d{2})$/);
+      const d = m?.[1];
+      if (d && d < cutoffKey) localStorage.removeItem(k);
+    }
+  } catch {
+    /* noop */
+  }
+}
 
 function todayKey() {
   return dateKeyFromDate(new Date());
@@ -20,6 +38,10 @@ export function useRoutineReminders(routine) {
   const enabled = routine.prefs?.routineRemindersEnabled === true;
   const routineRef = useRef(routine);
   routineRef.current = routine;
+
+  useEffect(() => {
+    cleanupStaleRoutineNotifyKeys();
+  }, []);
 
   useEffect(() => {
     if (!enabled) return undefined;
@@ -41,7 +63,7 @@ export function useRoutineReminders(routine) {
         const completions = r.completions[h.id] || [];
         if (completions.includes(dk)) continue;
 
-        const storageKey = `${NOTIFY_PREFIX}${h.id}_${dk}`;
+        const storageKey = `${ROUTINE_NOTIFY_PREFIX}${h.id}_${dk}`;
         try {
           if (localStorage.getItem(storageKey)) continue;
         } catch {

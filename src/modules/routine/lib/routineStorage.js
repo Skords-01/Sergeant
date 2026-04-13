@@ -1,6 +1,6 @@
 /** Hub «Рутина»: звички, теги, категорії (не-спорт), localStorage */
 
-import { dateKeyFromDate } from "./hubCalendarAggregate.js";
+import { dateKeyFromDate, habitScheduledOnDate } from "./hubCalendarAggregate.js";
 import { completionNoteKey } from "./completionNoteKey.js";
 
 export const ROUTINE_STORAGE_KEY = "hub_routine_v1";
@@ -9,6 +9,9 @@ export const ROUTINE_STORAGE_KEY = "hub_routine_v1";
 const FIZRUK_PUSHUPS_LEGACY = "fizruk_pushups_v1";
 
 export const ROUTINE_EVENT = "hub-routine-storage";
+
+/** Подія при невдалому localStorage.setItem (квота тощо) */
+export const ROUTINE_STORAGE_ERROR = "hub-routine-storage-error";
 
 export function emitRoutineStorage() {
   try {
@@ -41,7 +44,6 @@ const defaultState = () => ({
     showFizrukInCalendar: true,
     /** Планові списання підписок Фініка в календарі Hub */
     showFinykSubscriptionsInCalendar: true,
-    tagScope: "routine",
     /** Браузерні нагадування у вказаний час (якщо дозволено Notification) */
     routineRemindersEnabled: false,
   },
@@ -137,15 +139,23 @@ export function saveRoutineState(next) {
   try {
     localStorage.setItem(ROUTINE_STORAGE_KEY, JSON.stringify(next));
     emitRoutineStorage();
-  } catch {
-    /* noop */
+    return true;
+  } catch (e) {
+    try {
+      window.dispatchEvent(
+        new CustomEvent(ROUTINE_STORAGE_ERROR, { detail: { message: String(e?.message || e || "save failed") } }),
+      );
+    } catch {
+      /* noop */
+    }
+    return false;
   }
 }
 
 export function createTag(state, name) {
   const n = (name || "").trim();
   if (!n) return state;
-  const t = { id: uid("tag"), name: n, scope: state.prefs?.tagScope || "routine" };
+  const t = { id: uid("tag"), name: n, scope: "routine" };
   const next = { ...state, tags: [...state.tags, t] };
   saveRoutineState(next);
   return next;
@@ -200,7 +210,7 @@ export function createHabit(
 export function updateHabit(state, id, patch) {
   const next = {
     ...state,
-    habits: state.habits.map((h) => (h.id === id ? { ...h, ...patch } : h)),
+    habits: state.habits.map((h) => (h.id === id ? normalizeHabit({ ...h, ...patch }) : h)),
   };
   saveRoutineState(next);
   return next;
@@ -213,15 +223,41 @@ export function setPref(state, key, value) {
 }
 
 export function toggleHabitCompletion(state, habitId, dateKey) {
+  const habit = state.habits.find((h) => h.id === habitId);
+  if (!habit) return state;
   const cur = Array.isArray(state.completions[habitId]) ? [...state.completions[habitId]] : [];
   const i = cur.indexOf(dateKey);
-  if (i >= 0) cur.splice(i, 1);
-  else cur.push(dateKey);
+  if (i >= 0) {
+    cur.splice(i, 1);
+  } else {
+    if (!habitScheduledOnDate(habit, dateKey)) return state;
+    cur.push(dateKey);
+  }
   cur.sort();
   const next = {
     ...state,
     completions: { ...state.completions, [habitId]: cur },
   };
+  saveRoutineState(next);
+  return next;
+}
+
+/** Усі активні звички, заплановані на день, отримують відмітку (якщо ще немає). */
+export function markAllScheduledHabitsComplete(state, dateKey) {
+  const active = state.habits.filter((h) => !h.archived);
+  const completions = { ...state.completions };
+  let changed = false;
+  for (const h of active) {
+    if (!habitScheduledOnDate(h, dateKey)) continue;
+    const cur = Array.isArray(completions[h.id]) ? [...completions[h.id]] : [];
+    if (cur.includes(dateKey)) continue;
+    cur.push(dateKey);
+    cur.sort();
+    completions[h.id] = cur;
+    changed = true;
+  }
+  if (!changed) return state;
+  const next = { ...state, completions };
   saveRoutineState(next);
   return next;
 }
@@ -333,7 +369,9 @@ export function applyRoutineBackupPayload(parsed) {
   const mig = migrateLegacyPushups(s);
   s = mig.state;
   s = ensureHabitOrder(s).state;
-  saveRoutineState(s);
+  if (!saveRoutineState(s)) {
+    throw new Error("Не вдалося записати дані після імпорту (наприклад, переповнення сховища).");
+  }
   if (mig.migrated) {
     try {
       localStorage.removeItem(FIZRUK_PUSHUPS_LEGACY);
