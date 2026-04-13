@@ -16,6 +16,7 @@ import {
   totalCompletedVolumeKg,
   workoutDurationSec,
 } from "../lib/workoutStats";
+import { ACTIVE_WORKOUT_KEY } from "../lib/workoutUi.js";
 
 const SELECTED_TEMPLATE_KEY = "fizruk_selected_template_id_v1";
 
@@ -168,6 +169,8 @@ export function Dashboard({ onOpenAtlas }) {
         distanceM: isCardio ? 0 : 0,
       });
     }
+    try { localStorage.setItem(ACTIVE_WORKOUT_KEY, w.id); } catch {}
+    try { sessionStorage.setItem("fizruk_workouts_mode", "log"); } catch {}
     window.location.hash = "#workouts";
   };
 
@@ -264,6 +267,8 @@ export function Dashboard({ onOpenAtlas }) {
                 if (plan.picked.length) {
                   onClickStartPlan();
                 } else {
+                  const w = createWorkout();
+                  try { localStorage.setItem(ACTIVE_WORKOUT_KEY, w.id); } catch {}
                   try { sessionStorage.setItem("fizruk_workouts_mode", "log"); } catch {}
                   window.location.hash = "#workouts";
                 }

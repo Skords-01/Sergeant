@@ -139,6 +139,9 @@ export function Workouts() {
       if (m === "templates") {
         setMode("templates");
         sessionStorage.removeItem("fizruk_workouts_mode");
+      } else if (m === "log") {
+        setMode("log");
+        sessionStorage.removeItem("fizruk_workouts_mode");
       }
     } catch {}
   }, []);

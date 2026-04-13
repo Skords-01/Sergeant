@@ -39,8 +39,8 @@ export function WorkoutTemplatesSection({
   };
 
   const save = () => {
-    const n = name.trim();
-    if (!n || orderIds.length === 0) return;
+    if (orderIds.length === 0) return;
+    const n = name.trim() || "Мій шаблон";
     if (editingId === "new") {
       addTemplate(n, orderIds);
     } else if (editingId) {
@@ -86,7 +86,7 @@ export function WorkoutTemplatesSection({
       {editingId && (
         <div className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card space-y-3">
           <Input
-            placeholder="Назва шаблону *"
+            placeholder="Назва (за замовчуванням — «Мій шаблон»)"
             value={name}
             onChange={e => setName(e.target.value)}
             aria-label="Назва шаблону"
@@ -153,7 +153,7 @@ export function WorkoutTemplatesSection({
           </div>
 
           <div className="flex gap-2">
-            <Button className="flex-1 h-12 min-h-[44px]" onClick={save} disabled={!name.trim() || !orderIds.length}>
+            <Button className="flex-1 h-12 min-h-[44px]" onClick={save} disabled={!orderIds.length}>
               Зберегти
             </Button>
             <Button variant="ghost" className="flex-1 h-12 min-h-[44px]" onClick={() => { setEditingId(null); setOrderIds([]); setName(""); }}>
