@@ -150,17 +150,62 @@ export function Overview({ mono, storage, onNavigate, onCategoryClick, showBalan
   const expenseLeft = expenseTarget - spent - recurringOutThisMonth + recurringInThisMonth;
   const dayBudget = expenseLeft / remainingDays;
 
-  const pulseGood = dayBudget >= 200;
-  const pulseWarn = dayBudget >= 0 && dayBudget < 200;
-  const pulseBad = dayBudget < 0;
-  const pulseColor = pulseGood ? "text-success" : pulseWarn ? "text-warning" : "text-danger";
-  const pulseBg = pulseGood ? "bg-pulse-ok" : pulseWarn ? "bg-pulse-w" : "bg-pulse-b";
-  const pulseBorder = pulseGood ? "border-success/30" : pulseWarn ? "border-warning/30" : "border-danger/30";
+  const spendPlanRatio = expenseTarget > 0 ? spent / expenseTarget : 0;
+  const hasExpensePlan = expenseTarget > 0;
+
+  let pulseAccentLeft;
+  let pulseBg;
+  let pulseColor;
+  let incomeBarClass;
+  let forecastBarClass;
+  let pulseStatusText;
+
+  if (hasExpensePlan) {
+    if (spendPlanRatio > 0.75) {
+      pulseAccentLeft = "border-l-red-500";
+      pulseBg = "bg-pulse-b";
+      pulseColor = "text-danger";
+      incomeBarClass = "bg-danger";
+      forecastBarClass = "bg-danger";
+      pulseStatusText = "Понад 75% запланованого";
+    } else if (spendPlanRatio > 0.5) {
+      pulseAccentLeft = "border-l-amber-500";
+      pulseBg = "bg-pulse-w";
+      pulseColor = "text-warning";
+      incomeBarClass = "bg-warning";
+      forecastBarClass = "bg-warning";
+      pulseStatusText = "Понад 50% запланованого";
+    } else {
+      pulseAccentLeft = "border-l-emerald-500";
+      pulseBg = "bg-pulse-ok";
+      pulseColor = "text-success";
+      incomeBarClass = "bg-success";
+      forecastBarClass = "bg-emerald-500";
+      pulseStatusText = "В межах плану";
+    }
+  } else {
+    const pulseGood = dayBudget >= 200;
+    const pulseWarn = dayBudget >= 0 && dayBudget < 200;
+    const pulseBad = dayBudget < 0;
+    pulseAccentLeft = pulseGood ? "border-l-emerald-500" : pulseWarn ? "border-l-amber-500" : "border-l-red-500";
+    pulseBg = pulseGood ? "bg-pulse-ok" : pulseWarn ? "bg-pulse-w" : "bg-pulse-b";
+    pulseColor = pulseGood ? "text-success" : pulseWarn ? "text-warning" : "text-danger";
+    incomeBarClass = spent > income ? "bg-danger" : "bg-success";
+    forecastBarClass =
+      spent > projectedSpend
+        ? "bg-danger"
+        : projectedSpend > 0 && spent / projectedSpend >= 0.85
+          ? "bg-warning"
+          : "bg-emerald-500";
+    pulseStatusText = pulseBad ? "Перевитрата" : pulseWarn ? "Обережно — майже вичерпано" : "В нормі";
+  }
 
   const firstName = clientInfo?.name?.split(" ")[1] || clientInfo?.name?.split(" ")[0] || "друже";
   const monthBalance = income - spent;
   const spendPct = Math.min(100, income > 0 ? (spent / income) * 100 : 0);
   const dateLabel = now.toLocaleDateString("uk-UA", { day: "numeric", month: "long" });
+  const showMonthForecast = showBalance && daysPassed > 0 && projectedSpend > 0;
+  const forecastTrendPct = showMonthForecast ? Math.min(100, Math.round((spent / projectedSpend) * 100)) : 0;
 
   return (
     <div className="flex-1 overflow-y-auto overscroll-contain">
@@ -265,35 +310,122 @@ export function Overview({ mono, storage, onNavigate, onCategoryClick, showBalan
           </button>
         </div>
 
-        {/* ── Fact vs month forecast ── */}
-        {showBalance && daysPassed > 0 && projectedSpend > 0 && (
-          <div className="bg-panel border border-line/60 rounded-2xl p-5 shadow-card">
-            <div className="text-xs font-medium text-subtle mb-1">Витрати місяця: факт і прогноз</div>
-            <p className="text-[11px] text-subtle/80 leading-snug mb-3">
-              За {daysPassed} {daysPassed === 1 ? "день" : daysPassed < 5 ? "дні" : "дн."} · факт{" "}
-              <span className="font-semibold text-text tabular-nums">{spent.toLocaleString("uk-UA", { maximumFractionDigits: 0 })} ₴</span>
-              {" · "}прогноз до кінця місяця{" "}
-              <span className="font-semibold text-text tabular-nums">{Math.round(projectedSpend).toLocaleString("uk-UA", { maximumFractionDigits: 0 })} ₴</span>
-            </p>
-            <div className="h-2.5 bg-bg rounded-full overflow-hidden">
-              <div
-                className={cn(
-                  "h-full rounded-full transition-all duration-500",
-                  spent > projectedSpend
-                    ? "bg-danger"
-                    : spent / projectedSpend >= 0.85
-                      ? "bg-warning"
-                      : "bg-emerald-500",
-                )}
-                style={{ width: `${Math.min(100, (spent / projectedSpend) * 100)}%` }}
-              />
+        {/* ── Місяць: дохід і витрати, прогноз, фінпульс (одна картка) ── */}
+        <div
+          className={cn(
+            "rounded-2xl border border-line/60 bg-panel p-5 shadow-card border-l-[4px]",
+            pulseAccentLeft,
+            pulseBg,
+          )}
+        >
+          <div className="flex items-start justify-between gap-3 mb-4">
+            <div>
+              <div className="text-xs font-medium text-subtle">Місяць</div>
+              <p className="text-[11px] text-subtle/80 mt-0.5 capitalize">{dateLabel}</p>
             </div>
-            <div className="flex justify-between mt-2 text-[11px] text-subtle/70">
-              <span>{Math.min(100, Math.round((spent / projectedSpend) * 100))}% від прогнозу</span>
-              <span>{daysInMonth - daysPassed} дн. залишилось</span>
+            <span className="text-[11px] text-subtle/60 shrink-0 text-right tabular-nums">
+              {Math.max(0, daysInMonth - daysPassed)} дн. залишилось
+            </span>
+          </div>
+
+          <div className="flex justify-between items-start gap-4">
+            <div>
+              <div className="text-xs text-subtle font-medium">Витрати</div>
+              <div className="text-[26px] font-bold tabular-nums mt-1 leading-tight">
+                {showBalance ? spent.toLocaleString("uk-UA", { maximumFractionDigits: 0 }) : "••••"}
+                {showBalance && <span className="text-base font-medium text-muted ml-1">₴</span>}
+              </div>
+            </div>
+            <div className="text-right">
+              <div className="text-xs text-subtle font-medium">Дохід</div>
+              <div className="text-[26px] font-bold tabular-nums mt-1 leading-tight text-success">
+                {showBalance ? (
+                  <>
+                    +{income.toLocaleString("uk-UA", { maximumFractionDigits: 0 })}
+                    <span className="text-base font-medium text-success/70 ml-1">₴</span>
+                  </>
+                ) : (
+                  "••••"
+                )}
+              </div>
             </div>
           </div>
-        )}
+
+          <div className="mt-4 space-y-1.5">
+            <div className="flex justify-between text-[11px] text-subtle/70">
+              <span>Витрати від доходу</span>
+              <span>{showBalance ? `${Math.round(spendPct)}%` : "—"}</span>
+            </div>
+            <div className="h-1.5 bg-bg rounded-full overflow-hidden">
+              <div
+                className={cn("h-full rounded-full transition-all duration-700", incomeBarClass)}
+                style={{ width: showBalance ? `${spendPct}%` : "0%" }}
+              />
+            </div>
+            <div className="flex justify-between text-[11px] text-subtle/70">
+              <span>
+                {showBalance
+                  ? `Залишок: ${monthBalance >= 0 ? "+" : "−"}${Math.abs(monthBalance).toLocaleString("uk-UA", { maximumFractionDigits: 0 })} ₴`
+                  : "—"}
+              </span>
+              <span>
+                {showBalance && !showMonthForecast && projectedSpend > 0
+                  ? `Прогноз витрат ${projectedSpend.toLocaleString("uk-UA", { maximumFractionDigits: 0 })} ₴`
+                  : showBalance && showMonthForecast
+                    ? null
+                    : "—"}
+              </span>
+            </div>
+          </div>
+
+          {showMonthForecast && (
+            <div className="mt-4 pt-4 border-t border-line/50 space-y-2">
+              <div className="text-xs font-medium text-subtle">Факт і прогноз витрат</div>
+              <p className="text-[11px] text-subtle/80 leading-snug">
+                За {daysPassed} {daysPassed === 1 ? "день" : daysPassed < 5 ? "дні" : "дн."} · факт{" "}
+                <span className="font-semibold text-text tabular-nums">{spent.toLocaleString("uk-UA", { maximumFractionDigits: 0 })} ₴</span>
+                {" · "}до кінця місяця ~{" "}
+                <span className="font-semibold text-text tabular-nums">
+                  {Math.round(projectedSpend).toLocaleString("uk-UA", { maximumFractionDigits: 0 })} ₴
+                </span>
+              </p>
+              <div className="h-2.5 bg-bg rounded-full overflow-hidden">
+                <div
+                  className={cn("h-full rounded-full transition-all duration-500", forecastBarClass)}
+                  style={{ width: `${forecastTrendPct}%` }}
+                />
+              </div>
+              <div className="flex justify-between text-[11px] text-subtle/70">
+                <span>{forecastTrendPct}% від прогнозу за темпом</span>
+              </div>
+            </div>
+          )}
+
+          <div className="mt-4 pt-4 border-t border-line/50">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs font-medium text-subtle">Фінпульс</span>
+              <span className="text-[11px] text-subtle/60">цільова витрата на день</span>
+            </div>
+            <div className={cn("text-[30px] sm:text-[34px] font-bold leading-tight tabular-nums mt-2", pulseColor, !showBalance && "tracking-widest")}>
+              {showBalance ? (
+                <>
+                  {Math.abs(dayBudget).toLocaleString("uk-UA", { maximumFractionDigits: 0 })}
+                  <span className="text-base font-medium text-subtle ml-1">₴/день</span>
+                </>
+              ) : (
+                "••••"
+              )}
+            </div>
+            <div className={cn("text-sm mt-0.5", pulseColor)}>{pulseStatusText}</div>
+            {(recurringOutThisMonth > 0 || recurringInThisMonth > 0) && showBalance && (
+              <div className="text-[11px] text-subtle/70 mt-2 leading-relaxed">
+                Враховано планових: −{recurringOutThisMonth.toLocaleString("uk-UA", { maximumFractionDigits: 0 })} / +
+                {recurringInThisMonth.toLocaleString("uk-UA", { maximumFractionDigits: 0 })} ₴
+                {unknownOutCount > 0 && ` + ${unknownOutCount} без суми`}
+              </div>
+            )}
+          </div>
+        </div>
 
         {/* ── Networth chart ── */}
         {networthHistory.length >= 2 ? (
@@ -328,69 +460,6 @@ export function Overview({ mono, storage, onNavigate, onCategoryClick, showBalan
             })}
           </div>
         )}
-
-        {/* ── Pulse ── */}
-        <div className={cn("rounded-2xl border p-5 shadow-card", pulseBg, pulseBorder, "bg-panel")}>
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-subtle">Фінпульс</span>
-            <span className="text-xs text-subtle/60">{remainingDays} дн. до кінця місяця</span>
-          </div>
-          <div className={cn("text-[34px] font-bold leading-tight tabular-nums mt-2", pulseColor, !showBalance && "tracking-widest")}>
-            {showBalance ? (
-              <>
-                {Math.abs(dayBudget).toLocaleString("uk-UA", { maximumFractionDigits: 0 })}
-                <span className="text-base font-medium text-subtle ml-1">₴/день</span>
-              </>
-            ) : (
-              "••••"
-            )}
-          </div>
-          <div className={cn("text-sm mt-0.5", pulseColor)}>
-            {pulseBad ? "Перевитрата" : pulseWarn ? "Обережно — майже вичерпано" : "В нормі"}
-          </div>
-          {(recurringOutThisMonth > 0 || recurringInThisMonth > 0) && showBalance && (
-            <div className="text-[11px] text-subtle/70 mt-2 leading-relaxed">
-              Враховано планових: −{recurringOutThisMonth.toLocaleString("uk-UA", { maximumFractionDigits: 0 })} / +{recurringInThisMonth.toLocaleString("uk-UA", { maximumFractionDigits: 0 })} ₴
-              {unknownOutCount > 0 && ` + ${unknownOutCount} без суми`}
-            </div>
-          )}
-        </div>
-
-        {/* ── Spending ── */}
-        <div className="bg-panel border border-line/60 rounded-2xl p-5 shadow-card">
-          <div className="flex justify-between items-start mb-3">
-            <div>
-              <div className="text-xs text-subtle font-medium">Витрати</div>
-              <div className="text-[26px] font-bold tabular-nums mt-1 leading-tight">
-                {showBalance ? spent.toLocaleString("uk-UA", { maximumFractionDigits: 0 }) : "••••"}
-                {showBalance && <span className="text-base font-medium text-muted ml-1">₴</span>}
-              </div>
-            </div>
-            <div className="text-right">
-              <div className="text-xs text-subtle font-medium">Дохід</div>
-              <div className="text-[26px] font-bold tabular-nums mt-1 leading-tight text-success">
-                {showBalance ? (
-                  <>
-                    +{income.toLocaleString("uk-UA", { maximumFractionDigits: 0 })}
-                    <span className="text-base font-medium text-success/70 ml-1">₴</span>
-                  </>
-                ) : (
-                  "••••"
-                )}
-              </div>
-            </div>
-          </div>
-          <div className="h-1.5 bg-bg rounded-full overflow-hidden">
-            <div
-              className={cn("h-full rounded-full transition-all duration-700", spent > income ? "bg-danger" : "bg-success")}
-              style={{ width: showBalance ? `${spendPct}%` : "0%" }}
-            />
-          </div>
-          <div className="flex justify-between mt-2">
-            <span className="text-[11px] text-subtle/70">{showBalance ? `${Math.round(spendPct)}% доходу` : "—"}</span>
-            <span className="text-[11px] text-subtle/70">{showBalance ? `прогноз ${projectedSpend.toLocaleString("uk-UA", { maximumFractionDigits: 0 })} ₴` : "—"}</span>
-          </div>
-        </div>
 
         {/* ── Plan/Fact ── */}
         {(planIncome > 0 || planExpense > 0 || planSavings > 0) && (
