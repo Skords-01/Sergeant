@@ -271,10 +271,7 @@ export function Dashboard({ onOpenAtlas }) {
     <div className="flex-1 overflow-y-auto">
       <div className="max-w-4xl mx-auto px-4 pt-4 fizruk-page-scroll-pad space-y-4">
         <section
-          className="rounded-3xl p-6 overflow-hidden"
-          style={{
-            background: "linear-gradient(135deg, #0f2d1a 0%, #1e4d2b 100%)",
-          }}
+          className="rounded-3xl p-6 overflow-hidden bg-forest-grad"
           aria-label="Привітання"
         >
           <p className="text-[11px] font-bold tracking-widest uppercase text-accent">
@@ -322,8 +319,7 @@ export function Dashboard({ onOpenAtlas }) {
           <div className="mt-5 flex flex-col gap-3">
             <button
               type="button"
-              className="w-full py-4 rounded-full font-bold text-[15px] bg-accent transition-all active:scale-[0.98]"
-              style={{ color: "#0f2d1a" }}
+              className="w-full py-4 rounded-full font-bold text-[15px] bg-accent text-forest transition-all active:scale-[0.98]"
               onClick={() => {
                 try {
                   sessionStorage.setItem("fizruk_workouts_mode", "log");

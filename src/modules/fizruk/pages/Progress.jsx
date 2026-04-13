@@ -317,10 +317,7 @@ export function Progress() {
       <div className="max-w-4xl mx-auto px-4 pt-4 fizruk-page-scroll-pad space-y-3">
         {/* Hero */}
         <section
-          className="rounded-3xl p-4 border border-line/20"
-          style={{
-            background: "linear-gradient(135deg, #0f2d1a 0%, #1e4d2b 100%)",
-          }}
+          className="rounded-3xl p-4 border border-line/20 bg-forest-grad"
           aria-label="Огляд прогресу"
         >
           <div className="text-[11px] font-bold tracking-widest uppercase text-accent">
@@ -618,8 +615,7 @@ export function Progress() {
           </div>
           <button
             type="button"
-            className="w-full py-4 rounded-full font-bold text-[15px] bg-accent mb-2 transition-all active:scale-[0.98]"
-            style={{ color: "#0f2d1a" }}
+            className="w-full py-4 rounded-full font-bold text-[15px] bg-accent text-forest mb-2 transition-all active:scale-[0.98]"
             onClick={exportJson}
           >
             Експорт (backup)

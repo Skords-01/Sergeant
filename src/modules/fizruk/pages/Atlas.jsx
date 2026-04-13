@@ -49,10 +49,7 @@ export function Atlas() {
     <div className="flex-1 overflow-y-auto">
       <div className="max-w-4xl mx-auto px-4 pt-4 fizruk-page-scroll-pad space-y-3">
         <section
-          className="rounded-3xl p-5 border border-line/20"
-          style={{
-            background: "linear-gradient(135deg, #0f2d1a 0%, #1e4d2b 100%)",
-          }}
+          className="rounded-3xl p-5 border border-line/20 bg-forest-grad"
           aria-label="Атлас мʼязів"
         >
           <p className="text-[11px] font-bold tracking-widest uppercase text-accent">

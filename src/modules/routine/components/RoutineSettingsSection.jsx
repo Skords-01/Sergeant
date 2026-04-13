@@ -121,7 +121,7 @@ export function RoutineSettingsSection({
           <span className="text-muted">Показувати тренування з Фізрука</span>
           <input
             type="checkbox"
-            className="w-5 h-5 accent-[#e0786c]"
+            className="w-5 h-5 accent-routine"
             checked={routine.prefs.showFizrukInCalendar !== false}
             onChange={(ev) =>
               setRoutine((s) =>
@@ -136,7 +136,7 @@ export function RoutineSettingsSection({
           </span>
           <input
             type="checkbox"
-            className="w-5 h-5 accent-[#e0786c]"
+            className="w-5 h-5 accent-routine"
             checked={routine.prefs.showFinykSubscriptionsInCalendar !== false}
             onChange={(ev) =>
               setRoutine((s) =>
@@ -153,7 +153,7 @@ export function RoutineSettingsSection({
           <span className="text-muted">Нагадування в браузері</span>
           <input
             type="checkbox"
-            className="w-5 h-5 accent-[#e0786c]"
+            className="w-5 h-5 accent-routine"
             checked={routine.prefs.routineRemindersEnabled === true}
             onChange={async (ev) => {
               const on = ev.target.checked;
@@ -571,7 +571,7 @@ export function RoutineSettingsSection({
                 className={cn(
                   "flex flex-col gap-2 border-b border-line/40 pb-3 last:border-0 last:pb-0 cursor-grab active:cursor-grabbing",
                   editingId === h.id &&
-                    "ring-2 ring-[#f0a090]/60 rounded-xl p-2 -mx-1",
+                    "ring-2 ring-routine-ring/60 rounded-xl p-2 -mx-1",
                   dragId === h.id && "opacity-70",
                 )}
                 onDragStart={(e) => {

@@ -86,7 +86,8 @@ const MODULES = [
     label: "РУТИНА",
     desc: "Календар Hub, звички, план",
     gradient: "from-orange-400/15 to-rose-400/10",
-    iconClass: "bg-[#fff0eb] text-[#c24133] border border-[#f5c4b8]/60",
+    iconClass:
+      "bg-routine-surface text-routine-strong border border-routine-line/60",
     icon: (
       <svg
         width="32"

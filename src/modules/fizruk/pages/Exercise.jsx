@@ -94,10 +94,7 @@ export function Exercise({ exerciseId }) {
     <div className="flex-1 overflow-y-auto">
       <div className="max-w-4xl mx-auto px-4 pt-4 fizruk-page-scroll-pad space-y-3">
         <section
-          className="rounded-3xl p-5 border border-line/20"
-          style={{
-            background: "linear-gradient(135deg, #0f2d1a 0%, #1e4d2b 100%)",
-          }}
+          className="rounded-3xl p-5 border border-line/20 bg-forest-grad"
           aria-label="Профіль вправи"
         >
           <p className="text-[11px] font-bold tracking-widest uppercase text-accent">
@@ -213,8 +210,7 @@ export function Exercise({ exerciseId }) {
           <div className="mt-3">
             <button
               type="button"
-              className="w-full py-4 rounded-full font-bold text-[15px] bg-accent"
-              style={{ color: "#0f2d1a" }}
+              className="w-full py-4 rounded-full font-bold text-[15px] bg-accent text-forest"
               onClick={() => (window.location.hash = "#workouts")}
             >
               Перейти до журналу

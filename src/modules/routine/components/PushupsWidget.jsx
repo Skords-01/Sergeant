@@ -5,9 +5,9 @@ import { useRoutinePushups } from "../hooks/useRoutinePushups.js";
 import { useVisualKeyboardInset } from "../hooks/useVisualKeyboardInset.js";
 
 const C = {
-  primary: "!bg-[#e0786c] hover:!bg-[#d46356] !text-white border-0",
-  barToday: "bg-[#e0786c]",
-  barOther: "bg-[#e0786c]/35",
+  primary: "!bg-routine hover:!bg-routine-hover !text-white border-0",
+  barToday: "bg-routine",
+  barOther: "bg-routine/35",
 };
 
 export function PushupsWidget() {
@@ -46,7 +46,7 @@ export function PushupsWidget() {
               setInput("");
               setOpen(true);
             }}
-            className="shrink-0 w-14 h-14 rounded-2xl flex items-center justify-center transition-transform active:scale-95 bg-[#e0786c] text-white shadow-md"
+            className="shrink-0 w-14 h-14 rounded-2xl flex items-center justify-center transition-transform active:scale-95 bg-routine text-white shadow-md"
             aria-label="Додати відтискання"
           >
             <svg
@@ -145,7 +145,7 @@ export function PushupsWidget() {
                     addReps(n);
                     setOpen(false);
                   }}
-                  className="min-h-[44px] rounded-2xl border border-[#f5c4b8]/80 bg-[#fff0eb] px-1 py-2.5 text-center text-xs font-bold text-[#b45348] transition-colors active:opacity-90 sm:px-2 sm:text-sm"
+                  className="min-h-[44px] rounded-2xl border border-routine-line/80 bg-routine-surface px-1 py-2.5 text-center text-xs font-bold text-routine-kicker transition-colors active:opacity-90 sm:px-2 sm:text-sm"
                 >
                   +{n}
                 </button>
@@ -165,7 +165,7 @@ export function PushupsWidget() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Скільки?"
-                className="routine-touch-field min-h-[48px] min-w-0 flex-1 rounded-2xl border border-line bg-panelHi px-4 text-text outline-none focus:border-[#e0786c] [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                className="routine-touch-field min-h-[48px] min-w-0 flex-1 rounded-2xl border border-line bg-panelHi px-4 text-text outline-none focus:border-routine [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && input) {
                     addReps(Number(input));

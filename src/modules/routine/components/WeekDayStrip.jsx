@@ -44,9 +44,9 @@ export function WeekDayStrip({
               className={cn(
                 "flex min-h-[44px] flex-col items-center justify-center rounded-xl border py-1 text-[10px] font-semibold transition-colors sm:text-[11px]",
                 isSel
-                  ? "border-[#f0a090] bg-[#fff5f2] text-text shadow-sm ring-1 ring-[#f5c4b8]/50"
+                  ? "border-routine-ring bg-routine-surface2 text-text shadow-sm ring-1 ring-routine-line/50"
                   : "border-transparent bg-panelHi/50 text-muted hover:bg-panelHi hover:text-text",
-                isToday && !isSel && "ring-1 ring-[#e0786c]/40",
+                isToday && !isSel && "ring-1 ring-routine/40",
               )}
             >
               <span className="text-[9px] uppercase tracking-wide text-subtle">

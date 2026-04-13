@@ -17,6 +17,21 @@ export default {
         warning: "#b45309", // amber
         accent: "#a3e635", // lime-green CTA (hero buttons)
         forest: "#0f2d1a", // dark green hero card background
+        /** Модуль «Рутина» — коралова палітра */
+        routine: {
+          DEFAULT: "#e0786c",
+          hover: "#d46356",
+          nav: "#e85d4f",
+          strong: "#c24133",
+          kicker: "#b45348",
+          eyebrow: "#d65d4f",
+          surface: "#fff0eb",
+          surface2: "#fff5f2",
+          surface3: "#fff8f5",
+          line: "#f5c4b8",
+          ring: "#f0a090",
+          done: "#b91c1c",
+        },
       },
       borderRadius: {
         "2xl": "16px",
@@ -43,6 +58,8 @@ export default {
           "linear-gradient(135deg, rgba(180,83,9,.07) 0%, transparent 70%)",
         "pulse-b":
           "linear-gradient(135deg, rgba(220,38,38,.07) 0%, transparent 70%)",
+        "routine-hero":
+          "linear-gradient(135deg, #ffede8 0%, #fff7ed 45%, rgba(254, 215, 199, 0.65) 100%)",
       },
       fontSize: {
         "2xs": ["10px", { lineHeight: "14px" }],

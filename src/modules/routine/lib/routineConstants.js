@@ -1,28 +1,30 @@
 /** Спільні константи UI модуля «Рутина» (без JSX) */
 
 export const ROUTINE_THEME = {
-  eyebrow: "text-[#d65d4f]",
+  eyebrow: "text-routine-eyebrow",
   /** Заголовок картки-огляду (hero) */
-  heroKicker: "text-[#b45348]/90",
+  heroKicker: "text-routine-kicker/90",
   /** Картки метрик у hero */
   statCard:
-    "rounded-2xl bg-white/70 border border-[#f5c4b8]/50 p-3 text-center shadow-sm",
+    "rounded-2xl bg-panel/70 border border-routine-line/50 p-3 text-center shadow-sm",
   statCardEmerald:
-    "rounded-2xl bg-white/70 border border-emerald-200/60 p-3 text-center shadow-sm",
+    "rounded-2xl bg-panel/70 border border-emerald-200/60 p-3 text-center shadow-sm",
   emptyStateWarm:
-    "rounded-2xl border border-[#f5c4b8]/60 bg-[#fff8f5] p-6 text-center shadow-card",
-  linkAccent: "font-semibold text-[#c24133] underline decoration-[#f0a090]/80",
-  habitRowAccent: "border-l-[#e0786c]",
-  iconBox: "bg-[#fff0eb] border-[#f5c4b8]/80 text-[#c24133]",
-  navActive: "text-[#c24133]",
-  navBar: "bg-[#e85d4f]",
-  chipOn: "border-[#f0a090] bg-[#fff5f2] text-text shadow-sm",
+    "rounded-2xl border border-routine-line/60 bg-routine-surface3 p-6 text-center shadow-card",
+  linkAccent:
+    "font-semibold text-routine-strong underline decoration-routine-ring/80",
+  habitRowAccent: "border-l-routine",
+  iconBox: "bg-routine-surface border-routine-line/80 text-routine-strong",
+  navActive: "text-routine-strong",
+  navBar: "bg-routine-nav",
+  chipOn: "border-routine-ring bg-routine-surface2 text-text shadow-sm",
   chipOff:
     "border-line/60 bg-panel text-muted hover:text-text hover:bg-panelHi",
-  dot: "bg-[#e85d4f]",
-  monthSel: "bg-[#fff5f2] border-[#f0a090] ring-1 ring-[#f5c4b8]/50",
-  done: "border-[#e0786c]/45 bg-[#fff0eb] text-[#b91c1c]",
-  primary: "!bg-[#e0786c] hover:!bg-[#d46356] !text-white border-0 shadow-md",
+  dot: "bg-routine-nav",
+  monthSel:
+    "bg-routine-surface2 border-routine-ring ring-1 ring-routine-line/50",
+  done: "border-routine/45 bg-routine-surface text-routine-done",
+  primary: "!bg-routine hover:!bg-routine-hover !text-white border-0 shadow-md",
 };
 
 export const ROUTINE_TIME_MODES = [
