@@ -15,16 +15,67 @@ function Section({ title, children }) {
   );
 }
 
-export function Settings({ mono, storage }) {
+function ConfirmModal({ open, title, body, confirmLabel, danger, onConfirm, onCancel }) {
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-[120] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="finyk-confirm-title">
+      <button type="button" className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onCancel} aria-label="Закрити" />
+      <div className="relative w-full max-w-sm bg-panel border border-line rounded-2xl shadow-soft p-5 z-10">
+        <h2 id="finyk-confirm-title" className="text-base font-bold text-text">{title}</h2>
+        {body && <p className="text-sm text-muted mt-2">{body}</p>}
+        <div className="flex gap-2 mt-5">
+          <button
+            type="button"
+            className="flex-1 py-3 rounded-xl border border-line text-sm font-semibold text-muted hover:bg-panelHi transition-colors"
+            onClick={onCancel}
+          >
+            Скасувати
+          </button>
+          <button
+            type="button"
+            className={cn(
+              "flex-1 py-3 rounded-xl text-sm font-semibold text-white transition-colors",
+              danger ? "bg-danger hover:bg-danger/90" : "bg-emerald-600 hover:bg-emerald-700",
+            )}
+            onClick={onConfirm}
+          >
+            {confirmLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function Settings({ mono, storage, showToast }) {
   const { accounts, token, clientInfo, clearTxCache, disconnect } = mono;
   const { hiddenAccounts, toggleHideAccount, exportData, importData } = storage;
 
   const [syncOpen, setSyncOpen] = useState(false);
+  const [confirmKind, setConfirmKind] = useState(null);
 
   const uahAccounts = accounts.filter(a => a.currencyCode === 980);
 
   return (
     <div className="flex-1 overflow-y-auto">
+      <ConfirmModal
+        open={confirmKind !== null}
+        title={confirmKind === "cache" ? "Очистити кеш?" : "Вийти з Monobank?"}
+        body={
+          confirmKind === "cache"
+            ? "Буде видалено збережені транзакції в кеші. Потім дані підтягнуться з Monobank знову."
+            : "Токен API буде видалено з цього браузера. Потрібно буде ввести його знову."
+        }
+        confirmLabel={confirmKind === "cache" ? "Очистити" : "Вийти"}
+        danger={confirmKind === "disconnect"}
+        onCancel={() => setConfirmKind(null)}
+        onConfirm={() => {
+          if (confirmKind === "cache") clearTxCache?.();
+          if (confirmKind === "disconnect") disconnect?.();
+          setConfirmKind(null);
+          showToast?.(confirmKind === "cache" ? "Кеш очищено" : "Monobank відключено");
+        }}
+      />
       {syncOpen && <SyncModal storage={storage} onClose={() => setSyncOpen(false)} />}
       <div className="px-4 pt-4 pb-[calc(88px+env(safe-area-inset-bottom,0px))] space-y-4 max-w-4xl mx-auto">
 
@@ -105,7 +156,9 @@ export function Settings({ mono, storage }) {
 
         {/* Data */}
         <Section title="💾 Дані">
-          <p className="text-xs text-subtle -mt-1">Бекап включає всі налаштування, борги, підписки та бюджети</p>
+          <p className="text-xs text-subtle -mt-1">
+            Бекап: бюджети, підписки, активи, борги, приховані рахунки/транзакції, місячний план, категорії та спліти операцій, прив’язки боргів Monobank, історія нетворсу.
+          </p>
           <div className="grid grid-cols-2 gap-2">
             <Button variant="ghost" onClick={exportData} className="h-12">
               💾 Експорт JSON
@@ -119,7 +172,11 @@ export function Settings({ mono, storage }) {
                 type="file"
                 accept=".json"
                 className="hidden"
-                onChange={e => { if (e.target.files?.[0]) importData(e.target.files[0]); }}
+                onChange={async (e) => {
+                  const f = e.target.files?.[0];
+                  e.target.value = "";
+                  if (f) await importData(f);
+                }}
               />
             </label>
           </div>
@@ -133,9 +190,7 @@ export function Settings({ mono, storage }) {
           <Button
             variant="ghost"
             className="w-full h-12"
-            onClick={() => {
-              if (confirm("Очистити кеш транзакцій?")) clearTxCache?.();
-            }}
+            onClick={() => setConfirmKind("cache")}
           >
             🧹 Очистити кеш транзакцій
           </Button>
@@ -146,9 +201,7 @@ export function Settings({ mono, storage }) {
           <Button
             variant="danger"
             className="w-full h-12"
-            onClick={() => {
-              if (confirm("Відключити Monobank і видалити токен з цього пристрою?")) disconnect?.();
-            }}
+            onClick={() => setConfirmKind("disconnect")}
           >
             Вийти з Monobank
           </Button>

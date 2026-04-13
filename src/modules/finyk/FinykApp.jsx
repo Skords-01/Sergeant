@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, lazy, Suspense } from "react";
+import { useState, useEffect, useRef, useCallback, lazy, Suspense } from "react";
 import { useMonobank } from "./hooks/useMonobank";
 import { useStorage } from "./hooks/useStorage";
 import { PAGES } from "./constants";
@@ -70,6 +70,21 @@ const NAV_IDS = NAV_ITEMS.map(n => n.id);
 
 const ALL_PAGE_IDS = [...PAGES.map(p => p.id), "settings"];
 
+function FinykToast({ toast }) {
+  if (!toast) return null;
+  return (
+    <div
+      className={cn(
+        "fixed top-16 left-1/2 -translate-x-1/2 z-[110] px-4 py-3 rounded-2xl text-sm font-semibold shadow-soft transition-all",
+        toast.type === "error" ? "bg-danger/90 text-white" : "bg-success/90 text-white",
+      )}
+      role="status"
+    >
+      {toast.msg}
+    </div>
+  );
+}
+
 function useHashRouter(defaultPage = "overview") {
   const getPage = () => {
     let p = window.location.hash.replace("#/", "") || defaultPage;
@@ -88,11 +103,15 @@ function useHashRouter(defaultPage = "overview") {
 
 export default function App({ onBackToHub } = {}) {
   const mono = useMonobank();
-  const storage = useStorage();
+  const [toast, setToast] = useState(null);
+  const showToast = useCallback((msg, type = "success") => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 3500);
+  }, []);
+  const storage = useStorage({ onImportFeedback: showToast });
   const [page, navigate] = useHashRouter();
   const [tokenInput, setTokenInput] = useState("");
   const [showToken, setShowToken] = useState(false);
-  const [toast, setToast] = useState(null);
   const [categoryFilter, setCategoryFilter] = useState(null);
   const [showBalance, setShowBalance] = useState(() => {
     try { return localStorage.getItem("finyk_show_balance_v1") !== "0"; } catch { return true; }
@@ -101,11 +120,6 @@ export default function App({ onBackToHub } = {}) {
   useEffect(() => {
     try { localStorage.setItem("finyk_show_balance_v1", showBalance ? "1" : "0"); } catch {}
   }, [showBalance]);
-
-  const showToast = (msg, type = "success") => {
-    setToast({ msg, type });
-    setTimeout(() => setToast(null), 3500);
-  };
 
   useEffect(() => {
     if (window.location.search.includes("sync=")) {
@@ -156,6 +170,7 @@ export default function App({ onBackToHub } = {}) {
   if (!clientInfo) {
     return (
       <div className="min-h-dvh flex items-center justify-center p-5 bg-bg" style={{ paddingTop: "env(safe-area-inset-top, 0px)", paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
+        <FinykToast toast={toast} />
         <div className="w-full max-w-sm">
           <div className="text-center mb-8">
             <div className="w-20 h-20 mx-auto bg-emerald-500/12 rounded-3xl flex items-center justify-center mb-4 border border-emerald-500/15 shadow-card">
@@ -187,7 +202,7 @@ export default function App({ onBackToHub } = {}) {
                 className="absolute right-10 top-1/2 -translate-y-1/2 h-7 w-7 p-0 border-0"
                 onClick={async () => {
                   try { setTokenInput((await navigator.clipboard.readText()).trim()); }
-                  catch { alert("Не вдалось прочитати буфер."); }
+                  catch { showToast("Не вдалось прочитати буфер обміну", "error"); }
                 }}
               >📋</Button>
               <Button type="button" size="sm" variant="ghost"
@@ -262,15 +277,7 @@ export default function App({ onBackToHub } = {}) {
         </div>
       </div>
 
-      {/* Toast */}
-      {toast && (
-        <div className={cn(
-          "fixed top-16 left-1/2 -translate-x-1/2 z-[110] px-4 py-3 rounded-2xl text-sm font-semibold shadow-soft transition-all",
-          toast.type === "error" ? "bg-danger/90 text-white" : "bg-success/90 text-white"
-        )}>
-          {toast.msg}
-        </div>
-      )}
+      <FinykToast toast={toast} />
 
       {/* Page content */}
       <div
@@ -283,7 +290,7 @@ export default function App({ onBackToHub } = {}) {
           {page === "transactions" && <Transactions  mono={mono} storage={storage} showBalance={showBalance} categoryFilter={categoryFilter} onClearCategoryFilter={() => setCategoryFilter(null)} />}
           {page === "budgets"      && <Budgets       mono={mono} storage={storage} />}
           {page === "assets"       && <Assets        mono={mono} storage={storage} showBalance={showBalance} />}
-          {page === "settings"     && <Settings      mono={mono} storage={storage} />}
+          {page === "settings"     && <Settings      mono={mono} storage={storage} showToast={showToast} />}
         </Suspense>
       </div>
 

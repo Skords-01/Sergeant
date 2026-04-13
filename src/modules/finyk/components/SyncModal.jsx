@@ -92,7 +92,7 @@ export function SyncModal({ storage, onClose }) {
           {/* Info */}
           <div className="mt-4 rounded-xl bg-bg border border-line p-3">
             <div className="text-xs text-subtle leading-relaxed">
-              Що передається: підписки, борги, активи, бюджети, місячний план.
+              У посиланні: підписки, борги, активи, бюджети, місячний план, категорії та спліти операцій, прив’язки боргів Monobank, історія нетворсу. Без прихованих рахунків/транзакцій (вони залежать від пристрою).
               <br />
               <span className="text-danger/80">Токен Monobank</span> <span className="text-subtle">не передається — ввести треба окремо.</span>
             </div>
@@ -112,7 +112,13 @@ export function SyncModal({ storage, onClose }) {
                 type="file"
                 accept=".json"
                 className="hidden"
-                onChange={e => { if (e.target.files?.[0]) { storage.importData(e.target.files[0]); onClose(); } }}
+                onChange={async (e) => {
+                  const f = e.target.files?.[0];
+                  e.target.value = "";
+                  if (!f) return;
+                  const ok = await storage.importData(f);
+                  if (ok) onClose();
+                }}
               />
             </label>
           </div>
