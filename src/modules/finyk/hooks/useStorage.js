@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { DEFAULT_SUBSCRIPTIONS, INTERNAL_TRANSFER_ID } from "../constants";
 import { notifyFinykRoutineCalendarSync } from "../hubRoutineSync.js";
+import { normalizeFinykBackup, FINYK_BACKUP_VERSION } from "../lib/finykBackup.js";
 
 function reportSilentError(scope, error) {
   console.warn(`[finyk] ${scope}`, error);
@@ -39,7 +40,7 @@ function usePersist(key, defaultVal) {
   return [val, setVal];
 }
 
-export function useStorage() {
+export function useStorage({ onImportFeedback } = {}) {
   const defaultMonthlyPlan = { income: "", expense: "", savings: "" };
   const [hiddenAccounts, setHiddenAccounts] = usePersist("finyk_hidden", []);
   const [budgets, setBudgets] = usePersist("finyk_budgets", []);
@@ -119,34 +120,81 @@ export function useStorage() {
     if (data.hiddenAccounts) setHiddenAccounts(data.hiddenAccounts);
     if (data.hiddenTxIds) setHiddenTxIds(data.hiddenTxIds);
     if (data.monthlyPlan) setMonthlyPlan(data.monthlyPlan);
+    if (data.txCategories) setTxCategories(data.txCategories);
+    if (data.txSplits) setTxSplits(data.txSplits);
+    if (data.monoDebtLinkedTxIds) setMonoDebtLinkedTxIds(data.monoDebtLinkedTxIds);
+    if (data.networthHistory) setNetworthHistory(data.networthHistory);
+    notifyFinykRoutineCalendarSync();
   };
 
   const exportData = () => {
-    const data = { version: 1, budgets, subscriptions, manualAssets, manualDebts, receivables, hiddenAccounts, hiddenTxIds, monthlyPlan };
+    const data = {
+      version: FINYK_BACKUP_VERSION,
+      budgets,
+      subscriptions,
+      manualAssets,
+      manualDebts,
+      receivables,
+      hiddenAccounts,
+      hiddenTxIds,
+      monthlyPlan,
+      txCategories,
+      txSplits,
+      monoDebtLinkedTxIds,
+      networthHistory,
+    };
     const blob = new Blob([JSON.stringify(data)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `finto-backup-${new Date().toISOString().slice(0,10)}.json`;
+    a.download = `finyk-backup-${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     URL.revokeObjectURL(url);
   };
 
-  const importData = (file) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try { applyData(JSON.parse(e.target.result)); alert("Дані імпортовано!"); }
-      catch (err) { reportSilentError("import data", err); alert("Помилка: невірний формат файлу"); }
-    };
-    reader.readAsText(file);
-  };
+  /** @returns {Promise<boolean>} */
+  const importData = (file) =>
+    new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const parsed = JSON.parse(e.target.result);
+          const normalized = normalizeFinykBackup(parsed);
+          applyData(normalized);
+          onImportFeedback?.("✅ Дані імпортовано", "success");
+          resolve(true);
+        } catch (err) {
+          reportSilentError("import data", err);
+          const raw = err instanceof Error ? err.message : "невірний формат файлу";
+          const msg = raw.startsWith("Помилка:") ? raw : `Помилка: ${raw}`;
+          onImportFeedback?.(msg, "error");
+          resolve(false);
+        }
+      };
+      reader.onerror = () => {
+        onImportFeedback?.("Помилка: не вдалось прочитати файл", "error");
+        resolve(false);
+      };
+      reader.readAsText(file);
+    });
 
-  // Sync: навмисно НЕ включаємо hiddenTxIds/hiddenAccounts — device-specific
+  // Sync: без прихованих рахунків/транзакцій (device-specific). v3 — категорії, спліти, борги mono, нетворс.
   const generateSyncLink = () => {
-    const data = { v: 2, b: budgets, s: subscriptions, a: manualAssets, d: manualDebts, r: receivables, mp: monthlyPlan };
+    const data = {
+      v: 3,
+      b: budgets,
+      s: subscriptions,
+      a: manualAssets,
+      d: manualDebts,
+      r: receivables,
+      mp: monthlyPlan,
+      tc: txCategories,
+      ts: txSplits,
+      md: monoDebtLinkedTxIds,
+      nh: networthHistory,
+    };
     const encoded = btoa(encodeURIComponent(JSON.stringify(data)));
-    const url = `${window.location.origin}${window.location.pathname}?sync=${encoded}`;
-    return url;
+    return `${window.location.origin}${window.location.pathname}?sync=${encoded}`;
   };
 
   const loadFromUrl = () => {
@@ -162,9 +210,17 @@ export function useStorage() {
       if (data.r) setReceivables(data.r);
       if (data.h) setHiddenAccounts(data.h);
       if (data.mp) setMonthlyPlan(data.mp);
+      if (data.tc) setTxCategories(data.tc);
+      if (data.ts) setTxSplits(data.ts);
+      if (data.md) setMonoDebtLinkedTxIds(data.md);
+      if (data.nh) setNetworthHistory(data.nh);
+      notifyFinykRoutineCalendarSync();
       window.history.replaceState({}, "", window.location.pathname);
       return true;
-    } catch (err) { reportSilentError("load sync from url", err); return false; }
+    } catch (err) {
+      reportSilentError("load sync from url", err);
+      return false;
+    }
   };
 
   // Транзакції позначені як внутрішній переказ — виключаємо зі статистики

@@ -266,6 +266,10 @@ export function Overview({ mono, storage, onNavigate, onCategoryClick, showBalan
           </div>
         </div>
 
+        <p className="text-[11px] text-subtle px-1 -mt-1 leading-relaxed">
+          Огляд, категорії та бюджети на цій сторінці — у гривні (UAH). Інші валюти рахунків у загальному балансі не конвертуються автоматично.
+        </p>
+
         <div className="grid grid-cols-2 gap-3">
           <div className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card">
             <div className="flex items-center gap-2 text-emerald-600">
