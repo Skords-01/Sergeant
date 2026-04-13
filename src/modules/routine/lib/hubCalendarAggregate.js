@@ -35,7 +35,9 @@ export function loadTemplateNameById() {
         if (t?.id && t?.name) map.set(t.id, String(t.name));
       }
     }
-  } catch {}
+  } catch {
+    /* noop */
+  }
   return map;
 }
 
@@ -59,6 +61,45 @@ export function enumerateDateKeys(startKey, endKey) {
     d.setDate(d.getDate() + 1);
   }
   return out;
+}
+
+/** Пн=0 … Нд=6 */
+function isoWeekdayFromDateKey(dateKey) {
+  const d = parseDateKey(dateKey);
+  return (d.getDay() + 6) % 7;
+}
+
+/** Чи потрапляє звичка на цей день згідно з датами та регулярністю */
+export function habitScheduledOnDate(habit, dateKey) {
+  if (habit.archived) return false;
+  const start = habit.startDate || (habit.createdAt ? String(habit.createdAt).slice(0, 10) : dateKey);
+  const end = habit.endDate || null;
+  if (dateKey < start) return false;
+  if (end && dateKey > end) return false;
+  const r = habit.recurrence || "daily";
+  if (r === "once") return dateKey === start;
+  if (r === "daily") return true;
+  if (r === "weekdays") {
+    const wd = isoWeekdayFromDateKey(dateKey);
+    return wd >= 0 && wd <= 4;
+  }
+  if (r === "weekly") {
+    const days =
+      Array.isArray(habit.weekdays) && habit.weekdays.length > 0
+        ? habit.weekdays
+        : [0, 1, 2, 3, 4, 5, 6];
+    return days.includes(isoWeekdayFromDateKey(dateKey));
+  }
+  if (r === "monthly") {
+    const anchorDom = parseDateKey(start).getDate();
+    const d = parseDateKey(dateKey);
+    const y = d.getFullYear();
+    const m = d.getMonth();
+    const daysInMonth = new Date(y, m + 1, 0).getDate();
+    const scheduledDay = Math.min(anchorDom, daysInMonth);
+    return d.getDate() === scheduledDay;
+  }
+  return true;
 }
 
 function tagLabelsForHabit(state, habit) {
@@ -101,15 +142,18 @@ export function buildHubCalendarEvents(state, range, { showFizruk = true } = {})
   const activeHabits = state.habits.filter((h) => !h.archived);
   for (const date of days) {
     for (const h of activeHabits) {
+      if (!habitScheduledOnDate(h, date)) continue;
       const completions = state.completions[h.id] || [];
       const completed = completions.includes(date);
       const tagLabels = tagLabelsForHabit(state, h);
+      const t = h.timeOfDay ? String(h.timeOfDay).trim() : "";
+      const timePart = t ? ` · ${t}` : "";
       events.push({
         id: `habit_${h.id}_${date}`,
         source: "routine_habit",
         date,
         title: `${h.emoji} ${h.name}`,
-        subtitle: completed ? "Зроблено" : "Звичка",
+        subtitle: completed ? `Зроблено${timePart}` : `Звичка${timePart}`,
         tagLabels,
         sortKey: `${date} 1 ${h.name}`,
         habitId: h.id,
