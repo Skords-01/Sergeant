@@ -1,15 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-
-const KEY = "fizruk_workouts_v1";
-
-function safeJsonParse(raw, fallback) {
-  try {
-    const v = JSON.parse(raw);
-    return v ?? fallback;
-  } catch {
-    return fallback;
-  }
-}
+import {
+  parseWorkoutsFromStorage,
+  serializeWorkoutsToStorage,
+  WORKOUTS_STORAGE_KEY,
+} from "../lib/fizrukStorage";
 
 function uid(prefix = "id") {
   return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
@@ -20,15 +14,17 @@ export function useWorkouts() {
 
   useEffect(() => {
     try {
-      const raw = localStorage.getItem(KEY);
-      const parsed = raw ? safeJsonParse(raw, []) : [];
+      const raw = localStorage.getItem(WORKOUTS_STORAGE_KEY);
+      const parsed = parseWorkoutsFromStorage(raw);
       if (Array.isArray(parsed)) setWorkouts(parsed);
     } catch {}
   }, []);
 
   const persist = useCallback((next) => {
     setWorkouts(next);
-    try { localStorage.setItem(KEY, JSON.stringify(next)); } catch {}
+    try {
+      localStorage.setItem(WORKOUTS_STORAGE_KEY, serializeWorkoutsToStorage(next));
+    } catch {}
   }, []);
 
   const createWorkout = useCallback(() => {
@@ -105,4 +101,3 @@ export function useWorkouts() {
     removeItem,
   };
 }
-

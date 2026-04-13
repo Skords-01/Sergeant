@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import { parseWorkoutsFromStorage, WORKOUTS_STORAGE_KEY } from "../modules/fizruk/lib/fizrukStorage";
 import { MCC_CATEGORIES, INTERNAL_TRANSFER_ID } from "../modules/finyk/constants";
 import { getCategory, getMonoTotals, getDebtPaid, getTxStatAmount, calcCategorySpent, isMonoDebt, getMonoDebt } from "../modules/finyk/utils";
 import { cn } from "@shared/lib/cn";
@@ -188,8 +189,8 @@ function buildContext() {
   lines.push(`[Категорії] ${MCC_CATEGORIES.map(c => `${c.id}="${c.label}"`).join(", ")}`);
 
   try {
-    const raw = localStorage.getItem("fizruk_workouts_v1");
-    const w = raw ? JSON.parse(raw) : [];
+    const raw = localStorage.getItem(WORKOUTS_STORAGE_KEY);
+    const w = parseWorkoutsFromStorage(raw);
     if (Array.isArray(w) && w.length > 0) {
       const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
       const withTs = w.map(x => ({ ...x, _ts: new Date(x.startedAt).getTime() }));
