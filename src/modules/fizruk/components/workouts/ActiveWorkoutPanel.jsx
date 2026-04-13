@@ -2,6 +2,20 @@ import { Button } from "@shared/components/ui/Button";
 import { cn } from "@shared/lib/cn";
 import { recoveryConflictsForWorkoutItem } from "../../lib/recoveryConflict";
 
+function isoToDatetimeLocalValue(iso) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function datetimeLocalValueToIso(value) {
+  if (!value) return null;
+  const t = Date.parse(value);
+  return Number.isNaN(t) ? null : new Date(t).toISOString();
+}
+
 export function ActiveWorkoutPanel({
   activeWorkout,
   activeDuration,
@@ -39,6 +53,36 @@ export function ActiveWorkoutPanel({
           </Button>
         </div>
       </div>
+
+      <details className="mt-3 rounded-xl border border-line/60 bg-panelHi/50 px-3 py-2">
+        <summary className="text-xs font-semibold text-subtle cursor-pointer select-none">Час тренування</summary>
+        <div className="mt-2 space-y-2">
+          <label className="block text-[10px] text-subtle">Початок</label>
+          <input
+            type="datetime-local"
+            className="w-full h-11 rounded-xl border border-line bg-panelHi px-3 text-sm text-text outline-none"
+            value={isoToDatetimeLocalValue(activeWorkout.startedAt)}
+            onChange={(e) => {
+              const iso = datetimeLocalValueToIso(e.target.value);
+              if (iso) updateWorkout(activeWorkout.id, { startedAt: iso });
+            }}
+          />
+          {activeWorkout.endedAt ? (
+            <>
+              <label className="block text-[10px] text-subtle">Завершення (можна виправити після занесення)</label>
+              <input
+                type="datetime-local"
+                className="w-full h-11 rounded-xl border border-line bg-panelHi px-3 text-sm text-text outline-none"
+                value={isoToDatetimeLocalValue(activeWorkout.endedAt)}
+                onChange={(e) => {
+                  const iso = datetimeLocalValueToIso(e.target.value);
+                  updateWorkout(activeWorkout.id, { endedAt: iso || null });
+                }}
+              />
+            </>
+          ) : null}
+        </div>
+      </details>
 
       <div className="mt-3 space-y-2">
         {(activeWorkout.items || []).length === 0 ? (

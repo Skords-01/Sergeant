@@ -46,7 +46,7 @@ function toggleArr(arr, value) {
 export function Workouts() {
   const { exercises, search, primaryGroupsUk, musclesUk, musclesByPrimaryGroup, addExercise, removeExercise } = useExerciseCatalog();
   const rec = useRecovery();
-  const { workouts, createWorkout, updateWorkout, deleteWorkout, endWorkout, addItem, updateItem, removeItem } = useWorkouts();
+  const { workouts, createWorkout, createWorkoutWithTimes, updateWorkout, deleteWorkout, endWorkout, addItem, updateItem, removeItem } = useWorkouts();
   const templateApi = useWorkoutTemplates();
   const [q, setQ] = useState("");
   const [selected, setSelected] = useState(null);
@@ -63,6 +63,12 @@ export function Workouts() {
   const [finishFlash, setFinishFlash] = useState(null);
   const [journalLimit, setJournalLimit] = useState(12);
   const [now, setNow] = useState(Date.now());
+  const [retroOpen, setRetroOpen] = useState(false);
+  const [retroDate, setRetroDate] = useState(() => {
+    const x = new Date();
+    return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, "0")}-${String(x.getDate()).padStart(2, "0")}`;
+  });
+  const [retroTime, setRetroTime] = useState("18:00");
   const [form, setForm] = useState(() => ({
     nameUk: "",
     primaryGroup: "chest",
@@ -228,6 +234,18 @@ export function Workouts() {
     [exercises, rec.by, createWorkout, addItem],
   );
 
+  const submitRetroWorkout = useCallback(() => {
+    const [y, mo, d] = retroDate.split("-").map(Number);
+    const [hh, mm] = (retroTime || "12:00").split(":").map(Number);
+    const startedAt = new Date(y, mo - 1, d, hh, mm, 0, 0).toISOString();
+    const w = createWorkoutWithTimes({ startedAt });
+    try {
+      localStorage.setItem(ACTIVE_WORKOUT_KEY, w.id);
+    } catch {}
+    setActiveWorkoutId(w.id);
+    setRetroOpen(false);
+  }, [retroDate, retroTime, createWorkoutWithTimes]);
+
   const lastByExerciseId = useMemo(() => {
     const out = {};
     for (const w of workouts || []) {
@@ -340,31 +358,71 @@ export function Workouts() {
               </div>
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex flex-col gap-2">
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  className="fizruk-cta-accent flex-1 py-3.5 rounded-full text-[15px]"
+                  onClick={() => {
+                    const w = createWorkout();
+                    setActiveWorkoutId(w.id);
+                  }}
+                >
+                  + Нове тренування
+                </button>
+                <Button
+                  variant="ghost"
+                  className="h-[52px] px-4 rounded-full"
+                  onClick={() => setPickerOpen(true)}
+                  disabled={!activeWorkoutId}
+                >
+                  + Вправа
+                </Button>
+              </div>
               <button
                 type="button"
-                className="fizruk-cta-accent flex-1 py-3.5 rounded-full text-[15px]"
-                onClick={() => {
-                  const w = createWorkout();
-                  setActiveWorkoutId(w.id);
-                }}
+                className="w-full py-3 rounded-2xl border border-line bg-panel text-sm font-semibold text-text hover:bg-panelHi transition-colors"
+                onClick={() => setRetroOpen((o) => !o)}
+                aria-expanded={retroOpen}
               >
-                + Нове тренування
+                Занести тренування заднім числом
               </button>
-              <Button
-                variant="ghost"
-                className="h-[52px] px-4 rounded-full"
-                onClick={() => setPickerOpen(true)}
-                disabled={!activeWorkoutId}
-              >
-                + Вправа
-              </Button>
+              {retroOpen && (
+                <div className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card space-y-3">
+                  <p className="text-xs text-subtle leading-relaxed">
+                    Вкажи, коли було тренування. Потім додай вправи та впиши кг, повтори, час тощо — як занесення після факту.
+                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <div className="text-[10px] font-bold text-subtle uppercase tracking-widest mb-1">Дата</div>
+                      <input
+                        type="date"
+                        className="w-full h-11 rounded-xl border border-line bg-panelHi px-3 text-sm text-text outline-none"
+                        value={retroDate}
+                        onChange={(e) => setRetroDate(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <div className="text-[10px] font-bold text-subtle uppercase tracking-widest mb-1">Час початку</div>
+                      <input
+                        type="time"
+                        className="w-full h-11 rounded-xl border border-line bg-panelHi px-3 text-sm text-text outline-none"
+                        value={retroTime}
+                        onChange={(e) => setRetroTime(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <Button type="button" className="w-full h-11" onClick={submitRetroWorkout}>
+                    Створити й заповнити
+                  </Button>
+                </div>
+              )}
             </div>
 
             {!activeWorkout && (
               <div className="bg-panel border border-line/60 rounded-2xl p-5 shadow-card text-center">
                 <div className="text-sm font-semibold text-text">Немає активного тренування</div>
-                <div className="text-xs text-subtle mt-1">Створи нове або запусти готовий шаблон</div>
+                <div className="text-xs text-subtle mt-1">Нове тренування, занесення заднім числом або шаблон — обери варіант вище</div>
                 <div className="mt-3 flex gap-2">
                   <Button
                     className="flex-1 h-11"
