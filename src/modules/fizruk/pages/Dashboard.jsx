@@ -16,7 +16,6 @@ import {
   personalRecordsExerciseCount,
   totalCompletedVolumeKg,
   workoutDurationSec,
-  workoutTonnageKg,
 } from "../lib/workoutStats";
 
 const SELECTED_TEMPLATE_KEY = "fizruk_selected_template_id_v1";
@@ -26,26 +25,6 @@ function formatDurShort(sec) {
   const s = sec % 60;
   if (m <= 0) return `${s} с`;
   return `${m} хв ${s} с`;
-}
-
-function relDayLabel(iso) {
-  const t = Date.parse(iso);
-  if (!Number.isFinite(t)) return "—";
-  const now = new Date();
-  const d = new Date(t);
-  const DAY = 24 * 60 * 60 * 1000;
-  const a = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-  const b = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
-  const diff = Math.round((a - b) / DAY);
-  if (diff === 0) return "Сьогодні";
-  if (diff === 1) return "Вчора";
-  return d.toLocaleDateString("uk-UA", { day: "numeric", month: "short" });
-}
-
-function workoutLineTitle(w) {
-  const names = (w.items || []).map(it => it.nameUk).filter(Boolean);
-  if (names.length) return `${names.slice(0, 3).join(", ")}${names.length > 3 ? "…" : ""}`;
-  return "Тренування";
 }
 
 export function Dashboard({ onOpenAtlas }) {
@@ -148,11 +127,6 @@ export function Dashboard({ onOpenAtlas }) {
     volume: totalCompletedVolumeKg(workouts),
     pr: personalRecordsExerciseCount(workouts),
   }), [workouts]);
-
-  const recentDone = useMemo(
-    () => (workouts || []).filter(w => w.endedAt).slice(0, 5),
-    [workouts],
-  );
 
   const monthCompletedCount = useMemo(() => {
     const now = new Date();
@@ -265,7 +239,7 @@ export function Dashboard({ onOpenAtlas }) {
           <h1 className="text-[26px] font-black text-white mt-3 leading-tight">
             Твій прогрес<br />зібраний в одному місці
           </h1>
-          <div className="mt-4 grid grid-cols-3 gap-2">
+          <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2">
             <div className="rounded-2xl bg-white/10 border border-white/15 p-3 text-center">
               <p className="text-[10px] uppercase tracking-wide text-white/60">Тиждень</p>
               <p className="text-xl font-black text-white tabular-nums mt-1">{dashMetrics.week}</p>
@@ -277,6 +251,10 @@ export function Dashboard({ onOpenAtlas }) {
             <div className="rounded-2xl bg-white/10 border border-white/15 p-3 text-center">
               <p className="text-[10px] uppercase tracking-wide text-white/60">Сер. час</p>
               <p className="text-xl font-black text-white tabular-nums mt-1">{avgDurationSec ? formatDurShort(avgDurationSec) : "—"}</p>
+            </div>
+            <div className="rounded-2xl bg-white/10 border border-white/15 p-3 text-center">
+              <p className="text-[10px] uppercase tracking-wide text-white/60">Місяць</p>
+              <p className="text-xl font-black text-white tabular-nums mt-1">{monthCompletedCount}</p>
             </div>
           </div>
           <div className="mt-5 flex flex-col gap-3">
@@ -357,110 +335,56 @@ export function Dashboard({ onOpenAtlas }) {
           )}
         </section>
 
-        <section className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card" aria-label="Статус відновлення">
-          <div className="flex items-center justify-between gap-2 mb-3">
-            <h2 className="text-base font-semibold text-text flex items-center gap-2">
-              <span className="text-success" aria-hidden>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="10" />
-                  <circle cx="12" cy="12" r="6" />
-                  <circle cx="12" cy="12" r="2" />
-                </svg>
-              </span>
-              Статус відновлення
-            </h2>
+        <section className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card" aria-label="Відновлення та фокус тренування">
+          <div className="flex items-start justify-between gap-2 mb-3">
+            <div className="min-w-0">
+              <h2 className="text-base font-semibold text-text">Відновлення й фокус</h2>
+              <p className="text-[11px] text-subtle mt-1 leading-snug">
+                Колір на силуеті — готовність груп; чіпи — що логічно навантажити першим чергою після відпочинку.
+              </p>
+            </div>
             <Button
               variant="ghost"
               size="sm"
-              className="h-9 min-h-[40px] px-3 text-xs"
+              className="h-9 min-h-[40px] px-3 text-xs shrink-0"
               onClick={() => onOpenAtlas?.()}
               aria-label="Відкрити атлас мʼязів"
             >
               Атлас
             </Button>
           </div>
-          <div className="grid grid-cols-3 gap-2">
-            {(rec.list || []).slice(0, 6).map(m => (
-              <div
-                key={m.id}
-                className={cn(
-                  "p-3 rounded-xl text-center transition-colors",
-                  m.status === "green" && "bg-success/10",
-                  m.status === "yellow" && "bg-warning/10",
-                  m.status === "red" && "bg-danger/10",
-                )}
-              >
-                <div
-                  className={cn(
-                    "w-2 h-2 rounded-full mx-auto mb-1",
-                    m.status === "green" && "bg-success",
-                    m.status === "yellow" && "bg-warning",
-                    m.status === "red" && "bg-danger",
-                  )}
-                />
-                <p className="text-xs font-medium text-text line-clamp-2">{m.label}</p>
-                <p className="text-[10px] text-subtle mt-0.5">
-                  {m.daysSince == null ? "—" : m.daysSince === 0 ? "Сьогодні" : `${m.daysSince}д тому`}
-                </p>
-              </div>
-            ))}
-            {(rec.list || []).length === 0 && (
-              <p className="text-xs text-subtle col-span-3 text-center py-2">Додай тренування — тут зʼявляться мʼязи</p>
-            )}
+
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-subtle mb-3">
+            <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-success" /> готово</span>
+            <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-warning" /> краще почекати</span>
+            <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-danger" /> рано</span>
           </div>
+
+          <BodyAtlas statusByMuscle={statusByMuscle} height={120} showLegend={false} />
+
           <div className="mt-4 pt-3 border-t border-line/60">
-            <BodyAtlas statusByMuscle={statusByMuscle} height={140} showLegend={false} />
-          </div>
-        </section>
-
-        <section className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card" aria-label="Рекомендовані мʼязи">
-          <h2 className="text-base font-semibold text-text mb-3">Рекомендовані мʼязи</h2>
-          <div className="flex flex-wrap gap-2">
-            {(plan.focus || []).slice(0, 6).map(m => (
-              <span
-                key={m.id}
-                className="px-3 py-1.5 bg-success/10 text-success text-sm rounded-full font-medium border border-success/15"
-              >
-                {m.label}{m.daysSince == null ? "" : ` · ${m.daysSince}д`}
-              </span>
-            ))}
-            {(plan.focus || []).length === 0 && (
-              <span className="text-xs text-subtle">Поки немає даних для фокусу</span>
+            <p className="text-[10px] font-bold text-subtle uppercase tracking-widest mb-2">Пріоритет після відпочинку</p>
+            <div className="flex flex-wrap gap-2">
+              {(plan.focus || []).map(m => (
+                <span
+                  key={m.id}
+                  className="px-2.5 py-1 bg-success/10 text-success text-xs rounded-full font-medium border border-success/15"
+                >
+                  {m.label}{m.daysSince == null ? "" : ` · ${m.daysSince}д без`}
+                </span>
+              ))}
+              {(plan.focus || []).length === 0 && (
+                <span className="text-xs text-subtle">Додай завершені тренування — зʼявиться пріоритет груп.</span>
+              )}
+            </div>
+            {(plan.avoid || []).length > 0 && (
+              <p className="text-xs text-muted mt-3 leading-relaxed">
+                <span className="font-semibold text-warning">Почекати:</span>{" "}
+                {plan.avoid.map(x => x.label).join(", ")}
+              </p>
             )}
           </div>
-          {(plan.avoid || []).length > 0 && (
-            <p className="text-xs text-muted mt-3 leading-relaxed">
-              Уникати сьогодні:{" "}
-              <span className="text-warning font-medium">{plan.avoid.map(x => x.label).join(", ")}</span>
-            </p>
-          )}
         </section>
-
-        <div className="grid grid-cols-3 gap-3" role="list" aria-label="Коротка статистика">
-          <div className="bg-panel border border-line/60 rounded-2xl p-3 shadow-card text-center">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="mx-auto text-orange-500" aria-hidden>
-              <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.5-.5-3-1.5-4.5 2 2.5 2.5 5 1.5 7.5-1 2.5-3 4-5.5 4-3 0-5-2.5-5-5.5 0-3 2-5.5 5-7 0 3 1 5.5 3 7.5z" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            <p className="text-xl font-bold text-text mt-1 tabular-nums">{monthCompletedCount}</p>
-            <p className="text-[10px] text-subtle leading-tight mt-0.5">Цього місяця</p>
-          </div>
-          <div className="bg-panel border border-line/60 rounded-2xl p-3 shadow-card text-center">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="mx-auto text-success" aria-hidden>
-              <rect x="3" y="4" width="18" height="18" rx="2" strokeWidth="1.7" />
-              <path d="M16 2v4M8 2v4M3 10h18" strokeWidth="1.7" strokeLinecap="round" />
-            </svg>
-            <p className="text-xl font-bold text-text mt-1 tabular-nums">{streakDays}</p>
-            <p className="text-[10px] text-subtle leading-tight mt-0.5">Днів поспіль</p>
-          </div>
-          <div className="bg-panel border border-line/60 rounded-2xl p-3 shadow-card text-center">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="mx-auto text-success" aria-hidden>
-              <circle cx="12" cy="12" r="10" strokeWidth="1.7" />
-              <path d="M12 6v6l4 2" strokeWidth="1.7" strokeLinecap="round" />
-            </svg>
-            <p className="text-xl font-bold text-text mt-1 tabular-nums">{avgDurationSec ? formatDurShort(avgDurationSec) : "—"}</p>
-            <p className="text-[10px] text-subtle leading-tight mt-0.5">Сер. тривалість</p>
-          </div>
-        </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3" role="list" aria-label="Ключові показники">
           {kpi.map(card => (
@@ -508,51 +432,6 @@ export function Dashboard({ onOpenAtlas }) {
             </div>
           ))}
         </div>
-
-        <div className="bg-panel border border-line/60 rounded-2xl p-5 shadow-card flex flex-col min-h-[220px]">
-            <div className="flex items-center gap-2 mb-3">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" className="text-muted shrink-0" aria-hidden>
-                <circle cx="12" cy="12" r="10" />
-                <path d="M12 6v6l4 2" />
-              </svg>
-              <h2 className="text-sm font-bold text-text">Останні тренування</h2>
-            </div>
-            <div className="flex-1 space-y-2 overflow-y-auto min-h-0">
-              {recentDone.length === 0 ? (
-                <p className="text-xs text-subtle py-4 text-center leading-relaxed">Ще немає завершених тренувань — заверши сесію в журналі</p>
-              ) : (
-                recentDone.map(w => {
-                  const ton = workoutTonnageKg(w);
-                  const dur = workoutDurationSec(w);
-                  return (
-                    <div
-                      key={w.id}
-                      className="flex items-start gap-2 rounded-xl border border-line/80 bg-panelHi/60 p-3"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <div className="text-sm font-semibold text-text line-clamp-2">{workoutLineTitle(w)}</div>
-                        <div className="text-2xs text-subtle mt-1">
-                          {relDayLabel(w.startedAt)}
-                          {" · "}
-                          {formatDurShort(dur)}
-                          {ton > 0 ? ` · ${Math.round(ton)} кг×повт` : ""}
-                        </div>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="shrink-0 min-h-[40px] px-3 text-xs"
-                        onClick={() => { window.location.hash = "#workouts"; }}
-                        aria-label={`Журнал: ${workoutLineTitle(w)}`}
-                      >
-                        Журнал
-                      </Button>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          </div>
 
         <div className="bg-panel border border-line/60 rounded-2xl p-5 shadow-card">
           <div className="text-xs font-medium text-subtle mb-3">План на сьогодні</div>
@@ -638,21 +517,6 @@ export function Dashboard({ onOpenAtlas }) {
             >
               Журнал
             </Button>
-          </div>
-        </div>
-
-        <div className="bg-panel border border-line/60 rounded-2xl p-5 shadow-card">
-          <div className="text-xs font-medium text-subtle mb-3">Баланс (найбільш “забуті”)</div>
-          <div className="space-y-2">
-            {(rec.list || []).slice(0, 7).map(m => (
-              <div key={m.id} className="flex items-center justify-between">
-                <div className="flex items-center gap-2 min-w-0">
-                  <span className={cn("w-2.5 h-2.5 rounded-full inline-block", m.status === "red" ? "bg-danger" : m.status === "yellow" ? "bg-warning" : "bg-success")} />
-                  <div className="text-sm text-text truncate">{m.label}</div>
-                </div>
-                <div className="text-xs text-subtle shrink-0">{m.daysSince == null ? "—" : `${m.daysSince} дн`}</div>
-              </div>
-            ))}
           </div>
         </div>
 
