@@ -1,7 +1,6 @@
 import { Button } from "@shared/components/ui/Button";
 import { cn } from "@shared/lib/cn";
 import { useEffect, useMemo, useState } from "react";
-import { WeeklyVolumeChart } from "../components/WeeklyVolumeChart";
 import { useExerciseCatalog } from "../hooks/useExerciseCatalog";
 import { usePushups } from "../hooks/usePushups";
 import { useRecovery } from "../hooks/useRecovery";
@@ -15,7 +14,6 @@ import {
   formatCompactKg,
   personalRecordsExerciseCount,
   totalCompletedVolumeKg,
-  weeklyVolumeSeriesNow,
   workoutDurationSec,
   workoutTonnageKg,
 } from "../lib/workoutStats";
@@ -137,8 +135,6 @@ export function Dashboard({ onOpenAtlas }) {
     const avoid = (rec.avoid || []).slice(0, 4).map(m => ({ id: m.id, label: musclesUk?.[m.id] || m.label || m.id }));
     return { picked, focus, avoid, templateName: tpl?.name || "" };
   }, [selectedTemplateId, templates, exercises, rec.ready, rec.avoid, musclesUk]);
-
-  const weekly = useMemo(() => weeklyVolumeSeriesNow(workouts), [workouts]);
 
   const dashMetrics = useMemo(() => ({
     total: completedWorkoutsCount(workouts),
@@ -411,52 +407,6 @@ export function Dashboard({ onOpenAtlas }) {
           </div>
         </section>
 
-        <section className="rounded-3xl p-4 border border-green-200/60" style={{ background: "#f0fdf4" }} aria-label="Швидкий старт">
-          <p className="text-xs font-bold text-green-700 uppercase tracking-widest mb-3">ШВИДКИЙ СТАРТ</p>
-          {templates.length === 0 ? (
-            <p className="text-sm text-green-800/60 text-center py-3">
-              Немає шаблонів —{" "}
-              <button
-                type="button"
-                className="font-semibold text-green-800 underline"
-                onClick={() => {
-                  try { sessionStorage.setItem("fizruk_workouts_mode", "templates"); } catch {}
-                  window.location.hash = "#workouts";
-                }}
-              >
-                створи в «Тренування → Шаблони»
-              </button>
-            </p>
-          ) : (
-            <div className="space-y-2">
-              {templates.map(tpl => {
-                const n = (tpl.exerciseIds || []).length;
-                const active = tpl.id === selectedTemplateId;
-                return (
-                  <button
-                    key={tpl.id}
-                    type="button"
-                    onClick={() => onQuickStartTemplate(tpl)}
-                    className={cn(
-                      "w-full flex items-center justify-between gap-3 p-4 rounded-2xl text-left transition-colors min-h-[56px]",
-                      "bg-white shadow-sm border",
-                      active ? "border-success/40 ring-1 ring-success/20" : "border-green-100",
-                    )}
-                  >
-                    <div className="min-w-0">
-                      <p className="font-semibold text-text truncate">{tpl.name}</p>
-                      <p className="text-xs text-muted mt-0.5">{n} {n === 1 ? "вправа" : "вправ"}</p>
-                    </div>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="text-muted shrink-0" aria-hidden>
-                      <path d="M9 18l6-6-6-6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </section>
-
         <section className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card" aria-label="Рекомендовані мʼязи">
           <h2 className="text-base font-semibold text-text mb-3">Рекомендовані мʼязи</h2>
           <div className="flex flex-wrap gap-2">
@@ -553,11 +503,7 @@ export function Dashboard({ onOpenAtlas }) {
           ))}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div className="lg:col-span-2 bg-panel border border-line/60 rounded-2xl p-5 shadow-card">
-            <WeeklyVolumeChart volumeKg={weekly.volumeKg} />
-          </div>
-          <div className="lg:col-span-1 bg-panel border border-line/60 rounded-2xl p-5 shadow-card flex flex-col min-h-[220px]">
+        <div className="bg-panel border border-line/60 rounded-2xl p-5 shadow-card flex flex-col min-h-[220px]">
             <div className="flex items-center gap-2 mb-3">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" className="text-muted shrink-0" aria-hidden>
                 <circle cx="12" cy="12" r="10" />
@@ -601,7 +547,6 @@ export function Dashboard({ onOpenAtlas }) {
               )}
             </div>
           </div>
-        </div>
 
         <div className="bg-panel border border-line/60 rounded-2xl p-5 shadow-card">
           <div className="text-xs font-medium text-subtle mb-3">План на сьогодні</div>

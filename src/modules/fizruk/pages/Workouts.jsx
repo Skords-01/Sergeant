@@ -97,6 +97,8 @@ export function Workouts() {
   const [pickQ, setPickQ] = useState("");
   const [pendingPick, setPendingPick] = useState(null);
   const [finishFlash, setFinishFlash] = useState(null);
+  const [journalLimit, setJournalLimit] = useState(12);
+  const [now, setNow] = useState(Date.now());
   const [form, setForm] = useState(() => ({
     nameUk: "",
     primaryGroup: "chest",
@@ -113,6 +115,22 @@ export function Workouts() {
   }, [form.primaryGroup, musclesByPrimaryGroup, musclesUk]);
   const list = useMemo(() => search(q), [search, q]);
   const pickList = useMemo(() => search(pickQ).slice(0, 60), [search, pickQ]);
+  const pickGrouped = useMemo(() => {
+    const m = new Map();
+    for (const ex of pickList) {
+      const gid = ex.primaryGroup || "full_body";
+      if (!m.has(gid)) m.set(gid, []);
+      m.get(gid).push(ex);
+    }
+    const order = ["chest", "back", "shoulders", "arms", "core", "legs", "glutes", "full_body", "cardio"];
+    return Array.from(m.entries())
+      .sort((a, b) => {
+        const ai = order.indexOf(a[0]);
+        const bi = order.indexOf(b[0]);
+        return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+      })
+      .map(([gid, items]) => ({ id: gid, label: primaryGroupsUk[gid] || gid, items }));
+  }, [pickList, primaryGroupsUk]);
   const activeWorkout = workouts.find(w => w.id === activeWorkoutId) || null;
   const workoutQuickStats = useMemo(() => {
     const done = (workouts || []).filter(w => w.endedAt);
@@ -132,13 +150,13 @@ export function Workouts() {
   const activeDuration = useMemo(() => {
     if (!activeWorkout?.startedAt) return null;
     const start = Date.parse(activeWorkout.startedAt);
-    const end = activeWorkout.endedAt ? Date.parse(activeWorkout.endedAt) : Date.now();
+    const end = activeWorkout.endedAt ? Date.parse(activeWorkout.endedAt) : now;
     if (!Number.isFinite(start) || !Number.isFinite(end) || end < start) return null;
     const sec = Math.floor((end - start) / 1000);
     const mm = String(Math.floor(sec / 60)).padStart(2, "0");
     const ss = String(sec % 60).padStart(2, "0");
     return `${mm}:${ss}`;
-  }, [activeWorkout?.startedAt, activeWorkout?.endedAt]);
+  }, [activeWorkout?.startedAt, activeWorkout?.endedAt, now]);
 
   useEffect(() => {
     try {
@@ -174,6 +192,13 @@ export function Workouts() {
   useEffect(() => {
     if (!pickerOpen) setPendingPick(null);
   }, [pickerOpen]);
+
+  // Live timer tick — only when there is an active, unfinished workout
+  useEffect(() => {
+    if (!activeWorkout || activeWorkout.endedAt) return;
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [activeWorkout?.id, activeWorkout?.endedAt]);
 
   const addExerciseToActive = (ex) => {
     if (!activeWorkoutId) return;
@@ -487,22 +512,26 @@ export function Workouts() {
                                 <input
                                   className="h-10 rounded-xl border border-line bg-panelHi px-3 text-sm text-text outline-none"
                                   type="number"
+                                  inputMode="decimal"
                                   placeholder="кг"
-                                  value={s.weightKg ?? ""}
+                                  value={s.weightKg || ""}
+                                  onFocus={e => e.target.select()}
                                   onChange={(e) => {
                                     const next = [...(it.sets || [])];
-                                    next[idx] = { ...next[idx], weightKg: Number(e.target.value) };
+                                    next[idx] = { ...next[idx], weightKg: e.target.value === "" ? 0 : Number(e.target.value) };
                                     updateItem(activeWorkout.id, it.id, { sets: next });
                                   }}
                                 />
                                 <input
                                   className="h-10 rounded-xl border border-line bg-panelHi px-3 text-sm text-text outline-none"
                                   type="number"
+                                  inputMode="numeric"
                                   placeholder="повт."
-                                  value={s.reps ?? ""}
+                                  value={s.reps || ""}
+                                  onFocus={e => e.target.select()}
                                   onChange={(e) => {
                                     const next = [...(it.sets || [])];
-                                    next[idx] = { ...next[idx], reps: Number(e.target.value) };
+                                    next[idx] = { ...next[idx], reps: e.target.value === "" ? 0 : Number(e.target.value) };
                                     updateItem(activeWorkout.id, it.id, { sets: next });
                                   }}
                                 />
@@ -547,9 +576,11 @@ export function Workouts() {
                             <input
                               className="h-10 rounded-xl border border-line bg-panelHi px-3 text-sm text-text outline-none"
                               type="number"
+                              inputMode="numeric"
                               placeholder="сек"
-                              value={it.durationSec ?? ""}
-                              onChange={(e) => updateItem(activeWorkout.id, it.id, { durationSec: Number(e.target.value) })}
+                              value={it.durationSec || ""}
+                              onFocus={e => e.target.select()}
+                              onChange={(e) => updateItem(activeWorkout.id, it.id, { durationSec: e.target.value === "" ? 0 : Number(e.target.value) })}
                             />
                             <div className="h-10 rounded-xl border border-line bg-bg px-3 text-xs text-subtle flex items-center">
                               Напр: планка, ізометрія
@@ -562,16 +593,20 @@ export function Workouts() {
                             <input
                               className="h-10 rounded-xl border border-line bg-panelHi px-3 text-sm text-text outline-none"
                               type="number"
+                              inputMode="numeric"
                               placeholder="метри"
-                              value={it.distanceM ?? ""}
-                              onChange={(e) => updateItem(activeWorkout.id, it.id, { distanceM: Number(e.target.value) })}
+                              value={it.distanceM || ""}
+                              onFocus={e => e.target.select()}
+                              onChange={(e) => updateItem(activeWorkout.id, it.id, { distanceM: e.target.value === "" ? 0 : Number(e.target.value) })}
                             />
                             <input
                               className="h-10 rounded-xl border border-line bg-panelHi px-3 text-sm text-text outline-none"
                               type="number"
+                              inputMode="numeric"
                               placeholder="сек"
-                              value={it.durationSec ?? ""}
-                              onChange={(e) => updateItem(activeWorkout.id, it.id, { durationSec: Number(e.target.value) })}
+                              value={it.durationSec || ""}
+                              onFocus={e => e.target.select()}
+                              onChange={(e) => updateItem(activeWorkout.id, it.id, { durationSec: e.target.value === "" ? 0 : Number(e.target.value) })}
                             />
                           </div>
                         )}
@@ -597,7 +632,7 @@ export function Workouts() {
               <div className="px-4 py-3 bg-panelHi/60 border-b border-line">
                 <div className="text-xs font-bold text-subtle uppercase tracking-widest">Останні тренування</div>
               </div>
-              {(workouts || []).slice(0, 12).map(w => (
+              {(workouts || []).slice(0, journalLimit).map(w => (
                 <button
                   key={w.id}
                   onClick={() => setActiveWorkoutId(w.id)}
@@ -626,6 +661,14 @@ export function Workouts() {
                   )}
                 </button>
               ))}
+              {(workouts || []).length > journalLimit && (
+                <button
+                  onClick={() => setJournalLimit(l => l + 12)}
+                  className="w-full py-3 text-sm font-semibold text-accent hover:text-accent/80 transition-colors"
+                >
+                  Показати більше
+                </button>
+              )}
               {(workouts || []).length === 0 && (
                 <div className="p-6 text-center text-sm text-subtle">Поки тренувань немає</div>
               )}
@@ -1083,36 +1126,63 @@ export function Workouts() {
                 )}
 
                 <div className="bg-bg border border-line rounded-2xl overflow-hidden max-h-[55vh] overflow-y-auto">
-                  {pickList.map(ex => {
-                    const pickCf = recoveryConflictsForExercise(ex, rec.by);
-                    return (
-                    <button
-                      key={ex.id}
-                      className={cn(
-                        "w-full text-left px-4 py-3 border-b border-line last:border-0 hover:bg-panelHi transition-colors",
-                        pickCf.hasWarning && "border-l-4 border-l-warning/70"
-                      )}
-                      onClick={() => {
-                        if (!activeWorkoutId) return;
-                        if (pickCf.hasWarning) {
-                          setPendingPick(ex);
-                          return;
-                        }
-                        addExerciseToActive(ex);
-                      }}
-                    >
-                      <div className="flex items-center gap-2 min-w-0">
-                        <div className="text-sm font-semibold text-text truncate">{ex?.name?.uk || ex?.name?.en}</div>
-                        {pickCf.hasWarning ? (
-                          <span className="text-warning text-xs shrink-0">⚠</span>
-                        ) : null}
-                      </div>
-                      <div className="text-xs text-subtle mt-0.5">{ex.primaryGroupUk || ex.primaryGroup}</div>
-                    </button>
-                  );})}
                   {pickList.length === 0 && (
                     <div className="p-6 text-center text-sm text-subtle">Нічого не знайдено</div>
                   )}
+                  {pickQ
+                    ? pickList.map(ex => {
+                        const pickCf = recoveryConflictsForExercise(ex, rec.by);
+                        return (
+                          <button
+                            key={ex.id}
+                            className={cn(
+                              "w-full text-left px-4 py-3 border-b border-line last:border-0 hover:bg-panelHi transition-colors",
+                              pickCf.hasWarning && "border-l-4 border-l-warning/70"
+                            )}
+                            onClick={() => {
+                              if (!activeWorkoutId) return;
+                              if (pickCf.hasWarning) { setPendingPick(ex); return; }
+                              addExerciseToActive(ex);
+                            }}
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <div className="text-sm font-semibold text-text truncate">{ex?.name?.uk || ex?.name?.en}</div>
+                              {pickCf.hasWarning && <span className="text-warning text-xs shrink-0">⚠</span>}
+                            </div>
+                            <div className="text-xs text-subtle mt-0.5">{primaryGroupsUk[ex.primaryGroup] || ex.primaryGroup}</div>
+                          </button>
+                        );
+                      })
+                    : pickGrouped.map(g => (
+                        <div key={g.id}>
+                          <div className="px-4 py-2 bg-panelHi/80 border-b border-line sticky top-0">
+                            <span className="text-[10px] font-bold text-subtle uppercase tracking-widest">{g.label}</span>
+                          </div>
+                          {g.items.map(ex => {
+                            const pickCf = recoveryConflictsForExercise(ex, rec.by);
+                            return (
+                              <button
+                                key={ex.id}
+                                className={cn(
+                                  "w-full text-left px-4 py-3 border-b border-line last:border-0 hover:bg-panelHi transition-colors",
+                                  pickCf.hasWarning && "border-l-4 border-l-warning/70"
+                                )}
+                                onClick={() => {
+                                  if (!activeWorkoutId) return;
+                                  if (pickCf.hasWarning) { setPendingPick(ex); return; }
+                                  addExerciseToActive(ex);
+                                }}
+                              >
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <div className="text-sm font-semibold text-text truncate">{ex?.name?.uk || ex?.name?.en}</div>
+                                  {pickCf.hasWarning && <span className="text-warning text-xs shrink-0">⚠</span>}
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      ))
+                  }
                 </div>
               </div>
             </div>
@@ -1236,55 +1306,62 @@ export function Workouts() {
               )}
 
               {finishFlash.step === "summary" && !finishFlash.collapsed && (
-                <div className="rounded-2xl border border-line bg-panel p-4 shadow-float space-y-3 max-h-[min(75vh,560px)] overflow-y-auto">
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <div className="text-sm font-bold text-text">Тренування завершено</div>
-                      <div className="text-xs text-subtle mt-1 space-y-1">
-                        <div>
-                          Тривалість: <span className="font-semibold text-muted tabular-nums">{formatDurShort(finishFlash.durationSec)}</span>
-                          {" · "}
-                          Вправ: <span className="font-semibold text-muted">{finishFlash.items}</span>
-                          {finishFlash.tonnageKg > 0 ? (
-                            <>
-                              {" · "}
-                              Обʼєм: <span className="font-semibold text-muted tabular-nums">{Math.round(finishFlash.tonnageKg)} кг×повт</span>
-                            </>
-                          ) : null}
-                        </div>
-                        {finishFlash.savedWellbeing && (finishFlash.savedWellbeing.energy || finishFlash.savedWellbeing.mood) ? (
-                          <div className="text-muted">
-                            Самопочуття: енергія {finishFlash.savedWellbeing.energy ?? "—"}/5 · настрій {finishFlash.savedWellbeing.mood ?? "—"}/5
-                          </div>
-                        ) : null}
+                <div className="rounded-2xl overflow-hidden border border-line shadow-float">
+                  {/* Hero */}
+                  <div className="p-4" style={{ background: "linear-gradient(135deg, #0f2d1a 0%, #1e4d2b 100%)" }}>
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <div className="text-[11px] font-bold tracking-widest uppercase text-accent">Завершено</div>
+                        <div className="text-lg font-black text-white mt-1 leading-tight">Тренування виконано</div>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-1 shrink-0">
                       <button
                         type="button"
-                        className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-full bg-panelHi text-muted hover:text-text text-sm"
-                        aria-label="Згорнути"
-                        onClick={() => setFinishFlash(f => f && ({ ...f, collapsed: true }))}
-                      >
-                        ⌄
-                      </button>
-                      <button
-                        type="button"
-                        className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-full bg-panelHi text-muted hover:text-text text-lg leading-none"
+                        className="w-9 h-9 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full bg-white/10 text-white/70 hover:text-white text-lg"
                         aria-label="Закрити"
                         onClick={() => setFinishFlash(null)}
-                      >
-                        ✕
-                      </button>
+                      >✕</button>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2 mt-3">
+                      <div className="rounded-xl bg-white/10 border border-white/15 p-2.5 text-center">
+                        <div className="text-[10px] uppercase tracking-wide text-white/60">Час</div>
+                        <div className="text-sm font-black text-white tabular-nums mt-0.5">{formatDurShort(finishFlash.durationSec)}</div>
+                      </div>
+                      <div className="rounded-xl bg-white/10 border border-white/15 p-2.5 text-center">
+                        <div className="text-[10px] uppercase tracking-wide text-white/60">Вправ</div>
+                        <div className="text-lg font-black text-white tabular-nums">{finishFlash.items}</div>
+                      </div>
+                      <div className="rounded-xl bg-white/10 border border-white/15 p-2.5 text-center">
+                        <div className="text-[10px] uppercase tracking-wide text-white/60">Обʼєм</div>
+                        <div className="text-sm font-black text-white tabular-nums mt-0.5">
+                          {finishFlash.tonnageKg > 0 ? `${Math.round(finishFlash.tonnageKg)} кг` : "—"}
+                        </div>
+                      </div>
                     </div>
                   </div>
-                  <div className="flex gap-2">
-                    <Button variant="ghost" className="flex-1 h-12 min-h-[44px]" type="button" onClick={() => setFinishFlash(f => f && ({ ...f, collapsed: true }))}>
+                  {/* Wellbeing row */}
+                  {finishFlash.savedWellbeing && (finishFlash.savedWellbeing.energy || finishFlash.savedWellbeing.mood) && (
+                    <div className="px-4 py-2.5 bg-panel border-b border-line flex items-center gap-3 text-xs text-subtle">
+                      <span>Самопочуття:</span>
+                      <span className="font-semibold text-text">
+                        енергія {finishFlash.savedWellbeing.energy ?? "—"}/5
+                        {" · "}
+                        настрій {finishFlash.savedWellbeing.mood ?? "—"}/5
+                      </span>
+                    </div>
+                  )}
+                  {/* Actions */}
+                  <div className="flex gap-2 p-3 bg-panel">
+                    <Button variant="ghost" className="flex-1 h-12 min-h-[44px] rounded-full" type="button" onClick={() => setFinishFlash(f => f && ({ ...f, collapsed: true }))}>
                       Згорнути
                     </Button>
-                    <Button className="flex-1 h-12 min-h-[44px]" type="button" onClick={() => setFinishFlash(null)}>
-                      Ок
-                    </Button>
+                    <button
+                      type="button"
+                      className="flex-1 py-3 rounded-full font-bold text-[15px] bg-accent active:scale-[0.98] transition-all"
+                      style={{ color: "#0f2d1a" }}
+                      onClick={() => setFinishFlash(null)}
+                    >
+                      Готово
+                    </button>
                   </div>
                 </div>
               )}

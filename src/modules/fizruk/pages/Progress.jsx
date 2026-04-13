@@ -7,6 +7,8 @@ import { usePushups } from "../hooks/usePushups";
 import { useWorkouts } from "../hooks/useWorkouts";
 import { MiniLineChart } from "../components/MiniLineChart";
 import { WellbeingChart } from "../components/WellbeingChart";
+import { WeeklyVolumeChart } from "../components/WeeklyVolumeChart";
+import { weeklyVolumeSeriesNow } from "../lib/workoutStats";
 
 const WORKOUTS_KEY = "fizruk_workouts_v1";
 const MEASUREMENTS_KEY = "fizruk_measurements_v1";
@@ -158,6 +160,8 @@ export function Progress() {
     return { todayCount, week, month };
   }, [pushupHistory]);
 
+  const weekly = useMemo(() => weeklyVolumeSeriesNow(workouts), [workouts]);
+
   const wellbeingData = useMemo(() => {
     return (workouts || [])
       .filter(w => w.endedAt && (w.wellbeing?.energy != null || w.wellbeing?.mood != null))
@@ -290,6 +294,13 @@ export function Progress() {
             <div className="text-3xl mb-3">📈</div>
             <div className="text-sm font-medium text-text mb-1">Даних ще немає</div>
             <div className="text-xs text-subtle">Додай тренування або заміри — і тут зʼявиться аналітика</div>
+          </div>
+        )}
+
+        {/* Weekly volume chart */}
+        {(workouts || []).some(w => w.endedAt) && (
+          <div className="bg-panel border border-line/60 rounded-2xl p-5 shadow-card">
+            <WeeklyVolumeChart volumeKg={weekly.volumeKg} />
           </div>
         )}
 
