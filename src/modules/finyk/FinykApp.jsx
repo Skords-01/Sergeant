@@ -1,44 +1,15 @@
-import {
-  useState,
-  useEffect,
-  useRef,
-  useCallback,
-  lazy,
-  Suspense,
-} from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useMonobank } from "./hooks/useMonobank";
 import { useStorage } from "./hooks/useStorage";
 import { PAGES } from "./constants";
 import { Button } from "@shared/components/ui/Button";
 import { Input } from "@shared/components/ui/Input";
-import { Skeleton } from "@shared/components/ui/Skeleton";
 import { cn } from "@shared/lib/cn";
-
-const Overview = lazy(() =>
-  import("./pages/Overview").then((m) => ({ default: m.Overview })),
-);
-const Transactions = lazy(() =>
-  import("./pages/Transactions").then((m) => ({ default: m.Transactions })),
-);
-const Budgets = lazy(() =>
-  import("./pages/Budgets").then((m) => ({ default: m.Budgets })),
-);
-const Assets = lazy(() =>
-  import("./pages/Assets").then((m) => ({ default: m.Assets })),
-);
-const Settings = lazy(() =>
-  import("./pages/Settings").then((m) => ({ default: m.Settings })),
-);
-
-function PageLoader() {
-  return (
-    <div className="flex-1 overflow-y-auto px-4 pt-4 page-tabbar-pad space-y-3 max-w-4xl mx-auto w-full">
-      <Skeleton className="h-40 rounded-3xl" />
-      <Skeleton className="h-28 opacity-80 rounded-2xl" />
-      <Skeleton className="h-24 opacity-60 rounded-2xl" />
-    </div>
-  );
-}
+import { Overview } from "./pages/Overview.jsx";
+import { Transactions } from "./pages/Transactions.jsx";
+import { Budgets } from "./pages/Budgets.jsx";
+import { Assets } from "./pages/Assets.jsx";
+import { Settings } from "./pages/Settings.jsx";
 
 const NAV_ICONS = {
   overview: (
@@ -449,36 +420,34 @@ export default function App({ onBackToHub } = {}) {
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
-        <Suspense fallback={<PageLoader />}>
-          {page === "overview" && (
-            <Overview
-              mono={mono}
-              storage={storage}
-              onNavigate={navigate}
-              onCategoryClick={(catId) => {
-                setCategoryFilter(catId);
-                navigate("transactions");
-              }}
-              showBalance={showBalance}
-            />
-          )}
-          {page === "transactions" && (
-            <Transactions
-              mono={mono}
-              storage={storage}
-              showBalance={showBalance}
-              categoryFilter={categoryFilter}
-              onClearCategoryFilter={() => setCategoryFilter(null)}
-            />
-          )}
-          {page === "budgets" && <Budgets mono={mono} storage={storage} />}
-          {page === "assets" && (
-            <Assets mono={mono} storage={storage} showBalance={showBalance} />
-          )}
-          {page === "settings" && (
-            <Settings mono={mono} storage={storage} showToast={showToast} />
-          )}
-        </Suspense>
+        {page === "overview" && (
+          <Overview
+            mono={mono}
+            storage={storage}
+            onNavigate={navigate}
+            onCategoryClick={(catId) => {
+              setCategoryFilter(catId);
+              navigate("transactions");
+            }}
+            showBalance={showBalance}
+          />
+        )}
+        {page === "transactions" && (
+          <Transactions
+            mono={mono}
+            storage={storage}
+            showBalance={showBalance}
+            categoryFilter={categoryFilter}
+            onClearCategoryFilter={() => setCategoryFilter(null)}
+          />
+        )}
+        {page === "budgets" && <Budgets mono={mono} storage={storage} />}
+        {page === "assets" && (
+          <Assets mono={mono} storage={storage} showBalance={showBalance} />
+        )}
+        {page === "settings" && (
+          <Settings mono={mono} storage={storage} showToast={showToast} />
+        )}
       </div>
 
       {/* Bottom navigation */}
