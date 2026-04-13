@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@shared/lib/cn";
 import { Button } from "@shared/components/ui/Button";
 import { Input } from "@shared/components/ui/Input";
@@ -13,8 +13,16 @@ import {
   deleteHabit,
   updateHabit,
   setHabitArchived,
+  setCompletionNote,
+  moveHabitInOrder,
+  buildRoutineBackupPayload,
+  applyRoutineBackupPayload,
   ROUTINE_EVENT,
 } from "./lib/routineStorage.js";
+import { completionNoteKey } from "./lib/completionNoteKey.js";
+import { sortHabitsByOrder } from "./lib/habitOrder.js";
+import { maxActiveStreak } from "./lib/streaks.js";
+import { PushupsWidget } from "./components/PushupsWidget.jsx";
 import { useRoutineReminders, requestRoutineNotificationPermission } from "./hooks/useRoutineReminders.js";
 import {
   buildHubCalendarEvents,
@@ -171,6 +179,7 @@ export default function RoutineApp({ onBackToHub, onOpenModule } = {}) {
   const [monthCursor, setMonthCursor] = useState(() => ({ y: now.getFullYear(), m: now.getMonth() }));
   const [selectedDay, setSelectedDay] = useState(() => dateKeyFromDate(now));
   const [tagFilter, setTagFilter] = useState(null);
+  const [listQuery, setListQuery] = useState("");
   const [habitDraft, setHabitDraft] = useState(emptyHabitDraft);
   const [tagDraft, setTagDraft] = useState("");
   const [catDraft, setCatDraft] = useState({ name: "", emoji: "" });
@@ -206,10 +215,20 @@ export default function RoutineApp({ onBackToHub, onOpenModule } = {}) {
   );
 
   const filtered = useMemo(() => {
-    if (!tagFilter) return events;
-    if (tagFilter === "__fizruk") return events.filter((e) => e.fizruk);
-    return events.filter((e) => e.tagLabels.includes(tagFilter));
-  }, [events, tagFilter]);
+    let ev = events;
+    if (tagFilter) {
+      if (tagFilter === "__fizruk") ev = ev.filter((e) => e.fizruk);
+      else ev = ev.filter((e) => e.tagLabels.includes(tagFilter));
+    }
+    const q = listQuery.trim().toLowerCase();
+    if (q) {
+      ev = ev.filter((e) => {
+        const hay = `${e.title} ${e.subtitle} ${(e.tagLabels || []).join(" ")} ${e.note || ""}`.toLowerCase();
+        return hay.includes(q);
+      });
+    }
+    return ev;
+  }, [events, tagFilter, listQuery]);
 
   const listEvents = useMemo(() => {
     if (timeMode === "month") return filtered.filter((e) => e.date === selectedDay);
@@ -247,6 +266,12 @@ export default function RoutineApp({ onBackToHub, onOpenModule } = {}) {
     });
   };
 
+  const goToToday = useCallback(() => {
+    const t = todayDate();
+    setMonthCursor({ y: t.getFullYear(), m: t.getMonth() });
+    setSelectedDay(dateKeyFromDate(t));
+  }, []);
+
   const onToggleHabit = useCallback(
     (habitId, dateKey) => {
       setRoutine((prev) => toggleHabitCompletion(prev, habitId, dateKey));
@@ -269,6 +294,12 @@ export default function RoutineApp({ onBackToHub, onOpenModule } = {}) {
   }, [timeMode, monthTitle]);
 
   const headlineDate = todayDate().toLocaleDateString("uk-UA", { weekday: "long", day: "numeric", month: "long" });
+
+  const todayKey = dateKeyFromDate(todayDate());
+  const streakMax = useMemo(
+    () => maxActiveStreak(routine.habits, routine.completions, todayKey),
+    [routine.habits, routine.completions, todayKey],
+  );
 
   return (
     <div className="h-dvh flex flex-col bg-bg text-text overflow-hidden">
@@ -323,7 +354,7 @@ export default function RoutineApp({ onBackToHub, onOpenModule } = {}) {
               <section className="routine-hero-card" aria-label="Огляд періоду">
                 <p className="text-[11px] font-bold tracking-widest uppercase text-[#b45348]/90">{rangeLabel}</p>
                 <p className="text-xs text-subtle mt-1">{headlineDate}</p>
-                <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
+                <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
                   <div className="rounded-2xl bg-white/70 border border-[#f5c4b8]/50 p-3 text-center shadow-sm">
                     <p className="text-[10px] uppercase tracking-wide text-subtle">Подій у зрізі</p>
                     <p className="text-2xl font-black text-text tabular-nums mt-0.5">{filtered.length}</p>
@@ -334,7 +365,11 @@ export default function RoutineApp({ onBackToHub, onOpenModule } = {}) {
                       {routine.habits.filter((h) => !h.archived).length}
                     </p>
                   </div>
-                  <div className="rounded-2xl bg-white/70 border border-[#f5c4b8]/50 p-3 text-center shadow-sm col-span-2 sm:col-span-1">
+                  <div className="rounded-2xl bg-white/70 border border-[#f5c4b8]/50 p-3 text-center shadow-sm">
+                    <p className="text-[10px] uppercase tracking-wide text-subtle">Серія max</p>
+                    <p className="text-2xl font-black text-text tabular-nums mt-0.5">{streakMax}</p>
+                  </div>
+                  <div className="rounded-2xl bg-white/70 border border-[#f5c4b8]/50 p-3 text-center shadow-sm">
                     <p className="text-[10px] uppercase tracking-wide text-subtle">Фізрук у стрічці</p>
                     <p className="text-sm font-semibold text-text mt-1.5">
                       {routine.prefs.showFizrukInCalendar !== false ? "Увімкнено" : "Вимкнено"}
@@ -342,6 +377,8 @@ export default function RoutineApp({ onBackToHub, onOpenModule } = {}) {
                   </div>
                 </div>
               </section>
+
+              <PushupsWidget />
 
               <div className="flex flex-wrap gap-1.5">
                 {TIME_MODES.map((tm) => (
@@ -358,6 +395,14 @@ export default function RoutineApp({ onBackToHub, onOpenModule } = {}) {
                   </button>
                 ))}
               </div>
+
+              <Input
+                className="!h-10 w-full max-w-md"
+                placeholder="Пошук у стрічці…"
+                value={listQuery}
+                onChange={(e) => setListQuery(e.target.value)}
+                aria-label="Пошук подій"
+              />
 
               <div className="flex flex-wrap gap-1.5 items-center">
                 <span className="text-[10px] font-bold text-subtle uppercase tracking-widest w-full sm:w-auto">Теги</span>
@@ -396,23 +441,35 @@ export default function RoutineApp({ onBackToHub, onOpenModule } = {}) {
               </div>
 
               {timeMode === "month" && (
-                <div className="flex items-center justify-between gap-2">
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <button
+                      type="button"
+                      className="w-10 h-10 rounded-xl border border-line/80 bg-panel/90 text-muted hover:text-text shadow-sm"
+                      onClick={() => goMonth(-1)}
+                      aria-label="Попередній місяць"
+                    >
+                      ‹
+                    </button>
+                    <span className="text-sm font-semibold capitalize flex-1 text-center">{monthTitle}</span>
+                    <button
+                      type="button"
+                      className="w-10 h-10 rounded-xl border border-line/80 bg-panel/90 text-muted hover:text-text shadow-sm"
+                      onClick={() => goMonth(1)}
+                      aria-label="Наступний місяць"
+                    >
+                      ›
+                    </button>
+                  </div>
                   <button
                     type="button"
-                    className="w-10 h-10 rounded-xl border border-line/80 bg-panel/90 text-muted hover:text-text shadow-sm"
-                    onClick={() => goMonth(-1)}
-                    aria-label="Попередній місяць"
+                    onClick={goToToday}
+                    className={cn(
+                      "w-full min-h-[40px] rounded-xl text-xs font-semibold border transition-colors",
+                      C.chipOn,
+                    )}
                   >
-                    ‹
-                  </button>
-                  <span className="text-sm font-semibold capitalize flex-1 text-center">{monthTitle}</span>
-                  <button
-                    type="button"
-                    className="w-10 h-10 rounded-xl border border-line/80 bg-panel/90 text-muted hover:text-text shadow-sm"
-                    onClick={() => goMonth(1)}
-                    aria-label="Наступний місяць"
-                  >
-                    ›
+                    Сьогодні
                   </button>
                 </div>
               )}
@@ -478,7 +535,8 @@ export default function RoutineApp({ onBackToHub, onOpenModule } = {}) {
                         <li
                           key={e.id}
                           className={cn(
-                            "rounded-2xl border border-line/60 bg-panel px-4 py-3 shadow-card flex flex-col gap-1",
+                            "rounded-2xl border border-line/60 bg-panel pl-3 pr-4 py-3 shadow-card flex flex-col gap-1 border-l-4",
+                            e.fizruk ? "border-l-sky-500" : e.habitId ? "border-l-[#e0786c]" : "border-l-transparent",
                             e.completed && e.habitId && "opacity-90",
                           )}
                         >
@@ -522,6 +580,16 @@ export default function RoutineApp({ onBackToHub, onOpenModule } = {}) {
                               )}
                             </div>
                           </div>
+                          {e.habitId && e.completed && (
+                            <Input
+                              className="!h-9 !text-xs mt-1"
+                              placeholder="Нотатка до відмітки"
+                              value={routine.completionNotes?.[completionNoteKey(e.habitId, e.date)] || ""}
+                              onChange={(ev) =>
+                                setRoutine((s) => setCompletionNote(s, e.habitId, e.date, ev.target.value))
+                              }
+                            />
+                          )}
                         </li>
                       ))}
                     </ul>
@@ -601,6 +669,7 @@ function SettingsSection({
   setCatDraft,
 }) {
   const [editingId, setEditingId] = useState(null);
+  const backupRef = useRef(null);
 
   const loadHabitIntoDraft = (h) => {
     setHabitDraft({
@@ -674,6 +743,50 @@ function SettingsSection({
         <p className="text-[10px] text-subtle leading-snug">
           У звичці вкажи «Час нагадування». Один раз на день о цій хвилині, якщо день запланований і ще немає відмітки. Працює, поки відкрита вкладка або дозволено тло (залежить від браузера).
         </p>
+      </section>
+
+      <section className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card space-y-3">
+        <h2 className="text-xs font-bold text-subtle uppercase tracking-widest">Резервна копія</h2>
+        <p className="text-[10px] text-subtle">Звички, відмітки, відтискання та нотатки — один JSON-файл.</p>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            type="button"
+            className={cn("font-bold", C.primary)}
+            onClick={() => {
+              const blob = new Blob([JSON.stringify(buildRoutineBackupPayload(), null, 2)], {
+                type: "application/json",
+              });
+              const a = document.createElement("a");
+              a.href = URL.createObjectURL(blob);
+              a.download = `hub-routine-backup-${new Date().toISOString().slice(0, 10)}.json`;
+              a.click();
+              setTimeout(() => URL.revokeObjectURL(a.href), 1500);
+            }}
+          >
+            Експорт JSON
+          </Button>
+          <Button type="button" variant="ghost" className="border border-line/70" onClick={() => backupRef.current?.click()}>
+            Імпорт
+          </Button>
+          <input
+            ref={backupRef}
+            type="file"
+            accept="application/json,.json"
+            className="hidden"
+            onChange={async (e) => {
+              const f = e.target.files?.[0];
+              if (!f) return;
+              try {
+                const text = await f.text();
+                applyRoutineBackupPayload(JSON.parse(text));
+                setRoutine(loadRoutineState());
+              } catch (err) {
+                window.alert(err?.message || "Не вдалося імпортувати файл.");
+              }
+              e.target.value = "";
+            }}
+          />
+        </div>
       </section>
 
       <section className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card space-y-3">
@@ -908,9 +1021,10 @@ function SettingsSection({
           <p className="text-xs text-muted">Поки порожньо — додай першу звичку вище.</p>
         )}
         <ul className="space-y-2">
-          {routine.habits
-            .filter((h) => !h.archived)
-            .map((h) => {
+          {sortHabitsByOrder(
+            routine.habits.filter((h) => !h.archived),
+            routine.habitOrder || [],
+          ).map((h) => {
               const recLabel = RECURRENCE_OPTIONS.find((o) => o.value === (h.recurrence || "daily"))?.label || "";
               return (
                 <li
@@ -933,6 +1047,24 @@ function SettingsSection({
                       </p>
                     </div>
                     <div className="flex flex-wrap gap-1.5 justify-end shrink-0 max-w-[min(100%,12rem)] sm:max-w-none">
+                      <div className="flex gap-1">
+                        <button
+                          type="button"
+                          className="min-w-[32px] min-h-[36px] rounded-lg border border-line/70 text-xs text-muted hover:text-text"
+                          onClick={() => setRoutine((s) => moveHabitInOrder(s, h.id, -1))}
+                          aria-label="Вгору в списку"
+                        >
+                          ↑
+                        </button>
+                        <button
+                          type="button"
+                          className="min-w-[32px] min-h-[36px] rounded-lg border border-line/70 text-xs text-muted hover:text-text"
+                          onClick={() => setRoutine((s) => moveHabitInOrder(s, h.id, 1))}
+                          aria-label="Вниз в списку"
+                        >
+                          ↓
+                        </button>
+                      </div>
                       <Button
                         type="button"
                         variant="ghost"

@@ -2,6 +2,8 @@ import {
   MONTHLY_PLAN_STORAGE_KEY,
   TEMPLATES_STORAGE_KEY,
 } from "../../fizruk/lib/fizrukStorage.js";
+import { sortHabitsByOrder } from "./habitOrder.js";
+import { completionNoteKey } from "./completionNoteKey.js";
 
 export const FIZRUK_GROUP_LABEL = "Фізрук";
 
@@ -135,11 +137,16 @@ export function buildHubCalendarEvents(state, range, { showFizruk = true } = {})
         tagLabels: [FIZRUK_GROUP_LABEL],
         sortKey: `${date} 0 fizruk`,
         fizruk: true,
+        sourceKind: "fizruk",
       });
     }
   }
 
-  const activeHabits = state.habits.filter((h) => !h.archived);
+  const notes = state.completionNotes && typeof state.completionNotes === "object" ? state.completionNotes : {};
+  const activeHabits = sortHabitsByOrder(
+    state.habits.filter((h) => !h.archived),
+    state.habitOrder || [],
+  );
   for (const date of days) {
     for (const h of activeHabits) {
       if (!habitScheduledOnDate(h, date)) continue;
@@ -148,6 +155,8 @@ export function buildHubCalendarEvents(state, range, { showFizruk = true } = {})
       const tagLabels = tagLabelsForHabit(state, h);
       const t = h.timeOfDay ? String(h.timeOfDay).trim() : "";
       const timePart = t ? ` · ${t}` : "";
+      const nk = completionNoteKey(h.id, date);
+      const note = notes[nk] ? String(notes[nk]) : "";
       events.push({
         id: `habit_${h.id}_${date}`,
         source: "routine_habit",
@@ -158,6 +167,8 @@ export function buildHubCalendarEvents(state, range, { showFizruk = true } = {})
         sortKey: `${date} 1 ${h.name}`,
         habitId: h.id,
         completed,
+        note,
+        sourceKind: "habit",
       });
     }
   }

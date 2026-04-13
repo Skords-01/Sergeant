@@ -1,9 +1,10 @@
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@shared/components/ui/Button";
 import { cn } from "@shared/lib/cn";
 import { useExerciseCatalog } from "../hooks/useExerciseCatalog";
 import { useMeasurements } from "../hooks/useMeasurements";
-import { usePushups } from "../hooks/usePushups";
+import { ROUTINE_EVENT } from "../../routine/lib/routineStorage.js";
+import { buildPushupHistoryFromRoutine } from "../../routine/lib/routinePushupsRead.js";
 import { useWorkouts } from "../hooks/useWorkouts";
 import { MiniLineChart } from "../components/MiniLineChart";
 import { WellbeingChart } from "../components/WellbeingChart";
@@ -34,7 +35,20 @@ export function Progress() {
   const { workouts } = useWorkouts();
   const { entries } = useMeasurements();
   const { exercises, musclesUk } = useExerciseCatalog();
-  const { history: pushupHistory } = usePushups();
+  const [pushupSync, setPushupSync] = useState(0);
+  useEffect(() => {
+    const sync = () => setPushupSync((n) => n + 1);
+    window.addEventListener(ROUTINE_EVENT, sync);
+    window.addEventListener("storage", sync);
+    return () => {
+      window.removeEventListener(ROUTINE_EVENT, sync);
+      window.removeEventListener("storage", sync);
+    };
+  }, []);
+  const pushupHistory = useMemo(() => {
+    void pushupSync;
+    return buildPushupHistoryFromRoutine(30);
+  }, [pushupSync]);
   const fileRef = useRef(null);
 
   const meas = useMemo(() => {
@@ -290,7 +304,7 @@ export function Progress() {
         )}
 
         {/* Pushup stats */}
-        {pushupStats.month > 0 && (
+        {(pushupStats.todayCount > 0 || pushupStats.week > 0 || pushupStats.month > 0) && (
           <div className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card">
             <div className="text-xs font-bold text-subtle uppercase tracking-widest mb-3">Відтискання</div>
             <div className="grid grid-cols-3 gap-2">
@@ -307,6 +321,7 @@ export function Progress() {
                 <div className="text-lg font-black text-text tabular-nums">{pushupStats.month}</div>
               </div>
             </div>
+            <p className="text-[10px] text-subtle mt-3">Облік у модулі «Рутина».</p>
           </div>
         )}
 
