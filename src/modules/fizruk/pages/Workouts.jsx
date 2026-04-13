@@ -531,7 +531,7 @@ export function Workouts() {
 
         {mode === "log" && (
           <p className="text-xs text-subtle mb-2 leading-relaxed">
-            Каталог вправ: розкрий групу (груди, спина…) і натисни вправу — вона додасться до активного тренування.
+            Розкрий групу й тапни по вправі — додасться в активне тренування. Кнопка «ⓘ» праворуч — опис і фото без додавання.
           </p>
         )}
 
@@ -561,33 +561,44 @@ export function Workouts() {
                       {g.items.map(ex => {
                         const catCf = recoveryConflictsForExercise(ex, rec.by);
                         return (
-                        <button
-                          key={ex.id}
-                          type="button"
-                          onClick={() => handleExerciseInListClick(ex)}
-                          className={cn(
-                            "w-full text-left px-4 py-3 border-t border-line transition-colors",
-                            mode === "log" ? "hover:bg-success/10 active:bg-success/15" : "hover:bg-panelHi",
+                        <div key={ex.id} className="flex border-t border-line">
+                          <button
+                            type="button"
+                            onClick={() => handleExerciseInListClick(ex)}
+                            className={cn(
+                              "flex-1 min-w-0 text-left px-4 py-3 transition-colors",
+                              mode === "log" ? "hover:bg-success/10 active:bg-success/15" : "hover:bg-panelHi",
+                            )}
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0">
+                                <div className="text-sm font-semibold text-text truncate flex items-center gap-2">
+                                  {ex?.name?.uk || ex?.name?.en}
+                                  {catCf.hasWarning ? <span className="text-warning shrink-0" title="Мʼязи ще відновлюються">⚠</span> : null}
+                                </div>
+                                <div className="text-xs text-subtle mt-0.5">
+                                  Мʼязи:{" "}
+                                  <span className="font-semibold text-muted">
+                                    {(ex?.muscles?.primary || []).map(id => musclesUk?.[id] || id).join(", ") || "—"}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="shrink-0 text-xs text-muted tabular-nums">
+                                {ex.rating ? ex.rating.toFixed(1) : ""}
+                              </div>
+                            </div>
+                          </button>
+                          {mode === "log" && (
+                            <button
+                              type="button"
+                              className="shrink-0 w-12 min-h-[48px] flex items-center justify-center border-l border-line/80 text-muted hover:text-text hover:bg-panelHi transition-colors"
+                              aria-label="Опис і фото вправи"
+                              onClick={() => setSelected(ex)}
+                            >
+                              <span className="text-base leading-none" aria-hidden>ⓘ</span>
+                            </button>
                           )}
-                        >
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="min-w-0">
-                              <div className="text-sm font-semibold text-text truncate flex items-center gap-2">
-                                {ex?.name?.uk || ex?.name?.en}
-                                {catCf.hasWarning ? <span className="text-warning shrink-0" title="Мʼязи ще відновлюються">⚠</span> : null}
-                              </div>
-                              <div className="text-xs text-subtle mt-0.5">
-                                Мʼязи:{" "}
-                                <span className="font-semibold text-muted">
-                                  {(ex?.muscles?.primary || []).map(id => musclesUk?.[id] || id).join(", ") || "—"}
-                                </span>
-                              </div>
-                            </div>
-                            <div className="shrink-0 text-xs text-muted">
-                              {ex.rating ? ex.rating.toFixed(1) : ""}
-                            </div>
-                          </div>
-                        </button>
+                        </div>
                       );})}
                       {g.total > g.items.length && (
                         <div className="px-4 py-3 text-xs text-subtle border-t border-line">
@@ -723,9 +734,30 @@ export function Workouts() {
                   </div>
                 )}
 
+                {mode === "log" && (
+                  <Button
+                    type="button"
+                    className="w-full h-12 mt-5 bg-forest text-white border-forest hover:bg-forest/90"
+                    onClick={() => {
+                      if (!activeWorkoutId) {
+                        window.alert("Спочатку натисни «+ Нове» у блоці вище.");
+                        return;
+                      }
+                      if (activeWorkout?.endedAt) {
+                        window.alert("Це тренування вже завершено. Обери чернетку або створи нове.");
+                        return;
+                      }
+                      addExerciseToActive(selected);
+                      setSelected(null);
+                    }}
+                  >
+                    + Додати в активне тренування
+                  </Button>
+                )}
+
                 <div className="mt-5 grid grid-cols-2 gap-2">
                   <Button className="h-12" onClick={() => setSelected(null)}>
-                    Готово
+                    Закрити
                   </Button>
                   <Button
                     variant="ghost"

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { habitScheduledOnDate } from "./hubCalendarAggregate.js";
+import { buildHubCalendarEvents, habitScheduledOnDate } from "./hubCalendarAggregate.js";
 
 function base(over = {}) {
   return {
@@ -37,5 +37,41 @@ describe("habitScheduledOnDate", () => {
     const h = base({ recurrence: "monthly", startDate: "2024-01-31" });
     expect(habitScheduledOnDate(h, "2025-01-31")).toBe(true);
     expect(habitScheduledOnDate(h, "2025-02-28")).toBe(true);
+  });
+});
+
+describe("buildHubCalendarEvents", () => {
+  it("додає подію звички на кожен день діапазону", () => {
+    const state = {
+      prefs: { showFinykSubscriptionsInCalendar: false },
+      tags: [],
+      categories: [],
+      habits: [
+        {
+          id: "h1",
+          name: "Вода",
+          emoji: "💧",
+          archived: false,
+          recurrence: "daily",
+          startDate: "2025-06-01",
+          endDate: null,
+          tagIds: [],
+          weekdays: [0, 1, 2, 3, 4, 5, 6],
+          timeOfDay: "",
+        },
+      ],
+      completions: { h1: ["2025-06-10"] },
+      habitOrder: ["h1"],
+      completionNotes: {},
+    };
+    const events = buildHubCalendarEvents(
+      state,
+      { startKey: "2025-06-10", endKey: "2025-06-11" },
+      { showFizruk: false, showFinykSubs: false },
+    );
+    const habitEv = events.filter((e) => e.habitId === "h1");
+    expect(habitEv.length).toBe(2);
+    expect(habitEv.find((e) => e.date === "2025-06-10")?.completed).toBe(true);
+    expect(habitEv.find((e) => e.date === "2025-06-11")?.completed).toBe(false);
   });
 });
