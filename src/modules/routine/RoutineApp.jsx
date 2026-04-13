@@ -348,7 +348,7 @@ export default function RoutineApp({ onBackToHub, onOpenModule } = {}) {
       </div>
 
       <div className="flex-1 overflow-hidden flex flex-col min-h-0">
-        <main className="flex-1 overflow-y-auto routine-page-scroll-pad max-w-4xl mx-auto w-full px-4 pt-4 space-y-4">
+        <main className="flex-1 overflow-y-auto routine-page-scroll-pad routine-main-pad max-w-4xl mx-auto w-full pt-4 space-y-4">
           {mainTab === "calendar" && (
             <>
               <section className="routine-hero-card" aria-label="Огляд періоду">
@@ -397,7 +397,7 @@ export default function RoutineApp({ onBackToHub, onOpenModule } = {}) {
               </div>
 
               <Input
-                className="!h-10 w-full max-w-md"
+                className="routine-touch-field w-full max-w-md"
                 placeholder="Пошук у стрічці…"
                 value={listQuery}
                 onChange={(e) => setListQuery(e.target.value)}
@@ -535,13 +535,13 @@ export default function RoutineApp({ onBackToHub, onOpenModule } = {}) {
                         <li
                           key={e.id}
                           className={cn(
-                            "rounded-2xl border border-line/60 bg-panel pl-3 pr-4 py-3 shadow-card flex flex-col gap-1 border-l-4",
+                            "overflow-hidden rounded-2xl border border-line/60 bg-panel pl-4 pr-4 py-3 shadow-card flex flex-col gap-2 border-l-4",
                             e.fizruk ? "border-l-sky-500" : e.habitId ? "border-l-[#e0786c]" : "border-l-transparent",
                             e.completed && e.habitId && "opacity-90",
                           )}
                         >
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="min-w-0">
+                          <div className="flex items-start justify-between gap-3 sm:gap-2">
+                            <div className="min-w-0 flex-1">
                               <p className="font-semibold text-text text-[15px] leading-snug">{e.title}</p>
                               <p className="text-[11px] text-subtle mt-0.5">
                                 {parseDateKey(e.date).toLocaleDateString("uk-UA", {
@@ -582,7 +582,7 @@ export default function RoutineApp({ onBackToHub, onOpenModule } = {}) {
                           </div>
                           {e.habitId && e.completed && (
                             <Input
-                              className="!h-9 !text-xs mt-1"
+                              className="routine-touch-field w-full min-w-0"
                               placeholder="Нотатка до відмітки"
                               value={routine.completionNotes?.[completionNoteKey(e.habitId, e.date)] || ""}
                               onChange={(ev) =>
@@ -793,15 +793,15 @@ function SettingsSection({
         <h2 className="text-xs font-bold text-subtle uppercase tracking-widest">
           {editingId ? "Редагувати звичку" : "Нова звичка"}
         </h2>
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-stretch">
           <Input
-            className="!h-10 max-w-[4rem] text-center"
+            className="routine-touch-field w-16 shrink-0 text-center"
             value={habitDraft.emoji}
             onChange={(e) => setHabitDraft((d) => ({ ...d, emoji: e.target.value.slice(0, 4) }))}
             aria-label="Емодзі"
           />
           <Input
-            className="!h-10 flex-1"
+            className="routine-touch-field min-w-0 flex-1"
             placeholder="Назва"
             value={habitDraft.name}
             onChange={(e) => setHabitDraft((d) => ({ ...d, name: e.target.value }))}
@@ -811,7 +811,7 @@ function SettingsSection({
         <label className="block text-xs text-subtle">
           Регулярність
           <select
-            className="mt-1 w-full h-10 rounded-2xl border border-line bg-panelHi px-3 text-sm"
+            className="routine-touch-select mt-1"
             value={habitDraft.recurrence || "daily"}
             onChange={(e) => setHabitDraft((d) => ({ ...d, recurrence: e.target.value }))}
           >
@@ -828,7 +828,7 @@ function SettingsSection({
             Початок (дата)
             <Input
               type="date"
-              className="mt-1 !h-10"
+              className="routine-touch-field mt-1 w-full"
               value={habitDraft.startDate || ""}
               onChange={(e) => setHabitDraft((d) => ({ ...d, startDate: e.target.value }))}
             />
@@ -837,7 +837,7 @@ function SettingsSection({
             Кінець (необовʼязково)
             <Input
               type="date"
-              className="mt-1 !h-10"
+              className="routine-touch-field mt-1 w-full"
               value={habitDraft.endDate || ""}
               onChange={(e) => setHabitDraft((d) => ({ ...d, endDate: e.target.value }))}
             />
@@ -848,7 +848,7 @@ function SettingsSection({
           Час нагадування (необовʼязково)
           <Input
             type="time"
-            className="mt-1 !h-10"
+            className="routine-touch-field mt-1 w-full"
             value={habitDraft.timeOfDay || ""}
             onChange={(e) => setHabitDraft((d) => ({ ...d, timeOfDay: e.target.value }))}
           />
@@ -901,7 +901,7 @@ function SettingsSection({
           <label className="block text-xs text-subtle">
             Тег
             <select
-              className="mt-1 w-full h-10 rounded-2xl border border-line bg-panelHi px-3 text-sm"
+              className="routine-touch-select mt-1"
               value={habitDraft.tagIds[0] || ""}
               onChange={(e) => {
                 const id = e.target.value;
@@ -924,7 +924,7 @@ function SettingsSection({
           <label className="block text-xs text-subtle">
             Категорія
             <select
-              className="mt-1 w-full h-10 rounded-2xl border border-line bg-panelHi px-3 text-sm"
+              className="routine-touch-select mt-1"
               value={habitDraft.categoryId || ""}
               onChange={(e) => {
                 const id = e.target.value;
@@ -956,12 +956,17 @@ function SettingsSection({
 
       <section className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card space-y-3">
         <h2 className="text-xs font-bold text-subtle uppercase tracking-widest">Теги</h2>
-        <div className="flex gap-2">
-          <Input className="!h-10 flex-1" placeholder="Новий тег" value={tagDraft} onChange={(e) => setTagDraft(e.target.value)} />
+        <div className="flex gap-2 items-stretch">
+          <Input
+            className="routine-touch-field min-w-0 flex-1"
+            placeholder="Новий тег"
+            value={tagDraft}
+            onChange={(e) => setTagDraft(e.target.value)}
+          />
           <Button
             type="button"
             variant="ghost"
-            className="shrink-0 border border-line/70"
+            className="min-h-[44px] shrink-0 border border-line/70 px-4"
             onClick={() => {
               setRoutine((s) => createTag(s, tagDraft));
               setTagDraft("");
@@ -992,20 +997,20 @@ function SettingsSection({
 
       <section className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card space-y-3">
         <h2 className="text-xs font-bold text-subtle uppercase tracking-widest">Категорії</h2>
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex flex-wrap gap-2 items-stretch">
           <Input
-            className="!h-10 max-w-[4rem]"
+            className="routine-touch-field w-16 shrink-0"
             placeholder="🏠"
             value={catDraft.emoji}
             onChange={(e) => setCatDraft((d) => ({ ...d, emoji: e.target.value }))}
           />
           <Input
-            className="!h-10 flex-1 min-w-[120px]"
+            className="routine-touch-field min-w-0 flex-1 basis-[min(100%,14rem)]"
             placeholder="Назва категорії"
             value={catDraft.name}
             onChange={(e) => setCatDraft((d) => ({ ...d, name: e.target.value }))}
           />
-          <Button type="button" variant="ghost" className="border border-line/70" onClick={() => {
+          <Button type="button" variant="ghost" className="min-h-[44px] w-full min-w-0 border border-line/70 sm:w-auto sm:min-w-[7rem]" onClick={() => {
             setRoutine((s) => createCategory(s, catDraft.name, catDraft.emoji));
             setCatDraft({ name: "", emoji: "" });
           }}

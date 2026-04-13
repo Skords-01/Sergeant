@@ -67,6 +67,26 @@
     padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px));
   }
 
+  /* Горизонтальні safe-area (вирізи) */
+  .routine-main-pad {
+    padding-left: max(1rem, env(safe-area-inset-left, 0px));
+    padding-right: max(1rem, env(safe-area-inset-right, 0px));
+  }
+
+  /* Bottom sheet Рутини — контент не під таб-баром */
+  .routine-sheet-pad {
+    padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* Поля: без стрибка масштабу на iOS (≥16px) + мінімальна зона дотику */
+  .routine-touch-field {
+    @apply min-h-[44px] text-[16px] leading-normal md:text-sm;
+  }
+
+  .routine-touch-select {
+    @apply min-h-[44px] w-full rounded-2xl border border-line bg-panelHi px-3 outline-none text-[16px] leading-normal md:text-sm focus:border-[#e0786c]/80;
+  }
+
   /* Коралово-персиковий hero без дублювання логіки Фізрука */
   .routine-hero-card {
     @apply rounded-3xl p-5 border shadow-card;
@@ -88,6 +108,11 @@
   .fizruk-sheet button:focus-visible,
   .fizruk-sheet a:focus-visible {
     @apply outline-none ring-2 ring-forest/45 ring-offset-2 ring-offset-panel rounded-lg;
+  }
+
+  .routine-sheet button:focus-visible,
+  .routine-sheet a:focus-visible {
+    @apply outline-none ring-2 ring-[#e0786c]/50 ring-offset-2 ring-offset-panel rounded-xl;
   }
 }
 

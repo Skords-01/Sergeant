@@ -66,22 +66,21 @@ export function PushupsWidget() {
       </section>
 
       {open && (
-        <div className="fixed inset-0 z-[100] flex items-end justify-center" role="presentation">
+        <div className="routine-sheet fixed inset-0 z-[200] flex items-end justify-center" role="presentation">
           <button type="button" className="absolute inset-0 bg-black/60 backdrop-blur-sm" aria-label="Закрити" onClick={() => setOpen(false)} />
           <div
             ref={ref}
-            className="relative w-full max-w-4xl bg-panel border-t border-line rounded-t-3xl p-5 shadow-soft"
-            style={{ paddingBottom: "max(1.25rem, env(safe-area-inset-bottom))" }}
+            className="routine-sheet-pad relative max-h-[min(92dvh,100%)] w-full max-w-4xl overflow-y-auto overflow-x-hidden rounded-t-3xl border-t border-line bg-panel p-5 shadow-soft"
             role="dialog"
             aria-modal="true"
             aria-labelledby="routine-pushup-modal-title"
           >
-            <div className="w-10 h-1 bg-line rounded-full mx-auto mb-4" aria-hidden />
+            <div className="w-10 h-1 shrink-0 rounded-full bg-line mx-auto mb-4" aria-hidden />
             <div id="routine-pushup-modal-title" className="text-lg font-extrabold text-text mb-4">
               Додати відтискання
             </div>
 
-            <div className="flex gap-2 mb-4">
+            <div className="mb-4 grid grid-cols-5 gap-1.5 sm:gap-2">
               {[5, 10, 15, 20, 25].map((n) => (
                 <button
                   key={n}
@@ -90,15 +89,15 @@ export function PushupsWidget() {
                     addReps(n);
                     setOpen(false);
                   }}
-                  className="flex-1 py-3 rounded-2xl font-bold text-sm border transition-colors active:opacity-90 bg-[#fff0eb] text-[#b45348] border-[#f5c4b8]/80"
+                  className="min-h-[44px] rounded-2xl border border-[#f5c4b8]/80 bg-[#fff0eb] px-1 py-2.5 text-center text-xs font-bold text-[#b45348] transition-colors active:opacity-90 sm:px-2 sm:text-sm"
                 >
                   +{n}
                 </button>
               ))}
             </div>
 
-            <p className="text-xs text-subtle mb-2 text-center">або введи кількість вручну</p>
-            <div className="flex gap-2">
+            <p className="mb-2 text-center text-xs text-subtle">або введи кількість вручну</p>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
               <input
                 type="number"
                 inputMode="numeric"
@@ -107,7 +106,7 @@ export function PushupsWidget() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Скільки?"
-                className="flex-1 h-12 rounded-2xl border border-line bg-panelHi px-4 text-base text-text outline-none focus:border-[#e0786c]"
+                className="routine-touch-field min-h-[48px] min-w-0 flex-1 rounded-2xl border border-line bg-panelHi px-4 text-text outline-none focus:border-[#e0786c] [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && input) {
                     addReps(Number(input));
@@ -118,7 +117,10 @@ export function PushupsWidget() {
               />
               <button
                 type="button"
-                className={cn("h-12 px-6 rounded-2xl font-bold text-[15px] disabled:opacity-40", C.primary)}
+                className={cn(
+                  "min-h-[48px] w-full shrink-0 rounded-2xl px-6 text-base font-bold disabled:opacity-40 sm:w-auto sm:min-w-[7rem]",
+                  C.primary,
+                )}
                 disabled={!input || Number(input) <= 0}
                 onClick={() => {
                   addReps(Number(input));
@@ -128,7 +130,7 @@ export function PushupsWidget() {
                 Додати
               </button>
             </div>
-            <p className="text-xs text-subtle mt-3 text-center">
+            <p className="mt-3 text-center text-xs text-subtle">
               Сьогодні: <span className="font-bold text-text">{todayCount}</span>
             </p>
           </div>
