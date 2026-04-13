@@ -82,7 +82,7 @@ function mondayStartMs(d) {
 export function Workouts() {
   const { exercises, search, primaryGroupsUk, musclesUk, musclesByPrimaryGroup, addExercise, removeExercise } = useExerciseCatalog();
   const rec = useRecovery();
-  const { workouts, createWorkout, deleteWorkout, endWorkout, addItem, updateItem, removeItem } = useWorkouts();
+  const { workouts, createWorkout, updateWorkout, deleteWorkout, endWorkout, addItem, updateItem, removeItem } = useWorkouts();
   const templateApi = useWorkoutTemplates();
   const [q, setQ] = useState("");
   const [selected, setSelected] = useState(null);
