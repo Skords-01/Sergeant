@@ -3,6 +3,7 @@ import { cn } from "@shared/lib/cn";
 import { useDialogFocusTrap } from "@shared/hooks/useDialogFocusTrap";
 import { useRoutinePushups } from "../hooks/useRoutinePushups.js";
 import { useVisualKeyboardInset } from "../hooks/useVisualKeyboardInset.js";
+import { dateKeyFromDate } from "../lib/hubCalendarAggregate.js";
 
 const C = {
   primary: "!bg-routine hover:!bg-routine-hover !text-white border-0",
@@ -69,8 +70,7 @@ export function PushupsWidget() {
             <div className="flex items-end gap-1 h-10">
               {recentHistory.map((d) => {
                 const max = Math.max(...recentHistory.map((x) => x.total), 1);
-                const isToday =
-                  d.date === new Date().toISOString().slice(0, 10);
+                const isToday = d.date === dateKeyFromDate(new Date());
                 const pct = d.total / max;
                 return (
                   <div
