@@ -1,0 +1,13 @@
+# Мінімальний образ лише для Hub API (Railway / Docker).
+# Збірка: docker build -f Dockerfile.api -t hub-api .
+FROM node:20-alpine
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev
+
+COPY api ./api
+COPY server ./server
+
+ENV NODE_ENV=production
+CMD ["node", "server/railway.mjs"]

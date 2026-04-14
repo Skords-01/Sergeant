@@ -7,6 +7,7 @@ import {
   getMonoTotals,
   resolveExpenseCategoryMeta,
 } from "../utils";
+import { apiUrl } from "@shared/lib/apiUrl.js";
 import { cn } from "@shared/lib/cn";
 
 export function Chat({ mono, storage }) {
@@ -156,7 +157,7 @@ export function Chat({ mono, storage }) {
     setInput("");
     setLoading(true);
     try {
-      const res = await fetch("/api/chat", {
+      const res = await fetch(apiUrl("/api/chat"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -186,7 +187,7 @@ export function Chat({ mono, storage }) {
         }));
 
         // Send results back to get final AI response
-        const res2 = await fetch("/api/chat", {
+        const res2 = await fetch(apiUrl("/api/chat"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({

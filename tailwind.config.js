@@ -49,6 +49,13 @@ export default {
           ring: "#f0a090",
           done: "#b91c1c",
         },
+        /** Модуль «Харчування» — помаранчевий акцент (локально для UI-станів) */
+        nutrition: {
+          DEFAULT: "#f97316", // orange-500
+          hover: "#ea580c", // orange-600
+          soft: "#fff7ed", // orange-50
+          ring: "#fed7aa", // orange-200
+        },
       },
       borderRadius: {
         "2xl": "16px",

@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "start": "node server/railway.mjs",
     "dev": "vite",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -10,12 +11,13 @@
     "lint:imports": "node scripts/check-imports.mjs",
     "build": "node scripts/check-imports.mjs && vite build",
     "preview": "vite preview",
-    "test": "vitest run",
-    "test:watch": "vitest"
+    "test": "node scripts/vitest.mjs run",
+    "test:watch": "node scripts/vitest.mjs"
   },
   "dependencies": {
     "body-highlighter": "^3.0.2",
     "clsx": "^2.1.1",
+    "express": "^4.22.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-markdown": "^9.0.1",
@@ -42,6 +44,6 @@
   },
   "type": "module",
   "engines": {
-    "node": ">=20.0.0"
+    "node": "20.x"
   }
 }

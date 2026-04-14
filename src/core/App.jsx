@@ -52,9 +52,10 @@ const HubChat = lazy(() => import("./HubChat"));
 
 const FinykApp = lazy(() => import("../modules/finyk/FinykApp"));
 const FizrukApp = lazy(() => import("../modules/fizruk/FizrukApp"));
+const NutritionApp = lazy(() => import("../modules/nutrition/NutritionApp"));
 
 const HUB_MODULE_KEY = "hub_last_module";
-const VALID_MODULES = new Set(["finyk", "fizruk", "routine"]);
+const VALID_MODULES = new Set(["finyk", "fizruk", "routine", "nutrition"]);
 
 function readInitialModule() {
   if (typeof window === "undefined") return null;
@@ -204,6 +205,31 @@ const MODULES = [
       </svg>
     ),
   },
+  {
+    id: "nutrition",
+    label: "ХАРЧУВАННЯ",
+    desc: "Фото → КБЖВ · Рецепти · Поради",
+    gradient: "from-lime-400/15 to-emerald-400/10",
+    iconClass: "bg-lime-500/12 text-lime-700",
+    icon: (
+      <svg
+        width="32"
+        height="32"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M4 11c0 6 4 10 8 10s8-4 8-10" />
+        <path d="M12 21V11" />
+        <path d="M7 5c0 2 1 3 2 4M17 5c0 2-1 3-2 4" />
+        <path d="M7 5c0-1 1-2 2-2s2 1 2 2c0 2-2 4-2 6" />
+        <path d="M17 5c0-1-1-2-2-2s-2 1-2 2c0 2 2 4 2 6" />
+      </svg>
+    ),
+  },
 ];
 
 function PageLoader() {
@@ -300,6 +326,11 @@ export default function App() {
   const goToHub = useCallback(() => {
     setActiveModule(null);
     persistModuleToUrlAndStorage(null);
+    try {
+      const url = new URL(window.location.href);
+      url.hash = "";
+      window.history.replaceState(null, "", url);
+    } catch {}
   }, []);
 
   const openModule = useCallback((id, opts = {}) => {
@@ -521,6 +552,9 @@ export default function App() {
           {activeModule === "fizruk" && <FizrukApp onBackToHub={goToHub} />}
           {activeModule === "routine" && (
             <RoutineApp onBackToHub={goToHub} onOpenModule={openModule} />
+          )}
+          {activeModule === "nutrition" && (
+            <NutritionApp onBackToHub={goToHub} />
           )}
         </ModuleErrorBoundary>
       </Suspense>
