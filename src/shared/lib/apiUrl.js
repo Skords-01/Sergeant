@@ -6,7 +6,7 @@ export function apiUrl(path) {
   const raw =
     typeof import.meta !== "undefined" && import.meta.env?.VITE_API_BASE_URL
       ? String(import.meta.env.VITE_API_BASE_URL).trim()
-      : "";
+      : "https://sergeant-production.up.railway.app";
   const base = raw.replace(/\/$/, "");
   const p = path.startsWith("/") ? path : `/${path}`;
   return base ? `${base}${p}` : p;
