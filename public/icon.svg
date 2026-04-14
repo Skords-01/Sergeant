@@ -1,34 +1,83 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
   <defs>
-    <clipPath id="iconClip">
-      <rect x="0" y="0" width="1024" height="1024" rx="224"/>
+    <clipPath id="clip">
+      <rect width="1024" height="1024" rx="230"/>
     </clipPath>
+    <radialGradient id="bggrad" cx="40%" cy="35%" r="75%">
+      <stop offset="0%" stop-color="#1c2c48"/>
+      <stop offset="100%" stop-color="#0b1120"/>
+    </radialGradient>
+    <filter id="glow-green" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="18" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="glow-sky" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="18" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="glow-coral" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="18" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
   </defs>
 
-  <rect x="0" y="0" width="1024" height="1024" rx="224" fill="#1a6b47"/>
-  <rect x="0" y="512" width="1024" height="512" fill="#0f4a30" clip-path="url(#iconClip)"/>
+  <!-- Background -->
+  <rect width="1024" height="1024" rx="230" fill="url(#bggrad)"/>
 
-  <g clip-path="url(#iconClip)">
-    <rect x="88"  y="720" width="92" height="220" rx="14" fill="rgba(255,255,255,0.25)"/>
-    <rect x="208" y="648" width="92" height="292" rx="14" fill="rgba(255,255,255,0.45)"/>
-    <rect x="328" y="576" width="92" height="364" rx="14" fill="rgba(255,255,255,0.7)"/>
-    <rect x="448" y="612" width="92" height="328" rx="14" fill="rgba(255,255,255,0.5)"/>
-    <rect x="568" y="528" width="92" height="412" rx="14" fill="rgba(255,255,255,0.75)"/>
-    <rect x="688" y="472" width="92" height="468" rx="14" fill="rgba(255,255,255,0.9)"/>
-    <rect x="808" y="552" width="92" height="388" rx="14" fill="rgba(255,255,255,0.55)"/>
+  <g clip-path="url(#clip)">
+    <!-- Subtle top-center shimmer -->
+    <ellipse cx="512" cy="200" rx="320" ry="120" fill="rgba(255,255,255,0.03)"/>
 
-    <path d="M460 420 Q490 320 540 260 Q500 285 440 300 Q390 312 360 335 Q410 322 435 328 Q400 350 375 395 Q415 372 450 365 Q455 392 460 420Z" fill="#3dbf7e"/>
-    <path d="M540 260 Q580 170 635 140 Q600 172 585 220 Q565 245 540 260Z" fill="#4fd98e"/>
-    <path d="M540 260 Q565 200 605 150 Q575 175 555 215 Q546 238 540 260Z" fill="#2da865"/>
-    <path d="M540 260 Q515 225 470 195 Q505 212 530 242 Q536 251 540 260Z" fill="#4fd98e"/>
-    <path d="M540 260 Q580 245 635 228 Q598 240 568 256 Q554 260 540 260Z" fill="#2da865"/>
-    <path d="M540 260 Q525 310 518 375 Q532 318 545 288 Q544 273 540 260Z" fill="#f5c842"/>
-    <path d="M540 260 Q555 310 560 375 Q548 318 540 290 Q538 274 540 260Z" fill="#e0a800"/>
+    <!-- Connection lines from hub to nodes -->
+    <line x1="512" y1="512" x2="512" y2="238" stroke="rgba(255,255,255,0.12)" stroke-width="8" stroke-linecap="round"/>
+    <line x1="512" y1="512" x2="734" y2="654" stroke="rgba(255,255,255,0.12)" stroke-width="8" stroke-linecap="round"/>
+    <line x1="512" y1="512" x2="290" y2="654" stroke="rgba(255,255,255,0.12)" stroke-width="8" stroke-linecap="round"/>
 
-    <circle cx="820" cy="240" r="120" fill="#f5c842"/>
-    <circle cx="820" cy="240" r="95"  fill="#e0a800"/>
-    <text x="820" y="265" text-anchor="middle" font-family="-apple-system, Arial, sans-serif" font-weight="800" font-size="90" fill="#f5c842">₴</text>
+    <!-- Finyk node (emerald, top) glow -->
+    <circle cx="512" cy="238" r="145" fill="#16a34a" opacity="0.18"/>
+    <!-- Finyk node solid -->
+    <circle cx="512" cy="238" r="108" fill="#16a34a"/>
+    <circle cx="512" cy="238" r="108" fill="url(#finyk-shine)" opacity="0.3"/>
+    <!-- Finyk icon: bar chart uptrend -->
+    <rect x="455" y="262" width="26" height="42" rx="6" fill="white" opacity="0.55"/>
+    <rect x="489" y="246" width="26" height="58" rx="6" fill="white" opacity="0.78"/>
+    <rect x="523" y="230" width="26" height="74" rx="6" fill="white"/>
+    <!-- Finyk hryvnia sign -->
+    <text x="512" y="214" text-anchor="middle" font-family="-apple-system, Arial" font-weight="800" font-size="38" fill="white" opacity="0.9">₴</text>
+
+    <!-- Fizruk node (sky blue, bottom-right) glow -->
+    <circle cx="734" cy="654" r="145" fill="#0ea5e9" opacity="0.18"/>
+    <!-- Fizruk node solid -->
+    <circle cx="734" cy="654" r="108" fill="#0ea5e9"/>
+    <!-- Fizruk icon: dumbbell -->
+    <rect x="680" y="645" width="108" height="18" rx="9" fill="white"/>
+    <rect x="670" y="628" width="22" height="52" rx="8" fill="white"/>
+    <rect x="776" y="628" width="22" height="52" rx="8" fill="white"/>
+    <rect x="653" y="636" width="20" height="36" rx="6" fill="white" opacity="0.7"/>
+    <rect x="795" y="636" width="20" height="36" rx="6" fill="white" opacity="0.7"/>
+
+    <!-- Routine node (coral, bottom-left) glow -->
+    <circle cx="290" cy="654" r="145" fill="#e0786c" opacity="0.18"/>
+    <!-- Routine node solid -->
+    <circle cx="290" cy="654" r="108" fill="#e0786c"/>
+    <!-- Routine icon: calendar with checkmark -->
+    <rect x="242" y="624" width="96" height="80" rx="10" fill="white" opacity="0.2" stroke="white" stroke-width="7"/>
+    <line x1="242" y1="648" x2="338" y2="648" stroke="white" stroke-width="7"/>
+    <line x1="266" y1="614" x2="266" y2="635" stroke="white" stroke-width="7" stroke-linecap="round"/>
+    <line x1="314" y1="614" x2="314" y2="635" stroke="white" stroke-width="7" stroke-linecap="round"/>
+    <!-- Check mark -->
+    <polyline points="262,672 278,688 318,660" fill="none" stroke="white" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <!-- Hub center: white ring -->
+    <circle cx="512" cy="512" r="72" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.20)" stroke-width="3"/>
+    <!-- Hub center dot -->
+    <circle cx="512" cy="512" r="50" fill="white" opacity="0.95"/>
+    <!-- Hub: three-dot grid icon in center -->
+    <circle cx="494" cy="502" r="7" fill="#0b1120"/>
+    <circle cx="512" cy="502" r="7" fill="#0b1120"/>
+    <circle cx="530" cy="502" r="7" fill="#0b1120"/>
+    <circle cx="494" cy="520" r="7" fill="#0b1120"/>
+    <circle cx="512" cy="520" r="7" fill="#0b1120"/>
+    <circle cx="530" cy="520" r="7" fill="#0b1120"/>
   </g>
-
-  <text x="512" y="930" text-anchor="middle" font-family="-apple-system, 'SF Pro Rounded', Arial Rounded MT Bold, Arial, sans-serif" font-weight="700" font-size="108" letter-spacing="-2" fill="white">фінік</text>
 </svg>

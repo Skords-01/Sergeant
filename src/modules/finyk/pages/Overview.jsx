@@ -301,11 +301,7 @@ export function Overview({
   const monthBalance = income - spent;
   const spendPct = Math.min(100, income > 0 ? (spent / income) * 100 : 0);
   const expenseFromIncomeBarClass =
-    spendPct > 75
-      ? "bg-danger"
-      : spendPct > 50
-        ? "bg-warning"
-        : "bg-success";
+    spendPct > 75 ? "bg-danger" : spendPct > 50 ? "bg-warning" : "bg-success";
   const showMonthForecast = showBalance && daysPassed > 0 && projectedSpend > 0;
   const forecastTrendPct = showMonthForecast
     ? Math.min(100, Math.round((spent / projectedSpend) * 100))
@@ -769,8 +765,7 @@ export function Overview({
                       pct >= 100 ? "text-danger" : "text-warning",
                     )}
                   >
-                    {pct}%{" "}
-                    {pct >= 100 ? "⚠ перевищено" : "· понад 60% ліміту"}
+                    {pct}% {pct >= 100 ? "⚠ перевищено" : "· понад 60% ліміту"}
                   </span>
                 </div>
               );

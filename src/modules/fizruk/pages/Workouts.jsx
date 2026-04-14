@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Input } from "@shared/components/ui/Input";
 import { Button } from "@shared/components/ui/Button";
+import { ConfirmDialog } from "@shared/components/ui/ConfirmDialog";
+import { EmptyState } from "@shared/components/ui/EmptyState";
 import { cn } from "@shared/lib/cn";
 import { useDialogFocusTrap } from "@shared/hooks/useDialogFocusTrap";
 import { WorkoutTemplatesSection } from "../components/WorkoutTemplatesSection";
@@ -85,6 +87,9 @@ export function Workouts() {
   });
   const [finishFlash, setFinishFlash] = useState(null);
   const [journalLimit, setJournalLimit] = useState(12);
+  const [deleteWorkoutConfirm, setDeleteWorkoutConfirm] = useState(false);
+  const [deleteExerciseConfirm, setDeleteExerciseConfirm] = useState(false);
+  const [riskyTemplateConfirm, setRiskyTemplateConfirm] = useState(null); // stores template when risky
   const [now, setNow] = useState(Date.now());
   const [retroOpen, setRetroOpen] = useState(false);
   const [retroDate, setRetroDate] = useState(() => {
@@ -247,10 +252,8 @@ export function Workouts() {
         (ex) => recoveryConflictsForExercise(ex, rec.by).hasWarning,
       );
       if (risky) {
-        const ok = window.confirm(
-          "У шаблоні є вправи на групи мʼязів, які ще відновлюються. Почати тренування все одно?",
-        );
-        if (!ok) return;
+        setRiskyTemplateConfirm(tpl);
+        return;
       }
       const w = createWorkout();
       for (const ex of picks) {
@@ -571,14 +574,7 @@ export function Workouts() {
                     });
                   }
                 }}
-                onDeleteWorkout={() => {
-                  if (confirm("Видалити тренування?")) {
-                    deleteWorkout(activeWorkout.id);
-                    setActiveWorkoutId((prev) =>
-                      prev === activeWorkout.id ? null : prev,
-                    );
-                  }
-                }}
+                onDeleteWorkout={() => setDeleteWorkoutConfirm(true)}
               />
             )}
 
@@ -588,6 +584,27 @@ export function Workouts() {
                   Останні тренування
                 </div>
               </div>
+              {(workouts || []).length === 0 && (
+                <EmptyState
+                  compact
+                  icon={
+                    <svg
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.6"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M6.5 6.5h11M6.5 17.5h11M3 12h18M6 9l-3 3 3 3M18 9l3 3-3 3" />
+                    </svg>
+                  }
+                  title="Поки немає тренувань"
+                  description="Натисни «+ Нове тренування» щоб почати"
+                />
+              )}
               {(workouts || []).slice(0, journalLimit).map((w) => (
                 <button
                   key={w.id}
@@ -976,10 +993,7 @@ export function Workouts() {
                     <Button
                       variant="danger"
                       className="w-full h-12"
-                      onClick={() => {
-                        if (!confirm("Видалити цю вправу з каталогу?")) return;
-                        if (removeExercise(selected.id)) setSelected(null);
-                      }}
+                      onClick={() => setDeleteExerciseConfirm(true)}
                     >
                       Видалити з каталогу
                     </Button>
@@ -1288,6 +1302,74 @@ export function Workouts() {
           updateWorkout={updateWorkout}
         />
       </div>
+
+      {/* Confirmation dialogs */}
+      <ConfirmDialog
+        open={deleteWorkoutConfirm}
+        title="Видалити тренування?"
+        description="Дані цього тренування будуть втрачені назавжди."
+        confirmLabel="Видалити"
+        onConfirm={() => {
+          if (activeWorkout) {
+            deleteWorkout(activeWorkout.id);
+            setActiveWorkoutId((prev) =>
+              prev === activeWorkout.id ? null : prev,
+            );
+          }
+          setDeleteWorkoutConfirm(false);
+        }}
+        onCancel={() => setDeleteWorkoutConfirm(false)}
+      />
+
+      <ConfirmDialog
+        open={deleteExerciseConfirm}
+        title="Видалити вправу?"
+        description="Вправу буде видалено з каталогу. Записи в тренуваннях залишаться."
+        confirmLabel="Видалити"
+        onConfirm={() => {
+          if (selected && removeExercise(selected.id)) setSelected(null);
+          setDeleteExerciseConfirm(false);
+        }}
+        onCancel={() => setDeleteExerciseConfirm(false)}
+      />
+
+      <ConfirmDialog
+        open={!!riskyTemplateConfirm}
+        title="М'язи ще відновлюються"
+        description="У шаблоні є вправи на групи м'язів, які ще не відновились. Почати тренування все одно?"
+        confirmLabel="Так, почати"
+        cancelLabel="Скасувати"
+        danger={false}
+        onConfirm={() => {
+          const tpl = riskyTemplateConfirm;
+          setRiskyTemplateConfirm(null);
+          if (!tpl) return;
+          const picks = (tpl?.exerciseIds || [])
+            .map((id) => exercises.find((e) => e.id === id))
+            .filter(Boolean);
+          const w = createWorkout();
+          for (const ex of picks) {
+            const isCardio = ex.primaryGroup === "cardio";
+            addItem(w.id, {
+              exerciseId: ex.id,
+              nameUk: ex?.name?.uk || ex?.name?.en,
+              primaryGroup: ex.primaryGroup,
+              musclesPrimary: ex?.muscles?.primary || [],
+              musclesSecondary: ex?.muscles?.secondary || [],
+              type: isCardio ? "distance" : "strength",
+              sets: isCardio ? undefined : [{ weightKg: 0, reps: 0 }],
+              durationSec: 0,
+              distanceM: isCardio ? 0 : 0,
+            });
+          }
+          try {
+            localStorage.setItem(ACTIVE_WORKOUT_KEY, w.id);
+          } catch {}
+          setActiveWorkoutId(w.id);
+          setMode("log");
+        }}
+        onCancel={() => setRiskyTemplateConfirm(null)}
+      />
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { chartPalette } from "./src/modules/finyk/constants/chartPalette.js";
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ["./index.html", "./src/**/*.{js,jsx,ts,tsx}"],
+  darkMode: "class",
   theme: {
     extend: {
       fontFamily: {
@@ -15,17 +16,20 @@ export default {
         ],
       },
       colors: {
-        bg: "#f0f3f8", // light blue-gray page bg
-        panel: "#ffffff", // white cards
-        panelHi: "#f5f7fc", // hover/input bg
-        line: "#e2e8f4", // subtle border
-        text: "#0d1726", // near-black
-        muted: "#607590", // medium slate
-        subtle: "#96a8bc", // light slate (labels)
-        primary: "#0d1726", // ink color (same as text) — used sparingly
-        success: "#16a34a", // green
-        danger: "#dc2626", // red
-        warning: "#b45309", // amber
+        // Semantic UI colors — defined as CSS variables so dark mode works
+        // automatically without adding dark: prefix to every element.
+        bg: "rgb(var(--c-bg) / <alpha-value>)",
+        panel: "rgb(var(--c-panel) / <alpha-value>)",
+        panelHi: "rgb(var(--c-panel-hi) / <alpha-value>)",
+        line: "rgb(var(--c-line) / <alpha-value>)",
+        text: "rgb(var(--c-text) / <alpha-value>)",
+        muted: "rgb(var(--c-muted) / <alpha-value>)",
+        subtle: "rgb(var(--c-subtle) / <alpha-value>)",
+        primary: "rgb(var(--c-primary) / <alpha-value>)",
+        // Static accent/status colors (unchanged in dark mode)
+        success: "#16a34a",
+        danger: "#dc2626",
+        warning: "#b45309",
         accent: "#a3e635", // lime-green CTA (hero buttons)
         forest: "#0f2d1a", // dark green hero card background
         /** Фінік: сегменти діаграми категорій (джерело — chartPalette.js) */
@@ -59,13 +63,10 @@ export default {
         "4xl": "32px",
       },
       boxShadow: {
-        // overlay / sheets
-        soft: "0 8px 48px rgba(13,23,38,0.16)",
-        // regular cards — two-layer: tight contact + wide ambient
-        card: "0 1px 2px rgba(13,23,38,0.05), 0 6px 24px rgba(13,23,38,0.10), inset 0 1px 0 rgba(255,255,255,0.80)",
-        // hero / elevated cards — more pronounced lift
-        float:
-          "0 2px 6px rgba(13,23,38,0.07), 0 16px 48px rgba(13,23,38,0.14), inset 0 1px 0 rgba(255,255,255,0.70)",
+        // Use CSS variables so shadows adapt to dark mode automatically
+        soft: "var(--shadow-soft)",
+        card: "var(--shadow-card)",
+        float: "var(--shadow-float)",
         glow: "0 0 0 3px rgba(22,163,74,0.15)",
       },
       backgroundImage: {

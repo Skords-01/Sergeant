@@ -1,6 +1,7 @@
 import { useRef, useState, useMemo, useId } from "react";
 import { cn } from "@shared/lib/cn";
 import { Button } from "@shared/components/ui/Button";
+import { ConfirmDialog } from "@shared/components/ui/ConfirmDialog";
 import { Input } from "@shared/components/ui/Input";
 import {
   loadRoutineState,
@@ -46,6 +47,8 @@ export function RoutineSettingsSection({
   const [editingId, setEditingId] = useState(null);
   const [dragId, setDragId] = useState(null);
   const [habitListQuery, setHabitListQuery] = useState("");
+  // Confirm dialog state: stores { id, name, archived } of habit to delete
+  const [deleteHabitPending, setDeleteHabitPending] = useState(null);
   const backupRef = useRef(null);
   const habitDateFieldIds = useId();
   const habitStartDateId = `${habitDateFieldIds}-start`;
@@ -676,16 +679,13 @@ export function RoutineSettingsSection({
                       variant="ghost"
                       size="sm"
                       className="!h-9 !px-3 !text-xs text-danger border border-danger/25"
-                      onClick={() => {
-                        if (
-                          window.confirm(
-                            `Видалити звичку «${h.name}»? Відмітки по днях теж зникнуть.`,
-                          )
-                        ) {
-                          setRoutine((s) => deleteHabit(s, h.id));
-                          if (editingId === h.id) cancelEdit();
-                        }
-                      }}
+                      onClick={() =>
+                        setDeleteHabitPending({
+                          id: h.id,
+                          name: h.name,
+                          archived: false,
+                        })
+                      }
                     >
                       Видалити
                     </Button>
@@ -733,11 +733,13 @@ export function RoutineSettingsSection({
                       variant="ghost"
                       size="sm"
                       className="!h-9 !px-3 !text-xs text-danger border border-danger/25"
-                      onClick={() => {
-                        if (window.confirm(`Видалити «${h.name}» назавжди?`)) {
-                          setRoutine((s) => deleteHabit(s, h.id));
-                        }
-                      }}
+                      onClick={() =>
+                        setDeleteHabitPending({
+                          id: h.id,
+                          name: h.name,
+                          archived: true,
+                        })
+                      }
                     >
                       Видалити
                     </Button>
@@ -747,6 +749,33 @@ export function RoutineSettingsSection({
           </ul>
         </section>
       )}
+
+      <ConfirmDialog
+        open={!!deleteHabitPending}
+        title={
+          deleteHabitPending?.archived
+            ? `Видалити «${deleteHabitPending?.name}» назавжди?`
+            : `Видалити звичку «${deleteHabitPending?.name}»?`
+        }
+        description={
+          deleteHabitPending?.archived
+            ? "Звичку буде видалено повністю разом з усіма відмітками."
+            : "Відмітки по днях теж зникнуть. Замість видалення можна відправити звичку в архів."
+        }
+        confirmLabel="Видалити"
+        onConfirm={() => {
+          if (deleteHabitPending) {
+            setRoutine((s) => deleteHabit(s, deleteHabitPending.id));
+            if (
+              !deleteHabitPending.archived &&
+              editingId === deleteHabitPending.id
+            )
+              cancelEdit();
+          }
+          setDeleteHabitPending(null);
+        }}
+        onCancel={() => setDeleteHabitPending(null)}
+      />
     </div>
   );
 }

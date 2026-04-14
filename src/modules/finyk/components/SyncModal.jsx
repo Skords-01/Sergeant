@@ -1,8 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@shared/components/ui/Button";
 import { cn } from "@shared/lib/cn";
+import { useDialogFocusTrap } from "@shared/hooks/useDialogFocusTrap";
 
 export function SyncModal({ storage, onClose }) {
+  const trapRef = useRef(null);
+  useDialogFocusTrap(true, trapRef, { onEscape: onClose });
   const [url, setUrl] = useState(null);
   const [copied, setCopied] = useState(false);
   const canShare = typeof navigator !== "undefined" && !!navigator.share;
@@ -53,10 +56,12 @@ export function SyncModal({ storage, onClose }) {
       />
 
       <div
+        ref={trapRef}
         className="relative w-full bg-panel border-t border-line rounded-t-3xl shadow-soft safe-area-pb-16"
         onPointerDown={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
+        aria-labelledby="sync-modal-title"
       >
         {/* Drag handle */}
         <div className="flex justify-center pt-3 pb-1">
@@ -66,16 +71,32 @@ export function SyncModal({ storage, onClose }) {
         <div className="px-5 pb-6">
           <div className="flex items-start justify-between mb-4">
             <div>
-              <div className="text-lg font-bold">Синхронізація</div>
+              <div id="sync-modal-title" className="text-lg font-bold">
+                Синхронізація
+              </div>
               <div className="text-sm text-muted mt-0.5">
                 Перенести налаштування на інший пристрій
               </div>
             </div>
             <button
               onClick={onClose}
-              className="w-8 h-8 flex items-center justify-center rounded-full bg-panelHi text-muted hover:text-text text-lg transition-colors"
+              aria-label="Закрити"
+              className="w-8 h-8 flex items-center justify-center rounded-full bg-panelHi text-muted hover:text-text transition-colors"
             >
-              ✕
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden
+              >
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
             </button>
           </div>
 

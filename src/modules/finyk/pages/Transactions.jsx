@@ -3,6 +3,7 @@ import { TxRow } from "../components/TxRow";
 import { getCategory, getIncomeCategory } from "../utils";
 import { mergeExpenseCategoryDefinitions } from "../constants";
 import { Skeleton } from "@shared/components/ui/Skeleton";
+import { EmptyState } from "@shared/components/ui/EmptyState";
 import { cn } from "@shared/lib/cn";
 
 const now = new Date();
@@ -69,6 +70,30 @@ export function Transactions({
   const [showHidden, setShowHidden] = useState(false);
   const [search, setSearch] = useState("");
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  // Batch selection
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState(new Set());
+  const [batchCatPicker, setBatchCatPicker] = useState(false);
+
+  const toggleSelect = (id) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const exitSelectMode = () => {
+    setSelectMode(false);
+    setSelectedIds(new Set());
+    setBatchCatPicker(false);
+  };
+
+  const applyBatchCategory = (catId) => {
+    for (const id of selectedIds) overrideCategory(id, catId);
+    exitSelectMode();
+  };
   const [selMonth, setSelMonth] = useState(() => ({
     year: now.getFullYear(),
     month: now.getMonth(),
@@ -235,24 +260,90 @@ export function Transactions({
             </button>
           </div>
           <div className="flex items-center gap-1.5">
-            {hiddenTxIds.length > 0 && (
+            {selectMode ? (
               <button
-                onClick={() => setShowHidden((v) => !v)}
-                className={cn(
-                  "text-xs px-3 py-2 rounded-full border border-line transition-colors min-h-[36px]",
-                  showHidden ? "text-primary border-primary" : "text-subtle",
-                )}
+                onClick={exitSelectMode}
+                className="text-xs px-3 py-2 rounded-full border border-primary/40 bg-primary/8 text-primary min-h-[36px] font-semibold"
               >
-                {showHidden ? "👁" : `🗑 ${hiddenTxIds.length}`}
+                Скасувати
               </button>
+            ) : (
+              <>
+                {hiddenTxIds.length > 0 && (
+                  <button
+                    onClick={() => setShowHidden((v) => !v)}
+                    className={cn(
+                      "text-xs px-3 py-2 rounded-full border border-line transition-colors min-h-[36px]",
+                      showHidden
+                        ? "text-primary border-primary"
+                        : "text-subtle",
+                    )}
+                  >
+                    {showHidden ? (
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        aria-hidden
+                      >
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                        <circle cx="12" cy="12" r="3" />
+                      </svg>
+                    ) : (
+                      <span>{hiddenTxIds.length} прих.</span>
+                    )}
+                  </button>
+                )}
+                <button
+                  onClick={() => setSelectMode(true)}
+                  className="text-xs px-3 py-2 rounded-full border border-line text-subtle hover:text-text hover:border-muted transition-colors min-h-[36px]"
+                  title="Вибрати кілька"
+                  aria-label="Режим вибору"
+                >
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden
+                  >
+                    <polyline points="9 11 12 14 22 4" />
+                    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+                  </svg>
+                </button>
+                <button
+                  onClick={refresh}
+                  disabled={activeLoading}
+                  className="text-xs px-3 py-2 rounded-full border border-line text-subtle hover:text-text hover:border-muted transition-colors disabled:opacity-40 min-h-[36px]"
+                  aria-label="Оновити"
+                >
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className={activeLoading ? "animate-spin" : ""}
+                    aria-hidden
+                  >
+                    <polyline points="23 4 23 10 17 10" />
+                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+                  </svg>
+                </button>
+              </>
             )}
-            <button
-              onClick={refresh}
-              disabled={activeLoading}
-              className="text-xs px-3 py-2 rounded-full border border-line text-subtle hover:text-text hover:border-muted transition-colors disabled:opacity-40 min-h-[36px]"
-            >
-              {activeLoading ? "⟳" : "🔄"}
-            </button>
           </div>
         </div>
 
@@ -361,26 +452,45 @@ export function Transactions({
 
         {/* Empty */}
         {filtered.length === 0 && !activeLoading && (
-          <div className="rounded-2xl border border-dashed border-line/60 bg-panelHi/40 px-6 py-12 text-center">
-            <p className="text-sm font-medium text-text">
-              {search.trim()
-                ? `Нічого не знайдено за «${search}»`
-                : "Немає транзакцій за цими умовами"}
-            </p>
-            <p className="text-xs text-subtle mt-2 max-w-sm mx-auto leading-relaxed">
-              {search.trim()
-                ? "Спробуй інший запит або очисть пошук."
-                : "Зміни місяць, фільтр або переключи «приховані», якщо вони є."}
-            </p>
-            {search.trim() && (
-              <button
-                type="button"
-                onClick={() => setSearch("")}
-                className="mt-4 text-sm font-semibold text-primary hover:underline"
-              >
-                Очистити пошук
-              </button>
-            )}
+          <div className="rounded-2xl border border-dashed border-line/60 bg-panelHi/40">
+            <EmptyState
+              icon={
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <circle cx="11" cy="11" r="8" />
+                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                </svg>
+              }
+              title={
+                search.trim()
+                  ? `Нічого не знайдено за «${search}»`
+                  : "Немає транзакцій"
+              }
+              description={
+                search.trim()
+                  ? "Спробуй інший запит або очисть пошук."
+                  : "Зміни місяць, фільтр або переключи «приховані», якщо вони є."
+              }
+              action={
+                search.trim() ? (
+                  <button
+                    type="button"
+                    onClick={() => setSearch("")}
+                    className="text-sm font-semibold text-primary hover:underline"
+                  >
+                    Очистити пошук
+                  </button>
+                ) : null
+              }
+            />
           </div>
         )}
 
@@ -399,22 +509,61 @@ export function Transactions({
                   <div
                     key={t.id}
                     className={cn(
-                      "px-1 sm:px-2",
+                      "px-1 sm:px-2 relative",
                       i % 2 === 1 && "bg-panelHi/25",
+                      selectMode && selectedIds.has(t.id) && "bg-primary/8",
                     )}
                   >
-                    <TxRow
-                      tx={t}
-                      onHide={hideTx}
-                      hidden={hiddenTxIds.includes(t.id)}
-                      overrideCatId={txCategories[t.id]}
-                      onCatChange={overrideCategory}
-                      accounts={accounts}
-                      hideAmount={!showBalance}
-                      txSplits={txSplits}
-                      onSplitChange={setSplitTx}
-                      customCategories={customCategories}
-                    />
+                    {selectMode && (
+                      <button
+                        type="button"
+                        aria-label={
+                          selectedIds.has(t.id) ? "Зняти вибір" : "Вибрати"
+                        }
+                        onClick={() => toggleSelect(t.id)}
+                        className="absolute inset-0 z-10 w-full h-full cursor-pointer"
+                      />
+                    )}
+                    {selectMode && (
+                      <span
+                        className={cn(
+                          "absolute left-3 top-1/2 -translate-y-1/2 z-20 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors",
+                          selectedIds.has(t.id)
+                            ? "bg-primary border-primary"
+                            : "border-muted bg-panel",
+                        )}
+                        aria-hidden
+                      >
+                        {selectedIds.has(t.id) && (
+                          <svg
+                            width="10"
+                            height="10"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="white"
+                            strokeWidth="3"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
+                        )}
+                      </span>
+                    )}
+                    <div className={cn(selectMode && "pl-8")}>
+                      <TxRow
+                        tx={t}
+                        onHide={hideTx}
+                        hidden={hiddenTxIds.includes(t.id)}
+                        overrideCatId={txCategories[t.id]}
+                        onCatChange={overrideCategory}
+                        accounts={accounts}
+                        hideAmount={!showBalance}
+                        txSplits={txSplits}
+                        onSplitChange={setSplitTx}
+                        customCategories={customCategories}
+                      />
+                    </div>
                   </div>
                 ))}
               </div>
@@ -440,6 +589,74 @@ export function Transactions({
           </div>
         )}
       </div>
+
+      {/* Batch action toolbar */}
+      {selectMode && (
+        <div className="fixed bottom-0 left-0 right-0 z-[60] safe-area-pb">
+          <div className="max-w-4xl mx-auto px-4 pb-[calc(58px+env(safe-area-inset-bottom,0px)+0.5rem)] pt-3">
+            <div className="bg-panel border border-line rounded-2xl shadow-float px-4 py-3 flex items-center justify-between gap-3">
+              <span className="text-sm font-semibold text-text">
+                {selectedIds.size > 0
+                  ? `${selectedIds.size} обрано`
+                  : "Оберіть транзакції"}
+              </span>
+              <div className="flex items-center gap-2">
+                {selectedIds.size > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setBatchCatPicker(true)}
+                    className="text-sm font-semibold px-4 py-2 rounded-xl bg-primary text-bg min-h-[40px] transition-colors"
+                  >
+                    Змінити категорію
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Batch category picker */}
+      {batchCatPicker && (
+        <div className="fixed inset-0 z-[70] flex items-end">
+          <div
+            className="absolute inset-0 bg-text/40 backdrop-blur-sm"
+            onClick={() => setBatchCatPicker(false)}
+            aria-hidden
+          />
+          <div className="relative z-10 w-full max-w-lg mx-auto bg-panel rounded-t-3xl border-t border-line shadow-soft max-h-[70vh] flex flex-col safe-area-pb">
+            <div className="flex justify-center pt-3 pb-1 shrink-0">
+              <div className="w-10 h-1 bg-line rounded-full" aria-hidden />
+            </div>
+            <div className="px-5 pb-3 shrink-0">
+              <div className="text-base font-bold text-text">
+                Вибрати категорію
+              </div>
+              <div className="text-xs text-subtle mt-0.5">
+                Застосується до {selectedIds.size} транзакц
+                {selectedIds.size === 1 ? "ії" : "ій"}
+              </div>
+            </div>
+            <div className="overflow-y-auto px-4 pb-6 flex flex-col gap-1">
+              {mergeExpenseCategoryDefinitions(customCategories)
+                .filter((c) => c.id !== "income")
+                .map((cat) => (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => applyBatchCategory(cat.id)}
+                    className="w-full text-left flex items-center gap-3 px-4 py-3 rounded-2xl hover:bg-panelHi transition-colors min-h-[48px]"
+                  >
+                    <span className="text-lg">{cat.emoji}</span>
+                    <span className="text-sm font-medium text-text">
+                      {cat.label}
+                    </span>
+                  </button>
+                ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

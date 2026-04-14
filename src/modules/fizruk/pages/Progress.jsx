@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@shared/components/ui/Button";
+import { ConfirmDialog } from "@shared/components/ui/ConfirmDialog";
 import { cn } from "@shared/lib/cn";
 import { useExerciseCatalog } from "../hooks/useExerciseCatalog";
 import { useMeasurements } from "../hooks/useMeasurements";
@@ -252,8 +253,9 @@ export function Progress() {
     window.location.reload();
   };
 
+  const [resetConfirm, setResetConfirm] = useState(false);
+
   const resetAll = () => {
-    if (!confirm("Скинути всі дані Фізрука на цьому пристрої?")) return;
     for (const k of FIZRUK_RESET_KEYS) {
       try {
         localStorage.removeItem(k);
@@ -648,7 +650,11 @@ export function Progress() {
             }}
           />
           <div className="mt-3">
-            <Button variant="danger" className="w-full h-12" onClick={resetAll}>
+            <Button
+              variant="danger"
+              className="w-full h-12"
+              onClick={() => setResetConfirm(true)}
+            >
               Скинути всі дані
             </Button>
           </div>
@@ -657,6 +663,18 @@ export function Progress() {
           </div>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={resetConfirm}
+        title="Скинути всі дані Фізрука?"
+        description="Усі тренування, вправи, шаблони та вимірювання будуть безповоротно видалені з цього пристрою. Рекомендуємо зробити експорт перед скиданням."
+        confirmLabel="Скинути все"
+        onConfirm={() => {
+          setResetConfirm(false);
+          resetAll();
+        }}
+        onCancel={() => setResetConfirm(false)}
+      />
     </div>
   );
 }

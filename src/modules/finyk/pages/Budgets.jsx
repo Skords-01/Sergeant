@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { Button } from "@shared/components/ui/Button";
 import { Skeleton } from "@shared/components/ui/Skeleton";
+import { EmptyState } from "@shared/components/ui/EmptyState";
 import {
   calcCategorySpent,
   getTxStatAmount,
@@ -215,9 +216,28 @@ export function Budgets({ mono, storage }) {
           Ліміти · {monthStart.toLocaleDateString("uk-UA", { month: "long" })}
         </div>
         {limitBudgets.length === 0 && (
-          <p className="text-xs text-subtle">
-            Встанови ліміт щоб не виходити за межі
-          </p>
+          <EmptyState
+            compact
+            icon={
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.6"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <rect x="3" y="4" width="18" height="18" rx="2" />
+                <line x1="16" y1="2" x2="16" y2="6" />
+                <line x1="8" y1="2" x2="8" y2="6" />
+                <line x1="3" y1="10" x2="21" y2="10" />
+              </svg>
+            }
+            title="Немає лімітів"
+            description="Встанови ліміт витрат на категорію, щоб не виходити за межі бюджету"
+          />
         )}
         {limitBudgets.map((b, i) => {
           const cat = resolveExpenseCategoryMeta(
@@ -344,7 +364,26 @@ export function Budgets({ mono, storage }) {
           Цілі накопичення
         </div>
         {goalBudgets.length === 0 && (
-          <p className="text-xs text-subtle">Постав ціль і відстежуй прогрес</p>
+          <EmptyState
+            compact
+            icon={
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.6"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <polyline points="12 6 12 12 16 14" />
+              </svg>
+            }
+            title="Немає цілей"
+            description="Постав ціль накопичення і відстежуй прогрес"
+          />
         )}
         {goalBudgets.map((b, i) => {
           const saved = b.savedAmount || 0;

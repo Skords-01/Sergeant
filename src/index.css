@@ -3,8 +3,51 @@
 @tailwind utilities;
 
 @layer base {
+  /* ── Light theme (default) ─────────────────────────────────────────────── */
   :root {
     color-scheme: light;
+
+    /* Semantic UI colors as space-separated RGB triplets.
+       Format required for Tailwind opacity modifiers (bg-panel/95 etc.). */
+    --c-bg: 240 243 248; /* #f0f3f8 — light blue-gray page */
+    --c-panel: 255 255 255; /* #ffffff — white cards */
+    --c-panel-hi: 245 247 252; /* #f5f7fc — hover/input bg */
+    --c-line: 226 232 244; /* #e2e8f4 — subtle border */
+    --c-text: 13 23 38; /* #0d1726 — near-black */
+    --c-muted: 96 117 144; /* #607590 — medium slate */
+    --c-subtle: 150 168 188; /* #96a8bc — light slate (labels) */
+    --c-primary: 13 23 38; /* #0d1726 — ink (same as text) */
+
+    /* Shadows — two-layer card + float */
+    --shadow-card:
+      0 1px 2px rgba(13, 23, 38, 0.05), 0 6px 24px rgba(13, 23, 38, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    --shadow-float:
+      0 2px 6px rgba(13, 23, 38, 0.07), 0 16px 48px rgba(13, 23, 38, 0.14),
+      inset 0 1px 0 rgba(255, 255, 255, 0.7);
+    --shadow-soft: 0 8px 48px rgba(13, 23, 38, 0.16);
+  }
+
+  /* ── Dark theme ────────────────────────────────────────────────────────── */
+  .dark {
+    color-scheme: dark;
+
+    --c-bg: 11 17 30; /* #0b111e — deep navy */
+    --c-panel: 20 28 48; /* #141c30 — elevated surface */
+    --c-panel-hi: 28 38 62; /* #1c263e — input / hover bg */
+    --c-line: 44 58 88; /* #2c3a58 — subtle border */
+    --c-text: 224 232 248; /* #e0e8f8 — near-white */
+    --c-muted: 126 148 182; /* #7e94b6 — medium slate */
+    --c-subtle: 74 92 122; /* #4a5c7a — dimmed labels */
+    --c-primary: 224 232 248; /* #e0e8f8 — reversed (light on dark) */
+
+    --shadow-card:
+      0 1px 2px rgba(0, 0, 0, 0.3), 0 6px 24px rgba(0, 0, 0, 0.4),
+      inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    --shadow-float:
+      0 2px 6px rgba(0, 0, 0, 0.35), 0 16px 48px rgba(0, 0, 0, 0.5),
+      inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    --shadow-soft: 0 8px 48px rgba(0, 0, 0, 0.55);
   }
 
   html,

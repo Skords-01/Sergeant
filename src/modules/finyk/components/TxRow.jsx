@@ -51,7 +51,6 @@ export function TxRow({
   const [catPicker, setCatPicker] = useState(false);
   const [splitEditor, setSplitEditor] = useState(false);
   const [draftSplits, setDraftSplits] = useState([]);
-  const expenseCategories = mergeExpenseCategoryDefinitions(customCategories);
   const splitCategoryOptions = useMemo(() => {
     const merged = mergeExpenseCategoryDefinitions(customCategories);
     const internal = MCC_CATEGORIES.find((c) => c.id === INTERNAL_TRANSFER_ID);
@@ -405,7 +404,7 @@ export function TxRow({
       {/* Category picker */}
       {catPicker && (
         <div className="flex flex-wrap gap-1.5 pb-3 px-2">
-          {(isIncome ? INCOME_CATEGORIES : expenseCategories).map((c) => (
+          {(isIncome ? INCOME_CATEGORIES : splitCategoryOptions).map((c) => (
             <button
               key={c.id}
               onClick={() => {

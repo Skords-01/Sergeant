@@ -1,10 +1,7 @@
 import { useRef } from "react";
 import { Button } from "@shared/components/ui/Button";
 import { cn } from "@shared/lib/cn";
-import {
-  applyHubBackupPayload,
-  buildHubBackupPayload,
-} from "./hubBackup.js";
+import { applyHubBackupPayload, buildHubBackupPayload } from "./hubBackup.js";
 
 export function HubBackupPanel({ className }) {
   const fileRef = useRef(null);

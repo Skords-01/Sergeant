@@ -108,12 +108,14 @@ function FinykToast({ toast }) {
   return (
     <div
       className={cn(
-        "fixed top-16 left-1/2 -translate-x-1/2 z-[110] px-4 py-3 rounded-2xl text-sm font-semibold shadow-soft transition-all",
+        "fixed top-20 left-1/2 -translate-x-1/2 z-[110] px-4 py-3 rounded-2xl text-sm font-semibold shadow-float",
+        "animate-in fade-in slide-in-from-top-2 duration-200",
         toast.type === "error"
-          ? "bg-danger/90 text-white"
-          : "bg-success/90 text-white",
+          ? "bg-danger text-white"
+          : "bg-success text-white",
       )}
       role="status"
+      aria-live="polite"
     >
       {toast.msg}
     </div>
@@ -274,7 +276,9 @@ export default function App({ onBackToHub } = {}) {
                 type="button"
                 size="sm"
                 variant="ghost"
-                className="absolute right-10 top-1/2 -translate-y-1/2 h-7 w-7 p-0 border-0"
+                className="absolute right-10 top-1/2 -translate-y-1/2 h-8 w-8 p-0 border-0"
+                aria-label="Вставити з буфера обміну"
+                title="Вставити з буфера"
                 onClick={async () => {
                   try {
                     setTokenInput(
@@ -285,16 +289,60 @@ export default function App({ onBackToHub } = {}) {
                   }
                 }}
               >
-                📋
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden
+                >
+                  <rect x="9" y="9" width="13" height="13" rx="2" />
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                </svg>
               </Button>
               <Button
                 type="button"
                 size="sm"
                 variant="ghost"
-                className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7 p-0 border-0"
+                className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 p-0 border-0"
+                aria-label={showToken ? "Приховати токен" : "Показати токен"}
                 onClick={() => setShowToken((v) => !v)}
               >
-                {showToken ? "🙈" : "👁"}
+                {showToken ? (
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden
+                  >
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                    <line x1="1" y1="1" x2="23" y2="23" />
+                  </svg>
+                ) : (
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden
+                  >
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                )}
               </Button>
             </div>
 
@@ -321,8 +369,22 @@ export default function App({ onBackToHub } = {}) {
                 ← Назад до хабу
               </Button>
             )}
-            <p className="mt-4 text-center text-xs text-subtle">
-              🔒 Токен зберігається лише у твоєму браузері
+            <p className="mt-4 text-center text-xs text-subtle flex items-center justify-center gap-1.5">
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden
+              >
+                <rect x="3" y="11" width="18" height="11" rx="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+              </svg>
+              Токен зберігається лише у твоєму браузері
             </p>
           </div>
         </div>
@@ -460,26 +522,28 @@ export default function App({ onBackToHub } = {}) {
                 key={item.id}
                 type="button"
                 onClick={() => navigate(item.id)}
+                aria-current={active ? "page" : undefined}
+                aria-label={item.label}
                 className={cn(
-                  "relative flex-1 flex flex-col items-center justify-center gap-1 transition-all min-h-[48px]",
-                  active ? "text-text" : "text-muted",
+                  "relative flex-1 flex flex-col items-center justify-center gap-0.5 transition-all min-h-[48px] focus:outline-none",
+                  active ? "text-emerald-600" : "text-muted hover:text-text",
                 )}
               >
                 {active && (
                   <span
-                    className="absolute top-0 left-1/2 -translate-x-1/2 w-9 h-0.5 rounded-full bg-emerald-500/90"
+                    className="absolute top-0 left-1/2 -translate-x-1/2 w-10 h-0.5 rounded-full bg-emerald-500"
                     aria-hidden
                   />
                 )}
-                <span className={cn(active && "text-emerald-600")}>
-                  {NAV_ICONS[item.id]}
-                </span>
                 <span
                   className={cn(
-                    "text-[11px] leading-none font-semibold",
-                    active ? "text-text" : "text-muted",
+                    "flex items-center justify-center w-8 h-6 rounded-lg transition-colors",
+                    active && "bg-emerald-500/12",
                   )}
                 >
+                  {NAV_ICONS[item.id]}
+                </span>
+                <span className="text-[10px] leading-none font-semibold">
                   {item.label}
                 </span>
               </button>

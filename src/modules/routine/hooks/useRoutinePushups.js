@@ -16,7 +16,7 @@ function buildHistory(pushupsByDate, days) {
   for (let i = days - 1; i >= 0; i--) {
     const d = new Date(now);
     d.setDate(d.getDate() - i);
-    const str = d.toISOString().slice(0, 10);
+    const str = dateKeyFromDate(d);
     result.push({ date: str, total: data[str] ?? 0 });
   }
   return result;
@@ -46,7 +46,10 @@ export function useRoutinePushups() {
   const todayCount = data[today] ?? 0;
 
   const addReps = useCallback((reps) => {
-    setState((prev) => addPushupReps(prev, reps));
+    // Load fresh state directly from localStorage so the save is never
+    // deferred or dropped by React Concurrent Mode scheduling.
+    const next = addPushupReps(loadRoutineState(), reps);
+    setState(next);
   }, []);
 
   const history = useMemo(() => buildHistory(data, HISTORY_DAYS), [data]);
