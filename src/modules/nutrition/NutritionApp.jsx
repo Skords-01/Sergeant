@@ -1,15 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Input } from "@shared/components/ui/Input";
-import { Button } from "@shared/components/ui/Button";
-import { cn } from "@shared/lib/cn";
-import { useDialogFocusTrap } from "@shared/hooks/useDialogFocusTrap";
 import { fileToBase64 } from "./lib/fileToBase64.js";
 import { postJson } from "./lib/nutritionApi.js";
 import { mergeItems } from "./lib/mergeItems.js";
 import { NutritionHeader } from "./components/NutritionHeader.jsx";
+import { NutritionBottomNav } from "./components/NutritionBottomNav.jsx";
 import { PhotoAnalyzeCard } from "./components/PhotoAnalyzeCard.jsx";
 import { PantryCard } from "./components/PantryCard.jsx";
 import { RecipesCard } from "./components/RecipesCard.jsx";
+import { PantryManagerSheet } from "./components/PantryManagerSheet.jsx";
+import { ConfirmDeleteSheet } from "./components/ConfirmDeleteSheet.jsx";
+import { ItemEditSheet } from "./components/ItemEditSheet.jsx";
 import {
   loadActivePantryId,
   loadPantries,
@@ -18,10 +18,11 @@ import {
   persistPantries,
   persistNutritionPrefs,
   updatePantry,
+  NUTRITION_PANTRIES_KEY,
+  NUTRITION_ACTIVE_PANTRY_KEY,
 } from "./lib/nutritionStorage.js";
 import {
   normalizeFoodName,
-  normalizeUnit,
   parseLoosePantryText,
 } from "./lib/pantryTextParser.js";
 
@@ -68,14 +69,11 @@ export default function NutritionApp({ onBackToHub } = {}) {
   // ──────────────────────────────────────────────
   // Pantries (склади) + persistence
   // ──────────────────────────────────────────────
-  const PANTRIES_KEY = "nutrition_pantries_v1";
-  const ACTIVE_PANTRY_KEY = "nutrition_active_pantry_v1";
-
   const [pantries, setPantries] = useState(() =>
-    loadPantries(PANTRIES_KEY, ACTIVE_PANTRY_KEY),
+    loadPantries(NUTRITION_PANTRIES_KEY, NUTRITION_ACTIVE_PANTRY_KEY),
   );
   const [activePantryId, setActivePantryId] = useState(() =>
-    loadActivePantryId(ACTIVE_PANTRY_KEY),
+    loadActivePantryId(NUTRITION_ACTIVE_PANTRY_KEY),
   );
 
   const activePantry = useMemo(() => {
@@ -94,10 +92,6 @@ export default function NutritionApp({ onBackToHub } = {}) {
   // Sheets (заміна prompt/confirm/alert)
   // ──────────────────────────────────────────────
   const [pantryManagerOpen, setPantryManagerOpen] = useState(false);
-  const pantryManagerRef = useRef(null);
-  useDialogFocusTrap(pantryManagerOpen, pantryManagerRef, {
-    onEscape: () => setPantryManagerOpen(false),
-  });
 
   const [pantryForm, setPantryForm] = useState(() => ({
     mode: "create", // create | rename
@@ -106,10 +100,6 @@ export default function NutritionApp({ onBackToHub } = {}) {
   }));
 
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
-  const confirmDeleteRef = useRef(null);
-  useDialogFocusTrap(confirmDeleteOpen, confirmDeleteRef, {
-    onEscape: () => setConfirmDeleteOpen(false),
-  });
 
   const [itemEdit, setItemEdit] = useState(() => ({
     open: false,
@@ -119,13 +109,9 @@ export default function NutritionApp({ onBackToHub } = {}) {
     unit: "",
     err: "",
   }));
-  const itemEditRef = useRef(null);
-  useDialogFocusTrap(itemEdit.open, itemEditRef, {
-    onEscape: () => setItemEdit((s) => ({ ...s, open: false })),
-  });
 
   useEffect(() => {
-    persistPantries(PANTRIES_KEY, ACTIVE_PANTRY_KEY, pantries, activePantryId);
+    persistPantries(NUTRITION_PANTRIES_KEY, NUTRITION_ACTIVE_PANTRY_KEY, pantries, activePantryId);
   }, [pantries, activePantryId]);
 
   const [prefs, setPrefs] = useState(() => loadNutritionPrefs());
@@ -273,6 +259,45 @@ export default function NutritionApp({ onBackToHub } = {}) {
 
   const beginDeletePantry = () => {
     setConfirmDeleteOpen(true);
+  };
+
+  const onSavePantryForm = (name, mode) => {
+    if (mode === "rename") {
+      setPantries((cur) =>
+        updatePantry(cur, activePantryId, (p) => ({ ...p, name })),
+      );
+    } else {
+      const id = `p_${Date.now()}`;
+      setPantries((cur) => [
+        ...(Array.isArray(cur) ? cur : []),
+        { id, name, items: [], text: "" },
+      ]);
+      setActivePantryId(id);
+    }
+    setPantryManagerOpen(false);
+  };
+
+  const onConfirmDeletePantry = () => {
+    const arr = Array.isArray(pantries) ? pantries : [];
+    if (arr.length <= 1) return;
+    const next = arr.filter((p) => p.id !== activePantryId);
+    setPantries(next);
+    setActivePantryId(next[0]?.id || "home");
+    setConfirmDeleteOpen(false);
+    setPantryManagerOpen(false);
+  };
+
+  const onSaveItemEdit = (idx, qty, unit) => {
+    setPantries((curPantries) =>
+      updatePantry(curPantries, activePantryId, (p) => {
+        const items = Array.isArray(p.items) ? [...p.items] : [];
+        const item = items[idx];
+        if (!item) return p;
+        items[idx] = { ...item, qty, unit };
+        return { ...p, items };
+      }),
+    );
+    setItemEdit((s) => ({ ...s, open: false }));
   };
 
   const onPickPhoto = async (file) => {
@@ -427,20 +452,55 @@ export default function NutritionApp({ onBackToHub } = {}) {
 
   return (
     <div className="h-dvh flex flex-col bg-bg text-text overflow-hidden">
-      <NutritionHeader
-        busy={busy}
-        activePage={activePage}
-        setActivePage={setActivePageAndHash}
-        pantries={pantries}
-        activePantry={activePantry}
-        activePantryId={activePantryId}
-        setActivePantryId={setActivePantryId}
-        onOpenPantryManager={() => setPantryManagerOpen(true)}
-        onBackToHub={onBackToHub}
-      />
+      <NutritionHeader busy={busy} onBackToHub={onBackToHub} />
 
       <div className="flex-1 overflow-y-auto">
-        <div className="max-w-2xl mx-auto px-4 pt-4 pb-24 w-full">
+        <div className="max-w-2xl mx-auto px-4 pt-4 pb-6 w-full">
+
+          {/* Hero: склад */}
+          <div className="rounded-2xl bg-nutrition/10 border border-nutrition/20 px-4 py-3 mb-4 flex items-center gap-3">
+            <div className="min-w-0 flex-1">
+              <div className="text-[10px] font-bold text-nutrition/70 uppercase tracking-widest mb-0.5">
+                Активний склад
+              </div>
+              <div className="text-base font-extrabold text-text leading-tight">
+                {activePantry?.name || "Склад"}
+              </div>
+              <div className="text-xs text-subtle mt-0.5">
+                {pantryItems.length > 0
+                  ? `${pantryItems.length} продуктів збережено`
+                  : "Склад порожній"}
+              </div>
+            </div>
+            {(Array.isArray(pantries) ? pantries : []).length > 1 && (
+              <select
+                value={activePantry?.id || activePantryId || ""}
+                onChange={(e) => setActivePantryId(e.target.value)}
+                disabled={busy}
+                className="h-9 rounded-xl bg-panel/60 border border-nutrition/30 px-3 text-sm text-text outline-none focus:border-nutrition/60 max-w-[36vw]"
+                aria-label="Обрати склад"
+              >
+                {(Array.isArray(pantries) ? pantries : []).map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name || "Склад"}
+                  </option>
+                ))}
+              </select>
+            )}
+            <button
+              type="button"
+              onClick={() => setPantryManagerOpen(true)}
+              disabled={busy}
+              className="shrink-0 w-9 h-9 flex items-center justify-center rounded-xl text-nutrition/70 hover:text-nutrition hover:bg-nutrition/10 transition-colors border border-nutrition/20"
+              aria-label="Керування складами"
+              title="Склади"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <circle cx="12" cy="12" r="1.5" /><circle cx="5" cy="12" r="1.5" /><circle cx="19" cy="12" r="1.5" />
+              </svg>
+            </button>
+          </div>
+
           {(err || statusText) && (
             <div className="mb-4 rounded-2xl border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger">
               {err || statusText}
@@ -506,364 +566,41 @@ export default function NutritionApp({ onBackToHub } = {}) {
         </div>
       </div>
 
-      {/* Pantry manager sheet */}
-      {pantryManagerOpen && (
-        <div className={cn("fixed inset-0 flex items-end", "z-[100]")}>
-          <button
-            type="button"
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-            aria-label="Закрити"
-            onClick={() => setPantryManagerOpen(false)}
-          />
-          <div
-            ref={pantryManagerRef}
-            className={cn(
-              "relative w-full bg-panel border-t border-line rounded-t-3xl shadow-soft max-h-[92dvh] flex flex-col",
-              "fizruk-sheet-pad",
-            )}
-            onPointerDown={(e) => e.stopPropagation()}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="nutrition-pantries-title"
-          >
-            <div className="flex justify-center pt-3 pb-1 shrink-0">
-              <div className="w-10 h-1 bg-line rounded-full" aria-hidden />
-            </div>
-            <div className="px-4 sm:px-5 pb-6 overflow-y-auto flex-1 min-h-0">
-              <div className="flex items-start justify-between gap-3 mb-3">
-                <div className="min-w-0">
-                  <div
-                    id="nutrition-pantries-title"
-                    className="text-lg font-extrabold text-text leading-tight"
-                  >
-                    Склади продуктів
-                  </div>
-                  <div className="text-xs text-subtle mt-1">
-                    Створи окремо для “Дім / Робота” або по дієті
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setPantryManagerOpen(false)}
-                  className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full bg-panelHi text-muted hover:text-text text-lg transition-colors"
-                  aria-label="Закрити"
-                >
-                  ✕
-                </button>
-              </div>
+      <NutritionBottomNav
+        activePage={activePage}
+        setActivePage={setActivePageAndHash}
+        busy={busy}
+      />
 
-              <div className="rounded-2xl border border-line bg-bg overflow-hidden mb-4">
-                {(Array.isArray(pantries) ? pantries : []).map((p) => {
-                  const active = p.id === activePantryId;
-                  return (
-                    <button
-                      key={p.id}
-                      type="button"
-                      onClick={() => setActivePantryId(p.id)}
-                      className={cn(
-                        "w-full text-left px-4 py-3 border-b border-line last:border-0 hover:bg-panelHi transition-colors",
-                        active && "bg-nutrition/10",
-                      )}
-                      aria-pressed={active}
-                    >
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="text-sm font-semibold text-text truncate">
-                          {p.name || "Склад"}
-                        </div>
-                        {active ? (
-                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-nutrition/15 text-nutrition border border-nutrition/25">
-                            Активний
-                          </span>
-                        ) : null}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
+      <PantryManagerSheet
+        open={pantryManagerOpen}
+        onClose={() => setPantryManagerOpen(false)}
+        pantries={pantries}
+        activePantryId={activePantryId}
+        setActivePantryId={setActivePantryId}
+        pantryForm={pantryForm}
+        setPantryForm={setPantryForm}
+        busy={busy}
+        onSavePantryForm={onSavePantryForm}
+        onBeginCreate={beginCreatePantry}
+        onBeginRename={beginRenamePantry}
+        onBeginDelete={beginDeletePantry}
+      />
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
-                <Button
-                  type="button"
-                  className="h-12 min-h-[44px] bg-nutrition text-white hover:bg-nutrition-hover"
-                  onClick={beginCreatePantry}
-                >
-                  + Новий склад
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className="h-12 min-h-[44px]"
-                  onClick={beginRenamePantry}
-                >
-                  Перейменувати активний
-                </Button>
-              </div>
+      <ConfirmDeleteSheet
+        open={confirmDeleteOpen}
+        onClose={() => setConfirmDeleteOpen(false)}
+        pantries={pantries}
+        activePantryId={activePantryId}
+        onConfirm={onConfirmDeletePantry}
+      />
 
-              <div className="rounded-2xl border border-line bg-panelHi p-4">
-                <div className="text-[10px] font-bold text-subtle uppercase tracking-widest">
-                  {pantryForm.mode === "rename" ? "Нова назва" : "Назва складу"}
-                </div>
-                <div className="mt-2">
-                  <Input
-                    value={pantryForm.name}
-                    onChange={(e) =>
-                      setPantryForm((f) => ({ ...f, name: e.target.value, err: "" }))
-                    }
-                    placeholder="напр. Дім"
-                    disabled={busy}
-                    aria-label="Назва складу"
-                  />
-                  {pantryForm.err ? (
-                    <div className="text-xs text-danger mt-2">{pantryForm.err}</div>
-                  ) : null}
-                </div>
-                <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  <Button
-                    type="button"
-                    className="h-12 min-h-[44px] bg-nutrition text-white hover:bg-nutrition-hover"
-                    onClick={() => {
-                      const name = String(pantryForm.name || "").trim();
-                      if (!name) {
-                        setPantryForm((f) => ({ ...f, err: "Вкажи назву." }));
-                        return;
-                      }
-                      if (pantryForm.mode === "rename") {
-                        setPantries((cur) =>
-                          updatePantry(cur, activePantryId, (p) => ({
-                            ...p,
-                            name,
-                          })),
-                        );
-                        setPantryManagerOpen(false);
-                        return;
-                      }
-                      const id = `p_${Date.now()}`;
-                      setPantries((cur) => [
-                        ...(Array.isArray(cur) ? cur : []),
-                        { id, name, items: [], text: "" },
-                      ]);
-                      setActivePantryId(id);
-                      setPantryManagerOpen(false);
-                    }}
-                  >
-                    Зберегти
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="danger"
-                    className="h-12 min-h-[44px]"
-                    onClick={beginDeletePantry}
-                  >
-                    Видалити активний
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Confirm delete sheet */}
-      {confirmDeleteOpen && (
-        <div className={cn("fixed inset-0 flex items-end", "z-[110]")}>
-          <button
-            type="button"
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-            aria-label="Закрити"
-            onClick={() => setConfirmDeleteOpen(false)}
-          />
-          <div
-            ref={confirmDeleteRef}
-            className={cn(
-              "relative w-full bg-panel border-t border-line rounded-t-3xl shadow-soft",
-              "fizruk-sheet-pad",
-            )}
-            onPointerDown={(e) => e.stopPropagation()}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="nutrition-delete-title"
-          >
-            <div className="flex justify-center pt-3 pb-1">
-              <div className="w-10 h-1 bg-line rounded-full" aria-hidden />
-            </div>
-            <div className="px-5 pb-6">
-              <div
-                id="nutrition-delete-title"
-                className="text-lg font-extrabold text-text leading-tight"
-              >
-                Видалити склад?
-              </div>
-              <div className="text-xs text-subtle mt-1">
-                Це прибере всі продукти в ньому. Дію не можна відмінити.
-              </div>
-              {(() => {
-                const arr = Array.isArray(pantries) ? pantries : [];
-                if (arr.length <= 1) {
-                  return (
-                    <div className="mt-4 rounded-2xl border border-warning/40 bg-warning/10 p-4 text-sm text-warning">
-                      Не можна видалити останній склад.
-                    </div>
-                  );
-                }
-                return null;
-              })()}
-              <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className="h-12 min-h-[44px]"
-                  onClick={() => setConfirmDeleteOpen(false)}
-                >
-                  Скасувати
-                </Button>
-                <Button
-                  type="button"
-                  variant="danger"
-                  className="h-12 min-h-[44px]"
-                  onClick={() => {
-                    const arr = Array.isArray(pantries) ? pantries : [];
-                    if (arr.length <= 1) return;
-                    const next = arr.filter((p) => p.id !== activePantryId);
-                    setPantries(next);
-                    setActivePantryId(next[0]?.id || "home");
-                    setConfirmDeleteOpen(false);
-                    setPantryManagerOpen(false);
-                  }}
-                >
-                  Видалити
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Edit item sheet */}
-      {itemEdit.open && (
-        <div className={cn("fixed inset-0 flex items-end", "z-[120]")}>
-          <button
-            type="button"
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-            aria-label="Закрити"
-            onClick={() => setItemEdit((s) => ({ ...s, open: false }))}
-          />
-          <div
-            ref={itemEditRef}
-            className={cn(
-              "relative w-full bg-panel border-t border-line rounded-t-3xl shadow-soft",
-              "fizruk-sheet-pad",
-            )}
-            onPointerDown={(e) => e.stopPropagation()}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="nutrition-item-edit-title"
-          >
-            <div className="flex justify-center pt-3 pb-1">
-              <div className="w-10 h-1 bg-line rounded-full" aria-hidden />
-            </div>
-            <div className="px-5 pb-6">
-              <div className="flex items-start justify-between gap-3 mb-3">
-                <div className="min-w-0">
-                  <div
-                    id="nutrition-item-edit-title"
-                    className="text-lg font-extrabold text-text leading-tight truncate"
-                  >
-                    {itemEdit.name}
-                  </div>
-                  <div className="text-xs text-subtle mt-1">
-                    Кількість і одиниці (порожньо — прибрати)
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setItemEdit((s) => ({ ...s, open: false }))}
-                  className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full bg-panelHi text-muted hover:text-text text-lg transition-colors"
-                  aria-label="Закрити"
-                >
-                  ✕
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <div className="text-[10px] font-bold text-subtle uppercase tracking-widest mb-1">
-                    Кількість
-                  </div>
-                  <Input
-                    value={itemEdit.qty}
-                    onChange={(e) =>
-                      setItemEdit((s) => ({ ...s, qty: e.target.value, err: "" }))
-                    }
-                    inputMode="decimal"
-                    placeholder="напр. 2.5"
-                    aria-label="Кількість"
-                  />
-                </div>
-                <div>
-                  <div className="text-[10px] font-bold text-subtle uppercase tracking-widest mb-1">
-                    Одиниця
-                  </div>
-                  <Input
-                    value={itemEdit.unit}
-                    onChange={(e) =>
-                      setItemEdit((s) => ({ ...s, unit: e.target.value, err: "" }))
-                    }
-                    placeholder="г / кг / мл / л / шт"
-                    aria-label="Одиниця"
-                  />
-                </div>
-              </div>
-
-              {itemEdit.err ? (
-                <div className="text-xs text-danger mt-2">{itemEdit.err}</div>
-              ) : null}
-
-              <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <Button
-                  type="button"
-                  className="h-12 min-h-[44px] bg-nutrition text-white hover:bg-nutrition-hover"
-                  onClick={() => {
-                    const qtyStr = String(itemEdit.qty || "").trim();
-                    const unitStr = String(itemEdit.unit || "").trim();
-                    const qty =
-                      qtyStr === "" ? null : Number(qtyStr.replace(",", "."));
-                    if (qtyStr !== "" && !Number.isFinite(qty)) {
-                      setItemEdit((s) => ({ ...s, err: "Некоректна кількість." }));
-                      return;
-                    }
-                    const unit = unitStr === "" ? null : normalizeUnit(unitStr);
-                    setPantries((curPantries) =>
-                      updatePantry(curPantries, activePantryId, (p) => {
-                        const items = Array.isArray(p.items) ? [...p.items] : [];
-                        const item = items[itemEdit.idx];
-                        if (!item) return p;
-                        items[itemEdit.idx] = {
-                          ...item,
-                          qty: Number.isFinite(qty) ? qty : null,
-                          unit,
-                        };
-                        return { ...p, items };
-                      }),
-                    );
-                    setItemEdit((s) => ({ ...s, open: false }));
-                  }}
-                >
-                  Зберегти
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className="h-12 min-h-[44px]"
-                  onClick={() => setItemEdit((s) => ({ ...s, open: false }))}
-                >
-                  Скасувати
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <ItemEditSheet
+        itemEdit={itemEdit}
+        setItemEdit={setItemEdit}
+        onClose={() => setItemEdit((s) => ({ ...s, open: false }))}
+        onSave={onSaveItemEdit}
+      />
     </div>
   );
 }
-
