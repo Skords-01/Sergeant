@@ -24,7 +24,7 @@ function emptyForm(photoResult) {
   };
 }
 
-export function AddMealSheet({ open, onClose, onSave, photoResult }) {
+export function AddMealSheet({ open, onClose, onSave, photoResult, mealTemplates = [], setPrefs }) {
   const ref = useRef(null);
   const [form, setForm] = useState(() => emptyForm(null));
 
@@ -105,6 +105,37 @@ export function AddMealSheet({ open, onClose, onSave, photoResult }) {
               ✕
             </button>
           </div>
+
+          {Array.isArray(mealTemplates) && mealTemplates.length > 0 && (
+            <div className="mb-4">
+              <div className="text-[10px] font-bold text-subtle uppercase tracking-widest mb-2">
+                Шаблони
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {mealTemplates.map((t) => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() =>
+                      setForm((s) => ({
+                        ...s,
+                        name: t.name,
+                        mealType: t.mealType || "snack",
+                        kcal: t.macros?.kcal != null ? String(Math.round(t.macros.kcal)) : "",
+                        protein_g: t.macros?.protein_g != null ? String(Math.round(t.macros.protein_g)) : "",
+                        fat_g: t.macros?.fat_g != null ? String(Math.round(t.macros.fat_g)) : "",
+                        carbs_g: t.macros?.carbs_g != null ? String(Math.round(t.macros.carbs_g)) : "",
+                        err: "",
+                      }))
+                    }
+                    className="px-2 py-1 rounded-lg text-xs border border-line bg-panelHi hover:border-nutrition/50"
+                  >
+                    {t.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Мілі */}
           <div className="mb-4">
@@ -197,6 +228,44 @@ export function AddMealSheet({ open, onClose, onSave, photoResult }) {
           </div>
 
           {form.err && <div className="text-xs text-danger mt-2">{form.err}</div>}
+
+          {typeof setPrefs === "function" && (
+            <div className="mt-3">
+              <button
+                type="button"
+                className="text-xs text-nutrition font-semibold hover:underline"
+                onClick={() => {
+                  const name = form.name.trim();
+                  if (!name) {
+                    setForm((s) => ({ ...s, err: "Спочатку введіть назву для шаблону." }));
+                    return;
+                  }
+                  const kcal = form.kcal === "" ? 0 : Number(form.kcal);
+                  const protein_g = form.protein_g === "" ? 0 : Number(form.protein_g);
+                  const fat_g = form.fat_g === "" ? 0 : Number(form.fat_g);
+                  const carbs_g = form.carbs_g === "" ? 0 : Number(form.carbs_g);
+                  if ([kcal, protein_g, fat_g, carbs_g].some((n) => !Number.isFinite(n))) {
+                    setForm((s) => ({ ...s, err: "Некоректне КБЖВ для шаблону." }));
+                    return;
+                  }
+                  setPrefs((p) => ({
+                    ...p,
+                    mealTemplates: [
+                      ...(Array.isArray(p.mealTemplates) ? p.mealTemplates : []),
+                      {
+                        id: `tpl_${Date.now()}`,
+                        name,
+                        mealType: form.mealType,
+                        macros: { kcal, protein_g, fat_g, carbs_g },
+                      },
+                    ].slice(0, 40),
+                  }));
+                }}
+              >
+                + Зберегти як шаблон
+              </button>
+            </div>
+          )}
 
           {/* Кнопки */}
           <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-2">

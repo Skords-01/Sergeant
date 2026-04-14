@@ -10,6 +10,8 @@ import analyzePhoto from "./api/nutrition/analyze-photo.js";
 import parsePantry from "./api/nutrition/parse-pantry.js";
 import refinePhoto from "./api/nutrition/refine-photo.js";
 import recommendRecipes from "./api/nutrition/recommend-recipes.js";
+import dayHint from "./api/nutrition/day-hint.js";
+import weekPlan from "./api/nutrition/week-plan.js";
 
 const app = express();
 const port = Number(process.env.PORT) || 3000;
@@ -33,6 +35,8 @@ app.all("/api/nutrition/analyze-photo", wrap(analyzePhoto));
 app.all("/api/nutrition/parse-pantry", wrap(parsePantry));
 app.all("/api/nutrition/refine-photo", wrap(refinePhoto));
 app.all("/api/nutrition/recommend-recipes", wrap(recommendRecipes));
+app.all("/api/nutrition/day-hint", wrap(dayHint));
+app.all("/api/nutrition/week-plan", wrap(weekPlan));
 
 app.use((err, _req, res, _next) => {
   console.error(err);

@@ -7,7 +7,7 @@ export function ConfirmDeleteSheet({
   open,
   onClose,
   pantries,
-  activePantryId,
+  activePantryId: _activePantryId,
   onConfirm,
 }) {
   const ref = useRef(null);

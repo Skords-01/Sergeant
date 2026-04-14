@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { postJson } from "./lib/nutritionApi.js";
 import { NutritionHeader } from "./components/NutritionHeader.jsx";
 import { NutritionBottomNav } from "./components/NutritionBottomNav.jsx";
@@ -10,13 +10,12 @@ import { AddMealSheet } from "./components/AddMealSheet.jsx";
 import { PantryManagerSheet } from "./components/PantryManagerSheet.jsx";
 import { ConfirmDeleteSheet } from "./components/ConfirmDeleteSheet.jsx";
 import { ItemEditSheet } from "./components/ItemEditSheet.jsx";
-import {
-  loadNutritionPrefs,
-  persistNutritionPrefs,
-} from "./lib/nutritionStorage.js";
+import { loadNutritionPrefs, persistNutritionPrefs, getDayMacros } from "./lib/nutritionStorage.js";
 import { useNutritionPantries } from "./hooks/useNutritionPantries.js";
 import { useNutritionLog } from "./hooks/useNutritionLog.js";
 import { usePhotoAnalysis } from "./hooks/usePhotoAnalysis.js";
+import { buildRecipeCacheKey, readRecipeCache, writeRecipeCache } from "./lib/recipeCache.js";
+import { fileToThumbnailBlob, saveMealThumbnail } from "./lib/mealPhotoStorage.js";
 
 function fmtMacro(n) {
   if (n == null || Number.isNaN(Number(n))) return "—";
@@ -37,6 +36,10 @@ function setHash(next) {
   const h = next ? `#${next}` : "#products";
   if (window.location.hash === h) return;
   window.location.hash = h;
+}
+
+function todayISODate() {
+  return new Date().toISOString().slice(0, 10);
 }
 
 export default function NutritionApp({ onBackToHub } = {}) {
@@ -62,14 +65,73 @@ export default function NutritionApp({ onBackToHub } = {}) {
   const photo = usePhotoAnalysis({ setBusy, setErr, setStatusText });
 
   const [prefs, setPrefs] = useState(() => loadNutritionPrefs());
+  const [prefsStorageErr, setPrefsStorageErr] = useState("");
 
   useEffect(() => {
-    persistNutritionPrefs(prefs);
+    setPrefsStorageErr(persistNutritionPrefs(prefs) ? "" : "Не вдалося зберегти налаштування.");
   }, [prefs]);
 
   const [recipes, setRecipes] = useState([]);
   const [recipesTried, setRecipesTried] = useState(false);
   const [recipesRaw, setRecipesRaw] = useState("");
+
+  const [weekPlan, setWeekPlan] = useState(null);
+  const [weekPlanRaw, setWeekPlanRaw] = useState("");
+  const [weekPlanBusy, setWeekPlanBusy] = useState(false);
+
+  const [dayHintText, setDayHintText] = useState("");
+  const [dayHintBusy, setDayHintBusy] = useState(false);
+
+  const recipeCacheKey = useMemo(
+    () =>
+      buildRecipeCacheKey(pantry.activePantryId, pantry.effectiveItems, {
+        goal: prefs.goal,
+        servings: prefs.servings,
+        timeMinutes: prefs.timeMinutes,
+        exclude: prefs.exclude,
+      }),
+    [
+      pantry.activePantryId,
+      pantry.effectiveItems,
+      prefs.goal,
+      prefs.servings,
+      prefs.timeMinutes,
+      prefs.exclude,
+    ],
+  );
+
+  useEffect(() => {
+    if (activePage !== "recipes") return;
+    const c = readRecipeCache(recipeCacheKey);
+    if (c?.recipes?.length) {
+      setRecipes(c.recipes);
+      setRecipesRaw(c.recipesRaw || "");
+      setRecipesTried(true);
+    }
+  }, [activePage, recipeCacheKey]);
+
+  const lastNotifyKeyRef = useRef("");
+
+  useEffect(() => {
+    if (!prefs.reminderEnabled || typeof window === "undefined" || !("Notification" in window)) return;
+    const tick = () => {
+      if (Notification.permission !== "granted") return;
+      const h = new Date().getHours();
+      const target = prefs.reminderHour ?? 12;
+      if (h !== target) return;
+      const key = `${todayISODate()}-${target}`;
+      if (lastNotifyKeyRef.current === key) return;
+      lastNotifyKeyRef.current = key;
+      try {
+        new Notification("Харчування", { body: "Час записати прийоми їжі." });
+      } catch {
+        /* ignore */
+      }
+    };
+    const id = window.setInterval(tick, 45_000);
+    tick();
+    return () => window.clearInterval(id);
+  }, [prefs.reminderEnabled, prefs.reminderHour]);
 
   const handleSaveToLog = () => {
     log.setAddMealPhotoResult(photo.photoResult);
@@ -96,8 +158,11 @@ export default function NutritionApp({ onBackToHub } = {}) {
           locale: "uk-UA",
         },
       });
-      setRecipes(Array.isArray(data?.recipes) ? data.recipes : []);
-      setRecipesRaw(typeof data?.rawText === "string" ? data.rawText : "");
+      const list = Array.isArray(data?.recipes) ? data.recipes : [];
+      const raw = typeof data?.rawText === "string" ? data.rawText : "";
+      setRecipes(list);
+      setRecipesRaw(raw);
+      writeRecipeCache(recipeCacheKey, { recipes: list, recipesRaw: raw });
     } catch (e) {
       setErr(e?.message || "Помилка рекомендацій");
     } finally {
@@ -105,6 +170,68 @@ export default function NutritionApp({ onBackToHub } = {}) {
       setBusy(false);
     }
   };
+
+  const fetchWeekPlan = async () => {
+    setWeekPlanBusy(true);
+    setErr("");
+    setWeekPlan(null);
+    setWeekPlanRaw("");
+    try {
+      const items = pantry.effectiveItems;
+      if (items.length === 0) throw new Error("Додай продукти на склад.");
+      const data = await postJson("/api/nutrition/week-plan", {
+        items: items.slice(0, 50),
+        preferences: { goal: prefs.goal },
+        locale: "uk-UA",
+      });
+      setWeekPlan(data?.plan || null);
+      setWeekPlanRaw(typeof data?.rawText === "string" ? data.rawText : "");
+    } catch (e) {
+      setErr(e?.message || "Помилка плану");
+    } finally {
+      setWeekPlanBusy(false);
+    }
+  };
+
+  const fetchDayHint = useCallback(async () => {
+    setDayHintBusy(true);
+    setErr("");
+    try {
+      const macros = getDayMacros(log.nutritionLog, log.selectedDate);
+      const data = await postJson("/api/nutrition/day-hint", {
+        macros,
+        targets: {
+          dailyTargetKcal: prefs.dailyTargetKcal,
+          dailyTargetProtein_g: prefs.dailyTargetProtein_g,
+          dailyTargetFat_g: prefs.dailyTargetFat_g,
+          dailyTargetCarbs_g: prefs.dailyTargetCarbs_g,
+        },
+        locale: "uk-UA",
+      });
+      setDayHintText(typeof data?.hint === "string" ? data.hint : "");
+    } catch (e) {
+      setErr(e?.message || "Помилка підказки");
+    } finally {
+      setDayHintBusy(false);
+    }
+  }, [log.nutritionLog, log.selectedDate, prefs]);
+
+  const recipeCacheEntry = useMemo(() => readRecipeCache(recipeCacheKey), [recipeCacheKey]);
+
+  const wrappedAddMeal = useCallback(
+    async (meal) => {
+      log.handleAddMeal(meal);
+      if (meal.source === "photo" && photo.fileRef?.current?.files?.[0]) {
+        const blob = await fileToThumbnailBlob(photo.fileRef.current.files[0]);
+        if (blob) await saveMealThumbnail(meal.id, blob);
+      }
+    },
+    [log, photo.fileRef],
+  );
+
+  const storageBanner = [log.storageErr, pantry.pantryStorageErr, prefsStorageErr]
+    .filter(Boolean)
+    .join(" ");
 
   return (
     <div className="h-dvh flex flex-col bg-bg text-text overflow-hidden">
@@ -165,9 +292,9 @@ export default function NutritionApp({ onBackToHub } = {}) {
               {err}
             </div>
           )}
-          {log.storageErr && (
+          {storageBanner && (
             <div className="mb-4 rounded-2xl border border-amber-500/35 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
-              {log.storageErr}
+              {storageBanner}
             </div>
           )}
 
@@ -221,6 +348,13 @@ export default function NutritionApp({ onBackToHub } = {}) {
                 onRemoveMeal={log.handleRemoveMeal}
                 prefs={prefs}
                 setPrefs={setPrefs}
+                onDuplicateYesterday={log.duplicateYesterday}
+                onImportMerge={log.mergeLogFromJsonText}
+                onImportReplace={log.replaceLogFromJsonText}
+                onTrimLog={log.trimLogToLastDays}
+                onFetchDayHint={fetchDayHint}
+                dayHintText={dayHintText}
+                dayHintBusy={dayHintBusy}
               />
             )}
 
@@ -236,6 +370,11 @@ export default function NutritionApp({ onBackToHub } = {}) {
                 recipesRaw={recipesRaw}
                 err={err}
                 fmtMacro={fmtMacro}
+                recipeCacheEntry={recipeCacheEntry}
+                weekPlan={weekPlan}
+                weekPlanRaw={weekPlanRaw}
+                weekPlanBusy={weekPlanBusy}
+                fetchWeekPlan={fetchWeekPlan}
               />
             )}
           </div>
@@ -280,8 +419,10 @@ export default function NutritionApp({ onBackToHub } = {}) {
           log.setAddMealSheetOpen(false);
           log.setAddMealPhotoResult(null);
         }}
-        onSave={log.handleAddMeal}
+        onSave={wrappedAddMeal}
         photoResult={log.addMealPhotoResult}
+        mealTemplates={prefs.mealTemplates || []}
+        setPrefs={setPrefs}
       />
     </div>
   );

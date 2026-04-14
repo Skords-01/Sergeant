@@ -26,6 +26,9 @@ export function defaultNutritionPrefs() {
     dailyTargetProtein_g: null,
     dailyTargetFat_g: null,
     dailyTargetCarbs_g: null,
+    mealTemplates: [],
+    reminderEnabled: false,
+    reminderHour: 12,
   };
 }
 
@@ -46,6 +49,23 @@ export function loadNutritionPrefs(key = NUTRITION_PREFS_KEY) {
       dailyTargetProtein_g: optionalPositiveNumber(p.dailyTargetProtein_g),
       dailyTargetFat_g: optionalPositiveNumber(p.dailyTargetFat_g),
       dailyTargetCarbs_g: optionalPositiveNumber(p.dailyTargetCarbs_g),
+      mealTemplates: Array.isArray(p.mealTemplates)
+        ? p.mealTemplates
+            .filter((t) => t && typeof t === "object")
+            .map((t) => ({
+              id: String(t.id || `tpl_${Date.now()}`),
+              name: String(t.name || "").trim(),
+              mealType: isMealTypeId(t.mealType) ? t.mealType : "snack",
+              macros: normalizeMacros(t.macros),
+            }))
+            .filter((t) => t.name)
+            .slice(0, 40)
+        : [],
+      reminderEnabled: Boolean(p.reminderEnabled),
+      reminderHour:
+        p.reminderHour != null && Number.isFinite(Number(p.reminderHour))
+          ? Math.min(23, Math.max(0, Math.floor(Number(p.reminderHour))))
+          : 12,
     };
   } catch {
     return defaultNutritionPrefs();
@@ -273,4 +293,87 @@ export function getDayMacros(log, date) {
     },
     { kcal: 0, protein_g: 0, fat_g: 0, carbs_g: 0 },
   );
+}
+
+export function addDaysISODate(iso, deltaDays) {
+  const [y, m, d] = iso.split("-").map(Number);
+  const dt = new Date(y, m - 1, d + deltaDays);
+  return dt.toISOString().slice(0, 10);
+}
+
+export function duplicatePreviousDayMeals(log, targetDate) {
+  const prev = addDaysISODate(targetDate, -1);
+  const prevDay = log[prev];
+  if (!prevDay || !Array.isArray(prevDay.meals) || prevDay.meals.length === 0) return log;
+  const existing = Array.isArray(log[targetDate]?.meals) ? log[targetDate].meals : [];
+  const startIdx = existing.length;
+  const clones = prevDay.meals.map((m, i) =>
+    normalizeMeal({ ...m, id: undefined, source: "manual" }, startIdx + i),
+  );
+  return {
+    ...log,
+    [targetDate]: { meals: [...existing, ...clones] },
+  };
+}
+
+export function mergeNutritionLogs(base, incoming) {
+  const a = normalizeNutritionLog(base);
+  const b = normalizeNutritionLog(incoming);
+  const out = { ...a };
+  for (const [d, dayB] of Object.entries(b)) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) continue;
+    const mealsB = Array.isArray(dayB?.meals) ? dayB.meals : [];
+    if (mealsB.length === 0) continue;
+    const existing = Array.isArray(out[d]?.meals) ? out[d].meals : [];
+    const merged = [
+      ...existing,
+      ...mealsB.map((m, i) => normalizeMeal(m, existing.length + i)),
+    ];
+    out[d] = { meals: merged };
+  }
+  return out;
+}
+
+export function searchMealsByName(log, query) {
+  const q = String(query || "").trim().toLowerCase();
+  if (!q) return [];
+  const results = [];
+  for (const [date, day] of Object.entries(log)) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) continue;
+    for (const m of day?.meals || []) {
+      const n = String(m?.name || "").toLowerCase();
+      if (n.includes(q)) results.push({ date, meal: m });
+    }
+  }
+  return results.sort((a, b) => b.date.localeCompare(a.date));
+}
+
+export function getMacrosForDateRange(log, endIso, dayCount) {
+  const rows = [];
+  for (let i = dayCount - 1; i >= 0; i--) {
+    const d = addDaysISODate(endIso, -i);
+    rows.push({ date: d, ...getDayMacros(log, d) });
+  }
+  return rows;
+}
+
+export function estimateLogBytes(log) {
+  try {
+    return new Blob([JSON.stringify(log || {})]).size;
+  } catch {
+    return 0;
+  }
+}
+
+/** Залишає лише останні `keepCount` календарних днів (за сортуванням дат). */
+export function trimLogOldestDays(log, keepCount) {
+  const normalized = normalizeNutritionLog(log);
+  const dates = Object.keys(normalized)
+    .filter((k) => /^\d{4}-\d{2}-\d{2}$/.test(k))
+    .sort();
+  if (dates.length <= keepCount) return normalized;
+  const drop = dates.slice(0, dates.length - keepCount);
+  const out = { ...normalized };
+  for (const d of drop) delete out[d];
+  return out;
 }

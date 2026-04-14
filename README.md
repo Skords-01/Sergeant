@@ -61,7 +61,7 @@ npm run dev
 3. У **Vercel** (Environment Variables для Production/Preview): `VITE_API_BASE_URL` = публічний URL Railway (HTTPS).
 4. Каталог API перенесено в [`server/api/`](server/api/) — **у корені репо немає `api/`**, тож Vercel Hobby не створює десятки serverless-функцій. Запити з фронта йдуть на Railway, якщо задано `VITE_API_BASE_URL`.
 
-Локально API: `npm start` (слухає `PORT`, за замовчуванням 3000).
+Локально API: `npm start` (слухає `PORT`, за замовчуванням 3000). Фронт `npm run dev`: без `VITE_API_BASE_URL` запити йдуть на `/api/*` і **проксуються** на `VITE_API_PROXY_TARGET` (типово `http://127.0.0.1:3000`), див. `vite.config.js`.
 
 ## Деплой
 

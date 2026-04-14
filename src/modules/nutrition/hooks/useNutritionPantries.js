@@ -51,8 +51,11 @@ export function useNutritionPantries({ setBusy, setErr, setStatusText }) {
     err: "",
   }));
 
+  const [pantryStorageErr, setPantryStorageErr] = useState("");
+
   useEffect(() => {
-    persistPantries(NUTRITION_PANTRIES_KEY, NUTRITION_ACTIVE_PANTRY_KEY, pantries, activePantryId);
+    const ok = persistPantries(NUTRITION_PANTRIES_KEY, NUTRITION_ACTIVE_PANTRY_KEY, pantries, activePantryId);
+    setPantryStorageErr(ok ? "" : "Не вдалося зберегти дані складів.");
   }, [pantries, activePantryId]);
 
   const pantrySummary = useMemo(() => {
@@ -275,5 +278,7 @@ export function useNutritionPantries({ setBusy, setErr, setStatusText }) {
     effectiveItems,
     pantrySummary,
     parsePantry,
+    pantryStorageErr,
   };
 }
+

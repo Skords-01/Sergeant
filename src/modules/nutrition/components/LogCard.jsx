@@ -1,7 +1,22 @@
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Input } from "@shared/components/ui/Input";
+import { Button } from "@shared/components/ui/Button";
 import { cn } from "@shared/lib/cn";
-import { getDayMacros } from "../lib/nutritionStorage.js";
+import {
+  getDayMacros,
+  searchMealsByName,
+  getMacrosForDateRange,
+  estimateLogBytes,
+  addDaysISODate,
+} from "../lib/nutritionStorage.js";
 import { MEAL_ORDER, MEAL_META, isMealTypeId, mealTypeFromLabel } from "../lib/mealTypes.js";
+import { GOAL_PRESETS } from "../lib/goalPresets.js";
+import {
+  downloadBlob,
+  weekMacrosToCsv,
+  formatDayAsText,
+} from "../lib/nutritionLogExport.js";
+import { getMealThumbnailBlob } from "../lib/mealPhotoStorage.js";
 
 const MACRO_TILES = [
   { key: "kcal", label: "Ккал", color: "text-nutrition", targetKey: "dailyTargetKcal" },
@@ -40,6 +55,27 @@ function pct(current, target) {
   return Math.min(100, (current / target) * 100);
 }
 
+function MealThumb({ mealId }) {
+  const [url, setUrl] = useState(null);
+  useEffect(() => {
+    let u;
+    (async () => {
+      const b = await getMealThumbnailBlob(mealId);
+      if (b) {
+        u = URL.createObjectURL(b);
+        setUrl(u);
+      }
+    })();
+    return () => {
+      if (u) URL.revokeObjectURL(u);
+    };
+  }, [mealId]);
+  if (!url) return null;
+  return (
+    <img src={url} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0 border border-line/60" />
+  );
+}
+
 export function LogCard({
   log,
   selectedDate,
@@ -48,11 +84,33 @@ export function LogCard({
   onRemoveMeal,
   prefs,
   setPrefs,
+  onDuplicateYesterday,
+  onImportMerge,
+  onImportReplace,
+  onTrimLog,
+  onFetchDayHint,
+  dayHintText,
+  dayHintBusy,
 }) {
+  const [searchQuery, setSearchQuery] = useState("");
+  const importRef = useRef(null);
+  const [importMode, setImportMode] = useState("merge");
+
   const macros = getDayMacros(log, selectedDate);
   const dayData = log[selectedDate];
   const meals = dayData?.meals || [];
   const groups = groupByMealType(meals);
+
+  const searchHits = useMemo(() => {
+    const q = searchQuery.trim();
+    if (!q) return [];
+    return searchMealsByName(log, q).slice(0, 40);
+  }, [log, searchQuery]);
+
+  const weekRows = useMemo(() => getMacrosForDateRange(log, selectedDate, 7), [log, selectedDate]);
+
+  const logBytes = useMemo(() => estimateLogBytes(log), [log]);
+  const logSizeWarn = logBytes > 350_000;
 
   function shiftDate(delta) {
     const [y, m, d] = selectedDate.split("-").map(Number);
@@ -63,6 +121,8 @@ export function LogCard({
   }
 
   const isToday = selectedDate === toISODate(new Date());
+  const prevDate = addDaysISODate(selectedDate, -1);
+  const hasPrevDay = log[prevDate]?.meals?.length > 0;
 
   function setTarget(key, raw) {
     const v = String(raw ?? "").trim().replace(",", ".");
@@ -71,6 +131,56 @@ export function LogCard({
       const n = Number(v);
       return { ...p, [key]: Number.isFinite(n) && n > 0 ? n : null };
     });
+  }
+
+  function applyGoalPreset(preset) {
+    setPrefs((p) => ({
+      ...p,
+      dailyTargetKcal: preset.dailyTargetKcal,
+      dailyTargetProtein_g: preset.dailyTargetProtein_g,
+      dailyTargetFat_g: preset.dailyTargetFat_g,
+      dailyTargetCarbs_g: preset.dailyTargetCarbs_g,
+    }));
+  }
+
+  function exportDayJson() {
+    const payload = { [selectedDate]: log[selectedDate] || { meals: [] } };
+    downloadBlob(
+      `nutrition-${selectedDate}.json`,
+      "application/json",
+      JSON.stringify(payload, null, 2),
+    );
+  }
+
+  function exportDayText() {
+    downloadBlob(`nutrition-${selectedDate}.txt`, "text/plain;charset=utf-8", formatDayAsText(log, selectedDate));
+  }
+
+  function exportWeekCsv() {
+    const csv = weekMacrosToCsv(weekRows);
+    downloadBlob(`nutrition-week-${selectedDate}.csv`, "text/csv;charset=utf-8", csv);
+  }
+
+  function handleImportFile(e) {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const text = String(reader.result || "");
+        if (importMode === "replace") onImportReplace(text);
+        else onImportMerge(text);
+      } catch {
+        /* ignore */
+      }
+      e.target.value = "";
+    };
+    reader.readAsText(f);
+  }
+
+  function requestNotifyPermission() {
+    if (!("Notification" in window)) return;
+    void Notification.requestPermission();
   }
 
   return (
@@ -100,6 +210,189 @@ export function LogCard({
         >
           ›
         </button>
+      </div>
+
+      <div className="rounded-2xl border border-line/50 bg-panel/40 px-3 py-3 space-y-2">
+        <div className="text-[10px] font-bold text-subtle uppercase tracking-widest">Пошук по журналу</div>
+        <Input
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Назва страви…"
+          aria-label="Пошук по журналу"
+        />
+        {searchQuery.trim() && (
+          <ul className="max-h-36 overflow-y-auto text-sm space-y-1">
+            {searchHits.length === 0 && (
+              <li className="text-muted text-xs">Нічого не знайдено</li>
+            )}
+            {searchHits.map(({ date, meal }) => (
+              <li key={`${date}-${meal.id}`}>
+                <button
+                  type="button"
+                  className="text-left w-full text-nutrition hover:underline text-xs"
+                  onClick={() => {
+                    setSelectedDate(date);
+                    setSearchQuery("");
+                  }}
+                >
+                  {date} — {meal.name}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        <Button type="button" variant="ghost" className="text-xs h-9" onClick={exportDayJson}>
+          JSON дня
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          className="text-xs h-9"
+          onClick={() =>
+            downloadBlob("nutrition-log-full.json", "application/json", JSON.stringify(log, null, 2))
+          }
+        >
+          Повний журнал
+        </Button>
+        <Button type="button" variant="ghost" className="text-xs h-9" onClick={exportDayText}>
+          Текст дня
+        </Button>
+        <Button type="button" variant="ghost" className="text-xs h-9" onClick={exportWeekCsv}>
+          CSV тижня
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          className="text-xs h-9"
+          disabled={!hasPrevDay}
+          onClick={() => {
+            if (window.confirm("Скопіювати всі прийоми з попереднього дня в цей день?")) onDuplicateYesterday();
+          }}
+        >
+          Як учора
+        </Button>
+      </div>
+
+      <div className="rounded-2xl border border-line/50 bg-panel/40 px-3 py-3 space-y-2">
+        <div className="text-[10px] font-bold text-subtle uppercase tracking-widest">Імпорт журналу (JSON)</div>
+        <div className="flex flex-wrap gap-2 items-center">
+          <select
+            value={importMode}
+            onChange={(e) => setImportMode(e.target.value)}
+            className="h-9 rounded-xl bg-panel border border-line px-2 text-xs text-text"
+          >
+            <option value="merge">Додати до поточного</option>
+            <option value="replace">Замінити повністю</option>
+          </select>
+          <input ref={importRef} type="file" accept="application/json,.json" className="hidden" onChange={handleImportFile} />
+          <Button type="button" variant="ghost" className="text-xs h-9" onClick={() => importRef.current?.click()}>
+            Обрати файл…
+          </Button>
+        </div>
+      </div>
+
+      {logSizeWarn && (
+        <div className="rounded-2xl border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-100">
+          Журнал великий (~{Math.round(logBytes / 1024)} КБ).{" "}
+          <button type="button" className="underline font-semibold" onClick={() => onTrimLog(365)}>
+            Залишити лише останні 365 днів
+          </button>
+        </div>
+      )}
+
+      <div className="rounded-2xl border border-line/50 bg-panel/40 px-3 py-3">
+        <div className="text-[10px] font-bold text-subtle uppercase tracking-widest mb-2">Тиждень (до обраної дати)</div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-[11px] text-left">
+            <thead>
+              <tr className="text-subtle">
+                <th className="py-1 pr-2">Дата</th>
+                <th className="py-1 pr-2">Ккал</th>
+                <th className="py-1 pr-2">Б</th>
+                <th className="py-1 pr-2">Ж</th>
+                <th className="py-1">В</th>
+              </tr>
+            </thead>
+            <tbody>
+              {weekRows.map((r) => (
+                <tr key={r.date} className="border-t border-line/40">
+                  <td className="py-1 pr-2 font-mono text-[10px]">{r.date.slice(5)}</td>
+                  <td className="py-1 pr-2">{Math.round(r.kcal)}</td>
+                  <td className="py-1 pr-2">{Math.round(r.protein_g)}</td>
+                  <td className="py-1 pr-2">{Math.round(r.fat_g)}</td>
+                  <td className="py-1">{Math.round(r.carbs_g)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-line/50 bg-panel/40 px-3 py-3 space-y-2">
+        <div className="text-[10px] font-bold text-subtle uppercase tracking-widest">Підказка AI за день</div>
+        <Button
+          type="button"
+          variant="ghost"
+          className="text-xs h-9 w-full sm:w-auto"
+          disabled={dayHintBusy}
+          onClick={onFetchDayHint}
+        >
+          {dayHintBusy ? "…" : "Отримати підказку"}
+        </Button>
+        {dayHintText && (
+          <p className="text-sm text-text leading-snug border border-line/30 rounded-xl p-3 bg-bg/80">{dayHintText}</p>
+        )}
+      </div>
+
+      <div className="rounded-2xl border border-line/50 bg-panel/40 px-3 py-3 space-y-2">
+        <div className="text-[10px] font-bold text-subtle uppercase tracking-widest">Швидкі цілі (КБЖВ)</div>
+        <div className="flex flex-wrap gap-2">
+          {GOAL_PRESETS.map((preset) => (
+            <button
+              key={preset.id}
+              type="button"
+              onClick={() => applyGoalPreset(preset)}
+              className="px-3 py-1.5 rounded-xl text-xs font-semibold border border-line bg-panelHi hover:border-nutrition/50"
+            >
+              {preset.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-line/50 bg-panel/40 px-3 py-3 space-y-2">
+        <div className="text-[10px] font-bold text-subtle uppercase tracking-widest">Нагадування (браузер)</div>
+        <div className="flex flex-wrap gap-2 items-center">
+          <label className="flex items-center gap-2 text-xs text-text">
+            <input
+              type="checkbox"
+              checked={Boolean(prefs.reminderEnabled)}
+              onChange={(e) => setPrefs((p) => ({ ...p, reminderEnabled: e.target.checked }))}
+            />
+            Увімкнути
+          </label>
+          <input
+            type="number"
+            min={0}
+            max={23}
+            className="w-16 h-9 rounded-xl bg-panel border border-line px-2 text-xs"
+            value={prefs.reminderHour ?? 12}
+            onChange={(e) =>
+              setPrefs((p) => ({
+                ...p,
+                reminderHour: Math.min(23, Math.max(0, Number(e.target.value) || 0)),
+              }))
+            }
+          />
+          <span className="text-xs text-subtle">година</span>
+          <Button type="button" variant="ghost" className="text-xs h-9" onClick={requestNotifyPermission}>
+            Дозвіл на сповіщення
+          </Button>
+        </div>
+        <p className="text-[10px] text-subtle">Працює лише коли вкладка відкрита (обмеження браузера).</p>
       </div>
 
       <div className="rounded-2xl border border-line/50 bg-panel/40 px-3 py-3">
@@ -140,7 +433,10 @@ export function LogCard({
                 {label}
               </span>
               {hasTarget && (
-                <div className="w-full mt-1 h-1 rounded-full bg-line/80 overflow-hidden" title={`${Math.round(cur)} / ${Math.round(target)}`}>
+                <div
+                  className="w-full mt-1 h-1 rounded-full bg-line/80 overflow-hidden"
+                  title={`${Math.round(cur)} / ${Math.round(target)}`}
+                >
                   <div
                     className="h-full rounded-full bg-nutrition/90 transition-[width]"
                     style={{ width: `${pct(cur, target)}%` }}
@@ -198,6 +494,7 @@ function MealRow({ meal, onRemove }) {
   const mac = meal.macros || {};
   return (
     <div className="flex items-center gap-3 bg-panelHi rounded-2xl px-3 py-2.5 group">
+      <MealThumb mealId={meal.id} />
       <div className="flex flex-col flex-1 min-w-0">
         <div className="flex items-baseline gap-2">
           <span className="font-semibold text-text text-sm truncate">{meal.name}</span>

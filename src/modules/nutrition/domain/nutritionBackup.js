@@ -71,6 +71,12 @@ function normalizePrefs(x) {
     dailyTargetProtein_g: optionalPositiveNumber(p.dailyTargetProtein_g),
     dailyTargetFat_g: optionalPositiveNumber(p.dailyTargetFat_g),
     dailyTargetCarbs_g: optionalPositiveNumber(p.dailyTargetCarbs_g),
+    mealTemplates: Array.isArray(p.mealTemplates) ? p.mealTemplates.slice(0, 40) : [],
+    reminderEnabled: Boolean(p.reminderEnabled),
+    reminderHour:
+      p.reminderHour != null && Number.isFinite(Number(p.reminderHour))
+        ? Math.min(23, Math.max(0, Math.floor(Number(p.reminderHour))))
+        : 12,
   };
 }
 

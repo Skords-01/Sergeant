@@ -11,7 +11,7 @@ const TEMPLATES = [
 
 export function PantryCard({
   busy,
-  activePantry,
+  activePantry: _activePantry,
   parsePantry,
   applyTemplate,
   newItemName,

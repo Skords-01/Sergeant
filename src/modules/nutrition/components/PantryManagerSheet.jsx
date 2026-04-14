@@ -55,7 +55,7 @@ export function PantryManagerSheet({
                 Склади продуктів
               </div>
               <div className="text-xs text-subtle mt-1">
-                Створи окремо для "Дім / Робота" або по дієті
+                Створи окремо для Дім / Робота або по дієті
               </div>
             </div>
             <button
