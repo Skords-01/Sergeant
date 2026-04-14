@@ -444,6 +444,5 @@ function fmt(v) {
   const n = Number(v);
   if (!Number.isFinite(n)) return "—";
   return String(Math.round(n));
-  },
-});
+}
 
