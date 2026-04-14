@@ -6,7 +6,11 @@ export default defineConfig({
   plugins: [react()],
   test: {
     environment: "node",
-    include: ["src/**/*.test.js", "src/**/*.test.jsx", "api/**/*.test.js"],
+    include: [
+      "src/**/*.test.js",
+      "src/**/*.test.jsx",
+      "server/api/**/*.test.js",
+    ],
     passWithNoTests: false,
     setupFiles: ["src/test/setup.js"],
   },

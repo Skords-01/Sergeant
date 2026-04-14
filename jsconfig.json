@@ -15,7 +15,7 @@
   },
   "include": [
     "src/**/*",
-    "api/**/*",
+    "server/**/*",
     "scripts/**/*",
     "vite.config.js",
     "vitest.config.js",

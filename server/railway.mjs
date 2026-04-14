@@ -4,12 +4,12 @@
  */
 import express from "express";
 
-import chatHandler from "../api/chat.js";
-import monoHandler from "../api/mono.js";
-import analyzePhoto from "../api/nutrition/analyze-photo.js";
-import parsePantry from "../api/nutrition/parse-pantry.js";
-import refinePhoto from "../api/nutrition/refine-photo.js";
-import recommendRecipes from "../api/nutrition/recommend-recipes.js";
+import chatHandler from "./api/chat.js";
+import monoHandler from "./api/mono.js";
+import analyzePhoto from "./api/nutrition/analyze-photo.js";
+import parsePantry from "./api/nutrition/parse-pantry.js";
+import refinePhoto from "./api/nutrition/refine-photo.js";
+import recommendRecipes from "./api/nutrition/recommend-recipes.js";
 
 const app = express();
 const port = Number(process.env.PORT) || 3000;

@@ -24,9 +24,12 @@ src/
 │   └── lib/cn.js
 └── main.jsx
 
-api/
-├── mono.js                   # Monobank proxy
-└── chat.js                   # Anthropic Claude proxy
+server/
+├── railway.mjs               # Express-агрегатор API (Railway / npm start)
+└── api/                      # хендлери /api/* (не в корені — щоб Vercel Hobby не рахував functions)
+    ├── mono.js
+    ├── chat.js
+    └── nutrition/
 ```
 
 Дорожня карта та ТЗ по модулях: [docs/hub-modules-roadmap.md](docs/hub-modules-roadmap.md).
@@ -56,10 +59,10 @@ npm run dev
 1. У Railway: новий сервіс з цього репозиторію, білд через [`Dockerfile.api`](Dockerfile.api) (див. [`railway.toml`](railway.toml)).
 2. У змінних сервісу Railway задати ті самі секрети, що й для Vercel API: `ANTHROPIC_API_KEY`, опційно `NUTRITION_API_TOKEN`, `ALLOWED_ORIGINS` (додай origin свого Vercel-домену).
 3. У **Vercel** (Environment Variables для Production/Preview): `VITE_API_BASE_URL` = публічний URL Railway (HTTPS).
-4. На Vercel можна прибрати або залишити каталог `api/` — якщо залишиш, запити все одно підуть на Railway, якщо задано `VITE_API_BASE_URL`.
+4. Каталог API перенесено в [`server/api/`](server/api/) — **у корені репо немає `api/`**, тож Vercel Hobby не створює десятки serverless-функцій. Запити з фронта йдуть на Railway, якщо задано `VITE_API_BASE_URL`.
 
 Локально API: `npm start` (слухає `PORT`, за замовчуванням 3000).
 
 ## Деплой
 
-Vercel — автоматично при пуші в `main`. У корені [`vercel.json`](vercel.json): rewrite на `index.html` для Vite SPA (глибокі посилання); каталог [`api/`](api/) — serverless-функції (`/api/mono`, `/api/chat`, `/api/nutrition/*`). Дані модулів залишаються в **localStorage** браузера; окрема БД на сервері потрібна лише для синхронізації між пристроями або облікових записів.
+Vercel — автоматично при пуші в `main`. У [`vercel.json`](vercel.json): rewrite на `index.html` для SPA, **без** перехоплення `/api/*` (щоб не підміняти відповіді на HTML). API — на **Railway** (`Dockerfile.api`). Дані модулів у **localStorage**; окрема БД лише для синхронізації/акаунтів.
