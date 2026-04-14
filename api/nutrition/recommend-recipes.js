@@ -1,4 +1,5 @@
 import { setCorsHeaders } from "../lib/cors.js";
+import { extractJsonFromText } from "../lib/jsonSafe.js";
 
 const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
 
@@ -76,6 +77,7 @@ export default async function handler(req, res) {
     const payload = {
       model: "claude-sonnet-4-6",
       max_tokens: 900,
+      temperature: 0.2,
       system: SYSTEM,
       messages: [{ role: "user", content: prompt }],
     };
@@ -103,13 +105,7 @@ export default async function handler(req, res) {
       .join("\n")
       .trim();
 
-    let parsed;
-    try {
-      parsed = JSON.parse(out);
-    } catch {
-      return res.status(200).json({ recipes: [], raw: out });
-    }
-
+    const parsed = extractJsonFromText(out);
     const recipes = Array.isArray(parsed?.recipes) ? parsed.recipes : [];
     return res.status(200).json({ recipes });
   } catch (e) {

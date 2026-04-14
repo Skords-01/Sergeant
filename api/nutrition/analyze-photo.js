@@ -1,4 +1,5 @@
 import { setCorsHeaders } from "../lib/cors.js";
+import { extractJsonFromText } from "../lib/jsonSafe.js";
 
 const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
 
@@ -44,6 +45,7 @@ export default async function handler(req, res) {
     const payload = {
       model: "claude-sonnet-4-6",
       max_tokens: 700,
+      temperature: 0.2,
       system: SYSTEM,
       messages: [
         {
@@ -82,12 +84,20 @@ export default async function handler(req, res) {
       .join("\n")
       .trim();
 
-    let result = null;
-    try {
-      result = JSON.parse(text);
-    } catch {
-      return res.status(200).json({ result: { dishName: "Результат", confidence: 0, portion: null, ingredients: [], macros: { kcal: null, protein_g: null, fat_g: null, carbs_g: null }, questions: ["Не вдалося розпарсити JSON. Спробуй інше фото або обріж його."] }, raw: text });
-    }
+    const parsed = extractJsonFromText(text);
+    const result =
+      parsed && typeof parsed === "object"
+        ? parsed
+        : {
+            dishName: "Результат",
+            confidence: 0,
+            portion: null,
+            ingredients: [],
+            macros: { kcal: null, protein_g: null, fat_g: null, carbs_g: null },
+            questions: [
+              "Не вдалося витягнути JSON. Спробуй інше фото або обріж його.",
+            ],
+          };
 
     return res.status(200).json({ result });
   } catch (e) {
