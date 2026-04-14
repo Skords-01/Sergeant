@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { apiUrl } from "@shared/lib/apiUrl.js";
 import { TX_CACHE_TTL, CURRENCY } from "../constants";
 
 const HUB_FINYK_CACHE_EVENT = "hub-finyk-cache-updated";
@@ -154,7 +155,7 @@ async function fetchStatementWithRetry(tok, accId, from, to, maxAttempts = 3) {
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
       const res = await fetch(
-        `/api/mono?path=${encodeURIComponent(`/personal/statement/${accId}/${from}/${to}`)}`,
+        `${apiUrl("/api/mono")}?path=${encodeURIComponent(`/personal/statement/${accId}/${from}/${to}`)}`,
         { headers: { "X-Token": tok } },
       );
       if (!res.ok) {
@@ -388,7 +389,7 @@ export function useMonobank() {
         info = parsed?.info || parsed;
       } else {
         const res = await fetch(
-          `/api/mono?path=${encodeURIComponent("/personal/client-info")}`,
+          `${apiUrl("/api/mono")}?path=${encodeURIComponent("/personal/client-info")}`,
           {
             headers: { "X-Token": cleanToken },
           },
@@ -513,7 +514,7 @@ export function useMonobank() {
     // Також оновлюємо баланси рахунків (client-info), щоб нетворс був актуальним
     try {
       const res = await fetch(
-        `/api/mono?path=${encodeURIComponent("/personal/client-info")}`,
+        `${apiUrl("/api/mono")}?path=${encodeURIComponent("/personal/client-info")}`,
         {
           headers: { "X-Token": token },
         },

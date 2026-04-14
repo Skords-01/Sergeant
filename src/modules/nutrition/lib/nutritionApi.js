@@ -1,3 +1,4 @@
+import { apiUrl } from "@shared/lib/apiUrl.js";
 import { friendlyApiError } from "./nutritionErrors.js";
 
 export async function postJson(url, body) {
@@ -7,7 +8,7 @@ export async function postJson(url, body) {
     import.meta.env.VITE_NUTRITION_API_TOKEN
       ? String(import.meta.env.VITE_NUTRITION_API_TOKEN)
       : "";
-  const res = await fetch(url, {
+  const res = await fetch(apiUrl(url), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

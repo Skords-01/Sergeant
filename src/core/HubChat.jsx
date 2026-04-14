@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import { apiUrl } from "@shared/lib/apiUrl.js";
 import ReactMarkdown from "react-markdown";
 import {
   parseWorkoutsFromStorage,
@@ -829,7 +830,7 @@ function HubChat({ onClose }) {
     try {
       const context = buildContext();
 
-      const res = await fetch("/api/chat", {
+      const res = await fetch(apiUrl("/api/chat"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ context, messages: history }),
@@ -863,7 +864,7 @@ function HubChat({ onClose }) {
 
         let followUpText = "";
         try {
-          const res2 = await fetch("/api/chat", {
+          const res2 = await fetch(apiUrl("/api/chat"), {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({

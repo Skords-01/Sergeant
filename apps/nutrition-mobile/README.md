@@ -7,7 +7,7 @@
 - `/api/nutrition/recommend-recipes`
 
 ### Налаштування
-- Потрібно задати `EXPO_PUBLIC_API_BASE_URL` — базовий URL твого деплою `hub` (Vercel), напр.: `https://<твій-домен>.vercel.app`
+- Потрібно задати `EXPO_PUBLIC_API_BASE_URL` — базовий URL API: Vercel **або** окремий бекенд на Railway, напр.: `https://<твій-домен>.vercel.app` або `https://....up.railway.app`
 - Опційно: `EXPO_PUBLIC_NUTRITION_API_TOKEN` — якщо на сервері виставлено `NUTRITION_API_TOKEN` (йде заголовком `X-Token`)
 
 > Важливо: `EXPO_PUBLIC_*` змінні **видимі в клієнті**, це не “секрет”. Використовуй як легкий гейт для приватного деплою.
