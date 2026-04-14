@@ -18,7 +18,6 @@ function tryLoadSpeech() {
   try {
     // В Expo Go нативного модуля немає → буде runtime error.
     // У Dev Client модуль буде доступний.
-    // eslint-disable-next-line global-require
     const m = require("expo-speech-recognition");
     return m || null;
   } catch {
@@ -45,6 +44,7 @@ export default function App() {
   const [pantryText, setPantryText] = useState("");
   const [pantryItems, setPantryItems] = useState([]);
   const [recipes, setRecipes] = useState([]);
+  const [recipesRaw, setRecipesRaw] = useState("");
 
   const [listening, setListening] = useState(false);
   const lastTranscriptRef = useRef("");
@@ -117,6 +117,10 @@ export default function App() {
     const a = picked.assets?.[0];
     if (!a?.base64) {
       Alert.alert("Фото", "Не вдалося отримати base64. Спробуй інше фото.");
+      return;
+    }
+    if (String(a.base64).length > 7_000_000) {
+      Alert.alert("Фото", "Фото завелике. Обріж або стисни і спробуй ще раз.");
       return;
     }
     setImage({
@@ -198,6 +202,7 @@ export default function App() {
     setBusy(true);
     setStatus("Генерую рецепти…");
     try {
+      setRecipesRaw("");
       const items =
         pantryItems.length > 0
           ? pantryItems
@@ -215,6 +220,7 @@ export default function App() {
         },
       });
       setRecipes(Array.isArray(data?.recipes) ? data.recipes : []);
+      setRecipesRaw(typeof data?.rawText === "string" ? data.rawText : "");
     } catch (e) {
       Alert.alert("Помилка", e?.message || "Помилка рецептів");
     } finally {
@@ -367,6 +373,9 @@ export default function App() {
             onPress={recommendRecipes}
             disabled={busy}
           />
+          {!!recipesRaw && recipes.length === 0 && (
+            <Text style={styles.p}>Діагностика (raw): {recipesRaw}</Text>
+          )}
           {recipes.length > 0 &&
             recipes.map((r, idx) => (
               <View key={idx} style={styles.recipe}>

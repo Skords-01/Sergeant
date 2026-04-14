@@ -11,10 +11,14 @@ import {
   buildRoutineBackupPayload,
   applyRoutineBackupPayload,
 } from "../modules/routine/lib/routineStorage.js";
+import {
+  applyNutritionBackupPayload,
+  buildNutritionBackupPayload,
+} from "../modules/nutrition/domain/nutritionBackup.js";
 
 const HUB_MODULE_KEY = "hub_last_module";
 const HUB_CHAT_KEY = "hub_chat_history";
-const VALID_MODULES = new Set(["finyk", "fizruk", "routine"]);
+const VALID_MODULES = new Set(["finyk", "fizruk", "routine", "nutrition"]);
 
 export const HUB_BACKUP_KIND = "hub-backup";
 export const HUB_BACKUP_SCHEMA_VERSION = 1;
@@ -46,6 +50,7 @@ export function buildHubBackupPayload(options = {}) {
     finyk,
     fizruk: buildFizrukFullBackupPayload(),
     routine: buildRoutineBackupPayload(),
+    nutrition: buildNutritionBackupPayload(),
     hub: Object.keys(hub).length ? hub : undefined,
   };
 }
@@ -85,6 +90,9 @@ export function applyHubBackupPayload(parsed) {
   }
   if (parsed.fizruk) {
     applyFizrukFullBackupPayload(parsed.fizruk);
+  }
+  if (parsed.nutrition) {
+    applyNutritionBackupPayload(parsed.nutrition);
   }
   if (parsed.hub && typeof parsed.hub === "object") {
     const h = parsed.hub;

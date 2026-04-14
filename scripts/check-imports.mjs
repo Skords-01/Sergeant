@@ -6,6 +6,7 @@ const repoRoot = path.resolve(process.cwd());
 const MODULE_ROOTS = [
   path.join(repoRoot, "src", "modules", "finyk"),
   path.join(repoRoot, "src", "modules", "fizruk"),
+  path.join(repoRoot, "src", "modules", "nutrition"),
 ];
 
 const forbidden = [

@@ -1,7 +1,7 @@
 import { setCorsHeaders } from "../lib/cors.js";
 import { extractJsonFromText } from "../lib/jsonSafe.js";
-
-const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
+import { anthropicMessages, extractAnthropicText } from "./lib/anthropicFetch.js";
+import { normalizePhotoResult } from "./lib/nutritionResponse.js";
 
 const SYSTEM = `Ти нутріціолог-помічник. Відповідай ТІЛЬКИ українською.
 Поверни ТІЛЬКИ валідний JSON без markdown і без додаткового тексту.
@@ -61,45 +61,19 @@ export default async function handler(req, res) {
       ],
     };
 
-    const response = await fetch(ANTHROPIC_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify(payload),
-    });
-
-    const data = await response.json().catch(() => ({}));
+    const { response, data } = await anthropicMessages(apiKey, payload, { timeoutMs: 20000 });
     if (!response.ok) {
       return res
         .status(response.status)
         .json({ error: data?.error?.message || "AI error" });
     }
 
-    const text = (data?.content || [])
-      .filter((b) => b.type === "text")
-      .map((b) => b.text)
-      .join("\n")
-      .trim();
+    const text = extractAnthropicText(data);
 
     const parsed = extractJsonFromText(text);
-    const result =
-      parsed && typeof parsed === "object"
-        ? parsed
-        : {
-            dishName: "Результат",
-            confidence: 0,
-            portion: null,
-            ingredients: [],
-            macros: { kcal: null, protein_g: null, fat_g: null, carbs_g: null },
-            questions: [
-              "Не вдалося витягнути JSON. Спробуй інше фото або обріж його.",
-            ],
-          };
+    const result = normalizePhotoResult(parsed);
 
-    return res.status(200).json({ result });
+    return res.status(200).json({ result, rawText: text || null });
   } catch (e) {
     return res.status(500).json({ error: e?.message || "Помилка AI сервера" });
   }

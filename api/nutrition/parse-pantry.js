@@ -1,7 +1,7 @@
 import { setCorsHeaders } from "../lib/cors.js";
 import { extractJsonFromText } from "../lib/jsonSafe.js";
-
-const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
+import { anthropicMessages, extractAnthropicText } from "./lib/anthropicFetch.js";
+import { normalizePantryItems } from "./lib/nutritionResponse.js";
 
 const SYSTEM = `Ти помічник з харчування. Відповідай ТІЛЬКИ українською.
 Поверни ТІЛЬКИ валідний JSON без markdown і без додаткового тексту.
@@ -45,32 +45,18 @@ export default async function handler(req, res) {
       ],
     };
 
-    const response = await fetch(ANTHROPIC_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify(payload),
-    });
-
-    const data = await response.json().catch(() => ({}));
+    const { response, data } = await anthropicMessages(apiKey, payload, { timeoutMs: 20000 });
     if (!response.ok) {
       return res
         .status(response.status)
         .json({ error: data?.error?.message || "AI error" });
     }
 
-    const out = (data?.content || [])
-      .filter((b) => b.type === "text")
-      .map((b) => b.text)
-      .join("\n")
-      .trim();
+    const out = extractAnthropicText(data);
 
     const parsed = extractJsonFromText(out);
-    const items = Array.isArray(parsed?.items) ? parsed.items : [];
-    return res.status(200).json({ items });
+    const items = normalizePantryItems(parsed);
+    return res.status(200).json({ items, rawText: out || null });
   } catch (e) {
     return res.status(500).json({ error: e?.message || "Помилка AI сервера" });
   }

@@ -1,7 +1,7 @@
 import { setCorsHeaders } from "../lib/cors.js";
 import { extractJsonFromText } from "../lib/jsonSafe.js";
-
-const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
+import { anthropicMessages, extractAnthropicText } from "./lib/anthropicFetch.js";
+import { normalizeRecipes } from "./lib/nutritionResponse.js";
 
 const SYSTEM = `Ти шеф-кухар і нутріціолог. Відповідай ТІЛЬКИ українською.
 Поверни ТІЛЬКИ валідний JSON без markdown і без додаткового тексту.
@@ -88,36 +88,21 @@ export default async function handler(req, res) {
       messages: [{ role: "user", content: prompt }],
     };
 
-    const response = await fetch(ANTHROPIC_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify(payload),
-    });
-
-    const data = await response.json().catch(() => ({}));
+    const { response, data } = await anthropicMessages(apiKey, payload, { timeoutMs: 25000 });
     if (!response.ok) {
       return res
         .status(response.status)
         .json({ error: data?.error?.message || "AI error" });
     }
 
-    const out = (data?.content || [])
-      .filter((b) => b.type === "text")
-      .map((b) => b.text)
-      .join("\n")
-      .trim();
+    const out = extractAnthropicText(data);
 
     const parsed = extractJsonFromText(out);
-    const recipes = Array.isArray(parsed?.recipes) ? parsed.recipes : [];
-    // Якщо рецепти не повернулись — віддай raw для діагностики в UI
-    if (!Array.isArray(recipes) || recipes.length === 0) {
-      return res.status(200).json({ recipes: [], raw: out || null });
-    }
-    return res.status(200).json({ recipes });
+    const recipes = normalizeRecipes(parsed);
+    return res.status(200).json({
+      recipes,
+      rawText: recipes.length === 0 ? out || null : null,
+    });
   } catch (e) {
     return res.status(500).json({ error: e?.message || "Помилка AI сервера" });
   }
