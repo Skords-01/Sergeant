@@ -28,6 +28,11 @@ function uid(prefix) {
   return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 9)}`;
 }
 
+function normalizeReminderTimesStorage(rt) {
+  if (!Array.isArray(rt)) return [];
+  return rt.filter((t) => typeof t === "string" && /^\d{2}:\d{2}$/.test(t));
+}
+
 function normalizeHabit(h) {
   if (!h || typeof h !== "object") return h;
   const created = h.createdAt
@@ -39,6 +44,7 @@ function normalizeHabit(h) {
     startDate: h.startDate || created,
     endDate: h.endDate === undefined ? null : h.endDate,
     timeOfDay: h.timeOfDay === undefined ? "" : String(h.timeOfDay),
+    reminderTimes: normalizeReminderTimesStorage(h.reminderTimes),
     weekdays:
       Array.isArray(h.weekdays) && h.weekdays.length
         ? h.weekdays
@@ -206,6 +212,7 @@ export function createHabit(
     startDate = null,
     endDate = null,
     timeOfDay = "",
+    reminderTimes = [],
     weekdays = [0, 1, 2, 3, 4, 5, 6],
   } = {},
 ) {
@@ -228,6 +235,7 @@ export function createHabit(
       timeOfDay && String(timeOfDay).trim()
         ? String(timeOfDay).trim().slice(0, 5)
         : "",
+    reminderTimes: normalizeReminderTimesStorage(reminderTimes),
     weekdays: Array.isArray(weekdays)
       ? [...new Set(weekdays)].sort((a, b) => a - b)
       : [0, 1, 2, 3, 4, 5, 6],
