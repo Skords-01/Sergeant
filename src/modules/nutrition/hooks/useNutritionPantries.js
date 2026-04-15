@@ -85,18 +85,14 @@ export function useNutritionPantries({ setBusy, setErr, setStatusText }) {
     return parseLoosePantryText(raw);
   }, [pantryItems, pantryText]);
 
-  const upsertItem = (name) => {
-    const n = normalizeFoodName(name);
-    if (!n) return;
+  const upsertItem = (raw) => {
+    const parsed = parseLoosePantryText(raw);
+    if (!parsed.length) return;
     setPantries((cur) =>
-      updatePantry(cur, activePantryId, (p) => {
-        const arr = Array.isArray(p.items) ? p.items : [];
-        if (arr.some((x) => normalizeFoodName(x?.name) === n)) return p;
-        return {
-          ...p,
-          items: [...arr, { name: n, qty: null, unit: null, notes: null }],
-        };
-      }),
+      updatePantry(cur, activePantryId, (p) => ({
+        ...p,
+        items: mergeItems(Array.isArray(p.items) ? p.items : [], parsed),
+      })),
     );
   };
 

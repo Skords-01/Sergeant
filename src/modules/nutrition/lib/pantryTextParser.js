@@ -1,6 +1,7 @@
 export function normalizeFoodName(s) {
   return String(s || "")
     .trim()
+    .toLowerCase()
     .replace(/\s+/g, " ")
     .replace(/[•·]/g, ",")
     .replace(/^[,;]+|[,;]+$/g, "");
