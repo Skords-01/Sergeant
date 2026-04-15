@@ -18,7 +18,7 @@ export const STORAGE_KEYS = {
   // Fizruk
   FIZRUK_WORKOUTS: "fizruk_workouts_v1",
   FIZRUK_EXERCISES: "fizruk_exercises_v1",
-  FIZRUK_TEMPLATES: "fizruk_templates_v1",
+  FIZRUK_TEMPLATES: "fizruk_workout_templates_v1",
   FIZRUK_PLAN: "fizruk-storage-monthly-plan",
   FIZRUK_WELLBEING: "fizruk_wellbeing_v1",
   FIZRUK_MEASUREMENTS: "fizruk_measurements_v1",
