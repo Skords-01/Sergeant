@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { apiUrl } from "@shared/lib/apiUrl.js";
+import { STORAGE_KEYS } from "@shared/lib/storageKeys.js";
 
 const SYNC_MODULES = {
   finyk: {
@@ -8,21 +9,28 @@ const SYNC_MODULES = {
       "finyk_debts", "finyk_recv", "finyk_hidden_txs", "finyk_monthly_plan",
       "finyk_tx_cats", "finyk_mono_debt_linked", "finyk_networth_history",
       "finyk_tx_splits", "finyk_custom_cats_v1",
-      "finyk_tx_cache", "finyk_info_cache", "finyk_tx_cache_last_good",
-      "finyk_show_balance_v1", "finyk_token",
+      STORAGE_KEYS.FINYK_TX_CACHE,
+      STORAGE_KEYS.FINYK_INFO_CACHE,
+      "finyk_tx_cache_last_good",
+      STORAGE_KEYS.FINYK_SHOW_BALANCE,
+      STORAGE_KEYS.FINYK_TOKEN,
     ],
   },
   fizruk: {
     keys: [
-      "fizruk_workouts_v1", "fizruk_custom_exercises_v1",
-      "fizruk_measurements_v1", "fizruk_workout_templates_v1",
-      "fizruk_selected_template_id_v1", "fizruk_active_workout_id_v1",
-      "fizruk_plan_template_v1", "fizruk_monthly_plan_v1",
-      "fizruk_wellbeing_v1",
+      STORAGE_KEYS.FIZRUK_WORKOUTS,
+      "fizruk_custom_exercises_v1",
+      STORAGE_KEYS.FIZRUK_MEASUREMENTS,
+      STORAGE_KEYS.FIZRUK_TEMPLATES,
+      STORAGE_KEYS.FIZRUK_SELECTED_TEMPLATE,
+      "fizruk_active_workout_id_v1",
+      "fizruk_plan_template_v1",
+      "fizruk_monthly_plan_v1",
+      STORAGE_KEYS.FIZRUK_WELLBEING,
     ],
   },
   routine: {
-    keys: ["hub_routine_v1"],
+    keys: [STORAGE_KEYS.ROUTINE],
   },
   nutrition: {
     keys: [

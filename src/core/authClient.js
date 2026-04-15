@@ -1,10 +1,16 @@
 import { createAuthClient } from "better-auth/react";
 import { apiUrl } from "@shared/lib/apiUrl.js";
 
-const base = apiUrl("");
+function getAuthBaseURL() {
+  const configured = apiUrl("");
+  if (configured && configured !== "/" && configured.startsWith("http")) {
+    return configured;
+  }
+  return window.location.origin;
+}
 
 export const authClient = createAuthClient({
-  baseURL: base || window.location.origin,
+  baseURL: getAuthBaseURL(),
 });
 
 export const {
