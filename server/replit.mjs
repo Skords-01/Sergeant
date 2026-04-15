@@ -8,6 +8,8 @@ import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import { existsSync } from "fs";
 
+import { toNodeHandler } from "better-auth/node";
+import { auth } from "./auth.js";
 import chatHandler from "./api/chat.js";
 import monoHandler from "./api/mono.js";
 import analyzePhoto from "./api/nutrition/analyze-photo.js";
@@ -18,6 +20,7 @@ import dayHint from "./api/nutrition/day-hint.js";
 import weekPlan from "./api/nutrition/week-plan.js";
 import backupUpload from "./api/nutrition/backup-upload.js";
 import backupDownload from "./api/nutrition/backup-download.js";
+import { syncPush, syncPull, syncPullAll, syncPushAll } from "./api/sync.js";
 import { setCorsHeaders } from "./api/lib/cors.js";
 import { rateLimitExpress } from "./api/lib/rateLimit.js";
 
@@ -49,6 +52,17 @@ function wrap(handler) {
 app.get("/health", (_req, res) => {
   res.status(200).type("text/plain").send("ok");
 });
+
+app.all("/api/auth/*", toNodeHandler(auth));
+
+app.use(
+  "/api/sync",
+  rateLimitExpress({ key: "api:sync", limit: 30, windowMs: 60_000 }),
+);
+app.all("/api/sync/push", wrap(syncPush));
+app.all("/api/sync/pull", wrap(syncPull));
+app.all("/api/sync/pull-all", wrap(syncPullAll));
+app.all("/api/sync/push-all", wrap(syncPushAll));
 
 app.all(
   "/api/chat",

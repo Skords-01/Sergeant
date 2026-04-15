@@ -1,11 +1,13 @@
 # Hub — Replit Setup
 
 ## Overview
-A personal hub app with React + Vite frontend and an Express API backend, running as a single unified process on Replit.
+A personal hub app with React + Vite frontend and an Express API backend, running as a single unified process on Replit. Includes email/password authentication (Better Auth) and cloud sync via PostgreSQL.
 
 ## Architecture
 - **Frontend**: React 18 + Vite, built to `dist/`
 - **Backend**: Express.js serving API routes under `/api/*`
+- **Database**: PostgreSQL (Replit built-in) — stores users, sessions, and per-module JSON data blobs
+- **Auth**: Better Auth with email/password, session cookies, cookie caching
 - **Unified server**: `server/replit.mjs` serves both the built frontend and the API on port 5000
 
 ## Running the App
@@ -26,18 +28,43 @@ npm run dev           # Vite dev server on port 5173 (proxies /api to 3000)
 ## Key Files
 - `server/replit.mjs` — Unified server for Replit (frontend + API, port 5000)
 - `server/railway.mjs` — API-only server for Railway deployment (port 3000)
+- `server/auth.js` — Better Auth configuration (email/password, PostgreSQL adapter, session settings)
+- `server/db.js` — PostgreSQL connection pool
+- `server/api/sync.js` — Cloud sync endpoints (push/pull per-module data)
 - `server/api/` — API route handlers
 - `server/api/lib/cors.js` — CORS config (includes Replit domains via REPLIT_DOMAINS env var)
 - `vite.config.js` — Frontend build config with /api proxy
+- `src/core/authClient.js` — Better Auth React client
+- `src/core/AuthContext.jsx` — AuthProvider + useAuth hook
+- `src/core/useCloudSync.js` — Cloud sync hook (auto-push on data changes, manual pull)
+- `src/core/AuthPage.jsx` — Login/Register UI
 
 ## Environment Variables / Secrets
 | Key | Required | Description |
 |-----|----------|-------------|
+| `DATABASE_URL` | Yes (auto) | PostgreSQL connection string (auto-set by Replit) |
+| `BETTER_AUTH_SECRET` | Yes | Auth encryption secret (32+ chars) |
 | `ANTHROPIC_API_KEY` | Yes | Claude AI API key for chat features |
 | `NUTRITION_API_TOKEN` | No | Nutritionix API token |
 | `ALLOWED_ORIGINS` | No | Extra CORS origins (comma-separated) |
 | `VITE_API_BASE_URL` | No | Frontend API base URL (leave empty for relative paths) |
 | `VITE_NUTRITION_API_TOKEN` | No | Nutritionix token for direct frontend requests |
+
+## Auth & Sync System
+- **Better Auth** handles email/password registration and login at `/api/auth/*`
+- Session cookies with 30-day expiry, daily refresh, 5-minute cookie cache
+- `module_data` table stores JSON blobs per user per module (finyk, fizruk, routine, nutrition)
+- Sync endpoints: `POST /api/sync/push`, `POST /api/sync/pull`, `POST /api/sync/push-all`, `POST /api/sync/pull-all`
+- Client-side `useCloudSync` hook auto-pushes localStorage data to cloud on login and on storage changes (5s debounce)
+- Auth is optional — app works without login, but logged-in users get cloud backup and cross-device sync
+- User account menu in hub header shows sync status, manual push/pull buttons, and logout
+
+## Database Schema
+- `user` — Better Auth user table (id, email, name, etc.)
+- `session` — Better Auth session table
+- `account` — Better Auth account/credentials table
+- `verification` — Better Auth email verification table
+- `module_data` — Per-user per-module JSON data (user_id, module, data JSONB, timestamps)
 
 ## Shared UI System (`src/shared/`)
 - **ToastProvider + useToast** (`src/shared/hooks/useToast.jsx`) — Global toast notification context with `success`, `error`, `info`, `warning` methods

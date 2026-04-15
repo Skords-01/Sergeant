@@ -1,4 +1,4 @@
-modules = ["nodejs-20", "web"]
+modules = ["nodejs-20", "web", "postgresql-16"]
 [agent]
 expertMode = true
 
@@ -36,3 +36,8 @@ externalPort = 80
 [[ports]]
 localPort = 23636
 externalPort = 3001
+
+[userenv]
+
+[userenv.shared]
+BETTER_AUTH_SECRET = "2wHM5jrv6x1YRCEuCFEzwJ6qTCY451BVkPmn48XBySg="
