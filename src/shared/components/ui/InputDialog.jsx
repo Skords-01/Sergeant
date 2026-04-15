@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useId } from "react";
 import { useDialogFocusTrap } from "@shared/hooks/useDialogFocusTrap";
 import { cn } from "@shared/lib/cn";
 import { Button } from "./Button";
@@ -18,13 +18,15 @@ export function InputDialog({
   const ref = useRef(null);
   const inputRef = useRef(null);
   const [value, setValue] = useState(defaultValue);
+  const titleId = useId();
 
   useDialogFocusTrap(open, ref, { onEscape: onCancel });
 
   useEffect(() => {
     if (open) {
       setValue(defaultValue);
-      setTimeout(() => inputRef.current?.focus(), 60);
+      const timer = setTimeout(() => inputRef.current?.focus(), 60);
+      return () => clearTimeout(timer);
     }
   }, [open, defaultValue]);
 
@@ -50,7 +52,7 @@ export function InputDialog({
         ref={ref}
         role="dialog"
         aria-modal="true"
-        aria-labelledby="input-dialog-title"
+        aria-labelledby={titleId}
         onSubmit={handleSubmit}
         className={cn(
           "relative z-10 w-full max-w-sm mx-4 mb-4 sm:mb-0",
@@ -59,7 +61,7 @@ export function InputDialog({
         )}
       >
         <h2
-          id="input-dialog-title"
+          id={titleId}
           className="text-[17px] font-bold text-text mb-1 leading-snug"
         >
           {title}
