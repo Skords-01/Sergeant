@@ -18,6 +18,8 @@ import {
 import { getDebtTxRole, getReceivableTxRole } from "../domain/debtEngine";
 import { cn } from "@shared/lib/cn";
 import { notifyFinykRoutineCalendarSync } from "../hubRoutineSync.js";
+import { VoiceMicButton } from "@shared/components/ui/VoiceMicButton.jsx";
+import { parseExpenseSpeech as parseExpenseVoice } from "../../../core/lib/speechParsers.js";
 
 function SectionBar({ title, summary, open, onToggle }) {
   return (
@@ -39,7 +41,7 @@ function SectionBar({ title, summary, open, onToggle }) {
 const formInp =
   "w-full h-11 rounded-2xl border border-line bg-panelHi px-4 text-text outline-none focus:border-muted transition-colors";
 
-export function Assets({ mono, storage, showBalance = true }) {
+export function Assets({ mono, storage, showBalance = true, initialOpenDebt = false }) {
   const { accounts, transactions } = mono;
   const {
     hiddenAccounts,
@@ -59,7 +61,7 @@ export function Assets({ mono, storage, showBalance = true }) {
   } = storage;
 
   const [showAssetForm, setShowAssetForm] = useState(false);
-  const [showDebtForm, setShowDebtForm] = useState(false);
+  const [showDebtForm, setShowDebtForm] = useState(initialOpenDebt);
   const [showRecvForm, setShowRecvForm] = useState(false);
   const [showSubForm, setShowSubForm] = useState(false);
   const [newAsset, setNewAsset] = useState({
@@ -92,7 +94,7 @@ export function Assets({ mono, storage, showBalance = true }) {
   const [open, setOpen] = useState({
     subscriptions: false,
     assets: false,
-    liabilities: false,
+    liabilities: initialOpenDebt,
   });
 
   const { balance: monoTotal, debt: monoTotalDebt } = getMonoTotals(
@@ -809,14 +811,29 @@ export function Assets({ mono, storage, showBalance = true }) {
             ))}
             {showDebtForm ? (
               <div className="bg-panel border border-line rounded-xl p-4 space-y-3">
-                <input
-                  className={formInp}
-                  placeholder="Назва пасиву (кредит, борг...)"
-                  value={newDebt.name}
-                  onChange={(e) =>
-                    setNewDebt((a) => ({ ...a, name: e.target.value }))
-                  }
-                />
+                <div className="flex gap-2">
+                  <input
+                    className={cn(formInp, "flex-1")}
+                    placeholder="Назва пасиву (кредит, борг...)"
+                    value={newDebt.name}
+                    onChange={(e) =>
+                      setNewDebt((a) => ({ ...a, name: e.target.value }))
+                    }
+                  />
+                  <VoiceMicButton
+                    size="md"
+                    label="Голосовий ввід"
+                    onResult={(transcript) => {
+                      const parsed = parseExpenseVoice(transcript);
+                      if (!parsed) return;
+                      setNewDebt((a) => ({
+                        ...a,
+                        name: parsed.name || a.name,
+                        totalAmount: parsed.amount != null ? String(Math.round(parsed.amount)) : a.totalAmount,
+                      }));
+                    }}
+                  />
+                </div>
                 <input
                   className={formInp}
                   placeholder="Загальна сума ₴"

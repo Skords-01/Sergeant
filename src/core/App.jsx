@@ -104,6 +104,17 @@ function readLastHashForModule(moduleId) {
   return typeof h === "string" ? h : "";
 }
 
+const VALID_ACTIONS = new Set(["add_expense", "start_workout", "add_meal"]);
+
+function readInitialAction() {
+  if (typeof window === "undefined") return null;
+  try {
+    const q = new URLSearchParams(window.location.search).get("action");
+    if (VALID_ACTIONS.has(q)) return q;
+  } catch {}
+  return null;
+}
+
 function readInitialModule() {
   if (typeof window === "undefined") return null;
   try {
@@ -538,12 +549,38 @@ export default function App() {
   );
 }
 
+const PWA_ACTION_KEY = "pwa_pending_action";
+
+function consumePwaAction() {
+  try {
+    const a = localStorage.getItem(PWA_ACTION_KEY);
+    if (a) localStorage.removeItem(PWA_ACTION_KEY);
+    return a || null;
+  } catch {
+    return null;
+  }
+}
+
 function AppInner() {
   const [activeModule, setActiveModule] = useState(readInitialModule);
   const [chatOpen, setChatOpen] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
   const [hubView, setHubView] = useState("dashboard");
   const [searchOpen, setSearchOpen] = useState(false);
+  const [pwaAction, setPwaAction] = useState(() => {
+    const fromUrl = readInitialAction();
+    if (fromUrl) {
+      try { localStorage.setItem(PWA_ACTION_KEY, fromUrl); } catch {}
+      try {
+        const url = new URL(window.location.href);
+        url.searchParams.delete("action");
+        window.history.replaceState(null, "", url);
+      } catch {}
+      return fromUrl;
+    }
+    return consumePwaAction();
+  });
+  const clearPwaAction = useCallback(() => setPwaAction(null), []);
   const { dark, toggle: toggleDark } = useDarkMode();
   const { canInstall, install, dismiss } = usePwaInstall();
   const online = useOnlineStatus();
@@ -943,13 +980,13 @@ function AppInner() {
       <Suspense fallback={<PageLoader />}>
         <div key={activeModule} className="page-enter h-full flex flex-col">
           <ModuleErrorBoundary onBackToHub={goToHub}>
-            {activeModule === "finyk" && <FinykApp onBackToHub={goToHub} />}
-            {activeModule === "fizruk" && <FizrukApp onBackToHub={goToHub} />}
+            {activeModule === "finyk" && <FinykApp onBackToHub={goToHub} pwaAction={pwaAction} onPwaActionConsumed={clearPwaAction} />}
+            {activeModule === "fizruk" && <FizrukApp onBackToHub={goToHub} pwaAction={pwaAction} onPwaActionConsumed={clearPwaAction} />}
             {activeModule === "routine" && (
               <RoutineApp onBackToHub={goToHub} onOpenModule={openModule} />
             )}
             {activeModule === "nutrition" && (
-              <NutritionApp onBackToHub={goToHub} />
+              <NutritionApp onBackToHub={goToHub} pwaAction={pwaAction} onPwaActionConsumed={clearPwaAction} />
             )}
           </ModuleErrorBoundary>
         </div>

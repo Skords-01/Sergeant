@@ -4,6 +4,8 @@ import { Button } from "@shared/components/ui/Button";
 import { cn } from "@shared/lib/cn";
 import { useDialogFocusTrap } from "@shared/hooks/useDialogFocusTrap";
 import { MEAL_TYPES } from "../lib/mealTypes.js";
+import { VoiceMicButton } from "@shared/components/ui/VoiceMicButton.jsx";
+import { parseMealSpeech } from "../../../core/lib/speechParsers.js";
 import {
   ensureSeedFoods,
   macrosForGrams,
@@ -79,6 +81,18 @@ export function AddMealSheet({
   function field(key) {
     return (v) => setForm((s) => ({ ...s, [key]: v, err: "" }));
   }
+
+  const handleVoiceMeal = useCallback((transcript) => {
+    const parsed = parseMealSpeech(transcript);
+    if (!parsed) return;
+    setForm((s) => ({
+      ...s,
+      name: parsed.name || s.name,
+      kcal: parsed.kcal != null ? String(Math.round(parsed.kcal)) : s.kcal,
+      protein_g: parsed.protein != null ? String(Math.round(parsed.protein)) : s.protein_g,
+      err: "",
+    }));
+  }, []);
 
   function handleSave() {
     const name = form.name.trim();
@@ -430,8 +444,14 @@ export function AddMealSheet({
           {/* Назва + час */}
           <div className="grid grid-cols-[1fr_auto] gap-3 mb-4">
             <div>
-              <div className="text-[10px] font-bold text-subtle uppercase tracking-widest mb-1">
+              <div className="text-[10px] font-bold text-subtle uppercase tracking-widest mb-1 flex items-center gap-2">
                 Назва страви
+                <VoiceMicButton
+                  size="sm"
+                  onResult={handleVoiceMeal}
+                  onError={(e) => setForm((s) => ({ ...s, err: e }))}
+                  label="Голосовий ввід страви"
+                />
               </div>
               <Input
                 value={form.name}

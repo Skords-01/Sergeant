@@ -11,6 +11,7 @@ import { Transactions } from "./pages/Transactions.jsx";
 import { Budgets } from "./pages/Budgets.jsx";
 import { Assets } from "./pages/Assets.jsx";
 import { Settings } from "./pages/Settings.jsx";
+import { ManualExpenseSheet } from "./components/ManualExpenseSheet.jsx";
 
 const NAV_ICONS = {
   overview: (
@@ -122,7 +123,7 @@ function useHashRouter(defaultPage = "overview") {
   return [ALL_PAGE_IDS.includes(page) ? page : defaultPage, navigate];
 }
 
-export default function App({ onBackToHub } = {}) {
+export default function App({ onBackToHub, pwaAction, onPwaActionConsumed } = {}) {
   const mono = useMonobank();
   const toast = useToast();
   const showToast = useCallback((msg, type = "success") => {
@@ -141,6 +142,7 @@ export default function App({ onBackToHub } = {}) {
       return true;
     }
   });
+  const [showExpenseSheet, setShowExpenseSheet] = useState(false);
 
   useEffect(() => {
     try {
@@ -153,6 +155,11 @@ export default function App({ onBackToHub } = {}) {
       const ok = storage.loadFromUrl();
       if (ok) showToast("✅ Налаштування синхронізовано!");
       else showToast("❌ Не вдалось завантажити синк-дані", "error");
+    }
+    if (pwaAction === "add_expense") {
+      navigate("transactions");
+      setShowExpenseSheet(true);
+      onPwaActionConsumed?.();
     }
     // Одноразово при монтуванні: ?sync= у URL
     // eslint-disable-next-line react-hooks/exhaustive-deps -- storage/showToast не повинні перезапускати імпорт з URL
@@ -474,22 +481,44 @@ export default function App({ onBackToHub } = {}) {
           />
         )}
         {page === "transactions" && (
-          <Transactions
-            mono={mono}
-            storage={storage}
-            showBalance={showBalance}
-            categoryFilter={categoryFilter}
-            onClearCategoryFilter={() => setCategoryFilter(null)}
-          />
+          <div className="relative h-full">
+            <Transactions
+              mono={mono}
+              storage={storage}
+              showBalance={showBalance}
+              categoryFilter={categoryFilter}
+              onClearCategoryFilter={() => setCategoryFilter(null)}
+            />
+            <button
+              onClick={() => setShowExpenseSheet(true)}
+              className="absolute bottom-4 right-4 w-12 h-12 rounded-full bg-emerald-500 text-white shadow-lg flex items-center justify-center text-2xl hover:bg-emerald-600 active:scale-95 transition-all z-10"
+              aria-label="Додати витрату"
+            >
+              +
+            </button>
+          </div>
         )}
         {page === "budgets" && <Budgets mono={mono} storage={storage} />}
         {page === "assets" && (
-          <Assets mono={mono} storage={storage} showBalance={showBalance} />
+          <Assets
+            mono={mono}
+            storage={storage}
+            showBalance={showBalance}
+          />
         )}
         {page === "settings" && (
           <Settings mono={mono} storage={storage} showToast={showToast} />
         )}
       </div>
+
+      <ManualExpenseSheet
+        open={showExpenseSheet}
+        onClose={() => setShowExpenseSheet(false)}
+        onAdd={(expense) => {
+          storage.addManualExpense(expense);
+          showToast("✅ Витрату додано!");
+        }}
+      />
 
       {/* Bottom navigation */}
       <nav className="shrink-0 bg-panel/95 backdrop-blur-md border-t border-line/60 relative z-30 safe-area-pb">

@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { cn } from "@shared/lib/cn";
+import { HubRecommendations } from "./HubRecommendations.jsx";
 
 function safeParseLS(key, fallback) {
   try {
@@ -268,7 +269,10 @@ export function HubDashboard({ onOpenModule }) {
       : "🔄";
 
   return (
-    <div className="space-y-2.5">
+    <div className="space-y-4">
+      <HubRecommendations onOpenModule={onOpenModule} />
+
+      <div className="space-y-2.5">
       <h2 className="text-xs font-semibold text-muted uppercase tracking-wider px-0.5">
         Сьогодні
       </h2>
@@ -398,6 +402,7 @@ export function HubDashboard({ onOpenModule }) {
             <p className="text-xs text-muted">Немає записів</p>
           )}
         </DashCard>
+      </div>
       </div>
     </div>
   );

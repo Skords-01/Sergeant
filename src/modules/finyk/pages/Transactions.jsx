@@ -60,6 +60,8 @@ export function Transactions({
     overrideCategory,
     txSplits,
     setSplitTx,
+    manualExpenses,
+    removeManualExpense,
   } = storage;
   const [filter, setFilter] = useState("all");
 
@@ -113,7 +115,31 @@ export function Transactions({
 
   const isCurrentMonth =
     selMonth.year === now.getFullYear() && selMonth.month === now.getMonth();
-  const activeTx = isCurrentMonth ? realTx : historyTx;
+
+  const manualExpenseTxs = useMemo(() => {
+    const monthStart = new Date(selMonth.year, selMonth.month, 1).getTime();
+    const monthEnd = new Date(selMonth.year, selMonth.month + 1, 1).getTime();
+    return (manualExpenses || [])
+      .filter((e) => {
+        const ts = new Date(e.date).getTime();
+        return ts >= monthStart && ts < monthEnd;
+      })
+      .map((e) => ({
+        id: `manual_${e.id}`,
+        _manual: true,
+        _manualId: e.id,
+        time: Math.floor(new Date(e.date).getTime() / 1000),
+        amount: -Math.abs(Math.round(e.amount * 100)),
+        description: e.description,
+        _category: e.category,
+        _accountId: null,
+      }));
+  }, [manualExpenses, selMonth]);
+
+  const activeTx = useMemo(
+    () => [...(isCurrentMonth ? realTx : historyTx), ...manualExpenseTxs],
+    [isCurrentMonth, realTx, historyTx, manualExpenseTxs],
+  );
   const activeLoading = isCurrentMonth ? loadingTx : loadingHistory;
 
   const goMonth = (delta) => {
@@ -584,19 +610,29 @@ export function Transactions({
                         )}
                       </span>
                     )}
-                    <div className={cn(selectMode && "pl-8")}>
+                    <div className={cn(selectMode && "pl-8", "relative")}>
                       <TxRow
                         tx={t}
-                        onHide={hideTx}
+                        onHide={t._manual ? undefined : hideTx}
                         hidden={hiddenTxIds.includes(t.id)}
                         overrideCatId={txCategories[t.id]}
-                        onCatChange={overrideCategory}
+                        onCatChange={t._manual ? undefined : overrideCategory}
                         accounts={accounts}
                         hideAmount={!showBalance}
                         txSplits={txSplits}
-                        onSplitChange={setSplitTx}
+                        onSplitChange={t._manual ? undefined : setSplitTx}
                         customCategories={customCategories}
                       />
+                      {t._manual && removeManualExpense && (
+                        <button
+                          onClick={() => removeManualExpense(t._manualId)}
+                          className="absolute top-2 right-2 w-6 h-6 rounded-full bg-panelHi border border-line text-muted text-xs flex items-center justify-center hover:text-danger hover:border-danger transition-colors z-10"
+                          aria-label="Видалити витрату"
+                          title="Видалити ручну витрату"
+                        >
+                          ×
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}

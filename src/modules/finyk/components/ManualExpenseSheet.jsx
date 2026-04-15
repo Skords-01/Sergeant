@@ -1,0 +1,172 @@
+import { useState, useEffect } from "react";
+import { Button } from "@shared/components/ui/Button";
+import { VoiceMicButton } from "@shared/components/ui/VoiceMicButton.jsx";
+import { parseExpenseSpeech } from "../../../core/lib/speechParsers.js";
+
+const CATEGORIES = [
+  "їжа",
+  "транспорт",
+  "розваги",
+  "здоров'я",
+  "одяг",
+  "комунальні",
+  "техніка",
+  "інше",
+];
+
+const formInp =
+  "w-full h-11 rounded-2xl border border-line bg-panelHi px-4 text-text outline-none focus:border-muted transition-colors";
+
+export function ManualExpenseSheet({ open, onClose, onAdd }) {
+  const [form, setForm] = useState({
+    description: "",
+    amount: "",
+    category: "інше",
+    date: new Date().toISOString().slice(0, 10),
+  });
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (open) {
+      setForm({
+        description: "",
+        amount: "",
+        category: "інше",
+        date: new Date().toISOString().slice(0, 10),
+      });
+      setError("");
+    }
+  }, [open]);
+
+  if (!open) return null;
+
+  const handleSubmit = () => {
+    const amt = parseFloat(form.amount);
+    if (!form.description.trim()) {
+      setError("Вкажіть назву витрати");
+      return;
+    }
+    if (!form.amount || isNaN(amt) || amt <= 0) {
+      setError("Вкажіть суму більше 0");
+      return;
+    }
+    onAdd({
+      description: form.description.trim(),
+      amount: amt,
+      category: form.category,
+      date: form.date ? new Date(form.date).toISOString() : new Date().toISOString(),
+    });
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm">
+      <div className="w-full max-w-lg bg-panel rounded-t-3xl p-5 pb-safe-area-bottom space-y-4 animate-slide-up">
+        <div className="flex items-center justify-between mb-1">
+          <h2 className="text-base font-bold text-text">Додати витрату</h2>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-full bg-panelHi flex items-center justify-center text-muted hover:text-text transition-colors"
+            aria-label="Закрити"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div className="space-y-3">
+          <div className="flex gap-2 items-center">
+            <div className="flex-1">
+              <label className="text-xs text-muted uppercase tracking-wide font-semibold mb-1 block">
+                Назва
+              </label>
+              <input
+                className={formInp}
+                placeholder="Кава, продукти, таксі..."
+                value={form.description}
+                onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+                autoFocus
+              />
+            </div>
+            <div className="mt-5">
+              <VoiceMicButton
+                size="md"
+                label="Голосовий ввід"
+                onResult={(transcript) => {
+                  const parsed = parseExpenseSpeech(transcript);
+                  if (!parsed) return;
+                  setForm((f) => ({
+                    ...f,
+                    description: parsed.name || f.description,
+                    amount: parsed.amount != null ? String(Math.round(parsed.amount)) : f.amount,
+                  }));
+                }}
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="text-xs text-muted uppercase tracking-wide font-semibold mb-1 block">
+              Сума ₴
+            </label>
+            <input
+              className={formInp}
+              type="number"
+              inputMode="decimal"
+              placeholder="0"
+              min="0"
+              step="0.01"
+              value={form.amount}
+              onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))}
+            />
+          </div>
+
+          <div>
+            <label className="text-xs text-muted uppercase tracking-wide font-semibold mb-1 block">
+              Категорія
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {CATEGORIES.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setForm((f) => ({ ...f, category: cat }))}
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                    form.category === cat
+                      ? "bg-emerald-500 text-white border-emerald-500"
+                      : "bg-panelHi text-muted border-line hover:border-muted/50"
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="text-xs text-muted uppercase tracking-wide font-semibold mb-1 block">
+              Дата
+            </label>
+            <input
+              className={formInp}
+              type="date"
+              value={form.date}
+              onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
+            />
+          </div>
+
+          {error && (
+            <p className="text-xs text-red-500">{error}</p>
+          )}
+        </div>
+
+        <div className="flex gap-3 pt-1">
+          <Button variant="ghost" className="flex-1" onClick={onClose}>
+            Скасувати
+          </Button>
+          <Button className="flex-1" onClick={handleSubmit}>
+            Зберегти
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}

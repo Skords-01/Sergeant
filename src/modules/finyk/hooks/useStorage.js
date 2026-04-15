@@ -83,6 +83,23 @@ export function useStorage({ onImportFeedback } = {}) {
     "finyk_custom_cats_v1",
     [],
   );
+  const [manualExpenses, setManualExpenses] = usePersist("finyk_manual_expenses_v1", []);
+
+  const addManualExpense = (expense) => {
+    const entry = {
+      id: Date.now().toString(),
+      date: expense.date || new Date().toISOString(),
+      description: expense.description || "",
+      amount: Number(expense.amount) || 0,
+      category: expense.category || "інше",
+    };
+    setManualExpenses((prev) => [entry, ...prev]);
+    return entry;
+  };
+
+  const removeManualExpense = (id) => {
+    setManualExpenses((prev) => prev.filter((e) => e.id !== id));
+  };
 
   const toggleHideAccount = (id) =>
     setHiddenAccounts((h) =>
@@ -367,5 +384,9 @@ export function useStorage({ onImportFeedback } = {}) {
           .slice(-12);
       });
     },
+    manualExpenses,
+    setManualExpenses,
+    addManualExpense,
+    removeManualExpense,
   };
 }

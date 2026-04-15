@@ -72,7 +72,7 @@ function todayISODate() {
   return toLocalISODate(new Date());
 }
 
-export default function NutritionApp({ onBackToHub } = {}) {
+export default function NutritionApp({ onBackToHub, pwaAction, onPwaActionConsumed } = {}) {
   const toast = useToast();
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
@@ -100,6 +100,14 @@ export default function NutritionApp({ onBackToHub } = {}) {
   const log = useNutritionLog();
   const photo = usePhotoAnalysis({ setBusy, setErr, setStatusText });
   const shopping = useShoppingList();
+
+  useEffect(() => {
+    if (pwaAction === "add_meal") {
+      setActivePageAndHash("log");
+      log.setAddMealSheetOpen(true);
+      onPwaActionConsumed?.();
+    }
+  }, []);  
 
   const [prefs, setPrefs] = useState(() => loadNutritionPrefs());
   const [prefsStorageErr, setPrefsStorageErr] = useState("");

@@ -107,7 +107,7 @@ function setHash(next) {
   window.location.hash = h;
 }
 
-export default function FizrukApp({ onBackToHub } = {}) {
+export default function FizrukApp({ onBackToHub, pwaAction, onPwaActionConsumed } = {}) {
   const [route, setRoute] = useState(() => parseHash());
   const [settingsOpen, setSettingsOpen] = useState(false);
   const settingsPanelRef = useRef(null);
@@ -135,6 +135,13 @@ export default function FizrukApp({ onBackToHub } = {}) {
     const onHash = () => setRoute(parseHash());
     window.addEventListener("hashchange", onHash);
     return () => window.removeEventListener("hashchange", onHash);
+  }, []);
+
+  useEffect(() => {
+    if (pwaAction === "start_workout") {
+      setHash("workouts");
+      onPwaActionConsumed?.();
+    }
   }, []);
 
   const handleStartProgramWorkout = (session, _prog) => {

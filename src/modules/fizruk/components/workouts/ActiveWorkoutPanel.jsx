@@ -2,6 +2,8 @@ import { useId } from "react";
 import { Button } from "@shared/components/ui/Button";
 import { recoveryConflictsForWorkoutItem } from "../../lib/recoveryConflict";
 import { useRestSettings, getRestCategory, REST_CATEGORY_LABELS } from "../../hooks/useRestSettings";
+import { VoiceMicButton } from "@shared/components/ui/VoiceMicButton.jsx";
+import { parseWorkoutSetSpeech } from "../../../../core/lib/speechParsers.js";
 
 function isoToDatetimeLocalValue(iso) {
   if (!iso) return "";
@@ -302,9 +304,10 @@ export function ActiveWorkoutPanel({
                       </button>
                     </div>
                   ))}
+                  <div className="flex gap-2">
                   <Button
                     variant="ghost"
-                    className="w-full h-10 min-h-[44px]"
+                    className="flex-1 h-10 min-h-[44px]"
                     type="button"
                     onClick={() =>
                       updateItem(activeWorkout.id, it.id, {
@@ -314,6 +317,22 @@ export function ActiveWorkoutPanel({
                   >
                     + Підхід
                   </Button>
+                  <VoiceMicButton
+                    size="md"
+                    label="Голосовий ввід підходу"
+                    onResult={(transcript) => {
+                      const parsed = parseWorkoutSetSpeech(transcript);
+                      if (!parsed) return;
+                      const newSet = {
+                        weightKg: parsed.weight ?? 0,
+                        reps: parsed.reps ?? 0,
+                      };
+                      updateItem(activeWorkout.id, it.id, {
+                        sets: [...(it.sets || []), newSet],
+                      });
+                    }}
+                  />
+                  </div>
                   {!activeWorkout.endedAt && (() => {
                     const defSec = getDefaultForGroup(it.primaryGroup);
                     const cat = getRestCategory(it.primaryGroup);

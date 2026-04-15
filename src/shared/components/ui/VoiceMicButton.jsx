@@ -1,0 +1,156 @@
+import { useCallback, useEffect, useRef, useState } from "react";
+import { cn } from "@shared/lib/cn";
+
+export function useVoiceInput({ lang = "uk-UA", onResult, onError } = {}) {
+  const [listening, setListening] = useState(false);
+  const [supported, setSupported] = useState(false);
+  const recRef = useRef(null);
+
+  useEffect(() => {
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
+    setSupported(!!SpeechRecognition);
+  }, []);
+
+  const start = useCallback(() => {
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      onError?.("Голосовий ввід не підтримується у цьому браузері.");
+      return;
+    }
+    if (recRef.current) {
+      try { recRef.current.abort(); } catch {}
+      recRef.current = null;
+    }
+    const rec = new SpeechRecognition();
+    rec.lang = lang;
+    rec.interimResults = false;
+    rec.maxAlternatives = 1;
+    rec.continuous = false;
+
+    rec.onstart = () => setListening(true);
+    rec.onend = () => {
+      setListening(false);
+      recRef.current = null;
+    };
+    rec.onresult = (e) => {
+      const transcript = e.results?.[0]?.[0]?.transcript ?? "";
+      if (transcript) onResult?.(transcript);
+    };
+    rec.onerror = (e) => {
+      setListening(false);
+      recRef.current = null;
+      if (e.error === "not-allowed") {
+        onError?.("Немає дозволу на використання мікрофону.");
+      } else if (e.error === "no-speech") {
+        onError?.("Не вдалося розпізнати мову. Спробуйте ще раз.");
+      } else if (e.error !== "aborted") {
+        onError?.(`Помилка розпізнавання: ${e.error}`);
+      }
+    };
+
+    recRef.current = rec;
+    try {
+      rec.start();
+    } catch {
+      setListening(false);
+      recRef.current = null;
+    }
+  }, [lang, onResult, onError]);
+
+  const stop = useCallback(() => {
+    if (recRef.current) {
+      try { recRef.current.stop(); } catch {}
+    }
+  }, []);
+
+  const toggle = useCallback(() => {
+    if (listening) stop();
+    else start();
+  }, [listening, start, stop]);
+
+  useEffect(() => {
+    return () => {
+      if (recRef.current) {
+        try { recRef.current.abort(); } catch {}
+      }
+    };
+  }, []);
+
+  return { listening, supported, start, stop, toggle };
+}
+
+export function VoiceMicButton({
+  onResult,
+  onError,
+  lang = "uk-UA",
+  className,
+  size = "md",
+  label,
+  disabled = false,
+}) {
+  const { listening, supported, toggle } = useVoiceInput({
+    lang,
+    onResult,
+    onError,
+  });
+
+  if (!supported) return null;
+
+  const sizeMap = {
+    sm: "w-8 h-8",
+    md: "w-10 h-10",
+    lg: "w-12 h-12",
+  };
+  const iconSize = size === "sm" ? 14 : size === "lg" ? 20 : 16;
+
+  return (
+    <button
+      type="button"
+      onClick={toggle}
+      disabled={disabled}
+      aria-label={listening ? "Зупинити запис" : (label || "Голосовий ввід")}
+      title={listening ? "Зупинити запис" : (label || "Голосовий ввід")}
+      className={cn(
+        "relative flex items-center justify-center rounded-2xl shrink-0 transition-all",
+        sizeMap[size] || sizeMap.md,
+        listening
+          ? "bg-error/15 text-error border border-error/30 animate-pulse"
+          : "bg-panelHi text-muted hover:text-text hover:bg-line/40 border border-line/60",
+        disabled && "opacity-40 pointer-events-none",
+        className
+      )}
+    >
+      {listening ? (
+        <svg
+          width={iconSize}
+          height={iconSize}
+          viewBox="0 0 24 24"
+          fill="currentColor"
+          aria-hidden
+        >
+          <rect x="6" y="4" width="4" height="16" rx="1" />
+          <rect x="14" y="4" width="4" height="16" rx="1" />
+        </svg>
+      ) : (
+        <svg
+          width={iconSize}
+          height={iconSize}
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden
+        >
+          <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+          <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+          <line x1="12" y1="19" x2="12" y2="23" />
+          <line x1="8" y1="23" x2="16" y2="23" />
+        </svg>
+      )}
+    </button>
+  );
+}

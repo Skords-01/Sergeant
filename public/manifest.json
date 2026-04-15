@@ -1,0 +1,47 @@
+{
+  "name": "Мій Простір",
+  "short_name": "Мій Простір",
+  "description": "Особисті фінанси, фітнес, звички та харчування",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#3b82f6",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Додати витрату",
+      "short_name": "Витрата",
+      "description": "Швидко додати нову витрату у Фінік",
+      "url": "/?module=finyk&action=add_expense",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Розпочати тренування",
+      "short_name": "Тренування",
+      "description": "Розпочати нове тренування у Фізрук",
+      "url": "/?module=fizruk&action=start_workout",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Додати прийом їжі",
+      "short_name": "Їжа",
+      "description": "Записати прийом їжі у Харчування",
+      "url": "/?module=nutrition&action=add_meal",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}
