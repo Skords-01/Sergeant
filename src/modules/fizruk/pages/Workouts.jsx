@@ -272,13 +272,14 @@ export function Workouts() {
           distanceM: isCardio ? 0 : 0,
         });
       }
+      if (tpl?.id) templateApi.markTemplateUsed(tpl.id);
       try {
         localStorage.setItem(ACTIVE_WORKOUT_KEY, w.id);
       } catch {}
       setActiveWorkoutId(w.id);
       setMode("log");
     },
-    [exercises, rec.by, createWorkout, addItem, toast],
+    [exercises, rec.by, createWorkout, addItem, toast, templateApi],
   );
 
   const submitRetroWorkout = useCallback(() => {
@@ -1364,6 +1365,7 @@ export function Workouts() {
               distanceM: isCardio ? 0 : 0,
             });
           }
+          if (tpl?.id) templateApi.markTemplateUsed(tpl.id);
           try {
             localStorage.setItem(ACTIVE_WORKOUT_KEY, w.id);
           } catch {}

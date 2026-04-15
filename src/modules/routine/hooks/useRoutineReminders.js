@@ -79,8 +79,11 @@ export function useRoutineReminders(routine) {
 
   useEffect(() => {
     if (!enabled) return undefined;
+    let timerId = null;
+    let disposed = false;
 
-    const tick = () => {
+    const fireAndSchedule = () => {
+      if (disposed) return;
       const r = routineRef.current;
       if (r.prefs?.routineRemindersEnabled !== true) return;
       if (typeof Notification === "undefined") return;
@@ -117,11 +120,24 @@ export function useRoutineReminders(routine) {
           } catch {}
         } catch {}
       }
+
+      scheduleNext();
     };
 
-    const id = setInterval(tick, 30000);
-    tick();
-    return () => clearInterval(id);
+    const scheduleNext = () => {
+      if (disposed) return;
+      const now = new Date();
+      const msToNextMinute =
+        (60 - now.getSeconds()) * 1000 - now.getMilliseconds() + 50;
+      timerId = setTimeout(fireAndSchedule, msToNextMinute);
+    };
+
+    fireAndSchedule();
+
+    return () => {
+      disposed = true;
+      if (timerId) clearTimeout(timerId);
+    };
   }, [enabled]);
 }
 

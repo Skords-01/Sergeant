@@ -76,7 +76,7 @@ function habitScheduledOnDateSW(h, dk) {
 
 const notifiedKeys = new Set();
 let routineData = null;
-let reminderTimerId = null;
+let scheduledTimerId = null;
 
 function normalizeReminderTimesSW(h) {
   if (Array.isArray(h.reminderTimes) && h.reminderTimes.length > 0) {
@@ -120,10 +120,20 @@ function checkReminders() {
   }
 }
 
+function scheduleNextCheck() {
+  if (scheduledTimerId) clearTimeout(scheduledTimerId);
+  const now = new Date();
+  const msToNextMinute =
+    (60 - now.getSeconds()) * 1000 - now.getMilliseconds() + 50;
+  scheduledTimerId = setTimeout(() => {
+    checkReminders();
+    scheduleNextCheck();
+  }, msToNextMinute);
+}
+
 function startReminderLoop() {
-  if (reminderTimerId) clearInterval(reminderTimerId);
-  reminderTimerId = setInterval(checkReminders, 30000);
   checkReminders();
+  scheduleNextCheck();
 }
 
 self.addEventListener("message", (event) => {
