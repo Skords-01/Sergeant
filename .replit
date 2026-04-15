@@ -40,3 +40,11 @@ externalPort = 3001
 [userenv]
 
 [userenv.shared]
+
+[userenv.development]
+
+[userenv.production]
+
+[postMerge]
+path = "scripts/post-merge.sh"
+timeoutMs = 120000
