@@ -3,7 +3,7 @@ import { cn } from "@shared/lib/cn";
 const NAV = [
   {
     id: "start",
-    label: "Старт",
+    label: "Огляд",
     icon: (
       <svg
         width="22"
