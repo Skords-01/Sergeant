@@ -10,7 +10,7 @@ import { AddMealSheet } from "./components/AddMealSheet.jsx";
 import { PantryManagerSheet } from "./components/PantryManagerSheet.jsx";
 import { ConfirmDeleteSheet } from "./components/ConfirmDeleteSheet.jsx";
 import { ItemEditSheet } from "./components/ItemEditSheet.jsx";
-import { loadNutritionPrefs, persistNutritionPrefs, getDayMacros } from "./lib/nutritionStorage.js";
+import { loadNutritionPrefs, persistNutritionPrefs, getDayMacros, toLocalISODate } from "./lib/nutritionStorage.js";
 import { useNutritionPantries } from "./hooks/useNutritionPantries.js";
 import { useNutritionLog } from "./hooks/useNutritionLog.js";
 import { usePhotoAnalysis } from "./hooks/usePhotoAnalysis.js";
@@ -39,7 +39,7 @@ function setHash(next) {
 }
 
 function todayISODate() {
-  return new Date().toISOString().slice(0, 10);
+  return toLocalISODate(new Date());
 }
 
 export default function NutritionApp({ onBackToHub } = {}) {
@@ -375,6 +375,7 @@ export default function NutritionApp({ onBackToHub } = {}) {
                 weekPlanRaw={weekPlanRaw}
                 weekPlanBusy={weekPlanBusy}
                 fetchWeekPlan={fetchWeekPlan}
+                addMealToLog={wrappedAddMeal}
               />
             )}
           </div>

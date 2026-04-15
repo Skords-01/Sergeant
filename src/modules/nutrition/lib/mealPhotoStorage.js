@@ -71,6 +71,52 @@ export async function deleteMealThumbnail(mealId) {
   }
 }
 
+export async function listMealThumbnailIds() {
+  try {
+    const db = await openDb();
+    const ids = await new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE, "readonly");
+      const req = tx.objectStore(STORE).getAllKeys();
+      req.onsuccess = () => resolve(Array.isArray(req.result) ? req.result.map(String) : []);
+      req.onerror = () => reject(req.error);
+    });
+    db.close();
+    return Array.isArray(ids) ? ids : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function gcMealThumbnails(validMealIds, { maxDeletes = 500 } = {}) {
+  const keep = validMealIds instanceof Set ? validMealIds : new Set(Array.isArray(validMealIds) ? validMealIds : []);
+  try {
+    const db = await openDb();
+    const tx = db.transaction(STORE, "readwrite");
+    const store = tx.objectStore(STORE);
+    const keys = await new Promise((resolve, reject) => {
+      const r = store.getAllKeys();
+      r.onsuccess = () => resolve(Array.isArray(r.result) ? r.result.map(String) : []);
+      r.onerror = () => reject(r.error);
+    });
+    let deleted = 0;
+    for (const k of keys) {
+      if (deleted >= maxDeletes) break;
+      if (!keep.has(String(k))) {
+        store.delete(k);
+        deleted += 1;
+      }
+    }
+    await new Promise((resolve, reject) => {
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+    db.close();
+    return { ok: true, deleted };
+  } catch {
+    return { ok: false, deleted: 0 };
+  }
+}
+
 export function fileToThumbnailBlob(file, maxSize = 128) {
   return new Promise((resolve) => {
     const img = new Image();

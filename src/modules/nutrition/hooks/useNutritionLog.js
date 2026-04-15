@@ -9,12 +9,25 @@ import {
   mergeNutritionLogs,
   normalizeNutritionLog,
   trimLogOldestDays,
+  toLocalISODate,
 } from "../lib/nutritionStorage.js";
-import { deleteMealThumbnail } from "../lib/mealPhotoStorage.js";
+import { deleteMealThumbnail, gcMealThumbnails } from "../lib/mealPhotoStorage.js";
+
+function collectMealIds(log) {
+  const out = new Set();
+  for (const day of Object.values(log || {})) {
+    const meals = Array.isArray(day?.meals) ? day.meals : [];
+    for (const m of meals) {
+      const id = m?.id;
+      if (id) out.add(String(id));
+    }
+  }
+  return out;
+}
 
 export function useNutritionLog() {
   const [nutritionLog, setNutritionLog] = useState(() => loadNutritionLog(NUTRITION_LOG_KEY));
-  const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [selectedDate, setSelectedDate] = useState(() => toLocalISODate(new Date()));
   const [addMealSheetOpen, setAddMealSheetOpen] = useState(false);
   const [addMealPhotoResult, setAddMealPhotoResult] = useState(null);
   const [storageErr, setStorageErr] = useState("");
@@ -43,7 +56,12 @@ export function useNutritionLog() {
 
   const replaceLogFromJsonText = useCallback((text) => {
     const parsed = JSON.parse(text);
-    setNutritionLog(normalizeNutritionLog(parsed));
+    setNutritionLog((prev) => {
+      const next = normalizeNutritionLog(parsed);
+      const keep = collectMealIds(next);
+      void gcMealThumbnails(keep, { maxDeletes: 2000 });
+      return next;
+    });
   }, []);
 
   const mergeLogFromJsonText = useCallback((text) => {
@@ -52,7 +70,12 @@ export function useNutritionLog() {
   }, []);
 
   const trimLogToLastDays = useCallback((keepDays) => {
-    setNutritionLog((log) => trimLogOldestDays(log, keepDays));
+    setNutritionLog((prev) => {
+      const next = trimLogOldestDays(prev, keepDays);
+      const keep = collectMealIds(next);
+      void gcMealThumbnails(keep, { maxDeletes: 2000 });
+      return next;
+    });
   }, []);
 
   return {

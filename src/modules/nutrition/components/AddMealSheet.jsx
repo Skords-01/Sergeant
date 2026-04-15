@@ -4,6 +4,17 @@ import { Button } from "@shared/components/ui/Button";
 import { cn } from "@shared/lib/cn";
 import { useDialogFocusTrap } from "@shared/hooks/useDialogFocusTrap";
 import { MEAL_TYPES } from "../lib/mealTypes.js";
+import {
+  ensureSeedFoods,
+  macrosForGrams,
+  exportFoodDbJson,
+  importFoodDbJson,
+  lookupFoodByBarcode,
+  bindBarcodeToFood,
+  searchFoods,
+  upsertFood,
+} from "../lib/foodDb/foodDb.js";
+import { downloadBlob } from "../lib/nutritionLogExport.js";
 
 function currentTime() {
   const now = new Date();
@@ -27,11 +38,34 @@ function emptyForm(photoResult) {
 export function AddMealSheet({ open, onClose, onSave, photoResult, mealTemplates = [], setPrefs }) {
   const ref = useRef(null);
   const [form, setForm] = useState(() => emptyForm(null));
+  const [foodQuery, setFoodQuery] = useState("");
+  const [foodHits, setFoodHits] = useState([]);
+  const [foodBusy, setFoodBusy] = useState(false);
+  const [pickedFood, setPickedFood] = useState(null);
+  const [pickedGrams, setPickedGrams] = useState("100");
+  const [foodErr, setFoodErr] = useState("");
+  const [barcode, setBarcode] = useState("");
+  const [barcodeStatus, setBarcodeStatus] = useState("");
+  const [scannerOpen, setScannerOpen] = useState(false);
+  const videoRef = useRef(null);
+  const streamRef = useRef(null);
+  const foodImportRef = useRef(null);
 
   useDialogFocusTrap(open, ref, { onEscape: onClose });
 
   useEffect(() => {
-    if (open) setForm(emptyForm(photoResult));
+    if (open) {
+      setForm(emptyForm(photoResult));
+      setFoodQuery("");
+      setFoodHits([]);
+      setPickedFood(null);
+      setPickedGrams("100");
+      setFoodErr("");
+      setBarcode("");
+      setBarcodeStatus("");
+      setScannerOpen(false);
+      void ensureSeedFoods();
+    }
   }, [open, photoResult]);
 
   if (!open) return null;
@@ -66,6 +100,161 @@ export function AddMealSheet({ open, onClose, onSave, photoResult, mealTemplates
     });
   }
 
+  useEffect(() => {
+    const q = foodQuery.trim();
+    if (!q) {
+      setFoodHits([]);
+      setFoodErr("");
+      return;
+    }
+    let cancelled = false;
+    setFoodBusy(true);
+    setFoodErr("");
+    const id = window.setTimeout(() => {
+      (async () => {
+        const hits = await searchFoods(q, 12);
+        if (!cancelled) setFoodHits(hits);
+        if (!cancelled && hits.length === 0) setFoodErr("Нічого не знайдено в базі продуктів.");
+      })()
+        .catch(() => {
+          if (!cancelled) setFoodErr("Не вдалося виконати пошук.");
+        })
+        .finally(() => {
+          if (!cancelled) setFoodBusy(false);
+        });
+    }, 180);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(id);
+    };
+  }, [foodQuery]);
+
+  function applyPickedFood(p, gramsRaw) {
+    const g = Number(String(gramsRaw || "").trim().replace(",", "."));
+    const grams = Number.isFinite(g) && g > 0 ? g : p?.defaultGrams || 100;
+    const mac = macrosForGrams(p?.per100, grams);
+    setForm((s) => ({
+      ...s,
+      name: [p?.name, p?.brand].filter(Boolean).join(" ").trim() || s.name,
+      kcal: String(Math.round(Number(mac.kcal) || 0)),
+      protein_g: String(Math.round(Number(mac.protein_g) || 0)),
+      fat_g: String(Math.round(Number(mac.fat_g) || 0)),
+      carbs_g: String(Math.round(Number(mac.carbs_g) || 0)),
+      err: "",
+    }));
+  }
+
+  async function handleBarcodeLookup(codeRaw) {
+    const code = String(codeRaw || "").trim();
+    if (!code) return;
+    setBarcodeStatus("Шукаю…");
+    const found = await lookupFoodByBarcode(code);
+    if (!found) {
+      setBarcodeStatus("Не знайдено. Можна прив’язати до продукту.");
+      return;
+    }
+    setBarcodeStatus("Знайдено ✔");
+    setPickedFood(found);
+    setPickedGrams(String(Math.round(found.defaultGrams || 100)));
+    applyPickedFood(found, String(found.defaultGrams || 100));
+  }
+
+  async function handleBarcodeBind(codeRaw) {
+    const code = String(codeRaw || "").trim();
+    if (!/^\d{8,14}$/.test(code)) {
+      setBarcodeStatus("Некоректний штрихкод (очікую 8–14 цифр).");
+      return;
+    }
+    if (!pickedFood?.id) {
+      setBarcodeStatus("Спочатку обери продукт (або збережи поточний як продукт).");
+      return;
+    }
+    const ok = await bindBarcodeToFood(code, pickedFood.id);
+    setBarcodeStatus(ok ? "Прив’язано ✔" : "Не вдалося прив’язати");
+  }
+
+  useEffect(() => {
+    if (!scannerOpen) return;
+    let stopped = false;
+    let raf = 0;
+
+    const stop = () => {
+      try {
+        const s = streamRef.current;
+        if (s) for (const t of s.getTracks()) t.stop();
+      } catch {
+        /* ignore */
+      }
+      streamRef.current = null;
+      if (videoRef.current) videoRef.current.srcObject = null;
+    };
+
+    const run = async () => {
+      try {
+        if (!navigator?.mediaDevices?.getUserMedia) {
+          setBarcodeStatus("Камера недоступна в цьому браузері.");
+          setScannerOpen(false);
+          return;
+        }
+        // eslint-disable-next-line no-undef
+        const Detector = window.BarcodeDetector;
+        if (!Detector) {
+          setBarcodeStatus("Сканер не підтримується (BarcodeDetector).");
+          setScannerOpen(false);
+          return;
+        }
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "environment" },
+          audio: false,
+        });
+        if (stopped) {
+          for (const t of stream.getTracks()) t.stop();
+          return;
+        }
+        streamRef.current = stream;
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          await videoRef.current.play();
+        }
+        const detector = new Detector({
+          formats: ["ean_13", "ean_8", "upc_a", "upc_e", "code_128", "qr_code"],
+        });
+
+        const tick = async () => {
+          if (stopped) return;
+          try {
+            const v = videoRef.current;
+            if (v && v.readyState >= 2) {
+              const codes = await detector.detect(v);
+              const raw = codes?.[0]?.rawValue;
+              if (raw) {
+                setBarcode(String(raw));
+                setScannerOpen(false);
+                stop();
+                await handleBarcodeLookup(raw);
+                return;
+              }
+            }
+          } catch {
+            /* ignore */
+          }
+          raf = window.requestAnimationFrame(tick);
+        };
+        raf = window.requestAnimationFrame(tick);
+      } catch {
+        setBarcodeStatus("Не вдалося відкрити камеру.");
+        setScannerOpen(false);
+      }
+    };
+
+    void run();
+    return () => {
+      stopped = true;
+      if (raf) window.cancelAnimationFrame(raf);
+      stop();
+    };
+  }, [scannerOpen]);
+
   const hasPhotoMacros =
     photoResult?.macros &&
     Object.values(photoResult.macros).some((v) => v != null && v !== 0);
@@ -78,6 +267,31 @@ export function AddMealSheet({ open, onClose, onSave, photoResult, mealTemplates
         aria-label="Закрити"
         onClick={onClose}
       />
+      {scannerOpen && (
+        <div className="absolute inset-0 z-[130] flex items-center justify-center px-4">
+          <div className="w-full max-w-md rounded-3xl border border-line bg-panel shadow-soft overflow-hidden">
+            <div className="px-4 py-3 flex items-center justify-between border-b border-line/50">
+              <div className="text-sm font-extrabold text-text">Сканер штрихкоду</div>
+              <button
+                type="button"
+                onClick={() => setScannerOpen(false)}
+                className="w-10 h-10 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full bg-panelHi text-muted hover:text-text text-lg transition-colors"
+                aria-label="Закрити сканер"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="p-4 space-y-2">
+              <div className="rounded-2xl overflow-hidden border border-line/50 bg-black">
+                <video ref={videoRef} className="w-full aspect-[3/4] object-cover" muted playsInline />
+              </div>
+              <div className="text-[11px] text-subtle">
+                Наведи камеру на штрихкод. Якщо нічого не зчитує — введи код вручну.
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       <div
         ref={ref}
         className="relative w-full bg-panel border-t border-line rounded-t-3xl shadow-soft max-h-[90dvh] overflow-y-auto"
@@ -188,6 +402,218 @@ export function AddMealSheet({ open, onClose, onSave, photoResult, mealTemplates
             </div>
           </div>
 
+          {/* База продуктів */}
+          <div className="mb-4 rounded-2xl border border-line/50 bg-panel/40 px-3 py-3 space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <div className="text-[10px] font-bold text-subtle uppercase tracking-widest">
+                База продуктів (локально)
+              </div>
+              <span className="text-[10px] text-subtle">{foodBusy ? "пошук…" : ""}</span>
+            </div>
+            <Input
+              value={foodQuery}
+              onChange={(e) => setFoodQuery(e.target.value)}
+              placeholder="Пошук: курка, вівсянка, йогурт…"
+              aria-label="Пошук у базі продуктів"
+            />
+            {pickedFood && (
+              <div className="flex flex-wrap gap-2 items-center">
+                <div className="text-xs text-text font-semibold min-w-0 truncate">
+                  Обрано: {[pickedFood.name, pickedFood.brand].filter(Boolean).join(" ")}
+                </div>
+                <div className="flex items-center gap-2">
+                  <Input
+                    value={pickedGrams}
+                    onChange={(e) => setPickedGrams(e.target.value)}
+                    inputMode="decimal"
+                    aria-label="Грами"
+                    className="w-[92px]"
+                    placeholder="г"
+                  />
+                  <span className="text-xs text-subtle">г</span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="h-9 text-xs"
+                    onClick={() => applyPickedFood(pickedFood, pickedGrams)}
+                  >
+                    Підставити КБЖВ
+                  </Button>
+                </div>
+              </div>
+            )}
+            {foodErr && <div className="text-[11px] text-muted">{foodErr}</div>}
+            {!pickedFood && foodHits.length > 0 && (
+              <div className="max-h-44 overflow-y-auto rounded-xl border border-line/40 bg-bg/40">
+                <ul className="divide-y divide-line/30">
+                  {foodHits.map((p) => (
+                    <li key={p.id}>
+                      <button
+                        type="button"
+                        className="w-full text-left px-3 py-2 hover:bg-panelHi/60 transition-colors"
+                        onClick={() => {
+                          setPickedFood(p);
+                          setPickedGrams(String(Math.round(p.defaultGrams || 100)));
+                          applyPickedFood(p, String(p.defaultGrams || 100));
+                        }}
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="text-sm text-text font-semibold truncate">
+                            {[p.name, p.brand].filter(Boolean).join(" ")}
+                          </div>
+                          <div className="text-[11px] text-subtle shrink-0">
+                            {Math.round(p.per100?.kcal || 0)} ккал/100г
+                          </div>
+                        </div>
+                        <div className="text-[11px] text-subtle mt-0.5">
+                          Б {Math.round(p.per100?.protein_g || 0)} • Ж {Math.round(p.per100?.fat_g || 0)} • В{" "}
+                          {Math.round(p.per100?.carbs_g || 0)}
+                        </div>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                className="h-9 text-xs"
+                onClick={async () => {
+                  const name = String(form.name || "").trim();
+                  if (!name) {
+                    setForm((s) => ({ ...s, err: "Введіть назву, щоб зберегти продукт." }));
+                    return;
+                  }
+                  const kcal = form.kcal === "" ? 0 : Number(form.kcal);
+                  const protein_g = form.protein_g === "" ? 0 : Number(form.protein_g);
+                  const fat_g = form.fat_g === "" ? 0 : Number(form.fat_g);
+                  const carbs_g = form.carbs_g === "" ? 0 : Number(form.carbs_g);
+                  if ([kcal, protein_g, fat_g, carbs_g].some((n) => !Number.isFinite(n) || n < 0)) {
+                    setForm((s) => ({ ...s, err: "КБЖВ має бути числами (без від’ємних значень)." }));
+                    return;
+                  }
+                  const res = await upsertFood({
+                    name,
+                    per100: { kcal, protein_g, fat_g, carbs_g },
+                    defaultGrams: 100,
+                  });
+                  if (!res.ok) {
+                    setFoodErr(res.error || "Не вдалося зберегти продукт.");
+                    return;
+                  }
+                  setPickedFood(res.product);
+                  setPickedGrams("100");
+                  setFoodQuery(name);
+                  setFoodErr("");
+                }}
+              >
+                + Зберегти як продукт (на 100г)
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                className="h-9 text-xs"
+                onClick={async () => {
+                  const payload = await exportFoodDbJson();
+                  if (!payload) {
+                    setFoodErr("Не вдалося експортувати базу продуктів.");
+                    return;
+                  }
+                  downloadBlob(
+                    `nutrition-fooddb-${new Date().toISOString().slice(0, 10)}.json`,
+                    "application/json",
+                    JSON.stringify(payload, null, 2),
+                  );
+                }}
+              >
+                Експорт JSON
+              </Button>
+              <input
+                ref={foodImportRef}
+                type="file"
+                accept="application/json,.json"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (!f) return;
+                  const reader = new FileReader();
+                  reader.onload = async () => {
+                    try {
+                      const text = String(reader.result || "");
+                      const parsed = JSON.parse(text);
+                      const res = await importFoodDbJson(parsed, "merge");
+                      setFoodErr(res.ok ? `Імпортовано: +${res.added}` : res.error || "Помилка імпорту");
+                    } catch {
+                      setFoodErr("Некоректний файл імпорту.");
+                    } finally {
+                      e.target.value = "";
+                    }
+                  };
+                  reader.readAsText(f);
+                }}
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                className="h-9 text-xs"
+                onClick={() => foodImportRef.current?.click()}
+              >
+                Імпорт (merge)
+              </Button>
+            </div>
+
+            <div className="pt-1 border-t border-line/30">
+              <div className="text-[10px] font-bold text-subtle uppercase tracking-widest mb-2">
+                Штрихкод (опційно)
+              </div>
+              <div className="flex flex-wrap gap-2 items-center">
+                <Input
+                  value={barcode}
+                  onChange={(e) => {
+                    setBarcode(e.target.value.replace(/\s+/g, ""));
+                    setBarcodeStatus("");
+                  }}
+                  inputMode="numeric"
+                  placeholder="EAN/UPC…"
+                  aria-label="Штрихкод"
+                  className="w-[180px]"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="h-9 text-xs"
+                  onClick={() => handleBarcodeLookup(barcode)}
+                >
+                  Знайти
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="h-9 text-xs"
+                  onClick={() => handleBarcodeBind(barcode)}
+                >
+                  Прив’язати до обраного
+                </Button>
+                {"BarcodeDetector" in window && navigator?.mediaDevices?.getUserMedia && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="h-9 text-xs"
+                    onClick={() => {
+                      setBarcodeStatus("");
+                      setScannerOpen(true);
+                    }}
+                  >
+                    Сканувати
+                  </Button>
+                )}
+              </div>
+              {barcodeStatus && <div className="text-[11px] text-subtle mt-1">{barcodeStatus}</div>}
+            </div>
+          </div>
+
           {/* КБЖВ */}
           <div className="mb-1">
             <div className="flex items-center justify-between mb-2">
@@ -285,3 +711,4 @@ export function AddMealSheet({ open, onClose, onSave, photoResult, mealTemplates
     </div>
   );
 }
+

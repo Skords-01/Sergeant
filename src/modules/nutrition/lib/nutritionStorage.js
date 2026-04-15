@@ -10,6 +10,15 @@ export const NUTRITION_LOG_KEY = "nutrition_log_v1";
 const LEGACY_ITEMS_KEY = "nutrition_pantry_items_v0";
 const LEGACY_TEXT_KEY = "nutrition_pantry_text_v0";
 
+export function toLocalISODate(d = new Date()) {
+  const dt = d instanceof Date ? d : new Date(d);
+  if (Number.isNaN(dt.getTime())) return "1970-01-01";
+  const y = dt.getFullYear();
+  const m = String(dt.getMonth() + 1).padStart(2, "0");
+  const day = String(dt.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
 function optionalPositiveNumber(v) {
   if (v == null || v === "") return null;
   const n = Number(v);
@@ -298,7 +307,7 @@ export function getDayMacros(log, date) {
 export function addDaysISODate(iso, deltaDays) {
   const [y, m, d] = iso.split("-").map(Number);
   const dt = new Date(y, m - 1, d + deltaDays);
-  return dt.toISOString().slice(0, 10);
+  return toLocalISODate(dt);
 }
 
 export function duplicatePreviousDayMeals(log, targetDate) {

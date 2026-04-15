@@ -8,9 +8,11 @@ import {
   getMacrosForDateRange,
   estimateLogBytes,
   addDaysISODate,
+  toLocalISODate,
 } from "../lib/nutritionStorage.js";
 import { MEAL_ORDER, MEAL_META, isMealTypeId, mealTypeFromLabel } from "../lib/mealTypes.js";
 import { GOAL_PRESETS } from "../lib/goalPresets.js";
+import { avgFromSummary, getRowsForRange, mealTypeBreakdown, summarizeRows, topMeals } from "../lib/nutritionStats.js";
 import {
   downloadBlob,
   weekMacrosToCsv,
@@ -26,7 +28,7 @@ const MACRO_TILES = [
 ];
 
 function toISODate(d) {
-  return d.toISOString().slice(0, 10);
+  return toLocalISODate(d);
 }
 
 function formatDate(isoDate) {
@@ -95,6 +97,7 @@ export function LogCard({
   const [searchQuery, setSearchQuery] = useState("");
   const importRef = useRef(null);
   const [importMode, setImportMode] = useState("merge");
+  const [statsRange, setStatsRange] = useState(30);
 
   const macros = getDayMacros(log, selectedDate);
   const dayData = log[selectedDate];
@@ -108,6 +111,18 @@ export function LogCard({
   }, [log, searchQuery]);
 
   const weekRows = useMemo(() => getMacrosForDateRange(log, selectedDate, 7), [log, selectedDate]);
+
+  const statsRows = useMemo(
+    () => getRowsForRange(log, selectedDate, statsRange),
+    [log, selectedDate, statsRange],
+  );
+  const statsSummary = useMemo(() => summarizeRows(statsRows), [statsRows]);
+  const statsAvg = useMemo(() => avgFromSummary(statsSummary), [statsSummary]);
+  const statsTop = useMemo(() => topMeals(log, selectedDate, statsRange, 8), [log, selectedDate, statsRange]);
+  const statsMealTypes = useMemo(
+    () => mealTypeBreakdown(log, selectedDate, statsRange),
+    [log, selectedDate, statsRange],
+  );
 
   const logBytes = useMemo(() => estimateLogBytes(log), [log]);
   const logSizeWarn = logBytes > 350_000;
@@ -413,6 +428,111 @@ export function LogCard({
               />
             </div>
           ))}
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-line/50 bg-panel/40 px-3 py-3 space-y-3">
+        <div className="flex items-center justify-between gap-2">
+          <div className="text-[10px] font-bold text-subtle uppercase tracking-widest">
+            Аналітика (тренди)
+          </div>
+          <div className="flex gap-2">
+            {[30, 90].map((d) => (
+              <button
+                key={d}
+                type="button"
+                onClick={() => setStatsRange(d)}
+                className={cn(
+                  "px-2 py-1 rounded-lg text-[11px] font-semibold border",
+                  statsRange === d ? "border-nutrition/60 text-nutrition bg-nutrition/10" : "border-line text-subtle bg-panelHi",
+                )}
+              >
+                {d} днів
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          {[
+            { key: "kcal", label: "Сер. ккал/день", v: statsAvg.kcal },
+            { key: "protein_g", label: "Сер. Б/день", v: statsAvg.protein_g },
+            { key: "fat_g", label: "Сер. Ж/день", v: statsAvg.fat_g },
+            { key: "carbs_g", label: "Сер. В/день", v: statsAvg.carbs_g },
+          ].map((x) => (
+            <div key={x.key} className="bg-panelHi rounded-2xl px-2 py-3">
+              <div className="text-[10px] text-subtle">{x.label}</div>
+              <div className="text-base font-extrabold text-text tabular-nums">{Math.round(Number(x.v) || 0)}</div>
+              <div className="text-[10px] text-subtle">на {statsAvg.denom} активн. днів</div>
+            </div>
+          ))}
+        </div>
+
+        <div className="bg-panelHi rounded-2xl px-3 py-3">
+          <div className="text-[10px] font-bold text-subtle uppercase tracking-widest mb-2">
+            Калорії по днях (останні {Math.min(statsRange, statsRows.length)})
+          </div>
+          {statsRows.length === 0 ? (
+            <div className="text-xs text-muted">Немає даних</div>
+          ) : (
+            (() => {
+              const kcals = statsRows.map((r) => Number(r.kcal) || 0);
+              const max = Math.max(1, ...kcals);
+              return (
+                <div className="flex items-end gap-0.5 h-12">
+                  {kcals.slice(-statsRange).map((k, i) => (
+                    <div
+                      key={i}
+                      title={`${Math.round(k)} ккал`}
+                      className="flex-1 rounded-sm bg-nutrition/60"
+                      style={{ height: `${Math.max(2, Math.round((k / max) * 48))}px` }}
+                    />
+                  ))}
+                </div>
+              );
+            })()
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <div className="bg-panelHi rounded-2xl px-3 py-3">
+            <div className="text-[10px] font-bold text-subtle uppercase tracking-widest mb-2">Топ страв</div>
+            {statsTop.length === 0 ? (
+              <div className="text-xs text-muted">Поки що порожньо</div>
+            ) : (
+              <ol className="space-y-1">
+                {statsTop.map((x) => (
+                  <li key={x.name} className="flex items-baseline justify-between gap-2">
+                    <span className="text-xs text-text truncate">{x.name}</span>
+                    <span className="text-[11px] text-subtle shrink-0">
+                      {x.count}× · {Math.round(x.kcal)} ккал
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </div>
+          <div className="bg-panelHi rounded-2xl px-3 py-3">
+            <div className="text-[10px] font-bold text-subtle uppercase tracking-widest mb-2">
+              Розподіл прийомів
+            </div>
+            {Object.keys(statsMealTypes).length === 0 ? (
+              <div className="text-xs text-muted">Поки що порожньо</div>
+            ) : (
+              <ul className="space-y-1">
+                {MEAL_ORDER.filter((t) => statsMealTypes[t]?.count > 0).map((t) => (
+                  <li key={t} className="flex items-baseline justify-between gap-2">
+                    <span className="text-xs text-text">
+                      {MEAL_META[t]?.emoji} {MEAL_META[t]?.label || t}
+                    </span>
+                    <span className="text-[11px] text-subtle shrink-0">
+                      {statsMealTypes[t].count}× · {Math.round(statsMealTypes[t].kcal)} ккал
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
       </div>
 

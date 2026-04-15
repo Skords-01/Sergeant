@@ -1,6 +1,18 @@
+import { useEffect, useState } from "react";
 import { Card } from "@shared/components/ui/Card";
 import { Input } from "@shared/components/ui/Input";
+import { Button } from "@shared/components/ui/Button";
 import { cn } from "@shared/lib/cn";
+import { deleteSavedRecipe, listSavedRecipes, saveRecipeToBook, scaleMacros } from "../lib/recipeBook.js";
+import { MEAL_TYPES } from "../lib/mealTypes.js";
+
+function guessMealTypeIdNow() {
+  const h = new Date().getHours();
+  if (h >= 5 && h < 11) return "breakfast";
+  if (h >= 11 && h < 16) return "lunch";
+  if (h >= 16 && h < 22) return "dinner";
+  return "snack";
+}
 
 export function RecipesCard({
   busy,
@@ -18,7 +30,68 @@ export function RecipesCard({
   weekPlanRaw,
   weekPlanBusy,
   fetchWeekPlan,
+  addMealToLog,
 }) {
+  const [saved, setSaved] = useState([]);
+  const [savedBusy, setSavedBusy] = useState(false);
+  const [portionById, setPortionById] = useState({});
+
+  useEffect(() => {
+    let cancelled = false;
+    setSavedBusy(true);
+    (async () => {
+      const list = await listSavedRecipes(200);
+      if (!cancelled) setSaved(list);
+    })()
+      .catch(() => {
+        /* ignore */
+      })
+      .finally(() => {
+        if (!cancelled) setSavedBusy(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  async function refreshSaved() {
+    setSavedBusy(true);
+    try {
+      setSaved(await listSavedRecipes(200));
+    } finally {
+      setSavedBusy(false);
+    }
+  }
+
+  async function saveOne(r) {
+    const res = await saveRecipeToBook(r);
+    if (res.ok) await refreshSaved();
+  }
+
+  async function addRecipeAsMeal(r, idKey) {
+    if (typeof addMealToLog !== "function") return;
+    const key = String(idKey || r?.id || r?.title || "");
+    const factorRaw = portionById[key];
+    const factor = factorRaw == null || factorRaw === "" ? 1 : Number(String(factorRaw).replace(",", "."));
+    const macros = scaleMacros(r?.macros, Number.isFinite(factor) && factor > 0 ? factor : 1);
+    const mealType = guessMealTypeIdNow();
+    const label = MEAL_TYPES.find((x) => x.id === mealType)?.label || "Прийом їжі";
+    await addMealToLog({
+      id: `meal_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      time: `${String(new Date().getHours()).padStart(2, "0")}:${String(new Date().getMinutes()).padStart(2, "0")}`,
+      mealType,
+      label,
+      name: r?.title || "Рецепт",
+      macros: {
+        kcal: macros.kcal ?? 0,
+        protein_g: macros.protein_g ?? 0,
+        fat_g: macros.fat_g ?? 0,
+        carbs_g: macros.carbs_g ?? 0,
+      },
+      source: "manual",
+    });
+  }
+
   return (
     <Card className="p-4">
       <div className="text-sm font-semibold text-text">
@@ -32,6 +105,72 @@ export function RecipesCard({
       </div>
 
       <div className="mt-3 grid gap-3">
+        <div className="rounded-2xl border border-line bg-panel p-4 space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <div className="text-sm font-semibold text-text">Мої рецепти</div>
+            <div className="text-[11px] text-subtle">{savedBusy ? "…" : `${saved.length}`}</div>
+          </div>
+          {saved.length === 0 ? (
+            <div className="text-xs text-subtle">
+              Тут з’являться збережені рецепти. Згенеруй рецепти нижче й натисни “Зберегти”.
+            </div>
+          ) : (
+            <div className="grid gap-2">
+              {saved.slice(0, 8).map((r) => {
+                const key = r.id;
+                const factor = portionById[key] ?? "1";
+                return (
+                  <div key={r.id} className="rounded-2xl border border-line/60 bg-bg/40 p-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="text-sm font-semibold text-text truncate">{r.title}</div>
+                        <div className="text-[11px] text-subtle mt-0.5">
+                          {r.timeMinutes ? `${r.timeMinutes} хв` : "—"} · {r.servings ? `${r.servings} порц.` : "—"}
+                        </div>
+                      </div>
+                      <div className="flex gap-2 shrink-0">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          className="h-9 text-xs"
+                          onClick={() => void addRecipeAsMeal(r, key)}
+                        >
+                          + У журнал
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          className="h-9 text-xs text-danger"
+                          onClick={async () => {
+                            if (!window.confirm("Видалити збережений рецепт?")) return;
+                            await deleteSavedRecipe(r.id);
+                            await refreshSaved();
+                          }}
+                        >
+                          Видалити
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="mt-2 flex items-center gap-2">
+                      <span className="text-[11px] text-subtle">Порції (множник):</span>
+                      <Input
+                        value={String(factor)}
+                        onChange={(e) => setPortionById((m) => ({ ...m, [key]: e.target.value }))}
+                        inputMode="decimal"
+                        className="w-20"
+                      />
+                      <span className="text-[11px] text-subtle">× макроси рецепту</span>
+                    </div>
+                  </div>
+                );
+              })}
+              {saved.length > 8 && (
+                <div className="text-[11px] text-subtle">Показано 8 з {saved.length}.</div>
+              )}
+            </div>
+          )}
+        </div>
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <div className="text-[11px] text-subtle mb-1">Ціль</div>
@@ -154,6 +293,26 @@ export function RecipesCard({
                       {r.timeMinutes ? `${r.timeMinutes} хв` : "—"} ·{" "}
                       {r.servings ? `${r.servings} порц.` : "—"}
                     </div>
+                  </div>
+                  <div className="flex gap-2 shrink-0">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="h-9 text-xs"
+                      onClick={() => void saveOne(r)}
+                      disabled={busy}
+                    >
+                      Зберегти
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="h-9 text-xs"
+                      onClick={() => void addRecipeAsMeal(r, r.title || String(idx))}
+                      disabled={busy}
+                    >
+                      + У журнал
+                    </Button>
                   </div>
                   {r.macros?.kcal != null && (
                     <div className="shrink-0 rounded-xl border border-line bg-bg px-3 py-2 text-xs text-subtle">
