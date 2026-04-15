@@ -15,6 +15,7 @@ import {
   loadNutritionPrefs,
   persistNutritionPrefs,
   getDayMacros,
+  getDaySummary,
   toLocalISODate,
 } from "./lib/nutritionStorage.js";
 import { useNutritionPantries } from "./hooks/useNutritionPantries.js";
@@ -25,10 +26,19 @@ import {
   readRecipeCache,
   writeRecipeCache,
 } from "./lib/recipeCache.js";
+import { stableRecipeId } from "./lib/recipeIds.js";
 import {
   fileToThumbnailBlob,
   saveMealThumbnail,
 } from "./lib/mealPhotoStorage.js";
+import {
+  applyNutritionBackupPayload,
+  buildNutritionBackupPayload,
+} from "./domain/nutritionBackup.js";
+import {
+  decryptBlobToJson,
+  encryptJsonToBlob,
+} from "./lib/nutritionCloudBackup.js";
 
 function fmtMacro(n) {
   if (n == null || Number.isNaN(Number(n))) return "—";
@@ -102,6 +112,7 @@ export default function NutritionApp({ onBackToHub } = {}) {
 
   const [dayHintText, setDayHintText] = useState("");
   const [dayHintBusy, setDayHintBusy] = useState(false);
+  const [cloudBackupBusy, setCloudBackupBusy] = useState(false);
 
   const recipeCacheKey = useMemo(
     () =>
@@ -125,7 +136,12 @@ export default function NutritionApp({ onBackToHub } = {}) {
     if (activePage !== "recipes") return;
     const c = readRecipeCache(recipeCacheKey);
     if (c?.recipes?.length) {
-      setRecipes(c.recipes);
+      setRecipes(
+        c.recipes.map((r) => ({
+          ...r,
+          id: r?.id ? String(r.id) : stableRecipeId(r),
+        })),
+      );
       setRecipesRaw(c.recipesRaw || "");
       setRecipesTried(true);
     }
@@ -185,7 +201,12 @@ export default function NutritionApp({ onBackToHub } = {}) {
           locale: "uk-UA",
         },
       });
-      const list = Array.isArray(data?.recipes) ? data.recipes : [];
+      const list = Array.isArray(data?.recipes)
+        ? data.recipes.map((r) => ({
+            ...r,
+            id: r?.id ? String(r.id) : stableRecipeId(r),
+          }))
+        : [];
       const raw = typeof data?.rawText === "string" ? data.rawText : "";
       setRecipes(list);
       setRecipesRaw(raw);
@@ -224,9 +245,25 @@ export default function NutritionApp({ onBackToHub } = {}) {
     setDayHintBusy(true);
     setErr("");
     try {
-      const macros = getDayMacros(log.nutritionLog, log.selectedDate);
+      const summary = getDaySummary(log.nutritionLog, log.selectedDate);
+      if (!summary.hasMeals) {
+        setDayHintText("День порожній. Додай прийом їжі — і я зможу дати підказку.");
+        return;
+      }
+      const meals = log.nutritionLog?.[log.selectedDate]?.meals || [];
+      const macroSources = meals.reduce((acc, m) => {
+        const k = String(m?.macroSource || (m?.source === "photo" ? "photoAI" : "manual"));
+        acc[k] = (acc[k] || 0) + 1;
+        return acc;
+      }, {});
+      const macros = summary.hasAnyMacros
+        ? getDayMacros(log.nutritionLog, log.selectedDate)
+        : { kcal: null, protein_g: null, fat_g: null, carbs_g: null };
       const data = await postJson("/api/nutrition/day-hint", {
         macros,
+        hasMeals: summary.hasMeals,
+        hasAnyMacros: summary.hasAnyMacros,
+        macroSources,
         targets: {
           dailyTargetKcal: prefs.dailyTargetKcal,
           dailyTargetProtein_g: prefs.dailyTargetProtein_g,
@@ -242,6 +279,49 @@ export default function NutritionApp({ onBackToHub } = {}) {
       setDayHintBusy(false);
     }
   }, [log.nutritionLog, log.selectedDate, prefs]);
+
+  const uploadCloudBackup = useCallback(async () => {
+    if (cloudBackupBusy) return;
+    try {
+      const pass = window.prompt("Пароль для шифрування бекапу (запам’ятай його):");
+      if (!pass) return;
+      setCloudBackupBusy(true);
+      setErr("");
+      const payload = buildNutritionBackupPayload();
+      const blob = await encryptJsonToBlob(payload, pass);
+      await postJson("/api/nutrition/backup-upload", { blob });
+      setStatusText("Бекап завантажено.");
+      window.setTimeout(() => setStatusText(""), 2500);
+    } catch (e) {
+      setErr(e?.message || "Не вдалося завантажити бекап");
+    } finally {
+      setCloudBackupBusy(false);
+    }
+  }, [cloudBackupBusy]);
+
+  const downloadCloudBackup = useCallback(async () => {
+    if (cloudBackupBusy) return;
+    try {
+      const pass = window.prompt("Пароль для розшифрування бекапу:");
+      if (!pass) return;
+      setCloudBackupBusy(true);
+      setErr("");
+      const data = await postJson("/api/nutrition/backup-download", {});
+      const payload = await decryptBlobToJson(data?.blob, pass);
+      if (
+        !window.confirm(
+          "Застосувати бекап? Це перезапише поточні дані харчування на цьому пристрої.",
+        )
+      )
+        return;
+      applyNutritionBackupPayload(payload);
+      window.location.reload();
+    } catch (e) {
+      setErr(e?.message || "Не вдалося відновити бекап");
+    } finally {
+      setCloudBackupBusy(false);
+    }
+  }, [cloudBackupBusy]);
 
   const recipeCacheEntry = useMemo(
     () => readRecipeCache(recipeCacheKey),
@@ -404,6 +484,9 @@ export default function NutritionApp({ onBackToHub } = {}) {
                 onFetchDayHint={fetchDayHint}
                 dayHintText={dayHintText}
                 dayHintBusy={dayHintBusy}
+                onCloudBackupUpload={uploadCloudBackup}
+                onCloudBackupDownload={downloadCloudBackup}
+                cloudBackupBusy={cloudBackupBusy}
               />
             )}
 

@@ -95,12 +95,13 @@ export function RecipesCard({
       label,
       name: r?.title || "Рецепт",
       macros: {
-        kcal: macros.kcal ?? 0,
-        protein_g: macros.protein_g ?? 0,
-        fat_g: macros.fat_g ?? 0,
-        carbs_g: macros.carbs_g ?? 0,
+        kcal: macros.kcal ?? null,
+        protein_g: macros.protein_g ?? null,
+        fat_g: macros.fat_g ?? null,
+        carbs_g: macros.carbs_g ?? null,
       },
       source: "manual",
+      macroSource: "recipeAI",
     });
   }
 
@@ -337,7 +338,7 @@ export function RecipesCard({
           <div className="grid gap-3">
             {recipes.map((r, idx) => (
               <div
-                key={idx}
+                key={r.id || idx}
                 className="rounded-2xl border border-line bg-panel p-4"
               >
                 <div className="flex items-start justify-between gap-3">
@@ -365,7 +366,7 @@ export function RecipesCard({
                       variant="ghost"
                       className="h-9 text-xs"
                       onClick={() =>
-                        void addRecipeAsMeal(r, r.title || String(idx))
+                        void addRecipeAsMeal(r, r.id || r.title || String(idx))
                       }
                       disabled={busy}
                     >

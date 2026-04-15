@@ -1,6 +1,11 @@
 import { normalizeFoodName } from "./pantryTextParser.js";
 import { mergeItems } from "./mergeItems.js";
 import {
+  macrosHasAnyValue,
+  macrosToTotals,
+  normalizeMacrosNullable,
+} from "./macros.js";
+import {
   isMealTypeId,
   labelForMealType,
   mealTypeFromLabel,
@@ -198,21 +203,10 @@ export function mergePantryItems(pantry, incomingItems) {
   return { ...pantry, items: mergeItems(pantry?.items, incomingItems) };
 }
 
-function clampNum(v, fallback = 0) {
-  const n = Number(v);
-  return Number.isFinite(n) ? n : fallback;
-}
-
 function normalizeMacros(mac) {
-  if (!mac || typeof mac !== "object") {
-    return { kcal: 0, protein_g: 0, fat_g: 0, carbs_g: 0 };
-  }
-  return {
-    kcal: clampNum(mac.kcal, 0),
-    protein_g: clampNum(mac.protein_g, 0),
-    fat_g: clampNum(mac.fat_g, 0),
-    carbs_g: clampNum(mac.carbs_g, 0),
-  };
+  // Backward-compatible export name used across this module:
+  // meals/templates store nullable macros; totals are computed separately.
+  return normalizeMacrosNullable(mac);
 }
 
 export function normalizeMeal(m, idx) {
@@ -238,7 +232,19 @@ export function normalizeMeal(m, idx) {
   const source =
     raw.source && String(raw.source) === "photo" ? "photo" : "manual";
 
-  return { id, name, time, mealType, label, macros, source };
+  const rawMacroSource =
+    raw.macroSource != null ? String(raw.macroSource).trim() : "";
+  const macroSource =
+    rawMacroSource === "manual" ||
+    rawMacroSource === "productDb" ||
+    rawMacroSource === "photoAI" ||
+    rawMacroSource === "recipeAI"
+      ? rawMacroSource
+      : source === "photo"
+        ? "photoAI"
+        : "manual";
+
+  return { id, name, time, mealType, label, macros, source, macroSource };
 }
 
 export function normalizeNutritionLog(raw) {
@@ -314,16 +320,30 @@ export function getDayMacros(log, date) {
     return { kcal: 0, protein_g: 0, fat_g: 0, carbs_g: 0 };
   return day.meals.reduce(
     (acc, m) => {
-      const mac = m?.macros || {};
+      const mac = macrosToTotals(m?.macros);
       return {
-        kcal: acc.kcal + (Number(mac.kcal) || 0),
-        protein_g: acc.protein_g + (Number(mac.protein_g) || 0),
-        fat_g: acc.fat_g + (Number(mac.fat_g) || 0),
-        carbs_g: acc.carbs_g + (Number(mac.carbs_g) || 0),
+        kcal: acc.kcal + mac.kcal,
+        protein_g: acc.protein_g + mac.protein_g,
+        fat_g: acc.fat_g + mac.fat_g,
+        carbs_g: acc.carbs_g + mac.carbs_g,
       };
     },
     { kcal: 0, protein_g: 0, fat_g: 0, carbs_g: 0 },
   );
+}
+
+export function getDaySummary(log, date) {
+  const day = log?.[date];
+  const meals = Array.isArray(day?.meals) ? day.meals : [];
+  const totals = getDayMacros(log, date);
+  const hasAnyMacros = meals.some((m) => macrosHasAnyValue(m?.macros));
+  return {
+    date,
+    mealCount: meals.length,
+    hasMeals: meals.length > 0,
+    hasAnyMacros,
+    ...totals,
+  };
 }
 
 export function addDaysISODate(iso, deltaDays) {

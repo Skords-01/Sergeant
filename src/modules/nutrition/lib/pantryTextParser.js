@@ -7,13 +7,19 @@ export function normalizeFoodName(s) {
 }
 
 export function normalizeUnit(u) {
-  const s = String(u || "").toLowerCase();
+  const s = String(u || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\./g, "");
+  if (!s) return null;
   if (["г", "гр", "грам", "грами"].includes(s)) return "г";
   if (["кг", "кілограм", "кілограми"].includes(s)) return "кг";
-  if (["мл", "міл", "мілілітр"].includes(s)) return "мл";
+  if (["мл", "мілілітр", "мілілітри"].includes(s)) return "мл";
   if (["л", "літр", "літри"].includes(s)) return "л";
   if (["шт", "штук", "штуки"].includes(s)) return "шт";
-  return u;
+  if (["уп", "упак", "упаковка", "пач", "пачка", "пак", "пакет"].includes(s))
+    return "уп";
+  return s;
 }
 
 export function parseLoosePantryText(raw) {

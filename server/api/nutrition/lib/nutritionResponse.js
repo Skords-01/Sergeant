@@ -7,6 +7,11 @@ function safeNumberOrNull(x) {
   return Number.isFinite(n) ? n : null;
 }
 
+function safeNonNegNumberOrNull(x) {
+  const n = safeNumberOrNull(x);
+  return n == null ? null : n >= 0 ? n : null;
+}
+
 function clamp01(n) {
   const x = Number(n);
   if (!Number.isFinite(x)) return 0;
@@ -57,10 +62,10 @@ export function normalizePhotoResult(parsed, { fallbackGrams = null } = {}) {
       ? obj.macros
       : {};
   const outMacros = {
-    kcal: safeNumberOrNull(macros.kcal),
-    protein_g: safeNumberOrNull(macros.protein_g),
-    fat_g: safeNumberOrNull(macros.fat_g),
-    carbs_g: safeNumberOrNull(macros.carbs_g),
+    kcal: safeNonNegNumberOrNull(macros.kcal),
+    protein_g: safeNonNegNumberOrNull(macros.protein_g),
+    fat_g: safeNonNegNumberOrNull(macros.fat_g),
+    carbs_g: safeNonNegNumberOrNull(macros.carbs_g),
   };
 
   const questions = Array.isArray(obj.questions)
@@ -148,10 +153,10 @@ export function normalizeRecipes(parsed) {
           ? r.macros
           : {};
       const macros = {
-        kcal: safeNumberOrNull(m.kcal),
-        protein_g: safeNumberOrNull(m.protein_g),
-        fat_g: safeNumberOrNull(m.fat_g),
-        carbs_g: safeNumberOrNull(m.carbs_g),
+        kcal: safeNonNegNumberOrNull(m.kcal),
+        protein_g: safeNonNegNumberOrNull(m.protein_g),
+        fat_g: safeNonNegNumberOrNull(m.fat_g),
+        carbs_g: safeNonNegNumberOrNull(m.carbs_g),
       };
       return {
         title: title || "Рецепт",

@@ -37,16 +37,29 @@ export function checkRateLimit(req, { key, limit, windowMs }) {
   const cur = buckets.get(k);
   if (!cur || now - cur.startMs >= windowMs) {
     buckets.set(k, { startMs: now, count: 1 });
-    return { ok: true, remaining: limit - 1, resetMs: windowMs };
+    return {
+      ok: true,
+      remaining: limit - 1,
+      resetMs: windowMs,
+      retryAfterSec: Math.ceil(windowMs / 1000),
+    };
   }
   if (cur.count >= limit) {
-    return { ok: false, remaining: 0, resetMs: windowMs - (now - cur.startMs) };
+    const resetMs = windowMs - (now - cur.startMs);
+    return {
+      ok: false,
+      remaining: 0,
+      resetMs,
+      retryAfterSec: Math.max(1, Math.ceil(resetMs / 1000)),
+    };
   }
   cur.count += 1;
+  const resetMs = windowMs - (now - cur.startMs);
   return {
     ok: true,
     remaining: Math.max(0, limit - cur.count),
-    resetMs: windowMs - (now - cur.startMs),
+    resetMs,
+    retryAfterSec: Math.max(1, Math.ceil(resetMs / 1000)),
   };
 }
 

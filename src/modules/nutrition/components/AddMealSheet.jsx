@@ -86,16 +86,26 @@ export function AddMealSheet({
       setForm((s) => ({ ...s, err: "Введіть назву страви." }));
       return;
     }
-    const kcal = form.kcal === "" ? 0 : Number(form.kcal);
-    const protein_g = form.protein_g === "" ? 0 : Number(form.protein_g);
-    const fat_g = form.fat_g === "" ? 0 : Number(form.fat_g);
-    const carbs_g = form.carbs_g === "" ? 0 : Number(form.carbs_g);
-    if ([kcal, protein_g, fat_g, carbs_g].some((n) => !Number.isFinite(n))) {
+    const kcal = form.kcal === "" ? null : Number(form.kcal);
+    const protein_g = form.protein_g === "" ? null : Number(form.protein_g);
+    const fat_g = form.fat_g === "" ? null : Number(form.fat_g);
+    const carbs_g = form.carbs_g === "" ? null : Number(form.carbs_g);
+    if (
+      [kcal, protein_g, fat_g, carbs_g].some(
+        (n) => n != null && (!Number.isFinite(n) || n < 0),
+      )
+    ) {
       setForm((s) => ({ ...s, err: "Некоректне значення КБЖВ." }));
       return;
     }
     const mealLabel =
       MEAL_TYPES.find((m) => m.id === form.mealType)?.label || "Прийом їжі";
+    const source = photoResult ? "photo" : "manual";
+    const macroSource = photoResult
+      ? "photoAI"
+      : pickedFood
+        ? "productDb"
+        : "manual";
     onSave({
       id: `meal_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
       time: form.time || currentTime(),
@@ -103,7 +113,8 @@ export function AddMealSheet({
       label: mealLabel,
       name,
       macros: { kcal, protein_g, fat_g, carbs_g },
-      source: photoResult ? "photo" : "manual",
+      source,
+      macroSource,
     });
   }
 

@@ -1,4 +1,4 @@
-import { addDaysISODate, getDayMacros } from "./nutritionStorage.js";
+import { addDaysISODate, getDaySummary } from "./nutritionStorage.js";
 import { mealTypeFromLabel } from "./mealTypes.js";
 
 function clamp0(n) {
@@ -10,8 +10,7 @@ export function getRowsForRange(log, endIso, dayCount) {
   const rows = [];
   for (let i = dayCount - 1; i >= 0; i--) {
     const d = addDaysISODate(endIso, -i);
-    const mac = getDayMacros(log, d);
-    rows.push({ date: d, ...mac });
+    rows.push(getDaySummary(log, d));
   }
   return rows;
 }
@@ -23,25 +22,28 @@ export function summarizeRows(rows) {
     protein_g: 0,
     fat_g: 0,
     carbs_g: 0,
-    nonEmptyDays: 0,
+    daysWithMeals: 0,
+    daysWithAnyMacros: 0,
+    nonEmptyDays: 0, // backward-compatible alias for daysWithMeals
   };
   for (const r of rows) {
-    const has =
-      (Number(r.kcal) || 0) > 0 ||
-      (Number(r.protein_g) || 0) > 0 ||
-      (Number(r.fat_g) || 0) > 0 ||
-      (Number(r.carbs_g) || 0) > 0;
-    if (has) out.nonEmptyDays += 1;
+    const hasMeals = Boolean(r?.hasMeals) || (Number(r?.mealCount) || 0) > 0;
+    const hasAnyMacros = Boolean(r?.hasAnyMacros);
+    if (hasMeals) out.daysWithMeals += 1;
+    if (hasAnyMacros) out.daysWithAnyMacros += 1;
     out.kcal += Number(r.kcal) || 0;
     out.protein_g += Number(r.protein_g) || 0;
     out.fat_g += Number(r.fat_g) || 0;
     out.carbs_g += Number(r.carbs_g) || 0;
   }
+  out.nonEmptyDays = out.daysWithMeals;
   return out;
 }
 
 export function avgFromSummary(sum) {
-  const denom = Math.max(1, Number(sum?.nonEmptyDays) || 0);
+  // Prefer averaging only over days where some macros exist to avoid dragging
+  // averages down to 0 when meals were logged without macros.
+  const denom = Math.max(1, Number(sum?.daysWithAnyMacros) || 0);
   return {
     kcal: sum.kcal / denom,
     protein_g: sum.protein_g / denom,

@@ -128,6 +128,9 @@ export function LogCard({
   onFetchDayHint,
   dayHintText,
   dayHintBusy,
+  onCloudBackupUpload,
+  onCloudBackupDownload,
+  cloudBackupBusy,
 }) {
   const [searchQuery, setSearchQuery] = useState("");
   const importRef = useRef(null);
@@ -369,6 +372,28 @@ export function LogCard({
           }}
         >
           Як учора
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          className="text-xs h-9"
+          disabled={cloudBackupBusy || typeof onCloudBackupUpload !== "function"}
+          onClick={() => void onCloudBackupUpload?.()}
+          title="Зашифрований бекап на сервер (потрібен пароль)"
+        >
+          {cloudBackupBusy ? "…" : "Бекап ↑"}
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          className="text-xs h-9"
+          disabled={
+            cloudBackupBusy || typeof onCloudBackupDownload !== "function"
+          }
+          onClick={() => void onCloudBackupDownload?.()}
+          title="Відновити з зашифрованого бекапу (потрібен пароль)"
+        >
+          {cloudBackupBusy ? "…" : "Бекап ↓"}
         </Button>
       </div>
 
@@ -758,6 +783,15 @@ export function LogCard({
 
 function MealRow({ meal, onRemove }) {
   const mac = meal.macros || {};
+  const macroSource = String(meal?.macroSource || "manual");
+  const sourceLabel =
+    macroSource === "photoAI"
+      ? "AI"
+      : macroSource === "recipeAI"
+        ? "AI-рецепт"
+        : macroSource === "productDb"
+          ? "DB"
+          : "";
   return (
     <div className="flex items-center gap-3 bg-panelHi rounded-2xl px-3 py-2.5 group">
       <MealThumb mealId={meal.id} />
@@ -769,6 +803,14 @@ function MealRow({ meal, onRemove }) {
           {meal.time && (
             <span className="text-[11px] text-subtle shrink-0">
               {meal.time}
+            </span>
+          )}
+          {sourceLabel && (
+            <span
+              className="text-[10px] px-1.5 py-0.5 rounded-full bg-line/60 text-subtle font-bold uppercase tracking-wider shrink-0"
+              title="Походження КБЖВ"
+            >
+              {sourceLabel}
             </span>
           )}
         </div>

@@ -12,6 +12,8 @@ import refinePhoto from "./api/nutrition/refine-photo.js";
 import recommendRecipes from "./api/nutrition/recommend-recipes.js";
 import dayHint from "./api/nutrition/day-hint.js";
 import weekPlan from "./api/nutrition/week-plan.js";
+import backupUpload from "./api/nutrition/backup-upload.js";
+import backupDownload from "./api/nutrition/backup-download.js";
 import { setCorsHeaders } from "./api/lib/cors.js";
 import { rateLimitExpress } from "./api/lib/rateLimit.js";
 
@@ -63,6 +65,8 @@ app.all("/api/nutrition/refine-photo", wrap(refinePhoto));
 app.all("/api/nutrition/recommend-recipes", wrap(recommendRecipes));
 app.all("/api/nutrition/day-hint", wrap(dayHint));
 app.all("/api/nutrition/week-plan", wrap(weekPlan));
+app.all("/api/nutrition/backup-upload", wrap(backupUpload));
+app.all("/api/nutrition/backup-download", wrap(backupDownload));
 
 app.use((err, _req, res, _next) => {
   console.error(err);
