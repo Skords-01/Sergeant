@@ -1,5 +1,5 @@
 import { cn } from "@shared/lib/cn";
-import { ChartEmptyState } from "./ChartEmptyState";
+import { EmptyState } from "@shared/components/ui/EmptyState";
 
 const LABELS_UK = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Нд"];
 
@@ -26,9 +26,9 @@ export function WeeklyVolumeChart({ volumeKg, className }) {
             кг×повт
           </span>
         </div>
-        <ChartEmptyState
+        <EmptyState compact className="rounded-2xl border border-dashed border-line/60 bg-panelHi/50"
           title="Поки без обʼєму за тиждень"
-          hint="Заверши тренування з силовими підходами — тут зʼявиться сумарний обʼєм (кг×повторення) по днях."
+          description="Заверши тренування з силовими підходами — тут зʼявиться сумарний обʼєм (кг×повторення) по днях."
         />
       </div>
     );

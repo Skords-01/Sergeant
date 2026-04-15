@@ -1,20 +1,20 @@
-import { ChartEmptyState } from "./ChartEmptyState";
+import { EmptyState } from "@shared/components/ui/EmptyState";
 
 /** Grouped bar chart: energy (green) + mood (purple) per workout. */
 export function WellbeingChart({ data }) {
   if (!data || data.length === 0) {
     return (
-      <ChartEmptyState
+      <EmptyState compact className="rounded-2xl border border-dashed border-line/60 bg-panelHi/50"
         title="Немає даних для графіка"
-        hint="Після кількох тренувань з оцінкою енергії та настрою тут зʼявиться діаграма."
+        description="Після кількох тренувань з оцінкою енергії та настрою тут зʼявиться діаграма."
       />
     );
   }
   if (data.length < 2) {
     return (
-      <ChartEmptyState
+      <EmptyState compact className="rounded-2xl border border-dashed border-line/60 bg-panelHi/50"
         title="Замало точок"
-        hint="Потрібно щонайменше два тренування з оцінкою самопочуття, щоб порівняти динаміку."
+        description="Потрібно щонайменше два тренування з оцінкою самопочуття, щоб порівняти динаміку."
       />
     );
   }

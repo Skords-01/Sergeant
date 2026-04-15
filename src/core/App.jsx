@@ -421,7 +421,7 @@ function AppInner() {
 
   if (!activeModule) {
     return (
-      <div className="min-h-dvh bg-bg flex flex-col safe-area-pt-pb">
+      <div className="min-h-dvh bg-bg flex flex-col safe-area-pt-pb page-enter">
         {!online && <OfflineBanner />}
         <header className="px-5 pt-10 pb-2 max-w-lg mx-auto w-full flex items-start justify-between">
           <div>
