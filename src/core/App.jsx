@@ -56,7 +56,44 @@ const FizrukApp = lazy(() => import("../modules/fizruk/FizrukApp"));
 const NutritionApp = lazy(() => import("../modules/nutrition/NutritionApp"));
 
 const HUB_MODULE_KEY = "hub_last_module";
+const HUB_MODULE_HASHES_KEY = "hub_module_hashes_v1";
 const VALID_MODULES = new Set(["finyk", "fizruk", "routine", "nutrition"]);
+
+function readModuleHashes() {
+  try {
+    const raw = localStorage.getItem(HUB_MODULE_HASHES_KEY);
+    const parsed = raw ? JSON.parse(raw) : null;
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function writeModuleHashes(next) {
+  try {
+    localStorage.setItem(HUB_MODULE_HASHES_KEY, JSON.stringify(next || {}));
+  } catch {
+    /* ignore */
+  }
+}
+
+function persistLastHashForModule(moduleId, hash) {
+  const id = String(moduleId || "").trim();
+  if (!VALID_MODULES.has(id)) return;
+  const h = String(hash || "").trim();
+  if (!h || h === "#") return;
+  const map = readModuleHashes();
+  map[id] = h.startsWith("#") ? h : `#${h}`;
+  writeModuleHashes(map);
+}
+
+function readLastHashForModule(moduleId) {
+  const id = String(moduleId || "").trim();
+  if (!VALID_MODULES.has(id)) return "";
+  const map = readModuleHashes();
+  const h = map?.[id];
+  return typeof h === "string" ? h : "";
+}
 
 function readInitialModule() {
   if (typeof window === "undefined") return null;
@@ -325,6 +362,13 @@ export default function App() {
   const online = useOnlineStatus();
 
   const goToHub = useCallback(() => {
+    try {
+      if (activeModule) {
+        persistLastHashForModule(activeModule, window.location.hash);
+      }
+    } catch {
+      /* ignore */
+    }
     setActiveModule(null);
     persistModuleToUrlAndStorage(null);
     try {
@@ -332,24 +376,31 @@ export default function App() {
       url.hash = "";
       window.history.replaceState(null, "", url);
     } catch {}
-  }, []);
+  }, [activeModule]);
 
   const openModule = useCallback((id, opts = {}) => {
+    const nextId = String(id || "").trim();
+    const isSame = nextId && nextId === activeModule;
+
     try {
-      const raw = opts.hash != null ? String(opts.hash) : "";
+      if (!isSame && activeModule) {
+        persistLastHashForModule(activeModule, window.location.hash);
+      }
+
+      const raw = opts.hash != null ? String(opts.hash).trim() : "";
       if (raw) {
-        // normalized hash: always starts with '#'
         window.location.hash = raw.startsWith("#") ? raw : `#${raw}`;
-      } else {
-        // prevent leaking previous module hash into the next module
-        window.location.hash = "";
+      } else if (!isSame) {
+        const saved = readLastHashForModule(nextId);
+        if (saved) window.location.hash = saved;
+        else window.location.hash = "";
       }
     } catch {
       /* ignore */
     }
-    setActiveModule(id);
-    persistModuleToUrlAndStorage(id);
-  }, []);
+    setActiveModule(nextId);
+    persistModuleToUrlAndStorage(nextId);
+  }, [activeModule]);
 
   if (!activeModule) {
     return (
