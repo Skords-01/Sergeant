@@ -236,7 +236,7 @@ export function Workouts() {
       }
       addExerciseToActive(ex);
     },
-    [mode, activeWorkoutId, activeWorkout?.endedAt, addExerciseToActive],
+    [mode, activeWorkoutId, activeWorkout?.endedAt, addExerciseToActive, toast],
   );
 
   const startWorkoutFromTemplate = useCallback(
@@ -278,7 +278,7 @@ export function Workouts() {
       setActiveWorkoutId(w.id);
       setMode("log");
     },
-    [exercises, rec.by, createWorkout, addItem],
+    [exercises, rec.by, createWorkout, addItem, toast],
   );
 
   const submitRetroWorkout = useCallback(() => {
