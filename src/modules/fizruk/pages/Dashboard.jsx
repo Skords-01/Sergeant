@@ -346,6 +346,50 @@ export function Dashboard({ onOpenAtlas }) {
           </div>
         </section>
 
+        {templates.length > 0 && (
+          <section
+            className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card"
+            aria-label="Швидкий старт"
+          >
+            <div className="flex items-center justify-between gap-2 mb-3">
+              <h2 className="text-xs font-bold text-subtle uppercase tracking-widest">
+                Швидкий старт
+              </h2>
+              <span className="text-[10px] text-muted">
+                Останні шаблони
+              </span>
+            </div>
+            <div className="flex flex-col gap-2">
+              {templates.slice(0, 3).map((tpl) => {
+                const picks = (tpl.exerciseIds || [])
+                  .map((id) => exercises.find((e) => e.id === id))
+                  .filter(Boolean);
+                return (
+                  <button
+                    key={tpl.id}
+                    type="button"
+                    className="w-full text-left flex items-center gap-3 rounded-2xl border border-line bg-bg hover:bg-panelHi p-3 min-h-[52px] transition-colors active:scale-[0.99]"
+                    onClick={() => tryStartPlan(picks)}
+                    disabled={!picks.length}
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-success/10 flex items-center justify-center text-success shrink-0" aria-hidden>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm font-semibold text-text truncate">{tpl.name}</div>
+                      <div className="text-[11px] text-subtle mt-0.5">
+                        {picks.length > 0
+                          ? `${picks.length} вправ`
+                          : "Немає вправ у каталозі"}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
         <section
           className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card"
           aria-label="Відновлення та фокус тренування"

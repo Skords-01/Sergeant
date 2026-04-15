@@ -14,6 +14,7 @@ import { getSubscriptionAmountMeta } from "../domain/subscriptionUtils.js";
 import { Skeleton } from "@shared/components/ui/Skeleton";
 import { cn } from "@shared/lib/cn";
 import { THEME_HEX } from "@shared/lib/themeHex.js";
+import { SyncStatusBadge } from "../components/SyncStatusBadge";
 
 const parseLocalDate = (isoDate) => {
   const [y, m, d] = (isoDate || "").split("-").map(Number);
@@ -72,7 +73,7 @@ export function Overview({
   onCategoryClick,
   showBalance = true,
 }) {
-  const { realTx, loadingTx, clientInfo, accounts, transactions } = mono;
+  const { realTx, loadingTx, clientInfo, accounts, transactions, syncState, lastUpdated, error: monoError, refresh: monoRefresh, loadingTx: monoLoadingTx } = mono;
   const {
     budgets,
     subscriptions,
@@ -376,6 +377,16 @@ export function Overview({
   return (
     <div className="flex-1 overflow-y-auto overscroll-contain">
       <div className="px-4 pt-4 page-tabbar-pad space-y-4 max-w-4xl mx-auto">
+        {(clientInfo || syncState?.status === "error" || syncState?.status === "loading" || monoError) && (
+          <SyncStatusBadge
+            syncState={syncState}
+            lastUpdated={lastUpdated}
+            error={monoError}
+            onRetry={monoRefresh}
+            loading={monoLoadingTx}
+          />
+        )}
+
         {/* ── Hero (як у прототипі: градієнт + зведення) ── */}
         <div className="rounded-3xl bg-gradient-to-br from-emerald-600 via-emerald-700 to-teal-800 text-white p-5 shadow-float border border-white/10">
           <div className="flex items-start justify-between gap-2">

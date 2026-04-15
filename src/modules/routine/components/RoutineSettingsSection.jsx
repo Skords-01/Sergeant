@@ -31,6 +31,8 @@ import {
   emptyHabitDraft,
   habitDraftToPatch,
   routineTodayDate,
+  REMINDER_PRESETS,
+  normalizeReminderTimes,
 } from "../lib/routineDraftUtils.js";
 
 export function RoutineSettingsSection({
@@ -70,6 +72,7 @@ export function RoutineSettingsSection({
   }, [routine.habits, routine.habitOrder, q]);
 
   const loadHabitIntoDraft = (h) => {
+    const times = normalizeReminderTimes(h);
     setHabitDraft({
       name: h.name || "",
       emoji: h.emoji || "✓",
@@ -79,6 +82,7 @@ export function RoutineSettingsSection({
       startDate: h.startDate || dateKeyFromDate(routineTodayDate()),
       endDate: h.endDate || "",
       timeOfDay: h.timeOfDay || "",
+      reminderTimes: times,
       weekdays:
         Array.isArray(h.weekdays) && h.weekdays.length
           ? h.weekdays
@@ -311,18 +315,84 @@ export function RoutineSettingsSection({
           </label>
         </div>
 
-        <label className="block text-xs text-subtle" htmlFor={habitTimeId}>
-          Час нагадування (необовʼязково)
-          <Input
-            id={habitTimeId}
-            type="time"
-            className="routine-touch-field mt-1 w-full"
-            value={habitDraft.timeOfDay || ""}
-            onChange={(e) =>
-              setHabitDraft((d) => ({ ...d, timeOfDay: e.target.value }))
-            }
-          />
-        </label>
+        <div className="space-y-2">
+          <div className="text-xs text-subtle">Нагадування (необовʼязково)</div>
+          <div className="flex flex-wrap gap-1.5">
+            {REMINDER_PRESETS.map((preset) => (
+              <button
+                key={preset.id}
+                type="button"
+                className={cn(
+                  "text-[11px] px-2.5 py-1.5 rounded-lg border font-medium transition-colors min-h-[32px]",
+                  JSON.stringify((habitDraft.reminderTimes || []).slice().sort()) ===
+                    JSON.stringify(preset.times.slice().sort())
+                    ? C.chipOn
+                    : C.chipOff,
+                )}
+                onClick={() =>
+                  setHabitDraft((d) => ({ ...d, reminderTimes: [...preset.times], timeOfDay: preset.times[0] || "" }))
+                }
+              >
+                {preset.label}
+              </button>
+            ))}
+            <button
+              type="button"
+              className={cn(
+                "text-[11px] px-2.5 py-1.5 rounded-lg border font-medium transition-colors min-h-[32px]",
+                (habitDraft.reminderTimes || []).length === 0 ? C.chipOn : C.chipOff,
+              )}
+              onClick={() =>
+                setHabitDraft((d) => ({ ...d, reminderTimes: [], timeOfDay: "" }))
+              }
+            >
+              Без
+            </button>
+          </div>
+          {(habitDraft.reminderTimes || []).map((t, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <Input
+                type="time"
+                className="routine-touch-field flex-1"
+                value={t}
+                onChange={(e) =>
+                  setHabitDraft((d) => {
+                    const arr = [...(d.reminderTimes || [])];
+                    arr[i] = e.target.value;
+                    return { ...d, reminderTimes: arr, timeOfDay: arr[0] || "" };
+                  })
+                }
+              />
+              <button
+                type="button"
+                className="w-8 h-8 flex items-center justify-center rounded-lg text-subtle hover:text-danger hover:bg-danger/10 transition-colors"
+                onClick={() =>
+                  setHabitDraft((d) => {
+                    const arr = (d.reminderTimes || []).filter((_, j) => j !== i);
+                    return { ...d, reminderTimes: arr, timeOfDay: arr[0] || "" };
+                  })
+                }
+                aria-label="Видалити час"
+              >
+                ✕
+              </button>
+            </div>
+          ))}
+          {(habitDraft.reminderTimes || []).length < 5 && (habitDraft.reminderTimes || []).length > 0 && (
+            <button
+              type="button"
+              className="text-[11px] text-routine font-semibold hover:underline"
+              onClick={() =>
+                setHabitDraft((d) => ({
+                  ...d,
+                  reminderTimes: [...(d.reminderTimes || []), "12:00"],
+                }))
+              }
+            >
+              + Додати час
+            </button>
+          )}
+        </div>
 
         {habitDraft.recurrence === "weekly" && (
           <div>

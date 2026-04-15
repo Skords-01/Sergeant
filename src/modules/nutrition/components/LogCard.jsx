@@ -119,6 +119,7 @@ export function LogCard({
   selectedDate,
   setSelectedDate,
   onAddMeal,
+  onAddMealFromSearch,
   onRemoveMeal,
   prefs,
   setPrefs,
@@ -299,24 +300,64 @@ export function LogCard({
           aria-label="Пошук по журналу"
         />
         {searchQuery.trim() && (
-          <ul className="max-h-36 overflow-y-auto text-sm space-y-1">
+          <ul className="max-h-48 overflow-y-auto text-sm space-y-1">
             {searchHits.length === 0 && (
               <li className="text-muted text-xs">Нічого не знайдено</li>
             )}
-            {searchHits.map(({ date, meal }) => (
-              <li key={`${date}-${meal.id}`}>
-                <button
-                  type="button"
-                  className="text-left w-full text-nutrition hover:underline text-xs"
-                  onClick={() => {
-                    setSelectedDate(date);
-                    setSearchQuery("");
-                  }}
+            {searchHits.map(({ date, meal }) => {
+              const mac = meal.macros || {};
+              return (
+                <li
+                  key={`${date}-${meal.id}`}
+                  className="flex items-center gap-2 bg-panelHi rounded-xl px-2.5 py-2"
                 >
-                  {date} — {meal.name}
-                </button>
-              </li>
-            ))}
+                  <button
+                    type="button"
+                    className="text-left min-w-0 flex-1"
+                    onClick={() => {
+                      setSelectedDate(date);
+                      setSearchQuery("");
+                    }}
+                  >
+                    <div className="text-xs font-semibold text-text truncate">
+                      {meal.name}
+                    </div>
+                    <div className="flex gap-1.5 mt-0.5 flex-wrap">
+                      <span className="text-[10px] text-subtle">{date}</span>
+                      {mac.kcal != null && (
+                        <span className="text-[10px] text-nutrition font-bold">
+                          {Math.round(mac.kcal)} ккал
+                        </span>
+                      )}
+                      {mac.protein_g != null && (
+                        <span className="text-[10px] text-subtle">
+                          Б{Math.round(mac.protein_g)}
+                        </span>
+                      )}
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    className="shrink-0 w-8 h-8 flex items-center justify-center rounded-lg bg-nutrition/10 text-nutrition hover:bg-nutrition/20 transition-colors"
+                    onClick={() => {
+                      onAddMealFromSearch?.({
+                        name: meal.name,
+                        mealType: meal.mealType,
+                        label: meal.label,
+                        macros: meal.macros ? { ...meal.macros } : {},
+                        source: "manual",
+                        macroSource: "manual",
+                      });
+                      setSearchQuery("");
+                    }}
+                    title="Додати до поточного дня"
+                    aria-label={`Додати ${meal.name} до поточного дня`}
+                  >
+                    +
+                  </button>
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>

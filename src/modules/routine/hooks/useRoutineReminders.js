@@ -3,6 +3,7 @@ import {
   dateKeyFromDate,
   habitScheduledOnDate,
 } from "../lib/hubCalendarAggregate.js";
+import { normalizeReminderTimes } from "../lib/routineDraftUtils.js";
 
 export const ROUTINE_NOTIFY_PREFIX = "routine_notify_";
 
@@ -90,13 +91,14 @@ export function useRoutineReminders(routine) {
 
       for (const h of r.habits) {
         if (h.archived) continue;
-        const t = h.timeOfDay && String(h.timeOfDay).trim();
-        if (!t || t !== hm) continue;
+        const times = normalizeReminderTimes(h);
+        if (times.length === 0) continue;
+        if (!times.includes(hm)) continue;
         if (!habitScheduledOnDate(h, dk)) continue;
         const completions = r.completions[h.id] || [];
         if (completions.includes(dk)) continue;
 
-        const storageKey = `${ROUTINE_NOTIFY_PREFIX}${h.id}_${dk}`;
+        const storageKey = `${ROUTINE_NOTIFY_PREFIX}${h.id}_${hm}_${dk}`;
         try {
           if (localStorage.getItem(storageKey)) continue;
         } catch {}

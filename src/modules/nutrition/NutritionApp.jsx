@@ -490,6 +490,10 @@ export default function NutritionApp({ onBackToHub } = {}) {
                   log.setAddMealPhotoResult(null);
                   log.setAddMealSheetOpen(true);
                 }}
+                onAddMealFromSearch={(meal) => {
+                  const id = `meal_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+                  log.handleAddMeal({ ...meal, id });
+                }}
                 onRemoveMeal={log.handleRemoveMeal}
                 prefs={prefs}
                 setPrefs={setPrefs}

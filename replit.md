@@ -94,8 +94,8 @@ npm run dev           # Vite dev server on port 5173 (proxies /api to 3000)
 - SW also handles `notificationclick` to focus/reopen the app
 
 ## Modules
-- **Finyk** — Finance tracker with Monobank integration
-- **Fizruk** — Workout / exercise tracker  
-- **Routine** — Routine/habit tracker
-- **Nutrition** — Nutrition tracking with AI photo analysis
+- **Finyk** — Finance tracker with Monobank integration; SyncStatusBadge on Overview shows sync state (loading/success/partial/error), last-sync timestamp, and manual retry button
+- **Fizruk** — Workout / exercise tracker; Dashboard has "Швидкий старт" section showing 3 most recent templates for 1-tap workout start
+- **Routine** — Routine/habit tracker; habits support multiple `reminderTimes` (array) with morning/afternoon/evening presets; backward-compatible with legacy `timeOfDay` field via `normalizeReminderTimes()`
+- **Nutrition** — Nutrition tracking with AI photo analysis; LogCard search shows macro details and allows re-adding previously logged meals to current day via `onAddMealFromSearch` callback
 - **Hub Chat** — AI chat interface (Claude)
