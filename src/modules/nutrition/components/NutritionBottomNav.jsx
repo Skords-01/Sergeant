@@ -68,6 +68,25 @@ const NAV = [
     ),
   },
   {
+    id: "plan",
+    label: "План",
+    icon: (
+      <svg
+        width="22"
+        height="22"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <circle cx="12" cy="12" r="10" />
+        <polyline points="12 6 12 12 16 14" />
+      </svg>
+    ),
+  },
+  {
     id: "recipes",
     label: "Рецепти",
     icon: (
@@ -88,6 +107,26 @@ const NAV = [
       </svg>
     ),
   },
+  {
+    id: "shop",
+    label: "Покупки",
+    icon: (
+      <svg
+        width="22"
+        height="22"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+        <line x1="3" y1="6" x2="21" y2="6" />
+        <path d="M16 10a4 4 0 0 1-8 0" />
+      </svg>
+    ),
+  },
 ];
 
 export function NutritionBottomNav({ activePage, setActivePage }) {
@@ -102,22 +141,22 @@ export function NutritionBottomNav({ activePage, setActivePage }) {
               type="button"
               onClick={() => setActivePage(item.id)}
               className={cn(
-                "relative flex-1 flex flex-col items-center justify-center gap-1 transition-all min-h-[48px]",
+                "relative flex-1 flex flex-col items-center justify-center gap-0.5 transition-all min-h-[48px]",
                 active ? "text-text" : "text-muted",
               )}
             >
               {active && (
                 <span
-                  className="absolute top-0 left-1/2 -translate-x-1/2 w-9 h-0.5 rounded-full bg-nutrition"
+                  className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full bg-nutrition"
                   aria-hidden
                 />
               )}
-              <span className={cn(active && "text-nutrition")}>
+              <span className={cn(active && "text-nutrition", "scale-90")}>
                 {item.icon}
               </span>
               <span
                 className={cn(
-                  "text-[11px] leading-none font-semibold",
+                  "text-[10px] leading-none font-semibold",
                   active ? "text-text" : "text-muted",
                 )}
               >

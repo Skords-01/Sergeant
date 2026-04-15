@@ -5,6 +5,8 @@ import { NutritionBottomNav } from "./components/NutritionBottomNav.jsx";
 import { PhotoAnalyzeCard } from "./components/PhotoAnalyzeCard.jsx";
 import { PantryCard } from "./components/PantryCard.jsx";
 import { RecipesCard } from "./components/RecipesCard.jsx";
+import { DailyPlanCard } from "./components/DailyPlanCard.jsx";
+import { ShoppingListCard } from "./components/ShoppingListCard.jsx";
 import { LogCard } from "./components/LogCard.jsx";
 import { AddMealSheet } from "./components/AddMealSheet.jsx";
 import { PantryManagerSheet } from "./components/PantryManagerSheet.jsx";
@@ -21,6 +23,7 @@ import {
 import { useNutritionPantries } from "./hooks/useNutritionPantries.js";
 import { useNutritionLog } from "./hooks/useNutritionLog.js";
 import { usePhotoAnalysis } from "./hooks/usePhotoAnalysis.js";
+import { useShoppingList } from "./hooks/useShoppingList.js";
 import {
   buildRecipeCacheKey,
   readRecipeCache,
@@ -48,7 +51,7 @@ function fmtMacro(n) {
   return Math.round(Number(n));
 }
 
-const VALID_NUTRITION_PAGES = ["start", "pantry", "log", "recipes"];
+const VALID_NUTRITION_PAGES = ["start", "pantry", "log", "plan", "recipes", "shop"];
 
 function parseHash() {
   const raw = (window.location.hash || "").replace(/^#/, "").trim();
@@ -96,6 +99,7 @@ export default function NutritionApp({ onBackToHub } = {}) {
   const pantry = useNutritionPantries({ setBusy, setErr, setStatusText });
   const log = useNutritionLog();
   const photo = usePhotoAnalysis({ setBusy, setErr, setStatusText });
+  const shopping = useShoppingList();
 
   const [prefs, setPrefs] = useState(() => loadNutritionPrefs());
   const [prefsStorageErr, setPrefsStorageErr] = useState("");
@@ -113,6 +117,11 @@ export default function NutritionApp({ onBackToHub } = {}) {
   const [weekPlan, setWeekPlan] = useState(null);
   const [weekPlanRaw, setWeekPlanRaw] = useState("");
   const [weekPlanBusy, setWeekPlanBusy] = useState(false);
+
+  const [dayPlan, setDayPlan] = useState(null);
+  const [dayPlanBusy, setDayPlanBusy] = useState(false);
+
+  const [shoppingBusy, setShoppingBusy] = useState(false);
 
   const [dayHintText, setDayHintText] = useState("");
   const [dayHintBusy, setDayHintBusy] = useState(false);
@@ -285,6 +294,116 @@ export default function NutritionApp({ onBackToHub } = {}) {
       setDayHintBusy(false);
     }
   }, [log.nutritionLog, log.selectedDate, prefs]);
+
+  const fetchDayPlan = useCallback(
+    async (regenerateMealType) => {
+      setDayPlanBusy(true);
+      setErr("");
+      try {
+        const data = await postJson("/api/nutrition/day-plan", {
+          items: pantry.effectiveItems.slice(0, 50),
+          targets: {
+            kcal: prefs.dailyTargetKcal,
+            protein_g: prefs.dailyTargetProtein_g,
+            fat_g: prefs.dailyTargetFat_g,
+            carbs_g: prefs.dailyTargetCarbs_g,
+          },
+          regenerateMealType: regenerateMealType || null,
+          locale: "uk-UA",
+        });
+        const plan = data?.plan;
+        if (!plan) throw new Error("Не вдалося отримати план харчування");
+        if (regenerateMealType && dayPlan?.meals?.length > 0) {
+          const newMeals = Array.isArray(plan.meals) ? plan.meals : [];
+          const merged = [
+            ...dayPlan.meals.filter((m) => m.type !== regenerateMealType),
+            ...newMeals.filter((m) => m.type === regenerateMealType),
+          ];
+          const totals = merged.reduce(
+            (acc, m) => ({
+              totalKcal: (acc.totalKcal ?? 0) + (m.kcal ?? 0),
+              totalProtein_g: (acc.totalProtein_g ?? 0) + (m.protein_g ?? 0),
+              totalFat_g: (acc.totalFat_g ?? 0) + (m.fat_g ?? 0),
+              totalCarbs_g: (acc.totalCarbs_g ?? 0) + (m.carbs_g ?? 0),
+            }),
+            {}
+          );
+          setDayPlan({ ...dayPlan, meals: merged, ...totals });
+        } else {
+          setDayPlan(plan);
+        }
+      } catch (e) {
+        setErr(e?.message || "Помилка генерації плану");
+      } finally {
+        setDayPlanBusy(false);
+      }
+    },
+    [pantry.effectiveItems, prefs, dayPlan]
+  );
+
+  const addMealFromPlan = useCallback(
+    (meal) => {
+      const id = `meal_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+      const typeLabels = {
+        breakfast: "Сніданок",
+        lunch: "Обід",
+        dinner: "Вечеря",
+        snack: "Перекус",
+      };
+      log.handleAddMeal({
+        id,
+        time: `${String(new Date().getHours()).padStart(2, "0")}:${String(new Date().getMinutes()).padStart(2, "0")}`,
+        mealType: meal.type || "snack",
+        label: typeLabels[meal.type] || "Прийом їжі",
+        name: meal.name || "Страва",
+        macros: {
+          kcal: meal.kcal ?? null,
+          protein_g: meal.protein_g ?? null,
+          fat_g: meal.fat_g ?? null,
+          carbs_g: meal.carbs_g ?? null,
+        },
+        source: "manual",
+        macroSource: "recipeAI",
+      });
+    },
+    [log]
+  );
+
+  const generateShoppingList = useCallback(
+    async (source) => {
+      setShoppingBusy(true);
+      setErr("");
+      try {
+        const body = {
+          pantryItems: pantry.effectiveItems.slice(0, 50),
+          locale: "uk-UA",
+        };
+        if (source === "weekplan" && weekPlan?.days?.length > 0) {
+          body.weekPlan = weekPlan;
+        } else if (recipes.length > 0) {
+          body.recipes = recipes;
+        } else {
+          throw new Error("Немає рецептів чи тижневого плану для генерації.");
+        }
+        const data = await postJson("/api/nutrition/shopping-list", body);
+        if (!Array.isArray(data?.categories))
+          throw new Error("Не вдалося згенерувати список покупок.");
+        shopping.setGeneratedList(data.categories);
+      } catch (e) {
+        setErr(e?.message || "Помилка генерації списку покупок");
+      } finally {
+        setShoppingBusy(false);
+      }
+    },
+    [pantry.effectiveItems, recipes, weekPlan, shopping]
+  );
+
+  const addCheckedItemsToPantry = useCallback(() => {
+    for (const item of shopping.checkedItems) {
+      pantry.upsertItem(item.name);
+    }
+    shopping.clearChecked();
+  }, [shopping, pantry]);
 
   const uploadCloudBackup = useCallback(() => {
     if (cloudBackupBusy) return;
@@ -510,6 +629,20 @@ export default function NutritionApp({ onBackToHub } = {}) {
               />
             )}
 
+            {activePage === "plan" && (
+              <DailyPlanCard
+                prefs={prefs}
+                setPrefs={setPrefs}
+                pantryItems={pantry.effectiveItems}
+                busy={busy}
+                dayPlan={dayPlan}
+                dayPlanBusy={dayPlanBusy}
+                fetchDayPlan={() => fetchDayPlan(null)}
+                regenMeal={(mealType) => fetchDayPlan(mealType)}
+                addMealToLog={addMealFromPlan}
+              />
+            )}
+
             {activePage === "recipes" && (
               <RecipesCard
                 busy={busy}
@@ -528,6 +661,22 @@ export default function NutritionApp({ onBackToHub } = {}) {
                 weekPlanBusy={weekPlanBusy}
                 fetchWeekPlan={fetchWeekPlan}
                 addMealToLog={wrappedAddMeal}
+              />
+            )}
+
+            {activePage === "shop" && (
+              <ShoppingListCard
+                recipes={recipes}
+                weekPlan={weekPlan}
+                pantryItems={pantry.effectiveItems}
+                shoppingList={shopping.shoppingList}
+                shoppingBusy={shoppingBusy}
+                onGenerate={generateShoppingList}
+                onToggleItem={shopping.toggle}
+                onClearChecked={shopping.clearChecked}
+                onClearAll={shopping.clearAll}
+                onAddCheckedToPantry={addCheckedItemsToPantry}
+                checkedItems={shopping.checkedItems}
               />
             )}
           </div>

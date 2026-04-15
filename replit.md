@@ -97,5 +97,9 @@ npm run dev           # Vite dev server on port 5173 (proxies /api to 3000)
 - **Finyk** — Finance tracker with Monobank integration; SyncStatusBadge on Overview shows sync state (loading/success/partial/error), last-sync timestamp, and manual retry button
 - **Fizruk** — Workout / exercise tracker; features: Rest Timer with Web Audio API beep + vibration on completion and circular progress ring; Training Programs (4 built-in: PPL, Upper/Lower, Full Body, Linear Progression) with activate/deactivate, today's session on Dashboard; per-exercise 1RM and volume progress charts in Exercise detail view; Body page (Тіло tab) for logging weight/sleep/energy/mood with trend line charts; recovery compute uses daily wellbeing (sleep hours + energy level) as multipliers — poor sleep/energy increases fatigue, good metrics speed recovery
 - **Routine** — Routine/habit tracker; habits support multiple `reminderTimes` (array) with morning/afternoon/evening presets; backward-compatible with legacy `timeOfDay` field via `normalizeReminderTimes()`
-- **Nutrition** — Nutrition tracking with AI photo analysis; LogCard search shows macro details and allows re-adding previously logged meals to current day via `onAddMealFromSearch` callback
+- **Nutrition** — Nutrition tracking with AI photo analysis; LogCard search shows macro details and allows re-adding previously logged meals; now includes **Daily Plan** page (AI-generated day plan with breakfast/lunch/dinner/snack matching calorie/macro targets or presets — Схуднення/Підтримка/Набір маси) and **Shopping List** page (AI-generated from recipes or weekly plan, auto-subtracts pantry items, grouped by category, check-off with add-to-pantry)
+  - New pages: `plan` (DailyPlanCard.jsx) and `shop` (ShoppingListCard.jsx) in the bottom nav (now 6 tabs)
+  - New server endpoints: `POST /api/nutrition/day-plan`, `POST /api/nutrition/shopping-list`
+  - New storage: `shoppingListStorage.js` with localStorage key `nutrition_shopping_list_v1`
+  - New hook: `useShoppingList.js`
 - **Hub Chat** — AI chat interface (Claude)

@@ -18,6 +18,8 @@ import dayHint from "./api/nutrition/day-hint.js";
 import weekPlan from "./api/nutrition/week-plan.js";
 import backupUpload from "./api/nutrition/backup-upload.js";
 import backupDownload from "./api/nutrition/backup-download.js";
+import dayPlan from "./api/nutrition/day-plan.js";
+import shoppingList from "./api/nutrition/shopping-list.js";
 import { setCorsHeaders } from "./api/lib/cors.js";
 import { rateLimitExpress } from "./api/lib/rateLimit.js";
 
@@ -82,6 +84,8 @@ app.all("/api/nutrition/day-hint", wrap(dayHint));
 app.all("/api/nutrition/week-plan", wrap(weekPlan));
 app.all("/api/nutrition/backup-upload", wrap(backupUpload));
 app.all("/api/nutrition/backup-download", wrap(backupDownload));
+app.all("/api/nutrition/day-plan", wrap(dayPlan));
+app.all("/api/nutrition/shopping-list", wrap(shoppingList));
 
 app.use((err, _req, res, _next) => {
   console.error(err);
