@@ -43,3 +43,63 @@ export function maxActiveStreak(habits, completions, todayKey) {
   }
   return m;
 }
+
+export const currentMaxStreak = maxActiveStreak;
+
+export function completionRateForRange(habits, completions, startKey, endKey) {
+  const days = [];
+  const d = parseDateKey(startKey);
+  const end = parseDateKey(endKey);
+  d.setHours(12, 0, 0, 0);
+  end.setHours(12, 0, 0, 0);
+  while (d <= end) {
+    days.push(dateKeyFromDate(d));
+    d.setDate(d.getDate() + 1);
+  }
+
+  let scheduled = 0;
+  let completed = 0;
+  for (const h of habits) {
+    if (h.archived) continue;
+    const set = new Set(completions[h.id] || []);
+    for (const dk of days) {
+      if (!habitScheduledOnDate(h, dk)) continue;
+      scheduled += 1;
+      if (set.has(dk)) completed += 1;
+    }
+  }
+  return {
+    completed,
+    scheduled,
+    rate: scheduled > 0 ? completed / scheduled : 0,
+  };
+}
+
+export function habitCompletionRate(habit, completions, days) {
+  const today = new Date();
+  today.setHours(12, 0, 0, 0);
+  const start = new Date(today);
+  start.setDate(start.getDate() - (days - 1));
+
+  const dateList = [];
+  const d = new Date(start);
+  d.setHours(12, 0, 0, 0);
+  while (d <= today) {
+    dateList.push(dateKeyFromDate(d));
+    d.setDate(d.getDate() + 1);
+  }
+
+  const set = new Set(completions || []);
+  let scheduled = 0;
+  let completed = 0;
+  for (const dk of dateList) {
+    if (!habitScheduledOnDate(habit, dk)) continue;
+    scheduled += 1;
+    if (set.has(dk)) completed += 1;
+  }
+  return {
+    completed,
+    scheduled,
+    rate: scheduled > 0 ? completed / scheduled : 0,
+  };
+}

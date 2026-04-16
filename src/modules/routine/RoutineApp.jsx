@@ -9,7 +9,7 @@ import {
   ROUTINE_STORAGE_ERROR,
 } from "./lib/routineStorage.js";
 import { addDays, startOfIsoWeek } from "./lib/weekUtils.js";
-import { maxActiveStreak } from "./lib/streaks.js";
+import { maxActiveStreak, completionRateForRange } from "./lib/streaks.js";
 import { useRoutineReminders } from "./hooks/useRoutineReminders.js";
 import {
   buildHubCalendarEvents,
@@ -30,6 +30,7 @@ import { RoutineBottomNav } from "./components/RoutineBottomNav.jsx";
 import { RoutineCalendarPanel } from "./components/RoutineCalendarPanel.jsx";
 import { RoutineSettingsSection } from "./components/RoutineSettingsSection.jsx";
 import { HabitHeatmap } from "./components/HabitHeatmap.jsx";
+import { HabitLeadersBlock } from "./components/HabitLeadersBlock.jsx";
 
 const FIZRUK_PLAN_SYNC = "fizruk-storage-monthly-plan";
 
@@ -346,6 +347,16 @@ export default function RoutineApp({ onBackToHub, onOpenModule } = {}) {
     [routine.habits, routine.completions, todayKey],
   );
 
+  const completionRateVal = useMemo(
+    () => completionRateForRange(routine.habits, routine.completions, range.startKey, range.endKey),
+    [routine.habits, routine.completions, range.startKey, range.endKey],
+  );
+
+  const dayProgress = useMemo(
+    () => completionRateForRange(routine.habits, routine.completions, todayKey, todayKey),
+    [routine.habits, routine.completions, todayKey],
+  );
+
   const activeHabitsCount = routine.habits.filter((h) => !h.archived).length;
   const hasNoHabits = activeHabitsCount === 0;
   const hasListFilter = Boolean(tagFilter) || listQuery.trim().length > 0;
@@ -442,7 +453,9 @@ export default function RoutineApp({ onBackToHub, onOpenModule } = {}) {
             headlineDate={headlineDate}
             filtered={filtered}
             routine={routine}
-            streakMax={streakMax}
+            currentStreak={streakMax}
+            completionRate={completionRateVal}
+            dayProgress={dayProgress}
             timeMode={timeMode}
             applyTimeMode={applyTimeMode}
             selectedDay={selectedDay}
@@ -476,6 +489,13 @@ export default function RoutineApp({ onBackToHub, onOpenModule } = {}) {
 
           {mainTab === "calendar" && (
             <HabitHeatmap
+              habits={routine.habits}
+              completions={routine.completions}
+            />
+          )}
+
+          {mainTab === "calendar" && (
+            <HabitLeadersBlock
               habits={routine.habits}
               completions={routine.completions}
             />

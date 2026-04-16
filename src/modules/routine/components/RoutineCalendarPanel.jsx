@@ -1,12 +1,16 @@
+import { useState } from "react";
 import { cn } from "@shared/lib/cn";
 import { Button } from "@shared/components/ui/Button";
 import { Input } from "@shared/components/ui/Input";
 import { WeekDayStrip } from "./WeekDayStrip.jsx";
 import { completionNoteKey } from "../lib/completionNoteKey.js";
 import { PushupsWidget } from "./PushupsWidget.jsx";
+import { DayProgressRing } from "./DayProgressRing.jsx";
+import { DayReportSheet } from "./DayReportSheet.jsx";
 import {
   FIZRUK_GROUP_LABEL,
   parseDateKey,
+  habitScheduledOnDate,
 } from "../lib/hubCalendarAggregate.js";
 import {
   ROUTINE_THEME as C,
@@ -19,7 +23,9 @@ export function RoutineCalendarPanel({
   headlineDate,
   filtered,
   routine,
-  streakMax,
+  currentStreak,
+  completionRate,
+  dayProgress,
   timeMode,
   applyTimeMode,
   selectedDay,
@@ -50,6 +56,21 @@ export function RoutineCalendarPanel({
   onBulkMarkDay,
   hidden: panelHidden,
 }) {
+  const [dayReportOpen, setDayReportOpen] = useState(false);
+
+  const scheduledHabitsForReport = routine.habits
+    .filter((h) => !h.archived && habitScheduledOnDate(h, todayKey))
+    .map((h) => ({
+      ...h,
+      completed: (routine.completions[h.id] || []).includes(todayKey),
+    }));
+
+  const dayLabel = parseDateKey(todayKey).toLocaleDateString("uk-UA", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
   return (
     <div
       role="tabpanel"
@@ -68,53 +89,60 @@ export function RoutineCalendarPanel({
           {rangeLabel}
         </p>
         <p className="text-xs text-subtle mt-1">{headlineDate}</p>
-        <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
-          <div className={C.statCard}>
-            <p className="text-[10px] uppercase tracking-wide text-subtle">
-              Подій у зрізі
-            </p>
-            <p className="text-2xl font-black text-text tabular-nums mt-0.5">
-              {filtered.length}
-            </p>
-          </div>
-          <div className={C.statCard}>
-            <p className="text-[10px] uppercase tracking-wide text-subtle">
-              Звичок активних
-            </p>
-            <p className="text-2xl font-black text-text tabular-nums mt-0.5">
-              {routine.habits.filter((h) => !h.archived).length}
-            </p>
-          </div>
-          <div className={C.statCard}>
-            <p className="text-[10px] uppercase tracking-wide text-subtle">
-              Серія max
-            </p>
-            <p className="text-2xl font-black text-text tabular-nums mt-0.5">
-              {streakMax}
-            </p>
-          </div>
-          <div className={C.statCard}>
-            <p className="text-[10px] uppercase tracking-wide text-subtle">
-              Фізрук у стрічці
-            </p>
-            <p className="text-sm font-semibold text-text mt-1.5">
-              {routine.prefs.showFizrukInCalendar !== false
-                ? "Увімкнено"
-                : "Вимкнено"}
-            </p>
-          </div>
-          <div className={C.statCardEmerald}>
-            <p className="text-[10px] uppercase tracking-wide text-subtle">
-              Підписки Фініка
-            </p>
-            <p className="text-sm font-semibold text-text mt-1.5">
-              {routine.prefs.showFinykSubscriptionsInCalendar !== false
-                ? "Увімкнено"
-                : "Вимкнено"}
-            </p>
+        <div className="mt-4 flex flex-col sm:flex-row items-center gap-4">
+          <DayProgressRing
+            completed={dayProgress.completed}
+            scheduled={dayProgress.scheduled}
+            onClick={() => setDayReportOpen(true)}
+          />
+          <div className="flex-1 grid grid-cols-2 gap-2 w-full sm:grid-cols-2 lg:grid-cols-4">
+            <div className={C.statCard}>
+              <p className="text-[10px] uppercase tracking-wide text-subtle">
+                Подій у зрізі
+              </p>
+              <p className="text-2xl font-black text-text tabular-nums mt-0.5">
+                {filtered.length}
+              </p>
+            </div>
+            <div className={C.statCard}>
+              <p className="text-[10px] uppercase tracking-wide text-subtle">
+                Звичок активних
+              </p>
+              <p className="text-2xl font-black text-text tabular-nums mt-0.5">
+                {routine.habits.filter((h) => !h.archived).length}
+              </p>
+            </div>
+            <div className={C.statCard}>
+              <p className="text-[10px] uppercase tracking-wide text-subtle">
+                Виконання
+              </p>
+              <p className="text-2xl font-black text-text tabular-nums mt-0.5">
+                {Math.round(completionRate.rate * 100)}%
+              </p>
+              <p className="text-[9px] text-subtle tabular-nums">
+                {completionRate.completed}/{completionRate.scheduled}
+              </p>
+            </div>
+            <div className={C.statCard}>
+              <p className="text-[10px] uppercase tracking-wide text-subtle">
+                Поточна серія
+              </p>
+              <p className="text-2xl font-black text-text tabular-nums mt-0.5">
+                {currentStreak}
+              </p>
+            </div>
           </div>
         </div>
       </section>
+
+      <DayReportSheet
+        open={dayReportOpen}
+        onClose={() => setDayReportOpen(false)}
+        dayLabel={dayLabel}
+        scheduledHabits={scheduledHabitsForReport}
+        onToggleHabit={onToggleHabit}
+        dateKey={todayKey}
+      />
 
       <PushupsWidget />
 
