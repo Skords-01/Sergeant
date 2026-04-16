@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback } from "react";
+import { useMemo, useState, useCallback, useEffect, useRef } from "react";
 import { cn } from "@shared/lib/cn";
 
 const WEEKS = 53;
@@ -19,6 +19,18 @@ function cellBg(ratio, isFuture) {
 
 export function HabitHeatmap({ habits, completions }) {
   const [selected, setSelected] = useState(null);
+  const rootRef = useRef(null);
+
+  useEffect(() => {
+    if (!selected) return;
+    function onPointerDown(e) {
+      if (rootRef.current && !rootRef.current.contains(e.target)) {
+        setSelected(null);
+      }
+    }
+    document.addEventListener("pointerdown", onPointerDown, { capture: true });
+    return () => document.removeEventListener("pointerdown", onPointerDown, { capture: true });
+  }, [selected]);
 
   const activeHabits = useMemo(
     () => (habits || []).filter((h) => !h.archived),
@@ -92,7 +104,7 @@ export function HabitHeatmap({ habits, completions }) {
   }, [selected, weeks]);
 
   return (
-    <div className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card">
+    <div ref={rootRef} className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card">
       <p className="text-xs font-bold text-subtle uppercase tracking-widest mb-3">
         Активність за рік
       </p>
