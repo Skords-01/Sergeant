@@ -29,4 +29,43 @@ describe("mergeItems", () => {
     );
     expect(out).toHaveLength(1);
   });
+
+  it("does not duplicate when incoming has same name but no qty/unit and existing has qty/unit", () => {
+    const out = mergeItems(
+      [{ name: "огірок", qty: 4, unit: "шт", notes: null }],
+      [{ name: "огірок", qty: null, unit: null, notes: null }],
+    );
+    expect(out).toHaveLength(1);
+    expect(out[0]).toMatchObject({ qty: 4, unit: "шт" });
+  });
+
+  it("upgrades existing entry without qty/unit when incoming has qty/unit", () => {
+    const out = mergeItems(
+      [{ name: "огірок", qty: null, unit: null, notes: null }],
+      [{ name: "огірок", qty: 4, unit: "шт", notes: null }],
+    );
+    expect(out).toHaveLength(1);
+    expect(out[0]).toMatchObject({ qty: 4, unit: "шт" });
+  });
+
+  it("merges AI duplicates: same name with and without qty/unit into one entry", () => {
+    const out = mergeItems(
+      [],
+      [
+        { name: "огірок", qty: null, unit: null, notes: null },
+        { name: "огірок", qty: 4, unit: "шт", notes: null },
+      ],
+    );
+    expect(out).toHaveLength(1);
+    expect(out[0]).toMatchObject({ qty: 4, unit: "шт" });
+  });
+
+  it("same product with incompatible units (г vs уп): second entry is skipped by dedup policy", () => {
+    const out = mergeItems(
+      [{ name: "огірок", qty: 200, unit: "г", notes: null }],
+      [{ name: "огірок", qty: 1, unit: "уп", notes: null }],
+    );
+    expect(out).toHaveLength(1);
+    expect(out[0]).toMatchObject({ qty: 200, unit: "г" });
+  });
 });

@@ -54,6 +54,13 @@ describe("nutritionResponse normalizers", () => {
     expect(out).toEqual([{ name: "яйця", qty: 2, unit: "шт", notes: null }]);
   });
 
+  it("normalizePantryItems sets unit to шт when qty is present but unit is null", () => {
+    const out = normalizePantryItems({
+      items: [{ name: "огірок", qty: 4, unit: null, notes: null }],
+    });
+    expect(out).toEqual([{ name: "огірок", qty: 4, unit: "шт", notes: null }]);
+  });
+
   it("normalizeRecipes trims arrays and shapes macros", () => {
     const out = normalizeRecipes({
       recipes: [

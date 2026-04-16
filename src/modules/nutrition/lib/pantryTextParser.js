@@ -48,12 +48,12 @@ export function parseLoosePantryText(raw) {
       const rest = normalizeFoodName(m[3] || "");
 
       // Якщо після числа йде лише одне слово (без решти), це зазвичай назва продукту,
-      // а не “одиниця виміру” (напр. "2 яйця").
+      // а не "одиниця виміру" (напр. "2 яйця" -> name="яйця", qty=2, unit="шт").
       if (!rest && unitRaw) {
         return {
           name: normalizeFoodName(unitRaw),
           qty: Number.isFinite(qty) ? qty : null,
-          unit: null,
+          unit: Number.isFinite(qty) ? "шт" : null,
           notes: null,
         };
       }
@@ -63,10 +63,11 @@ export function parseLoosePantryText(raw) {
         normalizeFoodName(p.replace(m[0], "").trim()) ||
         normalizeFoodName(p);
       const unit = unitRaw ? normalizeUnit(unitRaw) : null;
+      const resolvedQty = Number.isFinite(qty) ? qty : null;
       return {
         name: normalizeFoodName(name),
-        qty: Number.isFinite(qty) ? qty : null,
-        unit,
+        qty: resolvedQty,
+        unit: resolvedQty != null && unit == null ? "шт" : unit,
         notes: null,
       };
     })

@@ -105,8 +105,9 @@ export function normalizePantryItems(parsed) {
       if (!name) return null;
       const qty =
         x.qty == null || x.qty === "" ? null : safeNumberOrNull(x.qty);
-      const unit =
+      let unit =
         x.unit == null || x.unit === "" ? null : safeString(x.unit, "").trim();
+      if (qty != null && unit == null) unit = "шт";
       const notes =
         x.notes == null || x.notes === ""
           ? null

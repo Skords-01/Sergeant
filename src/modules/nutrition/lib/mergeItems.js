@@ -67,16 +67,32 @@ export function mergeItems(oldItems, newItems) {
       }
     }
 
-    // Якщо не сумуємо — додаємо як окрему позицію, але уникаємо точного дубля (name+unit+qty)
-    const fingerprint = `${n}__${incomingUnit || ""}__${incomingQty ?? ""}`;
-    const exists = merged.some((x) => {
-      const nx = normalizeFoodName(x?.name);
-      const qx = x?.qty != null && x.qty !== "" ? Number(x.qty) : null;
-      const ux = x?.unit ? normalizeUnit(x.unit) : null;
-      const fp = `${nx}__${ux || ""}__${qx ?? ""}`;
-      return fp === fingerprint;
-    });
-    if (exists) continue;
+    // Якщо не сумуємо — перевіряємо чи є запис з тим самим ім'ям
+    const sameNameIdx = merged.findIndex(
+      (x) => normalizeFoodName(x?.name) === n,
+    );
+
+    if (sameNameIdx >= 0) {
+      const cur = merged[sameNameIdx];
+      const curQty =
+        cur?.qty != null && cur.qty !== "" && Number.isFinite(Number(cur.qty))
+          ? Number(cur.qty)
+          : null;
+      const curUnit = cur?.unit ? normalizeUnit(cur.unit) : null;
+
+      // Якщо існуючий без qty/unit — замінюємо на новий (з qty/unit має пріоритет)
+      if (curQty == null && !curUnit && (incomingQty != null || incomingUnit)) {
+        merged[sameNameIdx] = {
+          ...cur,
+          qty: incomingQty,
+          unit: incomingUnit,
+          notes: cur.notes ?? it?.notes ?? null,
+        };
+      }
+      // В усіх інших випадках (включно з точним дублем) — пропускаємо
+      continue;
+    }
+
     merged.push({
       name: n,
       qty: incomingQty,

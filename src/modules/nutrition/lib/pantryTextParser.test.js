@@ -23,7 +23,7 @@ describe("normalizeUnit", () => {
 describe("parseLoosePantryText", () => {
   it("parses qty+unit+name", () => {
     expect(parseLoosePantryText("2 яйця")).toEqual([
-      { name: "яйця", qty: 2, unit: null, notes: null },
+      { name: "яйця", qty: 2, unit: "шт", notes: null },
     ]);
     expect(parseLoosePantryText("200 г курка")).toEqual([
       { name: "курка", qty: 200, unit: "г", notes: null },
