@@ -119,6 +119,40 @@ const TOOLS = [
     },
   },
   {
+    name: "plan_workout",
+    description:
+      "Створити (запланувати) тренування у Фізруку на сьогодні або вказану дату. Можна додати список вправ із підходами/повтореннями/вагою.",
+    input_schema: {
+      type: "object",
+      properties: {
+        date: {
+          type: "string",
+          description:
+            "Дата тренування YYYY-MM-DD (опційно, за замовчуванням — сьогодні)",
+        },
+        note: {
+          type: "string",
+          description: "Коротка нотатка/назва тренування (опційно)",
+        },
+        exercises: {
+          type: "array",
+          description:
+            "Список вправ. Кожна вправа: name (обов'язково), sets, reps, weight (опційно).",
+          items: {
+            type: "object",
+            properties: {
+              name: { type: "string", description: "Назва вправи" },
+              sets: { type: "number", description: "Кількість підходів" },
+              reps: { type: "number", description: "Повторень у підході" },
+              weight: { type: "number", description: "Вага в кг" },
+            },
+            required: ["name"],
+          },
+        },
+      },
+    },
+  },
+  {
     name: "log_meal",
     description:
       "Записати прийом їжі в щоденник харчування на сьогодні. Використовуй коли користувач каже що з'їв щось і хоче записати.",
@@ -158,6 +192,7 @@ const SYSTEM_PREFIX = `Ти персональний асистент додат
 - Якщо потрібно порахувати (середня/день, прогноз, залишок ліміту, відсоток виконання) — рахуй на основі наданих чисел.
 - Якщо користувач просить змінити або записати дані — використай відповідний tool.
   - Фінанси: change_category, create_debt, create_receivable, hide_transaction, set_budget_limit, set_monthly_plan
+  - Фізрук: plan_workout (запланувати тренування на дату; можна одразу зі списком вправ)
   - Рутина: mark_habit_done (id звички з [Рутина сьогодні])
   - Харчування: log_meal (назва + ккал; білок/жири/вуглеводи опційно)
 - Транзакції мають id і дату — використовуй для tool calls.

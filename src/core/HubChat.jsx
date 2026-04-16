@@ -763,6 +763,63 @@ function executeAction(action) {
         );
         return `Звичку "${habit?.name || habit_id}" відмічено як виконану (${targetDate})`;
       }
+      case "plan_workout": {
+        const { date, note, exercises } = action.input || {};
+        const now4 = new Date();
+        const today = [
+          now4.getFullYear(),
+          String(now4.getMonth() + 1).padStart(2, "0"),
+          String(now4.getDate()).padStart(2, "0"),
+        ].join("-");
+        const targetDate = (date && /^\d{4}-\d{2}-\d{2}$/.test(date)) ? date : today;
+        const startedAt = new Date(`${targetDate}T09:00:00`).toISOString();
+        const wid = `w_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+        const items = Array.isArray(exercises)
+          ? exercises
+              .filter((ex) => ex && ex.name)
+              .map((ex, i) => {
+                const setsN = Math.max(1, Math.min(20, Number(ex.sets) || 3));
+                const reps = ex.reps != null ? Number(ex.reps) : null;
+                const weight = ex.weight != null ? Number(ex.weight) : null;
+                const sets = Array.from({ length: setsN }, (_, k) => ({
+                  id: `s_${Date.now().toString(36)}_${i}_${k}`,
+                  reps: reps != null && Number.isFinite(reps) ? reps : null,
+                  weight: weight != null && Number.isFinite(weight) ? weight : null,
+                  done: false,
+                }));
+                return {
+                  id: `i_${Date.now().toString(36)}_${i}_${Math.random().toString(36).slice(2, 6)}`,
+                  name: String(ex.name).trim(),
+                  sets,
+                };
+              })
+          : [];
+        const newW = {
+          id: wid,
+          startedAt,
+          endedAt: null,
+          items,
+          groups: [],
+          warmup: null,
+          cooldown: null,
+          note: note ? String(note).trim() : "",
+          planned: true,
+        };
+        const wRaw = localStorage.getItem("fizruk_workouts_v1");
+        let existing = [];
+        try {
+          const parsed = wRaw ? JSON.parse(wRaw) : null;
+          if (Array.isArray(parsed)) existing = parsed;
+          else if (parsed && Array.isArray(parsed.workouts)) existing = parsed.workouts;
+        } catch {}
+        const next = [newW, ...existing];
+        lsSet(
+          "fizruk_workouts_v1",
+          { schemaVersion: 1, workouts: next },
+        );
+        const exCount = items.length;
+        return `Тренування заплановано на ${targetDate}${note ? ` ("${note}")` : ""}: ${exCount} вправ${exCount === 1 ? "а" : exCount >= 2 && exCount <= 4 ? "и" : ""} (id:${wid})`;
+      }
       case "log_meal": {
         const { name, kcal, protein_g, fat_g, carbs_g } = action.input;
         const nutritionLog = ls("nutrition_log_v1", {});
@@ -1409,7 +1466,7 @@ function HubChat({ onClose }) {
                 className={cn(
                   "max-w-[82%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed",
                   m.role === "user"
-                    ? "bg-primary text-white rounded-br-sm whitespace-pre-wrap"
+                    ? "bg-primary text-bg rounded-br-sm whitespace-pre-wrap"
                     : "bg-panel border border-line text-text rounded-bl-sm whitespace-normal",
                 )}
               >
@@ -1560,7 +1617,7 @@ function HubChat({ onClose }) {
             type="button"
             onClick={() => send()}
             disabled={loading || !input.trim() || !online}
-            className="w-11 h-11 rounded-full bg-primary text-white flex items-center justify-center shrink-0 hover:brightness-110 transition-all disabled:opacity-40"
+            className="w-11 h-11 rounded-full bg-primary text-bg flex items-center justify-center shrink-0 hover:brightness-110 transition-all disabled:opacity-40"
             aria-label={online ? "Надіслати" : "Надсилання недоступне офлайн"}
             title={online ? "Надіслати" : "Немає інтернету — асистент офлайн"}
           >
