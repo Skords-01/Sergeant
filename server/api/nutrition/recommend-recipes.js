@@ -108,14 +108,14 @@ export default async function handler(req, res) {
 
     const payload = {
       model: "claude-sonnet-4-6",
-      max_tokens: 1200,
+      max_tokens: 2800,
       temperature: 0.2,
       system: SYSTEM,
       messages: [{ role: "user", content: prompt }],
     };
 
     const { response, data } = await anthropicMessages(apiKey, payload, {
-      timeoutMs: 25000,
+      timeoutMs: 45000,
     });
     if (!response.ok) {
       return res
