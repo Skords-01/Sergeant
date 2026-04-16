@@ -42,6 +42,7 @@ export function RecipesCard({
   const [savedBusy, setSavedBusy] = useState(false);
   const [portionById, setPortionById] = useState({});
   const [deleteRecipeConfirm, setDeleteRecipeConfirm] = useState(null);
+  const [openSavedId, setOpenSavedId] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -141,21 +142,51 @@ export function RecipesCard({
               {saved.slice(0, 8).map((r) => {
                 const key = r.id;
                 const factor = portionById[key] ?? "1";
+                const isOpen = openSavedId === r.id;
                 return (
                   <div
                     key={r.id}
                     className="rounded-2xl border border-line/60 bg-bg/40 p-3 overflow-hidden"
                   >
                     <div className="flex flex-wrap items-start justify-between gap-2">
-                      <div className="min-w-0 flex-1 basis-full sm:basis-auto">
-                        <div className="text-sm font-semibold text-text truncate">
-                          {r.title}
-                        </div>
-                        <div className="text-[11px] text-subtle mt-0.5">
-                          {r.timeMinutes ? `${r.timeMinutes} хв` : "—"} ·{" "}
-                          {r.servings ? `${r.servings} порц.` : "—"}
-                        </div>
-                      </div>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setOpenSavedId((id) => (id === r.id ? null : r.id))
+                        }
+                        className="min-w-0 flex-1 basis-full sm:basis-auto text-left flex items-start gap-2"
+                        aria-expanded={isOpen}
+                      >
+                        <svg
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className={cn(
+                            "shrink-0 mt-1 text-subtle transition-transform",
+                            isOpen && "rotate-90",
+                          )}
+                          aria-hidden
+                        >
+                          <polyline points="9 18 15 12 9 6" />
+                        </svg>
+                        <span className="min-w-0">
+                          <span className="block text-sm font-semibold text-text break-words">
+                            {r.title}
+                          </span>
+                          <span className="block text-[11px] text-subtle mt-0.5">
+                            {r.timeMinutes ? `${r.timeMinutes} хв` : "—"} ·{" "}
+                            {r.servings ? `${r.servings} порц.` : "—"}
+                            {r.macros?.kcal != null
+                              ? ` · ≈ ${fmtMacro(r.macros.kcal)} ккал`
+                              : ""}
+                          </span>
+                        </span>
+                      </button>
                       <div className="flex gap-2 shrink-0 flex-wrap">
                         <Button
                           type="button"
@@ -194,6 +225,60 @@ export function RecipesCard({
                         × макроси рецепту
                       </span>
                     </div>
+
+                    {isOpen && (
+                      <div className="mt-3 pt-3 border-t border-line/40 space-y-3">
+                        {Array.isArray(r.ingredients) &&
+                          r.ingredients.length > 0 && (
+                            <div className="text-sm text-text break-words">
+                              <div className="text-xs text-subtle mb-1">
+                                Інгредієнти
+                              </div>
+                              {r.ingredients.join(", ")}
+                            </div>
+                          )}
+                        {Array.isArray(r.steps) && r.steps.length > 0 && (
+                          <div className="text-sm text-text">
+                            <div className="text-xs text-subtle mb-1">
+                              Кроки
+                            </div>
+                            <ol className="list-decimal pl-5 space-y-1">
+                              {r.steps.map((s, i) => (
+                                <li key={i}>{s}</li>
+                              ))}
+                            </ol>
+                          </div>
+                        )}
+                        {Array.isArray(r.tips) && r.tips.length > 0 && (
+                          <div className="text-sm text-text">
+                            <div className="text-xs text-subtle mb-1">
+                              Поради
+                            </div>
+                            <ul className="list-disc pl-5 space-y-1">
+                              {r.tips.map((t, i) => (
+                                <li key={i}>{t}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {r.macros &&
+                          (r.macros.protein_g != null ||
+                            r.macros.fat_g != null ||
+                            r.macros.carbs_g != null) && (
+                            <div className="text-[11px] text-subtle">
+                              Б: {fmtMacro(r.macros.protein_g)} г · Ж:{" "}
+                              {fmtMacro(r.macros.fat_g)} г · В:{" "}
+                              {fmtMacro(r.macros.carbs_g)} г
+                            </div>
+                          )}
+                        {!Array.isArray(r.ingredients) &&
+                          !Array.isArray(r.steps) && (
+                            <div className="text-xs text-subtle">
+                              Деталі цього рецепту не збережені.
+                            </div>
+                          )}
+                      </div>
+                    )}
                   </div>
                 );
               })}
