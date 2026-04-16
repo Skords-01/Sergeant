@@ -233,8 +233,8 @@ function bestHabitMonthInsight() {
 
 /**
  * Insight 4: Average kcal on workout days vs rest days.
- * Requires ≥ 14 days with nutrition data total (≈ 2 weeks)
- * AND ≥ 7 days in each group.
+ * Requires ≥ 20 total nutrition-logged days (satisfies "20+ events" spec threshold)
+ * AND ≥ 7 days in each group (workout / rest).
  */
 function workoutKcalInsight() {
   const workouts = parseFizrukWorkouts().filter((w) => w.endedAt);
@@ -258,7 +258,7 @@ function workoutKcalInsight() {
     }
   }
 
-  if (kcalWorkout.length + kcalRest.length < 14) return null;
+  if (kcalWorkout.length + kcalRest.length < 20) return null;
   if (kcalWorkout.length < 7 || kcalRest.length < 7) return null;
 
   const avgWorkout = Math.round(
@@ -285,6 +285,88 @@ function workoutKcalInsight() {
 }
 
 /**
+ * Insight 5: Weekly habit completion % vs avg weekly kcal (cross-module correlation).
+ * Compares high-habit weeks (≥ 70% completion) vs low-habit weeks (< 70%).
+ * Requires ≥ 4 weeks with both habit and nutrition data.
+ */
+function habitWeeksKcalInsight() {
+  const state = safeLS("hub_routine_v1", null);
+  const log = safeLS("nutrition_log_v1", {});
+
+  if (!state) return null;
+  const habits = (state.habits || []).filter((h) => !h.archived);
+  const completions = state.completions || {};
+  if (habits.length === 0) return null;
+
+  const now = new Date();
+  const mondayOffset = (now.getDay() + 6) % 7;
+  const weekStats = [];
+
+  for (let i = 0; i < 16; i++) {
+    const mon = new Date(now);
+    mon.setDate(now.getDate() - mondayOffset - i * 7);
+    mon.setHours(0, 0, 0, 0);
+
+    const dates = [];
+    for (let d = 0; d < 7; d++) {
+      const dt = new Date(mon);
+      dt.setDate(mon.getDate() + d);
+      dates.push(localDateKey(dt));
+    }
+
+    let habitDone = 0;
+    const habitTotal = habits.length * 7;
+    for (const dk of dates) {
+      for (const h of habits) {
+        if (Array.isArray(completions[h.id]) && completions[h.id].includes(dk)) {
+          habitDone++;
+        }
+      }
+    }
+    const habitPct = habitTotal > 0 ? habitDone / habitTotal : 0;
+
+    const kcalDays = dates
+      .map((dk) => {
+        const meals = Array.isArray(log[dk]?.meals) ? log[dk].meals : [];
+        return meals.reduce((s, m) => s + (m?.macros?.kcal ?? 0), 0);
+      })
+      .filter((k) => k > 0);
+
+    if (habitDone === 0 || kcalDays.length === 0) continue;
+
+    const avgKcal = kcalDays.reduce((s, k) => s + k, 0) / kcalDays.length;
+    weekStats.push({ habitPct, avgKcal });
+  }
+
+  if (weekStats.length < 4) return null;
+
+  const highHabitWeeks = weekStats.filter((w) => w.habitPct >= 0.7);
+  const lowHabitWeeks = weekStats.filter((w) => w.habitPct < 0.7);
+
+  if (highHabitWeeks.length < 2 || lowHabitWeeks.length < 2) return null;
+
+  const avgKcalHigh =
+    Math.round(highHabitWeeks.reduce((s, w) => s + w.avgKcal, 0) / highHabitWeeks.length);
+  const avgKcalLow =
+    Math.round(lowHabitWeeks.reduce((s, w) => s + w.avgKcal, 0) / lowHabitWeeks.length);
+
+  const diff = avgKcalHigh - avgKcalLow;
+  if (Math.abs(diff) < 50) return null;
+
+  const sign = diff > 0 ? "+" : "";
+  return {
+    id: "habit_weeks_kcal",
+    emoji: "📊",
+    title:
+      diff > 0
+        ? `У тижні з 70%+ звичок ти їси на ${Math.abs(diff).toLocaleString("uk-UA")} ккал більше`
+        : `У тижні з 70%+ звичок ти їси на ${Math.abs(diff).toLocaleString("uk-UA")} ккал менше`,
+    stat: `${sign}${diff.toLocaleString("uk-UA")} ккал`,
+    detail: `${avgKcalHigh.toLocaleString("uk-UA")} vs ${avgKcalLow.toLocaleString("uk-UA")} ккал/день`,
+  };
+}
+
+/**
  * Returns up to 4 cross-module insights computed from localStorage data.
  * Returns an empty array when there is not enough data in all insights.
  *
@@ -296,6 +378,7 @@ export function generateInsights() {
     activeWeeksSpendingInsight(),
     bestHabitMonthInsight(),
     workoutKcalInsight(),
+    habitWeeksKcalInsight(),
   ]
     .filter(Boolean)
     .slice(0, 4);
