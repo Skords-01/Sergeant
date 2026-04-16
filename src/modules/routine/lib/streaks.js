@@ -34,6 +34,40 @@ export function streakForHabit(habit, completionsForHabit, todayKey) {
   return streak;
 }
 
+export function maxStreakAllTime(habit, completionsForHabit) {
+  const sorted = [...(completionsForHabit || [])].sort();
+  if (sorted.length === 0) return 0;
+  let best = 0;
+  let cur = 0;
+  let prev = null;
+  for (const key of sorted) {
+    if (!habitScheduledOnDate(habit, key)) continue;
+    if (prev === null) {
+      cur = 1;
+    } else {
+      let gap = false;
+      const d = parseDateKey(prev);
+      d.setDate(d.getDate() + 1);
+      while (dateKeyFromDate(d) < key) {
+        const dk = dateKeyFromDate(d);
+        if (habitScheduledOnDate(habit, dk)) {
+          gap = true;
+          break;
+        }
+        d.setDate(d.getDate() + 1);
+      }
+      if (gap) {
+        cur = 1;
+      } else {
+        cur += 1;
+      }
+    }
+    best = Math.max(best, cur);
+    prev = key;
+  }
+  return best;
+}
+
 export function maxActiveStreak(habits, completions, todayKey) {
   let m = 0;
   for (const h of habits) {

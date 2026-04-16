@@ -34,6 +34,7 @@ import {
   REMINDER_PRESETS,
   normalizeReminderTimes,
 } from "../lib/routineDraftUtils.js";
+import { HabitDetailSheet } from "./HabitDetailSheet.jsx";
 
 export function RoutineSettingsSection({
   routine,
@@ -50,6 +51,7 @@ export function RoutineSettingsSection({
   const toast = useToast();
   const [editingId, setEditingId] = useState(null);
   const [dragId, setDragId] = useState(null);
+  const [detailHabitId, setDetailHabitId] = useState(null);
   const [habitListQuery, setHabitListQuery] = useState("");
   const [deleteHabitPending, setDeleteHabitPending] = useState(null);
   const [importConfirm, setImportConfirm] = useState(null);
@@ -717,6 +719,15 @@ export function RoutineSettingsSection({
                       type="button"
                       variant="ghost"
                       size="sm"
+                      className="!h-9 !px-3 !text-xs border border-routine-line/60 bg-routine-surface/40"
+                      onClick={() => setDetailHabitId(h.id)}
+                    >
+                      Деталі
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
                       className="!h-9 !px-3 !text-xs border border-line/70"
                       onClick={() => {
                         setEditingId(h.id);
@@ -860,6 +871,13 @@ export function RoutineSettingsSection({
         }}
         onCancel={() => setImportConfirm(null)}
       />
+      {detailHabitId && (
+        <HabitDetailSheet
+          habitId={detailHabitId}
+          routine={routine}
+          onClose={() => setDetailHabitId(null)}
+        />
+      )}
     </div>
   );
 }

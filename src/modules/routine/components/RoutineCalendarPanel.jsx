@@ -3,6 +3,7 @@ import { cn } from "@shared/lib/cn";
 import { Button } from "@shared/components/ui/Button";
 import { Input } from "@shared/components/ui/Input";
 import { WeekDayStrip } from "./WeekDayStrip.jsx";
+import { HabitDetailSheet } from "./HabitDetailSheet.jsx";
 import { completionNoteKey } from "../lib/completionNoteKey.js";
 import { PushupsWidget } from "./PushupsWidget.jsx";
 import { DayProgressRing } from "./DayProgressRing.jsx";
@@ -57,6 +58,7 @@ export function RoutineCalendarPanel({
   hidden: panelHidden,
 }) {
   const [dayReportOpen, setDayReportOpen] = useState(false);
+  const [detailHabitId, setDetailHabitId] = useState(null);
 
   const scheduledHabitsForReport = routine.habits
     .filter((h) => !h.archived && habitScheduledOnDate(h, todayKey))
@@ -446,7 +448,19 @@ export function RoutineCalendarPanel({
                   )}
                 >
                   <div className="flex items-start justify-between gap-3 sm:gap-2">
-                    <div className="min-w-0 flex-1">
+                    <div
+                      className={cn("min-w-0 flex-1", e.habitId && "cursor-pointer")}
+                      role={e.habitId ? "button" : undefined}
+                      tabIndex={e.habitId ? 0 : undefined}
+                      onClick={() => e.habitId && setDetailHabitId(e.habitId)}
+                      onKeyDown={(ev) => {
+                        if (e.habitId && (ev.key === "Enter" || ev.key === " ")) {
+                          ev.preventDefault();
+                          setDetailHabitId(e.habitId);
+                        }
+                      }}
+                      aria-label={e.habitId ? `Деталі: ${e.title}` : undefined}
+                    >
                       <p className="font-semibold text-text text-[15px] leading-snug">
                         {e.title}
                       </p>
@@ -533,6 +547,13 @@ export function RoutineCalendarPanel({
           </div>
         ))}
       </section>
+      {detailHabitId && (
+        <HabitDetailSheet
+          habitId={detailHabitId}
+          routine={routine}
+          onClose={() => setDetailHabitId(null)}
+        />
+      )}
     </div>
   );
 }
