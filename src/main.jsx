@@ -2,6 +2,9 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./core/App";
 import "./index.css";
+import { storageManager } from "@shared/lib/storageManager.js";
+
+storageManager.runAll();
 
 class ErrorBoundary extends React.Component {
   constructor(props) {

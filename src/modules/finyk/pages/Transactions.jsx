@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
+import { GroupedVirtuoso } from "react-virtuoso";
 import { TxRow } from "../components/TxRow";
 import { getCategory, getIncomeCategory } from "../utils";
 import { mergeExpenseCategoryDefinitions } from "../constants";
@@ -8,7 +9,6 @@ import { cn } from "@shared/lib/cn";
 import { perfMark, perfEnd } from "@shared/lib/perf";
 
 const now = new Date();
-const PAGE_SIZE = 80;
 const SEARCH_DEBOUNCE_MS = 200;
 
 function dayKeyFromTx(ts) {
@@ -66,6 +66,7 @@ export function Transactions({
     removeManualExpense,
   } = storage;
   const [filter, setFilter] = useState("all");
+  const [scrollParent, setScrollParent] = useState(null);
 
   useEffect(() => {
     if (categoryFilter) {
@@ -76,7 +77,6 @@ export function Transactions({
   const [showHidden, setShowHidden] = useState(false);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   // Batch selection
   const [selectMode, setSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState(new Set());
@@ -125,9 +125,6 @@ export function Transactions({
     month: now.getMonth(),
   }));
 
-  useEffect(() => {
-    setVisibleCount(PAGE_SIZE);
-  }, [selMonth, filter, debouncedSearch, showHidden]);
 
   const isCurrentMonth =
     selMonth.year === now.getFullYear() && selMonth.month === now.getMonth();
@@ -285,17 +282,10 @@ export function Transactions({
     [sortedTxs, filter, searchLower, creditAccIds, getEffectiveCat],
   );
 
-  const visibleSorted = useMemo(() => {
-    const m = perfMark("finyk:tx:visibleSlice");
-    const res = filtered.slice(0, visibleCount);
-    perfEnd(m, { n: res.length });
-    return res;
-  }, [filtered, visibleCount]);
-
   const groupedByDate = useMemo(() => {
     const m = perfMark("finyk:tx:groupByDate");
     const groups = [];
-    for (const t of visibleSorted) {
+    for (const t of filtered) {
       const k = dayKeyFromTx(t.time);
       const last = groups[groups.length - 1];
       if (last && last.key === k) last.items.push(t);
@@ -303,7 +293,12 @@ export function Transactions({
     }
     perfEnd(m, { groups: groups.length });
     return groups;
-  }, [visibleSorted]);
+  }, [filtered]);
+
+  const groupCounts = useMemo(
+    () => groupedByDate.map((g) => g.items.length),
+    [groupedByDate],
+  );
 
   const syncColor =
     syncState?.status === "error"
@@ -313,7 +308,7 @@ export function Transactions({
         : "text-subtle";
 
   return (
-    <div className="flex-1 overflow-y-auto">
+    <div ref={setScrollParent} className="flex-1 overflow-y-auto">
       <div className="max-w-4xl mx-auto px-4 pt-4 page-tabbar-pad">
         {/* Header */}
         <div className="flex items-center justify-between mb-3">
@@ -570,20 +565,25 @@ export function Transactions({
           </div>
         )}
 
-        {/* List */}
+        {/* Virtualized list */}
         {filtered.length > 0 && (
           <div className="rounded-2xl border border-line/40 overflow-hidden -mx-px">
-            {groupedByDate.map((g) => (
-              <div key={g.key}>
+            <GroupedVirtuoso
+              customScrollParent={scrollParent}
+              groupCounts={groupCounts}
+              groupContent={(groupIndex) => (
                 <div
-                  className="sticky top-0 z-10 px-3 py-2 bg-bg/95 backdrop-blur-sm border-b border-line/50 text-[11px] font-semibold text-subtle tracking-wide"
+                  className="px-3 py-2 bg-bg/95 backdrop-blur-sm border-b border-line/50 text-[11px] font-semibold text-subtle tracking-wide"
                   role="presentation"
                 >
-                  {formatStickyDayLabel(g.key)}
+                  {formatStickyDayLabel(groupedByDate[groupIndex].key)}
                 </div>
-                {g.items.map((t, i) => (
+              )}
+              itemContent={(index, groupIndex) => {
+                const t = groupedByDate[groupIndex].items[index];
+                const i = index;
+                return (
                   <div
-                    key={t.id}
                     className={cn(
                       "px-1 sm:px-2 relative",
                       i % 2 === 1 && "bg-panelHi/25",
@@ -651,28 +651,14 @@ export function Transactions({
                       )}
                     </div>
                   </div>
-                ))}
-              </div>
-            ))}
+                );
+              }}
+            />
           </div>
         )}
 
         {activeLoading && activeTx.length > 0 && (
           <p className="text-center text-xs text-subtle py-2">⟳ оновлення...</p>
-        )}
-        {filtered.length > visibleCount && (
-          <div className="flex flex-col items-center gap-2 py-4">
-            <p className="text-xs text-subtle">
-              Показано {visibleCount} з {filtered.length}
-            </p>
-            <button
-              type="button"
-              onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
-              className="text-sm font-semibold text-primary px-4 py-2 rounded-xl border border-line hover:bg-panelHi transition-colors min-h-[44px]"
-            >
-              Завантажити ще
-            </button>
-          </div>
         )}
       </div>
 

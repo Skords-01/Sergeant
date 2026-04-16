@@ -125,17 +125,9 @@ export function loadPantries(
     }
   } catch {}
 
-  // Міграція: якщо є старі ключі (не було складів), підтягнемо як "Дім"
-  let fallback = makeDefaultPantry();
-  try {
-    const oldItems = JSON.parse(
-      localStorage.getItem(LEGACY_ITEMS_KEY) || "null",
-    );
-    const oldText = String(localStorage.getItem(LEGACY_TEXT_KEY) || "");
-    if (Array.isArray(oldItems) && oldItems.length > 0)
-      fallback.items = oldItems;
-    if (oldText) fallback.text = oldText;
-  } catch {}
+  // Legacy v0 pantry migration is handled by storageManager (nutrition_001_migrate_legacy_pantry).
+  // By the time this code runs after app boot, the v1 key already has data if any v0 data existed.
+  const fallback = makeDefaultPantry();
   try {
     localStorage.setItem(activeKey, fallback.id);
   } catch {}

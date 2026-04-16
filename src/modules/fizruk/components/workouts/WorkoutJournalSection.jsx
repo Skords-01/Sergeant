@@ -1,13 +1,57 @@
+import { Virtuoso } from "react-virtuoso";
 import { Button } from "@shared/components/ui/Button";
 import { EmptyState } from "@shared/components/ui/EmptyState";
 import { ActiveWorkoutPanel } from "../workouts/ActiveWorkoutPanel";
+
+function WorkoutRow({ w, activeWorkoutId, setActiveWorkoutId }) {
+  return (
+    <button
+      key={w.id}
+      onClick={() => setActiveWorkoutId(w.id)}
+      className={`w-full text-left px-4 py-3 border-b border-line last:border-0 hover:bg-panelHi transition-colors${activeWorkoutId === w.id ? " bg-text/5" : ""}`}
+    >
+      <div className="flex items-center justify-between gap-3">
+        <div className="text-sm font-semibold text-text">
+          {new Date(w.startedAt).toLocaleDateString("uk-UA", {
+            month: "short",
+            day: "numeric",
+          })}
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-subtle">
+            {(w.items || []).length} вправ
+          </span>
+          {activeWorkoutId === w.id ? (
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-success/15 text-success border border-success/20">
+              Активне
+            </span>
+          ) : w.endedAt ? (
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-panelHi text-subtle border border-line">
+              Завершене
+            </span>
+          ) : (
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-warning/10 text-warning border border-warning/20">
+              Чернетка
+            </span>
+          )}
+        </div>
+      </div>
+      {w.note && (
+        <div className="text-xs text-subtle mt-1 italic line-clamp-2">
+          {w.note}
+        </div>
+      )}
+    </button>
+  );
+}
+
+const JOURNAL_ITEM_HEIGHT = 60;
+const MAX_JOURNAL_HEIGHT = JOURNAL_ITEM_HEIGHT * 10;
 
 export function WorkoutJournalSection({
   activeWorkout,
   activeDuration,
   workouts,
-  journalLimit,
-  setJournalLimit,
   activeWorkoutId,
   setActiveWorkoutId,
   retroOpen,
@@ -31,6 +75,12 @@ export function WorkoutJournalSection({
   summarizeWorkoutForFinish,
   submitRetroWorkout,
 }) {
+  const workoutList = workouts || [];
+  const listHeight = Math.min(
+    workoutList.length * JOURNAL_ITEM_HEIGHT,
+    MAX_JOURNAL_HEIGHT,
+  );
+
   return (
     <div className="space-y-3">
       {!activeWorkout && (
@@ -152,7 +202,7 @@ export function WorkoutJournalSection({
           </div>
         )}
 
-        {(workouts || []).length === 0 && (
+        {workoutList.length === 0 && (
           <EmptyState
             compact
             icon={
@@ -174,59 +224,18 @@ export function WorkoutJournalSection({
           />
         )}
 
-        {(workouts || []).slice(0, journalLimit).map((w) => (
-          <button
-            key={w.id}
-            onClick={() => setActiveWorkoutId(w.id)}
-            className={`w-full text-left px-4 py-3 border-b border-line last:border-0 hover:bg-panelHi transition-colors${activeWorkoutId === w.id ? " bg-text/5" : ""}`}
-          >
-            <div className="flex items-center justify-between gap-3">
-              <div className="text-sm font-semibold text-text">
-                {new Date(w.startedAt).toLocaleDateString("uk-UA", {
-                  month: "short",
-                  day: "numeric",
-                })}
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-subtle">
-                  {(w.items || []).length} вправ
-                </span>
-                {activeWorkoutId === w.id ? (
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-success/15 text-success border border-success/20">
-                    Активне
-                  </span>
-                ) : w.endedAt ? (
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-panelHi text-subtle border border-line">
-                    Завершене
-                  </span>
-                ) : (
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-warning/10 text-warning border border-warning/20">
-                    Чернетка
-                  </span>
-                )}
-              </div>
-            </div>
-            {w.note && (
-              <div className="text-xs text-subtle mt-1 italic line-clamp-2">
-                {w.note}
-              </div>
+        {workoutList.length > 0 && (
+          <Virtuoso
+            style={{ height: listHeight }}
+            data={workoutList}
+            itemContent={(_, w) => (
+              <WorkoutRow
+                w={w}
+                activeWorkoutId={activeWorkoutId}
+                setActiveWorkoutId={setActiveWorkoutId}
+              />
             )}
-          </button>
-        ))}
-
-        {(workouts || []).length > journalLimit && (
-          <button
-            onClick={() => setJournalLimit((l) => l + 12)}
-            className="w-full py-3 text-sm font-semibold text-accent hover:text-accent/80 transition-colors"
-          >
-            Показати більше
-          </button>
-        )}
-
-        {(workouts || []).length === 0 && (
-          <div className="p-6 text-center text-sm text-subtle">
-            Поки тренувань немає
-          </div>
+          />
         )}
       </div>
     </div>

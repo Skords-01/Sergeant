@@ -87,7 +87,6 @@ export function Workouts() {
     }
   });
   const [finishFlash, setFinishFlash] = useState(null);
-  const [journalLimit, setJournalLimit] = useState(12);
   const [deleteWorkoutConfirm, setDeleteWorkoutConfirm] = useState(false);
   const [deleteExerciseConfirm, setDeleteExerciseConfirm] = useState(false);
   const [riskyTemplateConfirm, setRiskyTemplateConfirm] = useState(null); // stores template when risky
@@ -444,8 +443,6 @@ export function Workouts() {
             activeWorkout={activeWorkout}
             activeDuration={activeDuration}
             workouts={workouts}
-            journalLimit={journalLimit}
-            setJournalLimit={setJournalLimit}
             activeWorkoutId={activeWorkoutId}
             setActiveWorkoutId={setActiveWorkoutId}
             retroOpen={retroOpen}

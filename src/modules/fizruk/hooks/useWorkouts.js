@@ -5,6 +5,45 @@ import {
   WORKOUTS_STORAGE_KEY,
 } from "../lib/fizrukStorage";
 
+/**
+ * @typedef {{ id: string, done: boolean, label: string }} ChecklistItem
+ */
+
+/**
+ * @typedef {{
+ *   id: string,
+ *   exerciseId: string,
+ *   nameUk: string,
+ *   primaryGroup: string,
+ *   musclesPrimary: string[],
+ *   musclesSecondary: string[],
+ *   type: 'strength'|'distance'|'time',
+ *   sets?: Array<{ weightKg: number, reps: number }>,
+ *   durationSec?: number,
+ *   distanceM?: number,
+ * }} WorkoutItem
+ * A single exercise entry within a workout session.
+ */
+
+/**
+ * @typedef {{
+ *   id: string,
+ *   startedAt: string,
+ *   endedAt: string|null,
+ *   items: WorkoutItem[],
+ *   groups: Array<{ id: string, itemIds: string[] }>,
+ *   warmup: ChecklistItem[]|null,
+ *   cooldown: ChecklistItem[]|null,
+ *   note: string,
+ * }} Workout
+ * A complete workout session.
+ */
+
+/**
+ * Generate a unique ID with a given prefix.
+ * @param {string} [prefix]
+ * @returns {string}
+ */
 function uid(prefix = "id") {
   return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 }
@@ -21,14 +60,38 @@ const DEFAULT_COOLDOWN_ITEMS = [
   { label: "Пінний ролик або масаж (за потреби)" },
 ];
 
+/**
+ * Build a default warmup checklist with generated IDs.
+ * @returns {ChecklistItem[]}
+ */
 export function makeDefaultWarmup() {
   return DEFAULT_WARMUP_ITEMS.map((x) => ({ id: uid("wm"), ...x, done: false }));
 }
 
+/**
+ * Build a default cooldown checklist with generated IDs.
+ * @returns {ChecklistItem[]}
+ */
 export function makeDefaultCooldown() {
   return DEFAULT_COOLDOWN_ITEMS.map((x) => ({ id: uid("cd"), ...x, done: false }));
 }
 
+/**
+ * Hook for managing the list of workout sessions.
+ * Persists to localStorage under `WORKOUTS_STORAGE_KEY`.
+ *
+ * @returns {{
+ *   workouts: Workout[],
+ *   createWorkout: () => Workout,
+ *   createWorkoutWithTimes: (opts: { startedAt: string }) => Workout,
+ *   updateWorkout: (id: string, patch: Partial<Workout>) => void,
+ *   deleteWorkout: (id: string) => void,
+ *   endWorkout: (id: string) => Workout|null,
+ *   addItem: (workoutId: string, item: Partial<WorkoutItem>) => string,
+ *   updateItem: (workoutId: string, itemId: string, patch: Partial<WorkoutItem>) => void,
+ *   removeItem: (workoutId: string, itemId: string) => void,
+ * }}
+ */
 export function useWorkouts() {
   const [workouts, setWorkouts] = useState([]);
 
@@ -40,6 +103,11 @@ export function useWorkouts() {
     } catch {}
   }, []);
 
+  /**
+   * Persist an updated workouts array to localStorage.
+   * Accepts either a new array or an updater function.
+   * @param {Workout[]|((prev: Workout[]) => Workout[])} nextOrUpdater
+   */
   const persist = useCallback((nextOrUpdater) => {
     setWorkouts((prev) => {
       const next =
@@ -56,6 +124,10 @@ export function useWorkouts() {
     });
   }, []);
 
+  /**
+   * Create a new workout session starting now and add it to the list.
+   * @returns {Workout} The newly created workout.
+   */
   const createWorkout = useCallback(() => {
     const w = {
       id: uid("w"),
@@ -71,6 +143,11 @@ export function useWorkouts() {
     return w;
   }, [persist]);
 
+  /**
+   * Create a new workout session with a custom start time.
+   * @param {{ startedAt: string }} opts - ISO start timestamp.
+   * @returns {Workout} The newly created workout.
+   */
   const createWorkoutWithTimes = useCallback(
     ({ startedAt }) => {
       const w = {
@@ -89,6 +166,12 @@ export function useWorkouts() {
     [persist],
   );
 
+  /**
+   * Mark a workout as ended with the current timestamp.
+   * If the workout is already ended, returns it unchanged.
+   * @param {string} id - Workout ID.
+   * @returns {Workout|null} The updated (or already-ended) workout, or null.
+   */
   const endWorkout = useCallback(
     (id) => {
       const nowIso = new Date().toISOString();
@@ -109,6 +192,11 @@ export function useWorkouts() {
     [persist],
   );
 
+  /**
+   * Apply a partial update to a workout.
+   * @param {string} id - Workout ID.
+   * @param {Partial<Workout>} patch - Fields to merge.
+   */
   const updateWorkout = useCallback(
     (id, patch) => {
       persist((prev) =>
@@ -118,6 +206,10 @@ export function useWorkouts() {
     [persist],
   );
 
+  /**
+   * Permanently delete a workout by ID.
+   * @param {string} id - Workout ID.
+   */
   const deleteWorkout = useCallback(
     (id) => {
       persist((prev) => prev.filter((w) => w.id !== id));
@@ -125,6 +217,12 @@ export function useWorkouts() {
     [persist],
   );
 
+  /**
+   * Add an exercise item to a workout. Prepends to the items list.
+   * @param {string} workoutId
+   * @param {Partial<WorkoutItem>} item - Item data; `id` is generated if absent.
+   * @returns {string} The generated item ID.
+   */
   const addItem = useCallback(
     (workoutId, item) => {
       const itemId = item.id || uid("i");
@@ -142,6 +240,12 @@ export function useWorkouts() {
     [persist],
   );
 
+  /**
+   * Apply a partial update to a specific exercise item within a workout.
+   * @param {string} workoutId
+   * @param {string} itemId
+   * @param {Partial<WorkoutItem>} patch
+   */
   const updateItem = useCallback(
     (workoutId, itemId, patch) => {
       persist((prev) =>
@@ -159,6 +263,12 @@ export function useWorkouts() {
     [persist],
   );
 
+  /**
+   * Remove an exercise item from a workout.
+   * Also cleans up any superset groups that referenced the item.
+   * @param {string} workoutId
+   * @param {string} itemId
+   */
   const removeItem = useCallback(
     (workoutId, itemId) => {
       persist((prev) =>
@@ -178,6 +288,7 @@ export function useWorkouts() {
     [persist],
   );
 
+  /** Workouts sorted by `startedAt` descending (most recent first). */
   const sorted = useMemo(() => {
     return [...workouts].sort((a, b) =>
       (b.startedAt || "").localeCompare(a.startedAt || ""),

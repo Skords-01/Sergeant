@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Virtuoso } from "react-virtuoso";
 import { Input } from "@shared/components/ui/Input";
 import { Button } from "@shared/components/ui/Button";
 import { cn } from "@shared/lib/cn";
@@ -730,30 +731,12 @@ export function LogCard({
           Поки немає записів. Додайте перший прийом їжі.
         </div>
       ) : (
-        <div className="flex flex-col gap-3">
-          {MEAL_ORDER.filter((type) => groups[type]?.length).map((type) => {
-            const meta = MEAL_META[type];
-            return (
-              <div key={type}>
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-base">{meta.emoji}</span>
-                  <span className="text-xs font-bold text-subtle uppercase tracking-widest">
-                    {meta.label}
-                  </span>
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  {groups[type].map((meal) => (
-                    <MealRow
-                      key={meal.id}
-                      meal={meal}
-                      onRemove={() => onRemoveMeal(selectedDate, meal.id)}
-                    />
-                  ))}
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        <VirtualMealList
+          groups={groups}
+          meals={meals}
+          selectedDate={selectedDate}
+          onRemoveMeal={onRemoveMeal}
+        />
       )}
 
       <button
@@ -778,6 +761,57 @@ export function LogCard({
       onCancel={() => setDuplicateConfirm(false)}
     />
     </>
+  );
+}
+
+const MEAL_ROW_HEIGHT = 68;
+const MEAL_HEADER_HEIGHT = 32;
+const MAX_MEAL_LIST_HEIGHT = MEAL_ROW_HEIGHT * 8;
+
+function VirtualMealList({ groups, meals, selectedDate, onRemoveMeal }) {
+  const activeTypes = MEAL_ORDER.filter((t) => groups[t]?.length);
+  const flatItems = useMemo(() => {
+    const items = [];
+    for (const type of activeTypes) {
+      items.push({ kind: "header", type });
+      for (const meal of groups[type]) {
+        items.push({ kind: "meal", type, meal });
+      }
+    }
+    return items;
+  }, [groups, activeTypes]);
+
+  const listHeight = Math.min(
+    meals.length * MEAL_ROW_HEIGHT + activeTypes.length * MEAL_HEADER_HEIGHT,
+    MAX_MEAL_LIST_HEIGHT,
+  );
+
+  return (
+    <Virtuoso
+      style={{ height: listHeight }}
+      data={flatItems}
+      itemContent={(_, item) => {
+        if (item.kind === "header") {
+          const meta = MEAL_META[item.type];
+          return (
+            <div className="flex items-center gap-2 pt-2 pb-1">
+              <span className="text-base">{meta.emoji}</span>
+              <span className="text-xs font-bold text-subtle uppercase tracking-widest">
+                {meta.label}
+              </span>
+            </div>
+          );
+        }
+        return (
+          <div className="mb-1.5">
+            <MealRow
+              meal={item.meal}
+              onRemove={() => onRemoveMeal(selectedDate, item.meal.id)}
+            />
+          </div>
+        );
+      }}
+    />
   );
 }
 

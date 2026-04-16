@@ -1,16 +1,50 @@
 /**
- * Спільна логіка відновлення м'язів (useRecovery + прогноз дат).
- * @param {number} nowMs — момент «зараз» для розрахунку (для прогнозу — майбутнє).
+ * Shared muscle-recovery computation logic used by `useRecovery` and recovery forecasts.
+ */
+
+/**
+ * @typedef {{
+ *   id: string,
+ *   label: string,
+ *   lastAt: number|null,
+ *   daysSince: number|null,
+ *   load7d: number,
+ *   fatigue: number,
+ *   status: 'green'|'yellow'|'red',
+ * }} MuscleState
+ * Recovery state for a single muscle group.
+ */
+
+/**
+ * Number of whole days between two millisecond timestamps (a - b).
+ * @param {number} aMs
+ * @param {number} bMs
+ * @returns {number}
  */
 function daysBetween(aMs, bMs) {
   const DAY = 24 * 60 * 60 * 1000;
   return Math.floor((aMs - bMs) / DAY);
 }
 
+/**
+ * Clamp `n` to the range [a, b].
+ * @param {number} n
+ * @param {number} a
+ * @param {number} b
+ * @returns {number}
+ */
 function clamp(n, a, b) {
   return Math.max(a, Math.min(b, n));
 }
 
+/**
+ * Calculate the effective training load points for a single exercise item.
+ * Strength: tonnage (kg × reps) / 1000 + set count × 0.15
+ * Time-based: durationSec / 240
+ * Distance/cardio: km + minutes / 30
+ * @param {{ type: string, sets?: Array<{weightKg: number, reps: number}>, durationSec?: number, distanceM?: number }} item
+ * @returns {number} Load points ≥ 0.
+ */
 export function loadPointsForItem(item) {
   if (!item) return 0;
   if (item.type === "strength") {
@@ -44,7 +78,8 @@ export function loadPointsForItem(item) {
  * (multiplier > 1 increases effective fatigue time).
  * Good sleep/energy speeds recovery (multiplier < 1).
  * Falls back to 1.0 when no sleep/energy data is present.
- * Returns a value between 0.7 (well-rested) and 1.4 (exhausted).
+ * @param {Array<{at?: string, sleepHours?: number, energyLevel?: number}>} dailyLogEntries
+ * @returns {number} Multiplier clamped to [0.7, 1.4].
  */
 export function computeWellbeingMultiplier(dailyLogEntries = []) {
   if (!dailyLogEntries || dailyLogEntries.length === 0) return 1.0;
@@ -85,8 +120,13 @@ export function computeWellbeingMultiplier(dailyLogEntries = []) {
 }
 
 /**
- * Повертає map id м'яза → стан (як у useRecovery().by).
- * @param {Array} dailyLogEntries - recent daily log entries for wellbeing modifiers
+ * Build a map of muscle-group id → recovery state.
+ * Equivalent to the `by` object returned by `useRecovery`.
+ * @param {Array<{items?: Array, startedAt?: number}>} workouts - completed workout records
+ * @param {Record<string, string>} musclesUk - muscle id → Ukrainian display label
+ * @param {number} [nowMs] - current timestamp in ms (default: Date.now())
+ * @param {Array<{at?: string, sleepHours?: number, energyLevel?: number}>} [dailyLogEntries]
+ * @returns {Record<string, MuscleState>}
  */
 export function computeRecoveryBy(
   workouts = [],

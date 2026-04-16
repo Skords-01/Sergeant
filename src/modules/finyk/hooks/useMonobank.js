@@ -2,6 +2,32 @@ import { useState, useEffect, useRef } from "react";
 import { apiUrl } from "@shared/lib/apiUrl.js";
 import { TX_CACHE_TTL, CURRENCY } from "../constants";
 
+/**
+ * @typedef {{
+ *   id: string,
+ *   time: number,
+ *   amount: number,
+ *   description: string,
+ *   mcc?: number,
+ *   _accountId?: string|null,
+ *   _manual?: boolean,
+ *   _manualId?: string,
+ * }} Transaction
+ * A Monobank transaction (or manual expense) with metadata.
+ */
+
+/**
+ * @typedef {{
+ *   status: 'idle'|'loading'|'success'|'partial'|'error',
+ *   source: 'none'|'network'|'cache',
+ *   lastSuccess: Date|null,
+ *   lastError: string,
+ *   accountsTotal: number,
+ *   accountsOk: number,
+ * }} SyncState
+ * Current synchronisation state for the Monobank data fetch.
+ */
+
 const HUB_FINYK_CACHE_EVENT = "hub-finyk-cache-updated";
 
 function notifyHubFinykCache() {
@@ -19,30 +45,7 @@ function reportSilentError(scope, error) {
   console.warn(`[finyk] ${scope}`, error);
 }
 
-// Міграція старих ключів
-try {
-  for (const [o, n] of [
-    ["finto_tx_cache", "finyk_tx_cache"],
-    ["finto_info_cache", "finyk_info_cache"],
-    ["finto_token", "finyk_token"],
-  ]) {
-    const v = localStorage.getItem(o);
-    if (v !== null && localStorage.getItem(n) === null)
-      localStorage.setItem(n, v);
-    if (v !== null) localStorage.removeItem(o);
-  }
-} catch {}
-
-try {
-  const oldLast = localStorage.getItem("finto_tx_cache_last_good");
-  if (
-    oldLast !== null &&
-    localStorage.getItem("finyk_tx_cache_last_good") === null
-  ) {
-    localStorage.setItem("finyk_tx_cache_last_good", oldLast);
-  }
-  if (oldLast !== null) localStorage.removeItem("finto_tx_cache_last_good");
-} catch {}
+// Migration from "finto_*" keys to "finyk_*" is handled by storageManager (finyk_001_rename_finto_keys).
 
 function loadCache() {
   try {
@@ -193,6 +196,33 @@ async function fetchStatementWithRetry(tok, accId, from, to, maxAttempts = 3) {
   throw lastError || new Error("Помилка отримання транзакцій");
 }
 
+/**
+ * Hook for fetching and caching Monobank transactions.
+ * Handles token storage, multi-account sync with retry, cache fallback,
+ * and automatic refresh on visibility change / online event.
+ *
+ * @returns {{
+ *   token: string,
+ *   clientInfo: object|null,
+ *   accounts: object[],
+ *   transactions: Transaction[],
+ *   realTx: Transaction[],
+ *   connecting: boolean,
+ *   loadingTx: boolean,
+ *   error: string,
+ *   lastUpdated: Date|null,
+ *   syncState: SyncState,
+ *   authError: string,
+ *   setAuthError: (msg: string) => void,
+ *   connect: (token: string, forceRefresh?: boolean, remember?: boolean) => Promise<void>,
+ *   refresh: () => Promise<void>,
+ *   fetchMonth: (year: number, month: number) => Promise<void>,
+ *   historyTx: Transaction[],
+ *   loadingHistory: boolean,
+ *   clearTxCache: () => void,
+ *   disconnect: () => void,
+ * }}
+ */
 export function useMonobank() {
   const [token, setToken] = useState(() => {
     try {

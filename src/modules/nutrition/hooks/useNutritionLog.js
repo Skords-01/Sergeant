@@ -16,6 +16,37 @@ import {
   gcMealThumbnails,
 } from "../lib/mealPhotoStorage.js";
 
+/**
+ * @typedef {{ kcal: number|null, protein_g: number|null, fat_g: number|null, carbs_g: number|null }} NullableMacros
+ */
+
+/**
+ * @typedef {{
+ *   id: string,
+ *   name: string,
+ *   time: string,
+ *   mealType: string,
+ *   label: string,
+ *   macros: NullableMacros,
+ *   source: 'manual'|'photo',
+ *   macroSource: 'manual'|'productDb'|'photoAI'|'recipeAI',
+ * }} Meal
+ */
+
+/**
+ * @typedef {{ meals: Meal[] }} DayLog
+ */
+
+/**
+ * @typedef {Record<string, DayLog>} NutritionLog
+ * The full nutrition log keyed by ISO date string ("YYYY-MM-DD").
+ */
+
+/**
+ * Collect all meal IDs present in a log.
+ * @param {NutritionLog} log
+ * @returns {Set<string>}
+ */
 function collectMealIds(log) {
   const out = new Set();
   for (const day of Object.values(log || {})) {
@@ -28,6 +59,28 @@ function collectMealIds(log) {
   return out;
 }
 
+/**
+ * Hook for managing the nutrition log and selected date.
+ * Automatically persists the log to localStorage on each change.
+ *
+ * @returns {{
+ *   nutritionLog: NutritionLog,
+ *   setNutritionLog: (log: NutritionLog) => void,
+ *   selectedDate: string,
+ *   setSelectedDate: (date: string) => void,
+ *   addMealSheetOpen: boolean,
+ *   setAddMealSheetOpen: (open: boolean) => void,
+ *   addMealPhotoResult: unknown,
+ *   setAddMealPhotoResult: (result: unknown) => void,
+ *   handleAddMeal: (meal: Partial<Meal>) => void,
+ *   handleRemoveMeal: (date: string, id: string) => void,
+ *   storageErr: string,
+ *   duplicateYesterday: () => void,
+ *   replaceLogFromJsonText: (text: string) => void,
+ *   mergeLogFromJsonText: (text: string) => void,
+ *   trimLogToLastDays: (keepDays: number) => void,
+ * }}
+ */
 export function useNutritionLog() {
   const [nutritionLog, setNutritionLog] = useState(() =>
     loadNutritionLog(NUTRITION_LOG_KEY),
@@ -48,21 +101,38 @@ export function useNutritionLog() {
     );
   }, [nutritionLog]);
 
+  /**
+   * Add a meal to the currently selected date and close the add-meal sheet.
+   * @param {Partial<Meal>} meal
+   */
   const handleAddMeal = (meal) => {
     setNutritionLog((log) => addLogEntry(log, selectedDate, meal));
     setAddMealSheetOpen(false);
     setAddMealPhotoResult(null);
   };
 
+  /**
+   * Remove a meal entry by date and ID and delete its photo thumbnail if any.
+   * @param {string} date - ISO date string.
+   * @param {string} id   - Meal ID.
+   */
   const handleRemoveMeal = (date, id) => {
     void deleteMealThumbnail(id);
     setNutritionLog((log) => removeLogEntry(log, date, id));
   };
 
+  /**
+   * Copy all meals from the previous day into the currently selected date.
+   */
   const duplicateYesterday = useCallback(() => {
     setNutritionLog((log) => duplicatePreviousDayMeals(log, selectedDate));
   }, [selectedDate]);
 
+  /**
+   * Replace the entire log with data parsed from a JSON string.
+   * Garbage-collects orphaned photo thumbnails.
+   * @param {string} text - JSON string of a full `NutritionLog`.
+   */
   const replaceLogFromJsonText = useCallback((text) => {
     const parsed = JSON.parse(text);
     setNutritionLog((_prev) => {
@@ -73,11 +143,21 @@ export function useNutritionLog() {
     });
   }, []);
 
+  /**
+   * Merge data from a JSON string into the existing log.
+   * Existing meals are preserved; imported meals are appended.
+   * @param {string} text - JSON string of a `NutritionLog` to merge.
+   */
   const mergeLogFromJsonText = useCallback((text) => {
     const parsed = JSON.parse(text);
     setNutritionLog((log) => mergeNutritionLogs(log, parsed));
   }, []);
 
+  /**
+   * Trim the log to the most recent `keepDays` calendar days.
+   * Garbage-collects photo thumbnails for removed entries.
+   * @param {number} keepDays - Number of most-recent days to keep.
+   */
   const trimLogToLastDays = useCallback((keepDays) => {
     setNutritionLog((prev) => {
       const next = trimLogOldestDays(prev, keepDays);

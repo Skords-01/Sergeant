@@ -8,9 +8,6 @@ import { completionNoteKey } from "./completionNoteKey.js";
 
 export const ROUTINE_STORAGE_KEY = "hub_routine_v1";
 
-/** Легасі Фізрука — одноразова міграція відтискань у Рутину */
-const FIZRUK_PUSHUPS_LEGACY = "fizruk_pushups_v1";
-
 export const ROUTINE_EVENT = "hub-routine-storage";
 
 /** Подія при невдалому localStorage.setItem (квота тощо) */
@@ -73,32 +70,6 @@ const defaultState = () => ({
   completionNotes: {},
 });
 
-function migrateLegacyPushups(state) {
-  const cur =
-    state.pushupsByDate && typeof state.pushupsByDate === "object"
-      ? state.pushupsByDate
-      : {};
-  if (Object.keys(cur).length > 0) return { state, migrated: false };
-  try {
-    const raw = localStorage.getItem(FIZRUK_PUSHUPS_LEGACY);
-    if (!raw) return { state, migrated: false };
-    const parsed = JSON.parse(raw);
-    if (
-      typeof parsed !== "object" ||
-      !parsed ||
-      Object.keys(parsed).length === 0
-    ) {
-      return { state, migrated: false };
-    }
-    return {
-      state: { ...state, pushupsByDate: { ...parsed } },
-      migrated: true,
-    };
-  } catch {
-    return { state, migrated: false };
-  }
-}
-
 function ensureHabitOrder(state) {
   const active = state.habits.filter((h) => !h.archived).map((h) => h.id);
   let order = [...(state.habitOrder || [])].filter((id) => active.includes(id));
@@ -112,26 +83,27 @@ function ensureHabitOrder(state) {
   return { state: { ...state, habitOrder: order }, changed: true };
 }
 
-/** Міграція з легасі, нормалізація порядку звичок, збереження якщо щось змінилось */
+/**
+ * Normalize habit order and persist if changed.
+ * Legacy pushup migration is handled by storageManager (routine_001_migrate_fizruk_pushups)
+ * which runs before the React tree mounts, so by the time this is called the migration is done.
+ */
 function finalizeLoadedRoutineState(state) {
   let s = state;
-  const mig = migrateLegacyPushups(s);
-  s = mig.state;
   const ord = ensureHabitOrder(s);
   s = ord.state;
-  if (mig.migrated || ord.changed) {
+  if (ord.changed) {
     saveRoutineState(s);
-  }
-  if (mig.migrated) {
-    try {
-      localStorage.removeItem(FIZRUK_PUSHUPS_LEGACY);
-    } catch {
-      /* noop */
-    }
   }
   return s;
 }
 
+/**
+ * Load and normalize the full routine state from localStorage.
+ * Falls back to `defaultState()` on parse errors or missing key.
+ * Applies one-time data finalization (e.g. legacy pushup migration).
+ * @returns {{ schemaVersion: number, habits: Array, completions: Record<string,Record<string,boolean>>, tags: Array, categories: Array, prefs: object, pushupsByDate: Record<string,number>, habitOrder: string[], completionNotes: object }}
+ */
 export function loadRoutineState() {
   try {
     const raw = localStorage.getItem(ROUTINE_STORAGE_KEY);
@@ -164,6 +136,11 @@ export function loadRoutineState() {
   }
 }
 
+/**
+ * Persist routine state to localStorage and dispatch a storage event.
+ * @param {ReturnType<typeof loadRoutineState>} next - the new state to save
+ * @returns {boolean} `true` on success, `false` if localStorage threw (e.g. quota exceeded)
+ */
 export function saveRoutineState(next) {
   try {
     localStorage.setItem(ROUTINE_STORAGE_KEY, JSON.stringify(next));
@@ -201,6 +178,12 @@ export function createCategory(state, name, emoji = "") {
   return next;
 }
 
+/**
+ * Create a new habit, append it to `state.habits`, persist, and return next state.
+ * @param {ReturnType<typeof loadRoutineState>} state
+ * @param {{ name: string, emoji?: string, tagIds?: string[], categoryId?: string|null, recurrence?: 'daily'|'weekly'|'custom', startDate?: string|null, endDate?: string|null, timeOfDay?: string, reminderTimes?: string[], weekdays?: number[] }} options
+ * @returns {ReturnType<typeof loadRoutineState>} Updated state (or original state if `name` is empty).
+ */
 export function createHabit(
   state,
   {
@@ -251,6 +234,13 @@ export function createHabit(
   return next;
 }
 
+/**
+ * Apply a partial patch to a habit by id, persist, and return next state.
+ * @param {ReturnType<typeof loadRoutineState>} state
+ * @param {string} id - habit id
+ * @param {Partial<ReturnType<typeof loadRoutineState>['habits'][0]>} patch
+ * @returns {ReturnType<typeof loadRoutineState>}
+ */
 export function updateHabit(state, id, patch) {
   const next = {
     ...state,
@@ -268,6 +258,14 @@ export function setPref(state, key, value) {
   return next;
 }
 
+/**
+ * Toggle a habit's completion for a given date.
+ * No-op if the habit is not scheduled on that date (and it wasn't already marked).
+ * @param {ReturnType<typeof loadRoutineState>} state
+ * @param {string} habitId
+ * @param {string} dateKey - ISO date string "YYYY-MM-DD"
+ * @returns {ReturnType<typeof loadRoutineState>}
+ */
 export function toggleHabitCompletion(state, habitId, dateKey) {
   const habit = state.habits.find((h) => h.id === habitId);
   if (!habit) return state;
@@ -387,6 +385,10 @@ export function setCompletionNote(state, habitId, dateKey, text) {
   return next;
 }
 
+/**
+ * Build a JSON-serializable backup payload for the Routine module.
+ * @returns {{ kind: 'hub-routine-backup', schemaVersion: number, exportedAt: string, data: ReturnType<typeof loadRoutineState> }}
+ */
 export function buildRoutineBackupPayload() {
   return {
     kind: "hub-routine-backup",
@@ -426,20 +428,11 @@ export function applyRoutineBackupPayload(parsed) {
         : {},
   };
   let s = merged;
-  const mig = migrateLegacyPushups(s);
-  s = mig.state;
   s = ensureHabitOrder(s).state;
   if (!saveRoutineState(s)) {
     throw new Error(
       "Не вдалося записати дані після імпорту (наприклад, переповнення сховища).",
     );
-  }
-  if (mig.migrated) {
-    try {
-      localStorage.removeItem(FIZRUK_PUSHUPS_LEGACY);
-    } catch {
-      /* noop */
-    }
   }
 }
 
