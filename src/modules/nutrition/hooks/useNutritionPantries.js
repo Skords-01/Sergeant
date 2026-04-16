@@ -257,10 +257,13 @@ export function useNutritionPantries({ setBusy, setErr, setStatusText }) {
         updatePantry(cur, activePantryId, (p) => ({
           ...p,
           items: mergeItems(p.items, next),
+          text: "",
         })),
       );
+      return true;
     } catch (e) {
       setErr(e?.message || "Помилка розбору списку");
+      return false;
     } finally {
       setStatusText("");
       setBusy(false);

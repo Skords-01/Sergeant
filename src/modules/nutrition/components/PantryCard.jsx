@@ -124,7 +124,10 @@ export function PantryCard({
               />
               <button
                 type="button"
-                onClick={parsePantry}
+                onClick={async () => {
+                  const ok = await parsePantry();
+                  if (ok) setListOpen(false);
+                }}
                 disabled={busy || !pantryText.trim()}
                 className={cn(
                   "shrink-0 px-4 h-11 rounded-xl text-sm font-semibold mt-0.5",
