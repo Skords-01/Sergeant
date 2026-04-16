@@ -149,8 +149,15 @@ export function Exercise({ exerciseId }) {
     let best1rm = 0;
     let bestSet = null;
     let lastTop = null;
+    let lastWorkoutId = null;
+    let lastWorkoutBest1rm = 0;
+    let priorBest1rm = 0;
+
+    if (history.length > 0) lastWorkoutId = history[0].workout?.id;
+
     for (const { workout, item } of history) {
       if (item?.type !== "strength") continue;
+      const isLatest = workout?.id === lastWorkoutId;
       const sets = item.sets || [];
       for (const s of sets) {
         const est = epley1rm(s.weightKg, s.reps);
@@ -158,10 +165,17 @@ export function Exercise({ exerciseId }) {
           best1rm = est;
           bestSet = { ...s, _at: workout?.startedAt };
         }
-        if (!lastTop) lastTop = { ...s, _at: workout?.startedAt };
+        if (isLatest) {
+          if (est > lastWorkoutBest1rm) lastWorkoutBest1rm = est;
+          if (!lastTop) lastTop = { ...s, _at: workout?.startedAt };
+        } else {
+          if (est > priorBest1rm) priorBest1rm = est;
+        }
       }
     }
-    return { best1rm, bestSet, lastTop };
+
+    const isNewPR = lastWorkoutBest1rm > 0 && lastWorkoutBest1rm > priorBest1rm;
+    return { best1rm, bestSet, lastTop, isNewPR };
   }, [history]);
 
   const suggestedNext = useMemo(() => {
@@ -169,7 +183,9 @@ export function Exercise({ exerciseId }) {
     const w = Number(best.lastTop.weightKg) || 0;
     const r = Number(best.lastTop.reps) || 0;
     if (w <= 0 || r <= 0) return null;
-    const nextW = roundToStep(w * 1.025, 2.5);
+    const nextW = r <= 10
+      ? roundToStep(w + 2.5, 2.5)
+      : roundToStep(w * 1.05, 2.5);
     return { weightKg: nextW, reps: r };
   }, [best.lastTop]);
 
@@ -265,32 +281,52 @@ export function Exercise({ exerciseId }) {
           )}
         </section>
 
+        {best.isNewPR && (
+          <div className="flex items-center gap-2.5 rounded-2xl border border-yellow-400/40 bg-yellow-400/10 px-4 py-3">
+            <span className="text-xl leading-none">🏆</span>
+            <div>
+              <p className="text-sm font-bold text-yellow-700 dark:text-yellow-300">Новий особистий рекорд!</p>
+              <p className="text-xs text-yellow-600/80 dark:text-yellow-400/70">Найкращий результат за всю історію</p>
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-2 gap-3">
           <div className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card">
             <div className="text-[10px] font-bold text-subtle uppercase tracking-widest">
-              Best 1RM (оцінка)
+              Особистий рекорд
             </div>
             <div className="text-2xl font-extrabold text-text mt-1 tabular-nums">
               {best.best1rm ? `${fmt(best.best1rm, 0)} кг` : "—"}
             </div>
             <div className="text-xs text-subtle mt-1">
               {best.bestSet
-                ? `${best.bestSet.weightKg ?? 0}×${best.bestSet.reps ?? 0}`
+                ? `${best.bestSet.weightKg ?? 0} × ${best.bestSet.reps ?? 0} повт.`
                 : "Немає силових сетів"}
             </div>
+            {best.bestSet?._at && (
+              <div className="text-[10px] text-subtle/70 mt-1">
+                {new Date(best.bestSet._at).toLocaleDateString("uk-UA", { day: "numeric", month: "short", year: "2-digit" })}
+              </div>
+            )}
           </div>
           <div className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card">
             <div className="text-[10px] font-bold text-subtle uppercase tracking-widest">
-              Рекомендація
+              Наступного разу
             </div>
             <div className="text-2xl font-extrabold text-text mt-1 tabular-nums">
               {suggestedNext ? `${fmt(suggestedNext.weightKg, 1)} кг` : "—"}
             </div>
             <div className="text-xs text-subtle mt-1">
               {suggestedNext
-                ? `на ~${suggestedNext.reps} повторів`
-                : "Заповни останній сет, щоб зʼявилась прогресія"}
+                ? `× ${suggestedNext.reps} повт.`
+                : "Заповни сети, щоб зʼявилась рекомендація"}
             </div>
+            {suggestedNext && best.lastTop && (
+              <div className="text-[10px] text-subtle/70 mt-1">
+                {`зараз: ${best.lastTop.weightKg ?? 0} × ${best.lastTop.reps ?? 0}`}
+              </div>
+            )}
           </div>
         </div>
 

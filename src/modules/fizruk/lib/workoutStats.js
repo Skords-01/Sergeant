@@ -1,5 +1,57 @@
 /** Pure helpers for dashboard / analytics (kg, local week Mon–Sun). */
 
+function epley1rmInternal(weightKg, reps) {
+  const wg = Number(weightKg) || 0;
+  const r = Number(reps) || 0;
+  if (wg <= 0 || r <= 0) return 0;
+  return wg * (1 + r / 30);
+}
+
+function roundToStep(x, step) {
+  const s = Number(step) || 1;
+  return Math.round(x / s) * s;
+}
+
+/**
+ * Повертає особистий рекорд по вправі: { best1rm, bestSet: {weightKg, reps}, date }.
+ * Враховує всі тренування у `workouts`.
+ */
+export function getExercisePR(workouts, exerciseId) {
+  let best1rm = 0;
+  let bestSet = null;
+  let bestDate = null;
+  for (const w of workouts || []) {
+    for (const it of w.items || []) {
+      if (it.exerciseId !== exerciseId || it.type !== "strength") continue;
+      for (const s of it.sets || []) {
+        const est = epley1rmInternal(s.weightKg, s.reps);
+        if (est > best1rm) {
+          best1rm = est;
+          bestSet = { weightKg: s.weightKg, reps: s.reps };
+          bestDate = w.startedAt || null;
+        }
+      }
+    }
+  }
+  return { best1rm, bestSet, date: bestDate };
+}
+
+/**
+ * Рекомендує наступний сет на основі останнього кращого:
+ *   reps ≤ 10 → +2.5 кг (та ж кількість повт.)
+ *   reps > 10 → +5% від ваги (округлити до 2.5 кг)
+ * Повертає { weightKg, reps } або null.
+ */
+export function suggestNextSet(lastBestSet) {
+  const w = Number(lastBestSet?.weightKg) || 0;
+  const r = Number(lastBestSet?.reps) || 0;
+  if (w <= 0 || r <= 0) return null;
+  const nextW = r <= 10
+    ? roundToStep(w + 2.5, 2.5)
+    : roundToStep(w * 1.05, 2.5);
+  return { weightKg: nextW, reps: r };
+}
+
 export function workoutTonnageKg(w) {
   let t = 0;
   for (const it of w.items || []) {
