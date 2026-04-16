@@ -144,10 +144,10 @@ export function RecipesCard({
                 return (
                   <div
                     key={r.id}
-                    className="rounded-2xl border border-line/60 bg-bg/40 p-3"
+                    className="rounded-2xl border border-line/60 bg-bg/40 p-3 overflow-hidden"
                   >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1 basis-full sm:basis-auto">
                         <div className="text-sm font-semibold text-text truncate">
                           {r.title}
                         </div>
@@ -156,7 +156,7 @@ export function RecipesCard({
                           {r.servings ? `${r.servings} порц.` : "—"}
                         </div>
                       </div>
-                      <div className="flex gap-2 shrink-0">
+                      <div className="flex gap-2 shrink-0 flex-wrap">
                         <Button
                           type="button"
                           variant="ghost"
@@ -337,11 +337,11 @@ export function RecipesCard({
             {recipes.map((r, idx) => (
               <div
                 key={r.id || idx}
-                className="rounded-2xl border border-line bg-panel p-4"
+                className="rounded-2xl border border-line bg-panel p-4 overflow-hidden"
               >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="text-sm font-semibold text-text">
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div className="min-w-0 flex-1 basis-full sm:basis-auto">
+                    <div className="text-sm font-semibold text-text break-words">
                       {r.title || `Рецепт ${idx + 1}`}
                     </div>
                     <div className="text-xs text-subtle mt-1">
@@ -349,7 +349,15 @@ export function RecipesCard({
                       {r.servings ? `${r.servings} порц.` : "—"}
                     </div>
                   </div>
-                  <div className="flex gap-2 shrink-0">
+                  {r.macros?.kcal != null && (
+                    <div className="shrink-0 rounded-xl border border-line bg-bg px-3 py-2 text-xs text-subtle">
+                      <div className="text-[10px] text-subtle">≈ ккал</div>
+                      <div className="text-sm font-semibold text-text">
+                        {fmtMacro(r.macros.kcal)}
+                      </div>
+                    </div>
+                  )}
+                  <div className="flex gap-2 flex-wrap basis-full sm:basis-auto">
                     <Button
                       type="button"
                       variant="ghost"
@@ -371,18 +379,10 @@ export function RecipesCard({
                       + У журнал
                     </Button>
                   </div>
-                  {r.macros?.kcal != null && (
-                    <div className="shrink-0 rounded-xl border border-line bg-bg px-3 py-2 text-xs text-subtle">
-                      <div className="text-[10px] text-subtle">≈ ккал</div>
-                      <div className="text-sm font-semibold text-text">
-                        {fmtMacro(r.macros.kcal)}
-                      </div>
-                    </div>
-                  )}
                 </div>
 
                 {Array.isArray(r.ingredients) && r.ingredients.length > 0 && (
-                  <div className="mt-3 text-sm text-text">
+                  <div className="mt-3 text-sm text-text break-words">
                     <div className="text-xs text-subtle mb-1">Інгредієнти</div>
                     {r.ingredients.join(", ")}
                   </div>
