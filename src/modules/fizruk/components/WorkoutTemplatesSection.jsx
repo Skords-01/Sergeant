@@ -1,6 +1,11 @@
 import { useMemo, useState } from "react";
 import { Input } from "@shared/components/ui/Input";
 import { Button } from "@shared/components/ui/Button";
+
+function uid(prefix = "g") {
+  return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
 export function WorkoutTemplatesSection({
   exercises,
   search,
@@ -14,6 +19,9 @@ export function WorkoutTemplatesSection({
   const [editingId, setEditingId] = useState(null);
   const [name, setName] = useState("");
   const [orderIds, setOrderIds] = useState([]);
+  const [groups, setGroups] = useState([]);
+  const [groupSelectMode, setGroupSelectMode] = useState(false);
+  const [groupSelected, setGroupSelected] = useState(new Set());
 
   const pickList = useMemo(() => search(q).slice(0, 40), [search, q]);
 
@@ -25,31 +33,48 @@ export function WorkoutTemplatesSection({
     return m;
   }, [exercises]);
 
+  const exIdToGroup = useMemo(() => {
+    const m = new Map();
+    for (const g of groups) {
+      for (const id of g.exerciseIds || []) {
+        m.set(id, g);
+      }
+    }
+    return m;
+  }, [groups]);
+
   const startNew = () => {
     setEditingId("new");
     setName("");
     setOrderIds([]);
+    setGroups([]);
     setQ("");
+    setGroupSelectMode(false);
+    setGroupSelected(new Set());
   };
 
   const startEdit = (t) => {
     setEditingId(t.id);
     setName(t.name || "");
     setOrderIds([...(t.exerciseIds || [])]);
+    setGroups([...(t.groups || [])]);
     setQ("");
+    setGroupSelectMode(false);
+    setGroupSelected(new Set());
   };
 
   const save = () => {
     if (orderIds.length === 0) return;
     const n = name.trim() || "Мій шаблон";
     if (editingId === "new") {
-      addTemplate(n, orderIds);
+      addTemplate(n, orderIds, { groups });
     } else if (editingId) {
-      updateTemplate(editingId, { name: n, exerciseIds: orderIds });
+      updateTemplate(editingId, { name: n, exerciseIds: orderIds, groups });
     }
     setEditingId(null);
     setName("");
     setOrderIds([]);
+    setGroups([]);
   };
 
   const addEx = (ex) => {
@@ -69,7 +94,38 @@ export function WorkoutTemplatesSection({
   };
 
   const removeAt = (idx) => {
+    const removedId = orderIds[idx];
     setOrderIds((o) => o.filter((_, i) => i !== idx));
+    setGroups((gs) =>
+      gs
+        .map((g) => ({ ...g, exerciseIds: (g.exerciseIds || []).filter((id) => id !== removedId) }))
+        .filter((g) => (g.exerciseIds || []).length >= 2),
+    );
+  };
+
+  const handleToggleGroupSelect = (exId) => {
+    setGroupSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(exId)) next.delete(exId);
+      else next.add(exId);
+      return next;
+    });
+  };
+
+  const handleCreateGroup = (type) => {
+    if (groupSelected.size < 2 || groupSelected.size > 3) return;
+    const exerciseIds = [...groupSelected];
+    const newGroup = { id: uid("g"), type, exerciseIds, restSec: 60 };
+    setGroups((gs) => [
+      ...gs.filter((g) => !g.exerciseIds.some((id) => groupSelected.has(id))),
+      newGroup,
+    ]);
+    setGroupSelected(new Set());
+    setGroupSelectMode(false);
+  };
+
+  const handleRemoveGroup = (groupId) => {
+    setGroups((gs) => gs.filter((g) => g.id !== groupId));
   };
 
   return (
@@ -125,8 +181,48 @@ export function WorkoutTemplatesSection({
           </div>
 
           <div>
-            <div className="text-[10px] font-bold text-subtle uppercase tracking-widest mb-2">
-              Порядок ({orderIds.length})
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-[10px] font-bold text-subtle uppercase tracking-widest">
+                Порядок ({orderIds.length})
+              </div>
+              {orderIds.length >= 2 && !groupSelectMode && (
+                <button
+                  type="button"
+                  className="text-[11px] px-2 py-1 rounded-lg border border-line text-subtle hover:text-text hover:bg-panelHi transition-colors"
+                  onClick={() => { setGroupSelectMode(true); setGroupSelected(new Set()); }}
+                >
+                  ⊕ Суперсет
+                </button>
+              )}
+              {groupSelectMode && (
+                <div className="flex gap-1">
+                  <button
+                    type="button"
+                    className="text-[11px] px-2 py-1 rounded-lg border border-success/40 text-success disabled:opacity-40"
+                    disabled={groupSelected.size < 2 || groupSelected.size > 3}
+                    onClick={() => handleCreateGroup("superset")}
+                    title="Виберіть 2-3 вправи"
+                  >
+                    Суперсет ({groupSelected.size}/3)
+                  </button>
+                  <button
+                    type="button"
+                    className="text-[11px] px-2 py-1 rounded-lg border border-accent/40 text-accent disabled:opacity-40"
+                    disabled={groupSelected.size < 2 || groupSelected.size > 3}
+                    onClick={() => handleCreateGroup("circuit")}
+                    title="Виберіть 2-3 вправи"
+                  >
+                    Коло ({groupSelected.size}/3)
+                  </button>
+                  <button
+                    type="button"
+                    className="text-[11px] px-2 py-1 rounded-lg border border-line text-subtle"
+                    onClick={() => { setGroupSelectMode(false); setGroupSelected(new Set()); }}
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
             </div>
             {orderIds.length === 0 ? (
               <div className="text-sm text-subtle text-center py-4">
@@ -136,41 +232,73 @@ export function WorkoutTemplatesSection({
               <ul className="space-y-1">
                 {orderIds.map((id, idx) => {
                   const ex = byId.get(id);
+                  const group = exIdToGroup.get(id);
+                  const isSelected = groupSelected.has(id);
                   return (
                     <li
                       key={`${id}_${idx}`}
-                      className="flex items-center gap-2 rounded-xl border border-line bg-bg px-2 py-1.5"
+                      className={`flex items-center gap-2 rounded-xl border px-2 py-1.5 transition-colors ${isSelected ? "border-success bg-success/5" : group ? "border-success/40 bg-success/5" : "border-line bg-bg"}`}
                     >
-                      <span className="text-xs text-subtle w-5 text-center">
-                        {idx + 1}
-                      </span>
+                      {groupSelectMode && (
+                        <button
+                          type="button"
+                          className={`w-5 h-5 rounded-md border flex items-center justify-center flex-shrink-0 transition-colors ${isSelected ? "bg-success border-success text-white" : "border-line bg-bg"}`}
+                          onClick={() => handleToggleGroupSelect(id)}
+                        >
+                          {isSelected && (
+                            <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                              <path d="M2 5l2.5 2.5L8 3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                          )}
+                        </button>
+                      )}
+                      <span className="text-xs text-subtle w-5 text-center">{idx + 1}</span>
                       <span className="flex-1 text-sm truncate min-w-0">
                         {ex?.name?.uk || ex?.name?.en || id}
                       </span>
-                      <button
-                        type="button"
-                        className="min-w-[44px] min-h-[44px] text-subtle hover:text-text"
-                        aria-label="Вище"
-                        onClick={() => move(idx, -1)}
-                      >
-                        ↑
-                      </button>
-                      <button
-                        type="button"
-                        className="min-w-[44px] min-h-[44px] text-subtle hover:text-text"
-                        aria-label="Нижче"
-                        onClick={() => move(idx, 1)}
-                      >
-                        ↓
-                      </button>
-                      <button
-                        type="button"
-                        className="min-w-[44px] min-h-[44px] text-danger/80"
-                        aria-label="Прибрати з шаблону"
-                        onClick={() => removeAt(idx)}
-                      >
-                        ✕
-                      </button>
+                      {group && (
+                        <span className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full ${group.type === "circuit" ? "bg-accent/15 text-accent border border-accent/30" : "bg-success/15 text-success border border-success/30"}`}>
+                          {group.type === "circuit" ? "Коло" : "СС"}
+                        </span>
+                      )}
+                      {group && !groupSelectMode && (
+                        <button
+                          type="button"
+                          className="text-[10px] text-danger/60 hover:text-danger px-1"
+                          title="Прибрати з групи"
+                          onClick={() => handleRemoveGroup(group.id)}
+                        >
+                          ⊗
+                        </button>
+                      )}
+                      {!groupSelectMode && (
+                        <>
+                          <button
+                            type="button"
+                            className="min-w-[44px] min-h-[44px] text-subtle hover:text-text"
+                            aria-label="Вище"
+                            onClick={() => move(idx, -1)}
+                          >
+                            ↑
+                          </button>
+                          <button
+                            type="button"
+                            className="min-w-[44px] min-h-[44px] text-subtle hover:text-text"
+                            aria-label="Нижче"
+                            onClick={() => move(idx, 1)}
+                          >
+                            ↓
+                          </button>
+                          <button
+                            type="button"
+                            className="min-w-[44px] min-h-[44px] text-danger/80"
+                            aria-label="Прибрати з шаблону"
+                            onClick={() => removeAt(idx)}
+                          >
+                            ✕
+                          </button>
+                        </>
+                      )}
                     </li>
                   );
                 })}
@@ -193,6 +321,7 @@ export function WorkoutTemplatesSection({
                 setEditingId(null);
                 setOrderIds([]);
                 setName("");
+                setGroups([]);
               }}
             >
               Скасувати
@@ -223,6 +352,9 @@ export function WorkoutTemplatesSection({
                 </div>
                 <div className="text-xs text-subtle">
                   {(t.exerciseIds || []).length} вправ
+                  {(t.groups || []).length > 0 && (
+                    <span className="ml-2 text-success">· {(t.groups || []).length} суперсет{(t.groups || []).length > 1 ? "и" : ""}</span>
+                  )}
                 </div>
               </div>
               <div className="flex flex-wrap gap-1.5 shrink-0 justify-end">

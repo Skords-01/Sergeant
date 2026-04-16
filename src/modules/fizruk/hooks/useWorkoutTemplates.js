@@ -34,7 +34,7 @@ export function useWorkoutTemplates() {
   }, []);
 
   const addTemplate = useCallback(
-    (name, exerciseIds) => {
+    (name, exerciseIds, { groups } = {}) => {
       const n = (name || "").trim();
       if (!n) throw new Error("name required");
       const ids = Array.isArray(exerciseIds) ? exerciseIds.filter(Boolean) : [];
@@ -42,6 +42,7 @@ export function useWorkoutTemplates() {
         id: uid(),
         name: n,
         exerciseIds: ids,
+        groups: Array.isArray(groups) ? groups : [],
         updatedAt: new Date().toISOString(),
       };
       persist([t, ...templates]);

@@ -218,6 +218,49 @@ export function Workouts() {
     [mode, activeWorkoutId, activeWorkout?.endedAt, addExerciseToActive, toast],
   );
 
+  const executeTemplateStart = useCallback(
+    (tpl) => {
+      const picks = (tpl?.exerciseIds || [])
+        .map((id) => exercises.find((e) => e.id === id))
+        .filter(Boolean);
+      const w = createWorkout();
+      const exIdToItemId = {};
+      for (const ex of picks) {
+        const isCardio = ex.primaryGroup === "cardio";
+        const itemId = addItem(w.id, {
+          exerciseId: ex.id,
+          nameUk: ex?.name?.uk || ex?.name?.en,
+          primaryGroup: ex.primaryGroup,
+          musclesPrimary: ex?.muscles?.primary || [],
+          musclesSecondary: ex?.muscles?.secondary || [],
+          type: isCardio ? "distance" : "strength",
+          sets: isCardio ? undefined : [{ weightKg: 0, reps: 0 }],
+          durationSec: 0,
+          distanceM: isCardio ? 0 : 0,
+        });
+        exIdToItemId[ex.id] = itemId;
+      }
+      if ((tpl?.groups || []).length > 0) {
+        const workoutGroups = (tpl.groups || [])
+          .map((g) => ({
+            ...g,
+            itemIds: (g.exerciseIds || []).map((exId) => exIdToItemId[exId]).filter(Boolean),
+          }))
+          .filter((g) => (g.itemIds || []).length >= 2);
+        if (workoutGroups.length > 0) {
+          updateWorkout(w.id, { groups: workoutGroups });
+        }
+      }
+      if (tpl?.id) templateApi.markTemplateUsed(tpl.id);
+      try {
+        localStorage.setItem(ACTIVE_WORKOUT_KEY, w.id);
+      } catch {}
+      setActiveWorkoutId(w.id);
+      setMode("log");
+    },
+    [exercises, createWorkout, addItem, updateWorkout, templateApi],
+  );
+
   const startWorkoutFromTemplate = useCallback(
     (tpl) => {
       const picks = (tpl?.exerciseIds || [])
@@ -236,29 +279,9 @@ export function Workouts() {
         setRiskyTemplateConfirm(tpl);
         return;
       }
-      const w = createWorkout();
-      for (const ex of picks) {
-        const isCardio = ex.primaryGroup === "cardio";
-        addItem(w.id, {
-          exerciseId: ex.id,
-          nameUk: ex?.name?.uk || ex?.name?.en,
-          primaryGroup: ex.primaryGroup,
-          musclesPrimary: ex?.muscles?.primary || [],
-          musclesSecondary: ex?.muscles?.secondary || [],
-          type: isCardio ? "distance" : "strength",
-          sets: isCardio ? undefined : [{ weightKg: 0, reps: 0 }],
-          durationSec: 0,
-          distanceM: isCardio ? 0 : 0,
-        });
-      }
-      if (tpl?.id) templateApi.markTemplateUsed(tpl.id);
-      try {
-        localStorage.setItem(ACTIVE_WORKOUT_KEY, w.id);
-      } catch {}
-      setActiveWorkoutId(w.id);
-      setMode("log");
+      executeTemplateStart(tpl);
     },
-    [exercises, rec.by, createWorkout, addItem, toast, templateApi],
+    [exercises, rec.by, executeTemplateStart, toast],
   );
 
   const submitRetroWorkout = useCallback(() => {
@@ -555,30 +578,7 @@ export function Workouts() {
           const tpl = riskyTemplateConfirm;
           setRiskyTemplateConfirm(null);
           if (!tpl) return;
-          const picks = (tpl?.exerciseIds || [])
-            .map((id) => exercises.find((e) => e.id === id))
-            .filter(Boolean);
-          const w = createWorkout();
-          for (const ex of picks) {
-            const isCardio = ex.primaryGroup === "cardio";
-            addItem(w.id, {
-              exerciseId: ex.id,
-              nameUk: ex?.name?.uk || ex?.name?.en,
-              primaryGroup: ex.primaryGroup,
-              musclesPrimary: ex?.muscles?.primary || [],
-              musclesSecondary: ex?.muscles?.secondary || [],
-              type: isCardio ? "distance" : "strength",
-              sets: isCardio ? undefined : [{ weightKg: 0, reps: 0 }],
-              durationSec: 0,
-              distanceM: isCardio ? 0 : 0,
-            });
-          }
-          if (tpl?.id) templateApi.markTemplateUsed(tpl.id);
-          try {
-            localStorage.setItem(ACTIVE_WORKOUT_KEY, w.id);
-          } catch {}
-          setActiveWorkoutId(w.id);
-          setMode("log");
+          executeTemplateStart(tpl);
         }}
         onCancel={() => setRiskyTemplateConfirm(null)}
       />

@@ -221,6 +221,27 @@ export function Exercise({ exerciseId }) {
     return { rmPoints, volPoints };
   }, [history]);
 
+  const cardioData = useMemo(() => {
+    const pacePoints = [];
+    const distPoints = [];
+    for (const { workout, item } of [...history].reverse()) {
+      if (item?.type !== "distance" || !workout?.startedAt) continue;
+      const dist = Number(item.distanceM) || 0;
+      const dur = Number(item.durationSec) || 0;
+      if (dist <= 0 || dur <= 0) continue;
+      const distKm = dist / 1000;
+      const durMin = dur / 60;
+      const paceMinKm = durMin / distKm;
+      const dateLabel = new Date(workout.startedAt).toLocaleDateString("uk-UA", { day: "numeric", month: "short" });
+      pacePoints.push({ value: Math.round(paceMinKm * 10) / 10, dateLabel });
+      distPoints.push({ value: Math.round(distKm * 100) / 100, dateLabel });
+    }
+    return { pacePoints: pacePoints.slice(-12), distPoints: distPoints.slice(-12) };
+  }, [history]);
+
+  const hasCardio = cardioData.pacePoints.length > 0;
+  const hasStrength = progressData.rmPoints.length > 0 || history.some((h) => h.item?.type === "strength");
+
   if (!exerciseId) {
     return (
       <div className="flex-1 overflow-y-auto">
@@ -316,29 +337,62 @@ export function Exercise({ exerciseId }) {
           </div>
         </div>
 
-        <div className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card">
-          <div className="text-xs font-bold text-subtle uppercase tracking-widest mb-3">
-            Прогресія 1RM (за тижнями)
+        {hasStrength && (
+          <div className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card">
+            <div className="text-xs font-bold text-subtle uppercase tracking-widest mb-3">
+              Прогресія 1RM (за тижнями)
+            </div>
+            <ProgressChart
+              points={progressData.rmPoints}
+              label="1RM"
+              unit="кг"
+              color="rgb(22 163 74)"
+            />
           </div>
-          <ProgressChart
-            points={progressData.rmPoints}
-            label="1RM"
-            unit="кг"
-            color="rgb(22 163 74)"
-          />
-        </div>
+        )}
 
-        <div className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card">
-          <div className="text-xs font-bold text-subtle uppercase tracking-widest mb-3">
-            Обʼєм тренування (кг × повтори, за тижнями)
+        {hasStrength && (
+          <div className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card">
+            <div className="text-xs font-bold text-subtle uppercase tracking-widest mb-3">
+              Обʼєм тренування (кг × повтори, за тижнями)
+            </div>
+            <ProgressChart
+              points={progressData.volPoints}
+              label="Обсяг"
+              unit="кг"
+              color="rgb(99 102 241)"
+            />
           </div>
-          <ProgressChart
-            points={progressData.volPoints}
-            label="Обсяг"
-            unit="кг"
-            color="rgb(99 102 241)"
-          />
-        </div>
+        )}
+
+        {hasCardio && (
+          <div className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card">
+            <div className="text-xs font-bold text-subtle uppercase tracking-widest mb-3">
+              Темп (хв/км) — кардіо
+            </div>
+            <ProgressChart
+              points={cardioData.pacePoints}
+              label="Темп"
+              unit="хв/км"
+              color="rgb(234 88 12)"
+            />
+            <div className="text-[10px] text-subtle mt-1">Менше — краще (швидший темп)</div>
+          </div>
+        )}
+
+        {hasCardio && (
+          <div className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card">
+            <div className="text-xs font-bold text-subtle uppercase tracking-widest mb-3">
+              Дистанція (км) — кардіо
+            </div>
+            <ProgressChart
+              points={cardioData.distPoints}
+              label="Дистанція"
+              unit="км"
+              color="rgb(6 182 212)"
+            />
+          </div>
+        )}
 
         <div className="bg-panel border border-line/60 rounded-2xl p-5 shadow-card">
           <div className="text-xs font-bold text-subtle uppercase tracking-widest mb-3">
@@ -385,7 +439,21 @@ export function Exercise({ exerciseId }) {
                           .map((s) => `${s.weightKg ?? 0}×${s.reps ?? 0}`)
                           .join(", ") || "—"
                       : item.type === "distance"
-                        ? `${item.distanceM ?? 0} м за ${item.durationSec ?? 0} с`
+                        ? (() => {
+                            const dist = Number(item.distanceM) || 0;
+                            const dur = Number(item.durationSec) || 0;
+                            const base = `${dist} м за ${dur} с`;
+                            if (dist > 0 && dur > 0) {
+                              const distKm = dist / 1000;
+                              const paceMinKm = (dur / 60) / distKm;
+                              let pm = Math.floor(paceMinKm);
+                              let ps = Math.round((paceMinKm - pm) * 60);
+                              if (ps >= 60) { pm += 1; ps = 0; }
+                              const speed = (distKm / (dur / 3600)).toFixed(1);
+                              return `${base} · ${pm}:${String(ps).padStart(2, "0")} хв/км · ${speed} км/год`;
+                            }
+                            return base;
+                          })()
                         : `${item.durationSec ?? 0} с`}
                   </div>
                 </div>

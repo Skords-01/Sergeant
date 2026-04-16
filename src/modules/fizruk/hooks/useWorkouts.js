@@ -9,6 +9,26 @@ function uid(prefix = "id") {
   return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
+const DEFAULT_WARMUP_ITEMS = [
+  { label: "Загальна розминка (5-10 хв легкого кардіо)" },
+  { label: "Суглобова розминка (шия, плечі, лікті, зап'ястки, стегна, коліна)" },
+  { label: "Специфічна розминка до тренування (легкі підходи)" },
+];
+
+const DEFAULT_COOLDOWN_ITEMS = [
+  { label: "Статична розтяжка опрацьованих м'язів (2-3 хв)" },
+  { label: "Дихальні вправи / заспокоєння пульсу" },
+  { label: "Пінний ролик або масаж (за потреби)" },
+];
+
+export function makeDefaultWarmup() {
+  return DEFAULT_WARMUP_ITEMS.map((x) => ({ id: uid("wm"), ...x, done: false }));
+}
+
+export function makeDefaultCooldown() {
+  return DEFAULT_COOLDOWN_ITEMS.map((x) => ({ id: uid("cd"), ...x, done: false }));
+}
+
 export function useWorkouts() {
   const [workouts, setWorkouts] = useState([]);
 
@@ -42,13 +62,15 @@ export function useWorkouts() {
       startedAt: new Date().toISOString(),
       endedAt: null,
       items: [],
+      groups: [],
+      warmup: null,
+      cooldown: null,
       note: "",
     };
     persist((prev) => [w, ...prev]);
     return w;
   }, [persist]);
 
-  /** Тренування з заданим часом початку (наприклад занесення заднім числом). */
   const createWorkoutWithTimes = useCallback(
     ({ startedAt }) => {
       const w = {
@@ -56,6 +78,9 @@ export function useWorkouts() {
         startedAt: startedAt || new Date().toISOString(),
         endedAt: null,
         items: [],
+        groups: [],
+        warmup: null,
+        cooldown: null,
         note: "",
       };
       persist((prev) => [w, ...prev]);
@@ -102,15 +127,17 @@ export function useWorkouts() {
 
   const addItem = useCallback(
     (workoutId, item) => {
+      const itemId = item.id || uid("i");
       persist((prev) =>
         prev.map((w) => {
           if (w.id !== workoutId) return w;
           return {
             ...w,
-            items: [{ id: uid("i"), ...item }, ...(w.items || [])],
+            items: [{ id: itemId, ...item }, ...(w.items || [])],
           };
         }),
       );
+      return itemId;
     },
     [persist],
   );
@@ -137,9 +164,13 @@ export function useWorkouts() {
       persist((prev) =>
         prev.map((w) => {
           if (w.id !== workoutId) return w;
+          const newGroups = (w.groups || [])
+            .map((g) => ({ ...g, itemIds: (g.itemIds || []).filter((id) => id !== itemId) }))
+            .filter((g) => (g.itemIds || []).length >= 2);
           return {
             ...w,
             items: (w.items || []).filter((i) => i.id !== itemId),
+            groups: newGroups,
           };
         }),
       );
