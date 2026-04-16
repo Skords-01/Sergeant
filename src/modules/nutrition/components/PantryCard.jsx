@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Card } from "@shared/components/ui/Card";
 import { Input } from "@shared/components/ui/Input";
 import { cn } from "@shared/lib/cn";
@@ -19,7 +19,13 @@ function InventoryCard({
   pantrySummary,
   busy,
 }) {
+  const userToggledRef = useRef(false);
   const [expanded, setExpanded] = useState(effectiveItems.length <= COLLAPSE_THRESHOLD);
+
+  useEffect(() => {
+    if (userToggledRef.current) return;
+    setExpanded(effectiveItems.length <= COLLAPSE_THRESHOLD);
+  }, [effectiveItems.length]);
 
   if (effectiveItems.length === 0) return null;
 
@@ -27,7 +33,10 @@ function InventoryCard({
     <Card className="p-4">
       <button
         type="button"
-        onClick={() => setExpanded((v) => !v)}
+        onClick={() => {
+          userToggledRef.current = true;
+          setExpanded((v) => !v);
+        }}
         className="flex items-center justify-between w-full gap-2 mb-2"
       >
         <div className="flex items-center gap-2 min-w-0">
@@ -95,6 +104,10 @@ function InventoryCard({
 
       {pantryItemsLength > 0 && (
         <div className={cn("text-xs text-subtle pt-2 border-t border-line/50", expanded ? "mt-3" : "mt-1")}>
+          <span className="font-semibold text-text">
+            {pantryItemsLength} позицій
+          </span>
+          {" · "}
           <span>{pantrySummary}</span>
         </div>
       )}
