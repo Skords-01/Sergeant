@@ -164,7 +164,8 @@ function checkHasMonoData() {
 
 function readAllData() {
   const txCache = ls("finyk_tx_cache", null);
-  const infoCache = ls("finyk_info_cache", null);
+  const rawInfo = ls("finyk_info_cache", null);
+  const infoCache = rawInfo?.info ?? rawInfo;
 
   const transactions = txCache?.txs || [];
   const accounts = infoCache?.accounts || [];

@@ -50,7 +50,8 @@ function useFinykMetrics() {
       }
     }
 
-    const info = safeParseLS("finyk_info_cache", null);
+    const rawInfo = safeParseLS("finyk_info_cache", null);
+    const info = rawInfo?.info ?? rawInfo;
     const totalBalance = Array.isArray(info?.accounts)
       ? info.accounts.reduce((s, a) => s + (a.balance ?? 0), 0) / 100
       : null;
