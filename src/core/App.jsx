@@ -1,7 +1,6 @@
 import { useState, useCallback, lazy, Suspense, useEffect, useRef } from "react";
 import { cn } from "@shared/lib/cn";
 import ModuleErrorBoundary from "./ModuleErrorBoundary";
-import { HubBackupPanel } from "./HubBackupPanel.jsx";
 import { useDarkMode } from "@shared/hooks/useDarkMode";
 import { ToastProvider, useToast } from "@shared/hooks/useToast";
 import { ToastContainer } from "@shared/components/ui/Toast";
@@ -9,6 +8,7 @@ import { AuthProvider, useAuth } from "./AuthContext.jsx";
 import { useCloudSync } from "./useCloudSync.js";
 import { HubDashboard } from "./HubDashboard.jsx";
 import { HubReports } from "./HubReports.jsx";
+import { HubSettingsPage } from "./HubSettingsPage.jsx";
 
 const HubSearch = lazy(() => import("./HubSearch.jsx").then((m) => ({ default: m.HubSearch })));
 
@@ -551,7 +551,7 @@ function AppInner() {
               Мій простір
             </h1>
             <p className="text-sm text-muted mt-1">
-              {hubView === "reports" ? "Звіти та статистика" : "Дашборд та модулі"}
+              {hubView === "reports" ? "Звіти та статистика" : hubView === "settings" ? "Налаштування" : "Дашборд та модулі"}
             </p>
           </div>
           <div className="pt-1 flex items-center gap-1">
@@ -626,6 +626,22 @@ function AppInner() {
               </svg>
               Звіти
             </button>
+            <button
+              type="button"
+              onClick={() => setHubView("settings")}
+              className={cn(
+                "flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-sm font-medium transition-all",
+                hubView === "settings"
+                  ? "bg-panel text-text shadow-card"
+                  : "text-muted hover:text-text"
+              )}
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <circle cx="12" cy="12" r="3" />
+                <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" />
+              </svg>
+              Налаштування
+            </button>
           </div>
         </div>
 
@@ -671,8 +687,6 @@ function AppInner() {
           {hubView === "dashboard" && (
             <div className="flex flex-col gap-5 pt-2">
               <HubDashboard onOpenModule={openModule} />
-
-              <HubBackupPanel className="mt-1" />
             </div>
           )}
 
@@ -680,6 +694,17 @@ function AppInner() {
             <div className="pt-2">
               <HubReports />
             </div>
+          )}
+
+          {hubView === "settings" && (
+            <HubSettingsPage
+              dark={dark}
+              onToggleDark={toggleDark}
+              syncing={syncing}
+              onSync={pushAll}
+              onPull={pullAll}
+              user={user}
+            />
           )}
         </main>
 

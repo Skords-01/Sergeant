@@ -8,7 +8,6 @@ import { useRecovery } from "../hooks/useRecovery";
 import { useWorkouts } from "../hooks/useWorkouts";
 import { useWorkoutTemplates } from "../hooks/useWorkoutTemplates";
 import { forecastFullRecoveryByDate } from "../lib/recoveryForecast.js";
-import { requestNotificationPermission } from "../hooks/useFizrukWorkoutReminder.js";
 
 const WEEKDAYS = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Нд"];
 
@@ -38,9 +37,6 @@ export function PlanCalendar() {
   const { workouts } = useWorkouts();
   const rec = useRecovery();
   const {
-    reminderHour,
-    reminderMinute,
-    setReminder,
     setDayTemplate,
     getTemplateForDate,
     days,
@@ -49,12 +45,6 @@ export function PlanCalendar() {
   const [sheet, setSheet] = useState(null);
   const sheetRef = useRef(null);
   useDialogFocusTrap(!!sheet, sheetRef, { onEscape: () => setSheet(null) });
-
-  const [notif, setNotif] = useState(() =>
-    typeof Notification !== "undefined"
-      ? Notification.permission
-      : "unsupported",
-  );
 
   const forecast = useMemo(
     () => forecastFullRecoveryByDate(workouts, musclesUk),
@@ -113,50 +103,9 @@ export function PlanCalendar() {
     setSheet(null);
   };
 
-  const onEnableNotif = async () => {
-    const r = await requestNotificationPermission();
-    setNotif(r);
-  };
-
   return (
     <div className="flex-1 overflow-y-auto">
       <div className="max-w-4xl mx-auto px-4 pt-4 page-tabbar-pad space-y-4">
-        <section className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card">
-          <h2 className="text-sm font-semibold text-text mb-3">Нагадування</h2>
-          <p className="text-[11px] text-subtle mb-3 leading-snug">
-            Час локального нагадування, якщо на сьогодні в календарі обрано
-            шаблон. Потрібен дозвіл на сповіщення в браузері.
-          </p>
-          <div className="flex flex-wrap items-center gap-3">
-            <label className="flex items-center gap-2 text-sm">
-              <span className="text-subtle">Час</span>
-              <input
-                type="time"
-                className="bg-bg border border-line rounded-xl px-3 py-2 text-sm text-text"
-                value={`${String(reminderHour).padStart(2, "0")}:${String(reminderMinute).padStart(2, "0")}`}
-                onChange={(e) => {
-                  const [h, m] = e.target.value.split(":").map(Number);
-                  setReminder(h || 0, m || 0);
-                }}
-              />
-            </label>
-            {notif === "granted" ? (
-              <span className="text-xs text-success font-medium">
-                Сповіщення увімкнено
-              </span>
-            ) : (
-              <Button
-                type="button"
-                size="sm"
-                className="h-10"
-                onClick={onEnableNotif}
-              >
-                Дозволити сповіщення
-              </Button>
-            )}
-          </div>
-        </section>
-
         <section className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card">
           <div className="flex items-center justify-between gap-2 mb-4">
             <button

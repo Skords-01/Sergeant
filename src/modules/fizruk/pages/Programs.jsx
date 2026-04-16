@@ -2,14 +2,12 @@ import { useState } from "react";
 import { cn } from "@shared/lib/cn";
 import { useExerciseCatalog } from "../hooks/useExerciseCatalog";
 import { BUILTIN_PROGRAMS } from "../lib/trainingPrograms";
-import { useRestSettings, REST_CATEGORY_LABELS } from "../hooks/useRestSettings";
 
 const DAY_LABELS = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Нд"];
 
 export function Programs({ onStartWorkout, activeProgramId, activeProgram, activateProgram, deactivateProgram }) {
   const { exercises } = useExerciseCatalog();
   const [expandedProgram, setExpandedProgram] = useState(null);
-  const { settings, updateSetting } = useRestSettings();
 
   const todayDayIndex = (new Date().getDay() + 6) % 7;
 
@@ -173,37 +171,6 @@ export function Programs({ onStartWorkout, activeProgramId, activeProgram, activ
           })}
         </div>
 
-        <div className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card">
-          <h2 className="text-sm font-bold text-text mb-1">Таймер відпочинку — налаштування</h2>
-          <p className="text-xs text-subtle mb-3 leading-relaxed">
-            Рекомендований час відпочинку підбирається автоматично за типом вправи.
-            Ці значення з&apos;являться як кнопка за замовчуванням у кожній вправі.
-          </p>
-          <div className="space-y-3">
-            {Object.entries(REST_CATEGORY_LABELS).map(([cat, label]) => (
-              <div key={cat} className="flex items-center gap-3">
-                <span className="text-xs text-text flex-1 min-w-0">{label}</span>
-                <div className="flex items-center gap-1 flex-wrap justify-end">
-                  {[30, 60, 90, 120, 180].map((sec) => (
-                    <button
-                      key={sec}
-                      type="button"
-                      onClick={() => updateSetting(cat, sec)}
-                      className={cn(
-                        "h-9 w-14 rounded-xl border text-xs font-semibold transition-colors",
-                        settings[cat] === sec
-                          ? "border-success bg-success/15 text-success"
-                          : "border-line bg-panelHi text-subtle hover:text-text",
-                      )}
-                    >
-                      {sec}с
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
       </div>
     </div>
   );

@@ -250,11 +250,6 @@ export function LogCard({
     reader.readAsText(f);
   }
 
-  function requestNotifyPermission() {
-    if (!("Notification" in window)) return;
-    void Notification.requestPermission();
-  }
-
   return (
     <>
     <div className="flex flex-col gap-4">
@@ -546,52 +541,6 @@ export function LogCard({
             </button>
           ))}
         </div>
-      </div>
-
-      <div className="rounded-2xl border border-line/50 bg-panel/40 px-3 py-3 space-y-2">
-        <div className="text-[10px] font-bold text-subtle uppercase tracking-widest">
-          Нагадування (браузер)
-        </div>
-        <div className="flex flex-wrap gap-2 items-center">
-          <label className="flex items-center gap-2 text-xs text-text">
-            <input
-              type="checkbox"
-              checked={Boolean(prefs.reminderEnabled)}
-              onChange={(e) =>
-                setPrefs((p) => ({ ...p, reminderEnabled: e.target.checked }))
-              }
-            />
-            Увімкнути
-          </label>
-          <input
-            type="number"
-            min={0}
-            max={23}
-            className="w-16 h-9 rounded-xl bg-panel border border-line px-2 text-xs"
-            value={prefs.reminderHour ?? 12}
-            onChange={(e) =>
-              setPrefs((p) => ({
-                ...p,
-                reminderHour: Math.min(
-                  23,
-                  Math.max(0, Number(e.target.value) || 0),
-                ),
-              }))
-            }
-          />
-          <span className="text-xs text-subtle">година</span>
-          <Button
-            type="button"
-            variant="ghost"
-            className="text-xs h-9"
-            onClick={requestNotifyPermission}
-          >
-            Дозвіл на сповіщення
-          </Button>
-        </div>
-        <p className="text-[10px] text-subtle">
-          Працює лише коли вкладка відкрита (обмеження браузера).
-        </p>
       </div>
 
       <div className="rounded-2xl border border-line/50 bg-panel/40 px-3 py-3">

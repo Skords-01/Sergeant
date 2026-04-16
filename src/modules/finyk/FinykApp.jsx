@@ -10,7 +10,6 @@ import { Overview } from "./pages/Overview.jsx";
 import { Transactions } from "./pages/Transactions.jsx";
 import { Budgets } from "./pages/Budgets.jsx";
 import { Assets } from "./pages/Assets.jsx";
-import { Settings } from "./pages/Settings.jsx";
 import { ManualExpenseSheet } from "./components/ManualExpenseSheet.jsx";
 
 const NAV_ICONS = {
@@ -99,11 +98,10 @@ const NAV_ITEMS = [
   { id: "transactions", label: "Операції" },
   { id: "budgets", label: "Планування" },
   { id: "assets", label: "Активи" },
-  { id: "settings", label: "Налаш." },
 ];
 const NAV_IDS = NAV_ITEMS.map((n) => n.id);
 
-const ALL_PAGE_IDS = [...PAGES.map((p) => p.id), "settings"];
+const ALL_PAGE_IDS = PAGES.map((p) => p.id);
 
 function useHashRouter(defaultPage = "overview") {
   const getPage = useCallback(() => {
@@ -521,9 +519,6 @@ export default function App({ onBackToHub, pwaAction, onPwaActionConsumed } = {}
             showBalance={showBalance}
           />
         )}
-        {page === "settings" && (
-          <Settings mono={mono} storage={storage} showToast={showToast} />
-        )}
       </div>
 
       {(page === "overview" || page === "transactions" || page === "budgets") && (
@@ -543,12 +538,14 @@ export default function App({ onBackToHub, pwaAction, onPwaActionConsumed } = {}
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-text">Токен потребує оновлення</p>
               <p className="text-xs text-muted mt-0.5">{mono.authError}</p>
-              <button
-                onClick={() => navigate("settings")}
-                className="text-xs font-semibold text-primary mt-2 hover:underline"
-              >
-                Перейти до налаштувань
-              </button>
+              {onBackToHub && (
+                <button
+                  onClick={onBackToHub}
+                  className="text-xs font-semibold text-primary mt-2 hover:underline"
+                >
+                  Оновити токен у Налаштуваннях Hub
+                </button>
+              )}
             </div>
             <button
               onClick={() => mono.setAuthError("")}

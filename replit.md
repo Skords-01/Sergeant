@@ -103,8 +103,19 @@ npm run dev           # Vite dev server on port 5173 (proxies /api to 3000)
   - `Assets` (Finyk): parses "кредит 5000 гривень" → fills debt name + amount
 - **Speech parsers** (`src/core/lib/speechParsers.js`) — Dedicated parsers for expense, workout set, and meal speech input in Ukrainian and English.
 
+## Hub Settings Page (`src/core/HubSettingsPage.jsx`)
+A centralized "Налаштування" tab on the hub page (third tab alongside "Головна" and "Звіти") consolidating all module settings:
+- **Загальні**: dark mode toggle, cloud sync push/pull (when logged in), hub backup (export/import JSON)
+- **Рутина**: browser reminders toggle, show Fizruk workouts in calendar toggle, show Finyk subscriptions in calendar toggle
+- **Фізрук**: workout reminder time picker + notification permission, rest timer defaults per exercise category (Compound, Isolation, Cardio)
+- **Харчування**: reminder toggle + reminder hour, notification permission
+- **Фінік**: custom expense categories, account visibility toggles, Monobank profile display, sync between devices, data export/import, cache clearing, disconnect
+- Settings are removed from their original module locations to avoid duplication
+- HubBackupPanel moved from dashboard to General section in hub settings
+- Finyk Settings page removed from Finyk module nav (all settings now in Hub)
+
 ## Modules
-- **Finyk** — Finance tracker with Monobank integration; SyncStatusBadge on Overview shows sync state (loading/success/partial/error), last-sync timestamp, and manual retry button
+- **Finyk** — Finance tracker with Monobank integration; SyncStatusBadge on Overview shows sync state (loading/success/partial/error), last-sync timestamp, and manual retry button; Settings page moved to centralized Hub settings
 - **Fizruk** — Workout / exercise tracker; features: Rest Timer with Web Audio API beep + vibration on completion and circular progress ring; Training Programs (4 built-in: PPL, Upper/Lower, Full Body, Linear Progression) with activate/deactivate, today's session on Dashboard; per-exercise 1RM and volume progress charts in Exercise detail view; Body page (Тіло tab) for logging weight/sleep/energy/mood with trend line charts; recovery compute uses daily wellbeing (sleep hours + energy level) as multipliers — poor sleep/energy increases fatigue, good metrics speed recovery
 - **Routine** — Routine/habit tracker; habits support multiple `reminderTimes` (array) with morning/afternoon/evening presets; backward-compatible with legacy `timeOfDay` field via `normalizeReminderTimes()`; hero section shows SVG progress ring (day completed/scheduled), completion rate %, current streak; "Leaders & Outsiders" block shows best/worst habits by 30-day rate; Day Report bottom-sheet shows full habit list (done/missed) with toggle; streaks.js exports `completionRateForRange`, `habitCompletionRate`, `currentMaxStreak`; **HabitDetailSheet** bottom-sheet for viewing habit details (stats, mini-calendar, notes) — opened from calendar card tap or "Деталі" button in settings
 - **Nutrition** — Nutrition tracking with AI photo analysis; LogCard search shows macro details and allows re-adding previously logged meals; now includes **Daily Plan** page (AI-generated day plan with breakfast/lunch/dinner/snack matching calorie/macro targets or presets — Схуднення/Підтримка/Набір маси) and **Shopping List** page (AI-generated from recipes or weekly plan, auto-subtracts pantry items, grouped by category, check-off with add-to-pantry)

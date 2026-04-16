@@ -24,7 +24,6 @@ import {
 } from "../lib/routineStorage.js";
 import { dateKeyFromDate } from "../lib/hubCalendarAggregate.js";
 import { sortHabitsByOrder } from "../lib/habitOrder.js";
-import { requestRoutineNotificationPermission } from "../hooks/useRoutineReminders.js";
 import {
   ROUTINE_THEME as C,
   RECURRENCE_OPTIONS,
@@ -132,70 +131,6 @@ export function RoutineSettingsSection({
       hidden={panelHidden}
       className="space-y-4 pb-4"
     >
-      <section className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card space-y-3">
-        <h2 className="text-xs font-bold text-subtle uppercase tracking-widest">
-          Календар
-        </h2>
-        <label className="flex items-center justify-between gap-3 text-sm">
-          <span className="text-muted">Показувати тренування з Фізрука</span>
-          <input
-            type="checkbox"
-            className="w-5 h-5 accent-routine"
-            checked={routine.prefs.showFizrukInCalendar !== false}
-            onChange={(ev) =>
-              setRoutine((s) =>
-                setPref(s, "showFizrukInCalendar", ev.target.checked),
-              )
-            }
-          />
-        </label>
-        <label className="flex items-center justify-between gap-3 text-sm">
-          <span className="text-muted">
-            Показувати планові платежі підписок Фініка
-          </span>
-          <input
-            type="checkbox"
-            className="w-5 h-5 accent-routine"
-            checked={routine.prefs.showFinykSubscriptionsInCalendar !== false}
-            onChange={(ev) =>
-              setRoutine((s) =>
-                setPref(
-                  s,
-                  "showFinykSubscriptionsInCalendar",
-                  ev.target.checked,
-                ),
-              )
-            }
-          />
-        </label>
-        <label className="flex items-center justify-between gap-3 text-sm">
-          <span className="text-muted">Нагадування в браузері</span>
-          <input
-            type="checkbox"
-            className="w-5 h-5 accent-routine"
-            checked={routine.prefs.routineRemindersEnabled === true}
-            onChange={async (ev) => {
-              const on = ev.target.checked;
-              if (on) {
-                const p = await requestRoutineNotificationPermission();
-                if (p !== "granted") {
-                  toast.warning(
-                    "Без дозволу на сповіщення нагадування не надсилатимуться. Дозволь сповіщення для цього сайту в налаштуваннях браузера.",
-                  );
-                  return;
-                }
-              }
-              setRoutine((s) => setPref(s, "routineRemindersEnabled", on));
-            }}
-          />
-        </label>
-        <p className="text-[10px] text-subtle leading-snug">
-          У звичці вкажи час нагадування (один або кілька). Нагадування
-          спрацює о вказаній хвилині, якщо день запланований і ще немає
-          відмітки. Для кращої роботи у фоні встанови додаток на головний екран.
-        </p>
-      </section>
-
       <section className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card space-y-3">
         <h2 className="text-xs font-bold text-subtle uppercase tracking-widest">
           Резервна копія
