@@ -428,6 +428,7 @@ function consumePwaAction() {
 function AppInner() {
   const [activeModule, setActiveModule] = useState(readInitialModule);
   const [chatOpen, setChatOpen] = useState(false);
+  const [chatInitialMessage, setChatInitialMessage] = useState(null);
   const [showAuth, setShowAuth] = useState(false);
   const [hubView, setHubView] = useState("dashboard");
   const [showOnboarding, setShowOnboarding] = useState(() => shouldShowOnboarding());
@@ -715,7 +716,10 @@ function AppInner() {
         <main className="flex-1 px-5 pb-28 max-w-lg mx-auto w-full overflow-y-auto">
           {hubView === "dashboard" && (
             <div className="flex flex-col gap-5 pt-2">
-              <HubDashboard onOpenModule={openModule} />
+              <HubDashboard
+                onOpenModule={openModule}
+                onOpenChat={(message) => { setChatInitialMessage(message || null); setChatOpen(true); }}
+              />
             </div>
           )}
 
@@ -763,7 +767,10 @@ function AppInner() {
 
         {chatOpen && (
           <Suspense fallback={null}>
-            <HubChat onClose={() => setChatOpen(false)} />
+            <HubChat
+              onClose={() => { setChatOpen(false); setChatInitialMessage(null); }}
+              initialMessage={chatInitialMessage}
+            />
           </Suspense>
         )}
 

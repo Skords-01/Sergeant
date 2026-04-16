@@ -336,6 +336,22 @@ export function useWeeklyDigest(selectedWeekKey) {
       };
       saveDigest(weekKey, newDigest);
       setDigest(newDigest);
+
+      try {
+        fetch(apiUrl("/api/coach/memory"), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            weeklyDigest: {
+              weekKey,
+              weekRange: currentWeekRange,
+              generatedAt: json.generatedAt,
+              ...(json.report || {}),
+            },
+          }),
+        }).catch(() => {});
+      } catch {}
+
       return newDigest;
     } catch (e) {
       setError(e?.message || "Помилка мережі");

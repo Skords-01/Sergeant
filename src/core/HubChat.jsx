@@ -990,7 +990,7 @@ const QUICK_NO_MONO = [
   "Порадь щось",
 ];
 
-function HubChat({ onClose }) {
+function HubChat({ onClose, initialMessage }) {
   const [messages, setMessages] = useState(() => {
     try {
       const saved = localStorage.getItem("hub_chat_history");
@@ -1045,6 +1045,13 @@ function HubChat({ onClose }) {
   const inputRef = useRef(null);
   const panelRef = useRef(null);
   const lastWasVoice = useRef(false);
+
+  useEffect(() => {
+    if (initialMessage) {
+      setInput(initialMessage);
+      setTimeout(() => inputRef.current?.focus(), 100);
+    }
+  }, [initialMessage]);
 
   const [hasData, setHasData] = useState(() => checkHasMonoData());
   const online = useOnlineStatus();

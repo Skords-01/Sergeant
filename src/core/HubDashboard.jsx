@@ -2,6 +2,7 @@ import { useMemo, useState, useCallback, useEffect } from "react";
 import { cn } from "@shared/lib/cn";
 import { HubRecommendations } from "./HubRecommendations.jsx";
 import { WeeklyDigestCard } from "./WeeklyDigestCard.jsx";
+import { CoachInsightCard } from "./CoachInsightCard.jsx";
 import { useWeeklyDigest, loadDigest, getWeekKey } from "./useWeeklyDigest.js";
 import {
   DndContext,
@@ -368,7 +369,7 @@ function useMondayAutoDigest() {
   }, [generate]);
 }
 
-export function HubDashboard({ onOpenModule }) {
+export function HubDashboard({ onOpenModule, onOpenChat }) {
   const [order, setOrder] = useState(loadOrder);
   useMondayAutoDigest();
 
@@ -393,6 +394,8 @@ export function HubDashboard({ onOpenModule }) {
   return (
     <div className="space-y-4">
       <HubRecommendations onOpenModule={onOpenModule} />
+
+      <CoachInsightCard onOpenChat={onOpenChat} />
 
       <WeeklyDigestCard />
 

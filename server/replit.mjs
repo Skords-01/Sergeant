@@ -25,6 +25,7 @@ import backupDownload from "./api/nutrition/backup-download.js";
 import dayPlan from "./api/nutrition/day-plan.js";
 import shoppingList from "./api/nutrition/shopping-list.js";
 import weeklyDigest from "./api/weekly-digest.js";
+import coachHandler from "./api/coach.js";
 import { syncPush, syncPull, syncPullAll, syncPushAll } from "./api/sync.js";
 import barcodeHandler from "./api/barcode.js";
 import foodSearchHandler from "./api/food-search.js";
@@ -110,6 +111,13 @@ app.all(
   rateLimitExpress({ key: "api:weekly-digest", limit: 10, windowMs: 60 * 60_000 }),
   wrap(weeklyDigest),
 );
+
+app.use(
+  "/api/coach",
+  rateLimitExpress({ key: "api:coach", limit: 20, windowMs: 60 * 60_000 }),
+);
+app.all("/api/coach/memory", wrap(coachHandler));
+app.all("/api/coach/insight", wrap(coachHandler));
 
 if (existsSync(DIST)) {
   app.use(
