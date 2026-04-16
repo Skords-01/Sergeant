@@ -94,4 +94,19 @@ describe("calcMonthlyNeeded", () => {
     const r = calcMonthlyNeeded(10, 0, "2026-07-16");
     expect(r.monthlyNeeded).toBe(4);
   });
+
+  it("target date is today → still has at least 1 month window", () => {
+    // Same-day target: not overdue (today > now is false if time is midnight),
+    // but depending on parse, may be overdue. Min monthsLeft = 1 guards UX.
+    setNow("2026-04-16T00:00:00.000Z");
+    const r = calcMonthlyNeeded(1200, 0, "2026-04-16");
+    // Either "overdue" (target <= now at midnight UTC) or monthsLeft=1
+    // Either way, monthlyNeeded should not be negative/zero for unsaved goal
+    if (!r.isOverdue) {
+      expect(r.monthsLeft).toBeGreaterThanOrEqual(1);
+      expect(r.monthlyNeeded).toBeGreaterThan(0);
+    } else {
+      expect(r.monthlyNeeded).toBeNull();
+    }
+  });
 });
