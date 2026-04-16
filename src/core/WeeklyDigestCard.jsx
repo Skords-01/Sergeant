@@ -1,0 +1,316 @@
+import { useState, useEffect } from "react";
+import { cn } from "@shared/lib/cn";
+import { useWeeklyDigest, listDigestHistory, getWeekKey } from "./useWeeklyDigest.js";
+
+const MODULE_CONFIG = {
+  finyk: { icon: "💳", label: "Фінанси", colorClass: "text-emerald-600", bgClass: "bg-emerald-500/10" },
+  fizruk: { icon: "🏋️", label: "Тренування", colorClass: "text-sky-600", bgClass: "bg-sky-500/10" },
+  nutrition: { icon: "🥗", label: "Харчування", colorClass: "text-lime-700", bgClass: "bg-lime-500/10" },
+  routine: { icon: "✅", label: "Звички", colorClass: "text-orange-600", bgClass: "bg-orange-500/10" },
+};
+
+function ChevronIcon({ expanded }) {
+  return (
+    <svg
+      width="15"
+      height="15"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={cn("transition-transform duration-200 shrink-0 text-muted", expanded && "rotate-90")}
+      aria-hidden
+    >
+      <polyline points="9 18 15 12 9 6" />
+    </svg>
+  );
+}
+
+function ModuleBlock({ moduleKey, data }) {
+  const [open, setOpen] = useState(false);
+  const cfg = MODULE_CONFIG[moduleKey];
+  if (!cfg || !data) return null;
+
+  return (
+    <div className="rounded-xl border border-line bg-bg overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="w-full px-3 py-2.5 flex items-center gap-2.5 hover:bg-panelHi/50 transition-colors"
+      >
+        <div className={cn("w-6 h-6 rounded-lg flex items-center justify-center text-[11px] shrink-0", cfg.bgClass)}>
+          {cfg.icon}
+        </div>
+        <div className="flex-1 min-w-0 text-left">
+          <span className="text-xs font-semibold text-text">{cfg.label}</span>
+          {data.summary && (
+            <p className="text-[11px] text-muted truncate mt-0.5">{data.summary}</p>
+          )}
+        </div>
+        <ChevronIcon expanded={open} />
+      </button>
+
+      <div
+        className={cn(
+          "grid transition-[grid-template-rows] duration-200 ease-in-out",
+          open ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
+        )}
+      >
+        <div className="overflow-hidden">
+          <div className="px-3 pb-3 border-t border-line/60 pt-2 space-y-2">
+            {data.comment && (
+              <p className="text-xs text-muted leading-relaxed">{data.comment}</p>
+            )}
+            {Array.isArray(data.recommendations) && data.recommendations.length > 0 && (
+              <div className="space-y-1">
+                {data.recommendations.map((rec, i) => (
+                  <div key={i} className="flex items-start gap-1.5">
+                    <span className={cn("text-[10px] font-bold mt-0.5 shrink-0", cfg.colorClass)}>→</span>
+                    <span className="text-[11px] text-text leading-snug">{rec}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LoadingSpinner() {
+  return (
+    <div className="flex items-center justify-center gap-2 py-6">
+      <svg
+        className="animate-spin w-4 h-4 text-primary"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.5"
+        aria-hidden
+      >
+        <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+      </svg>
+      <span className="text-xs text-muted">Генерую звіт тижня…</span>
+    </div>
+  );
+}
+
+function DigestContent({ digest, loading, error, isCurrentWeek, onGenerate, onUpdate }) {
+  const [expanded, setExpanded] = useState(false);
+  const hasData = digest && (digest.finyk || digest.fizruk || digest.nutrition || digest.routine);
+
+  if (loading) return <LoadingSpinner />;
+
+  if (error) {
+    return (
+      <div className="px-4 pb-3">
+        <p className="text-xs text-danger bg-danger/10 rounded-xl px-3 py-2 mb-2">{error}</p>
+        {isCurrentWeek && (
+          <button
+            type="button"
+            onClick={onGenerate}
+            className="w-full h-9 rounded-xl border border-line text-xs font-semibold text-muted hover:text-text hover:bg-panelHi transition-colors"
+          >
+            Спробувати знову
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  if (!hasData) {
+    return (
+      <div className="px-4 pb-4">
+        {isCurrentWeek ? (
+          <>
+            <p className="text-xs text-muted mb-3 leading-relaxed">
+              AI-звіт підсумовує прогрес по всіх модулях і дає конкретні рекомендації на наступний тиждень.
+            </p>
+            <button
+              type="button"
+              onClick={onGenerate}
+              className="w-full h-10 rounded-xl bg-primary text-bg text-sm font-semibold hover:brightness-110 transition-all active:scale-[0.98]"
+            >
+              Згенерувати звіт
+            </button>
+          </>
+        ) : (
+          <p className="text-xs text-muted text-center py-2">Звіт за цей тиждень не збережено</p>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <div
+        className={cn(
+          "grid transition-[grid-template-rows] duration-200 ease-in-out",
+          expanded ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
+        )}
+      >
+        <div className="overflow-hidden">
+          <div className="border-t border-line/60 px-4 pt-3 pb-4 space-y-2">
+            {["finyk", "fizruk", "nutrition", "routine"].map((key) =>
+              digest[key] ? <ModuleBlock key={key} moduleKey={key} data={digest[key]} /> : null,
+            )}
+            {Array.isArray(digest.overallRecommendations) && digest.overallRecommendations.length > 0 && (
+              <div className="rounded-xl border border-primary/20 bg-primary/5 px-3 py-2.5 space-y-1.5">
+                <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Загальні рекомендації</p>
+                {digest.overallRecommendations.map((rec, i) => (
+                  <div key={i} className="flex items-start gap-1.5">
+                    <span className="text-[10px] font-bold text-primary mt-0.5 shrink-0">★</span>
+                    <span className="text-[11px] text-text leading-snug">{rec}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            {isCurrentWeek && (
+              <button
+                type="button"
+                onClick={onUpdate}
+                className="w-full h-9 rounded-xl border border-line text-xs font-semibold text-muted hover:text-text hover:bg-panelHi transition-colors"
+              >
+                Оновити звіт
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {!expanded && (
+        <div className="px-4 pb-3">
+          <button
+            type="button"
+            onClick={() => setExpanded(true)}
+            className="w-full h-9 rounded-xl border border-line text-xs font-semibold text-muted hover:text-text hover:bg-panelHi transition-colors"
+          >
+            Переглянути звіт
+          </button>
+        </div>
+      )}
+      {expanded && (
+        <div className="px-4 pb-3 border-t border-line/60 pt-2">
+          <button
+            type="button"
+            onClick={() => setExpanded(false)}
+            className="w-full h-9 rounded-xl border border-line text-xs font-semibold text-muted hover:text-text hover:bg-panelHi transition-colors"
+          >
+            Згорнути
+          </button>
+        </div>
+      )}
+    </>
+  );
+}
+
+export function WeeklyDigestCard() {
+  const currentWeekKey = getWeekKey();
+  const [selectedWeekKey, setSelectedWeekKey] = useState(currentWeekKey);
+  const [showHistory, setShowHistory] = useState(false);
+  const [history, setHistory] = useState(() => listDigestHistory());
+
+  const { digest, loading, error, weekRange, generate, isCurrentWeek } =
+    useWeeklyDigest(selectedWeekKey);
+
+  useEffect(() => {
+    const handler = () => setHistory(listDigestHistory());
+    window.addEventListener("hub-weekly-digest-updated", handler);
+    return () => window.removeEventListener("hub-weekly-digest-updated", handler);
+  }, []);
+
+  const handleGenerate = async () => {
+    const result = await generate();
+    if (result) {
+      setHistory(listDigestHistory());
+    }
+  };
+
+  const isPast = selectedWeekKey !== currentWeekKey;
+
+  return (
+    <div className="rounded-2xl border border-line bg-panel shadow-card overflow-hidden">
+      <div className="px-4 py-3 flex items-center gap-2.5">
+        <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 text-sm">
+          📋
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="text-sm font-semibold text-text">Звіт тижня</div>
+          <div className="text-[11px] text-muted mt-0.5">{weekRange}</div>
+        </div>
+        <div className="flex items-center gap-1.5 shrink-0">
+          {digest?.generatedAt && (
+            <span className="text-[10px] text-subtle">
+              {new Date(digest.generatedAt).toLocaleDateString("uk-UA", { day: "numeric", month: "short" })}
+            </span>
+          )}
+          {history.length > 1 && (
+            <button
+              type="button"
+              onClick={() => setShowHistory((v) => !v)}
+              title="Попередні тижні"
+              className={cn(
+                "w-7 h-7 flex items-center justify-center rounded-lg transition-colors",
+                showHistory ? "bg-primary/15 text-primary" : "text-muted hover:text-text hover:bg-panelHi",
+              )}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                <line x1="16" y1="2" x2="16" y2="6" />
+                <line x1="8" y1="2" x2="8" y2="6" />
+                <line x1="3" y1="10" x2="21" y2="10" />
+              </svg>
+            </button>
+          )}
+        </div>
+      </div>
+
+      {showHistory && history.length > 1 && (
+        <div className="border-t border-line/60 px-4 py-2">
+          <div className="flex flex-wrap gap-1">
+            {history.map((h) => (
+              <button
+                key={h.weekKey}
+                type="button"
+                onClick={() => { setSelectedWeekKey(h.weekKey); setShowHistory(false); }}
+                className={cn(
+                  "px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-colors",
+                  selectedWeekKey === h.weekKey
+                    ? "bg-primary/15 text-primary"
+                    : "bg-panelHi text-muted hover:text-text",
+                )}
+              >
+                {h.weekRange}
+                {h.weekKey === currentWeekKey && <span className="ml-1 text-[9px] opacity-70">поточний</span>}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {isPast && (
+        <div className="px-4 pb-1">
+          <button
+            type="button"
+            onClick={() => setSelectedWeekKey(currentWeekKey)}
+            className="text-[11px] text-primary hover:underline"
+          >
+            ← Поточний тиждень
+          </button>
+        </div>
+      )}
+
+      <DigestContent
+        digest={digest}
+        loading={loading}
+        error={error}
+        isCurrentWeek={isCurrentWeek}
+        onGenerate={handleGenerate}
+        onUpdate={handleGenerate}
+      />
+    </div>
+  );
+}

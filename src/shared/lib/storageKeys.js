@@ -26,4 +26,7 @@ export const STORAGE_KEYS = {
   FIZRUK_WELLBEING: "fizruk_wellbeing_v1",
   FIZRUK_MEASUREMENTS: "fizruk_measurements_v1",
   FIZRUK_SELECTED_TEMPLATE: "fizruk_selected_template_id_v1",
+
+  // Weekly Digest
+  WEEKLY_DIGEST_PREFIX: "hub_weekly_digest_",
 };

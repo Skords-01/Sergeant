@@ -3,6 +3,7 @@ import { cn } from "@shared/lib/cn";
 import { Button } from "@shared/components/ui/Button";
 import { HubBackupPanel } from "./HubBackupPanel.jsx";
 import { resetDashboardOrder } from "./HubDashboard.jsx";
+import { useWeeklyDigest } from "./useWeeklyDigest.js";
 import {
   loadRoutineState,
   setPref,
@@ -885,6 +886,54 @@ function FinykSection() {
   );
 }
 
+function AIDigestSection() {
+  const { digest, loading, error, weekRange, generate } = useWeeklyDigest();
+  const [done, setDone] = useState(false);
+  const { success: toastSuccess } = useToast();
+
+  const handleGenerate = async () => {
+    setDone(false);
+    const result = await generate();
+    if (result) {
+      setDone(true);
+      toastSuccess("Звіт тижня згенеровано!");
+    }
+  };
+
+  const generatedAt = digest?.generatedAt
+    ? new Date(digest.generatedAt).toLocaleDateString("uk-UA", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })
+    : null;
+
+  return (
+    <SettingsGroup title="AI Звіт тижня" emoji="📋">
+      <div className="space-y-3">
+        <p className="text-[11px] text-subtle leading-snug">
+          Тижневий AI-аналіз прогресу по всіх модулях: фінанси, тренування, харчування та звички.
+          Звіт доступний на дашборді щопонеділка або за запитом.
+        </p>
+        <div className="p-3 rounded-xl bg-bg border border-line">
+          <p className="text-xs font-semibold text-text">Поточний тиждень</p>
+          <p className="text-[11px] text-muted mt-0.5">{weekRange}</p>
+          {generatedAt && (
+            <p className="text-[10px] text-subtle mt-1">Згенеровано: {generatedAt}</p>
+          )}
+        </div>
+        {error && (
+          <p className="text-xs text-danger bg-danger/10 rounded-xl px-3 py-2">{error}</p>
+        )}
+        <Button
+          type="button"
+          className="w-full h-11"
+          disabled={loading}
+          onClick={handleGenerate}
+        >
+          {loading ? "Генерую…" : done ? "✓ Звіт готовий" : digest ? "Оновити звіт тижня" : "Згенерувати звіт зараз"}
+        </Button>
+      </div>
+    </SettingsGroup>
+  );
+}
+
 export function HubSettingsPage({ dark, onToggleDark, syncing, onSync, onPull, user }) {
   return (
     <div className="flex flex-col gap-3 pt-2 pb-4">
@@ -896,6 +945,7 @@ export function HubSettingsPage({ dark, onToggleDark, syncing, onSync, onPull, u
         onPull={onPull}
         user={user}
       />
+      <AIDigestSection />
       <NotificationsSection />
       <RoutineSection />
       <FizrukSection />

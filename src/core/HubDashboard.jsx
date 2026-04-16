@@ -1,6 +1,8 @@
 import { useMemo, useState, useCallback, useEffect } from "react";
 import { cn } from "@shared/lib/cn";
 import { HubRecommendations } from "./HubRecommendations.jsx";
+import { WeeklyDigestCard } from "./WeeklyDigestCard.jsx";
+import { useWeeklyDigest, loadDigest, getWeekKey } from "./useWeeklyDigest.js";
 import {
   DndContext,
   closestCenter,
@@ -347,8 +349,28 @@ function SortableCard({ id, onOpenModule }) {
   );
 }
 
+function useMondayAutoDigest() {
+  const { generate } = useWeeklyDigest();
+
+  useEffect(() => {
+    const now = new Date();
+    const isMonday = now.getDay() === 1;
+    if (!isMonday) return;
+
+    const weekKey = getWeekKey(now);
+    const existing = loadDigest(weekKey);
+    if (existing) return;
+
+    const timer = setTimeout(() => {
+      generate();
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, [generate]);
+}
+
 export function HubDashboard({ onOpenModule }) {
   const [order, setOrder] = useState(loadOrder);
+  useMondayAutoDigest();
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -371,6 +393,8 @@ export function HubDashboard({ onOpenModule }) {
   return (
     <div className="space-y-4">
       <HubRecommendations onOpenModule={onOpenModule} />
+
+      <WeeklyDigestCard />
 
       <div className="space-y-2.5">
         <h2 className="text-xs font-semibold text-muted uppercase tracking-wider px-0.5 flex items-center gap-1.5">

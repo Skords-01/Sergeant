@@ -24,6 +24,7 @@ import backupUpload from "./api/nutrition/backup-upload.js";
 import backupDownload from "./api/nutrition/backup-download.js";
 import dayPlan from "./api/nutrition/day-plan.js";
 import shoppingList from "./api/nutrition/shopping-list.js";
+import weeklyDigest from "./api/weekly-digest.js";
 import { syncPush, syncPull, syncPullAll, syncPushAll } from "./api/sync.js";
 import barcodeHandler from "./api/barcode.js";
 import { setCorsHeaders } from "./api/lib/cors.js";
@@ -101,6 +102,12 @@ app.all("/api/nutrition/backup-upload", wrap(backupUpload));
 app.all("/api/nutrition/backup-download", wrap(backupDownload));
 app.all("/api/nutrition/day-plan", wrap(dayPlan));
 app.all("/api/nutrition/shopping-list", wrap(shoppingList));
+
+app.all(
+  "/api/weekly-digest",
+  rateLimitExpress({ key: "api:weekly-digest", limit: 10, windowMs: 60 * 60_000 }),
+  wrap(weeklyDigest),
+);
 
 if (existsSync(DIST)) {
   app.use(
