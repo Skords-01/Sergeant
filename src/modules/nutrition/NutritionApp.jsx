@@ -174,6 +174,17 @@ export default function NutritionApp({ onBackToHub, pwaAction, onPwaActionConsum
   const lastNotifyKeyRef = useRef("");
 
   useEffect(() => {
+    try {
+      if ("serviceWorker" in navigator && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({
+          type: "NUTRITION_STATE_UPDATE",
+          data: { reminderEnabled: prefs.reminderEnabled, reminderHour: prefs.reminderHour ?? 12 },
+        });
+      }
+    } catch {}
+  }, [prefs.reminderEnabled, prefs.reminderHour]);
+
+  useEffect(() => {
     if (
       !prefs.reminderEnabled ||
       typeof window === "undefined" ||
@@ -189,7 +200,22 @@ export default function NutritionApp({ onBackToHub, pwaAction, onPwaActionConsum
       if (lastNotifyKeyRef.current === key) return;
       lastNotifyKeyRef.current = key;
       try {
-        new Notification("Харчування", { body: "Час записати прийоми їжі." });
+        if ("serviceWorker" in navigator) {
+          navigator.serviceWorker.ready.then((reg) => {
+            reg.showNotification("🥗 Харчування", {
+              body: "Час записати прийоми їжі.",
+              tag: `nutrition-reminder-${key}`,
+              icon: "/icon-192.png",
+              badge: "/icon-192.png",
+              requireInteraction: false,
+              data: { action: "open", module: "nutrition" },
+            });
+          }).catch(() => {
+            new Notification("🥗 Харчування", { body: "Час записати прийоми їжі." });
+          });
+        } else {
+          new Notification("🥗 Харчування", { body: "Час записати прийоми їжі." });
+        }
       } catch {
         /* ignore */
       }

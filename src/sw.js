@@ -76,6 +76,8 @@ function habitScheduledOnDateSW(h, dk) {
 
 const notifiedKeys = new Set();
 let routineData = null;
+let fizrukData = null;
+let nutritionData = null;
 let scheduledTimerId = null;
 
 function normalizeReminderTimesSW(h) {
@@ -87,7 +89,7 @@ function normalizeReminderTimesSW(h) {
   return [];
 }
 
-function checkReminders() {
+function checkRoutineReminders() {
   if (!routineData) return;
   if (routineData.prefs?.routineRemindersEnabled !== true) return;
 
@@ -116,8 +118,67 @@ function checkReminders() {
       icon: "/icon-192.png",
       badge: "/icon-192.png",
       requireInteraction: false,
+      data: { action: "open", module: "routine" },
     }).catch(() => {});
   }
+}
+
+function checkFizrukReminders() {
+  if (!fizrukData) return;
+  if (!fizrukData.reminderEnabled) return;
+
+  const dk = todayKey();
+  const hm = currentHm();
+  const todayEntry = fizrukData.days?.[dk];
+  if (!todayEntry?.templateId) return;
+
+  const rh = Number.isFinite(fizrukData.reminderHour) ? fizrukData.reminderHour : 18;
+  const rm = Number.isFinite(fizrukData.reminderMinute) ? fizrukData.reminderMinute : 0;
+  const targetHm = `${String(rh).padStart(2, "0")}:${String(rm).padStart(2, "0")}`;
+  if (hm !== targetHm) return;
+
+  const storageKey = `fizruk_notify_${dk}`;
+  if (notifiedKeys.has(storageKey)) return;
+  notifiedKeys.add(storageKey);
+
+  self.registration.showNotification("🏋️ Фізрук — тренування", {
+    body: "Заплановане тренування на сьогодні. Відкрий застосунок, щоб стартувати.",
+    tag: storageKey,
+    icon: "/icon-192.png",
+    badge: "/icon-192.png",
+    requireInteraction: false,
+    data: { action: "open", module: "fizruk" },
+  }).catch(() => {});
+}
+
+function checkNutritionReminders() {
+  if (!nutritionData) return;
+  if (!nutritionData.reminderEnabled) return;
+
+  const dk = todayKey();
+  const hm = currentHm();
+  const rh = Number.isFinite(nutritionData.reminderHour) ? nutritionData.reminderHour : 12;
+  const targetHm = `${String(rh).padStart(2, "0")}:00`;
+  if (hm !== targetHm) return;
+
+  const storageKey = `nutrition_notify_${dk}`;
+  if (notifiedKeys.has(storageKey)) return;
+  notifiedKeys.add(storageKey);
+
+  self.registration.showNotification("🥗 Харчування", {
+    body: "Час відмітити прийом їжі! Відкрий застосунок.",
+    tag: storageKey,
+    icon: "/icon-192.png",
+    badge: "/icon-192.png",
+    requireInteraction: false,
+    data: { action: "open", module: "nutrition" },
+  }).catch(() => {});
+}
+
+function checkReminders() {
+  checkRoutineReminders();
+  checkFizrukReminders();
+  checkNutritionReminders();
 }
 
 function scheduleNextCheck() {
@@ -150,6 +211,18 @@ self.addEventListener("message", (event) => {
     return;
   }
 
+  if (type === "FIZRUK_STATE_UPDATE") {
+    fizrukData = data;
+    startReminderLoop();
+    return;
+  }
+
+  if (type === "NUTRITION_STATE_UPDATE") {
+    nutritionData = data;
+    startReminderLoop();
+    return;
+  }
+
   if (type === "ROUTINE_NOTIFICATION_SENT") {
     if (data?.storageKey) notifiedKeys.add(data.storageKey);
   }
@@ -157,16 +230,27 @@ self.addEventListener("message", (event) => {
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
+  const module = event.notification.data?.module;
+  const url = module ? `/?module=${module}` : "/";
   event.waitUntil(
     self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
       for (const client of clientList) {
         if (client.url.includes(self.registration.scope)) {
-          return client.focus();
+          client.focus();
+          if (module) {
+            client.postMessage({ type: "OPEN_MODULE", module });
+          }
+          return;
         }
       }
-      return self.clients.openWindow("/");
+      return self.clients.openWindow(url);
     }),
   );
+});
+
+self.addEventListener("notificationclose", (event) => {
+  const tag = event.notification.tag;
+  if (tag) notifiedKeys.add(tag);
 });
 
 self.addEventListener("activate", (event) => {

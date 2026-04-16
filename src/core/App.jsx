@@ -213,6 +213,73 @@ function usePwaInstall() {
   return { canInstall: !!prompt && ready, install, dismiss };
 }
 
+const IOS_BANNER_DISMISSED_KEY = "ios_install_banner_dismissed";
+
+function useIosInstallBanner() {
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    try {
+      if (localStorage.getItem(IOS_BANNER_DISMISSED_KEY) === "1") return;
+    } catch {}
+    const isIOS =
+      /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+      (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    const isStandalone =
+      window.matchMedia("(display-mode: standalone)").matches ||
+      window.navigator.standalone === true;
+    if (isIOS && !isStandalone) {
+      const timer = setTimeout(() => setVisible(true), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  const dismiss = useCallback(() => {
+    try {
+      localStorage.setItem(IOS_BANNER_DISMISSED_KEY, "1");
+    } catch {}
+    setVisible(false);
+  }, []);
+
+  return { visible, dismiss };
+}
+
+function IOSInstallBanner({ onDismiss }) {
+  return (
+    <div className="px-5 max-w-lg mx-auto w-full mb-2">
+      <div className="px-4 py-3 rounded-2xl bg-panel border border-line shadow-card flex items-start gap-3">
+        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary" aria-hidden>
+            <path d="M12 2v13M7 7l5-5 5 5" />
+            <path d="M20 21H4a2 2 0 0 1-2-2v-1" />
+            <path d="M22 21v-1a2 2 0 0 0-2-2" />
+          </svg>
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-text">Додай на головний екран</p>
+          <p className="text-xs text-muted mt-0.5 leading-snug">
+            Щоб отримувати push-сповіщення на iOS, відкрий меню{" "}
+            <span className="font-semibold">Поділитися</span>{" "}
+            <span aria-hidden>⬆️</span> і обери{" "}
+            <span className="font-semibold">На початковий екран</span>.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={onDismiss}
+          className="text-muted hover:text-text shrink-0 p-1 -mt-1 -mr-1"
+          aria-label="Закрити"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function useSWUpdate() {
   const toast = useToast();
   const [updateAvailable, setUpdateAvailable] = useState(false);
@@ -382,10 +449,23 @@ function AppInner() {
   const clearPwaAction = useCallback(() => setPwaAction(null), []);
   const { dark, toggle: toggleDark } = useDarkMode();
   const { canInstall, install, dismiss } = usePwaInstall();
+  const { visible: iosVisible, dismiss: iosDismiss } = useIosInstallBanner();
   const online = useOnlineStatus();
   const { updateAvailable, applyUpdate } = useSWUpdate();
   const { user, isLoading: authLoading, logout } = useAuth();
   const { syncing, lastSync, pushAll, pullAll, migrationPending, uploadLocalData, skipMigration } = useCloudSync(user);
+
+  useEffect(() => {
+    const onMessage = (event) => {
+      if (event.data?.type === "OPEN_MODULE" && VALID_MODULES.has(event.data.module)) {
+        openModule(event.data.module);
+      }
+    };
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.addEventListener("message", onMessage);
+      return () => navigator.serviceWorker.removeEventListener("message", onMessage);
+    }
+  }, [openModule]);
 
   const goToHub = useCallback(() => {
     setModuleAnimClass("hub-enter");
@@ -629,6 +709,8 @@ function AppInner() {
             }}
           />
         )}
+
+        {iosVisible && <IOSInstallBanner onDismiss={iosDismiss} />}
 
         <main className="flex-1 px-5 pb-28 max-w-lg mx-auto w-full overflow-y-auto">
           {hubView === "dashboard" && (

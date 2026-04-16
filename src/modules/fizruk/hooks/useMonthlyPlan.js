@@ -12,15 +12,16 @@ function todayKey() {
 function loadState() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { reminderHour: 18, reminderMinute: 0, days: {} };
+    if (!raw) return { reminderEnabled: true, reminderHour: 18, reminderMinute: 0, days: {} };
     const p = JSON.parse(raw);
     return {
+      reminderEnabled: p.reminderEnabled !== false,
       reminderHour: Number.isFinite(p.reminderHour) ? p.reminderHour : 18,
       reminderMinute: Number.isFinite(p.reminderMinute) ? p.reminderMinute : 0,
       days: typeof p.days === "object" && p.days ? p.days : {},
     };
   } catch {
-    return { reminderHour: 18, reminderMinute: 0, days: {} };
+    return { reminderEnabled: true, reminderHour: 18, reminderMinute: 0, days: {} };
   }
 }
 
@@ -59,6 +60,14 @@ export function useMonthlyPlan() {
     });
   }, []);
 
+  const setReminderEnabled = useCallback((enabled) => {
+    setState((prev) => {
+      const next = { ...prev, reminderEnabled: !!enabled };
+      saveState(next);
+      return next;
+    });
+  }, []);
+
   const setDayTemplate = useCallback((dateKey, templateId) => {
     setState((prev) => {
       const days = { ...prev.days };
@@ -84,10 +93,12 @@ export function useMonthlyPlan() {
   );
 
   return {
+    reminderEnabled: state.reminderEnabled,
     reminderHour: state.reminderHour,
     reminderMinute: state.reminderMinute,
     days: state.days,
     setReminder,
+    setReminderEnabled,
     setDayTemplate,
     getTemplateForDate,
     todayTemplateId,

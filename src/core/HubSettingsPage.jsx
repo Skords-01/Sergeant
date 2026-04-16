@@ -13,7 +13,6 @@ import {
   useRestSettings,
   REST_CATEGORY_LABELS,
 } from "../modules/fizruk/hooks/useRestSettings.js";
-import { requestNotificationPermission as requestFizrukNotifPermission } from "../modules/fizruk/hooks/useFizrukWorkoutReminder.js";
 import {
   loadNutritionPrefs,
   persistNutritionPrefs,
@@ -173,6 +172,190 @@ function ConfirmModal({ open, title, body, confirmLabel, danger, onConfirm, onCa
   );
 }
 
+function NotificationsSection() {
+  const [permStatus, setPermStatus] = useState(() =>
+    typeof Notification !== "undefined" ? Notification.permission : "unsupported",
+  );
+  const { warning: toastWarning } = useToast();
+
+  const [routine, setRoutine] = useState(() => loadRoutineState());
+  useEffect(() => {
+    const handler = () => setRoutine(loadRoutineState());
+    const storageHandler = (e) => {
+      if (e.key === "hub_routine_v1" || e.key === null) handler();
+    };
+    window.addEventListener("hub-routine-storage", handler);
+    window.addEventListener("storage", storageHandler);
+    return () => {
+      window.removeEventListener("hub-routine-storage", handler);
+      window.removeEventListener("storage", storageHandler);
+    };
+  }, []);
+
+  const monthlyPlan = useMonthlyPlan();
+
+  const [nutritionPrefs, setNutritionPrefs] = useState(() => loadNutritionPrefs());
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.key === NUTRITION_PREFS_KEY || e.key === null) {
+        setNutritionPrefs(loadNutritionPrefs());
+      }
+    };
+    window.addEventListener("storage", handler);
+    return () => window.removeEventListener("storage", handler);
+  }, []);
+
+  const requestPermission = async () => {
+    if (typeof Notification === "undefined") return;
+    try {
+      const r = await Notification.requestPermission();
+      setPermStatus(r);
+      if (r !== "granted") {
+        toastWarning("Дозволь сповіщення в налаштуваннях браузера, щоб отримувати нагадування.");
+      }
+    } catch {
+      setPermStatus("denied");
+    }
+  };
+
+  const updateRoutinePref = (key, value) => {
+    setRoutine((s) => setPref(s, key, value));
+  };
+
+  const handleRoutineToggle = async (checked) => {
+    if (checked) {
+      const perm = await requestRoutineNotificationPermission();
+      setPermStatus(perm);
+      if (perm !== "granted") {
+        toastWarning("Без дозволу на сповіщення нагадування не надсилатимуться. Дозволь сповіщення у налаштуваннях браузера.");
+        return;
+      }
+    }
+    updateRoutinePref("routineRemindersEnabled", checked);
+  };
+
+  const handleFizrukToggle = async (checked) => {
+    if (checked && permStatus !== "granted") {
+      const perm = await requestRoutineNotificationPermission();
+      setPermStatus(perm);
+      if (perm !== "granted") {
+        toastWarning("Без дозволу на сповіщення нагадування не надсилатимуться.");
+        return;
+      }
+    }
+    monthlyPlan.setReminderEnabled(checked);
+  };
+
+  const handleNutritionToggle = async (checked) => {
+    if (checked && permStatus !== "granted") {
+      const perm = await requestRoutineNotificationPermission();
+      setPermStatus(perm);
+      if (perm !== "granted") {
+        toastWarning("Без дозволу на сповіщення нагадування не надсилатимуться.");
+        return;
+      }
+    }
+    const next = { ...nutritionPrefs, reminderEnabled: checked };
+    persistNutritionPrefs(next, NUTRITION_PREFS_KEY);
+    setNutritionPrefs(next);
+  };
+
+  const permLabel = {
+    granted: "Дозволено",
+    denied: "Заблоковано",
+    default: "Не встановлено",
+    unsupported: "Не підтримується",
+  }[permStatus] ?? "Невідомо";
+
+  const permColor = {
+    granted: "text-success",
+    denied: "text-danger",
+    default: "text-warning",
+    unsupported: "text-muted",
+  }[permStatus] ?? "text-muted";
+
+  return (
+    <SettingsGroup title="Сповіщення" emoji="🔔" defaultOpen>
+      <div className="flex items-center justify-between gap-3 p-3 rounded-xl bg-bg border border-line">
+        <div>
+          <p className="text-sm font-semibold text-text">Push-сповіщення</p>
+          <p className={cn("text-xs mt-0.5 font-medium", permColor)}>{permLabel}</p>
+        </div>
+        {permStatus !== "granted" && permStatus !== "unsupported" && (
+          <Button type="button" size="sm" className="h-9 shrink-0" onClick={requestPermission}>
+            Дозволити
+          </Button>
+        )}
+        {permStatus === "denied" && (
+          <p className="text-[11px] text-subtle">Відкрий налаштування браузера, щоб дозволити</p>
+        )}
+      </div>
+
+      <SettingsSubGroup title="Звички (Рутина)" defaultOpen>
+        <ToggleRow
+          label="Нагадування про звички"
+          description="Спрацьовує у встановлений в кожній звичці час, навіть коли застосунок закрито."
+          checked={routine.prefs?.routineRemindersEnabled === true}
+          onChange={(e) => handleRoutineToggle(e.target.checked)}
+        />
+      </SettingsSubGroup>
+
+      <SettingsSubGroup title="Тренування (Фізрук)" defaultOpen>
+        <ToggleRow
+          label="Нагадування про тренування"
+          description="Надсилається о вказаній годині, якщо на сьогодні призначено тренування."
+          checked={monthlyPlan.reminderEnabled}
+          onChange={(e) => handleFizrukToggle(e.target.checked)}
+        />
+        {monthlyPlan.reminderEnabled && (
+          <label className="flex items-center gap-2 text-sm">
+            <span className="text-subtle">Час</span>
+            <input
+              type="time"
+              className="bg-bg border border-line rounded-xl px-3 py-2 text-sm text-text"
+              value={`${String(monthlyPlan.reminderHour).padStart(2, "0")}:${String(monthlyPlan.reminderMinute).padStart(2, "0")}`}
+              onChange={(e) => {
+                const [h, m] = e.target.value.split(":").map(Number);
+                monthlyPlan.setReminder(h || 0, m || 0);
+              }}
+            />
+          </label>
+        )}
+      </SettingsSubGroup>
+
+      <SettingsSubGroup title="Харчування" defaultOpen>
+        <ToggleRow
+          label="Нагадування про їжу"
+          description="Щоденне нагадування записати прийоми їжі, навіть коли застосунок закрито."
+          checked={Boolean(nutritionPrefs.reminderEnabled)}
+          onChange={(e) => handleNutritionToggle(e.target.checked)}
+        />
+        {nutritionPrefs.reminderEnabled && (
+          <label className="flex items-center gap-2 text-sm">
+            <span className="text-subtle">Година</span>
+            <input
+              type="number"
+              min={0}
+              max={23}
+              className="w-16 h-9 rounded-xl bg-panel border border-line px-2 text-sm text-text"
+              value={nutritionPrefs.reminderHour ?? 12}
+              onChange={(e) => {
+                const next = {
+                  ...nutritionPrefs,
+                  reminderHour: Math.min(23, Math.max(0, Number(e.target.value) || 0)),
+                };
+                persistNutritionPrefs(next, NUTRITION_PREFS_KEY);
+                setNutritionPrefs(next);
+              }}
+            />
+            <span className="text-xs text-subtle">год.</span>
+          </label>
+        )}
+      </SettingsSubGroup>
+    </SettingsGroup>
+  );
+}
+
 function GeneralSection({ dark, onToggleDark, syncing, onSync, onPull, user }) {
   const [orderReset, setOrderReset] = useState(false);
 
@@ -236,7 +419,6 @@ function GeneralSection({ dark, onToggleDark, syncing, onSync, onPull, user }) {
 
 function RoutineSection() {
   const [routine, setRoutine] = useState(() => loadRoutineState());
-  const { warning: toastWarning } = useToast();
 
   useEffect(() => {
     const handler = () => setRoutine(loadRoutineState());
@@ -255,27 +437,8 @@ function RoutineSection() {
     setRoutine((s) => setPref(s, key, value));
   }, []);
 
-  const handleRemindersToggle = async (checked) => {
-    if (checked) {
-      const perm = await requestRoutineNotificationPermission();
-      if (perm !== "granted") {
-        toastWarning(
-          "Без дозволу на сповіщення нагадування не надсилатимуться. Дозволь сповіщення у налаштуваннях браузера.",
-        );
-        return;
-      }
-    }
-    updatePref("routineRemindersEnabled", checked);
-  };
-
   return (
     <SettingsGroup title="Рутина" emoji="✅">
-      <ToggleRow
-        label="Нагадування в браузері"
-        description="У звичці вкажи час нагадування. Нагадування спрацює о вказаній хвилині, якщо день запланований і ще немає відмітки."
-        checked={routine.prefs?.routineRemindersEnabled === true}
-        onChange={(e) => handleRemindersToggle(e.target.checked)}
-      />
       <ToggleRow
         label="Показувати тренування з Фізрука в календарі"
         checked={routine.prefs?.showFizrukInCalendar !== false}
@@ -291,47 +454,10 @@ function RoutineSection() {
 }
 
 function FizrukSection() {
-  const { reminderHour, reminderMinute, setReminder } = useMonthlyPlan();
   const { settings, updateSetting } = useRestSettings();
-
-  const [notifStatus, setNotifStatus] = useState(() =>
-    typeof Notification !== "undefined" ? Notification.permission : "unsupported",
-  );
-
-  const handleEnableNotif = async () => {
-    const r = await requestFizrukNotifPermission();
-    setNotifStatus(r);
-  };
 
   return (
     <SettingsGroup title="Фізрук" emoji="🏋️">
-      <SettingsSubGroup title="Нагадування про тренування">
-        <p className="text-[11px] text-subtle leading-snug">
-          Час локального нагадування, якщо на сьогодні в календарі обрано шаблон.
-        </p>
-        <div className="flex flex-wrap items-center gap-3">
-          <label className="flex items-center gap-2 text-sm">
-            <span className="text-subtle">Час</span>
-            <input
-              type="time"
-              className="bg-bg border border-line rounded-xl px-3 py-2 text-sm text-text"
-              value={`${String(reminderHour).padStart(2, "0")}:${String(reminderMinute).padStart(2, "0")}`}
-              onChange={(e) => {
-                const [h, m] = e.target.value.split(":").map(Number);
-                setReminder(h || 0, m || 0);
-              }}
-            />
-          </label>
-          {notifStatus === "granted" ? (
-            <span className="text-xs text-success font-medium">Сповіщення увімкнено</span>
-          ) : (
-            <Button type="button" size="sm" className="h-10" onClick={handleEnableNotif}>
-              Дозволити сповіщення
-            </Button>
-          )}
-        </div>
-      </SettingsSubGroup>
-
       <SettingsSubGroup title="Таймер відпочинку">
         <p className="text-[11px] text-subtle leading-snug">
           Рекомендований час відпочинку підбирається автоматично за типом вправи.
@@ -366,74 +492,6 @@ function FizrukSection() {
   );
 }
 
-function NutritionSection() {
-  const [prefs, setPrefsState] = useState(() => loadNutritionPrefs());
-
-  const updatePrefs = useCallback((updater) => {
-    setPrefsState((prev) => {
-      const next = typeof updater === "function" ? updater(prev) : { ...prev, ...updater };
-      persistNutritionPrefs(next, NUTRITION_PREFS_KEY);
-      return next;
-    });
-  }, []);
-
-  const [notifStatus, setNotifStatus] = useState(() =>
-    typeof Notification !== "undefined" ? Notification.permission : "unsupported",
-  );
-
-  const handleEnableNotif = async () => {
-    if (typeof Notification === "undefined") return;
-    if (Notification.permission !== "granted") {
-      try {
-        const r = await Notification.requestPermission();
-        setNotifStatus(r);
-      } catch {
-        setNotifStatus("denied");
-      }
-    } else {
-      setNotifStatus("granted");
-    }
-  };
-
-  return (
-    <SettingsGroup title="Харчування" emoji="🥗">
-      <SettingsSubGroup title="Нагадування">
-        <ToggleRow
-          label="Увімкнути нагадування"
-          description="Працює лише коли вкладка відкрита (обмеження браузера)."
-          checked={Boolean(prefs.reminderEnabled)}
-          onChange={(e) => updatePrefs((p) => ({ ...p, reminderEnabled: e.target.checked }))}
-        />
-        <div className="flex flex-wrap gap-3 items-center">
-          <label className="flex items-center gap-2 text-sm">
-            <span className="text-subtle">Година</span>
-            <input
-              type="number"
-              min={0}
-              max={23}
-              className="w-16 h-9 rounded-xl bg-panel border border-line px-2 text-sm text-text"
-              value={prefs.reminderHour ?? 12}
-              onChange={(e) =>
-                updatePrefs((p) => ({
-                  ...p,
-                  reminderHour: Math.min(23, Math.max(0, Number(e.target.value) || 0)),
-                }))
-              }
-            />
-            <span className="text-xs text-subtle">год.</span>
-          </label>
-          {notifStatus === "granted" ? (
-            <span className="text-xs text-success font-medium">Сповіщення дозволені</span>
-          ) : (
-            <Button type="button" variant="ghost" size="sm" className="h-9" onClick={handleEnableNotif}>
-              Дозвіл на сповіщення
-            </Button>
-          )}
-        </div>
-      </SettingsSubGroup>
-    </SettingsGroup>
-  );
-}
 
 function FinykSection() {
   const {
@@ -653,9 +711,9 @@ export function HubSettingsPage({ dark, onToggleDark, syncing, onSync, onPull, u
         onPull={onPull}
         user={user}
       />
+      <NotificationsSection />
       <RoutineSection />
       <FizrukSection />
-      <NutritionSection />
       <FinykSection />
     </div>
   );

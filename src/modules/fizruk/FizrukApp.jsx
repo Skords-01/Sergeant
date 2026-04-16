@@ -104,8 +104,10 @@ export default function FizrukApp({ onBackToHub, pwaAction, onPwaActionConsumed 
 
   useFizrukWorkoutReminder({
     enabled: !!monthlyPlan.todayTemplateId,
+    reminderEnabled: monthlyPlan.reminderEnabled,
     reminderHour: monthlyPlan.reminderHour,
     reminderMinute: monthlyPlan.reminderMinute,
+    days: monthlyPlan.days,
   });
 
   useDialogFocusTrap(settingsOpen, settingsPanelRef, {
