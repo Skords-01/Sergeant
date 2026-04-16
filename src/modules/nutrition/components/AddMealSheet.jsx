@@ -20,6 +20,33 @@ import { downloadBlob } from "../lib/nutritionLogExport.js";
 import { apiUrl } from "@shared/lib/apiUrl.js";
 import { BarcodeScanner } from "./BarcodeScanner.jsx";
 
+function FoodHitRow({ p, badge, onPick }) {
+  return (
+    <li>
+      <button
+        type="button"
+        className="w-full text-left px-3 py-2 hover:bg-panelHi/60 transition-colors"
+        onClick={onPick}
+      >
+        <div className="flex items-center justify-between gap-2">
+          <div className="text-sm text-text font-semibold truncate">
+            {[p.name, p.brand].filter(Boolean).join(" ")}
+            {badge && <span className="ml-1 text-[10px] text-subtle">{badge}</span>}
+          </div>
+          <div className="text-[11px] text-subtle shrink-0">
+            {Math.round(p.per100?.kcal || 0)} ккал/100г
+          </div>
+        </div>
+        <div className="text-[11px] text-subtle mt-0.5">
+          Б {Math.round(p.per100?.protein_g || 0)} • Ж{" "}
+          {Math.round(p.per100?.fat_g || 0)} • В{" "}
+          {Math.round(p.per100?.carbs_g || 0)}
+        </div>
+      </button>
+    </li>
+  );
+}
+
 function currentTime() {
   const now = new Date();
   return `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
@@ -52,7 +79,9 @@ export function AddMealSheet({
   const [form, setForm] = useState(() => emptyForm(null));
   const [foodQuery, setFoodQuery] = useState("");
   const [foodHits, setFoodHits] = useState([]);
+  const [offHits, setOffHits] = useState([]);
   const [foodBusy, setFoodBusy] = useState(false);
+  const [offBusy, setOffBusy] = useState(false);
   const [pickedFood, setPickedFood] = useState(null);
   const [pickedGrams, setPickedGrams] = useState("100");
   const [foodErr, setFoodErr] = useState("");
@@ -68,6 +97,7 @@ export function AddMealSheet({
       setForm(emptyForm(photoResult));
       setFoodQuery("");
       setFoodHits([]);
+      setOffHits([]);
       setPickedFood(null);
       setPickedGrams("100");
       setFoodErr("");
@@ -136,29 +166,42 @@ export function AddMealSheet({
     const q = foodQuery.trim();
     if (!q) {
       setFoodHits([]);
+      setOffHits([]);
       setFoodErr("");
       return;
     }
     let cancelled = false;
     setFoodBusy(true);
     setFoodErr("");
-    const id = window.setTimeout(() => {
-      (async () => {
-        const hits = await searchFoods(q, 12);
-        if (!cancelled) setFoodHits(hits);
-        if (!cancelled && hits.length === 0)
-          setFoodErr("Нічого не знайдено в базі продуктів.");
-      })()
-        .catch(() => {
-          if (!cancelled) setFoodErr("Не вдалося виконати пошук.");
-        })
-        .finally(() => {
-          if (!cancelled) setFoodBusy(false);
-        });
+
+    const localTimer = window.setTimeout(() => {
+      searchFoods(q, 8)
+        .then((hits) => { if (!cancelled) setFoodHits(hits); })
+        .catch(() => {})
+        .finally(() => { if (!cancelled) setFoodBusy(false); });
     }, 180);
+
+    // Пошук у Open Food Facts (з більшою затримкою щоб не спамити)
+    if (q.length >= 2) {
+      setOffBusy(true);
+      setOffHits([]);
+      const offTimer = window.setTimeout(() => {
+        fetch(apiUrl(`/api/food-search?q=${encodeURIComponent(q)}`))
+          .then((r) => r.ok ? r.json() : Promise.reject())
+          .then((data) => { if (!cancelled) setOffHits(data?.products || []); })
+          .catch(() => {})
+          .finally(() => { if (!cancelled) setOffBusy(false); });
+      }, 600);
+      return () => {
+        cancelled = true;
+        window.clearTimeout(localTimer);
+        window.clearTimeout(offTimer);
+      };
+    }
+
     return () => {
       cancelled = true;
-      window.clearTimeout(id);
+      window.clearTimeout(localTimer);
     };
   }, [foodQuery]);
 
@@ -415,17 +458,17 @@ export function AddMealSheet({
           <div className="mb-4 rounded-2xl border border-line/50 bg-panel/40 px-3 py-3 space-y-2">
             <div className="flex items-center justify-between gap-2">
               <div className="text-[10px] font-bold text-subtle uppercase tracking-widest">
-                База продуктів (локально)
+                Пошук продукту
               </div>
               <span className="text-[10px] text-subtle">
-                {foodBusy ? "пошук…" : ""}
+                {foodBusy || offBusy ? "пошук…" : ""}
               </span>
             </div>
             <Input
               value={foodQuery}
               onChange={(e) => setFoodQuery(e.target.value)}
-              placeholder="Пошук: курка, вівсянка, йогурт…"
-              aria-label="Пошук у базі продуктів"
+              placeholder="Курка, Activia, вівсянка, Lays…"
+              aria-label="Пошук продукту"
             />
             {pickedFood && (
               <div className="flex flex-wrap gap-2 items-center">
@@ -434,6 +477,9 @@ export function AddMealSheet({
                   {[pickedFood.name, pickedFood.brand]
                     .filter(Boolean)
                     .join(" ")}
+                  {pickedFood.source === "off" && (
+                    <span className="ml-1 text-[10px] text-subtle">🌍</span>
+                  )}
                 </div>
                 <div className="flex items-center gap-2">
                   <Input
@@ -457,38 +503,43 @@ export function AddMealSheet({
               </div>
             )}
             {foodErr && <div className="text-[11px] text-muted">{foodErr}</div>}
-            {!pickedFood && foodHits.length > 0 && (
-              <div className="max-h-44 overflow-y-auto rounded-xl border border-line/40 bg-bg/40">
+            {!pickedFood && (foodHits.length > 0 || offHits.length > 0) && (
+              <div className="max-h-52 overflow-y-auto rounded-xl border border-line/40 bg-bg/40">
                 <ul className="divide-y divide-line/30">
                   {foodHits.map((p) => (
-                    <li key={p.id}>
-                      <button
-                        type="button"
-                        className="w-full text-left px-3 py-2 hover:bg-panelHi/60 transition-colors"
-                        onClick={() => {
-                          setPickedFood(p);
-                          setPickedGrams(
-                            String(Math.round(p.defaultGrams || 100)),
-                          );
-                          applyPickedFood(p, String(p.defaultGrams || 100));
-                        }}
-                      >
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="text-sm text-text font-semibold truncate">
-                            {[p.name, p.brand].filter(Boolean).join(" ")}
-                          </div>
-                          <div className="text-[11px] text-subtle shrink-0">
-                            {Math.round(p.per100?.kcal || 0)} ккал/100г
-                          </div>
-                        </div>
-                        <div className="text-[11px] text-subtle mt-0.5">
-                          Б {Math.round(p.per100?.protein_g || 0)} • Ж{" "}
-                          {Math.round(p.per100?.fat_g || 0)} • В{" "}
-                          {Math.round(p.per100?.carbs_g || 0)}
-                        </div>
-                      </button>
-                    </li>
+                    <FoodHitRow
+                      key={p.id}
+                      p={p}
+                      onPick={() => {
+                        setPickedFood(p);
+                        setPickedGrams(String(Math.round(p.defaultGrams || 100)));
+                        applyPickedFood(p, String(p.defaultGrams || 100));
+                        setFoodQuery("");
+                      }}
+                    />
                   ))}
+                  {offHits.length > 0 && (
+                    <>
+                      {foodHits.length > 0 && (
+                        <li className="px-3 py-1 text-[10px] text-subtle bg-panelHi/40 font-semibold uppercase tracking-widest">
+                          🌍 Open Food Facts
+                        </li>
+                      )}
+                      {offHits.map((p) => (
+                        <FoodHitRow
+                          key={p.id}
+                          p={p}
+                          badge="🌍"
+                          onPick={() => {
+                            setPickedFood(p);
+                            setPickedGrams(String(Math.round(p.defaultGrams || 100)));
+                            applyPickedFood(p, String(p.defaultGrams || 100));
+                            setFoodQuery("");
+                          }}
+                        />
+                      ))}
+                    </>
+                  )}
                 </ul>
               </div>
             )}

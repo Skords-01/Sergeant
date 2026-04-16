@@ -27,6 +27,7 @@ import shoppingList from "./api/nutrition/shopping-list.js";
 import weeklyDigest from "./api/weekly-digest.js";
 import { syncPush, syncPull, syncPullAll, syncPushAll } from "./api/sync.js";
 import barcodeHandler from "./api/barcode.js";
+import foodSearchHandler from "./api/food-search.js";
 import { setCorsHeaders } from "./api/lib/cors.js";
 import { rateLimitExpress } from "./api/lib/rateLimit.js";
 
@@ -87,6 +88,7 @@ app.all(
 );
 
 app.get("/api/barcode", wrap(barcodeHandler));
+app.get("/api/food-search", wrap(foodSearchHandler));
 
 app.use(
   "/api/nutrition",
