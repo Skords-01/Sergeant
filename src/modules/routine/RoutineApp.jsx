@@ -29,6 +29,7 @@ import { emptyHabitDraft } from "./lib/routineDraftUtils.js";
 import { RoutineBottomNav } from "./components/RoutineBottomNav.jsx";
 import { RoutineCalendarPanel } from "./components/RoutineCalendarPanel.jsx";
 import { RoutineSettingsSection } from "./components/RoutineSettingsSection.jsx";
+import { HabitHeatmap } from "./components/HabitHeatmap.jsx";
 
 const FIZRUK_PLAN_SYNC = "fizruk-storage-monthly-plan";
 
@@ -472,6 +473,13 @@ export default function RoutineApp({ onBackToHub, onOpenModule } = {}) {
             onBulkMarkDay={onBulkMarkDay}
             hidden={mainTab !== "calendar"}
           />
+
+          {mainTab === "calendar" && (
+            <HabitHeatmap
+              habits={routine.habits}
+              completions={routine.completions}
+            />
+          )}
 
           <RoutineSettingsSection
             routine={routine}
