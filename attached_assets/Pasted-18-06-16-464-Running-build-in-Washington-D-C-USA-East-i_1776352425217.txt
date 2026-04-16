@@ -1,0 +1,48 @@
+18:06:16.464 Running build in Washington, D.C., USA (East) – iad1
+18:06:16.465 Build machine configuration: 2 cores, 8 GB
+18:06:16.623 Cloning github.com/Skords-01/Sergeant (Branch: main, Commit: 9c1fba1)
+18:06:17.687 Cloning completed: 1.064s
+18:06:17.847 Restored build cache from previous deployment (5u4bW1HGNecMrkSePvo4pRrGDfeU)
+18:06:18.274 Running "vercel build"
+18:06:18.928 Vercel CLI 51.2.1
+18:06:19.557 Installing dependencies...
+18:06:21.026 
+18:06:21.027 up to date in 1s
+18:06:21.027 
+18:06:21.027 239 packages are looking for funding
+18:06:21.028   run `npm fund` for details
+18:06:21.039 Running "npm run build"
+18:06:21.165 
+18:06:21.165 > hub@0.1.0 build
+18:06:21.165 > node scripts/check-imports.mjs && vite build
+18:06:21.166 
+18:06:21.224 ✅ Import check passed.
+18:06:21.543 [36mvite v4.5.14 [32mbuilding for production...[36m[39m
+18:06:21.575 transforming...
+18:06:22.677 [32m✓[39m 22 modules transformed.
+18:06:22.678 [31m[vite-plugin-pwa:build] Transform failed with 1 error:
+18:06:22.678 /vercel/path0/src/core/HubDashboard.jsx:56:10: ERROR: The symbol "hiddenSet" has already been declared[39m
+18:06:22.678 file: [36m/vercel/path0/src/core/HubDashboard.jsx:56:10[39m
+18:06:22.679 [33m
+18:06:22.679 [33mThe symbol "hiddenSet" has already been declared[33m
+18:06:22.679 54 |      const info = rawInfo?.info ?? rawInfo;
+18:06:22.679 55 |      const hiddenAccounts = safeParseLS("finyk_hidden", []);
+18:06:22.679 56 |      const hiddenSet = new Set(Array.isArray(hiddenAccounts) ? hiddenAccounts : []);
+18:06:22.680    |            ^
+18:06:22.680 57 |      const totalBalance = Array.isArray(info?.accounts)
+18:06:22.680 58 |        ? info.accounts
+18:06:22.680 [39m
+18:06:22.681 [31merror during build:
+18:06:22.681 Error: Transform failed with 1 error:
+18:06:22.681 /vercel/path0/src/core/HubDashboard.jsx:56:10: ERROR: The symbol "hiddenSet" has already been declared
+18:06:22.681     at failureErrorWithLog (/vercel/path0/node_modules/esbuild/lib/main.js:1649:15)
+18:06:22.681     at /vercel/path0/node_modules/esbuild/lib/main.js:847:29
+18:06:22.681     at responseCallbacks.<computed> (/vercel/path0/node_modules/esbuild/lib/main.js:703:9)
+18:06:22.681     at handleIncomingPacket (/vercel/path0/node_modules/esbuild/lib/main.js:762:9)
+18:06:22.682     at Socket.readFromStdout (/vercel/path0/node_modules/esbuild/lib/main.js:679:7)
+18:06:22.682     at Socket.emit (node:events:524:28)
+18:06:22.682     at addChunk (node:internal/streams/readable:561:12)
+18:06:22.682     at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+18:06:22.682     at Readable.push (node:internal/streams/readable:392:5)
+18:06:22.682     at Pipe.onStreamRead (node:internal/stream_base_commons:191:23)[39m
+18:06:22.695 Error: Command "npm run build" exited with 1

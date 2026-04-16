@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { cn } from "@shared/lib/cn";
 import { Button } from "@shared/components/ui/Button";
 import { HubBackupPanel } from "./HubBackupPanel.jsx";
@@ -19,7 +19,6 @@ import {
   NUTRITION_PREFS_KEY,
 } from "../modules/nutrition/lib/nutritionStorage.js";
 import { useStorage as useFinykStorage } from "../modules/finyk/hooks/useStorage.js";
-import { SyncModal } from "../modules/finyk/components/SyncModal.jsx";
 import { getAccountLabel } from "../modules/finyk/utils.js";
 import { useToast } from "@shared/hooks/useToast.jsx";
 
@@ -33,16 +32,64 @@ function safeParseLS(key, fallback) {
   }
 }
 
-function SettingsGroup({ title, emoji, children }) {
+function ChevronIcon({ expanded }) {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={cn("transition-transform duration-200 shrink-0", expanded && "rotate-90")}
+      aria-hidden
+    >
+      <polyline points="9 18 15 12 9 6" />
+    </svg>
+  );
+}
+
+function SettingsGroup({ title, emoji, children, defaultOpen = false }) {
+  const [open, setOpen] = useState(defaultOpen);
   return (
     <div className="rounded-2xl border border-line bg-panel shadow-card overflow-hidden">
-      <div className="px-4 pt-4 pb-2 border-b border-line/60">
-        <div className="text-xs font-bold text-muted uppercase tracking-widest flex items-center gap-1.5">
-          {emoji && <span>{emoji}</span>}
-          {title}
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="w-full px-4 py-3.5 flex items-center justify-between gap-2 hover:bg-panelHi/50 transition-colors"
+      >
+        <div className="flex items-center gap-2 min-w-0">
+          {emoji && <span className="text-base">{emoji}</span>}
+          <span className="text-sm font-semibold text-text">{title}</span>
         </div>
-      </div>
-      <div className="p-4 space-y-4">{children}</div>
+        <ChevronIcon expanded={open} />
+      </button>
+      {open && (
+        <div className="border-t border-line/60 p-4 space-y-5">
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SettingsSubGroup({ title, children, defaultOpen = false }) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center gap-1.5 w-full text-left group mb-1"
+      >
+        <ChevronIcon expanded={open} />
+        <span className="text-xs font-bold text-muted uppercase tracking-widest group-hover:text-text transition-colors">
+          {title}
+        </span>
+      </button>
+      {open && <div className="pt-2 space-y-3">{children}</div>}
     </div>
   );
 }
@@ -111,15 +158,14 @@ function ConfirmModal({ open, title, body, confirmLabel, danger, onConfirm, onCa
 
 function GeneralSection({ dark, onToggleDark, syncing, onSync, onPull, user }) {
   return (
-    <SettingsGroup title="Загальні" emoji="⚙️">
+    <SettingsGroup title="Загальні" emoji="⚙️" defaultOpen>
       <ToggleRow
         label="Темна тема"
         checked={dark}
         onChange={onToggleDark}
       />
       {user && (
-        <div className="space-y-2">
-          <p className="text-xs font-semibold text-muted uppercase tracking-widest">Хмарна синхронізація</p>
+        <SettingsSubGroup title="Хмарна синхронізація">
           <div className="flex gap-2">
             <Button
               type="button"
@@ -142,12 +188,11 @@ function GeneralSection({ dark, onToggleDark, syncing, onSync, onPull, user }) {
               {syncing ? "Завантаження…" : "Завантажити з хмари"}
             </Button>
           </div>
-        </div>
+        </SettingsSubGroup>
       )}
-      <div>
-        <p className="text-xs font-semibold text-muted uppercase tracking-widest mb-2">Резервна копія Hub</p>
+      <SettingsSubGroup title="Резервна копія Hub" defaultOpen>
         <HubBackupPanel />
-      </div>
+      </SettingsSubGroup>
     </SettingsGroup>
   );
 }
@@ -223,8 +268,7 @@ function FizrukSection() {
 
   return (
     <SettingsGroup title="Фізрук" emoji="🏋️">
-      <div className="space-y-3">
-        <p className="text-xs font-semibold text-muted uppercase tracking-widest">Нагадування про тренування</p>
+      <SettingsSubGroup title="Нагадування про тренування">
         <p className="text-[11px] text-subtle leading-snug">
           Час локального нагадування, якщо на сьогодні в календарі обрано шаблон.
         </p>
@@ -249,10 +293,9 @@ function FizrukSection() {
             </Button>
           )}
         </div>
-      </div>
+      </SettingsSubGroup>
 
-      <div className="space-y-3">
-        <p className="text-xs font-semibold text-muted uppercase tracking-widest">Таймер відпочинку</p>
+      <SettingsSubGroup title="Таймер відпочинку">
         <p className="text-[11px] text-subtle leading-snug">
           Рекомендований час відпочинку підбирається автоматично за типом вправи.
           Ці значення з&apos;являться як кнопка за замовчуванням у кожній вправі.
@@ -281,7 +324,7 @@ function FizrukSection() {
             </div>
           ))}
         </div>
-      </div>
+      </SettingsSubGroup>
     </SettingsGroup>
   );
 }
@@ -317,59 +360,55 @@ function NutritionSection() {
 
   return (
     <SettingsGroup title="Харчування" emoji="🥗">
-      <p className="text-xs font-semibold text-muted uppercase tracking-widest">Нагадування (браузер)</p>
-      <ToggleRow
-        label="Увімкнути нагадування"
-        description="Працює лише коли вкладка відкрита (обмеження браузера)."
-        checked={Boolean(prefs.reminderEnabled)}
-        onChange={(e) => updatePrefs((p) => ({ ...p, reminderEnabled: e.target.checked }))}
-      />
-      <div className="flex flex-wrap gap-3 items-center">
-        <label className="flex items-center gap-2 text-sm">
-          <span className="text-subtle">Година нагадування</span>
-          <input
-            type="number"
-            min={0}
-            max={23}
-            className="w-16 h-9 rounded-xl bg-panel border border-line px-2 text-sm text-text"
-            value={prefs.reminderHour ?? 12}
-            onChange={(e) =>
-              updatePrefs((p) => ({
-                ...p,
-                reminderHour: Math.min(23, Math.max(0, Number(e.target.value) || 0)),
-              }))
-            }
-          />
-          <span className="text-xs text-subtle">год.</span>
-        </label>
-        {notifStatus === "granted" ? (
-          <span className="text-xs text-success font-medium">Сповіщення дозволені</span>
-        ) : (
-          <Button type="button" variant="ghost" size="sm" className="h-9" onClick={handleEnableNotif}>
-            Дозвіл на сповіщення
-          </Button>
-        )}
-      </div>
+      <SettingsSubGroup title="Нагадування">
+        <ToggleRow
+          label="Увімкнути нагадування"
+          description="Працює лише коли вкладка відкрита (обмеження браузера)."
+          checked={Boolean(prefs.reminderEnabled)}
+          onChange={(e) => updatePrefs((p) => ({ ...p, reminderEnabled: e.target.checked }))}
+        />
+        <div className="flex flex-wrap gap-3 items-center">
+          <label className="flex items-center gap-2 text-sm">
+            <span className="text-subtle">Година</span>
+            <input
+              type="number"
+              min={0}
+              max={23}
+              className="w-16 h-9 rounded-xl bg-panel border border-line px-2 text-sm text-text"
+              value={prefs.reminderHour ?? 12}
+              onChange={(e) =>
+                updatePrefs((p) => ({
+                  ...p,
+                  reminderHour: Math.min(23, Math.max(0, Number(e.target.value) || 0)),
+                }))
+              }
+            />
+            <span className="text-xs text-subtle">год.</span>
+          </label>
+          {notifStatus === "granted" ? (
+            <span className="text-xs text-success font-medium">Сповіщення дозволені</span>
+          ) : (
+            <Button type="button" variant="ghost" size="sm" className="h-9" onClick={handleEnableNotif}>
+              Дозвіл на сповіщення
+            </Button>
+          )}
+        </div>
+      </SettingsSubGroup>
     </SettingsGroup>
   );
 }
 
 function FinykSection() {
-  const storage = useFinykStorage({});
   const {
     hiddenAccounts,
     toggleHideAccount,
-    exportData,
-    importData,
     customCategories,
     addCustomCategory,
     removeCustomCategory,
-  } = storage;
+  } = useFinykStorage({});
 
-  const [syncOpen, setSyncOpen] = useState(false);
   const [confirmKind, setConfirmKind] = useState(null);
   const [newCategoryLabel, setNewCategoryLabel] = useState("");
-  const importRef = useRef(null);
 
   const rawCache = safeParseLS("finyk_info_cache", null);
   const infoData = rawCache?.info ?? rawCache;
@@ -429,11 +468,8 @@ function FinykSection() {
           setConfirmKind(null);
         }}
       />
-      {syncOpen && <SyncModal storage={storage} onClose={() => setSyncOpen(false)} />}
 
-      {/* Custom categories */}
-      <div className="space-y-3">
-        <p className="text-xs font-semibold text-muted uppercase tracking-widest">📂 Власні категорії витрат</p>
+      <SettingsSubGroup title="Власні категорії витрат">
         <p className="text-[11px] text-subtle leading-snug">
           Додаються до списку категорій у транзакціях, сплітах і лімітах (можна вказати емодзі на початку назви).
         </p>
@@ -464,7 +500,7 @@ function FinykSection() {
           </Button>
         </div>
         {customCategories.length > 0 ? (
-          <ul className="space-y-0 -mx-4 -mb-2">
+          <ul className="space-y-0 -mx-4">
             {customCategories.map((c) => (
               <li
                 key={c.id}
@@ -484,16 +520,14 @@ function FinykSection() {
         ) : (
           <p className="text-xs text-subtle">Поки немає власних категорій.</p>
         )}
-      </div>
+      </SettingsSubGroup>
 
-      {/* Accounts visibility */}
       {uahAccounts.length > 0 && (
-        <div className="space-y-3">
-          <p className="text-xs font-semibold text-muted uppercase tracking-widest">💳 Рахунки</p>
+        <SettingsSubGroup title="Рахунки">
           <p className="text-[11px] text-subtle leading-snug">
             Сховані рахунки не враховуються у балансі та нетворсі.
           </p>
-          <div className="space-y-0 -mx-4 -mb-2">
+          <div className="space-y-0 -mx-4">
             {uahAccounts.map((acc) => {
               const hidden = hiddenAccounts.includes(acc.id);
               return (
@@ -524,13 +558,11 @@ function FinykSection() {
               );
             })}
           </div>
-        </div>
+        </SettingsSubGroup>
       )}
 
-      {/* Profile */}
       {clientName && (
-        <div className="space-y-3">
-          <p className="text-xs font-semibold text-muted uppercase tracking-widest">👤 Профіль Monobank</p>
+        <SettingsSubGroup title="Monobank">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-panelHi border border-line flex items-center justify-center text-xl">
               {clientName.charAt(0) || "?"}
@@ -553,80 +585,29 @@ function FinykSection() {
               </button>
             </div>
           )}
-        </div>
+        </SettingsSubGroup>
       )}
 
-      {/* Sync */}
-      <div className="space-y-2">
-        <p className="text-xs font-semibold text-muted uppercase tracking-widest">🔗 Синхронізація</p>
-        <p className="text-[11px] text-subtle">Перенести налаштування на інший пристрій через посилання</p>
-        <Button variant="ghost" className="w-full h-12" onClick={() => setSyncOpen(true)}>
-          📤 Sync між пристроями
-        </Button>
-      </div>
-
-      {/* Data */}
-      <div className="space-y-2">
-        <p className="text-xs font-semibold text-muted uppercase tracking-widest">💾 Дані</p>
+      <SettingsSubGroup title="Сервіс">
         <p className="text-[11px] text-subtle leading-snug">
-          Бекап: бюджети, підписки, активи, борги, приховані рахунки/транзакції, місячний план, категорії, власні категорії витрат.
+          Якщо список операцій виглядає некоректно — очисти кеш і синхронізуй знову.
         </p>
-        <div className="grid grid-cols-2 gap-2">
-          <Button variant="ghost" onClick={exportData} className="h-12">
-            💾 Експорт JSON
-          </Button>
-          <label
-            className={cn(
-              "flex items-center justify-center h-12 rounded-2xl border border-line text-sm font-semibold text-muted",
-              "cursor-pointer hover:bg-panelHi hover:text-text transition-colors",
-            )}
-          >
-            📥 Імпорт JSON
-            <input
-              ref={importRef}
-              type="file"
-              accept=".json"
-              className="hidden"
-              onChange={async (e) => {
-                const f = e.target.files?.[0];
-                e.target.value = "";
-                if (f) await importData(f);
-              }}
-            />
-          </label>
-        </div>
-      </div>
-
-      {/* Cache */}
-      <div className="space-y-2">
-        <p className="text-xs font-semibold text-muted uppercase tracking-widest">🧹 Кеш</p>
-        <p className="text-[11px] text-subtle">
-          Якщо Monobank &quot;зріже&quot; частину запитів і список операцій виглядає дивно — можна очистити кеш і оновити знову.
-        </p>
-        <Button variant="ghost" className="w-full h-12" onClick={() => setConfirmKind("cache")}>
+        <Button variant="ghost" className="w-full h-11" onClick={() => setConfirmKind("cache")}>
           🧹 Очистити кеш транзакцій
         </Button>
-      </div>
-
-      {/* Disconnect */}
-      {token && (
-        <div className="space-y-2">
-          <p className="text-xs font-semibold text-muted uppercase tracking-widest">🚪 Вихід</p>
-          <p className="text-[11px] text-subtle">
-            Відключити Monobank на цьому пристрої (токен буде видалено з браузера).
-          </p>
-          <Button variant="danger" className="w-full h-12" onClick={() => setConfirmKind("disconnect")}>
+        {token && (
+          <Button variant="danger" className="w-full h-11" onClick={() => setConfirmKind("disconnect")}>
             Вийти з Monobank
           </Button>
-        </div>
-      )}
+        )}
+      </SettingsSubGroup>
     </SettingsGroup>
   );
 }
 
 export function HubSettingsPage({ dark, onToggleDark, syncing, onSync, onPull, user }) {
   return (
-    <div className="flex flex-col gap-5 pt-2 pb-4">
+    <div className="flex flex-col gap-3 pt-2 pb-4">
       <GeneralSection
         dark={dark}
         onToggleDark={onToggleDark}
