@@ -43,7 +43,7 @@ export function HubRecommendations({ onOpenModule }) {
     [recs, dismissed]
   );
 
-  const shown = expanded ? visible : visible.slice(0, 3);
+  const shown = expanded ? visible : visible.slice(0, 2);
 
   const dismiss = useCallback((id) => {
     setDismissed((prev) => {
@@ -79,16 +79,16 @@ export function HubRecommendations({ onOpenModule }) {
         ))}
       </div>
 
-      {visible.length > 3 && !expanded && (
+      {visible.length > 2 && !expanded && (
         <button
           type="button"
           onClick={() => setExpanded(true)}
           className="w-full text-center text-xs text-muted hover:text-text py-1.5 transition-colors"
         >
-          Показати ще {visible.length - 3}
+          Показати ще {visible.length - 2}
         </button>
       )}
-      {expanded && visible.length > 3 && (
+      {expanded && visible.length > 2 && (
         <button
           type="button"
           onClick={() => setExpanded(false)}

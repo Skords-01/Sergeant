@@ -237,10 +237,10 @@ function DashCard({ icon, label, colorClass, gradientClass, children, onClick })
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
-            strokeWidth="2"
+            strokeWidth="2.5"
             strokeLinecap="round"
             strokeLinejoin="round"
-            className="ml-auto text-muted/40 group-hover:text-muted transition-colors shrink-0"
+            className="ml-auto text-muted/60 group-hover:text-muted group-hover:translate-x-0.5 transition-all shrink-0"
             aria-hidden
           >
             <path d="M9 18l6-6-6-6" />
