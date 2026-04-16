@@ -85,7 +85,8 @@ function useReportData(period, offset) {
     }
 
     function collectSpending(dates) {
-      const txList = safeParseLS("finyk_tx_cache", []);
+      const txRaw = safeParseLS("finyk_tx_cache", null);
+      const txList = txRaw?.txs ?? txRaw ?? [];
       const hiddenIds = safeParseLS("finyk_hidden_txs", []);
       const hiddenSet = new Set(Array.isArray(hiddenIds) ? hiddenIds : []);
       const txCategories = safeParseLS("finyk_tx_cats", {});

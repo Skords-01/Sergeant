@@ -25,7 +25,8 @@ function txDateKey(tx) {
 
 function useFinykMetrics() {
   return useMemo(() => {
-    const txList = safeParseLS("finyk_tx_cache", []);
+    const txRaw = safeParseLS("finyk_tx_cache", null);
+    const txList = txRaw?.txs ?? txRaw ?? [];
     const today = localDateKey();
     let todaySpent = 0;
     let todayIncome = 0;
