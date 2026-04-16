@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useMonobank } from "./hooks/useMonobank";
+import { usePrivatbank } from "./hooks/usePrivatbank";
 import { useStorage } from "./hooks/useStorage";
 import { PAGES } from "./constants";
 import { Button } from "@shared/components/ui/Button";
@@ -121,8 +122,11 @@ function useHashRouter(defaultPage = "overview") {
   return [ALL_PAGE_IDS.includes(page) ? page : defaultPage, navigate];
 }
 
+const PRIVAT_ENABLED = false;
+
 export default function App({ onBackToHub, pwaAction, onPwaActionConsumed } = {}) {
   const mono = useMonobank();
+  const privat = usePrivatbank(PRIVAT_ENABLED);
   const toast = useToast();
   const showToast = useCallback((msg, type = "success") => {
     if (type === "error") toast.error(msg);
@@ -180,13 +184,76 @@ export default function App({ onBackToHub, pwaAction, onPwaActionConsumed } = {}
     }
   }, []);
 
+  const mergedRefresh = useCallback(async () => {
+    const tasks = [mono.refresh()];
+    if (privat.connected) tasks.push(privat.refresh());
+    await Promise.allSettled(tasks);
+  }, [mono.refresh, privat.connected, privat.refresh]);
+
+  const mergedMono = useMemo(() => {
+    const privatTxs = privat.transactions || [];
+    const monoTxs = mono.realTx || [];
+    const combined = [...monoTxs, ...privatTxs].sort(
+      (a, b) => (b.time || 0) - (a.time || 0),
+    );
+    const privatTotal = (privat.accounts || [])
+      .filter((a) => a.currency === "UAH" || a.currency === "980")
+      .reduce((s, a) => s + (a.balance || 0) / 100, 0);
+
+    const monoAccounts = (mono.accounts || []).map((a) => ({
+      ...a,
+      _source: "monobank",
+    }));
+    const privatAccounts = (privat.accounts || []).map((a) => ({
+      ...a,
+      _source: "privatbank",
+    }));
+    const allAccounts = [...monoAccounts, ...privatAccounts];
+
+    const hasPrivatError = !!privat.error;
+    const privatSyncBad =
+      privat.syncState?.status === "error" || privat.syncState?.status === "partial";
+    const combinedError =
+      mono.error && hasPrivatError
+        ? `${mono.error}; ПриватБанк: ${privat.error}`
+        : mono.error || (hasPrivatError ? `ПриватБанк: ${privat.error}` : "");
+    const combinedSyncStatus =
+      mono.syncState?.status === "error" || (privatSyncBad && !privat.loadingTx)
+        ? "error"
+        : mono.syncState?.status === "partial" || privatSyncBad
+          ? "partial"
+          : mono.syncState?.status === "loading" || privat.loadingTx
+            ? "loading"
+            : mono.syncState?.status === "success"
+              ? "success"
+              : mono.syncState?.status;
+    const combinedSyncState = {
+      ...mono.syncState,
+      status: combinedSyncStatus,
+      lastError: combinedError,
+    };
+
+    return {
+      ...mono,
+      realTx: combined,
+      transactions: combined,
+      accounts: allAccounts,
+      refresh: mergedRefresh,
+      loadingTx: mono.loadingTx || privat.loadingTx,
+      error: combinedError,
+      syncState: combinedSyncState,
+      privatTotal,
+      privat,
+    };
+  }, [mono, privat, mergedRefresh]);
+
   const { clientInfo, connecting, error, authError, connect } = mono;
   const syncTone =
-    mono?.syncState?.status === "error"
+    mergedMono?.syncState?.status === "error"
       ? { dot: "bg-danger", text: "помилка" }
-      : mono?.syncState?.status === "partial"
+      : mergedMono?.syncState?.status === "partial"
         ? { dot: "bg-warning", text: "частково" }
-        : mono?.syncState?.status === "loading"
+        : mergedMono?.syncState?.status === "loading"
           ? { dot: "bg-muted", text: "оновлення" }
           : { dot: "bg-success", text: "ок" };
 
@@ -492,7 +559,7 @@ export default function App({ onBackToHub, pwaAction, onPwaActionConsumed } = {}
       >
         {page === "overview" && (
           <Overview
-            mono={mono}
+            mono={mergedMono}
             storage={storage}
             onNavigate={navigate}
             onCategoryClick={(catId) => {
@@ -504,17 +571,17 @@ export default function App({ onBackToHub, pwaAction, onPwaActionConsumed } = {}
         )}
         {page === "transactions" && (
           <Transactions
-            mono={mono}
+            mono={mergedMono}
             storage={storage}
             showBalance={showBalance}
             categoryFilter={categoryFilter}
             onClearCategoryFilter={() => setCategoryFilter(null)}
           />
         )}
-        {page === "budgets" && <Budgets mono={mono} storage={storage} />}
+        {page === "budgets" && <Budgets mono={mergedMono} storage={storage} />}
         {page === "assets" && (
           <Assets
-            mono={mono}
+            mono={mergedMono}
             storage={storage}
             showBalance={showBalance}
           />

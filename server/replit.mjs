@@ -13,6 +13,7 @@ import { auth } from "./auth.js";
 import { ensureSchema } from "./db.js";
 import chatHandler from "./api/chat.js";
 import monoHandler from "./api/mono.js";
+import privatHandler from "./api/privat.js";
 import analyzePhoto from "./api/nutrition/analyze-photo.js";
 import parsePantry from "./api/nutrition/parse-pantry.js";
 import refinePhoto from "./api/nutrition/refine-photo.js";
@@ -76,6 +77,11 @@ app.all(
   "/api/mono",
   rateLimitExpress({ key: "api:mono", limit: 60, windowMs: 60_000 }),
   wrap(monoHandler),
+);
+app.all(
+  "/api/privat",
+  rateLimitExpress({ key: "api:privat", limit: 30, windowMs: 60_000 }),
+  wrap(privatHandler),
 );
 
 app.use(

@@ -142,6 +142,11 @@ export function TxRow({
               {accountName}
             </span>
           )}
+          {tx._source === "privatbank" && (
+            <span className="text-[9px] bg-green-500/10 text-green-700 dark:text-green-400 px-1.5 py-0.5 rounded-full font-semibold shrink-0">
+              П24
+            </span>
+          )}
           <span className="text-xs text-subtle">· {fmtDate(tx.time)}</span>
         </div>
       </div>

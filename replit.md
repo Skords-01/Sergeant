@@ -31,6 +31,8 @@ npm run dev           # Vite dev server on port 5173 (proxies /api to 3000)
 - `server/auth.js` — Better Auth configuration (email/password, PostgreSQL adapter, session settings)
 - `server/db.js` — PostgreSQL connection pool
 - `server/api/sync.js` — Cloud sync endpoints (push/pull per-module data)
+- `server/api/mono.js` — Monobank API proxy (X-Token auth, rate-limited)
+- `server/api/privat.js` — PrivatBank business API proxy (Merchant ID + token, rate-limited). Currently disabled in UI via `PRIVAT_ENABLED = false` flag in `FinykApp.jsx` and `HubSettingsPage.jsx`; server route stays mounted for future re-enable.
 - `server/api/` — API route handlers
 - `server/api/lib/cors.js` — CORS config (includes Replit domains via REPLIT_DOMAINS env var)
 - `vite.config.js` — Frontend build config with /api proxy
@@ -115,7 +117,7 @@ A centralized "Налаштування" tab on the hub page (third tab alongsid
 - Finyk Settings page removed from Finyk module nav (all settings now in Hub)
 
 ## Modules
-- **Finyk** — Finance tracker with Monobank integration; SyncStatusBadge on Overview shows sync state (loading/success/partial/error), last-sync timestamp, and manual retry button; Settings page moved to centralized Hub settings
+- **Finyk** — Finance tracker with Monobank integration; SyncStatusBadge on Overview shows sync state (loading/success/partial/error), last-sync timestamp, and manual retry button; Settings page moved to centralized Hub settings. PrivatBank business-API integration (`usePrivatbank` hook, `server/api/privat.js`, settings UI) is implemented but gated behind `PRIVAT_ENABLED = false` and not visible in the UI; flip the flag in `FinykApp.jsx` and `HubSettingsPage.jsx` to re-enable.
 - **Fizruk** — Workout / exercise tracker; features: Rest Timer with Web Audio API beep + vibration on completion and circular progress ring; Training Programs (4 built-in: PPL, Upper/Lower, Full Body, Linear Progression) with activate/deactivate, today's session on Dashboard; per-exercise 1RM and volume progress charts in Exercise detail view; Body page (Тіло tab) for logging weight/sleep/energy/mood with trend line charts; recovery compute uses daily wellbeing (sleep hours + energy level) as multipliers — poor sleep/energy increases fatigue, good metrics speed recovery
 - **Routine** — Routine/habit tracker; habits support multiple `reminderTimes` (array) with morning/afternoon/evening presets; backward-compatible with legacy `timeOfDay` field via `normalizeReminderTimes()`; hero section shows SVG progress ring (day completed/scheduled), completion rate %, current streak; "Leaders & Outsiders" block shows best/worst habits by 30-day rate; Day Report bottom-sheet shows full habit list (done/missed) with toggle; streaks.js exports `completionRateForRange`, `habitCompletionRate`, `currentMaxStreak`; **HabitDetailSheet** bottom-sheet for viewing habit details (stats, mini-calendar, notes) — opened from calendar card tap or "Деталі" button in settings
 - **Nutrition** — Nutrition tracking with AI photo analysis; LogCard search shows macro details and allows re-adding previously logged meals; now includes **Daily Plan** page (AI-generated day plan with breakfast/lunch/dinner/snack matching calorie/macro targets or presets — Схуднення/Підтримка/Набір маси) and **Shopping List** page (AI-generated from recipes or weekly plan, auto-subtracts pantry items, grouped by category, check-off with add-to-pantry)

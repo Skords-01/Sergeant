@@ -73,7 +73,7 @@ export function Overview({
   onCategoryClick,
   showBalance = true,
 }) {
-  const { realTx, loadingTx, clientInfo, accounts, transactions, syncState, lastUpdated, error: monoError, refresh: monoRefresh } = mono;
+  const { realTx, loadingTx, clientInfo, accounts, transactions, syncState, lastUpdated, error: monoError, refresh: monoRefresh, privatTotal = 0 } = mono;
   const {
     budgets,
     subscriptions,
@@ -119,10 +119,11 @@ export function Overview({
   const projectedSpend =
     daysPassed > 0 ? (spent / daysPassed) * daysInMonth : 0;
 
-  const { balance: monoTotal, debt: monoTotalDebt } = useMemo(
+  const { balance: monoOnlyTotal, debt: monoTotalDebt } = useMemo(
     () => getMonoTotals(accounts, hiddenAccounts),
     [accounts, hiddenAccounts],
   );
+  const monoTotal = monoOnlyTotal + privatTotal;
   const manualDebtTotal = useMemo(
     () =>
       manualDebts.reduce((s, d) => s + calcDebtRemaining(d, transactions), 0),

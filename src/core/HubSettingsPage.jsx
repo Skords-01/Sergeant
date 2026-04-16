@@ -22,6 +22,8 @@ import { useStorage as useFinykStorage } from "../modules/finyk/hooks/useStorage
 import { getAccountLabel } from "../modules/finyk/utils.js";
 import { useToast } from "@shared/hooks/useToast.jsx";
 
+const PRIVAT_ENABLED = false;
+
 function safeParseLS(key, fallback) {
   try {
     const raw = localStorage.getItem(key);
@@ -505,6 +507,91 @@ function FinykSection() {
   const [confirmKind, setConfirmKind] = useState(null);
   const [newCategoryLabel, setNewCategoryLabel] = useState("");
 
+  const [privatIdInput, setPrivatIdInput] = useState(() => {
+    try {
+      return localStorage.getItem("finyk_privat_id") || sessionStorage.getItem("finyk_privat_id") || "";
+    } catch { return ""; }
+  });
+  const [privatTokenInput, setPrivatTokenInput] = useState(() => {
+    try {
+      return localStorage.getItem("finyk_privat_token") || sessionStorage.getItem("finyk_privat_token") || "";
+    } catch { return ""; }
+  });
+  const [showPrivatToken, setShowPrivatToken] = useState(false);
+  const [rememberPrivat, setRememberPrivat] = useState(() => {
+    try {
+      return !!localStorage.getItem("finyk_privat_id");
+    } catch { return false; }
+  });
+  const [privatError, setPrivatError] = useState("");
+  const [privatConnecting, setPrivatConnecting] = useState(false);
+  const [privatConnected, setPrivatConnected] = useState(() => {
+    try {
+      return !!(localStorage.getItem("finyk_privat_id") || sessionStorage.getItem("finyk_privat_id"));
+    } catch { return false; }
+  });
+  const [confirmDisconnectPrivat, setConfirmDisconnectPrivat] = useState(false);
+
+  const connectPrivat = async () => {
+    const cleanId = privatIdInput.trim();
+    const cleanToken = privatTokenInput.trim();
+    if (!cleanId || !cleanToken) {
+      setPrivatError("Введіть Merchant ID та токен");
+      return;
+    }
+    setPrivatConnecting(true);
+    setPrivatError("");
+    try {
+      const { apiUrl } = await import("@shared/lib/apiUrl.js");
+      const params = new URLSearchParams({
+        path: "/statements/balance/final",
+        country: "UA",
+        showRest: "true",
+      });
+      const res = await fetch(`${apiUrl("/api/privat")}?${params}`, {
+        headers: { "X-Privat-Id": cleanId, "X-Privat-Token": cleanToken },
+      });
+      if (!res.ok) {
+        const payload = await res.json().catch(() => ({}));
+        setPrivatError(payload?.error || `Помилка ${res.status}`);
+        return;
+      }
+      if (rememberPrivat) {
+        localStorage.setItem("finyk_privat_id", cleanId);
+        localStorage.setItem("finyk_privat_token", cleanToken);
+        sessionStorage.removeItem("finyk_privat_id");
+        sessionStorage.removeItem("finyk_privat_token");
+      } else {
+        sessionStorage.setItem("finyk_privat_id", cleanId);
+        sessionStorage.setItem("finyk_privat_token", cleanToken);
+        localStorage.removeItem("finyk_privat_id");
+        localStorage.removeItem("finyk_privat_token");
+      }
+      setPrivatConnected(true);
+      window.location.reload();
+    } catch (e) {
+      setPrivatError(e?.message || "Помилка підключення");
+    } finally {
+      setPrivatConnecting(false);
+    }
+  };
+
+  const disconnectPrivat = () => {
+    try {
+      localStorage.removeItem("finyk_privat_id");
+      localStorage.removeItem("finyk_privat_token");
+      sessionStorage.removeItem("finyk_privat_id");
+      sessionStorage.removeItem("finyk_privat_token");
+      localStorage.removeItem("finyk_privat_tx_cache");
+      localStorage.removeItem("finyk_privat_balance_cache");
+    } catch {}
+    setPrivatConnected(false);
+    setPrivatIdInput("");
+    setPrivatTokenInput("");
+    setConfirmDisconnectPrivat(false);
+    window.location.reload();
+  };
+
   const rawCache = safeParseLS("finyk_info_cache", null);
   const infoData = rawCache?.info ?? rawCache;
   const token = (() => {
@@ -696,6 +783,104 @@ function FinykSection() {
           </Button>
         )}
       </SettingsSubGroup>
+
+      {PRIVAT_ENABLED && (
+      <SettingsSubGroup title="ПриватБанк (Приват24 для підприємців)">
+        {confirmDisconnectPrivat && (
+          <ConfirmModal
+            open
+            title="Від'єднати ПриватБанк?"
+            body="Credentials та кеш транзакцій ПриватБанку буде видалено з цього браузера."
+            confirmLabel="Від'єднати"
+            danger
+            onCancel={() => setConfirmDisconnectPrivat(false)}
+            onConfirm={disconnectPrivat}
+          />
+        )}
+        {privatConnected ? (
+          <div className="space-y-3">
+            <div className="flex items-center gap-3 p-3 bg-bg border border-green-500/30 rounded-xl">
+              <div className="w-9 h-9 rounded-xl bg-green-500/12 border border-green-500/20 flex items-center justify-center text-base shrink-0">
+                🏦
+              </div>
+              <div>
+                <div className="text-sm font-semibold text-text">ПриватБанк підключено</div>
+                <div className="text-xs text-subtle mt-0.5 font-mono truncate">
+                  ID: {(privatIdInput || "").slice(0, 6)}••••
+                </div>
+              </div>
+            </div>
+            <Button
+              variant="danger"
+              className="w-full h-11"
+              onClick={() => setConfirmDisconnectPrivat(true)}
+            >
+              Від'єднати ПриватБанк
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <p className="text-[11px] text-subtle leading-snug">
+              API Приват24 для підприємців. Merchant ID та токен знаходяться у Приват24 Бізнес → Налаштування → API.
+            </p>
+            <div>
+              <label className="text-xs text-muted mb-1 block">Merchant ID</label>
+              <input
+                type="text"
+                value={privatIdInput}
+                onChange={(e) => setPrivatIdInput(e.target.value)}
+                placeholder="Ваш Merchant ID"
+                autoComplete="off"
+                className="w-full h-11 rounded-xl border border-line bg-panelHi px-3 text-sm text-text outline-none focus:border-primary/50 transition-colors"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-muted mb-1 block">Токен / пароль</label>
+              <div className="relative">
+                <input
+                  type={showPrivatToken ? "text" : "password"}
+                  value={privatTokenInput}
+                  onChange={(e) => setPrivatTokenInput(e.target.value)}
+                  placeholder="Merchant token"
+                  autoComplete="off"
+                  className="w-full h-11 rounded-xl border border-line bg-panelHi px-3 pr-10 text-sm text-text outline-none focus:border-primary/50 transition-colors"
+                  onKeyDown={(e) => e.key === "Enter" && connectPrivat()}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPrivatToken((v) => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-subtle hover:text-text"
+                  aria-label={showPrivatToken ? "Приховати" : "Показати"}
+                >
+                  {showPrivatToken ? "🙈" : "👁"}
+                </button>
+              </div>
+            </div>
+            <label className="flex items-center gap-2.5 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                className="w-4 h-4 rounded accent-emerald-600 cursor-pointer"
+                checked={rememberPrivat}
+                onChange={(e) => setRememberPrivat(e.target.checked)}
+              />
+              <span className="text-sm text-muted">Запам'ятати на цьому пристрої</span>
+            </label>
+            {privatError && (
+              <p className="text-sm text-danger bg-danger/10 rounded-xl px-3 py-2">
+                {privatError}
+              </p>
+            )}
+            <Button
+              className="w-full h-11"
+              onClick={connectPrivat}
+              disabled={privatConnecting}
+            >
+              {privatConnecting ? "Підключення..." : "Підключити ПриватБанк"}
+            </Button>
+          </div>
+        )}
+      </SettingsSubGroup>
+      )}
     </SettingsGroup>
   );
 }
