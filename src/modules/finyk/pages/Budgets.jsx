@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "@shared/components/ui/Button";
 import { Skeleton } from "@shared/components/ui/Skeleton";
 import { EmptyState } from "@shared/components/ui/EmptyState";
@@ -59,8 +59,8 @@ export function Budgets({ mono, storage }) {
       txSplits,
       customCategories,
     );
-  const limitBudgets = budgets.filter((b) => b.type === "limit");
-  const goalBudgets = budgets.filter((b) => b.type === "goal");
+  const limitBudgets = useMemo(() => budgets.filter((b) => b.type === "limit"), [budgets]);
+  const goalBudgets = useMemo(() => budgets.filter((b) => b.type === "goal"), [budgets]);
   const planIncome = Number(monthlyPlan?.income || 0);
   const planExpense = Number(monthlyPlan?.expense || 0);
   const planSavings = Number(monthlyPlan?.savings || 0);
@@ -80,10 +80,126 @@ export function Budgets({ mono, storage }) {
   const [aiExplanations, setAiExplanations] = useState({});
   const [aiLoading, setAiLoading] = useState({});
 
+  const [proactiveAdvice, setProactiveAdvice] = useState({});
+  const [proactiveLoading, setProactiveLoading] = useState({});
+  const fetchedInSession = useRef(new Set());
+
+  const PROACTIVE_CACHE_PREFIX = "finyk_proactive_v1_";
+  const PROACTIVE_CACHE_TTL = 24 * 60 * 60 * 1000;
+
+  const getAdviceCache = useCallback((categoryId, monthKey) => {
+    try {
+      const raw = localStorage.getItem(PROACTIVE_CACHE_PREFIX + categoryId + "_" + monthKey);
+      if (!raw) return null;
+      const { text, ts } = JSON.parse(raw);
+      if (Date.now() - ts > PROACTIVE_CACHE_TTL) return null;
+      return text;
+    } catch {
+      return null;
+    }
+  }, []);
+
+  const setAdviceCache = useCallback((categoryId, monthKey, text) => {
+    try {
+      localStorage.setItem(
+        PROACTIVE_CACHE_PREFIX + categoryId + "_" + monthKey,
+        JSON.stringify({ text, ts: Date.now() }),
+      );
+    } catch {}
+  }, []);
+
   const forecasts = useMemo(() => {
     if (limitBudgets.length === 0) return [];
     return calcForecast(statTx, limitBudgets, now, txCategories, txSplits, customCategories);
   }, [statTx, limitBudgets, txCategories, txSplits, customCategories, todayKey]);
+
+  const atRiskKey = useMemo(() => {
+    if (forecasts.length === 0) return "";
+    const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    const ids = forecasts
+      .filter((fc) => fc.overLimit || (fc.limit > 0 && fc.spent / fc.limit >= 0.8))
+      .map((fc) => fc.categoryId)
+      .sort();
+    return ids.length > 0 ? `${monthKey}|${ids.join(",")}` : "";
+  }, [forecasts, todayKey]);
+
+  useEffect(() => {
+    if (!atRiskKey) return;
+
+    const [monthKey, idsStr] = atRiskKey.split("|");
+    const atRiskIds = idsStr ? idsStr.split(",").filter(Boolean) : [];
+
+    const forecastByCategory = {};
+    for (const fc of forecasts) forecastByCategory[fc.categoryId] = fc;
+
+    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    const daysRemaining = daysInMonth - now.getDate();
+
+    const toFetch = [];
+    const preloaded = {};
+
+    for (const categoryId of atRiskIds) {
+      const sessionKey = `${monthKey}:${categoryId}`;
+      if (fetchedInSession.current.has(sessionKey)) continue;
+      const cached = getAdviceCache(categoryId, monthKey);
+      if (cached) {
+        preloaded[categoryId] = cached;
+        fetchedInSession.current.add(sessionKey);
+      } else {
+        toFetch.push(categoryId);
+      }
+    }
+
+    if (Object.keys(preloaded).length > 0) {
+      setProactiveAdvice((prev) => ({ ...prev, ...preloaded }));
+    }
+
+    if (toFetch.length === 0) return;
+
+    for (const id of toFetch) fetchedInSession.current.add(`${monthKey}:${id}`);
+
+    const loadingMap = {};
+    for (const id of toFetch) loadingMap[id] = true;
+    setProactiveLoading((prev) => ({ ...prev, ...loadingMap }));
+
+    Promise.all(
+      toFetch.map(async (categoryId) => {
+        const b = limitBudgets.find((x) => x.categoryId === categoryId);
+        if (!b) return;
+        const cat = resolveExpenseCategoryMeta(categoryId, customCategories);
+        const catLabel = cat?.label || categoryId;
+        const spent = calcSpent(b);
+        const remaining = Math.max(0, b.limit - spent);
+        const pct = b.limit > 0 ? Math.round((spent / b.limit) * 100) : 0;
+        const fc = forecastByCategory[categoryId];
+        const forecastNote = fc
+          ? ` Прогноз на кінець місяця: ${fc.forecast.toLocaleString("uk-UA")} ₴ (${fc.overLimit ? `перевищення на ${fc.overPercent}%` : "в межах ліміту"}).`
+          : "";
+        const prompt = `Категорія бюджету: ${catLabel}. Витрачено: ${spent.toLocaleString("uk-UA")} ₴ (${pct}% від ліміту ${b.limit.toLocaleString("uk-UA")} ₴). Залишок: ${remaining.toLocaleString("uk-UA")} ₴. До кінця місяця ${daysRemaining} днів.${forecastNote} Дай конкретну коротку пораду (1-2 речення) що зробити, щоб не перевищити ліміт. Відповідь виключно українською.`;
+        try {
+          const res = await fetch(apiUrl("/api/chat"), {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              context: `[Проактивна AI-порада] Категорія: ${catLabel}, витрачено: ${spent} ₴, ліміт: ${b.limit} ₴, залишок: ${remaining} ₴, прогноз: ${fc?.forecast ?? "—"} ₴, днів до кінця місяця: ${daysRemaining}`,
+              messages: [{ role: "user", content: prompt }],
+            }),
+          });
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const data = await res.json();
+          const text = data.text || null;
+          if (text) {
+            setAdviceCache(categoryId, monthKey, text);
+            setProactiveAdvice((prev) => ({ ...prev, [categoryId]: text }));
+          }
+        } catch {
+          fetchedInSession.current.delete(`${monthKey}:${categoryId}`);
+        } finally {
+          setProactiveLoading((prev) => ({ ...prev, [categoryId]: false }));
+        }
+      }),
+    );
+  }, [atRiskKey]);
 
   const explainCategory = async (categoryId, catLabel, spent, forecast, limit) => {
     if (aiLoading[categoryId]) return;
@@ -321,6 +437,8 @@ export function Budgets({ mono, storage }) {
           const warnLimit = pctRaw >= 80 && !overLimit;
           const remaining = Math.max(0, b.limit - bspent);
           const globalIdx = budgets.indexOf(b);
+          const forecastForCat = forecasts.find((fc) => fc.categoryId === b.categoryId);
+          const showProactiveAdvice = pctRaw >= 80 || (forecastForCat && forecastForCat.overLimit);
           const isEditing = editIdx === globalIdx;
           return (
             <div
@@ -423,6 +541,19 @@ export function Budgets({ mono, storage }) {
                       ? `Перевищено на ${(bspent - b.limit).toLocaleString("uk-UA")} ₴`
                       : `Залишок ${remaining.toLocaleString("uk-UA")} ₴ · ${pct}% використано`}
                   </div>
+                  {showProactiveAdvice && (
+                    proactiveLoading[b.categoryId] ? (
+                      <div className="mt-3 space-y-1.5">
+                        <Skeleton className="h-3 w-full rounded" />
+                        <Skeleton className="h-3 w-4/5 rounded" />
+                      </div>
+                    ) : proactiveAdvice[b.categoryId] ? (
+                      <div className="mt-3 flex gap-2 items-start bg-bg rounded-xl px-3 py-2.5">
+                        <span className="text-base leading-none mt-0.5 shrink-0">✨</span>
+                        <p className="text-xs text-text leading-relaxed">{proactiveAdvice[b.categoryId]}</p>
+                      </div>
+                    ) : null
+                  )}
                 </>
               )}
             </div>
