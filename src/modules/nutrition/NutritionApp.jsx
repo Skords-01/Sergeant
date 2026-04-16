@@ -645,6 +645,9 @@ export default function NutritionApp({ onBackToHub, pwaAction, onPwaActionConsum
                   log={log.nutritionLog}
                   prefs={prefs}
                   onGoToLog={() => setActivePageAndHash("log")}
+                  onFetchDayHint={fetchDayHint}
+                  dayHintText={dayHintText}
+                  dayHintBusy={dayHintBusy}
                   onAddMeal={() => {
                     log.setSelectedDate(todayISODate());
                     setActivePageAndHash("log");

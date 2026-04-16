@@ -141,6 +141,7 @@ export function LogCard({
   const importRef = useRef(null);
   const [importMode, setImportMode] = useState("merge");
   const [statsRange, setStatsRange] = useState(30);
+  const [weekOpen, setWeekOpen] = useState(false);
 
   const macros = getDayMacros(log, selectedDate);
   const dayData = log[selectedDate];
@@ -372,96 +373,45 @@ export function LogCard({
         </div>
       )}
 
-      <div className="rounded-2xl border border-line/50 bg-panel/40 px-3 py-3">
-        <div className="text-[10px] font-bold text-subtle uppercase tracking-widest mb-2">
-          Тиждень (до обраної дати)
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-[11px] text-left">
-            <thead>
-              <tr className="text-subtle">
-                <th className="py-1 pr-2">Дата</th>
-                <th className="py-1 pr-2">Ккал</th>
-                <th className="py-1 pr-2">Б</th>
-                <th className="py-1 pr-2">Ж</th>
-                <th className="py-1">В</th>
-              </tr>
-            </thead>
-            <tbody>
-              {weekRows.map((r) => (
-                <tr key={r.date} className="border-t border-line/40">
-                  <td className="py-1 pr-2 font-mono text-[10px]">
-                    {r.date.slice(5)}
-                  </td>
-                  <td className="py-1 pr-2">{Math.round(r.kcal)}</td>
-                  <td className="py-1 pr-2">{Math.round(r.protein_g)}</td>
-                  <td className="py-1 pr-2">{Math.round(r.fat_g)}</td>
-                  <td className="py-1">{Math.round(r.carbs_g)}</td>
+      <button
+        type="button"
+        onClick={() => setWeekOpen((v) => !v)}
+        className="flex items-center gap-2 text-[10px] font-bold text-subtle uppercase tracking-widest w-full text-left py-1"
+      >
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={cn("transition-transform shrink-0", weekOpen ? "rotate-90" : "")}>
+          <polyline points="9 18 15 12 9 6" />
+        </svg>
+        Журнал за тиждень
+      </button>
+
+      {weekOpen && (
+        <div className="rounded-2xl border border-line/50 bg-panel/40 px-3 py-3">
+          <div className="overflow-x-auto">
+            <table className="w-full text-[11px] text-left">
+              <thead>
+                <tr className="text-subtle">
+                  <th className="py-1 pr-2">Дата</th>
+                  <th className="py-1 pr-2">Ккал</th>
+                  <th className="py-1 pr-2">Б</th>
+                  <th className="py-1 pr-2">Ж</th>
+                  <th className="py-1">В</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {weekRows.map((r) => (
+                  <tr key={r.date} className="border-t border-line/40">
+                    <td className="py-1 pr-2 font-mono text-[10px]">{r.date.slice(5)}</td>
+                    <td className="py-1 pr-2">{Math.round(r.kcal)}</td>
+                    <td className="py-1 pr-2">{Math.round(r.protein_g)}</td>
+                    <td className="py-1 pr-2">{Math.round(r.fat_g)}</td>
+                    <td className="py-1">{Math.round(r.carbs_g)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
-
-      <div className="rounded-2xl border border-line/50 bg-panel/40 px-3 py-3 space-y-2">
-        <div className="text-[10px] font-bold text-subtle uppercase tracking-widest">
-          Підказка AI за день
-        </div>
-        <Button
-          type="button"
-          variant="ghost"
-          className="text-xs h-9 w-full sm:w-auto"
-          disabled={dayHintBusy}
-          onClick={onFetchDayHint}
-        >
-          {dayHintBusy ? "…" : "Отримати підказку"}
-        </Button>
-        {dayHintText && (
-          <p className="text-sm text-text leading-snug border border-line/30 rounded-xl p-3 bg-bg/80">
-            {dayHintText}
-          </p>
-        )}
-      </div>
-
-      <div className="rounded-2xl border border-line/50 bg-panel/40 px-3 py-3 space-y-2">
-        <div className="text-[10px] font-bold text-subtle uppercase tracking-widest">
-          Швидкі цілі (КБЖВ)
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {GOAL_PRESETS.map((preset) => (
-            <button
-              key={preset.id}
-              type="button"
-              onClick={() => applyGoalPreset(preset)}
-              className="px-3 py-1.5 rounded-xl text-xs font-semibold border border-line bg-panelHi hover:border-nutrition/50"
-            >
-              {preset.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="rounded-2xl border border-line/50 bg-panel/40 px-3 py-3">
-        <div className="text-[10px] font-bold text-subtle uppercase tracking-widest mb-2">
-          Цілі на день (необов’язково)
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-          {MACRO_TILES.map(({ label, targetKey }) => (
-            <div key={targetKey}>
-              <div className="text-[10px] text-subtle mb-0.5">{label}</div>
-              <Input
-                value={prefs[targetKey] != null ? String(prefs[targetKey]) : ""}
-                onChange={(e) => setTarget(targetKey, e.target.value)}
-                inputMode="decimal"
-                placeholder="—"
-                aria-label={`Ціль: ${label}`}
-                className="h-9 text-sm"
-              />
-            </div>
-          ))}
-        </div>
-      </div>
+      )}
 
       <div className="rounded-2xl border border-line/50 bg-panel/40 px-3 py-3 space-y-3">
         <div className="flex items-center justify-between gap-2">
@@ -585,43 +535,6 @@ export function LogCard({
             )}
           </div>
         </div>
-      </div>
-
-      <div className="grid grid-cols-4 gap-2">
-        {MACRO_TILES.map(({ key, label, color, targetKey }) => {
-          const target = prefs[targetKey];
-          const hasTarget = target != null && target > 0;
-          const cur = macros[key];
-          return (
-            <div
-              key={key}
-              className="bg-panelHi rounded-2xl px-2 py-3 flex flex-col items-center gap-1"
-            >
-              <span
-                className={cn(
-                  "text-lg font-extrabold tabular-nums leading-none",
-                  color,
-                )}
-              >
-                {Math.round(cur)}
-              </span>
-              <span className="text-[10px] font-bold text-subtle uppercase tracking-widest">
-                {label}
-              </span>
-              {hasTarget && (
-                <div
-                  className="w-full mt-1 h-1 rounded-full bg-line/80 overflow-hidden"
-                  title={`${Math.round(cur)} / ${Math.round(target)}`}
-                >
-                  <div
-                    className="h-full rounded-full bg-nutrition/90 transition-[width]"
-                    style={{ width: `${pct(cur, target)}%` }}
-                  />
-                </div>
-              )}
-            </div>
-          );
-        })}
       </div>
 
       {meals.length === 0 ? (

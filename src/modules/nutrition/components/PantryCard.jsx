@@ -206,12 +206,11 @@ export function PantryCard({
                 type="button"
                 onClick={onScanBarcode}
                 disabled={busy}
-                className="h-8 px-3 rounded-xl text-xs font-semibold bg-nutrition/10 text-nutrition border border-nutrition/30 hover:bg-nutrition/20 transition-colors disabled:opacity-50 flex items-center gap-1.5"
+                className="w-8 h-8 rounded-xl bg-nutrition/10 text-nutrition border border-nutrition/30 hover:bg-nutrition/20 transition-colors disabled:opacity-50 flex items-center justify-center text-base"
                 aria-label="Сканувати штрих-код"
                 title="Сканувати штрих-код"
               >
-                <span aria-hidden>📷</span>
-                Сканувати штрих-код
+                📷
               </button>
             )}
             <div className="flex rounded-xl bg-panelHi border border-line/50 p-0.5">

@@ -85,7 +85,7 @@ function MiniBar({ rows, targetKcal }) {
   );
 }
 
-export function NutritionDashboard({ log, prefs, onGoToLog, onAddMeal }) {
+export function NutritionDashboard({ log, prefs, onGoToLog, onAddMeal, onFetchDayHint, dayHintText, dayHintBusy }) {
   const today = todayISO();
 
   const macros = useMemo(() => getDayMacros(log, today), [log, today]);
@@ -199,6 +199,27 @@ export function NutritionDashboard({ log, prefs, onGoToLog, onAddMeal }) {
         </div>
         <MiniBar rows={weekRows} targetKcal={prefs.dailyTargetKcal || 0} />
       </Card>
+
+      {typeof onFetchDayHint === "function" && (
+        <Card className="p-4">
+          <div className="flex items-center justify-between gap-3 mb-2">
+            <div className="text-sm font-semibold text-text">Підказка AI</div>
+            <button
+              type="button"
+              onClick={onFetchDayHint}
+              disabled={dayHintBusy}
+              className="shrink-0 px-3 h-8 rounded-xl text-xs font-semibold bg-nutrition/10 text-nutrition border border-nutrition/30 hover:bg-nutrition/20 transition-colors disabled:opacity-50"
+            >
+              {dayHintBusy ? "…" : "Отримати"}
+            </button>
+          </div>
+          {dayHintText ? (
+            <p className="text-sm text-text leading-snug">{dayHintText}</p>
+          ) : (
+            <p className="text-xs text-subtle">Аналіз харчування за сьогодні від AI</p>
+          )}
+        </Card>
+      )}
     </div>
   );
 }
