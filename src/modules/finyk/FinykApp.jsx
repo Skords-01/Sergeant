@@ -134,6 +134,13 @@ export default function App({ onBackToHub, pwaAction, onPwaActionConsumed } = {}
   const [page, navigate] = useHashRouter();
   const [tokenInput, setTokenInput] = useState("");
   const [showToken, setShowToken] = useState(false);
+  const [rememberToken, setRememberToken] = useState(() => {
+    try {
+      return !!localStorage.getItem("finyk_token_remembered");
+    } catch {
+      return false;
+    }
+  });
   const [categoryFilter, setCategoryFilter] = useState(null);
   const [showBalance, setShowBalance] = useState(() => {
     try {
@@ -256,7 +263,7 @@ export default function App({ onBackToHub, pwaAction, onPwaActionConsumed } = {}
                 value={tokenInput}
                 onChange={(e) => setTokenInput(e.target.value)}
                 onKeyDown={(e) =>
-                  e.key === "Enter" && connect(tokenInput.trim())
+                  e.key === "Enter" && connect(tokenInput.trim(), false, rememberToken)
                 }
                 autoComplete="off"
               />
@@ -334,6 +341,16 @@ export default function App({ onBackToHub, pwaAction, onPwaActionConsumed } = {}
               </Button>
             </div>
 
+            <label className="flex items-center gap-2.5 mt-3 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                className="w-4 h-4 rounded accent-emerald-600 cursor-pointer"
+                checked={rememberToken}
+                onChange={(e) => setRememberToken(e.target.checked)}
+              />
+              <span className="text-sm text-muted">Запам'ятати токен на цьому пристрої</span>
+            </label>
+
             {error && (
               <p className="mt-3 text-sm text-danger bg-danger/10 rounded-xl px-3 py-2">
                 {error}
@@ -342,7 +359,7 @@ export default function App({ onBackToHub, pwaAction, onPwaActionConsumed } = {}
 
             <Button
               className="mt-4 w-full h-12 min-h-[48px] text-base !bg-emerald-600 !text-white hover:!bg-emerald-700 border-0 shadow-md"
-              onClick={() => connect(tokenInput.trim())}
+              onClick={() => connect(tokenInput.trim(), false, rememberToken)}
               disabled={connecting}
             >
               {connecting ? "Підключення..." : "Підключити"}

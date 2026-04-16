@@ -13,6 +13,7 @@ function notifyHubFinykCache() {
 const CACHE_KEY = "finyk_tx_cache";
 const INFO_CACHE_KEY = "finyk_info_cache";
 const TOKEN_KEY = "finyk_token";
+const REMEMBER_KEY = "finyk_token_remembered";
 
 function reportSilentError(scope, error) {
   console.warn(`[finyk] ${scope}`, error);
@@ -184,6 +185,9 @@ async function fetchStatementWithRetry(tok, accId, from, to, maxAttempts = 3) {
 export function useMonobank() {
   const [token, setToken] = useState(() => {
     try {
+      const rememberedToken = localStorage.getItem(REMEMBER_KEY);
+      if (rememberedToken) return rememberedToken;
+
       const sessionToken = sessionStorage.getItem(TOKEN_KEY);
       if (sessionToken) return sessionToken;
 
@@ -370,7 +374,7 @@ export function useMonobank() {
     }
   };
 
-  const connect = async (tok, forceRefresh = false) => {
+  const connect = async (tok, forceRefresh = false, remember = false) => {
     setConnecting(true);
     setError("");
 
@@ -425,6 +429,11 @@ export function useMonobank() {
       try {
         sessionStorage.setItem(TOKEN_KEY, cleanToken);
         localStorage.removeItem(TOKEN_KEY);
+        if (remember) {
+          localStorage.setItem(REMEMBER_KEY, cleanToken);
+        } else {
+          localStorage.removeItem(REMEMBER_KEY);
+        }
       } catch (e) {
         reportSilentError("save token", e);
       }
@@ -591,6 +600,7 @@ export function useMonobank() {
     try {
       sessionStorage.removeItem(TOKEN_KEY);
       localStorage.removeItem(TOKEN_KEY); // legacy fallback
+      localStorage.removeItem(REMEMBER_KEY);
       localStorage.removeItem("finto_token");
       localStorage.removeItem(CACHE_KEY);
       localStorage.removeItem(LAST_GOOD_KEY);
