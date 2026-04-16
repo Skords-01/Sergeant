@@ -122,7 +122,7 @@ function normalizeStoredMessages(raw) {
   if (!Array.isArray(raw) || raw.length === 0) {
     return [
       makeAssistantMsg(
-        "Привіт! Запитуй про фінанси чи тренування. Можу також змінювати категорії, додавати борги тощо.",
+        "Привіт! Я твій особистий асистент. Запитуй про фінанси (Фінік), тренування (Фізрук), звички (Рутина) або харчування. Можу також змінювати категорії, додавати борги, відмічати звички та записувати прийоми їжі.",
       ),
     ];
   }
@@ -449,6 +449,163 @@ function buildContext() {
     }
   } catch {}
 
+  // ── Рутина (звички) ──────────────────────────────────────────
+  try {
+    const routineState = ls("hub_routine_v1", null);
+    if (routineState) {
+      const habits = (routineState.habits || []).filter((h) => !h.archived);
+      const completions = routineState.completions || {};
+      const todayKey = [
+        now.getFullYear(),
+        String(now.getMonth() + 1).padStart(2, "0"),
+        String(now.getDate()).padStart(2, "0"),
+      ].join("-");
+
+      if (habits.length > 0) {
+        const todayDone = habits.filter(
+          (h) =>
+            Array.isArray(completions[h.id]) &&
+            completions[h.id].includes(todayKey),
+        );
+        lines.push(
+          `[Рутина] ${habits.length} активних звичок, виконано сьогодні: ${todayDone.length} з ${habits.length}`,
+        );
+
+        const habitDetails = habits
+          .map((h) => {
+            const done =
+              Array.isArray(completions[h.id]) &&
+              completions[h.id].includes(todayKey);
+            return `${h.emoji || ""} ${h.name} (id:${h.id}): ${done ? "✓" : "✗"}`;
+          })
+          .join(", ");
+        lines.push(`[Рутина сьогодні] ${habitDetails}`);
+
+        const dow = (now.getDay() + 6) % 7;
+        let weekDone = 0;
+        let weekTotal = 0;
+        for (let i = 0; i <= dow; i++) {
+          const d = new Date(now);
+          d.setDate(now.getDate() - dow + i);
+          const dk = [
+            d.getFullYear(),
+            String(d.getMonth() + 1).padStart(2, "0"),
+            String(d.getDate()).padStart(2, "0"),
+          ].join("-");
+          weekTotal += habits.length;
+          for (const h of habits) {
+            if (
+              Array.isArray(completions[h.id]) &&
+              completions[h.id].includes(dk)
+            )
+              weekDone++;
+          }
+        }
+        const weekPct =
+          weekTotal > 0 ? Math.round((weekDone / weekTotal) * 100) : 0;
+        lines.push(
+          `[Рутина тиждень] ${weekPct}% виконання (${weekDone} з ${weekTotal})`,
+        );
+
+        let streak = 0;
+        const sd = new Date(now);
+        sd.setDate(sd.getDate() - 1);
+        for (let i = 0; i < 365; i++) {
+          const dk = [
+            sd.getFullYear(),
+            String(sd.getMonth() + 1).padStart(2, "0"),
+            String(sd.getDate()).padStart(2, "0"),
+          ].join("-");
+          if (
+            habits.every(
+              (h) =>
+                Array.isArray(completions[h.id]) &&
+                completions[h.id].includes(dk),
+            )
+          ) {
+            streak++;
+          } else {
+            break;
+          }
+          sd.setDate(sd.getDate() - 1);
+        }
+        if (streak > 0)
+          lines.push(`[Рутина серія] ${streak} днів поспіль (всі звички)`);
+      }
+    }
+  } catch {}
+
+  // ── Харчування ────────────────────────────────────────────────
+  try {
+    const nutritionLog = ls("nutrition_log_v1", {});
+    const nutritionPrefs = ls("nutrition_prefs_v1", null);
+    const todayKey = [
+      now.getFullYear(),
+      String(now.getMonth() + 1).padStart(2, "0"),
+      String(now.getDate()).padStart(2, "0"),
+    ].join("-");
+    const todayData = nutritionLog[todayKey];
+
+    if (todayData) {
+      const meals = Array.isArray(todayData.meals) ? todayData.meals : [];
+      const kcal = meals.reduce((s, m) => s + (m?.macros?.kcal ?? 0), 0);
+      const protein = meals.reduce(
+        (s, m) => s + (m?.macros?.protein_g ?? 0),
+        0,
+      );
+      const fat = meals.reduce((s, m) => s + (m?.macros?.fat_g ?? 0), 0);
+      const carbs = meals.reduce((s, m) => s + (m?.macros?.carbs_g ?? 0), 0);
+      lines.push(
+        `[Харчування сьогодні] ${Math.round(kcal)} ккал | білок: ${Math.round(protein)}г | жири: ${Math.round(fat)}г | вуглеводи: ${Math.round(carbs)}г | прийомів: ${meals.length}`,
+      );
+      if (meals.length > 0) {
+        const mealList = meals
+          .slice(0, 6)
+          .map(
+            (m) =>
+              `${m.name || "?"} (${Math.round(m?.macros?.kcal ?? 0)} ккал)`,
+          )
+          .join(", ");
+        lines.push(`[Харчування прийоми] ${mealList}`);
+      }
+    }
+
+    if (nutritionPrefs) {
+      const tKcal = nutritionPrefs.dailyTargetKcal;
+      const tProt =
+        nutritionPrefs.dailyTargetProtein_g || nutritionPrefs.dailyTargetProtein;
+      if (tKcal || tProt) {
+        lines.push(
+          `[Харчування ціль] ${tKcal ? `${tKcal} ккал/день` : ""}${tKcal && tProt ? ", " : ""}${tProt ? `білок: ${tProt}г/день` : ""}`,
+        );
+      }
+    }
+
+    const weekKcalArr = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now);
+      d.setDate(now.getDate() - i);
+      const dk = [
+        d.getFullYear(),
+        String(d.getMonth() + 1).padStart(2, "0"),
+        String(d.getDate()).padStart(2, "0"),
+      ].join("-");
+      const dayMeals = Array.isArray(nutritionLog[dk]?.meals)
+        ? nutritionLog[dk].meals
+        : [];
+      const k = dayMeals.reduce((s, m) => s + (m?.macros?.kcal ?? 0), 0);
+      if (k > 0) weekKcalArr.push(k);
+    }
+    if (weekKcalArr.length > 0) {
+      const avg = Math.round(
+        weekKcalArr.reduce((a, b) => a + b, 0) / weekKcalArr.length,
+      );
+      lines.push(
+        `[Харчування тиждень] середньо ${avg} ккал/день (за ${weekKcalArr.length} днів)`,
+      );
+    }
+  } catch {}
+
   return lines.length > 1
     ? lines.join("\n")
     : "Даних немає. Monobank не підключено.";
@@ -556,6 +713,55 @@ function executeAction(action) {
         if (savings != null && savings !== "") next.savings = String(savings);
         lsSet("finyk_monthly_plan", next);
         return `Фінплан місяця оновлено: дохід ${next.income ?? "—"} / витрати ${next.expense ?? "—"} / заощадження ${next.savings ?? "—"} грн/міс`;
+      }
+      case "mark_habit_done": {
+        const { habit_id, date: habitDate } = action.input;
+        const routineState = ls("hub_routine_v1", { habits: [], completions: {} });
+        const completions = { ...(routineState.completions || {}) };
+        const now2 = new Date();
+        const targetDate =
+          habitDate ||
+          [
+            now2.getFullYear(),
+            String(now2.getMonth() + 1).padStart(2, "0"),
+            String(now2.getDate()).padStart(2, "0"),
+          ].join("-");
+        const arr = Array.isArray(completions[habit_id])
+          ? completions[habit_id].slice()
+          : [];
+        if (!arr.includes(targetDate)) arr.push(targetDate);
+        completions[habit_id] = arr;
+        lsSet("hub_routine_v1", { ...routineState, completions });
+        const habit = (routineState.habits || []).find(
+          (h) => h.id === habit_id,
+        );
+        return `Звичку "${habit?.name || habit_id}" відмічено як виконану (${targetDate})`;
+      }
+      case "log_meal": {
+        const { name, kcal, protein_g, fat_g, carbs_g } = action.input;
+        const nutritionLog = ls("nutrition_log_v1", {});
+        const now3 = new Date();
+        const todayKey = [
+          now3.getFullYear(),
+          String(now3.getMonth() + 1).padStart(2, "0"),
+          String(now3.getDate()).padStart(2, "0"),
+        ].join("-");
+        const dayData = { ...(nutritionLog[todayKey] || { meals: [] }) };
+        const meals = Array.isArray(dayData.meals) ? dayData.meals.slice() : [];
+        meals.push({
+          id: `m_${Date.now()}`,
+          name: name || "Без назви",
+          macros: {
+            kcal: Number(kcal) || 0,
+            protein_g: Number(protein_g) || 0,
+            fat_g: Number(fat_g) || 0,
+            carbs_g: Number(carbs_g) || 0,
+          },
+          addedAt: new Date().toISOString(),
+        });
+        nutritionLog[todayKey] = { ...dayData, meals };
+        lsSet("nutrition_log_v1", nutritionLog);
+        return `Прийом їжі "${name || "Без назви"}" записано: ${Math.round(kcal || 0)} ккал`;
       }
       default:
         return `Невідома дія: ${action.name}`;
