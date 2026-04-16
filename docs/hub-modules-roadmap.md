@@ -9,19 +9,34 @@
 ### Реалізовано
 
 - [x] Навігація між 4 модулями (Фінік, Фізрук, Рутина, Харчування)
-- [x] Спільна UI-бібліотека (Banner, Button, Card, ConfirmDialog, EmptyState, Input, InputDialog, Select, Skeleton, Toast)
-- [x] Спільні хуки (useDarkMode, useDialogFocusTrap, useToast)
+- [x] Спільна UI-бібліотека (Banner, Button, Card, ConfirmDialog, EmptyState, Input, InputDialog, Select, Skeleton, SwipeToAction, Toast, VoiceMicButton)
+- [x] Спільні хуки (useDarkMode, useDialogFocusTrap, useOnlineStatus, useToast)
 - [x] AI-чат (HubChat, Anthropic)
 - [x] Hub-бекап/відновлення (HubBackupPanel)
 - [x] ModuleErrorBoundary — ізоляція помилок модулів
-- [x] PWA: Service Worker, офлайн-кеш, встановлення на пристрій
+- [x] PWA: Service Worker, офлайн-кеш, встановлення на пристрій, push-нагадування у фоні
+- [x] PWA shortcuts: 3 ярлики на головному екрані з deep-link роутингом
 - [x] API-сервер: Railway / Replit (Express-агрегатор), CORS, rate-limit
+- [x] Авторизація: email/password (Better Auth), сесійні cookie, PostgreSQL
+- [x] Хмарна синхронізація між пристроями (useCloudSync, /api/sync/push, /api/sync/pull)
+- [x] Офлайн-черга: push-операції у localStorage при відсутності мережі, replay при reconnect
+- [x] Версійний трекінг синхронізації (LWW conflict resolution per module)
+- [x] Міграційний UX: пропозиція завантажити локальні дані при першому вході
+- [x] Глобальний пошук по Hub (HubSearch — їжа / тренування / транзакції / звички)
+- [x] Онбординг для нових користувачів (OnboardingWizard)
+- [x] Щотижневий AI-дайджест (WeeklyDigestCard, useWeeklyDigest, /api/weekly-digest)
+- [x] Рекомендаційний рушій (HubRecommendations, recommendationEngine — без AI API)
+- [x] Голосовий ввід (VoiceMicButton, speechParsers — UK/EN, у Харчуванні, Фізруку, Фінікові)
+- [x] Hub-налаштування (HubSettingsPage) — централізована сторінка для всіх модулів
+- [x] Hub-звіти (HubReports) — зведені звіти по всіх модулях
+- [x] Сторінка входу/реєстрації (AuthPage), AuthContext/useAuth, authClient
 
 ### Наступні кроки
 
-1. Глобальний пошук по Hub (їжа / тренування / транзакції / звички)
-2. Онбординг для нових користувачів
-3. Уніфікований експорт даних (всі модулі → один архів)
+1. Уніфікований експорт даних усіх модулів в один архів
+2. Push-нотифікації через Web Push API (зараз — тільки SW showNotification без підписки)
+3. Спільна сторінка «Щоденник» — агрегований лог активностей усіх модулів за день
+4. Email-нотифікації (тижневий дайджест, нагадування)
 
 ---
 
@@ -29,23 +44,29 @@
 
 ### Реалізовано
 
-- [x] Синхронізація з Monobank (імпорт транзакцій)
-- [x] Огляд, список транзакцій, фільтри
+- [x] Синхронізація з Monobank (імпорт транзакцій, useMonobank, /api/mono)
+- [x] Огляд, список транзакцій, фільтри (Overview, Transactions)
 - [x] Категорії витрат із графіком (CategoryChart)
-- [x] Бюджети
-- [x] Активи та чиста вартість (NetworthChart)
+- [x] Бюджети (Budgets)
+- [x] Активи та чиста вартість (Assets, NetworthChart)
 - [x] Борги (DebtCard, debtEngine)
 - [x] Підписки (SubCard, subscriptionUtils, інтеграція з календарем Рутини)
-- [x] AI-чат по фінансах
-- [x] Бекап/відновлення даних Фініка
+- [x] AI-чат по фінансах (Chat)
+- [x] Бекап/відновлення даних Фініка (finykBackup)
+- [x] Тренди бюджету (BudgetTrendChart)
+- [x] Ручне додавання витрат/боргів (ManualExpenseSheet)
+- [x] Прогноз витрат (forecastEngine)
+- [x] SyncStatusBadge — стан хмарної синхронізації на Overview
+- [x] PrivatBank business API (usePrivatbank, /api/privat) — реалізовано, вимкнено прапором `PRIVAT_ENABLED`
+- [x] Інтеграція з календарем Рутини (hubRoutineSync)
 
 ### Наступні кроки
 
-1. Цілі накопичення (savings goals)
-2. Детекція регулярних витрат (автоматичне розпізнавання підписок)
-3. Тренди витрат (місяць-до-місяця, рік-до-року)
-4. Експорт CSV
-5. Спліт транзакцій (розбиття однієї транзакції на кілька категорій)
+1. Цілі накопичення (savings goals) з прогрес-баром
+2. Детекція регулярних витрат (автоматичне розпізнавання підписок з транзакцій)
+3. Експорт CSV
+4. Спліт транзакцій (розбиття однієї транзакції на кілька категорій)
+5. Увімкнення PrivatBank у UI (зняти прапор `PRIVAT_ENABLED`)
 
 ---
 
@@ -54,16 +75,22 @@
 ### Реалізовано
 
 - [x] Каталог вправ (Atlas, Exercise) з групами м'язів (BodyAtlas)
-- [x] Шаблони тренувань
+- [x] Шаблони тренувань (WorkoutTemplatesSection, useWorkoutTemplates)
 - [x] Активне тренування з таймером відпочинку (ActiveWorkoutPanel, RestTimerOverlay)
+- [x] Журнал та каталог вправ у тренуванні (WorkoutJournalSection, WorkoutCatalogSection)
+- [x] Додавання вправ та детальна картка (AddExerciseSheet, ExerciseDetailSheet)
 - [x] Історія тренувань та статистика (Workouts, WeeklyVolumeChart)
-- [x] Прогрес по вправах (Progress, MiniLineChart)
-- [x] Виміри тіла (Measurements)
+- [x] Прогрес по вправах: 1RM та об'єм (Progress, MiniLineChart)
+- [x] Виміри тіла (Measurements, useMeasurements)
 - [x] Місячний план тренувань (PlanCalendar, useMonthlyPlan)
-- [x] Відновлення: оцінка/прогноз (recoveryCompute, recoveryForecast)
-- [x] Самопочуття (WellbeingChart)
+- [x] Відновлення: оцінка/прогноз з урахуванням сну та енергії (recoveryCompute, recoveryForecast, recoveryConflict)
+- [x] Щоденний лог самопочуття: вага/сон/енергія/настрій з трендами (Body, useDailyLog)
+- [x] Фото прогресу тіла (PhotoProgress, useBodyPhotos)
+- [x] Програми тренувань: PPL, Upper/Lower, Full Body, Linear Progression (Programs, useTrainingProgram, trainingPrograms)
 - [x] Бекап тренувань (WorkoutBackupBar)
 - [x] Нагадування про тренування (useFizrukWorkoutReminder)
+- [x] Налаштування таймера відпочинку per-категорія (useRestSettings)
+- [x] Активність відтискань (usePushupActivity)
 
 ### Наступні кроки
 
@@ -80,22 +107,28 @@
 ### Реалізовано
 
 - [x] Hub-календар із агрегацією подій Фізрука та Фініка (hubCalendarAggregate)
-- [x] Звички зі стріками (streaks) та щоденним відмічанням
+- [x] Звички зі стріками та щоденним відмічанням (streaks)
 - [x] Порядок звичок (habitOrder), drag & drop
 - [x] Тижнева стрічка (WeekDayStrip)
-- [x] Нотатки до виконання (completionNoteKey)
-- [x] Ремайндери/нагадування (useRoutineReminders)
-- [x] Віджет відтискань (PushupsWidget)
+- [x] Нотатки до виконання звичок (completionNoteKey)
+- [x] Ремайндери/нагадування: декілька часів на звичку, presets (useRoutineReminders)
+- [x] Віджет відтискань (PushupsWidget, routinePushupsRead)
 - [x] Інтеграція підписок Фініка в календар (finykSubscriptionCalendar)
 - [x] Налаштування (RoutineSettingsSection)
+- [x] Хітмеп звичок (HabitHeatmap) — візуалізація виконання за місяць/рік
+- [x] Панель статистики рутини (RoutineStatsPanel) — тижнева/місячна статистика виконання
+- [x] Лідери та аутсайдери (HabitLeadersBlock) — кращі/гірші звички за 30 днів
+- [x] Деталізація звички (HabitDetailSheet) — статистика, міні-календар, нотатки
+- [x] Денний звіт (DayReportSheet) — повний список звичок за день з перемиканням
+- [x] Прогрес-кільце дня (DayProgressRing) — SVG-кільце виконання на hero-секції
+- [x] Чернетки звичок (routineDraftUtils)
 
 ### Наступні кроки
 
 1. Категорії / групи звичок
-2. Хітмеп-календар (візуалізація виконання за місяць/рік)
-3. Тижнева / місячна статистика виконання
-4. Архівування звичок (приховати без видалення)
-5. Лог настрою / енергії (щоденний трекер)
+2. Архівування звичок (приховати без видалення)
+3. Лог настрою / енергії безпосередньо у Рутині (не через Фізрук)
+4. Шаблони звичок (готові набори для початку)
 
 ---
 
@@ -114,17 +147,20 @@
 - [x] Фото-мініатюри страв (mealPhotoStorage)
 - [x] Хмарний бекап із шифруванням (nutritionCloudBackup, backup-upload, backup-download)
 - [x] Експорт логу (nutritionLogExport)
-- [x] Цілі по макросах із пресетами (goalPresets)
+- [x] Цілі по макросах із пресетами Схуднення/Підтримка/Набір маси (goalPresets)
+- [x] Сканер штрихкодів (BarcodeScanner, /api/barcode)
+- [x] Денний план харчування (DailyPlanCard, /api/nutrition/day-plan) — AI-генерація з урахуванням цілей
+- [x] Список покупок (ShoppingListCard, /api/nutrition/shopping-list, shoppingListStorage) — AI-генерація з рецептів, мінус комора, групування по категоріях, позначення + додавання до комори
+- [x] Дешборд харчування (NutritionDashboard) — зведена статистика
+- [x] Пошук по логу з повторним додаванням страв (LogCard search)
 
 ### Наступні кроки
 
 1. Трекер води
-2. Сканер штрихкодів продуктів
-3. Планування їжі (meal prep / meal plan на тиждень)
-4. Обрані страви (швидке повторне додавання)
-5. Стріки харчування (послідовність днів з логуванням)
-6. Мікронутрієнти (вітаміни, мінерали)
-7. Список покупок із рецептів
+2. Обрані страви (швидке повторне додавання)
+3. Стріки харчування (послідовність днів з логуванням)
+4. Мікронутрієнти (вітаміни, мінерали)
+5. Інтеграція з зовнішніми базами їжі (Open Food Facts, USDA)
 
 ---
 
@@ -132,13 +168,21 @@
 
 ### Реалізовано
 
-- [x] PWA: Service Worker (src/sw.js), офлайн-кеш, встановлення
+- [x] PWA: Service Worker (src/sw.js) із vite-plugin-pwa (injectManifest), офлайн-кеш, Google Fonts offline, install banner
 - [x] Express API-сервер із CORS, rate-limit, JSON-safe middleware
-- [x] Деплой: Vercel (фронт) + Railway (API), Dockerfile.api
+- [x] Деплой: Vercel (фронт) + Railway (API), Dockerfile.api; Replit unified server
 - [x] localStorage як основне сховище даних модулів
-- [x] Хмарний бекап (Харчування), локальний бекап (Фінік, Фізрук, Hub)
+- [x] PostgreSQL (Replit built-in) — users, sessions, module_data (JSONB + version)
+- [x] Better Auth: email/password, cookie sessions, session caching
+- [x] Хмарна синхронізація всіх модулів (push/pull/push-all/pull-all)
+- [x] Офлайн-черга синхронізації з replay при reconnect
+- [x] Хмарний бекап Харчування (шифрування); локальний бекап Фінік, Фізрук, Hub
+- [x] CORS з підтримкою Replit-доменів (REPLIT_DOMAINS env var)
+- [x] storageManager — централізований менеджер localStorage
 
 ### Наступні кроки
 
-1. Акаунти та синхронізація між пристроями (мінімальна auth + серверне сховище)
-2. Повноцінний офлайн-режим для всіх API-залежних фіч (queue & sync)
+1. Резервне копіювання PostgreSQL (scheduled snapshots)
+2. Тести інтеграції для sync endpoints
+3. Rate-limiting per-user для auth endpoints
+4. CI/CD pipeline (GitHub Actions або Vercel checks)
