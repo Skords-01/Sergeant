@@ -185,6 +185,37 @@ export function calcCategorySpent(
   );
 }
 
+/**
+ * Розраховує скільки потрібно відкладати щомісяця для досягнення цілі.
+ * @returns {{ monthlyNeeded: number|null, monthsLeft: number, isAchieved: boolean, isOverdue: boolean }}
+ */
+export function calcMonthlyNeeded(targetAmount, savedAmount, targetDate) {
+  const tgt = Number(targetAmount) || 0;
+  const saved = Number(savedAmount) || 0;
+
+  if (saved >= tgt && tgt > 0) {
+    return { monthlyNeeded: null, monthsLeft: 0, isAchieved: true, isOverdue: false };
+  }
+
+  if (!targetDate) {
+    return { monthlyNeeded: null, monthsLeft: null, isAchieved: false, isOverdue: false };
+  }
+
+  const now = new Date();
+  const target = new Date(targetDate);
+
+  if (target <= now) {
+    return { monthlyNeeded: null, monthsLeft: 0, isAchieved: false, isOverdue: true };
+  }
+
+  const diffMs = target - now;
+  const monthsLeft = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24 * 30.44)));
+  const remaining = Math.max(0, tgt - saved);
+  const monthlyNeeded = Math.ceil(remaining / monthsLeft);
+
+  return { monthlyNeeded, monthsLeft, isAchieved: false, isOverdue: false };
+}
+
 // Підсумки по рахунках Mono
 export function getMonoTotals(accounts, hiddenAccountIds = []) {
   const visible = accounts.filter((a) => !hiddenAccountIds.includes(a.id));

@@ -6,6 +6,7 @@ import {
   calcCategorySpent,
   getTxStatAmount,
   resolveExpenseCategoryMeta,
+  calcMonthlyNeeded,
 } from "../utils";
 import { mergeExpenseCategoryDefinitions } from "../constants";
 import { cn } from "@shared/lib/cn";
@@ -394,6 +395,7 @@ export function Budgets({ mono, storage }) {
           const daysLeft = b.targetDate
             ? Math.ceil((new Date(b.targetDate) - now) / 86400000)
             : null;
+          const monthly = calcMonthlyNeeded(b.targetAmount, saved, b.targetDate);
           const globalIdx = budgets.indexOf(b);
           const isEditing = editIdx === globalIdx;
           return (
@@ -466,7 +468,23 @@ export function Budgets({ mono, storage }) {
                       style={{ width: `${pct}%` }}
                     />
                   </div>
-                  <div className="text-xs text-subtle mt-1.5">
+                  {monthly.isAchieved ? (
+                    <div className="text-xs font-semibold text-success mt-1.5">
+                      Ціль досягнута 🎉
+                    </div>
+                  ) : monthly.isOverdue ? (
+                    <div className="text-xs font-semibold text-danger mt-1.5">
+                      Термін минув
+                    </div>
+                  ) : monthly.monthlyNeeded !== null ? (
+                    <div className="text-xs text-subtle mt-1.5">
+                      Потрібно відкладати:{" "}
+                      <span className="font-semibold text-text">
+                        {monthly.monthlyNeeded.toLocaleString("uk-UA")} ₴/міс.
+                      </span>
+                    </div>
+                  ) : null}
+                  <div className="text-xs text-subtle mt-0.5">
                     {pct}% ·{" "}
                     {daysLeft !== null
                       ? daysLeft > 0
