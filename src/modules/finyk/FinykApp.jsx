@@ -481,7 +481,7 @@ export default function App({ onBackToHub, pwaAction, onPwaActionConsumed } = {}
           />
         )}
         {page === "transactions" && (
-          <div className="relative h-full">
+          <div className="relative flex-1 flex flex-col min-h-0">
             <Transactions
               mono={mono}
               storage={storage}
