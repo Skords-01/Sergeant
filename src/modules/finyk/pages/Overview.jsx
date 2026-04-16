@@ -6,8 +6,8 @@ import {
   calcDebtRemaining,
   calcReceivableRemaining,
   calcCategorySpent,
+  calcFinykSpendingTotal,
   getMonoTotals,
-  getTxStatAmount,
   resolveExpenseCategoryMeta,
 } from "../utils";
 import { getSubscriptionAmountMeta } from "../domain/subscriptionUtils.js";
@@ -103,10 +103,7 @@ export function Overview({
     [realTx, excludedTxIds],
   );
   const spent = useMemo(
-    () =>
-      statTx
-        .filter((t) => t.amount < 0)
-        .reduce((s, t) => s + getTxStatAmount(t, txSplits), 0),
+    () => calcFinykSpendingTotal(statTx, { txSplits }),
     [statTx, txSplits],
   );
   const income = useMemo(

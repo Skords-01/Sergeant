@@ -262,18 +262,40 @@ export function getFinykTxSplitsFromStorage() {
 }
 
 /**
+ * Сумарні витрати ФІНІК за списком транзакцій, з урахуванням excludedTxIds та
+ * txSplits (через getTxStatAmount). Ця функція — єдине джерело правди для
+ * підрахунку spent у Overview, Звітах та інших місцях. Повертає float — округлення
+ * виконується викликачем при виводі.
+ */
+export function calcFinykSpendingTotal(
+  transactions,
+  { excludedTxIds, txSplits = {} } = {},
+) {
+  const list = Array.isArray(transactions) ? transactions : [];
+  const excluded =
+    excludedTxIds instanceof Set
+      ? excludedTxIds
+      : new Set(Array.isArray(excludedTxIds) ? excludedTxIds : []);
+  let total = 0;
+  for (const tx of list) {
+    if (!tx || excluded.has(tx.id)) continue;
+    if (!(tx.amount < 0)) continue;
+    const amt = getTxStatAmount(tx, txSplits);
+    if (Number.isFinite(amt) && amt > 0) total += amt;
+  }
+  return total;
+}
+
+/**
  * Підсумовує витрати ФІНІК у заданому діапазоні дат за тими ж правилами, що й
- * дашборд (Overview): враховує `excludedTxIds`, `txSplits` (через
- * `getTxStatAmount`), внутрішні перекази та доходи.
- *
- * @returns {{ total: number, daily: Record<string, number> }}
+ * Overview. Повертає {total, daily}, причому total = сума округлених daily —
+ * це гарантує, що сума стовпчиків на графіку дорівнює числу в картці.
  */
 export function calcFinykSpendingByDate(
   transactions,
   { excludedTxIds, txSplits = {}, dateSet, localDateKeyFn },
 ) {
   const daily = {};
-  let total = 0;
   const list = Array.isArray(transactions) ? transactions : [];
   const excluded =
     excludedTxIds instanceof Set
@@ -288,13 +310,17 @@ export function calcFinykSpendingByDate(
     if (!dateSet.has(dk)) continue;
     const amt = getTxStatAmount(tx, txSplits);
     if (!Number.isFinite(amt) || amt <= 0) continue;
-    total += amt;
     daily[dk] = (daily[dk] || 0) + amt;
   }
 
   const dailyRounded = {};
-  for (const k of Object.keys(daily)) dailyRounded[k] = Math.round(daily[k]);
-  return { total: Math.round(total), daily: dailyRounded };
+  let total = 0;
+  for (const k of Object.keys(daily)) {
+    const r = Math.round(daily[k]);
+    dailyRounded[k] = r;
+    total += r;
+  }
+  return { total, daily: dailyRounded };
 }
 
 // Підсумки по рахунках Mono
