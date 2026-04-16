@@ -154,24 +154,39 @@ ${habitsInfo}`);
 }
 Якщо даних по модулю немає — поверни null для цього ключа. Відповідай ВИКЛЮЧНО валідним JSON.`;
 
-    const port = process.env.PORT || 5000;
-    const chatRes = await fetch(`http://localhost:${port}/api/chat`, {
+    const systemPrompt = `Ти аналітик персональних даних користувача додатку "Мій простір".
+Відповідай ВИКЛЮЧНО валідним JSON — без markdown, без коментарів, без преамбули.
+Уся аналітика — українською. Числа бери з блоку даних.
+
+ДАНІ:
+${dataContext}`;
+
+    const aiRes = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+      },
       body: JSON.stringify({
-        context: dataContext,
+        model: "claude-sonnet-4-6",
+        max_tokens: 2500,
+        system: systemPrompt,
         messages: [{ role: "user", content: userPrompt }],
       }),
     });
 
-    const chatData = await chatRes.json();
-    if (!chatRes.ok) {
+    const aiData = await aiRes.json();
+    if (!aiRes.ok) {
       return res
-        .status(chatRes.status)
-        .json({ error: chatData?.error || "AI error" });
+        .status(aiRes.status)
+        .json({ error: aiData?.error?.message || "AI error" });
     }
 
-    const text = chatData?.text || "";
+    const text = (aiData?.content || [])
+      .filter((b) => b.type === "text")
+      .map((b) => b.text)
+      .join("\n");
 
     const report = extractJsonObject(text);
     if (!report) {
