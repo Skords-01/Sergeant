@@ -301,6 +301,12 @@ export function Transactions({
     [groupedByDate],
   );
 
+  // GroupedVirtuoso передає глобальний (плоский) індекс — будуємо плоский масив
+  const flatItems = useMemo(
+    () => groupedByDate.flatMap((g) => g.items),
+    [groupedByDate],
+  );
+
   const syncColor =
     syncState?.status === "error"
       ? "text-danger"
@@ -580,8 +586,9 @@ export function Transactions({
                   {formatStickyDayLabel(groupedByDate[groupIndex].key)}
                 </div>
               )}
-              itemContent={(index, groupIndex) => {
-                const t = groupedByDate[groupIndex].items[index];
+              itemContent={(index) => {
+                const t = flatItems[index];
+                if (!t) return null;
                 const i = index;
                 return (
                   <div
