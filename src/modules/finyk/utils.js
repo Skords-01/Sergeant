@@ -208,8 +208,12 @@ export function calcMonthlyNeeded(targetAmount, savedAmount, targetDate) {
     return { monthlyNeeded: null, monthsLeft: 0, isAchieved: false, isOverdue: true };
   }
 
-  const diffMs = target - now;
-  const monthsLeft = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24 * 30.44)));
+  const y1 = now.getFullYear(), m1 = now.getMonth(), d1 = now.getDate();
+  const y2 = target.getFullYear(), m2 = target.getMonth();
+  let monthsLeft = (y2 - y1) * 12 + (m2 - m1);
+  const sameMonthsLater = new Date(y1, m1 + monthsLeft, d1);
+  if (target > sameMonthsLater) monthsLeft += 1;
+  monthsLeft = Math.max(1, monthsLeft);
   const remaining = Math.max(0, tgt - saved);
   const monthlyNeeded = Math.ceil(remaining / monthsLeft);
 
