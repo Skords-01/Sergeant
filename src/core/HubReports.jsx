@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { cn } from "@shared/lib/cn";
+import { generateInsights } from "./lib/insightsEngine";
 
 function safeParseLS(key, fallback) {
   try {
@@ -236,6 +237,23 @@ function StatCard({ title, icon, current, prev, unit, higherIsBetter, chart }) {
   );
 }
 
+function InsightCard({ emoji, title, stat, detail }) {
+  return (
+    <div className="bg-panel border border-line rounded-2xl p-4 flex gap-3 items-start">
+      <span className="text-2xl shrink-0 leading-none pt-0.5">{emoji}</span>
+      <div className="min-w-0 flex-1 space-y-1">
+        <p className="text-sm text-text leading-snug">{title}</p>
+        <div className="flex items-baseline gap-2 flex-wrap">
+          <span className="text-lg font-bold text-accent">{stat}</span>
+          {detail && (
+            <span className="text-xs text-muted truncate">{detail}</span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function HubReports() {
   const [period, setPeriod] = useState("week");
   const [offset, setOffset] = useState(0);
@@ -245,6 +263,7 @@ export function HubReports() {
   const isCurrentPeriod = offset === 0;
 
   const dates = data.period.dates;
+  const insights = useMemo(() => generateInsights(), []);
 
   return (
     <div className="space-y-4">
@@ -363,6 +382,21 @@ export function HubReports() {
           }
         />
       </div>
+
+      {insights.length > 0 ? (
+        <div className="space-y-3">
+          <p className="text-xs font-bold text-subtle uppercase tracking-widest">
+            Інсайти
+          </p>
+          {insights.map((ins) => (
+            <InsightCard key={ins.id} {...ins} />
+          ))}
+        </div>
+      ) : (
+        <div className="bg-panel border border-line/50 rounded-2xl p-4 text-center text-xs text-muted">
+          Збери більше даних для інсайтів
+        </div>
+      )}
 
       <div className="bg-panel border border-line rounded-2xl p-4">
         <p className="text-xs font-semibold text-muted uppercase tracking-wider mb-3">Підсумок</p>
