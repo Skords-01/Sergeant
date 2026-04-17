@@ -1,0 +1,80 @@
+import { Button } from "@shared/components/ui/Button";
+
+const formInp =
+  "w-full h-10 rounded-xl border border-line bg-bg px-3 text-sm text-text outline-none focus:border-primary";
+
+export function GoalBudgetCard({
+  budget,
+  saved,
+  pct,
+  daysLeft,
+  monthlyLabel,
+  isEditing,
+  onBeginEdit,
+  onChangeSaved,
+  onSave,
+  onDelete,
+}) {
+  return (
+    <div className="bg-panel border border-line/60 rounded-2xl p-5 shadow-card">
+      {isEditing ? (
+        <div className="space-y-2">
+          <input
+            className={formInp}
+            type="number"
+            placeholder="Відкладено ₴"
+            value={budget.savedAmount || ""}
+            onChange={(e) => onChangeSaved?.(Number(e.target.value))}
+          />
+          <div className="flex gap-2">
+            <Button className="flex-1" size="sm" onClick={onSave}>
+              Зберегти
+            </Button>
+            <Button className="flex-1" size="sm" variant="danger" onClick={onDelete}>
+              Видалити
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <>
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-sm font-semibold">
+              {budget.emoji} {budget.name}
+            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted">
+                {saved.toLocaleString("uk-UA")} / {budget.targetAmount.toLocaleString("uk-UA")} ₴
+              </span>
+              <button
+                type="button"
+                onClick={onBeginEdit}
+                className="text-subtle hover:text-text text-sm transition-colors"
+                aria-label="Редагувати ціль"
+              >
+                ✏️
+              </button>
+            </div>
+          </div>
+          <div className="h-2 bg-bg rounded-full overflow-hidden">
+            <div
+              className="h-full rounded-full bg-success transition-all duration-500"
+              style={{ width: `${pct}%` }}
+            />
+          </div>
+          {monthlyLabel && (
+            <div className="text-xs text-subtle mt-1.5">{monthlyLabel}</div>
+          )}
+          <div className="text-xs text-subtle mt-0.5">
+            {pct}% ·{" "}
+            {daysLeft !== null
+              ? daysLeft > 0
+                ? `${daysLeft} днів до мети`
+                : "⏰ Термін минув!"
+              : "Без дедлайну"}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+

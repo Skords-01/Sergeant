@@ -30,6 +30,7 @@ import { RoutineBottomNav } from "./components/RoutineBottomNav.jsx";
 import { RoutineCalendarPanel } from "./components/RoutineCalendarPanel.jsx";
 import { RoutineSettingsSection } from "./components/RoutineSettingsSection.jsx";
 import { RoutineStatsPanel } from "./components/RoutineStatsPanel.jsx";
+import { RoutineCalendarProvider } from "./context/RoutineCalendarContext.jsx";
 import { STORAGE_KEYS } from "@shared/lib/storageKeys";
 
 const FIZRUK_PLAN_SYNC = "fizruk-storage-monthly-plan";
@@ -485,44 +486,47 @@ export default function RoutineApp({ onBackToHub, onOpenModule } = {}) {
           className="flex-1 overflow-y-auto page-tabbar-pad routine-main-pad max-w-4xl mx-auto w-full pt-4 space-y-4"
           tabIndex={-1}
         >
-          <RoutineCalendarPanel
-            rangeLabel={rangeLabel}
-            headlineDate={headlineDate}
-            filtered={filtered}
-            routine={routine}
-            currentStreak={streakMax}
-            completionRate={completionRateVal}
-            dayProgress={dayProgress}
-            timeMode={timeMode}
-            applyTimeMode={applyTimeMode}
-            selectedDay={selectedDay}
-            todayKey={todayKey}
-            shiftWeekStrip={shiftWeekStrip}
-            setSelectedDay={setSelectedDay}
-            setTimeMode={setTimeMode}
-            listQuery={listQuery}
-            setListQuery={setListQuery}
-            tagFilter={tagFilter}
-            setTagFilter={setTagFilter}
-            tagChips={tagChips}
-            monthCursor={monthCursor}
-            monthTitle={monthTitle}
-            goMonth={goMonth}
-            goToToday={goToToday}
-            cells={cells}
-            dayCounts={dayCounts}
-            listIsEmpty={listIsEmpty}
-            hasListFilter={hasListFilter}
-            hasNoHabits={hasNoHabits}
-            grouped={grouped}
-            onToggleHabit={onToggleHabit}
-            setRoutine={setRoutine}
-            setMainTab={setMainTab}
-            onOpenModule={onOpenModule}
-            canBulkMark={canBulkMark}
-            onBulkMarkDay={onBulkMarkDay}
-            hidden={mainTab !== "calendar"}
-          />
+          <RoutineCalendarProvider
+            value={{
+              rangeLabel,
+              headlineDate,
+              filtered,
+              routine,
+              currentStreak: streakMax,
+              completionRate: completionRateVal,
+              dayProgress,
+              timeMode,
+              applyTimeMode,
+              selectedDay,
+              todayKey,
+              shiftWeekStrip,
+              setSelectedDay,
+              setTimeMode,
+              listQuery,
+              setListQuery,
+              tagFilter,
+              setTagFilter,
+              tagChips,
+              monthCursor,
+              monthTitle,
+              goMonth,
+              goToToday,
+              cells,
+              dayCounts,
+              listIsEmpty,
+              hasListFilter,
+              hasNoHabits,
+              grouped,
+              onToggleHabit,
+              setRoutine,
+              setMainTab,
+              onOpenModule,
+              canBulkMark,
+              onBulkMarkDay,
+            }}
+          >
+            <RoutineCalendarPanel hidden={mainTab !== "calendar"} />
+          </RoutineCalendarProvider>
 
           <RoutineStatsPanel
             routine={routine}

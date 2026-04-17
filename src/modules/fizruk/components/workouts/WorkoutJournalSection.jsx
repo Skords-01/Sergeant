@@ -3,6 +3,7 @@ import { Button } from "@shared/components/ui/Button";
 import { EmptyState } from "@shared/components/ui/EmptyState";
 import { ActiveWorkoutPanel } from "../workouts/ActiveWorkoutPanel";
 import { SwipeToAction } from "@shared/components/ui/SwipeToAction";
+import { SectionErrorBoundary } from "@shared/components/ui/SectionErrorBoundary.jsx";
 
 function WorkoutRow({ w, activeWorkoutId, setActiveWorkoutId }) {
   return (
@@ -116,33 +117,42 @@ export function WorkoutJournalSection({
       )}
 
       {activeWorkout && (
-        <ActiveWorkoutPanel
-          activeWorkout={activeWorkout}
-          activeDuration={activeDuration}
-          lastByExerciseId={lastByExerciseId}
-          musclesUk={musclesUk}
-          recBy={recBy}
-          removeItem={removeItem}
-          updateItem={updateItem}
-          updateWorkout={updateWorkout}
-          setRestTimer={setRestTimer}
-          onFinishClick={() => {
-            const sum = summarizeWorkoutForFinish(activeWorkout);
-            const wid = activeWorkout.id;
-            endWorkout(wid);
-            if (sum) {
-              setFinishFlash({
-                step: "wellbeing",
-                collapsed: false,
-                ...sum,
-                workoutId: wid,
-                energy: null,
-                mood: null,
-              });
-            }
+        <SectionErrorBoundary
+          title="Помилка в активному тренуванні"
+          resetLabel="Спробувати знову"
+          onReset={() => {
+            // Мінімальний безпечний reset: вихід з активної вправи-секції в UI
+            setActiveWorkoutId?.(activeWorkout?.id || null);
           }}
-          onDeleteWorkout={() => setDeleteWorkoutConfirm(true)}
-        />
+        >
+          <ActiveWorkoutPanel
+            activeWorkout={activeWorkout}
+            activeDuration={activeDuration}
+            lastByExerciseId={lastByExerciseId}
+            musclesUk={musclesUk}
+            recBy={recBy}
+            removeItem={removeItem}
+            updateItem={updateItem}
+            updateWorkout={updateWorkout}
+            setRestTimer={setRestTimer}
+            onFinishClick={() => {
+              const sum = summarizeWorkoutForFinish(activeWorkout);
+              const wid = activeWorkout.id;
+              endWorkout(wid);
+              if (sum) {
+                setFinishFlash({
+                  step: "wellbeing",
+                  collapsed: false,
+                  ...sum,
+                  workoutId: wid,
+                  energy: null,
+                  mood: null,
+                });
+              }
+            }}
+            onDeleteWorkout={() => setDeleteWorkoutConfirm(true)}
+          />
+        </SectionErrorBoundary>
       )}
 
       <div className="bg-panel border border-line/60 rounded-2xl shadow-card overflow-hidden">

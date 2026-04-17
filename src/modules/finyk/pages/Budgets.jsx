@@ -13,6 +13,8 @@ import { cn } from "@shared/lib/cn";
 import { calcForecast } from "../lib/forecastEngine";
 import { BudgetTrendChart } from "../components/BudgetTrendChart";
 import { apiUrl } from "@shared/lib/apiUrl.js";
+import { LimitBudgetCard } from "../components/budgets/LimitBudgetCard.jsx";
+import { GoalBudgetCard } from "../components/budgets/GoalBudgetCard.jsx";
 
 const formInp =
   "w-full h-10 rounded-xl border border-line bg-bg px-3 text-sm text-text outline-none focus:border-primary";
@@ -441,122 +443,32 @@ export function Budgets({ mono, storage }) {
           const showProactiveAdvice = pctRaw >= 80 || (forecastForCat && forecastForCat.overLimit);
           const isEditing = editIdx === globalIdx;
           return (
-            <div
+            <LimitBudgetCard
               key={b.id || i}
-              className="bg-panel border border-line/60 rounded-2xl p-5 shadow-card"
-            >
-              {isEditing ? (
-                <div className="space-y-2">
-                  <input
-                    className={formInp}
-                    type="number"
-                    placeholder="Ліміт ₴"
-                    value={b.limit}
-                    onChange={(e) =>
-                      setBudgets((bs) =>
-                        bs.map((x, j) =>
-                          j === globalIdx
-                            ? { ...x, limit: Number(e.target.value) }
-                            : x,
-                        ),
-                      )
-                    }
-                  />
-                  <div className="flex gap-2">
-                    <Button
-                      className="flex-1"
-                      size="sm"
-                      onClick={() => setEditIdx(null)}
-                    >
-                      Зберегти
-                    </Button>
-                    <Button
-                      className="flex-1"
-                      size="sm"
-                      variant="danger"
-                      onClick={() => {
-                        setBudgets((bs) =>
-                          bs.filter((_, j) => j !== globalIdx),
-                        );
-                        setEditIdx(null);
-                      }}
-                    >
-                      Видалити
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm font-semibold">
-                      {cat?.label || "—"}
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={cn(
-                          "text-xs tabular-nums",
-                          overLimit
-                            ? "text-danger font-semibold"
-                            : warnLimit
-                              ? "text-warning"
-                              : "text-muted",
-                        )}
-                      >
-                        {bspent} / {b.limit} ₴
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => setEditIdx(globalIdx)}
-                        className="text-subtle hover:text-text text-sm transition-colors"
-                        aria-label="Редагувати ліміт"
-                      >
-                        ✏️
-                      </button>
-                    </div>
-                  </div>
-                  <div className="h-2 bg-bg rounded-full overflow-hidden">
-                    <div
-                      className={cn(
-                        "h-full rounded-full transition-all duration-500",
-                        overLimit
-                          ? "bg-danger"
-                          : warnLimit
-                            ? "bg-warning"
-                            : "bg-emerald-500",
-                      )}
-                      style={{ width: `${Math.min(100, pctRaw)}%` }}
-                    />
-                  </div>
-                  <div
-                    className={cn(
-                      "text-xs mt-2",
-                      overLimit
-                        ? "text-danger font-medium"
-                        : warnLimit
-                          ? "text-warning"
-                          : "text-subtle",
-                    )}
-                  >
-                    {overLimit
-                      ? `Перевищено на ${(bspent - b.limit).toLocaleString("uk-UA")} ₴`
-                      : `Залишок ${remaining.toLocaleString("uk-UA")} ₴ · ${pct}% використано`}
-                  </div>
-                  {showProactiveAdvice && (
-                    proactiveLoading[b.categoryId] ? (
-                      <div className="mt-3 space-y-1.5">
-                        <Skeleton className="h-3 w-full rounded" />
-                        <Skeleton className="h-3 w-4/5 rounded" />
-                      </div>
-                    ) : proactiveAdvice[b.categoryId] ? (
-                      <div className="mt-3 flex gap-2 items-start bg-bg rounded-xl px-3 py-2.5">
-                        <span className="text-base leading-none mt-0.5 shrink-0">✨</span>
-                        <p className="text-xs text-text leading-relaxed">{proactiveAdvice[b.categoryId]}</p>
-                      </div>
-                    ) : null
-                  )}
-                </>
-              )}
-            </div>
+              budget={b}
+              categoryLabel={cat?.label || "—"}
+              spent={bspent}
+              pctRaw={pctRaw}
+              pctRounded={pct}
+              remaining={remaining}
+              isEditing={isEditing}
+              showProactiveAdvice={!!showProactiveAdvice}
+              proactiveText={proactiveAdvice[b.categoryId]}
+              proactiveLoading={!!proactiveLoading[b.categoryId]}
+              onBeginEdit={() => setEditIdx(globalIdx)}
+              onChangeLimit={(nextLimit) =>
+                setBudgets((bs) =>
+                  bs.map((x, j) =>
+                    j === globalIdx ? { ...x, limit: Number(nextLimit) } : x,
+                  ),
+                )
+              }
+              onSave={() => setEditIdx(null)}
+              onDelete={() => {
+                setBudgets((bs) => bs.filter((_, j) => j !== globalIdx));
+                setEditIdx(null);
+              }}
+            />
           );
         })}
 
@@ -690,102 +602,36 @@ export function Budgets({ mono, storage }) {
           const globalIdx = budgets.indexOf(b);
           const isEditing = editIdx === globalIdx;
           return (
-            <div
+            <GoalBudgetCard
               key={b.id || i}
-              className="bg-panel border border-line/60 rounded-2xl p-5 shadow-card"
-            >
-              {isEditing ? (
-                <div className="space-y-2">
-                  <input
-                    className={formInp}
-                    type="number"
-                    placeholder="Відкладено ₴"
-                    value={b.savedAmount || ""}
-                    onChange={(e) =>
-                      setBudgets((bs) =>
-                        bs.map((x, j) =>
-                          j === globalIdx
-                            ? { ...x, savedAmount: Number(e.target.value) }
-                            : x,
-                        ),
-                      )
-                    }
-                  />
-                  <div className="flex gap-2">
-                    <Button
-                      className="flex-1"
-                      size="sm"
-                      onClick={() => setEditIdx(null)}
-                    >
-                      Зберегти
-                    </Button>
-                    <Button
-                      className="flex-1"
-                      size="sm"
-                      variant="danger"
-                      onClick={() => {
-                        setBudgets((bs) =>
-                          bs.filter((_, j) => j !== globalIdx),
-                        );
-                        setEditIdx(null);
-                      }}
-                    >
-                      Видалити
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm font-semibold">
-                      {b.emoji} {b.name}
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted">
-                        {saved.toLocaleString("uk-UA")} /{" "}
-                        {b.targetAmount.toLocaleString("uk-UA")} ₴
-                      </span>
-                      <button
-                        onClick={() => setEditIdx(globalIdx)}
-                        className="text-subtle hover:text-text text-sm transition-colors"
-                      >
-                        ✏️
-                      </button>
-                    </div>
-                  </div>
-                  <div className="h-2 bg-bg rounded-full overflow-hidden">
-                    <div
-                      className="h-full rounded-full bg-success transition-all duration-500"
-                      style={{ width: `${pct}%` }}
-                    />
-                  </div>
-                  {monthly.isAchieved ? (
-                    <div className="text-xs font-semibold text-success mt-1.5">
-                      Ціль досягнута 🎉
-                    </div>
-                  ) : monthly.isOverdue ? (
-                    <div className="text-xs font-semibold text-danger mt-1.5">
-                      Термін минув
-                    </div>
-                  ) : monthly.monthlyNeeded !== null ? (
-                    <div className="text-xs text-subtle mt-1.5">
-                      Потрібно відкладати:{" "}
-                      <span className="font-semibold text-text">
-                        {monthly.monthlyNeeded.toLocaleString("uk-UA")} ₴/міс.
-                      </span>
-                    </div>
-                  ) : null}
-                  <div className="text-xs text-subtle mt-0.5">
-                    {pct}% ·{" "}
-                    {daysLeft !== null
-                      ? daysLeft > 0
-                        ? `${daysLeft} днів до мети`
-                        : "⏰ Термін минув!"
-                      : "Без дедлайну"}
-                  </div>
-                </>
-              )}
-            </div>
+              budget={b}
+              saved={saved}
+              pct={pct}
+              daysLeft={daysLeft}
+              monthlyLabel={
+                monthly.isAchieved
+                  ? "Ціль досягнута 🎉"
+                  : monthly.isOverdue
+                    ? "Термін минув"
+                    : monthly.monthlyNeeded !== null
+                      ? `Потрібно відкладати: ${monthly.monthlyNeeded.toLocaleString("uk-UA")} ₴/міс.`
+                      : null
+              }
+              isEditing={isEditing}
+              onBeginEdit={() => setEditIdx(globalIdx)}
+              onChangeSaved={(nextSaved) =>
+                setBudgets((bs) =>
+                  bs.map((x, j) =>
+                    j === globalIdx ? { ...x, savedAmount: Number(nextSaved) } : x,
+                  ),
+                )
+              }
+              onSave={() => setEditIdx(null)}
+              onDelete={() => {
+                setBudgets((bs) => bs.filter((_, j) => j !== globalIdx));
+                setEditIdx(null);
+              }}
+            />
           );
         })}
 

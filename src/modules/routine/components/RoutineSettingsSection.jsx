@@ -17,7 +17,6 @@ import {
   updateCategory,
   deleteCategory,
   setHabitArchived,
-  buildRoutineBackupPayload,
   applyRoutineBackupPayload,
   moveHabitInOrder,
   setHabitOrder,
@@ -37,6 +36,7 @@ import {
   normalizeReminderTimes,
 } from "../lib/routineDraftUtils.js";
 import { HabitDetailSheet } from "./HabitDetailSheet.jsx";
+import { RoutineBackupSection } from "./RoutineBackupSection.jsx";
 
 export function RoutineSettingsSection({
   routine,
@@ -62,7 +62,6 @@ export function RoutineSettingsSection({
   const [editingTagId, setEditingTagId] = useState(null);
   const [editingTagName, setEditingTagName] = useState("");
   const tagSavedRef = useRef(false);
-  const backupRef = useRef(null);
   const habitDateFieldIds = useId();
   const habitStartDateId = `${habitDateFieldIds}-start`;
   const habitEndDateId = `${habitDateFieldIds}-end`;
@@ -131,61 +130,11 @@ export function RoutineSettingsSection({
       hidden={panelHidden}
       className="space-y-4 pb-4"
     >
-      <section className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card space-y-3">
-        <h2 className="text-xs font-bold text-subtle uppercase tracking-widest">
-          Резервна копія
-        </h2>
-        <p className="text-[10px] text-subtle">
-          Звички, відмітки, відтискання та нотатки — один JSON-файл.
-        </p>
-        <div className="flex flex-wrap gap-2">
-          <Button
-            type="button"
-            className={cn("font-bold", C.primary)}
-            onClick={() => {
-              const blob = new Blob(
-                [JSON.stringify(buildRoutineBackupPayload(), null, 2)],
-                {
-                  type: "application/json",
-                },
-              );
-              const a = document.createElement("a");
-              a.href = URL.createObjectURL(blob);
-              a.download = `hub-routine-backup-${new Date().toISOString().slice(0, 10)}.json`;
-              a.click();
-              setTimeout(() => URL.revokeObjectURL(a.href), 1500);
-            }}
-          >
-            Експорт JSON
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            className="border border-line/70"
-            onClick={() => backupRef.current?.click()}
-          >
-            Імпорт
-          </Button>
-          <input
-            ref={backupRef}
-            type="file"
-            accept="application/json,.json"
-            className="hidden"
-            onChange={async (e) => {
-              const f = e.target.files?.[0];
-              if (!f) return;
-              try {
-                const text = await f.text();
-                const parsed = JSON.parse(text);
-                setImportConfirm({ parsed });
-              } catch (err) {
-                toast.warning(err?.message || "Не вдалося імпортувати файл.");
-              }
-              e.target.value = "";
-            }}
-          />
-        </div>
-      </section>
+      <RoutineBackupSection
+        theme={C}
+        toast={toast}
+        onImportParsed={(parsed) => setImportConfirm({ parsed })}
+      />
 
       <section className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card space-y-3">
         <h2 className="text-xs font-bold text-subtle uppercase tracking-widest">

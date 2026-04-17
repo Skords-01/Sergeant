@@ -1,0 +1,65 @@
+import { useRef } from "react";
+import { Button } from "@shared/components/ui/Button";
+import { cn } from "@shared/lib/cn";
+import { buildRoutineBackupPayload } from "../lib/routineStorage.js";
+
+export function RoutineBackupSection({ theme, toast, onImportParsed }) {
+  const backupRef = useRef(null);
+
+  return (
+    <section className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card space-y-3">
+      <h2 className="text-xs font-bold text-subtle uppercase tracking-widest">
+        Резервна копія
+      </h2>
+      <p className="text-xs text-subtle">
+        Експорт/імпорт JSON для переносу даних між пристроями.
+      </p>
+      <div className="flex flex-wrap gap-2">
+        <Button
+          type="button"
+          className={cn("font-bold", theme?.primary)}
+          onClick={() => {
+            const blob = new Blob(
+              [JSON.stringify(buildRoutineBackupPayload(), null, 2)],
+              { type: "application/json" },
+            );
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
+            a.download = `hub-routine-backup-${new Date().toISOString().slice(0, 10)}.json`;
+            a.click();
+            setTimeout(() => URL.revokeObjectURL(a.href), 1500);
+          }}
+        >
+          Експорт JSON
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          className="border border-line/70"
+          onClick={() => backupRef.current?.click()}
+        >
+          Імпорт
+        </Button>
+        <input
+          ref={backupRef}
+          type="file"
+          accept="application/json,.json"
+          className="hidden"
+          onChange={async (e) => {
+            const f = e.target.files?.[0];
+            if (!f) return;
+            try {
+              const text = await f.text();
+              const parsed = JSON.parse(text);
+              onImportParsed?.(parsed);
+            } catch (err) {
+              toast?.warning?.(err?.message || "Не вдалося імпортувати файл.");
+            }
+            e.target.value = "";
+          }}
+        />
+      </div>
+    </section>
+  );
+}
+
