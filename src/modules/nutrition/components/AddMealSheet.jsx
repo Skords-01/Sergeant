@@ -230,7 +230,7 @@ export function AddMealSheet({
 
   const handleBarcodeLookup = useCallback(
     async (codeRaw) => {
-      const code = String(codeRaw || '').trim();
+      const code = String(codeRaw || '').trim().replace(/\D/g, '');
       if (!code) return;
       setBarcodeStatus('Шукаю…');
 
@@ -268,17 +268,22 @@ export function AddMealSheet({
         setBarcodeStatus(`Знайдено: ${[p.name, p.brand].filter(Boolean).join(' — ')} ✔`);
         const grams = p.servingGrams || 100;
         const gramsStr = String(Math.round(grams));
-        const factor = grams / 100;
-        setForm((s) => ({
-          ...s,
-          name: [p.name, p.brand].filter(Boolean).join(' ').trim() || s.name,
-          kcal: p.kcal_100g != null ? String(Math.round(p.kcal_100g * factor)) : s.kcal,
-          protein_g: p.protein_100g != null ? String(Math.round(p.protein_100g * factor)) : s.protein_g,
-          fat_g: p.fat_100g != null ? String(Math.round(p.fat_100g * factor)) : s.fat_g,
-          carbs_g: p.carbs_100g != null ? String(Math.round(p.carbs_100g * factor)) : s.carbs_g,
-          err: '',
-        }));
+        const syntheticFood = {
+          id: null,
+          name: p.name,
+          brand: p.brand || null,
+          per100: {
+            kcal: p.kcal_100g ?? 0,
+            protein_g: p.protein_100g ?? 0,
+            fat_g: p.fat_100g ?? 0,
+            carbs_g: p.carbs_100g ?? 0,
+          },
+          defaultGrams: grams,
+          source: 'barcode',
+        };
+        setPickedFood(syntheticFood);
         setPickedGrams(gramsStr);
+        applyPickedFood(syntheticFood, gramsStr);
       } catch {
         setBarcodeStatus("Помилка пошуку. Перевір з'єднання і спробуй пізніше.");
       }

@@ -6,7 +6,7 @@ async function startZxingScanner(videoEl, stream, onDetected, cancelRef, zxingSt
 
   const reader = new BrowserMultiFormatReader();
 
-  reader.decodeFromStream(
+  const controls = await reader.decodeFromStream(
     stream,
     videoEl,
     (result) => {
@@ -19,6 +19,11 @@ async function startZxingScanner(videoEl, stream, onDetected, cancelRef, zxingSt
   );
 
   zxingStopRef.current = () => {
+    try {
+      controls?.stop?.();
+    } catch {
+      /* ignore */
+    }
     try {
       reader.reset();
     } catch {
@@ -80,7 +85,11 @@ export function BarcodeScanner({ onDetected, onClose }) {
       let stream;
       try {
         stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: "environment" },
+          video: {
+            facingMode: "environment",
+            width: { ideal: 1920 },
+            height: { ideal: 1080 },
+          },
           audio: false,
         });
       } catch {
@@ -117,11 +126,18 @@ export function BarcodeScanner({ onDetected, onClose }) {
 
         if (detector) {
           let consecutiveErrors = 0;
+          let lastTickTime = 0;
           const tick = async () => {
             if (cancelRef.current) return;
+            const now = performance.now();
+            if (now - lastTickTime < 150) {
+              rafRef.current = requestAnimationFrame(tick);
+              return;
+            }
+            lastTickTime = now;
             try {
               const v = videoRef.current;
-              if (v && v.readyState >= 2) {
+              if (v && v.readyState >= 2 && v.videoWidth > 0) {
                 const codes = await detector.detect(v);
                 consecutiveErrors = 0;
                 const raw = codes?.[0]?.rawValue;
@@ -196,6 +212,7 @@ export function BarcodeScanner({ onDetected, onClose }) {
               className="w-full aspect-video object-cover"
               muted
               playsInline
+              autoPlay
             />
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div className="w-3/4 h-1/2 border-2 border-nutrition/80 rounded-xl" />
