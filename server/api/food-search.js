@@ -5,6 +5,66 @@ const OFF_SEARCH = "https://world.openfoodfacts.org/api/v2/search";
 const OFF_FIELDS =
   "product_name,product_name_uk,brands,nutriments,serving_quantity";
 
+const UK_TO_EN = {
+  груша: "pear",
+  яблуко: "apple",
+  банан: "banana",
+  апельсин: "orange",
+  лимон: "lemon",
+  ківі: "kiwi",
+  манго: "mango",
+  персик: "peach",
+  слива: "plum",
+  вишня: "cherry",
+  черешня: "cherry",
+  полуниця: "strawberry",
+  суниця: "strawberry",
+  малина: "raspberry",
+  чорниця: "blueberry",
+  виноград: "grapes",
+  гарбуз: "pumpkin",
+  кабачок: "zucchini",
+  баклажан: "eggplant",
+  помідор: "tomato",
+  томат: "tomato",
+  огірок: "cucumber",
+  морква: "carrot",
+  цибуля: "onion",
+  часник: "garlic",
+  картопля: "potato",
+  броколі: "broccoli",
+  шпинат: "spinach",
+  капуста: "cabbage",
+  буряк: "beet",
+  гриби: "mushrooms",
+  шампіньони: "mushrooms",
+  авокадо: "avocado",
+  курка: "chicken",
+  яловичина: "beef",
+  свинина: "pork",
+  лосось: "salmon",
+  тунець: "tuna",
+  яйце: "egg",
+  молоко: "milk",
+  сир: "cheese",
+  йогурт: "yogurt",
+  масло: "butter",
+  рис: "rice",
+  гречка: "buckwheat",
+  вівсянка: "oatmeal",
+  макарони: "pasta",
+  хліб: "bread",
+  мед: "honey",
+  горіх: "nuts",
+  арахіс: "peanut",
+  мигдаль: "almond",
+};
+
+function translateFirstToken(query) {
+  const firstToken = query.trim().toLowerCase().split(/\s+/)[0];
+  return UK_TO_EN[firstToken] || null;
+}
+
 function normalizeProduct(product, idx) {
   const n = product?.nutriments || {};
 
@@ -51,6 +111,28 @@ function normalizeProduct(product, idx) {
   };
 }
 
+async function fetchOFF(searchTerms, lc, signal) {
+  const url = new URL(OFF_SEARCH);
+  url.searchParams.set("search_terms", searchTerms);
+  url.searchParams.set("page_size", "20");
+  url.searchParams.set("fields", OFF_FIELDS);
+  url.searchParams.set("sort_by", "unique_scans_n");
+  url.searchParams.set("lc", lc);
+  url.searchParams.set("cc", "ua");
+
+  const r = await fetch(url.toString(), {
+    headers: {
+      "User-Agent":
+        "Sergeant-NutritionApp/1.0 (https://sergeant.2dmanager.com.ua)",
+    },
+    signal,
+  });
+
+  if (!r.ok) return [];
+  const data = await r.json();
+  return data?.products || [];
+}
+
 export default async function handler(req, res) {
   setCorsHeaders(res, req, {
     methods: "GET, OPTIONS",
@@ -73,33 +155,38 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "Запит занадто короткий" });
   }
 
+  const signal = AbortSignal.timeout(8000);
+
   try {
-    const url = new URL(OFF_SEARCH);
-    url.searchParams.set("search_terms", query);
-    url.searchParams.set("page_size", "20");
-    url.searchParams.set("fields", OFF_FIELDS);
-    url.searchParams.set("sort_by", "unique_scans_n");
-    url.searchParams.set("lc", "uk");
-    url.searchParams.set("cc", "ua");
+    const enTerm = translateFirstToken(query);
 
-    const r = await fetch(url.toString(), {
-      headers: {
-        "User-Agent":
-          "Sergeant-NutritionApp/1.0 (https://sergeant.2dmanager.com.ua)",
-      },
-      signal: AbortSignal.timeout(8000),
-    });
-
-    if (!r.ok) {
-      return res
-        .status(502)
-        .json({ error: "Помилка зовнішнього сервісу (Open Food Facts)" });
+    let rawProducts;
+    if (enTerm) {
+      const [ukResults, enResults] = await Promise.all([
+        fetchOFF(query, "uk", signal),
+        fetchOFF(enTerm, "en", signal),
+      ]);
+      rawProducts = [...ukResults, ...enResults];
+    } else {
+      rawProducts = await fetchOFF(query, "uk", signal);
     }
 
-    const data = await r.json();
-    const products = (data?.products || [])
+    const qTokens = query.toLowerCase().split(/\s+/).filter((t) => t.length >= 2);
+    const enTokens = enTerm ? enTerm.toLowerCase().split(/\s+/) : [];
+    const allTokens = [...qTokens, ...enTokens];
+
+    const seen = new Set();
+    const products = rawProducts
       .map((p, i) => normalizeProduct(p, i))
       .filter(Boolean)
+      .filter((p) => {
+        const key = `${(p.name || "").toLowerCase()}|${(p.brand || "").toLowerCase()}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        if (!allTokens.length) return true;
+        const n = (p.name || "").toLowerCase();
+        return allTokens.some((t) => n.includes(t));
+      })
       .slice(0, 8);
 
     return res.status(200).json({ products });
