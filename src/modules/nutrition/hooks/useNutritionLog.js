@@ -5,6 +5,7 @@ import {
   persistNutritionLog,
   addLogEntry,
   removeLogEntry,
+  updateLogEntry,
   duplicatePreviousDayMeals,
   mergeNutritionLogs,
   normalizeNutritionLog,
@@ -30,6 +31,8 @@ import {
  *   macros: NullableMacros,
  *   source: 'manual'|'photo',
  *   macroSource: 'manual'|'productDb'|'photoAI'|'recipeAI',
+ *   amount_g?: number|null,
+ *   foodId?: string|null,
  * }} Meal
  */
 
@@ -73,6 +76,7 @@ function collectMealIds(log) {
  *   addMealPhotoResult: unknown,
  *   setAddMealPhotoResult: (result: unknown) => void,
  *   handleAddMeal: (meal: Partial<Meal>) => void,
+ *   handleEditMeal: (date: string, meal: Partial<Meal> & { id: string }) => void,
  *   handleRemoveMeal: (date: string, id: string) => void,
  *   storageErr: string,
  *   duplicateYesterday: () => void,
@@ -107,6 +111,13 @@ export function useNutritionLog() {
    */
   const handleAddMeal = (meal) => {
     setNutritionLog((log) => addLogEntry(log, selectedDate, meal));
+    setAddMealSheetOpen(false);
+    setAddMealPhotoResult(null);
+  };
+
+  const handleEditMeal = (date, meal) => {
+    if (!meal?.id) return;
+    setNutritionLog((log) => updateLogEntry(log, date, meal));
     setAddMealSheetOpen(false);
     setAddMealPhotoResult(null);
   };
@@ -177,6 +188,7 @@ export function useNutritionLog() {
     addMealPhotoResult,
     setAddMealPhotoResult,
     handleAddMeal,
+    handleEditMeal,
     handleRemoveMeal,
     storageErr,
     duplicateYesterday,

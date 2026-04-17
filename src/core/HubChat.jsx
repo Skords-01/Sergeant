@@ -331,6 +331,15 @@ function HubChat({ onClose, initialMessage }) {
     try { localStorage.removeItem("hub_chat_history"); } catch {}
   };
 
+  const sessionInfo = useMemo(() => {
+    const uiMsgs = Array.isArray(messages) ? messages : [];
+    const history = uiMsgs
+      .filter((x) => x?.role === "user" || x?.role === "assistant")
+      .slice(-10);
+    const chars = history.reduce((acc, x) => acc + String(x?.text || "").length, 0);
+    return { historyCount: history.length, chars };
+  }, [messages]);
+
   return (
     <div className="fixed inset-0 z-50 flex flex-col safe-area-pt-pb">
       <div
@@ -370,6 +379,9 @@ function HubChat({ onClose, initialMessage }) {
                     ? "Контекст готовий"
                     : ""}
               </div>
+              <div className="text-[10px] text-subtle mt-0.5">
+                Сесія: {sessionInfo.historyCount}/10 · ~{Math.round(sessionInfo.chars / 100) / 10}k символів
+              </div>
               <p
                 id="hub-chat-privacy"
                 className="text-[10px] text-subtle mt-1 leading-snug max-w-[min(100%,280px)]"
@@ -380,6 +392,15 @@ function HubChat({ onClose, initialMessage }) {
             </div>
           </div>
           <div className="flex items-center gap-1 shrink-0">
+            <button
+              type="button"
+              onClick={clearChat}
+              className="h-9 px-3 flex items-center gap-1.5 rounded-xl text-muted hover:text-text hover:bg-panelHi transition-colors text-xs font-semibold"
+              title="Нова сесія (очистити чат)"
+              aria-label="Нова сесія (очистити чат)"
+            >
+              ↻ Нова
+            </button>
             <button
               type="button"
               onClick={clearChat}

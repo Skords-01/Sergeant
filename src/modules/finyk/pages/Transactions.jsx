@@ -40,6 +40,7 @@ export function Transactions({
   showBalance = true,
   categoryFilter,
   onClearCategoryFilter,
+  onEditManualExpense,
 }) {
   const {
     realTx,
@@ -648,6 +649,11 @@ export function Transactions({
                       >
                         <TxRow
                           tx={t}
+                          onClick={
+                            t._manual && typeof onEditManualExpense === "function"
+                              ? () => onEditManualExpense(t._manualId)
+                              : undefined
+                          }
                           onHide={t._manual ? undefined : hideTx}
                           hidden={hiddenTxIds.includes(t.id)}
                           overrideCatId={txCategories[t.id]}

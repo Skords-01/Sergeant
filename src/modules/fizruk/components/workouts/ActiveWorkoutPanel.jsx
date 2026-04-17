@@ -1,4 +1,4 @@
-import { useId, useState } from "react";
+import { useCallback, useId, useMemo, useState } from "react";
 import { Button } from "@shared/components/ui/Button";
 import { recoveryConflictsForWorkoutItem } from "../../lib/recoveryConflict";
 import { useRestSettings, getRestCategory, REST_CATEGORY_LABELS } from "../../hooks/useRestSettings";
@@ -121,24 +121,26 @@ export function ActiveWorkoutPanel({
 
   if (!activeWorkout) return null;
 
-  const groups = activeWorkout.groups || [];
-  const itemIdToGroup = new Map();
-  for (const g of groups) {
-    for (const id of g.itemIds || []) {
-      itemIdToGroup.set(id, g);
+  const groups = useMemo(() => activeWorkout.groups || [], [activeWorkout.groups]);
+  const items = useMemo(() => activeWorkout.items || [], [activeWorkout.items]);
+  const itemIdToGroup = useMemo(() => {
+    const m = new Map();
+    for (const g of groups) {
+      for (const id of g.itemIds || []) m.set(id, g);
     }
-  }
+    return m;
+  }, [groups]);
 
-  const handleToggleGroupSelect = (itemId) => {
+  const handleToggleGroupSelect = useCallback((itemId) => {
     setGroupSelected((prev) => {
       const next = new Set(prev);
       if (next.has(itemId)) next.delete(itemId);
       else next.add(itemId);
       return next;
     });
-  };
+  }, []);
 
-  const handleCreateSuperset = (type) => {
+  const handleCreateSuperset = useCallback((type) => {
     if (groupSelected.size < 2 || groupSelected.size > 3) return;
     const itemIds = [...groupSelected];
     const newGroup = { id: uid("g"), type, itemIds, restSec: 60 };
@@ -146,34 +148,34 @@ export function ActiveWorkoutPanel({
     updateWorkout(activeWorkout.id, { groups: newGroups });
     setGroupSelected(new Set());
     setGroupSelectMode(false);
-  };
+  }, [activeWorkout.id, groupSelected, groups, updateWorkout]);
 
-  const handleRemoveGroup = (groupId) => {
+  const handleRemoveGroup = useCallback((groupId) => {
     updateWorkout(activeWorkout.id, { groups: groups.filter((g) => g.id !== groupId) });
-  };
+  }, [activeWorkout.id, groups, updateWorkout]);
 
-  const handleGroupRestSec = (groupId, sec) => {
+  const handleGroupRestSec = useCallback((groupId, sec) => {
     updateWorkout(activeWorkout.id, {
       groups: groups.map((g) => g.id === groupId ? { ...g, restSec: sec } : g),
     });
-  };
+  }, [activeWorkout.id, groups, updateWorkout]);
 
-  const handleWarmupToggle = (field, itemId) => {
+  const handleWarmupToggle = useCallback((field, itemId) => {
     const arr = (activeWorkout[field] || []).map((x) =>
       x.id === itemId ? { ...x, done: !x.done } : x,
     );
     updateWorkout(activeWorkout.id, { [field]: arr });
-  };
+  }, [activeWorkout, updateWorkout]);
 
-  const handleInitWarmup = () => {
+  const handleInitWarmup = useCallback(() => {
     updateWorkout(activeWorkout.id, { warmup: makeDefaultWarmup() });
-  };
+  }, [activeWorkout.id, updateWorkout]);
 
-  const handleInitCooldown = () => {
+  const handleInitCooldown = useCallback(() => {
     updateWorkout(activeWorkout.id, { cooldown: makeDefaultCooldown() });
-  };
+  }, [activeWorkout.id, updateWorkout]);
 
-  const renderItem = (it) => {
+  const renderItem = useCallback((it) => {
     const group = itemIdToGroup.get(it.id);
     const isSelected = groupSelected.has(it.id);
 
@@ -347,6 +349,16 @@ export function ActiveWorkoutPanel({
                   placeholder="повт."
                   value={s.reps || ""}
                   onFocus={(e) => e.target.select()}
+                  onKeyDown={(e) => {
+                    if (e.key !== "Enter") return;
+                    // UX: як у більшості трекерів — Enter на повторах = "залоговано" → запускаємо таймер
+                    if (activeWorkout.endedAt) return;
+                    if (group) return;
+                    const reps = Number(s.reps) || 0;
+                    const w = Number(s.weightKg) || 0;
+                    if (reps <= 0 && w <= 0) return;
+                    setRestTimer({ remaining: defSec, total: defSec });
+                  }}
                   onChange={(e) => {
                     const next = [...(it.sets || [])];
                     next[idx] = {
@@ -394,6 +406,9 @@ export function ActiveWorkoutPanel({
                   updateItem(activeWorkout.id, it.id, {
                     sets: [...(it.sets || []), newSet],
                   });
+                    if (!activeWorkout.endedAt && !group) {
+                      setRestTimer({ remaining: defSec, total: defSec });
+                    }
                 }}
               />
             </div>
@@ -497,10 +512,9 @@ export function ActiveWorkoutPanel({
         )}
       </div>
     );
-  };
+  }, [activeWorkout, getDefaultForGroup, groupSelectMode, groupSelected, itemIdToGroup, lastByExerciseId, musclesUk, recBy, removeItem, setRestTimer, updateItem]);
 
-  const renderItemsList = () => {
-    const items = activeWorkout.items || [];
+  const renderedItemsList = useMemo(() => {
     if (items.length === 0) {
       return (
         <div className="text-sm text-subtle text-center py-6">
@@ -573,7 +587,7 @@ export function ActiveWorkoutPanel({
     }
 
     return rendered;
-  };
+  }, [handleGroupRestSec, handleRemoveGroup, itemIdToGroup, items, renderItem, setRestTimer]);
 
   return (
     <div className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card">
@@ -707,7 +721,7 @@ export function ActiveWorkoutPanel({
             )}
           </div>
         )}
-        {renderItemsList()}
+        {renderedItemsList}
       </div>
 
       <div className="mt-3 space-y-2">

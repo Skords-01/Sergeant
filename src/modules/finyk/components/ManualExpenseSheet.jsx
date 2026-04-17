@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@shared/components/ui/Button";
 import { VoiceMicButton } from "@shared/components/ui/VoiceMicButton.jsx";
 import { parseExpenseSpeech } from "../../../core/lib/speechParsers.js";
+import { useVisualKeyboardInset } from "@shared/hooks/useVisualKeyboardInset";
 
 const CATEGORIES = [
   "їжа",
@@ -17,7 +18,9 @@ const CATEGORIES = [
 const formInp =
   "w-full h-11 rounded-2xl border border-line bg-panelHi px-4 text-text outline-none focus:border-muted transition-colors";
 
-export function ManualExpenseSheet({ open, onClose, onAdd }) {
+export function ManualExpenseSheet({ open, onClose, onSave, initialExpense }) {
+  const kbInsetPx = useVisualKeyboardInset(open);
+  const isEditing = !!initialExpense?.id;
   const [form, setForm] = useState({
     description: "",
     amount: "",
@@ -28,15 +31,25 @@ export function ManualExpenseSheet({ open, onClose, onAdd }) {
 
   useEffect(() => {
     if (open) {
-      setForm({
-        description: "",
-        amount: "",
-        category: "інше",
-        date: new Date().toISOString().slice(0, 10),
-      });
+      if (initialExpense?.id) {
+        const d = initialExpense.date ? new Date(initialExpense.date) : new Date();
+        setForm({
+          description: String(initialExpense.description || ""),
+          amount: initialExpense.amount != null ? String(initialExpense.amount) : "",
+          category: initialExpense.category || "інше",
+          date: d.toISOString().slice(0, 10),
+        });
+      } else {
+        setForm({
+          description: "",
+          amount: "",
+          category: "інше",
+          date: new Date().toISOString().slice(0, 10),
+        });
+      }
       setError("");
     }
-  }, [open]);
+  }, [open, initialExpense]);
 
   if (!open) return null;
 
@@ -50,7 +63,8 @@ export function ManualExpenseSheet({ open, onClose, onAdd }) {
       setError("Вкажіть суму більше 0");
       return;
     }
-    onAdd({
+    onSave?.({
+      ...(initialExpense?.id ? { id: String(initialExpense.id) } : {}),
       description: form.description.trim(),
       amount: amt,
       category: form.category,
@@ -61,9 +75,14 @@ export function ManualExpenseSheet({ open, onClose, onAdd }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm">
-      <div className="w-full max-w-lg bg-panel rounded-t-3xl p-5 pb-safe-area-bottom space-y-4 animate-slide-up">
+      <div
+        className="w-full max-w-lg bg-panel rounded-t-3xl p-5 pb-safe-area-bottom space-y-4 animate-slide-up"
+        style={{ marginBottom: kbInsetPx }}
+      >
         <div className="flex items-center justify-between mb-1">
-          <h2 className="text-base font-bold text-text">Додати витрату</h2>
+          <h2 className="text-base font-bold text-text">
+            {isEditing ? "Редагувати витрату" : "Додати витрату"}
+          </h2>
           <button
             onClick={onClose}
             className="w-8 h-8 rounded-full bg-panelHi flex items-center justify-center text-muted hover:text-text transition-colors"
@@ -163,7 +182,7 @@ export function ManualExpenseSheet({ open, onClose, onAdd }) {
             Скасувати
           </Button>
           <Button className="flex-1" onClick={handleSubmit}>
-            Зберегти
+            {isEditing ? "Зберегти" : "Додати"}
           </Button>
         </div>
       </div>

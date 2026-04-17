@@ -152,6 +152,7 @@ export default function App({ onBackToHub, pwaAction, onPwaActionConsumed } = {}
     }
   });
   const [showExpenseSheet, setShowExpenseSheet] = useState(false);
+  const [editingManualExpenseId, setEditingManualExpenseId] = useState(null);
 
   useEffect(() => {
     try {
@@ -576,6 +577,10 @@ export default function App({ onBackToHub, pwaAction, onPwaActionConsumed } = {}
             showBalance={showBalance}
             categoryFilter={categoryFilter}
             onClearCategoryFilter={() => setCategoryFilter(null)}
+            onEditManualExpense={(id) => {
+              setEditingManualExpenseId(String(id));
+              setShowExpenseSheet(true);
+            }}
           />
         )}
         {page === "budgets" && <Budgets mono={mergedMono} storage={storage} />}
@@ -590,7 +595,10 @@ export default function App({ onBackToHub, pwaAction, onPwaActionConsumed } = {}
 
       {(page === "overview" || page === "transactions" || page === "budgets") && (
         <button
-          onClick={() => setShowExpenseSheet(true)}
+          onClick={() => {
+            setEditingManualExpenseId(null);
+            setShowExpenseSheet(true);
+          }}
           className="fixed bottom-[calc(58px+env(safe-area-inset-bottom,0px)+16px)] right-4 w-12 h-12 rounded-full bg-emerald-500 text-white shadow-lg flex items-center justify-center text-2xl hover:bg-emerald-600 active:scale-95 transition-all z-20"
           aria-label="Додати витрату"
         >
@@ -627,10 +635,23 @@ export default function App({ onBackToHub, pwaAction, onPwaActionConsumed } = {}
 
       <ManualExpenseSheet
         open={showExpenseSheet}
-        onClose={() => setShowExpenseSheet(false)}
-        onAdd={(expense) => {
-          storage.addManualExpense(expense);
-          showToast("✅ Витрату додано!");
+        onClose={() => {
+          setShowExpenseSheet(false);
+          setEditingManualExpenseId(null);
+        }}
+        initialExpense={
+          editingManualExpenseId
+            ? (storage.manualExpenses || []).find((e) => String(e.id) === String(editingManualExpenseId)) || null
+            : null
+        }
+        onSave={(expense) => {
+          if (expense?.id) {
+            storage.editManualExpense?.(expense.id, expense);
+            showToast("✅ Витрату оновлено!");
+          } else {
+            storage.addManualExpense(expense);
+            showToast("✅ Витрату додано!");
+          }
         }}
       />
 

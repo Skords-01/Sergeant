@@ -122,6 +122,7 @@ export function LogCard({
   onAddMeal,
   onAddMealFromSearch,
   onRemoveMeal,
+  onEditMeal,
   prefs,
   setPrefs,
   onDuplicateYesterday,
@@ -525,6 +526,7 @@ export function LogCard({
           meals={meals}
           selectedDate={selectedDate}
           onRemoveMeal={onRemoveMeal}
+          onEditMeal={onEditMeal}
         />
       )}
 
@@ -557,7 +559,7 @@ const MEAL_ROW_HEIGHT = 68;
 const MEAL_HEADER_HEIGHT = 32;
 const MAX_MEAL_LIST_HEIGHT = MEAL_ROW_HEIGHT * 8;
 
-function VirtualMealList({ groups, meals, selectedDate, onRemoveMeal }) {
+function VirtualMealList({ groups, meals, selectedDate, onRemoveMeal, onEditMeal }) {
   const activeTypes = MEAL_ORDER.filter((t) => groups[t]?.length);
   const flatItems = useMemo(() => {
     const items = [];
@@ -600,6 +602,7 @@ function VirtualMealList({ groups, meals, selectedDate, onRemoveMeal }) {
             >
               <MealRow
                 meal={item.meal}
+                onEdit={onEditMeal ? () => onEditMeal(selectedDate, item.meal) : undefined}
                 onRemove={() => onRemoveMeal(selectedDate, item.meal.id)}
               />
             </SwipeToAction>
@@ -610,7 +613,7 @@ function VirtualMealList({ groups, meals, selectedDate, onRemoveMeal }) {
   );
 }
 
-function MealRow({ meal, onRemove }) {
+function MealRow({ meal, onRemove, onEdit }) {
   const mac = meal.macros || {};
   const macroSource = String(meal?.macroSource || "manual");
   const sourceLabel =
@@ -624,7 +627,16 @@ function MealRow({ meal, onRemove }) {
   return (
     <div className="flex items-center gap-3 bg-panelHi rounded-2xl px-3 py-2.5 group">
       <MealThumb mealId={meal.id} />
-      <div className="flex flex-col flex-1 min-w-0">
+      <button
+        type="button"
+        onClick={onEdit}
+        disabled={!onEdit}
+        className={cn(
+          "flex flex-col flex-1 min-w-0 text-left",
+          onEdit ? "cursor-pointer" : "cursor-default",
+        )}
+        aria-label={onEdit ? "Редагувати запис" : undefined}
+      >
         <div className="flex items-baseline gap-2">
           <span className="font-semibold text-text text-sm truncate">
             {meal.name}
@@ -665,7 +677,7 @@ function MealRow({ meal, onRemove }) {
             </span>
           )}
         </div>
-      </div>
+      </button>
       <button
         type="button"
         onClick={onRemove}

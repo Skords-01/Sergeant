@@ -110,6 +110,21 @@ export function useStorage({ onImportFeedback } = {}) {
     setManualExpenses((prev) => prev.filter((e) => e.id !== id));
   };
 
+  const editManualExpense = (id, patch) => {
+    const pid = String(id);
+    setManualExpenses((prev) =>
+      (prev || []).map((e) => {
+        if (String(e.id) !== pid) return e;
+        const next = { ...e };
+        if (patch?.date) next.date = String(patch.date);
+        if (patch?.description != null) next.description = String(patch.description || "");
+        if (patch?.category != null) next.category = String(patch.category || "інше");
+        if (patch?.amount != null) next.amount = Number(patch.amount) || 0;
+        return next;
+      }),
+    );
+  };
+
   const toggleHideAccount = (id) =>
     setHiddenAccounts((h) =>
       h.includes(id) ? h.filter((x) => x !== id) : [...h, id],
@@ -415,6 +430,7 @@ export function useStorage({ onImportFeedback } = {}) {
     manualExpenses,
     setManualExpenses,
     addManualExpense,
+    editManualExpense,
     removeManualExpense,
   };
 }

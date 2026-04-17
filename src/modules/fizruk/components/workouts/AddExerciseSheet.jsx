@@ -3,6 +3,7 @@ import { Input } from "@shared/components/ui/Input";
 import { Button } from "@shared/components/ui/Button";
 import { cn } from "@shared/lib/cn";
 import { useDialogFocusTrap } from "@shared/hooks/useDialogFocusTrap";
+import { useVisualKeyboardInset } from "@shared/hooks/useVisualKeyboardInset";
 import { FIZRUK_SHEET_PAD_CLASS, SHEET_Z } from "../../lib/workoutUi";
 
 const EQUIPMENT_OPTIONS = [
@@ -44,6 +45,7 @@ export function AddExerciseSheet({
 }) {
   const sheetRef = useRef(null);
   useDialogFocusTrap(open, sheetRef, { onEscape: onClose });
+  const kbInsetPx = useVisualKeyboardInset(open);
 
   const suggestedMuscles = useMemo(() => {
     const g = form.primaryGroup;
@@ -77,6 +79,7 @@ export function AddExerciseSheet({
           "relative w-full bg-panel border-t border-line rounded-t-3xl shadow-soft max-h-[92dvh] flex flex-col",
           FIZRUK_SHEET_PAD_CLASS,
         )}
+        style={{ marginBottom: kbInsetPx }}
         onPointerDown={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"

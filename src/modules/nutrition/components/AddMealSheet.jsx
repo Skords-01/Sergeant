@@ -3,6 +3,7 @@ import { Input } from "@shared/components/ui/Input";
 import { Button } from "@shared/components/ui/Button";
 import { cn } from "@shared/lib/cn";
 import { useDialogFocusTrap } from "@shared/hooks/useDialogFocusTrap";
+import { useVisualKeyboardInset } from "@shared/hooks/useVisualKeyboardInset";
 import { MEAL_TYPES } from "../lib/mealTypes.js";
 import { VoiceMicButton } from "@shared/components/ui/VoiceMicButton.jsx";
 import { parseMealSpeech } from "../../../core/lib/speechParsers.js";
@@ -81,12 +82,14 @@ export function AddMealSheet({
   onClose,
   onSave,
   photoResult,
+  initialMeal,
   mealTemplates = [],
   setPrefs,
   pantryItems = [],
   onConsumePantryItem,
 }) {
   const ref = useRef(null);
+  const kbInsetPx = useVisualKeyboardInset(open);
   const [form, setForm] = useState(() => emptyForm(null));
   const [foodQuery, setFoodQuery] = useState("");
   const [foodHits, setFoodHits] = useState([]);
@@ -105,12 +108,28 @@ export function AddMealSheet({
 
   useEffect(() => {
     if (open) {
-      setForm(emptyForm(photoResult));
+      if (initialMeal?.id) {
+        const mac = initialMeal.macros || {};
+        setForm({
+          name: String(initialMeal.name || ""),
+          mealType: initialMeal.mealType || "breakfast",
+          time: initialMeal.time || currentTime(),
+          kcal: mac.kcal != null ? String(Math.round(mac.kcal)) : "",
+          protein_g: mac.protein_g != null ? String(Math.round(mac.protein_g)) : "",
+          fat_g: mac.fat_g != null ? String(Math.round(mac.fat_g)) : "",
+          carbs_g: mac.carbs_g != null ? String(Math.round(mac.carbs_g)) : "",
+          err: "",
+        });
+      } else {
+        setForm(emptyForm(photoResult));
+      }
       setFoodQuery("");
       setFoodHits([]);
       setOffHits([]);
       setPickedFood(null);
-      setPickedGrams("100");
+      setPickedGrams(
+        initialMeal?.amount_g != null ? String(Math.round(Number(initialMeal.amount_g) || 100)) : "100",
+      );
       setFoodErr("");
       setBarcode("");
       setBarcodeStatus("");
@@ -118,7 +137,7 @@ export function AddMealSheet({
       setFromPantryItem(null);
       void ensureSeedFoods();
     }
-  }, [open, photoResult]);
+  }, [open, photoResult, initialMeal]);
 
   function field(key) {
     return (v) => setForm((s) => ({ ...s, [key]: v, err: "" }));
@@ -167,7 +186,7 @@ export function AddMealSheet({
         ? "productDb"
         : "manual";
     onSave({
-      id: `meal_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      id: initialMeal?.id || `meal_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
       time: form.time || currentTime(),
       mealType: form.mealType,
       label: mealLabel,
@@ -357,6 +376,7 @@ export function AddMealSheet({
       <div
         ref={ref}
         className="relative w-full bg-panel border-t border-line rounded-t-3xl shadow-soft max-h-[90dvh] overflow-y-auto"
+        style={{ marginBottom: kbInsetPx }}
         onPointerDown={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"

@@ -236,7 +236,16 @@ export function normalizeMeal(m, idx) {
         ? "photoAI"
         : "manual";
 
-  return { id, name, time, mealType, label, macros, source, macroSource };
+  const amount_g =
+    raw.amount_g != null && Number.isFinite(Number(raw.amount_g)) && Number(raw.amount_g) > 0
+      ? Number(raw.amount_g)
+      : null;
+  const foodId =
+    raw.foodId != null && String(raw.foodId).trim()
+      ? String(raw.foodId).trim()
+      : null;
+
+  return { id, name, time, mealType, label, macros, source, macroSource, amount_g, foodId };
 }
 
 export function normalizeNutritionLog(raw) {
@@ -304,6 +313,18 @@ export function removeLogEntry(log, date, id) {
     return next;
   }
   return { ...log, [date]: { ...day, meals } };
+}
+
+export function updateLogEntry(log, date, meal) {
+  const normalized = normalizeMeal(meal, 0);
+  const day = log[date];
+  if (!day) return log;
+  const prevMeals = Array.isArray(day.meals) ? day.meals : [];
+  const idx = prevMeals.findIndex((m) => m.id === normalized.id);
+  if (idx === -1) return log;
+  const nextMeals = [...prevMeals];
+  nextMeals[idx] = normalized;
+  return { ...log, [date]: { ...day, meals: nextMeals } };
 }
 
 export function getDayMacros(log, date) {

@@ -101,6 +101,7 @@ export default function NutritionApp({ onBackToHub, pwaAction, onPwaActionConsum
 
   const pantry = useNutritionPantries({ setBusy, setErr, setStatusText });
   const log = useNutritionLog();
+  const [editingMeal, setEditingMeal] = useState(null);
   const photo = usePhotoAnalysis({ setBusy, setErr, setStatusText });
   const shopping = useShoppingList();
 
@@ -543,15 +544,20 @@ export default function NutritionApp({ onBackToHub, pwaAction, onPwaActionConsum
     [recipeCacheKey],
   );
 
-  const wrappedAddMeal = useCallback(
+  const wrappedSaveMeal = useCallback(
     async (meal) => {
-      log.handleAddMeal(meal);
+      if (editingMeal?.id) {
+        log.handleEditMeal(editingMeal.date, meal);
+        setEditingMeal(null);
+      } else {
+        log.handleAddMeal(meal);
+      }
       if (meal.source === "photo" && photo.fileRef?.current?.files?.[0]) {
         const blob = await fileToThumbnailBlob(photo.fileRef.current.files[0]);
         if (blob) await saveMealThumbnail(meal.id, blob);
       }
     },
-    [log, photo.fileRef],
+    [log, photo.fileRef, editingMeal],
   );
 
   const storageBanner = [
@@ -739,6 +745,11 @@ export default function NutritionApp({ onBackToHub, pwaAction, onPwaActionConsum
                   log.handleAddMeal({ ...meal, id });
                 }}
                 onRemoveMeal={log.handleRemoveMeal}
+                onEditMeal={(date, meal) => {
+                  setEditingMeal({ date, ...meal });
+                  log.setAddMealPhotoResult(null);
+                  log.setAddMealSheetOpen(true);
+                }}
                 prefs={prefs}
                 setPrefs={setPrefs}
                 onDuplicateYesterday={log.duplicateYesterday}
@@ -785,7 +796,7 @@ export default function NutritionApp({ onBackToHub, pwaAction, onPwaActionConsum
                 weekPlanRaw={weekPlanRaw}
                 weekPlanBusy={weekPlanBusy}
                 fetchWeekPlan={fetchWeekPlan}
-                addMealToLog={wrappedAddMeal}
+                addMealToLog={wrappedSaveMeal}
               />
             )}
 
@@ -857,9 +868,11 @@ export default function NutritionApp({ onBackToHub, pwaAction, onPwaActionConsum
         onClose={() => {
           log.setAddMealSheetOpen(false);
           log.setAddMealPhotoResult(null);
+          setEditingMeal(null);
         }}
-        onSave={wrappedAddMeal}
+        onSave={wrappedSaveMeal}
         photoResult={log.addMealPhotoResult}
+        initialMeal={editingMeal}
         mealTemplates={prefs.mealTemplates || []}
         setPrefs={setPrefs}
         pantryItems={pantry.effectiveItems}
