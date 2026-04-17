@@ -1,4 +1,4 @@
-﻿import { setCorsHeaders } from "./lib/cors.js";
+import { setCorsHeaders } from "./lib/cors.js";
 import { checkRateLimit } from "./lib/rateLimit.js";
 
 const OFF_SEARCH = "https://world.openfoodfacts.org/api/v2/search";
@@ -6,102 +6,102 @@ const OFF_FIELDS =
   "product_name,product_name_uk,brands,nutriments,serving_quantity";
 const USDA_SEARCH = "https://api.nal.usda.gov/fdc/v1/foods/search";
 
-// ╨Я╨╡╤А╤И╨╕╨╣ ╤В╨╛╨║╨╡╨╜ ╨╖╨░╨┐╨╕╤В╤Г тЖТ ╨░╨╜╨│╨╗╤Ц╨╣╤Б╤М╨║╨╕╨╣ ╨╡╨║╨▓╤Ц╨▓╨░╨╗╨╡╨╜╤В ╨┤╨╗╤П USDA / OFF-en ╨┐╨╛╤И╤Г╨║╤Г
+// Перший токен запиту → англійський еквівалент для USDA / OFF-en пошуку
 const UK_TO_EN = {
-  ╨│╤А╤Г╤И╨░: "pear",
-  ╤П╨▒╨╗╤Г╨║╨╛: "apple",
-  ╨▒╨░╨╜╨░╨╜: "banana",
-  ╨░╨┐╨╡╨╗╤М╤Б╨╕╨╜: "orange",
-  ╨╗╨╕╨╝╨╛╨╜: "lemon",
-  ╨║╤Ц╨▓╤Ц: "kiwi",
-  ╨╝╨░╨╜╨│╨╛: "mango",
-  ╨┐╨╡╤А╤Б╨╕╨║: "peach",
-  ╤Б╨╗╨╕╨▓╨░: "plum",
-  ╨▓╨╕╤И╨╜╤П: "cherry",
-  ╤З╨╡╤А╨╡╤И╨╜╤П: "cherry",
-  ╨┐╨╛╨╗╤Г╨╜╨╕╤Ж╤П: "strawberry",
-  ╤Б╤Г╨╜╨╕╤Ж╤П: "strawberry",
-  ╨╝╨░╨╗╨╕╨╜╨░: "raspberry",
-  ╤З╨╛╤А╨╜╨╕╤Ж╤П: "blueberry",
-  ╨▓╨╕╨╜╨╛╨│╤А╨░╨┤: "grapes",
-  ╨│╨░╤А╨▒╤Г╨╖: "pumpkin",
-  ╨║╨░╨▒╨░╤З╨╛╨║: "zucchini",
-  ╨▒╨░╨║╨╗╨░╨╢╨░╨╜: "eggplant",
-  ╨┐╨╛╨╝╤Ц╨┤╨╛╤А: "tomato",
-  ╤В╨╛╨╝╨░╤В: "tomato",
-  ╨╛╨│╤Ц╤А╨╛╨║: "cucumber",
-  ╨╝╨╛╤А╨║╨▓╨░: "carrot",
-  ╤Ж╨╕╨▒╤Г╨╗╤П: "onion",
-  ╤З╨░╤Б╨╜╨╕╨║: "garlic",
-  ╨║╨░╤А╤В╨╛╨┐╨╗╤П: "potato",
-  ╨▒╤А╨╛╨║╨╛╨╗╤Ц: "broccoli",
-  ╤И╨┐╨╕╨╜╨░╤В: "spinach",
-  ╨║╨░╨┐╤Г╤Б╤В╨░: "cabbage",
-  ╨▒╤Г╤А╤П╨║: "beet",
-  ╨│╤А╨╕╨▒╨╕: "mushrooms",
-  ╤И╨░╨╝╨┐╤Ц╨╜╤М╨╛╨╜╨╕: "mushrooms",
-  ╨░╨▓╨╛╨║╨░╨┤╨╛: "avocado",
-  ╨║╤Г╤А╨║╨░: "chicken",
-  ╤П╨╗╨╛╨▓╨╕╤З╨╕╨╜╨░: "beef",
-  ╤Б╨▓╨╕╨╜╨╕╨╜╨░: "pork",
-  ╨╗╨╛╤Б╨╛╤Б╤М: "salmon",
-  ╤В╤Г╨╜╨╡╤Ж╤М: "tuna",
-  ╤П╨╣╤Ж╨╡: "egg",
-  ╨╝╨╛╨╗╨╛╨║╨╛: "milk",
-  ╤Б╨╕╤А: "cheese",
-  ╨╣╨╛╨│╤Г╤А╤В: "yogurt",
-  ╨╝╨░╤Б╨╗╨╛: "butter",
-  ╤А╨╕╤Б: "rice",
-  ╨│╤А╨╡╤З╨║╨░: "buckwheat",
-  ╨▓╤Ц╨▓╤Б╤П╨╜╨║╨░: "oatmeal",
-  ╨╝╨░╨║╨░╤А╨╛╨╜╨╕: "pasta",
-  ╤Е╨╗╤Ц╨▒: "bread",
-  ╨╝╨╡╨┤: "honey",
-  ╨│╨╛╤А╤Ц╤Е: "nuts",
-  ╨░╤А╨░╤Е╤Ц╤Б: "peanut",
-  ╨╝╨╕╨│╨┤╨░╨╗╤М: "almond",
-  ╨║╨░╨▓╨░: "coffee",
-  ╤З╨░╨╣: "tea",
-  ╤Б╨╛╤З╨╡╨▓╨╕╤Ж╤П: "lentils",
-  ╨║╨▓╨░╤Б╨╛╨╗╤П: "beans",
-  ╨╜╤Г╤В: "chickpeas",
-  ╤В╨╛╤Д╤Г: "tofu",
-  ╨░╨╜╨░╨╜╨░╤Б: "pineapple",
-  ╨┤╨╕╨╜╤П: "melon",
-  ╨║╨░╨▓╤Г╨╜: "watermelon",
-  ╨░╨▒╤А╨╕╨║╨╛╤Б: "apricot",
-  ╨╝╨░╨╜╨┤╨░╤А╨╕╨╜: "tangerine",
-  ╨│╤А╨╡╨╣╨┐╤Д╤А╤Г╤В: "grapefruit",
-  ╤А╨╛╨┤╨╖╨╕╨╜╨║╨╕: "raisins",
-  ╤З╨╛╤А╨╜╨╛╤Б╨╗╨╕╨▓: "prunes",
-  ╨║╤Г╤А╨░╨│╨░: "dried apricot",
-  ╨│╨░╤А╨▒╤Г╨╖╨╛╨▓╨╡: "pumpkin",
-  ╤Ж╨▓╤Ц╤В╨╜╨░: "cauliflower",
-  ╤Б╨╡╨╗╨╡╤А╨░: "celery",
-  ╨┐╨╡╤В╤А╤Г╤И╨║╨░: "parsley",
-  ╨║╤А╤Ц╨┐: "dill",
-  ╤А╨╡╨┤╨╕╤Б╨║╨░: "radish",
-  ╨│╨╛╤А╨╛╤И╨╛╨║: "peas",
-  ╨║╤Г╨║╤Г╤А╤Г╨┤╨╖╨░: "corn",
-  ╤Б╨┐╨░╤А╨╢╨░: "asparagus",
-  ╨│╤А╨╡╤З╨░╨╜╨╡: "buckwheat",
-  ╨▓╤Ц╨▓╤Б╤П╨╜╨╡: "oatmeal",
-  ╨┐╤И╨╡╨╜╨╕╤Ж╤П: "wheat",
-  ╨║╨╡╤Д╤Ц╤А: "kefir",
-  ╤Б╨╝╨╡╤В╨░╨╜╨░: "sour cream",
-  ╨▓╨╡╤А╤И╨║╨╕: "cream",
-  ╤П╨╗╨╛╨▓╨╕╤З╨╕╨╣: "beef",
-  ╨║╤Г╤А╤П╤З╨╕╨╣: "chicken",
-  ╤Б╨▓╨╕╨╜╤П╤З╨╕╨╣: "pork",
-  ╤А╨╕╨▒╨╜╨╕╨╣: "fish",
-  ╨╛╤Б╨╡╨╗╨╡╨┤╨╡╤Ж╤М: "herring",
-  ╤Б╨║╤Г╨╝╨▒╤А╤Ц╤П: "mackerel",
-  ╤В╤А╤Ц╤Б╨║╨░: "cod",
-  ╤Д╨╛╤А╨╡╨╗╤М: "trout",
-  ╨║╨╛╤А╨╛╨┐: "carp",
+  груша: "pear",
+  яблуко: "apple",
+  банан: "banana",
+  апельсин: "orange",
+  лимон: "lemon",
+  ківі: "kiwi",
+  манго: "mango",
+  персик: "peach",
+  слива: "plum",
+  вишня: "cherry",
+  черешня: "cherry",
+  полуниця: "strawberry",
+  суниця: "strawberry",
+  малина: "raspberry",
+  чорниця: "blueberry",
+  виноград: "grapes",
+  гарбуз: "pumpkin",
+  кабачок: "zucchini",
+  баклажан: "eggplant",
+  помідор: "tomato",
+  томат: "tomato",
+  огірок: "cucumber",
+  морква: "carrot",
+  цибуля: "onion",
+  часник: "garlic",
+  картопля: "potato",
+  броколі: "broccoli",
+  шпинат: "spinach",
+  капуста: "cabbage",
+  буряк: "beet",
+  гриби: "mushrooms",
+  шампіньони: "mushrooms",
+  авокадо: "avocado",
+  курка: "chicken",
+  яловичина: "beef",
+  свинина: "pork",
+  лосось: "salmon",
+  тунець: "tuna",
+  яйце: "egg",
+  молоко: "milk",
+  сир: "cheese",
+  йогурт: "yogurt",
+  масло: "butter",
+  рис: "rice",
+  гречка: "buckwheat",
+  вівсянка: "oatmeal",
+  макарони: "pasta",
+  хліб: "bread",
+  мед: "honey",
+  горіх: "nuts",
+  арахіс: "peanut",
+  мигдаль: "almond",
+  кава: "coffee",
+  чай: "tea",
+  сочевиця: "lentils",
+  квасоля: "beans",
+  нут: "chickpeas",
+  тофу: "tofu",
+  ананас: "pineapple",
+  диня: "melon",
+  кавун: "watermelon",
+  абрикос: "apricot",
+  мандарин: "tangerine",
+  грейпфрут: "grapefruit",
+  родзинки: "raisins",
+  чорнослив: "prunes",
+  курага: "dried apricot",
+  гарбузове: "pumpkin",
+  цвітна: "cauliflower",
+  селера: "celery",
+  петрушка: "parsley",
+  кріп: "dill",
+  редиска: "radish",
+  горошок: "peas",
+  кукурудза: "corn",
+  спаржа: "asparagus",
+  гречане: "buckwheat",
+  вівсяне: "oatmeal",
+  пшениця: "wheat",
+  кефір: "kefir",
+  сметана: "sour cream",
+  вершки: "cream",
+  яловичий: "beef",
+  курячий: "chicken",
+  свинячий: "pork",
+  рибний: "fish",
+  оселедець: "herring",
+  скумбрія: "mackerel",
+  тріска: "cod",
+  форель: "trout",
+  короп: "carp",
 };
 
-// ╨в╨╛╤З╨╜╨╕╨╣ ╨░╨▒╨╛ prefix-match (╨╜╨░╨┐╤А. "╨│╤А╤Г╤И" тЖТ "╨│╤А╤Г╤И╨░" тЖТ "pear")
+// Точний або prefix-match (напр. "груш" → "груша" → "pear")
 function translateFirstToken(query) {
   const token = query.trim().toLowerCase().split(/\s+/)[0];
   if (!token || token.length < 2) return null;
@@ -122,7 +122,7 @@ function normalizeOFFProduct(product, idx) {
       ? Math.round(Number(v) * 10) / 10
       : null;
 
-  // ╨Ф╨╛╨╖╨▓╨╛╨╗╤П╤Ф╨╝╨╛ ╨┤╤А╤Г╨║╨╛╨▓╨░╨╜╤Ц ╤Б╨╕╨╝╨▓╨╛╨╗╨╕ ╨╗╨░╤В╨╕╨╜╨╕╤Ж╤Ц + ╨║╨╕╤А╨╕╨╗╨╕╤Ж╤П (╨▒╨╡╨╖ ╨║╨╡╤А╤Г╤О╤З╨╕╤Е ╤Б╨╕╨╝╨▓╨╛╨╗╤Ц╨▓)
+  // Дозволяємо друковані символи латиниці + кирилиця (без керуючих символів)
   const name =
     product?.product_name_uk ||
     (product?.product_name &&
@@ -256,11 +256,11 @@ export default async function handler(req, res) {
   if (!rl.ok)
     return res
       .status(429)
-      .json({ error: "╨Ч╨░╨▒╨░╨│╨░╤В╨╛ ╨╖╨░╨┐╨╕╤В╤Ц╨▓. ╨б╨┐╤А╨╛╨▒╤Г╨╣ ╨┐╤Ц╨╖╨╜╤Ц╤И╨╡." });
+      .json({ error: "Забагато запитів. Спробуй пізніше." });
 
   const query = String(req.query.q || "").trim();
   if (!query || query.length < 2) {
-    return res.status(400).json({ error: "╨Ч╨░╨┐╨╕╤В ╨╖╨░╨╜╨░╨┤╤В╨╛ ╨║╨╛╤А╨╛╤В╨║╨╕╨╣" });
+    return res.status(400).json({ error: "Запит занадто короткий" });
   }
 
   const signal = AbortSignal.timeout(8000);
@@ -284,7 +284,7 @@ export default async function handler(req, res) {
       .map((p, i) => normalizeUSDAProduct(p, i))
       .filter(Boolean);
 
-    // OFF (╨╖ ╤Г╨║╤А╨░╤Ч╨╜╤Б╤М╨║╨╕╨╝╨╕ ╨╜╨░╨╖╨▓╨░╨╝╨╕) ╨╣╨┤╨╡ ╨┐╨╡╤А╤И╨╕╨╝, USDA тАФ ╤П╨║ fallback
+    // OFF (з українськими назвами) йде першим, USDA — як fallback
     const allProducts = [...offProducts, ...usdaProducts];
 
     const qTokens = query
@@ -311,7 +311,7 @@ export default async function handler(req, res) {
     if (e?.name === "TimeoutError" || e?.name === "AbortError") {
       return res
         .status(504)
-        .json({ error: "╨б╨╡╤А╨▓╤Ц╤Б ╨╜╨╡╨┤╨╛╤Б╤В╤Г╨┐╨╜╨╕╨╣ (╤В╨░╨╣╨╝╨░╤Г╤В). ╨б╨┐╤А╨╛╨▒╤Г╨╣ ╨┐╤Ц╨╖╨╜╤Ц╤И╨╡." });
+        .json({ error: "Сервіс недоступний (таймаут). Спробуй пізніше." });
     }
     return res.status(500).json({ error: e?.message || "Server error" });
   }
