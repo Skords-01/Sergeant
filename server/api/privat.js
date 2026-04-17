@@ -10,10 +10,17 @@ export default async function handler(req, res) {
 
   const merchantId = req.headers["x-privat-id"];
   const merchantToken = req.headers["x-privat-token"];
-  const path = req.query.path || "/statements/balance/final";
+  const rawPath = req.query.path || "/statements/balance/final";
 
   if (!merchantId || !merchantToken) {
     return res.status(401).json({ error: "Credentials відсутні" });
+  }
+
+  // Валідація шляху API: лише безпечні символи, без CRLF, ?, #, ..
+  // і точна відповідність дозволеному префіксу (рівний шлях або префікс+"/…").
+  const path = String(rawPath);
+  if (!/^\/[A-Za-z0-9\-_/]+$/.test(path) || path.includes("..")) {
+    return res.status(400).json({ error: "Недозволений API шлях" });
   }
 
   const allowedPaths = [
@@ -21,8 +28,23 @@ export default async function handler(req, res) {
     "/statements/transactions",
   ];
 
-  if (!allowedPaths.some((p) => path.startsWith(p))) {
+  const pathAllowed = allowedPaths.some(
+    (p) => path === p || path.startsWith(p + "/"),
+  );
+  if (!pathAllowed) {
     return res.status(400).json({ error: "Недозволений API шлях" });
+  }
+
+  // Відкидаємо небезпечні символи у значеннях заголовків (CRLF-injection захист).
+  const safeHeader = (v) => {
+    const s = String(v);
+    if (/[\r\n]/.test(s)) return null;
+    return s;
+  };
+  const safeId = safeHeader(merchantId);
+  const safeToken = safeHeader(merchantToken);
+  if (!safeId || !safeToken) {
+    return res.status(400).json({ error: "Недозволений заголовок" });
   }
 
   const queryParams = new URLSearchParams(req.query);
@@ -33,8 +55,8 @@ export default async function handler(req, res) {
     const url = `https://acp.privatbank.ua/api${path}${queryString ? "?" + queryString : ""}`;
     const response = await fetch(url, {
       headers: {
-        id: merchantId,
-        token: merchantToken,
+        id: safeId,
+        token: safeToken,
         "Content-Type": "application/json;charset=utf-8",
       },
     });

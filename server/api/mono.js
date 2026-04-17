@@ -9,22 +9,30 @@ export default async function handler(req, res) {
   if (req.method === "OPTIONS") return res.status(200).end();
 
   const token = req.headers["x-token"];
-  const path = req.query.path || "/personal/client-info";
+  const rawPath = req.query.path || "/personal/client-info";
 
   if (!token) {
     return res.status(401).json({ error: "Токен відсутній" });
   }
 
-  // Валідація шляху API
-  const allowedPaths = ["/personal/client-info", "/personal/statement/"];
+  // Валідація шляху API: лише безпечні символи, без CRLF, ?, #, ..
+  // і точна відповідність дозволеному префіксу (рівний шлях або префікс+"/…").
+  const path = String(rawPath);
+  if (!/^\/[A-Za-z0-9\-_/]+$/.test(path) || path.includes("..")) {
+    return res.status(400).json({ error: "Недозволений API шлях" });
+  }
 
-  if (!allowedPaths.some((allowed) => path.startsWith(allowed))) {
+  const allowedPaths = ["/personal/client-info", "/personal/statement"];
+  const pathAllowed = allowedPaths.some(
+    (allowed) => path === allowed || path.startsWith(allowed + "/"),
+  );
+  if (!pathAllowed) {
     return res.status(400).json({ error: "Недозволений API шлях" });
   }
 
   try {
     const response = await fetch(`https://api.monobank.ua${path}`, {
-      headers: { "X-Token": token },
+      headers: { "X-Token": String(token) },
     });
 
     if (!response.ok) {

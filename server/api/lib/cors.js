@@ -17,7 +17,7 @@ function getReplitOrigins() {
     .split(",")
     .map((d) => d.trim())
     .filter(Boolean)
-    .flatMap((d) => [`https://${d}`, `http://${d}`]);
+    .map((d) => `https://${d}`);
 }
 
 export function getAllowedOrigins() {
