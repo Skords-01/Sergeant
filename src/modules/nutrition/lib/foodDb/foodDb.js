@@ -86,12 +86,23 @@ export async function ensureSeedFoods() {
       r.onerror = () => reject(r.error);
     });
     db.close();
-    if (count > 0) return true;
-    return await replaceAllFoodsFromList(
-      SEED_FOODS_UK.map((x) =>
-        makeFoodProduct({ name: x.name, per100: x.per100 }),
-      ),
-    );
+
+    if (count === 0) {
+      return await replaceAllFoodsFromList(
+        SEED_FOODS_UK.map((x) =>
+          makeFoodProduct({ name: x.name, per100: x.per100 }),
+        ),
+      );
+    }
+
+    // Merge: додати тільки ті seeds, яких ще немає в базі
+    const existing = await listFoods(5000);
+    const byNorm = new Map(existing.map((x) => [normText(x.norm || x.name), x]));
+    for (const seed of SEED_FOODS_UK) {
+      if (byNorm.has(normText(seed.name))) continue;
+      await upsertFood(makeFoodProduct({ name: seed.name, per100: seed.per100 }));
+    }
+    return true;
   } catch {
     return false;
   }
