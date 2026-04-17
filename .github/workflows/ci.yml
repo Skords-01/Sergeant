@@ -4,13 +4,22 @@ on:
   push:
   pull_request:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      # actions/checkout v4.3.1 (SHA-pinned for supply-chain hardening)
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
 
-      - uses: actions/setup-node@v4
+      # actions/setup-node v4.4.0 (SHA-pinned for supply-chain hardening)
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: "20"
           cache: npm
@@ -23,6 +32,17 @@ jobs:
 
       - name: Audit (high, non-blocking)
         run: npm audit --audit-level=high --omit=dev || true
+
+      - name: Audit full tree (non-blocking)
+        run: npm audit --audit-level=high || true
+
+      - name: License policy check (production tree)
+        run: >-
+          npx --yes license-checker-rseidelsohn@4.4.2
+          --production
+          --excludePackages "hub@0.1.0"
+          --onlyAllow
+          "MIT;ISC;Apache-2.0;BSD-2-Clause;BSD-3-Clause;MIT-0;0BSD;BlueOak-1.0.0;CC0-1.0;MPL-2.0;(Unlicense OR Apache-2.0)"
 
       - name: Format, lint, test, build
         run: npm run check

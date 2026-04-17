@@ -61,5 +61,8 @@
   "type": "module",
   "engines": {
     "node": "20.x"
+  },
+  "overrides": {
+    "serialize-javascript": "^7.0.5"
   }
 }

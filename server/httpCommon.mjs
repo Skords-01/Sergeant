@@ -33,7 +33,22 @@ export function requestLogMiddleware(req, res, next) {
   next();
 }
 
-/** JSON API: без CSP; CORP cross-origin щоб fetch з іншого домену (Vercel → Railway) не ламався. */
+/**
+ * JSON API + статичний фронтенд PWA (див. server/replit.mjs).
+ *
+ * `contentSecurityPolicy: false` — свідома відмова від дефолтної CSP helmet:
+ *   - Vite-PWA вбудовує інлайн-bootstrap для реєстрації service worker;
+ *   - service worker створюється через `blob:` URL, який блокується дефолтним
+ *     `worker-src 'self'` (див. https://vite-pwa-org.netlify.app/);
+ *   - API живе на іншому origin (Railway), клієнт — на Vercel, тож будь-яка
+ *     CSP повинна містити повний допуск зовнішніх API та зображень.
+ * Перш ніж вмикати CSP, треба: скласти явну політику під PWA (script-src з
+ * nonce/strict-dynamic, worker-src 'self' blob:, connect-src усіх бекендів)
+ * і протестувати її на staging (офлайн-кеш + push).
+ *
+ * `crossOriginResourcePolicy: 'cross-origin'` — щоб fetch з іншого домену
+ * (Vercel → Railway) не ламався.
+ */
 export function apiHelmetMiddleware() {
   return helmet({
     contentSecurityPolicy: false,
