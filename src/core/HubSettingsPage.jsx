@@ -24,6 +24,7 @@ import { useStorage as useFinykStorage } from "../modules/finyk/hooks/useStorage
 import { getAccountLabel } from "../modules/finyk/utils.js";
 import { useToast } from "@shared/hooks/useToast.jsx";
 import { WorkoutBackupBar } from "../modules/fizruk/components/workouts/WorkoutBackupBar.jsx";
+import { apiUrl } from "@shared/lib/apiUrl.js";
 
 const PRIVAT_ENABLED = false;
 
@@ -582,7 +583,6 @@ function FinykSection() {
     setPrivatConnecting(true);
     setPrivatError("");
     try {
-      const { apiUrl } = await import("@shared/lib/apiUrl.js");
       const params = new URLSearchParams({
         path: "/statements/balance/final",
         country: "UA",

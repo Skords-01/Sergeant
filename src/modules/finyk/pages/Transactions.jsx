@@ -8,6 +8,7 @@ import { EmptyState } from "@shared/components/ui/EmptyState";
 import { cn } from "@shared/lib/cn";
 import { perfMark, perfEnd } from "@shared/lib/perf";
 import { SwipeToAction } from "@shared/components/ui/SwipeToAction";
+import { useToast } from "@shared/hooks/useToast";
 
 const now = new Date();
 const SEARCH_DEBOUNCE_MS = 200;
@@ -42,6 +43,7 @@ export function Transactions({
   onClearCategoryFilter,
   onEditManualExpense,
 }) {
+  const toast = useToast();
   const {
     realTx,
     loadingTx,
@@ -65,6 +67,7 @@ export function Transactions({
     txSplits,
     setSplitTx,
     manualExpenses,
+    addManualExpense,
     removeManualExpense,
   } = storage;
   const [filter, setFilter] = useState("all");
@@ -640,7 +643,24 @@ export function Transactions({
                         disabled={selectMode}
                         onSwipeLeft={
                           t._manual
-                            ? (removeManualExpense ? () => removeManualExpense(t._manualId) : undefined)
+                            ? (removeManualExpense && addManualExpense
+                                ? () => {
+                                    const snapshot = {
+                                      id: String(t._manualId),
+                                      date: t.time
+                                        ? new Date(t.time * 1000).toISOString()
+                                        : new Date().toISOString(),
+                                      description: String(t.description || ""),
+                                      amount: Math.abs(Number(t.amount || 0) / 100),
+                                      category: String(t._category || "інше"),
+                                    };
+                                    removeManualExpense(t._manualId);
+                                    toast.info("Витрату видалено", 5000, {
+                                      label: "Undo",
+                                      onClick: () => addManualExpense(snapshot),
+                                    });
+                                  }
+                                : undefined)
                             : (!hiddenTxIds.includes(t.id) ? () => hideTx(t.id) : undefined)
                         }
                         onSwipeRight={undefined}

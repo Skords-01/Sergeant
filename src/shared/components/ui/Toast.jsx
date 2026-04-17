@@ -60,6 +60,21 @@ export function ToastContainer() {
         >
           {ICON[t.type]}
           <span className="min-w-0 flex-1 leading-snug">{t.msg}</span>
+          {t.action?.onClick && (
+            <button
+              type="button"
+              onClick={() => {
+                try {
+                  t.action.onClick();
+                } finally {
+                  dismiss(t.id);
+                }
+              }}
+              className="shrink-0 px-2.5 py-1 rounded-xl bg-white/15 hover:bg-white/25 transition-colors"
+            >
+              {t.action.label || "Дія"}
+            </button>
+          )}
           <button
             type="button"
             onClick={() => dismiss(t.id)}

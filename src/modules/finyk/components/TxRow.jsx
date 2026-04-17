@@ -218,6 +218,7 @@ export function TxRow({
                     : "text-subtle/60 hover:text-subtle hover:bg-panelHi",
               )}
               title="Розподілити транзакцію"
+              aria-label="Розподілити транзакцію"
             >
               ⅔
             </button>
@@ -236,6 +237,7 @@ export function TxRow({
                   : "text-subtle/60 hover:text-subtle hover:bg-panelHi",
               )}
               title="Змінити категорію"
+              aria-label="Змінити категорію"
             >
               <svg
                 width="14"
@@ -265,6 +267,7 @@ export function TxRow({
                   : "text-subtle/60 hover:text-danger hover:bg-danger/8",
               )}
               title={hidden ? "Відновити" : "Приховати"}
+              aria-label={hidden ? "Відновити" : "Приховати"}
             >
               {hidden ? (
                 <svg

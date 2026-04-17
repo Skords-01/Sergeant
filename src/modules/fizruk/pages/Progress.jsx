@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, useCallback } from "react";
 import { Button } from "@shared/components/ui/Button";
 import { ConfirmDialog } from "@shared/components/ui/ConfirmDialog";
 import { cn } from "@shared/lib/cn";
@@ -148,11 +148,19 @@ export function Progress() {
         ex?.name?.uk || ex?.name?.en || ex.id,
       ]),
     );
+    const groupById = new Map(
+      (exercises || []).map((ex) => [ex.id, ex.primaryGroup || null]),
+    );
     return Object.entries(by)
-      .map(([id, v]) => ({ id, name: labelById.get(id) || id, ...v }))
-      .sort((a, b) => b.best1rm - a.best1rm)
-      .slice(0, 12);
-  }, [workouts, exercises]);
+      .map(([id, v]) => ({
+        id,
+        name: labelById.get(id) || id,
+        muscleGroup: groupById.get(id) || null,
+        muscleGroupLabel: musclesUk?.[groupById.get(id)] || null,
+        ...v,
+      }))
+      .sort((a, b) => b.best1rm - a.best1rm);
+  }, [workouts, exercises, musclesUk]);
 
   const quickStats = useMemo(() => {
     const done = (workouts || []).filter((w) => w.endedAt);
@@ -214,6 +222,7 @@ export function Progress() {
   };
 
   const [resetConfirm, setResetConfirm] = useState(false);
+  const [prFilter, setPrFilter] = useState("all");
 
   const resetAll = () => {
     for (const k of FIZRUK_RESET_KEYS) {
@@ -492,44 +501,103 @@ export function Progress() {
           )}
         </div>
 
-        {/* PR list */}
-        <div className="bg-panel border border-line/60 rounded-2xl p-5 shadow-card">
-          <div className="text-xs font-bold text-subtle uppercase tracking-widest mb-3">
-            Рекорди (PR)
-          </div>
-          {prs.length === 0 ? (
-            <div className="text-sm text-subtle text-center py-6">
-              Поки немає силових PR
+        {/* PR Board */}
+        {(() => {
+          const muscleGroups = [...new Set(prs.map((p) => p.muscleGroup).filter(Boolean))].sort();
+          const filtered = prFilter === "all" ? prs : prs.filter((p) => p.muscleGroup === prFilter);
+          const MEDALS = ["🥇", "🥈", "🥉"];
+          return (
+            <div className="bg-panel border border-line/60 rounded-2xl p-5 shadow-card">
+              <div className="flex items-center justify-between gap-2 mb-3">
+                <div className="text-xs font-bold text-subtle uppercase tracking-widest">
+                  Рекорди (PR) · {prs.length}
+                </div>
+                {filtered.length !== prs.length && (
+                  <div className="text-[11px] text-subtle">{filtered.length} показано</div>
+                )}
+              </div>
+
+              {/* Muscle group filter */}
+              {muscleGroups.length > 1 && (
+                <div className="flex gap-1.5 overflow-x-auto pb-2 mb-3 scrollbar-none">
+                  <button
+                    type="button"
+                    onClick={() => setPrFilter("all")}
+                    className={cn(
+                      "shrink-0 px-3 h-7 rounded-full text-[11px] font-semibold transition-colors border",
+                      prFilter === "all"
+                        ? "bg-accent text-forest border-accent"
+                        : "bg-panel border-line text-subtle hover:text-text",
+                    )}
+                  >
+                    Всі
+                  </button>
+                  {muscleGroups.map((g) => (
+                    <button
+                      key={g}
+                      type="button"
+                      onClick={() => setPrFilter(g === prFilter ? "all" : g)}
+                      className={cn(
+                        "shrink-0 px-3 h-7 rounded-full text-[11px] font-semibold transition-colors border whitespace-nowrap",
+                        prFilter === g
+                          ? "bg-accent text-forest border-accent"
+                          : "bg-panel border-line text-subtle hover:text-text",
+                      )}
+                    >
+                      {musclesUk?.[g] || g}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {filtered.length === 0 ? (
+                <div className="text-sm text-subtle text-center py-6">
+                  {prs.length === 0 ? "Поки немає силових PR" : "Немає PR для цієї групи м'язів"}
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {filtered.map((p, idx) => {
+                    const globalRank = prs.findIndex((x) => x.id === p.id);
+                    const medal = globalRank >= 0 && globalRank < 3 ? MEDALS[globalRank] : null;
+                    return (
+                      <button
+                        key={p.id}
+                        type="button"
+                        className="w-full text-left border border-line rounded-2xl p-3 bg-bg hover:bg-panelHi transition-colors"
+                        onClick={() => { window.location.hash = `#exercise/${p.id}`; }}
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2 min-w-0">
+                            {medal && <span className="shrink-0 text-base leading-none">{medal}</span>}
+                            <div className="text-sm font-semibold text-text truncate">{p.name}</div>
+                          </div>
+                          <div className="shrink-0 text-sm font-bold text-text tabular-nums">
+                            {p.best1rm.toFixed(0)} кг
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className="text-xs text-subtle tabular-nums">
+                            {p.weightKg ?? 0} кг × {p.reps ?? 0}
+                          </span>
+                          {p.at && (
+                            <span className="text-[11px] text-muted">
+                              · {new Date(p.at).toLocaleDateString("uk-UA", { month: "short", day: "numeric" })}
+                            </span>
+                          )}
+                          {p.muscleGroupLabel && (
+                            <span className="ml-auto text-[10px] px-2 py-0.5 rounded-full bg-accent/10 text-accent/70 font-medium shrink-0">
+                              {p.muscleGroupLabel}
+                            </span>
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
-          ) : (
-            <div className="space-y-2">
-              {prs.map((p) => (
-                <button
-                  key={p.id}
-                  className="w-full text-left border border-line rounded-2xl p-3 bg-bg hover:bg-panelHi transition-colors"
-                  onClick={() => {
-                    window.location.hash = `#exercise/${p.id}`;
-                  }}
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="text-sm font-semibold text-text truncate">
-                      {p.name}
-                    </div>
-                    <div className="text-xs text-subtle tabular-nums">
-                      {p.best1rm.toFixed(0)} кг
-                    </div>
-                  </div>
-                  <div className="text-xs text-subtle mt-0.5">
-                    {p.weightKg ?? 0}×{p.reps ?? 0}
-                    {p.at
-                      ? ` · ${new Date(p.at).toLocaleDateString("uk-UA", { month: "short", day: "numeric" })}`
-                      : ""}
-                  </div>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+          );
+        })()}
 
         {/* Data management */}
         <div className="bg-panel border border-line/60 rounded-2xl p-5 shadow-card">

@@ -61,17 +61,14 @@ export function AddExerciseSheet({
       role="presentation"
     >
       <div
+        className="absolute inset-0"
+        role="presentation"
+      />
+      <button
+        type="button"
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-        role="button"
-        tabIndex={0}
         aria-label="Закрити"
         onClick={onClose}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            onClose();
-          }
-        }}
       />
       <div
         ref={sheetRef}

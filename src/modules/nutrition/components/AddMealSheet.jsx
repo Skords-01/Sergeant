@@ -299,7 +299,6 @@ export function AddMealSheet({
           setBarcodeStatus("Продукт знайдено, але дані неповні. Введи вручну.");
           return;
         }
-        setBarcodeStatus(`Знайдено: ${[p.name, p.brand].filter(Boolean).join(" — ")} ✔`);
         const grams = p.servingGrams || 100;
         const gramsStr = String(Math.round(grams));
         const factor = grams / 100;
@@ -318,7 +317,6 @@ export function AddMealSheet({
         };
         setPickedFood(fakeFood);
         setPickedGrams(gramsStr);
-        // fallback fields for barcode products with no per100
         setForm((s) => ({
           ...s,
           name: [p.name, p.brand].filter(Boolean).join(" ").trim() || s.name,
@@ -328,6 +326,12 @@ export function AddMealSheet({
           carbs_g: p.carbs_100g != null ? String(Math.round(p.carbs_100g * factor)) : s.carbs_g,
           err: "",
         }));
+        // partial = UPCitemdb found name/brand but has no nutrition data
+        if (p.partial) {
+          setBarcodeStatus(`Знайдено: ${[p.name, p.brand].filter(Boolean).join(" — ")} — введи КБЖВ вручну.`);
+        } else {
+          setBarcodeStatus(`Знайдено: ${[p.name, p.brand].filter(Boolean).join(" — ")} ✔`);
+        }
       } catch {
         setBarcodeStatus("Помилка пошуку. Перевір з'єднання і спробуй пізніше.");
       }

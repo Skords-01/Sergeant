@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Card } from "@shared/components/ui/Card";
 import { Input } from "@shared/components/ui/Input";
 import { Button } from "@shared/components/ui/Button";
@@ -18,6 +18,20 @@ function guessMealTypeIdNow() {
   if (h >= 11 && h < 16) return "lunch";
   if (h >= 16 && h < 22) return "dinner";
   return "snack";
+}
+
+function ChevronIcon({ open }) {
+  return (
+    <svg
+      width="16" height="16" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="2.5"
+      strokeLinecap="round" strokeLinejoin="round"
+      className={cn("shrink-0 text-subtle transition-transform duration-200", open && "rotate-90")}
+      aria-hidden
+    >
+      <polyline points="9 18 15 12 9 6" />
+    </svg>
+  );
 }
 
 export function RecipesCard({
@@ -43,6 +57,8 @@ export function RecipesCard({
   const [portionById, setPortionById] = useState({});
   const [deleteRecipeConfirm, setDeleteRecipeConfirm] = useState(null);
   const [openSavedId, setOpenSavedId] = useState(null);
+  const [savedOpen, setSavedOpen] = useState(false);
+  const prevSavedLen = useRef(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -51,9 +67,7 @@ export function RecipesCard({
       const list = await listSavedRecipes(200);
       if (!cancelled) setSaved(list);
     })()
-      .catch(() => {
-        /* ignore */
-      })
+      .catch(() => {})
       .finally(() => {
         if (!cancelled) setSavedBusy(false);
       });
@@ -61,6 +75,14 @@ export function RecipesCard({
       cancelled = true;
     };
   }, []);
+
+  // Auto-open when first recipe is saved during this session
+  useEffect(() => {
+    if (saved.length > prevSavedLen.current && prevSavedLen.current === 0) {
+      setSavedOpen(true);
+    }
+    prevSavedLen.current = saved.length;
+  }, [saved.length]);
 
   async function refreshSaved() {
     setSavedBusy(true);
@@ -110,32 +132,31 @@ export function RecipesCard({
 
   return (
     <>
+    {/* ── Мої рецепти — окремий згорнутий блок ── */}
     <Card className="p-4">
-      <div className="text-sm font-semibold text-text">
-        Рецепти ({activePantry?.name || "Склад"})
-      </div>
-      <div className="text-xs text-subtle mt-0.5">
-        Рекомендації на базі продуктів зі складу. Можна вказати час, порції та
-        “не хочу”.
-        {recipeCacheEntry?.recipes?.length > 0 && (
-          <span className="ml-1 text-nutrition">
-            (є кеш сеансу — натисни «Запропонувати» для оновлення)
-          </span>
-        )}
-      </div>
+      <button
+        type="button"
+        onClick={() => setSavedOpen((v) => !v)}
+        className="w-full flex items-center justify-between gap-2"
+        aria-expanded={savedOpen}
+      >
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-semibold text-text">Мої рецепти</span>
+          {!savedBusy && saved.length > 0 && (
+            <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-nutrition/15 text-nutrition">
+              {saved.length}
+            </span>
+          )}
+          {savedBusy && <span className="text-[11px] text-subtle">…</span>}
+        </div>
+        <ChevronIcon open={savedOpen} />
+      </button>
 
-      <div className="mt-3 grid gap-3">
-        <div className="rounded-2xl border border-line bg-panel p-4 space-y-2">
-          <div className="flex items-center justify-between gap-2">
-            <div className="text-sm font-semibold text-text">Мої рецепти</div>
-            <div className="text-[11px] text-subtle">
-              {savedBusy ? "…" : `${saved.length}`}
-            </div>
-          </div>
+      {savedOpen && (
+        <div className="mt-3">
           {saved.length === 0 ? (
             <div className="text-xs text-subtle">
-              Тут з’являться збережені рецепти. Згенеруй рецепти нижче й натисни
-              “Зберегти”.
+              Тут з&apos;являться збережені рецепти. Згенеруй рецепти нижче й натисни &quot;Зберегти&quot;.
             </div>
           ) : (
             <div className="grid gap-2">
@@ -157,23 +178,7 @@ export function RecipesCard({
                         className="min-w-0 flex-1 basis-full sm:basis-auto text-left flex items-start gap-2"
                         aria-expanded={isOpen}
                       >
-                        <svg
-                          width="14"
-                          height="14"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          className={cn(
-                            "shrink-0 mt-1 text-subtle transition-transform",
-                            isOpen && "rotate-90",
-                          )}
-                          aria-hidden
-                        >
-                          <polyline points="9 18 15 12 9 6" />
-                        </svg>
+                        <ChevronIcon open={isOpen} />
                         <span className="min-w-0">
                           <span className="block text-sm font-semibold text-text break-words">
                             {r.title}
@@ -290,7 +295,25 @@ export function RecipesCard({
             </div>
           )}
         </div>
+      )}
+    </Card>
 
+    {/* ── Генератор рецептів ── */}
+    <Card className="p-4">
+      <div className="text-sm font-semibold text-text">
+        Рецепти ({activePantry?.name || "Склад"})
+      </div>
+      <div className="text-xs text-subtle mt-0.5">
+        Рекомендації на базі продуктів зі складу. Можна вказати час, порції та
+        &quot;не хочу&quot;.
+        {recipeCacheEntry?.recipes?.length > 0 && (
+          <span className="ml-1 text-nutrition">
+            (є кеш сеансу — натисни «Запропонувати» для оновлення)
+          </span>
+        )}
+      </div>
+
+      <div className="mt-3 grid gap-3">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <div className="text-[11px] text-subtle mb-1">Ціль</div>
@@ -501,7 +524,7 @@ export function RecipesCard({
 
         {recipesTried && !busy && recipes.length === 0 && !err && (
           <div className="rounded-2xl border border-line bg-panel p-4 text-sm text-subtle">
-            Рецептів не повернулося. Спробуй натиснути “Розібрати” або додати
+            Рецептів не повернулося. Спробуй натиснути &quot;Розібрати&quot; або додати
             2–3 базові продукти (яйця/крупа/овочі).
             {recipesRaw && (
               <details className="mt-3">

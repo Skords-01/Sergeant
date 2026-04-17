@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { apiUrl } from "@shared/lib/apiUrl.js";
 import { TX_CACHE_TTL, CURRENCY } from "../constants";
+import { safeJsonSet } from "@shared/lib/storageQuota.js";
 
 /**
  * @typedef {{
@@ -73,26 +74,16 @@ function loadAnyCache() {
 }
 
 function saveCache(txs) {
-  try {
-    localStorage.setItem(
-      CACHE_KEY,
-      JSON.stringify({ txs, timestamp: Date.now() }),
-    );
-    notifyHubFinykCache();
-  } catch {}
+  const res = safeJsonSet(CACHE_KEY, { txs, timestamp: Date.now() });
+  if (res.ok) notifyHubFinykCache();
 }
 
 /** Останній повний знімок — якщо поточний кеш зіпсований (мало транзакцій), відновлюємо звідси */
 const LAST_GOOD_KEY = "finyk_tx_cache_last_good";
 
 function saveLastGoodBackup(txs) {
-  try {
-    if (!txs || txs.length < 3) return;
-    localStorage.setItem(
-      LAST_GOOD_KEY,
-      JSON.stringify({ txs, timestamp: Date.now() }),
-    );
-  } catch {}
+  if (!txs || txs.length < 3) return;
+  safeJsonSet(LAST_GOOD_KEY, { txs, timestamp: Date.now() });
 }
 
 function loadLastGoodBackup() {

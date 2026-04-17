@@ -9,7 +9,7 @@
 | ФІНІК       | Особисті фінанси, синхронізація з Monobank, бюджети, борги, активи, тренди витрат, ручне додавання             | Готово |
 | ФІЗРУК      | Тренування (активне, таймер відпочинку), програми тренувань, прогрес, виміри, фото тіла, щоденник самопочуття  | Готово |
 | Рутина      | Hub-календар, звички зі стріками, хітмеп, статистика, лідери/аутсайдери, деталізація, ремайндери               | Готово |
-| Харчування  | Фото → AI-аналіз макросів, лог їжі, сканер штрихкодів, денний план, список покупок, комора, рецепти            | Готово |
+| Харчування  | Фото → AI-аналіз макросів, лог їжі, сканер штрихкодів (OFF + USDA + UPCitemdb), денний план, список покупок, комора, рецепти | Готово |
 
 ## Hub-ядро (спільні фічі)
 
@@ -99,7 +99,8 @@ src/
 │   ├── components/ui/             # Banner, Button, Card, ConfirmDialog, EmptyState, Input,
 │   │                              # InputDialog, Select, Skeleton, SwipeToAction, Toast, VoiceMicButton
 │   ├── hooks/                     # useDarkMode, useDialogFocusTrap, useOnlineStatus, useToast
-│   └── lib/                       # apiUrl, cn, perf, storageKeys, storageManager, themeHex
+│   └── lib/                       # apiUrl, cn, date (toLocalISODate), perf, storageKeys,
+│                                  # storageManager, storageQuota (safeJsonSet/safeSetItem), themeHex
 ├── sw.js                          # Service Worker (PWA, офлайн-кеш, push-нагадування)
 └── main.jsx                       # Точка входу, реєстрація SW
 
@@ -109,7 +110,7 @@ server/
 ├── auth.js                        # Better Auth конфігурація (email/password, PostgreSQL adapter)
 ├── db.js                          # PostgreSQL connection pool
 └── api/
-    ├── barcode.js                 # Пошук продукту за штрихкодом
+    ├── barcode.js                 # Пошук продукту за штрихкодом (OFF → USDA FDC → UPCitemdb)
     ├── chat.js                    # AI-чат (Anthropic)
     ├── mono.js                    # Proxy до Monobank API
     ├── privat.js                  # PrivatBank business API proxy (вимкнено прапором)
@@ -161,11 +162,12 @@ npm run dev        # 2) Vite dev server (фронт, порт 5173) — прок
 | `DATABASE_URL`            | Так (авто)  | PostgreSQL connection string — авто-надається Replit; для Railway/Vercel задати вручну                            |
 | `BETTER_AUTH_SECRET`      | Так         | Секрет шифрування сесій Better Auth (32+ символи) — задати вручну як secret                                       |
 | `ANTHROPIC_API_KEY`       | Так         | Ключ Anthropic (чат, аналіз фото, рецепти, дайджест, підказки)                                                    |
-| `NUTRITION_API_TOKEN`     | Ні          | Простий токен-гейт для `/api/nutrition/*` (перевіряється по `X-Token`)                                            |
+                                          |
 | `ALLOWED_ORIGINS`         | Ні          | Додаткові CORS origin через кому (локальне та preview вже дозволені)                                              |
 | `VITE_API_BASE_URL`       | Ні          | Базовий URL API **без** завершального `/`, напр. `https://xxx.up.railway.app` (порожньо → відносні шляхи)        |
 | `VITE_API_PROXY_TARGET`   | Ні          | Тільки для `vite dev`: куди проксувати `/api/*` (типово `http://127.0.0.1:3000`)                                  |
 | `VITE_NUTRITION_API_TOKEN`| Ні          | Токен Nutritionix для прямих запитів з фронту                                                                     |
+| `USDA_FDC_API_KEY`        | Ні          | Ключ USDA FoodData Central для barcode-fallback (безкоштовний на [api.data.gov](https://api.data.gov/signup)); без ключа — `DEMO_KEY` (40 req/hr) |
 | `PORT`                    | Ні          | Порт Express-сервера (типово `3000`)                                                                              |
 
 > `DATABASE_URL` і `BETTER_AUTH_SECRET` не входять до `.env.example` (вони є секретами, а не публічними налаштуваннями). На Replit `DATABASE_URL` надається автоматично при підключенні бази даних. `BETTER_AUTH_SECRET` задається вручну через Secrets.

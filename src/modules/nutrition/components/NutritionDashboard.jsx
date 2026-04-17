@@ -7,6 +7,7 @@ import {
   getMacrosForDateRange,
   toLocalISODate,
 } from "../lib/nutritionStorage.js";
+import { WaterTrackerCard } from "./WaterTrackerCard.jsx";
 
 function todayISO() {
   return toLocalISODate(new Date());
@@ -85,7 +86,7 @@ function MiniBar({ rows, targetKcal }) {
   );
 }
 
-export function NutritionDashboard({ log, prefs, onGoToLog, onAddMeal, onFetchDayHint, dayHintText, dayHintBusy }) {
+export function NutritionDashboard({ log, prefs, onGoToLog, onAddMeal, onFetchDayHint, dayHintText, dayHintBusy, onSetPrefs }) {
   const today = todayISO();
 
   const macros = useMemo(() => getDayMacros(log, today), [log, today]);
@@ -199,6 +200,8 @@ export function NutritionDashboard({ log, prefs, onGoToLog, onAddMeal, onFetchDa
         </div>
         <MiniBar rows={weekRows} targetKcal={prefs.dailyTargetKcal || 0} />
       </Card>
+
+      <WaterTrackerCard goalMl={prefs.waterGoalMl ?? 2000} />
 
       {typeof onFetchDayHint === "function" && (
         <Card className="p-4">

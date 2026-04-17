@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   NUTRITION_LOG_KEY,
   loadNutritionLog,
@@ -78,6 +78,7 @@ function collectMealIds(log) {
  *   handleAddMeal: (meal: Partial<Meal>) => void,
  *   handleEditMeal: (date: string, meal: Partial<Meal> & { id: string }) => void,
  *   handleRemoveMeal: (date: string, id: string) => void,
+ *   handleRestoreMeal: (date: string, meal: Partial<Meal> & { id: string }) => void,
  *   storageErr: string,
  *   duplicateYesterday: () => void,
  *   replaceLogFromJsonText: (text: string) => void,
@@ -95,6 +96,7 @@ export function useNutritionLog() {
   const [addMealSheetOpen, setAddMealSheetOpen] = useState(false);
   const [addMealPhotoResult, setAddMealPhotoResult] = useState(null);
   const [storageErr, setStorageErr] = useState("");
+  const pendingThumbDeletesRef = useRef(new Map());
 
   useEffect(() => {
     const ok = persistNutritionLog(nutritionLog, NUTRITION_LOG_KEY);
@@ -127,9 +129,28 @@ export function useNutritionLog() {
    * @param {string} date - ISO date string.
    * @param {string} id   - Meal ID.
    */
-  const handleRemoveMeal = (date, id) => {
-    void deleteMealThumbnail(id);
+  const handleRemoveMeal = (date, idOrMeal) => {
+    const id = typeof idOrMeal === "string" ? idOrMeal : String(idOrMeal?.id || "");
+    if (!id) return;
+    const existingTimer = pendingThumbDeletesRef.current.get(id);
+    if (existingTimer) clearTimeout(existingTimer);
+    const t = setTimeout(() => {
+      pendingThumbDeletesRef.current.delete(id);
+      void deleteMealThumbnail(id);
+    }, 6000);
+    pendingThumbDeletesRef.current.set(id, t);
     setNutritionLog((log) => removeLogEntry(log, date, id));
+  };
+
+  const handleRestoreMeal = (date, meal) => {
+    const id = String(meal?.id || "");
+    if (!id) return;
+    const t = pendingThumbDeletesRef.current.get(id);
+    if (t) {
+      clearTimeout(t);
+      pendingThumbDeletesRef.current.delete(id);
+    }
+    setNutritionLog((log) => addLogEntry(log, date, meal));
   };
 
   /**
@@ -190,6 +211,7 @@ export function useNutritionLog() {
     handleAddMeal,
     handleEditMeal,
     handleRemoveMeal,
+    handleRestoreMeal,
     storageErr,
     duplicateYesterday,
     replaceLogFromJsonText,

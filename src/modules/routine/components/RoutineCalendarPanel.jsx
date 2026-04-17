@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { Virtuoso } from "react-virtuoso";
 import { cn } from "@shared/lib/cn";
 import { Button } from "@shared/components/ui/Button";
 import { Input } from "@shared/components/ui/Input";
@@ -58,8 +59,25 @@ export function RoutineCalendarPanel({ hidden: panelHidden }) {
 
   const { applyTimeMode, onToggleHabit, setRoutine, setMainTab, onOpenModule, onBulkMarkDay } =
     useRoutineCalendarActions();
+  const [listQueryDraft, setListQueryDraft] = useState(listQuery || "");
+  useEffect(() => {
+    setListQueryDraft(listQuery || "");
+  }, [listQuery]);
+  useEffect(() => {
+    const id = setTimeout(() => setListQuery(listQueryDraft), 200);
+    return () => clearTimeout(id);
+  }, [listQueryDraft, setListQuery]);
   const [dayReportOpen, setDayReportOpen] = useState(false);
   const [detailHabitId, setDetailHabitId] = useState(null);
+
+  const flatGroupedItems = useMemo(() => {
+    const items = [];
+    for (const [label, rows] of grouped || []) {
+      items.push({ kind: "header", label });
+      for (const e of rows || []) items.push({ kind: "event", e });
+    }
+    return items;
+  }, [grouped]);
 
   const scheduledHabitsForReport = routine.habits
     .filter((h) => !h.archived && habitScheduledOnDate(h, todayKey))
@@ -200,8 +218,8 @@ export function RoutineCalendarPanel({ hidden: panelHidden }) {
       <Input
         className="routine-touch-field w-full max-w-md"
         placeholder="Пошук у стрічці…"
-        value={listQuery}
-        onChange={(e) => setListQuery(e.target.value)}
+        value={listQueryDraft}
+        onChange={(e) => setListQueryDraft(e.target.value)}
         aria-label="Пошук подій"
       />
 
@@ -425,135 +443,148 @@ export function RoutineCalendarPanel({ hidden: panelHidden }) {
             </p>
           </div>
         )}
-        {grouped.map(([label, rows]) => (
-          <div key={label}>
-            <h3 className="text-xs font-bold text-subtle uppercase tracking-widest mb-2">
-              {label}
-            </h3>
-            <ul className="space-y-2">
-              {rows.map((e) => (
-                <SwipeToAction
-                  key={e.id}
-                  onSwipeRight={e.habitId && !e.completed ? () => onToggleHabit(e.habitId, e.date) : undefined}
-                  onSwipeLeft={e.habitId && e.completed ? () => onToggleHabit(e.habitId, e.date) : undefined}
-                  leftLabel="✓ Виконано"
-                  leftColor="bg-success"
-                  rightLabel="↩ Скасувати"
-                  rightColor="bg-muted"
-                >
-                <li
-                  className={cn(
-                    "overflow-hidden rounded-2xl border border-line/60 bg-panel pl-4 pr-4 py-3 shadow-card flex flex-col gap-2 border-l-4",
-                    e.fizruk
-                      ? "border-l-sky-500"
-                      : e.finykSub
-                        ? "border-l-emerald-500"
-                        : e.habitId
-                          ? C.habitRowAccent
-                          : "border-l-transparent",
-                    e.completed && e.habitId && "opacity-90",
-                  )}
-                >
-                  <div className="flex items-start justify-between gap-3 sm:gap-2">
+        {flatGroupedItems.length > 0 && (
+          <Virtuoso
+            data={flatGroupedItems}
+            itemKey={(_, item) =>
+              item.kind === "header" ? `h_${item.label}` : `e_${item.e?.id}`
+            }
+            itemContent={(_, item) => {
+              if (item.kind === "header") {
+                return (
+                  <h3 className="text-xs font-bold text-subtle uppercase tracking-widest mb-2 mt-3">
+                    {item.label}
+                  </h3>
+                );
+              }
+              const e = item.e;
+              return (
+                <div className="mb-2">
+                  <SwipeToAction
+                    onSwipeRight={
+                      e.habitId && !e.completed
+                        ? () => onToggleHabit(e.habitId, e.date)
+                        : undefined
+                    }
+                    onSwipeLeft={
+                      e.habitId && e.completed
+                        ? () => onToggleHabit(e.habitId, e.date)
+                        : undefined
+                    }
+                    leftLabel="✓ Виконано"
+                    leftColor="bg-success"
+                    rightLabel="↩ Скасувати"
+                    rightColor="bg-muted"
+                  >
                     <div
-                      className={cn("min-w-0 flex-1", e.habitId && "cursor-pointer")}
-                      role={e.habitId ? "button" : undefined}
-                      tabIndex={e.habitId ? 0 : undefined}
-                      onClick={() => e.habitId && setDetailHabitId(e.habitId)}
-                      onKeyDown={(ev) => {
-                        if (e.habitId && (ev.key === "Enter" || ev.key === " ")) {
-                          ev.preventDefault();
-                          setDetailHabitId(e.habitId);
-                        }
-                      }}
-                      aria-label={e.habitId ? `Деталі: ${e.title}` : undefined}
+                      className={cn(
+                        "overflow-hidden rounded-2xl border border-line/60 bg-panel pl-4 pr-4 py-3 shadow-card flex flex-col gap-2 border-l-4",
+                        e.fizruk
+                          ? "border-l-sky-500"
+                          : e.finykSub
+                            ? "border-l-emerald-500"
+                            : e.habitId
+                              ? C.habitRowAccent
+                              : "border-l-transparent",
+                        e.completed && e.habitId && "opacity-90",
+                      )}
                     >
-                      <p className="font-semibold text-text text-[15px] leading-snug">
-                        {e.title}
-                      </p>
-                      <p className="text-[11px] text-subtle mt-0.5">
-                        {parseDateKey(e.date).toLocaleDateString("uk-UA", {
-                          weekday: "short",
-                          day: "numeric",
-                          month: "short",
-                        })}{" "}
-                        · {e.subtitle}
-                      </p>
-                    </div>
-                    <div className="flex items-start gap-2 shrink-0">
-                      {e.fizruk && typeof onOpenModule === "function" && (
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="!h-9 !px-3 !text-xs border border-line/70 bg-panelHi/80"
-                          type="button"
-                          onClick={() =>
-                            onOpenModule("fizruk", { hash: "plan" })
-                          }
-                        >
-                          План
-                        </Button>
-                      )}
-                      {e.finykSub && typeof onOpenModule === "function" && (
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="!h-9 !px-3 !text-xs border border-emerald-500/25 bg-emerald-500/5"
-                          type="button"
-                          onClick={() =>
-                            onOpenModule("finyk", { hash: "assets" })
-                          }
-                        >
-                          Фінік
-                        </Button>
-                      )}
-                      {e.habitId && (
-                        <button
-                          type="button"
-                          onClick={() => onToggleHabit(e.habitId, e.date)}
+                      <div className="flex items-start justify-between gap-3 sm:gap-2">
+                        <div
                           className={cn(
-                            "w-10 h-10 rounded-xl border flex items-center justify-center text-base font-bold transition-colors",
-                            e.completed
-                              ? C.done
-                              : "border-line hover:bg-panelHi text-muted",
+                            "min-w-0 flex-1",
+                            e.habitId && "cursor-pointer",
                           )}
-                          aria-label={
-                            e.completed ? "Скасувати виконання" : "Виконано"
-                          }
-                          title={e.completed ? "Скасувати" : "Виконано"}
+                          role={e.habitId ? "button" : undefined}
+                          tabIndex={e.habitId ? 0 : undefined}
+                          onClick={() => e.habitId && setDetailHabitId(e.habitId)}
+                          onKeyDown={(ev) => {
+                            if (
+                              e.habitId &&
+                              (ev.key === "Enter" || ev.key === " ")
+                            ) {
+                              ev.preventDefault();
+                              setDetailHabitId(e.habitId);
+                            }
+                          }}
+                          aria-label={e.habitId ? `Деталі: ${e.title}` : undefined}
                         >
-                          {e.completed ? "✓" : "○"}
-                        </button>
+                          <p className="font-semibold text-text text-[15px] leading-snug">
+                            {e.title}
+                          </p>
+                          <p className="text-[11px] text-subtle mt-0.5">
+                            {parseDateKey(e.date).toLocaleDateString("uk-UA", {
+                              weekday: "short",
+                              day: "numeric",
+                              month: "short",
+                            })}{" "}
+                            · {e.subtitle}
+                          </p>
+                        </div>
+                        <div className="flex items-start gap-2 shrink-0">
+                          {e.fizruk && typeof onOpenModule === "function" && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="!h-9 !px-3 !text-xs border border-line/70 bg-panelHi/80"
+                              type="button"
+                              onClick={() => onOpenModule("fizruk", { hash: "plan" })}
+                            >
+                              План
+                            </Button>
+                          )}
+                          {e.finykSub && typeof onOpenModule === "function" && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="!h-9 !px-3 !text-xs border border-emerald-500/25 bg-emerald-500/5"
+                              type="button"
+                              onClick={() => onOpenModule("finyk", { hash: "assets" })}
+                            >
+                              Фінік
+                            </Button>
+                          )}
+                          {e.habitId && (
+                            <button
+                              type="button"
+                              onClick={() => onToggleHabit(e.habitId, e.date)}
+                              className={cn(
+                                "w-10 h-10 rounded-xl border flex items-center justify-center text-base font-bold transition-colors",
+                                e.completed
+                                  ? C.done
+                                  : "border-line hover:bg-panelHi text-muted",
+                              )}
+                              aria-label={e.completed ? "Скасувати виконання" : "Виконано"}
+                              title={e.completed ? "Скасувати" : "Виконано"}
+                            >
+                              {e.completed ? "✓" : "○"}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                      {e.habitId && e.completed && (
+                        <Input
+                          className="routine-touch-field w-full min-w-0"
+                          placeholder="Нотатка до відмітки"
+                          value={
+                            routine.completionNotes?.[
+                              completionNoteKey(e.habitId, e.date)
+                            ] || ""
+                          }
+                          onChange={(ev) =>
+                            setRoutine((s) =>
+                              setCompletionNote(s, e.habitId, e.date, ev.target.value),
+                            )
+                          }
+                        />
                       )}
                     </div>
-                  </div>
-                  {e.habitId && e.completed && (
-                    <Input
-                      className="routine-touch-field w-full min-w-0"
-                      placeholder="Нотатка до відмітки"
-                      value={
-                        routine.completionNotes?.[
-                          completionNoteKey(e.habitId, e.date)
-                        ] || ""
-                      }
-                      onChange={(ev) =>
-                        setRoutine((s) =>
-                          setCompletionNote(
-                            s,
-                            e.habitId,
-                            e.date,
-                            ev.target.value,
-                          ),
-                        )
-                      }
-                    />
-                  )}
-                </li>
-                </SwipeToAction>
-              ))}
-            </ul>
-          </div>
-        ))}
+                  </SwipeToAction>
+                </div>
+              );
+            }}
+          />
+        )}
       </section>
       {detailHabitId && (
         <HabitDetailSheet

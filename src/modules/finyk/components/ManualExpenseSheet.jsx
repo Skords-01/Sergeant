@@ -3,6 +3,7 @@ import { Button } from "@shared/components/ui/Button";
 import { VoiceMicButton } from "@shared/components/ui/VoiceMicButton.jsx";
 import { parseExpenseSpeech } from "../../../core/lib/speechParsers.js";
 import { useVisualKeyboardInset } from "@shared/hooks/useVisualKeyboardInset";
+import { toLocalISODate } from "@shared/lib/date";
 
 const CATEGORIES = [
   "їжа",
@@ -25,7 +26,7 @@ export function ManualExpenseSheet({ open, onClose, onSave, initialExpense }) {
     description: "",
     amount: "",
     category: "інше",
-    date: new Date().toISOString().slice(0, 10),
+    date: toLocalISODate(),
   });
   const [error, setError] = useState("");
 
@@ -37,14 +38,14 @@ export function ManualExpenseSheet({ open, onClose, onSave, initialExpense }) {
           description: String(initialExpense.description || ""),
           amount: initialExpense.amount != null ? String(initialExpense.amount) : "",
           category: initialExpense.category || "інше",
-          date: d.toISOString().slice(0, 10),
+          date: toLocalISODate(d),
         });
       } else {
         setForm({
           description: "",
           amount: "",
           category: "інше",
-          date: new Date().toISOString().slice(0, 10),
+          date: toLocalISODate(),
         });
       }
       setError("");
@@ -68,7 +69,11 @@ export function ManualExpenseSheet({ open, onClose, onSave, initialExpense }) {
       description: form.description.trim(),
       amount: amt,
       category: form.category,
-      date: form.date ? new Date(form.date).toISOString() : new Date().toISOString(),
+      // "YYYY-MM-DD" як local date може з’їхати при toISOString() в UTC.
+      // Ставимо полудень, щоб стабільно зберігати правильний день.
+      date: form.date
+        ? new Date(`${form.date}T12:00:00`).toISOString()
+        : new Date().toISOString(),
     });
     onClose();
   };

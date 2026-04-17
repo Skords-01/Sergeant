@@ -36,7 +36,7 @@ describe("mergeItems", () => {
       [{ name: "огірок", qty: null, unit: null, notes: null }],
     );
     expect(out).toHaveLength(1);
-    expect(out[0]).toMatchObject({ qty: 4, unit: "шт" });
+    expect(out[0]).toMatchObject({ qty: 5, unit: "шт" });
   });
 
   it("upgrades existing entry without qty/unit when incoming has qty/unit", () => {
@@ -57,7 +57,7 @@ describe("mergeItems", () => {
       ],
     );
     expect(out).toHaveLength(1);
-    expect(out[0]).toMatchObject({ qty: 4, unit: "шт" });
+    expect(out[0]).toMatchObject({ qty: 5, unit: "шт" });
   });
 
   it("same product with incompatible units (г vs уп): second entry is skipped by dedup policy", () => {

@@ -94,11 +94,12 @@
 
 ### Наступні кроки
 
+- [x] Повноцінна PR board у Progress: всі вправи без ліміту, фільтр по групах м'язів, медалі (🥇🥈🥉), бейджи груп м'язів
+
 1. Суперсети / кругові тренування
-2. Дошка персональних рекордів (PR board)
-3. Підказки прогресивного навантаження (auto-progression)
-4. Шеринг / експорт тренувань
-5. Блок розминки / заминки в тренуванні
+2. Підказки прогресивного навантаження (auto-progression)
+3. Шеринг / експорт тренувань
+4. Блок розминки / заминки в тренуванні
 
 ---
 
@@ -148,7 +149,7 @@
 - [x] Хмарний бекап із шифруванням (nutritionCloudBackup, backup-upload, backup-download)
 - [x] Експорт логу (nutritionLogExport)
 - [x] Цілі по макросах із пресетами Схуднення/Підтримка/Набір маси (goalPresets)
-- [x] Сканер штрихкодів (BarcodeScanner, /api/barcode)
+- [x] Сканер штрихкодів (BarcodeScanner, /api/barcode) — каскадний пошук: Open Food Facts → USDA FoodData Central → UPCitemdb (partial fallback)
 - [x] Денний план харчування (DailyPlanCard, /api/nutrition/day-plan) — AI-генерація з урахуванням цілей
 - [x] Список покупок (ShoppingListCard, /api/nutrition/shopping-list, shoppingListStorage) — AI-генерація з рецептів, мінус комора, групування по категоріях, позначення + додавання до комори
 - [x] Дешборд харчування (NutritionDashboard) — зведена статистика
@@ -156,11 +157,11 @@
 
 ### Наступні кроки
 
-1. Трекер води
-2. Обрані страви (швидке повторне додавання)
-3. Стріки харчування (послідовність днів з логуванням)
-4. Мікронутрієнти (вітаміни, мінерали)
-5. Інтеграція з зовнішніми базами їжі (Open Food Facts, USDA)
+- [x] Трекер води (WaterTrackerCard, useWaterTracker, waterStorage — кнопки +200/300/500/750, прогрес-бар, ціль waterGoalMl у prefs)
+
+1. Обрані страви (швидке повторне додавання)
+2. Стріки харчування (послідовність днів з логуванням)
+3. Мікронутрієнти (вітаміни, мінерали)
 
 ---
 
@@ -179,6 +180,9 @@
 - [x] Хмарний бекап Харчування (шифрування); локальний бекап Фінік, Фізрук, Hub
 - [x] CORS з підтримкою Replit-доменів (REPLIT_DOMAINS env var)
 - [x] storageManager — централізований менеджер localStorage
+- [x] storageQuota.js (`safeJsonSet` / `safeSetItem`) — захист від QuotaExceededError у всіх модулях
+- [x] date.js (`toLocalISODate`) — уніфікований UTC-незалежний форматер дат
+- [x] Barcode multi-DB cascade (`lookupOFF` / `lookupUSDA` / `lookupUPCitemdb`)
 
 ### Наступні кроки
 

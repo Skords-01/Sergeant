@@ -9,6 +9,7 @@ import {
   normalizeNutritionLog,
   persistPantries,
 } from "./nutritionStorage.js";
+import { storageManager } from "@shared/lib/storageManager.js";
 
 function createLocalStorageMock() {
   /** @type {Map<string, string>} */
@@ -52,6 +53,8 @@ describe("loadPantries", () => {
       JSON.stringify([{ name: "яйця", qty: 2, unit: "шт", notes: null }]),
     );
     globalThis.localStorage.setItem("nutrition_pantry_text_v0", "яйця");
+    storageManager.resetMigration("nutrition_001_migrate_legacy_pantry");
+    storageManager.runAll();
     const pantries = loadPantries(
       NUTRITION_PANTRIES_KEY,
       NUTRITION_ACTIVE_PANTRY_KEY,

@@ -137,11 +137,17 @@ export function LogCard({
   cloudBackupBusy,
 }) {
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [duplicateConfirm, setDuplicateConfirm] = useState(false);
   const importRef = useRef(null);
   const [importMode, setImportMode] = useState("merge");
   const [statsRange, setStatsRange] = useState(30);
   const [weekOpen, setWeekOpen] = useState(false);
+
+  useEffect(() => {
+    const id = setTimeout(() => setDebouncedSearchQuery(searchQuery), 150);
+    return () => clearTimeout(id);
+  }, [searchQuery]);
 
   const macros = getDayMacros(log, selectedDate);
   const dayData = log[selectedDate];
@@ -149,10 +155,10 @@ export function LogCard({
   const groups = groupByMealType(meals);
 
   const searchHits = useMemo(() => {
-    const q = searchQuery.trim();
+    const q = debouncedSearchQuery.trim();
     if (!q) return [];
     return searchMealsByName(log, q).slice(0, 40);
-  }, [log, searchQuery]);
+  }, [log, debouncedSearchQuery]);
 
   const weekRows = useMemo(
     () => getMacrosForDateRange(log, selectedDate, 7),
@@ -596,14 +602,14 @@ function VirtualMealList({ groups, meals, selectedDate, onRemoveMeal, onEditMeal
         return (
           <div className="mb-1.5">
             <SwipeToAction
-              onSwipeLeft={() => onRemoveMeal(selectedDate, item.meal.id)}
+              onSwipeLeft={() => onRemoveMeal(selectedDate, item.meal)}
               rightLabel="🗑 Видалити"
               rightColor="bg-danger"
             >
               <MealRow
                 meal={item.meal}
                 onEdit={onEditMeal ? () => onEditMeal(selectedDate, item.meal) : undefined}
-                onRemove={() => onRemoveMeal(selectedDate, item.meal.id)}
+                onRemove={() => onRemoveMeal(selectedDate, item.meal)}
               />
             </SwipeToAction>
           </div>

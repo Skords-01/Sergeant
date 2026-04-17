@@ -25,6 +25,7 @@ import { useNutritionPantries } from "./hooks/useNutritionPantries.js";
 import { useNutritionLog } from "./hooks/useNutritionLog.js";
 import { usePhotoAnalysis } from "./hooks/usePhotoAnalysis.js";
 import { useShoppingList } from "./hooks/useShoppingList.js";
+import { useNutritionUiState } from "./hooks/useNutritionUiState.js";
 import {
   buildRecipeCacheKey,
   readRecipeCache,
@@ -85,7 +86,7 @@ export default function NutritionApp({ onBackToHub, pwaAction, onPwaActionConsum
 
   const pantry = useNutritionPantries({ setBusy, setErr, setStatusText });
   const log = useNutritionLog();
-  const [editingMeal, setEditingMeal] = useState(null);
+  const ui = useNutritionUiState();
   const photo = usePhotoAnalysis({ setBusy, setErr, setStatusText });
   const shopping = useShoppingList();
 
@@ -106,26 +107,42 @@ export default function NutritionApp({ onBackToHub, pwaAction, onPwaActionConsum
     );
   }, [prefs]);
 
-  const [recipes, setRecipes] = useState([]);
-  const [recipesTried, setRecipesTried] = useState(false);
-  const [recipesRaw, setRecipesRaw] = useState("");
-
-  const [weekPlan, setWeekPlan] = useState(null);
-  const [weekPlanRaw, setWeekPlanRaw] = useState("");
-  const [weekPlanBusy, setWeekPlanBusy] = useState(false);
-
-  const [dayPlan, setDayPlan] = useState(null);
-  const [dayPlanBusy, setDayPlanBusy] = useState(false);
-
-  const [shoppingBusy, setShoppingBusy] = useState(false);
-
-  const [dayHintText, setDayHintText] = useState("");
-  const [dayHintBusy, setDayHintBusy] = useState(false);
-  const [cloudBackupBusy, setCloudBackupBusy] = useState(false);
-  const [backupPasswordDialog, setBackupPasswordDialog] = useState(null);
-  const [restoreConfirm, setRestoreConfirm] = useState(null);
-  const [pantryScannerOpen, setPantryScannerOpen] = useState(false);
-  const [pantryScanStatus, setPantryScanStatus] = useState("");
+  const {
+    editingMeal,
+    setEditingMeal,
+    recipes,
+    setRecipes,
+    recipesTried,
+    setRecipesTried,
+    recipesRaw,
+    setRecipesRaw,
+    weekPlan,
+    setWeekPlan,
+    weekPlanRaw,
+    setWeekPlanRaw,
+    weekPlanBusy,
+    setWeekPlanBusy,
+    dayPlan,
+    setDayPlan,
+    dayPlanBusy,
+    setDayPlanBusy,
+    shoppingBusy,
+    setShoppingBusy,
+    dayHintText,
+    setDayHintText,
+    dayHintBusy,
+    setDayHintBusy,
+    cloudBackupBusy,
+    setCloudBackupBusy,
+    backupPasswordDialog,
+    setBackupPasswordDialog,
+    restoreConfirm,
+    setRestoreConfirm,
+    pantryScannerOpen,
+    setPantryScannerOpen,
+    pantryScanStatus,
+    setPantryScanStatus,
+  } = ui;
 
   const recipeCacheKey = useMemo(
     () =>
@@ -251,8 +268,12 @@ export default function NutritionApp({ onBackToHub, pwaAction, onPwaActionConsum
         }
         const label = [p.name, p.brand].filter(Boolean).join(" ").trim();
         pantry.upsertItem(label);
-        setPantryScanStatus(`Додано: ${label} \u2714`);
-        setTimeout(() => setPantryScanStatus(""), 3000);
+        if (p.partial) {
+          setPantryScanStatus(`Знайдено: ${label}. КБЖВ відсутнє в базі — за потреби додай вручну. \u2714`);
+        } else {
+          setPantryScanStatus(`Додано: ${label} \u2714`);
+        }
+        setTimeout(() => setPantryScanStatus(""), 4000);
       } catch {
         setPantryScanStatus("Помилка пошуку. Перевір з\u2019єднання.");
       }
@@ -728,7 +749,14 @@ export default function NutritionApp({ onBackToHub, pwaAction, onPwaActionConsum
                   const id = `meal_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
                   log.handleAddMeal({ ...meal, id });
                 }}
-                onRemoveMeal={log.handleRemoveMeal}
+                onRemoveMeal={(date, meal) => {
+                  if (!meal?.id) return;
+                  log.handleRemoveMeal(date, meal);
+                  toast.info("Запис видалено", 5000, {
+                    label: "Undo",
+                    onClick: () => log.handleRestoreMeal(date, meal),
+                  });
+                }}
                 onEditMeal={(date, meal) => {
                   setEditingMeal({ date, ...meal });
                   log.setAddMealPhotoResult(null);

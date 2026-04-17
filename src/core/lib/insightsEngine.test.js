@@ -2,6 +2,17 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { generateInsights } from "./insightsEngine.js";
 
+function createLocalStorageMock() {
+  /** @type {Map<string, string>} */
+  const store = new Map();
+  return {
+    getItem: (k) => (store.has(String(k)) ? store.get(String(k)) : null),
+    setItem: (k, v) => void store.set(String(k), String(v)),
+    removeItem: (k) => void store.delete(String(k)),
+    clear: () => void store.clear(),
+  };
+}
+
 function setLS(key, value) {
   localStorage.setItem(key, JSON.stringify(value));
 }
@@ -28,7 +39,10 @@ function makeWorkouts(count, dayOfWeek = 1) {
 }
 
 describe("generateInsights", () => {
-  beforeEach(clearAll);
+  beforeEach(() => {
+    globalThis.localStorage = createLocalStorageMock();
+    clearAll();
+  });
   afterEach(clearAll);
 
   it("повертає масив при порожньому localStorage", () => {

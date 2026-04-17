@@ -6,6 +6,8 @@ import {
   normalizeFinykSyncPayload,
   FINYK_BACKUP_VERSION,
 } from "../lib/finykBackup.js";
+import { toLocalISODate } from "@shared/lib/date";
+import { safeJsonSet } from "@shared/lib/storageQuota.js";
 
 function reportSilentError(scope, error) {
   console.warn(`[finyk] ${scope}`, error);
@@ -46,9 +48,11 @@ function usePersist(key, defaultVal) {
     }
   });
   useEffect(() => {
-    try {
-      localStorage.setItem(key, JSON.stringify(val));
-    } catch {}
+    const res = safeJsonSet(key, val);
+    if (!res.ok) {
+      // Не ламаємо UX, але і не мовчимо повністю.
+      console.warn(`[finyk] localStorage write failed for "${key}"`, res.reason);
+    }
   }, [key, val]);
   return [val, setVal];
 }
@@ -96,7 +100,7 @@ export function useStorage({ onImportFeedback } = {}) {
 
   const addManualExpense = (expense) => {
     const entry = {
-      id: Date.now().toString(),
+      id: expense?.id != null ? String(expense.id) : Date.now().toString(),
       date: expense.date || new Date().toISOString(),
       description: expense.description || "",
       amount: Number(expense.amount) || 0,
@@ -280,7 +284,7 @@ export function useStorage({ onImportFeedback } = {}) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `finyk-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `finyk-backup-${toLocalISODate()}.json`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -406,7 +410,7 @@ export function useStorage({ onImportFeedback } = {}) {
     debtLinkedTxIds,
     networthHistory,
     saveNetworthSnapshot: (networth) => {
-      const today = new Date().toISOString().slice(0, 10);
+      const today = toLocalISODate();
       const rounded = Math.round(networth);
       const snap = networthSnapshotRef.current;
       if (snap.date === today && snap.value !== null) {

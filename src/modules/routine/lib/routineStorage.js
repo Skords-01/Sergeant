@@ -5,6 +5,7 @@ import {
   habitScheduledOnDate,
 } from "./hubCalendarAggregate.js";
 import { completionNoteKey } from "./completionNoteKey.js";
+import { safeJsonSet } from "@shared/lib/storageQuota.js";
 
 export const ROUTINE_STORAGE_KEY = "hub_routine_v1";
 
@@ -142,11 +143,13 @@ export function loadRoutineState() {
  * @returns {boolean} `true` on success, `false` if localStorage threw (e.g. quota exceeded)
  */
 export function saveRoutineState(next) {
-  try {
-    localStorage.setItem(ROUTINE_STORAGE_KEY, JSON.stringify(next));
+  const res = safeJsonSet(ROUTINE_STORAGE_KEY, next);
+  if (res.ok) {
     emitRoutineStorage();
     return true;
-  } catch (e) {
+  }
+  try {
+    const e = res.error;
     try {
       window.dispatchEvent(
         new CustomEvent(ROUTINE_STORAGE_ERROR, {
@@ -156,6 +159,8 @@ export function saveRoutineState(next) {
     } catch {
       /* noop */
     }
+    return false;
+  } catch {
     return false;
   }
 }

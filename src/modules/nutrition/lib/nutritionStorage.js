@@ -5,6 +5,7 @@ import {
   macrosToTotals,
   normalizeMacrosNullable,
 } from "./macros.js";
+import { safeJsonSet, safeSetItem } from "@shared/lib/storageQuota.js";
 import {
   isMealTypeId,
   labelForMealType,
@@ -47,6 +48,7 @@ export function defaultNutritionPrefs() {
     mealTemplates: [],
     reminderEnabled: false,
     reminderHour: 12,
+    waterGoalMl: 2000,
   };
 }
 
@@ -92,12 +94,7 @@ export function loadNutritionPrefs(key = NUTRITION_PREFS_KEY) {
 }
 
 export function persistNutritionPrefs(prefs, key = NUTRITION_PREFS_KEY) {
-  try {
-    localStorage.setItem(key, JSON.stringify(prefs || defaultNutritionPrefs()));
-    return true;
-  } catch {
-    return false;
-  }
+  return safeJsonSet(key, prefs || defaultNutritionPrefs()).ok;
 }
 
 export function makeDefaultPantry() {
@@ -128,9 +125,7 @@ export function loadPantries(
   // Legacy v0 pantry migration is handled by storageManager (nutrition_001_migrate_legacy_pantry).
   // By the time this code runs after app boot, the v1 key already has data if any v0 data existed.
   const fallback = makeDefaultPantry();
-  try {
-    localStorage.setItem(activeKey, fallback.id);
-  } catch {}
+  safeSetItem(activeKey, fallback.id);
   return [fallback];
 }
 
@@ -140,21 +135,9 @@ export function persistPantries(
   pantries,
   activeId,
 ) {
-  let ok = true;
-  try {
-    localStorage.setItem(
-      key,
-      JSON.stringify(Array.isArray(pantries) ? pantries : []),
-    );
-  } catch {
-    ok = false;
-  }
-  try {
-    if (activeId) localStorage.setItem(activeKey, String(activeId));
-  } catch {
-    ok = false;
-  }
-  return ok;
+  const a = safeJsonSet(key, Array.isArray(pantries) ? pantries : []);
+  const b = activeId ? safeSetItem(activeKey, String(activeId)) : { ok: true };
+  return a.ok && b.ok;
 }
 
 export function updatePantry(pantries, activeId, fn) {
@@ -281,12 +264,7 @@ export function loadNutritionLog(key = NUTRITION_LOG_KEY) {
 }
 
 export function persistNutritionLog(log, key = NUTRITION_LOG_KEY) {
-  try {
-    localStorage.setItem(key, JSON.stringify(log || {}));
-    return true;
-  } catch {
-    return false;
-  }
+  return safeJsonSet(key, log || {}).ok;
 }
 
 export function addLogEntry(log, date, meal) {

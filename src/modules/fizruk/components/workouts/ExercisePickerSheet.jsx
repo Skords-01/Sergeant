@@ -33,18 +33,11 @@ export function ExercisePickerSheet({
   if (!open) return null;
   return (
     <div className={cn("fixed inset-0 flex items-end fizruk-sheet", SHEET_Z)}>
-      <div
+      <button
+        type="button"
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-        role="button"
-        tabIndex={0}
         aria-label="Закрити"
         onClick={onClose}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            onClose();
-          }
-        }}
       />
       <div
         ref={sheetRef}

@@ -1,4 +1,5 @@
 import { getCategory } from "../utils";
+import { toLocalISODate } from "@shared/lib/date";
 
 /**
  * Calculates daily spending per category for the current month.
@@ -12,7 +13,7 @@ function buildDailySpending(transactions, txCategories, txSplits, customCategori
     const txDate = new Date(tx.time * 1000);
     if (txDate < monthStart || txDate > today) continue;
 
-    const dayKey = txDate.toISOString().slice(0, 10);
+    const dayKey = toLocalISODate(txDate);
     if (!dayMap[dayKey]) dayMap[dayKey] = {};
 
     const splits = txSplits[tx.id];
@@ -95,7 +96,7 @@ export function calcForecast(
     let cumActual = 0;
     for (let d = 1; d <= daysInMonth; d++) {
       const dateObj = new Date(now.getFullYear(), now.getMonth(), d);
-      const dayKey = dateObj.toISOString().slice(0, 10);
+      const dayKey = toLocalISODate(dateObj);
       const isPast = d <= dayOfMonth;
 
       if (isPast) {
