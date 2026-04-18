@@ -136,7 +136,6 @@ function RecCard({ rec, onDismiss, onAction }) {
           "w-9 h-9 rounded-xl flex items-center justify-center shrink-0",
           "bg-white/60 dark:bg-white/10",
           "shadow-sm",
-          "transition-transform duration-200 group-hover:scale-110",
         )}
       >
         <span className="text-base" aria-hidden>

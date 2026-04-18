@@ -83,20 +83,6 @@ export function HeroCard({
               : "••••"}
           </div>
         </div>
-        <div className="w-px bg-white/25 hidden sm:block self-stretch min-h-[2.5rem]" />
-        <div>
-          <div className="text-[11px] text-emerald-200/80 mb-0.5">Місяць</div>
-          <div
-            className={cn(
-              "font-semibold tabular-nums",
-              monthBalance >= 0 ? "text-emerald-50" : "text-amber-200",
-            )}
-          >
-            {showBalance
-              ? `${monthBalance >= 0 ? "+" : "−"}${Math.abs(monthBalance).toLocaleString("uk-UA", { maximumFractionDigits: 0 })} ₴`
-              : "••••"}
-          </div>
-        </div>
       </div>
     </div>
   );

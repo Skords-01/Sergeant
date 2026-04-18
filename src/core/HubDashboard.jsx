@@ -303,47 +303,21 @@ function DailyProgressHero() {
     <div
       className={cn(
         "relative overflow-hidden rounded-3xl border shadow-card p-5",
-        "bg-gradient-to-br from-white via-brand-50/30 to-teal-50/40",
+        "bg-gradient-to-br from-white via-brand-50/20 to-teal-50/30",
         "dark:from-panel dark:via-panel dark:to-panel",
         "border-brand-100/60 dark:border-brand-800/30",
         "transition-all duration-500",
         isComplete && "animate-success-ring",
       )}
     >
-      {/* Animated decorative gradient orbs */}
-      <div className="absolute -top-20 -right-20 w-48 h-48 rounded-full bg-gradient-to-br from-brand-200/30 to-teal-200/20 blur-3xl animate-pulse-soft" />
-      <div
-        className="absolute -bottom-16 -left-16 w-40 h-40 rounded-full bg-gradient-to-tr from-teal-200/25 to-brand-100/20 blur-3xl animate-pulse-soft"
-        style={{ animationDelay: "1s" }}
-      />
-
-      {/* Subtle grid pattern overlay */}
-      <div
-        className="absolute inset-0 opacity-[0.03] dark:opacity-[0.02]"
-        style={{
-          backgroundImage: `radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)`,
-          backgroundSize: "24px 24px",
-        }}
-      />
-
       <div className="relative flex items-center gap-5">
-        {/* Enhanced Progress Ring with glow effect */}
+        {/* Progress Ring — glow comes from ProgressRing itself */}
         <div
           className={cn(
             "relative",
             percentage === 100 && "animate-celebration-pop",
           )}
         >
-          {/* Glow ring behind progress */}
-          <div
-            className={cn(
-              "absolute inset-0 rounded-full blur-xl transition-opacity duration-500",
-              percentage > 0 ? "opacity-40" : "opacity-0",
-              "bg-brand-400",
-            )}
-            style={{ transform: "scale(0.85)" }}
-          />
-
           <ProgressRing
             value={progress.completed}
             max={progress.total}
@@ -428,19 +402,14 @@ function ModuleCard({ config, onClick, dragProps, isDragging }) {
       )}
       {...dragProps}
     >
-      {/* Subtle shine effect on hover */}
-      <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none overflow-hidden">
-        <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-      </div>
-
       <div className="relative">
         {/* Header row */}
         <div className="flex items-center gap-2.5 mb-3">
           <div
             className={cn(
               "w-10 h-10 rounded-xl flex items-center justify-center shrink-0",
-              "transition-all duration-200 ease-bounce",
-              "group-hover:scale-110 group-hover:rotate-3",
+              "transition-transform duration-200 ease-smooth",
+              "group-hover:scale-105",
               "shadow-sm",
               config.colorClass,
             )}
@@ -495,27 +464,19 @@ function ModuleCard({ config, onClick, dragProps, isDragging }) {
             </p>
           )}
 
-          {/* Enhanced mini progress bar */}
+          {/* Mini progress bar */}
           {preview.progress !== undefined && preview.progress > 0 && (
             <div className="mt-2.5 h-1.5 rounded-full bg-line/40 dark:bg-white/10 overflow-hidden">
               <div
                 className={cn(
                   "h-full rounded-full transition-all duration-700 ease-out",
-                  "relative overflow-hidden",
-                  config.module === "routine" &&
-                    "bg-gradient-to-r from-routine to-routine-secondary",
-                  config.module === "nutrition" &&
-                    "bg-gradient-to-r from-nutrition to-lime-400",
-                  config.module === "fizruk" &&
-                    "bg-gradient-to-r from-fizruk to-teal-400",
-                  config.module === "finyk" &&
-                    "bg-gradient-to-r from-finyk to-brand-400",
+                  config.module === "routine" && "bg-routine",
+                  config.module === "nutrition" && "bg-nutrition",
+                  config.module === "fizruk" && "bg-fizruk",
+                  config.module === "finyk" && "bg-finyk",
                 )}
                 style={{ width: `${Math.min(preview.progress, 100)}%` }}
-              >
-                {/* Shimmer effect on progress bar */}
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full animate-[shimmer_2s_infinite]" />
-              </div>
+              />
             </div>
           )}
         </div>
@@ -638,14 +599,13 @@ export function HubDashboard({ onOpenModule, onOpenChat }) {
       <WeeklyDigestCard />
 
       {/* Module Cards Grid */}
-      <section className="space-y-4">
+      <section className="space-y-3">
         <div className="flex items-center justify-between px-0.5">
-          <div className="flex items-center gap-2">
-            <div className="w-1 h-4 rounded-full bg-gradient-to-b from-brand-500 to-teal-500" />
-            <h2 className="text-sm font-bold text-text">Модулі</h2>
-          </div>
-          <span className="text-[10px] text-subtle bg-panelHi/80 dark:bg-white/5 px-2 py-1 rounded-full">
-            Утримуй для переміщення
+          <h2 className="text-xs font-semibold text-muted uppercase tracking-wider">
+            Модулі
+          </h2>
+          <span className="text-[10px] text-subtle">
+            Утримуй, щоб переставити
           </span>
         </div>
 

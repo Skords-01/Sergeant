@@ -261,14 +261,8 @@ export default function App({
   // ── Login screen ──────────────────────────────────────────────────────
   if (!clientInfo && !manualOnly) {
     return (
-      <div className="min-h-dvh flex items-center justify-center p-5 bg-bg safe-area-pt-pb relative overflow-hidden">
-        {/* Decorative background elements */}
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute -top-40 -right-40 w-80 h-80 rounded-full bg-gradient-to-br from-brand-200/30 to-teal-200/20 blur-3xl" />
-          <div className="absolute -bottom-40 -left-40 w-80 h-80 rounded-full bg-gradient-to-tr from-teal-200/25 to-brand-100/20 blur-3xl" />
-        </div>
-
-        <div className="w-full max-w-sm relative">
+      <div className="min-h-dvh flex items-center justify-center p-5 bg-bg safe-area-pt-pb">
+        <div className="w-full max-w-sm">
           <div className="text-center mb-8">
             <div
               className={cn(
