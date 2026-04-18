@@ -33,6 +33,28 @@ function normalizeReminderTimesStorage(rt) {
   return rt.filter((t) => typeof t === "string" && /^\d{2}:\d{2}$/.test(t));
 }
 
+const DATE_KEY_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+/** Prune duplicates and invalid date keys from a single habit's completion list. */
+function normalizeCompletionList(list) {
+  if (!Array.isArray(list)) return [];
+  const seen = new Set();
+  for (const v of list) {
+    if (typeof v === "string" && DATE_KEY_RE.test(v)) seen.add(v);
+  }
+  return [...seen].sort();
+}
+
+/** Coerce the whole completions map into `{ [habitId]: sortedUniqueDateKeys }`. */
+function normalizeCompletionsMap(raw) {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
+  const out = {};
+  for (const [k, v] of Object.entries(raw)) {
+    out[k] = normalizeCompletionList(v);
+  }
+  return out;
+}
+
 function normalizeHabit(h) {
   if (!h || typeof h !== "object") return h;
   const created = h.createdAt
@@ -119,8 +141,7 @@ export function loadRoutineState() {
     tags: Array.isArray(p.tags) ? p.tags : [],
     categories: Array.isArray(p.categories) ? p.categories : [],
     habits: Array.isArray(p.habits) ? p.habits.map(normalizeHabit) : [],
-    completions:
-      typeof p.completions === "object" && p.completions ? p.completions : {},
+    completions: normalizeCompletionsMap(p.completions),
     pushupsByDate:
       typeof p.pushupsByDate === "object" && p.pushupsByDate
         ? p.pushupsByDate
@@ -266,17 +287,14 @@ export function setPref(state, key, value) {
 export function toggleHabitCompletion(state, habitId, dateKey) {
   const habit = state.habits.find((h) => h.id === habitId);
   if (!habit) return state;
-  const cur = Array.isArray(state.completions[habitId])
-    ? [...state.completions[habitId]]
-    : [];
-  const i = cur.indexOf(dateKey);
-  if (i >= 0) {
-    cur.splice(i, 1);
+  const curSet = new Set(normalizeCompletionList(state.completions[habitId]));
+  if (curSet.has(dateKey)) {
+    curSet.delete(dateKey);
   } else {
     if (!habitScheduledOnDate(habit, dateKey)) return state;
-    cur.push(dateKey);
+    curSet.add(dateKey);
   }
-  cur.sort();
+  const cur = [...curSet].sort();
   const next = {
     ...state,
     completions: { ...state.completions, [habitId]: cur },
@@ -292,11 +310,10 @@ export function markAllScheduledHabitsComplete(state, dateKey) {
   let changed = false;
   for (const h of active) {
     if (!habitScheduledOnDate(h, dateKey)) continue;
-    const cur = Array.isArray(completions[h.id]) ? [...completions[h.id]] : [];
-    if (cur.includes(dateKey)) continue;
-    cur.push(dateKey);
-    cur.sort();
-    completions[h.id] = cur;
+    const set = new Set(normalizeCompletionList(completions[h.id]));
+    if (set.has(dateKey)) continue;
+    set.add(dateKey);
+    completions[h.id] = [...set].sort();
     changed = true;
   }
   if (!changed) return state;
@@ -312,10 +329,16 @@ export function setHabitArchived(state, id, archived) {
 export function deleteHabit(state, id) {
   const completions = { ...state.completions };
   delete completions[id];
+  const notes = { ...(state.completionNotes || {}) };
+  const prefix = `${id}__`;
+  for (const k of Object.keys(notes)) {
+    if (k.startsWith(prefix)) delete notes[k];
+  }
   const next = {
     ...state,
     habits: state.habits.filter((h) => h.id !== id),
     completions,
+    completionNotes: notes,
     habitOrder: (state.habitOrder || []).filter((x) => x !== id),
   };
   saveRoutineState(next);
@@ -375,8 +398,14 @@ export function setCompletionNote(state, habitId, dateKey, text) {
   const k = completionNoteKey(habitId, dateKey);
   const notes = { ...(state.completionNotes || {}) };
   const t = (text || "").trim();
-  if (!t) delete notes[k];
-  else notes[k] = t.slice(0, 500);
+  if (!t) {
+    if (!(k in notes)) return state;
+    delete notes[k];
+  } else {
+    const habitExists = state.habits.some((h) => h.id === habitId);
+    if (!habitExists) return state;
+    notes[k] = t.slice(0, 500);
+  }
   const next = { ...state, completionNotes: notes };
   saveRoutineState(next);
   return next;
@@ -412,8 +441,7 @@ export function applyRoutineBackupPayload(parsed) {
     tags: Array.isArray(d.tags) ? d.tags : [],
     categories: Array.isArray(d.categories) ? d.categories : [],
     habits: Array.isArray(d.habits) ? d.habits.map(normalizeHabit) : [],
-    completions:
-      typeof d.completions === "object" && d.completions ? d.completions : {},
+    completions: normalizeCompletionsMap(d.completions),
     pushupsByDate:
       typeof d.pushupsByDate === "object" && d.pushupsByDate
         ? d.pushupsByDate

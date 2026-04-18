@@ -26,6 +26,7 @@ import {
   applyRoutineBackupPayload,
   ROUTINE_STORAGE_KEY,
 } from "./routineStorage.js";
+import { completionNoteKey } from "./completionNoteKey.js";
 
 beforeEach(() => {
   localStorage.clear();
@@ -251,6 +252,243 @@ describe("tags and categories", () => {
     s = deleteCategory(s, cid);
     expect(s.categories).toHaveLength(0);
     expect(s.habits[0].categoryId).toBeNull();
+  });
+});
+
+describe("edge cases: double completion in one day", () => {
+  it("повторний toggle після вже відміченого — знімає відмітку (off)", () => {
+    let s = createHabit(fresh(), { name: "A" });
+    const id = s.habits[0].id;
+    s = toggleHabitCompletion(s, id, "2024-06-15");
+    s = toggleHabitCompletion(s, id, "2024-06-15");
+    expect(s.completions[id] || []).not.toContain("2024-06-15");
+  });
+  it("три послідовні toggle: on → off → on залишає рівно одну відмітку", () => {
+    let s = createHabit(fresh(), { name: "A" });
+    const id = s.habits[0].id;
+    s = toggleHabitCompletion(s, id, "2024-06-15");
+    s = toggleHabitCompletion(s, id, "2024-06-15");
+    s = toggleHabitCompletion(s, id, "2024-06-15");
+    const count = (s.completions[id] || []).filter(
+      (k) => k === "2024-06-15",
+    ).length;
+    expect(count).toBe(1);
+  });
+  it("дублікати з legacy-даних санітизуються при завантаженні", () => {
+    const id = "legacy";
+    const raw = {
+      schemaVersion: 3,
+      habits: [
+        {
+          id,
+          name: "Legacy",
+          archived: false,
+          recurrence: "daily",
+          startDate: "2024-01-01",
+        },
+      ],
+      completions: { [id]: ["2024-06-15", "2024-06-15", "bad", "2024-06-14"] },
+      habitOrder: [id],
+    };
+    localStorage.setItem(ROUTINE_STORAGE_KEY, JSON.stringify(raw));
+    const s = loadRoutineState();
+    expect(s.completions[id]).toEqual(["2024-06-14", "2024-06-15"]);
+  });
+  it("markAllScheduledHabitsComplete стає no-op після дедуплікації", () => {
+    let s = createHabit(fresh(), { name: "A" });
+    const id = s.habits[0].id;
+    s = toggleHabitCompletion(s, id, "2024-06-15");
+    const s2 = markAllScheduledHabitsComplete(s, "2024-06-15");
+    expect(s2).toBe(s);
+  });
+  it("toggleHabitCompletion дедуплікує передувало-дубльований масив", () => {
+    // Симулюємо пошкоджений state з дублем прямо в пам'яті
+    let s = createHabit(fresh(), { name: "A" });
+    const id = s.habits[0].id;
+    s = {
+      ...s,
+      completions: { ...s.completions, [id]: ["2024-06-15", "2024-06-15"] },
+    };
+    const s2 = toggleHabitCompletion(s, id, "2024-06-15");
+    expect(s2.completions[id]).not.toContain("2024-06-15");
+  });
+});
+
+describe("edge cases: reorder after delete", () => {
+  it("видалення середньої звички зберігає порядок решти", () => {
+    let s = fresh();
+    s = createHabit(s, { name: "A" });
+    s = createHabit(s, { name: "B" });
+    s = createHabit(s, { name: "C" });
+    const [a, b, c] = s.habits.map((h) => h.id);
+    s = deleteHabit(s, b);
+    expect(s.habitOrder).toEqual([a, c]);
+    expect(s.habitOrder).not.toContain(b);
+  });
+  it("moveHabitInOrder після delete не тягне видалений id назад", () => {
+    let s = fresh();
+    s = createHabit(s, { name: "A" });
+    s = createHabit(s, { name: "B" });
+    s = createHabit(s, { name: "C" });
+    const [a, _b, c] = s.habits.map((h) => h.id);
+    s = deleteHabit(s, _b);
+    s = moveHabitInOrder(s, c, -1);
+    expect(s.habitOrder).toEqual([c, a]);
+  });
+  it("setHabitOrder ігнорує id видаленої звички", () => {
+    let s = fresh();
+    s = createHabit(s, { name: "A" });
+    s = createHabit(s, { name: "B" });
+    const [a, b] = s.habits.map((h) => h.id);
+    s = deleteHabit(s, a);
+    s = setHabitOrder(s, [a, b]);
+    expect(s.habitOrder).toEqual([b]);
+  });
+});
+
+describe("edge cases: archived habits isolation", () => {
+  it("moveHabitInOrder не пересуває архівовану звичку", () => {
+    let s = fresh();
+    s = createHabit(s, { name: "A" });
+    s = createHabit(s, { name: "B" });
+    const [a] = s.habits.map((h) => h.id);
+    const orderBefore = [...s.habitOrder];
+    s = setHabitArchived(s, a, true);
+    // move has no effect for archived ids
+    const s2 = moveHabitInOrder(s, a, 1);
+    expect(s2).toBe(s);
+    expect(s2.habitOrder).toEqual(orderBefore);
+  });
+  it("markAllScheduledHabitsComplete пропускає архівовані", () => {
+    let s = fresh();
+    s = createHabit(s, { name: "A" });
+    s = createHabit(s, { name: "B" });
+    const [a, b] = s.habits.map((h) => h.id);
+    s = setHabitArchived(s, b, true);
+    s = markAllScheduledHabitsComplete(s, "2024-06-15");
+    expect(s.completions[a]).toContain("2024-06-15");
+    expect(s.completions[b] || []).not.toContain("2024-06-15");
+  });
+  it("setHabitOrder відкидає архівовані id", () => {
+    let s = fresh();
+    s = createHabit(s, { name: "A" });
+    s = createHabit(s, { name: "B" });
+    const [a, b] = s.habits.map((h) => h.id);
+    s = setHabitArchived(s, a, true);
+    s = setHabitOrder(s, [a, b]);
+    expect(s.habitOrder).toEqual([b]);
+  });
+});
+
+describe("edge cases: delete tag/category used in habits", () => {
+  it("deleteTag видаляє посилання у кількох звичках", () => {
+    let s = createTag(fresh(), "t1");
+    const tid = s.tags[0].id;
+    s = createHabit(s, { name: "A", tagIds: [tid] });
+    s = createHabit(s, { name: "B", tagIds: [tid] });
+    s = deleteTag(s, tid);
+    for (const h of s.habits) {
+      expect(h.tagIds).not.toContain(tid);
+    }
+  });
+  it("deleteCategory скидає categoryId у всіх звичках, які її використовують", () => {
+    let s = createCategory(fresh(), "C");
+    const cid = s.categories[0].id;
+    s = createHabit(s, { name: "A", categoryId: cid });
+    s = createHabit(s, { name: "B", categoryId: cid });
+    s = createHabit(s, { name: "C", categoryId: null });
+    s = deleteCategory(s, cid);
+    for (const h of s.habits) {
+      expect(h.categoryId).toBeNull();
+    }
+  });
+  it("deleteTag не чіпає теги інших звичок", () => {
+    let s = createTag(fresh(), "t1");
+    s = createTag(s, "t2");
+    const [t1, t2] = s.tags.map((t) => t.id);
+    s = createHabit(s, { name: "A", tagIds: [t1, t2] });
+    s = deleteTag(s, t1);
+    expect(s.habits[0].tagIds).toEqual([t2]);
+    expect(s.tags.map((t) => t.id)).toEqual([t2]);
+  });
+});
+
+describe("edge cases: completion notes cleanup", () => {
+  it("deleteHabit прибирає всі completionNotes для цієї звички", () => {
+    let s = fresh();
+    s = createHabit(s, { name: "A" });
+    s = createHabit(s, { name: "B" });
+    const [a, b] = s.habits.map((h) => h.id);
+    s = setCompletionNote(s, a, "2024-06-15", "note-a-1");
+    s = setCompletionNote(s, a, "2024-06-14", "note-a-2");
+    s = setCompletionNote(s, b, "2024-06-15", "note-b");
+    s = deleteHabit(s, a);
+    const keys = Object.keys(s.completionNotes);
+    expect(keys).toHaveLength(1);
+    expect(keys[0]).toBe(completionNoteKey(b, "2024-06-15"));
+  });
+  it("setCompletionNote не створює нотатку для неіснуючої звички", () => {
+    const s1 = fresh();
+    const s2 = setCompletionNote(s1, "ghost", "2024-06-15", "hi");
+    expect(s2).toBe(s1);
+    expect(Object.keys(s2.completionNotes || {})).toHaveLength(0);
+  });
+  it("setCompletionNote з порожнім текстом без існуючої нотатки — no-op", () => {
+    let s = createHabit(fresh(), { name: "A" });
+    const id = s.habits[0].id;
+    const before = s;
+    s = setCompletionNote(s, id, "2024-06-15", "");
+    expect(s).toBe(before);
+  });
+  it("setCompletionNote чистить існуючу нотатку навіть для архівованої звички", () => {
+    let s = createHabit(fresh(), { name: "A" });
+    const id = s.habits[0].id;
+    s = setCompletionNote(s, id, "2024-06-15", "note");
+    s = setHabitArchived(s, id, true);
+    s = setCompletionNote(s, id, "2024-06-15", "");
+    expect(Object.keys(s.completionNotes)).toHaveLength(0);
+  });
+  it("toggle off → toggle on зберігає раніше записану нотатку (UX не змінюється)", () => {
+    let s = createHabit(fresh(), { name: "A" });
+    const id = s.habits[0].id;
+    s = toggleHabitCompletion(s, id, "2024-06-15");
+    s = setCompletionNote(s, id, "2024-06-15", "stay");
+    s = toggleHabitCompletion(s, id, "2024-06-15"); // off
+    s = toggleHabitCompletion(s, id, "2024-06-15"); // on
+    const k = completionNoteKey(id, "2024-06-15");
+    expect(s.completionNotes[k]).toBe("stay");
+  });
+});
+
+describe("edge cases: loadRoutineState sanitization", () => {
+  it("коерсить completions як не-об'єкт у порожню мапу", () => {
+    const raw = {
+      schemaVersion: 3,
+      habits: [],
+      completions: "not-an-object",
+    };
+    localStorage.setItem(ROUTINE_STORAGE_KEY, JSON.stringify(raw));
+    const s = loadRoutineState();
+    expect(s.completions).toEqual({});
+  });
+  it("коерсить не-масив completions[id] у порожній масив", () => {
+    const id = "h1";
+    const raw = {
+      schemaVersion: 3,
+      habits: [
+        {
+          id,
+          name: "A",
+          archived: false,
+          recurrence: "daily",
+          startDate: "2024-01-01",
+        },
+      ],
+      completions: { [id]: "oops" },
+    };
+    localStorage.setItem(ROUTINE_STORAGE_KEY, JSON.stringify(raw));
+    const s = loadRoutineState();
+    expect(s.completions[id]).toEqual([]);
   });
 });
 
