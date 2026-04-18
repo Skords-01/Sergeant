@@ -889,7 +889,8 @@ textarea {
 }
 
 .tooltip.visible {
-  @apply opacity-100 visible;
+  @apply opacity-100;
+  visibility: visible;
   transform: translateY(0);
 }
 
