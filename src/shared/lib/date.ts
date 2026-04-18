@@ -1,4 +1,4 @@
-export function toLocalISODate(d = new Date()) {
+export function toLocalISODate(d: Date | string | number = new Date()): string {
   const dt = d instanceof Date ? d : new Date(d);
   if (Number.isNaN(dt.getTime())) return "1970-01-01";
   const y = dt.getFullYear();

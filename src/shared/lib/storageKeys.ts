@@ -79,4 +79,7 @@ export const STORAGE_KEYS = {
 
   // ─── Weekly Digest ────────────────────────────────────────────────────
   WEEKLY_DIGEST_PREFIX: "hub_weekly_digest_",
-};
+} as const;
+
+export type StorageKeyName = keyof typeof STORAGE_KEYS;
+export type StorageKeyValue = (typeof STORAGE_KEYS)[StorageKeyName];

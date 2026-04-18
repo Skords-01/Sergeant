@@ -11,25 +11,33 @@
 
 const MIGRATIONS_RAN_KEY = "storageManager_ran_migrations";
 
-/**
- * @typedef {Object} Migration
- * @property {string}   id          - Unique, stable migration identifier (never change).
- * @property {string}   description - Human-readable description of what is migrated.
- * @property {Function} up          - Migration function; receives no arguments, runs synchronously.
- */
+export interface Migration {
+  /** Unique, stable migration identifier (never change). */
+  id: string;
+  /** Human-readable description of what is migrated. */
+  description: string;
+  /** Migration function; receives no arguments, runs synchronously. */
+  up: () => void;
+}
 
-function loadRanSet() {
+export interface RunAllResult {
+  ran: string[];
+  skipped: string[];
+  errors: Array<{ id: string; error: unknown }>;
+}
+
+function loadRanSet(): Set<string> {
   try {
     const raw = localStorage.getItem(MIGRATIONS_RAN_KEY);
     if (!raw) return new Set();
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? new Set(parsed) : new Set();
+    return Array.isArray(parsed) ? new Set<string>(parsed) : new Set<string>();
   } catch {
     return new Set();
   }
 }
 
-function saveRanSet(set) {
+function saveRanSet(set: Set<string>): void {
   try {
     localStorage.setItem(MIGRATIONS_RAN_KEY, JSON.stringify([...set]));
   } catch {
@@ -37,15 +45,13 @@ function saveRanSet(set) {
   }
 }
 
-/** @type {Migration[]} */
-const registry = [];
+const registry: Migration[] = [];
 
 /**
  * Register a migration.
  * Must be called before `runAll()`.
- * @param {Migration} migration
  */
-function register(migration) {
+function register(migration: Migration): void {
   if (!migration || typeof migration.id !== "string" || !migration.id.trim()) {
     throw new Error("storageManager.register: migration.id is required");
   }
@@ -61,11 +67,10 @@ function register(migration) {
 /**
  * Run all registered migrations that have not yet been executed.
  * Call once on app boot, after all migrations are registered.
- * @returns {{ ran: string[], skipped: string[], errors: Array<{id: string, error: Error}> }}
  */
-function runAll() {
+function runAll(): RunAllResult {
   const ran = loadRanSet();
-  const result = { ran: [], skipped: [], errors: [] };
+  const result: RunAllResult = { ran: [], skipped: [], errors: [] };
 
   for (const migration of registry) {
     if (ran.has(migration.id)) {
@@ -89,9 +94,8 @@ function runAll() {
 /**
  * Reset the "already ran" record for a specific migration id.
  * Useful in tests or manual data recovery.
- * @param {string} id
  */
-function resetMigration(id) {
+function resetMigration(id: string): void {
   const ran = loadRanSet();
   ran.delete(id);
   saveRanSet(ran);
@@ -101,7 +105,7 @@ function resetMigration(id) {
  * Clear all migration history (forces all migrations to re-run on next `runAll()`).
  * Use only for debugging or data recovery.
  */
-function resetAll() {
+function resetAll(): void {
   try {
     localStorage.removeItem(MIGRATIONS_RAN_KEY);
   } catch {
@@ -127,7 +131,7 @@ storageManager.register({
       ["finto_tx_cache", "finyk_tx_cache"],
       ["finto_info_cache", "finyk_info_cache"],
       ["finto_token", "finyk_token"],
-    ]) {
+    ] as const) {
       try {
         const v = localStorage.getItem(oldKey);
         if (v !== null && localStorage.getItem(newKey) === null) {
@@ -178,7 +182,7 @@ storageManager.register({
       /* continue with migration */
     }
 
-    let items = [];
+    let items: unknown[] = [];
     let text = "";
     try {
       const rawItems = localStorage.getItem(LEGACY_ITEMS);
@@ -227,7 +231,7 @@ storageManager.register({
     const ROUTINE_KEY = "hub_routine_v1";
     const PUSHUPS_LEGACY = "fizruk_pushups_v1";
 
-    let legacy;
+    let legacy: Record<string, unknown>;
     try {
       const raw = localStorage.getItem(PUSHUPS_LEGACY);
       if (!raw) return;
@@ -244,14 +248,14 @@ storageManager.register({
     }
 
     const routineRaw = localStorage.getItem(ROUTINE_KEY);
-    let state;
+    let state: Record<string, unknown>;
     try {
       state = routineRaw ? JSON.parse(routineRaw) : {};
     } catch {
       state = {};
     }
     // Only migrate if pushupsByDate is empty
-    const existing = state.pushupsByDate;
+    const existing = state.pushupsByDate as Record<string, unknown> | undefined;
     if (
       existing &&
       typeof existing === "object" &&
