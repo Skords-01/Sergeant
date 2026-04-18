@@ -8,14 +8,11 @@ import { cn } from "../../lib/cn";
  * - default: Standard panel card
  * - interactive: Hover lift effect for clickable cards
  * - flat: No shadow, minimal border
- * - hero: Module-branded hero card with gradient background
  *
- * Padding:
- * - none: No padding
- * - sm: 12px padding
- * - md: 16px padding (default)
- * - lg: 20px padding
- * - xl: 24px padding
+ * Plus module-branded variants (finyk, fizruk, routine, nutrition) and
+ * their soft counterparts.
+ *
+ * Padding: none | sm | md (default) | lg | xl.
  */
 
 const variants = {
@@ -60,7 +57,7 @@ export const Card = forwardRef(function Card(
     children,
     ...props
   },
-  ref
+  ref,
 ) {
   return (
     <Component
@@ -103,9 +100,7 @@ export function CardTitle({ className, as: Component = "h3", ...props }) {
  * CardDescription — Secondary text for cards
  */
 export function CardDescription({ className, ...props }) {
-  return (
-    <p className={cn("text-sm text-muted mt-1", className)} {...props} />
-  );
+  return <p className={cn("text-sm text-muted mt-1", className)} {...props} />;
 }
 
 /**
@@ -123,104 +118,9 @@ export function CardFooter({ className, ...props }) {
     <div
       className={cn(
         "flex items-center gap-3 mt-4 pt-4 border-t border-line",
-        className
+        className,
       )}
       {...props}
     />
-  );
-}
-
-/**
- * MetricCard — Specialized card for displaying single metrics
- */
-export function MetricCard({
-  label,
-  value,
-  unit,
-  trend,
-  trendLabel,
-  icon,
-  variant = "default",
-  className,
-  ...props
-}) {
-  const trendColor =
-    trend > 0
-      ? "text-brand-600 bg-brand-50"
-      : trend < 0
-        ? "text-red-600 bg-red-50"
-        : "text-muted bg-stone-100";
-
-  return (
-    <Card
-      variant={variant}
-      padding="md"
-      className={cn("", className)}
-      {...props}
-    >
-      <div className="flex items-start justify-between mb-2">
-        <span className="text-sm text-muted">{label}</span>
-        {icon && <span className="text-muted">{icon}</span>}
-      </div>
-      <div className="flex items-baseline gap-1.5">
-        <span className="text-2xl font-bold text-text tabular-nums">
-          {value}
-        </span>
-        {unit && <span className="text-sm text-muted">{unit}</span>}
-      </div>
-      {(trend !== undefined || trendLabel) && (
-        <div className="flex items-center gap-2 mt-2">
-          {trend !== undefined && (
-            <span
-              className={cn(
-                "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium",
-                trendColor
-              )}
-            >
-              {trend > 0 ? "+" : ""}
-              {trend}%
-            </span>
-          )}
-          {trendLabel && (
-            <span className="text-xs text-subtle">{trendLabel}</span>
-          )}
-        </div>
-      )}
-    </Card>
-  );
-}
-
-/**
- * HeroCard — Large prominent card for module headers
- */
-export function HeroCard({
-  module,
-  title,
-  subtitle,
-  children,
-  className,
-  ...props
-}) {
-  const moduleVariant = module || "default";
-
-  return (
-    <Card
-      variant={moduleVariant}
-      padding="lg"
-      className={cn("relative overflow-hidden", className)}
-      {...props}
-    >
-      {title && (
-        <div className="mb-4">
-          {subtitle && (
-            <p className="text-xs font-medium text-muted uppercase tracking-wider mb-1">
-              {subtitle}
-            </p>
-          )}
-          <h2 className="text-xl font-bold text-text">{title}</h2>
-        </div>
-      )}
-      {children}
-    </Card>
   );
 }

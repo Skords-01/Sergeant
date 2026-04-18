@@ -81,7 +81,7 @@ export const Button = forwardRef(function Button(
     children,
     ...props
   },
-  ref
+  ref,
 ) {
   const isDisabled = disabled || loading;
 
@@ -100,7 +100,7 @@ export const Button = forwardRef(function Button(
         variants[variant],
         // Size
         iconOnly ? iconSizes[size] : sizes[size],
-        className
+        className,
       )}
       {...props}
     >
@@ -130,21 +130,4 @@ function LoadingSpinner({ className }) {
       <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
     </svg>
   );
-}
-
-// Convenience exports for common button patterns
-export function IconButton({ children, ...props }) {
-  return (
-    <Button iconOnly {...props}>
-      {children}
-    </Button>
-  );
-}
-
-export function PrimaryButton(props) {
-  return <Button variant="primary" {...props} />;
-}
-
-export function GhostButton(props) {
-  return <Button variant="ghost" {...props} />;
 }
