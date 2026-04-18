@@ -114,6 +114,7 @@ export default async function handler(req, res) {
 
     const { response, data } = await anthropicMessages(apiKey, payload, {
       timeoutMs: 20000,
+      endpoint: "refine-photo",
     });
     if (!response.ok) {
       return res

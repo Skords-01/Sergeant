@@ -1,7 +1,21 @@
 import { setCorsHeaders } from "./lib/cors.js";
 import { setRequestModule } from "../obs/requestContext.js";
 import { logger } from "../obs/logger.js";
-import { externalHttpRequestsTotal } from "../obs/metrics.js";
+import {
+  externalHttpDurationMs,
+  externalHttpRequestsTotal,
+} from "../obs/metrics.js";
+
+function recordPrivat(outcome, ms) {
+  try {
+    externalHttpRequestsTotal.inc({ upstream: "privatbank", outcome });
+    if (ms != null) {
+      externalHttpDurationMs.observe({ upstream: "privatbank", outcome }, ms);
+    }
+  } catch {
+    /* ignore */
+  }
+}
 
 export default async function handler(req, res) {
   setRequestModule("finyk");
@@ -55,6 +69,7 @@ export default async function handler(req, res) {
   queryParams.delete("path");
   const queryString = queryParams.toString();
 
+  const start = process.hrtime.bigint();
   try {
     const url = `https://acp.privatbank.ua/api${path}${queryString ? "?" + queryString : ""}`;
     const response = await fetch(url, {
@@ -64,16 +79,10 @@ export default async function handler(req, res) {
         "Content-Type": "application/json;charset=utf-8",
       },
     });
+    const ms = Number(process.hrtime.bigint() - start) / 1e6;
 
     if (!response.ok) {
-      try {
-        externalHttpRequestsTotal.inc({
-          upstream: "privatbank",
-          outcome: response.status === 429 ? "rate_limited" : "error",
-        });
-      } catch {
-        /* ignore */
-      }
+      recordPrivat(response.status === 429 ? "rate_limited" : "error", ms);
       let errorText = "";
       try {
         errorText = await response.text();
@@ -88,22 +97,12 @@ export default async function handler(req, res) {
       });
     }
 
-    try {
-      externalHttpRequestsTotal.inc({ upstream: "privatbank", outcome: "ok" });
-    } catch {
-      /* ignore */
-    }
+    recordPrivat("ok", ms);
     const data = await response.json();
     res.status(200).json(data);
   } catch (e) {
-    try {
-      externalHttpRequestsTotal.inc({
-        upstream: "privatbank",
-        outcome: "error",
-      });
-    } catch {
-      /* ignore */
-    }
+    const ms = Number(process.hrtime.bigint() - start) / 1e6;
+    recordPrivat("error", ms);
     logger.error({
       msg: "privat_proxy_failed",
       err: { message: e?.message || String(e), code: e?.code },

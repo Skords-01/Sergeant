@@ -192,6 +192,7 @@ ${regenStr}`;
 
     const { response, data } = await anthropicMessages(apiKey, payload, {
       timeoutMs: 30000,
+      endpoint: "day-plan",
     });
     if (!response.ok) {
       return res

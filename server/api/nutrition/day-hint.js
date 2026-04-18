@@ -89,6 +89,7 @@ ${contextNote}${sourcesNote}Факт за день: ккал ${m.kcal ?? "—"},
 
     const { response, data } = await anthropicMessages(apiKey, payload, {
       timeoutMs: 20000,
+      endpoint: "day-hint",
     });
     if (!response.ok) {
       return res

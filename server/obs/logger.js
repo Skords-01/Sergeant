@@ -69,3 +69,32 @@ export const logger = pino({
 export function childLogger(bindings) {
   return logger.child(bindings);
 }
+
+/**
+ * Розгортає `err.cause` ланцюжком у plain об'єкт, безпечний для JSON/pino.
+ * Корисно в `errorHandler` і process-level hooks, щоб у Loki/Grafana причину
+ * бачити без розгортання stack.
+ *
+ * @param {unknown} err
+ * @param {{ includeStack?: boolean, depth?: number }} [opts]
+ */
+export function serializeError(err, { includeStack = false, depth = 4 } = {}) {
+  if (err == null || depth < 0) return undefined;
+  if (typeof err !== "object") {
+    return { message: String(err) };
+  }
+  const out = {
+    name: err.name,
+    message: err.message || String(err),
+  };
+  if (err.code !== undefined) out.code = err.code;
+  if (err.status !== undefined) out.status = err.status;
+  if (includeStack && err.stack) out.stack = err.stack;
+  if (err.cause) {
+    out.cause = serializeError(err.cause, {
+      includeStack,
+      depth: depth - 1,
+    });
+  }
+  return out;
+}

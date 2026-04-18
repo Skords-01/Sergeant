@@ -1,5 +1,9 @@
 import { betterAuth } from "better-auth";
 import pool from "./db.js";
+import {
+  authAttemptsTotal,
+  authSessionLookupDurationMs,
+} from "./obs/metrics.js";
 
 function getBaseURL() {
   if (process.env.BETTER_AUTH_URL) return process.env.BETTER_AUTH_URL;
@@ -81,24 +85,40 @@ function getTrustedOrigins() {
 }
 
 export async function getSessionUser(req) {
-  const session = await auth.api.getSession({
-    headers: new Headers(req.headers),
-  });
-  const user = session?.user ?? null;
-  if (user?.id) {
-    // Ліниво прив'язуємо сесію до request-context і Sentry-scope. Завдяки
-    // цьому будь-який log/Sentry-івент далі в ланцюжку знає, хто саме
-    // виконує запит. Безпечно без сесії — просто no-op.
+  const start = process.hrtime.bigint();
+  let outcome = "miss";
+  try {
+    const session = await auth.api.getSession({
+      headers: new Headers(req.headers),
+    });
+    const user = session?.user ?? null;
+    if (user?.id) {
+      outcome = "hit";
+      // Ліниво прив'язуємо сесію до request-context і Sentry-scope. Завдяки
+      // цьому будь-який log/Sentry-івент далі в ланцюжку знає, хто саме
+      // виконує запит. Безпечно без сесії — просто no-op.
+      try {
+        const [{ setUserId }, Sentry] = await Promise.all([
+          import("./obs/requestContext.js"),
+          import("@sentry/node"),
+        ]);
+        setUserId(user.id);
+        Sentry.getCurrentScope?.().setUser({ id: user.id });
+      } catch {
+        /* ignore — observability не має блокувати auth */
+      }
+    }
+    return user;
+  } catch (e) {
+    outcome = "error";
+    throw e;
+  } finally {
+    const ms = Number(process.hrtime.bigint() - start) / 1e6;
     try {
-      const [{ setUserId }, Sentry] = await Promise.all([
-        import("./obs/requestContext.js"),
-        import("@sentry/node"),
-      ]);
-      setUserId(user.id);
-      Sentry.getCurrentScope?.().setUser({ id: user.id });
+      authSessionLookupDurationMs.observe({ outcome }, ms);
+      authAttemptsTotal.inc({ op: "session_check", outcome });
     } catch {
-      /* ignore — observability не має блокувати auth */
+      /* metrics must never break a request */
     }
   }
-  return user;
 }

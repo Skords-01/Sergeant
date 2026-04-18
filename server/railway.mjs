@@ -16,6 +16,7 @@ import { auth } from "./auth.js";
 import { ensureSchema, pool } from "./db.js";
 import {
   apiHelmetMiddleware,
+  authMetricsMiddleware,
   authSensitiveRateLimit,
   createReadyzHandler,
   errorHandler,
@@ -24,8 +25,13 @@ import {
   requestLogMiddleware,
   withRequestContext,
 } from "./httpCommon.mjs";
-import { logger } from "./obs/logger.js";
-import { metricsHandler, startPoolSampler } from "./obs/metrics.js";
+import { logger, serializeError } from "./obs/logger.js";
+import {
+  metricsHandler,
+  startPoolSampler,
+  uncaughtExceptionsTotal,
+  unhandledRejectionsTotal,
+} from "./obs/metrics.js";
 import chatHandler from "./api/chat.js";
 import monoHandler from "./api/mono.js";
 import privatHandler from "./api/privat.js";
@@ -87,6 +93,7 @@ app.get("/health", createReadyzHandler(pool));
 app.get("/metrics", metricsHandler);
 
 app.use("/api/auth", authSensitiveRateLimit);
+app.use("/api/auth", authMetricsMiddleware);
 app.all("/api/auth/*", toNodeHandler(auth));
 
 app.use(
@@ -169,6 +176,35 @@ attachSentryErrorHandler(app);
 app.use(errorHandler);
 
 startPoolSampler(pool);
+
+// Process-level error tracking: ловимо все, що не впіймали вище.
+// Sentry вже інструментує це окремо, а ми додаємо counter+структурний лог
+// щоб у Grafana було видно спайки незалежно від Sentry retention.
+process.on("unhandledRejection", (reason) => {
+  try {
+    unhandledRejectionsTotal.inc();
+  } catch {
+    /* ignore */
+  }
+  logger.error({
+    msg: "unhandled_rejection",
+    err: serializeError(reason, { includeStack: true }),
+  });
+});
+
+process.on("uncaughtException", (err) => {
+  try {
+    uncaughtExceptionsTotal.inc();
+  } catch {
+    /* ignore */
+  }
+  logger.fatal({
+    msg: "uncaught_exception",
+    err: serializeError(err, { includeStack: true }),
+  });
+  // Не вбиваємо процес тут: Railway рестартує за health-probe, а Sentry вже
+  // зловив stacktrace. Жорсткий exit(1) призвв би до обриву активних запитів.
+});
 
 ensureSchema()
   .then(() => {

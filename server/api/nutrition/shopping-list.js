@@ -133,6 +133,7 @@ ${ingredientsList}
 
     const { response, data } = await anthropicMessages(apiKey, payload, {
       timeoutMs: 25000,
+      endpoint: "shopping-list",
     });
     if (!response.ok) {
       return res

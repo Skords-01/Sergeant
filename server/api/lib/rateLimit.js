@@ -1,3 +1,13 @@
+import { rateLimitHitsTotal } from "../../obs/metrics.js";
+
+function recordRateLimit(key, outcome) {
+  try {
+    rateLimitHitsTotal.inc({ key, outcome });
+  } catch {
+    /* metrics must never break a request */
+  }
+}
+
 export function getIp(req) {
   const xf = req?.headers?.["x-forwarded-for"];
   if (typeof xf === "string" && xf.trim()) return xf.split(",")[0].trim();
@@ -35,9 +45,11 @@ export function checkRateLimit(req, { key, limit, windowMs }) {
   const cur = buckets.get(k);
   if (!cur || now - cur.startMs >= windowMs) {
     buckets.set(k, { startMs: now, count: 1 });
+    recordRateLimit(key, "allowed");
     return { ok: true, remaining: limit - 1, resetMs: windowMs };
   }
   if (cur.count >= limit) {
+    recordRateLimit(key, "blocked");
     return {
       ok: false,
       remaining: 0,
@@ -45,6 +57,7 @@ export function checkRateLimit(req, { key, limit, windowMs }) {
     };
   }
   cur.count += 1;
+  recordRateLimit(key, "allowed");
   return {
     ok: true,
     remaining: Math.max(0, limit - cur.count),

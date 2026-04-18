@@ -3,17 +3,25 @@ import { checkRateLimit } from "./lib/rateLimit.js";
 import { setRequestModule } from "../obs/requestContext.js";
 import {
   barcodeLookupsTotal,
+  externalHttpDurationMs,
   externalHttpRequestsTotal,
 } from "../obs/metrics.js";
 
 /** Емітить і барcode-domain метрику, і загальний outbound HTTP. */
-function recordLookup(source, outcome) {
+function recordLookup(source, outcome, ms) {
   try {
     barcodeLookupsTotal.inc({ source, outcome });
     externalHttpRequestsTotal.inc({ upstream: source, outcome });
+    if (ms != null) {
+      externalHttpDurationMs.observe({ upstream: source, outcome }, ms);
+    }
   } catch {
     /* metrics must never break a request */
   }
+}
+
+function elapsedMs(start) {
+  return Number(process.hrtime.bigint() - start) / 1e6;
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -69,6 +77,7 @@ function normalizeOFF(product) {
 
 async function lookupOFF(barcode) {
   const url = `${OFF_BASE}/${barcode}.json?fields=${OFF_FIELDS}`;
+  const start = process.hrtime.bigint();
   try {
     const r = await fetch(url, {
       headers: {
@@ -78,19 +87,23 @@ async function lookupOFF(barcode) {
       signal: AbortSignal.timeout(7000),
     });
     if (!r.ok) {
-      recordLookup("off", "miss");
+      recordLookup("off", "miss", elapsedMs(start));
       return null;
     }
     const data = await r.json();
     if (data?.status !== 1 || !data?.product) {
-      recordLookup("off", "miss");
+      recordLookup("off", "miss", elapsedMs(start));
       return null;
     }
     const product = normalizeOFF(data.product);
-    recordLookup("off", product ? "hit" : "miss");
+    recordLookup("off", product ? "hit" : "miss", elapsedMs(start));
     return product;
   } catch (e) {
-    recordLookup("off", "error");
+    recordLookup(
+      "off",
+      e?.name === "TimeoutError" ? "timeout" : "error",
+      elapsedMs(start),
+    );
     throw e;
   }
 }
@@ -160,19 +173,20 @@ async function lookupUSDA(barcode) {
   const key = process.env.USDA_FDC_API_KEY || "DEMO_KEY";
   // Search Branded Foods by GTIN/UPC (barcode is stored in gtinUpc field)
   const url = `${FDC_BASE}/foods/search?query=${encodeURIComponent(barcode)}&dataType=Branded&pageSize=5&api_key=${key}`;
+  const start = process.hrtime.bigint();
   try {
     const r = await fetch(url, {
       headers: { "User-Agent": "Sergeant-NutritionApp/1.0" },
       signal: AbortSignal.timeout(7000),
     });
     if (!r.ok) {
-      recordLookup("usda", "miss");
+      recordLookup("usda", "miss", elapsedMs(start));
       return null;
     }
     const data = await r.json();
     const foods = data?.foods;
     if (!Array.isArray(foods) || foods.length === 0) {
-      recordLookup("usda", "miss");
+      recordLookup("usda", "miss", elapsedMs(start));
       return null;
     }
 
@@ -184,10 +198,14 @@ async function lookupUSDA(barcode) {
     );
     const food = exact || foods[0];
     const product = normalizeUSDA(food);
-    recordLookup("usda", product ? "hit" : "miss");
+    recordLookup("usda", product ? "hit" : "miss", elapsedMs(start));
     return product;
   } catch (e) {
-    recordLookup("usda", "error");
+    recordLookup(
+      "usda",
+      e?.name === "TimeoutError" ? "timeout" : "error",
+      elapsedMs(start),
+    );
     throw e;
   }
 }
@@ -199,31 +217,32 @@ async function lookupUSDA(barcode) {
 // ──────────────────────────────────────────────────────────────────────────────
 async function lookupUPCitemdb(barcode) {
   const url = `https://api.upcitemdb.com/prod/trial/lookup?upc=${encodeURIComponent(barcode)}`;
+  const start = process.hrtime.bigint();
   try {
     const r = await fetch(url, {
       headers: { "User-Agent": "Sergeant-NutritionApp/1.0" },
       signal: AbortSignal.timeout(6000),
     });
     if (!r.ok) {
-      recordLookup("upcitemdb", "miss");
+      recordLookup("upcitemdb", "miss", elapsedMs(start));
       return null;
     }
     const data = await r.json();
     const item = Array.isArray(data?.items) ? data.items[0] : null;
     if (!item) {
-      recordLookup("upcitemdb", "miss");
+      recordLookup("upcitemdb", "miss", elapsedMs(start));
       return null;
     }
 
     const name = item.title || null;
     if (!name) {
-      recordLookup("upcitemdb", "miss");
+      recordLookup("upcitemdb", "miss", elapsedMs(start));
       return null;
     }
 
     const brand = item.brand || null;
 
-    recordLookup("upcitemdb", "hit");
+    recordLookup("upcitemdb", "hit", elapsedMs(start));
     return {
       name,
       brand,
@@ -237,7 +256,11 @@ async function lookupUPCitemdb(barcode) {
       partial: true, // no nutrition data — frontend should prompt user to fill in macros
     };
   } catch (e) {
-    recordLookup("upcitemdb", "error");
+    recordLookup(
+      "upcitemdb",
+      e?.name === "TimeoutError" ? "timeout" : "error",
+      elapsedMs(start),
+    );
     throw e;
   }
 }

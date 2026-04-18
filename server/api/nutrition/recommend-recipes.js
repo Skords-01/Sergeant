@@ -120,6 +120,7 @@ export default async function handler(req, res) {
 
     const { response, data } = await anthropicMessages(apiKey, payload, {
       timeoutMs: 45000,
+      endpoint: "recommend-recipes",
     });
     if (!response.ok) {
       return res

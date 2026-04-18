@@ -111,6 +111,7 @@ export default async function handler(req, res) {
 
     const { response, data } = await anthropicMessages(apiKey, payload, {
       timeoutMs: 35000,
+      endpoint: "week-plan",
     });
     if (!response.ok) {
       return res

@@ -85,6 +85,7 @@ export default async function handler(req, res) {
 
     const { response, data } = await anthropicMessages(apiKey, payload, {
       timeoutMs: 20000,
+      endpoint: "parse-pantry",
     });
     if (!response.ok) {
       return res

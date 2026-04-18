@@ -1,11 +1,17 @@
 import { setCorsHeaders } from "./lib/cors.js";
 import { setRequestModule } from "../obs/requestContext.js";
 import { logger } from "../obs/logger.js";
-import { externalHttpRequestsTotal } from "../obs/metrics.js";
+import {
+  externalHttpDurationMs,
+  externalHttpRequestsTotal,
+} from "../obs/metrics.js";
 
-function recordMono(outcome) {
+function recordMono(outcome, ms) {
   try {
     externalHttpRequestsTotal.inc({ upstream: "monobank", outcome });
+    if (ms != null) {
+      externalHttpDurationMs.observe({ upstream: "monobank", outcome }, ms);
+    }
   } catch {
     /* ignore */
   }
@@ -42,13 +48,15 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "Недозволений API шлях" });
   }
 
+  const start = process.hrtime.bigint();
   try {
     const response = await fetch(`https://api.monobank.ua${path}`, {
       headers: { "X-Token": String(token) },
     });
+    const ms = Number(process.hrtime.bigint() - start) / 1e6;
 
     if (!response.ok) {
-      recordMono(response.status === 429 ? "rate_limited" : "error");
+      recordMono(response.status === 429 ? "rate_limited" : "error", ms);
       const errorText = await response.text();
       return res.status(response.status).json({
         error: response.status === 429 ? "Занадто багато запитів" : errorText,
@@ -56,10 +64,11 @@ export default async function handler(req, res) {
     }
 
     const data = await response.json();
-    recordMono("ok");
+    recordMono("ok", ms);
     res.status(200).json(data);
   } catch (e) {
-    recordMono("error");
+    const ms = Number(process.hrtime.bigint() - start) / 1e6;
+    recordMono("error", ms);
     logger.error({
       msg: "mono_proxy_failed",
       err: { message: e?.message || String(e), code: e?.code },

@@ -1,15 +1,37 @@
 import {
+  aiRequestDurationMs,
+  aiRequestsTotal,
   aiTokensTotal,
+  externalHttpDurationMs,
   externalHttpRequestsTotal,
 } from "../../../obs/metrics.js";
 
 const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
 
-function recordOutcome(outcome) {
+function recordOutcome(outcome, { model, endpoint, ms }) {
   try {
     externalHttpRequestsTotal.inc({ upstream: "anthropic", outcome });
+    if (ms != null) {
+      externalHttpDurationMs.observe({ upstream: "anthropic", outcome }, ms);
+    }
+    aiRequestsTotal.inc({
+      provider: "anthropic",
+      model: model || "unknown",
+      endpoint: endpoint || "unknown",
+      outcome,
+    });
+    if (ms != null) {
+      aiRequestDurationMs.observe(
+        {
+          provider: "anthropic",
+          model: model || "unknown",
+          endpoint: endpoint || "unknown",
+        },
+        ms,
+      );
+    }
   } catch {
-    /* ignore */
+    /* metrics must never break a request */
   }
 }
 
@@ -37,10 +59,12 @@ function recordUsage(model, data) {
 export async function anthropicMessages(
   apiKey,
   payload,
-  { timeoutMs = 20000 } = {},
+  { timeoutMs = 20000, endpoint = "unknown" } = {},
 ) {
   const maxAttempts = 3;
   const retryDelayMs = [0, 250, 750];
+  const model = payload?.model || "unknown";
+  const overallStart = process.hrtime.bigint();
 
   /** @type {Response|null} */
   let lastResponse = null;
@@ -73,17 +97,27 @@ export async function anthropicMessages(
       // Ретраїмо тільки тимчасові/перевантажені стани.
       if (shouldRetryStatus(response.status) && attempt < maxAttempts) continue;
 
+      const ms = Number(process.hrtime.bigint() - overallStart) / 1e6;
       if (response.ok) {
-        recordOutcome("ok");
-        recordUsage(payload?.model || "unknown", data);
+        recordOutcome("ok", { model, endpoint, ms });
+        recordUsage(model, data);
       } else {
-        recordOutcome(response.status === 429 ? "rate_limited" : "error");
+        recordOutcome(response.status === 429 ? "rate_limited" : "error", {
+          model,
+          endpoint,
+          ms,
+        });
       }
       return { response, data };
     } catch (e) {
       // На явний timeout (AbortError) краще не "допалювати" запити.
       if (isAbortError(e) || attempt >= maxAttempts) {
-        recordOutcome(isAbortError(e) ? "timeout" : "error");
+        const ms = Number(process.hrtime.bigint() - overallStart) / 1e6;
+        recordOutcome(isAbortError(e) ? "timeout" : "error", {
+          model,
+          endpoint,
+          ms,
+        });
         throw e;
       }
       continue;

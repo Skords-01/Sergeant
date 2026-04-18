@@ -1,12 +1,15 @@
 import { randomUUID } from "crypto";
 import helmet from "helmet";
 import { rateLimitExpress } from "./api/lib/rateLimit.js";
-import { logger } from "./obs/logger.js";
-import { withRequestContext } from "./obs/requestContext.js";
+import { logger, serializeError } from "./obs/logger.js";
+import { als, withRequestContext } from "./obs/requestContext.js";
 import {
+  appErrorsTotal,
+  authAttemptsTotal,
   httpInFlight,
   httpRequestDurationMs,
   httpRequestsTotal,
+  statusClass,
 } from "./obs/metrics.js";
 import { isOperationalError } from "./obs/errors.js";
 
@@ -48,11 +51,13 @@ export function requestLogMiddleware(req, res, next) {
     const ms = Number(process.hrtime.bigint() - start) / 1e6;
     const routePath = req.route?.path;
     const basePath = typeof req.baseUrl === "string" ? req.baseUrl : "";
-    const path =
-      routePath != null ? `${basePath}${routePath}` : url.split("?")[0];
+    // Fallback на `unknown` (не сирий URL) щоб не роздувати cardinality Prometheus
+    // сканерами /wp-admin і подібним.
+    const path = routePath != null ? `${basePath}${routePath}` : "unknown";
     const status = res.statusCode;
     const level = status >= 500 ? "error" : status >= 400 ? "warn" : "info";
     const bytesOut = Number(res.getHeader("content-length")) || 0;
+    const mod = als.getStore()?.module || "unknown";
 
     logger[level]({
       msg: "http",
@@ -66,8 +71,16 @@ export function requestLogMiddleware(req, res, next) {
     });
 
     try {
-      httpRequestsTotal.inc({ method: req.method, path, status });
-      httpRequestDurationMs.observe({ method: req.method, path }, ms);
+      httpRequestsTotal.inc({
+        method: req.method,
+        path,
+        status,
+        module: mod,
+      });
+      httpRequestDurationMs.observe(
+        { method: req.method, path, status_class: statusClass(status) },
+        ms,
+      );
     } catch {
       /* metrics must never break a request */
     }
@@ -152,6 +165,44 @@ export function authSensitiveRateLimit(req, res, next) {
 }
 
 /**
+ * Класифікує auth-ендпоінти better-auth і після відповіді інкрементує
+ * `authAttemptsTotal{op,outcome}`. Ставити ПІСЛЯ `authSensitiveRateLimit`,
+ * ДО `toNodeHandler(auth)` — щоб 429 від ліміту теж ловилися.
+ */
+export function authMetricsMiddleware(req, res, next) {
+  if (req.method !== "POST") return next();
+  const url = req.originalUrl || "";
+  const op =
+    (url.includes("/sign-in") && "sign_in") ||
+    (url.includes("/sign-up") && "sign_up") ||
+    (url.includes("forget-password") && "forget_password") ||
+    (url.includes("reset-password") && "reset_password") ||
+    (url.includes("/sign-out") && "signout") ||
+    null;
+  if (!op) return next();
+
+  res.on("finish", () => {
+    const s = res.statusCode;
+    const outcome =
+      s === 429
+        ? "rate_limited"
+        : s === 401 || s === 403
+          ? "bad_credentials"
+          : s >= 500
+            ? "error"
+            : s >= 400
+              ? "invalid"
+              : "ok";
+    try {
+      authAttemptsTotal.inc({ op, outcome });
+    } catch {
+      /* ignore */
+    }
+  });
+  next();
+}
+
+/**
  * @deprecated Використовуй `livezHandler` + `readyzHandler`. Лишено для
  * зворотної сумісності зі старими health-probe в інфраструктурі.
  */
@@ -200,6 +251,18 @@ export function errorHandler(err, req, res, _next) {
   const code =
     (typeof err?.code === "string" && err.code) ||
     (status === 429 ? "RATE_LIMIT" : operational ? "BAD_REQUEST" : "INTERNAL");
+  const mod = als.getStore()?.module || "unknown";
+
+  try {
+    appErrorsTotal.inc({
+      kind: operational ? "operational" : "programmer",
+      status: String(status),
+      code,
+      module: mod,
+    });
+  } catch {
+    /* metrics must never break error handling */
+  }
 
   const level = status >= 500 ? "error" : "warn";
   logger[level]({
@@ -208,12 +271,8 @@ export function errorHandler(err, req, res, _next) {
     path: req.route?.path || req.originalUrl,
     status,
     code,
-    err: {
-      name: err?.name,
-      message: err?.message || String(err),
-      stack: status >= 500 ? err?.stack : undefined,
-      cause: err?.cause?.message,
-    },
+    module: mod,
+    err: serializeError(err, { includeStack: status >= 500 }),
   });
 
   if (res.headersSent) return;
