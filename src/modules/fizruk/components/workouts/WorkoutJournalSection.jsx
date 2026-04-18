@@ -6,6 +6,11 @@ import { SwipeToAction } from "@shared/components/ui/SwipeToAction";
 import { SectionErrorBoundary } from "@shared/components/ui/SectionErrorBoundary.jsx";
 
 function WorkoutRow({ w, activeWorkoutId, setActiveWorkoutId }) {
+  // An ended workout is always "Завершене" — even if it happens to be the
+  // currently-selected row — so it no longer looks like it's "hanging in
+  // active" after the user pressed «Завершити».
+  const isEnded = Boolean(w.endedAt);
+  const isActive = !isEnded && activeWorkoutId === w.id;
   return (
     <button
       key={w.id}
@@ -23,13 +28,13 @@ function WorkoutRow({ w, activeWorkoutId, setActiveWorkoutId }) {
           <span className="text-xs text-subtle">
             {(w.items || []).length} вправ
           </span>
-          {activeWorkoutId === w.id ? (
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-success/15 text-success border border-success/20">
-              Активне
-            </span>
-          ) : w.endedAt ? (
+          {isEnded ? (
             <span className="text-[10px] px-2 py-0.5 rounded-full bg-panelHi text-subtle border border-line">
               Завершене
+            </span>
+          ) : isActive ? (
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-success/15 text-success border border-success/20">
+              Активне
             </span>
           ) : (
             <span className="text-[10px] px-2 py-0.5 rounded-full bg-warning/10 text-warning border border-warning/20">
@@ -139,6 +144,12 @@ export function WorkoutJournalSection({
               const sum = summarizeWorkoutForFinish(activeWorkout);
               const wid = activeWorkout.id;
               endWorkout(wid);
+              // Collapse the expanded active workout panel immediately —
+              // a finished session should live on in the history list as a
+              // "Завершене" entry, not keep occupying the "Активне" slot.
+              // The workout itself is not deleted: it can only be removed
+              // via explicit delete (swipe / "Видалити" confirm dialog).
+              setActiveWorkoutId(null);
               if (sum) {
                 setFinishFlash({
                   step: "wellbeing",
