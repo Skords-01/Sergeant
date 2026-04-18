@@ -179,7 +179,9 @@ export default function FizrukApp({
   useEffect(() => {
     const raw = (window.location.hash || "").replace(/^#\/?/, "").trim();
     const canonical = route.page === "exercise" ? raw : route.page;
-    if (raw !== canonical) {
+    // Guard the empty-hash case: a clean URL without any fragment must stay
+    // clean. We only normalize legacy/invalid hashes like `#/foo`.
+    if (raw && raw !== canonical) {
       window.history.replaceState(
         null,
         "",
