@@ -1,7 +1,7 @@
 # Alert rules, прив'язані до SLO в ../SLO.md.
 #
 # Пари вікон (за Google SRE Workbook Ch. 5):
-#   fast  — 1h long / 5m short / burn-rate 14.4 → page (≈2h до вичерпання бюджету)
+#   fast  — 1h long / 5m short / burn-rate 14.4 → page (≈2d до вичерпання 30-day бюджету)
 #   slow  — 6h long / 30m short / burn-rate 6   → ticket (≈5d до вичерпання)
 #
 # Поріг burn-rate (напр. 14.4) помножений на error-budget `(1 - SLO)`
@@ -23,10 +23,10 @@ groups:
           severity: page
           slo: http_availability
         annotations:
-          summary: "HTTP API burning error budget fast (>14.4× / 2h to exhaust)"
+          summary: "HTTP API burning error budget fast (>14.4× / ~2d to exhaust)"
           description: |
             5xx ratio >14.4% over both 1h and 5m windows. At this rate the
-            30-day error budget (1%) will be gone in ~2h.
+            30-day error budget (1%) will be gone in ~2d (30d / 14.4 ≈ 50h).
             Current 1h 5xx ratio: {{ $value | humanizePercentage }}.
           runbook: "docs/observability/runbook.md#httperrorbudgetburn"
 
@@ -76,7 +76,7 @@ groups:
           summary: "Sync burning error budget fast"
           description: |
             Sync error/too_large/unauthorized ratio >7.2% over 1h and 5m.
-            30-day budget (0.5%) gone in ~2h at this rate.
+            30-day budget (0.5%) gone in ~2d at this rate (30d / 14.4 ≈ 50h).
             Clients may be silently losing data. Investigate Postgres and
             `sync_operations_total{outcome=~"error|too_large"}` breakdown
             by {op, module}.
@@ -234,7 +234,10 @@ groups:
   - name: slo_external_http
     rules:
       - alert: ExternalHttpErrorBudgetBurnSlow
-        expr: sli:external_http_error:ratio_rate6h > (6 * 0.05)
+        expr: |
+          sli:external_http_error:ratio_rate6h > (6 * 0.05)
+          and
+          sli:external_http_error:ratio_rate30m > (6 * 0.05)
         for: 30m
         labels:
           severity: ticket

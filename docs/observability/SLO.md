@@ -128,12 +128,17 @@ sum(rate(external_http_requests_total{upstream="X"}[w]))
 
 ## 7. Process-рівня (не SLO, hard alerts)
 
-Жорсткі алерти без burn-rate логіки — будь-який інцидент = page:
+Жорсткі алерти без burn-rate логіки. `page` — для симптомів, що ламають
+увесь процес або фронтують реальних користувачів:
 
-- `unhandled_rejections_total` має інкремент за 5m.
-- `uncaught_exceptions_total` має інкремент за 5m.
-- `db_pool_waiting > 0` протягом 10m — вичерпано pool, запити черги.
-- `app_errors_total{kind="programmer"}` має інкремент за 5m — це завжди баг.
+- `unhandled_rejections_total` має інкремент за 5m → **page** (request hung/double-response).
+- `uncaught_exceptions_total` має інкремент за 5m → **page** (process стан inconsistent).
+- `db_pool_waiting > 0` протягом 10m → **page** (усі запити stalled).
+
+`ticket` — для сигналів "завжди баг, але не обов'язково прод-аварія":
+
+- `app_errors_total{kind="programmer"}` має інкремент за 5m → **ticket** + Sentry issue.
+  Одноразовий throw на краю валідації не варто будити on-call о 3-й ночі.
 
 ---
 
@@ -141,10 +146,12 @@ sum(rate(external_http_requests_total{upstream="X"}[w]))
 
 Для SLO з бюджетом `B = 1 - SLO` (напр. B=0.01 для 99 %):
 
-- **Page (2h threshold / 1h window)**: burn rate ≥ `14.4`, тобто `error_ratio_1h ≥ 14.4·B` **І** `error_ratio_5m ≥ 14.4·B`.
-  За такого темпу весь місячний бюджет згорить за 2h.
-- **Ticket (5h threshold / 6h window)**: burn rate ≥ `6`, тобто `error_ratio_6h ≥ 6·B` **І** `error_ratio_30m ≥ 6·B`.
-  Бюджет згорить за 5 діб.
+- **Page (1h+5m window)**: burn rate ≥ `14.4`, тобто `error_ratio_1h ≥ 14.4·B` **І** `error_ratio_5m ≥ 14.4·B`.
+  За такого темпу весь 30-day бюджет згорить за `30d / 14.4 ≈ 2d` (50h). За 1h
+  при цьому спалюється `14.4 / (30·24) ≈ 2 %` місячного бюджету — звідси
+  короткий trigger-window і page-severity.
+- **Ticket (6h+30m window)**: burn rate ≥ `6`, тобто `error_ratio_6h ≥ 6·B` **І** `error_ratio_30m ≥ 6·B`.
+  Бюджет згорить за `30d / 6 = 5d`.
 
 Дві умови AND (long-window + short-window) захищають від false-positive, коли
 ratio пульсує.
