@@ -12,6 +12,10 @@ import { HubDashboard } from "./HubDashboard.jsx";
 import { HubReports } from "./HubReports.jsx";
 import { HubSettingsPage } from "./HubSettingsPage.jsx";
 import { OnboardingWizard, shouldShowOnboarding } from "./OnboardingWizard.jsx";
+import {
+  seedFinykDemoData,
+  enableFinykManualOnly,
+} from "../modules/finyk/lib/demoData.js";
 import { SyncStatusIndicator } from "./SyncStatusIndicator.jsx";
 import { OfflineBanner } from "./app/OfflineBanner.jsx";
 import { PageLoader } from "./app/PageLoader.jsx";
@@ -448,8 +452,20 @@ function AppInner() {
 
         {showOnboarding && (
           <OnboardingWizard
-            onDone={(startModuleId) => {
+            onDone={(startModuleId, opts = {}) => {
               setShowOnboarding(false);
+              // Quick-start intents from the wizard map onto three different
+              // landings inside Finyk. We set any flags / PWA actions *before*
+              // calling `openModule` so FinykApp sees them on mount.
+              if (opts.intent === "demo") {
+                seedFinykDemoData();
+              } else if (opts.intent === "manual") {
+                enableFinykManualOnly();
+                setPwaAction("add_expense");
+              } else if (opts.intent === "bank") {
+                // Bank flow needs no pre-seeding — the module renders its
+                // token input as soon as it mounts.
+              }
               if (startModuleId) openModule(startModuleId);
             }}
           />

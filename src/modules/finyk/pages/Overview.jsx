@@ -1,4 +1,5 @@
-import { memo, useMemo, useEffect, Suspense } from "react";
+import { memo, useMemo, useEffect, useRef, useState, Suspense } from "react";
+import { trackEvent, ANALYTICS_EVENTS } from "../../../core/analytics";
 import { CategoryChart, NetworthChart } from "../components/charts/lazy";
 import { ChartFallback } from "../components/charts/ChartFallback";
 import {
@@ -108,6 +109,7 @@ export function Overview({
     txSplits,
     manualAssets,
     customCategories,
+    manualExpenses = [],
   } = storage;
 
   const now = new Date();
@@ -185,6 +187,38 @@ export function Overview({
     accounts.length,
     saveNetworthSnapshot,
   ]);
+
+  // First-insight banner — shown exactly once, the moment the user first
+  // sees the Overview with any real data (manual expense or bank tx).
+  // Dismissing it (✕ or CTA) sets the flag so we never show it again.
+  const hasAnyData = manualExpenses.length > 0 || realTx.length > 0;
+  const [showFirstInsight, setShowFirstInsight] = useState(() => {
+    try {
+      return !localStorage.getItem("finyk_first_insight_seen_v1");
+    } catch {
+      return false;
+    }
+  });
+  // Ref guard — `manualExpenses.length` is in the dep array (to satisfy
+  // exhaustive-deps and to initially trigger once data lands), but we only
+  // ever want to fire the event on the *first* time the banner becomes
+  // eligible in a given session. Adding a new expense later must not
+  // re-fire the activation metric.
+  const insightFiredRef = useRef(false);
+  useEffect(() => {
+    if (insightFiredRef.current) return;
+    if (!showFirstInsight || !hasAnyData) return;
+    insightFiredRef.current = true;
+    try {
+      localStorage.setItem("finyk_first_insight_seen_v1", "1");
+    } catch {
+      /* noop */
+    }
+    trackEvent(ANALYTICS_EVENTS.FIRST_INSIGHT_SEEN, {
+      source: manualExpenses.length > 0 ? "manual" : "bank",
+    });
+  }, [showFirstInsight, hasAnyData, manualExpenses.length]);
+  const dismissFirstInsight = () => setShowFirstInsight(false);
 
   const budgetAlerts = useMemo(
     () =>
@@ -434,6 +468,66 @@ export function Overview({
             onRetry={monoRefresh}
             loading={loadingTx}
           />
+        )}
+
+        {showFirstInsight && hasAnyData && (
+          <div className="rounded-2xl border border-emerald-500/25 bg-emerald-500/10 p-4 flex items-start gap-3">
+            <div
+              className="w-10 h-10 shrink-0 rounded-2xl bg-emerald-500/15 flex items-center justify-center text-xl"
+              aria-hidden
+            >
+              💡
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="text-sm font-semibold text-text">
+                Ось куди йдуть твої гроші
+              </div>
+              <div className="text-xs text-muted mt-0.5">
+                Хочеш поставити бюджет — і бачити, коли починаєш виходити за
+                рамки?
+              </div>
+              <div className="flex gap-2 mt-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    dismissFirstInsight();
+                    onNavigate?.("budgets");
+                  }}
+                  className="px-3 py-1.5 rounded-xl bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-700 transition"
+                >
+                  Поставити бюджет
+                </button>
+                <button
+                  type="button"
+                  onClick={dismissFirstInsight}
+                  className="px-3 py-1.5 rounded-xl text-xs text-muted hover:text-text hover:bg-panelHi transition"
+                >
+                  Пізніше
+                </button>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={dismissFirstInsight}
+              className="text-muted hover:text-text shrink-0 -mr-1"
+              aria-label="Закрити підказку"
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden
+              >
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          </div>
         )}
 
         {/* ── Hero (як у прототипі: градієнт + зведення) ── */}

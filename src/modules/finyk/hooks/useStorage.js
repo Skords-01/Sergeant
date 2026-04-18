@@ -109,6 +109,20 @@ export function useStorage({ onImportFeedback } = {}) {
       hasDescription: Boolean(entry.description),
       source: "manual",
     });
+    // Activation funnel: fire once for the user's first-ever manual
+    // expense, keyed by a localStorage flag so seeded demo data doesn't
+    // count and so re-adds don't re-fire. Wrapped in try/catch because
+    // storage can throw in locked-down private modes.
+    try {
+      if (!localStorage.getItem("finyk_first_expense_seen_v1")) {
+        localStorage.setItem("finyk_first_expense_seen_v1", "1");
+        trackEvent(ANALYTICS_EVENTS.FIRST_EXPENSE_ADDED, {
+          category: entry.category,
+        });
+      }
+    } catch {
+      /* noop */
+    }
     return entry;
   };
 

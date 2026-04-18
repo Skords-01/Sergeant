@@ -28,6 +28,9 @@ export const ANALYTICS_EVENTS = Object.freeze({
   BANK_CONNECT_STARTED: "bank_connect_started",
   BANK_CONNECT_SUCCESS: "bank_connect_success",
   PAYWALL_VIEWED: "paywall_viewed",
+  // Activation funnel — fired at most once per user to measure time-to-value.
+  FIRST_EXPENSE_ADDED: "first_expense_added",
+  FIRST_INSIGHT_SEEN: "first_insight_seen",
 });
 
 /**

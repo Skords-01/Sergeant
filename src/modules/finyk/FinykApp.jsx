@@ -3,6 +3,10 @@ import { useMonobank } from "./hooks/useMonobank";
 import { usePrivatbank } from "./hooks/usePrivatbank";
 import { useStorage } from "./hooks/useStorage";
 import { readRaw, writeRaw } from "./lib/finykStorage.js";
+import {
+  FINYK_MANUAL_ONLY_KEY,
+  enableFinykManualOnly,
+} from "./lib/demoData.js";
 import { PAGES } from "./constants";
 import { Button } from "@shared/components/ui/Button";
 import { Input } from "@shared/components/ui/Input";
@@ -173,6 +177,13 @@ export default function App({
   );
   const [showExpenseSheet, setShowExpenseSheet] = useState(false);
   const [editingManualExpenseId, setEditingManualExpenseId] = useState(null);
+  // "Manual only" bypass: user completed onboarding without Monobank or
+  // pressed «Далі без банку» on the login screen. When set, we render the
+  // normal Finyk UI populated from manual expenses even if `clientInfo` is
+  // still null — the bank can still be connected later from settings.
+  const [manualOnly, setManualOnly] = useState(
+    () => readRaw(FINYK_MANUAL_ONLY_KEY, "") === "1",
+  );
 
   useEffect(() => {
     writeRaw("finyk_show_balance_v1", showBalance ? "1" : "0");
@@ -238,7 +249,7 @@ export default function App({
   };
 
   // ── Login screen ──────────────────────────────────────────────────────
-  if (!clientInfo) {
+  if (!clientInfo && !manualOnly) {
     return (
       <div className="min-h-dvh flex items-center justify-center p-5 bg-bg safe-area-pt-pb relative overflow-hidden">
         {/* Decorative background elements */}
@@ -428,11 +439,22 @@ export default function App({
             >
               {connecting ? "Підключення..." : "Підключити"}
             </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              className="mt-2 w-full min-h-[44px]"
+              onClick={() => {
+                enableFinykManualOnly();
+                setManualOnly(true);
+              }}
+            >
+              Далі без банку
+            </Button>
             {typeof onBackToHub === "function" && (
               <Button
                 type="button"
                 variant="ghost"
-                className="mt-2 w-full min-h-[44px]"
+                className="mt-1 w-full min-h-[44px]"
                 onClick={onBackToHub}
               >
                 ← Назад до хабу
