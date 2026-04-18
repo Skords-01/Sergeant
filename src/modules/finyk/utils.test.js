@@ -217,13 +217,11 @@ describe("calcCategorySpent", () => {
     expect(calcCategorySpent(txs, "food")).toBe(600);
   });
   it("сумує через override для окремої транзакції", () => {
-    expect(calcCategorySpent(txs, "transport", { "4": "transport" })).toBe(
-      300,
-    );
+    expect(calcCategorySpent(txs, "transport", { 4: "transport" })).toBe(300);
   });
   it("використовує спліт коли він заданий", () => {
     const splits = {
-      "1": [
+      1: [
         { amount: 200, categoryId: "food" },
         { amount: 300, categoryId: "restaurant" },
       ],
@@ -316,9 +314,9 @@ describe("calcFinykSpendingTotal", () => {
     expect(calcFinykSpendingTotal(txs)).toBe(800);
   });
   it("ігнорує tx з excluded Set", () => {
-    expect(
-      calcFinykSpendingTotal(txs, { excludedTxIds: new Set(["1"]) }),
-    ).toBe(300);
+    expect(calcFinykSpendingTotal(txs, { excludedTxIds: new Set(["1"]) })).toBe(
+      300,
+    );
   });
   it("приймає excluded як масив", () => {
     expect(calcFinykSpendingTotal(txs, { excludedTxIds: ["1", "2"] })).toBe(
@@ -335,7 +333,7 @@ describe("calcFinykSpendingTotal", () => {
   });
   it("враховує txSplits (виключає internal transfer)", () => {
     const splits = {
-      "1": [
+      1: [
         { amount: 200, categoryId: "food" },
         { amount: 300, categoryId: INTERNAL_TRANSFER_ID },
       ],
