@@ -1,4 +1,4 @@
-import { memo, useMemo, useEffect, useState, Suspense } from "react";
+import { memo, useMemo, useEffect, useRef, useState, Suspense } from "react";
 import { trackEvent, ANALYTICS_EVENTS } from "../../../core/analytics";
 import { CategoryChart, NetworthChart } from "../components/charts/lazy";
 import { ChartFallback } from "../components/charts/ChartFallback";
@@ -199,8 +199,16 @@ export function Overview({
       return false;
     }
   });
+  // Ref guard — `manualExpenses.length` is in the dep array (to satisfy
+  // exhaustive-deps and to initially trigger once data lands), but we only
+  // ever want to fire the event on the *first* time the banner becomes
+  // eligible in a given session. Adding a new expense later must not
+  // re-fire the activation metric.
+  const insightFiredRef = useRef(false);
   useEffect(() => {
+    if (insightFiredRef.current) return;
     if (!showFirstInsight || !hasAnyData) return;
+    insightFiredRef.current = true;
     try {
       localStorage.setItem("finyk_first_insight_seen_v1", "1");
     } catch {
