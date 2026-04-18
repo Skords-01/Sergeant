@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, type ChangeEvent } from "react";
 import { cn } from "@shared/lib/cn";
 import { useDialogFocusTrap } from "@shared/hooks/useDialogFocusTrap";
 import { useRoutinePushups } from "../hooks/useRoutinePushups.js";
@@ -15,8 +15,8 @@ export function PushupsWidget() {
   const { todayCount, addReps, recentHistory } = useRoutinePushups();
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
-  const ref = useRef(null);
-  const inputRef = useRef(null);
+  const ref = useRef<HTMLDivElement | null>(null);
+  const inputRef = useRef<HTMLInputElement | null>(null);
   const keyboardInset = useVisualKeyboardInset(open);
   useDialogFocusTrap(open, ref, { onEscape: () => setOpen(false) });
 
@@ -163,7 +163,9 @@ export function PushupsWidget() {
                 min="1"
                 max="999"
                 value={input}
-                onChange={(e) => setInput(e.target.value)}
+                onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                  setInput(e.target.value)
+                }
                 placeholder="Скільки?"
                 className="routine-touch-field min-h-[48px] min-w-0 flex-1 rounded-2xl border border-line bg-panelHi px-4 text-text outline-none focus:border-routine [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                 onKeyDown={(e) => {

@@ -3,7 +3,17 @@ const STROKE = 7;
 const RADIUS = (SIZE - STROKE) / 2;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
-export function DayProgressRing({ completed, scheduled, onClick }) {
+export interface DayProgressRingProps {
+  completed: number;
+  scheduled: number;
+  onClick?: () => void;
+}
+
+export function DayProgressRing({
+  completed,
+  scheduled,
+  onClick,
+}: DayProgressRingProps) {
   const ratio = scheduled > 0 ? completed / scheduled : 0;
   const offset = CIRCUMFERENCE * (1 - ratio);
 
