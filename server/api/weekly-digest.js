@@ -184,13 +184,20 @@ ${dataContext}`;
         system: systemPrompt,
         messages: [{ role: "user", content: userPrompt }],
       }),
+      signal: AbortSignal.timeout(30_000),
     });
 
     const aiData = await aiRes.json();
     if (!aiRes.ok) {
-      return res
-        .status(aiRes.status)
-        .json({ error: aiData?.error?.message || "AI error" });
+      console.error(
+        JSON.stringify({
+          level: "error",
+          msg: "weekly_digest_ai_error",
+          status: aiRes.status,
+          error: aiData?.error?.message || String(aiData),
+        }),
+      );
+      return res.status(aiRes.status).json({ error: "Помилка AI сервера" });
     }
 
     const text = (aiData?.content || [])
@@ -200,9 +207,12 @@ ${dataContext}`;
 
     const report = extractJsonObject(text);
     if (!report) {
+      console.error(
+        JSON.stringify({ level: "error", msg: "weekly_digest_parse_error" }),
+      );
       return res
         .status(500)
-        .json({ error: "Не вдалося розпарсити відповідь AI", raw: text });
+        .json({ error: "Не вдалося розпарсити відповідь AI" });
     }
 
     return res

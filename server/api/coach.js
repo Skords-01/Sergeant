@@ -233,13 +233,20 @@ ${snapshotText}
         max_tokens: 300,
         messages: [{ role: "user", content: systemPrompt }],
       }),
+      signal: AbortSignal.timeout(20_000),
     });
 
     const aiData = await aiRes.json();
     if (!aiRes.ok) {
-      return res
-        .status(aiRes.status)
-        .json({ error: aiData?.error?.message || "AI error" });
+      console.error(
+        JSON.stringify({
+          level: "error",
+          msg: "coach_ai_error",
+          status: aiRes.status,
+          error: aiData?.error?.message || String(aiData),
+        }),
+      );
+      return res.status(aiRes.status).json({ error: "Помилка AI сервера" });
     }
 
     const text = (aiData?.content || [])

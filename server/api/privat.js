@@ -79,7 +79,13 @@ export default async function handler(req, res) {
     const data = await response.json();
     res.status(200).json(data);
   } catch (e) {
-    console.error("PrivatBank API Error:", e);
+    console.error(
+      JSON.stringify({
+        level: "error",
+        msg: "privatbank_api_error",
+        error: e?.message || String(e),
+      }),
+    );
     res.status(500).json({ error: "Помилка сервера" });
   }
 }
