@@ -1,4 +1,4 @@
-import { forwardRef } from "react";
+import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from "react";
 import { cn } from "../../lib/cn";
 
 /**
@@ -18,7 +18,24 @@ import { cn } from "../../lib/cn";
  * - nutrition: Lime nutrition theme
  */
 
-const variants = {
+export type ButtonVariant =
+  | "primary"
+  | "secondary"
+  | "ghost"
+  | "danger"
+  | "success"
+  | "finyk"
+  | "fizruk"
+  | "routine"
+  | "nutrition"
+  | "finyk-soft"
+  | "fizruk-soft"
+  | "routine-soft"
+  | "nutrition-soft";
+
+export type ButtonSize = "xs" | "sm" | "md" | "lg" | "xl";
+
+const variants: Record<ButtonVariant, string> = {
   // Core variants
   primary:
     "bg-brand-500 text-white shadow-sm hover:bg-brand-600 hover:shadow-glow active:bg-brand-700 active:scale-[0.98]",
@@ -52,7 +69,7 @@ const variants = {
     "bg-nutrition-soft text-nutrition border border-nutrition-ring/50 hover:bg-lime-100 active:scale-[0.98]",
 };
 
-const sizes = {
+const sizes: Record<ButtonSize, string> = {
   xs: "h-8 px-3 text-xs font-medium rounded-xl gap-1.5",
   sm: "h-9 px-3.5 text-sm font-medium rounded-xl gap-1.5",
   md: "h-11 px-5 text-sm font-semibold rounded-2xl gap-2",
@@ -61,7 +78,7 @@ const sizes = {
 };
 
 // Icon-only button sizes
-const iconSizes = {
+const iconSizes: Record<ButtonSize, string> = {
   xs: "h-8 w-8 rounded-xl",
   sm: "h-9 w-9 rounded-xl",
   md: "h-11 w-11 rounded-2xl",
@@ -69,63 +86,73 @@ const iconSizes = {
   xl: "h-14 w-14 rounded-3xl",
 };
 
-export const Button = forwardRef(function Button(
-  {
-    className,
-    variant = "primary",
-    size = "md",
-    type = "button",
-    iconOnly = false,
-    loading = false,
-    disabled,
-    children,
-    ...props
-  },
-  ref,
-) {
-  const isDisabled = disabled || loading;
+export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: ButtonVariant;
+  size?: ButtonSize;
+  iconOnly?: boolean;
+  loading?: boolean;
+  children?: ReactNode;
+}
 
-  return (
-    <button
-      ref={ref}
-      type={type}
-      disabled={isDisabled}
-      aria-busy={loading || undefined}
-      aria-live={loading ? "polite" : undefined}
-      className={cn(
-        // Base styles
-        "inline-flex items-center justify-center",
-        "transition-all duration-200 ease-smooth",
-        "focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-panel",
-        "disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none",
-        // Variant
-        variants[variant],
-        // Size
-        iconOnly ? iconSizes[size] : sizes[size],
-        className,
-      )}
-      {...props}
-    >
-      {loading ? (
-        <>
-          <LoadingSpinner className="animate-spin" />
-          {!iconOnly && (
-            <span className="opacity-0" aria-hidden="true">
-              {children}
-            </span>
-          )}
-          <span className="sr-only">Завантаження…</span>
-        </>
-      ) : (
-        children
-      )}
-    </button>
-  );
-});
+export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
+  function Button(
+    {
+      className,
+      variant = "primary",
+      size = "md",
+      type = "button",
+      iconOnly = false,
+      loading = false,
+      disabled,
+      children,
+      ...props
+    },
+    ref,
+  ) {
+    const isDisabled = disabled || loading;
+
+    return (
+      <button
+        ref={ref}
+        type={type}
+        disabled={isDisabled}
+        aria-busy={loading || undefined}
+        aria-live={loading ? "polite" : undefined}
+        className={cn(
+          // Base styles
+          "inline-flex items-center justify-center",
+          "transition-all duration-200 ease-smooth",
+          "focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-panel",
+          "disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none",
+          // Variant
+          variants[variant],
+          // Size
+          iconOnly ? iconSizes[size] : sizes[size],
+          className,
+        )}
+        {...props}
+      >
+        {loading ? (
+          <>
+            <LoadingSpinner className="animate-spin" />
+            {!iconOnly && (
+              <span className="opacity-0" aria-hidden="true">
+                {children}
+              </span>
+            )}
+            <span className="sr-only">Завантаження…</span>
+          </>
+        ) : (
+          children
+        )}
+      </button>
+    );
+  },
+);
 
 // Loading spinner component. Always decorative — SR announcement is handled by
 // the sr-only "Завантаження…" sibling in Button.
-function LoadingSpinner({ className }) {
+function LoadingSpinner({ className }: { className?: string }) {
   return (
     <svg
       aria-hidden="true"

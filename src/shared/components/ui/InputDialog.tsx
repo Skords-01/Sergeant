@@ -1,7 +1,28 @@
-import { useRef, useState, useEffect, useId } from "react";
+import {
+  useRef,
+  useState,
+  useEffect,
+  useId,
+  type FormEvent,
+  type HTMLInputTypeAttribute,
+  type ReactNode,
+} from "react";
 import { useDialogFocusTrap } from "@shared/hooks/useDialogFocusTrap";
 import { cn } from "@shared/lib/cn";
 import { Button } from "./Button";
+
+export interface InputDialogProps {
+  open: boolean;
+  title?: string;
+  description?: ReactNode;
+  placeholder?: string;
+  defaultValue?: string;
+  type?: HTMLInputTypeAttribute;
+  confirmLabel?: string;
+  cancelLabel?: string;
+  onConfirm?: (value: string) => void;
+  onCancel?: () => void;
+}
 
 export function InputDialog({
   open,
@@ -14,9 +35,9 @@ export function InputDialog({
   cancelLabel = "Скасувати",
   onConfirm,
   onCancel,
-}) {
-  const ref = useRef(null);
-  const inputRef = useRef(null);
+}: InputDialogProps) {
+  const ref = useRef<HTMLFormElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const [value, setValue] = useState(defaultValue);
   const titleId = useId();
 
@@ -32,7 +53,7 @@ export function InputDialog({
 
   if (!open) return null;
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     onConfirm?.(value);
   };

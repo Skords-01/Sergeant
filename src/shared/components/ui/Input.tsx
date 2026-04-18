@@ -1,4 +1,9 @@
-import { forwardRef } from "react";
+import {
+  forwardRef,
+  type InputHTMLAttributes,
+  type ReactNode,
+  type TextareaHTMLAttributes,
+} from "react";
 import { cn } from "../../lib/cn";
 
 /**
@@ -9,20 +14,35 @@ import { cn } from "../../lib/cn";
  * States: error, success
  */
 
-const sizes = {
+export type InputSize = "sm" | "md" | "lg";
+export type InputVariant = "default" | "filled" | "ghost";
+
+const sizes: Record<InputSize, string> = {
   sm: "h-9 px-3 text-sm rounded-xl",
   md: "h-11 px-4 text-base rounded-2xl",
   lg: "h-12 px-5 text-base rounded-2xl",
 };
 
-const variants = {
+const variants: Record<InputVariant, string> = {
   default:
     "bg-panelHi border border-line focus:border-brand-400 focus:ring-2 focus:ring-brand-100",
   filled: "bg-panelHi border-transparent focus:bg-panel focus:border-brand-400",
   ghost: "bg-transparent border-transparent hover:bg-panelHi focus:bg-panelHi",
 };
 
-export const Input = forwardRef(function Input(
+export interface InputProps extends Omit<
+  InputHTMLAttributes<HTMLInputElement>,
+  "size"
+> {
+  size?: InputSize;
+  variant?: InputVariant;
+  error?: boolean;
+  success?: boolean;
+  icon?: ReactNode;
+  suffix?: ReactNode;
+}
+
+export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
   {
     className,
     size = "md",
@@ -73,31 +93,38 @@ export const Input = forwardRef(function Input(
   );
 });
 
+export interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
+  variant?: InputVariant;
+  error?: boolean;
+}
+
 /**
  * Textarea — Multi-line text input
  */
-export const Textarea = forwardRef(function Textarea(
-  { className, variant = "default", error, rows = 3, ...props },
-  ref,
-) {
-  const stateClass = error
-    ? "border-red-400 focus:border-red-500 focus:ring-red-100"
-    : "";
+export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
+  function Textarea(
+    { className, variant = "default", error, rows = 3, ...props },
+    ref,
+  ) {
+    const stateClass = error
+      ? "border-red-400 focus:border-red-500 focus:ring-red-100"
+      : "";
 
-  return (
-    <textarea
-      ref={ref}
-      rows={rows}
-      aria-invalid={error ? true : undefined}
-      className={cn(
-        "w-full px-4 py-3 text-base text-text placeholder:text-subtle/70 rounded-2xl",
-        "outline-none transition-all duration-200 resize-none",
-        "disabled:opacity-50 disabled:cursor-not-allowed",
-        variants[variant],
-        stateClass,
-        className,
-      )}
-      {...props}
-    />
-  );
-});
+    return (
+      <textarea
+        ref={ref}
+        rows={rows}
+        aria-invalid={error ? true : undefined}
+        className={cn(
+          "w-full px-4 py-3 text-base text-text placeholder:text-subtle/70 rounded-2xl",
+          "outline-none transition-all duration-200 resize-none",
+          "disabled:opacity-50 disabled:cursor-not-allowed",
+          variants[variant],
+          stateClass,
+          className,
+        )}
+        {...props}
+      />
+    );
+  },
+);

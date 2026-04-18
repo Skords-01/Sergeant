@@ -1,20 +1,62 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { cn } from "@shared/lib/cn";
 
-export function useVoiceInput({ lang = "uk-UA", onResult, onError } = {}) {
+type SpeechRecognitionLike = {
+  lang: string;
+  interimResults: boolean;
+  maxAlternatives: number;
+  continuous: boolean;
+  onstart: (() => void) | null;
+  onend: (() => void) | null;
+  onresult:
+    | ((e: { results?: ArrayLike<ArrayLike<{ transcript?: string }>> }) => void)
+    | null;
+  onerror: ((e: { error: string }) => void) | null;
+  start: () => void;
+  stop: () => void;
+  abort: () => void;
+};
+
+type SpeechRecognitionCtor = new () => SpeechRecognitionLike;
+
+export interface UseVoiceInputOptions {
+  lang?: string;
+  onResult?: (transcript: string) => void;
+  onError?: (message: string) => void;
+}
+
+export interface UseVoiceInputReturn {
+  listening: boolean;
+  supported: boolean;
+  start: () => void;
+  stop: () => void;
+  toggle: () => void;
+}
+
+export function useVoiceInput({
+  lang = "uk-UA",
+  onResult,
+  onError,
+}: UseVoiceInputOptions = {}): UseVoiceInputReturn {
   const [listening, setListening] = useState(false);
   const [supported, setSupported] = useState(false);
-  const recRef = useRef(null);
+  const recRef = useRef<SpeechRecognitionLike | null>(null);
 
   useEffect(() => {
-    const SpeechRecognition =
-      window.SpeechRecognition || window.webkitSpeechRecognition;
+    const w = window as unknown as {
+      SpeechRecognition?: SpeechRecognitionCtor;
+      webkitSpeechRecognition?: SpeechRecognitionCtor;
+    };
+    const SpeechRecognition = w.SpeechRecognition || w.webkitSpeechRecognition;
     setSupported(!!SpeechRecognition);
   }, []);
 
   const start = useCallback(() => {
-    const SpeechRecognition =
-      window.SpeechRecognition || window.webkitSpeechRecognition;
+    const w = window as unknown as {
+      SpeechRecognition?: SpeechRecognitionCtor;
+      webkitSpeechRecognition?: SpeechRecognitionCtor;
+    };
+    const SpeechRecognition = w.SpeechRecognition || w.webkitSpeechRecognition;
     if (!SpeechRecognition) {
       onError?.("Голосовий ввід не підтримується у цьому браузері.");
       return;
@@ -22,7 +64,9 @@ export function useVoiceInput({ lang = "uk-UA", onResult, onError } = {}) {
     if (recRef.current) {
       try {
         recRef.current.abort();
-      } catch {}
+      } catch {
+        /* noop */
+      }
       recRef.current = null;
     }
     const rec = new SpeechRecognition();
@@ -65,7 +109,9 @@ export function useVoiceInput({ lang = "uk-UA", onResult, onError } = {}) {
     if (recRef.current) {
       try {
         recRef.current.stop();
-      } catch {}
+      } catch {
+        /* noop */
+      }
     }
   }, []);
 
@@ -79,12 +125,26 @@ export function useVoiceInput({ lang = "uk-UA", onResult, onError } = {}) {
       if (recRef.current) {
         try {
           recRef.current.abort();
-        } catch {}
+        } catch {
+          /* noop */
+        }
       }
     };
   }, []);
 
   return { listening, supported, start, stop, toggle };
+}
+
+export type VoiceMicButtonSize = "sm" | "md" | "lg";
+
+export interface VoiceMicButtonProps {
+  onResult?: (transcript: string) => void;
+  onError?: (message: string) => void;
+  lang?: string;
+  className?: string;
+  size?: VoiceMicButtonSize;
+  label?: string;
+  disabled?: boolean;
 }
 
 export function VoiceMicButton({
@@ -95,7 +155,7 @@ export function VoiceMicButton({
   size = "md",
   label,
   disabled = false,
-}) {
+}: VoiceMicButtonProps) {
   const { listening, supported, toggle } = useVoiceInput({
     lang,
     onResult,
@@ -104,7 +164,7 @@ export function VoiceMicButton({
 
   if (!supported) return null;
 
-  const sizeMap = {
+  const sizeMap: Record<VoiceMicButtonSize, string> = {
     sm: "w-8 h-8",
     md: "w-10 h-10",
     lg: "w-12 h-12",

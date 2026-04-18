@@ -1,4 +1,9 @@
-import { forwardRef } from "react";
+import {
+  forwardRef,
+  type ElementType,
+  type HTMLAttributes,
+  type ReactNode,
+} from "react";
 import { cn } from "../../lib/cn";
 
 /**
@@ -15,7 +20,24 @@ import { cn } from "../../lib/cn";
  * Padding: none | sm | md (default) | lg | xl.
  */
 
-const variants = {
+export type CardVariant =
+  | "default"
+  | "interactive"
+  | "flat"
+  | "elevated"
+  | "ghost"
+  | "finyk"
+  | "fizruk"
+  | "routine"
+  | "nutrition"
+  | "finyk-soft"
+  | "fizruk-soft"
+  | "routine-soft"
+  | "nutrition-soft";
+
+export type CardPadding = "none" | "sm" | "md" | "lg" | "xl";
+
+const variants: Record<CardVariant, string> = {
   default: "bg-panel border border-line rounded-3xl shadow-card",
   interactive:
     "bg-panel border border-line rounded-3xl shadow-card transition-all duration-200 ease-smooth hover:shadow-float hover:-translate-y-0.5 active:scale-[0.99] cursor-pointer",
@@ -40,7 +62,7 @@ const variants = {
     "rounded-2xl border border-lime-100 bg-lime-50/50 backdrop-blur-sm",
 };
 
-const paddings = {
+const paddings: Record<CardPadding, string> = {
   none: "",
   sm: "p-3",
   md: "p-4",
@@ -48,7 +70,14 @@ const paddings = {
   xl: "p-6",
 };
 
-export const Card = forwardRef(function Card(
+export interface CardProps extends HTMLAttributes<HTMLElement> {
+  variant?: CardVariant;
+  padding?: CardPadding;
+  as?: ElementType;
+  children?: ReactNode;
+}
+
+export const Card = forwardRef<HTMLElement, CardProps>(function Card(
   {
     className,
     variant = "default",
@@ -73,7 +102,11 @@ export const Card = forwardRef(function Card(
 /**
  * CardHeader — Consistent header section for cards
  */
-export function CardHeader({ className, children, ...props }) {
+export function CardHeader({
+  className,
+  children,
+  ...props
+}: HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       className={cn("flex items-center justify-between mb-4", className)}
@@ -84,10 +117,18 @@ export function CardHeader({ className, children, ...props }) {
   );
 }
 
+export interface CardTitleProps extends HTMLAttributes<HTMLElement> {
+  as?: ElementType;
+}
+
 /**
  * CardTitle — Title text for cards
  */
-export function CardTitle({ className, as: Component = "h3", ...props }) {
+export function CardTitle({
+  className,
+  as: Component = "h3",
+  ...props
+}: CardTitleProps) {
   return (
     <Component
       className={cn("text-lg font-semibold text-text", className)}
@@ -99,21 +140,30 @@ export function CardTitle({ className, as: Component = "h3", ...props }) {
 /**
  * CardDescription — Secondary text for cards
  */
-export function CardDescription({ className, ...props }) {
+export function CardDescription({
+  className,
+  ...props
+}: HTMLAttributes<HTMLParagraphElement>) {
   return <p className={cn("text-sm text-muted mt-1", className)} {...props} />;
 }
 
 /**
  * CardContent — Main content area with optional overflow handling
  */
-export function CardContent({ className, ...props }) {
+export function CardContent({
+  className,
+  ...props
+}: HTMLAttributes<HTMLDivElement>) {
   return <div className={cn("", className)} {...props} />;
 }
 
 /**
  * CardFooter — Footer section for actions
  */
-export function CardFooter({ className, ...props }) {
+export function CardFooter({
+  className,
+  ...props
+}: HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       className={cn(

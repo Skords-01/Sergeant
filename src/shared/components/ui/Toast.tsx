@@ -1,21 +1,21 @@
-import { useToast } from "@shared/hooks/useToast";
+import { useToast, type ToastType } from "@shared/hooks/useToast";
 import { cn } from "@shared/lib/cn";
 
-const VARIANT = {
+const VARIANT: Record<ToastType, string> = {
   success: "bg-success text-white",
   error: "bg-danger text-white",
   warning: "bg-warning text-white",
   info: "bg-primary text-white",
 };
 
-const ICON_WRAP = {
+const ICON_WRAP: Record<ToastType, string> = {
   success: "motion-safe:animate-check-pop",
   error: "",
   warning: "",
   info: "",
 };
 
-const ICON = {
+const ICON: Record<ToastType, React.ReactNode> = {
   success: (
     <svg
       width="16"
@@ -119,7 +119,7 @@ export function ToastContainer() {
               type="button"
               onClick={() => {
                 try {
-                  t.action.onClick();
+                  t.action?.onClick();
                 } finally {
                   dismiss(t.id);
                 }

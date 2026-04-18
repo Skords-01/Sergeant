@@ -1,13 +1,31 @@
-import { Component } from "react";
+import { Component, type ErrorInfo, type ReactNode } from "react";
 
-export class SectionErrorBoundary extends Component {
-  constructor(props) {
+export interface SectionErrorBoundaryProps {
+  title?: string;
+  resetLabel?: string;
+  onReset?: () => void;
+  children?: ReactNode;
+}
+
+interface SectionErrorBoundaryState {
+  error: Error | null;
+}
+
+export class SectionErrorBoundary extends Component<
+  SectionErrorBoundaryProps,
+  SectionErrorBoundaryState
+> {
+  constructor(props: SectionErrorBoundaryProps) {
     super(props);
     this.state = { error: null };
   }
 
-  static getDerivedStateFromError(error) {
+  static getDerivedStateFromError(error: Error): SectionErrorBoundaryState {
     return { error };
+  }
+
+  componentDidCatch(_error: Error, _info: ErrorInfo): void {
+    // no-op; rendering fallback via state.error
   }
 
   render() {

@@ -1,5 +1,5 @@
+import { useState, useEffect, type CSSProperties, type ReactNode } from "react";
 import { cn } from "../../lib/cn";
-import { useState, useEffect } from "react";
 
 /**
  * Sergeant Design System — ProgressRing Component
@@ -11,7 +11,33 @@ import { useState, useEffect } from "react";
  * Variants: brand, finyk, fizruk, routine, nutrition
  */
 
-const sizes = {
+export type ProgressRingSize = "xs" | "sm" | "md" | "lg" | "xl";
+export type ProgressRingVariant =
+  | "brand"
+  | "finyk"
+  | "fizruk"
+  | "routine"
+  | "nutrition"
+  | "success"
+  | "warning"
+  | "danger";
+
+interface SizeConfig {
+  size: number;
+  strokeWidth: number;
+  fontSize: string;
+  glowSize: number;
+}
+
+interface VariantConfig {
+  track: string;
+  fill: string;
+  text: string;
+  glow: string;
+  gradient: [string, string];
+}
+
+const sizes: Record<ProgressRingSize, SizeConfig> = {
   xs: { size: 32, strokeWidth: 3, fontSize: "text-2xs", glowSize: 4 },
   sm: { size: 48, strokeWidth: 4, fontSize: "text-xs", glowSize: 6 },
   md: { size: 64, strokeWidth: 5, fontSize: "text-sm", glowSize: 8 },
@@ -19,7 +45,7 @@ const sizes = {
   xl: { size: 128, strokeWidth: 8, fontSize: "text-xl", glowSize: 16 },
 };
 
-const variants = {
+const variants: Record<ProgressRingVariant, VariantConfig> = {
   brand: {
     track: "stroke-brand-100 dark:stroke-brand-900/40",
     fill: "stroke-brand-500",
@@ -79,6 +105,21 @@ const variants = {
   },
 };
 
+export interface ProgressRingProps {
+  value?: number;
+  max?: number;
+  size?: ProgressRingSize;
+  variant?: ProgressRingVariant;
+  showValue?: boolean;
+  valueFormat?: (value: number, max: number) => ReactNode;
+  label?: ReactNode;
+  animate?: boolean;
+  showGlow?: boolean;
+  celebrateOnComplete?: boolean;
+  className?: string;
+  children?: ReactNode;
+}
+
 export function ProgressRing({
   value = 0,
   max = 100,
@@ -92,7 +133,7 @@ export function ProgressRing({
   celebrateOnComplete = false,
   className,
   children,
-}) {
+}: ProgressRingProps) {
   const config = sizes[sizeProp];
   const colors = variants[variant];
   const [celebrating, setCelebrating] = useState(false);
@@ -186,12 +227,14 @@ export function ProgressRing({
             animate && "transition-[stroke-dashoffset] duration-700 ease-out",
             isComplete && "progress-ring-complete",
           )}
-          style={{
-            "--progress-offset": offset,
-            filter: isComplete
-              ? `drop-shadow(0 0 ${glowSize / 2}px ${colors.glow})`
-              : "none",
-          }}
+          style={
+            {
+              "--progress-offset": offset,
+              filter: isComplete
+                ? `drop-shadow(0 0 ${glowSize / 2}px ${colors.glow})`
+                : "none",
+            } as CSSProperties
+          }
         />
 
         {/* Completion checkmark overlay */}

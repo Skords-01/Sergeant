@@ -15,7 +15,9 @@
  * follow-up PRs using the same pattern.
  */
 
-const PATHS = {
+import type { ReactNode, SVGAttributes } from "react";
+
+const PATHS: Record<string, ReactNode> = {
   "chevron-right": <polyline points="9 18 15 12 9 6" />,
   "chevron-left": <polyline points="15 18 9 12 15 6" />,
   "chevron-down": <polyline points="6 9 12 15 18 9" />,
@@ -114,16 +116,21 @@ const PATHS = {
   ),
 };
 
+export type IconName = keyof typeof PATHS;
+
+export interface IconProps extends Omit<
+  SVGAttributes<SVGSVGElement>,
+  "name" | "title"
+> {
+  name: IconName | (string & {});
+  size?: number;
+  strokeWidth?: number;
+  title?: string;
+}
+
 /**
- * Icon component.
- *
- * @param {Object} props
- * @param {keyof typeof PATHS} props.name
- * @param {number} [props.size=20]
- * @param {number} [props.strokeWidth=2]
- * @param {string} [props.className]
- * @param {string} [props.title] - if provided, icon is announced to AT;
- *                                  otherwise it is hidden via aria-hidden.
+ * Icon component. If `title` is provided, icon is announced to AT; otherwise
+ * it is hidden via aria-hidden.
  */
 export function Icon({
   name,
@@ -132,7 +139,7 @@ export function Icon({
   className,
   title,
   ...rest
-}) {
+}: IconProps) {
   const body = PATHS[name];
   if (!body) {
     if (import.meta.env?.DEV) {
@@ -140,7 +147,7 @@ export function Icon({
     }
     return null;
   }
-  const labelProps = title
+  const labelProps: SVGAttributes<SVGSVGElement> = title
     ? { role: "img", "aria-label": title }
     : { "aria-hidden": true };
   return (

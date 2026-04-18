@@ -1,20 +1,21 @@
-import { useRef } from "react";
+import { useRef, type ReactNode } from "react";
 import { useDialogFocusTrap } from "@shared/hooks/useDialogFocusTrap";
 import { cn } from "@shared/lib/cn";
 import { Button } from "./Button";
 
+export interface ConfirmDialogProps {
+  open: boolean;
+  title?: string;
+  description?: ReactNode;
+  confirmLabel?: string;
+  cancelLabel?: string;
+  danger?: boolean;
+  onConfirm?: () => void;
+  onCancel?: () => void;
+}
+
 /**
  * Reusable confirmation dialog (bottom sheet style).
- *
- * Props:
- *   open         — boolean, whether the dialog is visible
- *   title        — string, dialog heading
- *   description  — string | ReactNode, body text
- *   confirmLabel — string, confirm button text (default "Видалити")
- *   cancelLabel  — string, cancel button text (default "Скасувати")
- *   danger       — boolean, use danger variant for confirm button (default true)
- *   onConfirm    — () => void
- *   onCancel     — () => void
  */
 export function ConfirmDialog({
   open,
@@ -25,8 +26,8 @@ export function ConfirmDialog({
   danger = true,
   onConfirm,
   onCancel,
-}) {
-  const ref = useRef(null);
+}: ConfirmDialogProps) {
+  const ref = useRef<HTMLDivElement>(null);
   useDialogFocusTrap(open, ref, { onEscape: onCancel });
 
   if (!open) return null;
