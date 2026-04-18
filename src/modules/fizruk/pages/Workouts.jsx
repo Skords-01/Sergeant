@@ -67,6 +67,7 @@ export function Workouts() {
   const rec = useRecovery();
   const {
     workouts,
+    loaded: workoutsLoaded,
     createWorkout,
     createWorkoutWithTimes,
     updateWorkout,
@@ -130,6 +131,15 @@ export function Workouts() {
       else localStorage.setItem(ACTIVE_WORKOUT_KEY, activeWorkoutId);
     } catch {}
   }, [activeWorkoutId]);
+
+  // Clear a stale activeWorkoutId that no longer matches any workout
+  // (e.g. the workout was deleted on another device before sync).
+  useEffect(() => {
+    if (!workoutsLoaded || !activeWorkoutId) return;
+    if (!workouts.some((w) => w.id === activeWorkoutId)) {
+      setActiveWorkoutId(null);
+    }
+  }, [workoutsLoaded, activeWorkoutId, workouts]);
 
   useEffect(() => {
     try {
