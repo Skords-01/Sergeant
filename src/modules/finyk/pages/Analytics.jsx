@@ -175,6 +175,9 @@ export function Analytics({ mono, storage }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [prevYear, prevMonth, isPrevCurrent, prevKey]);
 
+  // Transactions for the selected month: live list for the current month,
+  // on-demand cached list otherwise. Stable reference while month + cache
+  // entry stay the same.
   const activeTx = useMemo(() => {
     if (isCurrentMonth) return mono.realTx || [];
     return historyCache[monthKey] || [];
@@ -185,11 +188,21 @@ export function Analytics({ mono, storage }) {
     return historyCache[prevKey] || [];
   }, [isPrevCurrent, mono.realTx, historyCache, prevKey]);
 
+  // Stable adapter object passed into useAnalytics. Rebuilding this on every
+  // render would bust the hook's internal useMemo deps, so memoize it.
+  const analyticsMono = useMemo(
+    () => ({ ...mono, realTx: activeTx, loadingTx: mono.loadingTx || loading }),
+    [mono, activeTx, loading],
+  );
+
   const { summary, distribution, topMerchants } = useAnalytics({
-    mono: { ...mono, realTx: activeTx, loadingTx: mono.loadingTx || loading },
+    mono: analyticsMono,
     storage,
   });
 
+  // Cache: month-over-month comparison for the picked month.
+  // Depends on the selected month's tx list, the previous month's tx list
+  // and the filters that actually affect totals (excluded ids + splits).
   const comparison = useMemo(() => {
     if (!prevTx.length && !historyCache[prevKey]) return null;
     return getMonthlyTrendComparison(activeTx, prevTx, {

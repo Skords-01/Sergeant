@@ -68,7 +68,11 @@ export function getMonthlySummary(
   return { spent, income, balance: income - spent, txCount };
 }
 
-export function getTopCategories(
+// Heaviest step of category analytics: iterates every expense transaction
+// once, resolves a category per tx (or per split) and aggregates spend.
+// Shared by `getTopCategories` / `getCategoryDistribution` / hooks so the
+// transaction list is scanned at most once per (tx + filters) change.
+export function computeCategorySpendIndex(
   transactions,
   {
     txCategories = {},
@@ -76,7 +80,6 @@ export function getTopCategories(
     customCategories = [],
     excludedTxIds = new Set(),
   } = {},
-  limit = 5,
 ) {
   const list = Array.isArray(transactions) ? transactions : [];
   const excluded =
@@ -106,6 +109,13 @@ export function getTopCategories(
     }
   }
 
+  return { catSpend, totalSpent };
+}
+
+// Pure projection of a precomputed spend index into a sorted category list.
+// Cheap (O(k log k) on distinct categories), so it can be re-derived
+// whenever `customCategories` (labels/colors) change without re-scanning txs.
+function buildCategoryList({ catSpend, totalSpent }, customCategories = []) {
   return Object.entries(catSpend)
     .map(([categoryId, rawSpent], idx) => {
       const meta = resolveExpenseCategoryMeta(categoryId, customCategories) || {
@@ -120,6 +130,38 @@ export function getTopCategories(
         color: getCatColor(categoryId, customCategories, idx),
       };
     })
-    .sort((a, b) => b.spent - a.spent)
-    .slice(0, limit);
+    .sort((a, b) => b.spent - a.spent);
+}
+
+// Slice a precomputed category index into top-N entries.
+export function selectTopCategoriesFromIndex(
+  index,
+  customCategories = [],
+  limit = 5,
+) {
+  return buildCategoryList(index, customCategories).slice(0, limit);
+}
+
+// Build a full distribution view (up to 20 categories) with pct
+// rebased on the displayed slice.
+export function selectCategoryDistributionFromIndex(
+  index,
+  customCategories = [],
+) {
+  const top = buildCategoryList(index, customCategories).slice(0, 20);
+  const totalSpent = top.reduce((s, c) => s + c.spent, 0);
+  return top.map((c, idx) => ({
+    ...c,
+    pct: totalSpent > 0 ? Math.round((c.spent / totalSpent) * 100) : 0,
+    color: c.color || getCatColor(c.categoryId, customCategories, idx),
+  }));
+}
+
+export function getTopCategories(transactions, opts = {}, limit = 5) {
+  const index = computeCategorySpendIndex(transactions, opts);
+  return selectTopCategoriesFromIndex(
+    index,
+    opts.customCategories || [],
+    limit,
+  );
 }
