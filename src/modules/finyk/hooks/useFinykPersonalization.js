@@ -28,13 +28,18 @@ export function useFinykPersonalization({ mono, storage, now } = {}) {
   const txCategories = useMemo(() => rawTxCategories || {}, [rawTxCategories]);
 
   // `storage.excludedTxIds` — `new Set(...)` збирається у useStorage кожного
-  // рендера, тож її посилання нестабільне. Використовуємо розмір як дешевий
-  // invalidate-ключ: додались/прибрались — перераховуємо, інакше — ні.
-  const excludedTxIdsSize = rawExcludedTxIds?.size ?? 0;
+  // рендера, тож її посилання нестабільне. Використовуємо відсортований вміст
+  // як invalidate-ключ: однакові id → однаковий ключ → посилання не міняється.
+  // (Розмір як proxy не годиться: при swap "hide X, unhide Y" size однаковий,
+  // а вміст інший — селектори отримали б застарілий фільтр.)
+  const excludedTxIdsKey = useMemo(() => {
+    if (!rawExcludedTxIds || rawExcludedTxIds.size === 0) return "";
+    return Array.from(rawExcludedTxIds).sort().join("|");
+  }, [rawExcludedTxIds]);
   const excludedTxIds = useMemo(
     () => rawExcludedTxIds || null,
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [excludedTxIdsSize],
+    [excludedTxIdsKey],
   );
 
   const opts = useMemo(

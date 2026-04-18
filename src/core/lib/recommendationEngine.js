@@ -308,7 +308,7 @@ function buildFinanceRecs() {
     if (best) {
       const BUILTIN = {
         food: "Продукти",
-        cafe: "Кафе та ресторани",
+        restaurant: "Кафе та ресторани",
         transport: "Транспорт",
         entertainment: "Розваги",
         health: "Здоров'я",
