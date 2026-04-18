@@ -1,11 +1,5 @@
-import {
-  useMemo,
-  useState,
-  useEffect,
-  useCallback,
-  useRef,
-  Suspense,
-} from "react";
+import { useMemo, useState, useCallback, Suspense } from "react";
+import { useMutation, useQueries } from "@tanstack/react-query";
 import { Button } from "@shared/components/ui/Button";
 import { Skeleton } from "@shared/components/ui/Skeleton";
 import { EmptyState } from "@shared/components/ui/EmptyState";
@@ -41,6 +35,102 @@ import { trackEvent, ANALYTICS_EVENTS } from "../../../core/analytics";
 
 const formInp =
   "w-full h-10 rounded-xl border border-line bg-bg px-3 text-sm text-text outline-none focus:border-primary";
+
+// ─── React Query integration for AI chat lookups ──────────────────────────
+//
+// The Budgets page issues two kinds of AI requests:
+//
+//  1. **Proactive advice** (one request per at-risk category on the current
+//     month) — eligible for a 24h cache backed by localStorage. The query is
+//     keyed by `[monthKey, categoryId]` so the cache rolls over naturally
+//     when the month changes.
+//  2. **On-demand forecast explanation** (user clicks "Пояснити" on a
+//     forecast card) — fired through `useMutation`. The text is stored in
+//     per-category local state; we don't cache across sessions because the
+//     button wording ("🔄 Пояснити знову") makes regeneration explicit.
+
+const PROACTIVE_CACHE_PREFIX = "finyk_proactive_v1_";
+const PROACTIVE_CACHE_TTL = 24 * 60 * 60 * 1000;
+
+const proactiveCacheKey = (categoryId, monthKey) =>
+  `${PROACTIVE_CACHE_PREFIX}${categoryId}_${monthKey}`;
+
+export const proactiveAdviceQueryKey = (monthKey, categoryId) => [
+  "finyk",
+  "proactive-advice",
+  monthKey,
+  categoryId,
+];
+
+function loadProactiveAdviceFromLS(categoryId, monthKey) {
+  const cached = readJSON(proactiveCacheKey(categoryId, monthKey), null);
+  if (!cached || typeof cached !== "object") return null;
+  const { text, ts } = cached;
+  if (!text || !ts || Date.now() - ts > PROACTIVE_CACHE_TTL) return null;
+  return { text, ts };
+}
+
+function saveProactiveAdviceToLS(categoryId, monthKey, text) {
+  writeJSON(proactiveCacheKey(categoryId, monthKey), {
+    text,
+    ts: Date.now(),
+  });
+}
+
+async function fetchProactiveAdvice({
+  categoryId,
+  monthKey,
+  catLabel,
+  spent,
+  limit,
+  remaining,
+  pct,
+  forecast,
+  forecastNote,
+  daysRemaining,
+}) {
+  const prompt = `Категорія бюджету: ${catLabel}. Витрачено: ${spent.toLocaleString(
+    "uk-UA",
+  )} ₴ (${pct}% від ліміту ${limit.toLocaleString(
+    "uk-UA",
+  )} ₴). Залишок: ${remaining.toLocaleString(
+    "uk-UA",
+  )} ₴. До кінця місяця ${daysRemaining} днів.${forecastNote} Дай конкретну коротку пораду (1-2 речення) що зробити, щоб не перевищити ліміт. Відповідь виключно українською.`;
+  const res = await fetch(apiUrl("/api/chat"), {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      context: `[Проактивна AI-порада] Категорія: ${catLabel}, витрачено: ${spent} ₴, ліміт: ${limit} ₴, залишок: ${remaining} ₴, прогноз: ${
+        forecast ?? "—"
+      } ₴, днів до кінця місяця: ${daysRemaining}`,
+      messages: [{ role: "user", content: prompt }],
+    }),
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const data = await res.json();
+  const text = data.text || null;
+  if (text) saveProactiveAdviceToLS(categoryId, monthKey, text);
+  return text;
+}
+
+async function fetchCategoryExplanation({ catLabel, spent, forecast, limit }) {
+  const prompt = `Категорія: ${catLabel}. Витрачено за місяць: ${spent} ₴. Прогноз на кінець місяця: ${forecast} ₴. Ліміт: ${limit} ₴. Чому витрати можуть бути ${
+    forecast > limit ? "вищими за ліміт" : "нижчими за план"
+  } і що варто зробити? Дай коротку відповідь (2-3 речення) українською.`;
+  const res = await fetch(apiUrl("/api/chat"), {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      context: `[Бюджетний прогноз] Категорія: ${catLabel}, витрачено: ${spent} ₴, прогноз: ${forecast} ₴, ліміт: ${limit} ₴`,
+      messages: [{ role: "user", content: prompt }],
+    }),
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const data = await res.json();
+  return data.text || "Не вдалося отримати пояснення.";
+}
 
 export function Budgets({ mono, storage }) {
   const { realTx, loadingTx } = mono;
@@ -106,35 +196,6 @@ export function Budgets({ mono, storage }) {
   const [formError, setFormError] = useState("");
 
   const [aiExplanations, setAiExplanations] = useState({});
-  const [aiLoading, setAiLoading] = useState({});
-
-  const [proactiveAdvice, setProactiveAdvice] = useState({});
-  const [proactiveLoading, setProactiveLoading] = useState({});
-  const fetchedInSession = useRef(new Set());
-
-  const PROACTIVE_CACHE_PREFIX = "finyk_proactive_v1_";
-  const PROACTIVE_CACHE_TTL = 24 * 60 * 60 * 1000;
-
-  const getAdviceCache = useCallback(
-    (categoryId, monthKey) => {
-      const cached = readJSON(
-        PROACTIVE_CACHE_PREFIX + categoryId + "_" + monthKey,
-        null,
-      );
-      if (!cached || typeof cached !== "object") return null;
-      const { text, ts } = cached;
-      if (!ts || Date.now() - ts > PROACTIVE_CACHE_TTL) return null;
-      return text;
-    },
-    [PROACTIVE_CACHE_TTL],
-  );
-
-  const setAdviceCache = useCallback((categoryId, monthKey, text) => {
-    writeJSON(PROACTIVE_CACHE_PREFIX + categoryId + "_" + monthKey, {
-      text,
-      ts: Date.now(),
-    });
-  }, []);
 
   const forecasts = useMemo(() => {
     if (limitBudgets.length === 0) return [];
@@ -153,131 +214,124 @@ export function Budgets({ mono, storage }) {
     [forecasts, now],
   );
 
-  useEffect(() => {
-    if (!atRiskKey) return;
-
+  // Derive the exact set of (monthKey, categoryId) pairs that need proactive
+  // advice, along with the prompt context for each. The resulting array drives
+  // `useQueries` below, so a category entering/leaving the at-risk set just
+  // adds/removes an observer — no manual fetch orchestration needed.
+  const proactiveItems = useMemo(() => {
+    if (!atRiskKey) return [];
     const [monthKey, idsStr] = atRiskKey.split("|");
+    if (!monthKey) return [];
     const atRiskIds = idsStr ? idsStr.split(",").filter(Boolean) : [];
-
+    if (atRiskIds.length === 0) return [];
     const forecastByCategory = {};
     for (const fc of forecasts) forecastByCategory[fc.categoryId] = fc;
-
     const { daysLeft: daysRemaining } = getCurrentMonthContext(now);
-
-    const toFetch = [];
-    const preloaded = {};
-
+    const items = [];
     for (const categoryId of atRiskIds) {
-      const sessionKey = `${monthKey}:${categoryId}`;
-      if (fetchedInSession.current.has(sessionKey)) continue;
-      const cached = getAdviceCache(categoryId, monthKey);
-      if (cached) {
-        preloaded[categoryId] = cached;
-        fetchedInSession.current.add(sessionKey);
-      } else {
-        toFetch.push(categoryId);
-      }
-    }
-
-    if (Object.keys(preloaded).length > 0) {
-      setProactiveAdvice((prev) => ({ ...prev, ...preloaded }));
-    }
-
-    if (toFetch.length === 0) return;
-
-    for (const id of toFetch) fetchedInSession.current.add(`${monthKey}:${id}`);
-
-    const loadingMap = {};
-    for (const id of toFetch) loadingMap[id] = true;
-    setProactiveLoading((prev) => ({ ...prev, ...loadingMap }));
-
-    Promise.all(
-      toFetch.map(async (categoryId) => {
-        const b = limitBudgets.find((x) => x.categoryId === categoryId);
-        if (!b) return;
-        const cat = resolveExpenseCategoryMeta(categoryId, customCategories);
-        const catLabel = cat?.label || categoryId;
-        const spent = calcSpent(b);
-        const remaining = Math.max(0, b.limit - spent);
-        const pct = b.limit > 0 ? Math.round((spent / b.limit) * 100) : 0;
-        const fc = forecastByCategory[categoryId];
-        const forecastNote = fc
-          ? ` Прогноз на кінець місяця: ${fc.forecast.toLocaleString("uk-UA")} ₴ (${fc.overLimit ? `перевищення на ${fc.overPercent}%` : "в межах ліміту"}).`
-          : "";
-        const prompt = `Категорія бюджету: ${catLabel}. Витрачено: ${spent.toLocaleString("uk-UA")} ₴ (${pct}% від ліміту ${b.limit.toLocaleString("uk-UA")} ₴). Залишок: ${remaining.toLocaleString("uk-UA")} ₴. До кінця місяця ${daysRemaining} днів.${forecastNote} Дай конкретну коротку пораду (1-2 речення) що зробити, щоб не перевищити ліміт. Відповідь виключно українською.`;
-        try {
-          const res = await fetch(apiUrl("/api/chat"), {
-            method: "POST",
-            credentials: "include",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              context: `[Проактивна AI-порада] Категорія: ${catLabel}, витрачено: ${spent} ₴, ліміт: ${b.limit} ₴, залишок: ${remaining} ₴, прогноз: ${fc?.forecast ?? "—"} ₴, днів до кінця місяця: ${daysRemaining}`,
-              messages: [{ role: "user", content: prompt }],
-            }),
-          });
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          const data = await res.json();
-          const text = data.text || null;
-          if (text) {
-            setAdviceCache(categoryId, monthKey, text);
-            setProactiveAdvice((prev) => ({ ...prev, [categoryId]: text }));
-          }
-        } catch {
-          fetchedInSession.current.delete(`${monthKey}:${categoryId}`);
-        } finally {
-          setProactiveLoading((prev) => ({ ...prev, [categoryId]: false }));
-        }
-      }),
-    );
-  }, [
-    atRiskKey,
-    calcSpent,
-    customCategories,
-    forecasts,
-    getAdviceCache,
-    limitBudgets,
-    now,
-    setAdviceCache,
-  ]);
-
-  const explainCategory = async (
-    categoryId,
-    catLabel,
-    spent,
-    forecast,
-    limit,
-  ) => {
-    if (aiLoading[categoryId]) return;
-    setAiLoading((prev) => ({ ...prev, [categoryId]: true }));
-    setAiExplanations((prev) => ({ ...prev, [categoryId]: null }));
-    try {
-      const prompt = `Категорія: ${catLabel}. Витрачено за місяць: ${spent} ₴. Прогноз на кінець місяця: ${forecast} ₴. Ліміт: ${limit} ₴. Чому витрати можуть бути ${forecast > limit ? "вищими за ліміт" : "нижчими за план"} і що варто зробити? Дай коротку відповідь (2-3 речення) українською.`;
-      const res = await fetch(apiUrl("/api/chat"), {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          context: `[Бюджетний прогноз] Категорія: ${catLabel}, витрачено: ${spent} ₴, прогноз: ${forecast} ₴, ліміт: ${limit} ₴`,
-          messages: [{ role: "user", content: prompt }],
-        }),
+      const b = limitBudgets.find((x) => x.categoryId === categoryId);
+      if (!b) continue;
+      const cat = resolveExpenseCategoryMeta(categoryId, customCategories);
+      const catLabel = cat?.label || categoryId;
+      const spent = calcSpent(b);
+      const remaining = Math.max(0, b.limit - spent);
+      const pct = b.limit > 0 ? Math.round((spent / b.limit) * 100) : 0;
+      const fc = forecastByCategory[categoryId];
+      const forecastNote = fc
+        ? ` Прогноз на кінець місяця: ${fc.forecast.toLocaleString("uk-UA")} ₴ (${fc.overLimit ? `перевищення на ${fc.overPercent}%` : "в межах ліміту"}).`
+        : "";
+      items.push({
+        categoryId,
+        monthKey,
+        catLabel,
+        spent,
+        limit: b.limit,
+        remaining,
+        pct,
+        forecast: fc?.forecast,
+        forecastNote,
+        daysRemaining,
       });
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}`);
-      }
-      const data = await res.json();
-      setAiExplanations((prev) => ({
-        ...prev,
-        [categoryId]: data.text || "Не вдалося отримати пояснення.",
-      }));
-    } catch {
+    }
+    return items;
+  }, [atRiskKey, limitBudgets, forecasts, customCategories, calcSpent, now]);
+
+  // One query per at-risk category. Seeded synchronously from localStorage so
+  // the UI paints cached advice with no spinner. `staleTime` is set to the
+  // 24h TTL and `initialDataUpdatedAt` is the LS timestamp, so a cached entry
+  // older than a day is considered stale and re-fetched automatically —
+  // matching the pre-migration manual TTL check.
+  const proactiveQueries = useQueries({
+    queries: proactiveItems.map((item) => ({
+      queryKey: proactiveAdviceQueryKey(item.monthKey, item.categoryId),
+      queryFn: () => fetchProactiveAdvice(item),
+      staleTime: PROACTIVE_CACHE_TTL,
+      gcTime: PROACTIVE_CACHE_TTL,
+      retry: false,
+      initialData: () => {
+        const cached = loadProactiveAdviceFromLS(
+          item.categoryId,
+          item.monthKey,
+        );
+        return cached?.text ?? undefined;
+      },
+      initialDataUpdatedAt: () => {
+        const cached = loadProactiveAdviceFromLS(
+          item.categoryId,
+          item.monthKey,
+        );
+        return cached?.ts ?? undefined;
+      },
+    })),
+  });
+
+  const proactiveAdvice = {};
+  const proactiveLoading = {};
+  proactiveItems.forEach((item, i) => {
+    const q = proactiveQueries[i];
+    proactiveAdvice[item.categoryId] = q?.data ?? null;
+    proactiveLoading[item.categoryId] = Boolean(q?.isFetching);
+  });
+
+  // On-demand explanation: single shared mutation, per-category result stored
+  // in local state so each forecast card renders independently. `variables`
+  // carries the categoryId so we can derive per-card loading state from
+  // `mutation.isPending && mutation.variables?.categoryId === fc.categoryId`.
+  const explainMutation = useMutation({
+    mutationFn: ({ catLabel, spent, forecast, limit }) =>
+      fetchCategoryExplanation({ catLabel, spent, forecast, limit }),
+    onSuccess: (text, { categoryId }) => {
+      setAiExplanations((prev) => ({ ...prev, [categoryId]: text }));
+    },
+    onError: (_err, { categoryId }) => {
       setAiExplanations((prev) => ({
         ...prev,
         [categoryId]: "Помилка з'єднання з AI.",
       }));
-    } finally {
-      setAiLoading((prev) => ({ ...prev, [categoryId]: false }));
-    }
-  };
+    },
+  });
+
+  const isExplaining = useCallback(
+    (categoryId) =>
+      explainMutation.isPending &&
+      explainMutation.variables?.categoryId === categoryId,
+    [explainMutation.isPending, explainMutation.variables],
+  );
+
+  const explainCategory = useCallback(
+    (categoryId, catLabel, spent, forecast, limit) => {
+      if (isExplaining(categoryId)) return;
+      setAiExplanations((prev) => ({ ...prev, [categoryId]: null }));
+      explainMutation.mutate({
+        categoryId,
+        catLabel,
+        spent,
+        forecast,
+        limit,
+      });
+    },
+    [explainMutation, isExplaining],
+  );
 
   const resetForm = () => {
     setNewB({
@@ -568,7 +622,7 @@ export function Budgets({ mono, storage }) {
                 customCategories,
               );
               const explanation = aiExplanations[fc.categoryId];
-              const loading = aiLoading[fc.categoryId];
+              const loading = isExplaining(fc.categoryId);
               return (
                 <div
                   key={fc.categoryId}
