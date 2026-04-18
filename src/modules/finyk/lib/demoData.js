@@ -81,6 +81,11 @@ function demoEntry(base, offsetDays, payload) {
   const d = new Date(base.getTime() - offsetDays * 86400000);
   return {
     id: `demo-${d.getTime()}-${Math.round(payload.amount)}`,
+    // Flag every demo entry so cross-module detectors (e.g.
+    // `firstRealEntry.hasAnyRealEntry`) can tell seeded FTUX data apart
+    // from real user transactions — otherwise the soft-auth card would
+    // pop on the first dashboard render.
+    demo: true,
     date: d.toISOString(),
     description: payload.description,
     amount: payload.amount,

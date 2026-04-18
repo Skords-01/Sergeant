@@ -6,6 +6,7 @@ export const VIBE_PICKS_KEY = "hub_onboarding_vibes_v1";
 export const FIRST_ACTION_PENDING_KEY = "hub_first_action_pending_v1";
 export const FIRST_REAL_ENTRY_KEY = "hub_first_real_entry_done_v1";
 export const SOFT_AUTH_DISMISSED_KEY = "hub_soft_auth_dismissed_v1";
+export const DEMO_BANNER_DISMISSED_KEY = "hub_demo_banner_dismissed_v1";
 
 /** @typedef {"finyk" | "fizruk" | "routine" | "nutrition"} HubModuleId */
 
@@ -88,6 +89,22 @@ export function markFirstRealEntryDone() {
 export function isFirstRealEntryDone() {
   try {
     return localStorage.getItem(FIRST_REAL_ENTRY_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+export function dismissDemoBanner() {
+  try {
+    localStorage.setItem(DEMO_BANNER_DISMISSED_KEY, "1");
+  } catch {
+    /* noop */
+  }
+}
+
+export function isDemoBannerDismissed() {
+  try {
+    return localStorage.getItem(DEMO_BANNER_DISMISSED_KEY) === "1";
   } catch {
     return false;
   }

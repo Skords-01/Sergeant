@@ -8,8 +8,14 @@ import { HubInsightsPanel } from "./HubInsightsPanel.jsx";
 import { WeeklyDigestCard, hasLiveWeeklyDigest } from "./WeeklyDigestCard.jsx";
 import { useWeeklyDigest, loadDigest, getWeekKey } from "./useWeeklyDigest.js";
 import { SoftAuthPromptCard } from "./onboarding/SoftAuthPromptCard.jsx";
+import { DemoModeBanner } from "./onboarding/DemoModeBanner.jsx";
 import { detectFirstRealEntry } from "./onboarding/firstRealEntry.js";
-import { isSoftAuthDismissed } from "./onboarding/vibePicks.js";
+import {
+  isSoftAuthDismissed,
+  isDemoBannerDismissed,
+  dismissDemoBanner,
+} from "./onboarding/vibePicks.js";
+import { wasDemoSeeded } from "./onboarding/demoSeeds.js";
 import {
   DndContext,
   closestCenter,
@@ -414,6 +420,15 @@ export function HubDashboard({ onOpenModule, onOpenChat, user, onShowAuth }) {
     !softAuthDismissed &&
     typeof onShowAuth === "function";
 
+  // Demo banner: only while we're still showing seeded FTUX data and the
+  // user hasn't contributed anything of their own yet. Dismissible; once
+  // there's a real entry or the user closes it, it stays gone.
+  const [demoBannerDismissed, setDemoBannerDismissed] = useState(() =>
+    isDemoBannerDismissed(),
+  );
+  const showDemoBanner =
+    !hasRealEntry && !demoBannerDismissed && wasDemoSeeded();
+
   const { focus, rest, dismiss } = useDashboardFocus();
 
   const sensors = useSensors(
@@ -459,6 +474,15 @@ export function HubDashboard({ onOpenModule, onOpenChat, user, onShowAuth }) {
   return (
     <div className="space-y-4">
       <DateHeader />
+
+      {showDemoBanner && (
+        <DemoModeBanner
+          onDismiss={() => {
+            dismissDemoBanner();
+            setDemoBannerDismissed(true);
+          }}
+        />
+      )}
 
       {showSoftAuth && (
         <SoftAuthPromptCard

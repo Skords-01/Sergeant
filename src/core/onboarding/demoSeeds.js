@@ -188,23 +188,28 @@ function seedNutritionDemoData() {
     if (Object.keys(existing).length > 0) return 0;
   }
 
+  // Rough macro split that's close enough to a real meal for the rings
+  // and daily totals to render convincingly.
+  const splitMacros = (kcal) => ({
+    kcal,
+    protein_g: Math.round((kcal * 0.22) / 4),
+    fat_g: Math.round((kcal * 0.28) / 9),
+    carbs_g: Math.round((kcal * 0.5) / 4),
+  });
+
   const log = {};
   for (const m of NUTRITION_DEMO_MEALS) {
     const dateKey = toLocalISODate(daysAgo(m.offset));
-    if (!log[dateKey]) log[dateKey] = { items: [] };
-    log[dateKey].items.push({
-      id: `demo-meal-${dateKey}-${log[dateKey].items.length}`,
+    // IMPORTANT: `normalizeNutritionLog` reads each day as `{ meals: [] }`;
+    // any other shape (e.g. `{ items: [] }`) is silently dropped on load.
+    if (!log[dateKey]) log[dateKey] = { meals: [] };
+    log[dateKey].meals.push({
+      id: `demo-meal-${dateKey}-${log[dateKey].meals.length}`,
       demo: true,
       name: m.name,
       mealType: m.meal,
-      createdAt: daysAgo(m.offset).toISOString(),
-      macros: {
-        kcal: m.kcal,
-        // Rough split — good enough for the ring to fill convincingly.
-        protein_g: Math.round(m.kcal * 0.22 * 0.25),
-        fat_g: Math.round(m.kcal * 0.28 * 0.11),
-        carbs_g: Math.round(m.kcal * 0.5 * 0.25),
-      },
+      source: "manual",
+      macros: splitMacros(m.kcal),
     });
   }
 

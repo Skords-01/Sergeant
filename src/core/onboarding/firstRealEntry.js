@@ -58,11 +58,12 @@ export function hasAnyRealEntry() {
   const routine = safeReadJSON("hub_routine_v1");
   if (routine && hasNonDemoItem(routine.habits)) return true;
 
-  // Nutrition — meal log is keyed by date; inspect items across all days.
+  // Nutrition — meal log is keyed by date; inspect meals across all days.
+  // The day shape is `{ meals: [...] }` (see `normalizeNutritionLog`).
   const nutrition = safeReadJSON("nutrition_log_v1");
   if (nutrition && typeof nutrition === "object" && !Array.isArray(nutrition)) {
     for (const day of Object.values(nutrition)) {
-      if (day && hasNonDemoItem(day.items)) return true;
+      if (day && hasNonDemoItem(day.meals)) return true;
     }
   }
 
