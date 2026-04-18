@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { foodSearchApi, isApiError } from "@shared/api";
+import { nutritionKeys } from "@shared/lib/queryKeys.js";
 import { searchFoods } from "../../lib/foodDb/foodDb.js";
 
 const LOCAL_DEBOUNCE_MS = 180;
@@ -44,14 +45,14 @@ export function useFoodSearch(foodQuery) {
   const offQuery = useDebouncedValue(trimmed, OFF_DEBOUNCE_MS);
 
   const local = useQuery({
-    queryKey: ["nutrition", "food-search", "local", localQuery],
+    queryKey: nutritionKeys.foodSearchLocal(localQuery),
     queryFn: () => searchFoods(localQuery, 8),
     enabled: localQuery.length > 0,
     staleTime: 5 * 60_000,
   });
 
   const off = useQuery({
-    queryKey: ["nutrition", "food-search", "off", offQuery],
+    queryKey: nutritionKeys.foodSearchOff(offQuery),
     queryFn: ({ signal }) => fetchOpenFoodFacts(offQuery, signal),
     enabled: offQuery.length >= OFF_MIN_LEN,
     staleTime: 5 * 60_000,

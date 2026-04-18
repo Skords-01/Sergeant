@@ -26,6 +26,7 @@ import { calcForecast } from "../lib/forecastEngine";
 import { BudgetTrendChart } from "../components/charts/lazy";
 import { ChartFallback } from "../components/charts/ChartFallback";
 import { chatApi } from "@shared/api";
+import { finykKeys } from "@shared/lib/queryKeys.js";
 import { LimitBudgetCard } from "../components/budgets/LimitBudgetCard.jsx";
 import { GoalBudgetCard } from "../components/budgets/GoalBudgetCard.jsx";
 import { CategorySelector } from "../components/CategorySelector.jsx";
@@ -55,12 +56,9 @@ const PROACTIVE_CACHE_TTL = 24 * 60 * 60 * 1000;
 const proactiveCacheKey = (categoryId, monthKey) =>
   `${PROACTIVE_CACHE_PREFIX}${categoryId}_${monthKey}`;
 
-export const proactiveAdviceQueryKey = (monthKey, categoryId) => [
-  "finyk",
-  "proactive-advice",
-  monthKey,
-  categoryId,
-];
+// Re-export from the centralized queryKeys module for callers that still
+// import this name from the Budgets page.
+export const proactiveAdviceQueryKey = finykKeys.proactiveAdvice;
 
 function loadProactiveAdviceFromLS(categoryId, monthKey) {
   const cached = readJSON(proactiveCacheKey(categoryId, monthKey), null);

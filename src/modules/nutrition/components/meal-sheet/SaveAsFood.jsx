@@ -1,5 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@shared/components/ui/Button";
+import { nutritionKeys } from "@shared/lib/queryKeys.js";
 import { upsertFood } from "../../lib/foodDb/foodDb.js";
 
 export function SaveAsFood({
@@ -55,7 +56,7 @@ export function SaveAsFood({
           // freshly saved product instead of 5 min of stale IndexedDB
           // results.
           queryClient.invalidateQueries({
-            queryKey: ["nutrition", "food-search", "local"],
+            queryKey: [...nutritionKeys.foodSearch, "local"],
           });
           setPickedFood(res.product);
           setPickedGrams("100");

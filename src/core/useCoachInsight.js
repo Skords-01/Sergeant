@@ -1,6 +1,7 @@
 import { useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { coachApi, isApiError } from "@shared/api";
+import { coachKeys } from "@shared/lib/queryKeys.js";
 
 const CACHE_KEY = "hub_coach_insight_cache_v1";
 
@@ -198,14 +199,11 @@ async function fetchCoachInsight() {
   }
 }
 
-// React Query key factory — exported so other callers (e.g. the weekly
-// digest mutation) can invalidate the insight when the underlying data
-// signature changes.
-export const coachInsightQueryKey = (todayKey = localDateKey()) => [
-  "coach",
-  "insight",
-  todayKey,
-];
+// React Query key factory — re-exported from the centralized queryKeys
+// module so other callers (e.g. the weekly digest mutation) can invalidate
+// the insight when the underlying data signature changes.
+export const coachInsightQueryKey = (todayKey = localDateKey()) =>
+  coachKeys.insight(todayKey);
 
 // Seed the query from localStorage only when the cached date matches the
 // *current* calendar day. At midnight the query key rolls over, producing a
@@ -271,7 +269,7 @@ export function useCoachInsight() {
   const refresh = useCallback(() => {
     // Drop stale cache entries from prior days so they can't be resurrected
     // via `initialData` on a remount.
-    queryClient.invalidateQueries({ queryKey: ["coach", "insight"] });
+    queryClient.invalidateQueries({ queryKey: coachKeys.all });
     return refetch();
   }, [queryClient, refetch]);
 

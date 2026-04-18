@@ -8,9 +8,16 @@
  *  - `gcTime` 5хв — тримаємо дані в пам'яті після того, як
  *    останній observer відписався, але не надовго, щоб не тримати
  *    застарілі дані після логауту.
+ *  - `networkMode: "offlineFirst"` для запитів — PWA повинен малювати
+ *    з кешу, коли мережі немає, а не падати в помилку одразу.
+ *    Для мутацій залишаємо дефолт `"online"`, щоб важкі AI-виклики
+ *    швидко падали офлайн замість зависання у черзі.
  *
  * Мутації не ретраяться — серверні AI-ендпоінти дорогі, не хочемо
  * повторювати випадково.
+ *
+ * Query keys — див. `./queryKeys.ts`; нові запити мають брати ключі
+ * звідти, а не інлайнити їх у хуці.
  */
 
 import { QueryClient } from "@tanstack/react-query";
@@ -43,6 +50,7 @@ export function createAppQueryClient(): QueryClient {
         staleTime: 60_000,
         gcTime: 5 * 60_000,
         refetchOnWindowFocus: false,
+        networkMode: "offlineFirst",
       },
       mutations: {
         retry: false,

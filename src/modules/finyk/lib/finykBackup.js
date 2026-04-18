@@ -3,7 +3,7 @@ import { notifyFinykRoutineCalendarSync } from "../hubRoutineSync.js";
 import { readJSON, writeJSON } from "./finykStorage.js";
 
 /** Версія формату експорту JSON (бекап). */
-export const FINYK_BACKUP_VERSION = 2;
+export const FINYK_BACKUP_VERSION = 3;
 
 const DEFAULT_MONTHLY_PLAN = { income: "", expense: "", savings: "" };
 
@@ -36,6 +36,7 @@ export function readFinykBackupFromStorage() {
     monoDebtLinkedTxIds: readJsonFromLocalStorage("finyk_mono_debt_linked", {}),
     networthHistory: readJsonFromLocalStorage("finyk_networth_history", []),
     customCategories: readJsonFromLocalStorage("finyk_custom_cats_v1", []),
+    dismissedRecurring: readJsonFromLocalStorage("finyk_rec_dismissed", []),
   };
 }
 
@@ -53,6 +54,7 @@ const FINYK_FIELD_TO_STORAGE_KEY = {
   monoDebtLinkedTxIds: "finyk_mono_debt_linked",
   networthHistory: "finyk_networth_history",
   customCategories: "finyk_custom_cats_v1",
+  dismissedRecurring: "finyk_rec_dismissed",
 };
 
 /**
@@ -161,6 +163,16 @@ export function normalizeFinykBackup(parsed) {
     out.customCategories = cc;
   }
 
+  const dr = needArr(parsed.dismissedRecurring, "dismissedRecurring");
+  if (dr) {
+    for (const item of dr) {
+      if (typeof item !== "string") {
+        throw new Error("Некоректний запис у dismissedRecurring");
+      }
+    }
+    out.dismissedRecurring = dr;
+  }
+
   if (Object.keys(out).length === 0) {
     throw new Error(
       "У файлі немає даних для імпорту (очікуйте поля бекапу ФІНІК)",
@@ -195,7 +207,8 @@ export function normalizeFinykSyncPayload(data) {
     has("txSplits") ||
     has("monoDebtLinkedTxIds") ||
     has("networthHistory") ||
-    has("customCategories");
+    has("customCategories") ||
+    has("dismissedRecurring");
 
   if (looksLikeFullBackup) {
     const withVer = has("version") ? data : { ...data, version: 1 };
@@ -220,6 +233,7 @@ export function normalizeFinykSyncPayload(data) {
   if (has("md")) full.monoDebtLinkedTxIds = data.md;
   if (has("nh")) full.networthHistory = data.nh;
   if (has("cc")) full.customCategories = data.cc;
+  if (has("dr")) full.dismissedRecurring = data.dr;
 
   return normalizeFinykBackup(full);
 }
