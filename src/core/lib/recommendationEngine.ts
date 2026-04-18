@@ -6,27 +6,77 @@
 import { buildFinanceContext } from "./recommendations/financeContext";
 import { FINANCE_RULES } from "./recommendations/finance";
 import { runRules } from "./recommendations/registry";
+import type { Rec } from "./recommendations/types";
 
-function safeLS(key, fallback) {
+interface Transaction {
+  id: string;
+  amount: number;
+  time: number;
+}
+
+interface Exercise {
+  nameUk?: string;
+  name?: string;
+  exercise?: string;
+  muscleGroups?: string[];
+  muscles?: string[];
+}
+
+interface Workout {
+  startedAt: string;
+  endedAt?: string;
+  items?: Exercise[];
+}
+
+interface Habit {
+  id: string;
+  archived?: boolean;
+}
+
+interface RoutineState {
+  habits?: Habit[];
+  completions?: Record<string, string[]>;
+}
+
+interface Meal {
+  macros?: {
+    kcal?: number;
+    protein_g?: number;
+  };
+}
+
+interface NutritionDay {
+  meals?: Meal[];
+}
+
+type NutritionLog = Record<string, NutritionDay | undefined>;
+
+interface NutritionPrefs {
+  dailyTargetKcal?: number;
+  dailyTargetProtein_g?: number;
+  dailyTargetProtein?: number;
+}
+
+function safeLS<T>(key: string, fallback: T): T {
   try {
     const raw = localStorage.getItem(key);
-    return raw ? JSON.parse(raw) : fallback;
+    return raw ? (JSON.parse(raw) as T) : fallback;
   } catch {
     return fallback;
   }
 }
 
-function localDateKey(d = new Date()) {
+function localDateKey(d: Date = new Date()): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-function daysBetween(isoA, isoB) {
+function daysBetween(isoA: string, isoB: string): number {
   const a = new Date(isoA);
   const b = new Date(isoB);
-  return Math.round(Math.abs(b - a) / 86_400_000);
+  return Math.round(Math.abs(b.getTime() - a.getTime()) / 86_400_000);
 }
 
-const MUSCLE_LABELS_UK = {
+const MUSCLE_LABELS_UK: Record<string, string> = {
   chest: "Груди",
   back: "Спина",
   legs: "Ноги",
@@ -39,19 +89,21 @@ const MUSCLE_LABELS_UK = {
   calves: "Литки",
 };
 
-function parseFizrukWorkouts() {
+function parseFizrukWorkouts(): Workout[] {
   const raw = localStorage.getItem("fizruk_workouts_v1");
   if (!raw) return [];
   try {
-    const p = JSON.parse(raw);
+    const p = JSON.parse(raw) as Workout[] | { workouts?: Workout[] } | null;
     if (Array.isArray(p)) return p;
     if (p && Array.isArray(p.workouts)) return p.workouts;
-  } catch {}
+  } catch {
+    /* ignore */
+  }
   return [];
 }
 
-function getExerciseMuscles(exercise) {
-  const muscles = [];
+function getExerciseMuscles(exercise: Exercise | null | undefined): string[] {
+  const muscles: string[] = [];
   const ex = exercise || {};
   const name = (ex.nameUk || ex.name || ex.exercise || "").toLowerCase();
   if (/присід|squat/.test(name)) muscles.push("legs");
@@ -70,8 +122,8 @@ function getExerciseMuscles(exercise) {
   return [...new Set(muscles)];
 }
 
-function buildMuscleLastTrained(workouts) {
-  const last = {};
+function buildMuscleLastTrained(workouts: Workout[]): Record<string, string> {
+  const last: Record<string, string> = {};
   const completed = workouts.filter((w) => w.endedAt);
   for (const w of completed) {
     for (const item of w.items || []) {
@@ -86,7 +138,7 @@ function buildMuscleLastTrained(workouts) {
   return last;
 }
 
-function startOfWeek(d) {
+function startOfWeek(d: Date): Date {
   const x = new Date(d);
   const dow = (x.getDay() + 6) % 7;
   x.setDate(x.getDate() - dow);
@@ -94,30 +146,30 @@ function startOfWeek(d) {
   return x;
 }
 
-function txTimestamp(tx) {
+function txTimestamp(tx: Transaction): number {
   return tx.time > 1e10 ? tx.time : tx.time * 1000;
 }
 
-function buildFinanceRecs() {
+function buildFinanceRecs(): Rec[] {
   // Делегує правилам з реєстру. Контекст будується один раз, далі кожне
   // правило читає потрібні зрізи і повертає 0..N рекомендацій.
   const ctx = buildFinanceContext();
   return runRules(FINANCE_RULES, ctx);
 }
 
-function buildFizrukRecs() {
-  const recs = [];
+function buildFizrukRecs(): Rec[] {
+  const recs: Rec[] = [];
   const workouts = parseFizrukWorkouts();
   const completed = workouts.filter((w) => w.endedAt);
   if (!completed.length) return recs;
 
   const sorted = [...completed].sort(
-    (a, b) => new Date(b.startedAt) - new Date(a.startedAt),
+    (a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime(),
   );
 
   const now = new Date();
   const lastMs = new Date(sorted[0].startedAt).getTime();
-  const hoursAgo = (now - lastMs) / 3_600_000;
+  const hoursAgo = (now.getTime() - lastMs) / 3_600_000;
   const daysSinceWorkout = hoursAgo / 24;
 
   if (daysSinceWorkout > 5) {
@@ -171,9 +223,9 @@ function buildFizrukRecs() {
   return recs;
 }
 
-function buildRoutineRecs() {
-  const recs = [];
-  const state = safeLS("hub_routine_v1", null);
+function buildRoutineRecs(): Rec[] {
+  const recs: Rec[] = [];
+  const state = safeLS<RoutineState | null>("hub_routine_v1", null);
   if (!state) return recs;
 
   const habits = (state.habits || []).filter((h) => !h.archived);
@@ -245,16 +297,16 @@ function buildRoutineRecs() {
   return recs;
 }
 
-function buildNutritionRecs() {
-  const recs = [];
-  const log = safeLS("nutrition_log_v1", {});
-  const prefs = safeLS("nutrition_prefs_v1", null);
+function buildNutritionRecs(): Rec[] {
+  const recs: Rec[] = [];
+  const log = safeLS<NutritionLog>("nutrition_log_v1", {});
+  const prefs = safeLS<NutritionPrefs | null>("nutrition_prefs_v1", null);
   const today = localDateKey();
   const dayData = log?.[today];
-  const meals = Array.isArray(dayData?.meals) ? dayData.meals : [];
+  const meals: Meal[] = Array.isArray(dayData?.meals) ? dayData.meals : [];
 
-  let kcal = 0,
-    protein = 0;
+  let kcal = 0;
+  let protein = 0;
   for (const m of meals) {
     kcal += m?.macros?.kcal ?? 0;
     protein += m?.macros?.protein_g ?? 0;
@@ -307,10 +359,11 @@ function buildNutritionRecs() {
     const completed = workouts.filter((w) => w.endedAt);
     if (completed.length > 0) {
       const sorted = [...completed].sort(
-        (a, b) => new Date(b.startedAt) - new Date(a.startedAt),
+        (a, b) =>
+          new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime(),
       );
       const lastHours =
-        (Date.now() - new Date(sorted[0].startedAt)) / 3_600_000;
+        (Date.now() - new Date(sorted[0].startedAt).getTime()) / 3_600_000;
       if (lastHours < 2 && pctProtein < 0.4) {
         recs.push({
           id: "nutrition_post_workout_protein",
@@ -328,7 +381,7 @@ function buildNutritionRecs() {
   return recs;
 }
 
-function buildWeeklyDigestRecs() {
+function buildWeeklyDigestRecs(): Rec[] {
   // Понеділок 7:00-12:00 — підсумок минулого тижня
   const now = new Date();
   if (now.getDay() !== 1) return [];
@@ -349,7 +402,7 @@ function buildWeeklyDigestRecs() {
   }).length;
 
   // Звички
-  const state = safeLS("hub_routine_v1", null);
+  const state = safeLS<RoutineState | null>("hub_routine_v1", null);
   let habitPctText = "";
   if (state) {
     const habits = (state.habits || []).filter((h) => !h.archived);
@@ -375,11 +428,18 @@ function buildWeeklyDigestRecs() {
   }
 
   // Витрати минулого тижня
-  const txCache = safeLS("finyk_tx_cache", null);
-  const transactions = txCache?.txs || (Array.isArray(txCache) ? txCache : []);
-  const txCategories = safeLS("finyk_tx_cats", {});
-  const hiddenTxIds = new Set(safeLS("finyk_hidden_txs", []));
-  const transferIds = new Set(
+  const txCache = safeLS<{ txs?: Transaction[] } | Transaction[] | null>(
+    "finyk_tx_cache",
+    null,
+  );
+  const transactions: Transaction[] = txCache
+    ? Array.isArray(txCache)
+      ? txCache
+      : (txCache.txs ?? [])
+    : [];
+  const txCategories = safeLS<Record<string, string>>("finyk_tx_cats", {});
+  const hiddenTxIds = new Set<string>(safeLS<string[]>("finyk_hidden_txs", []));
+  const transferIds = new Set<string>(
     Object.entries(txCategories)
       .filter(([, v]) => v === "internal_transfer")
       .map(([k]) => k),
@@ -394,7 +454,7 @@ function buildWeeklyDigestRecs() {
     }
   }
 
-  const parts = [];
+  const parts: string[] = [];
   if (workoutsLastWeek > 0) parts.push(`${workoutsLastWeek} трен.`);
   if (habitPctText) parts.push(habitPctText);
   if (spendLastWeek > 0)
@@ -419,10 +479,9 @@ function buildWeeklyDigestRecs() {
 
 /**
  * Returns sorted list of recommendations.
- * @returns {Array<{id, module, priority, icon, title, body, action}>}
  */
-export function generateRecommendations() {
-  const all = [
+export function generateRecommendations(): Rec[] {
+  const all: Rec[] = [
     ...buildFinanceRecs(),
     ...buildFizrukRecs(),
     ...buildRoutineRecs(),
@@ -430,7 +489,7 @@ export function generateRecommendations() {
     ...buildWeeklyDigestRecs(),
   ];
   all.sort((a, b) => b.priority - a.priority);
-  const seen = new Set();
+  const seen = new Set<string>();
   return all.filter((r) => {
     if (seen.has(r.id)) return false;
     seen.add(r.id);
