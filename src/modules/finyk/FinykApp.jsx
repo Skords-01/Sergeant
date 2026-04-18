@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useMonobank } from "./hooks/useMonobank";
 import { usePrivatbank } from "./hooks/usePrivatbank";
 import { useStorage } from "./hooks/useStorage";
@@ -13,6 +13,7 @@ import { Budgets } from "./pages/Budgets.jsx";
 import { Assets } from "./pages/Assets.jsx";
 import { Analytics } from "./pages/Analytics.jsx";
 import { ManualExpenseSheet } from "./components/ManualExpenseSheet.jsx";
+import { useUnifiedFinanceData } from "./hooks/useUnifiedFinanceData";
 
 const NAV_ICONS = {
   overview: (
@@ -210,69 +211,7 @@ export default function App({
     }
   }, []);
 
-  const mergedRefresh = useCallback(async () => {
-    const tasks = [mono.refresh()];
-    if (privat.connected) tasks.push(privat.refresh());
-    await Promise.allSettled(tasks);
-  }, [mono, privat]);
-
-  const mergedMono = useMemo(() => {
-    const privatTxs = privat.transactions || [];
-    const monoTxs = mono.realTx || [];
-    const combined = [...monoTxs, ...privatTxs].sort(
-      (a, b) => (b.time || 0) - (a.time || 0),
-    );
-    const privatTotal = (privat.accounts || [])
-      .filter((a) => a.currency === "UAH" || a.currency === "980")
-      .reduce((s, a) => s + (a.balance || 0) / 100, 0);
-
-    const monoAccounts = (mono.accounts || []).map((a) => ({
-      ...a,
-      _source: "monobank",
-    }));
-    const privatAccounts = (privat.accounts || []).map((a) => ({
-      ...a,
-      _source: "privatbank",
-    }));
-    const allAccounts = [...monoAccounts, ...privatAccounts];
-
-    const hasPrivatError = !!privat.error;
-    const privatSyncBad =
-      privat.syncState?.status === "error" ||
-      privat.syncState?.status === "partial";
-    const combinedError =
-      mono.error && hasPrivatError
-        ? `${mono.error}; ПриватБанк: ${privat.error}`
-        : mono.error || (hasPrivatError ? `ПриватБанк: ${privat.error}` : "");
-    const combinedSyncStatus =
-      mono.syncState?.status === "error" || (privatSyncBad && !privat.loadingTx)
-        ? "error"
-        : mono.syncState?.status === "partial" || privatSyncBad
-          ? "partial"
-          : mono.syncState?.status === "loading" || privat.loadingTx
-            ? "loading"
-            : mono.syncState?.status === "success"
-              ? "success"
-              : mono.syncState?.status;
-    const combinedSyncState = {
-      ...mono.syncState,
-      status: combinedSyncStatus,
-      lastError: combinedError,
-    };
-
-    return {
-      ...mono,
-      realTx: combined,
-      transactions: combined,
-      accounts: allAccounts,
-      refresh: mergedRefresh,
-      loadingTx: mono.loadingTx || privat.loadingTx,
-      error: combinedError,
-      syncState: combinedSyncState,
-      privatTotal,
-      privat,
-    };
-  }, [mono, privat, mergedRefresh]);
+  const { mergedMono } = useUnifiedFinanceData({ mono, privat });
 
   const { clientInfo, connecting, error, authError, connect } = mono;
   const syncTone =

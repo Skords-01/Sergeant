@@ -1,12 +1,11 @@
 import { useMemo } from "react";
 import {
-  getMonthlySummary,
-  getTopCategories,
   getCategoryDistribution,
   getTopMerchants,
   getMonthlySpendSeries,
   getMonthlyTrendComparison,
 } from "../lib/finykStats";
+import { getMonthlySummary, getTopCategories } from "../domain/selectors";
 
 export function useAnalytics({ mono, storage, monthlyHistory = [] }) {
   const { realTx = [], loadingTx } = mono;

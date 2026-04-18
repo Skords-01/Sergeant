@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { apiUrl } from "@shared/lib/apiUrl.js";
 import { TX_CACHE_TTL, CURRENCY } from "../constants";
 import { safeJsonSet } from "@shared/lib/storageQuota.js";
+import { normalizeTransaction } from "../domain/transactions";
 
 /**
  * @typedef {{
@@ -301,7 +302,9 @@ export function useMonobank() {
         const acc = targetAccounts[i];
         try {
           const txs = await fetchStatementWithRetry(tok, acc.id, from, to);
-          const tagged = txs.map((t) => ({ ...t, _accountId: acc.id }));
+          const tagged = txs.map((t) =>
+            normalizeTransaction(t, { source: "monobank", accountId: acc.id }),
+          );
           fetchedByAccount[acc.id] = tagged;
           succeededIds.push(acc.id);
           accountsOk += 1;
@@ -562,7 +565,14 @@ export function useMonobank() {
         const acc = targetAccounts[i];
         try {
           const txs = await fetchStatementWithRetry(token, acc.id, from, to);
-          results.push(txs.map((t) => ({ ...t, _accountId: acc.id })));
+          results.push(
+            txs.map((t) =>
+              normalizeTransaction(t, {
+                source: "monobank",
+                accountId: acc.id,
+              }),
+            ),
+          );
         } catch {}
         if (i < targetAccounts.length - 1) await sleep(800);
       }
