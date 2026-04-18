@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { apiUrl } from "@shared/lib/apiUrl.js";
+import { getCoachInsight, getCoachMemory } from "@shared/api/coreApi.js";
 
 const CACHE_KEY = "hub_coach_insight_cache_v1";
 
@@ -177,34 +177,20 @@ function aggregateCurrentSnapshot() {
 async function fetchCoachInsight() {
   let memory = null;
   try {
-    const memRes = await fetch(apiUrl("/api/coach/memory"), {
-      method: "GET",
-      credentials: "include",
-    });
-    if (memRes.ok) {
-      const memJson = await memRes.json();
-      memory = memJson.memory;
-    }
+    const memJson = await getCoachMemory();
+    memory = memJson?.memory ?? null;
   } catch {}
 
   const snapshot = aggregateCurrentSnapshot();
 
-  const insightRes = await fetch(apiUrl("/api/coach/insight"), {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
-    body: JSON.stringify({ snapshot, memory }),
-  });
-
-  if (!insightRes.ok) {
-    const err = await insightRes.json().catch(() => ({}));
-    const error = new Error(err?.error || "Помилка генерації інсайту");
-    error.status = insightRes.status;
-    throw error;
+  try {
+    const insightJson = await getCoachInsight({ snapshot, memory });
+    return insightJson?.insight ?? null;
+  } catch (error) {
+    const err = new Error(error?.message || "Помилка генерації інсайту");
+    err.status = error?.status;
+    throw err;
   }
-
-  const insightJson = await insightRes.json();
-  return insightJson.insight ?? null;
 }
 
 export function useCoachInsight() {

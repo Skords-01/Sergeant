@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { apiUrl } from "@shared/lib/apiUrl.js";
+import { generateWeeklyDigest as requestWeeklyDigest, saveCoachMemory } from "@shared/api/coreApi.js";
 import { STORAGE_KEYS } from "@shared/lib/storageKeys.js";
 import { safeReadLS } from "@shared/lib/storage.js";
 import { MCC_CATEGORIES, INCOME_CATEGORIES } from "@finyk/constants.js";
@@ -298,32 +298,26 @@ async function generateWeeklyDigest(weekKey) {
   const nutrition = aggregateNutrition(weekKey);
   const routine = aggregateRoutine(weekKey);
 
-  const res = await fetch(apiUrl("/api/weekly-digest"), {
-    method: "POST",
-    credentials: "include",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
+  try {
+    const json = await requestWeeklyDigest({
       weekRange: currentWeekRange,
       finyk,
       fizruk,
       nutrition,
       routine,
-    }),
-  });
+    });
 
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    const err = new Error(json?.error || "Помилка генерації звіту");
-    err.status = res.status;
+    return {
+      report: json.report,
+      generatedAt: json.generatedAt,
+      weekKey,
+      weekRange: currentWeekRange,
+    };
+  } catch (error) {
+    const err = new Error(error?.message || "Помилка генерації звіту");
+    err.status = error?.status;
     throw err;
   }
-
-  return {
-    report: json.report,
-    generatedAt: json.generatedAt,
-    weekKey,
-    weekRange: currentWeekRange,
-  };
 }
 
 export function useWeeklyDigest(selectedWeekKey) {
@@ -364,18 +358,13 @@ export function useWeeklyDigest(selectedWeekKey) {
       // Fire-and-forget push of digest into coach memory so /api/coach/insight
       // has richer context on the next call. Failures are non-fatal.
       try {
-        fetch(apiUrl("/api/coach/memory"), {
-          method: "POST",
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            weeklyDigest: {
-              weekKey: wk,
-              weekRange: wr,
-              generatedAt,
-              ...(report || {}),
-            },
-          }),
+        saveCoachMemory({
+          weeklyDigest: {
+            weekKey: wk,
+            weekRange: wr,
+            generatedAt,
+            ...(report || {}),
+          },
         }).catch(() => {});
       } catch {}
     },

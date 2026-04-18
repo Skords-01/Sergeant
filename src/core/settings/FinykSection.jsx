@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { cn } from "@shared/lib/cn";
 import { Button } from "@shared/components/ui/Button";
-import { apiUrl } from "@shared/lib/apiUrl.js";
+import { fetchPrivat } from "@shared/api/finykApi.js";
 import { safeReadLS } from "@shared/lib/storage.js";
 import { useStorage as useFinykStorage } from "../../modules/finyk/hooks/useStorage.js";
 import { getAccountLabel } from "../../modules/finyk/utils.js";
@@ -79,17 +79,15 @@ export function FinykSection() {
     setPrivatConnecting(true);
     setPrivatError("");
     try {
-      const params = new URLSearchParams({
-        path: "/statements/balance/final",
-        country: "UA",
-        showRest: "true",
-      });
-      const res = await fetch(`${apiUrl("/api/privat")}?${params}`, {
-        headers: { "X-Privat-Id": cleanId, "X-Privat-Token": cleanToken },
-      });
-      if (!res.ok) {
-        const payload = await res.json().catch(() => ({}));
-        setPrivatError(payload?.error || `Помилка ${res.status}`);
+      try {
+        await fetchPrivat(
+          "/statements/balance/final",
+          cleanId,
+          cleanToken,
+          { country: "UA", showRest: "true" },
+        );
+      } catch (error) {
+        setPrivatError(error?.message || "Помилка підключення");
         return;
       }
       if (rememberPrivat) {

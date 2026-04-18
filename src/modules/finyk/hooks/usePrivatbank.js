@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
-import { apiUrl } from "@shared/lib/apiUrl.js";
+import { ApiError } from "@shared/api/client.js";
+import { fetchPrivat } from "@shared/api/finykApi.js";
 import { normalizeTransaction } from "../domain/transactions";
 import {
   readRaw,
@@ -137,29 +138,16 @@ function normalizeAccount(raw) {
 }
 
 async function apiFetch(merchantId, merchantToken, path, queryParams = {}) {
-  const params = new URLSearchParams({ path, ...queryParams });
-  const res = await fetch(`${apiUrl("/api/privat")}?${params}`, {
-    headers: {
-      "X-Privat-Id": merchantId,
-      "X-Privat-Token": merchantToken,
-    },
-  });
-
-  if (!res.ok) {
-    let msg = `HTTP ${res.status}`;
-    try {
-      const payload = await res.json();
-      msg = payload?.error || msg;
-    } catch {}
-    if (res.status === 401 || res.status === 403) {
-      const err = new Error(msg);
+  try {
+    return await fetchPrivat(path, merchantId, merchantToken, queryParams);
+  } catch (error) {
+    if (error instanceof ApiError && (error.status === 401 || error.status === 403)) {
+      const err = new Error(error.message);
       err.name = "AuthError";
       throw err;
     }
-    throw new Error(msg);
+    throw error;
   }
-
-  return res.json();
 }
 
 export function usePrivatbank(enabled = true) {

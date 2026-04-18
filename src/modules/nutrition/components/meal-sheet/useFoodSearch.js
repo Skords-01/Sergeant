@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { apiUrl } from "@shared/lib/apiUrl.js";
+import { foodSearch } from "@shared/api/nutritionApi.js";
 import { searchFoods } from "../../lib/foodDb/foodDb.js";
 
 export function useFoodSearch(foodQuery) {
@@ -36,8 +36,7 @@ export function useFoodSearch(foodQuery) {
       setOffBusy(true);
       setOffHits([]);
       const offTimer = window.setTimeout(() => {
-        fetch(apiUrl(`/api/food-search?q=${encodeURIComponent(q)}`))
-          .then((r) => (r.ok ? r.json() : Promise.reject()))
+        foodSearch(q)
           .then((data) => {
             if (!cancelled) setOffHits(data?.products || []);
           })

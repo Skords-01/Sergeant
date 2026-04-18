@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
-import { apiUrl } from "@shared/lib/apiUrl.js";
+import { ApiError } from "@shared/api/client.js";
+import { fetchMonobank } from "@shared/api/finykApi.js";
 import { TX_CACHE_TTL, CURRENCY } from "../constants";
 import {
   readJSON,
@@ -154,24 +155,15 @@ async function fetchStatementWithRetry(tok, accId, from, to, maxAttempts = 3) {
   let lastError = null;
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
-      const res = await fetch(
-        `${apiUrl("/api/mono")}?path=${encodeURIComponent(`/personal/statement/${accId}/${from}/${to}`)}`,
-        { headers: { "X-Token": tok } },
+      const data = await fetchMonobank(
+        `/personal/statement/${accId}/${from}/${to}`,
+        tok,
       );
-      if (!res.ok) {
-        let message = `HTTP ${res.status}`;
-        try {
-          const payload = await res.json();
-          message = payload?.error || message;
-        } catch {}
-        if (res.status === 401 || res.status === 403) {
-          throw new AuthError(message);
-        }
-        throw new Error(message);
-      }
-      const data = await res.json();
       return Array.isArray(data) ? data : [];
     } catch (e) {
+      if (e instanceof ApiError && (e.status === 401 || e.status === 403)) {
+        throw new AuthError(e.message);
+      }
       if (e instanceof AuthError) throw e;
       lastError = e;
       if (attempt < maxAttempts) {
@@ -453,28 +445,7 @@ export function useMonobank() {
         }
         info = parsedInfoCache?.info || parsedInfoCache;
       } else {
-        const res = await fetch(
-          `${apiUrl("/api/mono")}?path=${encodeURIComponent("/personal/client-info")}`,
-          {
-            headers: { "X-Token": cleanToken },
-          },
-        );
-
-        if (!res.ok) {
-          let errorMessage = "Помилка з'єднання";
-          try {
-            const errorData = await res.json();
-            errorMessage = errorData.error || `Помилка ${res.status}`;
-          } catch {
-            errorMessage = `HTTP ${res.status}: ${res.statusText}`;
-          }
-          if (res.status === 401 || res.status === 403) {
-            throw new AuthError(errorMessage);
-          }
-          throw new Error(errorMessage);
-        }
-
-        info = await res.json();
+        info = await fetchMonobank("/personal/client-info", cleanToken);
         if (!writeJSON(INFO_CACHE_KEY, { token: cleanToken, info })) {
           reportSilentError("save client-info cache", "write failed");
         }
@@ -520,7 +491,12 @@ export function useMonobank() {
         await fetchAllTx(cleanToken, info.accounts || []);
       }
     } catch (e) {
-      if (e instanceof AuthError) {
+      if (e instanceof ApiError && (e.status === 401 || e.status === 403)) {
+        setAuthError(
+          e.message ||
+            "Токен Monobank недійсний або закінчився. Оновіть токен.",
+        );
+      } else if (e instanceof AuthError) {
         setAuthError(
           e.message ||
             "Токен Monobank недійсний або закінчився. Оновіть токен.",
@@ -588,30 +564,22 @@ export function useMonobank() {
 
   const refresh = async () => {
     try {
-      const res = await fetch(
-        `${apiUrl("/api/mono")}?path=${encodeURIComponent("/personal/client-info")}`,
-        {
-          headers: { "X-Token": token },
-        },
-      );
-      if (res.ok) {
-        setAuthError("");
-        const info = await res.json();
-        setClientInfo(info);
-        setAccounts(info.accounts || []);
-        if (!writeJSON(INFO_CACHE_KEY, { token, info })) {
-          reportSilentError("refresh info cache", "write failed");
-        }
-        await fetchAllTx(token, info.accounts || []);
-        return;
+      const info = await fetchMonobank("/personal/client-info", token);
+      setAuthError("");
+      setClientInfo(info);
+      setAccounts(info.accounts || []);
+      if (!writeJSON(INFO_CACHE_KEY, { token, info })) {
+        reportSilentError("refresh info cache", "write failed");
       }
-      if (res.status === 401 || res.status === 403) {
+      await fetchAllTx(token, info.accounts || []);
+      return;
+    } catch (e) {
+      if (e instanceof ApiError && (e.status === 401 || e.status === 403)) {
         setAuthError(
           "Токен Monobank недійсний або закінчився. Оновіть токен у налаштуваннях.",
         );
         return;
       }
-    } catch (e) {
       reportSilentError("refresh client-info", e);
     }
     await fetchAllTx(token, accounts);

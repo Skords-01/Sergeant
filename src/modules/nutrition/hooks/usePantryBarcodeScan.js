@@ -1,5 +1,6 @@
 import { useCallback } from "react";
-import { apiUrl } from "@shared/lib/apiUrl.js";
+import { ApiError } from "@shared/api/client.js";
+import { barcodeLookup } from "@shared/api/nutritionApi.js";
 
 export function usePantryBarcodeScan({
   pantry,
@@ -22,19 +23,7 @@ export function usePantryBarcodeScan({
         return;
       }
       try {
-        const res = await fetch(
-          apiUrl(`/api/barcode?barcode=${encodeURIComponent(code)}`),
-        );
-        if (res.status === 404) {
-          setPantryScanStatus("Продукт не знайдено в базі. Додай вручну.");
-          return;
-        }
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({}));
-          setPantryScanStatus(err?.error || "Помилка пошуку.");
-          return;
-        }
-        const data = await res.json();
+        const data = await barcodeLookup(code);
         const p = data?.product;
         if (!p?.name) {
           setPantryScanStatus(
@@ -52,8 +41,12 @@ export function usePantryBarcodeScan({
           setPantryScanStatus(`Додано: ${label} \u2714`);
         }
         setTimeout(() => setPantryScanStatus(""), 4000);
-      } catch {
-        setPantryScanStatus("Помилка пошуку. Перевір з\u2019єднання.");
+      } catch (error) {
+        if (error instanceof ApiError && error.status === 404) {
+          setPantryScanStatus("Продукт не знайдено в базі. Додай вручну.");
+          return;
+        }
+        setPantryScanStatus(error?.message || "Помилка пошуку. Перевір з\u2019єднання.");
       }
     },
     [pantry, setPantryScanStatus, setPantryScannerOpen],

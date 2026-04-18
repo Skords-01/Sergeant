@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { apiUrl } from "@shared/lib/apiUrl.js";
+import { pullAll as pullAllApi, pushAll as pushAllApi } from "@shared/api/syncApi.js";
 import { STORAGE_KEYS } from "@shared/lib/storageKeys.js";
 import { safeReadLS, safeWriteLS } from "@shared/lib/storage.js";
 
@@ -357,15 +357,8 @@ export function useCloudSync(user) {
 
     replayingRef.current = true;
     try {
-      const res = await fetch(apiUrl("/api/sync/push-all"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ modules: modulesToPush }),
-      });
-      if (res.ok) {
-        clearOfflineQueue();
-      }
+      await pushAllApi(modulesToPush);
+      clearOfflineQueue();
     } catch {
       // Network/transport failure during replay must not break callers
       // (onOnline chains pushDirty afterwards). Keep the queue for later.
@@ -410,15 +403,7 @@ export function useCloudSync(user) {
 
       await replayOfflineQueue();
 
-      const res = await fetch(apiUrl("/api/sync/push-all"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ modules }),
-      });
-      if (!res.ok) throw new Error("Push failed");
-
-      const result = await res.json();
+      const result = await pushAllApi(modules);
       const currentModified = getModuleModifiedTimes();
       if (result?.results) {
         for (const [mod, r] of Object.entries(result.results)) {
@@ -470,15 +455,7 @@ export function useCloudSync(user) {
         return;
       }
 
-      const res = await fetch(apiUrl("/api/sync/push-all"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ modules }),
-      });
-      if (!res.ok) throw new Error("Push failed");
-
-      const result = await res.json();
+      const result = await pushAllApi(modules);
       if (user?.id && result?.results) {
         for (const [mod, r] of Object.entries(result.results)) {
           if (r?.version) setModuleVersion(user.id, mod, r.version);
@@ -500,13 +477,7 @@ export function useCloudSync(user) {
     setSyncing(true);
     setSyncError(null);
     try {
-      const res = await fetch(apiUrl("/api/sync/pull-all"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-      });
-      if (!res.ok) throw new Error("Pull failed");
-      const { modules } = await res.json();
+      const { modules } = await pullAllApi();
       if (modules) {
         for (const [mod, payload] of Object.entries(modules)) {
           if (payload?.data) {
@@ -546,13 +517,7 @@ export function useCloudSync(user) {
         }
       }
       if (Object.keys(modules).length > 0) {
-        const res = await fetch(apiUrl("/api/sync/push-all"), {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({ modules }),
-        });
-        if (!res.ok) throw new Error("Upload failed");
+        await pushAllApi(modules);
       }
       markMigrationDone(user.id);
       clearAllDirty();
@@ -580,13 +545,7 @@ export function useCloudSync(user) {
     try {
       await replayOfflineQueue();
 
-      const res = await fetch(apiUrl("/api/sync/pull-all"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-      });
-      if (!res.ok) throw new Error("Initial sync failed");
-      const { modules: cloudModules } = await res.json();
+      const { modules: cloudModules } = await pullAllApi();
 
       const hasCloudData =
         cloudModules &&
@@ -644,13 +603,10 @@ export function useCloudSync(user) {
             }
           }
           if (Object.keys(modules).length > 0) {
-            const pushRes = await fetch(apiUrl("/api/sync/push-all"), {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              credentials: "include",
-              body: JSON.stringify({ modules }),
-            });
-            if (pushRes.ok) clearAllDirty();
+            try {
+              await pushAllApi(modules);
+              clearAllDirty();
+            } catch {}
           }
         }
         if (!migrated) markMigrationDone(user?.id);

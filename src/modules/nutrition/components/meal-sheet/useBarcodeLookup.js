@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
-import { apiUrl } from "@shared/lib/apiUrl.js";
+import { ApiError } from "@shared/api/client.js";
+import { barcodeLookup } from "@shared/api/nutritionApi.js";
 import {
   bindBarcodeToFood,
   lookupFoodByBarcode,
@@ -37,19 +38,7 @@ export function useBarcodeLookup({
       }
 
       try {
-        const res = await fetch(
-          apiUrl(`/api/barcode?barcode=${encodeURIComponent(code)}`),
-        );
-        if (res.status === 404) {
-          setBarcodeStatus("Продукт не знайдено. Можна ввести дані вручну.");
-          return;
-        }
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({}));
-          setBarcodeStatus(err?.error || "Помилка пошуку. Спробуй пізніше.");
-          return;
-        }
-        const data = await res.json();
+        const data = await barcodeLookup(code);
         const p = data?.product;
         if (!p?.name) {
           setBarcodeStatus("Продукт знайдено, але дані неповні. Введи вручну.");
@@ -104,9 +93,13 @@ export function useBarcodeLookup({
             `Знайдено: ${[p.name, p.brand].filter(Boolean).join(" — ")} ✔`,
           );
         }
-      } catch {
+      } catch (error) {
+        if (error instanceof ApiError && error.status === 404) {
+          setBarcodeStatus("Продукт не знайдено. Можна ввести дані вручну.");
+          return;
+        }
         setBarcodeStatus(
-          "Помилка пошуку. Перевір з'єднання і спробуй пізніше.",
+          error?.message || "Помилка пошуку. Перевір з'єднання і спробуй пізніше.",
         );
       }
     },

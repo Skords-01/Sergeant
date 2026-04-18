@@ -1,5 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
-import { apiUrl } from "@shared/lib/apiUrl";
+import {
+  getPushVapidPublic,
+  subscribePush,
+  unsubscribePush,
+} from "@shared/api/coreApi.js";
 
 const PUSH_SUB_KEY = "hub_push_subscribed";
 
@@ -56,9 +60,10 @@ export function usePushNotifications(): UsePushNotificationsResult {
       setPermission(perm);
       if (perm !== "granted") return;
 
-      const vapidRes = await fetch(apiUrl("/api/push/vapid-public"));
-      if (!vapidRes.ok) throw new Error("VAPID not configured");
-      const { publicKey } = (await vapidRes.json()) as { publicKey: string };
+      const { publicKey } = (await getPushVapidPublic()) as {
+        publicKey: string;
+      };
+      if (!publicKey) throw new Error("VAPID not configured");
 
       const reg = await navigator.serviceWorker.ready;
       const sub = await reg.pushManager.subscribe({
@@ -67,18 +72,7 @@ export function usePushNotifications(): UsePushNotificationsResult {
       });
 
       const subJson = sub.toJSON();
-      const res = await fetch(apiUrl("/api/push/subscribe"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify(subJson),
-      });
-      if (!res.ok) {
-        const data = (await res.json().catch(() => ({}))) as {
-          error?: string;
-        };
-        throw new Error(data.error || `Server error ${res.status}`);
-      }
+      await subscribePush(subJson);
 
       localStorage.setItem(PUSH_SUB_KEY, "1");
       setSubscribed(true);
@@ -98,12 +92,7 @@ export function usePushNotifications(): UsePushNotificationsResult {
       if (sub) {
         const endpoint = sub.endpoint;
         await sub.unsubscribe();
-        await fetch(apiUrl("/api/push/subscribe"), {
-          method: "DELETE",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({ endpoint }),
-        }).catch(() => {});
+        await unsubscribePush(endpoint).catch(() => {});
       }
       localStorage.removeItem(PUSH_SUB_KEY);
       setSubscribed(false);

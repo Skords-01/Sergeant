@@ -31,7 +31,7 @@ import { cn } from "@shared/lib/cn";
 import { calcForecast } from "../lib/forecastEngine";
 import { BudgetTrendChart } from "../components/charts/lazy";
 import { ChartFallback } from "../components/charts/ChartFallback";
-import { apiUrl } from "@shared/lib/apiUrl.js";
+import { sendChat } from "@shared/api/finykApi.js";
 import { LimitBudgetCard } from "../components/budgets/LimitBudgetCard.jsx";
 import { GoalBudgetCard } from "../components/budgets/GoalBudgetCard.jsx";
 import { CategorySelector } from "../components/CategorySelector.jsx";
@@ -206,17 +206,10 @@ export function Budgets({ mono, storage }) {
           : "";
         const prompt = `Категорія бюджету: ${catLabel}. Витрачено: ${spent.toLocaleString("uk-UA")} ₴ (${pct}% від ліміту ${b.limit.toLocaleString("uk-UA")} ₴). Залишок: ${remaining.toLocaleString("uk-UA")} ₴. До кінця місяця ${daysRemaining} днів.${forecastNote} Дай конкретну коротку пораду (1-2 речення) що зробити, щоб не перевищити ліміт. Відповідь виключно українською.`;
         try {
-          const res = await fetch(apiUrl("/api/chat"), {
-            method: "POST",
-            credentials: "include",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              context: `[Проактивна AI-порада] Категорія: ${catLabel}, витрачено: ${spent} ₴, ліміт: ${b.limit} ₴, залишок: ${remaining} ₴, прогноз: ${fc?.forecast ?? "—"} ₴, днів до кінця місяця: ${daysRemaining}`,
-              messages: [{ role: "user", content: prompt }],
-            }),
+          const data = await sendChat({
+            context: `[Проактивна AI-порада] Категорія: ${catLabel}, витрачено: ${spent} ₴, ліміт: ${b.limit} ₴, залишок: ${remaining} ₴, прогноз: ${fc?.forecast ?? "—"} ₴, днів до кінця місяця: ${daysRemaining}`,
+            messages: [{ role: "user", content: prompt }],
           });
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          const data = await res.json();
           const text = data.text || null;
           if (text) {
             setAdviceCache(categoryId, monthKey, text);
@@ -252,19 +245,10 @@ export function Budgets({ mono, storage }) {
     setAiExplanations((prev) => ({ ...prev, [categoryId]: null }));
     try {
       const prompt = `Категорія: ${catLabel}. Витрачено за місяць: ${spent} ₴. Прогноз на кінець місяця: ${forecast} ₴. Ліміт: ${limit} ₴. Чому витрати можуть бути ${forecast > limit ? "вищими за ліміт" : "нижчими за план"} і що варто зробити? Дай коротку відповідь (2-3 речення) українською.`;
-      const res = await fetch(apiUrl("/api/chat"), {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          context: `[Бюджетний прогноз] Категорія: ${catLabel}, витрачено: ${spent} ₴, прогноз: ${forecast} ₴, ліміт: ${limit} ₴`,
-          messages: [{ role: "user", content: prompt }],
-        }),
+      const data = await sendChat({
+        context: `[Бюджетний прогноз] Категорія: ${catLabel}, витрачено: ${spent} ₴, прогноз: ${forecast} ₴, ліміт: ${limit} ₴`,
+        messages: [{ role: "user", content: prompt }],
       });
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}`);
-      }
-      const data = await res.json();
       setAiExplanations((prev) => ({
         ...prev,
         [categoryId]: data.text || "Не вдалося отримати пояснення.",
