@@ -1,5 +1,10 @@
 import { normalizeTransaction } from "../domain/transactions";
-import { getMonthlySummary, getTopCategories } from "../domain/selectors";
+import {
+  getMonthlySummary,
+  getTopCategories,
+  computeCategorySpendIndex,
+  selectCategoryDistributionFromIndex,
+} from "../domain/selectors";
 
 const CAT_COLORS = {
   food: "#10b981",
@@ -41,6 +46,14 @@ export function getCatColor(categoryId, customCategories = [], idx = 0) {
   if (custom?.color) return custom.color;
   return FALLBACK_COLORS[idx % FALLBACK_COLORS.length];
 }
+
+export {
+  getMonthlySummary,
+  getTopCategories,
+  computeCategorySpendIndex,
+  selectCategoryDistributionFromIndex,
+};
+export { selectTopCategoriesFromIndex } from "../domain/selectors";
 
 export function getRecentTransactions(
   transactions,
@@ -115,26 +128,12 @@ export function getMonthlySpendSeries(monthlyData) {
   });
 }
 
-export function getCategoryDistribution(
-  transactions,
-  {
-    txCategories = {},
-    txSplits = {},
-    customCategories = [],
-    excludedTxIds = new Set(),
-  } = {},
-) {
-  const top = getTopCategories(
-    transactions,
-    { txCategories, txSplits, customCategories, excludedTxIds },
-    20,
+export function getCategoryDistribution(transactions, opts = {}) {
+  const index = computeCategorySpendIndex(transactions, opts);
+  return selectCategoryDistributionFromIndex(
+    index,
+    opts.customCategories || [],
   );
-  const totalSpent = top.reduce((s, c) => s + c.spent, 0);
-  return top.map((c, idx) => ({
-    ...c,
-    pct: totalSpent > 0 ? Math.round((c.spent / totalSpent) * 100) : 0,
-    color: c.color || getCatColor(c.categoryId, customCategories, idx),
-  }));
 }
 
 export function getTopMerchants(
