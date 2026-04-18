@@ -1,7 +1,10 @@
-import { normalizeTransaction } from "../domain/transactions";
+import { manualExpenseToTransaction } from "../domain/transactions";
 import {
   getMonthlySummary,
   getTopCategories,
+  getCategoryDistribution,
+  getTrendComparison,
+  getTopMerchants,
   computeCategorySpendIndex,
   selectCategoryDistributionFromIndex,
 } from "../domain/selectors";
@@ -50,10 +53,17 @@ export function getCatColor(categoryId, customCategories = [], idx = 0) {
 export {
   getMonthlySummary,
   getTopCategories,
+  getCategoryDistribution,
+  getTrendComparison,
+  getTopMerchants,
   computeCategorySpendIndex,
   selectCategoryDistributionFromIndex,
 };
 export { selectTopCategoriesFromIndex } from "../domain/selectors";
+
+// Legacy alias — retained so existing imports keep working while callers
+// migrate to the shorter `getTrendComparison` name.
+export const getMonthlyTrendComparison = getTrendComparison;
 
 export function getRecentTransactions(
   transactions,
@@ -65,19 +75,7 @@ export function getRecentTransactions(
   const excluded =
     excludedTxIds instanceof Set ? excludedTxIds : new Set(excludedTxIds);
 
-  const normalizedManual = manual.map((e) =>
-    normalizeTransaction(
-      {
-        id: `manual_${e.id}`,
-        time: e.date ? Math.floor(new Date(e.date).getTime() / 1000) : 0,
-        amount: -(Math.abs(e.amount) * 100),
-        description: e.description || "",
-        mcc: 0,
-        raw: { category: e.category },
-      },
-      { source: "manual", accountId: null },
-    ),
-  );
+  const normalizedManual = manual.map((e) => manualExpenseToTransaction(e));
 
   const all = [
     ...list.filter((tx) => tx && !excluded.has(tx.id)),
@@ -85,26 +83,6 @@ export function getRecentTransactions(
   ].sort((a, b) => (b.time || 0) - (a.time || 0));
 
   return all.slice(0, limit);
-}
-
-export function getMonthlyTrendComparison(
-  currentTx,
-  prevTx,
-  { excludedTxIds = new Set(), txSplits = {} } = {},
-) {
-  const curr = getMonthlySummary(currentTx, { excludedTxIds, txSplits });
-  const prev = getMonthlySummary(prevTx, { excludedTxIds, txSplits });
-  const diff = curr.spent - prev.spent;
-  const diffPct = prev.spent > 0 ? Math.round((diff / prev.spent) * 100) : null;
-
-  return {
-    currentSpent: curr.spent,
-    prevSpent: prev.spent,
-    diff,
-    diffPct,
-    currentIncome: curr.income,
-    prevIncome: prev.income,
-  };
 }
 
 export function getMonthlySpendSeries(monthlyData) {
@@ -126,37 +104,4 @@ export function getMonthlySpendSeries(monthlyData) {
         : month;
     return { month, label, spent, income };
   });
-}
-
-export function getCategoryDistribution(transactions, opts = {}) {
-  const index = computeCategorySpendIndex(transactions, opts);
-  return selectCategoryDistributionFromIndex(
-    index,
-    opts.customCategories || [],
-  );
-}
-
-export function getTopMerchants(
-  transactions,
-  { excludedTxIds = new Set() } = {},
-  limit = 10,
-) {
-  const list = Array.isArray(transactions) ? transactions : [];
-  const excluded =
-    excludedTxIds instanceof Set ? excludedTxIds : new Set(excludedTxIds);
-  const merchants = {};
-
-  for (const tx of list) {
-    if (!tx || excluded.has(tx.id) || tx.amount >= 0) continue;
-    const name = (tx.description || "").trim();
-    if (!name) continue;
-    if (!merchants[name]) merchants[name] = { name, count: 0, total: 0 };
-    merchants[name].count++;
-    merchants[name].total += Math.abs(tx.amount / 100);
-  }
-
-  return Object.values(merchants)
-    .map((m) => ({ ...m, total: Math.round(m.total) }))
-    .sort((a, b) => b.total - a.total)
-    .slice(0, limit);
 }

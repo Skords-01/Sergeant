@@ -1,11 +1,9 @@
 import { useMemo } from "react";
-import {
-  getTopMerchants,
-  getMonthlySpendSeries,
-  getMonthlyTrendComparison,
-} from "../lib/finykStats";
+import { getMonthlySpendSeries } from "../lib/finykStats";
 import {
   getMonthlySummary,
+  getTopMerchants,
+  getTrendComparison,
   computeCategorySpendIndex,
   selectTopCategoriesFromIndex,
   selectCategoryDistributionFromIndex,
@@ -76,7 +74,7 @@ export function useAnalytics({ mono, storage, monthlyHistory = [] }) {
     if (monthlyHistory.length < 2) return null;
     const curr = monthlyHistory[monthlyHistory.length - 1];
     const prev = monthlyHistory[monthlyHistory.length - 2];
-    return getMonthlyTrendComparison(
+    return getTrendComparison(
       curr?.transactions || [],
       prev?.transactions || [],
       { excludedTxIds, txSplits },

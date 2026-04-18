@@ -11,6 +11,7 @@ import {
   resolveExpenseCategoryMeta,
 } from "../utils";
 import { getSubscriptionAmountMeta } from "../domain/subscriptionUtils.js";
+import { getMonthlySummary } from "../domain/selectors";
 import { Skeleton } from "@shared/components/ui/Skeleton";
 import { cn } from "@shared/lib/cn";
 import { THEME_HEX } from "@shared/lib/themeHex.js";
@@ -119,13 +120,13 @@ export function Overview({
     () => calcFinykSpendingTotal(statTx, { txSplits }),
     [statTx, txSplits],
   );
-  const income = useMemo(
-    () =>
-      statTx
-        .filter((t) => t.amount > 0)
-        .reduce((s, t) => s + t.amount / 100, 0),
-    [statTx],
+  // Pure selector keeps summary math out of the component; rounded totals
+  // match the spend/income totals shown on the Analytics page.
+  const monthlySummary = useMemo(
+    () => getMonthlySummary(realTx, { excludedTxIds, txSplits }),
+    [realTx, excludedTxIds, txSplits],
   );
+  const income = monthlySummary.income;
   const projectedSpend =
     daysPassed > 0 ? (spent / daysPassed) * daysInMonth : 0;
 
