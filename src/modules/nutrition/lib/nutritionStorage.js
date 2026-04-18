@@ -54,8 +54,10 @@ export function loadNutritionPrefs(key = NUTRITION_PREFS_KEY) {
   if (!p || typeof p !== "object" || Array.isArray(p))
     return defaultNutritionPrefs();
   try {
+    const defaults = defaultNutritionPrefs();
+    const waterGoalMl = optionalPositiveNumber(p.waterGoalMl);
     return {
-      ...defaultNutritionPrefs(),
+      ...defaults,
       ...p,
       servings: p.servings != null ? Number(p.servings) || 1 : 1,
       timeMinutes: p.timeMinutes != null ? Number(p.timeMinutes) || 25 : 25,
@@ -82,6 +84,7 @@ export function loadNutritionPrefs(key = NUTRITION_PREFS_KEY) {
         p.reminderHour != null && Number.isFinite(Number(p.reminderHour))
           ? Math.min(23, Math.max(0, Math.floor(Number(p.reminderHour))))
           : 12,
+      waterGoalMl: waterGoalMl != null ? waterGoalMl : defaults.waterGoalMl,
     };
   } catch {
     return defaultNutritionPrefs();
@@ -96,6 +99,39 @@ export function makeDefaultPantry() {
   return { id: "home", name: "Дім", items: [], text: "" };
 }
 
+function sanitizePantryItem(raw) {
+  if (!raw || typeof raw !== "object") return null;
+  const name = String(raw.name || "").trim();
+  if (!name) return null;
+  const qtyNum = Number(raw.qty);
+  const qty = raw.qty == null || !Number.isFinite(qtyNum) ? null : qtyNum;
+  return {
+    name,
+    qty,
+    unit: raw.unit == null ? null : String(raw.unit),
+    notes: raw.notes == null ? null : String(raw.notes),
+  };
+}
+
+export function normalizePantries(raw) {
+  if (!Array.isArray(raw)) return [];
+  const out = [];
+  const seenIds = new Set();
+  for (const p of raw) {
+    if (!p || typeof p !== "object") continue;
+    let id = p.id != null ? String(p.id).trim() : "";
+    if (!id || seenIds.has(id)) id = `p_${Date.now()}_${out.length}`;
+    seenIds.add(id);
+    const name = String(p.name || "Склад").trim() || "Склад";
+    const items = Array.isArray(p.items)
+      ? p.items.map(sanitizePantryItem).filter(Boolean)
+      : [];
+    const text = p.text == null ? "" : String(p.text);
+    out.push({ id, name, items, text });
+  }
+  return out;
+}
+
 export function loadActivePantryId(activeKey = NUTRITION_ACTIVE_PANTRY_KEY) {
   const v = nutritionStorage.readRaw(activeKey, null);
   return v ? String(v) : "home";
@@ -106,7 +142,8 @@ export function loadPantries(
   activeKey = NUTRITION_ACTIVE_PANTRY_KEY,
 ) {
   const parsed = nutritionStorage.readJSON(key, null);
-  if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+  const normalized = normalizePantries(parsed);
+  if (normalized.length > 0) return normalized;
 
   // Legacy v0 pantry migration is handled by storageManager (nutrition_001_migrate_legacy_pantry).
   // By the time this code runs after app boot, the v1 key already has data if any v0 data existed.
