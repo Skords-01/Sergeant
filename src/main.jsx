@@ -1,48 +1,40 @@
-import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import App from "./core/App";
 import "./index.css";
 import { storageManager } from "@shared/lib/storageManager.js";
+import { initSentry, Sentry } from "./core/sentry.js";
 
+initSentry();
 storageManager.runAll();
 
-class ErrorBoundary extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = { error: null };
-  }
-  static getDerivedStateFromError(e) {
-    return { error: e };
-  }
-  render() {
-    if (this.state.error) {
-      return (
-        <div className="p-8 font-sans">
-          <h2 className="text-lg font-semibold text-text">Щось пішло не так</h2>
-          <pre className="text-xs text-danger whitespace-pre-wrap mt-2">
-            {this.state.error.message}
-          </pre>
-          <button
-            type="button"
-            onClick={() => window.location.reload()}
-            className="mt-4 px-4 py-2 rounded-xl border border-line bg-panel text-sm font-medium text-text"
-          >
-            Перезавантажити
-          </button>
-        </div>
-      );
-    }
-    return this.props.children;
-  }
+function ErrorFallback({ error, resetError }) {
+  return (
+    <div className="p-8 font-sans">
+      <h2 className="text-lg font-semibold text-text">Щось пішло не так</h2>
+      <pre className="text-xs text-danger whitespace-pre-wrap mt-2">
+        {error?.message}
+      </pre>
+      <button
+        type="button"
+        onClick={() => {
+          resetError?.();
+          window.location.reload();
+        }}
+        className="mt-4 px-4 py-2 rounded-xl border border-line bg-panel text-sm font-medium text-text"
+      >
+        Перезавантажити
+      </button>
+    </div>
+  );
 }
 
 ReactDOM.createRoot(document.getElementById("root")).render(
-  <ErrorBoundary>
+  <Sentry.ErrorBoundary fallback={ErrorFallback}>
     <BrowserRouter>
       <App />
     </BrowserRouter>
-  </ErrorBoundary>,
+  </Sentry.ErrorBoundary>,
 );
 
 if ("serviceWorker" in navigator) {

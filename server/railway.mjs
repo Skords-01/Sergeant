@@ -2,6 +2,12 @@
  * Один процес Express для деплою API на Railway (обхід ліміту Vercel Hobby на кількість functions).
  * Шляхи збігаються з Vercel: /api/chat, /api/mono, /api/nutrition/*
  */
+import { initSentry, attachSentryErrorHandler } from "./sentry.js";
+
+// Має виконатися до `import express` та створення app, щоб Sentry міг
+// автоматично заінструментувати HTTP-клієнти та фреймворк.
+initSentry();
+
 import express from "express";
 
 import { toNodeHandler } from "better-auth/node";
@@ -145,6 +151,9 @@ app.use(
 app.post("/api/push/subscribe", wrap(pushSubscribe));
 app.delete("/api/push/subscribe", wrap(pushUnsubscribe));
 app.post("/api/push/send", wrap(sendPush));
+
+// Sentry error handler має стояти перед нашим, щоб захопити stack trace.
+attachSentryErrorHandler(app);
 
 app.use((err, req, res, _next) => {
   const rid = req?.requestId;
