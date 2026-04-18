@@ -1,13 +1,11 @@
-import { useState, useCallback, useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { cn } from "@shared/lib/cn";
-import { ProgressRing } from "@shared/components/ui/ProgressRing";
 import { Icon } from "@shared/components/ui/Icon";
 import { safeReadLS, safeWriteLS, safeRemoveLS } from "@shared/lib/storage.js";
 import { STORAGE_KEYS } from "@shared/lib/storageKeys.js";
-import { HubRecommendations } from "./HubRecommendations.jsx";
-import { WeeklyDigestCard } from "./WeeklyDigestCard.jsx";
-import { CoachInsightCard } from "./CoachInsightCard.jsx";
-import { DailyFinykSummaryCard } from "./DailyFinykSummaryCard.jsx";
+import { TodayFocusCard, useDashboardFocus } from "./TodayFocusCard.jsx";
+import { HubInsightsPanel } from "./HubInsightsPanel.jsx";
+import { WeeklyDigestCard, hasLiveWeeklyDigest } from "./WeeklyDigestCard.jsx";
 import { useWeeklyDigest, loadDigest, getWeekKey } from "./useWeeklyDigest.js";
 import {
   DndContext,
@@ -27,7 +25,7 @@ import { CSS } from "@dnd-kit/utilities";
 
 const DASHBOARD_ORDER_KEY = STORAGE_KEYS.DASHBOARD_ORDER;
 const DEFAULT_ORDER = ["finyk", "fizruk", "routine", "nutrition"];
-const HUB_PREFS_KEY = STORAGE_KEYS.HUB_PREFS;
+const DRAG_HINT_KEY = "hub_drag_hint_seen_v1";
 
 function loadOrder() {
   const saved = safeReadLS(DASHBOARD_ORDER_KEY, null);
@@ -50,14 +48,14 @@ export function resetDashboardOrder() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// MODULE CONFIGURATIONS — Updated with new brand colors
+// MODULE CONFIGURATIONS — calm accent-only styling
 // ═══════════════════════════════════════════════════════════════════════════
 const MODULE_CONFIGS = {
   finyk: {
     icon: (
       <svg
-        width="18"
-        height="18"
+        width="16"
+        height="16"
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
@@ -71,13 +69,11 @@ const MODULE_CONFIGS = {
     ),
     label: "Фінік",
     module: "finyk",
-    colorClass: "bg-finyk-soft text-finyk",
-    borderClass: "border-brand-200/60",
-    hoverGradient: "from-brand-50 to-teal-50/50",
-    ringVariant: "finyk",
+    iconClass: "bg-finyk-soft text-finyk",
+    accentClass: "bg-finyk",
     description: "Транзакції та бюджети",
+    hasGoal: false,
     getPreview: () => {
-      // Quick finance preview from localStorage
       try {
         const data = localStorage.getItem("finyk_quick_stats");
         if (data) {
@@ -98,8 +94,8 @@ const MODULE_CONFIGS = {
   fizruk: {
     icon: (
       <svg
-        width="18"
-        height="18"
+        width="16"
+        height="16"
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
@@ -114,18 +110,17 @@ const MODULE_CONFIGS = {
     ),
     label: "Фізрук",
     module: "fizruk",
-    colorClass: "bg-fizruk-soft text-fizruk",
-    borderClass: "border-teal-200/60",
-    hoverGradient: "from-teal-50 to-brand-50/50",
-    ringVariant: "fizruk",
+    iconClass: "bg-fizruk-soft text-fizruk",
+    accentClass: "bg-fizruk",
     description: "Тренування та прогрес",
+    hasGoal: false,
     getPreview: () => {
       try {
         const data = localStorage.getItem("fizruk_quick_stats");
         if (data) {
           const stats = JSON.parse(data);
           return {
-            main: stats.weekWorkouts ? `${stats.weekWorkouts} тренувань` : null,
+            main: stats.weekWorkouts ? `${stats.weekWorkouts} трен.` : null,
             sub: stats.streak ? `Серія: ${stats.streak} днів` : null,
           };
         }
@@ -136,8 +131,8 @@ const MODULE_CONFIGS = {
   routine: {
     icon: (
       <svg
-        width="18"
-        height="18"
+        width="16"
+        height="16"
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
@@ -151,11 +146,10 @@ const MODULE_CONFIGS = {
     ),
     label: "Рутина",
     module: "routine",
-    colorClass: "bg-routine-surface text-routine",
-    borderClass: "border-coral-200/60",
-    hoverGradient: "from-coral-50 to-routine-surface/50",
-    ringVariant: "routine",
+    iconClass: "bg-routine-surface text-routine",
+    accentClass: "bg-routine",
     description: "Звички та щоденні цілі",
+    hasGoal: true,
     getPreview: () => {
       try {
         const data = localStorage.getItem("routine_quick_stats");
@@ -179,8 +173,8 @@ const MODULE_CONFIGS = {
   nutrition: {
     icon: (
       <svg
-        width="18"
-        height="18"
+        width="16"
+        height="16"
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
@@ -195,11 +189,10 @@ const MODULE_CONFIGS = {
     ),
     label: "Харчування",
     module: "nutrition",
-    colorClass: "bg-nutrition-soft text-nutrition",
-    borderClass: "border-lime-200/60",
-    hoverGradient: "from-lime-50 to-nutrition-soft/50",
-    ringVariant: "nutrition",
+    iconClass: "bg-nutrition-soft text-nutrition",
+    accentClass: "bg-nutrition",
     description: "КБЖВ та раціон",
+    hasGoal: true,
     getPreview: () => {
       try {
         const data = localStorage.getItem("nutrition_quick_stats");
@@ -220,242 +213,85 @@ const MODULE_CONFIGS = {
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
-// DAILY PROGRESS HERO — Shows overall day progress with enhanced visuals
+// DATE HEADER — replaces the decorative hero with a dense info line
 // ═══════════════════════════════════════════════════════════════════════════
-function DailyProgressHero() {
-  const [progress, setProgress] = useState({ total: 0, completed: 0 });
-  const [isComplete, setIsComplete] = useState(false);
-
-  useEffect(() => {
-    // Aggregate progress from all modules
-    let total = 0;
-    let completed = 0;
-
-    // Check routine habits
+function DateHeader() {
+  const text = useMemo(() => {
     try {
-      const routineData = localStorage.getItem("routine_quick_stats");
-      if (routineData) {
-        const stats = JSON.parse(routineData);
-        total += stats.todayTotal || 0;
-        completed += stats.todayDone || 0;
-      }
-    } catch {}
-
-    // Check nutrition goals (simplified)
-    try {
-      const nutritionData = localStorage.getItem("nutrition_quick_stats");
-      if (nutritionData) {
-        const stats = JSON.parse(nutritionData);
-        if (stats.calGoal) {
-          total += 1;
-          if (stats.todayCal >= stats.calGoal * 0.8) completed += 1;
-        }
-      }
-    } catch {}
-
-    // Check workout for today
-    try {
-      const fizrukData = localStorage.getItem("fizruk_quick_stats");
-      if (fizrukData) {
-        const stats = JSON.parse(fizrukData);
-        if (stats.plannedToday) {
-          total += 1;
-          if (stats.completedToday) completed += 1;
-        }
-      }
-    } catch {}
-
-    const finalTotal = total || 4;
-    const wasComplete =
-      progress.completed === progress.total && progress.total > 0;
-    const nowComplete = completed === finalTotal && finalTotal > 0;
-
-    if (nowComplete && !wasComplete) {
-      setIsComplete(true);
-      setTimeout(() => setIsComplete(false), 2000);
+      return new Date().toLocaleDateString("uk-UA", {
+        weekday: "short",
+        day: "numeric",
+        month: "long",
+      });
+    } catch {
+      return "";
     }
-
-    setProgress({ total: finalTotal, completed });
-  }, [progress.completed, progress.total]);
-
-  const percentage =
-    progress.total > 0
-      ? Math.round((progress.completed / progress.total) * 100)
-      : 0;
-
-  const greeting = useMemo(() => {
-    const hour = new Date().getHours();
-    if (hour < 12) return "Добрий ранок";
-    if (hour < 17) return "Добрий день";
-    return "Добрий вечір";
   }, []);
 
-  const motivationalText = useMemo(() => {
-    if (percentage === 0) return "Час почати день!";
-    if (percentage < 25) return "Гарний початок!";
-    if (percentage < 50) return "Так тримати!";
-    if (percentage < 75) return "Чудовий прогрес!";
-    if (percentage < 100) return "Майже все!";
-    return "День завершено!";
-  }, [percentage]);
-
   return (
-    <div
-      className={cn(
-        "relative overflow-hidden rounded-3xl border shadow-card p-5",
-        "bg-gradient-to-br from-white via-brand-50/20 to-teal-50/30",
-        "dark:from-panel dark:via-panel dark:to-panel",
-        "border-brand-100/60 dark:border-brand-800/30",
-        "transition-all duration-500",
-        isComplete && "animate-success-ring",
-      )}
-    >
-      <div className="relative flex items-center gap-5">
-        {/* Progress Ring — glow comes from ProgressRing itself */}
-        <div
-          className={cn(
-            "relative",
-            percentage === 100 && "animate-celebration-pop",
-          )}
-        >
-          <ProgressRing
-            value={progress.completed}
-            max={progress.total}
-            size="lg"
-            variant="brand"
-            animate
-          >
-            <div className="flex flex-col items-center">
-              <span className="text-2xl font-bold text-brand-600 dark:text-brand-400 tabular-nums leading-none">
-                {percentage}%
-              </span>
-            </div>
-          </ProgressRing>
-        </div>
-
-        {/* Text content with enhanced typography */}
-        <div className="flex-1 min-w-0">
-          <p className="text-[10px] font-semibold text-brand-600/70 dark:text-brand-400/70 uppercase tracking-widest mb-1">
-            {greeting}
-          </p>
-          <h1 className="text-xl font-bold text-text mb-1.5 text-balance leading-tight">
-            {motivationalText}
-          </h1>
-          <div className="flex items-center gap-2">
-            <p className="text-sm text-muted">
-              <span className="font-semibold text-brand-600 dark:text-brand-400 tabular-nums">
-                {progress.completed}
-              </span>
-              <span className="mx-1">/</span>
-              <span className="tabular-nums">{progress.total}</span>
-              <span className="ml-1.5">завдань</span>
-            </p>
-            {percentage === 100 && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-brand-100 dark:bg-brand-900/30 text-brand-700 dark:text-brand-400 text-[10px] font-semibold">
-                <Icon name="check" size={10} strokeWidth={3} />
-                Виконано
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
+    <p className="px-0.5 text-xs font-medium text-muted uppercase tracking-wider">
+      {text}
+    </p>
   );
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// MODULE CARD — Interactive card with preview data and enhanced visuals
+// MODULE CARD — calm surface with colored left accent
 // ═══════════════════════════════════════════════════════════════════════════
 function ModuleCard({ config, onClick, dragProps, isDragging }) {
   const preview = config.getPreview();
-
-  // Module-specific gradient classes
-  const moduleGradients = {
-    finyk: "module-card-finyk",
-    fizruk: "module-card-fizruk",
-    routine: "module-card-routine",
-    nutrition: "module-card-nutrition",
-  };
-
-  const moduleGlows = {
-    finyk: "hover-glow",
-    fizruk: "hover-glow-teal",
-    routine: "hover-glow-coral",
-    nutrition: "hover-glow-lime",
-  };
+  const showProgress =
+    config.hasGoal && preview.progress !== undefined && preview.progress > 0;
 
   return (
     <button
       type="button"
       onClick={onClick}
       className={cn(
-        "group relative w-full text-left",
-        "p-4 rounded-2xl border",
-        "shadow-card transition-all duration-200 ease-smooth",
-        "hover:shadow-float hover:-translate-y-1",
-        "active:scale-[0.97] active:shadow-card",
-        "focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
-        moduleGradients[config.module] || "bg-panel",
-        moduleGlows[config.module],
-        isDragging &&
-          "opacity-80 scale-[0.97] shadow-float z-50 cursor-grabbing rotate-1",
+        "group relative w-full text-left overflow-hidden",
+        "p-4 rounded-2xl border border-line/60 bg-panel",
+        "shadow-card transition-shadow duration-200",
+        "hover:shadow-float",
+        "active:scale-[0.98]",
+        "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2",
+        isDragging && "opacity-70 shadow-float z-50 cursor-grabbing",
       )}
       {...dragProps}
     >
-      <div className="relative">
-        {/* Header row */}
-        <div className="flex items-center gap-2.5 mb-3">
+      {/* Left accent bar — the only color on the card */}
+      <div
+        className={cn(
+          "absolute left-0 top-3 bottom-3 w-1 rounded-r-full",
+          config.accentClass,
+        )}
+        aria-hidden
+      />
+
+      <div className="pl-2">
+        <div className="flex items-center gap-2 mb-2.5">
           <div
             className={cn(
-              "w-10 h-10 rounded-xl flex items-center justify-center shrink-0",
-              "transition-transform duration-200 ease-smooth",
-              "group-hover:scale-105",
-              "shadow-sm",
-              config.colorClass,
+              "w-7 h-7 rounded-lg flex items-center justify-center shrink-0",
+              config.iconClass,
             )}
           >
             {config.icon}
           </div>
-          <div className="flex-1 min-w-0">
-            <span className="text-[11px] font-bold text-muted uppercase tracking-wider">
-              {config.label}
-            </span>
-          </div>
-          <div
-            className={cn(
-              "w-7 h-7 rounded-lg flex items-center justify-center",
-              "bg-line/30 dark:bg-white/5",
-              "group-hover:bg-line/50 dark:group-hover:bg-white/10",
-              "transition-all duration-200",
-              "group-hover:translate-x-0.5",
-            )}
-          >
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="text-muted group-hover:text-text transition-colors"
-              aria-hidden
-            >
-              <path d="M9 18l6-6-6-6" />
-            </svg>
-          </div>
+          <span className="text-[11px] font-semibold text-muted uppercase tracking-wider truncate">
+            {config.label}
+          </span>
         </div>
 
-        {/* Preview content */}
-        <div className="space-y-1.5">
+        <div className="space-y-1">
           {preview.main ? (
             <>
               <p className="text-xl font-bold text-text tabular-nums leading-tight">
                 {preview.main}
               </p>
               {preview.sub && (
-                <p className="text-xs text-muted leading-snug">{preview.sub}</p>
+                <p className="text-xs text-muted leading-snug truncate">
+                  {preview.sub}
+                </p>
               )}
             </>
           ) : (
@@ -464,16 +300,12 @@ function ModuleCard({ config, onClick, dragProps, isDragging }) {
             </p>
           )}
 
-          {/* Mini progress bar */}
-          {preview.progress !== undefined && preview.progress > 0 && (
-            <div className="mt-2.5 h-1.5 rounded-full bg-line/40 dark:bg-white/10 overflow-hidden">
+          {showProgress && (
+            <div className="mt-2.5 h-1 rounded-full bg-line/40 dark:bg-white/10 overflow-hidden">
               <div
                 className={cn(
                   "h-full rounded-full transition-all duration-700 ease-out",
-                  config.module === "routine" && "bg-routine",
-                  config.module === "nutrition" && "bg-nutrition",
-                  config.module === "fizruk" && "bg-fizruk",
-                  config.module === "finyk" && "bg-finyk",
+                  config.accentClass,
                 )}
                 style={{ width: `${Math.min(preview.progress, 100)}%` }}
               />
@@ -541,11 +373,33 @@ function useMondayAutoDigest() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
+// WEEKLY DIGEST FOOTER — compact link when no fresh digest
+// ═══════════════════════════════════════════════════════════════════════════
+function WeeklyDigestFooter({ onExpand }) {
+  return (
+    <button
+      type="button"
+      onClick={onExpand}
+      className={cn(
+        "w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl",
+        "text-xs font-medium text-muted hover:text-text",
+        "hover:bg-panelHi transition-colors",
+      )}
+    >
+      <span>Тижневий звіт</span>
+      <Icon name="chevron-right" size={14} strokeWidth={2.5} />
+    </button>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // MAIN HUB DASHBOARD
 // ═══════════════════════════════════════════════════════════════════════════
 export function HubDashboard({ onOpenModule, onOpenChat }) {
   const [order, setOrder] = useState(loadOrder);
   useMondayAutoDigest();
+
+  const { focus, rest, dismiss } = useDashboardFocus();
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -562,51 +416,53 @@ export function HubDashboard({ onOpenModule, onOpenChat }) {
         const newIndex = prev.indexOf(over.id);
         const next = arrayMove(prev, oldIndex, newIndex);
         saveOrder(next);
+        try {
+          localStorage.setItem(DRAG_HINT_KEY, "1");
+        } catch {}
         return next;
       });
     }
   }, []);
 
-  const [showCoach, setShowCoach] = useState(
-    () => safeReadLS(HUB_PREFS_KEY, {}).showCoach !== false,
-  );
-
+  const [showDragHint, setShowDragHint] = useState(() => {
+    try {
+      return localStorage.getItem(DRAG_HINT_KEY) !== "1";
+    } catch {
+      return false;
+    }
+  });
   useEffect(() => {
-    const handler = (e) => {
-      if (e.key === HUB_PREFS_KEY || e.key === null) {
-        setShowCoach(safeReadLS(HUB_PREFS_KEY, {}).showCoach !== false);
-      }
-    };
-    window.addEventListener("storage", handler);
-    return () => window.removeEventListener("storage", handler);
-  }, []);
+    if (!showDragHint) return;
+    const t = setTimeout(() => setShowDragHint(false), 6000);
+    return () => clearTimeout(t);
+  }, [showDragHint]);
+
+  const [digestExpanded, setDigestExpanded] = useState(false);
+  const digestFresh = hasLiveWeeklyDigest();
+  const renderDigestCard = digestFresh || digestExpanded;
 
   return (
-    <div className="space-y-5">
-      {/* Daily Progress Hero */}
-      <DailyProgressHero />
+    <div className="space-y-4">
+      <DateHeader />
 
-      {/* Daily Finyk Summary (today's spend + top category, soft reminders) */}
-      <DailyFinykSummaryCard />
+      {/* Today focus — the ONE primary action on the dashboard */}
+      <TodayFocusCard
+        focus={focus}
+        onAction={onOpenModule}
+        onDismiss={dismiss}
+      />
 
-      {/* Smart Recommendations */}
-      <HubRecommendations onOpenModule={onOpenModule} />
-
-      {/* AI Coach Insight */}
-      {showCoach && <CoachInsightCard onOpenChat={onOpenChat} />}
-
-      {/* Weekly Digest */}
-      <WeeklyDigestCard />
-
-      {/* Module Cards Grid */}
-      <section className="space-y-3">
-        <div className="flex items-center justify-between px-0.5">
-          <h2 className="text-xs font-semibold text-muted uppercase tracking-wider">
+      {/* Module grid */}
+      <section className="space-y-2">
+        <div className="flex items-center justify-between px-0.5 min-h-[18px]">
+          <h2 className="text-[11px] font-semibold text-muted uppercase tracking-wider">
             Модулі
           </h2>
-          <span className="text-[10px] text-subtle">
-            Утримуй, щоб переставити
-          </span>
+          {showDragHint && (
+            <span className="text-[10px] text-subtle">
+              Утримуй, щоб переставити
+            </span>
+          )}
         </div>
 
         <DndContext
@@ -615,7 +471,7 @@ export function HubDashboard({ onOpenModule, onOpenChat }) {
           onDragEnd={handleDragEnd}
         >
           <SortableContext items={order} strategy={rectSortingStrategy}>
-            <div className="grid grid-cols-2 gap-3 stagger-enter">
+            <div className="grid grid-cols-2 gap-3">
               {order.map((id) => (
                 <SortableCard key={id} id={id} onOpenModule={onOpenModule} />
               ))}
@@ -623,6 +479,21 @@ export function HubDashboard({ onOpenModule, onOpenChat }) {
           </SortableContext>
         </DndContext>
       </section>
+
+      {/* Unified insights — collapsed by default */}
+      <HubInsightsPanel
+        items={rest}
+        onOpenModule={onOpenModule}
+        onOpenChat={onOpenChat}
+        onDismiss={dismiss}
+      />
+
+      {/* Weekly digest — full card only when fresh/newly generated */}
+      {renderDigestCard ? (
+        <WeeklyDigestCard />
+      ) : (
+        <WeeklyDigestFooter onExpand={() => setDigestExpanded(true)} />
+      )}
     </div>
   );
 }
