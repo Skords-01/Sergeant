@@ -256,8 +256,8 @@ describe("tags and categories", () => {
 
 describe("backup roundtrip", () => {
   it("build → apply повертає такий самий state", () => {
-    let s = createHabit(fresh(), { name: "A" });
-    s = toggleHabitCompletion(s, s.habits[0].id, "2024-06-15");
+    const s1 = createHabit(fresh(), { name: "A" });
+    toggleHabitCompletion(s1, s1.habits[0].id, "2024-06-15");
     const payload = buildRoutineBackupPayload();
     expect(payload.kind).toBe("hub-routine-backup");
     localStorage.clear();
