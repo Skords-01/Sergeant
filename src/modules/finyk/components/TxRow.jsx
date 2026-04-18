@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { memo, useMemo, useState } from "react";
 import { getCategory, getIncomeCategory, fmtAmt, fmtDate } from "../utils";
 import {
   MCC_CATEGORIES,
@@ -34,7 +34,7 @@ function getAccountShortName(acc) {
   return typeMap[acc.type] || acc.type || "Рахунок";
 }
 
-export function TxRow({
+function TxRowImpl({
   tx,
   onClick,
   highlighted,
@@ -450,3 +450,5 @@ export function TxRow({
     </div>
   );
 }
+
+export const TxRow = memo(TxRowImpl);

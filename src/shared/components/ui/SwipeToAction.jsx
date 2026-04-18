@@ -1,10 +1,10 @@
-import { useRef, useState, useCallback } from "react";
+import { memo, useRef, useState, useCallback } from "react";
 import { cn } from "@shared/lib/cn";
 
 const SWIPE_THRESHOLD = 60;
 const MAX_SWIPE = 100;
 
-export function SwipeToAction({
+function SwipeToActionImpl({
   children,
   onSwipeLeft,
   onSwipeRight,
@@ -147,3 +147,5 @@ export function SwipeToAction({
     </div>
   );
 }
+
+export const SwipeToAction = memo(SwipeToActionImpl);
