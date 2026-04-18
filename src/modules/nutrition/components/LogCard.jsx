@@ -5,6 +5,7 @@ import { cn } from "@shared/lib/cn";
 import { ConfirmDialog } from "@shared/components/ui/ConfirmDialog";
 import { SwipeToAction } from "@shared/components/ui/SwipeToAction";
 import { Icon } from "@shared/components/ui/Icon";
+import { EmptyState } from "@shared/components/ui/EmptyState";
 import {
   searchMealsByName,
   getMacrosForDateRange,
@@ -371,7 +372,7 @@ export function LogCard({
               Калорії по днях (останні {Math.min(statsRange, statsRows.length)})
             </div>
             {statsRows.length === 0 ? (
-              <div className="text-xs text-muted">Немає даних</div>
+              <div className="text-xs text-muted">Поки що порожньо</div>
             ) : (
               (() => {
                 const kcals = statsRows.map((r) => Number(r.kcal) || 0);
@@ -450,9 +451,27 @@ export function LogCard({
         </div>
 
         {meals.length === 0 ? (
-          <div className="text-center text-muted text-sm py-8">
-            Поки немає записів. Додайте перший прийом їжі.
-          </div>
+          <EmptyState
+            compact
+            icon={
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.6"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M3 3h18v4H3zM5 7v14h14V7" />
+                <path d="M9 11h6M9 15h6" />
+              </svg>
+            }
+            title="Поки немає записів"
+            description="Додайте перший прийом їжі, щоб почати вести журнал."
+          />
         ) : (
           <VirtualMealList
             groups={groups}

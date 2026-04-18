@@ -50,6 +50,7 @@ export const Input = forwardRef(function Input(
       )}
       <input
         ref={ref}
+        aria-invalid={error ? true : undefined}
         className={cn(
           "w-full text-text placeholder:text-subtle/70",
           "outline-none transition-all duration-200",
@@ -87,6 +88,7 @@ export const Textarea = forwardRef(function Textarea(
     <textarea
       ref={ref}
       rows={rows}
+      aria-invalid={error ? true : undefined}
       className={cn(
         "w-full px-4 py-3 text-base text-text placeholder:text-subtle/70 rounded-2xl",
         "outline-none transition-all duration-200 resize-none",

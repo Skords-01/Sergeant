@@ -90,6 +90,8 @@ export const Button = forwardRef(function Button(
       ref={ref}
       type={type}
       disabled={isDisabled}
+      aria-busy={loading || undefined}
+      aria-live={loading ? "polite" : undefined}
       className={cn(
         // Base styles
         "inline-flex items-center justify-center",
@@ -106,8 +108,13 @@ export const Button = forwardRef(function Button(
     >
       {loading ? (
         <>
-          <LoadingSpinner className="animate-spin" />
-          {!iconOnly && <span className="opacity-0">{children}</span>}
+          <LoadingSpinner className="animate-spin" aria-hidden="true" />
+          {!iconOnly && (
+            <span className="opacity-0" aria-hidden="true">
+              {children}
+            </span>
+          )}
+          <span className="sr-only">Завантаження…</span>
         </>
       ) : (
         children

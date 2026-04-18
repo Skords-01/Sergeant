@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { cn } from "@shared/lib/cn";
+import { EmptyState } from "@shared/components/ui/EmptyState";
 import { MEASURE_FIELDS, useMeasurements } from "../hooks/useMeasurements";
 
 const inp =
@@ -232,9 +233,11 @@ export function Measurements() {
             </div>
           ))}
           {(entries || []).length === 0 && (
-            <div className="p-6 text-center text-sm text-subtle">
-              Поки замірів немає
-            </div>
+            <EmptyState
+              compact
+              title="Поки замірів немає"
+              description="Додай перший запис, щоб бачити динаміку показників."
+            />
           )}
         </div>
       </div>

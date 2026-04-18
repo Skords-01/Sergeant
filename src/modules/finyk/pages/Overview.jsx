@@ -21,6 +21,7 @@ import { getCategorySpendList } from "../domain/categories";
 import { filterStatTransactions } from "../domain/transactions";
 import { Skeleton } from "@shared/components/ui/Skeleton";
 import { Icon } from "@shared/components/ui/Icon";
+import { EmptyState } from "@shared/components/ui/EmptyState";
 import { cn } from "@shared/lib/cn";
 import { THEME_HEX } from "@shared/lib/themeHex.js";
 import { SyncStatusBadge } from "../components/SyncStatusBadge";
@@ -1006,17 +1007,20 @@ export function Overview({
             </Suspense>
           </div>
         ) : (
-          <div className="bg-panel border border-dashed border-line/60 rounded-2xl p-8 text-center shadow-card">
-            <p className="text-sm text-subtle">
-              Поки немає витрат за категоріями цього місяця.
-            </p>
-            <button
-              type="button"
-              onClick={() => onNavigate("transactions")}
-              className="mt-4 text-sm font-medium text-primary hover:underline"
-            >
-              Переглянути операції
-            </button>
+          <div className="bg-panel border border-dashed border-line/60 rounded-2xl shadow-card">
+            <EmptyState
+              title="Поки немає витрат"
+              description="Цього місяця витрат за категоріями ще немає."
+              action={
+                <button
+                  type="button"
+                  onClick={() => onNavigate("transactions")}
+                  className="text-sm font-medium text-primary hover:underline"
+                >
+                  Переглянути операції
+                </button>
+              }
+            />
           </div>
         )}
 

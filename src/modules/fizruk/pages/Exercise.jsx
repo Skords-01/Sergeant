@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { cn } from "@shared/lib/cn";
+import { EmptyState } from "@shared/components/ui/EmptyState";
 import { useExerciseCatalog } from "../hooks/useExerciseCatalog";
 import { useWorkouts } from "../hooks/useWorkouts";
 import { epley1rm, suggestNextSet } from "../lib/workoutStats";
@@ -551,9 +552,11 @@ export function Exercise({ exerciseId }) {
             Історія сетів
           </div>
           {history.length === 0 ? (
-            <div className="text-sm text-subtle text-center py-6">
-              Ще немає записів по цій вправі
-            </div>
+            <EmptyState
+              compact
+              title="Поки немає записів"
+              description="Заверши хоча б один підхід — історія зʼявиться тут."
+            />
           ) : (
             <div className="space-y-2">
               {history.slice(0, 20).map(({ workout, item }) => (

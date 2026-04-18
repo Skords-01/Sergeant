@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { Button } from "@shared/components/ui/Button";
+import { EmptyState } from "@shared/components/ui/EmptyState";
 import { cn } from "@shared/lib/cn";
 import { useDialogFocusTrap } from "@shared/hooks/useDialogFocusTrap";
 import { useExerciseCatalog } from "../hooks/useExerciseCatalog";
@@ -211,9 +212,11 @@ export function PlanCalendar() {
             як у блоці відновлення).
           </p>
           {recoveryRows.length === 0 ? (
-            <p className="text-xs text-subtle">
-              Немає даних — потрібні завершені тренування з вправами.
-            </p>
+            <EmptyState
+              compact
+              title="Поки що порожньо"
+              description="Потрібні завершені тренування з вправами — дані зʼявляться автоматично."
+            />
           ) : (
             <ul className="space-y-2 max-h-64 overflow-y-auto">
               {recoveryRows.map((r) => (

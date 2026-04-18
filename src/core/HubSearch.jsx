@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { cn } from "@shared/lib/cn";
 import { Icon } from "@shared/components/ui/Icon";
+import { EmptyState } from "@shared/components/ui/EmptyState";
 
 function safeParseLS(key, fallback) {
   try {
@@ -294,18 +295,19 @@ export function HubSearch({ onClose, onOpenModule }) {
 
       <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4">
         {query.trim().length >= 2 && results.length === 0 && (
-          <div className="py-12 text-center text-muted text-sm">
-            <p className="text-3xl mb-2">🔍</p>
-            <p>Нічого не знайдено за «{query}»</p>
-          </div>
+          <EmptyState
+            icon={<Icon name="search" size={22} strokeWidth={1.6} />}
+            title="Нічого не знайдено"
+            description={`За запитом «${query}» нічого не знайшлося. Спробуй іншу фразу.`}
+          />
         )}
 
         {query.trim().length < 2 && (
-          <div className="py-12 text-center text-muted text-sm space-y-1">
-            <p className="text-3xl mb-2">🔎</p>
-            <p className="font-medium">Глобальний пошук</p>
-            <p className="text-xs">Транзакції, тренування, звички, їжа</p>
-          </div>
+          <EmptyState
+            icon={<Icon name="search" size={22} strokeWidth={1.6} />}
+            title="Глобальний пошук"
+            description="Транзакції, тренування, звички, їжа — все в одному місці."
+          />
         )}
 
         {Object.entries(grouped).map(([moduleId, group]) => (

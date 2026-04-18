@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 import { Button } from "@shared/components/ui/Button";
 import { ConfirmDialog } from "@shared/components/ui/ConfirmDialog";
+import { EmptyState } from "@shared/components/ui/EmptyState";
 import { cn } from "@shared/lib/cn";
 import { useExerciseCatalog } from "../hooks/useExerciseCatalog";
 import { useMeasurements } from "../hooks/useMeasurements";
@@ -482,9 +483,11 @@ export function Progress() {
             Обʼєм по мʼязах
           </div>
           {weeklyByMuscle.top.length === 0 ? (
-            <div className="text-sm text-subtle text-center py-6">
-              Немає даних за останні 4 тижні
-            </div>
+            <EmptyState
+              compact
+              title="Поки що порожньо"
+              description="Немає даних за останні 4 тижні."
+            />
           ) : (
             <div className="space-y-2">
               {weeklyByMuscle.top.map((m) => (
@@ -566,11 +569,19 @@ export function Progress() {
               )}
 
               {filtered.length === 0 ? (
-                <div className="text-sm text-subtle text-center py-6">
-                  {prs.length === 0
-                    ? "Поки немає силових PR"
-                    : "Немає PR для цієї групи м'язів"}
-                </div>
+                <EmptyState
+                  compact
+                  title={
+                    prs.length === 0
+                      ? "Поки немає силових PR"
+                      : "Немає PR для цієї групи мʼязів"
+                  }
+                  description={
+                    prs.length === 0
+                      ? "Заверши сети з вагою — рекорди зʼявляться тут автоматично."
+                      : "Спробуй іншу групу або скинь фільтр."
+                  }
+                />
               ) : (
                 <div className="space-y-2">
                   {filtered.map((p) => {

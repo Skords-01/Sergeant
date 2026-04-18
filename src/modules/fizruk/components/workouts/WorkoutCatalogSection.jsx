@@ -1,4 +1,5 @@
 import { Input } from "@shared/components/ui/Input";
+import { EmptyState } from "@shared/components/ui/EmptyState";
 import { cn } from "@shared/lib/cn";
 
 export function WorkoutCatalogSection({
@@ -41,9 +42,11 @@ export function WorkoutCatalogSection({
 
       <div className="bg-panel border border-line/60 rounded-2xl shadow-card overflow-hidden">
         {grouped.length === 0 ? (
-          <div className="p-6 text-center text-sm text-subtle">
-            Поки немає вправ. Додай першу через кнопку &quot;+ Додати&quot;.
-          </div>
+          <EmptyState
+            compact
+            title="Поки немає вправ"
+            description="Додай першу через кнопку «+ Додати»."
+          />
         ) : (
           grouped.map((g) => {
             const isOpen = open[g.id] ?? false;
