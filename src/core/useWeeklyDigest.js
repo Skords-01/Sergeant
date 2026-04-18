@@ -360,6 +360,16 @@ export function useWeeklyDigest(selectedWeekKey) {
     queryFn: () => loadDigest(weekKey) ?? null,
     staleTime: Infinity,
     gcTime: Infinity,
+    // React Query wraps even a synchronous `queryFn` in a Promise, so
+    // without `initialData` `query.data` is `undefined` for one render
+    // and `WeeklyDigestCard` would briefly render its empty state. Seed
+    // synchronously from localStorage so the first paint matches the
+    // pre-migration behavior (old code used `useState(() => loadDigest(...))`).
+    initialData: () => loadDigest(weekKey) ?? undefined,
+    initialDataUpdatedAt: () => {
+      const existing = loadDigest(weekKey);
+      return existing ? Date.now() : undefined;
+    },
   });
 
   const mutation = useMutation({
