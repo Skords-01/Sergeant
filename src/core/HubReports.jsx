@@ -280,7 +280,7 @@ function InsightCard({ emoji, title, stat, detail }) {
       <div className="min-w-0 flex-1 space-y-1">
         <p className="text-sm text-text leading-snug">{title}</p>
         <div className="flex items-baseline gap-2 flex-wrap">
-          <span className="text-lg font-bold text-accent">{stat}</span>
+          <span className="text-lg font-bold text-brand-600">{stat}</span>
           {detail && (
             <span className="text-xs text-muted truncate">{detail}</span>
           )}
@@ -316,7 +316,7 @@ export function HubReports() {
               className={cn(
                 "px-3 py-1.5 text-xs font-medium transition-colors",
                 period === p
-                  ? "bg-accent text-white"
+                  ? "bg-brand-500 text-white"
                   : "text-muted hover:text-text hover:bg-panelHi",
               )}
             >

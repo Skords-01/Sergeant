@@ -127,7 +127,7 @@ function WarmupCooldownChecklist({ title, items, onToggle, onInit, color }) {
 function SupersetBadge({ type }) {
   return (
     <span
-      className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full ${type === "circuit" ? "bg-accent/15 text-accent border border-accent/30" : "bg-success/15 text-success border border-success/30"}`}
+      className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full ${type === "circuit" ? "bg-fizruk/15 text-fizruk border border-fizruk/30" : "bg-success/15 text-success border border-success/30"}`}
     >
       {type === "circuit" ? "Коло" : "Суперсет"}
     </span>
@@ -889,7 +889,7 @@ export function ActiveWorkoutPanel({
                 </button>
                 <button
                   type="button"
-                  className="text-[11px] px-3 py-1.5 rounded-lg border border-accent/40 text-accent bg-accent/10 hover:bg-accent/20 transition-colors disabled:opacity-40"
+                  className="text-[11px] px-3 py-1.5 rounded-lg border border-fizruk/40 text-fizruk bg-fizruk/10 hover:bg-fizruk/20 transition-colors disabled:opacity-40"
                   disabled={groupSelected.size < 2 || groupSelected.size > 3}
                   onClick={() => handleCreateSuperset("circuit")}
                   title="Виберіть 2-3 вправи"

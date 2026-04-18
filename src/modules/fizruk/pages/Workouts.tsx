@@ -405,7 +405,7 @@ export function Workouts() {
               className={cn(
                 "text-xs px-3 py-2.5 min-h-[44px] rounded-full border transition-colors",
                 mode === "catalog"
-                  ? "bg-forest text-white border-forest"
+                  ? "bg-fizruk text-white border-fizruk"
                   : "border-line text-subtle hover:text-text",
               )}
               onClick={() => setMode("catalog")}
@@ -418,7 +418,7 @@ export function Workouts() {
               className={cn(
                 "text-xs px-3 py-2.5 min-h-[44px] rounded-full border transition-colors",
                 mode === "log"
-                  ? "bg-forest text-white border-forest"
+                  ? "bg-fizruk text-white border-fizruk"
                   : "border-line text-subtle hover:text-text",
               )}
               onClick={() => setMode("log")}
@@ -431,7 +431,7 @@ export function Workouts() {
               className={cn(
                 "text-xs px-3 py-2.5 min-h-[44px] rounded-full border transition-colors",
                 mode === "templates"
-                  ? "bg-forest text-white border-forest"
+                  ? "bg-fizruk text-white border-fizruk"
                   : "border-line text-subtle hover:text-text",
               )}
               onClick={() => setMode("templates")}

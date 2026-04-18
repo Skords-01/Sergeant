@@ -222,61 +222,89 @@ const MODULE_CONFIGS = {
 // ═══════════════════════════════════════════════════════════════════════════
 // DAILY PROGRESS HERO — Shows overall day progress with enhanced visuals
 // ═══════════════════════════════════════════════════════════════════════════
+const PROGRESS_STORAGE_KEYS = [
+  "routine_quick_stats",
+  "nutrition_quick_stats",
+  "fizruk_quick_stats",
+];
+
+function readDailyProgress() {
+  let total = 0;
+  let completed = 0;
+
+  try {
+    const routineData = localStorage.getItem("routine_quick_stats");
+    if (routineData) {
+      const stats = JSON.parse(routineData);
+      total += stats.todayTotal || 0;
+      completed += stats.todayDone || 0;
+    }
+  } catch {
+    /* ignore */
+  }
+
+  try {
+    const nutritionData = localStorage.getItem("nutrition_quick_stats");
+    if (nutritionData) {
+      const stats = JSON.parse(nutritionData);
+      if (stats.calGoal) {
+        total += 1;
+        if (stats.todayCal >= stats.calGoal * 0.8) completed += 1;
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+
+  try {
+    const fizrukData = localStorage.getItem("fizruk_quick_stats");
+    if (fizrukData) {
+      const stats = JSON.parse(fizrukData);
+      if (stats.plannedToday) {
+        total += 1;
+        if (stats.completedToday) completed += 1;
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+
+  return { total: total || 4, completed };
+}
+
 function DailyProgressHero() {
-  const [progress, setProgress] = useState({ total: 0, completed: 0 });
+  const [progress, setProgress] = useState(() => ({ total: 0, completed: 0 }));
   const [isComplete, setIsComplete] = useState(false);
 
   useEffect(() => {
-    // Aggregate progress from all modules
-    let total = 0;
-    let completed = 0;
-
-    // Check routine habits
-    try {
-      const routineData = localStorage.getItem("routine_quick_stats");
-      if (routineData) {
-        const stats = JSON.parse(routineData);
-        total += stats.todayTotal || 0;
-        completed += stats.todayDone || 0;
-      }
-    } catch {}
-
-    // Check nutrition goals (simplified)
-    try {
-      const nutritionData = localStorage.getItem("nutrition_quick_stats");
-      if (nutritionData) {
-        const stats = JSON.parse(nutritionData);
-        if (stats.calGoal) {
-          total += 1;
-          if (stats.todayCal >= stats.calGoal * 0.8) completed += 1;
+    const refresh = () => {
+      const next = readDailyProgress();
+      setProgress((prev) => {
+        const wasComplete = prev.completed === prev.total && prev.total > 0;
+        const nowComplete = next.completed === next.total && next.total > 0;
+        if (nowComplete && !wasComplete) {
+          setIsComplete(true);
+          setTimeout(() => setIsComplete(false), 2000);
         }
-      }
-    } catch {}
+        return next;
+      });
+    };
 
-    // Check workout for today
-    try {
-      const fizrukData = localStorage.getItem("fizruk_quick_stats");
-      if (fizrukData) {
-        const stats = JSON.parse(fizrukData);
-        if (stats.plannedToday) {
-          total += 1;
-          if (stats.completedToday) completed += 1;
-        }
-      }
-    } catch {}
+    refresh();
 
-    const finalTotal = total || 4;
-    const wasComplete =
-      progress.completed === progress.total && progress.total > 0;
-    const nowComplete = completed === finalTotal && finalTotal > 0;
-
-    if (nowComplete && !wasComplete) {
-      setIsComplete(true);
-      setTimeout(() => setIsComplete(false), 2000);
-    }
-
-    setProgress({ total: finalTotal, completed });
-  }, [progress.completed, progress.total]);
+    // Cross-tab + cross-module sync: when any module updates its quick-stats
+    // cache via localStorage, the hero reflects it without a full re-mount.
+    const onStorage = (e) => {
+      if (!e.key || PROGRESS_STORAGE_KEYS.includes(e.key)) refresh();
+    };
+    window.addEventListener("storage", onStorage);
+    const onFocus = () => refresh();
+    window.addEventListener("focus", onFocus);
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener("focus", onFocus);
+    };
+  }, []);
 
   const percentage =
     progress.total > 0
@@ -301,6 +329,8 @@ function DailyProgressHero() {
 
   return (
     <div
+      role="region"
+      aria-label="Прогрес дня"
       className={cn(
         "relative overflow-hidden rounded-3xl border shadow-card p-5",
         "bg-gradient-to-br from-white via-brand-50/20 to-teal-50/30",
@@ -310,6 +340,9 @@ function DailyProgressHero() {
         isComplete && "animate-success-ring",
       )}
     >
+      <div className="sr-only" aria-live="polite" aria-atomic="true">
+        {`${motivationalText}. Виконано ${progress.completed} з ${progress.total} завдань. ${percentage}%.`}
+      </div>
       <div className="relative flex items-center gap-5">
         {/* Progress Ring — glow comes from ProgressRing itself */}
         <div

@@ -359,7 +359,7 @@ export function Progress() {
               Активність з інших модулів
             </div>
             <div className="flex items-center gap-3 mb-3">
-              <div className="w-9 h-9 rounded-xl bg-accent/10 flex items-center justify-center shrink-0 text-base">
+              <div className="w-9 h-9 rounded-xl bg-fizruk/10 flex items-center justify-center shrink-0 text-base">
                 💪
               </div>
               <div className="min-w-0 flex-1">
@@ -565,7 +565,7 @@ export function Progress() {
                     className={cn(
                       "shrink-0 px-3 h-7 rounded-full text-[11px] font-semibold transition-colors border",
                       prFilter === "all"
-                        ? "bg-accent text-forest border-accent"
+                        ? "bg-fizruk text-white border-fizruk"
                         : "bg-panel border-line text-subtle hover:text-text",
                     )}
                   >
@@ -579,7 +579,7 @@ export function Progress() {
                       className={cn(
                         "shrink-0 px-3 h-7 rounded-full text-[11px] font-semibold transition-colors border whitespace-nowrap",
                         prFilter === g
-                          ? "bg-accent text-forest border-accent"
+                          ? "bg-fizruk text-white border-fizruk"
                           : "bg-panel border-line text-subtle hover:text-text",
                       )}
                     >
@@ -649,7 +649,7 @@ export function Progress() {
                             </span>
                           )}
                           {p.muscleGroupLabel && (
-                            <span className="ml-auto text-[10px] px-2 py-0.5 rounded-full bg-accent/10 text-accent/70 font-medium shrink-0">
+                            <span className="ml-auto text-[10px] px-2 py-0.5 rounded-full bg-fizruk/10 text-fizruk/70 font-medium shrink-0">
                               {p.muscleGroupLabel}
                             </span>
                           )}
@@ -670,7 +670,7 @@ export function Progress() {
           </div>
           <button
             type="button"
-            className="w-full py-4 rounded-full font-bold text-[15px] bg-accent text-forest mb-2 transition-all active:scale-[0.98]"
+            className="w-full py-4 rounded-full font-bold text-[15px] bg-fizruk text-white mb-2 transition-all active:scale-[0.98]"
             onClick={exportJson}
           >
             Експорт (backup)

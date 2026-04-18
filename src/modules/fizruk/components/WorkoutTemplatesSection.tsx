@@ -213,7 +213,7 @@ export function WorkoutTemplatesSection({
                   </button>
                   <button
                     type="button"
-                    className="text-[11px] px-2 py-1 rounded-lg border border-accent/40 text-accent disabled:opacity-40"
+                    className="text-[11px] px-2 py-1 rounded-lg border border-fizruk/40 text-fizruk disabled:opacity-40"
                     disabled={groupSelected.size < 2 || groupSelected.size > 3}
                     onClick={() => handleCreateGroup("circuit")}
                     title="Виберіть 2-3 вправи"
@@ -280,7 +280,7 @@ export function WorkoutTemplatesSection({
                       </span>
                       {group && (
                         <span
-                          className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full ${group.type === "circuit" ? "bg-accent/15 text-accent border border-accent/30" : "bg-success/15 text-success border border-success/30"}`}
+                          className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full ${group.type === "circuit" ? "bg-fizruk/15 text-fizruk border border-fizruk/30" : "bg-success/15 text-success border border-success/30"}`}
                         >
                           {group.type === "circuit" ? "Коло" : "СС"}
                         </span>
@@ -388,7 +388,7 @@ export function WorkoutTemplatesSection({
                 {typeof onStartTemplate === "function" && (
                   <Button
                     size="sm"
-                    className="h-10 min-h-[44px] px-3 bg-forest text-white border-forest hover:bg-forest/90"
+                    className="h-10 min-h-[44px] px-3 bg-fizruk text-white border-fizruk hover:bg-fizruk/90"
                     onClick={() => onStartTemplate(t)}
                     disabled={!(t.exerciseIds || []).length}
                   >

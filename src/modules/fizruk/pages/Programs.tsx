@@ -116,7 +116,7 @@ export function Programs({
                         {todaySession && onStartWorkout && (
                           <button
                             type="button"
-                            className="flex-1 py-2.5 rounded-xl bg-accent text-forest text-sm font-semibold transition-all active:scale-[0.98]"
+                            className="flex-1 py-2.5 rounded-xl bg-fizruk text-white text-sm font-semibold transition-all active:scale-[0.98]"
                             onClick={() => {
                               const session =
                                 prog.sessions[todaySession.sessionKey];
@@ -183,7 +183,7 @@ function ProgramDetails({ prog, exercises }) {
             className="rounded-xl bg-panel border border-line/40 p-3"
           >
             <div className="flex items-center gap-2 mb-2">
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-forest/10 text-success border border-success/20">
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-fizruk/10 text-success border border-success/20">
                 День {schedEntry.day}
               </span>
               <span className="text-sm font-semibold text-text">

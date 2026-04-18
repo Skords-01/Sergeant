@@ -3,6 +3,9 @@ import { DarkModeToggle } from "./DarkModeToggle.jsx";
 import { SyncStatusIndicator } from "../SyncStatusIndicator.jsx";
 import { UserMenuButton } from "./UserMenuButton.jsx";
 
+const ICON_BUTTON_CLS =
+  "w-11 h-11 flex items-center justify-center rounded-2xl text-muted hover:text-text hover:bg-panelHi transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-bg";
+
 export function HubHeader({
   hubView,
   onOpenSearch,
@@ -18,10 +21,13 @@ export function HubHeader({
   onToggleDark,
 }) {
   return (
-    <header className="px-5 pt-10 pb-2 max-w-lg mx-auto w-full flex items-start justify-between">
+    <header
+      className="px-5 pt-10 pb-2 max-w-lg mx-auto w-full flex items-start justify-between"
+      style={{ paddingTop: "max(2.5rem, env(safe-area-inset-top))" }}
+    >
       <div>
         <h1 className="text-3xl font-bold text-text tracking-tight">
-          Мій простір
+          Sergeant
         </h1>
         <p className="text-sm text-muted mt-1">
           {hubView === "reports"
@@ -37,7 +43,7 @@ export function HubHeader({
           onClick={onOpenSearch}
           aria-label="Пошук"
           title="Пошук по всіх модулях"
-          className="w-10 h-10 flex items-center justify-center rounded-2xl text-muted hover:text-text hover:bg-panelHi transition-colors"
+          className={ICON_BUTTON_CLS}
         >
           <Icon name="search" size={20} />
         </button>
@@ -61,22 +67,9 @@ export function HubHeader({
               onClick={onShowAuth}
               aria-label="Увійти в акаунт"
               title="Увійти"
-              className="w-10 h-10 flex items-center justify-center rounded-2xl text-muted hover:text-text hover:bg-panelHi transition-colors"
+              className={ICON_BUTTON_CLS}
             >
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden
-              >
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                <circle cx="12" cy="7" r="4" />
-              </svg>
+              <Icon name="user" size={20} />
             </button>
           )
         )}

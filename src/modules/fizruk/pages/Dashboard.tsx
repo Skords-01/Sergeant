@@ -282,10 +282,10 @@ export function Dashboard({
     <div className="flex-1 overflow-y-auto">
       <div className="max-w-4xl mx-auto px-4 pt-4 page-tabbar-pad space-y-4">
         <section
-          className="rounded-3xl p-6 overflow-hidden bg-forest-grad"
+          className="rounded-3xl p-6 overflow-hidden bg-hero-teal"
           aria-label="Привітання"
         >
-          <p className="text-[11px] font-bold tracking-widest uppercase text-accent">
+          <p className="text-[11px] font-bold tracking-widest uppercase text-fizruk">
             {greeting} · {today}
           </p>
           <h1 className="text-[26px] font-black text-white mt-3 leading-tight">
@@ -330,7 +330,7 @@ export function Dashboard({
           <div className="mt-5 flex flex-col gap-3">
             <button
               type="button"
-              className="w-full py-4 rounded-full font-bold text-[15px] bg-accent text-forest transition-all active:scale-[0.98]"
+              className="w-full py-4 rounded-full font-bold text-[15px] bg-fizruk text-white transition-all active:scale-[0.98]"
               onClick={() => {
                 try {
                   sessionStorage.setItem("fizruk_workouts_mode", "log");
@@ -451,7 +451,7 @@ export function Dashboard({
             {todaySession && (
               <button
                 type="button"
-                className="w-full py-3 rounded-xl bg-accent text-forest font-semibold text-sm transition-all active:scale-[0.98]"
+                className="w-full py-3 rounded-xl bg-fizruk text-white font-semibold text-sm transition-all active:scale-[0.98]"
                 onClick={() => {
                   const session =
                     activeProgram.sessions?.[todaySession.sessionKey];

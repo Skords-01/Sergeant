@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { cn } from "@shared/lib/cn";
+import { Button } from "@shared/components/ui/Button";
 import { useAuth } from "./AuthContext.jsx";
 
 export function AuthPage() {
@@ -26,12 +26,21 @@ export function AuthPage() {
     setLoading(false);
   };
 
+  const INPUT_CLS =
+    "w-full min-h-[44px] px-4 py-3 rounded-xl bg-panel border border-line text-text text-[16px] md:text-sm placeholder:text-muted/50 focus:outline-none focus:ring-2 focus:ring-brand-500/40 focus:border-brand-500 transition-colors";
+
   return (
-    <div className="min-h-dvh bg-bg flex flex-col items-center justify-center px-5 safe-area-pt-pb">
+    <div
+      className="min-h-dvh bg-bg flex flex-col items-center justify-center px-5"
+      style={{
+        paddingTop: "max(1.25rem, env(safe-area-inset-top))",
+        paddingBottom: "max(1.25rem, env(safe-area-inset-bottom))",
+      }}
+    >
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-text tracking-tight mb-1">
-            Мій простір
+            Sergeant
           </h1>
           <p className="text-sm text-subtle">
             {mode === "login" ? "Вхід в акаунт" : "Створення акаунту"}
@@ -52,7 +61,7 @@ export function AuthPage() {
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl bg-panel border border-line text-text text-sm placeholder:text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent transition-colors"
+                className={INPUT_CLS}
                 placeholder={"Ваше ім'я"}
                 autoComplete="name"
               />
@@ -72,7 +81,7 @@ export function AuthPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full px-4 py-3 rounded-xl bg-panel border border-line text-text text-sm placeholder:text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent transition-colors"
+              className={INPUT_CLS}
               placeholder="email@example.com"
               autoComplete="email"
             />
@@ -92,7 +101,7 @@ export function AuthPage() {
               onChange={(e) => setPassword(e.target.value)}
               required
               minLength={6}
-              className="w-full px-4 py-3 rounded-xl bg-panel border border-line text-text text-sm placeholder:text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent transition-colors"
+              className={INPUT_CLS}
               placeholder="Мінімум 6 символів"
               autoComplete={
                 mode === "login" ? "current-password" : "new-password"
@@ -109,28 +118,26 @@ export function AuthPage() {
             </div>
           )}
 
-          <button
+          <Button
             type="submit"
-            disabled={loading}
-            className={cn(
-              "w-full py-3 rounded-xl font-semibold text-sm transition-all",
-              "bg-accent text-white hover:bg-accent/90",
-              "disabled:opacity-50 disabled:cursor-not-allowed",
-            )}
+            variant="primary"
+            size="lg"
+            loading={loading}
+            className="w-full"
           >
             {loading
               ? "Зачекайте..."
               : mode === "login"
                 ? "Увійти"
                 : "Зареєструватися"}
-          </button>
+          </Button>
         </form>
 
         <div className="mt-6 text-center">
           <button
             type="button"
             onClick={switchMode}
-            className="text-sm text-accent hover:underline"
+            className="text-sm text-brand-600 dark:text-brand-400 hover:underline px-2 py-1 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40"
           >
             {mode === "login"
               ? "Немає акаунту? Зареєструватися"

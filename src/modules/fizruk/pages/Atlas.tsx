@@ -49,10 +49,10 @@ export function Atlas() {
     <div className="flex-1 overflow-y-auto">
       <div className="max-w-4xl mx-auto px-4 pt-4 page-tabbar-pad space-y-3">
         <section
-          className="rounded-3xl p-5 border border-line/20 bg-forest-grad"
+          className="rounded-3xl p-5 border border-line/20 bg-hero-teal"
           aria-label="Атлас мʼязів"
         >
-          <p className="text-[11px] font-bold tracking-widest uppercase text-accent">
+          <p className="text-[11px] font-bold tracking-widest uppercase text-fizruk">
             Атлас мʼязів
           </p>
           <h1 className="text-2xl font-black text-white mt-2 leading-tight">

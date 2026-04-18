@@ -459,7 +459,7 @@ export default function FizrukApp({
                     {item.icon}
                     {hasDot && !active && (
                       <span
-                        className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-accent border border-panel"
+                        className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-fizruk border border-panel"
                         aria-hidden
                       />
                     )}

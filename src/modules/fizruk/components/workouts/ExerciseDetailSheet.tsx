@@ -196,7 +196,7 @@ export function ExerciseDetailSheet({
           {mode === "log" && (
             <Button
               type="button"
-              className="w-full h-12 mt-5 bg-forest text-white border-forest hover:bg-forest/90"
+              className="w-full h-12 mt-5 bg-fizruk text-white border-fizruk hover:bg-fizruk/90"
               onClick={() => {
                 if (!activeWorkoutId) {
                   toast?.warning("Спочатку натисни «+ Нове» у блоці вище.");

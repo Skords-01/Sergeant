@@ -474,7 +474,7 @@ export function Exercise({ exerciseId }) {
                 : "Заповни сети, щоб зʼявилась рекомендація"}
             </div>
             {suggestedNext?.altWeightKg != null && (
-              <div className="text-[10px] text-accent mt-1">
+              <div className="text-[10px] text-fizruk mt-1">
                 {`або ${fmt(suggestedNext.altWeightKg, 1)} × ${suggestedNext.altReps} повт.`}
               </div>
             )}
@@ -622,7 +622,7 @@ export function Exercise({ exerciseId }) {
           <div className="mt-3">
             <button
               type="button"
-              className="w-full py-4 rounded-full font-bold text-[15px] bg-accent text-forest"
+              className="w-full py-4 rounded-full font-bold text-[15px] bg-fizruk text-white"
               onClick={() => (window.location.hash = "#workouts")}
             >
               Перейти до журналу
