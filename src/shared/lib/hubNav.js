@@ -31,3 +31,25 @@ export function openHubModule(moduleId, hash) {
     /* noop — SSR / disabled CustomEvent */
   }
 }
+
+const VALID_HUB_ACTIONS = new Set(["add_expense", "start_workout", "add_meal"]);
+
+/**
+ * Відкрити модуль із запитом на дію (така ж семантика як у PWA shortcuts).
+ * Використовується, напр., для кнопки "Додати витрату" на hub-дашборді.
+ * @param {"finyk"|"fizruk"|"routine"|"nutrition"} moduleId
+ * @param {"add_expense"|"start_workout"|"add_meal"} action
+ */
+export function openHubModuleWithAction(moduleId, action) {
+  if (!VALID_HUB_MODULES.has(moduleId)) return;
+  if (!VALID_HUB_ACTIONS.has(action)) return;
+  try {
+    window.dispatchEvent(
+      new CustomEvent(HUB_OPEN_MODULE_EVENT, {
+        detail: { module: moduleId, hash: "", action },
+      }),
+    );
+  } catch {
+    /* noop */
+  }
+}

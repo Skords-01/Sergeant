@@ -7,6 +7,7 @@ import { STORAGE_KEYS } from "@shared/lib/storageKeys.js";
 import { HubRecommendations } from "./HubRecommendations.jsx";
 import { WeeklyDigestCard } from "./WeeklyDigestCard.jsx";
 import { CoachInsightCard } from "./CoachInsightCard.jsx";
+import { DailyFinykSummaryCard } from "./DailyFinykSummaryCard.jsx";
 import { useWeeklyDigest, loadDigest, getWeekKey } from "./useWeeklyDigest.js";
 import {
   DndContext,
@@ -623,6 +624,9 @@ export function HubDashboard({ onOpenModule, onOpenChat }) {
     <div className="space-y-5">
       {/* Daily Progress Hero */}
       <DailyProgressHero />
+
+      {/* Daily Finyk Summary (today's spend + top category, soft reminders) */}
+      <DailyFinykSummaryCard />
 
       {/* Smart Recommendations */}
       <HubRecommendations onOpenModule={onOpenModule} />

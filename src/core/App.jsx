@@ -169,8 +169,16 @@ function AppInner() {
   // модуль+hash без прокидування `onOpenModule` через дерево.
   useEffect(() => {
     const onHubOpen = (ev) => {
-      const { module, hash } = ev.detail || {};
+      const { module, hash, action } = ev.detail || {};
       if (!VALID_MODULES.has(module)) return;
+      if (action && VALID_ACTIONS.has(action)) {
+        try {
+          localStorage.setItem(PWA_ACTION_KEY, action);
+        } catch {
+          /* noop */
+        }
+        setPwaAction(action);
+      }
       openModule(module, hash ? { hash } : undefined);
     };
     window.addEventListener(HUB_OPEN_MODULE_EVENT, onHubOpen);
