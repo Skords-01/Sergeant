@@ -273,11 +273,21 @@ export function filterStatTransactions(
   return transactions.filter((t) => t && !excluded.has(t.id));
 }
 
+// Захищаємось від "сирих" входів з неправильною формою: нормалізуємо
+// лише валідні об'єкти, пропускаємо пусті/null/недійсні записи та гарантуємо
+// унікальність за стабільним id. Остання транзакція з тим же id виграє —
+// це важливо для merge між cache + network, коли сервер повернув свіжу копію.
 export function dedupeAndSortTransactions(
   items: readonly RawTxInput[] | null | undefined,
 ): Transaction[] {
+  if (!Array.isArray(items)) return [];
+  const safe = items.filter(
+    (tx): tx is RawTxInput => tx != null && typeof tx === "object",
+  );
   const map = new Map<string, Transaction>();
-  for (const tx of normalizeTransactions(items)) map.set(tx.id, tx);
+  for (const tx of normalizeTransactions(safe)) {
+    if (tx.id) map.set(tx.id, tx);
+  }
   return Array.from(map.values()).sort((a, b) => (b.time || 0) - (a.time || 0));
 }
 

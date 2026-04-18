@@ -6,6 +6,7 @@ import { readRaw, writeRaw } from "./lib/finykStorage.js";
 import { PAGES } from "./constants";
 import { Button } from "@shared/components/ui/Button";
 import { Input } from "@shared/components/ui/Input";
+import { SectionErrorBoundary } from "@shared/components/ui/SectionErrorBoundary.jsx";
 import { cn } from "@shared/lib/cn";
 import { useToast } from "@shared/hooks/useToast";
 import { Overview } from "./pages/Overview.jsx";
@@ -549,40 +550,67 @@ export default function App({
         onTouchEnd={handleTouchEnd}
       >
         {page === "overview" && (
-          <Overview
-            mono={mergedMono}
-            storage={storage}
-            onNavigate={navigate}
-            onCategoryClick={(catId) => {
-              setCategoryFilter(catId);
-              navigate("transactions");
-            }}
-            showBalance={showBalance}
-          />
+          <SectionErrorBoundary
+            key="page-overview"
+            title="Не вдалось показати «Огляд»"
+          >
+            <Overview
+              mono={mergedMono}
+              storage={storage}
+              onNavigate={navigate}
+              onCategoryClick={(catId) => {
+                setCategoryFilter(catId);
+                navigate("transactions");
+              }}
+              showBalance={showBalance}
+            />
+          </SectionErrorBoundary>
         )}
         {page === "transactions" && (
-          <Transactions
-            mono={mergedMono}
-            storage={storage}
-            showBalance={showBalance}
-            categoryFilter={categoryFilter}
-            onClearCategoryFilter={() => setCategoryFilter(null)}
-            onEditManualExpense={(id) => {
-              setEditingManualExpenseId(String(id));
-              setShowExpenseSheet(true);
-            }}
-          />
+          <SectionErrorBoundary
+            key="page-transactions"
+            title="Не вдалось показати «Операції»"
+          >
+            <Transactions
+              mono={mergedMono}
+              storage={storage}
+              showBalance={showBalance}
+              categoryFilter={categoryFilter}
+              onClearCategoryFilter={() => setCategoryFilter(null)}
+              onEditManualExpense={(id) => {
+                setEditingManualExpenseId(String(id));
+                setShowExpenseSheet(true);
+              }}
+            />
+          </SectionErrorBoundary>
         )}
-        {page === "budgets" && <Budgets mono={mergedMono} storage={storage} />}
+        {page === "budgets" && (
+          <SectionErrorBoundary
+            key="page-budgets"
+            title="Не вдалось показати «Планування»"
+          >
+            <Budgets mono={mergedMono} storage={storage} />
+          </SectionErrorBoundary>
+        )}
         {page === "analytics" && (
-          <Analytics mono={mergedMono} storage={storage} />
+          <SectionErrorBoundary
+            key="page-analytics"
+            title="Не вдалось показати «Аналітику»"
+          >
+            <Analytics mono={mergedMono} storage={storage} />
+          </SectionErrorBoundary>
         )}
         {page === "assets" && (
-          <Assets
-            mono={mergedMono}
-            storage={storage}
-            showBalance={showBalance}
-          />
+          <SectionErrorBoundary
+            key="page-assets"
+            title="Не вдалось показати «Активи»"
+          >
+            <Assets
+              mono={mergedMono}
+              storage={storage}
+              showBalance={showBalance}
+            />
+          </SectionErrorBoundary>
         )}
       </div>
 

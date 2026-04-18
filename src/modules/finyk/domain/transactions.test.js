@@ -184,6 +184,24 @@ describe("normalizeTransactions / dedupeAndSortTransactions", () => {
     ]);
     expect(result.map((t) => t.id)).toEqual(["b", "a"]);
   });
+
+  it("толерує null/undefined/не-об'єкти у вхідному списку", () => {
+    const result = dedupeAndSortTransactions([
+      null,
+      undefined,
+      "garbage",
+      42,
+      { id: "a", time: 3, amount: 1 },
+    ]);
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe("a");
+  });
+
+  it("повертає порожній масив для не-масиву", () => {
+    expect(dedupeAndSortTransactions(null)).toEqual([]);
+    expect(dedupeAndSortTransactions(undefined)).toEqual([]);
+    expect(dedupeAndSortTransactions({})).toEqual([]);
+  });
 });
 
 describe("manualExpenseToTransaction", () => {

@@ -24,8 +24,27 @@ try {
 } catch (error) {
   reportSilentError("storage migrations", error);
 }
+// Визначаємо "очікувану форму" за дефолтом: array / plain-object / скаляр.
+// Це дозволяє тихо відкинути пошкоджений JSON у localStorage (наприклад,
+// коли ключ випадково був перезаписаний іншим модулем або ручною правкою)
+// і ввімкнути модуль з дефолтом, замість того щоб падати на мапах/фільтрах.
+function matchesShape(value, defaultVal) {
+  if (Array.isArray(defaultVal)) return Array.isArray(value);
+  if (defaultVal && typeof defaultVal === "object") {
+    return value != null && typeof value === "object" && !Array.isArray(value);
+  }
+  return true;
+}
+
 function usePersist(key, defaultVal) {
-  const [val, setVal] = useState(() => readJSON(key, defaultVal));
+  const [val, setVal] = useState(() => {
+    const stored = readJSON(key, defaultVal);
+    if (!matchesShape(stored, defaultVal)) {
+      reportSilentError(`usePersist shape mismatch ("${key}")`, stored);
+      return defaultVal;
+    }
+    return stored;
+  });
   useEffect(() => {
     writeJSONDebounced(key, val);
   }, [key, val]);
