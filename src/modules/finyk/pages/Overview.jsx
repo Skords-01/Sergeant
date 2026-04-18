@@ -324,13 +324,7 @@ export function Overview({
           f.dueDate &&
           f.dueDate <= new Date(currentYear, currentMonth + 1, 0),
       ),
-    [
-      subscriptionFlows,
-      debtOutFlows,
-      debtInFlows,
-      currentYear,
-      currentMonth,
-    ],
+    [subscriptionFlows, debtOutFlows, debtInFlows, currentYear, currentMonth],
   );
 
   if (loadingTx && realTx.length === 0) {
