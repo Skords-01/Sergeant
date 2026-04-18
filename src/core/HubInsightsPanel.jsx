@@ -1,7 +1,32 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { cn } from "@shared/lib/cn";
 import { Icon } from "@shared/components/ui/Icon";
 import { useCoachInsight } from "./useCoachInsight.js";
+
+// localStorage flag used to auto-expand the insights panel at most once per
+// calendar day when a coach insight is present. After the first expand on a
+// given day (automatic or manual), we stamp today's date here so subsequent
+// dashboard opens keep the panel quietly collapsed.
+const AUTO_OPEN_KEY = "hub_insights_auto_opened_v1";
+
+function todayKey() {
+  const d = new Date();
+  return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+}
+
+function wasAutoOpenedToday() {
+  try {
+    return localStorage.getItem(AUTO_OPEN_KEY) === todayKey();
+  } catch {
+    return false;
+  }
+}
+
+function markAutoOpenedToday() {
+  try {
+    localStorage.setItem(AUTO_OPEN_KEY, todayKey());
+  } catch {}
+}
 
 const MODULE_ACCENT = {
   finyk: "bg-finyk",
@@ -141,6 +166,16 @@ export function HubInsightsPanel({
   const hasCoach = Boolean(insight) || Boolean(loading);
   const coachCount = insight ? 1 : 0;
   const total = (items?.length || 0) + coachCount;
+
+  // Auto-expand once per day when a coach insight is available so the user
+  // actually notices it — without re-opening on every subsequent dashboard
+  // visit that day.
+  useEffect(() => {
+    if (!insight) return;
+    if (wasAutoOpenedToday()) return;
+    setOpen(true);
+    markAutoOpenedToday();
+  }, [insight]);
 
   if (total === 0) return null;
 

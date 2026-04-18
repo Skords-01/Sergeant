@@ -15,6 +15,17 @@ const MODULE_ACCENT = {
   hub: "bg-primary",
 };
 
+// Subtle module-tinted background wash for the primary hero card. Uses the
+// low-saturation "soft"/"surface" color tokens defined in tailwind.config;
+// opacity is tuned so the card dominates without fighting dark mode.
+const MODULE_WASH = {
+  finyk: "bg-finyk-soft/60 dark:bg-finyk-soft/10",
+  fizruk: "bg-fizruk-soft/60 dark:bg-fizruk-soft/10",
+  routine: "bg-routine-surface/60 dark:bg-routine-surface/20",
+  nutrition: "bg-nutrition-soft/60 dark:bg-nutrition-soft/10",
+  hub: "bg-panelHi",
+};
+
 const MODULE_CTA = {
   finyk: "Відкрити Фінік",
   fizruk: "Відкрити Фізрук",
@@ -22,6 +33,64 @@ const MODULE_CTA = {
   nutrition: "Відкрити Харчування",
   hub: "Подивитись",
 };
+
+function readJSON(key) {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Derive a single "reward" line for the empty focus state from the latest
+ * quick-stats each module writes to localStorage. Priority:
+ *   1. longest active streak (habits > training)
+ *   2. today's habit completion ratio (if any progress made)
+ *   3. nutrition on-goal today
+ *   4. fallback neutral message
+ */
+function deriveRewardSignal() {
+  const routine = readJSON("routine_quick_stats") || {};
+  const fizruk = readJSON("fizruk_quick_stats") || {};
+  const nutrition = readJSON("nutrition_quick_stats") || {};
+
+  const streaks = [
+    { module: "routine", days: Number(routine.streak) || 0 },
+    { module: "fizruk", days: Number(fizruk.streak) || 0 },
+  ]
+    .filter((s) => s.days >= 2)
+    .sort((a, b) => b.days - a.days);
+
+  if (streaks.length > 0) {
+    const top = streaks[0];
+    return {
+      line: `Серія ${top.days} днів досі`,
+      module: top.module,
+    };
+  }
+
+  if (routine.todayTotal > 0 && routine.todayDone > 0) {
+    return {
+      line: `Звички сьогодні: ${routine.todayDone}/${routine.todayTotal}`,
+      module: "routine",
+    };
+  }
+
+  if (
+    nutrition.calGoal &&
+    nutrition.todayCal &&
+    nutrition.todayCal <= nutrition.calGoal
+  ) {
+    return {
+      line: `Уклався в ціль по калоріях: ${nutrition.todayCal}/${nutrition.calGoal} ккал`,
+      module: "nutrition",
+    };
+  }
+
+  return null;
+}
 
 function loadDismissed() {
   try {
@@ -75,22 +144,45 @@ export function useDashboardFocus() {
 }
 
 function EmptyFocus({ onOpenReports }) {
+  const reward = deriveRewardSignal();
+  const washClass = reward ? MODULE_WASH[reward.module] : null;
+  const accentClass = reward ? MODULE_ACCENT[reward.module] : null;
+
   return (
     <div
       className={cn(
-        "rounded-2xl border border-line/60 bg-panel p-4",
+        "relative overflow-hidden rounded-2xl border border-line/60 bg-panel p-4",
         "flex items-center gap-3",
+        washClass,
       )}
     >
-      <div className="shrink-0 w-10 h-10 rounded-xl bg-brand-100/70 dark:bg-brand-900/30 text-brand-600 dark:text-brand-400 flex items-center justify-center">
-        <Icon name="check" size={18} strokeWidth={2.5} />
+      {accentClass && (
+        <div
+          className={cn(
+            "absolute left-0 top-4 bottom-4 w-1 rounded-r-full",
+            accentClass,
+          )}
+          aria-hidden
+        />
+      )}
+      <div
+        className={cn(
+          "relative shrink-0 w-10 h-10 rounded-xl flex items-center justify-center",
+          reward
+            ? "bg-panel/70 text-text"
+            : "bg-brand-100/70 dark:bg-brand-900/30 text-brand-600 dark:text-brand-400",
+        )}
+      >
+        <Icon name={reward ? "sparkle" : "check"} size={18} strokeWidth={2.5} />
       </div>
-      <div className="flex-1 min-w-0">
+      <div className="relative flex-1 min-w-0">
         <p className="text-sm font-semibold text-text leading-snug">
-          Сьогодні нічого термінового
+          {reward ? "Ти в грі" : "Сьогодні нічого термінового"}
         </p>
         <p className="text-xs text-muted mt-0.5 leading-snug">
-          Все зафіксовано. Переглянь тижневий прогрес або відкрий модуль.
+          {reward
+            ? reward.line
+            : "Все зафіксовано. Переглянь тижневий прогрес або відкрий модуль."}
         </p>
       </div>
       {onOpenReports && (
@@ -98,7 +190,7 @@ function EmptyFocus({ onOpenReports }) {
           type="button"
           onClick={onOpenReports}
           className={cn(
-            "shrink-0 text-xs font-semibold text-muted hover:text-text",
+            "relative shrink-0 text-xs font-semibold text-muted hover:text-text",
             "px-2.5 py-1.5 rounded-lg hover:bg-panelHi transition-colors",
           )}
         >
@@ -120,6 +212,7 @@ export function TodayFocusCard({ focus, onAction, onDismiss, onOpenReports }) {
   }
 
   const accent = MODULE_ACCENT[focus.module] || "bg-primary";
+  const wash = MODULE_WASH[focus.module] || "bg-panelHi";
   const cta = MODULE_CTA[focus.module] || "Відкрити";
 
   return (
@@ -127,6 +220,7 @@ export function TodayFocusCard({ focus, onAction, onDismiss, onOpenReports }) {
       className={cn(
         "relative overflow-hidden rounded-2xl border border-line/60 bg-panel",
         "shadow-card p-4",
+        wash,
       )}
     >
       {/* Accent bar */}

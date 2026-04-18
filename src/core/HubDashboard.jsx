@@ -36,7 +36,19 @@ import { CSS } from "@dnd-kit/utilities";
 const DASHBOARD_ORDER_KEY = STORAGE_KEYS.DASHBOARD_ORDER;
 const DEFAULT_ORDER = ["finyk", "fizruk", "routine", "nutrition"];
 
-function loadOrder() {
+// Public labels for each module, surfaced in Settings → "Упорядкувати модулі".
+// Kept here (not in MODULE_CONFIGS) so consumers can import labels without
+// pulling the full config (icons, localStorage readers, etc.).
+export const DASHBOARD_MODULE_LABELS = {
+  finyk: "Фінік",
+  fizruk: "Фізрук",
+  routine: "Рутина",
+  nutrition: "Харчування",
+};
+
+export const DASHBOARD_DEFAULT_ORDER = DEFAULT_ORDER;
+
+export function loadDashboardOrder() {
   const saved = safeReadLS(DASHBOARD_ORDER_KEY, null);
   if (
     Array.isArray(saved) &&
@@ -48,13 +60,17 @@ function loadOrder() {
   return [...DEFAULT_ORDER];
 }
 
-function saveOrder(order) {
+export function saveDashboardOrder(order) {
   safeWriteLS(DASHBOARD_ORDER_KEY, order);
 }
 
 export function resetDashboardOrder() {
   safeRemoveLS(DASHBOARD_ORDER_KEY);
 }
+
+// Local aliases preserved so the rest of the file reads the same.
+const loadOrder = loadDashboardOrder;
+const saveOrder = saveDashboardOrder;
 
 // ═══════════════════════════════════════════════════════════════════════════
 // MODULE CONFIGURATIONS — calm accent-only styling
