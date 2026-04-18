@@ -15,6 +15,10 @@ import { BudgetTrendChart } from "../components/BudgetTrendChart";
 import { apiUrl } from "@shared/lib/apiUrl.js";
 import { LimitBudgetCard } from "../components/budgets/LimitBudgetCard.jsx";
 import { GoalBudgetCard } from "../components/budgets/GoalBudgetCard.jsx";
+import { BudgetOverviewCard } from "../components/BudgetOverviewCard.jsx";
+import { CategorySelector } from "../components/CategorySelector.jsx";
+import { CategoryManager } from "../components/CategoryManager.jsx";
+import { calculateSafeToSpendPerDay } from "../hooks/useBudget.js";
 
 const formInp =
   "w-full h-10 rounded-xl border border-line bg-bg px-3 text-sm text-text outline-none focus:border-primary";
@@ -30,6 +34,9 @@ export function Budgets({ mono, storage }) {
     txCategories,
     txSplits,
     customCategories,
+    addCustomCategory,
+    editCustomCategory,
+    removeCustomCategory,
   } = storage;
   const statTx = realTx.filter((t) => !excludedTxIds.has(t.id));
   const [editIdx, setEditIdx] = useState(null);
@@ -356,10 +363,31 @@ export function Budgets({ mono, storage }) {
     );
   }
 
+  const now2 = new Date();
+  const daysInMonth2 = new Date(now2.getFullYear(), now2.getMonth() + 1, 0).getDate();
+  const daysLeft2 = daysInMonth2 - now2.getDate();
+  const safePerDay = calculateSafeToSpendPerDay(
+    Math.max(0, planExpense - totalExpenseFact),
+    daysLeft2,
+  );
+
   return (
     <div className="flex-1 overflow-y-auto">
       <div className="max-w-4xl mx-auto px-4 pt-4 page-tabbar-pad space-y-4">
-        {/* Monthly plan */}
+        {/* Budget overview */}
+        {(planIncome > 0 || planExpense > 0) && (
+          <BudgetOverviewCard
+            totalPlan={planExpense}
+            totalFact={totalExpenseFact}
+            totalRemaining={Math.max(0, planExpense - totalExpenseFact)}
+            safePerDay={safePerDay}
+            isOverall={planExpense > 0 && totalExpenseFact > planExpense}
+            daysLeft={daysLeft2}
+            planIncome={planIncome}
+          />
+        )}
+
+        {/* Monthly plan inputs */}
         <div className="bg-panel border border-line/60 rounded-2xl p-5 shadow-card">
           <div className="text-[11px] font-bold text-subtle uppercase tracking-widest mb-3">
             Фінплан на місяць
@@ -701,6 +729,17 @@ export function Budgets({ mono, storage }) {
         })}
 
         {/* Add form */}
+        {/* Category manager */}
+        <div className="bg-panel border border-line/60 rounded-2xl p-5 shadow-card">
+          <CategoryManager
+            customCategories={customCategories}
+            allCategories={expenseCategoryList}
+            onAdd={addCustomCategory}
+            onEdit={editCustomCategory}
+            onRemove={removeCustomCategory}
+          />
+        </div>
+
         {showForm ? (
           <div className="bg-panel border border-line/60 rounded-2xl p-5 shadow-card space-y-3">
             <div className="flex gap-2">
@@ -735,22 +774,12 @@ export function Budgets({ mono, storage }) {
             </div>
             {formType === "limit" ? (
               <>
-                <select
-                  className={formInp}
+                <CategorySelector
                   value={newB.categoryId}
-                  onChange={(e) =>
-                    setNewB((b) => ({ ...b, categoryId: e.target.value }))
-                  }
-                >
-                  <option value="">Вибери категорію</option>
-                  {expenseCategoryList
-                    .filter((c) => c.id !== "income")
-                    .map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.label}
-                      </option>
-                    ))}
-                </select>
+                  onChange={(val) => setNewB((b) => ({ ...b, categoryId: val }))}
+                  categories={expenseCategoryList.filter((c) => c.id !== "income")}
+                  placeholder="Вибери категорію"
+                />
                 <input
                   className={formInp}
                   placeholder="Ліміт ₴"

@@ -216,7 +216,7 @@ export function useStorage({ onImportFeedback } = {}) {
     );
   };
 
-  const addCustomCategory = (label) => {
+  const addCustomCategory = (label, { color, icon, parentId } = {}) => {
     const trimmed = String(label || "").trim();
     if (!trimmed || trimmed.length > 80) return;
     setCustomCategories((prev) => {
@@ -224,8 +224,26 @@ export function useStorage({ onImportFeedback } = {}) {
       if (prev.some((c) => c.label.toLowerCase() === trimmed.toLowerCase()))
         return prev;
       const id = `cus_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 9)}`;
-      return [...prev, { id, label: trimmed }];
+      const entry = { id, label: trimmed };
+      if (color) entry.color = color;
+      if (icon) entry.icon = icon;
+      if (parentId) entry.parentId = parentId;
+      return [...prev, entry];
     });
+  };
+
+  const editCustomCategory = (id, patch) => {
+    setCustomCategories((prev) =>
+      prev.map((c) => {
+        if (c.id !== id) return c;
+        const next = { ...c };
+        if (patch.label != null) next.label = String(patch.label).trim() || c.label;
+        if (patch.color !== undefined) next.color = patch.color || undefined;
+        if (patch.icon !== undefined) next.icon = patch.icon || undefined;
+        if (patch.parentId !== undefined) next.parentId = patch.parentId || undefined;
+        return next;
+      }),
+    );
   };
 
   const removeCustomCategory = (id) => {
@@ -414,6 +432,7 @@ export function useStorage({ onImportFeedback } = {}) {
     txCategories,
     customCategories,
     addCustomCategory,
+    editCustomCategory,
     removeCustomCategory,
     overrideCategory,
     txSplits,

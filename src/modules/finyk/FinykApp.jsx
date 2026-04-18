@@ -11,6 +11,7 @@ import { Overview } from "./pages/Overview.jsx";
 import { Transactions } from "./pages/Transactions.jsx";
 import { Budgets } from "./pages/Budgets.jsx";
 import { Assets } from "./pages/Assets.jsx";
+import { Analytics } from "./pages/Analytics.jsx";
 import { ManualExpenseSheet } from "./components/ManualExpenseSheet.jsx";
 
 const NAV_ICONS = {
@@ -77,6 +78,22 @@ const NAV_ICONS = {
       <line x1="2" y1="10" x2="22" y2="10" />
     </svg>
   ),
+  analytics: (
+    <svg
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <line x1="18" y1="20" x2="18" y2="10" />
+      <line x1="12" y1="20" x2="12" y2="4" />
+      <line x1="6" y1="20" x2="6" y2="14" />
+    </svg>
+  ),
   settings: (
     <svg
       width="22"
@@ -98,6 +115,7 @@ const NAV_ITEMS = [
   { id: "overview", label: "Огляд" },
   { id: "transactions", label: "Операції" },
   { id: "budgets", label: "Планування" },
+  { id: "analytics", label: "Аналітика" },
   { id: "assets", label: "Активи" },
 ];
 const NAV_IDS = NAV_ITEMS.map((n) => n.id);
@@ -599,6 +617,9 @@ export default function App({
           />
         )}
         {page === "budgets" && <Budgets mono={mergedMono} storage={storage} />}
+        {page === "analytics" && (
+          <Analytics mono={mergedMono} storage={storage} />
+        )}
         {page === "assets" && (
           <Assets
             mono={mergedMono}

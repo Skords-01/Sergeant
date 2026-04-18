@@ -1,0 +1,41 @@
+import { cn } from "@shared/lib/cn";
+
+export function MerchantList({ merchants = [], className }) {
+  if (!merchants || merchants.length === 0) return null;
+
+  const maxTotal = merchants[0]?.total || 1;
+
+  return (
+    <div className={cn("space-y-2", className)}>
+      {merchants.map((m, i) => {
+        const barPct = Math.round((m.total / maxTotal) * 100);
+        return (
+          <div key={m.name} className="flex items-center gap-3">
+            <span className="text-[11px] text-subtle w-4 shrink-0 text-right tabular-nums">
+              {i + 1}
+            </span>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between mb-0.5">
+                <span className="text-sm text-text truncate pr-2">{m.name}</span>
+                <span className="text-sm font-semibold tabular-nums text-text shrink-0">
+                  {m.total.toLocaleString("uk-UA")} ₴
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="flex-1 h-1.5 bg-bg rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-primary/70 rounded-full"
+                    style={{ width: `${barPct}%` }}
+                  />
+                </div>
+                <span className="text-[10px] text-subtle shrink-0">
+                  {m.count} разів
+                </span>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
