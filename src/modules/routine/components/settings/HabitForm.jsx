@@ -16,13 +16,12 @@ export function HabitForm({
   editingId,
   onSave,
   onCancel,
-  // One-shot trigger set by the `add_habit` PWA action and the FTUX
-  // first-action sheet. When it flips truthy we scroll the form into
-  // view and focus the name input, then the parent resets it. Using a
-  // monotonic tick rather than a bool keeps repeated triggers reliable
-  // (focus-again would otherwise be a no-op if bool stayed `true`).
+  // Monotonic tick bumped by the parent (`RoutineApp`) when the
+  // `add_habit` PWA action or the FTUX first-action sheet wants us to
+  // scroll into view and focus the name input. A tick — not a bool —
+  // so repeated triggers keep re-firing without the parent having to
+  // reset anything.
   focusTick,
-  onFocusHandled,
 }) {
   const fieldIds = useId();
   const startId = `${fieldIds}-start`;
@@ -48,8 +47,7 @@ export function HabitForm({
         }
       });
     }
-    onFocusHandled?.();
-  }, [focusTick, onFocusHandled]);
+  }, [focusTick]);
 
   return (
     <section

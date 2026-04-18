@@ -35,7 +35,6 @@ export function RoutineSettingsSection({
   setCatDraft,
   onOpenCalendar,
   habitFormFocusTick,
-  onHabitFormFocusHandled,
   hidden: panelHidden,
 }) {
   const toast = useToast();
@@ -109,7 +108,6 @@ export function RoutineSettingsSection({
         onSave={saveHabit}
         onCancel={cancelEdit}
         focusTick={habitFormFocusTick}
-        onFocusHandled={onHabitFormFocusHandled}
       />
 
       <TagsSection
