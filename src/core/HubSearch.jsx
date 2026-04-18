@@ -44,10 +44,12 @@ function searchFinyk(query) {
   const txList = safeParseLS("finyk_tx_cache", []);
   if (Array.isArray(txList)) {
     for (const tx of txList) {
+      if (!tx || typeof tx !== "object") continue;
       const desc = (tx.description || tx.comment || "").toLowerCase();
       const mcc = String(tx.mcc || "");
       if (desc.includes(q) || mcc.includes(q)) {
-        const amount = (tx.amount ?? 0) / 100;
+        const amtRaw = Number(tx.amount);
+        const amount = (Number.isFinite(amtRaw) ? amtRaw : 0) / 100;
         const sign = amount < 0 ? "−" : "+";
         results.push({
           id: `finyk_tx_${tx.id || tx.time}`,
@@ -65,13 +67,16 @@ function searchFinyk(query) {
   const subs = safeParseLS("finyk_subs", []);
   if (Array.isArray(subs)) {
     for (const s of subs) {
+      if (!s || typeof s !== "object") continue;
       if ((s.name || "").toLowerCase().includes(q)) {
+        const amtRaw = Number(s.amount);
+        const amt = Number.isFinite(amtRaw) && amtRaw > 0 ? amtRaw : 0;
         results.push({
           id: `finyk_sub_${s.id}`,
           module: "finyk",
           moduleLabel: "Фінік",
           title: s.name,
-          subtitle: `Підписка · ${s.amount ? (s.amount / 100).toFixed(0) + " ₴" : ""}`,
+          subtitle: `Підписка · ${amt ? (amt / 100).toFixed(0) + " ₴" : ""}`,
           icon: "🔄",
         });
       }
@@ -90,9 +95,11 @@ function searchFizruk(query) {
   );
   if (workouts.length > 0) {
     for (const w of workouts) {
+      if (!w || typeof w !== "object") continue;
       const note = (w.note || "").toLowerCase();
-      const exercises = (w.items || []).map((i) =>
-        (i.exerciseName || i.name || "").toLowerCase(),
+      const itemsRaw = Array.isArray(w.items) ? w.items : [];
+      const exercises = itemsRaw.map((i) =>
+        ((i && (i.exerciseName || i.name)) || "").toLowerCase(),
       );
       const matchNote = note.includes(q);
       const matchExercise = exercises.some((e) => e.includes(q));
@@ -100,9 +107,9 @@ function searchFizruk(query) {
         const dateLabel = w.startedAt
           ? localDateKey(new Date(w.startedAt))
           : "";
-        const exNames = (w.items || [])
+        const exNames = itemsRaw
           .slice(0, 2)
-          .map((i) => i.exerciseName || i.name || "")
+          .map((i) => (i && (i.exerciseName || i.name)) || "")
           .filter(Boolean);
         results.push({
           id: `fizruk_w_${w.id}`,
@@ -110,7 +117,7 @@ function searchFizruk(query) {
           moduleLabel: "Фізрук",
           title: w.note || exNames.join(", ") || "Тренування",
           subtitle:
-            dateLabel + (w.items?.length ? ` · ${w.items.length} вправ` : ""),
+            dateLabel + (itemsRaw.length ? ` · ${itemsRaw.length} вправ` : ""),
           icon: "🏋️",
         });
       }
@@ -122,6 +129,7 @@ function searchFizruk(query) {
     localStorage.getItem("fizruk_custom_exercises_v1"),
   );
   for (const e of exercises) {
+    if (!e || typeof e !== "object") continue;
     if (
       (e.name || "").toLowerCase().includes(q) ||
       (Array.isArray(e.muscles) ? e.muscles : [])
@@ -155,6 +163,7 @@ function searchRoutine(query) {
 
   const habits = Array.isArray(state.habits) ? state.habits : [];
   for (const h of habits) {
+    if (!h || typeof h !== "object") continue;
     if (
       (h.name || "").toLowerCase().includes(q) ||
       (h.note || "").toLowerCase().includes(q) ||

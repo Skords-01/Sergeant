@@ -216,8 +216,20 @@ export function Progress() {
   };
 
   const importJson = async (file) => {
-    const text = await file.text();
-    const parsed = JSON.parse(text);
+    let text;
+    try {
+      text = await file.text();
+    } catch (err) {
+      console.error("[fizruk] importJson: failed to read file", err);
+      throw err;
+    }
+    let parsed;
+    try {
+      parsed = JSON.parse(text);
+    } catch (err) {
+      console.error("[fizruk] importJson: invalid JSON", err);
+      throw new Error("Невірний формат файлу");
+    }
     applyFizrukFullBackupPayload(parsed);
     window.location.reload();
   };

@@ -164,26 +164,45 @@ export function useNutritionLog() {
   /**
    * Replace the entire log with data parsed from a JSON string.
    * Garbage-collects orphaned photo thumbnails.
+   * Returns `false` on malformed JSON instead of throwing, so the UI
+   * can show an import-failure toast without unmounting.
    * @param {string} text - JSON string of a full `NutritionLog`.
+   * @returns {boolean}
    */
   const replaceLogFromJsonText = useCallback((text) => {
-    const parsed = JSON.parse(text);
+    let parsed;
+    try {
+      parsed = JSON.parse(text);
+    } catch (err) {
+      console.error("[nutrition] replaceLogFromJsonText: invalid JSON", err);
+      return false;
+    }
     setNutritionLog((_prev) => {
       const next = normalizeNutritionLog(parsed);
       const keep = collectMealIds(next);
       void gcMealThumbnails(keep, { maxDeletes: 2000 });
       return next;
     });
+    return true;
   }, []);
 
   /**
    * Merge data from a JSON string into the existing log.
    * Existing meals are preserved; imported meals are appended.
+   * Returns `false` on malformed JSON instead of throwing.
    * @param {string} text - JSON string of a `NutritionLog` to merge.
+   * @returns {boolean}
    */
   const mergeLogFromJsonText = useCallback((text) => {
-    const parsed = JSON.parse(text);
+    let parsed;
+    try {
+      parsed = JSON.parse(text);
+    } catch (err) {
+      console.error("[nutrition] mergeLogFromJsonText: invalid JSON", err);
+      return false;
+    }
     setNutritionLog((log) => mergeNutritionLogs(log, parsed));
+    return true;
   }, []);
 
   /**
