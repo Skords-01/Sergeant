@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { postJson } from "../lib/nutritionApi.js";
+import { parsePantry as apiParsePantry } from "../lib/nutritionApi.js";
 import { mergeItems } from "../lib/mergeItems.js";
 import {
   loadActivePantryId,
@@ -243,23 +243,22 @@ export function useNutritionPantries({ setBusy, setErr, setStatusText }) {
   };
 
   const parsePantryMutation = useMutation({
-    mutationFn: () => {
-      if (!pantryText.trim())
-        throw new Error("Надиктуй/впиши список продуктів.");
-      return postJson("/api/nutrition/parse-pantry", {
-        text: pantryText.trim(),
-        locale: "uk-UA",
-      });
+    mutationFn: ({ pantryId, text }) => {
+      if (!text) throw new Error("Надиктуй/впиши список продуктів.");
+      return apiParsePantry({ text, locale: "uk-UA" }).then((data) => ({
+        data,
+        pantryId,
+      }));
     },
     onMutate: () => {
       setBusy(true);
       setErr("");
       setStatusText("Розбираю список…");
     },
-    onSuccess: (data) => {
+    onSuccess: ({ data, pantryId }) => {
       const next = Array.isArray(data?.items) ? data.items : [];
       setPantries((cur) =>
-        updatePantry(cur, activePantryId, (p) => ({
+        updatePantry(cur, pantryId, (p) => ({
           ...p,
           items: mergeItems(p.items, next),
           text: "",
@@ -276,8 +275,12 @@ export function useNutritionPantries({ setBusy, setErr, setStatusText }) {
   });
 
   const parsePantry = useCallback(
-    () => parsePantryMutation.mutate(),
-    [parsePantryMutation],
+    () =>
+      parsePantryMutation.mutate({
+        pantryId: activePantryId,
+        text: pantryText.trim(),
+      }),
+    [parsePantryMutation, activePantryId, pantryText],
   );
 
   return {

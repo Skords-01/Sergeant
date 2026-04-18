@@ -192,7 +192,6 @@ export default function NutritionApp({
     setWeekPlan,
     setWeekPlanRaw,
     setWeekPlanBusy,
-    dayPlan,
     setDayPlan,
     setDayPlanBusy,
     setDayHintBusy,

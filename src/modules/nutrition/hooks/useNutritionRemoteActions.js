@@ -1,6 +1,12 @@
 import { useCallback } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { postJson } from "../lib/nutritionApi.js";
+import {
+  recommendRecipes as apiRecommendRecipes,
+  fetchWeekPlan as apiFetchWeekPlan,
+  fetchDayHint as apiFetchDayHint,
+  fetchDayPlan as apiFetchDayPlan,
+  fetchShoppingList as apiFetchShoppingList,
+} from "../lib/nutritionApi.js";
 import { writeRecipeCache } from "../lib/recipeCache.js";
 import { stableRecipeId } from "../lib/recipeIds.js";
 import { getDayMacros, getDaySummary } from "../lib/nutritionStorage.js";
@@ -65,7 +71,6 @@ export function useNutritionRemoteActions({
   setWeekPlanRaw,
   setWeekPlanBusy,
   // day plan / day hint
-  dayPlan,
   setDayPlan,
   setDayPlanBusy,
   setDayHintBusy,
@@ -81,7 +86,7 @@ export function useNutritionRemoteActions({
       const items = pantry.effectiveItems;
       if (items.length === 0)
         throw new Error("Дай хоча б 2–3 продукти для рецептів.");
-      return postJson("/api/nutrition/recommend-recipes", {
+      return apiRecommendRecipes({
         items: items.slice(0, 40),
         preferences: {
           goal: prefs.goal,
@@ -130,7 +135,7 @@ export function useNutritionRemoteActions({
     mutationFn: () => {
       const items = pantry.effectiveItems;
       if (items.length === 0) throw new Error("Додай продукти на склад.");
-      return postJson("/api/nutrition/week-plan", {
+      return apiFetchWeekPlan({
         items: items.slice(0, 50),
         preferences: { goal: prefs.goal },
         locale: "uk-UA",
@@ -182,7 +187,7 @@ export function useNutritionRemoteActions({
       const macros = summary.hasAnyMacros
         ? getDayMacros(log.nutritionLog, log.selectedDate)
         : { kcal: null, protein_g: null, fat_g: null, carbs_g: null };
-      return postJson("/api/nutrition/day-hint", {
+      return apiFetchDayHint({
         macros,
         hasMeals: summary.hasMeals,
         hasAnyMacros: summary.hasAnyMacros,
@@ -219,7 +224,7 @@ export function useNutritionRemoteActions({
   // ─── Day plan ───────────────────────────────────────────────────────────
   const dayPlanMutation = useMutation({
     mutationFn: (regenerateMealType) =>
-      postJson("/api/nutrition/day-plan", {
+      apiFetchDayPlan({
         items: pantry.effectiveItems.slice(0, 50),
         targets: {
           kcal: prefs.dailyTargetKcal,
@@ -239,25 +244,26 @@ export function useNutritionRemoteActions({
       setErr("");
     },
     onSuccess: ({ plan, regenerateMealType }) => {
-      if (regenerateMealType && dayPlan?.meals?.length > 0) {
-        const newMeals = Array.isArray(plan.meals) ? plan.meals : [];
-        const merged = [
-          ...dayPlan.meals.filter((m) => m.type !== regenerateMealType),
-          ...newMeals.filter((m) => m.type === regenerateMealType),
-        ];
-        const totals = merged.reduce(
-          (acc, m) => ({
-            totalKcal: (acc.totalKcal ?? 0) + (m.kcal ?? 0),
-            totalProtein_g: (acc.totalProtein_g ?? 0) + (m.protein_g ?? 0),
-            totalFat_g: (acc.totalFat_g ?? 0) + (m.fat_g ?? 0),
-            totalCarbs_g: (acc.totalCarbs_g ?? 0) + (m.carbs_g ?? 0),
-          }),
-          {},
-        );
-        setDayPlan({ ...dayPlan, meals: merged, ...totals });
-      } else {
-        setDayPlan(plan);
-      }
+      setDayPlan((prev) => {
+        if (regenerateMealType && prev?.meals?.length > 0) {
+          const newMeals = Array.isArray(plan.meals) ? plan.meals : [];
+          const merged = [
+            ...prev.meals.filter((m) => m.type !== regenerateMealType),
+            ...newMeals.filter((m) => m.type === regenerateMealType),
+          ];
+          const totals = merged.reduce(
+            (acc, m) => ({
+              totalKcal: (acc.totalKcal ?? 0) + (m.kcal ?? 0),
+              totalProtein_g: (acc.totalProtein_g ?? 0) + (m.protein_g ?? 0),
+              totalFat_g: (acc.totalFat_g ?? 0) + (m.fat_g ?? 0),
+              totalCarbs_g: (acc.totalCarbs_g ?? 0) + (m.carbs_g ?? 0),
+            }),
+            {},
+          );
+          return { ...prev, meals: merged, ...totals };
+        }
+        return plan;
+      });
     },
     onError: (err) => {
       setErr(err?.message || "Помилка генерації плану");
@@ -315,7 +321,7 @@ export function useNutritionRemoteActions({
       } else {
         throw new Error("Немає рецептів чи тижневого плану для генерації.");
       }
-      return postJson("/api/nutrition/shopping-list", body).then((data) => {
+      return apiFetchShoppingList(body).then((data) => {
         if (!Array.isArray(data?.categories))
           throw new Error("Не вдалося згенерувати список покупок.");
         return data;

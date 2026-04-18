@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { fileToBase64 } from "../lib/fileToBase64.js";
-import { postJson } from "../lib/nutritionApi.js";
+import {
+  analyzePhoto as apiAnalyzePhoto,
+  refinePhoto as apiRefinePhoto,
+} from "../lib/nutritionApi.js";
 
 export function usePhotoAnalysis({ setBusy, setErr, setStatusText }) {
   const fileRef = useRef(null);
@@ -76,7 +79,7 @@ export function usePhotoAnalysis({ setBusy, setErr, setStatusText }) {
         locale: "uk-UA",
       };
       setLastPhotoPayload(payload);
-      return postJson("/api/nutrition/analyze-photo", payload);
+      return apiAnalyzePhoto(payload);
     },
     onMutate: () => {
       setBusy(true);
@@ -115,7 +118,7 @@ export function usePhotoAnalysis({ setBusy, setErr, setStatusText }) {
         .map((q) => ({ question: q, answer: String(answers[q] || "").trim() }))
         .filter((x) => x.answer);
       const grams = Number(String(portionGrams).replace(",", "."));
-      return postJson("/api/nutrition/refine-photo", {
+      return apiRefinePhoto({
         ...lastPhotoPayload,
         prior_result: photoResult,
         portion_grams: Number.isFinite(grams) && grams > 0 ? grams : null,

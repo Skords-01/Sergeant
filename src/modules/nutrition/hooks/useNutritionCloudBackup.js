@@ -1,6 +1,9 @@
 import { useCallback } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { postJson } from "../lib/nutritionApi.js";
+import {
+  backupUpload as apiBackupUpload,
+  backupDownload as apiBackupDownload,
+} from "../lib/nutritionApi.js";
 import {
   applyNutritionBackupPayload,
   buildNutritionBackupPayload,
@@ -41,7 +44,7 @@ export function useNutritionCloudBackup({
     mutationFn: async ({ pass }) => {
       const payload = buildNutritionBackupPayload();
       const blob = await encryptJsonToBlob(payload, pass);
-      return postJson("/api/nutrition/backup-upload", { blob });
+      return apiBackupUpload({ blob });
     },
     onMutate: () => {
       setCloudBackupBusy(true);
@@ -60,7 +63,7 @@ export function useNutritionCloudBackup({
 
   const downloadMutation = useMutation({
     mutationFn: async ({ pass }) => {
-      const data = await postJson("/api/nutrition/backup-download", {});
+      const data = await apiBackupDownload();
       const payload = await decryptBlobToJson(data?.blob, pass);
       return { payload };
     },

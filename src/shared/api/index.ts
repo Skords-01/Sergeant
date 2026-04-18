@@ -18,7 +18,45 @@ export { weeklyDigestApi } from "./endpoints/weeklyDigest";
 export type { WeeklyDigestPayload } from "./endpoints/weeklyDigest";
 export { pushApi } from "./endpoints/push";
 export { nutritionApi } from "./endpoints/nutrition";
+export type {
+  NutritionMacros,
+  NutritionPhotoPortion,
+  NutritionPhotoIngredient,
+  NutritionPhotoResult,
+  NutritionPhotoResponse,
+  NutritionRecipe,
+  NutritionRecipesResponse,
+  NutritionWeekDay,
+  NutritionWeekPlan,
+  NutritionWeekPlanResponse,
+  NutritionMealType,
+  NutritionDayMeal,
+  NutritionDayPlan,
+  NutritionDayPlanResponse,
+  NutritionDayHintResponse,
+  NutritionShoppingItem,
+  NutritionShoppingCategory,
+  NutritionShoppingListResponse,
+  NutritionPantryItem,
+  NutritionParsePantryResponse,
+  NutritionBackupUploadResponse,
+  NutritionBackupDownloadResponse,
+} from "./endpoints/nutrition";
 export { barcodeApi } from "./endpoints/barcode";
 export { foodSearchApi } from "./endpoints/foodSearch";
 export { monoApi } from "./endpoints/mono";
+export type {
+  MonoAccount,
+  MonoJar,
+  MonoClientInfo,
+  MonoStatementEntry,
+  MonoCashbackType,
+} from "./endpoints/mono";
 export { privatApi } from "./endpoints/privat";
+export type {
+  PrivatCredentials,
+  PrivatBalanceRecord,
+  PrivatBalanceFinalResponse,
+  PrivatStatementEntry,
+  PrivatStatementsResponse,
+} from "./endpoints/privat";
