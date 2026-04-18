@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { cn } from "@shared/lib/cn";
 
 /**
@@ -6,7 +7,9 @@ import { cn } from "@shared/lib/cn";
  * - Dashed line: projected spending (future days)
  * - Horizontal limit line (if provided)
  */
-export function BudgetTrendChart({
+// Чиста SVG-діаграма — безпечно мемоїзувати, графік перераховується лише
+// коли змінюються масив dailyData, ліміт або колір.
+function BudgetTrendChartComponent({
   dailyData,
   limit,
   color = "#6366f1",
@@ -147,3 +150,5 @@ export function BudgetTrendChart({
     </div>
   );
 }
+
+export const BudgetTrendChart = memo(BudgetTrendChartComponent);

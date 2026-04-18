@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Button } from "@shared/components/ui/Button";
 import { Skeleton } from "@shared/components/ui/Skeleton";
 import { cn } from "@shared/lib/cn";
@@ -5,7 +6,10 @@ import { cn } from "@shared/lib/cn";
 const formInp =
   "w-full h-10 rounded-xl border border-line bg-bg px-3 text-sm text-text outline-none focus:border-primary";
 
-export function LimitBudgetCard({
+// Презентаційна картка ліміту бюджету. Усі дані приходять готовими пропсами,
+// тому memo потрібен, щоб картка не перемальовувалась при змінах сусідніх
+// бюджетів чи сторонніх станів Budgets.
+function LimitBudgetCardComponent({
   budget,
   categoryLabel,
   spent,
@@ -127,3 +131,5 @@ export function LimitBudgetCard({
     </div>
   );
 }
+
+export const LimitBudgetCard = memo(LimitBudgetCardComponent);

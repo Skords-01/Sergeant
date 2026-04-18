@@ -1,6 +1,9 @@
+import { memo } from "react";
 import { cn } from "@shared/lib/cn";
 
-export function MerchantList({ merchants = [], className }) {
+// Презентаційний список топ-мерчантів. `memo` уникає перерендеру,
+// поки масив `merchants` не змінився.
+function MerchantListComponent({ merchants = [], className }) {
   if (!merchants || merchants.length === 0) return null;
 
   const maxTotal = merchants[0]?.total || 1;
@@ -39,3 +42,5 @@ export function MerchantList({ merchants = [], className }) {
     </div>
   );
 }
+
+export const MerchantList = memo(MerchantListComponent);

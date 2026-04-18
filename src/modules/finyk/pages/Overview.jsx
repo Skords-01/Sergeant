@@ -1,4 +1,4 @@
-import { useMemo, useEffect } from "react";
+import { memo, useMemo, useEffect } from "react";
 import { CategoryChart } from "../components/CategoryChart";
 import { NetworthChart } from "../components/NetworthChart";
 import { mergeExpenseCategoryDefinitions } from "../constants";
@@ -39,7 +39,9 @@ const getNextBillingDate = (billingDay, now) => {
   return d;
 };
 
-function FlowRow({ flow, showAmount = true }) {
+// Рядок запланованого грошового потоку. Пропси вже готові до рендеру —
+// memo знімає перерахунок і diff на кожному ре-рендері Overview.
+const FlowRow = memo(function FlowRow({ flow, showAmount = true }) {
   const isGreen = flow.color === THEME_HEX.success;
   return (
     <div className="flex justify-between items-center py-3 border-b border-line last:border-0">
@@ -64,7 +66,7 @@ function FlowRow({ flow, showAmount = true }) {
       </div>
     </div>
   );
-}
+});
 
 export function Overview({
   mono,
@@ -155,7 +157,13 @@ export function Overview({
   );
   const networth = monoTotal + manualAssetTotal + totalReceivable - totalDebt;
 
-  const limitBudgets = budgets.filter((b) => b.type === "limit");
+  // useMemo — стабільне посилання на масив лімітів, щоб нижче
+  // budgetAlerts/inline-рендер списку не перезапускались, поки
+  // сам `budgets` не змінився.
+  const limitBudgets = useMemo(
+    () => budgets.filter((b) => b.type === "limit"),
+    [budgets],
+  );
   const catSpends = useMemo(
     () =>
       mergeExpenseCategoryDefinitions(customCategories)
@@ -203,6 +211,128 @@ export function Overview({
     [limitBudgets, statTx, txCategories, txSplits, customCategories],
   );
 
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  // useMemo — обчислення flow-масивів проходить по всіх підписках/боргах
+  // і не повинно повторюватись при незв'язаних змінах (наприклад,
+  // перемикання вкладок, лоадер транзакцій). Залежності підібрані точно,
+  // щоб масив перераховувався лише при реальній зміні даних.
+  const subscriptionFlows = useMemo(
+    () =>
+      subscriptions.map((sub) => {
+        const { amount, currency } = getSubscriptionAmountMeta(
+          sub,
+          transactions,
+        );
+        const dueDate = getNextBillingDate(sub.billingDay, now);
+        const daysLeft = Math.ceil((dueDate - todayStart) / 86400000);
+        return {
+          id: `sub-${sub.id}`,
+          title: `${sub.emoji} ${sub.name}`,
+          amount,
+          sign: "-",
+          color: THEME_HEX.danger,
+          daysLeft,
+          hint: formatDaysLeft(daysLeft),
+          currency,
+          dueDate,
+        };
+      }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [subscriptions, transactions, todayStart.getTime()],
+  );
+
+  const debtOutFlows = useMemo(
+    () =>
+      manualDebts
+        .map((d) => ({ ...d, remaining: calcDebtRemaining(d, transactions) }))
+        .filter((d) => d.dueDate && d.remaining > 0)
+        .map((d) => {
+          const daysLeft = Math.ceil(
+            (parseLocalDate(d.dueDate) - todayStart) / 86400000,
+          );
+          return {
+            id: `debt-${d.id}`,
+            title: `${d.emoji || "💸"} ${d.name}`,
+            amount: d.remaining,
+            sign: "-",
+            color: THEME_HEX.danger,
+            daysLeft,
+            hint: formatDaysLeft(daysLeft),
+            currency: "₴",
+            dueDate: parseLocalDate(d.dueDate),
+          };
+        }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [manualDebts, transactions, todayStart.getTime()],
+  );
+
+  const debtInFlows = useMemo(
+    () =>
+      receivables
+        .map((r) => ({
+          ...r,
+          remaining: calcReceivableRemaining(r, transactions),
+        }))
+        .filter((r) => r.dueDate && r.remaining > 0)
+        .map((r) => {
+          const daysLeft = Math.ceil(
+            (parseLocalDate(r.dueDate) - todayStart) / 86400000,
+          );
+          return {
+            id: `recv-${r.id}`,
+            title: `${r.emoji || "💰"} ${r.name}`,
+            amount: r.remaining,
+            sign: "+",
+            color: THEME_HEX.success,
+            daysLeft,
+            hint: formatDaysLeft(daysLeft),
+            currency: "₴",
+            dueDate: parseLocalDate(r.dueDate),
+          };
+        }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [receivables, transactions, todayStart.getTime()],
+  );
+
+  // useMemo — злиття+сортування трьох масивів; перерахунок лише коли
+  // хоч один з flow-масивів справді змінився.
+  const plannedFlows = useMemo(
+    () =>
+      [...subscriptionFlows, ...debtOutFlows, ...debtInFlows]
+        .filter((x) => x.daysLeft >= 0 && x.daysLeft <= 10)
+        .sort((a, b) => a.daysLeft - b.daysLeft),
+    [subscriptionFlows, debtOutFlows, debtInFlows],
+  );
+
+  const planIncome = Number(monthlyPlan?.income || 0);
+  const planExpense = Number(monthlyPlan?.expense || 0);
+  const planSavings = Number(monthlyPlan?.savings || 0);
+  const factSavings = income - spent;
+  const remainingDays = Math.max(1, daysInMonth - daysPassed + 1);
+  const expenseTarget = planExpense > 0 ? planExpense : projectedSpend;
+  // useMemo — `monthFlows` проходить по всіх flow-массивах і створює нову
+  // Date для фільтра; кешуємо, доки flow-массиви та поточний місяць не
+  // змінились.
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth();
+  const monthFlows = useMemo(
+    () =>
+      [...subscriptionFlows, ...debtOutFlows, ...debtInFlows].filter(
+        (f) =>
+          f.daysLeft >= 0 &&
+          f.dueDate &&
+          f.dueDate <= new Date(currentYear, currentMonth + 1, 0),
+      ),
+    [
+      subscriptionFlows,
+      debtOutFlows,
+      debtInFlows,
+      currentYear,
+      currentMonth,
+    ],
+  );
+
   if (loadingTx && realTx.length === 0) {
     return (
       <div className="flex-1 overflow-y-auto">
@@ -216,85 +346,6 @@ export function Overview({
     );
   }
 
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
-  const subscriptionFlows = subscriptions.map((sub) => {
-    const { amount, currency } = getSubscriptionAmountMeta(sub, transactions);
-    const dueDate = getNextBillingDate(sub.billingDay, now);
-    const daysLeft = Math.ceil((dueDate - todayStart) / 86400000);
-    return {
-      id: `sub-${sub.id}`,
-      title: `${sub.emoji} ${sub.name}`,
-      amount,
-      sign: "-",
-      color: THEME_HEX.danger,
-      daysLeft,
-      hint: formatDaysLeft(daysLeft),
-      currency,
-      dueDate,
-    };
-  });
-
-  const debtOutFlows = manualDebts
-    .map((d) => ({ ...d, remaining: calcDebtRemaining(d, transactions) }))
-    .filter((d) => d.dueDate && d.remaining > 0)
-    .map((d) => {
-      const daysLeft = Math.ceil(
-        (parseLocalDate(d.dueDate) - todayStart) / 86400000,
-      );
-      return {
-        id: `debt-${d.id}`,
-        title: `${d.emoji || "💸"} ${d.name}`,
-        amount: d.remaining,
-        sign: "-",
-        color: THEME_HEX.danger,
-        daysLeft,
-        hint: formatDaysLeft(daysLeft),
-        currency: "₴",
-        dueDate: parseLocalDate(d.dueDate),
-      };
-    });
-
-  const debtInFlows = receivables
-    .map((r) => ({ ...r, remaining: calcReceivableRemaining(r, transactions) }))
-    .filter((r) => r.dueDate && r.remaining > 0)
-    .map((r) => {
-      const daysLeft = Math.ceil(
-        (parseLocalDate(r.dueDate) - todayStart) / 86400000,
-      );
-      return {
-        id: `recv-${r.id}`,
-        title: `${r.emoji || "💰"} ${r.name}`,
-        amount: r.remaining,
-        sign: "+",
-        color: THEME_HEX.success,
-        daysLeft,
-        hint: formatDaysLeft(daysLeft),
-        currency: "₴",
-        dueDate: parseLocalDate(r.dueDate),
-      };
-    });
-
-  const plannedFlows = [...subscriptionFlows, ...debtOutFlows, ...debtInFlows]
-    .filter((x) => x.daysLeft >= 0 && x.daysLeft <= 10)
-    .sort((a, b) => a.daysLeft - b.daysLeft);
-
-  const planIncome = Number(monthlyPlan?.income || 0);
-  const planExpense = Number(monthlyPlan?.expense || 0);
-  const planSavings = Number(monthlyPlan?.savings || 0);
-  const factSavings = income - spent;
-  const remainingDays = Math.max(1, daysInMonth - daysPassed + 1);
-  const expenseTarget = planExpense > 0 ? planExpense : projectedSpend;
-  const monthFlows = [
-    ...subscriptionFlows,
-    ...debtOutFlows,
-    ...debtInFlows,
-  ].filter(
-    (f) =>
-      f.daysLeft >= 0 &&
-      f.dueDate &&
-      f.dueDate <= new Date(now.getFullYear(), now.getMonth() + 1, 0),
-  );
   const recurringOutThisMonth = monthFlows
     .filter((f) => f.sign === "-" && typeof f.amount === "number")
     .reduce((sum, f) => sum + f.amount, 0);

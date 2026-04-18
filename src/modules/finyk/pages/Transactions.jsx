@@ -92,39 +92,47 @@ export function Transactions({
     return () => clearTimeout(id);
   }, [search]);
 
-  const toggleSelect = (id) => {
+  // useCallback — `toggleSelect` передається у кожен рядок вибору.
+  // Сталий reference спільно з React.memo(TxRow)/обгорткою чекбокса дає
+  // змогу дочірнім елементам не перерендерюватись при оновленні батька.
+  const toggleSelect = useCallback((id) => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
       return next;
     });
-  };
+  }, []);
 
-  const exitSelectMode = () => {
+  const exitSelectMode = useCallback(() => {
     setSelectMode(false);
     setSelectedIds(new Set());
     setBatchCatPicker(false);
-  };
+  }, []);
 
-  const applyBatchCategory = (catId) => {
-    for (const id of selectedIds) overrideCategory(id, catId);
-    exitSelectMode();
-  };
+  // useCallback — використовується у batch-панелі; стабільний handler
+  // дозволяє безпечно мемоїзувати toolbar у майбутньому.
+  const applyBatchCategory = useCallback(
+    (catId) => {
+      for (const id of selectedIds) overrideCategory(id, catId);
+      exitSelectMode();
+    },
+    [selectedIds, overrideCategory, exitSelectMode],
+  );
 
-  const applyBatchHide = () => {
+  const applyBatchHide = useCallback(() => {
     for (const id of selectedIds) {
       if (!hiddenTxIds.includes(id)) hideTx(id);
     }
     exitSelectMode();
-  };
+  }, [selectedIds, hiddenTxIds, hideTx, exitSelectMode]);
 
-  const applyBatchExclude = () => {
+  const applyBatchExclude = useCallback(() => {
     for (const id of selectedIds) {
       if (!(excludedStatTxIds || []).includes(id)) toggleExcludeFromStats(id);
     }
     exitSelectMode();
-  };
+  }, [selectedIds, excludedStatTxIds, toggleExcludeFromStats, exitSelectMode]);
   const [selMonth, setSelMonth] = useState(() => ({
     year: now.getFullYear(),
     month: now.getMonth(),
@@ -159,22 +167,28 @@ export function Transactions({
   );
   const activeLoading = isCurrentMonth ? loadingTx : loadingHistory;
 
-  const goMonth = (delta) => {
-    setSelMonth((prev) => {
-      let m = prev.month + delta;
-      let y = prev.year;
-      if (m < 0) {
-        m = 11;
-        y--;
-      }
-      if (m > 11) {
-        m = 0;
-        y++;
-      }
-      if (!(y === now.getFullYear() && m === now.getMonth())) fetchMonth(y, m);
-      return { year: y, month: m };
-    });
-  };
+  // useCallback — `goMonth` підв'язаний до двох кнопок навігації місяцями;
+  // стабільний handler уникає створення нових замикань на кожен рендер.
+  const goMonth = useCallback(
+    (delta) => {
+      setSelMonth((prev) => {
+        let m = prev.month + delta;
+        let y = prev.year;
+        if (m < 0) {
+          m = 11;
+          y--;
+        }
+        if (m > 11) {
+          m = 0;
+          y++;
+        }
+        if (!(y === now.getFullYear() && m === now.getMonth()))
+          fetchMonth(y, m);
+        return { year: y, month: m };
+      });
+    },
+    [fetchMonth],
+  );
 
   const monthLabel = new Date(
     selMonth.year,

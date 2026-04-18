@@ -1,6 +1,9 @@
+import { memo } from "react";
 import { THEME_HEX } from "@shared/lib/themeHex.js";
 
-export function NetworthChart({ data }) {
+// SVG-графік нетворсу повністю детермінований вхідним `data`.
+// `memo` запобігає перерендеру при незв'язаних оновленнях стану Overview.
+function NetworthChartComponent({ data }) {
   if (!data || data.length < 2) return null;
 
   const values = data.map((d) => d.networth);
@@ -122,3 +125,5 @@ export function NetworthChart({ data }) {
     </div>
   );
 }
+
+export const NetworthChart = memo(NetworthChartComponent);

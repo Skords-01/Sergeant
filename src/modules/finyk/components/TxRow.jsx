@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { memo, useCallback, useMemo, useState } from "react";
 import { getCategory, getIncomeCategory, fmtAmt, fmtDate } from "../utils";
 import {
   MCC_CATEGORIES,
@@ -34,7 +34,11 @@ function getAccountShortName(acc) {
   return typeMap[acc.type] || acc.type || "Рахунок";
 }
 
-export function TxRow({
+// TxRow — головна "гаряча" точка: рендериться сотнями в віртуалізованому
+// списку транзакцій. Обгортаємо у React.memo, щоб рядок перерендерювався
+// лише при зміні власних пропсів (категорія, приховання, спліти), а не
+// щоразу, коли батько оновлює стан (фільтри, скрол, вибір).
+function TxRowComponent({
   tx,
   onClick,
   highlighted,
@@ -71,10 +75,17 @@ export function TxRow({
   const isCreditCard = account?.creditLimit > 0;
   const accountName = getAccountShortName(account);
 
-  const existingSplits = txSplits?.[tx.id] || [];
+  // useMemo — стабілізуємо масив сплітів, щоб `openSplitEditor` (useCallback
+  // нижче) не перестворювався, коли `txSplits` — той самий об'єкт.
+  const existingSplits = useMemo(
+    () => txSplits?.[tx.id] || [],
+    [txSplits, tx.id],
+  );
   const totalAmt = Math.abs(tx.amount / 100);
 
-  const openSplitEditor = () => {
+  // useCallback — стабільне посилання зменшує кількість замикань на рендер
+  // і робить можливі майбутні onClick-обробники стабільними для dom/handler-деталей.
+  const openSplitEditor = useCallback(() => {
     setDraftSplits(
       existingSplits.length > 0
         ? existingSplits.map((s) => ({ ...s }))
@@ -85,7 +96,7 @@ export function TxRow({
     );
     setSplitEditor(true);
     setCatPicker(false);
-  };
+  }, [existingSplits, cat.id, totalAmt]);
 
   const splitsTotal = draftSplits.reduce(
     (s, p) => s + (parseFloat(p.amount) || 0),
@@ -93,13 +104,15 @@ export function TxRow({
   );
   const remaining = Math.round((totalAmt - splitsTotal) * 100) / 100;
 
-  const saveSplits = () => {
+  // useCallback — зберігає сталий handler для JSX нижче; уникаємо нової
+  // функції на кожен символ у полі редагування суми.
+  const saveSplits = useCallback(() => {
     const valid = draftSplits.filter(
       (s) => s.categoryId && (parseFloat(s.amount) || 0) > 0,
     );
     onSplitChange?.(tx.id, valid.length >= 2 ? valid : null);
     setSplitEditor(false);
-  };
+  }, [draftSplits, onSplitChange, tx.id]);
 
   const mainRowInner = (
     <>
@@ -450,3 +463,5 @@ export function TxRow({
     </div>
   );
 }
+
+export const TxRow = memo(TxRowComponent);

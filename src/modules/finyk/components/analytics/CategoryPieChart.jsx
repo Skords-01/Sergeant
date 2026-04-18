@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { cn } from "@shared/lib/cn";
 
 function polarToXY(cx, cy, r, angleDeg) {
@@ -12,7 +13,10 @@ function describeArc(cx, cy, r, startDeg, endDeg) {
   return `M ${start.x.toFixed(2)} ${start.y.toFixed(2)} A ${r} ${r} 0 ${largeArc} 1 ${end.x.toFixed(2)} ${end.y.toFixed(2)}`;
 }
 
-export function CategoryPieChart({ data = [], size = 160, className }) {
+// Презентаційна кругова діаграма для статистики категорій.
+// Результат повністю залежить від вхідних пропсів, тому `memo` вимикає зайві
+// перерендери при змінах стану сторінки Analytics.
+function CategoryPieChartComponent({ data = [], size = 160, className }) {
   if (!data || data.length === 0) return null;
 
   const cx = size / 2;
@@ -110,3 +114,5 @@ export function CategoryPieChart({ data = [], size = 160, className }) {
     </div>
   );
 }
+
+export const CategoryPieChart = memo(CategoryPieChartComponent);

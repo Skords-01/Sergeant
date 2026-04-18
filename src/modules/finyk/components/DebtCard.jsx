@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { cn } from "@shared/lib/cn";
 
 function formatDueDate(dueDate) {
@@ -22,7 +23,9 @@ function formatDueDateValue(dueDate) {
   return new Date(y, (m || 1) - 1, d || 1).toLocaleDateString("uk-UA");
 }
 
-export function DebtCard({
+// Чиста картка боргу / заборгованості — рендер повністю керується пропсами,
+// тому memo безпечно зрізає перерендери при оновленнях батька.
+function DebtCardComponent({
   name,
   emoji,
   remaining,
@@ -99,3 +102,5 @@ export function DebtCard({
     </div>
   );
 }
+
+export const DebtCard = memo(DebtCardComponent);

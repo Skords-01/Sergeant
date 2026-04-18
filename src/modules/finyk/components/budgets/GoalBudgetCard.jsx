@@ -1,9 +1,12 @@
+import { memo } from "react";
 import { Button } from "@shared/components/ui/Button";
 
 const formInp =
   "w-full h-10 rounded-xl border border-line bg-bg px-3 text-sm text-text outline-none focus:border-primary";
 
-export function GoalBudgetCard({
+// Картка цілі накопичення — детерміновані пропси, memo дозволяє не
+// перераховувати розмітку при перерендерах сторінки Budgets.
+function GoalBudgetCardComponent({
   budget,
   saved,
   pct,
@@ -83,3 +86,5 @@ export function GoalBudgetCard({
     </div>
   );
 }
+
+export const GoalBudgetCard = memo(GoalBudgetCardComponent);

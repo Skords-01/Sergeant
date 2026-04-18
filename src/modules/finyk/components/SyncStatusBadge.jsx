@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { cn } from "@shared/lib/cn";
 
 function formatTs(ts) {
@@ -9,7 +10,9 @@ function formatTs(ts) {
   return `${hh}:${mm}`;
 }
 
-export function SyncStatusBadge({
+// Простий індикатор синхронізації. Рендериться в Overview, де багато
+// стан-залежних значень змінюються часто — memo зменшує зайві рендери.
+function SyncStatusBadgeComponent({
   syncState,
   lastUpdated,
   error,
@@ -79,3 +82,5 @@ export function SyncStatusBadge({
     </div>
   );
 }
+
+export const SyncStatusBadge = memo(SyncStatusBadgeComponent);

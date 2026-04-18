@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { memo, useState } from "react";
 import { daysUntil, fmtDate } from "../utils";
 import { cn } from "@shared/lib/cn";
 import {
@@ -24,7 +24,9 @@ const EMOJI_OPTIONS = [
   "📡",
 ];
 
-export function SubCard({
+// Картка підписки. Всередині тримає лише локальний стан редагування,
+// тож memo уникає перерендеру при змінах інших підписок/сторінки.
+function SubCardComponent({
   sub,
   transactions,
   onDelete,
@@ -212,3 +214,5 @@ export function SubCard({
     </div>
   );
 }
+
+export const SubCard = memo(SubCardComponent);

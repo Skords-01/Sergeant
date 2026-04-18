@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { memo, useCallback, useState, useEffect, useMemo, useRef } from "react";
 import { Skeleton } from "@shared/components/ui/Skeleton";
 import { EmptyState } from "@shared/components/ui/EmptyState";
 import { cn } from "@shared/lib/cn";
@@ -18,7 +18,9 @@ function readTxCache(year, month) {
   }
 }
 
-function Section({ title, children, className }) {
+// Презентаційний контейнер-секція. memo, бо приймає лише `title/className/children`
+// і не має побічних ефектів — уникаємо рендеру при оновленнях, не пов'язаних з пропсами.
+const Section = memo(function Section({ title, children, className }) {
   return (
     <div
       className={cn(
@@ -32,9 +34,11 @@ function Section({ title, children, className }) {
       {children}
     </div>
   );
-}
+});
 
-function MonthNav({ year, month, onChange }) {
+// Навігація між місяцями. memo — пропси (year/month/onChange) змінюються рідко,
+// а сторінка Analytics ре-рендериться при кожному завантаженні історії.
+const MonthNav = memo(function MonthNav({ year, month, onChange }) {
   const now = new Date();
   const isCurrentMonth =
     year === now.getFullYear() && month === now.getMonth() + 1;
@@ -73,9 +77,11 @@ function MonthNav({ year, month, onChange }) {
       </button>
     </div>
   );
-}
+});
 
-function ComparisonRow({ label, current, prev }) {
+// Рядок порівняння метрики з попереднім місяцем. Чиста функція від пропсів —
+// memo знімає перерендер при оновленнях сусідніх секцій Analytics.
+const ComparisonRow = memo(function ComparisonRow({ label, current, prev }) {
   const diff = current - prev;
   const pct = prev > 0 ? Math.round((diff / prev) * 100) : null;
   const up = diff > 0;
@@ -105,7 +111,7 @@ function ComparisonRow({ label, current, prev }) {
       </div>
     </div>
   );
-}
+});
 
 export function Analytics({ mono, storage }) {
   const now = new Date();
@@ -191,16 +197,20 @@ export function Analytics({ mono, storage }) {
 
   const pageLoading = (isCurrentMonth ? mono.loadingTx : loading) && activeTx.length === 0;
 
+  // useCallback — передається у memo(MonthNav); стабільне посилання дозволяє
+  // уникати перерендеру навігації при оновленні інших частин сторінки.
+  const handleMonthChange = useCallback((y, m) => {
+    setYear(y);
+    setMonth(m);
+  }, []);
+
   return (
     <div className="flex-1 overflow-y-auto">
       <div className="max-w-4xl mx-auto px-4 pt-4 page-tabbar-pad space-y-4">
         <MonthNav
           year={year}
           month={month}
-          onChange={(y, m) => {
-            setYear(y);
-            setMonth(m);
-          }}
+          onChange={handleMonthChange}
         />
 
         {/* Summary */}

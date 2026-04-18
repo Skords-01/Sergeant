@@ -1,6 +1,10 @@
+import { memo } from "react";
 import { chartPaletteList as COLORS } from "../constants/chartPalette.js";
 
-export function CategoryChart({ data, onBarClick }) {
+// Чиста презентаційна діаграма: рендер залежить лише від `data` та `onBarClick`.
+// `memo` уникає перерендеру, коли батько оновлюється, а ці пропси не змінилися
+// (напр. зміна фільтрів транзакцій не повинна торкатись графіка категорій).
+function CategoryChartComponent({ data, onBarClick }) {
   const maxVal = data[0]?.spent || 1;
   return (
     <div className="flex flex-col gap-3">
@@ -42,3 +46,5 @@ export function CategoryChart({ data, onBarClick }) {
     </div>
   );
 }
+
+export const CategoryChart = memo(CategoryChartComponent);

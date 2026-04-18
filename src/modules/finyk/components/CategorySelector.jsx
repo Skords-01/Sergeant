@@ -1,6 +1,9 @@
+import { memo } from "react";
 import { cn } from "@shared/lib/cn";
 
-export function CategorySelector({
+// Тонкий <select>-обгортач: рендер повністю залежить від пропсів,
+// memo робить його дешевшим у формах з частими ре-рендерами.
+function CategorySelectorComponent({
   value,
   onChange,
   categories = [],
@@ -25,3 +28,5 @@ export function CategorySelector({
     </select>
   );
 }
+
+export const CategorySelector = memo(CategorySelectorComponent);
