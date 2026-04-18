@@ -21,13 +21,35 @@ function effectiveLimits() {
   };
 }
 
+async function safeSessionUser(req) {
+  try {
+    return await getSessionUser(req);
+  } catch (e) {
+    console.error(
+      JSON.stringify({
+        level: "warn",
+        msg: "ai_quota_session_lookup_failed",
+        error: e?.message || String(e),
+      }),
+    );
+    return null;
+  }
+}
+
 /**
  * Перевірка та збільшення денного лічильника AI для залогіненого користувача або IP.
- * Повертає false, якщо відповідь вже відправлена (429/503).
+ * Повертає false, якщо відповідь вже відправлена (429).
+ *
+ * Квота зберігається в Postgres (ai_usage_daily). Якщо сховище тимчасово недоступне
+ * (немає DATABASE_URL, впала БД, відсутня таблиця тощо) — fail-open: пропускаємо запит
+ * і логуємо подію. Це advisory-ліміт, а не механізм безпеки: upstream (Anthropic) і
+ * роут-специфічні `checkRateLimit` все одно захищають від зловживань.
  */
 export async function assertAiQuota(req, res) {
+  if (isAiQuotaDisabled()) return true;
+
   const { user: userLimit, anon: anonLimit } = effectiveLimits();
-  const sessionUser = await getSessionUser(req);
+  const sessionUser = await safeSessionUser(req);
   const limit = sessionUser ? userLimit : anonLimit;
 
   if (limit == null) return true;
@@ -38,6 +60,12 @@ export async function assertAiQuota(req, res) {
       code: "AI_QUOTA",
     });
     return false;
+  }
+
+  if (!process.env.DATABASE_URL) {
+    logQuotaStoreUnavailable("database_url_missing");
+    setRemainingHeader(res, "unknown");
+    return true;
   }
 
   const subject = sessionUser ? `u:${sessionUser.id}` : `ip:${getIp(req)}`;
@@ -53,26 +81,34 @@ export async function assertAiQuota(req, res) {
       });
       return false;
     }
-    try {
-      res.setHeader("X-AI-Quota-Remaining", String(result.remaining));
-    } catch {
-      /* ignore */
-    }
+    setRemainingHeader(res, String(result.remaining));
     return true;
   } catch (e) {
-    console.error(
-      JSON.stringify({
-        level: "error",
-        msg: "ai_quota_db",
-        error: e?.message || String(e),
-      }),
-    );
-    res.status(503).json({
-      error: "Не вдалося перевірити квоту AI. Спробуй пізніше.",
-      code: "AI_QUOTA_DB",
-    });
-    return false;
+    logQuotaStoreUnavailable("db_error", e);
+    // Fail-open: краще пропустити запит, ніж блокувати всі AI-фічі через збій сховища квот.
+    setRemainingHeader(res, "unknown");
+    return true;
   }
+}
+
+function setRemainingHeader(res, value) {
+  try {
+    res.setHeader("X-AI-Quota-Remaining", value);
+  } catch {
+    /* ignore */
+  }
+}
+
+function logQuotaStoreUnavailable(reason, e) {
+  console.error(
+    JSON.stringify({
+      level: "error",
+      msg: "ai_quota_store_unavailable",
+      reason,
+      error: e?.message || (e ? String(e) : undefined),
+      code: e?.code,
+    }),
+  );
 }
 
 async function consumeQuota(subject, day, limit) {
