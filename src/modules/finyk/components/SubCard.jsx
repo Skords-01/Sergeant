@@ -1,5 +1,6 @@
 import { memo, useState } from "react";
 import { daysUntil, fmtDate } from "../utils";
+import { Button } from "@shared/components/ui/Button";
 import { cn } from "@shared/lib/cn";
 import {
   getLastTxForSubscription,
@@ -110,13 +111,18 @@ function SubCardComponent({
           </select>
         </div>
         <div className="flex gap-2">
-          <button
+          <Button
+            variant="finyk-soft"
+            size="sm"
+            className="flex-1"
             onClick={saveEdit}
-            className="flex-1 py-2.5 text-sm font-semibold bg-emerald-500/12 text-emerald-700 border border-emerald-500/25 rounded-xl hover:bg-emerald-500/20 transition-colors"
           >
             Зберегти
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            className="flex-1"
             onClick={() => {
               setForm({
                 name: sub.name,
@@ -127,10 +133,9 @@ function SubCardComponent({
               });
               setEditing(false);
             }}
-            className="flex-1 py-2.5 text-sm font-semibold text-muted border border-line rounded-xl hover:bg-panelHi transition-colors"
           >
             Скасувати
-          </button>
+          </Button>
         </div>
       </div>
     );
