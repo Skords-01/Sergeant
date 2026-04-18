@@ -240,6 +240,67 @@ function buildFinanceRecs() {
     }
   }
 
+  // Персоналізована підказка: найчастіша категорія без встановленого ліміту.
+  // Кількість використань — за ВСІ транзакції (банк + manual), а не лише за
+  // поточний місяць, щоб уникнути шуму на початку місяця.
+  try {
+    const limitCategoryIds = new Set(
+      limits.map((l) => l.categoryId).filter(Boolean),
+    );
+    const catCount = new Map();
+    for (const tx of transactions) {
+      if (hiddenTxIds.has(tx.id) || transferIds.has(tx.id)) continue;
+      if ((tx.amount ?? 0) >= 0) continue;
+      const catId = txCategories[tx.id];
+      if (!catId || catId === "internal_transfer") continue;
+      catCount.set(catId, (catCount.get(catId) || 0) + 1);
+    }
+    for (const me of manualExpenses) {
+      const key = me.category || "other";
+      if (key === "internal_transfer") continue;
+      catCount.set(key, (catCount.get(key) || 0) + 1);
+    }
+    // Знаходимо топ-категорію без бюджету; поріг — ≥5 використань, щоб
+    // уникнути передчасних рекомендацій.
+    let best = null;
+    for (const [id, count] of catCount) {
+      if (limitCategoryIds.has(id)) continue;
+      if (count < 5) continue;
+      if (!best || count > best.count) best = { id, count };
+    }
+    if (best) {
+      const BUILTIN = {
+        food: "Продукти",
+        cafe: "Кафе та ресторани",
+        transport: "Транспорт",
+        entertainment: "Розваги",
+        health: "Здоров'я",
+        shopping: "Покупки",
+        utilities: "Комунальні",
+        subscriptions: "Підписки",
+        other: "Інше",
+      };
+      const fromCustom = customCategories.find((c) => c.id === best.id);
+      const label = fromCustom?.label || BUILTIN[best.id] || best.id;
+      const thisMonthSpend = Math.round(categorySpend[best.id] || 0);
+      const spendHint =
+        thisMonthSpend > 0
+          ? `Цього місяця вже ${thisMonthSpend.toLocaleString("uk-UA")} ₴ — поставте ліміт, щоб тримати руку на пульсі.`
+          : `Використано ${best.count} разів — встановіть ліміт, щоб тримати все під контролем.`;
+      recs.push({
+        id: `finyk_frequent_no_budget_${best.id}`,
+        module: "finyk",
+        priority: 55,
+        icon: "📌",
+        title: `"${label}" — ваша найчастіша категорія без ліміту`,
+        body: spendHint,
+        action: "finyk",
+      });
+    }
+  } catch {
+    // дефенсивно: рекомендація опціональна, не валимо ланцюжок інших правил.
+  }
+
   // Прогрес фінансових цілей (>=80% — фінішна пряма)
   const goals = budgets.filter((b) => b.type === "goal");
   for (const g of goals) {

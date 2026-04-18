@@ -20,6 +20,7 @@ import { Assets } from "./pages/Assets.jsx";
 import { Analytics } from "./pages/Analytics.jsx";
 import { ManualExpenseSheet } from "./components/ManualExpenseSheet.jsx";
 import { useUnifiedFinanceData } from "./hooks/useUnifiedFinanceData";
+import { useFinykPersonalization } from "./hooks/useFinykPersonalization";
 
 const NAV_ICONS = {
   overview: (
@@ -177,6 +178,8 @@ export default function App({
   );
   const [showExpenseSheet, setShowExpenseSheet] = useState(false);
   const [editingManualExpenseId, setEditingManualExpenseId] = useState(null);
+  // Для prefill категорії при кліку на quick-add картку з Overview.
+  const [quickAddCategory, setQuickAddCategory] = useState(null);
   // "Manual only" bypass: user completed onboarding without Monobank or
   // pressed «Далі без банку» on the login screen. When set, we render the
   // normal Finyk UI populated from manual expenses even if `clientInfo` is
@@ -215,6 +218,13 @@ export default function App({
   }, []);
 
   const { mergedMono } = useUnifiedFinanceData({ mono, privat });
+
+  // Частотна персоналізація: топ-категорії/мерчанти користувача.
+  // Використовуються у quick add, dashboard-картці та підказках.
+  const { frequentCategories, frequentMerchants } = useFinykPersonalization({
+    mono: mergedMono,
+    storage,
+  });
 
   const { clientInfo, connecting, error, authError, connect } = mono;
   const syncTone =
@@ -585,6 +595,13 @@ export default function App({
                 navigate("transactions");
               }}
               showBalance={showBalance}
+              frequentCategories={frequentCategories}
+              frequentMerchants={frequentMerchants}
+              onQuickAdd={(manualLabel) => {
+                setEditingManualExpenseId(null);
+                setQuickAddCategory(manualLabel || null);
+                setShowExpenseSheet(true);
+              }}
             />
           </SectionErrorBoundary>
         )}
@@ -685,6 +702,7 @@ export default function App({
         onClose={() => {
           setShowExpenseSheet(false);
           setEditingManualExpenseId(null);
+          setQuickAddCategory(null);
         }}
         initialExpense={
           editingManualExpenseId
@@ -693,6 +711,9 @@ export default function App({
               ) || null
             : null
         }
+        initialCategory={quickAddCategory}
+        frequentCategories={frequentCategories}
+        frequentMerchants={frequentMerchants}
         onSave={(expense) => {
           if (expense?.id) {
             storage.editManualExpense?.(expense.id, expense);

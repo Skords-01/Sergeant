@@ -1,9 +1,10 @@
-import { useState, useEffect, useId } from "react";
+import { useState, useEffect, useId, useMemo } from "react";
 import { Button } from "@shared/components/ui/Button";
 import { VoiceMicButton } from "@shared/components/ui/VoiceMicButton.jsx";
 import { parseExpenseSpeech } from "../../../core/lib/speechParsers.js";
 import { useVisualKeyboardInset } from "@shared/hooks/useVisualKeyboardInset";
 import { toLocalISODate } from "@shared/lib/date";
+import { CANONICAL_TO_MANUAL_LABEL } from "../domain/personalization";
 
 const CATEGORIES = [
   "їжа",
@@ -19,7 +20,44 @@ const CATEGORIES = [
 const formInp =
   "w-full h-11 rounded-2xl border border-line bg-panelHi px-4 text-text outline-none focus:border-muted transition-colors";
 
-export function ManualExpenseSheet({ open, onClose, onSave, initialExpense }) {
+// Сортує доступні підписи категорій за персональною частотою, зберігаючи
+// стабільний порядок для категорій без статистики.
+function sortCategoriesByFrequency(frequentCategories = []) {
+  if (!frequentCategories.length) return CATEGORIES;
+  // Перетворюємо частотну статистику на індекс manual-label → rank.
+  // Для canonical id беремо відповідний manual-label; для custom / невідомих —
+  // використовуємо original manualLabel, якщо він є у списку кнопок.
+  const rank = new Map();
+  frequentCategories.forEach((cat, idx) => {
+    const label =
+      cat.manualLabel && CATEGORIES.includes(cat.manualLabel)
+        ? cat.manualLabel
+        : CANONICAL_TO_MANUAL_LABEL[cat.id];
+    if (label && CATEGORIES.includes(label) && !rank.has(label)) {
+      rank.set(label, idx);
+    }
+  });
+  const withRank = CATEGORIES.map((c, originalIdx) => ({
+    label: c,
+    rank: rank.has(c) ? rank.get(c) : Infinity,
+    originalIdx,
+  }));
+  withRank.sort((a, b) => {
+    if (a.rank !== b.rank) return a.rank - b.rank;
+    return a.originalIdx - b.originalIdx;
+  });
+  return withRank.map((x) => x.label);
+}
+
+export function ManualExpenseSheet({
+  open,
+  onClose,
+  onSave,
+  initialExpense,
+  frequentCategories = [],
+  frequentMerchants = [],
+  initialCategory,
+}) {
   const formId = useId();
   const descId = `${formId}-desc`;
   const amountId = `${formId}-amount`;
@@ -49,16 +87,52 @@ export function ManualExpenseSheet({ open, onClose, onSave, initialExpense }) {
           date: toLocalISODate(d),
         });
       } else {
+        // Для нової витрати беремо або явно вказану категорію (клік по картці
+        // "часте" з dashboard'у), або найчастішу категорію користувача, якщо
+        // вона є у списку кнопок; інакше — дефолтне "інше".
+        let startCategory = "інше";
+        if (initialCategory && CATEGORIES.includes(initialCategory)) {
+          startCategory = initialCategory;
+        } else if (frequentCategories.length > 0) {
+          const top = frequentCategories[0];
+          const topLabel =
+            top.manualLabel && CATEGORIES.includes(top.manualLabel)
+              ? top.manualLabel
+              : CANONICAL_TO_MANUAL_LABEL[top.id];
+          if (topLabel && CATEGORIES.includes(topLabel)) {
+            startCategory = topLabel;
+          }
+        }
         setForm({
           description: "",
           amount: "",
-          category: "інше",
+          category: startCategory,
           date: toLocalISODate(),
         });
       }
       setError("");
     }
+    // frequentCategories/initialCategory лише задають стартовий стан при
+    // відкритті — навмисно не реагуємо на їхні оновлення у відкритому sheet.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, initialExpense]);
+
+  const sortedCategories = useMemo(
+    () => sortCategoriesByFrequency(frequentCategories),
+    [frequentCategories],
+  );
+  // Ховаємо зі списку пропозицій мерчанта, якого вже введено у полі description.
+  const merchantSuggestions = useMemo(() => {
+    if (!frequentMerchants.length) return [];
+    const currentKey = (form.description || "")
+      .trim()
+      .toLocaleLowerCase("uk-UA");
+    return frequentMerchants
+      .filter(
+        (m) => m.name && m.name.toLocaleLowerCase("uk-UA") !== currentKey,
+      )
+      .slice(0, 5);
+  }, [frequentMerchants, form.description]);
 
   if (!open) return null;
 
@@ -144,6 +218,42 @@ export function ManualExpenseSheet({ open, onClose, onSave, initialExpense }) {
             </div>
           </div>
 
+          {merchantSuggestions.length > 0 && (
+            <div
+              className="flex flex-wrap gap-1.5 -mt-1"
+              role="group"
+              aria-label="Нещодавні мерчанти"
+            >
+              <span className="text-[10px] text-subtle uppercase tracking-wide font-semibold w-full">
+                Нещодавнє
+              </span>
+              {merchantSuggestions.map((m) => (
+                <button
+                  key={m.key}
+                  type="button"
+                  onClick={() =>
+                    setForm((f) => {
+                      const next = { ...f, description: m.name };
+                      // Якщо є впевнений підпис manual-категорії для цього
+                      // мерчанта — підставляємо його, щоб економити тапи.
+                      const suggested =
+                        m.suggestedManualCategory &&
+                        CATEGORIES.includes(m.suggestedManualCategory)
+                          ? m.suggestedManualCategory
+                          : null;
+                      if (suggested) next.category = suggested;
+                      return next;
+                    })
+                  }
+                  className="px-2.5 py-1 rounded-full text-[11px] font-medium bg-panelHi text-muted border border-line hover:border-muted/50 transition-colors"
+                  title={`${m.count} разів · ${m.total.toLocaleString("uk-UA")} ₴`}
+                >
+                  {m.name}
+                </button>
+              ))}
+            </div>
+          )}
+
           <div>
             <label
               htmlFor={amountId}
@@ -178,7 +288,7 @@ export function ManualExpenseSheet({ open, onClose, onSave, initialExpense }) {
               role="group"
               aria-labelledby={catLabelId}
             >
-              {CATEGORIES.map((cat) => (
+              {sortedCategories.map((cat) => (
                 <button
                   key={cat}
                   onClick={() => setForm((f) => ({ ...f, category: cat }))}
