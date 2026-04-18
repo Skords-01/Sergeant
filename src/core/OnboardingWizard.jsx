@@ -84,6 +84,86 @@ function StepDots({ total, current }) {
   );
 }
 
+// A tiny auto-cycling preview of what a "full" Sergeant screen looks like:
+// one metric per module, rotating on a 2.2s interval. Purely decorative —
+// it exists so the user sees concrete numbers (not just words) in the first
+// second of the splash, which is what sells the "life in one screen" pitch.
+const SPLASH_TICKER_ITEMS = [
+  {
+    icon: "credit-card",
+    accent: "text-finyk bg-finyk-soft",
+    metric: "−320 грн",
+    label: "на каву цього тижня",
+  },
+  {
+    icon: "dumbbell",
+    accent: "text-fizruk bg-fizruk-soft",
+    metric: "5 трен.",
+    label: "за останні 14 днів",
+  },
+  {
+    icon: "check",
+    accent: "text-routine bg-routine-soft",
+    metric: "7 днів",
+    label: "стрік — «випити воду»",
+  },
+  {
+    icon: "utensils",
+    accent: "text-nutrition bg-nutrition-soft",
+    metric: "420 ккал",
+    label: "сніданок сьогодні",
+  },
+];
+
+function SplashTicker() {
+  const [idx, setIdx] = useState(0);
+  useEffect(() => {
+    const t = setInterval(
+      () => setIdx((i) => (i + 1) % SPLASH_TICKER_ITEMS.length),
+      2200,
+    );
+    return () => clearInterval(t);
+  }, []);
+  const item = SPLASH_TICKER_ITEMS[idx];
+  return (
+    <div
+      className={cn(
+        "w-full rounded-2xl border border-line bg-surface",
+        "px-4 py-3 flex items-center gap-3",
+      )}
+      aria-live="polite"
+    >
+      <div
+        key={`icon-${idx}`}
+        className={cn(
+          "shrink-0 w-10 h-10 rounded-xl flex items-center justify-center",
+          "animate-fade-in",
+          item.accent,
+        )}
+      >
+        <Icon name={item.icon} size={20} strokeWidth={2} aria-hidden />
+      </div>
+      <div key={`text-${idx}`} className="animate-fade-in text-left">
+        <div className="text-base font-semibold text-text leading-tight">
+          {item.metric}
+        </div>
+        <div className="text-xs text-muted leading-tight">{item.label}</div>
+      </div>
+      <div className="ml-auto flex items-center gap-1" aria-hidden>
+        {SPLASH_TICKER_ITEMS.map((_, i) => (
+          <span
+            key={i}
+            className={cn(
+              "rounded-full transition-all",
+              i === idx ? "w-1.5 h-1.5 bg-brand-500" : "w-1 h-1 bg-line",
+            )}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // Step 0 — Value prop. No name field, no form. The goal of this screen
 // is to answer "what is this?" in one sentence and then get out of the way.
 function SplashStep({ onNext }) {
@@ -99,6 +179,7 @@ function SplashStep({ onNext }) {
           AI-помічник.
         </p>
       </div>
+      <SplashTicker />
       <ul className="w-full space-y-2 text-left text-sm text-muted">
         <li className="flex items-start gap-2">
           <span className="mt-0.5 text-brand-600">•</span>
