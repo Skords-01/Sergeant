@@ -1,15 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { safeReadLS, safeWriteLS } from "@shared/lib/storage.js";
+import { STORAGE_KEYS } from "@shared/lib/storageKeys.js";
 
-const KEY = "fizruk_measurements_v1";
-
-function safeParse(raw, fallback) {
-  try {
-    const v = JSON.parse(raw);
-    return v ?? fallback;
-  } catch {
-    return fallback;
-  }
-}
+const KEY = STORAGE_KEYS.FIZRUK_MEASUREMENTS;
 
 function uid() {
   return `m_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
@@ -36,18 +29,13 @@ export function useMeasurements() {
   const [entries, setEntries] = useState([]);
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(KEY);
-      const parsed = raw ? safeParse(raw, []) : [];
-      if (Array.isArray(parsed)) setEntries(parsed);
-    } catch {}
+    const parsed = safeReadLS(KEY, []);
+    if (Array.isArray(parsed)) setEntries(parsed);
   }, []);
 
   const persist = useCallback((next) => {
     setEntries(next);
-    try {
-      localStorage.setItem(KEY, JSON.stringify(next));
-    } catch {}
+    safeWriteLS(KEY, next);
   }, []);
 
   const addEntry = useCallback(

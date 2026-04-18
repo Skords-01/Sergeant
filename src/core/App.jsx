@@ -19,6 +19,8 @@ import { HubDashboard } from "./HubDashboard.jsx";
 import { HubReports } from "./HubReports.jsx";
 import { HubSettingsPage } from "./HubSettingsPage.jsx";
 import { OnboardingWizard, shouldShowOnboarding } from "./OnboardingWizard.jsx";
+import { SyncStatusIndicator } from "./SyncStatusIndicator.jsx";
+import { Icon } from "@shared/components/ui/Icon";
 
 const HubSearch = lazy(() =>
   import("./HubSearch.jsx").then((m) => ({ default: m.HubSearch })),
@@ -31,20 +33,7 @@ function OfflineBanner() {
       aria-live="polite"
       className="fixed top-0 left-0 right-0 z-[300] flex items-center justify-center gap-2 px-4 py-2 bg-warning text-white text-xs font-semibold safe-area-pt shadow-soft"
     >
-      <svg
-        width="14"
-        height="14"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden
-      >
-        <line x1="1" y1="1" x2="23" y2="23" />
-        <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55M5 12.55a10.94 10.94 0 0 1 5.17-2.39M10.71 5.05A16 16 0 0 1 22.56 9M1.42 9a15.91 15.91 0 0 1 4.7-2.88M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01" />
-      </svg>
+      <Icon name="wifi-off" size={14} strokeWidth={2.5} />
       Немає підключення до інтернету
     </div>
   );
@@ -79,43 +68,7 @@ function DarkModeToggle({ dark, onToggle }) {
       title={dark ? "Світла тема" : "Темна тема"}
       className="w-10 h-10 flex items-center justify-center rounded-2xl text-muted hover:text-text hover:bg-panelHi transition-colors"
     >
-      {dark ? (
-        <svg
-          width="20"
-          height="20"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          aria-hidden
-        >
-          <circle cx="12" cy="12" r="5" />
-          <line x1="12" y1="1" x2="12" y2="3" />
-          <line x1="12" y1="21" x2="12" y2="23" />
-          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
-          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
-          <line x1="1" y1="12" x2="3" y2="12" />
-          <line x1="21" y1="12" x2="23" y2="12" />
-          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
-          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
-        </svg>
-      ) : (
-        <svg
-          width="20"
-          height="20"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          aria-hidden
-        >
-          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-        </svg>
-      )}
+      <Icon name={dark ? "sun" : "moon"} size={20} />
     </button>
   );
 }
@@ -279,20 +232,7 @@ function IOSInstallBanner({ onDismiss }) {
 function useSWUpdate() {
   const toast = useToast();
   const [updateAvailable, setUpdateAvailable] = useState(false);
-
-  useEffect(() => {
-    const onUpdate = () => setUpdateAvailable(true);
-    const onOffline = () => {
-      toast.success("Додаток готовий до роботи офлайн", 4000);
-    };
-    if (window.__pwaUpdateReady) setUpdateAvailable(true);
-    window.addEventListener("pwa-update-ready", onUpdate);
-    window.addEventListener("pwa-offline-ready", onOffline);
-    return () => {
-      window.removeEventListener("pwa-update-ready", onUpdate);
-      window.removeEventListener("pwa-offline-ready", onOffline);
-    };
-  }, [toast]);
+  const toastShownRef = useRef(false);
 
   const applyUpdate = useCallback(() => {
     if (typeof window.__pwaUpdateSW === "function") {
@@ -301,6 +241,35 @@ function useSWUpdate() {
       window.location.reload();
     }
   }, []);
+
+  useEffect(() => {
+    const showUpdateToast = () => {
+      if (toastShownRef.current) return;
+      toastShownRef.current = true;
+      toast.info("Доступна нова версія", 15000, {
+        label: "Оновити",
+        onClick: applyUpdate,
+      });
+    };
+
+    const onUpdate = () => {
+      setUpdateAvailable(true);
+      showUpdateToast();
+    };
+    const onOffline = () => {
+      toast.success("Додаток готовий до роботи офлайн", 4000);
+    };
+    if (window.__pwaUpdateReady) {
+      setUpdateAvailable(true);
+      showUpdateToast();
+    }
+    window.addEventListener("pwa-update-ready", onUpdate);
+    window.addEventListener("pwa-offline-ready", onOffline);
+    return () => {
+      window.removeEventListener("pwa-update-ready", onUpdate);
+      window.removeEventListener("pwa-offline-ready", onOffline);
+    };
+  }, [toast, applyUpdate]);
 
   return { updateAvailable, applyUpdate };
 }
@@ -678,14 +647,17 @@ function AppInner() {
               </svg>
             </button>
             {user ? (
-              <UserMenuButton
-                user={user}
-                syncing={syncing}
-                lastSync={lastSync}
-                onSync={pushAll}
-                onPull={pullAll}
-                onLogout={logout}
-              />
+              <>
+                <SyncStatusIndicator user={user} syncing={syncing} />
+                <UserMenuButton
+                  user={user}
+                  syncing={syncing}
+                  lastSync={lastSync}
+                  onSync={pushAll}
+                  onPull={pullAll}
+                  onLogout={logout}
+                />
+              </>
             ) : (
               !authLoading && (
                 <button

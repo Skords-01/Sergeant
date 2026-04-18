@@ -63,6 +63,10 @@ export function PhotoAnalyzeCard({
           <img
             src={photoPreviewUrl}
             alt="Обране фото"
+            loading="lazy"
+            decoding="async"
+            width="600"
+            height="280"
             className="w-full max-h-[280px] object-cover rounded-2xl"
           />
         ) : (

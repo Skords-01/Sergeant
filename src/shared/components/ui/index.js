@@ -44,3 +44,4 @@ export { Skeleton } from "./Skeleton";
 export { SwipeToAction } from "./SwipeToAction";
 export { SectionErrorBoundary } from "./SectionErrorBoundary";
 export { VoiceMicButton } from "./VoiceMicButton";
+export { Icon, ICON_NAMES } from "./Icon";

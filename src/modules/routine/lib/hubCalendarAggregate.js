@@ -1,3 +1,4 @@
+import { safeReadLS } from "@shared/lib/storage.js";
 import {
   MONTHLY_PLAN_STORAGE_KEY,
   TEMPLATES_STORAGE_KEY,
@@ -8,38 +9,18 @@ import { buildFinykSubscriptionEvents } from "./finykSubscriptionCalendar.js";
 
 export const FIZRUK_GROUP_LABEL = "Фізрук";
 
-function safeParse(raw, fallback) {
-  try {
-    const v = JSON.parse(raw);
-    return v ?? fallback;
-  } catch {
-    return fallback;
-  }
-}
-
 export function loadMonthlyPlanDays() {
-  try {
-    const raw = localStorage.getItem(MONTHLY_PLAN_STORAGE_KEY);
-    if (!raw) return {};
-    const p = safeParse(raw, {});
-    return typeof p.days === "object" && p.days ? p.days : {};
-  } catch {
-    return {};
-  }
+  const p = safeReadLS(MONTHLY_PLAN_STORAGE_KEY, {});
+  return typeof p?.days === "object" && p.days ? p.days : {};
 }
 
 export function loadTemplateNameById() {
   const map = new Map();
-  try {
-    const raw = localStorage.getItem(TEMPLATES_STORAGE_KEY);
-    const arr = raw ? safeParse(raw, []) : [];
-    if (Array.isArray(arr)) {
-      for (const t of arr) {
-        if (t?.id && t?.name) map.set(t.id, String(t.name));
-      }
+  const arr = safeReadLS(TEMPLATES_STORAGE_KEY, []);
+  if (Array.isArray(arr)) {
+    for (const t of arr) {
+      if (t?.id && t?.name) map.set(t.id, String(t.name));
     }
-  } catch {
-    /* noop */
   }
   return map;
 }

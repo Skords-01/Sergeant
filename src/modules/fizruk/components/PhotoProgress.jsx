@@ -150,6 +150,10 @@ function CompareSlider({ beforeSrc, afterSrc }) {
       <img
         src={afterSrc}
         alt="Після"
+        loading="lazy"
+        decoding="async"
+        width="600"
+        height="800"
         className="absolute inset-0 w-full h-full object-cover"
         draggable={false}
       />
@@ -160,6 +164,10 @@ function CompareSlider({ beforeSrc, afterSrc }) {
         <img
           src={beforeSrc}
           alt="До"
+          loading="lazy"
+          decoding="async"
+          width="600"
+          height="800"
           className="absolute inset-0 h-full object-cover"
           style={{ width: containerWidth > 0 ? containerWidth : "100%" }}
           draggable={false}
@@ -351,6 +359,10 @@ export function PhotoProgress() {
           <img
             src={preview}
             alt="Попередній перегляд"
+            loading="lazy"
+            decoding="async"
+            width="600"
+            height="800"
             className="w-full rounded-xl object-cover max-h-72"
           />
           <div className="grid grid-cols-2 gap-2">
@@ -455,6 +467,10 @@ export function PhotoProgress() {
                   <img
                     src={p.dataUrl}
                     alt={p.date}
+                    loading="lazy"
+                    decoding="async"
+                    width="240"
+                    height="320"
                     className="w-full h-full object-cover"
                   />
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors" />

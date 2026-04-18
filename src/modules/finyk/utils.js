@@ -1,3 +1,4 @@
+import { safeReadLS } from "@shared/lib/storage.js";
 import {
   MCC_CATEGORIES,
   INCOME_CATEGORIES,
@@ -260,26 +261,15 @@ export function calcMonthlyNeeded(targetAmount, savedAmount, targetDate) {
   return { monthlyNeeded, monthsLeft, isAchieved: false, isOverdue: false };
 }
 
-function safeParseLS(key, fallback) {
-  try {
-    if (typeof localStorage === "undefined") return fallback;
-    const raw = localStorage.getItem(key);
-    if (!raw) return fallback;
-    return JSON.parse(raw) ?? fallback;
-  } catch {
-    return fallback;
-  }
-}
-
 // Збирає Set ID транзакцій, що виключаються зі статистики ФІНІК (та сама логіка, що
 // в `useStorage` → `excludedTxIds`), читаючи безпосередньо з localStorage.
 // Це дозволяє іншим сторінкам (Звіти, AI Digest) використовувати ту саму логіку
 // без mounted-хука useStorage.
 export function getFinykExcludedTxIdsFromStorage() {
-  const hidden = safeParseLS("finyk_hidden_txs", []);
-  const txCats = safeParseLS("finyk_tx_cats", {});
-  const recv = safeParseLS("finyk_recv", []);
-  const extra = safeParseLS("finyk_excluded_stat_txs", []);
+  const hidden = safeReadLS("finyk_hidden_txs", []);
+  const txCats = safeReadLS("finyk_tx_cats", {});
+  const recv = safeReadLS("finyk_recv", []);
+  const extra = safeReadLS("finyk_excluded_stat_txs", []);
   const transferIds = Object.entries(
     txCats && typeof txCats === "object" ? txCats : {},
   )
@@ -297,7 +287,7 @@ export function getFinykExcludedTxIdsFromStorage() {
 }
 
 export function getFinykTxSplitsFromStorage() {
-  const v = safeParseLS("finyk_tx_splits", {});
+  const v = safeReadLS("finyk_tx_splits", {});
   return v && typeof v === "object" ? v : {};
 }
 

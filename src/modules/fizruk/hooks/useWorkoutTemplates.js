@@ -1,36 +1,24 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { safeReadLS, safeWriteLS } from "@shared/lib/storage.js";
+import { STORAGE_KEYS } from "@shared/lib/storageKeys.js";
 
-const KEY = "fizruk_workout_templates_v1";
+const KEY = STORAGE_KEYS.FIZRUK_TEMPLATES;
 
 function uid() {
   return `tpl_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
-}
-
-function safeParse(raw, fallback) {
-  try {
-    const v = JSON.parse(raw);
-    return v ?? fallback;
-  } catch {
-    return fallback;
-  }
 }
 
 export function useWorkoutTemplates() {
   const [templates, setTemplates] = useState([]);
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(KEY);
-      const parsed = raw ? safeParse(raw, []) : [];
-      if (Array.isArray(parsed)) setTemplates(parsed);
-    } catch {}
+    const parsed = safeReadLS(KEY, []);
+    if (Array.isArray(parsed)) setTemplates(parsed);
   }, []);
 
   const persist = useCallback((next) => {
     setTemplates(next);
-    try {
-      localStorage.setItem(KEY, JSON.stringify(next));
-    } catch {}
+    safeWriteLS(KEY, next);
   }, []);
 
   const addTemplate = useCallback(

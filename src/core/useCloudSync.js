@@ -1,26 +1,27 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { apiUrl } from "@shared/lib/apiUrl.js";
 import { STORAGE_KEYS } from "@shared/lib/storageKeys.js";
+import { safeReadLS, safeWriteLS } from "@shared/lib/storage.js";
 
 const SYNC_MODULES = {
   finyk: {
     keys: [
-      "finyk_hidden",
-      "finyk_budgets",
-      "finyk_subs",
-      "finyk_assets",
-      "finyk_debts",
-      "finyk_recv",
-      "finyk_hidden_txs",
-      "finyk_monthly_plan",
-      "finyk_tx_cats",
-      "finyk_mono_debt_linked",
-      "finyk_networth_history",
-      "finyk_tx_splits",
-      "finyk_custom_cats_v1",
+      STORAGE_KEYS.FINYK_HIDDEN,
+      STORAGE_KEYS.FINYK_BUDGETS,
+      STORAGE_KEYS.FINYK_SUBS,
+      STORAGE_KEYS.FINYK_ASSETS,
+      STORAGE_KEYS.FINYK_DEBTS,
+      STORAGE_KEYS.FINYK_RECV,
+      STORAGE_KEYS.FINYK_HIDDEN_TXS,
+      STORAGE_KEYS.FINYK_MONTHLY_PLAN,
+      STORAGE_KEYS.FINYK_TX_CATS,
+      STORAGE_KEYS.FINYK_MONO_DEBT_LINKED,
+      STORAGE_KEYS.FINYK_NETWORTH_HISTORY,
+      STORAGE_KEYS.FINYK_TX_SPLITS,
+      STORAGE_KEYS.FINYK_CUSTOM_CATS,
       STORAGE_KEYS.FINYK_TX_CACHE,
       STORAGE_KEYS.FINYK_INFO_CACHE,
-      "finyk_tx_cache_last_good",
+      STORAGE_KEYS.FINYK_TX_CACHE_LAST_GOOD,
       STORAGE_KEYS.FINYK_SHOW_BALANCE,
       STORAGE_KEYS.FINYK_TOKEN,
     ],
@@ -28,13 +29,13 @@ const SYNC_MODULES = {
   fizruk: {
     keys: [
       STORAGE_KEYS.FIZRUK_WORKOUTS,
-      "fizruk_custom_exercises_v1",
+      STORAGE_KEYS.FIZRUK_CUSTOM_EXERCISES,
       STORAGE_KEYS.FIZRUK_MEASUREMENTS,
       STORAGE_KEYS.FIZRUK_TEMPLATES,
       STORAGE_KEYS.FIZRUK_SELECTED_TEMPLATE,
-      "fizruk_active_workout_id_v1",
-      "fizruk_plan_template_v1",
-      "fizruk_monthly_plan_v1",
+      STORAGE_KEYS.FIZRUK_ACTIVE_WORKOUT,
+      STORAGE_KEYS.FIZRUK_PLAN_TEMPLATE,
+      STORAGE_KEYS.FIZRUK_MONTHLY_PLAN,
       STORAGE_KEYS.FIZRUK_WELLBEING,
     ],
   },
@@ -43,21 +44,22 @@ const SYNC_MODULES = {
   },
   nutrition: {
     keys: [
-      "nutrition_log_v1",
-      "nutrition_pantries_v1",
-      "nutrition_active_pantry_v1",
-      "nutrition_prefs_v1",
+      STORAGE_KEYS.NUTRITION_LOG,
+      STORAGE_KEYS.NUTRITION_PANTRIES,
+      STORAGE_KEYS.NUTRITION_ACTIVE_PANTRY,
+      STORAGE_KEYS.NUTRITION_PREFS,
     ],
   },
 };
 
 export const SYNC_EVENT = "hub-cloud-sync-dirty";
+export const SYNC_STATUS_EVENT = "hub-cloud-sync-status";
 
-const SYNC_VERSION_KEY = "hub_sync_versions";
-const DIRTY_MODULES_KEY = "hub_sync_dirty_modules";
-const MODULE_MODIFIED_KEY = "hub_sync_module_modified";
-const OFFLINE_QUEUE_KEY = "hub_sync_offline_queue";
-const MIGRATION_DONE_KEY = "hub_sync_migrated_users";
+const SYNC_VERSION_KEY = STORAGE_KEYS.SYNC_VERSIONS;
+const DIRTY_MODULES_KEY = STORAGE_KEYS.SYNC_DIRTY_MODULES;
+const MODULE_MODIFIED_KEY = STORAGE_KEYS.SYNC_MODULE_MODIFIED;
+const OFFLINE_QUEUE_KEY = STORAGE_KEYS.SYNC_OFFLINE_QUEUE;
+const MIGRATION_DONE_KEY = STORAGE_KEYS.SYNC_MIGRATION_DONE;
 
 const ALL_TRACKED_KEYS = new Set(
   Object.values(SYNC_MODULES).flatMap((m) => m.keys),
@@ -70,65 +72,51 @@ function keyToModule(key) {
   return null;
 }
 
-function getDirtyModules() {
+function emitStatusEvent() {
   try {
-    const raw = localStorage.getItem(DIRTY_MODULES_KEY);
-    return raw ? JSON.parse(raw) : {};
-  } catch {
-    return {};
-  }
+    window.dispatchEvent(new CustomEvent(SYNC_STATUS_EVENT));
+  } catch {}
+}
+
+export function getDirtyModules() {
+  return safeReadLS(DIRTY_MODULES_KEY, {}) || {};
 }
 
 function markModuleDirty(moduleName) {
-  try {
-    const dirty = getDirtyModules();
-    dirty[moduleName] = true;
-    localStorage.setItem(DIRTY_MODULES_KEY, JSON.stringify(dirty));
-    const modified = getModuleModifiedTimes();
-    modified[moduleName] = new Date().toISOString();
-    localStorage.setItem(MODULE_MODIFIED_KEY, JSON.stringify(modified));
-  } catch {}
+  const dirty = getDirtyModules();
+  dirty[moduleName] = true;
+  safeWriteLS(DIRTY_MODULES_KEY, dirty);
+  const modified = getModuleModifiedTimes();
+  modified[moduleName] = new Date().toISOString();
+  safeWriteLS(MODULE_MODIFIED_KEY, modified);
+  emitStatusEvent();
 }
 
 function clearDirtyModule(moduleName) {
-  try {
-    const dirty = getDirtyModules();
-    delete dirty[moduleName];
-    localStorage.setItem(DIRTY_MODULES_KEY, JSON.stringify(dirty));
-  } catch {}
+  const dirty = getDirtyModules();
+  delete dirty[moduleName];
+  safeWriteLS(DIRTY_MODULES_KEY, dirty);
+  emitStatusEvent();
 }
 
 function clearAllDirty() {
-  try {
-    localStorage.setItem(DIRTY_MODULES_KEY, JSON.stringify({}));
-  } catch {}
+  safeWriteLS(DIRTY_MODULES_KEY, {});
+  emitStatusEvent();
 }
 
 function getModuleModifiedTimes() {
-  try {
-    const raw = localStorage.getItem(MODULE_MODIFIED_KEY);
-    return raw ? JSON.parse(raw) : {};
-  } catch {
-    return {};
-  }
+  return safeReadLS(MODULE_MODIFIED_KEY, {}) || {};
 }
 
 function getModuleVersions() {
-  try {
-    const raw = localStorage.getItem(SYNC_VERSION_KEY);
-    return raw ? JSON.parse(raw) : {};
-  } catch {
-    return {};
-  }
+  return safeReadLS(SYNC_VERSION_KEY, {}) || {};
 }
 
 function setModuleVersion(userId, moduleName, version) {
-  try {
-    const versions = getModuleVersions();
-    if (!versions[userId]) versions[userId] = {};
-    versions[userId][moduleName] = version;
-    localStorage.setItem(SYNC_VERSION_KEY, JSON.stringify(versions));
-  } catch {}
+  const versions = getModuleVersions();
+  if (!versions[userId]) versions[userId] = {};
+  versions[userId][moduleName] = version;
+  safeWriteLS(SYNC_VERSION_KEY, versions);
 }
 
 function getModuleVersion(userId, moduleName) {
@@ -136,46 +124,34 @@ function getModuleVersion(userId, moduleName) {
   return versions[userId]?.[moduleName] ?? 0;
 }
 
-function getOfflineQueue() {
-  try {
-    const raw = localStorage.getItem(OFFLINE_QUEUE_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
+export function getOfflineQueue() {
+  const q = safeReadLS(OFFLINE_QUEUE_KEY, []);
+  return Array.isArray(q) ? q : [];
 }
 
 function addToOfflineQueue(entry) {
-  try {
-    const queue = getOfflineQueue();
-    queue.push({ ...entry, ts: new Date().toISOString() });
-    localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(queue));
-  } catch {}
+  const queue = getOfflineQueue();
+  queue.push({ ...entry, ts: new Date().toISOString() });
+  safeWriteLS(OFFLINE_QUEUE_KEY, queue);
+  emitStatusEvent();
 }
 
 function clearOfflineQueue() {
   try {
     localStorage.removeItem(OFFLINE_QUEUE_KEY);
   } catch {}
+  emitStatusEvent();
 }
 
 function isMigrationDone(userId) {
-  try {
-    const raw = localStorage.getItem(MIGRATION_DONE_KEY);
-    const map = raw ? JSON.parse(raw) : {};
-    return !!map[userId];
-  } catch {
-    return false;
-  }
+  const map = safeReadLS(MIGRATION_DONE_KEY, {}) || {};
+  return !!map[userId];
 }
 
 function markMigrationDone(userId) {
-  try {
-    const raw = localStorage.getItem(MIGRATION_DONE_KEY);
-    const map = raw ? JSON.parse(raw) : {};
-    map[userId] = new Date().toISOString();
-    localStorage.setItem(MIGRATION_DONE_KEY, JSON.stringify(map));
-  } catch {}
+  const map = safeReadLS(MIGRATION_DONE_KEY, {}) || {};
+  map[userId] = new Date().toISOString();
+  safeWriteLS(MIGRATION_DONE_KEY, map);
 }
 
 function collectModuleData(moduleName) {
@@ -664,4 +640,42 @@ export function useCloudSync(user) {
     uploadLocalData,
     skipMigration,
   };
+}
+
+/**
+ * Lightweight hook exposing just the local sync state (dirty modules,
+ * offline queue, online status) so UI components can render status
+ * indicators without owning the full cloud-sync lifecycle.
+ */
+export function useSyncStatus() {
+  const [state, setState] = useState(() => ({
+    dirtyCount: Object.keys(getDirtyModules()).length,
+    queuedCount: getOfflineQueue().length,
+    isOnline: typeof navigator !== "undefined" ? navigator.onLine : true,
+  }));
+
+  useEffect(() => {
+    const refresh = () => {
+      setState({
+        dirtyCount: Object.keys(getDirtyModules()).length,
+        queuedCount: getOfflineQueue().length,
+        isOnline:
+          typeof navigator !== "undefined" ? navigator.onLine : true,
+      });
+    };
+
+    refresh();
+    window.addEventListener(SYNC_STATUS_EVENT, refresh);
+    window.addEventListener(SYNC_EVENT, refresh);
+    window.addEventListener("online", refresh);
+    window.addEventListener("offline", refresh);
+    return () => {
+      window.removeEventListener(SYNC_STATUS_EVENT, refresh);
+      window.removeEventListener(SYNC_EVENT, refresh);
+      window.removeEventListener("online", refresh);
+      window.removeEventListener("offline", refresh);
+    };
+  }, []);
+
+  return state;
 }

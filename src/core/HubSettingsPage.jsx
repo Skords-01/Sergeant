@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { cn } from "@shared/lib/cn";
 import { Button } from "@shared/components/ui/Button";
+import { safeReadLS } from "@shared/lib/storage.js";
 import { HubBackupPanel } from "./HubBackupPanel.jsx";
 import { resetDashboardOrder } from "./HubDashboard.jsx";
 import { useWeeklyDigest } from "./useWeeklyDigest.js";
@@ -27,16 +28,6 @@ import { WorkoutBackupBar } from "../modules/fizruk/components/workouts/WorkoutB
 import { apiUrl } from "@shared/lib/apiUrl.js";
 
 const PRIVAT_ENABLED = false;
-
-function safeParseLS(key, fallback) {
-  try {
-    const raw = localStorage.getItem(key);
-    if (!raw) return fallback;
-    return JSON.parse(raw) ?? fallback;
-  } catch {
-    return fallback;
-  }
-}
 
 function ChevronIcon({ expanded }) {
   return (
@@ -697,7 +688,7 @@ function FinykSection() {
     window.location.reload();
   };
 
-  const rawCache = safeParseLS("finyk_info_cache", null);
+  const rawCache = safeReadLS("finyk_info_cache", null);
   const infoData = rawCache?.info ?? rawCache;
   const token = (() => {
     try {

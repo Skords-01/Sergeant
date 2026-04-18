@@ -1,49 +1,27 @@
+import { safeReadLS } from "@shared/lib/storage.js";
+import { STORAGE_KEYS } from "@shared/lib/storageKeys.js";
 import { DEFAULT_SUBSCRIPTIONS } from "../../finyk/constants.js";
 import { getSubscriptionAmountMeta } from "../../finyk/domain/subscriptionUtils.js";
 import { enumerateDateKeys, parseDateKey } from "./hubCalendarAggregate.js";
 
 export const FINYK_SUB_GROUP_LABEL = "Фінік · підписки";
 
-const SUBS_KEY = "finyk_subs";
-const TX_CACHE_KEY = "finyk_tx_cache";
-const TX_LAST_GOOD_KEY = "finyk_tx_cache_last_good";
-
-function safeParse(raw, fallback) {
-  try {
-    const v = JSON.parse(raw);
-    return v ?? fallback;
-  } catch {
-    return fallback;
-  }
-}
+const SUBS_KEY = STORAGE_KEYS.FINYK_SUBS;
+const TX_CACHE_KEY = STORAGE_KEYS.FINYK_TX_CACHE;
+const TX_LAST_GOOD_KEY = STORAGE_KEYS.FINYK_TX_CACHE_LAST_GOOD;
 
 export function loadFinykSubscriptionsFromStorage() {
-  try {
-    const raw = localStorage.getItem(SUBS_KEY);
-    if (!raw) return [...DEFAULT_SUBSCRIPTIONS];
-    const arr = safeParse(raw, []);
-    return Array.isArray(arr) && arr.length ? arr : [...DEFAULT_SUBSCRIPTIONS];
-  } catch {
-    return [...DEFAULT_SUBSCRIPTIONS];
-  }
+  const arr = safeReadLS(SUBS_KEY, null);
+  if (arr === null) return [...DEFAULT_SUBSCRIPTIONS];
+  return Array.isArray(arr) && arr.length ? arr : [...DEFAULT_SUBSCRIPTIONS];
 }
 
 /** Транзакції з кешу Monobank (для сум і прив’язок). */
 export function loadFinykTransactionsFromStorage() {
-  try {
-    const raw = localStorage.getItem(TX_CACHE_KEY);
-    if (raw) {
-      const c = safeParse(raw, null);
-      if (c?.txs?.length) return c.txs;
-    }
-    const raw2 = localStorage.getItem(TX_LAST_GOOD_KEY);
-    if (raw2) {
-      const c = safeParse(raw2, null);
-      if (c?.txs?.length) return c.txs;
-    }
-  } catch {
-    /* noop */
-  }
+  const primary = safeReadLS(TX_CACHE_KEY, null);
+  if (primary?.txs?.length) return primary.txs;
+  const fallback = safeReadLS(TX_LAST_GOOD_KEY, null);
+  if (fallback?.txs?.length) return fallback.txs;
   return [];
 }
 
