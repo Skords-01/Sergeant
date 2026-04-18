@@ -30,12 +30,12 @@
     --c-primary: 28 25 23; /* #1c1917 — ink (same as text) */
 
     /* Shadows — softer, warmer, more organic */
-    --shadow-card: 0 1px 3px rgba(28, 25, 23, 0.04),
-      0 4px 16px rgba(28, 25, 23, 0.08),
+    --shadow-card:
+      0 1px 3px rgba(28, 25, 23, 0.04), 0 4px 16px rgba(28, 25, 23, 0.08),
       inset 0 1px 0 rgba(255, 255, 255, 0.9);
 
-    --shadow-float: 0 2px 8px rgba(28, 25, 23, 0.06),
-      0 12px 40px rgba(28, 25, 23, 0.12),
+    --shadow-float:
+      0 2px 8px rgba(28, 25, 23, 0.06), 0 12px 40px rgba(28, 25, 23, 0.12),
       inset 0 1px 0 rgba(255, 255, 255, 0.85);
 
     --shadow-soft: 0 8px 32px rgba(28, 25, 23, 0.12);
@@ -66,12 +66,12 @@
     --c-subtle: 87 83 78; /* #57534e — dimmed labels */
     --c-primary: 250 247 241; /* reversed */
 
-    --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.25),
-      0 4px 16px rgba(0, 0, 0, 0.35),
+    --shadow-card:
+      0 1px 3px rgba(0, 0, 0, 0.25), 0 4px 16px rgba(0, 0, 0, 0.35),
       inset 0 1px 0 rgba(255, 255, 255, 0.03);
 
-    --shadow-float: 0 2px 8px rgba(0, 0, 0, 0.3),
-      0 12px 40px rgba(0, 0, 0, 0.45),
+    --shadow-float:
+      0 2px 8px rgba(0, 0, 0, 0.3), 0 12px 40px rgba(0, 0, 0, 0.45),
       inset 0 1px 0 rgba(255, 255, 255, 0.03);
 
     --shadow-soft: 0 8px 32px rgba(0, 0, 0, 0.5);
@@ -600,14 +600,14 @@ textarea {
    ═══════════════════════════════════════════════════════════════════════ */
 .glass {
   @apply bg-panel/80 backdrop-blur-xl border border-white/20;
-  box-shadow: 
+  box-shadow:
     0 4px 24px rgba(0, 0, 0, 0.06),
     inset 0 1px 0 rgba(255, 255, 255, 0.5);
 }
 
 .dark .glass {
   @apply bg-panel/70 border-white/10;
-  box-shadow: 
+  box-shadow:
     0 4px 24px rgba(0, 0, 0, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
@@ -728,7 +728,8 @@ textarea {
 }
 
 @keyframes streak-glow {
-  0%, 100% {
+  0%,
+  100% {
     filter: drop-shadow(0 0 8px rgba(249, 112, 102, 0.4));
   }
   50% {
@@ -766,13 +767,21 @@ textarea {
 }
 
 .module-card-finyk::before {
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, transparent 60%);
+  background: linear-gradient(
+    135deg,
+    rgba(16, 185, 129, 0.08) 0%,
+    transparent 60%
+  );
 }
 
 .dark .module-card-finyk {
   @apply bg-panel;
   border-color: rgba(16, 185, 129, 0.2);
-  background-image: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, transparent 60%);
+  background-image: linear-gradient(
+    135deg,
+    rgba(16, 185, 129, 0.12) 0%,
+    transparent 60%
+  );
 }
 
 .module-card-fizruk {
@@ -781,13 +790,21 @@ textarea {
 }
 
 .module-card-fizruk::before {
-  background: linear-gradient(135deg, rgba(20, 184, 166, 0.08) 0%, transparent 60%);
+  background: linear-gradient(
+    135deg,
+    rgba(20, 184, 166, 0.08) 0%,
+    transparent 60%
+  );
 }
 
 .dark .module-card-fizruk {
   @apply bg-panel;
   border-color: rgba(20, 184, 166, 0.2);
-  background-image: linear-gradient(135deg, rgba(20, 184, 166, 0.12) 0%, transparent 60%);
+  background-image: linear-gradient(
+    135deg,
+    rgba(20, 184, 166, 0.12) 0%,
+    transparent 60%
+  );
 }
 
 .module-card-routine {
@@ -796,13 +813,21 @@ textarea {
 }
 
 .module-card-routine::before {
-  background: linear-gradient(135deg, rgba(249, 112, 102, 0.08) 0%, transparent 60%);
+  background: linear-gradient(
+    135deg,
+    rgba(249, 112, 102, 0.08) 0%,
+    transparent 60%
+  );
 }
 
 .dark .module-card-routine {
   @apply bg-panel;
   border-color: rgba(249, 112, 102, 0.2);
-  background-image: linear-gradient(135deg, rgba(249, 112, 102, 0.12) 0%, transparent 60%);
+  background-image: linear-gradient(
+    135deg,
+    rgba(249, 112, 102, 0.12) 0%,
+    transparent 60%
+  );
 }
 
 .module-card-nutrition {
@@ -811,13 +836,21 @@ textarea {
 }
 
 .module-card-nutrition::before {
-  background: linear-gradient(135deg, rgba(132, 204, 22, 0.08) 0%, transparent 60%);
+  background: linear-gradient(
+    135deg,
+    rgba(132, 204, 22, 0.08) 0%,
+    transparent 60%
+  );
 }
 
 .dark .module-card-nutrition {
   @apply bg-panel;
   border-color: rgba(132, 204, 22, 0.2);
-  background-image: linear-gradient(135deg, rgba(132, 204, 22, 0.12) 0%, transparent 60%);
+  background-image: linear-gradient(
+    135deg,
+    rgba(132, 204, 22, 0.12) 0%,
+    transparent 60%
+  );
 }
 
 /* ═══════════════════════════════════════════════════════════════════════

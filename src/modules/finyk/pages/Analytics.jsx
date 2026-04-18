@@ -190,7 +190,7 @@ export function Analytics({ mono, storage }) {
     return historyCache[prevKey] || [];
   }, [isPrevCurrent, mono.realTx, historyCache, prevKey]);
 
-  const { summary, distribution, topMerchants, isLoading } = useAnalytics({
+  const { summary, distribution, topMerchants } = useAnalytics({
     mono: { ...mono, realTx: activeTx, loadingTx: mono.loadingTx || loading },
     storage,
   });

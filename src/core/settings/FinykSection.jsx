@@ -130,7 +130,7 @@ export function FinykSection() {
     window.location.reload();
   };
 
-  const rawCache = safeParseLS("finyk_info_cache", null);
+  const rawCache = safeReadLS("finyk_info_cache", null);
   const infoData = rawCache?.info ?? rawCache;
   const token = (() => {
     try {

@@ -1,6 +1,7 @@
 import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
+import { visualizer } from "rollup-plugin-visualizer";
 import { resolve } from "path";
 
 export default defineConfig(({ mode }) => {
@@ -8,6 +9,10 @@ export default defineConfig(({ mode }) => {
   const apiProxyTarget = (
     env.VITE_API_PROXY_TARGET || "http://127.0.0.1:3000"
   ).replace(/\/$/, "");
+
+  // Opt-in via `ANALYZE=1 npm run build` so regular builds stay fast and we
+  // don't litter dist/ with the report in CI.
+  const analyze = env.ANALYZE === "1" || process.env.ANALYZE === "1";
 
   return {
     plugins: [
@@ -87,7 +92,15 @@ export default defineConfig(({ mode }) => {
           globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
         },
       }),
-    ],
+      analyze &&
+        visualizer({
+          filename: "dist/bundle-report.html",
+          template: "treemap",
+          gzipSize: true,
+          brotliSize: true,
+          open: false,
+        }),
+    ].filter(Boolean),
     build: {
       rollupOptions: {
         output: {

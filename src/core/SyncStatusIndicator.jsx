@@ -13,11 +13,7 @@ import { Icon } from "@shared/components/ui/Icon";
  * The component is intentionally tiny — a single glyph + tooltip — so it can
  * sit next to the gear/menu icon without crowding the header.
  */
-export function SyncStatusIndicator({
-  user,
-  syncing = false,
-  className = "",
-}) {
+export function SyncStatusIndicator({ user, syncing = false, className = "" }) {
   const { dirtyCount, queuedCount, isOnline } = useSyncStatus();
 
   if (!user) return null;

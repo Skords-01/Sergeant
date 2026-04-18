@@ -122,17 +122,19 @@ export function ProgressRing({
   const gradientId = `progress-gradient-${variant}-${size}`;
 
   return (
-    <div className={cn(
-      "relative inline-flex items-center justify-center",
-      celebrating && "animate-celebration-pop",
-      className
-    )}>
+    <div
+      className={cn(
+        "relative inline-flex items-center justify-center",
+        celebrating && "animate-celebration-pop",
+        className,
+      )}
+    >
       {/* Glow effect behind the ring */}
       {showGlow && percentage > 0 && (
-        <div 
+        <div
           className={cn(
             "absolute rounded-full transition-opacity duration-500",
-            isComplete ? "opacity-60" : "opacity-30"
+            isComplete ? "opacity-60" : "opacity-30",
           )}
           style={{
             width: size - strokeWidth * 2,
@@ -142,7 +144,7 @@ export function ProgressRing({
           }}
         />
       )}
-      
+
       <svg
         width={size}
         height={size}
@@ -157,7 +159,7 @@ export function ProgressRing({
             <stop offset="100%" stopColor={colors.gradient[1]} />
           </linearGradient>
         </defs>
-        
+
         {/* Background track */}
         <circle
           cx={size / 2}
@@ -167,7 +169,7 @@ export function ProgressRing({
           strokeWidth={strokeWidth}
           className={cn(colors.track)}
         />
-        
+
         {/* Progress fill with gradient */}
         <circle
           cx={size / 2}
@@ -182,14 +184,16 @@ export function ProgressRing({
           className={cn(
             "progress-ring-value",
             animate && "transition-[stroke-dashoffset] duration-700 ease-out",
-            isComplete && "progress-ring-complete"
+            isComplete && "progress-ring-complete",
           )}
           style={{
             "--progress-offset": offset,
-            filter: isComplete ? `drop-shadow(0 0 ${glowSize/2}px ${colors.glow})` : 'none',
+            filter: isComplete
+              ? `drop-shadow(0 0 ${glowSize / 2}px ${colors.glow})`
+              : "none",
           }}
         />
-        
+
         {/* Completion checkmark overlay */}
         {isComplete && celebrating && (
           <g className="animate-check-draw">
@@ -216,7 +220,7 @@ export function ProgressRing({
                   "font-bold tabular-nums transition-all duration-300",
                   config.fontSize,
                   colors.text,
-                  isComplete && "scale-105"
+                  isComplete && "scale-105",
                 )}
               >
                 {displayValue}

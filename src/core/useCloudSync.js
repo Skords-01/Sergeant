@@ -659,8 +659,7 @@ export function useSyncStatus() {
       setState({
         dirtyCount: Object.keys(getDirtyModules()).length,
         queuedCount: getOfflineQueue().length,
-        isOnline:
-          typeof navigator !== "undefined" ? navigator.onLine : true,
+        isOnline: typeof navigator !== "undefined" ? navigator.onLine : true,
       });
     };
 

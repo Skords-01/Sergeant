@@ -1,6 +1,6 @@
 /**
  * Sergeant Brand Palette — Soft & Organic with Emerald/Teal accent
- * 
+ *
  * Design Philosophy:
  * - Warm, friendly, approachable colors inspired by Duolingo/Yazio/Monobank
  * - Soft pastels with rich saturated accents

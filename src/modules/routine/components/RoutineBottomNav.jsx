@@ -76,7 +76,7 @@ export function RoutineBottomNav({ mainTab, onSelectTab }) {
       className={cn(
         "shrink-0 relative z-30 safe-area-pb",
         "bg-panel/95 backdrop-blur-xl",
-        "border-t border-line/60"
+        "border-t border-line/60",
       )}
       aria-label="Розділи Рутини"
     >
@@ -107,24 +107,24 @@ export function RoutineBottomNav({ mainTab, onSelectTab }) {
                     "absolute top-0 left-1/2 -translate-x-1/2",
                     "w-10 h-1 rounded-full",
                     "bg-gradient-to-r from-coral-400 to-coral-500",
-                    "shadow-sm"
+                    "shadow-sm",
                   )}
                   aria-hidden
                 />
               )}
-              
+
               {/* Icon with glow effect when active */}
-              <span 
+              <span
                 className={cn(
                   "transition-all duration-200",
                   active && C.navActive,
-                  active && "drop-shadow-[0_0_8px_rgba(249,112,102,0.3)]"
-                )} 
+                  active && "drop-shadow-[0_0_8px_rgba(249,112,102,0.3)]",
+                )}
                 aria-hidden
               >
                 {item.icon}
               </span>
-              
+
               <span
                 className={cn(
                   "text-[11px] leading-none font-semibold transition-colors",

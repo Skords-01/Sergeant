@@ -133,11 +133,13 @@ const NAV = [
 
 export function NutritionBottomNav({ activePage, setActivePage }) {
   return (
-    <nav className={cn(
-      "shrink-0 relative z-30 safe-area-pb",
-      "bg-panel/95 backdrop-blur-xl",
-      "border-t border-line/60"
-    )}>
+    <nav
+      className={cn(
+        "shrink-0 relative z-30 safe-area-pb",
+        "bg-panel/95 backdrop-blur-xl",
+        "border-t border-line/60",
+      )}
+    >
       <div className="flex h-[60px]">
         {NAV.map((item) => {
           const active = activePage === item.id;
@@ -160,21 +162,23 @@ export function NutritionBottomNav({ activePage, setActivePage }) {
                     "absolute top-0 left-1/2 -translate-x-1/2",
                     "w-8 h-1 rounded-full",
                     "bg-gradient-to-r from-lime-400 to-lime-500",
-                    "shadow-sm"
+                    "shadow-sm",
                   )}
                   aria-hidden
                 />
               )}
-              
+
               {/* Icon */}
-              <span className={cn(
-                "scale-90 transition-all duration-200",
-                active && "text-nutrition",
-                active && "drop-shadow-[0_0_8px_rgba(132,204,22,0.3)]"
-              )}>
+              <span
+                className={cn(
+                  "scale-90 transition-all duration-200",
+                  active && "text-nutrition",
+                  active && "drop-shadow-[0_0_8px_rgba(132,204,22,0.3)]",
+                )}
+              >
                 {item.icon}
               </span>
-              
+
               <span
                 className={cn(
                   "text-[10px] leading-none font-semibold transition-colors",

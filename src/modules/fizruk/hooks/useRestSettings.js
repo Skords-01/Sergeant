@@ -40,7 +40,10 @@ export function getRestCategory(primaryGroup) {
 export function useRestSettings() {
   const [settings, setSettings] = useState(() => {
     const parsed = safeReadLS(KEY, {});
-    return { ...REST_DEFAULTS, ...(parsed && typeof parsed === "object" ? parsed : {}) };
+    return {
+      ...REST_DEFAULTS,
+      ...(parsed && typeof parsed === "object" ? parsed : {}),
+    };
   });
 
   const persist = useCallback((next) => {

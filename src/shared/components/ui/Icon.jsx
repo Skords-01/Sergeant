@@ -16,18 +16,10 @@
  */
 
 const PATHS = {
-  "chevron-right": (
-    <polyline points="9 18 15 12 9 6" />
-  ),
-  "chevron-left": (
-    <polyline points="15 18 9 12 15 6" />
-  ),
-  "chevron-down": (
-    <polyline points="6 9 12 15 18 9" />
-  ),
-  "chevron-up": (
-    <polyline points="18 15 12 9 6 15" />
-  ),
+  "chevron-right": <polyline points="9 18 15 12 9 6" />,
+  "chevron-left": <polyline points="15 18 9 12 15 6" />,
+  "chevron-down": <polyline points="6 9 12 15 18 9" />,
+  "chevron-up": <polyline points="18 15 12 9 6 15" />,
   close: (
     <>
       <line x1="18" y1="6" x2="6" y2="18" />
