@@ -28,7 +28,15 @@ export function CategoryPieChart({ data = [], size = 160, className }) {
   const otherSpent = data.slice(TOP_N).reduce((s, d) => s + d.spent, 0);
   const segments =
     otherSpent > 0
-      ? [...top, { categoryId: "_other", label: "Інше", spent: otherSpent, color: "#94a3b8" }]
+      ? [
+          ...top,
+          {
+            categoryId: "_other",
+            label: "Інше",
+            spent: otherSpent,
+            color: "#94a3b8",
+          },
+        ]
       : top;
 
   let currentAngle = 0;
@@ -89,7 +97,10 @@ export function CategoryPieChart({ data = [], size = 160, className }) {
 
         <div className="flex-1 w-full space-y-1.5 min-w-0">
           {arcs.map((arc) => (
-            <div key={arc.categoryId} className="flex items-center gap-2 text-sm">
+            <div
+              key={arc.categoryId}
+              className="flex items-center gap-2 text-sm"
+            >
               <span
                 className="w-2.5 h-2.5 rounded-full shrink-0"
                 style={{ background: arc.color }}

@@ -46,8 +46,14 @@ function MonthNav({ year, month, onChange }) {
   const go = (delta) => {
     let m = month + delta;
     let y = year;
-    if (m > 12) { m = 1; y++; }
-    if (m < 1) { m = 12; y--; }
+    if (m > 12) {
+      m = 1;
+      y++;
+    }
+    if (m < 1) {
+      m = 12;
+      y--;
+    }
     onChange(y, m);
   };
 
@@ -61,7 +67,9 @@ function MonthNav({ year, month, onChange }) {
       >
         ‹
       </button>
-      <span className="text-sm font-semibold text-text capitalize">{label}</span>
+      <span className="text-sm font-semibold text-text capitalize">
+        {label}
+      </span>
       <button
         type="button"
         onClick={() => go(1)}
@@ -156,14 +164,14 @@ export function Analytics({ mono, storage }) {
     if (!isCurrentMonth && !historyCache[monthKey]) {
       ensureMonth(year, month, monthKey);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [year, month, isCurrentMonth, monthKey]);
 
   useEffect(() => {
     if (!isPrevCurrent && !historyCache[prevKey]) {
       ensureMonth(prevYear, prevMonth, prevKey);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [prevYear, prevMonth, isPrevCurrent, prevKey]);
 
   const activeTx = useMemo(() => {
@@ -176,7 +184,7 @@ export function Analytics({ mono, storage }) {
     return historyCache[prevKey] || [];
   }, [isPrevCurrent, mono.realTx, historyCache, prevKey]);
 
-  const { summary, distribution, topMerchants, isLoading } = useAnalytics({
+  const { summary, distribution, topMerchants } = useAnalytics({
     mono: { ...mono, realTx: activeTx, loadingTx: mono.loadingTx || loading },
     storage,
   });
@@ -187,9 +195,17 @@ export function Analytics({ mono, storage }) {
       excludedTxIds: storage.excludedTxIds,
       txSplits: storage.txSplits,
     });
-  }, [activeTx, prevTx, historyCache, prevKey, storage.excludedTxIds, storage.txSplits]);
+  }, [
+    activeTx,
+    prevTx,
+    historyCache,
+    prevKey,
+    storage.excludedTxIds,
+    storage.txSplits,
+  ]);
 
-  const pageLoading = (isCurrentMonth ? mono.loadingTx : loading) && activeTx.length === 0;
+  const pageLoading =
+    (isCurrentMonth ? mono.loadingTx : loading) && activeTx.length === 0;
 
   return (
     <div className="flex-1 overflow-y-auto">

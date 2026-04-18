@@ -13,7 +13,7 @@ export function NutritionHeader({ busy: _busy, onBackToHub }) {
               "flex items-center justify-center rounded-xl",
               "text-muted hover:text-text transition-all duration-200",
               "border border-line/80 bg-panel/80 hover:bg-panelHi",
-              "active:scale-95"
+              "active:scale-95",
             )}
             aria-label="До вибору модуля"
             title="До хабу"
@@ -41,7 +41,7 @@ export function NutritionHeader({ busy: _busy, onBackToHub }) {
               "dark:from-lime-900/40 dark:to-green-900/30",
               "text-lime-600 dark:text-lime-400",
               "border border-lime-200/60 dark:border-lime-700/30",
-              "shadow-sm"
+              "shadow-sm",
             )}
             aria-hidden
           >

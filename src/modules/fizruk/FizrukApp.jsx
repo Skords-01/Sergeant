@@ -288,7 +288,7 @@ export default function FizrukApp({
                 "dark:from-teal-900/40 dark:to-cyan-900/30",
                 "text-teal-600 dark:text-teal-400",
                 "border border-teal-200/60 dark:border-teal-700/30",
-                "shadow-sm"
+                "shadow-sm",
               )}
               aria-hidden
             >

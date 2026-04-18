@@ -1,4 +1,3 @@
-import { getTxStatAmount } from "../utils";
 import { normalizeTransaction } from "../domain/transactions";
 import { getMonthlySummary, getTopCategories } from "../domain/selectors";
 

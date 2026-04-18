@@ -26,8 +26,7 @@ export const ROUTINE_THEME = {
 
   // Habit list items
   habitRowAccent: "border-l-routine",
-  habitRowDone:
-    "border-l-routine bg-coral-50/50 dark:bg-routine/10",
+  habitRowDone: "border-l-routine bg-coral-50/50 dark:bg-routine/10",
 
   // Icon containers
   iconBox:
