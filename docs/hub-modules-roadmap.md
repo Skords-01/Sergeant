@@ -75,14 +75,14 @@
 - [x] Доменний шар `domain/`: уніфікована модель `Transaction` і `normalizeTransaction` (manual / mono / ai / import), `domain/selectors.js` із чистими проєкціями для аналітики
 - [x] Централізований шар сховища `lib/finykStorage.js` + `storageManager.js` замість прямих викликів localStorage у компонентах/хуках (debounce + safeJsonSet)
 - [x] Оптимізації рендеру: memoization чистих компонентів (TxRow/SwipeToAction), кеш аналітики через `useAnalytics`, єдиний `useUnifiedFinanceData`
+- [x] Спліт транзакцій (розбиття однієї транзакції на кілька категорій) — реалізовано в `TxRow.jsx` (`splitEditor`, `txSplits`, враховується в `selectors`/`forecastEngine`/бекапі)
+- [x] Автодетекція регулярних витрат (`lib/recurringDetect.ts` + блок «Можливі підписки» на `Assets`): групування за нормалізованим merchant-ключем, визначення періодичності (weekly/biweekly/monthly/quarterly/yearly), перевірка стабільності суми, кнопка «+ Підписка» для one-click конверсії
 
 ### Наступні кроки
 
 1. Цілі накопичення (savings goals) з прогрес-баром
-2. Детекція регулярних витрат (автоматичне розпізнавання підписок з транзакцій)
-3. Експорт CSV
-4. Спліт транзакцій (розбиття однієї транзакції на кілька категорій)
-5. Увімкнення PrivatBank у UI (зняти прапор `PRIVAT_ENABLED`)
+2. Експорт CSV
+3. Увімкнення PrivatBank у UI (зняти прапор `PRIVAT_ENABLED`)
 
 ---
 

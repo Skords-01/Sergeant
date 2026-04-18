@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { DebtCard } from "../components/DebtCard";
 import { SubCard } from "../components/SubCard";
+import { RecurringSuggestions } from "../components/RecurringSuggestions";
 import { TxRow } from "../components/TxRow";
 import { Button } from "@shared/components/ui/Button";
 import {
@@ -61,6 +62,10 @@ export function Assets({
     subscriptions,
     setSubscriptions,
     updateSubscription,
+    addSubscriptionFromRecurring,
+    dismissedRecurring,
+    dismissRecurring,
+    excludedTxIds,
     monoDebtLinkedTxIds,
     toggleMonoDebtTx,
     customCategories,
@@ -411,6 +416,16 @@ export function Assets({
             )}
           </div>
         </div>
+
+        {/* Auto-detected recurring suggestions (renders nothing if empty) */}
+        <RecurringSuggestions
+          transactions={transactions}
+          subscriptions={subscriptions}
+          dismissedRecurring={dismissedRecurring}
+          excludedTxIds={excludedTxIds}
+          onAdd={(candidate) => addSubscriptionFromRecurring?.(candidate)}
+          onDismiss={(key) => dismissRecurring?.(key)}
+        />
 
         {/* Subscriptions section */}
         <SectionBar
