@@ -2,6 +2,12 @@ import * as Sentry from "@sentry/react";
 
 let initialized = false;
 
+function parseRate(val, fallback) {
+  if (val == null || val === "") return fallback;
+  const n = Number(val);
+  return Number.isFinite(n) ? n : fallback;
+}
+
 /**
  * Ініціалізує Sentry в браузері, якщо задано VITE_SENTRY_DSN.
  * Без DSN — no-op (dev/preview без моніторингу).
@@ -26,10 +32,16 @@ export function initSentry() {
         blockAllMedia: true,
       }),
     ],
-    tracesSampleRate:
-      Number(import.meta.env.VITE_SENTRY_TRACES_SAMPLE_RATE) || 0.1,
-    replaysSessionSampleRate:
-      Number(import.meta.env.VITE_SENTRY_REPLAY_SAMPLE_RATE) || 0,
+    // `VITE_SENTRY_*_SAMPLE_RATE=0` має справді вимикати трейсинг/реплей,
+    // тому fallback виноситься через parseRate, а не через `|| 0.x`.
+    tracesSampleRate: parseRate(
+      import.meta.env.VITE_SENTRY_TRACES_SAMPLE_RATE,
+      0.1,
+    ),
+    replaysSessionSampleRate: parseRate(
+      import.meta.env.VITE_SENTRY_REPLAY_SAMPLE_RATE,
+      0,
+    ),
     replaysOnErrorSampleRate: 1.0,
     beforeSend(event) {
       // Приховуємо cookies/авто-налаштування, щоб не відправляти sid.
