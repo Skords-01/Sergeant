@@ -2,6 +2,12 @@ import fs from "fs/promises";
 import path from "path";
 import { fileURLToPath } from "url";
 import pg from "pg";
+import { logger } from "./obs/logger.js";
+import {
+  dbErrorsTotal,
+  dbQueryDurationMs,
+  dbSlowQueriesTotal,
+} from "./obs/metrics.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -12,8 +18,75 @@ const pool = new pg.Pool({
 });
 
 pool.on("error", (err) => {
-  console.error("[db] Unexpected pool error", err);
+  logger.error({
+    msg: "db_pool_error",
+    err: { message: err?.message || String(err), code: err?.code },
+  });
+  try {
+    dbErrorsTotal.inc({ code: err?.code || "unknown" });
+  } catch {
+    /* ignore */
+  }
 });
+
+const SLOW_MS = Number(process.env.DB_SLOW_MS) || 200;
+
+/** Коротке ім'я SQL для логів (перше слово + перші 120 символів, без параметрів). */
+function sqlSummary(text) {
+  if (typeof text !== "string") return undefined;
+  return text.replace(/\s+/g, " ").trim().slice(0, 120);
+}
+
+/**
+ * Обгортка над `pool.query` з логуванням повільних запитів, метриками і
+ * підрахунком помилок. Підпис збережено один-в-один з pg, щоб можна було
+ * поступово переводити handler-и без зміни викликів.
+ *
+ * @param {string | { text: string, values?: unknown[] }} text
+ * @param {unknown[]} [values]
+ * @param {{ op?: string }} [meta]
+ */
+export async function query(text, values, meta) {
+  const op = meta?.op ?? "query";
+  const start = process.hrtime.bigint();
+  try {
+    const result = await pool.query(text, values);
+    const ms = Number(process.hrtime.bigint() - start) / 1e6;
+    try {
+      dbQueryDurationMs.observe({ op }, ms);
+    } catch {
+      /* ignore */
+    }
+    if (ms >= SLOW_MS) {
+      try {
+        dbSlowQueriesTotal.inc({ op });
+      } catch {
+        /* ignore */
+      }
+      logger.warn({
+        msg: "db_slow",
+        op,
+        sql: sqlSummary(typeof text === "string" ? text : text?.text),
+        ms: Math.round(ms),
+        rows: result.rowCount,
+      });
+    }
+    return result;
+  } catch (err) {
+    try {
+      dbErrorsTotal.inc({ code: err?.code || "unknown" });
+    } catch {
+      /* ignore */
+    }
+    logger.error({
+      msg: "db_error",
+      op,
+      sql: sqlSummary(typeof text === "string" ? text : text?.text),
+      err: { message: err?.message || String(err), code: err?.code },
+    });
+    throw err;
+  }
+}
 
 async function ensureAuthTables(client) {
   await client.query(`

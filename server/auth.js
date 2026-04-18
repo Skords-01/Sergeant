@@ -84,5 +84,21 @@ export async function getSessionUser(req) {
   const session = await auth.api.getSession({
     headers: new Headers(req.headers),
   });
-  return session?.user ?? null;
+  const user = session?.user ?? null;
+  if (user?.id) {
+    // Ліниво прив'язуємо сесію до request-context і Sentry-scope. Завдяки
+    // цьому будь-який log/Sentry-івент далі в ланцюжку знає, хто саме
+    // виконує запит. Безпечно без сесії — просто no-op.
+    try {
+      const [{ setUserId }, Sentry] = await Promise.all([
+        import("./obs/requestContext.js"),
+        import("@sentry/node"),
+      ]);
+      setUserId(user.id);
+      Sentry.getCurrentScope?.().setUser({ id: user.id });
+    } catch {
+      /* ignore — observability не має блокувати auth */
+    }
+  }
+  return user;
 }

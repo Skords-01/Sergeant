@@ -1,4 +1,5 @@
 import * as Sentry from "@sentry/node";
+import { als } from "./obs/requestContext.js";
 
 function parseRate(val, fallback) {
   if (val == null || val === "") return fallback;
@@ -30,7 +31,27 @@ if (dsn) {
     beforeSend(event) {
       if (event.request?.data) delete event.request.data;
       if (event.request?.cookies) delete event.request.cookies;
+      // Підмішуємо контекст із ALS, якщо подія народилася в рамках запиту.
+      const ctx = als.getStore();
+      if (ctx) {
+        event.tags = {
+          ...(event.tags || {}),
+          ...(ctx.requestId ? { requestId: ctx.requestId } : {}),
+          ...(ctx.module ? { module: ctx.module } : {}),
+        };
+        if (ctx.userId) {
+          event.user = { ...(event.user || {}), id: ctx.userId };
+        }
+      }
       return event;
+    },
+    beforeBreadcrumb(breadcrumb) {
+      // Не тягнемо тіла HTTP-запитів у breadcrumbs.
+      if (breadcrumb?.category === "http" && breadcrumb.data) {
+        delete breadcrumb.data.request_body_size;
+        delete breadcrumb.data.response_body_size;
+      }
+      return breadcrumb;
     },
   });
 
