@@ -1,6 +1,8 @@
 import { useCallback, useState } from "react";
+import { safeReadLS, safeWriteLS } from "@shared/lib/storage.js";
+import { STORAGE_KEYS } from "@shared/lib/storageKeys.js";
 
-const KEY = "fizruk_rest_settings_v1";
+const KEY = STORAGE_KEYS.FIZRUK_REST_SETTINGS;
 
 /**
  * Default rest time in seconds per exercise category.
@@ -31,35 +33,19 @@ export function getRestCategory(primaryGroup) {
   return "compound";
 }
 
-function safeParse(raw, fallback) {
-  try {
-    const v = JSON.parse(raw);
-    return v && typeof v === "object" ? v : fallback;
-  } catch {
-    return fallback;
-  }
-}
-
 /**
  * Hook that provides user-configurable default rest durations per exercise type.
  * Settings are stored in localStorage.
  */
 export function useRestSettings() {
   const [settings, setSettings] = useState(() => {
-    try {
-      const raw = localStorage.getItem(KEY);
-      const parsed = safeParse(raw, {});
-      return { ...REST_DEFAULTS, ...parsed };
-    } catch {
-      return { ...REST_DEFAULTS };
-    }
+    const parsed = safeReadLS(KEY, {});
+    return { ...REST_DEFAULTS, ...(parsed && typeof parsed === "object" ? parsed : {}) };
   });
 
   const persist = useCallback((next) => {
     setSettings(next);
-    try {
-      localStorage.setItem(KEY, JSON.stringify(next));
-    } catch {}
+    safeWriteLS(KEY, next);
   }, []);
 
   const updateSetting = useCallback(

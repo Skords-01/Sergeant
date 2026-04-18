@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { apiUrl } from "@shared/lib/apiUrl.js";
 import { STORAGE_KEYS } from "@shared/lib/storageKeys.js";
+import { safeReadLS } from "@shared/lib/storage.js";
 import { MCC_CATEGORIES, INCOME_CATEGORIES } from "@finyk/constants.js";
 
 const DIGEST_PREFIX = STORAGE_KEYS.WEEKLY_DIGEST_PREFIX;
@@ -47,18 +48,8 @@ export function getWeekRange(d = new Date()) {
   return `${fmt(monday)} — ${fmt(sunday)}`;
 }
 
-function safeParseLS(key, fallback) {
-  try {
-    const raw = localStorage.getItem(key);
-    if (!raw) return fallback;
-    return JSON.parse(raw) ?? fallback;
-  } catch {
-    return fallback;
-  }
-}
-
 export function loadDigest(weekKey) {
-  return safeParseLS(`${DIGEST_PREFIX}${weekKey}`, null);
+  return safeReadLS(`${DIGEST_PREFIX}${weekKey}`, null);
 }
 
 export function listDigestHistory() {
@@ -90,11 +81,11 @@ function saveDigest(weekKey, data) {
 }
 
 function aggregateFinyk(weekKey) {
-  const txRaw = safeParseLS("finyk_tx_cache", null);
+  const txRaw = safeReadLS("finyk_tx_cache", null);
   const txList = txRaw?.txs ?? txRaw ?? [];
-  const txCategories = safeParseLS("finyk_tx_cats", {});
-  const hiddenIds = new Set(safeParseLS("finyk_hidden_txs", []));
-  const customCategories = safeParseLS("finyk_custom_cats_v1", []);
+  const txCategories = safeReadLS("finyk_tx_cats", {});
+  const hiddenIds = new Set(safeReadLS("finyk_hidden_txs", []));
+  const customCategories = safeReadLS("finyk_custom_cats_v1", []);
   const transferIds = new Set(
     Object.entries(txCategories)
       .filter(([, v]) => v === "internal_transfer")
@@ -135,7 +126,7 @@ function aggregateFinyk(weekKey) {
     .slice(0, 5)
     .map(([name, amount]) => ({ name, amount: Math.round(amount) }));
 
-  const finykStorage = safeParseLS("finyk_storage_v2", {});
+  const finykStorage = safeReadLS("finyk_storage_v2", {});
   const monthlyBudget = finykStorage?.monthlyPlan?.expense ?? null;
 
   return {
@@ -220,8 +211,8 @@ function aggregateFizruk(weekKey) {
 }
 
 function aggregateNutrition(weekKey) {
-  const log = safeParseLS("nutrition_log_v1", {});
-  const prefs = safeParseLS("nutrition_prefs_v1", null);
+  const log = safeReadLS("nutrition_log_v1", {});
+  const prefs = safeReadLS("nutrition_prefs_v1", null);
   const targetKcal = prefs?.dailyTargetKcal ?? 2000;
 
   const monday = new Date(`${weekKey}T00:00:00`);
@@ -261,7 +252,7 @@ function aggregateNutrition(weekKey) {
 }
 
 function aggregateRoutine(weekKey) {
-  const state = safeParseLS("hub_routine_v1", null);
+  const state = safeReadLS("hub_routine_v1", null);
   if (!state) return null;
 
   const habits = Array.isArray(state.habits)

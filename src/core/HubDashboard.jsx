@@ -1,6 +1,8 @@
 import { useState, useCallback, useEffect, useMemo } from "react";
 import { cn } from "@shared/lib/cn";
 import { ProgressRing } from "@shared/components/ui/ProgressRing";
+import { safeReadLS, safeWriteLS, safeRemoveLS } from "@shared/lib/storage.js";
+import { STORAGE_KEYS } from "@shared/lib/storageKeys.js";
 import { HubRecommendations } from "./HubRecommendations.jsx";
 import { WeeklyDigestCard } from "./WeeklyDigestCard.jsx";
 import { CoachInsightCard } from "./CoachInsightCard.jsx";
@@ -21,22 +23,12 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
-const DASHBOARD_ORDER_KEY = "hub_dashboard_order_v1";
+const DASHBOARD_ORDER_KEY = STORAGE_KEYS.DASHBOARD_ORDER;
 const DEFAULT_ORDER = ["finyk", "fizruk", "routine", "nutrition"];
-const HUB_PREFS_KEY = "hub_prefs_v1";
-
-function safeParseLS(key, fallback) {
-  try {
-    const raw = localStorage.getItem(key);
-    if (!raw) return fallback;
-    return JSON.parse(raw) ?? fallback;
-  } catch {
-    return fallback;
-  }
-}
+const HUB_PREFS_KEY = STORAGE_KEYS.HUB_PREFS;
 
 function loadOrder() {
-  const saved = safeParseLS(DASHBOARD_ORDER_KEY, null);
+  const saved = safeReadLS(DASHBOARD_ORDER_KEY, null);
   if (
     Array.isArray(saved) &&
     saved.length === DEFAULT_ORDER.length &&
@@ -48,15 +40,11 @@ function loadOrder() {
 }
 
 function saveOrder(order) {
-  try {
-    localStorage.setItem(DASHBOARD_ORDER_KEY, JSON.stringify(order));
-  } catch {}
+  safeWriteLS(DASHBOARD_ORDER_KEY, order);
 }
 
 export function resetDashboardOrder() {
-  try {
-    localStorage.removeItem(DASHBOARD_ORDER_KEY);
-  } catch {}
+  safeRemoveLS(DASHBOARD_ORDER_KEY);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -476,13 +464,13 @@ export function HubDashboard({ onOpenModule, onOpenChat }) {
   }, []);
 
   const [showCoach, setShowCoach] = useState(
-    () => safeParseLS(HUB_PREFS_KEY, {}).showCoach !== false,
+    () => safeReadLS(HUB_PREFS_KEY, {}).showCoach !== false,
   );
   
   useEffect(() => {
     const handler = (e) => {
       if (e.key === HUB_PREFS_KEY || e.key === null) {
-        setShowCoach(safeParseLS(HUB_PREFS_KEY, {}).showCoach !== false);
+        setShowCoach(safeReadLS(HUB_PREFS_KEY, {}).showCoach !== false);
       }
     };
     window.addEventListener("storage", handler);

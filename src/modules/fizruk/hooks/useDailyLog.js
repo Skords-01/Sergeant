@@ -1,18 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { safeReadLS, safeWriteLS } from "@shared/lib/storage.js";
+import { STORAGE_KEYS } from "@shared/lib/storageKeys.js";
 
-const KEY = "fizruk_daily_log_v1";
+const KEY = STORAGE_KEYS.FIZRUK_DAILY_LOG;
 
 function uid() {
   return `dl_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
-}
-
-function safeParse(raw) {
-  try {
-    const v = JSON.parse(raw);
-    return Array.isArray(v) ? v : [];
-  } catch {
-    return [];
-  }
 }
 
 /**
@@ -31,17 +24,13 @@ export function useDailyLog() {
   const [entries, setEntries] = useState([]);
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(KEY);
-      if (raw) setEntries(safeParse(raw));
-    } catch {}
+    const loaded = safeReadLS(KEY, []);
+    if (Array.isArray(loaded)) setEntries(loaded);
   }, []);
 
   const persist = useCallback((next) => {
     setEntries(next);
-    try {
-      localStorage.setItem(KEY, JSON.stringify(next));
-    } catch {}
+    safeWriteLS(KEY, next);
   }, []);
 
   const addEntry = useCallback(

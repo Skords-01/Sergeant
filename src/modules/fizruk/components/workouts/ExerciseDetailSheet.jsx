@@ -109,6 +109,9 @@ export function ExerciseDetailSheet({
                     src={src}
                     alt={selected?.name?.uk || selected?.name?.en || "exercise"}
                     loading="lazy"
+                    decoding="async"
+                    width="160"
+                    height="160"
                     className="h-40 w-40 rounded-2xl object-cover border border-line bg-bg"
                   />
                 ))}

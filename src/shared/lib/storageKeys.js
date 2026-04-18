@@ -1,32 +1,82 @@
 /**
  * Centralized localStorage key constants.
  * Prevents magic strings scattered across the codebase.
+ *
+ * When adding a new key, also consider whether it should be part of cloud
+ * sync — if yes, add it to `SYNC_MODULES` in `src/core/useCloudSync.js`.
  */
 export const STORAGE_KEYS = {
-  // Hub
+  // ─── Hub ──────────────────────────────────────────────────────────────
   DARK_MODE: "hub_dark_mode_v1",
   LAST_MODULE: "hub_last_module",
   ROUTINE: "hub_routine_v1",
   ROUTINE_MAIN_TAB: "hub_routine_main_tab_v1",
   ONBOARDING_DONE: "hub_onboarding_done_v1",
   DASHBOARD_ORDER: "hub_dashboard_order_v1",
+  HUB_PREFS: "hub_prefs_v1",
 
-  // Finyk
+  // Hub quick-stats previews rendered on the dashboard
+  FINYK_QUICK_STATS: "finyk_quick_stats",
+  FIZRUK_QUICK_STATS: "fizruk_quick_stats",
+  ROUTINE_QUICK_STATS: "routine_quick_stats",
+  NUTRITION_QUICK_STATS: "nutrition_quick_stats",
+
+  // PWA / install prompts
+  PWA_SESSION_COUNT: "pwa_session_count",
+  PWA_INSTALL_DISMISSED: "pwa_install_dismissed",
+  PWA_PENDING_ACTION: "pwa_pending_action",
+  IOS_BANNER_DISMISSED: "ios_install_banner_dismissed",
+
+  // Cloud sync metadata
+  SYNC_VERSIONS: "hub_sync_versions",
+  SYNC_DIRTY_MODULES: "hub_sync_dirty_modules",
+  SYNC_MODULE_MODIFIED: "hub_sync_module_modified",
+  SYNC_OFFLINE_QUEUE: "hub_sync_offline_queue",
+  SYNC_MIGRATION_DONE: "hub_sync_migrated_users",
+
+  // ─── Finyk ────────────────────────────────────────────────────────────
   FINYK_TX_CACHE: "finyk_tx_cache",
+  FINYK_TX_CACHE_LAST_GOOD: "finyk_tx_cache_last_good",
   FINYK_INFO_CACHE: "finyk_info_cache",
   FINYK_TOKEN: "finyk_token",
   FINYK_STORAGE: "finyk_storage_v2",
   FINYK_SHOW_BALANCE: "finyk_show_balance_v1",
+  FINYK_HIDDEN: "finyk_hidden",
+  FINYK_HIDDEN_TXS: "finyk_hidden_txs",
+  FINYK_EXCLUDED_STAT_TXS: "finyk_excluded_stat_txs",
+  FINYK_BUDGETS: "finyk_budgets",
+  FINYK_SUBS: "finyk_subs",
+  FINYK_ASSETS: "finyk_assets",
+  FINYK_DEBTS: "finyk_debts",
+  FINYK_RECV: "finyk_recv",
+  FINYK_MONTHLY_PLAN: "finyk_monthly_plan",
+  FINYK_TX_CATS: "finyk_tx_cats",
+  FINYK_TX_SPLITS: "finyk_tx_splits",
+  FINYK_MONO_DEBT_LINKED: "finyk_mono_debt_linked",
+  FINYK_NETWORTH_HISTORY: "finyk_networth_history",
+  FINYK_CUSTOM_CATS: "finyk_custom_cats_v1",
 
-  // Fizruk
+  // ─── Fizruk ───────────────────────────────────────────────────────────
   FIZRUK_WORKOUTS: "fizruk_workouts_v1",
   FIZRUK_EXERCISES: "fizruk_exercises_v1",
+  FIZRUK_CUSTOM_EXERCISES: "fizruk_custom_exercises_v1",
   FIZRUK_TEMPLATES: "fizruk_workout_templates_v1",
   FIZRUK_PLAN: "fizruk-storage-monthly-plan",
+  FIZRUK_MONTHLY_PLAN: "fizruk_monthly_plan_v1",
+  FIZRUK_PLAN_TEMPLATE: "fizruk_plan_template_v1",
   FIZRUK_WELLBEING: "fizruk_wellbeing_v1",
   FIZRUK_MEASUREMENTS: "fizruk_measurements_v1",
   FIZRUK_SELECTED_TEMPLATE: "fizruk_selected_template_id_v1",
+  FIZRUK_ACTIVE_WORKOUT: "fizruk_active_workout_id_v1",
+  FIZRUK_DAILY_LOG: "fizruk_daily_log_v1",
+  FIZRUK_REST_SETTINGS: "fizruk_rest_settings_v1",
 
-  // Weekly Digest
+  // ─── Nutrition ────────────────────────────────────────────────────────
+  NUTRITION_LOG: "nutrition_log_v1",
+  NUTRITION_PANTRIES: "nutrition_pantries_v1",
+  NUTRITION_ACTIVE_PANTRY: "nutrition_active_pantry_v1",
+  NUTRITION_PREFS: "nutrition_prefs_v1",
+
+  // ─── Weekly Digest ────────────────────────────────────────────────────
   WEEKLY_DIGEST_PREFIX: "hub_weekly_digest_",
 };
