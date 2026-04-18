@@ -14,6 +14,7 @@
 import { createModuleStorage } from "@shared/lib/createModuleStorage.js";
 import { finykStorageManager } from "./storageManager.js";
 import type { Budget, Category, Transaction } from "../domain/types";
+import { BudgetsSchema } from "../domain/schemas";
 
 /** Стандартні ключі доменних сутностей ФІНІК. Не змінювати без міграції. */
 export const FINYK_STORAGE_KEYS = Object.freeze({
@@ -91,10 +92,21 @@ export function saveCategories(
 
 /**
  * Повертає конфіг бюджетів (finyk_budgets).
+ * Дані валідуються zod-схемою: записи з пошкодженими полями дропаються
+ * (замість падіння у споживачів), решта повертається як є.
  */
 export function getBudget(): Budget[] {
-  const v = readJSON<Budget[]>(FINYK_STORAGE_KEYS.budget, []);
-  return Array.isArray(v) ? v : [];
+  const raw = readJSON<unknown>(FINYK_STORAGE_KEYS.budget, []);
+  if (!Array.isArray(raw)) return [];
+  const result = BudgetsSchema.safeParse(raw);
+  if (result.success) return result.data as Budget[];
+  // Одиничні биті записи не повинні руйнувати весь список — фільтруємо.
+  const clean: Budget[] = [];
+  for (const item of raw) {
+    const one = BudgetsSchema.element.safeParse(item);
+    if (one.success) clean.push(one.data as Budget);
+  }
+  return clean;
 }
 
 /**

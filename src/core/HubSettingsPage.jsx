@@ -1,4 +1,5 @@
 import { AIDigestSection } from "./settings/AIDigestSection.jsx";
+import { ExperimentalSection } from "./settings/ExperimentalSection.jsx";
 import { FinykSection } from "./settings/FinykSection.jsx";
 import { FizrukSection } from "./settings/FizrukSection.jsx";
 import { GeneralSection } from "./settings/GeneralSection.jsx";
@@ -28,6 +29,7 @@ export function HubSettingsPage({
       <RoutineSection />
       <FizrukSection />
       <FinykSection />
+      <ExperimentalSection />
     </div>
   );
 }
