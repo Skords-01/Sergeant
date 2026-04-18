@@ -7,6 +7,9 @@ import { TodayFocusCard, useDashboardFocus } from "./TodayFocusCard.jsx";
 import { HubInsightsPanel } from "./HubInsightsPanel.jsx";
 import { WeeklyDigestCard, hasLiveWeeklyDigest } from "./WeeklyDigestCard.jsx";
 import { useWeeklyDigest, loadDigest, getWeekKey } from "./useWeeklyDigest.js";
+import { SoftAuthPromptCard } from "./onboarding/SoftAuthPromptCard.jsx";
+import { detectFirstRealEntry } from "./onboarding/firstRealEntry.js";
+import { isSoftAuthDismissed } from "./onboarding/vibePicks.js";
 import {
   DndContext,
   closestCenter,
@@ -395,9 +398,21 @@ function WeeklyDigestFooter({ onExpand }) {
 // ═══════════════════════════════════════════════════════════════════════════
 // MAIN HUB DASHBOARD
 // ═══════════════════════════════════════════════════════════════════════════
-export function HubDashboard({ onOpenModule, onOpenChat }) {
+export function HubDashboard({ onOpenModule, onOpenChat, user, onShowAuth }) {
   const [order, setOrder] = useState(loadOrder);
   useMondayAutoDigest();
+
+  // Soft auth prompt appears only once the user has typed in real data and
+  // has no account yet — an "offer to save", never a toll gate.
+  const hasRealEntry = detectFirstRealEntry();
+  const [softAuthDismissed, setSoftAuthDismissed] = useState(() =>
+    isSoftAuthDismissed(),
+  );
+  const showSoftAuth =
+    !user &&
+    hasRealEntry &&
+    !softAuthDismissed &&
+    typeof onShowAuth === "function";
 
   const { focus, rest, dismiss } = useDashboardFocus();
 
@@ -444,6 +459,13 @@ export function HubDashboard({ onOpenModule, onOpenChat }) {
   return (
     <div className="space-y-4">
       <DateHeader />
+
+      {showSoftAuth && (
+        <SoftAuthPromptCard
+          onOpenAuth={onShowAuth}
+          onDismiss={() => setSoftAuthDismissed(true)}
+        />
+      )}
 
       {/* Today focus — the ONE primary action on the dashboard */}
       <TodayFocusCard
