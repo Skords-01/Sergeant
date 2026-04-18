@@ -274,6 +274,7 @@ export const PAGES = [
   { id: "overview", label: "🏠 Огляд" },
   { id: "transactions", label: "📋 Транзакції" },
   { id: "budgets", label: "📅 Планування" },
+  { id: "analytics", label: "📊 Аналітика" },
   { id: "assets", label: "🏦 Активи та пасиви" },
 ];
 
