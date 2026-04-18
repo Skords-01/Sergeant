@@ -38,7 +38,7 @@ function getAccountShortName(acc) {
 // списку транзакцій. Обгортаємо у React.memo, щоб рядок перерендерювався
 // лише при зміні власних пропсів (категорія, приховання, спліти), а не
 // щоразу, коли батько оновлює стан (фільтри, скрол, вибір).
-function TxRowComponent({
+function TxRowImpl({
   tx,
   onClick,
   highlighted,
@@ -464,4 +464,4 @@ function TxRowComponent({
   );
 }
 
-export const TxRow = memo(TxRowComponent);
+export const TxRow = memo(TxRowImpl);

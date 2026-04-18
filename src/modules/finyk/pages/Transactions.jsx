@@ -1,6 +1,6 @@
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { GroupedVirtuoso } from "react-virtuoso";
-import { TxRow } from "../components/TxRow";
+import { TxListItem } from "../components/TxListItem";
 import { getCategory, getIncomeCategory } from "../utils";
 import { normalizeTransaction } from "../domain/transactions";
 import { mergeExpenseCategoryDefinitions } from "../constants";
@@ -8,11 +8,11 @@ import { Skeleton } from "@shared/components/ui/Skeleton";
 import { EmptyState } from "@shared/components/ui/EmptyState";
 import { cn } from "@shared/lib/cn";
 import { perfMark, perfEnd } from "@shared/lib/perf";
-import { SwipeToAction } from "@shared/components/ui/SwipeToAction";
 import { useToast } from "@shared/hooks/useToast";
+import { useDebounce } from "@shared/hooks/useDebounce";
 
 const now = new Date();
-const SEARCH_DEBOUNCE_MS = 200;
+const SEARCH_DEBOUNCE_MS = 300;
 
 function dayKeyFromTx(ts) {
   const d = new Date(ts * 1000);
@@ -74,6 +74,27 @@ export function Transactions({
   const [filter, setFilter] = useState("all");
   const [scrollParent, setScrollParent] = useState(null);
 
+  // Stable refs for handlers used by memoized row — avoids re-rendering all
+  // visible rows whenever any unrelated parent state changes.
+  const handlersRef = useRef({
+    hideTx,
+    overrideCategory,
+    setSplitTx,
+    removeManualExpense,
+    addManualExpense,
+    onEditManualExpense,
+    toast,
+  });
+  handlersRef.current = {
+    hideTx,
+    overrideCategory,
+    setSplitTx,
+    removeManualExpense,
+    addManualExpense,
+    onEditManualExpense,
+    toast,
+  };
+
   useEffect(() => {
     if (categoryFilter) {
       setFilter(categoryFilter);
@@ -82,16 +103,11 @@ export function Transactions({
   }, [categoryFilter, onClearCategoryFilter]);
   const [showHidden, setShowHidden] = useState(false);
   const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const debouncedSearch = useDebounce(search, SEARCH_DEBOUNCE_MS);
   // Batch selection
   const [selectMode, setSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [batchCatPicker, setBatchCatPicker] = useState(false);
-
-  useEffect(() => {
-    const id = setTimeout(() => setDebouncedSearch(search), SEARCH_DEBOUNCE_MS);
-    return () => clearTimeout(id);
-  }, [search]);
 
   // useCallback — `toggleSelect` передається у кожен рядок вибору.
   // Сталий reference спільно з React.memo(TxRow)/обгорткою чекбокса дає
@@ -102,6 +118,43 @@ export function Transactions({
       if (next.has(id)) next.delete(id);
       else next.add(id);
       return next;
+    });
+  }, []);
+
+  const stableHideTx = useCallback((id) => handlersRef.current.hideTx(id), []);
+  const stableOverrideCategory = useCallback(
+    (id, catId) => handlersRef.current.overrideCategory(id, catId),
+    [],
+  );
+  const stableSetSplitTx = useCallback(
+    (id, splits) => handlersRef.current.setSplitTx(id, splits),
+    [],
+  );
+  const stableOnEditManual = useCallback((manualId) => {
+    const fn = handlersRef.current.onEditManualExpense;
+    if (typeof fn === "function") fn(manualId);
+  }, []);
+  const stableSwipeHideTx = useCallback(
+    (id) => handlersRef.current.hideTx(id),
+    [],
+  );
+  const stableSwipeDeleteManual = useCallback((tx) => {
+    const { removeManualExpense, addManualExpense, toast } =
+      handlersRef.current;
+    if (!removeManualExpense || !addManualExpense) return;
+    const snapshot = {
+      id: String(tx._manualId),
+      date: tx.time
+        ? new Date(tx.time * 1000).toISOString()
+        : new Date().toISOString(),
+      description: String(tx.description || ""),
+      amount: Math.abs(Number(tx.amount || 0) / 100),
+      category: String(tx._category || "інше"),
+    };
+    removeManualExpense(tx._manualId);
+    toast.info("Витрату видалено", 5000, {
+      label: "Undo",
+      onClick: () => addManualExpense(snapshot),
     });
   }, []);
 
@@ -596,6 +649,7 @@ export function Transactions({
             <GroupedVirtuoso
               customScrollParent={scrollParent}
               groupCounts={groupCounts}
+              increaseViewportBy={{ top: 400, bottom: 400 }}
               groupContent={(groupIndex) => (
                 <div
                   className="px-3 py-2 bg-bg/95 backdrop-blur-sm border-b border-line/50 text-[11px] font-semibold text-subtle tracking-wide"
@@ -607,105 +661,26 @@ export function Transactions({
               itemContent={(index) => {
                 const t = flatItems[index];
                 if (!t) return null;
-                const i = index;
                 return (
-                  <div
-                    className={cn(
-                      "px-1 sm:px-2 relative",
-                      i % 2 === 1 && "bg-panelHi/25",
-                      selectMode && selectedIds.has(t.id) && "bg-primary/8",
-                    )}
-                  >
-                    {selectMode && (
-                      <button
-                        type="button"
-                        aria-label={
-                          selectedIds.has(t.id) ? "Зняти вибір" : "Вибрати"
-                        }
-                        onClick={() => toggleSelect(t.id)}
-                        className="absolute inset-0 z-10 w-full h-full cursor-pointer"
-                      />
-                    )}
-                    {selectMode && (
-                      <span
-                        className={cn(
-                          "absolute left-3 top-1/2 -translate-y-1/2 z-20 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors",
-                          selectedIds.has(t.id)
-                            ? "bg-primary border-primary"
-                            : "border-muted bg-panel",
-                        )}
-                        aria-hidden
-                      >
-                        {selectedIds.has(t.id) && (
-                          <svg
-                            width="10"
-                            height="10"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="white"
-                            strokeWidth="3"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          >
-                            <polyline points="20 6 9 17 4 12" />
-                          </svg>
-                        )}
-                      </span>
-                    )}
-                    <div className={cn(selectMode && "pl-8", "relative")}>
-                      <SwipeToAction
-                        disabled={selectMode}
-                        onSwipeLeft={
-                          t._manual
-                            ? removeManualExpense && addManualExpense
-                              ? () => {
-                                  const snapshot = {
-                                    id: String(t._manualId),
-                                    date: t.time
-                                      ? new Date(t.time * 1000).toISOString()
-                                      : new Date().toISOString(),
-                                    description: String(t.description || ""),
-                                    amount: Math.abs(
-                                      Number(t.amount || 0) / 100,
-                                    ),
-                                    category: String(t._category || "інше"),
-                                  };
-                                  removeManualExpense(t._manualId);
-                                  toast.info("Витрату видалено", 5000, {
-                                    label: "Undo",
-                                    onClick: () => addManualExpense(snapshot),
-                                  });
-                                }
-                              : undefined
-                            : !hiddenTxIds.includes(t.id)
-                              ? () => hideTx(t.id)
-                              : undefined
-                        }
-                        onSwipeRight={undefined}
-                        rightLabel="🙈 Приховати"
-                        rightColor="bg-warning/80"
-                      >
-                        <TxRow
-                          tx={t}
-                          onClick={
-                            t._manual &&
-                            typeof onEditManualExpense === "function"
-                              ? () => onEditManualExpense(t._manualId)
-                              : undefined
-                          }
-                          onHide={t._manual ? undefined : hideTx}
-                          hidden={hiddenTxIds.includes(t.id)}
-                          overrideCatId={txCategories[t.id]}
-                          onCatChange={t._manual ? undefined : overrideCategory}
-                          accounts={accounts}
-                          hideAmount={!showBalance}
-                          txSplits={txSplits}
-                          onSplitChange={t._manual ? undefined : setSplitTx}
-                          customCategories={customCategories}
-                        />
-                      </SwipeToAction>
-                    </div>
-                  </div>
+                  <TxListItem
+                    tx={t}
+                    rowIndex={index}
+                    selectMode={selectMode}
+                    selected={selectMode && selectedIds.has(t.id)}
+                    hidden={hiddenTxIdSet.has(t.id)}
+                    overrideCatId={txCategories[t.id]}
+                    txSplits={txSplits}
+                    accounts={accounts}
+                    hideAmount={!showBalance}
+                    customCategories={customCategories}
+                    onToggleSelect={toggleSelect}
+                    onSwipeHideTx={stableSwipeHideTx}
+                    onSwipeDeleteManual={stableSwipeDeleteManual}
+                    onEditManual={stableOnEditManual}
+                    onHideTx={stableHideTx}
+                    onCatChange={stableOverrideCategory}
+                    onSplitChange={stableSetSplitTx}
+                  />
                 );
               }}
             />

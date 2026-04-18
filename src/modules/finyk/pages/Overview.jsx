@@ -1,6 +1,6 @@
-import { memo, useMemo, useEffect } from "react";
-import { CategoryChart } from "../components/CategoryChart";
-import { NetworthChart } from "../components/NetworthChart";
+import { memo, useMemo, useEffect, Suspense } from "react";
+import { CategoryChart, NetworthChart } from "../components/charts/lazy";
+import { ChartFallback } from "../components/charts/ChartFallback";
 import { mergeExpenseCategoryDefinitions } from "../constants";
 import {
   calcDebtRemaining,
@@ -787,7 +787,9 @@ export function Overview({
                 {networthHistory.length} міс.
               </span>
             </div>
-            <NetworthChart data={networthHistory} />
+            <Suspense fallback={<ChartFallback className="h-20" />}>
+              <NetworthChart data={networthHistory} />
+            </Suspense>
           </div>
         ) : (
           <div className="bg-panel border border-dashed border-line/60 rounded-2xl p-6 text-center shadow-card">
@@ -915,17 +917,19 @@ export function Overview({
             <div className="text-xs font-medium text-subtle mb-4">
               Витрати за категоріями
             </div>
-            <CategoryChart
-              data={catSpends.slice(0, 6)}
-              onBarClick={
-                onCategoryClick
-                  ? (catId) => {
-                      onCategoryClick(catId);
-                      onNavigate?.("transactions");
-                    }
-                  : undefined
-              }
-            />
+            <Suspense fallback={<ChartFallback className="h-40" />}>
+              <CategoryChart
+                data={catSpends.slice(0, 6)}
+                onBarClick={
+                  onCategoryClick
+                    ? (catId) => {
+                        onCategoryClick(catId);
+                        onNavigate?.("transactions");
+                      }
+                    : undefined
+                }
+              />
+            </Suspense>
           </div>
         ) : (
           <div className="bg-panel border border-dashed border-line/60 rounded-2xl p-8 text-center shadow-card">

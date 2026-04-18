@@ -1,4 +1,11 @@
-import { useMemo, useState, useEffect, useCallback, useRef } from "react";
+import {
+  useMemo,
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  Suspense,
+} from "react";
 import { Button } from "@shared/components/ui/Button";
 import { Skeleton } from "@shared/components/ui/Skeleton";
 import { EmptyState } from "@shared/components/ui/EmptyState";
@@ -11,7 +18,8 @@ import {
 import { mergeExpenseCategoryDefinitions } from "../constants";
 import { cn } from "@shared/lib/cn";
 import { calcForecast } from "../lib/forecastEngine";
-import { BudgetTrendChart } from "../components/BudgetTrendChart";
+import { BudgetTrendChart } from "../components/charts/lazy";
+import { ChartFallback } from "../components/charts/ChartFallback";
 import { apiUrl } from "@shared/lib/apiUrl.js";
 import { LimitBudgetCard } from "../components/budgets/LimitBudgetCard.jsx";
 import { GoalBudgetCard } from "../components/budgets/GoalBudgetCard.jsx";
@@ -37,7 +45,10 @@ export function Budgets({ mono, storage }) {
     editCustomCategory,
     removeCustomCategory,
   } = storage;
-  const statTx = realTx.filter((t) => !excludedTxIds.has(t.id));
+  const statTx = useMemo(
+    () => realTx.filter((t) => !excludedTxIds.has(t.id)),
+    [realTx, excludedTxIds],
+  );
   const [editIdx, setEditIdx] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [showCategories, setShowCategories] = useState(false);
@@ -574,7 +585,7 @@ export function Budgets({ mono, storage }) {
               isEditing={isEditing}
               showProactiveAdvice={!!showProactiveAdvice}
               proactiveText={proactiveAdvice[b.categoryId]}
-              proactiveLoading={!!proactiveLoading[b.categoryId]}
+              proactiveLoading={proactiveLoading[b.categoryId]}
               onBeginEdit={() => setEditIdx(globalIdx)}
               onChangeLimit={(nextLimit) =>
                 setBudgets((bs) =>
@@ -600,7 +611,7 @@ export function Budgets({ mono, storage }) {
             </div>
             {loadingTx && forecasts.length === 0 ? (
               limitBudgets.map((b) => (
-                <Skeleton key={b.id} className="h-36 rounded-2xl" />
+                <Skeleton key={b.id} className="h-64 rounded-2xl" />
               ))
             ) : forecasts.length === 0 ? (
               <div className="text-sm text-muted px-1">
@@ -653,12 +664,14 @@ export function Budgets({ mono, storage }) {
                     </div>
                   )}
 
-                  <BudgetTrendChart
-                    dailyData={fc.dailyData}
-                    limit={fc.limit}
-                    color={fc.overLimit ? "#ef4444" : "#6366f1"}
-                    className="mb-2"
-                  />
+                  <Suspense fallback={<ChartFallback className="h-20 mb-2" />}>
+                    <BudgetTrendChart
+                      dailyData={fc.dailyData}
+                      limit={fc.limit}
+                      color={fc.overLimit ? "#ef4444" : "#6366f1"}
+                      className="mb-2"
+                    />
+                  </Suspense>
 
                   <div className="flex items-center justify-between text-[10px] text-subtle mt-1 mb-2">
                     <span>Факт: {fc.spent.toLocaleString("uk-UA")} ₴</span>
