@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { DEFAULT_SUBSCRIPTIONS, INTERNAL_TRANSFER_ID } from "../constants";
 import { notifyFinykRoutineCalendarSync } from "../hubRoutineSync.js";
+import { trackEvent, ANALYTICS_EVENTS } from "../../../core/analytics";
 import {
   normalizeFinykBackup,
   normalizeFinykSyncPayload,
@@ -82,11 +83,19 @@ export function useStorage({ onImportFeedback } = {}) {
       category: expense.category || "інше",
     };
     setManualExpenses((prev) => [entry, ...prev]);
+    // Product analytics: payload intentionally minimal (category + flag
+    // whether a custom description was provided) — no amounts, no text.
+    trackEvent(ANALYTICS_EVENTS.EXPENSE_ADDED, {
+      category: entry.category,
+      hasDescription: Boolean(entry.description),
+      source: "manual",
+    });
     return entry;
   };
 
   const removeManualExpense = (id) => {
     setManualExpenses((prev) => prev.filter((e) => e.id !== id));
+    trackEvent(ANALYTICS_EVENTS.EXPENSE_DELETED, { source: "manual" });
   };
 
   const editManualExpense = (id, patch) => {

@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { cn } from "@shared/lib/cn";
+import { trackEvent, ANALYTICS_EVENTS } from "./analytics";
 
 export const ONBOARDING_DONE_KEY = "hub_onboarding_done_v1";
 
@@ -324,7 +325,17 @@ export function OnboardingWizard({ onDone }) {
 
   const TOTAL = 4;
 
+  // Wizard mounts exactly once per onboarding attempt — emit start event here
+  // rather than in a parent so the signal is colocated with the flow itself.
+  useEffect(() => {
+    trackEvent(ANALYTICS_EVENTS.ONBOARDING_STARTED);
+  }, []);
+
   const handleDone = () => {
+    trackEvent(ANALYTICS_EVENTS.ONBOARDING_COMPLETED, {
+      startModule: startModule || "none",
+      providedName: Boolean(name.trim()),
+    });
     if (name.trim()) {
       try {
         localStorage.setItem("hub_user_name", name.trim());

@@ -16,6 +16,7 @@ import { ChartFallback } from "../components/charts/ChartFallback";
 import { MerchantList } from "../components/analytics/MerchantList";
 import { getTrendComparison } from "../domain/selectors";
 import { readJSON } from "../lib/finykStorage.js";
+import { trackEvent, ANALYTICS_EVENTS } from "../../../core/analytics";
 
 function readTxCache(year, month) {
   const cache = readJSON(`finyk_tx_cache_${year}_${month}`, null);
@@ -130,6 +131,12 @@ export function Analytics({ mono, storage }) {
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1);
+
+  // Fire-and-forget: record that the analytics view was opened. Intentionally
+  // runs once on mount (no month dep) so re-selecting months doesn't spam.
+  useEffect(() => {
+    trackEvent(ANALYTICS_EVENTS.ANALYTICS_OPENED, { module: "finyk" });
+  }, []);
 
   const isCurrentMonth =
     year === now.getFullYear() && month === now.getMonth() + 1;

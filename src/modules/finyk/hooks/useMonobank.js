@@ -9,6 +9,7 @@ import {
   removeItem,
 } from "../lib/finykStorage.js";
 import { normalizeTransaction } from "../domain/transactions";
+import { trackEvent, ANALYTICS_EVENTS } from "../../../core/analytics";
 
 /**
  * @typedef {{
@@ -436,6 +437,13 @@ export function useMonobank() {
       return;
     }
 
+    // Fire before the network call so we measure attempts, not just
+    // successes. Payload stays minimal — no token, no personal data.
+    trackEvent(ANALYTICS_EVENTS.BANK_CONNECT_STARTED, {
+      bank: "monobank",
+      forceRefresh: Boolean(forceRefresh),
+    });
+
     try {
       let info;
       const parsedInfoCache = readJSON(INFO_CACHE_KEY, null);
@@ -486,6 +494,11 @@ export function useMonobank() {
         removeItem(REMEMBER_KEY);
       }
       setToken(cleanToken);
+
+      trackEvent(ANALYTICS_EVENTS.BANK_CONNECT_SUCCESS, {
+        bank: "monobank",
+        accountsTotal: Array.isArray(info.accounts) ? info.accounts.length : 0,
+      });
 
       const cache = forceRefresh ? null : loadCache();
       if (cache) {

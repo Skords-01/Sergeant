@@ -27,6 +27,7 @@ import { CategorySelector } from "../components/CategorySelector.jsx";
 import { CategoryManager } from "../components/CategoryManager.jsx";
 import { calculateSafeToSpendPerDay } from "../hooks/useBudget.js";
 import { readJSON, writeJSON } from "../lib/finykStorage.js";
+import { trackEvent, ANALYTICS_EVENTS } from "../../../core/analytics";
 
 const formInp =
   "w-full h-10 rounded-xl border border-line bg-bg px-3 text-sm text-text outline-none focus:border-primary";
@@ -330,6 +331,10 @@ export function Budgets({ mono, storage }) {
         ...b,
         { ...newB, limit: limitVal, id: crypto.randomUUID() },
       ]);
+      trackEvent(ANALYTICS_EVENTS.BUDGET_SET, {
+        type: "limit",
+        categoryId: newB.categoryId,
+      });
       resetForm();
     } else if (newB.type === "goal") {
       if (!newB.name || !newB.name.trim()) {
@@ -355,6 +360,7 @@ export function Budgets({ mono, storage }) {
           id: crypto.randomUUID(),
         },
       ]);
+      trackEvent(ANALYTICS_EVENTS.BUDGET_SET, { type: "goal" });
       resetForm();
     }
   };
