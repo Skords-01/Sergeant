@@ -1,17 +1,10 @@
-import {
-  useState,
-  useCallback,
-  lazy,
-  Suspense,
-  useEffect,
-  useRef,
-} from "react";
+import { useState, useCallback, lazy, Suspense, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { cn } from "@shared/lib/cn";
 import ModuleErrorBoundary from "./ModuleErrorBoundary";
 import { useDarkMode } from "@shared/hooks/useDarkMode";
 import { useOnlineStatus } from "@shared/hooks/useOnlineStatus";
-import { ToastProvider, useToast } from "@shared/hooks/useToast";
+import { ToastProvider } from "@shared/hooks/useToast";
 import { ToastContainer } from "@shared/components/ui/Toast";
 import { AuthProvider, useAuth } from "./AuthContext.jsx";
 import { useCloudSync } from "./useCloudSync.js";
@@ -20,24 +13,20 @@ import { HubReports } from "./HubReports.jsx";
 import { HubSettingsPage } from "./HubSettingsPage.jsx";
 import { OnboardingWizard, shouldShowOnboarding } from "./OnboardingWizard.jsx";
 import { SyncStatusIndicator } from "./SyncStatusIndicator.jsx";
-import { Icon } from "@shared/components/ui/Icon";
+import { OfflineBanner } from "./app/OfflineBanner.jsx";
+import { PageLoader } from "./app/PageLoader.jsx";
+import { DarkModeToggle } from "./app/DarkModeToggle.jsx";
+import { IOSInstallBanner } from "./app/IOSInstallBanner.jsx";
+import { UserMenuButton } from "./app/UserMenuButton.jsx";
+import { MigrationPrompt } from "./app/MigrationPrompt.jsx";
+import { usePwaInstall } from "./app/usePwaInstall.js";
+import { useIosInstallBanner } from "./app/useIosInstallBanner.js";
+import { useSWUpdate } from "./app/useSWUpdate.js";
+import { PWA_ACTION_KEY, consumePwaAction } from "./app/pwaAction.js";
 
 const HubSearch = lazy(() =>
   import("./HubSearch.jsx").then((m) => ({ default: m.HubSearch })),
 );
-
-function OfflineBanner() {
-  return (
-    <div
-      role="status"
-      aria-live="polite"
-      className="fixed top-0 left-0 right-0 z-[300] flex items-center justify-center gap-2 px-4 py-2 bg-warning text-white text-xs font-semibold safe-area-pt shadow-soft"
-    >
-      <Icon name="wifi-off" size={14} strokeWidth={2.5} />
-      Немає підключення до інтернету
-    </div>
-  );
-}
 
 import RoutineApp from "../modules/routine/RoutineApp.jsx";
 
@@ -50,363 +39,9 @@ const NutritionApp = lazy(() => import("../modules/nutrition/NutritionApp"));
 const VALID_MODULES = new Set(["finyk", "fizruk", "routine", "nutrition"]);
 const VALID_ACTIONS = new Set(["add_expense", "start_workout", "add_meal"]);
 
-function PageLoader() {
-  return (
-    <div className="flex-1 flex items-center justify-center">
-      <div className="text-subtle text-sm animate-pulse">Завантаження...</div>
-    </div>
-  );
-}
-
-/** Sun/Moon icon toggle for dark mode */
-function DarkModeToggle({ dark, onToggle }) {
-  return (
-    <button
-      type="button"
-      onClick={onToggle}
-      aria-label={dark ? "Увімкнути світлу тему" : "Увімкнути темну тему"}
-      title={dark ? "Світла тема" : "Темна тема"}
-      className="w-10 h-10 flex items-center justify-center rounded-2xl text-muted hover:text-text hover:bg-panelHi transition-colors"
-    >
-      <Icon name={dark ? "sun" : "moon"} size={20} />
-    </button>
-  );
-}
-
-const PWA_SESSIONS_KEY = "pwa_session_count";
-const PWA_DISMISSED_KEY = "pwa_install_dismissed";
-const INSTALL_DELAY_MS = 30000;
-const MIN_SESSIONS = 2;
-
-function usePwaInstall() {
-  const [prompt, setPrompt] = useState(null);
-  const [ready, setReady] = useState(false);
-  const deferredRef = useRef(null);
-
-  useEffect(() => {
-    try {
-      const count =
-        parseInt(localStorage.getItem(PWA_SESSIONS_KEY) || "0", 10) + 1;
-      localStorage.setItem(PWA_SESSIONS_KEY, String(count));
-    } catch {}
-
-    const handler = (e) => {
-      e.preventDefault();
-      deferredRef.current = e;
-      setPrompt(e);
-    };
-    window.addEventListener("beforeinstallprompt", handler);
-    return () => window.removeEventListener("beforeinstallprompt", handler);
-  }, []);
-
-  useEffect(() => {
-    if (!prompt) return;
-    try {
-      if (localStorage.getItem(PWA_DISMISSED_KEY) === "1") return;
-    } catch {}
-
-    let sessions = 1;
-    try {
-      sessions = parseInt(localStorage.getItem(PWA_SESSIONS_KEY) || "1", 10);
-    } catch {}
-
-    if (sessions >= MIN_SESSIONS) {
-      const timer = setTimeout(() => setReady(true), INSTALL_DELAY_MS);
-      return () => clearTimeout(timer);
-    }
-  }, [prompt]);
-
-  const install = useCallback(async () => {
-    const p = deferredRef.current;
-    if (!p) return;
-    p.prompt();
-    const { outcome } = await p.userChoice;
-    if (outcome === "accepted") {
-      deferredRef.current = null;
-      setPrompt(null);
-      setReady(false);
-    }
-  }, []);
-
-  const dismiss = useCallback(() => {
-    try {
-      localStorage.setItem(PWA_DISMISSED_KEY, "1");
-    } catch {}
-    setReady(false);
-    setPrompt(null);
-  }, []);
-
-  return { canInstall: !!prompt && ready, install, dismiss };
-}
-
-const IOS_BANNER_DISMISSED_KEY = "ios_install_banner_dismissed";
-
-function useIosInstallBanner() {
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
-    try {
-      if (localStorage.getItem(IOS_BANNER_DISMISSED_KEY) === "1") return;
-    } catch {}
-    const isIOS =
-      /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-      (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-    const isStandalone =
-      window.matchMedia("(display-mode: standalone)").matches ||
-      window.navigator.standalone === true;
-    if (isIOS && !isStandalone) {
-      const timer = setTimeout(() => setVisible(true), 3000);
-      return () => clearTimeout(timer);
-    }
-  }, []);
-
-  const dismiss = useCallback(() => {
-    try {
-      localStorage.setItem(IOS_BANNER_DISMISSED_KEY, "1");
-    } catch {}
-    setVisible(false);
-  }, []);
-
-  return { visible, dismiss };
-}
-
-function IOSInstallBanner({ onDismiss }) {
-  return (
-    <div className="px-5 max-w-lg mx-auto w-full mb-2">
-      <div className="px-4 py-3 rounded-2xl bg-panel border border-line shadow-card flex items-start gap-3">
-        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="text-primary"
-            aria-hidden
-          >
-            <path d="M12 2v13M7 7l5-5 5 5" />
-            <path d="M20 21H4a2 2 0 0 1-2-2v-1" />
-            <path d="M22 21v-1a2 2 0 0 0-2-2" />
-          </svg>
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-text">
-            Додай на головний екран
-          </p>
-          <p className="text-xs text-muted mt-0.5 leading-snug">
-            Щоб отримувати push-сповіщення на iOS, відкрий меню{" "}
-            <span className="font-semibold">Поділитися</span>{" "}
-            <span aria-hidden>⬆️</span> і обери{" "}
-            <span className="font-semibold">На початковий екран</span>.
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={onDismiss}
-          className="text-muted hover:text-text shrink-0 p-1 -mt-1 -mr-1"
-          aria-label="Закрити"
-        >
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden
-          >
-            <line x1="18" y1="6" x2="6" y2="18" />
-            <line x1="6" y1="6" x2="18" y2="18" />
-          </svg>
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function useSWUpdate() {
-  const toast = useToast();
-  const [updateAvailable, setUpdateAvailable] = useState(false);
-  const toastShownRef = useRef(false);
-
-  const applyUpdate = useCallback(() => {
-    if (typeof window.__pwaUpdateSW === "function") {
-      window.__pwaUpdateSW(true);
-    } else {
-      window.location.reload();
-    }
-  }, []);
-
-  useEffect(() => {
-    const showUpdateToast = () => {
-      if (toastShownRef.current) return;
-      toastShownRef.current = true;
-      toast.info("Доступна нова версія", 15000, {
-        label: "Оновити",
-        onClick: applyUpdate,
-      });
-    };
-
-    const onUpdate = () => {
-      setUpdateAvailable(true);
-      showUpdateToast();
-    };
-    const onOffline = () => {
-      toast.success("Додаток готовий до роботи офлайн", 4000);
-    };
-    if (window.__pwaUpdateReady) {
-      setUpdateAvailable(true);
-      showUpdateToast();
-    }
-    window.addEventListener("pwa-update-ready", onUpdate);
-    window.addEventListener("pwa-offline-ready", onOffline);
-    return () => {
-      window.removeEventListener("pwa-update-ready", onUpdate);
-      window.removeEventListener("pwa-offline-ready", onOffline);
-    };
-  }, [toast, applyUpdate]);
-
-  return { updateAvailable, applyUpdate };
-}
-
 const AuthPage = lazy(() =>
   import("./AuthPage.jsx").then((m) => ({ default: m.AuthPage })),
 );
-
-function UserMenuButton({ user, syncing, lastSync, onSync, onPull, onLogout }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [open]);
-
-  const initial = (user.name || user.email || "?")[0].toUpperCase();
-
-  return (
-    <div className="relative" ref={ref}>
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        aria-label="Акаунт"
-        title={user.email}
-        className={cn(
-          "w-10 h-10 flex items-center justify-center rounded-2xl text-sm font-bold transition-colors",
-          "bg-accent/15 text-accent hover:bg-accent/25",
-          syncing && "animate-pulse",
-        )}
-      >
-        {initial}
-      </button>
-      {open && (
-        <div className="absolute right-0 top-12 z-50 w-64 bg-panel border border-line rounded-2xl shadow-float p-3 space-y-2">
-          <div className="px-2 py-1">
-            <p className="text-sm font-semibold text-text truncate">
-              {user.name || "Користувач"}
-            </p>
-            <p className="text-xs text-muted truncate">{user.email}</p>
-          </div>
-          <div className="border-t border-line/60 pt-2 space-y-1">
-            <button
-              type="button"
-              onClick={() => {
-                onSync();
-                setOpen(false);
-              }}
-              disabled={syncing}
-              className="w-full text-left px-3 py-2 rounded-xl text-sm text-text hover:bg-panelHi transition-colors disabled:opacity-50 flex items-center gap-2"
-            >
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden
-              >
-                <polyline points="16 16 12 12 8 16" />
-                <line x1="12" y1="12" x2="12" y2="21" />
-                <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3" />
-              </svg>
-              {syncing ? "Синхронізація..." : "Зберегти в хмару"}
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                onPull();
-                setOpen(false);
-              }}
-              disabled={syncing}
-              className="w-full text-left px-3 py-2 rounded-xl text-sm text-text hover:bg-panelHi transition-colors disabled:opacity-50 flex items-center gap-2"
-            >
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden
-              >
-                <polyline points="8 8 12 12 16 8" />
-                <line x1="12" y1="3" x2="12" y2="12" />
-                <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3" />
-              </svg>
-              Завантажити з хмари
-            </button>
-            {lastSync && (
-              <p className="px-3 text-[10px] text-muted">
-                Остання синхр.: {lastSync.toLocaleTimeString("uk-UA")}
-              </p>
-            )}
-          </div>
-          <div className="border-t border-line/60 pt-2">
-            <button
-              type="button"
-              onClick={() => {
-                onLogout();
-                setOpen(false);
-              }}
-              className="w-full text-left px-3 py-2 rounded-xl text-sm text-error hover:bg-error/10 transition-colors flex items-center gap-2"
-            >
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden
-              >
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                <polyline points="16 17 21 12 16 7" />
-                <line x1="21" y1="12" x2="9" y2="12" />
-              </svg>
-              Вийти
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
 
 export default function App() {
   return (
@@ -417,18 +52,6 @@ export default function App() {
       </AuthProvider>
     </ToastProvider>
   );
-}
-
-const PWA_ACTION_KEY = "pwa_pending_action";
-
-function consumePwaAction() {
-  try {
-    const a = localStorage.getItem(PWA_ACTION_KEY);
-    if (a) localStorage.removeItem(PWA_ACTION_KEY);
-    return a || null;
-  } catch {
-    return null;
-  }
 }
 
 function AppInner() {
@@ -456,7 +79,9 @@ function AppInner() {
     if (VALID_ACTIONS.has(fromUrl)) {
       try {
         localStorage.setItem(PWA_ACTION_KEY, fromUrl);
-      } catch {}
+      } catch {
+        /* noop */
+      }
       return fromUrl;
     }
     return consumePwaAction();
@@ -535,54 +160,11 @@ function AppInner() {
 
   if (migrationPending) {
     return (
-      <div className="min-h-dvh bg-bg flex items-center justify-center p-6 page-enter">
-        <div className="max-w-sm w-full bg-panel border border-line rounded-3xl p-6 shadow-float space-y-5">
-          <div className="text-center space-y-2">
-            <div className="w-14 h-14 mx-auto bg-accent/10 rounded-2xl flex items-center justify-center">
-              <svg
-                width="28"
-                height="28"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="text-accent"
-                aria-hidden
-              >
-                <polyline points="16 16 12 12 8 16" />
-                <line x1="12" y1="12" x2="12" y2="21" />
-                <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3" />
-              </svg>
-            </div>
-            <h2 className="text-xl font-bold text-text">
-              Локальні дані знайдено
-            </h2>
-            <p className="text-sm text-muted leading-relaxed">
-              У вас є дані на цьому пристрої, які ще не збережено в хмарі.
-              Бажаєте завантажити їх у свій акаунт?
-            </p>
-          </div>
-          <div className="space-y-2">
-            <button
-              type="button"
-              onClick={uploadLocalData}
-              disabled={syncing}
-              className="w-full py-3 rounded-2xl bg-accent text-white font-semibold text-sm hover:brightness-110 transition disabled:opacity-50"
-            >
-              {syncing ? "Завантаження..." : "Завантажити в хмару"}
-            </button>
-            <button
-              type="button"
-              onClick={skipMigration}
-              className="w-full py-3 rounded-2xl border border-line text-muted text-sm hover:text-text hover:bg-panelHi transition"
-            >
-              Пропустити
-            </button>
-          </div>
-        </div>
-      </div>
+      <MigrationPrompt
+        onUpload={uploadLocalData}
+        onSkip={skipMigration}
+        syncing={syncing}
+      />
     );
   }
 
