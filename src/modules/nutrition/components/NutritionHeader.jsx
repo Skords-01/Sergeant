@@ -1,12 +1,20 @@
+import { cn } from "@shared/lib/cn";
+
 export function NutritionHeader({ busy: _busy, onBackToHub }) {
   return (
-    <div className="shrink-0 bg-panel/95 backdrop-blur-md border-b border-line/60 z-40 relative safe-area-pt">
+    <div className="shrink-0 bg-panel/95 backdrop-blur-xl border-b border-line/60 z-40 relative safe-area-pt">
       <div className="flex min-h-[68px] items-center px-4 py-2 sm:px-5 gap-3">
         {typeof onBackToHub === "function" ? (
           <button
             type="button"
             onClick={onBackToHub}
-            className="shrink-0 w-10 h-10 min-w-[40px] min-h-[40px] -ml-1 flex items-center justify-center rounded-xl text-muted hover:text-text hover:bg-panelHi transition-colors border border-line/80 bg-panel/80"
+            className={cn(
+              "shrink-0 w-10 h-10 min-w-[40px] min-h-[40px] -ml-1",
+              "flex items-center justify-center rounded-xl",
+              "text-muted hover:text-text transition-all duration-200",
+              "border border-line/80 bg-panel/80 hover:bg-panelHi",
+              "active:scale-95"
+            )}
             aria-label="До вибору модуля"
             title="До хабу"
           >
@@ -27,7 +35,14 @@ export function NutritionHeader({ busy: _busy, onBackToHub }) {
           </button>
         ) : (
           <div
-            className="shrink-0 w-9 h-9 rounded-xl bg-nutrition/10 flex items-center justify-center text-nutrition border border-nutrition/20"
+            className={cn(
+              "shrink-0 w-10 h-10 rounded-xl flex items-center justify-center",
+              "bg-gradient-to-br from-lime-100 to-green-100",
+              "dark:from-lime-900/40 dark:to-green-900/30",
+              "text-lime-600 dark:text-lime-400",
+              "border border-lime-200/60 dark:border-lime-700/30",
+              "shadow-sm"
+            )}
             aria-hidden
           >
             <svg
@@ -50,7 +65,7 @@ export function NutritionHeader({ busy: _busy, onBackToHub }) {
         )}
 
         <div className="min-w-0 flex-1">
-          <span className="text-[9px] text-nutrition/70 font-bold tracking-widest uppercase block leading-none mb-0.5">
+          <span className="text-[9px] text-lime-600/80 dark:text-lime-400/70 font-bold tracking-widest uppercase block leading-none mb-0.5">
             ХАРЧУВАННЯ
           </span>
           <span className="text-[16px] font-semibold tracking-wide text-text block leading-tight">

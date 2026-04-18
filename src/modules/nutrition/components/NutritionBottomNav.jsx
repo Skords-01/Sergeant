@@ -133,8 +133,12 @@ const NAV = [
 
 export function NutritionBottomNav({ activePage, setActivePage }) {
   return (
-    <nav className="shrink-0 bg-panel/95 backdrop-blur-md border-t border-line/60 relative z-30 safe-area-pb">
-      <div className="flex h-[58px]">
+    <nav className={cn(
+      "shrink-0 relative z-30 safe-area-pb",
+      "bg-panel/95 backdrop-blur-xl",
+      "border-t border-line/60"
+    )}>
+      <div className="flex h-[60px]">
         {NAV.map((item) => {
           const active = activePage === item.id;
           return (
@@ -143,22 +147,37 @@ export function NutritionBottomNav({ activePage, setActivePage }) {
               type="button"
               onClick={() => setActivePage(item.id)}
               className={cn(
-                "relative flex-1 flex flex-col items-center justify-center gap-0.5 transition-all min-h-[48px]",
-                active ? "text-text" : "text-muted",
+                "relative flex-1 flex flex-col items-center justify-center gap-1",
+                "transition-all duration-200 min-h-[48px]",
+                "active:scale-95",
+                active ? "text-text" : "text-muted hover:text-text/70",
               )}
             >
+              {/* Active indicator pill */}
               {active && (
                 <span
-                  className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full bg-nutrition"
+                  className={cn(
+                    "absolute top-0 left-1/2 -translate-x-1/2",
+                    "w-8 h-1 rounded-full",
+                    "bg-gradient-to-r from-lime-400 to-lime-500",
+                    "shadow-sm"
+                  )}
                   aria-hidden
                 />
               )}
-              <span className={cn(active && "text-nutrition", "scale-90")}>
+              
+              {/* Icon */}
+              <span className={cn(
+                "scale-90 transition-all duration-200",
+                active && "text-nutrition",
+                active && "drop-shadow-[0_0_8px_rgba(132,204,22,0.3)]"
+              )}>
                 {item.icon}
               </span>
+              
               <span
                 className={cn(
-                  "text-[10px] leading-none font-semibold",
+                  "text-[10px] leading-none font-semibold transition-colors",
                   active ? "text-text" : "text-muted",
                 )}
               >

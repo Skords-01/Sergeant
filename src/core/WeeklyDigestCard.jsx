@@ -10,26 +10,30 @@ const MODULE_CONFIG = {
   finyk: {
     icon: "💳",
     label: "Фінанси",
-    colorClass: "text-emerald-600",
-    bgClass: "bg-emerald-500/10",
+    colorClass: "text-brand-600 dark:text-brand-400",
+    bgClass: "bg-brand-100 dark:bg-brand-900/30",
+    borderClass: "border-brand-200/60 dark:border-brand-700/30",
   },
   fizruk: {
     icon: "🏋️",
     label: "Тренування",
-    colorClass: "text-sky-600",
-    bgClass: "bg-sky-500/10",
+    colorClass: "text-teal-600 dark:text-teal-400",
+    bgClass: "bg-teal-100 dark:bg-teal-900/30",
+    borderClass: "border-teal-200/60 dark:border-teal-700/30",
   },
   nutrition: {
     icon: "🥗",
     label: "Харчування",
-    colorClass: "text-lime-700",
-    bgClass: "bg-lime-500/10",
+    colorClass: "text-lime-600 dark:text-lime-400",
+    bgClass: "bg-lime-100 dark:bg-lime-900/30",
+    borderClass: "border-lime-200/60 dark:border-lime-700/30",
   },
   routine: {
     icon: "✅",
     label: "Звички",
-    colorClass: "text-orange-600",
-    bgClass: "bg-orange-500/10",
+    colorClass: "text-coral-600 dark:text-coral-400",
+    bgClass: "bg-coral-100 dark:bg-coral-900/30",
+    borderClass: "border-coral-200/60 dark:border-coral-700/30",
   },
 };
 
@@ -302,13 +306,28 @@ export function WeeklyDigestCard() {
   const isPast = selectedWeekKey !== currentWeekKey;
 
   return (
-    <div className="rounded-2xl border border-line bg-panel shadow-card overflow-hidden">
-      <div className="px-4 py-3 flex items-center gap-2.5">
-        <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 text-sm">
-          📋
+    <div className={cn(
+      "rounded-2xl border bg-panel shadow-card overflow-hidden",
+      "border-line/80 dark:border-line",
+      "transition-all duration-200 hover:shadow-float"
+    )}>
+      <div className="px-4 py-3.5 flex items-center gap-3 bg-gradient-to-r from-transparent via-brand-50/30 to-teal-50/20 dark:from-transparent dark:via-brand-900/10 dark:to-teal-900/5">
+        <div className={cn(
+          "w-10 h-10 rounded-xl flex items-center justify-center shrink-0",
+          "bg-gradient-to-br from-brand-100 to-teal-100",
+          "dark:from-brand-900/40 dark:to-teal-900/30",
+          "shadow-sm"
+        )}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-brand-600 dark:text-brand-400">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+            <line x1="16" y1="13" x2="8" y2="13" />
+            <line x1="16" y1="17" x2="8" y2="17" />
+            <polyline points="10 9 9 9 8 9" />
+          </svg>
         </div>
         <div className="flex-1 min-w-0">
-          <div className="text-sm font-semibold text-text">Звіт тижня</div>
+          <div className="text-sm font-bold text-text">Звіт тижня</div>
           <div className="text-[11px] text-muted mt-0.5">{weekRange}</div>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">

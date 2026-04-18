@@ -309,10 +309,22 @@ export default function App({
   // ── Login screen ──────────────────────────────────────────────────────
   if (!clientInfo) {
     return (
-      <div className="min-h-dvh flex items-center justify-center p-5 bg-bg safe-area-pt-pb">
-        <div className="w-full max-w-sm">
+      <div className="min-h-dvh flex items-center justify-center p-5 bg-bg safe-area-pt-pb relative overflow-hidden">
+        {/* Decorative background elements */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute -top-40 -right-40 w-80 h-80 rounded-full bg-gradient-to-br from-brand-200/30 to-teal-200/20 blur-3xl" />
+          <div className="absolute -bottom-40 -left-40 w-80 h-80 rounded-full bg-gradient-to-tr from-teal-200/25 to-brand-100/20 blur-3xl" />
+        </div>
+        
+        <div className="w-full max-w-sm relative">
           <div className="text-center mb-8">
-            <div className="w-20 h-20 mx-auto bg-emerald-500/12 rounded-3xl flex items-center justify-center mb-4 border border-emerald-500/15 shadow-card">
+            <div className={cn(
+              "w-20 h-20 mx-auto rounded-3xl flex items-center justify-center mb-4",
+              "bg-gradient-to-br from-brand-100 to-teal-100",
+              "dark:from-brand-900/40 dark:to-teal-900/30",
+              "border border-brand-200/60 dark:border-brand-700/30",
+              "shadow-card"
+            )}>
               <svg
                 width="40"
                 height="40"
@@ -322,7 +334,7 @@ export default function App({
                 strokeWidth="1.5"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                className="text-emerald-600"
+                className="text-brand-600 dark:text-brand-400"
                 aria-hidden
               >
                 <rect x="3" y="8" width="18" height="12" rx="2" />
@@ -336,7 +348,10 @@ export default function App({
             </p>
           </div>
 
-          <div className="bg-panel border border-line rounded-3xl p-6 shadow-float">
+          <div className={cn(
+            "bg-panel/95 backdrop-blur-xl border rounded-3xl p-6 shadow-float",
+            "border-line/80 dark:border-line"
+          )}>
             <label
               className="text-sm text-muted mb-2 block"
               htmlFor="finyk-mono-token"
@@ -464,7 +479,15 @@ export default function App({
             )}
 
             <Button
-              className="mt-4 w-full h-12 min-h-[48px] text-base !bg-emerald-600 !text-white hover:!bg-emerald-700 border-0 shadow-md"
+              className={cn(
+                "mt-4 w-full h-12 min-h-[48px] text-base border-0",
+                "bg-gradient-to-r from-brand-600 to-teal-600",
+                "hover:from-brand-700 hover:to-teal-700",
+                "text-white font-semibold",
+                "shadow-md hover:shadow-glow",
+                "transition-all duration-200",
+                "active:scale-[0.98]"
+              )}
               onClick={() => connect(tokenInput.trim(), false, rememberToken)}
               disabled={connecting}
             >
