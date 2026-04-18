@@ -1,14 +1,11 @@
-import { memo, useMemo, useEffect, useRef, useState, Suspense } from "react";
+import { useMemo, useEffect, useRef, useState } from "react";
 import { trackEvent, ANALYTICS_EVENTS } from "../../../core/analytics";
-import { CategoryChart, NetworthChart } from "../components/charts/lazy";
-import { ChartFallback } from "../components/charts/ChartFallback";
 import {
   calcDebtRemaining,
   calcReceivableRemaining,
   calcCategorySpent,
   calcFinykSpendingTotal,
   getMonoTotals,
-  resolveExpenseCategoryMeta,
 } from "../utils";
 import { getSubscriptionAmountMeta } from "../domain/subscriptionUtils.js";
 import { getMonthlySummary } from "../domain/selectors";
@@ -19,14 +16,22 @@ import {
 } from "../domain/budget";
 import { getCategorySpendList } from "../domain/categories";
 import { filterStatTransactions } from "../domain/transactions";
-import { CANONICAL_TO_MANUAL_LABEL } from "../domain/personalization";
 import { Skeleton } from "@shared/components/ui/Skeleton";
-import { Icon } from "@shared/components/ui/Icon";
-import { EmptyState } from "@shared/components/ui/EmptyState";
-import { cn } from "@shared/lib/cn";
 import { THEME_HEX } from "@shared/lib/themeHex.js";
 import { SyncStatusBadge } from "../components/SyncStatusBadge";
 import { RetroComparison } from "../components/RetroComparison";
+
+import { FirstInsightBanner } from "./overview/FirstInsightBanner.jsx";
+import { HeroCard } from "./overview/HeroCard.jsx";
+import { IncomeExpensePills } from "./overview/IncomeExpensePills.jsx";
+import { NavButtons } from "./overview/NavButtons.jsx";
+import { MonthPulseCard } from "./overview/MonthPulseCard.jsx";
+import { NetworthSection } from "./overview/NetworthSection.jsx";
+import { BudgetAlertsList } from "./overview/BudgetAlertsList.jsx";
+import { PlanFactCard } from "./overview/PlanFactCard.jsx";
+import { QuickAddCard } from "./overview/QuickAddCard.jsx";
+import { PlannedFlowsCard } from "./overview/PlannedFlowsCard.jsx";
+import { CategoryChartSection } from "./overview/CategoryChartSection.jsx";
 
 const parseLocalDate = (isoDate) => {
   const [y, m, d] = (isoDate || "").split("-").map(Number);
@@ -50,35 +55,6 @@ const getNextBillingDate = (billingDay, now) => {
     );
   return d;
 };
-
-// Рядок запланованого грошового потоку. Пропси вже готові до рендеру —
-// memo знімає перерахунок і diff на кожному ре-рендері Overview.
-const FlowRow = memo(function FlowRow({ flow, showAmount = true }) {
-  const isGreen = flow.color === THEME_HEX.success;
-  return (
-    <div className="flex justify-between items-center py-3 border-b border-line last:border-0">
-      <div className="min-w-0 mr-3">
-        <div className="text-[15px] font-medium leading-snug truncate">
-          {flow.title}
-        </div>
-        <div className="text-xs text-subtle mt-0.5">{flow.hint}</div>
-      </div>
-      <div
-        className={cn(
-          "text-[15px] font-bold tabular-nums shrink-0",
-          isGreen ? "text-success" : "text-danger",
-        )}
-      >
-        {showAmount
-          ? (flow.amount === null
-              ? `${flow.sign}?`
-              : `${flow.sign}${flow.amount.toLocaleString("uk-UA", { maximumFractionDigits: 0 })}`) +
-            ` ${flow.currency}`
-          : "••••"}
-      </div>
-    </div>
-  );
-});
 
 export function Overview({
   mono,
@@ -404,54 +380,6 @@ export function Overview({
   const spendPlanRatio = expenseTarget > 0 ? spent / expenseTarget : 0;
   const hasExpensePlan = expenseTarget > 0;
 
-  let pulseAccentLeft;
-  let pulseBg;
-  let pulseColor;
-  let pulseStatusText;
-
-  if (hasExpensePlan) {
-    if (spendPlanRatio > 0.75) {
-      pulseAccentLeft = "border-l-red-500";
-      pulseBg = "bg-pulse-b";
-      pulseColor = "text-danger";
-      pulseStatusText = "Понад 75% запланованого";
-    } else if (spendPlanRatio > 0.5) {
-      pulseAccentLeft = "border-l-amber-500";
-      pulseBg = "bg-pulse-w";
-      pulseColor = "text-warning";
-      pulseStatusText = "Понад 50% запланованого";
-    } else {
-      pulseAccentLeft = "border-l-emerald-500";
-      pulseBg = "bg-pulse-ok";
-      pulseColor = "text-success";
-      pulseStatusText = "В межах плану";
-    }
-  } else {
-    const pulseGood = dayBudget >= 200;
-    const pulseWarn = dayBudget >= 0 && dayBudget < 200;
-    const pulseBad = dayBudget < 0;
-    pulseAccentLeft = pulseGood
-      ? "border-l-emerald-500"
-      : pulseWarn
-        ? "border-l-amber-500"
-        : "border-l-red-500";
-    pulseBg = pulseGood
-      ? "bg-pulse-ok"
-      : pulseWarn
-        ? "bg-pulse-w"
-        : "bg-pulse-b";
-    pulseColor = pulseGood
-      ? "text-success"
-      : pulseWarn
-        ? "text-warning"
-        : "text-danger";
-    pulseStatusText = pulseBad
-      ? "Перевитрата"
-      : pulseWarn
-        ? "Обережно — майже вичерпано"
-        : "В нормі";
-  }
-
   const firstName =
     clientInfo?.name?.split(" ")[1] ||
     clientInfo?.name?.split(" ")[0] ||
@@ -478,199 +406,35 @@ export function Overview({
         )}
 
         {showFirstInsight && hasAnyData && (
-          <div className="rounded-2xl border border-emerald-500/25 bg-emerald-500/10 p-4 flex items-start gap-3">
-            <div
-              className="w-10 h-10 shrink-0 rounded-2xl bg-emerald-500/15 flex items-center justify-center text-xl"
-              aria-hidden
-            >
-              💡
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="text-sm font-semibold text-text">
-                Ось куди йдуть твої гроші
-              </div>
-              <div className="text-xs text-muted mt-0.5">
-                Хочеш поставити бюджет — і бачити, коли починаєш виходити за
-                рамки?
-              </div>
-              <div className="flex gap-2 mt-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    dismissFirstInsight();
-                    onNavigate?.("budgets");
-                  }}
-                  className="px-3 py-1.5 rounded-xl bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-700 transition"
-                >
-                  Поставити бюджет
-                </button>
-                <button
-                  type="button"
-                  onClick={dismissFirstInsight}
-                  className="px-3 py-1.5 rounded-xl text-xs text-muted hover:text-text hover:bg-panelHi transition"
-                >
-                  Пізніше
-                </button>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={dismissFirstInsight}
-              className="text-muted hover:text-text shrink-0 -mr-1"
-              aria-label="Закрити підказку"
-            >
-              <Icon name="close" size={16} />
-            </button>
-          </div>
+          <FirstInsightBanner
+            onSetBudget={() => {
+              dismissFirstInsight();
+              onNavigate?.("budgets");
+            }}
+            onDismiss={dismissFirstInsight}
+          />
         )}
 
-        {/* ── Hero (як у прототипі: градієнт + зведення) ── */}
-        <div className="rounded-3xl bg-gradient-to-br from-emerald-600 via-emerald-700 to-teal-800 text-white p-5 shadow-float border border-white/10">
-          <div className="flex items-start justify-between gap-2">
-            <div>
-              <p className="text-emerald-100/90 text-sm">Загальний нетворс</p>
-              <p className="text-[11px] text-emerald-200/70 mt-0.5">
-                {firstName} · {dateLabel}
-              </p>
-            </div>
-          </div>
-          <div
-            className={cn(
-              "text-[40px] font-bold tracking-tight leading-tight mt-2 tabular-nums",
-              !showBalance && "tracking-widest",
-            )}
-          >
-            {showBalance ? (
-              <>
-                {networth.toLocaleString("uk-UA", { maximumFractionDigits: 0 })}
-                <span className="text-2xl font-semibold text-emerald-100 ml-1">
-                  ₴
-                </span>
-              </>
-            ) : (
-              "••••••"
-            )}
-          </div>
-          <div className="flex items-center gap-2 mt-3 text-emerald-100">
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="shrink-0 opacity-90"
-              aria-hidden
-            >
-              <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
-              <polyline points="17 6 23 6 23 12" />
-            </svg>
-            <span className="text-sm">
-              {showBalance
-                ? `Баланс місяця: ${monthBalance >= 0 ? "+" : "−"}${Math.abs(monthBalance).toLocaleString("uk-UA", { maximumFractionDigits: 0 })} ₴`
-                : "••••"}
-            </span>
-          </div>
-          <div className="flex flex-wrap gap-x-4 gap-y-2 mt-4 pt-4 border-t border-white/20 text-sm">
-            <div>
-              <div className="text-[11px] text-emerald-200/80 mb-0.5">
-                На картках
-              </div>
-              <div className="font-semibold tabular-nums text-emerald-50">
-                {showBalance
-                  ? `+${monoTotal.toLocaleString("uk-UA", { maximumFractionDigits: 0 })} ₴`
-                  : "••••"}
-              </div>
-            </div>
-            <div className="w-px bg-white/25 hidden sm:block self-stretch min-h-[2.5rem]" />
-            <div>
-              <div className="text-[11px] text-emerald-200/80 mb-0.5">
-                Борги
-              </div>
-              <div className="font-semibold tabular-nums text-emerald-50">
-                {showBalance
-                  ? `−${totalDebt.toLocaleString("uk-UA", { maximumFractionDigits: 0 })} ₴`
-                  : "••••"}
-              </div>
-            </div>
-            <div className="w-px bg-white/25 hidden sm:block self-stretch min-h-[2.5rem]" />
-            <div>
-              <div className="text-[11px] text-emerald-200/80 mb-0.5">
-                Місяць
-              </div>
-              <div
-                className={cn(
-                  "font-semibold tabular-nums",
-                  monthBalance >= 0 ? "text-emerald-50" : "text-amber-200",
-                )}
-              >
-                {showBalance
-                  ? `${monthBalance >= 0 ? "+" : "−"}${Math.abs(monthBalance).toLocaleString("uk-UA", { maximumFractionDigits: 0 })} ₴`
-                  : "••••"}
-              </div>
-            </div>
-          </div>
-        </div>
+        <HeroCard
+          networth={networth}
+          monoTotal={monoTotal}
+          totalDebt={totalDebt}
+          monthBalance={monthBalance}
+          firstName={firstName}
+          dateLabel={dateLabel}
+          showBalance={showBalance}
+        />
 
         <p className="text-[11px] text-subtle px-1 -mt-1 leading-relaxed">
           Огляд, категорії та бюджети на цій сторінці — у гривні (UAH). Інші
           валюти рахунків у загальному балансі не конвертуються автоматично.
         </p>
 
-        <div className="grid grid-cols-2 gap-3">
-          <div className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card">
-            <div className="flex items-center gap-2 text-emerald-600">
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden
-              >
-                <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
-                <polyline points="17 6 23 6 23 12" />
-              </svg>
-              <span className="text-xs text-subtle">Дохід</span>
-            </div>
-            <p className="text-xl font-semibold mt-1 tabular-nums text-text">
-              {showBalance
-                ? `+${income.toLocaleString("uk-UA", { maximumFractionDigits: 0 })}`
-                : "••••"}{" "}
-              <span className="text-base font-medium text-muted">₴</span>
-            </p>
-          </div>
-          <div className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card">
-            <div className="flex items-center gap-2 text-red-500">
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden
-              >
-                <polyline points="23 18 13.5 8.5 8.5 13.5 1 6" />
-                <polyline points="17 18 23 18 23 12" />
-              </svg>
-              <span className="text-xs text-subtle">Витрати</span>
-            </div>
-            <p className="text-xl font-semibold mt-1 tabular-nums text-text">
-              {showBalance
-                ? `−${spent.toLocaleString("uk-UA", { maximumFractionDigits: 0 })}`
-                : "••••"}{" "}
-              <span className="text-base font-medium text-muted">₴</span>
-            </p>
-          </div>
-        </div>
+        <IncomeExpensePills
+          income={income}
+          spent={spent}
+          showBalance={showBalance}
+        />
 
         <RetroComparison
           transactions={realTx}
@@ -680,438 +444,67 @@ export function Overview({
           showBalance={showBalance}
         />
 
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={() => onNavigate("transactions")}
-            className="flex-1 min-w-[140px] min-h-[44px] rounded-2xl border border-line bg-panel px-4 py-2.5 text-sm font-medium text-text shadow-card hover:border-emerald-500/30 hover:bg-emerald-500/[0.04] transition-colors"
-          >
-            Операції →
-          </button>
-          <button
-            type="button"
-            onClick={() => onNavigate("budgets")}
-            className="flex-1 min-w-[140px] min-h-[44px] rounded-2xl border border-line bg-panel px-4 py-2.5 text-sm font-medium text-text shadow-card hover:border-emerald-500/30 hover:bg-emerald-500/[0.04] transition-colors"
-          >
-            Бюджети →
-          </button>
-        </div>
+        <NavButtons onNavigate={onNavigate} />
 
-        {/* ── Місяць: дохід і витрати, прогноз, фінпульс (одна картка) ── */}
-        <div
-          className={cn(
-            "rounded-2xl border border-line/60 bg-panel p-5 shadow-card border-l-[4px]",
-            pulseAccentLeft,
-            pulseBg,
-          )}
-        >
-          <div className="flex items-start justify-between gap-3 mb-4">
-            <div>
-              <div className="text-xs font-medium text-subtle">Місяць</div>
-              <p className="text-[11px] text-subtle/80 mt-0.5 capitalize">
-                {dateLabel}
-              </p>
-            </div>
-            <span className="text-[11px] text-subtle/60 shrink-0 text-right tabular-nums">
-              {Math.max(0, daysInMonth - daysPassed)} дн. залишилось
-            </span>
-          </div>
+        <MonthPulseCard
+          dateLabel={dateLabel}
+          daysInMonth={daysInMonth}
+          daysPassed={daysPassed}
+          spent={spent}
+          income={income}
+          showBalance={showBalance}
+          showMonthForecast={showMonthForecast}
+          projectedSpend={projectedSpend}
+          spendPct={spendPct}
+          expenseFromIncomeBarClass={expenseFromIncomeBarClass}
+          forecastTrendPct={forecastTrendPct}
+          forecastBarClass={forecastBarClass}
+          dayBudget={dayBudget}
+          monthBalance={monthBalance}
+          spendPlanRatio={spendPlanRatio}
+          hasExpensePlan={hasExpensePlan}
+          recurringOutThisMonth={recurringOutThisMonth}
+          recurringInThisMonth={recurringInThisMonth}
+          unknownOutCount={unknownOutCount}
+        />
 
-          <div className="flex justify-between items-start gap-4">
-            <div>
-              <div className="text-xs text-subtle font-medium">Витрати</div>
-              <div className="text-[26px] font-bold tabular-nums mt-1 leading-tight">
-                {showBalance
-                  ? spent.toLocaleString("uk-UA", { maximumFractionDigits: 0 })
-                  : "••••"}
-                {showBalance && (
-                  <span className="text-base font-medium text-muted ml-1">
-                    ₴
-                  </span>
-                )}
-              </div>
-            </div>
-            <div className="text-right">
-              <div className="text-xs text-subtle font-medium">Дохід</div>
-              <div className="text-[26px] font-bold tabular-nums mt-1 leading-tight text-success">
-                {showBalance ? (
-                  <>
-                    +
-                    {income.toLocaleString("uk-UA", {
-                      maximumFractionDigits: 0,
-                    })}
-                    <span className="text-base font-medium text-success/70 ml-1">
-                      ₴
-                    </span>
-                  </>
-                ) : (
-                  "••••"
-                )}
-              </div>
-            </div>
-          </div>
+        <NetworthSection networthHistory={networthHistory} />
 
-          <div className="mt-4 space-y-1.5">
-            <div className="flex justify-between text-[11px] text-subtle/70">
-              <span>Витрати від доходу</span>
-              <span>{showBalance ? `${Math.round(spendPct)}%` : "—"}</span>
-            </div>
-            <div className="h-1.5 bg-bg rounded-full overflow-hidden">
-              <div
-                className={cn(
-                  "h-full rounded-full transition-all duration-700",
-                  expenseFromIncomeBarClass,
-                )}
-                style={{ width: showBalance ? `${spendPct}%` : "0%" }}
-              />
-            </div>
-            <div className="flex justify-between text-[11px] text-subtle/70">
-              <span>
-                {showBalance
-                  ? `Залишок: ${monthBalance >= 0 ? "+" : "−"}${Math.abs(monthBalance).toLocaleString("uk-UA", { maximumFractionDigits: 0 })} ₴`
-                  : "—"}
-              </span>
-              <span>
-                {showBalance && !showMonthForecast && projectedSpend > 0
-                  ? `Прогноз витрат ${projectedSpend.toLocaleString("uk-UA", { maximumFractionDigits: 0 })} ₴`
-                  : showBalance && showMonthForecast
-                    ? null
-                    : "—"}
-              </span>
-            </div>
-          </div>
+        <BudgetAlertsList
+          budgetAlerts={budgetAlerts}
+          statTx={statTx}
+          txCategories={txCategories}
+          txSplits={txSplits}
+          customCategories={customCategories}
+        />
 
-          {showMonthForecast && (
-            <div className="mt-4 pt-4 border-t border-line/50 space-y-2">
-              <div className="text-xs font-medium text-subtle">
-                Факт і прогноз витрат
-              </div>
-              <p className="text-[11px] text-subtle/80 leading-snug">
-                За {daysPassed}{" "}
-                {daysPassed === 1 ? "день" : daysPassed < 5 ? "дні" : "дн."} ·
-                факт{" "}
-                <span className="font-semibold text-text tabular-nums">
-                  {spent.toLocaleString("uk-UA", { maximumFractionDigits: 0 })}{" "}
-                  ₴
-                </span>
-                {" · "}до кінця місяця ~{" "}
-                <span className="font-semibold text-text tabular-nums">
-                  {Math.round(projectedSpend).toLocaleString("uk-UA", {
-                    maximumFractionDigits: 0,
-                  })}{" "}
-                  ₴
-                </span>
-              </p>
-              <div className="h-2.5 bg-bg rounded-full overflow-hidden">
-                <div
-                  className={cn(
-                    "h-full rounded-full transition-all duration-500",
-                    forecastBarClass,
-                  )}
-                  style={{ width: `${forecastTrendPct}%` }}
-                />
-              </div>
-              <div className="flex justify-between text-[11px] text-subtle/70">
-                <span>{forecastTrendPct}% від прогнозу за темпом</span>
-              </div>
-            </div>
-          )}
+        <PlanFactCard
+          planIncome={planIncome}
+          planExpense={planExpense}
+          planSavings={planSavings}
+          income={income}
+          spent={spent}
+          factSavings={factSavings}
+        />
 
-          <div className="mt-4 pt-4 border-t border-line/50">
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-xs font-medium text-subtle">Фінпульс</span>
-              <span className="text-[11px] text-subtle/60">
-                цільова витрата на день
-              </span>
-            </div>
-            <div
-              className={cn(
-                "text-[30px] sm:text-[34px] font-bold leading-tight tabular-nums mt-2",
-                pulseColor,
-                !showBalance && "tracking-widest",
-              )}
-            >
-              {showBalance ? (
-                <>
-                  {Math.abs(dayBudget).toLocaleString("uk-UA", {
-                    maximumFractionDigits: 0,
-                  })}
-                  <span className="text-base font-medium text-subtle ml-1">
-                    ₴/день
-                  </span>
-                </>
-              ) : (
-                "••••"
-              )}
-            </div>
-            <div className={cn("text-sm mt-0.5", pulseColor)}>
-              {pulseStatusText}
-            </div>
-            {(recurringOutThisMonth > 0 || recurringInThisMonth > 0) &&
-              showBalance && (
-                <div className="text-[11px] text-subtle/70 mt-2 leading-relaxed">
-                  Враховано планових: −
-                  {recurringOutThisMonth.toLocaleString("uk-UA", {
-                    maximumFractionDigits: 0,
-                  })}{" "}
-                  / +
-                  {recurringInThisMonth.toLocaleString("uk-UA", {
-                    maximumFractionDigits: 0,
-                  })}{" "}
-                  ₴{unknownOutCount > 0 && ` + ${unknownOutCount} без суми`}
-                </div>
-              )}
-          </div>
-        </div>
+        <QuickAddCard
+          onQuickAdd={onQuickAdd}
+          frequentCategories={frequentCategories}
+          frequentMerchants={frequentMerchants}
+        />
 
-        {/* ── Networth chart ── */}
-        {networthHistory.length >= 2 ? (
-          <div className="bg-panel border border-line/60 rounded-2xl px-5 pt-4 pb-3 shadow-card">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-medium text-subtle">
-                Динаміка нетворсу
-              </span>
-              <span className="text-xs text-subtle/60">
-                {networthHistory.length} міс.
-              </span>
-            </div>
-            <Suspense fallback={<ChartFallback className="h-20" />}>
-              <NetworthChart data={networthHistory} />
-            </Suspense>
-          </div>
-        ) : (
-          <div className="bg-panel border border-dashed border-line/60 rounded-2xl p-6 text-center shadow-card">
-            <p className="text-sm text-subtle">
-              Ще мало знімків для графіка нетворсу — з’явиться після кількох
-              змін балансу.
-            </p>
-          </div>
-        )}
+        <PlannedFlowsCard
+          plannedFlows={plannedFlows}
+          onNavigate={onNavigate}
+          showBalance={showBalance}
+        />
 
-        {/* ── Budget alerts ── */}
-        {budgetAlerts.length > 0 && (
-          <div className="space-y-1.5">
-            {budgetAlerts.map((b, i) => {
-              const cat = resolveExpenseCategoryMeta(
-                b.categoryId,
-                customCategories,
-              );
-              const s = calcCategorySpent(
-                statTx,
-                b.categoryId,
-                txCategories,
-                txSplits,
-                customCategories,
-              );
-              const pct = Math.round((s / b.limit) * 100);
-              return (
-                <div
-                  key={i}
-                  className={cn(
-                    "rounded-2xl px-4 py-3 flex items-center justify-between border",
-                    pct >= 100
-                      ? "bg-danger/8 border-danger/20"
-                      : "bg-warning/8 border-warning/20",
-                  )}
-                >
-                  <span className="text-sm font-medium">
-                    {cat?.label || b.categoryId}
-                  </span>
-                  <span
-                    className={cn(
-                      "text-sm font-bold tabular-nums",
-                      pct >= 100 ? "text-danger" : "text-warning",
-                    )}
-                  >
-                    {pct}% {pct >= 100 ? "⚠ перевищено" : "· понад 60% ліміту"}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        )}
+        <CategoryChartSection
+          catSpends={catSpends}
+          onNavigate={onNavigate}
+          onCategoryClick={onCategoryClick}
+        />
 
-        {/* ── Plan/Fact ── */}
-        {(planIncome > 0 || planExpense > 0 || planSavings > 0) && (
-          <div className="bg-panel border border-line/60 rounded-2xl p-5 shadow-card">
-            <div className="text-xs font-medium text-subtle mb-3">
-              План / Факт
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <div className="text-[11px] text-subtle/60 mb-1">План</div>
-                <div className="text-sm text-muted tabular-nums">
-                  +{planIncome.toLocaleString("uk-UA")} ₴
-                </div>
-                <div className="text-sm text-muted tabular-nums">
-                  −{planExpense.toLocaleString("uk-UA")} ₴
-                </div>
-                <div className="text-sm text-muted tabular-nums">
-                  {planSavings.toLocaleString("uk-UA")} ₴ збер.
-                </div>
-              </div>
-              <div className="space-y-1.5">
-                <div className="text-[11px] text-subtle/60 mb-1">Факт</div>
-                <div className="text-sm text-success tabular-nums">
-                  +
-                  {income.toLocaleString("uk-UA", { maximumFractionDigits: 0 })}{" "}
-                  ₴
-                </div>
-                <div className="text-sm text-danger tabular-nums">
-                  −{spent.toLocaleString("uk-UA", { maximumFractionDigits: 0 })}{" "}
-                  ₴
-                </div>
-                <div
-                  className={cn(
-                    "text-sm tabular-nums",
-                    factSavings >= 0 ? "text-success" : "text-danger",
-                  )}
-                >
-                  {factSavings.toLocaleString("uk-UA", {
-                    maximumFractionDigits: 0,
-                  })}{" "}
-                  ₴ збер.
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ── Персоналізований quick add ──
-            Показуємо топ-категорії та «нещодавнє» коли є куди
-            додати нову manual-витрату. Ховаємо картку, якщо ще
-            не зібрано жодної релевантної статистики. */}
-        {onQuickAdd &&
-          (frequentCategories.length > 0 || frequentMerchants.length > 0) && (
-            <div className="bg-panel border border-line/60 rounded-2xl p-5 shadow-card space-y-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-[11px] font-semibold uppercase tracking-wide text-subtle">
-                    Швидке додавання
-                  </div>
-                  <div className="text-sm text-muted mt-0.5">
-                    Ваші найчастіші категорії
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => onQuickAdd?.()}
-                  className="text-xs font-semibold text-primary/90 hover:text-primary transition-colors py-2 px-1 min-h-[36px]"
-                >
-                  Нова витрата →
-                </button>
-              </div>
-              {frequentCategories.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {frequentCategories.slice(0, 5).map((c) => {
-                    const manualLabel =
-                      (c.manualLabel && c.manualLabel) ||
-                      CANONICAL_TO_MANUAL_LABEL[c.id] ||
-                      c.id;
-                    return (
-                      <button
-                        key={c.id}
-                        type="button"
-                        onClick={() => onQuickAdd?.(manualLabel)}
-                        className="flex items-center gap-2 px-3 py-2 rounded-xl bg-panelHi border border-line hover:border-muted/50 transition-colors text-left min-w-[6.5rem]"
-                      >
-                        <span className="text-sm font-medium text-text truncate">
-                          {c.label || manualLabel}
-                        </span>
-                        <span className="text-[11px] text-subtle tabular-nums shrink-0">
-                          ×{c.count}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-              {frequentMerchants.length > 0 && (
-                <div className="pt-2 border-t border-line/50">
-                  <div className="text-[11px] font-semibold uppercase tracking-wide text-subtle mb-2">
-                    Нещодавнє
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {frequentMerchants.slice(0, 4).map((m) => (
-                      <button
-                        key={m.key}
-                        type="button"
-                        onClick={() =>
-                          onQuickAdd?.(m.suggestedManualCategory || null)
-                        }
-                        className="px-2.5 py-1 rounded-full text-[11px] font-medium bg-panelHi text-muted border border-line hover:border-muted/50 transition-colors"
-                        title={`${m.count} разів · ${m.total.toLocaleString("uk-UA")} ₴`}
-                      >
-                        {m.name}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-        {/* ── Planned flows ── */}
-        {plannedFlows.length > 0 && (
-          <div className="bg-panel border border-line/60 rounded-2xl overflow-hidden shadow-card">
-            <div className="px-5 pt-4 pb-2 flex items-center justify-between">
-              <span className="text-xs font-medium text-subtle">
-                Найближчі платежі
-              </span>
-              <button
-                onClick={() => onNavigate("budgets")}
-                className="text-xs text-primary/80 hover:text-primary transition-colors py-2 px-1 min-h-[36px]"
-              >
-                Усі →
-              </button>
-            </div>
-            <div className="px-5 pb-3">
-              {plannedFlows.slice(0, 5).map((f) => (
-                <FlowRow key={f.id} flow={f} showAmount={showBalance} />
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* ── Category chart ── */}
-        {catSpends.length > 0 ? (
-          <div className="bg-panel border border-line/60 rounded-2xl p-5 shadow-card">
-            <div className="text-xs font-medium text-subtle mb-4">
-              Витрати за категоріями
-            </div>
-            <Suspense fallback={<ChartFallback className="h-40" />}>
-              <CategoryChart
-                data={catSpends.slice(0, 6)}
-                onBarClick={
-                  onCategoryClick
-                    ? (catId) => {
-                        onCategoryClick(catId);
-                        onNavigate?.("transactions");
-                      }
-                    : undefined
-                }
-              />
-            </Suspense>
-          </div>
-        ) : (
-          <div className="bg-panel border border-dashed border-line/60 rounded-2xl shadow-card">
-            <EmptyState
-              title="Поки немає витрат"
-              description="Цього місяця витрат за категоріями ще немає."
-              action={
-                <button
-                  type="button"
-                  onClick={() => onNavigate("transactions")}
-                  className="text-sm font-medium text-primary hover:underline"
-                >
-                  Переглянути операції
-                </button>
-              }
-            />
-          </div>
-        )}
-
-        {/* ── Tx link ── */}
         {realTx.length > 0 && (
           <button
             onClick={() => onNavigate("transactions")}
