@@ -68,7 +68,7 @@ export function ModuleCard({ config, onClick, dragProps, isDragging }) {
             {config.icon}
           </div>
           <div className="flex-1 min-w-0">
-            <span className="text-[11px] font-bold text-muted uppercase tracking-wider">
+            <span className="text-[11px] font-bold text-text uppercase tracking-wider">
               {config.label}
             </span>
           </div>

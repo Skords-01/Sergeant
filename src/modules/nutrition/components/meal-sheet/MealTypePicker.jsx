@@ -5,7 +5,7 @@ export function MealTypePicker({ mealType, setForm }) {
   return (
     <div className="mb-4">
       <div className="text-[10px] font-bold text-subtle uppercase tracking-widest mb-2">
-        Мілі
+        Прийом їжі
       </div>
       <div className="flex gap-2 flex-wrap">
         {MEAL_TYPES.map((mt) => (
