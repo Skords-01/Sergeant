@@ -34,24 +34,53 @@ export function requestLogMiddleware(req, res, next) {
 }
 
 /**
- * JSON API + статичний фронтенд PWA (див. server/replit.mjs).
+ * CSP директиви для API-only сервера.
  *
- * `contentSecurityPolicy: false` — свідома відмова від дефолтної CSP helmet:
- *   - Vite-PWA вбудовує інлайн-bootstrap для реєстрації service worker;
- *   - service worker створюється через `blob:` URL, який блокується дефолтним
- *     `worker-src 'self'` (див. https://vite-pwa-org.netlify.app/);
- *   - API живе на іншому origin (Railway), клієнт — на Vercel, тож будь-яка
- *     CSP повинна містити повний допуск зовнішніх API та зображень.
- * Перш ніж вмикати CSP, треба: скласти явну політику під PWA (script-src з
- * nonce/strict-dynamic, worker-src 'self' blob:, connect-src усіх бекендів)
- * і протестувати її на staging (офлайн-кеш + push).
+ * Railway сервер віддає лише JSON (або мінімальні текст/plain для health) і не
+ * обслуговує HTML фронтенду — той живе на Vercel. Тому CSP може бути дуже
+ * суворою: ніякий контент із цього origin не має виконувати скрипти / бути
+ * вбудованим у фрейм / завантажувати щось. Це захищає на випадок помилки
+ * middleware, яка випадково поверне HTML.
  *
- * `crossOriginResourcePolicy: 'cross-origin'` — щоб fetch з іншого домену
- * (Vercel → Railway) не ламався.
+ * Для фронтенду CSP треба задавати в `vercel.json` з урахуванням PWA
+ * (script-src + worker-src blob:, connect-src — Railway + Anthropic-free, бо
+ * AI виклики проксовані через API).
+ */
+export function buildApiCspDirectives() {
+  return {
+    defaultSrc: ["'none'"],
+    frameAncestors: ["'none'"],
+    baseUri: ["'none'"],
+    formAction: ["'none'"],
+    connectSrc: ["'self'"],
+    imgSrc: ["'self'", "data:"],
+    // Навіть якщо колись повернеться HTML з сервера — ніяких зовнішніх скриптів
+    scriptSrc: ["'none'"],
+    styleSrc: ["'none'"],
+  };
+}
+
+/**
+ * JSON API сервер (див. server/railway.mjs).
+ *
+ * - CSP API-only (див. buildApiCspDirectives). Можна вимкнути через
+ *   `CSP_DISABLE=1` або перевести в report-only через `CSP_REPORT_ONLY=1`
+ *   (корисно для поступового розгортання на стейджі).
+ * - `crossOriginResourcePolicy: 'cross-origin'` — щоб fetch з іншого домену
+ *   (Vercel → Railway) не ламався.
  */
 export function apiHelmetMiddleware() {
+  const cspDisabled = process.env.CSP_DISABLE === "1";
+  const reportOnly = process.env.CSP_REPORT_ONLY === "1";
+
   return helmet({
-    contentSecurityPolicy: false,
+    contentSecurityPolicy: cspDisabled
+      ? false
+      : {
+          useDefaults: false,
+          directives: buildApiCspDirectives(),
+          reportOnly,
+        },
     crossOriginResourcePolicy: { policy: "cross-origin" },
   });
 }
