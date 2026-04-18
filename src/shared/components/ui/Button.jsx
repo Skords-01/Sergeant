@@ -108,7 +108,7 @@ export const Button = forwardRef(function Button(
     >
       {loading ? (
         <>
-          <LoadingSpinner className="animate-spin" aria-hidden="true" />
+          <LoadingSpinner className="animate-spin" />
           {!iconOnly && (
             <span className="opacity-0" aria-hidden="true">
               {children}
@@ -123,10 +123,13 @@ export const Button = forwardRef(function Button(
   );
 });
 
-// Loading spinner component
+// Loading spinner component. Always decorative — SR announcement is handled by
+// the sr-only "Завантаження…" sibling in Button.
 function LoadingSpinner({ className }) {
   return (
     <svg
+      aria-hidden="true"
+      focusable="false"
       className={cn("h-4 w-4", className)}
       viewBox="0 0 24 24"
       fill="none"
