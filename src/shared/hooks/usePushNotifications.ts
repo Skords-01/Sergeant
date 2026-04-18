@@ -1,5 +1,7 @@
-import { useState, useEffect, useCallback } from "react";
-import { pushApi, isApiError } from "@shared/api";
+import { useCallback, useEffect, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { isApiError, pushApi } from "@shared/api";
+import { pushKeys } from "@shared/lib/queryKeys";
 
 const PUSH_SUB_KEY = "hub_push_subscribed";
 
@@ -12,6 +14,15 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer> {
   return out;
 }
 
+function isPushSupported(): boolean {
+  return (
+    typeof window !== "undefined" &&
+    "serviceWorker" in navigator &&
+    "PushManager" in window &&
+    "Notification" in window
+  );
+}
+
 export interface UsePushNotificationsResult {
   supported: boolean;
   permission: NotificationPermission;
@@ -21,15 +32,28 @@ export interface UsePushNotificationsResult {
   unsubscribe: () => Promise<void>;
 }
 
+// Ключ для VAPID public key.
+// Сервер не ротує його, тож кешуємо назавжди (Infinity/Infinity) —
+// зайвий мережевий похід перед кожним натисканням "увімкнути сповіщення"
+// був помітний на слабкому 3G.
+const vapidKey = ["push", "vapid"] as const;
+
 /**
  * Хук для управління Web Push підпискою.
+ *
+ * Мутації (subscribe/unsubscribe) йдуть через `useMutation`, щоб:
+ *  - `isPending` замінив рукописний `loading`-стейт;
+ *  - `onError` централізовано логував помилку без try/finally-шуму;
+ *  - інвалідація `pushKeys.status` після successful підписки дозволяла
+ *    іншим місцям (напр., налаштування модулів) спостерігати стан без
+ *    CustomEvent-ів.
+ *
+ * Локальна `subscribed`-мітка в localStorage — оптимістичний кеш для
+ * першого рендеру, щоб UI не мерехтів між "не підписано" і "підписано".
  */
 export function usePushNotifications(): UsePushNotificationsResult {
-  const supported =
-    typeof window !== "undefined" &&
-    "serviceWorker" in navigator &&
-    "PushManager" in window &&
-    "Notification" in window;
+  const supported = isPushSupported();
+  const queryClient = useQueryClient();
 
   const [permission, setPermission] = useState<NotificationPermission>(
     supported ? Notification.permission : "denied",
@@ -41,27 +65,40 @@ export function usePushNotifications(): UsePushNotificationsResult {
       return false;
     }
   });
-  const [loading, setLoading] = useState<boolean>(false);
 
   useEffect(() => {
     if (!supported) return;
     setPermission(Notification.permission);
   }, [supported]);
 
-  const subscribe = useCallback(async (): Promise<void> => {
-    if (!supported || loading) return;
-    setLoading(true);
-    try {
+  // Prefetch VAPID на маунт — коли користувач натисне "увімкнути",
+  // ключ вже буде в кеші й ми одразу підемо у pushManager.subscribe.
+  const vapidQuery = useQuery({
+    queryKey: vapidKey,
+    queryFn: () => pushApi.getVapidPublic(),
+    enabled: supported,
+    staleTime: Infinity,
+    gcTime: Infinity,
+  });
+
+  const subscribeMutation = useMutation({
+    mutationFn: async (): Promise<void> => {
+      if (!supported) return;
+
       const perm = await Notification.requestPermission();
       setPermission(perm);
       if (perm !== "granted") return;
 
-      let publicKey: string;
-      try {
-        publicKey = (await pushApi.getVapidPublic()).publicKey;
-      } catch {
-        throw new Error("VAPID not configured");
-      }
+      const vapid =
+        vapidQuery.data ??
+        (await queryClient.fetchQuery({
+          queryKey: vapidKey,
+          queryFn: () => pushApi.getVapidPublic(),
+          staleTime: Infinity,
+          gcTime: Infinity,
+        }));
+      const publicKey = vapid?.publicKey;
+      if (!publicKey) throw new Error("VAPID not configured");
 
       const reg = await navigator.serviceWorker.ready;
       const sub = await reg.pushManager.subscribe({
@@ -73,35 +110,58 @@ export function usePushNotifications(): UsePushNotificationsResult {
 
       localStorage.setItem(PUSH_SUB_KEY, "1");
       setSubscribed(true);
-    } catch (e) {
+      queryClient.invalidateQueries({ queryKey: pushKeys.status });
+    },
+    onError: (e) => {
       const message = isApiError(e)
         ? e.serverMessage || `Server error ${e.status}`
         : (e as Error).message;
       console.warn("[push] subscribe failed:", message);
-    } finally {
-      setLoading(false);
-    }
-  }, [supported, loading]);
+    },
+  });
 
-  const unsubscribe = useCallback(async (): Promise<void> => {
-    if (!supported || loading) return;
-    setLoading(true);
-    try {
+  const unsubscribeMutation = useMutation({
+    mutationFn: async (): Promise<void> => {
+      if (!supported) return;
+
       const reg = await navigator.serviceWorker.ready;
       const sub = await reg.pushManager.getSubscription();
       if (sub) {
         const endpoint = sub.endpoint;
         await sub.unsubscribe();
+        // Серверний DELETE є best-effort: якщо сервер недоступний, локально
+        // ми все одно розписалися — запис у БД зачистить cron або наступна
+        // вдала підписка.
         await pushApi.unsubscribe(endpoint).catch(() => {});
       }
       localStorage.removeItem(PUSH_SUB_KEY);
       setSubscribed(false);
-    } catch (e) {
-      console.warn("[push] unsubscribe failed:", (e as Error).message);
-    } finally {
-      setLoading(false);
-    }
-  }, [supported, loading]);
+      queryClient.invalidateQueries({ queryKey: pushKeys.status });
+    },
+    onError: (e) => {
+      const message = isApiError(e)
+        ? e.serverMessage || `Server error ${e.status}`
+        : (e as Error).message;
+      console.warn("[push] unsubscribe failed:", message);
+    },
+  });
 
-  return { supported, permission, subscribed, loading, subscribe, unsubscribe };
+  const subscribe = useCallback(async (): Promise<void> => {
+    if (subscribeMutation.isPending || unsubscribeMutation.isPending) return;
+    await subscribeMutation.mutateAsync();
+  }, [subscribeMutation, unsubscribeMutation.isPending]);
+
+  const unsubscribe = useCallback(async (): Promise<void> => {
+    if (subscribeMutation.isPending || unsubscribeMutation.isPending) return;
+    await unsubscribeMutation.mutateAsync();
+  }, [subscribeMutation.isPending, unsubscribeMutation]);
+
+  return {
+    supported,
+    permission,
+    subscribed,
+    loading: subscribeMutation.isPending || unsubscribeMutation.isPending,
+    subscribe,
+    unsubscribe,
+  };
 }

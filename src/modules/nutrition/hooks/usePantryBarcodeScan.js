@@ -1,11 +1,14 @@
 import { useCallback } from "react";
-import { barcodeApi, isApiError } from "@shared/api";
+import { isApiError } from "@shared/api";
+import { useBarcodeProductLookup } from "./useBarcodeProduct.js";
 
 export function usePantryBarcodeScan({
   pantry,
   setPantryScannerOpen,
   setPantryScanStatus,
 }) {
+  const lookupProduct = useBarcodeProductLookup();
+
   return useCallback(
     async (raw) => {
       setPantryScannerOpen(false);
@@ -17,47 +20,45 @@ export function usePantryBarcodeScan({
         setPantryScanStatus("Некоректний штрих-код.");
         return;
       }
-      if (!navigator.onLine) {
-        setPantryScanStatus("Немає підключення до інтернету.");
-        return;
-      }
-      let data;
+
+      let p;
       try {
-        data = await barcodeApi.lookup(code);
-      } catch (e) {
-        if (isApiError(e) && e.status === 404) {
-          setPantryScanStatus("Продукт не знайдено в базі. Додай вручну.");
+        p = await lookupProduct(code);
+      } catch (err) {
+        if (isApiError(err) && err.isOffline) {
+          setPantryScanStatus("Немає підключення до інтернету.");
           return;
         }
-        if (isApiError(e) && e.kind === "http") {
-          setPantryScanStatus(e.serverMessage || "Помилка пошуку.");
+        if (isApiError(err) && err.kind === "http") {
+          setPantryScanStatus(err.serverMessage || "Помилка пошуку.");
           return;
         }
         setPantryScanStatus("Помилка пошуку. Перевір з\u2019єднання.");
         return;
       }
-      try {
-        const p = data?.product;
-        if (!p?.name) {
-          setPantryScanStatus(
-            "Продукт знайдено, але назва відсутня. Додай вручну.",
-          );
-          return;
-        }
-        const label = [p.name, p.brand].filter(Boolean).join(" ").trim();
-        pantry.upsertItem(label);
-        if (p.partial) {
-          setPantryScanStatus(
-            `Знайдено: ${label}. КБЖВ відсутнє в базі — за потреби додай вручну. \u2714`,
-          );
-        } else {
-          setPantryScanStatus(`Додано: ${label} \u2714`);
-        }
-        setTimeout(() => setPantryScanStatus(""), 4000);
-      } catch {
-        setPantryScanStatus("Помилка пошуку. Перевір з\u2019єднання.");
+
+      if (!p) {
+        setPantryScanStatus("Продукт не знайдено в базі. Додай вручну.");
+        return;
       }
+      if (!p.name) {
+        setPantryScanStatus(
+          "Продукт знайдено, але назва відсутня. Додай вручну.",
+        );
+        return;
+      }
+
+      const label = [p.name, p.brand].filter(Boolean).join(" ").trim();
+      pantry.upsertItem(label);
+      if (p.partial) {
+        setPantryScanStatus(
+          `Знайдено: ${label}. КБЖВ відсутнє в базі — за потреби додай вручну. \u2714`,
+        );
+      } else {
+        setPantryScanStatus(`Додано: ${label} \u2714`);
+      }
+      setTimeout(() => setPantryScanStatus(""), 4000);
     },
-    [pantry, setPantryScanStatus, setPantryScannerOpen],
+    [lookupProduct, pantry, setPantryScanStatus, setPantryScannerOpen],
   );
 }
