@@ -1,0 +1,45 @@
+export function MealTemplatesRow({ mealTemplates, setForm }) {
+  if (!Array.isArray(mealTemplates) || mealTemplates.length === 0) return null;
+  return (
+    <div className="mb-4">
+      <div className="text-[10px] font-bold text-subtle uppercase tracking-widest mb-2">
+        Шаблони
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {mealTemplates.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            onClick={() =>
+              setForm((s) => ({
+                ...s,
+                name: t.name,
+                mealType: t.mealType || "snack",
+                kcal:
+                  t.macros?.kcal != null
+                    ? String(Math.round(t.macros.kcal))
+                    : "",
+                protein_g:
+                  t.macros?.protein_g != null
+                    ? String(Math.round(t.macros.protein_g))
+                    : "",
+                fat_g:
+                  t.macros?.fat_g != null
+                    ? String(Math.round(t.macros.fat_g))
+                    : "",
+                carbs_g:
+                  t.macros?.carbs_g != null
+                    ? String(Math.round(t.macros.carbs_g))
+                    : "",
+                err: "",
+              }))
+            }
+            className="px-2 py-1 rounded-lg text-xs border border-line bg-panelHi hover:border-nutrition/50"
+          >
+            {t.name}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
