@@ -561,11 +561,15 @@ export function Budgets({ mono, storage }) {
             <div className="text-[11px] font-bold text-subtle uppercase tracking-widest pt-1">
               Прогноз · кінець місяця
             </div>
-            {forecasts.length === 0 && (
+            {loadingTx && forecasts.length === 0 ? (
+              limitBudgets.map((b) => (
+                <Skeleton key={b.id} className="h-36 rounded-2xl" />
+              ))
+            ) : forecasts.length === 0 ? (
               <div className="text-sm text-muted px-1">
                 Недостатньо даних для прогнозу
               </div>
-            )}
+            ) : null}
             {forecasts.map((fc) => {
               const cat = resolveExpenseCategoryMeta(
                 fc.categoryId,
