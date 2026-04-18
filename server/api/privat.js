@@ -1,6 +1,10 @@
 import { setCorsHeaders } from "./lib/cors.js";
+import { setRequestModule } from "../obs/requestContext.js";
+import { logger } from "../obs/logger.js";
+import { externalHttpRequestsTotal } from "../obs/metrics.js";
 
 export default async function handler(req, res) {
+  setRequestModule("finyk");
   setCorsHeaders(res, req, {
     allowHeaders: "X-Privat-Id, X-Privat-Token, Content-Type",
     methods: "GET, OPTIONS",
@@ -62,6 +66,14 @@ export default async function handler(req, res) {
     });
 
     if (!response.ok) {
+      try {
+        externalHttpRequestsTotal.inc({
+          upstream: "privatbank",
+          outcome: response.status === 429 ? "rate_limited" : "error",
+        });
+      } catch {
+        /* ignore */
+      }
       let errorText = "";
       try {
         errorText = await response.text();
@@ -76,10 +88,26 @@ export default async function handler(req, res) {
       });
     }
 
+    try {
+      externalHttpRequestsTotal.inc({ upstream: "privatbank", outcome: "ok" });
+    } catch {
+      /* ignore */
+    }
     const data = await response.json();
     res.status(200).json(data);
   } catch (e) {
-    console.error("PrivatBank API Error:", e);
+    try {
+      externalHttpRequestsTotal.inc({
+        upstream: "privatbank",
+        outcome: "error",
+      });
+    } catch {
+      /* ignore */
+    }
+    logger.error({
+      msg: "privat_proxy_failed",
+      err: { message: e?.message || String(e), code: e?.code },
+    });
     res.status(500).json({ error: "Помилка сервера" });
   }
 }

@@ -1,5 +1,6 @@
 import { assertAiQuota } from "../../aiQuota.js";
 import { setCorsHeaders } from "../lib/cors.js";
+import { setRequestModule } from "../../obs/requestContext.js";
 import { extractJsonFromText } from "../lib/jsonSafe.js";
 import { validateBody } from "../lib/validate.js";
 import { AnalyzePhotoSchema } from "../lib/schemas.js";
@@ -31,6 +32,7 @@ const SYSTEM = `Ти нутріціолог-помічник. Відповіда
 `;
 
 export default async function handler(req, res) {
+  setRequestModule("nutrition");
   setCorsHeaders(res, req, {
     allowHeaders: "X-Token, Content-Type",
     methods: "POST, OPTIONS",

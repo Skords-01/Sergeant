@@ -1,4 +1,5 @@
 import { setCorsHeaders } from "./lib/cors.js";
+import { setRequestModule } from "../obs/requestContext.js";
 import { checkRateLimit } from "./lib/rateLimit.js";
 
 const OFF_SEARCH = "https://world.openfoodfacts.org/api/v2/search";
@@ -240,6 +241,7 @@ async function fetchUSDA(query, signal) {
 }
 
 export default async function handler(req, res) {
+  setRequestModule("nutrition");
   setCorsHeaders(res, req, {
     methods: "GET, OPTIONS",
     allowHeaders: "Content-Type",

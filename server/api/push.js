@@ -2,6 +2,17 @@ import webpush from "web-push";
 import pool from "../db.js";
 import { auth } from "../auth.js";
 import { fromNodeHeaders } from "better-auth/node";
+import { setRequestModule } from "../obs/requestContext.js";
+import { logger } from "../obs/logger.js";
+import { pushSendsTotal } from "../obs/metrics.js";
+
+function recordSend(outcome) {
+  try {
+    pushSendsTotal.inc({ outcome });
+  } catch {
+    /* ignore */
+  }
+}
 
 const VAPID_PUBLIC = process.env.VAPID_PUBLIC_KEY;
 const VAPID_PRIVATE = process.env.VAPID_PRIVATE_KEY;
@@ -24,6 +35,7 @@ async function getSession(req) {
 
 /** GET /api/push/vapid-public — повертає публічний VAPID ключ для підписки */
 export async function vapidPublic(req, res) {
+  setRequestModule("push");
   if (!VAPID_PUBLIC) {
     return res.status(503).json({ error: "Push not configured" });
   }
@@ -32,6 +44,7 @@ export async function vapidPublic(req, res) {
 
 /** POST /api/push/subscribe — зберегти підписку */
 export async function subscribe(req, res) {
+  setRequestModule("push");
   if (!VAPID_PUBLIC)
     return res.status(503).json({ error: "Push not configured" });
   const user = await getSession(req);
@@ -51,13 +64,17 @@ export async function subscribe(req, res) {
     );
     res.json({ ok: true });
   } catch (e) {
-    console.error("[push] subscribe error", e);
+    logger.error({
+      msg: "push_subscribe_failed",
+      err: { message: e?.message || String(e), code: e?.code },
+    });
     res.status(500).json({ error: "DB error" });
   }
 }
 
 /** DELETE /api/push/subscribe — видалити підписку */
 export async function unsubscribe(req, res) {
+  setRequestModule("push");
   const user = await getSession(req);
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
@@ -71,7 +88,10 @@ export async function unsubscribe(req, res) {
     );
     res.json({ ok: true });
   } catch (e) {
-    console.error("[push] unsubscribe error", e);
+    logger.error({
+      msg: "push_unsubscribe_failed",
+      err: { message: e?.message || String(e), code: e?.code },
+    });
     res.status(500).json({ error: "DB error" });
   }
 }
@@ -82,6 +102,7 @@ export async function unsubscribe(req, res) {
  * Захищений API_SECRET щоб не дозволяти довільні запити.
  */
 export async function sendPush(req, res) {
+  setRequestModule("push");
   const secret = req.headers["x-api-secret"];
   if (!secret || secret !== process.env.API_SECRET) {
     return res.status(401).json({ error: "Unauthorized" });
@@ -118,11 +139,25 @@ export async function sendPush(req, res) {
         try {
           await webpush.sendNotification(sub, payload);
           sent++;
+          recordSend("ok");
         } catch (e) {
           if (e.statusCode === 404 || e.statusCode === 410) {
             stale.push(row.endpoint);
+            recordSend("invalid_endpoint");
+          } else if (e.statusCode === 429) {
+            recordSend("rate_limited");
+            logger.warn({
+              msg: "push_rate_limited",
+              status: e.statusCode,
+              err: { message: e?.message },
+            });
           } else {
-            console.warn("[push] send error", e.statusCode, e.message);
+            recordSend("error");
+            logger.warn({
+              msg: "push_send_error",
+              status: e.statusCode,
+              err: { message: e?.message },
+            });
           }
         }
       }),
@@ -137,7 +172,10 @@ export async function sendPush(req, res) {
 
     res.json({ sent, stale: stale.length });
   } catch (e) {
-    console.error("[push] sendPush error", e);
+    logger.error({
+      msg: "push_send_failed",
+      err: { message: e?.message || String(e), code: e?.code },
+    });
     res.status(500).json({ error: "Internal error" });
   }
 }

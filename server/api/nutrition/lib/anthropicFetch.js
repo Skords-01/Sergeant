@@ -1,4 +1,38 @@
+import {
+  aiTokensTotal,
+  externalHttpRequestsTotal,
+} from "../../../obs/metrics.js";
+
 const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
+
+function recordOutcome(outcome) {
+  try {
+    externalHttpRequestsTotal.inc({ upstream: "anthropic", outcome });
+  } catch {
+    /* ignore */
+  }
+}
+
+function recordUsage(model, data) {
+  try {
+    const usage = data?.usage;
+    if (!usage) return;
+    if (Number.isFinite(usage.input_tokens)) {
+      aiTokensTotal.inc(
+        { provider: "anthropic", model, kind: "prompt" },
+        usage.input_tokens,
+      );
+    }
+    if (Number.isFinite(usage.output_tokens)) {
+      aiTokensTotal.inc(
+        { provider: "anthropic", model, kind: "completion" },
+        usage.output_tokens,
+      );
+    }
+  } catch {
+    /* ignore */
+  }
+}
 
 export async function anthropicMessages(
   apiKey,
@@ -39,10 +73,19 @@ export async function anthropicMessages(
       // Ретраїмо тільки тимчасові/перевантажені стани.
       if (shouldRetryStatus(response.status) && attempt < maxAttempts) continue;
 
+      if (response.ok) {
+        recordOutcome("ok");
+        recordUsage(payload?.model || "unknown", data);
+      } else {
+        recordOutcome(response.status === 429 ? "rate_limited" : "error");
+      }
       return { response, data };
     } catch (e) {
       // На явний timeout (AbortError) краще не "допалювати" запити.
-      if (isAbortError(e) || attempt >= maxAttempts) throw e;
+      if (isAbortError(e) || attempt >= maxAttempts) {
+        recordOutcome(isAbortError(e) ? "timeout" : "error");
+        throw e;
+      }
       continue;
     } finally {
       clearTimeout(t);

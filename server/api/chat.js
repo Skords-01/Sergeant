@@ -2,8 +2,40 @@ import { assertAiQuota } from "../aiQuota.js";
 import { setCorsHeaders } from "./lib/cors.js";
 import { validateBody } from "./lib/validate.js";
 import { ChatRequestSchema } from "./lib/schemas.js";
+import { setRequestModule } from "../obs/requestContext.js";
+import { aiTokensTotal, externalHttpRequestsTotal } from "../obs/metrics.js";
 
 const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
+
+/** Облік токенів з Anthropic-відповіді (usage.input_tokens / output_tokens). */
+function recordAnthropicUsage(model, data) {
+  try {
+    const usage = data?.usage;
+    if (!usage) return;
+    if (Number.isFinite(usage.input_tokens)) {
+      aiTokensTotal.inc(
+        { provider: "anthropic", model, kind: "prompt" },
+        usage.input_tokens,
+      );
+    }
+    if (Number.isFinite(usage.output_tokens)) {
+      aiTokensTotal.inc(
+        { provider: "anthropic", model, kind: "completion" },
+        usage.output_tokens,
+      );
+    }
+  } catch {
+    /* ignore */
+  }
+}
+
+function recordAnthropicOutcome(outcome) {
+  try {
+    externalHttpRequestsTotal.inc({ upstream: "anthropic", outcome });
+  } catch {
+    /* ignore */
+  }
+}
 
 const TOOLS = [
   {
@@ -211,6 +243,7 @@ const SYSTEM_PREFIX = `Ти персональний асистент додат
 `;
 
 export default async function handler(req, res) {
+  setRequestModule("chat");
   setCorsHeaders(res, req, {
     allowHeaders: "Content-Type",
     methods: "POST, OPTIONS",
@@ -289,10 +322,16 @@ export default async function handler(req, res) {
 
       const data = await response.json();
       if (!response.ok) {
+        recordAnthropicOutcome(
+          response.status === 429 ? "rate_limited" : "error",
+        );
         return res
           .status(response.status)
           .json({ error: data?.error?.message || "AI error" });
       }
+
+      recordAnthropicOutcome("ok");
+      recordAnthropicUsage(payload.model, data);
 
       const text = (data?.content || [])
         .filter((b) => b.type === "text")
@@ -325,10 +364,16 @@ export default async function handler(req, res) {
 
     const data = await response.json();
     if (!response.ok) {
+      recordAnthropicOutcome(
+        response.status === 429 ? "rate_limited" : "error",
+      );
       return res
         .status(response.status)
         .json({ error: data?.error?.message || "AI error" });
     }
+
+    recordAnthropicOutcome("ok");
+    recordAnthropicUsage("claude-sonnet-4-6", data);
 
     const content = data?.content || [];
     const toolUses = content.filter((b) => b.type === "tool_use");
