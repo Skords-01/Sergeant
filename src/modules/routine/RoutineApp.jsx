@@ -172,10 +172,17 @@ export default function RoutineApp({ onBackToHub, onOpenModule } = {}) {
 
   useEffect(() => {
     try {
-      const q = new URLSearchParams(window.location.search).get("routineDay");
+      const params = new URLSearchParams(window.location.search);
+      const q = params.get("routineDay");
       if (q && /^\d{4}-\d{2}-\d{2}$/.test(q)) {
         setSelectedDay(q);
         setTimeMode("day");
+        // Видаляємо параметр після застосування, щоб back-навігація чи
+        // рефреш не запускали стрибок у "day"-режим повторно.
+        params.delete("routineDay");
+        const qs = params.toString();
+        const next = `${window.location.pathname}${qs ? `?${qs}` : ""}${window.location.hash}`;
+        window.history.replaceState(null, "", next);
       }
     } catch {
       /* noop */

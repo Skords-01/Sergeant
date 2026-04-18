@@ -13,13 +13,23 @@ function dateKeyMinusDays(baseKey, daysBack) {
 
 /**
  * Поточна серія: від сьогодні назад, лише дні де звичка запланована; зупинка на першому без відмітки.
+ * Межа ітерацій — за найдавнішою відомою подією звички (startDate / найдавніша відмітка),
+ * щоб рідкі рекурентності (monthly / custom) не обривали стрік передчасно.
  */
 export function streakForHabit(habit, completionsForHabit, todayKey) {
   const set = new Set(completionsForHabit || []);
+  if (set.size === 0) return 0;
+  // Нижня межа: найдавніша відома дата (старт звички або перша відмітка).
+  let earliest = null;
+  for (const k of set) if (earliest === null || k < earliest) earliest = k;
+  const startKey = habit.startDate || earliest || todayKey;
+  const minKey = earliest && earliest < startKey ? earliest : startKey;
+  // Жорсткий safety-cap на випадок битих дат (20 років), аж ніяк не 500 днів.
   let streak = 0;
   let dayOffset = 0;
-  for (let i = 0; i < 500; i++) {
+  for (let i = 0; i < 20 * 366; i++) {
     const key = dateKeyMinusDays(todayKey, dayOffset);
+    if (key < minKey) break;
     if (!habitScheduledOnDate(habit, key)) {
       dayOffset += 1;
       continue;
@@ -37,32 +47,28 @@ export function streakForHabit(habit, completionsForHabit, todayKey) {
 export function maxStreakAllTime(habit, completionsForHabit) {
   const sorted = [...(completionsForHabit || [])].sort();
   if (sorted.length === 0) return 0;
-  let best = 0;
-  let cur = 0;
-  let prev = null;
-  for (const key of sorted) {
-    if (!habitScheduledOnDate(habit, key)) continue;
-    if (prev === null) {
-      cur = 1;
-    } else {
-      let gap = false;
-      const d = parseDateKey(prev);
+  // Всі історичні відмітки враховуються — користувач позначив виконання, незалежно
+  // від поточного розкладу. Раніше при зміні розкладу (напр. daily→weekly) історичні стріки
+  // безшумно втрачались. Геп все ще визначаємо за поточним розкладом (історичний розклад не
+  // зберігається), оскільки для пропущених днів користувач сам вирішує, чи вони повинні збивати стрік.
+  let best = 1;
+  let cur = 1;
+  let prev = sorted[0];
+  for (let i = 1; i < sorted.length; i++) {
+    const key = sorted[i];
+    let gap = false;
+    const d = parseDateKey(prev);
+    d.setDate(d.getDate() + 1);
+    while (dateKeyFromDate(d) < key) {
+      const dk = dateKeyFromDate(d);
+      if (habitScheduledOnDate(habit, dk)) {
+        gap = true;
+        break;
+      }
       d.setDate(d.getDate() + 1);
-      while (dateKeyFromDate(d) < key) {
-        const dk = dateKeyFromDate(d);
-        if (habitScheduledOnDate(habit, dk)) {
-          gap = true;
-          break;
-        }
-        d.setDate(d.getDate() + 1);
-      }
-      if (gap) {
-        cur = 1;
-      } else {
-        cur += 1;
-      }
     }
-    best = Math.max(best, cur);
+    cur = gap ? 1 : cur + 1;
+    if (cur > best) best = cur;
     prev = key;
   }
   return best;
