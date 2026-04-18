@@ -1,3 +1,4 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@shared/components/ui/Button";
 import { upsertFood } from "../../lib/foodDb/foodDb.js";
 
@@ -9,6 +10,7 @@ export function SaveAsFood({
   setFoodQuery,
   setFoodErr,
 }) {
+  const queryClient = useQueryClient();
   return (
     <div className="mt-3 mb-1">
       <Button
@@ -48,6 +50,13 @@ export function SaveAsFood({
             setFoodErr(res.error || "Не вдалося зберегти продукт.");
             return;
           }
+          // Bust the local food-search cache so the next search (including
+          // the refetch triggered by `setFoodQuery(name)` below) sees the
+          // freshly saved product instead of 5 min of stale IndexedDB
+          // results.
+          queryClient.invalidateQueries({
+            queryKey: ["nutrition", "food-search", "local"],
+          });
           setPickedFood(res.product);
           setPickedGrams("100");
           setFoodQuery(name);
