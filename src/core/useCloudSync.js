@@ -61,6 +61,36 @@ const MODULE_MODIFIED_KEY = STORAGE_KEYS.SYNC_MODULE_MODIFIED;
 const OFFLINE_QUEUE_KEY = STORAGE_KEYS.SYNC_OFFLINE_QUEUE;
 const MIGRATION_DONE_KEY = STORAGE_KEYS.SYNC_MIGRATION_DONE;
 
+// Hard cap on offline queue length. Beyond this we drop the oldest entries to
+// keep localStorage usage bounded for users offline for extended periods.
+const MAX_OFFLINE_QUEUE = 50;
+
+export function __internal_parseDateSafe(value) {
+  return parseDateSafe(value);
+}
+
+function parseDateSafe(value) {
+  if (!value) return null;
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+// A module push result is considered successful only when the server did not
+// signal a conflict, an error, or ok:false. Any ambiguous shape is treated as
+// non-success so we keep the module dirty and retry later instead of dropping
+// unsynced changes.
+export function __internal_isModulePushSuccess(r) {
+  return isModulePushSuccess(r);
+}
+
+function isModulePushSuccess(r) {
+  if (!r || typeof r !== "object") return false;
+  if (r.conflict) return false;
+  if (r.error) return false;
+  if (r.ok === false) return false;
+  return true;
+}
+
 const ALL_TRACKED_KEYS = new Set(
   Object.values(SYNC_MODULES).flatMap((m) => m.keys),
 );
@@ -129,11 +159,66 @@ export function getOfflineQueue() {
   return Array.isArray(q) ? q : [];
 }
 
+export function __internal_addToOfflineQueue(entry) {
+  return addToOfflineQueue(entry);
+}
+
 function addToOfflineQueue(entry) {
-  const queue = getOfflineQueue();
+  let queue = getOfflineQueue();
+  // Coalesce consecutive push entries: merge new module payloads into the last
+  // queued push instead of pushing a fresh row. This prevents queue growth and
+  // duplicate work on replay when many small changes happen while offline.
+  if (
+    entry &&
+    entry.type === "push" &&
+    entry.modules &&
+    typeof entry.modules === "object" &&
+    queue.length > 0
+  ) {
+    const last = queue[queue.length - 1];
+    if (
+      last &&
+      last.type === "push" &&
+      last.modules &&
+      typeof last.modules === "object"
+    ) {
+      last.modules = { ...last.modules, ...entry.modules };
+      last.ts = new Date().toISOString();
+      safeWriteLS(OFFLINE_QUEUE_KEY, queue);
+      emitStatusEvent();
+      return;
+    }
+  }
   queue.push({ ...entry, ts: new Date().toISOString() });
+  if (queue.length > MAX_OFFLINE_QUEUE) {
+    queue = queue.slice(queue.length - MAX_OFFLINE_QUEUE);
+  }
   safeWriteLS(OFFLINE_QUEUE_KEY, queue);
   emitStatusEvent();
+}
+
+// Extract the last-known module payloads from a queue, tolerating corrupted
+// rows (non-objects, wrong types, unknown module names, missing data).
+// Later entries overwrite earlier ones for the same module since the queue is
+// append-ordered.
+export function __internal_collectQueuedModules(queue) {
+  return collectQueuedModules(queue);
+}
+
+function collectQueuedModules(queue) {
+  const modulesToPush = {};
+  if (!Array.isArray(queue)) return modulesToPush;
+  for (const entry of queue) {
+    if (!entry || typeof entry !== "object") continue;
+    if (entry.type !== "push") continue;
+    if (!entry.modules || typeof entry.modules !== "object") continue;
+    for (const [mod, payload] of Object.entries(entry.modules)) {
+      if (!SYNC_MODULES[mod]) continue;
+      if (!payload || typeof payload !== "object") continue;
+      modulesToPush[mod] = payload;
+    }
+  }
+  return modulesToPush;
 }
 
 function clearOfflineQueue() {
@@ -252,19 +337,26 @@ export function useCloudSync(user) {
   const [syncError, setSyncError] = useState(null);
   const [migrationPending, setMigrationPending] = useState(false);
   const syncingRef = useRef(false);
+  const replayingRef = useRef(false);
 
   const replayOfflineQueue = useCallback(async () => {
+    // Guard against re-entry: if an "online" event fires twice in quick
+    // succession, or replay is triggered concurrently from initialSync and
+    // pushDirty, we must not fire duplicate push requests for the same queue.
+    if (replayingRef.current) return;
     const queue = getOfflineQueue();
     if (queue.length === 0) return;
 
-    const modulesToPush = {};
-    for (const entry of queue) {
-      if (entry.type === "push" && entry.modules) {
-        Object.assign(modulesToPush, entry.modules);
-      }
+    const modulesToPush = collectQueuedModules(queue);
+    if (Object.keys(modulesToPush).length === 0) {
+      // Queue contained only corrupted/unknown entries — drop it so we don't
+      // keep retrying nothing forever.
+      clearOfflineQueue();
+      return;
     }
 
-    if (Object.keys(modulesToPush).length > 0) {
+    replayingRef.current = true;
+    try {
       const res = await fetch(apiUrl("/api/sync/push-all"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -274,6 +366,11 @@ export function useCloudSync(user) {
       if (res.ok) {
         clearOfflineQueue();
       }
+    } catch {
+      // Network/transport failure during replay must not break callers
+      // (onOnline chains pushDirty afterwards). Keep the queue for later.
+    } finally {
+      replayingRef.current = false;
     }
   }, []);
 
@@ -286,18 +383,21 @@ export function useCloudSync(user) {
     syncingRef.current = true;
     setSyncing(true);
     setSyncError(null);
-    try {
-      const modifiedTimes = getModuleModifiedTimes();
-      const modules = {};
-      for (const mod of dirtyMods) {
-        const data = collectModuleData(mod);
-        if (data && Object.keys(data).length > 0) {
-          modules[mod] = {
-            data,
-            clientUpdatedAt: modifiedTimes[mod] || new Date().toISOString(),
-          };
-        }
+    // Snapshot modified timestamps at push-start. After the server responds we
+    // only clear a module's dirty flag if its modifiedAt hasn't advanced —
+    // otherwise a change that happened mid-request would be silently dropped.
+    const modifiedSnapshot = getModuleModifiedTimes();
+    const modules = {};
+    for (const mod of dirtyMods) {
+      const data = collectModuleData(mod);
+      if (data && Object.keys(data).length > 0) {
+        modules[mod] = {
+          data,
+          clientUpdatedAt: modifiedSnapshot[mod] || new Date().toISOString(),
+        };
       }
+    }
+    try {
       if (Object.keys(modules).length === 0) {
         clearAllDirty();
         return;
@@ -319,26 +419,23 @@ export function useCloudSync(user) {
       if (!res.ok) throw new Error("Push failed");
 
       const result = await res.json();
-      if (user?.id && result?.results) {
+      const currentModified = getModuleModifiedTimes();
+      if (result?.results) {
         for (const [mod, r] of Object.entries(result.results)) {
-          if (r?.version) setModuleVersion(user.id, mod, r.version);
-          if (!r?.conflict) clearDirtyModule(mod);
+          if (user?.id && r?.version) setModuleVersion(user.id, mod, r.version);
+          if (!isModulePushSuccess(r)) continue;
+          // Only clear dirty if no newer change landed while we were pushing.
+          if (currentModified[mod] === modifiedSnapshot[mod]) {
+            clearDirtyModule(mod);
+          }
         }
       }
 
       setLastSync(new Date());
     } catch (err) {
-      const modifiedTimes = getModuleModifiedTimes();
-      const modules = {};
-      for (const mod of dirtyMods) {
-        const data = collectModuleData(mod);
-        if (data && Object.keys(data).length > 0) {
-          modules[mod] = {
-            data,
-            clientUpdatedAt: modifiedTimes[mod] || new Date().toISOString(),
-          };
-        }
-      }
+      // Re-queue the exact payload we attempted to push rather than
+      // re-collecting, which would race with changes that happened during the
+      // failed request.
       if (Object.keys(modules).length > 0) {
         addToOfflineQueue({ type: "push", modules });
       }
@@ -520,12 +617,8 @@ export function useCloudSync(user) {
           if (!payload?.data) continue;
           const localVersion = user?.id ? getModuleVersion(user.id, mod) : 0;
           const cloudVersion = payload.version ?? 0;
-          const localModified = modifiedTimes[mod]
-            ? new Date(modifiedTimes[mod])
-            : null;
-          const cloudModified = payload.serverUpdatedAt
-            ? new Date(payload.serverUpdatedAt)
-            : null;
+          const localModified = parseDateSafe(modifiedTimes[mod]);
+          const cloudModified = parseDateSafe(payload.serverUpdatedAt);
 
           if (
             cloudVersion > localVersion ||
