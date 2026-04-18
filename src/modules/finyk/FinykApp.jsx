@@ -132,7 +132,9 @@ const ALL_PAGE_IDS = PAGES.map((p) => p.id);
 
 function useHashRouter(defaultPage = "overview") {
   const getPage = useCallback(() => {
-    let p = window.location.hash.replace("#/", "") || defaultPage;
+    // Accept both `#page` (canonical, matches fizruk/nutrition) and legacy `#/page`.
+    let p =
+      window.location.hash.replace(/^#\/?/, "").split("/")[0] || defaultPage;
     if (p === "payments") p = "budgets";
     return p;
   }, [defaultPage]);
@@ -143,7 +145,7 @@ function useHashRouter(defaultPage = "overview") {
     return () => window.removeEventListener("hashchange", handler);
   }, [getPage]);
   const navigate = (p) => {
-    window.location.hash = `/${p}`;
+    window.location.hash = p;
   };
   return [ALL_PAGE_IDS.includes(page) ? page : defaultPage, navigate];
 }
@@ -195,24 +197,30 @@ export default function App({
   useEffect(() => {
     if (window.location.search.includes("sync=")) {
       const ok = storage.loadFromUrl();
-      if (ok) showToast("✅ Налаштування синхронізовано!");
-      else showToast("❌ Не вдалось завантажити синк-дані", "error");
-    }
-    if (pwaAction === "add_expense") {
-      navigate("transactions");
-      setShowExpenseSheet(true);
-      onPwaActionConsumed?.();
+      if (ok) showToast("Налаштування синхронізовано!");
+      else showToast("Не вдалось завантажити синк-дані", "error");
     }
     // Одноразово при монтуванні: ?sync= у URL
     // eslint-disable-next-line react-hooks/exhaustive-deps -- storage/showToast не повинні перезапускати імпорт з URL
   }, []);
 
   useEffect(() => {
-    if (window.location.hash === "#/payments") {
+    if (pwaAction === "add_expense") {
+      navigate("transactions");
+      setShowExpenseSheet(true);
+      onPwaActionConsumed?.();
+    }
+    // `navigate` — стабільна локальна функція useHashRouter, не ре-створюється між рендерами.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pwaAction, onPwaActionConsumed]);
+
+  useEffect(() => {
+    const h = window.location.hash;
+    if (h === "#/payments" || h === "#payments") {
       window.history.replaceState(
         null,
         "",
-        `${window.location.pathname}#/budgets`,
+        `${window.location.pathname}#budgets`,
       );
     }
   }, []);
@@ -251,7 +259,10 @@ export default function App({
     touchStartX.current = null;
     touchStartY.current = null;
 
-    if (Math.abs(dx) < 100 || Math.abs(dy) > Math.abs(dx) * 0.85) return;
+    // Require a clearly horizontal swipe so vertical scrolls in nested lists
+    // (transactions, budgets) never trigger tab switches: |dx| must exceed
+    // both a comfortable threshold (60px) AND ~1.5× the vertical travel.
+    if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
     const curIdx = NAV_IDS.indexOf(page);
     if (curIdx === -1) return;
     const next = curIdx + (dx > 0 ? 1 : -1);

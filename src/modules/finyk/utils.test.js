@@ -110,6 +110,21 @@ describe("fmtDate", () => {
     const yesterdaySec = Math.floor(Date.now() / 1000) - 86400;
     expect(fmtDate(yesterdaySec)).toMatch(/^Вчора/);
   });
+  it("групує за календарним днем, а не за 24-годинним інтервалом", () => {
+    // О 00:30 транзакція, зроблена вчора о 23:50 (≈40 хв тому), має бути «Вчора».
+    vi.setSystemTime(new Date("2024-06-15T00:30:00"));
+    const lateYesterdayTs = Math.floor(
+      new Date("2024-06-14T23:50:00").getTime() / 1000,
+    );
+    expect(fmtDate(lateYesterdayTs)).toMatch(/^Вчора/);
+
+    // О 23:00 транзакція о 01:00 того ж дня (≈22 год тому) — «Сьогодні».
+    vi.setSystemTime(new Date("2024-06-15T23:00:00"));
+    const earlyTodayTs = Math.floor(
+      new Date("2024-06-15T01:00:00").getTime() / 1000,
+    );
+    expect(fmtDate(earlyTodayTs)).toMatch(/^Сьогодні/);
+  });
 });
 
 describe("getAccountLabel", () => {

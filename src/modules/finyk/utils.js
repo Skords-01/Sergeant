@@ -83,7 +83,12 @@ export function fmtAmt(amount, cc = CURRENCY.UAH) {
 
 export function fmtDate(ts) {
   const d = new Date(ts * 1000);
-  const diff = Math.floor((Date.now() - d) / 86400000);
+  // Compare by calendar day at midnight, not elapsed milliseconds, so a
+  // transaction at 23:50 and a read at 00:10 render as "Вчора", not "Сьогодні".
+  const d0 = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const diff = Math.round((today - d0) / 86400000);
   const t = d.toLocaleTimeString("uk-UA", {
     hour: "2-digit",
     minute: "2-digit",

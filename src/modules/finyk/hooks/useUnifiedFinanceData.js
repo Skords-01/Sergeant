@@ -41,9 +41,7 @@ export function useUnifiedFinanceData({ mono, privat }) {
           ? "partial"
           : mono.syncState?.status === "loading" || privat.loadingTx
             ? "loading"
-            : mono.syncState?.status === "success"
-              ? "success"
-              : mono.syncState?.status;
+            : mono.syncState?.status;
     const combinedSyncState = {
       ...mono.syncState,
       status: combinedSyncStatus,
