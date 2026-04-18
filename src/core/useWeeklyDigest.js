@@ -139,16 +139,13 @@ export function aggregateFinyk(weekKey) {
 }
 
 export function aggregateFizruk(weekKey) {
-  const raw = localStorage.getItem("fizruk_workouts_v1");
-  if (!raw) return null;
-
-  let workouts = [];
-  try {
-    const p = JSON.parse(raw);
-    workouts = Array.isArray(p) ? p : (p?.workouts ?? []);
-  } catch {
-    return null;
-  }
+  // Storage shape is historically either an array or { workouts: [...] }, so
+  // we read the raw value through `safeReadLS` (handles SecurityError / quota
+  // exceptions) and then normalize.
+  const parsed = safeReadLS("fizruk_workouts_v1", null);
+  if (!parsed) return null;
+  const workouts = Array.isArray(parsed) ? parsed : (parsed?.workouts ?? []);
+  if (!Array.isArray(workouts) || workouts.length === 0) return null;
 
   const monday = new Date(`${weekKey}T00:00:00`);
   const sunday = new Date(monday);
