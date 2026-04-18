@@ -18,8 +18,11 @@ import { getTrendComparison } from "../domain/selectors";
 import { readJSON } from "../lib/finykStorage.js";
 import { trackEvent, ANALYTICS_EVENTS } from "../../../core/analytics";
 
-function readTxCache(year, month) {
-  const cache = readJSON(`finyk_tx_cache_${year}_${month}`, null);
+// `fetchMonth` приймає 0-based місяць (як у `new Date(y, m, 1)`).
+// Сторінка оперує 1-based (1..12), тож тут нормалізуємо.
+function readTxCache(year, month1Based) {
+  const m0 = month1Based - 1;
+  const cache = readJSON(`finyk_tx_cache_${year}_${m0}`, null);
   if (!cache || typeof cache !== "object") return null;
   return Array.isArray(cache.txs) ? cache.txs : null;
 }
@@ -95,10 +98,19 @@ const MonthNav = memo(function MonthNav({ year, month, onChange }) {
 
 // Рядок порівняння метрики з попереднім місяцем. Чиста функція від пропсів —
 // memo знімає перерендер при оновленнях сусідніх секцій Analytics.
-const ComparisonRow = memo(function ComparisonRow({ label, current, prev }) {
+// `kind` визначає семантику знаку: для "expense" зростання — погано
+// (червоне), для "income" — добре (зелене).
+const ComparisonRow = memo(function ComparisonRow({
+  label,
+  current,
+  prev,
+  kind = "expense",
+}) {
   const diff = current - prev;
   const pct = prev > 0 ? Math.round((diff / prev) * 100) : null;
   const up = diff > 0;
+  const upIsGood = kind === "income";
+  const good = diff === 0 ? null : up === upIsGood;
 
   return (
     <div className="flex items-center justify-between text-sm">
@@ -111,11 +123,11 @@ const ComparisonRow = memo(function ComparisonRow({ label, current, prev }) {
           <span
             className={cn(
               "text-xs",
-              diff === 0
+              good === null
                 ? "text-muted"
-                : up
-                  ? "text-danger"
-                  : "text-emerald-600",
+                : good
+                  ? "text-emerald-600"
+                  : "text-danger",
             )}
           >
             {up ? "+" : ""}
@@ -150,12 +162,10 @@ export function Analytics({ mono, storage }) {
   const prevYear = month === 1 ? year - 1 : year;
   const prevMonth = month === 1 ? 12 : month - 1;
   const prevKey = `${prevYear}-${String(prevMonth).padStart(2, "0")}`;
-  const isPrevCurrent =
-    prevYear === now.getFullYear() && prevMonth === now.getMonth() + 1;
 
-  const ensureMonth = (y, m, key) => {
+  const ensureMonth = (y, m1, key) => {
     if (fetchingRef.current.has(key)) return;
-    const cached = readTxCache(y, m);
+    const cached = readTxCache(y, m1);
     if (cached) {
       setHistoryCache((prev) =>
         prev[key] ? prev : { ...prev, [key]: cached },
@@ -164,10 +174,11 @@ export function Analytics({ mono, storage }) {
     }
     fetchingRef.current.add(key);
     setLoading(true);
+    // `fetchMonth` очікує 0-based місяць (як `Date.getMonth()`).
     mono
-      .fetchMonth(y, m)
+      .fetchMonth(y, m1 - 1)
       .then(() => {
-        const txs = readTxCache(y, m) || [];
+        const txs = readTxCache(y, m1) || [];
         setHistoryCache((prev) => ({ ...prev, [key]: txs }));
       })
       .catch(() => {
@@ -186,11 +197,11 @@ export function Analytics({ mono, storage }) {
   }, [year, month, isCurrentMonth, monthKey]);
 
   useEffect(() => {
-    if (!isPrevCurrent && !historyCache[prevKey]) {
+    if (!historyCache[prevKey]) {
       ensureMonth(prevYear, prevMonth, prevKey);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [prevYear, prevMonth, isPrevCurrent, prevKey]);
+  }, [prevYear, prevMonth, prevKey]);
 
   // Transactions for the selected month: live list for the current month,
   // on-demand cached list otherwise. Stable reference while month + cache
@@ -200,10 +211,10 @@ export function Analytics({ mono, storage }) {
     return historyCache[monthKey] || [];
   }, [isCurrentMonth, mono.realTx, historyCache, monthKey]);
 
-  const prevTx = useMemo(() => {
-    if (isPrevCurrent) return mono.realTx || [];
-    return historyCache[prevKey] || [];
-  }, [isPrevCurrent, mono.realTx, historyCache, prevKey]);
+  const prevTx = useMemo(
+    () => historyCache[prevKey] || [],
+    [historyCache, prevKey],
+  );
 
   // Stable adapter object passed into useAnalytics. Rebuilding this on every
   // render would bust the hook's internal useMemo deps, so memoize it.
@@ -221,11 +232,22 @@ export function Analytics({ mono, storage }) {
   // Depends on the selected month's tx list, the previous month's tx list
   // and the filters that actually affect totals (excluded ids + splits).
   const comparison = useMemo(() => {
-    if (!prevTx.length && !historyCache[prevKey]) return null;
-    return getTrendComparison(activeTx, prevTx, {
+    // Попередній місяць ще не вичитаний — не показувати секцію.
+    if (!(prevKey in historyCache)) return null;
+    const c = getTrendComparison(activeTx, prevTx, {
       excludedTxIds: storage.excludedTxIds,
       txSplits: storage.txSplits,
     });
+    // Обидві сторони порожні — порівнювати немає чого.
+    if (
+      c.currentSpent === 0 &&
+      c.prevSpent === 0 &&
+      c.currentIncome === 0 &&
+      c.prevIncome === 0
+    ) {
+      return null;
+    }
+    return c;
   }, [
     activeTx,
     prevTx,
@@ -301,6 +323,7 @@ export function Analytics({ mono, storage }) {
                 label="Дохід"
                 current={comparison.currentIncome}
                 prev={comparison.prevIncome}
+                kind="income"
               />
             </div>
           </Section>

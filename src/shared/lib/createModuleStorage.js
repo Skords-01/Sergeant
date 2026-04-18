@@ -172,7 +172,7 @@ export function createModuleStorage({
         pendingValues.delete(k);
         writeJSON(k, val);
       },
-      Math.max(0, Number(delay) || 0),
+      Math.max(0, Number(delay) || defaultDebounceMs),
     );
     pendingTimers.set(k, timer);
   }
