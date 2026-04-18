@@ -6,6 +6,7 @@ import {
   listDigestHistory,
   getWeekKey,
 } from "./useWeeklyDigest.js";
+import { WeeklyDigestStories } from "./WeeklyDigestStories.jsx";
 
 const MODULE_CONFIG = {
   finyk: {
@@ -148,6 +149,7 @@ function DigestContent({
   isCurrentWeek,
   onGenerate,
   onUpdate,
+  onPlayStories,
 }) {
   const [expanded, setExpanded] = useState(false);
   const hasData =
@@ -203,6 +205,30 @@ function DigestContent({
 
   return (
     <>
+      <div className="px-4 pb-3 pt-1">
+        <button
+          type="button"
+          onClick={onPlayStories}
+          className={cn(
+            "w-full h-11 rounded-xl text-sm font-bold text-white",
+            "bg-gradient-to-r from-brand-500 via-brand-400 to-teal-400",
+            "dark:from-brand-600 dark:via-brand-500 dark:to-teal-500",
+            "shadow-card hover:brightness-110 active:scale-[0.98] transition-all",
+            "flex items-center justify-center gap-2",
+          )}
+        >
+          <svg
+            width="15"
+            height="15"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            aria-hidden
+          >
+            <path d="M8 5v14l11-7z" />
+          </svg>
+          Переглянути як сторіс
+        </button>
+      </div>
       <div
         className={cn(
           "grid transition-[grid-template-rows] duration-200 ease-in-out",
@@ -278,6 +304,7 @@ export function WeeklyDigestCard() {
   const [selectedWeekKey, setSelectedWeekKey] = useState(currentWeekKey);
   const [showHistory, setShowHistory] = useState(false);
   const [history, setHistory] = useState(() => listDigestHistory());
+  const [storiesOpen, setStoriesOpen] = useState(false);
 
   const { digest, loading, error, weekRange, generate, isCurrentWeek } =
     useWeeklyDigest(selectedWeekKey);
@@ -426,7 +453,17 @@ export function WeeklyDigestCard() {
         isCurrentWeek={isCurrentWeek}
         onGenerate={handleGenerate}
         onUpdate={handleGenerate}
+        onPlayStories={() => setStoriesOpen(true)}
       />
+
+      {storiesOpen && digest && (
+        <WeeklyDigestStories
+          digest={digest}
+          weekKey={selectedWeekKey}
+          weekRange={weekRange}
+          onClose={() => setStoriesOpen(false)}
+        />
+      )}
     </div>
   );
 }

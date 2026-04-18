@@ -80,7 +80,7 @@ function saveDigest(weekKey, data) {
   } catch {}
 }
 
-function aggregateFinyk(weekKey) {
+export function aggregateFinyk(weekKey) {
   const txRaw = safeReadLS("finyk_tx_cache", null);
   const txList = txRaw?.txs ?? txRaw ?? [];
   const txCategories = safeReadLS("finyk_tx_cats", {});
@@ -138,7 +138,7 @@ function aggregateFinyk(weekKey) {
   };
 }
 
-function aggregateFizruk(weekKey) {
+export function aggregateFizruk(weekKey) {
   const raw = localStorage.getItem("fizruk_workouts_v1");
   if (!raw) return null;
 
@@ -210,7 +210,7 @@ function aggregateFizruk(weekKey) {
   };
 }
 
-function aggregateNutrition(weekKey) {
+export function aggregateNutrition(weekKey) {
   const log = safeReadLS("nutrition_log_v1", {});
   const prefs = safeReadLS("nutrition_prefs_v1", null);
   const targetKcal = prefs?.dailyTargetKcal ?? 2000;
@@ -251,7 +251,7 @@ function aggregateNutrition(weekKey) {
   };
 }
 
-function aggregateRoutine(weekKey) {
+export function aggregateRoutine(weekKey) {
   const state = safeReadLS("hub_routine_v1", null);
   if (!state) return null;
 
