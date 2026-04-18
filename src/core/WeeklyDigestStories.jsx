@@ -722,7 +722,9 @@ export function WeeklyDigestStories({ digest, weekKey, weekRange, onClose }) {
             clearTimeout(holdTimerRef.current);
             holdTimerRef.current = null;
           }
-          if (paused) setPaused(false);
+          // Unconditional — `paused` may be stale in this closure if the
+          // hold-timer just fired, and we must not leave the stories stuck.
+          setPaused(false);
           resetDrag();
         }}
         onTouchStart={handlePressStart}
