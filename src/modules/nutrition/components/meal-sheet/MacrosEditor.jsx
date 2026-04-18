@@ -1,4 +1,6 @@
+import { useState } from "react";
 import { Input } from "@shared/components/ui/Input";
+import { Button } from "@shared/components/ui/Button";
 import { emptyForm } from "./mealFormUtils.js";
 
 export function MacrosEditor({
@@ -10,6 +12,30 @@ export function MacrosEditor({
   photoResult,
   hasPhotoMacros,
 }) {
+  // Guarded edit: when a food is linked from the DB, direct macro edits
+  // used to silently drop the `foodId`. Now the first edit opens a
+  // confirmation panel and the user must explicitly unlink before editing.
+  const [pendingUnlink, setPendingUnlink] = useState(null);
+
+  const handleMacroChange = (key) => (e) => {
+    const v = e.target.value;
+    if (pickedFood) {
+      setPendingUnlink({ key, value: v });
+      return;
+    }
+    field(key)(v);
+  };
+
+  const confirmUnlink = () => {
+    if (!pendingUnlink) return;
+    const { key, value } = pendingUnlink;
+    setPickedFood(null);
+    field(key)(value);
+    setPendingUnlink(null);
+  };
+
+  const cancelUnlink = () => setPendingUnlink(null);
+
   return (
     <div className="mb-1">
       <div className="flex items-center justify-between mb-2">
@@ -48,20 +74,53 @@ export function MacrosEditor({
             </div>
             <Input
               value={form[key]}
-              onChange={(e) => {
-                if (pickedFood) setPickedFood(null);
-                field(key)(e.target.value);
-              }}
+              onChange={handleMacroChange(key)}
               inputMode="decimal"
               placeholder={placeholder}
               aria-label={label}
+              readOnly={Boolean(pickedFood && !pendingUnlink)}
             />
           </div>
         ))}
       </div>
-      {pickedFood && (
+      {pickedFood && !pendingUnlink && (
         <div className="text-[11px] text-subtle mt-1.5">
-          Редагування вручну відʼєднає від продукту
+          Щоб змінити вручну — відʼєднайте продукт
+        </div>
+      )}
+      {pendingUnlink && (
+        <div
+          role="alertdialog"
+          aria-label="Підтвердити відʼєднання продукту"
+          className="mt-3 rounded-2xl border border-warning/40 bg-warning/10 p-3 text-xs text-text space-y-2"
+        >
+          <p className="font-semibold">
+            Відʼєднати «{pickedFood.name || "продукт"}»?
+          </p>
+          <p className="text-muted">
+            Макроси перестануть оновлюватись з бази продуктів — значення
+            зафіксуються у цьому прийомі.
+          </p>
+          <div className="flex gap-2 pt-1">
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              className="flex-1"
+              onClick={cancelUnlink}
+            >
+              Скасувати
+            </Button>
+            <Button
+              type="button"
+              variant="primary"
+              size="sm"
+              className="flex-1"
+              onClick={confirmUnlink}
+            >
+              Відʼєднати
+            </Button>
+          </div>
         </div>
       )}
     </div>
