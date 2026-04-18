@@ -1,9 +1,10 @@
-import { computeRecoveryBy, isFullyRecovered } from "./recoveryCompute.js";
+import { computeRecoveryBy, isFullyRecovered } from "./recoveryCompute";
+import type { Workout } from "../domain/types";
 
 const DAY = 24 * 60 * 60 * 1000;
 const MAX_DAYS = 21;
 
-function localDateKey(ms) {
+function localDateKey(ms: number): string {
   const d = new Date(ms);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
@@ -13,11 +14,11 @@ function localDateKey(ms) {
  * Якщо вже green зараз — сьогодні; якщо за MAX_DAYS не досягнуто — null.
  */
 export function forecastFullRecoveryByDate(
-  workouts,
-  musclesUk,
-  nowMs = Date.now(),
-) {
-  const out = {};
+  workouts: Array<Partial<Workout>>,
+  musclesUk: Record<string, string>,
+  nowMs: number = Date.now(),
+): Record<string, string | null> {
+  const out: Record<string, string | null> = {};
 
   const byNow = computeRecoveryBy(workouts, musclesUk, nowMs);
   const ids = Object.keys(byNow).filter((id) => byNow[id].lastAt != null);

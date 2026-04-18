@@ -125,11 +125,17 @@ function setHash(next) {
   window.location.hash = h;
 }
 
+interface FizrukAppProps {
+  onBackToHub?: () => void;
+  pwaAction?: string | null;
+  onPwaActionConsumed?: () => void;
+}
+
 export default function FizrukApp({
   onBackToHub,
   pwaAction,
   onPwaActionConsumed,
-} = {}) {
+}: FizrukAppProps = {}) {
   const [route, setRoute] = useState(() => parseHash());
   const [settingsOpen, setSettingsOpen] = useState(false);
   const settingsPanelRef = useRef(null);

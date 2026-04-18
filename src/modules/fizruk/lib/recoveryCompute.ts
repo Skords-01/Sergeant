@@ -2,18 +2,15 @@
  * Shared muscle-recovery computation logic used by `useRecovery` and recovery forecasts.
  */
 
-/**
- * @typedef {{
- *   id: string,
- *   label: string,
- *   lastAt: number|null,
- *   daysSince: number|null,
- *   load7d: number,
- *   fatigue: number,
- *   status: 'green'|'yellow'|'red',
- * }} MuscleState
- * Recovery state for a single muscle group.
- */
+import type {
+  MuscleState,
+  RecoveryStatus,
+  Workout,
+  DailyLogEntry,
+  WorkoutItem,
+} from "../domain/types";
+
+export type { MuscleState, RecoveryStatus };
 
 /**
  * Number of whole days between two millisecond timestamps (a - b).
@@ -45,7 +42,9 @@ function clamp(n, a, b) {
  * @param {{ type: string, sets?: Array<{weightKg: number, reps: number}>, durationSec?: number, distanceM?: number }} item
  * @returns {number} Load points ≥ 0.
  */
-export function loadPointsForItem(item) {
+export function loadPointsForItem(
+  item: Partial<WorkoutItem> | null | undefined,
+): number {
   if (!item) return 0;
   if (item.type === "strength") {
     const sets = item.sets || [];
@@ -81,7 +80,9 @@ export function loadPointsForItem(item) {
  * @param {Array<{at?: string, sleepHours?: number, energyLevel?: number}>} dailyLogEntries
  * @returns {number} Multiplier clamped to [0.7, 1.4].
  */
-export function computeWellbeingMultiplier(dailyLogEntries = []) {
+export function computeWellbeingMultiplier(
+  dailyLogEntries: Array<Partial<DailyLogEntry>> = [],
+): number {
   if (!dailyLogEntries || dailyLogEntries.length === 0) return 1.0;
 
   const sorted = [...dailyLogEntries].sort((a, b) =>
@@ -129,11 +130,11 @@ export function computeWellbeingMultiplier(dailyLogEntries = []) {
  * @returns {Record<string, MuscleState>}
  */
 export function computeRecoveryBy(
-  workouts = [],
-  musclesUk = {},
-  nowMs = Date.now(),
-  dailyLogEntries = [],
-) {
+  workouts: Array<Partial<Workout>> = [],
+  musclesUk: Record<string, string> = {},
+  nowMs: number = Date.now(),
+  dailyLogEntries: Array<Partial<DailyLogEntry>> = [],
+): Record<string, MuscleState> {
   const WEEK = 7 * 24 * 60 * 60 * 1000;
   const DAY = 24 * 60 * 60 * 1000;
 
@@ -147,7 +148,7 @@ export function computeRecoveryBy(
     }
   }
 
-  const by = {};
+  const by: Record<string, MuscleState> = {};
   for (const id of muscleIds) {
     by[id] = {
       id,
@@ -196,10 +197,11 @@ export function computeRecoveryBy(
     if (m.lastAt != null) {
       m.daysSince = clamp(daysBetween(nowMs, m.lastAt), 0, 999);
     }
+    const ds = m.daysSince ?? Infinity;
     if (m.lastAt == null) m.status = "green";
-    else if (m.daysSince <= 1) m.status = "red";
+    else if (ds <= 1) m.status = "red";
     else if (m.fatigue >= 4.5) m.status = "red";
-    else if (m.fatigue >= 2.2 || m.daysSince <= 3) m.status = "yellow";
+    else if (m.fatigue >= 2.2 || ds <= 3) m.status = "yellow";
     else m.status = "green";
   }
 
@@ -207,6 +209,8 @@ export function computeRecoveryBy(
 }
 
 /** «Повне» відновлення: зелений статус (fatigue < 2.2, daysSince > 3 у логіці вище). */
-export function isFullyRecovered(row) {
+export function isFullyRecovered(
+  row: Pick<MuscleState, "status" | "lastAt"> | null | undefined,
+): boolean {
   return row?.status === "green" && row?.lastAt != null;
 }

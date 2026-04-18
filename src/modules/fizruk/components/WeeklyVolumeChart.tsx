@@ -4,7 +4,15 @@ import { EmptyState } from "@shared/components/ui/EmptyState";
 const LABELS_UK = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Нд"];
 
 /** Легкий area-chart без залежностей; акцент — success з tailwind. */
-export function WeeklyVolumeChart({ volumeKg, className }) {
+interface WeeklyVolumeChartProps {
+  volumeKg?: number[];
+  className?: string;
+}
+
+export function WeeklyVolumeChart({
+  volumeKg,
+  className,
+}: WeeklyVolumeChartProps) {
   const vals =
     Array.isArray(volumeKg) && volumeKg.length === 7
       ? volumeKg

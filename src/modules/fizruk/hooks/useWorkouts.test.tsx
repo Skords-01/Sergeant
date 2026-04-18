@@ -1,11 +1,11 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach } from "vitest";
 import { renderHook, act, waitFor } from "@testing-library/react";
-import { useWorkouts } from "./useWorkouts.js";
+import { useWorkouts } from "./useWorkouts";
 import {
   WORKOUTS_STORAGE_KEY,
   serializeWorkoutsToStorage,
-} from "../lib/fizrukStorage.js";
+} from "../lib/fizrukStorage";
 
 function seedWorkouts(workouts) {
   localStorage.setItem(

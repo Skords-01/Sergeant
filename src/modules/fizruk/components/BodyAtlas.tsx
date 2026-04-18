@@ -3,12 +3,14 @@ import createBodyHighlighter from "body-highlighter";
 import { cn } from "@shared/lib/cn";
 import { THEME_HEX } from "@shared/lib/themeHex.js";
 
-const STATUS_TO_FREQ = { yellow: 1, red: 2 };
+const STATUS_TO_FREQ: Record<string, number> = { yellow: 1, red: 2 };
 
-function buildDataFromStatuses(statusByMuscle) {
-  const out = [];
+function buildDataFromStatuses(
+  statusByMuscle: Record<string, string> | null | undefined,
+) {
+  const out: Array<{ name: string; muscles: string[]; frequency: number }> = [];
   for (const [muscle, status] of Object.entries(statusByMuscle || {})) {
-    const freq = STATUS_TO_FREQ[status];
+    const freq = STATUS_TO_FREQ[status as string];
     if (!freq) continue; // green = default bodyColor
     out.push({ name: muscle, muscles: [muscle], frequency: freq });
   }
@@ -34,7 +36,7 @@ export function BodyAtlas({ statusByMuscle, height = 320, showLegend = true }) {
     }
     const inst = createBodyHighlighter({
       container: containerRef.current,
-      type: view,
+      type: view as "anterior" | "posterior",
       data,
       // green as "ready" baseline
       bodyColor: THEME_HEX.success,

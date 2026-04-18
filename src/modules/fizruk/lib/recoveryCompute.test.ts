@@ -4,7 +4,7 @@ import {
   computeWellbeingMultiplier,
   computeRecoveryBy,
   isFullyRecovered,
-} from "./recoveryCompute.js";
+} from "./recoveryCompute";
 
 describe("fizruk/recoveryCompute", () => {
   it("loadPointsForItem supports strength/time/distance", () => {
@@ -48,7 +48,12 @@ describe("fizruk/recoveryCompute", () => {
         ],
       },
     ];
-    const by = computeRecoveryBy(workouts, { chest: "Груди" }, nowMs, []);
+    const by = computeRecoveryBy(
+      workouts as never,
+      { chest: "Груди" },
+      nowMs,
+      [],
+    );
     expect(by.chest.status).toBe("red");
     expect(isFullyRecovered(by.chest)).toBe(false);
   });

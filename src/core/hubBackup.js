@@ -6,7 +6,7 @@ import {
 import {
   buildFizrukFullBackupPayload,
   applyFizrukFullBackupPayload,
-} from "../modules/fizruk/lib/fizrukStorage.js";
+} from "../modules/fizruk/lib/fizrukStorage";
 import {
   buildRoutineBackupPayload,
   applyRoutineBackupPayload,

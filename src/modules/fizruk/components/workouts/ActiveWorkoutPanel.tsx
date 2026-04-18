@@ -11,7 +11,7 @@ import { parseWorkoutSetSpeech } from "../../../../core/lib/speechParsers.js";
 import {
   makeDefaultWarmup,
   makeDefaultCooldown,
-} from "../../hooks/useWorkouts.js";
+} from "../../hooks/useWorkouts";
 
 function uid(prefix = "id") {
   return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;

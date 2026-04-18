@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { forecastFullRecoveryByDate } from "./recoveryForecast.js";
+import { forecastFullRecoveryByDate } from "./recoveryForecast";
 
 describe("forecastFullRecoveryByDate", () => {
   it("повертає дату для м'яза після навантаження", () => {
@@ -17,7 +17,7 @@ describe("forecastFullRecoveryByDate", () => {
         ],
       },
     ];
-    const out = forecastFullRecoveryByDate(workouts, musclesUk);
+    const out = forecastFullRecoveryByDate(workouts as never, musclesUk);
     expect(out.biceps).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   });
 });

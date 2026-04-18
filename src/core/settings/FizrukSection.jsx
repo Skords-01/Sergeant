@@ -2,8 +2,8 @@ import { cn } from "@shared/lib/cn";
 import {
   useRestSettings,
   REST_CATEGORY_LABELS,
-} from "../../modules/fizruk/hooks/useRestSettings.js";
-import { WorkoutBackupBar } from "../../modules/fizruk/components/workouts/WorkoutBackupBar.jsx";
+} from "../../modules/fizruk/hooks/useRestSettings";
+import { WorkoutBackupBar } from "../../modules/fizruk/components/workouts/WorkoutBackupBar";
 import { SettingsGroup, SettingsSubGroup } from "./SettingsPrimitives.jsx";
 
 export function FizrukSection() {
