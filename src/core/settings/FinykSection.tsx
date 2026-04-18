@@ -1,17 +1,45 @@
 import { useState } from "react";
 import { cn } from "@shared/lib/cn";
 import { Button } from "@shared/components/ui/Button";
-import { apiUrl } from "@shared/lib/apiUrl.js";
-import { safeReadLS } from "@shared/lib/storage.js";
+import { apiUrl } from "@shared/lib/apiUrl";
+import { safeReadLS } from "@shared/lib/storage";
 import { useStorage as useFinykStorage } from "../../modules/finyk/hooks/useStorage.js";
 import { getAccountLabel } from "../../modules/finyk/utils.js";
 import {
   ConfirmModal,
   SettingsGroup,
   SettingsSubGroup,
-} from "./SettingsPrimitives.jsx";
+} from "./SettingsPrimitives";
 
 const PRIVAT_ENABLED = false;
+
+type ConfirmKind = "cache" | "disconnect" | null;
+
+interface CustomCategory {
+  id: string;
+  label: string;
+}
+
+interface UahAccount {
+  id: string;
+  currencyCode: number;
+  balance: number;
+  creditLimit?: number;
+}
+
+interface FinykInfoCache {
+  info?: { name?: string; accounts?: UahAccount[] };
+  name?: string;
+  accounts?: UahAccount[];
+}
+
+interface FinykStorageShape {
+  hiddenAccounts: string[];
+  toggleHideAccount: (id: string) => void;
+  customCategories: CustomCategory[];
+  addCustomCategory: (label: string) => void;
+  removeCustomCategory: (id: string) => void;
+}
 
 export function FinykSection() {
   const {
@@ -20,12 +48,12 @@ export function FinykSection() {
     customCategories,
     addCustomCategory,
     removeCustomCategory,
-  } = useFinykStorage({});
+  } = useFinykStorage({}) as FinykStorageShape;
 
-  const [confirmKind, setConfirmKind] = useState(null);
+  const [confirmKind, setConfirmKind] = useState<ConfirmKind>(null);
   const [newCategoryLabel, setNewCategoryLabel] = useState("");
 
-  const [privatIdInput, setPrivatIdInput] = useState(() => {
+  const [privatIdInput, setPrivatIdInput] = useState<string>(() => {
     try {
       return (
         localStorage.getItem("finyk_privat_id") ||
@@ -36,7 +64,7 @@ export function FinykSection() {
       return "";
     }
   });
-  const [privatTokenInput, setPrivatTokenInput] = useState(() => {
+  const [privatTokenInput, setPrivatTokenInput] = useState<string>(() => {
     try {
       return (
         localStorage.getItem("finyk_privat_token") ||
@@ -48,7 +76,7 @@ export function FinykSection() {
     }
   });
   const [showPrivatToken, setShowPrivatToken] = useState(false);
-  const [rememberPrivat, setRememberPrivat] = useState(() => {
+  const [rememberPrivat, setRememberPrivat] = useState<boolean>(() => {
     try {
       return !!localStorage.getItem("finyk_privat_id");
     } catch {
@@ -57,7 +85,7 @@ export function FinykSection() {
   });
   const [privatError, setPrivatError] = useState("");
   const [privatConnecting, setPrivatConnecting] = useState(false);
-  const [privatConnected, setPrivatConnected] = useState(() => {
+  const [privatConnected, setPrivatConnected] = useState<boolean>(() => {
     try {
       return !!(
         localStorage.getItem("finyk_privat_id") ||
@@ -88,8 +116,12 @@ export function FinykSection() {
         headers: { "X-Privat-Id": cleanId, "X-Privat-Token": cleanToken },
       });
       if (!res.ok) {
-        const payload = await res.json().catch(() => ({}));
-        setPrivatError(payload?.error || `Помилка ${res.status}`);
+        const payload = await res
+          .json()
+          .catch(() => ({}) as { error?: string });
+        setPrivatError(
+          (payload as { error?: string })?.error || `Помилка ${res.status}`,
+        );
         return;
       }
       if (rememberPrivat) {
@@ -106,7 +138,9 @@ export function FinykSection() {
       setPrivatConnected(true);
       window.location.reload();
     } catch (e) {
-      setPrivatError(e?.message || "Помилка підключення");
+      setPrivatError(
+        e instanceof Error && e.message ? e.message : "Помилка підключення",
+      );
     } finally {
       setPrivatConnecting(false);
     }
@@ -130,7 +164,7 @@ export function FinykSection() {
     window.location.reload();
   };
 
-  const rawCache = safeReadLS("finyk_info_cache", null);
+  const rawCache = safeReadLS<FinykInfoCache | null>("finyk_info_cache", null);
   const infoData = rawCache?.info ?? rawCache;
   const token = (() => {
     try {
@@ -144,7 +178,7 @@ export function FinykSection() {
     }
   })();
   const clientName = infoData?.name ?? null;
-  const uahAccounts = Array.isArray(infoData?.accounts)
+  const uahAccounts: UahAccount[] = Array.isArray(infoData?.accounts)
     ? infoData.accounts.filter((a) => a.currencyCode === 980)
     : [];
 
@@ -271,8 +305,8 @@ export function FinykSection() {
                         maximumFractionDigits: 0,
                       })}{" "}
                       ₴
-                      {acc.creditLimit > 0 &&
-                        ` · ліміт ${(acc.creditLimit / 100).toLocaleString("uk-UA", { maximumFractionDigits: 0 })} ₴`}
+                      {(acc.creditLimit ?? 0) > 0 &&
+                        ` · ліміт ${((acc.creditLimit ?? 0) / 100).toLocaleString("uk-UA", { maximumFractionDigits: 0 })} ₴`}
                     </div>
                   </div>
                   <button

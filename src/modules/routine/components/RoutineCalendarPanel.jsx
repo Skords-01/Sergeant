@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Virtuoso } from "react-virtuoso";
 import { cn } from "@shared/lib/cn";
 import { Button } from "@shared/components/ui/Button";
+import { Card } from "@shared/components/ui/Card";
 import { Input } from "@shared/components/ui/Input";
 import { WeekDayStrip } from "./WeekDayStrip.jsx";
 import { HabitDetailSheet } from "./HabitDetailSheet.jsx";
@@ -106,7 +107,12 @@ export function RoutineCalendarPanel({ hidden: panelHidden }) {
       hidden={panelHidden}
       className="space-y-4"
     >
-      <section className="routine-hero-card" aria-label="Огляд періоду">
+      <Card
+        as="section"
+        variant="routine"
+        padding="lg"
+        aria-label="Огляд періоду"
+      >
         <p
           className={cn(
             "text-[11px] font-bold tracking-widest uppercase",
@@ -160,7 +166,7 @@ export function RoutineCalendarPanel({ hidden: panelHidden }) {
             </div>
           </div>
         </div>
-      </section>
+      </Card>
 
       <DayReportSheet
         open={dayReportOpen}
