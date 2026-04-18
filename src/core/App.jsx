@@ -1,5 +1,5 @@
-import { useEffect, lazy, Suspense, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useCallback, useEffect, lazy, Suspense } from "react";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { cn } from "@shared/lib/cn";
 import ModuleErrorBoundary from "./ModuleErrorBoundary";
 import { useDarkMode } from "@shared/hooks/useDarkMode";
@@ -44,9 +44,39 @@ export default function App() {
   );
 }
 
+// Auth lives at `/sign-in` rather than as an in-page overlay. This keeps
+// the FTUX splash (`/`) as the true cold-start surface — the old
+// `showAuth` boolean meant that a first-time visitor who tapped
+// "Вже маю акаунт" bounced into the auth form with no URL change, so
+// the back button, deep links, and shared URLs all misbehaved. Having
+// a named route also lets us link straight to sign-in from emails,
+// push-notification landing pages, etc.
+const SIGN_IN_PATH = "/sign-in";
+
+// Tiny effect-only component so the redirect is a declarative render,
+// not a `navigate()` call in the middle of AppInner — keeps the render
+// phase free of side effects and avoids the React warning.
+function RedirectHome() {
+  const navigate = useNavigate();
+  useEffect(() => {
+    navigate("/", { replace: true });
+  }, [navigate]);
+  return <PageLoader />;
+}
+
 function AppInner() {
-  const [showAuth, setShowAuth] = useState(false);
   const [searchParams] = useSearchParams();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const onSignInRoute = location.pathname === SIGN_IN_PATH;
+
+  const openAuth = useCallback(() => {
+    navigate(SIGN_IN_PATH);
+  }, [navigate]);
+
+  const leaveAuth = useCallback(() => {
+    navigate("/");
+  }, [navigate]);
 
   const { activeModule, openModule, goToHub, moduleAnimClass } =
     useHubNavigation();
@@ -100,11 +130,21 @@ function AppInner() {
     );
   }
 
-  if (showAuth && !user) {
+  // `/sign-in` is a URL-addressable auth entry. Already-authenticated
+  // users landing here (e.g. from a stale link or from tapping "Вже маю
+  // акаунт" after logging in on another tab) get redirected straight
+  // back to `/` — no need to re-prompt for credentials they already
+  // have. We defer the redirect until `authLoading` settles, otherwise
+  // a freshly-mounted session would briefly bounce the user away from
+  // the form before `user` hydrates.
+  if (onSignInRoute) {
+    if (!authLoading && user) {
+      return <RedirectHome />;
+    }
     return (
       <Suspense fallback={<PageLoader />}>
         <div className="page-enter">
-          <AuthPage onContinueWithoutAccount={() => setShowAuth(false)} />
+          <AuthPage onContinueWithoutAccount={leaveAuth} />
         </div>
       </Suspense>
     );
@@ -125,7 +165,7 @@ function AppInner() {
           onPull={sync.pullAll}
           onLogout={logout}
           authLoading={authLoading}
-          onShowAuth={() => setShowAuth(true)}
+          onShowAuth={openAuth}
           dark={dark}
           onToggleDark={toggleDark}
         />
@@ -151,7 +191,7 @@ function AppInner() {
           onSync={sync.pushAll}
           onPull={sync.pullAll}
           user={user}
-          onShowAuth={() => setShowAuth(true)}
+          onShowAuth={openAuth}
         />
 
         <HubFloatingActions onOpenChat={() => ui.openChat()} />
