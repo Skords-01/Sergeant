@@ -1,0 +1,46 @@
+import { useCallback, useState } from "react";
+import { PWA_ACTION_KEY, consumePwaAction } from "../app/pwaAction.js";
+
+export type PwaAction = "add_expense" | "start_workout" | "add_meal";
+
+const VALID_ACTIONS = new Set<PwaAction>([
+  "add_expense",
+  "start_workout",
+  "add_meal",
+]);
+
+function isPwaAction(value: string | null): value is PwaAction {
+  return value != null && (VALID_ACTIONS as Set<string>).has(value);
+}
+
+export interface PwaActions {
+  pwaAction: PwaAction | null;
+  setPwaAction: (value: PwaAction | null) => void;
+  clearPwaAction: () => void;
+  validActions: Set<PwaAction>;
+}
+
+export function usePwaActions(searchParams: URLSearchParams): PwaActions {
+  const [pwaAction, setPwaAction] = useState<PwaAction | null>(() => {
+    const fromUrl = searchParams.get("action");
+    if (isPwaAction(fromUrl)) {
+      try {
+        localStorage.setItem(PWA_ACTION_KEY, fromUrl);
+      } catch {
+        /* noop */
+      }
+      return fromUrl;
+    }
+    const consumed = consumePwaAction();
+    return isPwaAction(consumed) ? consumed : null;
+  });
+
+  const clearPwaAction = useCallback(() => setPwaAction(null), []);
+
+  return {
+    pwaAction,
+    setPwaAction,
+    clearPwaAction,
+    validActions: VALID_ACTIONS,
+  };
+}
