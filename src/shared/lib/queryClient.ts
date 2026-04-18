@@ -15,9 +15,15 @@
 
 import { QueryClient } from "@tanstack/react-query";
 
-function isRetriableError(error) {
+interface MaybeHttpError {
+  status?: number;
+  response?: { status?: number };
+}
+
+function isRetriableError(error: unknown): boolean {
   if (!error) return false;
-  const status = error?.status ?? error?.response?.status;
+  const e = error as MaybeHttpError;
+  const status = e?.status ?? e?.response?.status;
   if (typeof status === "number") {
     // 408 Request Timeout, 429 Too Many Requests, 5xx
     return status === 408 || status === 429 || status >= 500;
@@ -26,7 +32,7 @@ function isRetriableError(error) {
   return true;
 }
 
-export function createAppQueryClient() {
+export function createAppQueryClient(): QueryClient {
   return new QueryClient({
     defaultOptions: {
       queries: {

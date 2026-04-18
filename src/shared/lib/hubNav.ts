@@ -12,18 +12,30 @@
 
 export const HUB_OPEN_MODULE_EVENT = "hub:open-module";
 
-const VALID_HUB_MODULES = new Set(["finyk", "fizruk", "routine", "nutrition"]);
+export type HubModuleId = "finyk" | "fizruk" | "routine" | "nutrition";
+export type HubModuleAction = "add_expense" | "start_workout" | "add_meal";
+
+export interface HubOpenModuleDetail {
+  module: HubModuleId;
+  hash: string;
+  action?: HubModuleAction;
+}
+
+const VALID_HUB_MODULES = new Set<HubModuleId>([
+  "finyk",
+  "fizruk",
+  "routine",
+  "nutrition",
+]);
 
 /**
  * Перемкнути активний модуль Hub (з опційним hash для вкладки всередині).
- * @param {"finyk"|"fizruk"|"routine"|"nutrition"} moduleId
- * @param {string} [hash] — наприклад `"/analytics"` для Фініка або `"log"` для Nutrition.
  */
-export function openHubModule(moduleId, hash) {
+export function openHubModule(moduleId: HubModuleId, hash?: string): void {
   if (!VALID_HUB_MODULES.has(moduleId)) return;
   try {
     window.dispatchEvent(
-      new CustomEvent(HUB_OPEN_MODULE_EVENT, {
+      new CustomEvent<HubOpenModuleDetail>(HUB_OPEN_MODULE_EVENT, {
         detail: { module: moduleId, hash: hash || "" },
       }),
     );
@@ -32,20 +44,25 @@ export function openHubModule(moduleId, hash) {
   }
 }
 
-const VALID_HUB_ACTIONS = new Set(["add_expense", "start_workout", "add_meal"]);
+const VALID_HUB_ACTIONS = new Set<HubModuleAction>([
+  "add_expense",
+  "start_workout",
+  "add_meal",
+]);
 
 /**
  * Відкрити модуль із запитом на дію (така ж семантика як у PWA shortcuts).
  * Використовується, напр., для кнопки "Додати витрату" на hub-дашборді.
- * @param {"finyk"|"fizruk"|"routine"|"nutrition"} moduleId
- * @param {"add_expense"|"start_workout"|"add_meal"} action
  */
-export function openHubModuleWithAction(moduleId, action) {
+export function openHubModuleWithAction(
+  moduleId: HubModuleId,
+  action: HubModuleAction,
+): void {
   if (!VALID_HUB_MODULES.has(moduleId)) return;
   if (!VALID_HUB_ACTIONS.has(action)) return;
   try {
     window.dispatchEvent(
-      new CustomEvent(HUB_OPEN_MODULE_EVENT, {
+      new CustomEvent<HubOpenModuleDetail>(HUB_OPEN_MODULE_EVENT, {
         detail: { module: moduleId, hash: "", action },
       }),
     );

@@ -5,7 +5,19 @@
 
 export const DEFAULT_MAX_BYTES = 4_000_000; // ~4MB safety (varies by browser)
 
-export function estimateUtf8Bytes(str) {
+export interface SafeSetOptions {
+  maxBytes?: number;
+}
+
+export interface SafeSetResult {
+  ok: boolean;
+  bytes?: number;
+  maxBytes?: number;
+  reason?: "too_large" | "exception";
+  error?: unknown;
+}
+
+export function estimateUtf8Bytes(str: unknown): number {
   try {
     return new Blob([String(str || "")]).size;
   } catch {
@@ -13,7 +25,11 @@ export function estimateUtf8Bytes(str) {
   }
 }
 
-export function safeSetItem(key, value, { maxBytes = DEFAULT_MAX_BYTES } = {}) {
+export function safeSetItem(
+  key: string,
+  value: unknown,
+  { maxBytes = DEFAULT_MAX_BYTES }: SafeSetOptions = {},
+): SafeSetResult {
   try {
     const s = String(value ?? "");
     const bytes = estimateUtf8Bytes(s);
@@ -27,7 +43,11 @@ export function safeSetItem(key, value, { maxBytes = DEFAULT_MAX_BYTES } = {}) {
   }
 }
 
-export function safeJsonSet(key, obj, { maxBytes = DEFAULT_MAX_BYTES } = {}) {
+export function safeJsonSet(
+  key: string,
+  obj: unknown,
+  { maxBytes = DEFAULT_MAX_BYTES }: SafeSetOptions = {},
+): SafeSetResult {
   try {
     const s = JSON.stringify(obj ?? null);
     return safeSetItem(key, s, { maxBytes });

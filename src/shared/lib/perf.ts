@@ -1,4 +1,9 @@
-function isPerfEnabled() {
+export interface PerfMark {
+  name: string;
+  t: number;
+}
+
+function isPerfEnabled(): boolean {
   try {
     return localStorage.getItem("hub_perf") === "1";
   } catch {
@@ -6,13 +11,16 @@ function isPerfEnabled() {
   }
 }
 
-export function perfMark(name) {
+export function perfMark(name: string): PerfMark | null {
   if (!isPerfEnabled()) return null;
   const t = performance.now();
   return { name, t };
 }
 
-export function perfEnd(mark, extra = null) {
+export function perfEnd(
+  mark: PerfMark | null,
+  extra: unknown = null,
+): number | undefined {
   if (!mark || !isPerfEnabled()) return;
   const dt = performance.now() - mark.t;
   try {

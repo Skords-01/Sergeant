@@ -1,15 +1,15 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { z } from "zod";
-import { createTypedStore } from "./typedStore.ts";
+import { createTypedStore } from "./typedStore";
 
 function makeLS() {
-  const map = new Map();
+  const map = new Map<string, string>();
   return {
-    getItem: (k) => (map.has(k) ? map.get(k) : null),
-    setItem: (k, v) => map.set(k, String(v)),
-    removeItem: (k) => map.delete(k),
+    getItem: (k: string) => (map.has(k) ? map.get(k)! : null),
+    setItem: (k: string, v: string) => map.set(k, String(v)),
+    removeItem: (k: string) => map.delete(k),
     clear: () => map.clear(),
-    key: (i) => Array.from(map.keys())[i] ?? null,
+    key: (i: number) => Array.from(map.keys())[i] ?? null,
     get length() {
       return map.size;
     },
@@ -87,8 +87,14 @@ describe("typedStore", () => {
       defaultValue: { count: 0, name: "" },
       legacyVersion: 0,
       migrations: {
-        0: (old) => ({ count: old.cnt, title: old.title }),
-        1: (old) => ({ count: old.count, name: old.title }),
+        0: (old: unknown) => {
+          const o = old as { cnt: number; title: string };
+          return { count: o.cnt, title: o.title };
+        },
+        1: (old: unknown) => {
+          const o = old as { count: number; title: string };
+          return { count: o.count, name: o.title };
+        },
       },
     });
     expect(store.get()).toEqual({ count: 3, name: "hi" });
@@ -134,7 +140,10 @@ describe("typedStore", () => {
       reportError: () => {},
     });
     store.set({ count: 1, name: "ok" });
-    const ok = store.set({ count: "nope", name: 1 });
+    const ok = store.set({ count: "nope", name: 1 } as unknown as {
+      count: number;
+      name: string;
+    });
     expect(ok).toBe(false);
     expect(store.get()).toEqual({ count: 1, name: "ok" });
   });

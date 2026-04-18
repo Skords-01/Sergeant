@@ -16,24 +16,38 @@
  *  - flushPendingWrites()
  */
 
-import { safeJsonSet } from "./storageQuota.js";
+import { safeJsonSet } from "./storageQuota";
 
 export const DEFAULT_DEBOUNCE_MS = 500;
 
+export interface ModuleStorageOptions {
+  name?: string;
+  defaultDebounceMs?: number;
+}
+
+export interface ModuleStorage {
+  readJSON<T = unknown>(key: string, fallback?: T | null): T | null;
+  writeJSON(key: string, value: unknown): boolean;
+  readRaw(key: string, fallback?: string | null): string | null;
+  writeRaw(key: string, value: unknown): boolean;
+  removeItem(key: string): boolean;
+  writeJSONDebounced(key: string, value: unknown, delay?: number): void;
+  flushPendingWrites(): void;
+}
+
 /**
  * Створює ізольований storage-API для модуля.
- * @param {{ name?: string, defaultDebounceMs?: number }} [opts]
  */
 export function createModuleStorage({
   name = "storage",
   defaultDebounceMs = DEFAULT_DEBOUNCE_MS,
-} = {}) {
+}: ModuleStorageOptions = {}): ModuleStorage {
   const moduleName = String(name);
-  const lastWrittenCache = new Map();
-  const pendingValues = new Map();
-  const pendingTimers = new Map();
+  const lastWrittenCache = new Map<string, string>();
+  const pendingValues = new Map<string, unknown>();
+  const pendingTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
-  function reportError(scope, error) {
+  function reportError(scope: string, error: unknown): void {
     try {
       console.warn(`[${moduleName}Storage] ${scope}`, error);
     } catch {
@@ -41,11 +55,11 @@ export function createModuleStorage({
     }
   }
 
-  function hasLocalStorage() {
+  function hasLocalStorage(): boolean {
     return typeof localStorage !== "undefined" && localStorage !== null;
   }
 
-  function safeStringify(value) {
+  function safeStringify(value: unknown): string | undefined {
     try {
       return JSON.stringify(value === undefined ? null : value);
     } catch (error) {
@@ -54,10 +68,13 @@ export function createModuleStorage({
     }
   }
 
-  function readJSON(key, fallback = null) {
+  function readJSON<T = unknown>(
+    key: string,
+    fallback: T | null = null,
+  ): T | null {
     if (!hasLocalStorage()) return fallback;
     const k = String(key);
-    let raw;
+    let raw: string | null;
     try {
       raw = localStorage.getItem(k);
     } catch (error) {
@@ -66,7 +83,7 @@ export function createModuleStorage({
     }
     if (raw === null || raw === undefined) return fallback;
     try {
-      const parsed = JSON.parse(raw);
+      const parsed = JSON.parse(raw) as T;
       return parsed === undefined ? fallback : parsed;
     } catch (error) {
       reportError(`JSON.parse("${k}")`, error);
@@ -74,7 +91,7 @@ export function createModuleStorage({
     }
   }
 
-  function writeJSON(key, value) {
+  function writeJSON(key: string, value: unknown): boolean {
     if (!hasLocalStorage()) return false;
     const k = String(key);
     try {
@@ -84,7 +101,7 @@ export function createModuleStorage({
         if (serialized !== undefined) lastWrittenCache.set(k, serialized);
         return true;
       }
-      reportError(`write("${k}")`, res?.reason || res?.error || "unknown");
+      reportError(`write("${k}")`, res?.error || res?.reason || "unknown");
       return false;
     } catch (error) {
       reportError(`write("${k}")`, error);
@@ -92,7 +109,7 @@ export function createModuleStorage({
     }
   }
 
-  function readRaw(key, fallback = null) {
+  function readRaw(key: string, fallback: string | null = null): string | null {
     if (!hasLocalStorage()) return fallback;
     const k = String(key);
     try {
@@ -104,7 +121,7 @@ export function createModuleStorage({
     }
   }
 
-  function writeRaw(key, value) {
+  function writeRaw(key: string, value: unknown): boolean {
     if (!hasLocalStorage()) return false;
     const k = String(key);
     try {
@@ -116,7 +133,7 @@ export function createModuleStorage({
     }
   }
 
-  function removeItem(key) {
+  function removeItem(key: string): boolean {
     if (!hasLocalStorage()) return false;
     const k = String(key);
     // Скасовуємо відкладений запис, інакше пізніше перезапише null після видалення.
@@ -136,7 +153,7 @@ export function createModuleStorage({
     }
   }
 
-  function flushKey(k) {
+  function flushKey(k: string): void {
     if (!pendingValues.has(k)) return;
     const value = pendingValues.get(k);
     pendingValues.delete(k);
@@ -148,7 +165,11 @@ export function createModuleStorage({
     writeJSON(k, value);
   }
 
-  function writeJSONDebounced(key, value, delay = defaultDebounceMs) {
+  function writeJSONDebounced(
+    key: string,
+    value: unknown,
+    delay: number = defaultDebounceMs,
+  ): void {
     if (!hasLocalStorage()) return;
     const k = String(key);
     const nextStr = safeStringify(value);
@@ -162,8 +183,9 @@ export function createModuleStorage({
 
     pendingValues.set(k, value);
 
-    if (pendingTimers.has(k)) {
-      clearTimeout(pendingTimers.get(k));
+    const existing = pendingTimers.get(k);
+    if (existing) {
+      clearTimeout(existing);
     }
     const timer = setTimeout(
       () => {
@@ -177,7 +199,7 @@ export function createModuleStorage({
     pendingTimers.set(k, timer);
   }
 
-  function flushPendingWrites() {
+  function flushPendingWrites(): void {
     const keys = Array.from(pendingValues.keys());
     for (const k of keys) flushKey(k);
   }
