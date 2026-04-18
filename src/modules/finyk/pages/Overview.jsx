@@ -25,6 +25,7 @@ import { EmptyState } from "@shared/components/ui/EmptyState";
 import { cn } from "@shared/lib/cn";
 import { THEME_HEX } from "@shared/lib/themeHex.js";
 import { SyncStatusBadge } from "../components/SyncStatusBadge";
+import { RetroComparison } from "../components/RetroComparison";
 
 const parseLocalDate = (isoDate) => {
   const [y, m, d] = (isoDate || "").split("-").map(Number);
@@ -666,6 +667,14 @@ export function Overview({
             </p>
           </div>
         </div>
+
+        <RetroComparison
+          transactions={realTx}
+          excludedTxIds={excludedTxIds}
+          txSplits={txSplits}
+          now={now}
+          showBalance={showBalance}
+        />
 
         <div className="flex flex-wrap gap-2">
           <button

@@ -14,6 +14,7 @@ import type {
   MerchantStat,
   MonthFilter,
   MonthlySummary,
+  PeriodComparison,
   SelectorOptions,
   TopCategory,
   Transaction,
@@ -28,6 +29,7 @@ export type {
   CategorySpendIndex,
   MerchantStat,
   MonthlySummary,
+  PeriodComparison,
   SelectorOptions,
   TopCategory,
   TrendComparison,
@@ -288,6 +290,183 @@ export function getTrendComparison(
     prevIncome: prev.income,
     incomeDiff,
     incomeDiffPct,
+  };
+}
+
+// Build a "YYYY-MM" tag for a calendar month. Safe for single-digit months
+// (pads to `01`..`12`) so lexicographic sorts still line up with chronology.
+function formatMonthKey(year: number, month1Based: number): string {
+  return `${year}-${String(month1Based).padStart(2, "0")}`;
+}
+
+export interface CurrentVsPreviousOptions extends Pick<
+  SelectorOptions,
+  "excludedTxIds" | "txSplits"
+> {
+  /** Опорна дата для "поточного" місяця (за замовчуванням — now). */
+  now?: Date;
+  /**
+   * Явний вибір поточного місяця — перевизначає `now`. Формат — як у
+   * `MonthFilter`: "YYYY-MM" або `{year, month}`.
+   */
+  currentMonth?: MonthFilter;
+  /**
+   * Явний вибір попереднього місяця. За замовчуванням — календарно
+   * попередній місяць до `currentMonth`.
+   */
+  previousMonth?: MonthFilter;
+}
+
+// Parse a MonthFilter into `{year, month}` (1-based). Returns null when the
+// filter cannot be interpreted — callers fall back to derived months.
+function parseMonthFilter(
+  month: MonthFilter,
+): { year: number; month: number } | null {
+  if (!month) return null;
+  if (typeof month === "string") {
+    const [ys, ms] = month.split("-");
+    const y = Number(ys);
+    const m = Number(ms);
+    if (!Number.isFinite(y) || !Number.isFinite(m)) return null;
+    return { year: y, month: m };
+  }
+  if (typeof month === "object") {
+    const y = Number(month.year);
+    const m = Number(month.month);
+    if (!Number.isFinite(y) || !Number.isFinite(m)) return null;
+    return { year: y, month: m };
+  }
+  return null;
+}
+
+/**
+ * Порівняння поточного календарного періоду з попереднім, обчислене з
+ * одного списку транзакцій. Корисно, коли у компонентах є тільки
+ * `realTx` (поточний стан банку) і не треба тягнути окремий датасет за
+ * попередній місяць — селектор сам фільтрує потрібні дати.
+ *
+ * Повертає ті самі поля, що й `getTrendComparison`, плюс ярлики періодів
+ * ("YYYY-MM") для підписів у UI.
+ */
+export function getCurrentVsPreviousComparison(
+  transactions: readonly Transaction[] | null | undefined,
+  opts: CurrentVsPreviousOptions = {},
+): PeriodComparison {
+  const {
+    now = new Date(),
+    currentMonth,
+    previousMonth,
+    excludedTxIds = new Set<string>(),
+    txSplits = {} as TxSplitsMap,
+  } = opts;
+
+  const currentParsed = parseMonthFilter(currentMonth) ?? {
+    year: now.getFullYear(),
+    month: now.getMonth() + 1,
+  };
+  const previousParsed =
+    parseMonthFilter(previousMonth) ??
+    (() => {
+      const y =
+        currentParsed.month === 1 ? currentParsed.year - 1 : currentParsed.year;
+      const m = currentParsed.month === 1 ? 12 : currentParsed.month - 1;
+      return { year: y, month: m };
+    })();
+
+  const currKey = formatMonthKey(currentParsed.year, currentParsed.month);
+  const prevKey = formatMonthKey(previousParsed.year, previousParsed.month);
+
+  const curr: AnalyticsResult = getMonthlySummary(transactions, {
+    excludedTxIds,
+    txSplits,
+    month: currentParsed,
+  });
+  const prev: AnalyticsResult = getMonthlySummary(transactions, {
+    excludedTxIds,
+    txSplits,
+    month: previousParsed,
+  });
+  const diff = curr.spent - prev.spent;
+  const diffPct = prev.spent > 0 ? Math.round((diff / prev.spent) * 100) : null;
+  const incomeDiff = curr.income - prev.income;
+  const incomeDiffPct =
+    prev.income > 0 ? Math.round((incomeDiff / prev.income) * 100) : null;
+
+  return {
+    currentMonth: currKey,
+    previousMonth: prevKey,
+    currentSpent: curr.spent,
+    prevSpent: prev.spent,
+    diff,
+    diffPct,
+    currentIncome: curr.income,
+    prevIncome: prev.income,
+    incomeDiff,
+    incomeDiffPct,
+  };
+}
+
+/**
+ * Варіанти коротких підсумкових фраз для ретро-порівняння.
+ * Тримаємо окремі ключі, щоб UI міг підставляти їх без локального
+ * конкатенату рядків.
+ */
+export type ComparisonDirection = "up" | "down" | "equal" | "no_prev";
+
+export interface ComparisonSummary {
+  direction: ComparisonDirection;
+  /** Коротке речення українською для показу користувачу. */
+  text: string;
+}
+
+/**
+ * Форматує `TrendComparison` (або `PeriodComparison`) у коротку фразу,
+ * яку можна показати поряд з цифрами ("На X ₴ більше, ніж торік…").
+ * Чиста функція — зручно використовувати і в компонентах, і в тестах.
+ */
+export function formatComparisonSummary(
+  comparison:
+    | Pick<TrendComparison, "diff" | "diffPct" | "prevSpent" | "currentSpent">
+    | null
+    | undefined,
+  { prevLabel = "попереднього місяця" }: { prevLabel?: string } = {},
+): ComparisonSummary {
+  if (!comparison) {
+    return { direction: "no_prev", text: "Немає даних за попередній період." };
+  }
+  const { diff, diffPct, prevSpent, currentSpent } = comparison;
+  if (!prevSpent) {
+    if (!currentSpent) {
+      return {
+        direction: "no_prev",
+        text: "Витрат ще немає — повернемось, коли зʼявляться дані.",
+      };
+    }
+    return {
+      direction: "no_prev",
+      text: `У ${prevLabel} витрат не було — порівнювати поки немає з чим.`,
+    };
+  }
+  if (diff === 0) {
+    return {
+      direction: "equal",
+      text: `Витрати такі самі, як у ${prevLabel}.`,
+    };
+  }
+  const absDiff = Math.abs(diff).toLocaleString("uk-UA", {
+    maximumFractionDigits: 0,
+  });
+  const pctPart =
+    diffPct != null && diffPct !== 0 ? ` (${Math.abs(diffPct)}%)` : "";
+  if (diff > 0) {
+    return {
+      direction: "up",
+      text: `Ви витратили на ${absDiff} ₴${pctPart} більше, ніж у ${prevLabel}.`,
+    };
+  }
+  return {
+    direction: "down",
+    text: `Ви витратили на ${absDiff} ₴${pctPart} менше, ніж у ${prevLabel}.`,
   };
 }
 

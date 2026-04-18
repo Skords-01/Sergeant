@@ -145,6 +145,16 @@ export interface TrendComparison {
   incomeDiffPct: number | null;
 }
 
+/**
+ * Порівняння двох календарних періодів, побудоване на одному списку
+ * транзакцій: містить метрики `TrendComparison` плюс самі ярлики
+ * періодів у форматі "YYYY-MM" для підписів у UI.
+ */
+export interface PeriodComparison extends TrendComparison {
+  currentMonth: string;
+  previousMonth: string;
+}
+
 /** Елемент топу мерчантів. */
 export interface MerchantStat {
   name: string;
