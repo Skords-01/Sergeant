@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type Dispatch, type SetStateAction } from "react";
 import { Button } from "@shared/components/ui/Button";
 import { Input } from "@shared/components/ui/Input";
 import { sortHabitsByOrder } from "../../lib/habitOrder.js";
@@ -8,6 +8,22 @@ import {
   setHabitOrder,
 } from "../../lib/routineStorage.js";
 import { HabitListItem } from "./HabitListItem.jsx";
+import type {
+  Habit,
+  PendingHabitDeletion,
+  RoutineState,
+} from "../../lib/types";
+
+export interface ActiveHabitsSectionProps {
+  routine: RoutineState;
+  setRoutine: Dispatch<SetStateAction<RoutineState>>;
+  editingId: string | null;
+  onEdit: (habit: Habit) => void;
+  onCancelEditIf: (id: string) => void;
+  onOpenDetails: (id: string) => void;
+  onOpenCalendar?: () => void;
+  onRequestDelete: (pending: PendingHabitDeletion) => void;
+}
 
 export function ActiveHabitsSection({
   routine,
@@ -18,8 +34,8 @@ export function ActiveHabitsSection({
   onOpenDetails,
   onOpenCalendar,
   onRequestDelete,
-}) {
-  const [dragId, setDragId] = useState(null);
+}: ActiveHabitsSectionProps) {
+  const [dragId, setDragId] = useState<string | null>(null);
   const [habitListQuery, setHabitListQuery] = useState("");
 
   const q = habitListQuery.trim().toLowerCase();

@@ -1,12 +1,18 @@
 import { dateKeyFromDate } from "./hubCalendarAggregate.js";
+import type {
+  Habit,
+  HabitDraft,
+  HabitDraftPatch,
+  ReminderPreset,
+} from "./types";
 
-export function routineTodayDate() {
+export function routineTodayDate(): Date {
   const d = new Date();
   d.setHours(12, 0, 0, 0);
   return d;
 }
 
-export const REMINDER_PRESETS = [
+export const REMINDER_PRESETS: readonly ReminderPreset[] = [
   { id: "morning", label: "Ранок", times: ["08:00"] },
   { id: "afternoon", label: "День", times: ["13:00"] },
   { id: "evening", label: "Вечір", times: ["20:00"] },
@@ -18,7 +24,9 @@ export const REMINDER_PRESETS = [
   },
 ];
 
-export function normalizeReminderTimes(habit) {
+export function normalizeReminderTimes(
+  habit: Pick<Habit, "reminderTimes" | "timeOfDay">,
+): string[] {
   if (Array.isArray(habit.reminderTimes) && habit.reminderTimes.length > 0) {
     return habit.reminderTimes.filter(
       (t) => typeof t === "string" && /^\d{2}:\d{2}$/.test(t),
@@ -29,7 +37,7 @@ export function normalizeReminderTimes(habit) {
   return [];
 }
 
-export function emptyHabitDraft() {
+export function emptyHabitDraft(): HabitDraft {
   const t = routineTodayDate();
   return {
     name: "",
@@ -45,7 +53,7 @@ export function emptyHabitDraft() {
   };
 }
 
-export function habitDraftToPatch(draft) {
+export function habitDraftToPatch(draft: HabitDraft): HabitDraftPatch {
   const tagIds = draft.tagIds || [];
   const reminderTimes = (draft.reminderTimes || [])
     .map((t) =>

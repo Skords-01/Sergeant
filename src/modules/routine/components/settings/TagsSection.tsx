@@ -1,14 +1,27 @@
-import { useRef, useState } from "react";
+import { useRef, useState, type Dispatch, type SetStateAction } from "react";
 import { Button } from "@shared/components/ui/Button";
 import { Input } from "@shared/components/ui/Input";
 import { createTag, deleteTag, updateTag } from "../../lib/routineStorage.js";
+import type { RoutineState } from "../../lib/types";
 
-export function TagsSection({ routine, setRoutine, tagDraft, setTagDraft }) {
-  const [editingTagId, setEditingTagId] = useState(null);
+export interface TagsSectionProps {
+  routine: RoutineState;
+  setRoutine: Dispatch<SetStateAction<RoutineState>>;
+  tagDraft: string;
+  setTagDraft: Dispatch<SetStateAction<string>>;
+}
+
+export function TagsSection({
+  routine,
+  setRoutine,
+  tagDraft,
+  setTagDraft,
+}: TagsSectionProps) {
+  const [editingTagId, setEditingTagId] = useState<string | null>(null);
   const [editingTagName, setEditingTagName] = useState("");
   const tagSavedRef = useRef(false);
 
-  const commitEdit = (id) => {
+  const commitEdit = (id: string) => {
     if (!tagSavedRef.current && editingTagName.trim()) {
       tagSavedRef.current = true;
       setRoutine((s) => updateTag(s, id, editingTagName));

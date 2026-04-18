@@ -76,7 +76,12 @@ export const ROUTINE_THEME = {
 };
 
 // Time mode options
-export const ROUTINE_TIME_MODES = [
+export type RoutineTimeModeId = "today" | "tomorrow" | "week" | "month";
+export interface RoutineTimeMode {
+  id: RoutineTimeModeId;
+  label: string;
+}
+export const ROUTINE_TIME_MODES: readonly RoutineTimeMode[] = [
   { id: "today", label: "Сьогодні" },
   { id: "tomorrow", label: "Завтра" },
   { id: "week", label: "Тиждень" },
@@ -84,7 +89,11 @@ export const ROUTINE_TIME_MODES = [
 ];
 
 // Recurrence patterns
-export const RECURRENCE_OPTIONS = [
+export interface RecurrenceOption {
+  value: "daily" | "weekdays" | "weekly" | "monthly" | "once";
+  label: string;
+}
+export const RECURRENCE_OPTIONS: readonly RecurrenceOption[] = [
   { value: "daily", label: "Щодня" },
   { value: "weekdays", label: "Будні (пн-пт)" },
   { value: "weekly", label: "Обрані дні тижня" },
@@ -93,13 +102,23 @@ export const RECURRENCE_OPTIONS = [
 ];
 
 // Weekday labels (Ukrainian, Monday first)
-export const WEEKDAY_LABELS = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Нд"];
+export const WEEKDAY_LABELS: readonly string[] = [
+  "Пн",
+  "Вт",
+  "Ср",
+  "Чт",
+  "Пт",
+  "Сб",
+  "Нд",
+];
 
 // Gamification streak thresholds
-export const STREAK_MILESTONES = [3, 7, 14, 21, 30, 60, 90, 180, 365];
+export const STREAK_MILESTONES: readonly number[] = [
+  3, 7, 14, 21, 30, 60, 90, 180, 365,
+];
 
 // Get milestone message based on streak count
-export function getStreakMessage(streak) {
+export function getStreakMessage(streak: number): string | null {
   if (streak >= 365) return "Неймовірно! Рік послідовності!";
   if (streak >= 180) return "Півроку! Ти - легенда!";
   if (streak >= 90) return "3 місяці! Це вже стиль життя!";

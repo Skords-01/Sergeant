@@ -1,4 +1,11 @@
-import { useEffect, useId, useRef, useState } from "react";
+import {
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type Dispatch,
+  type SetStateAction,
+} from "react";
 import { cn } from "@shared/lib/cn";
 import { Button } from "@shared/components/ui/Button";
 import { Input } from "@shared/components/ui/Input";
@@ -8,6 +15,24 @@ import {
 } from "../../lib/routineConstants.js";
 import { ReminderPresets } from "./ReminderPresets.jsx";
 import { WeekdayPicker } from "./WeekdayPicker.jsx";
+import type { HabitDraft, RoutineState } from "../../lib/types";
+
+export interface HabitFormProps {
+  routine: RoutineState;
+  habitDraft: HabitDraft;
+  setHabitDraft: Dispatch<SetStateAction<HabitDraft>>;
+  editingId: string | null;
+  onSave: () => void;
+  onCancel: () => void;
+  /**
+   * Monotonic tick bumped by the parent (`RoutineApp`) when the
+   * `add_habit` PWA action or the FTUX first-action sheet wants us to
+   * scroll into view and focus the name input. A tick — not a bool —
+   * so repeated triggers keep re-firing without the parent having to
+   * reset anything.
+   */
+  focusTick?: number;
+}
 
 export function HabitForm({
   routine,
@@ -16,19 +41,14 @@ export function HabitForm({
   editingId,
   onSave,
   onCancel,
-  // Monotonic tick bumped by the parent (`RoutineApp`) when the
-  // `add_habit` PWA action or the FTUX first-action sheet wants us to
-  // scroll into view and focus the name input. A tick — not a bool —
-  // so repeated triggers keep re-firing without the parent having to
-  // reset anything.
   focusTick,
-}) {
+}: HabitFormProps) {
   const fieldIds = useId();
   const startId = `${fieldIds}-start`;
   const endId = `${fieldIds}-end`;
   const advancedId = `${fieldIds}-advanced`;
-  const sectionRef = useRef(null);
-  const nameRef = useRef(null);
+  const sectionRef = useRef<HTMLElement | null>(null);
+  const nameRef = useRef<HTMLInputElement | null>(null);
   // Minimal-first UX: emoji + name + regularity are visible on first
   // render. Dates, reminders, tags and categories live behind a
   // "Більше опцій" disclosure. When editing an existing habit we open

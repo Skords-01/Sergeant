@@ -1,9 +1,19 @@
+import type { Dispatch, SetStateAction } from "react";
 import { cn } from "@shared/lib/cn";
 import { Input } from "@shared/components/ui/Input";
 import { ROUTINE_THEME as C } from "../../lib/routineConstants.js";
 import { REMINDER_PRESETS } from "../../lib/routineDraftUtils.js";
+import type { HabitDraft } from "../../lib/types";
 
-export function ReminderPresets({ habitDraft, setHabitDraft }) {
+export interface ReminderPresetsProps {
+  habitDraft: HabitDraft;
+  setHabitDraft: Dispatch<SetStateAction<HabitDraft>>;
+}
+
+export function ReminderPresets({
+  habitDraft,
+  setHabitDraft,
+}: ReminderPresetsProps) {
   const times = habitDraft.reminderTimes || [];
   return (
     <div className="space-y-2">

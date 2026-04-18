@@ -1,7 +1,24 @@
-import { memo } from "react";
+import { memo, type DragEventHandler } from "react";
 import { cn } from "@shared/lib/cn";
 import { Button } from "@shared/components/ui/Button";
 import { RECURRENCE_OPTIONS } from "../../lib/routineConstants.js";
+import type { Habit } from "../../lib/types";
+
+export interface HabitListItemProps {
+  habit: Habit;
+  editing: boolean;
+  dragging: boolean;
+  onDragStart: DragEventHandler<HTMLLIElement>;
+  onDragEnd: DragEventHandler<HTMLLIElement>;
+  onDragOver: DragEventHandler<HTMLLIElement>;
+  onDrop: DragEventHandler<HTMLLIElement>;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+  onOpenDetails: () => void;
+  onStartEdit: () => void;
+  onArchive: () => void;
+  onRequestDelete: () => void;
+}
 
 /**
  * Єдиний рядок у списку активних звичок: перетягування, кнопки ↑↓,
@@ -22,7 +39,7 @@ export const HabitListItem = memo(function HabitListItem({
   onStartEdit,
   onArchive,
   onRequestDelete,
-}) {
+}: HabitListItemProps) {
   const recLabel =
     RECURRENCE_OPTIONS.find((o) => o.value === (h.recurrence || "daily"))
       ?.label || "";

@@ -5,10 +5,15 @@ import {
   WEEKDAY_LABELS,
 } from "../../lib/routineConstants.js";
 
+export interface WeekdayPickerProps {
+  weekdays: number[] | null | undefined;
+  onChange: (next: number[]) => void;
+}
+
 export const WeekdayPicker = memo(function WeekdayPicker({
   weekdays,
   onChange,
-}) {
+}: WeekdayPickerProps) {
   const active = weekdays || [];
   return (
     <div>

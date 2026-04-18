@@ -64,6 +64,46 @@ export interface HabitDraftPatch {
   weekdays?: number[];
 }
 
+/**
+ * Full habit draft used by HabitForm. All fields are defined (possibly
+ * empty strings / empty arrays) so inputs are always controlled.
+ */
+export interface HabitDraft {
+  name: string;
+  emoji: string;
+  tagIds: string[];
+  categoryId: string | null;
+  recurrence: Recurrence | string;
+  startDate: string;
+  endDate: string;
+  timeOfDay: string;
+  reminderTimes: string[];
+  weekdays: number[];
+}
+
+export interface ReminderPreset {
+  id: string;
+  label: string;
+  times: string[];
+}
+
+export interface CategoryDraft {
+  name: string;
+  emoji: string;
+}
+
+export interface PendingHabitDeletion {
+  id: string;
+  name: string;
+  archived: boolean;
+}
+
+export interface PendingCategoryDeletion {
+  id: string;
+  name: string;
+  habitCount: number;
+}
+
 export interface CreateHabitOptions extends HabitDraftPatch {
   name: string;
 }

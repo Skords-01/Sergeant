@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type Dispatch, type SetStateAction } from "react";
 import { cn } from "@shared/lib/cn";
 import { Button } from "@shared/components/ui/Button";
 import { Input } from "@shared/components/ui/Input";
@@ -8,15 +8,28 @@ import {
   updateCategory,
   deleteCategory,
 } from "../../lib/routineStorage.js";
+import type {
+  CategoryDraft,
+  PendingCategoryDeletion,
+  RoutineState,
+} from "../../lib/types";
+
+export interface CategoriesSectionProps {
+  routine: RoutineState;
+  setRoutine: Dispatch<SetStateAction<RoutineState>>;
+  catDraft: CategoryDraft;
+  setCatDraft: Dispatch<SetStateAction<CategoryDraft>>;
+}
 
 export function CategoriesSection({
   routine,
   setRoutine,
   catDraft,
   setCatDraft,
-}) {
-  const [editingCatId, setEditingCatId] = useState(null);
-  const [deleteCatPending, setDeleteCatPending] = useState(null);
+}: CategoriesSectionProps) {
+  const [editingCatId, setEditingCatId] = useState<string | null>(null);
+  const [deleteCatPending, setDeleteCatPending] =
+    useState<PendingCategoryDeletion | null>(null);
 
   return (
     <>

@@ -1,11 +1,19 @@
+import type { Dispatch, SetStateAction } from "react";
 import { Button } from "@shared/components/ui/Button";
 import { setHabitArchived } from "../../lib/routineStorage.js";
+import type { PendingHabitDeletion, RoutineState } from "../../lib/types";
+
+export interface ArchivedHabitsSectionProps {
+  routine: RoutineState;
+  setRoutine: Dispatch<SetStateAction<RoutineState>>;
+  onRequestDelete: (pending: PendingHabitDeletion) => void;
+}
 
 export function ArchivedHabitsSection({
   routine,
   setRoutine,
   onRequestDelete,
-}) {
+}: ArchivedHabitsSectionProps) {
   const archived = routine.habits.filter((h) => h.archived);
   if (archived.length === 0) return null;
 
