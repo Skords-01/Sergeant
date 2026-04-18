@@ -1,0 +1,29 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "allowJs": true,
+    "checkJs": false,
+    "strict": false,
+    "noImplicitAny": false,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "forceConsistentCasingInFileNames": true,
+    "types": ["vite/client"],
+    "paths": {
+      "@shared/*": ["./src/shared/*"],
+      "@finyk/*": ["./src/modules/finyk/*"],
+      "@fizruk/*": ["./src/modules/fizruk/*"],
+      "@routine/*": ["./src/modules/routine/*"],
+      "@nutrition/*": ["./src/modules/nutrition/*"]
+    }
+  },
+  "include": ["src/**/*", "vite.config.js", "vitest.config.js"],
+  "exclude": ["node_modules", "dist", "src/sw.js"]
+}
