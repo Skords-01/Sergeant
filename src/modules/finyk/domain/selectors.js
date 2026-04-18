@@ -1,3 +1,7 @@
+// Pure analytics selectors for the Finyk module.
+// Every function here is a pure projection from the passed-in data —
+// no `localStorage`, no `window`, no side effects — so it is safe to
+// wrap in `useMemo` or call from tests.
 import {
   getTxStatAmount,
   getCategory,
@@ -45,19 +49,54 @@ function getCatColor(categoryId, customCategories = [], idx = 0) {
   return FALLBACK_COLORS[idx % FALLBACK_COLORS.length];
 }
 
-export function getMonthlySummary(
-  transactions,
-  { excludedTxIds = new Set(), txSplits = {} } = {},
-) {
+// Turn a "YYYY-MM" string or a {year, month} object into a predicate
+// that matches a tx's local calendar month. Returns null when no month
+// filter is requested — callers should treat null as "include all".
+function buildMonthPredicate(month) {
+  if (!month) return null;
+  let y;
+  let m;
+  if (typeof month === "string") {
+    const [ys, ms] = month.split("-");
+    y = Number(ys);
+    m = Number(ms);
+  } else if (typeof month === "object") {
+    y = Number(month.year);
+    m = Number(month.month);
+  }
+  if (!Number.isFinite(y) || !Number.isFinite(m)) return null;
+  return (tx) => {
+    if (!tx || !tx.time) return false;
+    const ts = tx.time > 1e10 ? tx.time : tx.time * 1000;
+    const d = new Date(ts);
+    return d.getFullYear() === y && d.getMonth() + 1 === m;
+  };
+}
+
+// Normalize the optional filter bag so selectors can accept either a
+// plain options object or a shorthand month string as their second arg.
+function normalizeOpts(optsOrMonth) {
+  if (optsOrMonth == null) return {};
+  if (typeof optsOrMonth === "string") return { month: optsOrMonth };
+  return optsOrMonth;
+}
+
+// Aggregated totals for a list of transactions (optionally scoped to
+// a single calendar month). Pure — never touches storage.
+export function getMonthlySummary(transactions, optsOrMonth) {
+  const opts = normalizeOpts(optsOrMonth);
+  const { excludedTxIds = new Set(), txSplits = {}, month = null } = opts;
   const list = Array.isArray(transactions) ? transactions : [];
   const excluded =
     excludedTxIds instanceof Set ? excludedTxIds : new Set(excludedTxIds);
+  const inMonth = buildMonthPredicate(month);
   let spent = 0;
   let income = 0;
   let txCount = 0;
 
   for (const tx of list) {
     if (!tx || excluded.has(tx.id)) continue;
+    if (inMonth && !inMonth(tx)) continue;
     txCount++;
     if (tx.amount < 0) spent += getTxStatAmount(tx, txSplits);
     else income += tx.amount / 100;
@@ -65,7 +104,17 @@ export function getMonthlySummary(
 
   spent = Math.round(spent);
   income = Math.round(income);
-  return { spent, income, balance: income - spent, txCount };
+  // `spent`/`income` keep backwards compatibility with existing callers,
+  // `totalExpense`/`totalIncome` expose the same numbers under the
+  // public selector contract.
+  return {
+    spent,
+    income,
+    balance: income - spent,
+    txCount,
+    totalExpense: spent,
+    totalIncome: income,
+  };
 }
 
 // Heaviest step of category analytics: iterates every expense transaction
@@ -79,16 +128,19 @@ export function computeCategorySpendIndex(
     txSplits = {},
     customCategories = [],
     excludedTxIds = new Set(),
+    month = null,
   } = {},
 ) {
   const list = Array.isArray(transactions) ? transactions : [];
   const excluded =
     excludedTxIds instanceof Set ? excludedTxIds : new Set(excludedTxIds);
+  const inMonth = buildMonthPredicate(month);
   const catSpend = {};
   let totalSpent = 0;
 
   for (const tx of list) {
     if (!tx || excluded.has(tx.id) || tx.amount >= 0) continue;
+    if (inMonth && !inMonth(tx)) continue;
     const splits = txSplits[tx.id];
     if (splits && splits.length > 0) {
       for (const s of splits) {
@@ -157,11 +209,87 @@ export function selectCategoryDistributionFromIndex(
   }));
 }
 
-export function getTopCategories(transactions, opts = {}, limit = 5) {
+// Top spending categories. Supports both the documented selector shape
+// `getTopCategories(txs, limit)` and the legacy `(txs, opts, limit)` form
+// used by older hooks/tests.
+export function getTopCategories(transactions, optsOrLimit = {}, maybeLimit) {
+  let opts = {};
+  let limit = 5;
+  if (typeof optsOrLimit === "number") {
+    limit = optsOrLimit;
+  } else {
+    opts = optsOrLimit || {};
+    if (typeof maybeLimit === "number") limit = maybeLimit;
+  }
   const index = computeCategorySpendIndex(transactions, opts);
   return selectTopCategoriesFromIndex(
     index,
     opts.customCategories || [],
     limit,
   );
+}
+
+// Full `category → amount` distribution (returned as a sorted array of
+// `{ categoryId, label, spent, pct, color }`).
+export function getCategoryDistribution(transactions, opts = {}) {
+  const index = computeCategorySpendIndex(transactions, opts);
+  return selectCategoryDistributionFromIndex(
+    index,
+    opts.customCategories || [],
+  );
+}
+
+// Compare two monthly summaries and return the absolute and percentage
+// delta for both spend and income.
+export function getTrendComparison(currentMonthTx, previousMonthTx, opts = {}) {
+  const { excludedTxIds = new Set(), txSplits = {} } = opts;
+  const curr = getMonthlySummary(currentMonthTx, { excludedTxIds, txSplits });
+  const prev = getMonthlySummary(previousMonthTx, { excludedTxIds, txSplits });
+  const diff = curr.spent - prev.spent;
+  const diffPct = prev.spent > 0 ? Math.round((diff / prev.spent) * 100) : null;
+  const incomeDiff = curr.income - prev.income;
+  const incomeDiffPct =
+    prev.income > 0 ? Math.round((incomeDiff / prev.income) * 100) : null;
+
+  return {
+    currentSpent: curr.spent,
+    prevSpent: prev.spent,
+    diff,
+    diffPct,
+    currentIncome: curr.income,
+    prevIncome: prev.income,
+    incomeDiff,
+    incomeDiffPct,
+  };
+}
+
+// Top merchants by aggregated expense. Deterministic, pure sort — useful
+// both in the UI and in tests.
+export function getTopMerchants(transactions, opts = {}, maybeLimit) {
+  const {
+    excludedTxIds = new Set(),
+    month = null,
+    limit: optsLimit,
+  } = typeof opts === "number" ? { limit: opts } : opts || {};
+  const limit = typeof maybeLimit === "number" ? maybeLimit : (optsLimit ?? 10);
+  const list = Array.isArray(transactions) ? transactions : [];
+  const excluded =
+    excludedTxIds instanceof Set ? excludedTxIds : new Set(excludedTxIds);
+  const inMonth = buildMonthPredicate(month);
+  const merchants = {};
+
+  for (const tx of list) {
+    if (!tx || excluded.has(tx.id) || tx.amount >= 0) continue;
+    if (inMonth && !inMonth(tx)) continue;
+    const name = (tx.description || "").trim();
+    if (!name) continue;
+    if (!merchants[name]) merchants[name] = { name, count: 0, total: 0 };
+    merchants[name].count++;
+    merchants[name].total += Math.abs(tx.amount / 100);
+  }
+
+  return Object.values(merchants)
+    .map((m) => ({ ...m, total: Math.round(m.total) }))
+    .sort((a, b) => b.total - a.total)
+    .slice(0, limit);
 }

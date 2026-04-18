@@ -14,7 +14,7 @@ import { useAnalytics } from "../hooks/useAnalytics";
 import { CategoryPieChart } from "../components/charts/lazy";
 import { ChartFallback } from "../components/charts/ChartFallback";
 import { MerchantList } from "../components/analytics/MerchantList";
-import { getMonthlyTrendComparison } from "../lib/finykStats";
+import { getTrendComparison } from "../domain/selectors";
 
 function readTxCache(year, month) {
   try {
@@ -219,7 +219,7 @@ export function Analytics({ mono, storage }) {
   // and the filters that actually affect totals (excluded ids + splits).
   const comparison = useMemo(() => {
     if (!prevTx.length && !historyCache[prevKey]) return null;
-    return getMonthlyTrendComparison(activeTx, prevTx, {
+    return getTrendComparison(activeTx, prevTx, {
       excludedTxIds: storage.excludedTxIds,
       txSplits: storage.txSplits,
     });
