@@ -540,7 +540,7 @@ export function Budgets({ mono, storage }) {
               isEditing={isEditing}
               showProactiveAdvice={!!showProactiveAdvice}
               proactiveText={proactiveAdvice[b.categoryId]}
-              proactiveLoading={!!proactiveLoading[b.categoryId]}
+              proactiveLoading={proactiveLoading[b.categoryId]}
               onBeginEdit={() => setEditIdx(globalIdx)}
               onChangeLimit={(nextLimit) =>
                 setBudgets((bs) =>
