@@ -16,6 +16,7 @@ import {
   dismissDemoBanner,
 } from "./onboarding/vibePicks.js";
 import { wasDemoSeeded } from "./onboarding/demoSeeds.js";
+import { useFirstEntryCelebration } from "./onboarding/useFirstEntryCelebration.js";
 import {
   DndContext,
   closestCenter,
@@ -411,6 +412,7 @@ export function HubDashboard({ onOpenModule, onOpenChat, user, onShowAuth }) {
   // Soft auth prompt appears only once the user has typed in real data and
   // has no account yet — an "offer to save", never a toll gate.
   const hasRealEntry = detectFirstRealEntry();
+  useFirstEntryCelebration(hasRealEntry);
   const [softAuthDismissed, setSoftAuthDismissed] = useState(() =>
     isSoftAuthDismissed(),
   );
