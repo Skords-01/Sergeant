@@ -224,6 +224,12 @@ export function useCoachInsight() {
     },
   });
 
+  const { mutateAsync } = mutation;
+
+  // Depending on the whole `mutation` object would recreate `loadInsight`
+  // on every state transition (isPending flip, etc.), which in turn makes
+  // `refresh` below unstable and defeats its `useCallback`. `mutateAsync`
+  // is a stable reference in react-query v5, so we depend on it directly.
   const loadInsight = useCallback(
     async (force = false) => {
       const todayKey = localDateKey();
@@ -235,12 +241,12 @@ export function useCoachInsight() {
         }
       }
       try {
-        return await mutation.mutateAsync();
+        return await mutateAsync();
       } catch {
         return null;
       }
     },
-    [mutation],
+    [mutateAsync],
   );
 
   useEffect(() => {
