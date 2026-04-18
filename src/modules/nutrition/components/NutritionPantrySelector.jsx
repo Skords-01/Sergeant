@@ -3,7 +3,7 @@ export function NutritionPantrySelector({ pantry, busy }) {
   return (
     <div className="rounded-2xl bg-nutrition/10 border border-nutrition/20 px-4 py-3 mb-4 flex items-center gap-3">
       <div className="min-w-0 flex-1">
-        <div className="text-[10px] font-bold text-nutrition/70 uppercase tracking-widest mb-0.5">
+        <div className="text-xs font-bold text-nutrition/70 uppercase tracking-widest mb-0.5">
           Активний склад
         </div>
         <div className="text-base font-extrabold text-text leading-tight">

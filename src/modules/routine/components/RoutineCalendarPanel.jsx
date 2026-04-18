@@ -206,7 +206,7 @@ export function RoutineCalendarPanel({ hidden: panelHidden }) {
       </div>
 
       <div className="rounded-2xl border border-line/60 bg-panel/80 p-3 shadow-card">
-        <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-subtle">
+        <p className="mb-2 text-xs font-bold uppercase tracking-widest text-subtle">
           Тиждень
         </p>
         <WeekDayStrip
@@ -236,7 +236,7 @@ export function RoutineCalendarPanel({ hidden: panelHidden }) {
       />
 
       <div className="flex flex-wrap gap-1.5 items-center">
-        <span className="text-[10px] font-bold text-subtle uppercase tracking-widest w-full sm:w-auto">
+        <span className="text-xs font-bold text-subtle uppercase tracking-widest w-full sm:w-auto">
           Теги
         </span>
         <button

@@ -168,7 +168,7 @@ export function Programs({
 function ProgramDetails({ prog, exercises }) {
   return (
     <div className="border-t border-line/60 px-4 pb-4 pt-3 space-y-3 bg-bg/50">
-      <div className="text-[10px] font-bold text-subtle uppercase tracking-widest">
+      <div className="text-xs font-bold text-subtle uppercase tracking-widest">
         Розклад та вправи
       </div>
       {prog.schedule.map((schedEntry) => {

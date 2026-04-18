@@ -204,7 +204,7 @@ export function Body({ onOpenMeasurements }) {
               <div>
                 <label
                   htmlFor="body-weight"
-                  className="text-[10px] font-bold text-subtle uppercase tracking-widest block mb-1"
+                  className="text-xs font-bold text-subtle uppercase tracking-widest block mb-1"
                 >
                   Вага (кг)
                 </label>
@@ -226,7 +226,7 @@ export function Body({ onOpenMeasurements }) {
               <div>
                 <label
                   htmlFor="body-sleep"
-                  className="text-[10px] font-bold text-subtle uppercase tracking-widest block mb-1"
+                  className="text-xs font-bold text-subtle uppercase tracking-widest block mb-1"
                 >
                   Сон (год)
                 </label>
@@ -248,7 +248,7 @@ export function Body({ onOpenMeasurements }) {
             </div>
 
             <div>
-              <p className="text-[10px] font-bold text-subtle uppercase tracking-widest mb-2">
+              <p className="text-xs font-bold text-subtle uppercase tracking-widest mb-2">
                 Рівень енергії
               </p>
               <div
@@ -274,7 +274,7 @@ export function Body({ onOpenMeasurements }) {
             </div>
 
             <div>
-              <p className="text-[10px] font-bold text-subtle uppercase tracking-widest mb-2">
+              <p className="text-xs font-bold text-subtle uppercase tracking-widest mb-2">
                 Настрій
               </p>
               <div className="flex gap-1.5" role="group" aria-label="Настрій">
@@ -298,7 +298,7 @@ export function Body({ onOpenMeasurements }) {
             <div>
               <label
                 htmlFor="body-note"
-                className="text-[10px] font-bold text-subtle uppercase tracking-widest block mb-1"
+                className="text-xs font-bold text-subtle uppercase tracking-widest block mb-1"
               >
                 Нотатка (необов&apos;язково)
               </label>

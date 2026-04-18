@@ -39,7 +39,7 @@ export function MacrosEditor({
   return (
     <div className="mb-1">
       <div className="flex items-center justify-between mb-2">
-        <div className="text-[10px] font-bold text-subtle uppercase tracking-widest">
+        <div className="text-xs font-bold text-subtle uppercase tracking-widest">
           {pickedFood ? "КБЖВ (редагувати вручну)" : "КБЖВ"}
         </div>
         {hasPhotoMacros && (
@@ -69,7 +69,7 @@ export function MacrosEditor({
           { key: "carbs_g", label: "Вуглев. г", placeholder: "60" },
         ].map(({ key, label, placeholder }) => (
           <div key={key}>
-            <div className="text-[10px] font-bold text-subtle uppercase tracking-widest mb-1">
+            <div className="text-xs font-bold text-subtle uppercase tracking-widest mb-1">
               {label}
             </div>
             <Input

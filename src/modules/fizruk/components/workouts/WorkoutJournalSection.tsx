@@ -217,7 +217,7 @@ export function WorkoutJournalSection({
             </p>
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <div className="text-[10px] font-bold text-subtle uppercase tracking-widest mb-1">
+                <div className="text-xs font-bold text-subtle uppercase tracking-widest mb-1">
                   Дата
                 </div>
                 <input
@@ -228,7 +228,7 @@ export function WorkoutJournalSection({
                 />
               </div>
               <div>
-                <div className="text-[10px] font-bold text-subtle uppercase tracking-widest mb-1">
+                <div className="text-xs font-bold text-subtle uppercase tracking-widest mb-1">
                   Час початку
                 </div>
                 <input

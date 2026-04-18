@@ -540,7 +540,7 @@ export function Assets({
         />
         {open.assets && (
           <div className="mb-3 space-y-2">
-            <div className="text-[11px] font-bold text-subtle uppercase tracking-widest pt-1">
+            <div className="text-xs font-bold text-subtle uppercase tracking-widest pt-1">
               💳 Картки Monobank
             </div>
             {accounts
@@ -571,7 +571,7 @@ export function Assets({
                 </div>
               ))}
 
-            <div className="text-[11px] font-bold text-subtle uppercase tracking-widest pt-2">
+            <div className="text-xs font-bold text-subtle uppercase tracking-widest pt-2">
               💰 Мені винні
             </div>
             {receivables.map((r) => (
@@ -673,7 +673,7 @@ export function Assets({
               </button>
             )}
 
-            <div className="text-[11px] font-bold text-subtle uppercase tracking-widest pt-2">
+            <div className="text-xs font-bold text-subtle uppercase tracking-widest pt-2">
               🏦 Інші активи
             </div>
             {manualAssets.map((a, i) => (

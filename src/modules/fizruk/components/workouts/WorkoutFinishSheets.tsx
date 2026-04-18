@@ -43,7 +43,7 @@ export function WorkoutFinishSheets({
               Оціни по шкалі 1–5 (можна пропустити).
             </p>
             <div>
-              <div className="text-[10px] font-bold text-subtle uppercase tracking-widest mb-2">
+              <div className="text-xs font-bold text-subtle uppercase tracking-widest mb-2">
                 Енергія
               </div>
               <div className="flex flex-wrap gap-2">
@@ -68,7 +68,7 @@ export function WorkoutFinishSheets({
               </div>
             </div>
             <div>
-              <div className="text-[10px] font-bold text-subtle uppercase tracking-widest mb-2">
+              <div className="text-xs font-bold text-subtle uppercase tracking-widest mb-2">
                 Настрій
               </div>
               <div className="flex flex-wrap gap-2">
@@ -157,7 +157,7 @@ export function WorkoutFinishSheets({
             <div className="fizruk-summary-header">
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <div className="text-[11px] font-bold tracking-widest uppercase text-fizruk">
+                  <div className="text-xs font-bold tracking-widest uppercase text-fizruk">
                     Завершено
                   </div>
                   <div className="text-lg font-black text-white mt-1 leading-tight">

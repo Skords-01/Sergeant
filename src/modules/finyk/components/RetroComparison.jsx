@@ -109,7 +109,7 @@ export const RetroComparison = memo(function RetroComparison({
     >
       <div className="flex items-start justify-between gap-3">
         <div>
-          <div className="text-[11px] font-bold text-subtle uppercase tracking-widest">
+          <div className="text-xs font-bold text-subtle uppercase tracking-widest">
             Порівняння з попереднім місяцем
           </div>
           <p className="text-[11px] text-subtle/80 mt-1 capitalize">

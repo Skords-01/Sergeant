@@ -80,7 +80,7 @@ export function Measurements() {
 
         <div className="grid grid-cols-3 gap-2">
           <div className="bg-panel border border-line/60 rounded-2xl p-3 shadow-card text-center">
-            <div className="text-[10px] font-semibold text-subtle uppercase tracking-widest">
+            <div className="text-xs font-bold text-subtle uppercase tracking-widest">
               Записів
             </div>
             <div className="text-lg font-extrabold text-text tabular-nums mt-1">
@@ -88,7 +88,7 @@ export function Measurements() {
             </div>
           </div>
           <div className="bg-panel border border-line/60 rounded-2xl p-3 shadow-card text-center">
-            <div className="text-[10px] font-semibold text-subtle uppercase tracking-widest">
+            <div className="text-xs font-bold text-subtle uppercase tracking-widest">
               Останній
             </div>
             <div className="text-sm font-bold text-text mt-1">
@@ -96,7 +96,7 @@ export function Measurements() {
             </div>
           </div>
           <div className="bg-panel border border-line/60 rounded-2xl p-3 shadow-card text-center">
-            <div className="text-[10px] font-semibold text-subtle uppercase tracking-widest">
+            <div className="text-xs font-bold text-subtle uppercase tracking-widest">
               Полів
             </div>
             <div className="text-lg font-extrabold text-text tabular-nums mt-1">
@@ -112,7 +112,7 @@ export function Measurements() {
           <div className="grid grid-cols-2 gap-2">
             {MEASURE_FIELDS.map((f) => (
               <div key={f.id} className="space-y-1">
-                <div className="text-[10px] font-bold text-subtle uppercase tracking-widest px-1">
+                <div className="text-xs font-bold text-subtle uppercase tracking-widest px-1">
                   {f.label} · {f.unit}
                 </div>
                 <input
@@ -169,7 +169,7 @@ export function Measurements() {
                   key={f.id}
                   className="bg-bg border border-line rounded-2xl p-3"
                 >
-                  <div className="text-[10px] font-bold text-subtle uppercase tracking-widest">
+                  <div className="text-xs font-bold text-subtle uppercase tracking-widest">
                     {f.label}
                   </div>
                   <div className="text-lg font-extrabold tabular-nums text-text mt-1">

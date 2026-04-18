@@ -25,7 +25,7 @@ export function NameTimeRow({ form, field, setForm }) {
   return (
     <div className="grid grid-cols-[1fr_auto] gap-3 mb-4">
       <div>
-        <div className="text-[10px] font-bold text-subtle uppercase tracking-widest mb-1 flex items-center gap-2">
+        <div className="text-xs font-bold text-subtle uppercase tracking-widest mb-1 flex items-center gap-2">
           Назва страви
           <VoiceMicButton
             size="sm"
@@ -42,7 +42,7 @@ export function NameTimeRow({ form, field, setForm }) {
         />
       </div>
       <div>
-        <div className="text-[10px] font-bold text-subtle uppercase tracking-widest mb-1">
+        <div className="text-xs font-bold text-subtle uppercase tracking-widest mb-1">
           Час
         </div>
         <Input

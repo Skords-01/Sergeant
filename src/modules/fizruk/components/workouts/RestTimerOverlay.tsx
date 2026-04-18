@@ -47,7 +47,7 @@ export function RestTimerOverlay({ restTimer, onCancel }) {
             </svg>
           </div>
           <div>
-            <div className="text-[10px] font-bold text-subtle uppercase tracking-widest">
+            <div className="text-xs font-bold text-subtle uppercase tracking-widest">
               Відпочинок
             </div>
             <div

@@ -143,7 +143,7 @@ export function DailyProgressHero() {
         </div>
 
         <div className="flex-1 min-w-0">
-          <p className="text-[10px] font-semibold text-brand-600/70 dark:text-brand-400/70 uppercase tracking-widest mb-1">
+          <p className="text-xs font-semibold text-brand-600/70 dark:text-brand-400/70 uppercase tracking-widest mb-1">
             {greeting}
           </p>
           <h1 className="text-xl font-bold text-text mb-1.5 text-balance leading-tight">

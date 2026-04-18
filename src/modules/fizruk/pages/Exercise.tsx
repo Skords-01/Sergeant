@@ -440,7 +440,7 @@ export function Exercise({ exerciseId }) {
 
         <div className="grid grid-cols-2 gap-3">
           <div className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card">
-            <div className="text-[10px] font-bold text-subtle uppercase tracking-widest">
+            <div className="text-xs font-bold text-subtle uppercase tracking-widest">
               Особистий рекорд
             </div>
             <div className="text-2xl font-extrabold text-text mt-1 tabular-nums">
@@ -462,7 +462,7 @@ export function Exercise({ exerciseId }) {
             )}
           </div>
           <div className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card">
-            <div className="text-[10px] font-bold text-subtle uppercase tracking-widest">
+            <div className="text-xs font-bold text-subtle uppercase tracking-widest">
               Наступного разу
             </div>
             <div className="text-2xl font-extrabold text-text mt-1 tabular-nums">

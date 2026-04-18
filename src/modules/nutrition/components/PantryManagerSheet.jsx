@@ -116,7 +116,7 @@ export function PantryManagerSheet({
           </div>
 
           <div className="rounded-2xl border border-line bg-panelHi p-4">
-            <div className="text-[10px] font-bold text-subtle uppercase tracking-widest">
+            <div className="text-xs font-bold text-subtle uppercase tracking-widest">
               {pantryForm.mode === "rename" ? "Нова назва" : "Назва складу"}
             </div>
             <div className="mt-2">

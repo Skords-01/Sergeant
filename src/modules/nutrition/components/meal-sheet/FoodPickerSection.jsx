@@ -51,7 +51,7 @@ export function FoodPickerSection({
   return (
     <div className="mb-4 space-y-2">
       <div className="flex items-center justify-between gap-2">
-        <div className="text-[10px] font-bold text-subtle uppercase tracking-widest">
+        <div className="text-xs font-bold text-subtle uppercase tracking-widest">
           Продукт
         </div>
         {(foodBusy || offBusy) && (
@@ -89,7 +89,7 @@ export function FoodPickerSection({
                 {offHits.length > 0 && (
                   <>
                     {foodHits.length > 0 && (
-                      <li className="px-3 py-1.5 text-[10px] text-subtle bg-panelHi/50 font-semibold uppercase tracking-widest">
+                      <li className="px-3 py-1.5 text-xs text-subtle bg-panelHi/50 font-bold uppercase tracking-widest">
                         🌍 Open Food Facts
                       </li>
                     )}

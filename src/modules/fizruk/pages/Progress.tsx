@@ -403,7 +403,7 @@ export function Progress() {
         {/* Weight + fat cards */}
         <div className="grid grid-cols-2 gap-3">
           <div className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card">
-            <div className="text-[10px] font-bold text-subtle uppercase tracking-widest">
+            <div className="text-xs font-bold text-subtle uppercase tracking-widest">
               Вага
             </div>
             <div className="text-2xl font-extrabold text-text mt-1 tabular-nums">
@@ -430,7 +430,7 @@ export function Progress() {
             </div>
           </div>
           <div className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card">
-            <div className="text-[10px] font-bold text-subtle uppercase tracking-widest">
+            <div className="text-xs font-bold text-subtle uppercase tracking-widest">
               % жиру
             </div>
             <div className="text-2xl font-extrabold text-text mt-1 tabular-nums">

@@ -191,7 +191,7 @@ export function LogCard({
         </div>
 
         <div className="rounded-2xl border border-line/50 bg-panel/40 px-3 py-3 space-y-2">
-          <div className="text-[10px] font-bold text-subtle uppercase tracking-widest">
+          <div className="text-xs font-bold text-subtle uppercase tracking-widest">
             Пошук по журналу
           </div>
           <Input
@@ -279,7 +279,7 @@ export function LogCard({
         <button
           type="button"
           onClick={() => setWeekOpen((v) => !v)}
-          className="flex items-center gap-2 text-[10px] font-bold text-subtle uppercase tracking-widest w-full text-left py-1"
+          className="flex items-center gap-2 text-xs font-bold text-subtle uppercase tracking-widest w-full text-left py-1"
         >
           <Icon
             name="chevron-right"
@@ -326,7 +326,7 @@ export function LogCard({
 
         <div className="rounded-2xl border border-line/50 bg-panel/40 px-3 py-3 space-y-3">
           <div className="flex items-center justify-between gap-2">
-            <div className="text-[10px] font-bold text-subtle uppercase tracking-widest">
+            <div className="text-xs font-bold text-subtle uppercase tracking-widest">
               Аналітика (тренди)
             </div>
             <div className="flex gap-2">
@@ -368,7 +368,7 @@ export function LogCard({
           </div>
 
           <div className="bg-panelHi rounded-2xl px-3 py-3">
-            <div className="text-[10px] font-bold text-subtle uppercase tracking-widest mb-2">
+            <div className="text-xs font-bold text-subtle uppercase tracking-widest mb-2">
               Калорії по днях (останні {Math.min(statsRange, statsRows.length)})
             </div>
             {statsRows.length === 0 ? (
@@ -397,7 +397,7 @@ export function LogCard({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <div className="bg-panelHi rounded-2xl px-3 py-3">
-              <div className="text-[10px] font-bold text-subtle uppercase tracking-widest mb-2">
+              <div className="text-xs font-bold text-subtle uppercase tracking-widest mb-2">
                 Топ страв
               </div>
               {statsTop.length === 0 ? (
@@ -421,7 +421,7 @@ export function LogCard({
               )}
             </div>
             <div className="bg-panelHi rounded-2xl px-3 py-3">
-              <div className="text-[10px] font-bold text-subtle uppercase tracking-widest mb-2">
+              <div className="text-xs font-bold text-subtle uppercase tracking-widest mb-2">
                 Розподіл прийомів
               </div>
               {Object.keys(statsMealTypes).length === 0 ? (

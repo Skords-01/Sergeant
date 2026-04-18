@@ -2,7 +2,7 @@ export function MealTemplatesRow({ mealTemplates, setForm, onSelected }) {
   if (!Array.isArray(mealTemplates) || mealTemplates.length === 0) return null;
   return (
     <div className="mb-4">
-      <div className="text-[10px] font-bold text-subtle uppercase tracking-widest mb-2">
+      <div className="text-xs font-bold text-subtle uppercase tracking-widest mb-2">
         Шаблони
       </div>
       <div className="flex flex-wrap gap-2">

@@ -373,7 +373,7 @@ export function ActiveWorkoutPanel({
 
           <div className="mt-2">
             <div className="rounded-2xl border border-line bg-panelHi px-3">
-              <div className="text-[10px] font-bold text-subtle uppercase tracking-widest pt-2">
+              <div className="text-xs font-bold text-subtle uppercase tracking-widest pt-2">
                 Тип
               </div>
               <select
@@ -518,7 +518,7 @@ export function ActiveWorkoutPanel({
               {!activeWorkout.endedAt && !group && (
                 <div className="flex flex-wrap items-center gap-2 mt-2 pt-2 border-t border-line/60">
                   <div className="flex items-center justify-between w-full gap-1">
-                    <span className="text-[10px] font-bold text-subtle uppercase tracking-widest">
+                    <span className="text-xs font-bold text-subtle uppercase tracking-widest">
                       Таймер відпочинку
                     </span>
                     <span className="text-[9px] text-muted">
@@ -615,7 +615,7 @@ export function ActiveWorkoutPanel({
               {cardioMetrics && (
                 <div className="grid grid-cols-2 gap-2">
                   <div className="rounded-xl border border-line bg-bg px-3 py-2 text-center">
-                    <div className="text-[9px] font-bold text-subtle uppercase tracking-widest">
+                    <div className="text-xs font-bold text-subtle uppercase tracking-widest">
                       Темп
                     </div>
                     <div className="text-sm font-bold text-text tabular-nums">
@@ -623,7 +623,7 @@ export function ActiveWorkoutPanel({
                     </div>
                   </div>
                   <div className="rounded-xl border border-line bg-bg px-3 py-2 text-center">
-                    <div className="text-[9px] font-bold text-subtle uppercase tracking-widest">
+                    <div className="text-xs font-bold text-subtle uppercase tracking-widest">
                       Швидкість
                     </div>
                     <div className="text-sm font-bold text-text tabular-nums">
@@ -704,7 +704,7 @@ export function ActiveWorkoutPanel({
           {groupItems.map((gIt) => renderItem(gIt))}
           {!activeWorkout?.endedAt && (
             <div className="flex flex-wrap items-center gap-2 px-1 pt-1 border-t border-success/20">
-              <span className="text-[10px] font-bold text-subtle uppercase tracking-widest w-full">
+              <span className="text-xs font-bold text-subtle uppercase tracking-widest w-full">
                 Спільний таймер відпочинку між колами
               </span>
               <button

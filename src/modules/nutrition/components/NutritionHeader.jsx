@@ -65,7 +65,7 @@ export function NutritionHeader({ busy: _busy, onBackToHub }) {
         )}
 
         <div className="min-w-0 flex-1">
-          <span className="text-[9px] text-lime-600/80 dark:text-lime-400/70 font-bold tracking-widest uppercase block leading-none mb-0.5">
+          <span className="text-xs text-lime-600/80 dark:text-lime-400/70 font-bold tracking-widest uppercase block leading-none mb-0.5">
             ХАРЧУВАННЯ
           </span>
           <span className="text-[16px] font-semibold tracking-wide text-text block leading-tight">

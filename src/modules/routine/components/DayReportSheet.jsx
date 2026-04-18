@@ -78,7 +78,7 @@ export function DayReportSheet({
 
         {done.length > 0 && (
           <div className="mb-4">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-subtle mb-2">
+            <p className="text-xs font-bold uppercase tracking-widest text-subtle mb-2">
               Виконано ({done.length})
             </p>
             <ul className="space-y-1.5">
@@ -109,7 +109,7 @@ export function DayReportSheet({
 
         {missed.length > 0 && (
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-subtle mb-2">
+            <p className="text-xs font-bold uppercase tracking-widest text-subtle mb-2">
               Пропущено ({missed.length})
             </p>
             <ul className="space-y-1.5">

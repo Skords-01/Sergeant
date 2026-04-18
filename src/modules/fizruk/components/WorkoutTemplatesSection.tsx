@@ -155,7 +155,7 @@ export function WorkoutTemplatesSection({
             aria-label="Назва шаблону"
           />
           <div>
-            <div className="text-[10px] font-bold text-subtle uppercase tracking-widest mb-2">
+            <div className="text-xs font-bold text-subtle uppercase tracking-widest mb-2">
               Додати вправу з каталогу
             </div>
             <Input
@@ -185,7 +185,7 @@ export function WorkoutTemplatesSection({
 
           <div>
             <div className="flex items-center justify-between mb-2">
-              <div className="text-[10px] font-bold text-subtle uppercase tracking-widest">
+              <div className="text-xs font-bold text-subtle uppercase tracking-widest">
                 Порядок ({orderIds.length})
               </div>
               {orderIds.length >= 2 && !groupSelectMode && (

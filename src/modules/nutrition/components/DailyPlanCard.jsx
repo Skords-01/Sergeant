@@ -62,7 +62,7 @@ function MacroRatioBar({ prefs }) {
 
   return (
     <div className="mt-3 space-y-1.5">
-      <div className="text-[10px] font-bold text-subtle uppercase tracking-widest">
+      <div className="text-xs font-bold text-subtle uppercase tracking-widest">
         Відсоткове співвідношення макро
       </div>
       <div className="flex rounded-lg overflow-hidden h-5">
@@ -136,7 +136,7 @@ function MealRow({ meal, onAddToLog, onRegen, busy }) {
             <span className="text-base leading-none" aria-hidden>
               {MEAL_TYPE_ICONS[meal.type] || "🍴"}
             </span>
-            <span className="text-[11px] font-bold text-nutrition/80 uppercase tracking-widest">
+            <span className="text-xs font-bold text-nutrition/80 uppercase tracking-widest">
               {MEAL_TYPE_LABELS[meal.type] || meal.label}
             </span>
           </div>

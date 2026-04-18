@@ -334,7 +334,7 @@ export default function FizrukApp({
           )}
           <div className="min-w-0 flex-1">
             {!isAtlas && !isExercise && (
-              <span className="text-[9px] text-success/70 font-bold tracking-widest uppercase block leading-none mb-0.5">
+              <span className="text-xs text-success/70 font-bold tracking-widest uppercase block leading-none mb-0.5">
                 ОСОБИСТИЙ ЖУРНАЛ
               </span>
             )}

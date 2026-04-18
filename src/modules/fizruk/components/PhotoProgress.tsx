@@ -296,7 +296,7 @@ export function PhotoProgress() {
             <div>
               <label
                 htmlFor={compareBeforeId}
-                className="text-[10px] font-bold text-subtle uppercase tracking-widest block mb-1"
+                className="text-xs font-bold text-subtle uppercase tracking-widest block mb-1"
               >
                 До
               </label>
@@ -318,7 +318,7 @@ export function PhotoProgress() {
             <div>
               <label
                 htmlFor={compareAfterId}
-                className="text-[10px] font-bold text-subtle uppercase tracking-widest block mb-1"
+                className="text-xs font-bold text-subtle uppercase tracking-widest block mb-1"
               >
                 Після
               </label>
@@ -369,7 +369,7 @@ export function PhotoProgress() {
             <div>
               <label
                 htmlFor={addDateId}
-                className="text-[10px] font-bold text-subtle uppercase tracking-widest block mb-1"
+                className="text-xs font-bold text-subtle uppercase tracking-widest block mb-1"
               >
                 Дата
               </label>
@@ -384,7 +384,7 @@ export function PhotoProgress() {
             <div>
               <label
                 htmlFor={addNoteId}
-                className="text-[10px] font-bold text-subtle uppercase tracking-widest block mb-1"
+                className="text-xs font-bold text-subtle uppercase tracking-widest block mb-1"
               >
                 Нотатка
               </label>

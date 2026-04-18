@@ -166,7 +166,7 @@ export function PhotoAnalyzeCard({
           {Array.isArray(photoResult.questions) &&
             photoResult.questions.length > 0 && (
               <div className="rounded-2xl border border-line bg-panelHi p-3 grid gap-3">
-                <div className="text-xs font-semibold text-subtle uppercase tracking-widest">
+                <div className="text-xs font-bold text-subtle uppercase tracking-widest">
                   Уточнення порції
                 </div>
 

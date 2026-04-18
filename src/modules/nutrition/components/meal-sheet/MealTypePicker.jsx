@@ -4,7 +4,7 @@ import { MEAL_TYPES } from "../../lib/mealTypes.js";
 export function MealTypePicker({ mealType, setForm }) {
   return (
     <div className="mb-4">
-      <div className="text-[10px] font-bold text-subtle uppercase tracking-widest mb-2">
+      <div className="text-xs font-bold text-subtle uppercase tracking-widest mb-2">
         Прийом їжі
       </div>
       <div className="flex gap-2 flex-wrap">

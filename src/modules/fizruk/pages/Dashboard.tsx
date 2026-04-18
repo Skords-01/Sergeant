@@ -285,7 +285,7 @@ export function Dashboard({
           className="rounded-3xl p-6 overflow-hidden bg-hero-teal"
           aria-label="Привітання"
         >
-          <p className="text-[11px] font-bold tracking-widest uppercase text-fizruk">
+          <p className="text-xs font-bold tracking-widest uppercase text-fizruk">
             {greeting} · {today}
           </p>
           <h1 className="text-[26px] font-black text-white mt-3 leading-tight">
@@ -541,7 +541,7 @@ export function Dashboard({
               />
 
               <div className="mt-4 pt-3 border-t border-line/60">
-                <p className="text-[10px] font-bold text-subtle uppercase tracking-widest mb-2">
+                <p className="text-xs font-bold text-subtle uppercase tracking-widest mb-2">
                   Пріоритет після відпочинку
                 </p>
                 <div className="flex flex-wrap gap-2">
@@ -687,7 +687,7 @@ export function Dashboard({
             </p>
           )}
           <div className="rounded-2xl border border-line bg-panelHi px-3">
-            <div className="text-[10px] font-bold text-subtle uppercase tracking-widest pt-2">
+            <div className="text-xs font-bold text-subtle uppercase tracking-widest pt-2">
               Мій шаблон
             </div>
             <select

@@ -116,7 +116,7 @@ export function AddExerciseSheet({
             />
 
             <div className="rounded-2xl border border-line bg-panelHi px-3">
-              <div className="text-[10px] font-bold text-subtle uppercase tracking-widest pt-2">
+              <div className="text-xs font-bold text-subtle uppercase tracking-widest pt-2">
                 Основна група
               </div>
               <select
@@ -141,7 +141,7 @@ export function AddExerciseSheet({
             </div>
 
             <div className="rounded-2xl border border-line bg-panelHi px-3 py-2">
-              <div className="text-[10px] font-bold text-subtle uppercase tracking-widest">
+              <div className="text-xs font-bold text-subtle uppercase tracking-widest">
                 Обладнання
               </div>
               <div className="py-2 flex flex-wrap gap-2">
@@ -173,7 +173,7 @@ export function AddExerciseSheet({
             </div>
 
             <div className="rounded-2xl border border-line bg-panelHi px-3 py-2">
-              <div className="text-[10px] font-bold text-subtle uppercase tracking-widest">
+              <div className="text-xs font-bold text-subtle uppercase tracking-widest">
                 Основні мʼязи
               </div>
               <div className="flex flex-wrap gap-1.5 mt-2">
@@ -201,7 +201,7 @@ export function AddExerciseSheet({
             </div>
 
             <div className="rounded-2xl border border-line bg-panelHi px-3 py-2">
-              <div className="text-[10px] font-bold text-subtle uppercase tracking-widest">
+              <div className="text-xs font-bold text-subtle uppercase tracking-widest">
                 Супутні мʼязи
               </div>
               <div className="flex flex-wrap gap-1.5 mt-2">

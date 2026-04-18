@@ -58,7 +58,7 @@ export function ItemEditSheet({ itemEdit, setItemEdit, onClose, onSave }) {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <div className="text-[10px] font-bold text-subtle uppercase tracking-widest mb-1">
+              <div className="text-xs font-bold text-subtle uppercase tracking-widest mb-1">
                 Кількість
               </div>
               <Input
@@ -72,7 +72,7 @@ export function ItemEditSheet({ itemEdit, setItemEdit, onClose, onSave }) {
               />
             </div>
             <div>
-              <div className="text-[10px] font-bold text-subtle uppercase tracking-widest mb-1">
+              <div className="text-xs font-bold text-subtle uppercase tracking-widest mb-1">
                 Одиниця
               </div>
               <Input

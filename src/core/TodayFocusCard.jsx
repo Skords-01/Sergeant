@@ -140,7 +140,7 @@ export function TodayFocusCard({ focus, onAction, onDismiss, onOpenReports }) {
 
       <div className="pl-3">
         <div className="flex items-start justify-between gap-3 mb-1">
-          <span className="text-[10px] font-semibold uppercase tracking-widest text-muted">
+          <span className="text-xs font-semibold uppercase tracking-widest text-muted">
             Зараз
           </span>
           {onDismiss && (
