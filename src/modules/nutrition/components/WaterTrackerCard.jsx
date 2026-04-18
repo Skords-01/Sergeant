@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@shared/lib/cn";
 import { useWaterTracker } from "../hooks/useWaterTracker.js";
+import { Card } from "@shared/components/ui/Card";
 
 const QUICK_ML = [200, 300, 500, 750];
 
@@ -28,7 +29,7 @@ export function WaterTrackerCard({ goalMl = 2000 }) {
   }, []);
 
   return (
-    <div className="bg-panel border border-line rounded-2xl p-4 shadow-card">
+    <Card radius="lg">
       <div className="flex items-center justify-between gap-2 mb-3">
         <div className="flex items-center gap-2">
           <span className="text-lg leading-none" aria-hidden="true">
@@ -111,6 +112,6 @@ export function WaterTrackerCard({ goalMl = 2000 }) {
           </button>
         ))}
       </div>
-    </div>
+    </Card>
   );
 }

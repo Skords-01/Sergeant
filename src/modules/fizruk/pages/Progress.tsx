@@ -16,6 +16,7 @@ import {
   FIZRUK_RESET_KEYS,
 } from "../lib/fizrukStorage";
 import { epley1rm, weeklyVolumeSeriesNow } from "../lib/workoutStats";
+import { Card } from "@shared/components/ui/Card";
 
 function weekStartMs(d) {
   const x = new Date(d);
@@ -347,14 +348,14 @@ export function Progress() {
 
         {/* Weekly volume chart */}
         {(workouts || []).some((w) => w.endedAt) && (
-          <div className="bg-panel border border-line rounded-2xl p-5 shadow-card">
+          <Card radius="lg" padding="lg">
             <WeeklyVolumeChart volumeKg={weekly.volumeKg} />
-          </div>
+          </Card>
         )}
 
         {/* Cross-module activity */}
         {hasPushupData && (
-          <div className="bg-panel border border-line rounded-2xl p-4 shadow-card">
+          <Card radius="lg">
             <div className="text-xs font-bold text-subtle uppercase tracking-widest mb-3">
               Активність з інших модулів
             </div>
@@ -397,12 +398,12 @@ export function Progress() {
                 </div>
               </div>
             </div>
-          </div>
+          </Card>
         )}
 
         {/* Weight + fat cards */}
         <div className="grid grid-cols-2 gap-3">
-          <div className="bg-panel border border-line rounded-2xl p-4 shadow-card">
+          <Card radius="lg">
             <div className="text-2xs font-bold text-subtle uppercase tracking-widest">
               Вага
             </div>
@@ -428,8 +429,8 @@ export function Progress() {
                 </span>
               )}
             </div>
-          </div>
-          <div className="bg-panel border border-line rounded-2xl p-4 shadow-card">
+          </Card>
+          <Card radius="lg">
             <div className="text-2xs font-bold text-subtle uppercase tracking-widest">
               % жиру
             </div>
@@ -455,12 +456,12 @@ export function Progress() {
                 </span>
               )}
             </div>
-          </div>
+          </Card>
         </div>
 
         {/* Weight trend chart */}
         {weightTrend.filter((d) => d.value != null).length >= 2 && (
-          <div className="bg-panel border border-line rounded-2xl p-4 shadow-card">
+          <Card radius="lg">
             <div className="text-xs font-bold text-subtle uppercase tracking-widest mb-3">
               Тренд ваги
             </div>
@@ -470,12 +471,12 @@ export function Progress() {
               color="rgb(22 163 74)"
               metricLabel="вагу тіла"
             />
-          </div>
+          </Card>
         )}
 
         {/* Body fat trend chart */}
         {fatTrend.filter((d) => d.value != null).length >= 2 && (
-          <div className="bg-panel border border-line rounded-2xl p-4 shadow-card">
+          <Card radius="lg">
             <div className="text-xs font-bold text-subtle uppercase tracking-widest mb-3">
               Тренд % жиру
             </div>
@@ -485,21 +486,21 @@ export function Progress() {
               color="rgb(234 179 8)"
               metricLabel="відсоток жиру"
             />
-          </div>
+          </Card>
         )}
 
         {/* Wellbeing chart */}
         {wellbeingData.length >= 2 && (
-          <div className="bg-panel border border-line rounded-2xl p-4 shadow-card">
+          <Card radius="lg">
             <div className="text-xs font-bold text-subtle uppercase tracking-widest mb-3">
               Самопочуття
             </div>
             <WellbeingChart data={wellbeingData} />
-          </div>
+          </Card>
         )}
 
         {/* Muscle volume bars */}
-        <div className="bg-panel border border-line rounded-2xl p-5 shadow-card">
+        <Card radius="lg" padding="lg">
           <div className="text-xs font-bold text-subtle uppercase tracking-widest mb-3">
             Обʼєм по мʼязах
           </div>
@@ -531,7 +532,7 @@ export function Progress() {
               ))}
             </div>
           )}
-        </div>
+        </Card>
 
         {/* PR Board */}
         {(() => {
@@ -544,7 +545,7 @@ export function Progress() {
               : prs.filter((p) => p.muscleGroup === prFilter);
           const MEDALS = ["🥇", "🥈", "🥉"];
           return (
-            <div className="bg-panel border border-line rounded-2xl p-5 shadow-card">
+            <Card radius="lg" padding="lg">
               <div className="flex items-center justify-between gap-2 mb-3">
                 <div className="text-xs font-bold text-subtle uppercase tracking-widest">
                   Рекорди (PR) · {prs.length}
@@ -659,12 +660,12 @@ export function Progress() {
                   })}
                 </div>
               )}
-            </div>
+            </Card>
           );
         })()}
 
         {/* Data management */}
-        <div className="bg-panel border border-line rounded-2xl p-5 shadow-card">
+        <Card radius="lg" padding="lg">
           <div className="text-xs font-bold text-subtle uppercase tracking-widest mb-3">
             Дані
           </div>
@@ -714,7 +715,7 @@ export function Progress() {
           <div className="text-[11px] text-subtle/70 mt-2">
             Порада: роби експорт перед великими змінами/оновленнями.
           </div>
-        </div>
+        </Card>
       </div>
 
       <ConfirmDialog

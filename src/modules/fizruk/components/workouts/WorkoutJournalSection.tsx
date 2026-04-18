@@ -6,6 +6,7 @@ import { EmptyState } from "@shared/components/ui/EmptyState";
 import { ActiveWorkoutPanel } from "../workouts/ActiveWorkoutPanel";
 import { SwipeToAction } from "@shared/components/ui/SwipeToAction";
 import { SectionErrorBoundary } from "@shared/components/ui/SectionErrorBoundary.jsx";
+import { Card } from "@shared/components/ui/Card";
 
 function WorkoutRow({ w, activeWorkoutId, setActiveWorkoutId }) {
   // An ended workout is always "Завершене" — even if it happens to be the
@@ -191,7 +192,7 @@ export function WorkoutJournalSection({
         </SectionErrorBoundary>
       )}
 
-      <div className="bg-panel border border-line rounded-2xl shadow-card overflow-hidden">
+      <Card radius="lg" padding="none" className="overflow-hidden">
         <div className="px-4 py-3 bg-panelHi/60 border-b border-line flex items-center justify-between gap-2">
           <div className="text-xs font-bold text-subtle uppercase tracking-widest">
             Останні тренування
@@ -296,7 +297,7 @@ export function WorkoutJournalSection({
             )}
           />
         )}
-      </div>
+      </Card>
     </div>
   );
 }

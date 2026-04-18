@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { habitCompletionRate } from "../lib/streaks.js";
+import { Card } from "@shared/components/ui/Card";
 
 export function HabitLeadersBlock({ habits, completions }) {
   const { best, worst } = useMemo(() => {
@@ -27,7 +28,7 @@ export function HabitLeadersBlock({ habits, completions }) {
   if (!best) return null;
 
   return (
-    <div className="bg-panel border border-line rounded-2xl p-4 shadow-card">
+    <Card radius="lg">
       <p className="text-xs font-bold text-subtle uppercase tracking-widest mb-3">
         Лідери та аутсайдери (30 днів)
       </p>
@@ -58,6 +59,6 @@ export function HabitLeadersBlock({ habits, completions }) {
           </div>
         )}
       </div>
-    </div>
+    </Card>
   );
 }

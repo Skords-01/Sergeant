@@ -12,6 +12,7 @@ import {
   makeDefaultWarmup,
   makeDefaultCooldown,
 } from "../../hooks/useWorkouts";
+import { Card } from "@shared/components/ui/Card";
 
 function uid(prefix = "id") {
   return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
@@ -752,7 +753,7 @@ export function ActiveWorkoutPanel({
   if (!activeWorkout) return null;
 
   return (
-    <div className="bg-panel border border-line rounded-2xl p-4 shadow-card">
+    <Card radius="lg">
       <div className="flex items-center justify-between gap-2">
         <div>
           <div className="text-sm font-bold text-text">
@@ -935,6 +936,6 @@ export function ActiveWorkoutPanel({
           />
         </div>
       )}
-    </div>
+    </Card>
   );
 }

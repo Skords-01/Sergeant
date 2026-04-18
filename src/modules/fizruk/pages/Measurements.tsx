@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { cn } from "@shared/lib/cn";
 import { EmptyState } from "@shared/components/ui/EmptyState";
 import { MEASURE_FIELDS, useMeasurements } from "../hooks/useMeasurements";
+import { Card } from "@shared/components/ui/Card";
 
 const inp =
   "w-full h-11 rounded-2xl border border-line bg-panelHi px-4 text-text outline-none focus:border-muted transition-colors";
@@ -105,7 +106,7 @@ export function Measurements() {
           </div>
         </div>
 
-        <div className="bg-panel border border-line rounded-2xl p-4 shadow-card">
+        <Card radius="lg">
           <div className="text-xs font-bold text-subtle uppercase tracking-widest mb-3">
             Додати замір
           </div>
@@ -146,10 +147,10 @@ export function Measurements() {
               Зберегти замір
             </button>
           </div>
-        </div>
+        </Card>
 
         {latest && (
-          <div className="bg-panel border border-line rounded-2xl p-4 shadow-card">
+          <Card radius="lg">
             <div className="flex items-center justify-between">
               <div>
                 <div className="text-xs font-bold text-subtle uppercase tracking-widest">
@@ -192,10 +193,10 @@ export function Measurements() {
                 </div>
               ))}
             </div>
-          </div>
+          </Card>
         )}
 
-        <div className="bg-panel border border-line rounded-2xl shadow-card overflow-hidden">
+        <Card radius="lg" padding="none" className="overflow-hidden">
           <div className="px-4 py-3 bg-panelHi/60 border-b border-line">
             <div className="text-xs font-bold text-subtle uppercase tracking-widest">
               Історія
@@ -239,7 +240,7 @@ export function Measurements() {
               description="Додай перший запис, щоб бачити динаміку показників."
             />
           )}
-        </div>
+        </Card>
       </div>
     </div>
   );

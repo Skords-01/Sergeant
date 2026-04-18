@@ -4,6 +4,7 @@ import { EmptyState } from "@shared/components/ui/EmptyState";
 import { useExerciseCatalog } from "../hooks/useExerciseCatalog";
 import { useWorkouts } from "../hooks/useWorkouts";
 import { epley1rm, suggestNextSet } from "../lib/workoutStats";
+import { Card } from "@shared/components/ui/Card";
 
 function fmt(n, digits = 0) {
   const x = Number(n);
@@ -44,7 +45,7 @@ const CALC_ZONES = [
 
 function LoadCalculator({ oneRM }) {
   return (
-    <div className="bg-panel border border-line rounded-2xl p-4 shadow-card">
+    <Card radius="lg">
       <div className="flex items-baseline justify-between gap-2 mb-3">
         <div className="text-xs font-bold text-subtle uppercase tracking-widest">
           Калькулятор навантаження
@@ -92,7 +93,7 @@ function LoadCalculator({ oneRM }) {
       <p className="text-3xs text-muted mt-2 text-center">
         Ваги округлені до найближчих 2.5 кг
       </p>
-    </div>
+    </Card>
   );
 }
 
@@ -439,7 +440,7 @@ export function Exercise({ exerciseId }) {
         )}
 
         <div className="grid grid-cols-2 gap-3">
-          <div className="bg-panel border border-line rounded-2xl p-4 shadow-card">
+          <Card radius="lg">
             <div className="text-2xs font-bold text-subtle uppercase tracking-widest">
               Особистий рекорд
             </div>
@@ -460,8 +461,8 @@ export function Exercise({ exerciseId }) {
                 })}
               </div>
             )}
-          </div>
-          <div className="bg-panel border border-line rounded-2xl p-4 shadow-card">
+          </Card>
+          <Card radius="lg">
             <div className="text-2xs font-bold text-subtle uppercase tracking-widest">
               Наступного разу
             </div>
@@ -483,11 +484,11 @@ export function Exercise({ exerciseId }) {
                 {`зараз: ${best.lastTop.weightKg ?? 0} × ${best.lastTop.reps ?? 0}`}
               </div>
             )}
-          </div>
+          </Card>
         </div>
 
         {hasStrength && (
-          <div className="bg-panel border border-line rounded-2xl p-4 shadow-card">
+          <Card radius="lg">
             <div className="text-xs font-bold text-subtle uppercase tracking-widest mb-3">
               Прогресія 1RM (за тижнями)
             </div>
@@ -497,11 +498,11 @@ export function Exercise({ exerciseId }) {
               unit="кг"
               color="rgb(22 163 74)"
             />
-          </div>
+          </Card>
         )}
 
         {hasStrength && (
-          <div className="bg-panel border border-line rounded-2xl p-4 shadow-card">
+          <Card radius="lg">
             <div className="text-xs font-bold text-subtle uppercase tracking-widest mb-3">
               Обʼєм тренування (кг × повтори, за тижнями)
             </div>
@@ -511,11 +512,11 @@ export function Exercise({ exerciseId }) {
               unit="кг"
               color="rgb(99 102 241)"
             />
-          </div>
+          </Card>
         )}
 
         {hasCardio && (
-          <div className="bg-panel border border-line rounded-2xl p-4 shadow-card">
+          <Card radius="lg">
             <div className="text-xs font-bold text-subtle uppercase tracking-widest mb-3">
               Темп (хв/км) — кардіо
             </div>
@@ -528,11 +529,11 @@ export function Exercise({ exerciseId }) {
             <div className="text-2xs text-subtle mt-1">
               Менше — краще (швидший темп)
             </div>
-          </div>
+          </Card>
         )}
 
         {hasCardio && (
-          <div className="bg-panel border border-line rounded-2xl p-4 shadow-card">
+          <Card radius="lg">
             <div className="text-xs font-bold text-subtle uppercase tracking-widest mb-3">
               Дистанція (км) — кардіо
             </div>
@@ -542,12 +543,12 @@ export function Exercise({ exerciseId }) {
               unit="км"
               color="rgb(6 182 212)"
             />
-          </div>
+          </Card>
         )}
 
         {best.best1rm > 0 && <LoadCalculator oneRM={best.best1rm} />}
 
-        <div className="bg-panel border border-line rounded-2xl p-5 shadow-card">
+        <Card radius="lg" padding="lg">
           <div className="text-xs font-bold text-subtle uppercase tracking-widest mb-3">
             Історія сетів
           </div>
@@ -628,7 +629,7 @@ export function Exercise({ exerciseId }) {
               Перейти до журналу
             </button>
           </div>
-        </div>
+        </Card>
       </div>
     </div>
   );

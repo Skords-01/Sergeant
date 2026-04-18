@@ -1,4 +1,5 @@
 import { CANONICAL_TO_MANUAL_LABEL } from "../../domain/personalization";
+import { Card } from "@shared/components/ui/Card";
 
 /**
  * Квікадд-картка: топ-категорії + «нещодавнє». Показуємо лише коли
@@ -14,7 +15,7 @@ export function QuickAddCard({
     return null;
 
   return (
-    <div className="bg-panel border border-line rounded-2xl p-5 shadow-card space-y-3">
+    <Card radius="lg" padding="lg" className="space-y-3">
       <div className="flex items-center justify-between">
         <div>
           <div className="text-[11px] font-semibold uppercase tracking-wide text-subtle">
@@ -77,6 +78,6 @@ export function QuickAddCard({
           </div>
         </div>
       )}
-    </div>
+    </Card>
   );
 }

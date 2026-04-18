@@ -1,5 +1,6 @@
 import { memo } from "react";
 import { Button } from "@shared/components/ui/Button";
+import { Card } from "@shared/components/ui/Card";
 
 const formInp =
   "w-full h-10 rounded-xl border border-line bg-bg px-3 text-sm text-text outline-none focus:border-primary";
@@ -19,7 +20,7 @@ function GoalBudgetCardComponent({
   onDelete,
 }) {
   return (
-    <div className="bg-panel border border-line rounded-2xl p-5 shadow-card">
+    <Card radius="lg" padding="lg">
       {isEditing ? (
         <div className="space-y-2">
           <input
@@ -83,7 +84,7 @@ function GoalBudgetCardComponent({
           </div>
         </>
       )}
-    </div>
+    </Card>
   );
 }
 

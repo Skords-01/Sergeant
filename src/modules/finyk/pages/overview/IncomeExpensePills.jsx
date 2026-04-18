@@ -1,3 +1,4 @@
+import { Card } from "@shared/components/ui/Card";
 /**
  * Пара карток «Дохід» / «Витрати» під Hero-ом. Стрілки з inline-SVG лишаємо
  * тут — це декоративні іконки конкретні для цієї секції.
@@ -5,7 +6,7 @@
 export function IncomeExpensePills({ income, spent, showBalance = true }) {
   return (
     <div className="grid grid-cols-2 gap-3">
-      <div className="bg-panel border border-line rounded-2xl p-4 shadow-card">
+      <Card radius="lg">
         <div className="flex items-center gap-2 text-emerald-600">
           <svg
             width="16"
@@ -29,8 +30,8 @@ export function IncomeExpensePills({ income, spent, showBalance = true }) {
             : "••••"}{" "}
           <span className="text-base font-medium text-muted">₴</span>
         </p>
-      </div>
-      <div className="bg-panel border border-line rounded-2xl p-4 shadow-card">
+      </Card>
+      <Card radius="lg">
         <div className="flex items-center gap-2 text-red-500">
           <svg
             width="16"
@@ -54,7 +55,7 @@ export function IncomeExpensePills({ income, spent, showBalance = true }) {
             : "••••"}{" "}
           <span className="text-base font-medium text-muted">₴</span>
         </p>
-      </div>
+      </Card>
     </div>
   );
 }

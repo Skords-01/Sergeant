@@ -17,6 +17,7 @@ import {
   workoutDurationSec,
 } from "../lib/workoutStats";
 import { ACTIVE_WORKOUT_KEY } from "../lib/workoutUi";
+import { Card } from "@shared/components/ui/Card";
 
 const SELECTED_TEMPLATE_KEY = "fizruk_selected_template_id_v1";
 
@@ -666,7 +667,7 @@ export function Dashboard({
           ))}
         </div>
 
-        <div className="bg-panel border border-line rounded-2xl p-5 shadow-card">
+        <Card radius="lg" padding="lg">
           <div className="flex items-center justify-between gap-2 mb-3">
             <div className="text-xs font-medium text-subtle">
               План на сьогодні
@@ -790,7 +791,7 @@ export function Dashboard({
               Журнал
             </Button>
           </div>
-        </div>
+        </Card>
       </div>
 
       {planConfirmOpen && (

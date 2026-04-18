@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { Input } from "@shared/components/ui/Input";
 import { Button } from "@shared/components/ui/Button";
+import { Card } from "@shared/components/ui/Card";
 
 function uid(prefix = "g") {
   return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
@@ -147,7 +148,7 @@ export function WorkoutTemplatesSection({
       )}
 
       {editingId && (
-        <div className="bg-panel border border-line rounded-2xl p-4 shadow-card space-y-3">
+        <Card radius="lg" className="space-y-3">
           <Input
             placeholder="Назва (за замовчуванням — «Мій шаблон»)"
             value={name}
@@ -351,10 +352,10 @@ export function WorkoutTemplatesSection({
               Скасувати
             </Button>
           </div>
-        </div>
+        </Card>
       )}
 
-      <div className="bg-panel border border-line rounded-2xl shadow-card overflow-hidden">
+      <Card radius="lg" padding="none" className="overflow-hidden">
         <div className="px-4 py-3 bg-panelHi/60 border-b border-line">
           <div className="text-xs font-bold text-subtle uppercase tracking-widest">
             Збережені шаблони
@@ -417,7 +418,7 @@ export function WorkoutTemplatesSection({
             </div>
           ))
         )}
-      </div>
+      </Card>
     </div>
   );
 }

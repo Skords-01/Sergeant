@@ -1,5 +1,6 @@
 import { BodyAtlas } from "../components/BodyAtlas";
 import { useRecovery } from "../hooks/useRecovery";
+import { Card } from "@shared/components/ui/Card";
 
 export function Atlas() {
   const rec = useRecovery();
@@ -74,13 +75,13 @@ export function Atlas() {
           </div>
         </section>
 
-        <div className="bg-panel border border-line rounded-2xl p-5 shadow-card">
+        <Card radius="lg" padding="lg">
           <BodyAtlas
             statusByMuscle={statusByMuscle}
             height={520}
             showLegend={false}
           />
-        </div>
+        </Card>
       </div>
     </div>
   );

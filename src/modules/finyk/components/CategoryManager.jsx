@@ -3,6 +3,7 @@ import { Button } from "@shared/components/ui/Button";
 import { Input } from "@shared/components/ui/Input";
 import { ConfirmDialog } from "@shared/components/ui/ConfirmDialog";
 import { cn } from "@shared/lib/cn";
+import { Card } from "@shared/components/ui/Card";
 
 const PRESET_COLORS = [
   "#10b981",
@@ -308,7 +309,7 @@ export function CategoryManager({
       </div>
 
       {showForm ? (
-        <div className="bg-panel border border-line rounded-2xl p-4 shadow-card">
+        <Card radius="lg">
           <div className="text-sm font-semibold text-text mb-3">
             Нова категорія
           </div>
@@ -324,7 +325,7 @@ export function CategoryManager({
             }}
             onCancel={() => setShowForm(false)}
           />
-        </div>
+        </Card>
       ) : (
         <button
           type="button"

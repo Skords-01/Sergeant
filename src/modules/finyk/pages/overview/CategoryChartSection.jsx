@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { CategoryChart } from "../../components/charts/lazy";
 import { ChartFallback } from "../../components/charts/ChartFallback";
 import { EmptyState } from "@shared/components/ui/EmptyState";
+import { Card } from "@shared/components/ui/Card";
 
 /**
  * «Витрати за категоріями». Відмальовує chart якщо є дані, або empty-state
@@ -14,7 +15,7 @@ export function CategoryChartSection({
 }) {
   if (catSpends.length > 0) {
     return (
-      <div className="bg-panel border border-line rounded-2xl p-5 shadow-card">
+      <Card radius="lg" padding="lg">
         <div className="text-xs font-medium text-subtle mb-4">
           Витрати за категоріями
         </div>
@@ -31,7 +32,7 @@ export function CategoryChartSection({
             }
           />
         </Suspense>
-      </div>
+      </Card>
     );
   }
 

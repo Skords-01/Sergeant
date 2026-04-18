@@ -33,6 +33,7 @@ import { CategorySelector } from "../components/CategorySelector.jsx";
 import { CategoryManager } from "../components/CategoryManager.jsx";
 import { readJSON, writeJSON } from "../lib/finykStorage.js";
 import { trackEvent, ANALYTICS_EVENTS } from "../../../core/analytics";
+import { Card } from "@shared/components/ui/Card";
 
 const formInp =
   "w-full h-10 rounded-xl border border-line bg-bg px-3 text-sm text-text outline-none focus:border-primary";
@@ -757,7 +758,7 @@ export function Budgets({ mono, storage }) {
         })}
 
         {showForm ? (
-          <div className="bg-panel border border-line rounded-2xl p-5 shadow-card space-y-3">
+          <Card radius="lg" padding="lg" className="space-y-3">
             <div className="flex gap-2">
               <button
                 onClick={() => {
@@ -893,7 +894,7 @@ export function Budgets({ mono, storage }) {
                 Скасувати
               </Button>
             </div>
-          </div>
+          </Card>
         ) : (
           <button
             onClick={() => setShowForm(true)}
@@ -904,7 +905,7 @@ export function Budgets({ mono, storage }) {
         )}
 
         {/* Category manager — collapsible at bottom so it never shifts other sections */}
-        <div className="bg-panel border border-line rounded-2xl shadow-card overflow-hidden">
+        <Card radius="lg" padding="none" className="overflow-hidden">
           <button
             type="button"
             onClick={() => setShowCategories((v) => !v)}
@@ -931,7 +932,7 @@ export function Budgets({ mono, storage }) {
               />
             </div>
           )}
-        </div>
+        </Card>
       </div>
     </div>
   );

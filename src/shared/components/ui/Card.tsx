@@ -37,13 +37,23 @@ export type CardVariant =
 
 export type CardPadding = "none" | "sm" | "md" | "lg" | "xl";
 
+export type CardRadius = "md" | "lg" | "xl";
+
+const radii: Record<CardRadius, string> = {
+  md: "rounded-xl",
+  lg: "rounded-2xl",
+  xl: "rounded-3xl",
+};
+
+// Core variants omit the radius class — it's controlled by the `radius` prop.
+// Module (branded) variants bake rounded-3xl into their class string for hero surfaces.
 const variants: Record<CardVariant, string> = {
-  default: "bg-panel border border-line rounded-3xl shadow-card",
+  default: "bg-panel border border-line shadow-card",
   interactive:
-    "bg-panel border border-line rounded-3xl shadow-card transition-all duration-200 ease-smooth hover:shadow-float hover:-translate-y-0.5 active:scale-[0.99] cursor-pointer",
-  flat: "bg-panel border border-line rounded-3xl",
-  elevated: "bg-panel border border-line rounded-3xl shadow-float",
-  ghost: "bg-transparent border border-transparent rounded-3xl",
+    "bg-panel border border-line shadow-card transition-all duration-200 ease-smooth hover:shadow-float hover:-translate-y-0.5 active:scale-[0.99] cursor-pointer",
+  flat: "bg-panel border border-line",
+  elevated: "bg-panel border border-line shadow-float",
+  ghost: "bg-transparent border border-transparent",
 
   // Module hero cards — branded surface in light, subtle tinted panel in dark.
   finyk:
@@ -77,25 +87,42 @@ const paddings: Record<CardPadding, string> = {
 export interface CardProps extends HTMLAttributes<HTMLElement> {
   variant?: CardVariant;
   padding?: CardPadding;
+  radius?: CardRadius;
   as?: ElementType;
   children?: ReactNode;
 }
+
+const CORE_VARIANTS: ReadonlySet<CardVariant> = new Set([
+  "default",
+  "interactive",
+  "flat",
+  "elevated",
+  "ghost",
+]);
 
 export const Card = forwardRef<HTMLElement, CardProps>(function Card(
   {
     className,
     variant = "default",
     padding = "md",
+    radius = "xl",
     as: Component = "div",
     children,
     ...props
   },
   ref,
 ) {
+  // Module (branded) variants bake their own radius for hero treatment.
+  const radiusClass = CORE_VARIANTS.has(variant) ? radii[radius] : "";
   return (
     <Component
       ref={ref}
-      className={cn(variants[variant], paddings[padding], className)}
+      className={cn(
+        variants[variant],
+        radiusClass,
+        paddings[padding],
+        className,
+      )}
       {...props}
     >
       {children}

@@ -1,6 +1,7 @@
 import { useState, type ChangeEvent, type ReactNode } from "react";
 import { cn } from "@shared/lib/cn";
 import { Icon } from "@shared/components/ui/Icon";
+import { Card } from "@shared/components/ui/Card";
 
 export interface ChevronIconProps {
   expanded: boolean;
@@ -34,7 +35,7 @@ export function SettingsGroup({
 }: SettingsGroupProps) {
   const [open, setOpen] = useState<boolean>(defaultOpen);
   return (
-    <div className="rounded-2xl border border-line bg-panel shadow-card overflow-hidden">
+    <Card radius="lg" padding="none" className="overflow-hidden">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
@@ -56,7 +57,7 @@ export function SettingsGroup({
           <div className="border-t border-line p-4 space-y-5">{children}</div>
         </div>
       </div>
-    </div>
+    </Card>
   );
 }
 

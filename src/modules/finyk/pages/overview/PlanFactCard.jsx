@@ -1,4 +1,5 @@
 import { cn } from "@shared/lib/cn";
+import { Card } from "@shared/components/ui/Card";
 
 /**
  * Картка «План / Факт» — показує planIncome/planExpense/planSavings поряд з
@@ -16,7 +17,7 @@ export function PlanFactCard({
   if (!(planIncome > 0 || planExpense > 0 || planSavings > 0)) return null;
 
   return (
-    <div className="bg-panel border border-line rounded-2xl p-5 shadow-card">
+    <Card radius="lg" padding="lg">
       <div className="text-xs font-medium text-subtle mb-3">План / Факт</div>
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1.5">
@@ -52,6 +53,6 @@ export function PlanFactCard({
           </div>
         </div>
       </div>
-    </div>
+    </Card>
   );
 }

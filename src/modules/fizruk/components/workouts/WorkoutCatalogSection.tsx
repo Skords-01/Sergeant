@@ -1,6 +1,7 @@
 import { Input } from "@shared/components/ui/Input";
 import { EmptyState } from "@shared/components/ui/EmptyState";
 import { cn } from "@shared/lib/cn";
+import { Card } from "@shared/components/ui/Card";
 
 export function WorkoutCatalogSection({
   mode,
@@ -40,7 +41,7 @@ export function WorkoutCatalogSection({
         </p>
       )}
 
-      <div className="bg-panel border border-line rounded-2xl shadow-card overflow-hidden">
+      <Card radius="lg" padding="none" className="overflow-hidden">
         {grouped.length === 0 ? (
           <EmptyState
             compact
@@ -139,7 +140,7 @@ export function WorkoutCatalogSection({
             );
           })
         )}
-      </div>
+      </Card>
     </>
   );
 }
