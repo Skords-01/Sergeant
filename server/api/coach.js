@@ -3,9 +3,10 @@ import { getSessionUser } from "../auth.js";
 import { assertAiQuota } from "../aiQuota.js";
 import { setCorsHeaders } from "./lib/cors.js";
 import { setRequestModule } from "../obs/requestContext.js";
-import { aiTokensTotal, externalHttpRequestsTotal } from "../obs/metrics.js";
-
-const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
+import {
+  anthropicMessages,
+  extractAnthropicText,
+} from "./nutrition/lib/anthropicFetch.js";
 
 async function getMemory(userId) {
   const result = await pool.query(
@@ -224,69 +225,23 @@ ${snapshotText}
 
 Відповідай ТІЛЬКИ текстом повідомлення, без вітань, без підписів, без лапок.`;
 
-    const aiRes = await fetch(ANTHROPIC_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
+    const { response: aiRes, data: aiData } = await anthropicMessages(
+      apiKey,
+      {
         model: "claude-sonnet-4-6",
         max_tokens: 300,
         messages: [{ role: "user", content: systemPrompt }],
-      }),
-    });
+      },
+      { timeoutMs: 20000, endpoint: "coach-insight" },
+    );
 
-    const aiData = await aiRes.json();
-    if (!aiRes.ok) {
-      try {
-        externalHttpRequestsTotal.inc({
-          upstream: "anthropic",
-          outcome: aiRes.status === 429 ? "rate_limited" : "error",
-        });
-      } catch {
-        /* ignore */
-      }
+    if (!aiRes?.ok) {
       return res
-        .status(aiRes.status)
+        .status(aiRes?.status || 500)
         .json({ error: aiData?.error?.message || "AI error" });
     }
 
-    try {
-      externalHttpRequestsTotal.inc({ upstream: "anthropic", outcome: "ok" });
-      const usage = aiData?.usage;
-      if (usage) {
-        if (Number.isFinite(usage.input_tokens)) {
-          aiTokensTotal.inc(
-            {
-              provider: "anthropic",
-              model: "claude-sonnet-4-6",
-              kind: "prompt",
-            },
-            usage.input_tokens,
-          );
-        }
-        if (Number.isFinite(usage.output_tokens)) {
-          aiTokensTotal.inc(
-            {
-              provider: "anthropic",
-              model: "claude-sonnet-4-6",
-              kind: "completion",
-            },
-            usage.output_tokens,
-          );
-        }
-      }
-    } catch {
-      /* ignore */
-    }
-
-    const text = (aiData?.content || [])
-      .filter((b) => b.type === "text")
-      .map((b) => b.text)
-      .join("")
-      .trim();
+    const text = extractAnthropicText(aiData);
 
     return res.json({ ok: true, insight: text });
   }

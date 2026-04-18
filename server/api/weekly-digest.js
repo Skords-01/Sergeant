@@ -1,6 +1,10 @@
 import { assertAiQuota } from "../aiQuota.js";
 import { setCorsHeaders } from "./lib/cors.js";
 import { setRequestModule } from "../obs/requestContext.js";
+import {
+  anthropicMessages,
+  extractAnthropicText,
+} from "./nutrition/lib/anthropicFetch.js";
 
 function extractJsonObject(raw) {
   if (typeof raw !== "string") return null;
@@ -173,32 +177,24 @@ ${habitsInfo}`);
 ДАНІ:
 ${dataContext}`;
 
-    const aiRes = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
+    const { response: aiRes, data: aiData } = await anthropicMessages(
+      apiKey,
+      {
         model: "claude-sonnet-4-6",
         max_tokens: 2500,
         system: systemPrompt,
         messages: [{ role: "user", content: userPrompt }],
-      }),
-    });
+      },
+      { timeoutMs: 45000, endpoint: "weekly-digest" },
+    );
 
-    const aiData = await aiRes.json();
-    if (!aiRes.ok) {
+    if (!aiRes?.ok) {
       return res
-        .status(aiRes.status)
+        .status(aiRes?.status || 500)
         .json({ error: aiData?.error?.message || "AI error" });
     }
 
-    const text = (aiData?.content || [])
-      .filter((b) => b.type === "text")
-      .map((b) => b.text)
-      .join("\n");
+    const text = extractAnthropicText(aiData);
 
     const report = extractJsonObject(text);
     if (!report) {

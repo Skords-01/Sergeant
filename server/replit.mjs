@@ -85,8 +85,11 @@ app.get("/readyz", createReadyzHandler(pool));
 app.get("/health", createReadyzHandler(pool));
 app.get("/metrics", metricsHandler);
 
-app.use("/api/auth", authSensitiveRateLimit);
+// authMetricsMiddleware має реєструватись ПЕРЕД rate-limiter-ом — він лише
+// чіпляє `res.on("finish")` і викликає next(), а коли limiter короткозамикає
+// запит (429 без next()), listener усе одно спрацює на завершенні відповіді.
 app.use("/api/auth", authMetricsMiddleware);
+app.use("/api/auth", authSensitiveRateLimit);
 app.all("/api/auth/*", toNodeHandler(auth));
 
 app.use(

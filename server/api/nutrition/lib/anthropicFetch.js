@@ -130,6 +130,66 @@ export async function anthropicMessages(
   return { response: lastResponse, data: lastData };
 }
 
+/**
+ * Стрімова версія Anthropic Messages API. Викликає fetch з `stream: true`,
+ * інструментує outcome/latency (розмір відповіді = час до закриття з'єднання),
+ * і повертає `{ response, recordStreamEnd }`. Викликай `recordStreamEnd(outcome?)`
+ * коли боді повністю спожите (або з помилкою) щоб закрити latency-вимір.
+ */
+export async function anthropicMessagesStream(
+  apiKey,
+  payload,
+  { endpoint = "unknown", timeoutMs = 60000 } = {},
+) {
+  const model = payload?.model || "unknown";
+  const start = process.hrtime.bigint();
+  const controller = new AbortController();
+  const t = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(ANTHROPIC_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({ ...payload, stream: true }),
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      const ms = Number(process.hrtime.bigint() - start) / 1e6;
+      recordOutcome(response.status === 429 ? "rate_limited" : "error", {
+        model,
+        endpoint,
+        ms,
+      });
+      return { response, recordStreamEnd: () => {} };
+    }
+
+    let settled = false;
+    const recordStreamEnd = (outcome = "ok") => {
+      if (settled) return;
+      settled = true;
+      const ms = Number(process.hrtime.bigint() - start) / 1e6;
+      recordOutcome(outcome, { model, endpoint, ms });
+    };
+
+    return { response, recordStreamEnd };
+  } catch (e) {
+    const ms = Number(process.hrtime.bigint() - start) / 1e6;
+    recordOutcome(isAbortError(e) ? "timeout" : "error", {
+      model,
+      endpoint,
+      ms,
+    });
+    throw e;
+  } finally {
+    clearTimeout(t);
+  }
+}
+
 export function extractAnthropicText(data) {
   return (data?.content || [])
     .filter((b) => b.type === "text")
