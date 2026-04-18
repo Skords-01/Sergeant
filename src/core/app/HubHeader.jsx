@@ -20,7 +20,9 @@ export function HubHeader({
   return (
     <header className="px-5 pt-10 pb-2 max-w-lg mx-auto w-full flex items-start justify-between">
       <div>
-        <h1 className="text-3xl font-bold text-text tracking-tight">Мій простір</h1>
+        <h1 className="text-3xl font-bold text-text tracking-tight">
+          Мій простір
+        </h1>
         <p className="text-sm text-muted mt-1">
           {hubView === "reports"
             ? "Звіти та статистика"

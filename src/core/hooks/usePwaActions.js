@@ -19,5 +19,10 @@ export function usePwaActions(searchParams) {
 
   const clearPwaAction = useCallback(() => setPwaAction(null), []);
 
-  return { pwaAction, setPwaAction, clearPwaAction, validActions: VALID_ACTIONS };
+  return {
+    pwaAction,
+    setPwaAction,
+    clearPwaAction,
+    validActions: VALID_ACTIONS,
+  };
 }

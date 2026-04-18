@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -9,6 +10,17 @@ import { ErrorBoundary } from "./core/ErrorBoundary.jsx";
 import { initSentry } from "./core/sentry.js";
 
 const queryClient = createAppQueryClient();
+
+// react-query devtools are only useful in development. Lazy-importing keeps
+// them out of the production bundle entirely — the tree-shaker can drop the
+// import expression when `import.meta.env.DEV` is statically `false`.
+const ReactQueryDevtools = import.meta.env.DEV
+  ? lazy(() =>
+      import("@tanstack/react-query-devtools").then((m) => ({
+        default: m.ReactQueryDevtools,
+      })),
+    )
+  : null;
 
 storageManager.runAll();
 
@@ -39,6 +51,14 @@ ReactDOM.createRoot(document.getElementById("root")).render(
       <BrowserRouter>
         <App />
       </BrowserRouter>
+      {ReactQueryDevtools ? (
+        <Suspense fallback={null}>
+          <ReactQueryDevtools
+            initialIsOpen={false}
+            buttonPosition="bottom-left"
+          />
+        </Suspense>
+      ) : null}
     </QueryClientProvider>
   </ErrorBoundary>,
 );

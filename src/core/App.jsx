@@ -48,9 +48,11 @@ function AppInner() {
   const [showAuth, setShowAuth] = useState(false);
   const [searchParams] = useSearchParams();
 
-  const { activeModule, openModule, goToHub, moduleAnimClass } = useHubNavigation();
+  const { activeModule, openModule, goToHub, moduleAnimClass } =
+    useHubNavigation();
   const ui = useHubUIState();
-  const { pwaAction, setPwaAction, clearPwaAction, validActions } = usePwaActions(searchParams);
+  const { pwaAction, setPwaAction, clearPwaAction, validActions } =
+    usePwaActions(searchParams);
   const { dark, toggle: toggleDark } = useDarkMode();
   const { canInstall, install, dismiss } = usePwaInstall();
   const { visible: iosVisible, dismiss: iosDismiss } = useIosInstallBanner();
@@ -66,7 +68,8 @@ function AppInner() {
     };
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.addEventListener("message", onMessage);
-      return () => navigator.serviceWorker.removeEventListener("message", onMessage);
+      return () =>
+        navigator.serviceWorker.removeEventListener("message", onMessage);
     }
   }, [openModule]);
 
@@ -88,7 +91,13 @@ function AppInner() {
   }, [openModule, setPwaAction, validActions]);
 
   if (sync.migrationPending) {
-    return <MigrationPrompt onUpload={sync.uploadLocalData} onSkip={sync.skipMigration} syncing={sync.syncing} />;
+    return (
+      <MigrationPrompt
+        onUpload={sync.uploadLocalData}
+        onSkip={sync.skipMigration}
+        syncing={sync.syncing}
+      />
+    );
   }
 
   if (showAuth && !user) {
@@ -97,7 +106,11 @@ function AppInner() {
         <div className="page-enter">
           <AuthPage />
           <div className="fixed bottom-6 left-0 right-0 flex justify-center">
-            <button type="button" onClick={() => setShowAuth(false)} className="text-sm text-muted hover:text-text underline">
+            <button
+              type="button"
+              onClick={() => setShowAuth(false)}
+              className="text-sm text-muted hover:text-text underline"
+            >
               Продовжити без акаунту
             </button>
           </div>
@@ -176,7 +189,17 @@ function AppInner() {
             title="До вибору модуля"
             aria-label="До вибору модуля"
           >
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <svg
+              width="22"
+              height="22"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
               <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
               <polyline points="9 22 9 12 15 12 15 22" />
             </svg>
@@ -185,12 +208,35 @@ function AppInner() {
       )}
 
       <Suspense fallback={<PageLoader />}>
-        <div key={activeModule} className={cn(moduleAnimClass, "h-full flex flex-col")}>
+        <div
+          key={activeModule}
+          className={cn(moduleAnimClass, "h-full flex flex-col")}
+        >
           <ModuleErrorBoundary onBackToHub={goToHub}>
-            {activeModule === "finyk" && <FinykApp onBackToHub={goToHub} pwaAction={pwaAction} onPwaActionConsumed={clearPwaAction} />}
-            {activeModule === "fizruk" && <FizrukApp onBackToHub={goToHub} pwaAction={pwaAction} onPwaActionConsumed={clearPwaAction} />}
-            {activeModule === "routine" && <RoutineApp onBackToHub={goToHub} onOpenModule={openModule} />}
-            {activeModule === "nutrition" && <NutritionApp onBackToHub={goToHub} pwaAction={pwaAction} onPwaActionConsumed={clearPwaAction} />}
+            {activeModule === "finyk" && (
+              <FinykApp
+                onBackToHub={goToHub}
+                pwaAction={pwaAction}
+                onPwaActionConsumed={clearPwaAction}
+              />
+            )}
+            {activeModule === "fizruk" && (
+              <FizrukApp
+                onBackToHub={goToHub}
+                pwaAction={pwaAction}
+                onPwaActionConsumed={clearPwaAction}
+              />
+            )}
+            {activeModule === "routine" && (
+              <RoutineApp onBackToHub={goToHub} onOpenModule={openModule} />
+            )}
+            {activeModule === "nutrition" && (
+              <NutritionApp
+                onBackToHub={goToHub}
+                pwaAction={pwaAction}
+                onPwaActionConsumed={clearPwaAction}
+              />
+            )}
           </ModuleErrorBoundary>
         </div>
       </Suspense>
