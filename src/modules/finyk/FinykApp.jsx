@@ -571,69 +571,74 @@ export default function App({
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
-        {page === "overview" && (
-          <SectionErrorBoundary
-            key="page-overview"
-            title="Не вдалось показати «Огляд»"
-          >
-            <Overview
-              mono={mergedMono}
-              storage={storage}
-              onNavigate={navigate}
-              onCategoryClick={(catId) => {
-                setCategoryFilter(catId);
-                navigate("transactions");
-              }}
-              showBalance={showBalance}
-            />
-          </SectionErrorBoundary>
-        )}
-        {page === "transactions" && (
-          <SectionErrorBoundary
-            key="page-transactions"
-            title="Не вдалось показати «Операції»"
-          >
-            <Transactions
-              mono={mergedMono}
-              storage={storage}
-              showBalance={showBalance}
-              categoryFilter={categoryFilter}
-              onClearCategoryFilter={() => setCategoryFilter(null)}
-              onEditManualExpense={(id) => {
-                setEditingManualExpenseId(String(id));
-                setShowExpenseSheet(true);
-              }}
-            />
-          </SectionErrorBoundary>
-        )}
-        {page === "budgets" && (
-          <SectionErrorBoundary
-            key="page-budgets"
-            title="Не вдалось показати «Планування»"
-          >
-            <Budgets mono={mergedMono} storage={storage} />
-          </SectionErrorBoundary>
-        )}
-        {page === "analytics" && (
-          <SectionErrorBoundary
-            key="page-analytics"
-            title="Не вдалось показати «Аналітику»"
-          >
-            <Analytics mono={mergedMono} storage={storage} />
-          </SectionErrorBoundary>
-        )}
-        {page === "assets" && (
-          <SectionErrorBoundary
-            key="page-assets"
-            title="Не вдалось показати «Активи»"
-          >
-            <Assets
-              mono={mergedMono}
-              storage={storage}
-              showBalance={showBalance}
-            />
-          </SectionErrorBoundary>
-        )}
+        <div
+          key={`page-${page}`}
+          className="flex-1 overflow-hidden flex flex-col min-h-0 motion-safe:animate-fade-in"
+        >
+          {page === "overview" && (
+            <SectionErrorBoundary
+              key="page-overview"
+              title="Не вдалось показати «Огляд»"
+            >
+              <Overview
+                mono={mergedMono}
+                storage={storage}
+                onNavigate={navigate}
+                onCategoryClick={(catId) => {
+                  setCategoryFilter(catId);
+                  navigate("transactions");
+                }}
+                showBalance={showBalance}
+              />
+            </SectionErrorBoundary>
+          )}
+          {page === "transactions" && (
+            <SectionErrorBoundary
+              key="page-transactions"
+              title="Не вдалось показати «Операції»"
+            >
+              <Transactions
+                mono={mergedMono}
+                storage={storage}
+                showBalance={showBalance}
+                categoryFilter={categoryFilter}
+                onClearCategoryFilter={() => setCategoryFilter(null)}
+                onEditManualExpense={(id) => {
+                  setEditingManualExpenseId(String(id));
+                  setShowExpenseSheet(true);
+                }}
+              />
+            </SectionErrorBoundary>
+          )}
+          {page === "budgets" && (
+            <SectionErrorBoundary
+              key="page-budgets"
+              title="Не вдалось показати «Планування»"
+            >
+              <Budgets mono={mergedMono} storage={storage} />
+            </SectionErrorBoundary>
+          )}
+          {page === "analytics" && (
+            <SectionErrorBoundary
+              key="page-analytics"
+              title="Не вдалось показати «Аналітику»"
+            >
+              <Analytics mono={mergedMono} storage={storage} />
+            </SectionErrorBoundary>
+          )}
+          {page === "assets" && (
+            <SectionErrorBoundary
+              key="page-assets"
+              title="Не вдалось показати «Активи»"
+            >
+              <Assets
+                mono={mergedMono}
+                storage={storage}
+                showBalance={showBalance}
+              />
+            </SectionErrorBoundary>
+          )}
+        </div>
       </div>
 
       {(page === "overview" ||
@@ -644,7 +649,7 @@ export default function App({
             setEditingManualExpenseId(null);
             setShowExpenseSheet(true);
           }}
-          className="fixed bottom-[calc(58px+env(safe-area-inset-bottom,0px)+16px)] right-4 w-12 h-12 rounded-full bg-emerald-500 text-white shadow-lg flex items-center justify-center text-2xl hover:bg-emerald-600 active:scale-95 transition-all z-20"
+          className="fixed bottom-[calc(58px+env(safe-area-inset-bottom,0px)+16px)] right-4 w-12 h-12 rounded-full bg-emerald-500 text-white shadow-lg flex items-center justify-center text-2xl hover:bg-emerald-600 hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-200 ease-smooth z-20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-panel"
           aria-label="Додати витрату"
         >
           +
@@ -717,20 +722,20 @@ export default function App({
                 aria-current={active ? "page" : undefined}
                 aria-label={item.label}
                 className={cn(
-                  "relative flex-1 flex flex-col items-center justify-center gap-0.5 transition-all min-h-[48px] focus:outline-none",
+                  "relative flex-1 flex flex-col items-center justify-center gap-0.5 transition-all duration-200 ease-smooth min-h-[48px] active:scale-95 focus:outline-none",
                   active ? "text-emerald-600" : "text-muted hover:text-text",
                 )}
               >
                 {active && (
                   <span
-                    className="absolute top-0 left-1/2 -translate-x-1/2 w-10 h-0.5 rounded-full bg-emerald-500"
+                    className="absolute top-0 left-1/2 -translate-x-1/2 w-10 h-0.5 rounded-full bg-emerald-500 motion-safe:animate-scale-in"
                     aria-hidden
                   />
                 )}
                 <span
                   className={cn(
-                    "flex items-center justify-center w-8 h-6 rounded-lg transition-colors",
-                    active && "bg-emerald-500/12",
+                    "flex items-center justify-center w-8 h-6 rounded-lg transition-all duration-200 ease-smooth",
+                    active && "bg-emerald-500/12 motion-safe:animate-scale-in",
                   )}
                 >
                   {NAV_ICONS[item.id]}

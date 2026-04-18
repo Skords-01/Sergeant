@@ -8,6 +8,13 @@ const VARIANT = {
   info: "bg-primary text-white",
 };
 
+const ICON_WRAP = {
+  success: "motion-safe:animate-check-pop",
+  error: "",
+  warning: "",
+  info: "",
+};
+
 const ICON = {
   success: (
     <svg
@@ -98,7 +105,14 @@ export function ToastContainer() {
           )}
           role="alert"
         >
-          {ICON[t.type]}
+          <span
+            className={cn(
+              "shrink-0 inline-flex items-center justify-center",
+              ICON_WRAP[t.type],
+            )}
+          >
+            {ICON[t.type]}
+          </span>
           <span className="min-w-0 flex-1 leading-snug">{t.msg}</span>
           {t.action?.onClick && (
             <button
