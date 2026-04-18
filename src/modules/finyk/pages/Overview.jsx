@@ -1,7 +1,6 @@
 import { memo, useMemo, useEffect, Suspense } from "react";
 import { CategoryChart, NetworthChart } from "../components/charts/lazy";
 import { ChartFallback } from "../components/charts/ChartFallback";
-import { mergeExpenseCategoryDefinitions } from "../constants";
 import {
   calcDebtRemaining,
   calcReceivableRemaining,
@@ -12,6 +11,13 @@ import {
 } from "../utils";
 import { getSubscriptionAmountMeta } from "../domain/subscriptionUtils.js";
 import { getMonthlySummary } from "../domain/selectors";
+import {
+  getLimitBudgets,
+  isBudgetAlert,
+  getCurrentMonthContext,
+} from "../domain/budget";
+import { getCategorySpendList } from "../domain/categories";
+import { filterStatTransactions } from "../domain/transactions";
 import { Skeleton } from "@shared/components/ui/Skeleton";
 import { cn } from "@shared/lib/cn";
 import { THEME_HEX } from "@shared/lib/themeHex.js";
@@ -105,15 +111,10 @@ export function Overview({
   } = storage;
 
   const now = new Date();
-  const daysInMonth = new Date(
-    now.getFullYear(),
-    now.getMonth() + 1,
-    0,
-  ).getDate();
-  const daysPassed = now.getDate();
+  const { daysInMonth, daysPassed } = getCurrentMonthContext(now);
 
   const statTx = useMemo(
-    () => realTx.filter((t) => !excludedTxIds.has(t.id)),
+    () => filterStatTransactions(realTx, excludedTxIds),
     [realTx, excludedTxIds],
   );
   const spent = useMemo(
@@ -161,26 +162,14 @@ export function Overview({
   // useMemo — стабільне посилання на масив лімітів, щоб нижче
   // budgetAlerts/inline-рендер списку не перезапускались, поки
   // сам `budgets` не змінився.
-  const limitBudgets = useMemo(
-    () => budgets.filter((b) => b.type === "limit"),
-    [budgets],
-  );
+  const limitBudgets = useMemo(() => getLimitBudgets(budgets), [budgets]);
   const catSpends = useMemo(
     () =>
-      mergeExpenseCategoryDefinitions(customCategories)
-        .filter((c) => c.id !== "income")
-        .map((cat) => ({
-          ...cat,
-          spent: calcCategorySpent(
-            statTx,
-            cat.id,
-            txCategories,
-            txSplits,
-            customCategories,
-          ),
-        }))
-        .filter((c) => c.spent > 0)
-        .sort((a, b) => b.spent - a.spent),
+      getCategorySpendList(statTx, {
+        txCategories,
+        txSplits,
+        customCategories,
+      }),
     [statTx, txCategories, txSplits, customCategories],
   );
 
@@ -199,16 +188,18 @@ export function Overview({
 
   const budgetAlerts = useMemo(
     () =>
-      limitBudgets.filter((b) => {
-        const s = calcCategorySpent(
-          statTx,
-          b.categoryId,
-          txCategories,
-          txSplits,
-          customCategories,
-        );
-        return b.limit > 0 && s / b.limit >= 0.6;
-      }),
+      limitBudgets.filter((b) =>
+        isBudgetAlert(
+          calcCategorySpent(
+            statTx,
+            b.categoryId,
+            txCategories,
+            txSplits,
+            customCategories,
+          ),
+          b.limit,
+        ),
+      ),
     [limitBudgets, statTx, txCategories, txSplits, customCategories],
   );
 

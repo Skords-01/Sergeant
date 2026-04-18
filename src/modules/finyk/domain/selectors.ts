@@ -21,6 +21,7 @@ import type {
   TxSplit,
   TxSplitsMap,
 } from "./types";
+import { getCatColor } from "./categories";
 
 export type {
   AnalyticsResult,
@@ -31,51 +32,6 @@ export type {
   TopCategory,
   TrendComparison,
 } from "./types";
-
-const CAT_COLORS: Record<string, string> = {
-  food: "#10b981",
-  restaurant: "#f59e0b",
-  transport: "#3b82f6",
-  subscriptions: "#8b5cf6",
-  health: "#ec4899",
-  shopping: "#f97316",
-  entertainment: "#14b8a6",
-  sport: "#22c55e",
-  beauty: "#e879f9",
-  smoking: "#78716c",
-  education: "#6366f1",
-  travel: "#0ea5e9",
-  debt: "#ef4444",
-  charity: "#84cc16",
-  utilities: "#64748b",
-  other: "#94a3b8",
-};
-
-const FALLBACK_COLORS: readonly string[] = [
-  "#6366f1",
-  "#10b981",
-  "#f59e0b",
-  "#ec4899",
-  "#0ea5e9",
-  "#f97316",
-  "#14b8a6",
-  "#8b5cf6",
-  "#22c55e",
-  "#e879f9",
-];
-
-function getCatColor(
-  categoryId: string,
-  customCategories: Category[] = [],
-  idx = 0,
-): string {
-  if (CAT_COLORS[categoryId]) return CAT_COLORS[categoryId];
-  const custom = Array.isArray(customCategories)
-    ? customCategories.find((c) => c.id === categoryId)
-    : null;
-  if (custom?.color) return custom.color;
-  return FALLBACK_COLORS[idx % FALLBACK_COLORS.length];
-}
 
 type MonthPredicate = (tx: Transaction | null | undefined) => boolean;
 

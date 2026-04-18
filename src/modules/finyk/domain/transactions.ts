@@ -256,6 +256,23 @@ export function normalizeTransactions(
   return list.map((tx) => normalizeTransaction(tx, defaults));
 }
 
+// Відфільтровує транзакції, які не беруть участь у ФІНІК-статистиці
+// (приховані користувачем, внутрішні перекази, погашення боргів…).
+// Використовується сторінками Overview/Budgets замість inline-фільтра.
+export function filterStatTransactions(
+  transactions: readonly Transaction[] | null | undefined,
+  excludedTxIds: Set<string> | Iterable<string> | null | undefined,
+): Transaction[] {
+  if (!Array.isArray(transactions)) return [];
+  const excluded =
+    excludedTxIds instanceof Set
+      ? excludedTxIds
+      : new Set<string>(
+          excludedTxIds ? (excludedTxIds as Iterable<string>) : [],
+        );
+  return transactions.filter((t) => t && !excluded.has(t.id));
+}
+
 export function dedupeAndSortTransactions(
   items: readonly RawTxInput[] | null | undefined,
 ): Transaction[] {
