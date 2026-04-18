@@ -1,9 +1,10 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, Suspense } from "react";
 import { Skeleton } from "@shared/components/ui/Skeleton";
 import { EmptyState } from "@shared/components/ui/EmptyState";
 import { cn } from "@shared/lib/cn";
 import { useAnalytics } from "../hooks/useAnalytics";
-import { CategoryPieChart } from "../components/analytics/CategoryPieChart";
+import { CategoryPieChart } from "../components/charts/lazy";
+import { ChartFallback } from "../components/charts/ChartFallback";
 import { MerchantList } from "../components/analytics/MerchantList";
 import { getMonthlyTrendComparison } from "../lib/finykStats";
 
@@ -286,7 +287,9 @@ export function Analytics({ mono, storage }) {
               description="Транзакцій за цей місяць не знайдено"
             />
           ) : (
-            <CategoryPieChart data={distribution} />
+            <Suspense fallback={<ChartFallback className="h-40" />}>
+              <CategoryPieChart data={distribution} />
+            </Suspense>
           )}
         </Section>
 
