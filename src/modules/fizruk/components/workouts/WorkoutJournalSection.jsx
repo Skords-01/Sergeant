@@ -11,12 +11,14 @@ function WorkoutRow({ w, activeWorkoutId, setActiveWorkoutId }) {
   // currently-selected row — so it no longer looks like it's "hanging in
   // active" after the user pressed «Завершити».
   const isEnded = Boolean(w.endedAt);
-  const isActive = !isEnded && activeWorkoutId === w.id;
+  const isSelected = activeWorkoutId === w.id;
+  const isActive = !isEnded && isSelected;
   return (
     <button
       key={w.id}
-      onClick={() => setActiveWorkoutId(w.id)}
-      className={`w-full text-left px-4 py-3 border-b border-line last:border-0 hover:bg-panelHi transition-colors${activeWorkoutId === w.id ? " bg-text/5" : ""}`}
+      onClick={() => setActiveWorkoutId(isSelected ? null : w.id)}
+      aria-pressed={isSelected}
+      className={`w-full text-left px-4 py-3 border-b border-line last:border-0 hover:bg-panelHi transition-colors${isSelected ? " bg-text/5" : ""}`}
     >
       <div className="flex items-center justify-between gap-3">
         <div className="text-sm font-semibold text-text">
@@ -183,6 +185,7 @@ export function WorkoutJournalSection({
               }, 0);
             }}
             onDeleteWorkout={() => setDeleteWorkoutConfirm(true)}
+            onCollapse={() => setActiveWorkoutId(null)}
           />
         </SectionErrorBoundary>
       )}

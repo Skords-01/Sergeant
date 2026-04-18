@@ -146,6 +146,7 @@ export function ActiveWorkoutPanel({
   setRestTimer,
   onFinishClick,
   onDeleteWorkout,
+  onCollapse,
 }) {
   const dtFieldsId = useId();
   const workoutStartId = `${dtFieldsId}-started`;
@@ -735,7 +736,11 @@ export function ActiveWorkoutPanel({
     <div className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card">
       <div className="flex items-center justify-between gap-2">
         <div>
-          <div className="text-sm font-bold text-text">Активне тренування</div>
+          <div className="text-sm font-bold text-text">
+            {activeWorkout.endedAt
+              ? "Завершене тренування"
+              : "Активне тренування"}
+          </div>
           <div className="text-xs text-subtle mt-0.5">
             {new Date(activeWorkout.startedAt).toLocaleString("uk-UA", {
               month: "short",
@@ -757,6 +762,17 @@ export function ActiveWorkoutPanel({
               onClick={onFinishClick}
             >
               Завершити
+            </Button>
+          ) : onCollapse ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-9 px-4"
+              type="button"
+              onClick={onCollapse}
+              aria-label="Згорнути завершене тренування"
+            >
+              Згорнути
             </Button>
           ) : (
             <span className="text-xs text-subtle">Завершено</span>
