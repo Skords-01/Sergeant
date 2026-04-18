@@ -18,9 +18,16 @@
 
 import { MCC_CATEGORIES, INCOME_CATEGORIES } from "@finyk/constants.js";
 
-const ALL_CATS = [...MCC_CATEGORIES, ...INCOME_CATEGORIES];
+interface Category {
+  id: string;
+  label?: string;
+  name?: string;
+  mccs?: number[];
+}
 
-const BUILTIN_LABELS = {
+const ALL_CATS: Category[] = [...MCC_CATEGORIES, ...INCOME_CATEGORIES];
+
+const BUILTIN_LABELS: Record<string, string> = {
   food: "🛒 Продукти",
   cafe: "🍽️ Кафе та ресторани",
   transport: "🚗 Транспорт",
@@ -33,24 +40,29 @@ const BUILTIN_LABELS = {
 
 export const DAILY_SUMMARY_DISMISS_KEY = "hub_daily_finyk_dismissed_v1";
 
-function defaultReadLS(key, fallback) {
+export type ReadLS = <T>(key: string, fallback: T) => T;
+
+const defaultReadLS: ReadLS = <T>(key: string, fallback: T): T => {
   try {
     const raw = localStorage.getItem(key);
     if (raw == null) return fallback;
-    return JSON.parse(raw);
+    return JSON.parse(raw) as T;
   } catch {
     return fallback;
   }
-}
+};
 
-function localDateKey(d) {
+function localDateKey(d: Date): string {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
   return `${y}-${m}-${day}`;
 }
 
-function resolveCatLabel(catIdOrMcc, customCategories) {
+function resolveCatLabel(
+  catIdOrMcc: string | number | null | undefined,
+  customCategories: Category[],
+): string {
   if (!catIdOrMcc || catIdOrMcc === "other") return BUILTIN_LABELS.other;
   const str = String(catIdOrMcc);
   const byId = [...ALL_CATS, ...(customCategories || [])].find(
@@ -61,20 +73,53 @@ function resolveCatLabel(catIdOrMcc, customCategories) {
   const mcc = Number(str);
   if (Number.isFinite(mcc) && mcc > 0) {
     const byMcc = MCC_CATEGORIES.find(
-      (c) => Array.isArray(c.mccs) && c.mccs.includes(mcc),
+      (c: Category) => Array.isArray(c.mccs) && c.mccs.includes(mcc),
     );
-    if (byMcc) return byMcc.label;
+    if (byMcc) return byMcc.label ?? str;
   }
   return str;
 }
 
-function txTimestampMs(tx) {
+interface BankTx {
+  id: string;
+  amount: number;
+  time: number;
+  mcc?: number;
+}
+
+interface ManualExpense {
+  amount: number;
+  date: string;
+  category?: string;
+}
+
+interface TxSplit {
+  categoryId?: string;
+  amount: number;
+}
+
+interface RoutineState {
+  habits?: Array<{ id: string; archived?: boolean }>;
+  completions?: Record<string, string[]>;
+}
+
+interface FizrukWorkout {
+  startedAt?: string;
+}
+
+interface NutritionLog {
+  [dateKey: string]:
+    | { meals?: Array<{ macros?: { kcal?: number } }> }
+    | undefined;
+}
+
+function txTimestampMs(tx: BankTx | null | undefined): number {
   const t = Number(tx?.time);
   if (!Number.isFinite(t)) return NaN;
   return t > 1e10 ? t : t * 1000;
 }
 
-function toDayKeyFromTs(ts) {
+function toDayKeyFromTs(ts: number): string | null {
   const d = new Date(ts);
   if (!Number.isFinite(d.getTime())) return null;
   return localDateKey(d);
@@ -85,11 +130,21 @@ function toDayKeyFromTs(ts) {
  * протягом останніх `days` днів (не враховуючи сьогодні).
  */
 function collectExpenseDaysWithin(
-  { bankTxs, manualExpenses, hiddenIds, transferIds },
-  todayKey,
-  days,
-) {
-  const keys = new Set();
+  {
+    bankTxs,
+    manualExpenses,
+    hiddenIds,
+    transferIds,
+  }: {
+    bankTxs: BankTx[];
+    manualExpenses: ManualExpense[];
+    hiddenIds: Set<string>;
+    transferIds: Set<string>;
+  },
+  todayKey: string,
+  days: number,
+): Set<string> {
+  const keys = new Set<string>();
   const now = Date.now();
   const minMs = now - days * 86_400_000;
 
@@ -113,11 +168,11 @@ function collectExpenseDaysWithin(
   return keys;
 }
 
-function isActivityTodayFromModules(now, readLS) {
+function isActivityTodayFromModules(now: Date, readLS: ReadLS): boolean {
   const todayKey = localDateKey(now);
 
   // Routine: будь-яка звичка позначена сьогодні
-  const routine = readLS("hub_routine_v1", null);
+  const routine = readLS<RoutineState | null>("hub_routine_v1", null);
   if (routine && Array.isArray(routine.habits) && routine.completions) {
     for (const h of routine.habits) {
       if (h?.archived) continue;
@@ -127,8 +182,10 @@ function isActivityTodayFromModules(now, readLS) {
   }
 
   // Fizruk: тренування, що почалось сьогодні
-  const workoutsRaw = readLS("fizruk_workouts_v1", null);
-  const workouts = Array.isArray(workoutsRaw)
+  const workoutsRaw = readLS<
+    FizrukWorkout[] | { workouts?: FizrukWorkout[] } | null
+  >("fizruk_workouts_v1", null);
+  const workouts: FizrukWorkout[] = Array.isArray(workoutsRaw)
     ? workoutsRaw
     : Array.isArray(workoutsRaw?.workouts)
       ? workoutsRaw.workouts
@@ -141,11 +198,33 @@ function isActivityTodayFromModules(now, readLS) {
   }
 
   // Nutrition: щонайменше один прийом їжі сьогодні
-  const log = readLS("nutrition_log_v1", null);
+  const log = readLS<NutritionLog | null>("nutrition_log_v1", null);
   const meals = log?.[todayKey]?.meals;
   if (Array.isArray(meals) && meals.length > 0) return true;
 
   return false;
+}
+
+export interface TopCategory {
+  id: string;
+  label: string;
+  amount: number;
+  pct: number;
+}
+
+export type DailyFinykSummaryStatus =
+  | "hidden"
+  | "has_expenses"
+  | "quiet"
+  | "reminder_no_expenses"
+  | "reminder_active_day";
+
+export interface DailyFinykSummary {
+  status: DailyFinykSummaryStatus;
+  todayKey: string;
+  todaySpent: number;
+  txCount: number;
+  topCategory?: TopCategory | null;
 }
 
 /**
@@ -162,27 +241,36 @@ function isActivityTodayFromModules(now, readLS) {
 export function computeDailyFinykSummary({
   now = new Date(),
   readLS = defaultReadLS,
-} = {}) {
+}: {
+  now?: Date;
+  readLS?: ReadLS;
+} = {}): DailyFinykSummary {
   const todayKey = localDateKey(now);
   const hour = now.getHours();
 
-  const txCache = readLS("finyk_tx_cache", null);
-  const bankTxs = Array.isArray(txCache?.txs)
-    ? txCache.txs
-    : Array.isArray(txCache)
-      ? txCache
+  const txCache = readLS<{ txs?: BankTx[] } | BankTx[] | null>(
+    "finyk_tx_cache",
+    null,
+  );
+  const bankTxs: BankTx[] = Array.isArray(txCache)
+    ? txCache
+    : Array.isArray(txCache?.txs)
+      ? txCache.txs
       : [];
-  const manualExpenses = (() => {
-    const v = readLS("finyk_manual_expenses_v1", []);
+  const manualExpenses: ManualExpense[] = (() => {
+    const v = readLS<ManualExpense[]>("finyk_manual_expenses_v1", []);
     return Array.isArray(v) ? v : [];
   })();
-  const txCategories = readLS("finyk_tx_cats", {}) || {};
-  const txSplitsRaw = readLS("finyk_tx_splits", {}) || {};
-  const txSplits =
+  const txCategories =
+    readLS<Record<string, string>>("finyk_tx_cats", {}) || {};
+  const txSplitsRaw = readLS<Record<string, TxSplit[]>>("finyk_tx_splits", {});
+  const txSplits: Record<string, TxSplit[]> =
     txSplitsRaw && typeof txSplitsRaw === "object" ? txSplitsRaw : {};
-  const hiddenIds = new Set(readLS("finyk_hidden_txs", []) || []);
-  const customCategories = readLS("finyk_custom_cats_v1", []) || [];
-  const transferIds = new Set(
+  const hiddenIds = new Set<string>(
+    readLS<string[]>("finyk_hidden_txs", []) || [],
+  );
+  const customCategories = readLS<Category[]>("finyk_custom_cats_v1", []) || [];
+  const transferIds = new Set<string>(
     Object.entries(txCategories)
       .filter(([, v]) => v === "internal_transfer")
       .map(([k]) => k),
@@ -191,7 +279,7 @@ export function computeDailyFinykSummary({
   // ── Агрегація сьогоднішніх витрат ────────────────────────────────────────
   let todaySpent = 0;
   let txCount = 0;
-  const catAmounts = {};
+  const catAmounts: Record<string, number> = {};
 
   for (const tx of bankTxs) {
     if (!tx || (tx.amount ?? 0) >= 0) continue;
@@ -233,7 +321,7 @@ export function computeDailyFinykSummary({
   }
 
   // ── Топ-категорія ────────────────────────────────────────────────────────
-  let topCategory = null;
+  let topCategory: TopCategory | null = null;
   const catEntries = Object.entries(catAmounts).sort(([, a], [, b]) => b - a);
   if (catEntries.length > 0 && todaySpent > 0) {
     const [catId, amount] = catEntries[0];
@@ -304,8 +392,11 @@ export function computeDailyFinykSummary({
 export function isDailySummaryDismissedToday({
   now = new Date(),
   readLS = defaultReadLS,
-} = {}) {
+}: {
+  now?: Date;
+  readLS?: ReadLS;
+} = {}): boolean {
   const todayKey = localDateKey(now);
-  const v = readLS(DAILY_SUMMARY_DISMISS_KEY, null);
+  const v = readLS<{ date?: string } | null>(DAILY_SUMMARY_DISMISS_KEY, null);
   return Boolean(v && v.date === todayKey);
 }
