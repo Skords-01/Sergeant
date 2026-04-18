@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { apiUrl } from "@shared/lib/apiUrl.js";
 import { STORAGE_KEYS } from "@shared/lib/storageKeys.js";
@@ -381,10 +381,17 @@ export function useWeeklyDigest(selectedWeekKey) {
     },
   });
 
-  const generate = async () => {
+  const { mutateAsync } = mutation;
+
+  // `mutateAsync` is a stable reference from react-query, so `generate`
+  // stays referentially stable across renders as long as
+  // `weekKey`/`isCurrentWeek` don't change. Consumers (e.g.
+  // `useMondayAutoDigest`) rely on this to avoid re-running effects that
+  // trigger additional AI calls.
+  const generate = useCallback(async () => {
     if (!isCurrentWeek) return null;
     try {
-      const result = await mutation.mutateAsync(weekKey);
+      const result = await mutateAsync(weekKey);
       return {
         ...result.report,
         generatedAt: result.generatedAt,
@@ -394,7 +401,7 @@ export function useWeeklyDigest(selectedWeekKey) {
     } catch {
       return null;
     }
-  };
+  }, [weekKey, isCurrentWeek, mutateAsync]);
 
   return {
     digest,

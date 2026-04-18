@@ -254,12 +254,14 @@ export function useCoachInsight() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const refresh = useCallback(() => loadInsight(true), [loadInsight]);
+
   return {
     insight,
     loading: mutation.isPending,
     error: mutation.error
       ? mutation.error.message || "Помилка завантаження"
       : null,
-    refresh: () => loadInsight(true),
+    refresh,
   };
 }
