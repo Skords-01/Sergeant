@@ -282,7 +282,14 @@ export default function FizrukApp({
             </button>
           ) : (
             <div
-              className="shrink-0 w-9 h-9 rounded-xl bg-success/10 flex items-center justify-center text-success border border-success/20"
+              className={cn(
+                "shrink-0 w-10 h-10 rounded-xl flex items-center justify-center",
+                "bg-gradient-to-br from-teal-100 to-cyan-100",
+                "dark:from-teal-900/40 dark:to-cyan-900/30",
+                "text-teal-600 dark:text-teal-400",
+                "border border-teal-200/60 dark:border-teal-700/30",
+                "shadow-sm"
+              )}
               aria-hidden
             >
               <svg
@@ -370,7 +377,7 @@ export default function FizrukApp({
                 id="fizruk-settings-title"
                 className="text-base font-semibold text-text"
               >
-                Дані й резервні копії
+                Дані й резер��ні копії
               </h2>
               <button
                 type="button"

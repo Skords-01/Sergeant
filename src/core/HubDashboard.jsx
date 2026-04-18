@@ -171,10 +171,11 @@ const MODULE_CONFIGS = {
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
-// DAILY PROGRESS HERO — Shows overall day progress
+// DAILY PROGRESS HERO — Shows overall day progress with enhanced visuals
 // ═══════════════════════════════════════════════════════════════════════════
 function DailyProgressHero() {
   const [progress, setProgress] = useState({ total: 0, completed: 0 });
+  const [isComplete, setIsComplete] = useState(false);
   
   useEffect(() => {
     // Aggregate progress from all modules
@@ -215,8 +216,17 @@ function DailyProgressHero() {
       }
     } catch {}
     
-    setProgress({ total: total || 4, completed });
-  }, []);
+    const finalTotal = total || 4;
+    const wasComplete = progress.completed === progress.total && progress.total > 0;
+    const nowComplete = completed === finalTotal && finalTotal > 0;
+    
+    if (nowComplete && !wasComplete) {
+      setIsComplete(true);
+      setTimeout(() => setIsComplete(false), 2000);
+    }
+    
+    setProgress({ total: finalTotal, completed });
+  }, [progress.completed, progress.total]);
   
   const percentage = progress.total > 0 
     ? Math.round((progress.completed / progress.total) * 100) 
@@ -239,36 +249,76 @@ function DailyProgressHero() {
   }, [percentage]);
 
   return (
-    <div className="relative overflow-hidden rounded-3xl bg-hub-hero border border-line shadow-card p-5">
-      {/* Decorative gradient orbs */}
-      <div className="absolute -top-20 -right-20 w-40 h-40 rounded-full bg-brand-200/20 blur-3xl" />
-      <div className="absolute -bottom-10 -left-10 w-32 h-32 rounded-full bg-teal-200/20 blur-3xl" />
+    <div className={cn(
+      "relative overflow-hidden rounded-3xl border shadow-card p-5",
+      "bg-gradient-to-br from-white via-brand-50/30 to-teal-50/40",
+      "dark:from-panel dark:via-panel dark:to-panel",
+      "border-brand-100/60 dark:border-brand-800/30",
+      "transition-all duration-500",
+      isComplete && "animate-success-ring"
+    )}>
+      {/* Animated decorative gradient orbs */}
+      <div className="absolute -top-20 -right-20 w-48 h-48 rounded-full bg-gradient-to-br from-brand-200/30 to-teal-200/20 blur-3xl animate-pulse-soft" />
+      <div className="absolute -bottom-16 -left-16 w-40 h-40 rounded-full bg-gradient-to-tr from-teal-200/25 to-brand-100/20 blur-3xl animate-pulse-soft" style={{ animationDelay: '1s' }} />
+      
+      {/* Subtle grid pattern overlay */}
+      <div className="absolute inset-0 opacity-[0.03] dark:opacity-[0.02]" style={{
+        backgroundImage: `radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)`,
+        backgroundSize: '24px 24px'
+      }} />
       
       <div className="relative flex items-center gap-5">
-        {/* Progress Ring */}
-        <ProgressRing
-          value={progress.completed}
-          max={progress.total}
-          size="lg"
-          variant="brand"
-          animate
-        >
-          <span className="text-2xl font-bold text-brand-600 tabular-nums">
-            {percentage}%
-          </span>
-        </ProgressRing>
+        {/* Enhanced Progress Ring with glow effect */}
+        <div className={cn(
+          "relative",
+          percentage === 100 && "animate-celebration-pop"
+        )}>
+          {/* Glow ring behind progress */}
+          <div className={cn(
+            "absolute inset-0 rounded-full blur-xl transition-opacity duration-500",
+            percentage > 0 ? "opacity-40" : "opacity-0",
+            "bg-brand-400"
+          )} style={{ transform: 'scale(0.85)' }} />
+          
+          <ProgressRing
+            value={progress.completed}
+            max={progress.total}
+            size="lg"
+            variant="brand"
+            animate
+          >
+            <div className="flex flex-col items-center">
+              <span className="text-2xl font-bold text-brand-600 dark:text-brand-400 tabular-nums leading-none">
+                {percentage}%
+              </span>
+            </div>
+          </ProgressRing>
+        </div>
         
-        {/* Text content */}
+        {/* Text content with enhanced typography */}
         <div className="flex-1 min-w-0">
-          <p className="text-xs font-medium text-muted uppercase tracking-wider mb-0.5">
+          <p className="text-[10px] font-semibold text-brand-600/70 dark:text-brand-400/70 uppercase tracking-widest mb-1">
             {greeting}
           </p>
-          <h1 className="text-xl font-bold text-text mb-1 text-balance">
+          <h1 className="text-xl font-bold text-text mb-1.5 text-balance leading-tight">
             {motivationalText}
           </h1>
-          <p className="text-sm text-muted">
-            {progress.completed} з {progress.total} завдань виконано
-          </p>
+          <div className="flex items-center gap-2">
+            <p className="text-sm text-muted">
+              <span className="font-semibold text-brand-600 dark:text-brand-400 tabular-nums">{progress.completed}</span>
+              <span className="mx-1">/</span>
+              <span className="tabular-nums">{progress.total}</span>
+              <span className="ml-1.5">завдань</span>
+            </p>
+            {percentage === 100 && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-brand-100 dark:bg-brand-900/30 text-brand-700 dark:text-brand-400 text-[10px] font-semibold">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                Виконано
+              </span>
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -276,7 +326,7 @@ function DailyProgressHero() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// MODULE CARD — Interactive card with preview data
+// MODULE CARD — Interactive card with preview data and enhanced visuals
 // ═══════════════════════════════════════════════════════════════════════════
 function ModuleCard({
   config,
@@ -286,93 +336,118 @@ function ModuleCard({
 }) {
   const preview = config.getPreview();
   
+  // Module-specific gradient classes
+  const moduleGradients = {
+    finyk: "module-card-finyk",
+    fizruk: "module-card-fizruk", 
+    routine: "module-card-routine",
+    nutrition: "module-card-nutrition",
+  };
+
+  const moduleGlows = {
+    finyk: "hover-glow",
+    fizruk: "hover-glow-teal",
+    routine: "hover-glow-coral", 
+    nutrition: "hover-glow-lime",
+  };
+  
   return (
     <button
       type="button"
       onClick={onClick}
       className={cn(
         "group relative w-full text-left",
-        "p-4 rounded-2xl border bg-panel",
+        "p-4 rounded-2xl border",
         "shadow-card transition-all duration-200 ease-smooth",
-        "hover:shadow-float hover:-translate-y-0.5",
-        "active:scale-[0.98] active:shadow-card",
-        "focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/30 focus-visible:ring-offset-2",
-        config.borderClass,
-        isDragging && "opacity-70 scale-[0.97] shadow-float z-50 cursor-grabbing",
+        "hover:shadow-float hover:-translate-y-1",
+        "active:scale-[0.97] active:shadow-card",
+        "focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
+        moduleGradients[config.module] || "bg-panel",
+        moduleGlows[config.module],
+        isDragging && "opacity-80 scale-[0.97] shadow-float z-50 cursor-grabbing rotate-1",
       )}
       {...dragProps}
     >
-      {/* Hover gradient overlay */}
-      <div
-        className={cn(
-          "absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100",
-          "transition-opacity duration-300 pointer-events-none",
-          "bg-gradient-to-br",
-          config.hoverGradient,
-        )}
-      />
+      {/* Subtle shine effect on hover */}
+      <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none overflow-hidden">
+        <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+      </div>
       
       <div className="relative">
         {/* Header row */}
         <div className="flex items-center gap-2.5 mb-3">
           <div
             className={cn(
-              "w-9 h-9 rounded-xl flex items-center justify-center shrink-0",
-              "transition-transform duration-200 group-hover:scale-110",
+              "w-10 h-10 rounded-xl flex items-center justify-center shrink-0",
+              "transition-all duration-200 ease-bounce",
+              "group-hover:scale-110 group-hover:rotate-3",
+              "shadow-sm",
               config.colorClass,
             )}
           >
             {config.icon}
           </div>
           <div className="flex-1 min-w-0">
-            <span className="text-xs font-semibold text-muted uppercase tracking-wider">
+            <span className="text-[11px] font-bold text-muted uppercase tracking-wider">
               {config.label}
             </span>
           </div>
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="text-subtle group-hover:text-muted group-hover:translate-x-0.5 transition-all shrink-0"
-            aria-hidden
-          >
-            <path d="M9 18l6-6-6-6" />
-          </svg>
+          <div className={cn(
+            "w-7 h-7 rounded-lg flex items-center justify-center",
+            "bg-line/30 dark:bg-white/5",
+            "group-hover:bg-line/50 dark:group-hover:bg-white/10",
+            "transition-all duration-200",
+            "group-hover:translate-x-0.5"
+          )}>
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="text-muted group-hover:text-text transition-colors"
+              aria-hidden
+            >
+              <path d="M9 18l6-6-6-6" />
+            </svg>
+          </div>
         </div>
         
         {/* Preview content */}
-        <div className="space-y-1">
+        <div className="space-y-1.5">
           {preview.main ? (
             <>
-              <p className="text-lg font-bold text-text tabular-nums">
+              <p className="text-xl font-bold text-text tabular-nums leading-tight">
                 {preview.main}
               </p>
               {preview.sub && (
-                <p className="text-xs text-muted">{preview.sub}</p>
+                <p className="text-xs text-muted leading-snug">{preview.sub}</p>
               )}
             </>
           ) : (
-            <p className="text-sm text-muted">{preview.sub || config.description}</p>
+            <p className="text-sm text-muted leading-snug">{preview.sub || config.description}</p>
           )}
           
-          {/* Mini progress bar if available */}
+          {/* Enhanced mini progress bar */}
           {preview.progress !== undefined && preview.progress > 0 && (
-            <div className="mt-2 h-1.5 rounded-full bg-line/50 overflow-hidden">
+            <div className="mt-2.5 h-1.5 rounded-full bg-line/40 dark:bg-white/10 overflow-hidden">
               <div 
                 className={cn(
-                  "h-full rounded-full transition-all duration-500",
-                  config.module === "routine" && "bg-routine",
-                  config.module === "nutrition" && "bg-nutrition",
-                  config.module === "fizruk" && "bg-fizruk",
-                  config.module === "finyk" && "bg-finyk",
+                  "h-full rounded-full transition-all duration-700 ease-out",
+                  "relative overflow-hidden",
+                  config.module === "routine" && "bg-gradient-to-r from-routine to-routine-secondary",
+                  config.module === "nutrition" && "bg-gradient-to-r from-nutrition to-lime-400",
+                  config.module === "fizruk" && "bg-gradient-to-r from-fizruk to-teal-400",
+                  config.module === "finyk" && "bg-gradient-to-r from-finyk to-brand-400",
                 )}
                 style={{ width: `${Math.min(preview.progress, 100)}%` }}
-              />
+              >
+                {/* Shimmer effect on progress bar */}
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full animate-[shimmer_2s_infinite]" />
+              </div>
             </div>
           )}
         </div>
@@ -492,12 +567,15 @@ export function HubDashboard({ onOpenModule, onOpenChat }) {
       <WeeklyDigestCard />
 
       {/* Module Cards Grid */}
-      <section className="space-y-3">
+      <section className="space-y-4">
         <div className="flex items-center justify-between px-0.5">
-          <h2 className="text-sm font-semibold text-text">
-            Модулі
-          </h2>
-          <span className="text-2xs text-subtle">
+          <div className="flex items-center gap-2">
+            <div className="w-1 h-4 rounded-full bg-gradient-to-b from-brand-500 to-teal-500" />
+            <h2 className="text-sm font-bold text-text">
+              Модулі
+            </h2>
+          </div>
+          <span className="text-[10px] text-subtle bg-panelHi/80 dark:bg-white/5 px-2 py-1 rounded-full">
             Утримуй для переміщення
           </span>
         </div>
@@ -508,7 +586,7 @@ export function HubDashboard({ onOpenModule, onOpenChat }) {
           onDragEnd={handleDragEnd}
         >
           <SortableContext items={order} strategy={rectSortingStrategy}>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-3 stagger-enter">
               {order.map((id) => (
                 <SortableCard key={id} id={id} onOpenModule={onOpenModule} />
               ))}

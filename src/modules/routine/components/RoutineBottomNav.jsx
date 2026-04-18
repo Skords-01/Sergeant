@@ -73,10 +73,14 @@ const NAV = [
 export function RoutineBottomNav({ mainTab, onSelectTab }) {
   return (
     <nav
-      className="shrink-0 bg-panel/95 backdrop-blur-md border-t border-line/60 relative z-30 safe-area-pb"
+      className={cn(
+        "shrink-0 relative z-30 safe-area-pb",
+        "bg-panel/95 backdrop-blur-xl",
+        "border-t border-line/60"
+      )}
       aria-label="Розділи Рутини"
     >
-      <div className="flex h-[58px]" role="tablist">
+      <div className="flex h-[60px]" role="tablist">
         {NAV.map((item) => {
           const active = mainTab === item.id;
           return (
@@ -90,25 +94,40 @@ export function RoutineBottomNav({ mainTab, onSelectTab }) {
               tabIndex={active ? 0 : -1}
               onClick={() => onSelectTab(item.id)}
               className={cn(
-                "relative flex-1 flex flex-col items-center justify-center gap-1 transition-all min-h-[48px]",
-                active ? "text-text" : "text-muted",
+                "relative flex-1 flex flex-col items-center justify-center gap-1.5",
+                "transition-all duration-200 min-h-[48px]",
+                "active:scale-95",
+                active ? "text-text" : "text-muted hover:text-text/70",
               )}
             >
+              {/* Active indicator pill */}
               {active && (
                 <span
                   className={cn(
-                    "absolute top-0 left-1/2 -translate-x-1/2 w-9 h-0.5 rounded-full",
-                    C.navBar,
+                    "absolute top-0 left-1/2 -translate-x-1/2",
+                    "w-10 h-1 rounded-full",
+                    "bg-gradient-to-r from-coral-400 to-coral-500",
+                    "shadow-sm"
                   )}
                   aria-hidden
                 />
               )}
-              <span className={cn(active && C.navActive)} aria-hidden>
+              
+              {/* Icon with glow effect when active */}
+              <span 
+                className={cn(
+                  "transition-all duration-200",
+                  active && C.navActive,
+                  active && "drop-shadow-[0_0_8px_rgba(249,112,102,0.3)]"
+                )} 
+                aria-hidden
+              >
                 {item.icon}
               </span>
+              
               <span
                 className={cn(
-                  "text-[11px] leading-none font-semibold",
+                  "text-[11px] leading-none font-semibold transition-colors",
                   active ? "text-text" : "text-muted",
                 )}
               >
