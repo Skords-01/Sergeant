@@ -166,8 +166,10 @@ export function authSensitiveRateLimit(req, res, next) {
 
 /**
  * Класифікує auth-ендпоінти better-auth і після відповіді інкрементує
- * `authAttemptsTotal{op,outcome}`. Ставити ПІСЛЯ `authSensitiveRateLimit`,
- * ДО `toNodeHandler(auth)` — щоб 429 від ліміту теж ловилися.
+ * `authAttemptsTotal{op,outcome}`. Ставити ПЕРЕД `authSensitiveRateLimit`
+ * (і ДО `toNodeHandler(auth)`): `res.on("finish")` спрацьовує, навіть
+ * коли rate-limiter короткозамикає пайплайн без `next()`, тому реєстрація
+ * listener-а мусить відбутись раніше за сам limiter, щоб 429 ловились.
  */
 export function authMetricsMiddleware(req, res, next) {
   if (req.method !== "POST") return next();
