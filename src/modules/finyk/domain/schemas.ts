@@ -6,15 +6,29 @@ import { z } from "zod";
 
 export const BudgetTypeSchema = z.enum(["limit", "goal"]);
 
+// Goal-бюджети не мають ліміту (у формі `limit` лишається "" після spread
+// з initial-state у Budgets.jsx), тому `limit` опціональний. Preprocess
+// нормалізує "" / null / NaN до undefined — без цього legacy goal-записи
+// мовчки відфільтровувалися б у `getBudget()`.
+const optionalNumberSchema = z.preprocess((v) => {
+  if (v === "" || v === null || v === undefined) return undefined;
+  if (typeof v === "number") return Number.isFinite(v) ? v : undefined;
+  if (typeof v === "string") {
+    const parsed = Number(v);
+    return Number.isFinite(parsed) ? parsed : undefined;
+  }
+  return v;
+}, z.number().finite().optional());
+
 export const BudgetSchema = z
   .object({
     id: z.string().min(1),
     type: BudgetTypeSchema.optional(),
-    limit: z.number().finite(),
+    limit: optionalNumberSchema,
     categoryId: z.string().optional(),
     label: z.string().optional(),
-    target: z.number().finite().optional(),
-    current: z.number().finite().optional(),
+    target: optionalNumberSchema,
+    current: optionalNumberSchema,
   })
   .passthrough();
 

@@ -101,9 +101,20 @@ export function resetFlags(): void {
   flagsStore.reset();
 }
 
+// Кеш снапшоту всіх флагів. `useSyncExternalStore` вимагає реф-стабільний
+// результат від `getSnapshot` між оновленнями store'а — інакше React
+// вважає, що state змінився, і ганяє ре-рендери/лупить у concurrent mode.
+let cachedAllFlagsSnapshot: Record<string, boolean> | null = null;
+flagsStore.subscribe(() => {
+  cachedAllFlagsSnapshot = null;
+});
+
 /** Повертає поточні значення з підставленими defaults — зручно для UI. */
 export function getAllFlags(): Record<string, boolean> {
-  return { ...defaults(), ...flagsStore.get() };
+  if (cachedAllFlagsSnapshot) return cachedAllFlagsSnapshot;
+  const snapshot = { ...defaults(), ...flagsStore.get() };
+  cachedAllFlagsSnapshot = snapshot;
+  return snapshot;
 }
 
 /**
@@ -122,8 +133,8 @@ export function useFlag(id: FlagId | string): boolean {
 export function useAllFlags(): Record<string, boolean> {
   return useSyncExternalStore(
     (onChange) => flagsStore.subscribe(onChange),
-    () => getAllFlags(),
-    () => getAllFlags(),
+    getAllFlags,
+    getAllFlags,
   );
 }
 

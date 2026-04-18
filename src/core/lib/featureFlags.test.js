@@ -60,4 +60,16 @@ describe("featureFlags", () => {
       expect(all[f.id]).toBe(f.defaultValue);
     }
   });
+
+  it("getAllFlags повертає ту саму ref до зміни (useSyncExternalStore contract)", async () => {
+    const { getAllFlags, setFlag } = await loadFresh();
+    const a = getAllFlags();
+    const b = getAllFlags();
+    expect(a).toBe(b);
+    setFlag("finyk_subscriptions_category", true);
+    const c = getAllFlags();
+    expect(c).not.toBe(a);
+    const d = getAllFlags();
+    expect(d).toBe(c);
+  });
 });
