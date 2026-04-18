@@ -4,45 +4,45 @@ const DB_NAME = "fizruk_photos_v1";
 const STORE = "photos";
 const DB_VERSION = 1;
 
-function openDB() {
+function openDB(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const req = indexedDB.open(DB_NAME, DB_VERSION);
-    req.onupgradeneeded = (e) => {
-      const db = e.target.result;
+    req.onupgradeneeded = () => {
+      const db = req.result;
       if (!db.objectStoreNames.contains(STORE)) {
         const store = db.createObjectStore(STORE, { keyPath: "id" });
         store.createIndex("date", "date", { unique: false });
       }
     };
-    req.onsuccess = (e) => resolve(e.target.result);
-    req.onerror = (e) => reject(e.target.error);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
   });
 }
 
-function dbGetAll(db) {
+function dbGetAll<T = unknown>(db: IDBDatabase): Promise<T[]> {
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE, "readonly");
     const req = tx.objectStore(STORE).getAll();
-    req.onsuccess = (e) => resolve(e.target.result || []);
-    req.onerror = (e) => reject(e.target.error);
+    req.onsuccess = () => resolve((req.result as T[]) || []);
+    req.onerror = () => reject(req.error);
   });
 }
 
-function dbPut(db, record) {
+function dbPut(db: IDBDatabase, record: unknown): Promise<IDBValidKey> {
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE, "readwrite");
     const req = tx.objectStore(STORE).put(record);
-    req.onsuccess = (e) => resolve(e.target.result);
-    req.onerror = (e) => reject(e.target.error);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
   });
 }
 
-function dbDelete(db, id) {
-  return new Promise((resolve, reject) => {
+function dbDelete(db: IDBDatabase, id: string): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
     const tx = db.transaction(STORE, "readwrite");
     const req = tx.objectStore(STORE).delete(id);
     req.onsuccess = () => resolve();
-    req.onerror = (e) => reject(e.target.error);
+    req.onerror = () => reject(req.error);
   });
 }
 
@@ -54,10 +54,12 @@ function uid() {
  * Hook for storing body progress photos in IndexedDB.
  * Each photo record: { id, date (YYYY-MM-DD), dataUrl, note, createdAt }
  */
+import type { BodyPhoto } from "../domain/types";
+
 export function useBodyPhotos() {
-  const [photos, setPhotos] = useState([]);
+  const [photos, setPhotos] = useState<BodyPhoto[]>([]);
   const [ready, setReady] = useState(false);
-  const [dbRef, setDbRef] = useState(null);
+  const [dbRef, setDbRef] = useState<IDBDatabase | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -65,7 +67,7 @@ export function useBodyPhotos() {
       .then(async (db) => {
         if (cancelled) return;
         setDbRef(db);
-        const all = await dbGetAll(db);
+        const all = await dbGetAll<BodyPhoto>(db);
         if (!cancelled) {
           setPhotos(
             all.sort((a, b) => (b.date || "").localeCompare(a.date || "")),

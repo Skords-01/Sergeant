@@ -22,7 +22,11 @@ export function useWorkoutTemplates() {
   }, []);
 
   const addTemplate = useCallback(
-    (name, exerciseIds, { groups } = {}) => {
+    (
+      name: string,
+      exerciseIds: string[],
+      { groups }: { groups?: unknown[] } = {},
+    ) => {
       const n = (name || "").trim();
       if (!n) throw new Error("name required");
       const ids = Array.isArray(exerciseIds) ? exerciseIds.filter(Boolean) : [];

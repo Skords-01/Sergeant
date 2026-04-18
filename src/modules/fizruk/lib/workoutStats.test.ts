@@ -9,7 +9,7 @@ import {
   workoutDurationSec,
   workoutTonnageKg,
   weeklyVolumeSeriesNow,
-} from "./workoutStats.js";
+} from "./workoutStats";
 
 describe("workoutTonnageKg", () => {
   it("sums strength sets", () => {

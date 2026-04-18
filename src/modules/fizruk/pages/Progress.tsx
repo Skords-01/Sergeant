@@ -76,7 +76,7 @@ export function Progress() {
 
   const weeklyByMuscle = useMemo(() => {
     const now = Date.now();
-    const weeks = new Map();
+    const weeks = new Map<number, Record<string, number>>();
     const DAY = 24 * 60 * 60 * 1000;
     const cutoff = now - 28 * DAY;
 
@@ -85,7 +85,7 @@ export function Progress() {
       if (!Number.isFinite(t) || t < cutoff) continue;
       const wk = weekStartMs(t);
       if (!weeks.has(wk)) weeks.set(wk, {});
-      const bucket = weeks.get(wk);
+      const bucket = weeks.get(wk)!;
       for (const it of w.items || []) {
         const primary = it.musclesPrimary || [];
         const secondary = it.musclesSecondary || [];
@@ -103,7 +103,7 @@ export function Progress() {
             (Number(it.distanceM) || 0) / 1000 +
             (Number(it.durationSec) || 0) / 60 / 30;
         }
-        const add = (id, wgt) => {
+        const add = (id: string, wgt: number) => {
           if (!id) return;
           bucket[id] = (bucket[id] || 0) + pts * wgt;
         };
@@ -125,7 +125,13 @@ export function Progress() {
   }, [workouts, musclesUk]);
 
   const prs = useMemo(() => {
-    const by = {};
+    type PR = {
+      best1rm: number;
+      weightKg: number;
+      reps: number;
+      at: string;
+    };
+    const by: Record<string, PR> = {};
     for (const w of workouts || []) {
       for (const it of w.items || []) {
         const exId = it.exerciseId;
@@ -149,17 +155,20 @@ export function Progress() {
         ex?.name?.uk || ex?.name?.en || ex.id,
       ]),
     );
-    const groupById = new Map(
+    const groupById = new Map<string, string | null>(
       (exercises || []).map((ex) => [ex.id, ex.primaryGroup || null]),
     );
     return Object.entries(by)
-      .map(([id, v]) => ({
-        id,
-        name: labelById.get(id) || id,
-        muscleGroup: groupById.get(id) || null,
-        muscleGroupLabel: musclesUk?.[groupById.get(id)] || null,
-        ...v,
-      }))
+      .map(([id, v]) => {
+        const group = groupById.get(id) || null;
+        return {
+          id,
+          name: labelById.get(id) || id,
+          muscleGroup: group,
+          muscleGroupLabel: group ? musclesUk?.[group] || null : null,
+          ...v,
+        };
+      })
       .sort((a, b) => b.best1rm - a.best1rm);
   }, [workouts, exercises, musclesUk]);
 

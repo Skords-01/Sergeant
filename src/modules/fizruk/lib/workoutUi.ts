@@ -1,6 +1,6 @@
 /** UI helpers for workout logging (pure, no React). */
 
-export { ACTIVE_WORKOUT_KEY } from "./fizrukStorage.js";
+export { ACTIVE_WORKOUT_KEY } from "./fizrukStorage";
 /** @deprecated Використовуй клас `fizruk-sheet-pad` у index.css */
 export const SHEET_BOTTOM_PADDING =
   "calc(env(safe-area-inset-bottom, 16px) + 72px)";
@@ -39,4 +39,4 @@ export function formatRestClock(sec) {
   return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
-export { mondayStartMs } from "./workoutStats.js";
+export { mondayStartMs } from "./workoutStats";

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { MONTHLY_PLAN_STORAGE_KEY } from "../lib/fizrukStorage.js";
+import { MONTHLY_PLAN_STORAGE_KEY } from "../lib/fizrukStorage";
 
 const STORAGE_KEY = MONTHLY_PLAN_STORAGE_KEY;
 

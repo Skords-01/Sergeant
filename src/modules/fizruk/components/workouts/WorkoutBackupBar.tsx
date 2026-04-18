@@ -28,11 +28,11 @@ export function WorkoutBackupBar({ className }) {
     const r = new FileReader();
     r.onload = () => {
       try {
-        const data = JSON.parse(r.result);
+        const data = JSON.parse(String(r.result));
         applyFizrukBackupPayload(data, { replace });
         window.location.reload();
       } catch (err) {
-        alert(err?.message || "Не вдалось імпортувати файл");
+        alert((err as Error)?.message || "Не вдалось імпортувати файл");
       }
       e.target.value = "";
     };

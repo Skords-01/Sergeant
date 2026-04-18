@@ -8,7 +8,7 @@ import { useMonthlyPlan } from "../hooks/useMonthlyPlan";
 import { useRecovery } from "../hooks/useRecovery";
 import { useWorkouts } from "../hooks/useWorkouts";
 import { useWorkoutTemplates } from "../hooks/useWorkoutTemplates";
-import { forecastFullRecoveryByDate } from "../lib/recoveryForecast.js";
+import { forecastFullRecoveryByDate } from "../lib/recoveryForecast";
 
 const WEEKDAYS = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Нд"];
 

@@ -25,10 +25,23 @@ vi.mock("react-virtuoso", () => ({
   ),
 }));
 
-import { WorkoutJournalSection } from "./WorkoutJournalSection.jsx";
+import { WorkoutJournalSection } from "./WorkoutJournalSection";
 
-function baseProps(overrides = {}) {
-  const active = overrides.activeWorkout ?? {
+interface BaseWorkout {
+  id: string;
+  startedAt: string;
+  endedAt: string | null;
+  items: unknown[];
+  groups: unknown[];
+  warmup: unknown;
+  cooldown: unknown;
+  note: string;
+}
+
+function baseProps(
+  overrides: { activeWorkout?: BaseWorkout } & Record<string, unknown> = {},
+) {
+  const active: BaseWorkout = overrides.activeWorkout ?? {
     id: "w-active",
     startedAt: new Date("2025-01-01T10:00:00Z").toISOString(),
     endedAt: null,

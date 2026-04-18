@@ -16,7 +16,7 @@ import {
   totalCompletedVolumeKg,
   workoutDurationSec,
 } from "../lib/workoutStats";
-import { ACTIVE_WORKOUT_KEY } from "../lib/workoutUi.js";
+import { ACTIVE_WORKOUT_KEY } from "../lib/workoutUi";
 
 const SELECTED_TEMPLATE_KEY = "fizruk_selected_template_id_v1";
 
@@ -231,7 +231,7 @@ export function Dashboard({
 
   const [pendingTemplateId, setPendingTemplateId] = useState(null);
 
-  const tryStartPlan = (picks, templateId) => {
+  const tryStartPlan = (picks: unknown[], templateId?: string | null) => {
     if (!picks?.length) return;
     const risky = picks.some(
       (ex) => recoveryConflictsForExercise(ex, rec.by).hasWarning,

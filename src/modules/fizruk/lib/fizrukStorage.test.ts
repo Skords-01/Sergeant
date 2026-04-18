@@ -7,7 +7,7 @@ import {
   parseCustomExercisesFromStorage,
   WORKOUTS_STORAGE_KEY,
   CUSTOM_EXERCISES_KEY,
-} from "./fizrukStorage.js";
+} from "./fizrukStorage";
 
 describe("fizrukStorage – defensive parsing/import", () => {
   beforeEach(() => {

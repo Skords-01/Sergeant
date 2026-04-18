@@ -4,7 +4,7 @@ import { Button } from "@shared/components/ui/Button";
 import { useToast } from "@shared/hooks/useToast.jsx";
 import { requestRoutineNotificationPermission } from "../../modules/routine/hooks/useRoutineReminders.js";
 import { useRoutineState } from "../../modules/routine/hooks/useRoutineState.js";
-import { useMonthlyPlan } from "../../modules/fizruk/hooks/useMonthlyPlan.js";
+import { useMonthlyPlan } from "../../modules/fizruk/hooks/useMonthlyPlan";
 import {
   loadNutritionPrefs,
   persistNutritionPrefs,
