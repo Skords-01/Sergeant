@@ -87,7 +87,7 @@ function WelcomeStep({ name, setName, onNext }) {
       <div>
         <h2 className="text-2xl font-bold text-text">Вітаємо в Sergeant!</h2>
         <p className="text-sm text-muted mt-2 leading-relaxed">
-          Почнемо з головного — грошей. Це займе менше хвилини.
+          Особистий хаб для фінансів, звичок, тренувань та харчування.
         </p>
       </div>
       <div className="w-full space-y-1.5 text-left">
@@ -120,21 +120,122 @@ function WelcomeStep({ name, setName, onNext }) {
   );
 }
 
-// The three "first value" paths a new user can pick. Keep copy short: every
-// extra word is a decision the user has to make before they see any value.
-function QuickStartStep({ onPick, onBack }) {
+// Step 2: module picker. Shows all 4 modules so the user knows Sergeant is
+// more than Finyk before being routed to a specific quick-start flow.
+const MODULE_OPTIONS = [
+  {
+    id: "finyk",
+    icon: "credit-card",
+    title: "Фінік",
+    desc: "Бюджет, витрати, банки",
+    accent: "bg-finyk/10 text-finyk",
+  },
+  {
+    id: "routine",
+    icon: "check",
+    title: "Рутина",
+    desc: "Звички, трекер, серії",
+    accent: "bg-routine/10 text-routine",
+  },
+  {
+    id: "fizruk",
+    icon: "dumbbell",
+    title: "Фізрук",
+    desc: "Тренування, кардіо, вага",
+    accent: "bg-fizruk/10 text-fizruk",
+  },
+  {
+    id: "nutrition",
+    icon: "utensils",
+    title: "Харчування",
+    desc: "Журнал їжі, склад, рецепти",
+    accent: "bg-nutrition/10 text-nutrition",
+  },
+];
+
+function ModulePickerStep({ selected, setSelected, onNext, onBack }) {
+  return (
+    <div className="space-y-4">
+      <div className="text-center">
+        <div className="w-14 h-14 mx-auto rounded-2xl bg-brand-500/10 text-brand-600 flex items-center justify-center mb-2">
+          <Icon name="target" size={28} strokeWidth={1.8} />
+        </div>
+        <h2 className="text-xl font-bold text-text">З чого почнемо?</h2>
+        <p className="text-sm text-muted mt-1">
+          Оберіть модуль — інші завжди під рукою на дашборді
+        </p>
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        {MODULE_OPTIONS.map((o) => {
+          const isActive = selected === o.id;
+          return (
+            <button
+              key={o.id}
+              type="button"
+              onClick={() => setSelected(o.id)}
+              className={cn(
+                "text-left px-3 py-3 rounded-2xl border transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50",
+                isActive
+                  ? "border-brand-500 bg-brand-500/5"
+                  : "border-line bg-panelHi hover:border-brand-500/40",
+              )}
+            >
+              <div
+                className={cn(
+                  "w-9 h-9 rounded-xl flex items-center justify-center mb-1.5",
+                  o.accent,
+                )}
+              >
+                <Icon name={o.icon} size={18} />
+              </div>
+              <div className="text-sm font-semibold text-text">{o.title}</div>
+              <div className="text-[11px] text-muted mt-0.5 leading-tight">
+                {o.desc}
+              </div>
+            </button>
+          );
+        })}
+      </div>
+      <div className="flex gap-2 pt-1">
+        <Button
+          type="button"
+          onClick={onBack}
+          variant="secondary"
+          size="md"
+          className="flex-1"
+        >
+          Назад
+        </Button>
+        <Button
+          type="button"
+          onClick={onNext}
+          variant="primary"
+          size="md"
+          className="flex-1"
+          disabled={!selected}
+        >
+          Далі
+          <Icon name="chevron-right" size={14} />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+// The three "first value" paths a new user can pick inside Фінік.
+function FinykQuickStartStep({ onPick, onBack }) {
   const options = [
-    {
-      id: "bank",
-      icon: "credit-card",
-      title: "Підключити Monobank",
-      desc: "Автоматичні транзакції за 30 секунд",
-    },
     {
       id: "manual",
       icon: "edit",
       title: "Додати першу витрату",
       desc: "Швидко, без входу в банк",
+    },
+    {
+      id: "bank",
+      icon: "credit-card",
+      title: "Підключити Monobank",
+      desc: "Автоматичні транзакції за 30 секунд",
     },
     {
       id: "demo",
@@ -195,20 +296,17 @@ function QuickStartStep({ onPick, onBack }) {
 export function OnboardingWizard({ onDone }) {
   const [step, setStep] = useState(0);
   const [name, setName] = useState("");
+  const [pickedModule, setPickedModule] = useState("finyk");
 
-  const TOTAL = 2;
+  // For Finyk we keep the 3-way quick-start; other modules get a single
+  // "Відкрити" step so total step count flexes between 3 and 3.
+  const TOTAL = 3;
 
-  // Wizard mounts exactly once per onboarding attempt — emit start event here
-  // rather than in a parent so the signal is colocated with the flow itself.
   useEffect(() => {
     trackEvent(ANALYTICS_EVENTS.ONBOARDING_STARTED);
   }, []);
 
-  const finish = (intent) => {
-    trackEvent(ANALYTICS_EVENTS.ONBOARDING_COMPLETED, {
-      intent,
-      providedName: Boolean(name.trim()),
-    });
+  const persistName = () => {
     if (name.trim()) {
       try {
         localStorage.setItem("hub_user_name", name.trim());
@@ -216,11 +314,28 @@ export function OnboardingWizard({ onDone }) {
         /* ignore */
       }
     }
+  };
+
+  const finishWithIntent = (intent) => {
+    trackEvent(ANALYTICS_EVENTS.ONBOARDING_COMPLETED, {
+      intent,
+      providedName: Boolean(name.trim()),
+      module: pickedModule,
+    });
+    persistName();
     markOnboardingDone();
-    // Every quick-start path currently lands in Finyk — banks, manual
-    // entry and demo data all live there. Keeping the module id explicit
-    // makes it trivial to branch later (e.g. "спробувати фізрук з демо").
-    onDone("finyk", { intent });
+    onDone(pickedModule, { intent });
+  };
+
+  const finishSimple = () => {
+    trackEvent(ANALYTICS_EVENTS.ONBOARDING_COMPLETED, {
+      intent: "open_module",
+      providedName: Boolean(name.trim()),
+      module: pickedModule,
+    });
+    persistName();
+    markOnboardingDone();
+    onDone(pickedModule, { intent: "open_module" });
   };
 
   return (
@@ -237,8 +352,6 @@ export function OnboardingWizard({ onDone }) {
           <button
             type="button"
             onClick={() => {
-              // "Пропустити" — still fire a completion event so funnels can
-              // distinguish skipped vs explicit quick-start picks.
               trackEvent(ANALYTICS_EVENTS.ONBOARDING_COMPLETED, {
                 intent: "skipped",
                 providedName: Boolean(name.trim()),
@@ -260,11 +373,71 @@ export function OnboardingWizard({ onDone }) {
           />
         )}
         {step === 1 && (
-          <QuickStartStep
-            onPick={(intent) => finish(intent)}
+          <ModulePickerStep
+            selected={pickedModule}
+            setSelected={setPickedModule}
+            onNext={() => setStep(2)}
             onBack={() => setStep(0)}
           />
         )}
+        {step === 2 && pickedModule === "finyk" && (
+          <FinykQuickStartStep
+            onPick={finishWithIntent}
+            onBack={() => setStep(1)}
+          />
+        )}
+        {step === 2 && pickedModule !== "finyk" && (
+          <ModuleOpenStep
+            moduleId={pickedModule}
+            onOpen={finishSimple}
+            onBack={() => setStep(1)}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ModuleOpenStep({ moduleId, onOpen, onBack }) {
+  const opt =
+    MODULE_OPTIONS.find((o) => o.id === moduleId) || MODULE_OPTIONS[0];
+  return (
+    <div className="space-y-4 text-center">
+      <div
+        className={cn(
+          "w-16 h-16 mx-auto rounded-2xl flex items-center justify-center",
+          opt.accent,
+        )}
+      >
+        <Icon name={opt.icon} size={32} strokeWidth={1.8} />
+      </div>
+      <div>
+        <h2 className="text-xl font-bold text-text">{opt.title}</h2>
+        <p className="text-sm text-muted mt-1 leading-relaxed">
+          Готово. Натисніть «Відкрити», щоб почати. Решту модулів знайдете на
+          дашборді.
+        </p>
+      </div>
+      <div className="flex gap-2 pt-1">
+        <Button
+          type="button"
+          onClick={onBack}
+          variant="secondary"
+          size="md"
+          className="flex-1"
+        >
+          Назад
+        </Button>
+        <Button
+          type="button"
+          onClick={onOpen}
+          variant="primary"
+          size="md"
+          className="flex-1"
+        >
+          Відкрити
+          <Icon name="chevron-right" size={14} />
+        </Button>
       </div>
     </div>
   );
