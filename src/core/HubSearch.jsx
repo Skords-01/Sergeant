@@ -290,7 +290,7 @@ export function HubSearch({ onClose, onOpenModule }) {
             placeholder="Пошук по всіх модулях..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="w-full h-11 pl-10 pr-4 rounded-2xl bg-panelHi border border-line text-text placeholder:text-muted text-sm focus:outline-none focus:ring-2 focus:ring-accent/40"
+            className="w-full h-11 pl-10 pr-4 rounded-2xl bg-panelHi border border-line text-text placeholder:text-muted text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/40"
           />
         </div>
         <button

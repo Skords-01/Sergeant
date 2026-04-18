@@ -45,6 +45,24 @@ export default [
         { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
       ],
       "react/prop-types": "off",
+      // Prevent reintroduction of legacy `accent`/`forest` tokens that were
+      // retired when Sergeant migrated to the Emerald/Teal/Coral/Lime palette.
+      // Use brand-*, fizruk, routine, nutrition, finyk tokens instead.
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector:
+            "Literal[value=/\\b(?:bg|text|border|ring|from|to|via|fill|stroke|shadow|outline|divide|placeholder|caret)-(?:accent|forest)(?:-grad)?(?:\\/\\d+)?\\b/]",
+          message:
+            "Legacy token `accent`/`forest` retired — use `brand-500`, `fizruk`, `routine`, `nutrition`, or `finyk` instead.",
+        },
+        {
+          selector:
+            "TemplateElement[value.raw=/\\b(?:bg|text|border|ring|from|to|via|fill|stroke|shadow|outline|divide|placeholder|caret)-(?:accent|forest)(?:-grad)?(?:\\/\\d+)?\\b/]",
+          message:
+            "Legacy token `accent`/`forest` retired — use `brand-500`, `fizruk`, `routine`, `nutrition`, or `finyk` instead.",
+        },
+      ],
     },
   },
   {

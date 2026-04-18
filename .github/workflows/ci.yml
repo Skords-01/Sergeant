@@ -40,7 +40,7 @@ jobs:
         run: >-
           npx --yes license-checker-rseidelsohn@4.4.2
           --production
-          --excludePackages "hub@0.1.0"
+          --excludePackages "sergeant@0.1.0"
           --onlyAllow
           "MIT;ISC;Apache-2.0;BSD-2-Clause;BSD-3-Clause;MIT-0;0BSD;BlueOak-1.0.0;CC0-1.0;MPL-2.0;(Unlicense OR Apache-2.0)"
 

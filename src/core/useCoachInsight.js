@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useCallback } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiUrl } from "@shared/lib/apiUrl.js";
 
 const CACHE_KEY = "hub_coach_insight_cache_v1";
@@ -207,67 +207,82 @@ async function fetchCoachInsight() {
   return insightJson.insight ?? null;
 }
 
-export function useCoachInsight() {
-  const [insight, setInsight] = useState(null);
+// React Query key factory — exported so other callers (e.g. the weekly
+// digest mutation) can invalidate the insight when the underlying data
+// signature changes.
+export const coachInsightQueryKey = (todayKey = localDateKey()) => [
+  "coach",
+  "insight",
+  todayKey,
+];
 
-  const mutation = useMutation({
-    mutationFn: fetchCoachInsight,
-    onSuccess: (text) => {
-      if (!text) return;
-      try {
-        localStorage.setItem(
-          CACHE_KEY,
-          JSON.stringify({ date: localDateKey(), text }),
-        );
-      } catch {}
-      setInsight(text);
+// Seed the query from localStorage only when the cached date matches the
+// *current* calendar day. At midnight the query key rolls over, producing a
+// fresh cache entry, and stale cross-day localStorage is ignored.
+function loadInitialInsight(todayKey) {
+  const cached = safeParseLS(CACHE_KEY, null);
+  if (cached?.date === todayKey && typeof cached?.text === "string") {
+    return cached.text;
+  }
+  return undefined;
+}
+
+export function useCoachInsight() {
+  const queryClient = useQueryClient();
+  const todayKey = localDateKey();
+  const queryKey = coachInsightQueryKey(todayKey);
+
+  const query = useQuery({
+    queryKey,
+    queryFn: fetchCoachInsight,
+    // The snapshot depends on localStorage that can change during a session
+    // (new transaction, new workout, etc.), but regenerating costs an AI
+    // call — so we keep the day's insight cached until the user explicitly
+    // refreshes or the date-keyed cache rolls at midnight.
+    staleTime: Infinity,
+    gcTime: 24 * 60 * 60_000,
+    initialData: () => loadInitialInsight(todayKey),
+    // Without a fetched-at marker, React Query would still consider the
+    // seeded data stale and refetch on mount. We only want to refetch when
+    // there was no cached insight for today.
+    initialDataUpdatedAt: () => {
+      const cached = safeParseLS(CACHE_KEY, null);
+      if (cached?.date !== todayKey) return undefined;
+      return Date.now();
     },
   });
 
-  const { mutateAsync } = mutation;
-
-  // Depending on the whole `mutation` object would recreate `loadInsight`
-  // on every state transition (isPending flip, etc.), which in turn makes
-  // `refresh` below unstable and defeats its `useCallback`. `mutateAsync`
-  // is a stable reference in react-query v5, so we depend on it directly.
-  const loadInsight = useCallback(
-    async (force = false) => {
-      const todayKey = localDateKey();
-      if (!force) {
-        const cached = safeParseLS(CACHE_KEY, null);
-        if (cached?.date === todayKey && cached?.text) {
-          setInsight(cached.text);
-          return cached.text;
-        }
+  // Write-through to localStorage so cross-session hydration keeps working.
+  // We do this in a subscription-free callback rather than an effect to
+  // avoid an extra render and to stay in sync with `data` changes from
+  // both mount-time `initialData` and fresh fetches.
+  if (
+    typeof query.data === "string" &&
+    query.data.length > 0 &&
+    !query.isFetching
+  ) {
+    try {
+      const cached = safeParseLS(CACHE_KEY, null);
+      if (cached?.date !== todayKey || cached?.text !== query.data) {
+        localStorage.setItem(
+          CACHE_KEY,
+          JSON.stringify({ date: todayKey, text: query.data }),
+        );
       }
-      try {
-        return await mutateAsync();
-      } catch {
-        return null;
-      }
-    },
-    [mutateAsync],
-  );
+    } catch {}
+  }
 
-  useEffect(() => {
-    const todayKey = localDateKey();
-    const cached = safeParseLS(CACHE_KEY, null);
-    if (cached?.date === todayKey && cached?.text) {
-      setInsight(cached.text);
-      return;
-    }
-    loadInsight();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const refresh = useCallback(() => loadInsight(true), [loadInsight]);
+  const refresh = useCallback(() => {
+    // Drop stale cache entries from prior days so they can't be resurrected
+    // via `initialData` on a remount.
+    queryClient.invalidateQueries({ queryKey: ["coach", "insight"] });
+    return query.refetch();
+  }, [queryClient, query]);
 
   return {
-    insight,
-    loading: mutation.isPending,
-    error: mutation.error
-      ? mutation.error.message || "Помилка завантаження"
-      : null,
+    insight: query.data ?? null,
+    loading: query.isPending || query.isFetching,
+    error: query.error ? query.error.message || "Помилка завантаження" : null,
     refresh,
   };
 }

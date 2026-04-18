@@ -130,7 +130,7 @@ export function Measurements() {
           <div className="mt-3">
             <button
               type="button"
-              className="w-full py-4 rounded-full font-bold text-[15px] bg-accent text-forest transition-all active:scale-[0.98]"
+              className="w-full py-4 rounded-full font-bold text-[15px] bg-fizruk text-white transition-all active:scale-[0.98]"
               onClick={() => {
                 const payload = {};
                 for (const f of MEASURE_FIELDS) {

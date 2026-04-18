@@ -29,14 +29,14 @@ export default defineConfig(({ mode }) => {
           "apple-touch-icon.png",
         ],
         manifest: {
-          name: "Мій простір",
-          short_name: "Hub",
-          description: "Особистий простір: фінанси, спорт та звички",
+          name: "Sergeant — Твій персональний хаб життя",
+          short_name: "Sergeant",
+          description: "Персональний хаб: фінанси, спорт, звички та харчування",
           start_url: "/",
           display: "standalone",
           orientation: "portrait",
-          background_color: "#0b1120",
-          theme_color: "#0d1726",
+          background_color: "#fdf9f3",
+          theme_color: "#fdf9f3",
           lang: "uk",
           shortcuts: [
             {

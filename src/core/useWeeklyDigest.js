@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useCallback } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiUrl } from "@shared/lib/apiUrl.js";
 import { STORAGE_KEYS } from "@shared/lib/storageKeys.js";
 import { safeReadLS } from "@shared/lib/storage.js";
@@ -75,9 +75,6 @@ export function listDigestHistory() {
 function saveDigest(weekKey, data) {
   try {
     localStorage.setItem(`${DIGEST_PREFIX}${weekKey}`, JSON.stringify(data));
-    window.dispatchEvent(
-      new CustomEvent("hub-weekly-digest-updated", { detail: { weekKey } }),
-    );
   } catch {}
 }
 
@@ -326,28 +323,44 @@ async function generateWeeklyDigest(weekKey) {
   };
 }
 
+// ─── React Query integration ─────────────────────────────────────────────
+//
+// localStorage is the source of truth for persisted digests; React Query
+// caches it in memory so multiple mounted consumers (dashboard card,
+// settings panel, Monday auto-digest) share a single observable copy. The
+// mutation writes through to both localStorage and the query cache, which
+// replaces the previous `hub-weekly-digest-updated` CustomEvent fan-out.
+
+export const weeklyDigestQueryKey = (weekKey) => ["weekly-digest", weekKey];
+export const weeklyDigestHistoryQueryKey = ["weekly-digest", "history"];
+
+export function useDigestHistory() {
+  return useQuery({
+    queryKey: weeklyDigestHistoryQueryKey,
+    queryFn: listDigestHistory,
+    // Pure localStorage read — only mutates when the generation mutation
+    // invalidates this key explicitly.
+    staleTime: Infinity,
+    gcTime: Infinity,
+  });
+}
+
 export function useWeeklyDigest(selectedWeekKey) {
+  const queryClient = useQueryClient();
   const currentWeekKey = getWeekKey();
   const weekKey = selectedWeekKey || currentWeekKey;
   const weekRange = getWeekRange(new Date(weekKey + "T12:00:00"));
   const isCurrentWeek = weekKey === currentWeekKey;
 
-  const [digest, setDigest] = useState(() => loadDigest(weekKey));
-
-  useEffect(() => {
-    setDigest(loadDigest(weekKey));
-  }, [weekKey]);
-
-  useEffect(() => {
-    const handler = (e) => {
-      if (!e.detail?.weekKey || e.detail.weekKey === weekKey) {
-        setDigest(loadDigest(weekKey));
-      }
-    };
-    window.addEventListener("hub-weekly-digest-updated", handler);
-    return () =>
-      window.removeEventListener("hub-weekly-digest-updated", handler);
-  }, [weekKey]);
+  const query = useQuery({
+    queryKey: weeklyDigestQueryKey(weekKey),
+    // Synchronous localStorage read. Any update flows through
+    // `setQueryData` from the mutation below, so this effectively runs
+    // once per weekKey per session.
+    queryFn: () => loadDigest(weekKey) ?? null,
+    staleTime: Infinity,
+    gcTime: Infinity,
+  });
 
   const mutation = useMutation({
     mutationFn: generateWeeklyDigest,
@@ -359,7 +372,15 @@ export function useWeeklyDigest(selectedWeekKey) {
         weekRange: wr,
       };
       saveDigest(wk, newDigest);
-      setDigest(newDigest);
+      // Fan out to every observer of this week's digest — dashboard,
+      // settings, stories. Replaces the CustomEvent broadcast.
+      queryClient.setQueryData(weeklyDigestQueryKey(wk), newDigest);
+      // Picker + history list must pick up the new entry.
+      queryClient.invalidateQueries({ queryKey: weeklyDigestHistoryQueryKey });
+      // The generated digest is also pushed into the coach memory (below),
+      // so today's coach insight is now based on stale context. Drop it so
+      // the next mount / refresh regenerates with the richer context.
+      queryClient.invalidateQueries({ queryKey: ["coach", "insight"] });
 
       // Fire-and-forget push of digest into coach memory so /api/coach/insight
       // has richer context on the next call. Failures are non-fatal.
@@ -404,7 +425,7 @@ export function useWeeklyDigest(selectedWeekKey) {
   }, [weekKey, isCurrentWeek, mutateAsync]);
 
   return {
-    digest,
+    digest: query.data ?? null,
     loading: mutation.isPending,
     error: mutation.error ? mutation.error.message || "Помилка мережі" : null,
     weekKey,

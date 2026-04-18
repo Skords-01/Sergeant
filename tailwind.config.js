@@ -64,10 +64,6 @@ export default {
         warning: statusColors.warning,
         info: statusColors.info,
 
-        // Legacy accent (gradually phase out)
-        accent: brandColors.lime[300],
-        forest: "#0f2d1a",
-
         // ═══════════════════════════════════════════════════════════════════
         // CHART PALETTE — For pie charts, graphs, data visualization
         // ═══════════════════════════════════════════════════════════════════
@@ -184,8 +180,6 @@ export default {
         "card-coral": "linear-gradient(135deg, #fff5f3 0%, #ffffff 100%)",
         "card-lime": "linear-gradient(135deg, #f8fee7 0%, #ffffff 100%)",
 
-        // Legacy (keep for backwards compatibility)
-        "forest-grad": "linear-gradient(135deg, #0f2d1a 0%, #1e4d2b 100%)",
         hero: "linear-gradient(150deg, #fdf9f3 0%, #fefdfb 100%)",
         "hero-g": "linear-gradient(150deg, #f0fdfa 0%, #ffffff 100%)",
         "routine-hero":

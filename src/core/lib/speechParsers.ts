@@ -6,7 +6,7 @@
 // ── Finyk: expense parser ──────────────────────────────────────────────────
 // e.g. "кава 45 гривень", "продукти 320 грн", "таксі двісті п'ятдесят"
 
-const UA_NUMBER_WORDS = {
+const UA_NUMBER_WORDS: Record<string, number> = {
   нуль: 0,
   один: 1,
   одна: 1,
@@ -51,7 +51,7 @@ const UA_NUMBER_WORDS = {
   тисяч: 1000,
 };
 
-function parseUaNumber(text) {
+function parseUaNumber(text: string): number | null {
   const lower = text.toLowerCase();
   const parsed = parseFloat(lower.replace(",", "."));
   if (!isNaN(parsed)) return parsed;
@@ -72,7 +72,13 @@ function parseUaNumber(text) {
   return total > 0 ? total : null;
 }
 
-export function parseExpenseSpeech(text) {
+export interface ParsedExpense {
+  name: string;
+  amount: number | null;
+  raw: string;
+}
+
+export function parseExpenseSpeech(text: string): ParsedExpense | null {
   if (!text?.trim()) return null;
 
   const lower = text.toLowerCase().replace(/[,]/g, ".");
@@ -81,7 +87,7 @@ export function parseExpenseSpeech(text) {
     lower.match(/(\d+(?:\.\d+)?)\s*(?:грн?|гривень|гривні|гривня|₴|uah)/i) ||
     lower.match(/(\d+(?:\.\d+)?)/);
 
-  let amount = null;
+  let amount: number | null = null;
   if (amountMatch) {
     amount = parseFloat(amountMatch[1]);
   }
@@ -113,7 +119,15 @@ export function parseExpenseSpeech(text) {
 // ── Fizruk: workout set parser ─────────────────────────────────────────────
 // e.g. "bench press 80 kg 8 reps", "присідання 100 кг 5 повторень"
 
-export function parseWorkoutSetSpeech(text) {
+export interface ParsedWorkoutSet {
+  exerciseName: string | null;
+  weight: number | null;
+  reps: number | null;
+  sets: number | null;
+  raw: string;
+}
+
+export function parseWorkoutSetSpeech(text: string): ParsedWorkoutSet | null {
   if (!text?.trim()) return null;
 
   const lower = text.toLowerCase();
@@ -130,20 +144,20 @@ export function parseWorkoutSetSpeech(text) {
     lower.match(/(\d+)\s*(?:підходів|підхід|sets?)/i) ||
     lower.match(/(?:підхід|sets?)\s*(\d+)/i);
 
-  let weight = null;
+  let weight: number | null = null;
   if (weightMatch) {
     weight = parseFloat(weightMatch[1].replace(",", "."));
     if (/lb|lbs|фунт/i.test(weightMatch[0]))
       weight = Math.round(weight * 0.453592);
   }
 
-  let reps = null;
+  let reps: number | null = null;
   if (repsMatch) reps = parseInt(repsMatch[1] || repsMatch[2], 10);
 
-  let sets = null;
+  let sets: number | null = null;
   if (setsMatch) sets = parseInt(setsMatch[1] || setsMatch[2], 10);
 
-  let exerciseName = text
+  let exerciseName: string | null = text
     .replace(/(\d+(?:[.,]\d+)?)\s*(?:кг|kg|кілограм|lb|lbs|фунт)?\b/gi, " ")
     .replace(
       /(\d+)\s*(?:повт|повторень|повторів|reps?|раз|разів|підходів|підхід|sets?)\b/gi,
@@ -168,7 +182,15 @@ export function parseWorkoutSetSpeech(text) {
 // ── Nutrition: meal parser ─────────────────────────────────────────────────
 // e.g. "гречка 200 грам 180 ккал", "овочевий салат 150г 45 калорій"
 
-export function parseMealSpeech(text) {
+export interface ParsedMeal {
+  name: string;
+  kcal: number | null;
+  grams: number | null;
+  protein: number | null;
+  raw: string;
+}
+
+export function parseMealSpeech(text: string): ParsedMeal | null {
   if (!text?.trim()) return null;
 
   const lower = text.toLowerCase();
@@ -185,14 +207,14 @@ export function parseMealSpeech(text) {
     /(\d+(?:[.,]\d+)?)\s*(?:г\s*білка|г\s*протеїну|g\s*protein|protein)/i,
   );
 
-  let kcal = null;
+  let kcal: number | null = null;
   if (kcalMatch)
     kcal = parseFloat((kcalMatch[1] || kcalMatch[2]).replace(",", "."));
 
-  let grams = null;
+  let grams: number | null = null;
   if (gramsMatch) grams = parseFloat(gramsMatch[1].replace(",", "."));
 
-  let protein = null;
+  let protein: number | null = null;
   if (proteinMatch) protein = parseFloat(proteinMatch[1].replace(",", "."));
 
   let name = text

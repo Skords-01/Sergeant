@@ -118,6 +118,20 @@
     background-color: rgba(16, 185, 129, 0.2);
     color: inherit;
   }
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     REDUCED MOTION — respect OS-level preference (WCAG 2.3.3)
+     ═══════════════════════════════════════════════════════════════════════ */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
 }
 
 @layer components {
@@ -273,6 +287,16 @@
     @apply outline-none ring-2 ring-coral-500/45 ring-offset-2 ring-offset-panel rounded-xl;
   }
 
+  .nutrition-sheet button:focus-visible,
+  .nutrition-sheet a:focus-visible {
+    @apply outline-none ring-2 ring-lime-500/45 ring-offset-2 ring-offset-panel rounded-xl;
+  }
+
+  .finyk-sheet button:focus-visible,
+  .finyk-sheet a:focus-visible {
+    @apply outline-none ring-2 ring-brand-500/45 ring-offset-2 ring-offset-panel rounded-xl;
+  }
+
   /* ═══════════════════════════════════════════════════════════════════════
      PROGRESS RING — Duolingo-style circular progress
      ═══════════════════════════════════════════════════════════════════════ */
@@ -330,11 +354,6 @@
   }
   .dark .badge-neutral {
     @apply bg-stone-800 text-stone-400;
-  }
-
-  /* Legacy compatibility */
-  .fizruk-hero-card-legacy {
-    @apply rounded-3xl p-4 border border-line/20 bg-forest-grad;
   }
 }
 

@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { cn } from "@shared/lib/cn";
 import { Icon } from "@shared/components/ui/Icon";
 import {
   useWeeklyDigest,
-  listDigestHistory,
+  useDigestHistory,
   getWeekKey,
   loadDigest,
 } from "./useWeeklyDigest.js";
@@ -327,25 +327,13 @@ export function WeeklyDigestCard() {
   const currentWeekKey = getWeekKey();
   const [selectedWeekKey, setSelectedWeekKey] = useState(currentWeekKey);
   const [showHistory, setShowHistory] = useState(false);
-  const [history, setHistory] = useState(() => listDigestHistory());
   const [storiesOpen, setStoriesOpen] = useState(false);
 
   const { digest, loading, error, weekRange, generate, isCurrentWeek } =
     useWeeklyDigest(selectedWeekKey);
+  const { data: history = [] } = useDigestHistory();
 
-  useEffect(() => {
-    const handler = () => setHistory(listDigestHistory());
-    window.addEventListener("hub-weekly-digest-updated", handler);
-    return () =>
-      window.removeEventListener("hub-weekly-digest-updated", handler);
-  }, []);
-
-  const handleGenerate = async () => {
-    const result = await generate();
-    if (result) {
-      setHistory(listDigestHistory());
-    }
-  };
+  const handleGenerate = () => generate();
 
   const isPast = selectedWeekKey !== currentWeekKey;
 

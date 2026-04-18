@@ -8,27 +8,64 @@
  *   - Specific per-insight gates are documented below.
  */
 
-function safeLS(key, fallback) {
+export interface Insight {
+  id: string;
+  emoji: string;
+  title: string;
+  stat: string;
+  detail: string;
+}
+
+interface Workout {
+  startedAt: string;
+  endedAt?: string;
+}
+
+interface Transaction {
+  id: string;
+  amount: number;
+  time: number;
+}
+
+interface Habit {
+  id: string;
+  archived?: boolean;
+}
+
+interface RoutineState {
+  habits?: Habit[];
+  completions?: Record<string, string[]>;
+}
+
+interface NutritionDay {
+  meals?: Array<{ macros?: { kcal?: number } }>;
+}
+
+type NutritionLog = Record<string, NutritionDay | undefined>;
+
+function safeLS<T>(key: string, fallback: T): T {
   try {
     const raw = localStorage.getItem(key);
-    return raw ? JSON.parse(raw) : fallback;
+    return raw ? (JSON.parse(raw) as T) : fallback;
   } catch {
     return fallback;
   }
 }
 
-function localDateKey(d = new Date()) {
+function localDateKey(d: Date = new Date()): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-function parseFizrukWorkouts() {
+function parseFizrukWorkouts(): Workout[] {
   const raw = localStorage.getItem("fizruk_workouts_v1");
   if (!raw) return [];
   try {
-    const p = JSON.parse(raw);
+    const p = JSON.parse(raw) as Workout[] | { workouts?: Workout[] } | null;
     if (Array.isArray(p)) return p;
     if (p && Array.isArray(p.workouts)) return p.workouts;
-  } catch {}
+  } catch {
+    /* ignore */
+  }
   return [];
 }
 
@@ -61,11 +98,11 @@ const MONTHS_UK = [
  * Insight 1: Best day-of-week for workouts.
  * Requires ≥ 20 completed workouts (satisfies both "4 weeks" and "20+ events").
  */
-function workoutDayInsight() {
+function workoutDayInsight(): Insight | null {
   const workouts = parseFizrukWorkouts().filter((w) => w.endedAt);
   if (workouts.length < 20) return null;
 
-  const dowCount = Array(7).fill(0);
+  const dowCount = Array<number>(7).fill(0);
   for (const w of workouts) {
     dowCount[new Date(w.startedAt).getDay()]++;
   }
@@ -88,13 +125,16 @@ function workoutDayInsight() {
  * Requires ≥ 4 weeks with spending data AND ≥ 2 weeks in each group.
  * Excludes hidden transactions and internal transfers (mirrors report logic).
  */
-function activeWeeksSpendingInsight() {
+function activeWeeksSpendingInsight(): Insight | null {
   const workouts = parseFizrukWorkouts().filter((w) => w.endedAt);
-  const raw = safeLS("finyk_tx_cache", []);
-  const txs = Array.isArray(raw) ? raw : (raw?.txs ?? []);
-  const hiddenSet = new Set(safeLS("finyk_hidden_txs", []));
-  const txCategories = safeLS("finyk_tx_cats", {});
-  const transferIds = new Set(
+  const raw = safeLS<Transaction[] | { txs?: Transaction[] }>(
+    "finyk_tx_cache",
+    [],
+  );
+  const txs: Transaction[] = Array.isArray(raw) ? raw : (raw?.txs ?? []);
+  const hiddenSet = new Set<string>(safeLS<string[]>("finyk_hidden_txs", []));
+  const txCategories = safeLS<Record<string, string>>("finyk_tx_cats", {});
+  const transferIds = new Set<string>(
     Object.entries(txCategories)
       .filter(([, v]) => v === "internal_transfer")
       .map(([k]) => k),
@@ -105,7 +145,7 @@ function activeWeeksSpendingInsight() {
   const now = new Date();
   const mondayOffset = (now.getDay() + 6) % 7;
 
-  const weekStats = [];
+  const weekStats: Array<{ wCount: number; spending: number }> = [];
   for (let i = 0; i < 16; i++) {
     const mon = new Date(now);
     mon.setDate(now.getDate() - mondayOffset - i * 7);
@@ -173,16 +213,16 @@ function activeWeeksSpendingInsight() {
  * Requires ≥ 28 total completions (≈ 4 weeks × 1 habit/day minimum)
  * AND ≥ 4 distinct ISO weeks with any completion.
  */
-function bestHabitMonthInsight() {
-  const state = safeLS("hub_routine_v1", null);
+function bestHabitMonthInsight(): Insight | null {
+  const state = safeLS<RoutineState | null>("hub_routine_v1", null);
   if (!state) return null;
 
   const habits = (state.habits || []).filter((h) => !h.archived);
   const completions = state.completions || {};
   if (habits.length === 0) return null;
 
-  const monthDone = {};
-  const weekKeys = new Set();
+  const monthDone: Record<string, number> = {};
+  const weekKeys = new Set<string>();
   let totalCompletions = 0;
 
   for (const h of habits) {
@@ -202,7 +242,7 @@ function bestHabitMonthInsight() {
   const months = Object.keys(monthDone);
   if (months.length < 2) return null;
 
-  let bestMk = null;
+  let bestMk: string | null = null;
   let bestPct = 0;
 
   for (const mk of months) {
@@ -236,16 +276,16 @@ function bestHabitMonthInsight() {
  * Requires ≥ 20 total nutrition-logged days (satisfies "20+ events" spec threshold)
  * AND ≥ 7 days in each group (workout / rest).
  */
-function workoutKcalInsight() {
+function workoutKcalInsight(): Insight | null {
   const workouts = parseFizrukWorkouts().filter((w) => w.endedAt);
-  const log = safeLS("nutrition_log_v1", {});
+  const log = safeLS<NutritionLog>("nutrition_log_v1", {});
 
-  const workoutDays = new Set(
+  const workoutDays = new Set<string>(
     workouts.map((w) => localDateKey(new Date(w.startedAt))),
   );
 
-  const kcalWorkout = [];
-  const kcalRest = [];
+  const kcalWorkout: number[] = [];
+  const kcalRest: number[] = [];
 
   for (const [dk, dayData] of Object.entries(log)) {
     const meals = Array.isArray(dayData?.meals) ? dayData.meals : [];
@@ -289,9 +329,9 @@ function workoutKcalInsight() {
  * Compares high-habit weeks (≥ 70% completion) vs low-habit weeks (< 70%).
  * Requires ≥ 4 weeks with both habit and nutrition data.
  */
-function habitWeeksKcalInsight() {
-  const state = safeLS("hub_routine_v1", null);
-  const log = safeLS("nutrition_log_v1", {});
+function habitWeeksKcalInsight(): Insight | null {
+  const state = safeLS<RoutineState | null>("hub_routine_v1", null);
+  const log = safeLS<NutritionLog>("nutrition_log_v1", {});
 
   if (!state) return null;
   const habits = (state.habits || []).filter((h) => !h.archived);
@@ -300,14 +340,14 @@ function habitWeeksKcalInsight() {
 
   const now = new Date();
   const mondayOffset = (now.getDay() + 6) % 7;
-  const weekStats = [];
+  const weekStats: Array<{ habitPct: number; avgKcal: number }> = [];
 
   for (let i = 0; i < 16; i++) {
     const mon = new Date(now);
     mon.setDate(now.getDate() - mondayOffset - i * 7);
     mon.setHours(0, 0, 0, 0);
 
-    const dates = [];
+    const dates: string[] = [];
     for (let d = 0; d < 7; d++) {
       const dt = new Date(mon);
       dt.setDate(mon.getDate() + d);
@@ -330,7 +370,7 @@ function habitWeeksKcalInsight() {
 
     const kcalDays = dates
       .map((dk) => {
-        const meals = Array.isArray(log[dk]?.meals) ? log[dk].meals : [];
+        const meals = Array.isArray(log[dk]?.meals) ? log[dk]!.meals! : [];
         return meals.reduce((s, m) => s + (m?.macros?.kcal ?? 0), 0);
       })
       .filter((k) => k > 0);
@@ -374,10 +414,8 @@ function habitWeeksKcalInsight() {
 /**
  * Returns up to 4 cross-module insights computed from localStorage data.
  * Returns an empty array when there is not enough data in all insights.
- *
- * Each insight: { id, emoji, title, stat, detail }
  */
-export function generateInsights() {
+export function generateInsights(): Insight[] {
   return [
     workoutDayInsight(),
     activeWeeksSpendingInsight(),
@@ -385,6 +423,6 @@ export function generateInsights() {
     workoutKcalInsight(),
     habitWeeksKcalInsight(),
   ]
-    .filter(Boolean)
+    .filter((x): x is Insight => Boolean(x))
     .slice(0, 4);
 }
