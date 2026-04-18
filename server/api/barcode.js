@@ -1,5 +1,20 @@
 import { setCorsHeaders } from "./lib/cors.js";
 import { checkRateLimit } from "./lib/rateLimit.js";
+import { setRequestModule } from "../obs/requestContext.js";
+import {
+  barcodeLookupsTotal,
+  externalHttpRequestsTotal,
+} from "../obs/metrics.js";
+
+/** Емітить і барcode-domain метрику, і загальний outbound HTTP. */
+function recordLookup(source, outcome) {
+  try {
+    barcodeLookupsTotal.inc({ source, outcome });
+    externalHttpRequestsTotal.inc({ upstream: source, outcome });
+  } catch {
+    /* metrics must never break a request */
+  }
+}
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Source 1: Open Food Facts (no key, 100 req/min, global crowdsourced DB)
@@ -54,17 +69,30 @@ function normalizeOFF(product) {
 
 async function lookupOFF(barcode) {
   const url = `${OFF_BASE}/${barcode}.json?fields=${OFF_FIELDS}`;
-  const r = await fetch(url, {
-    headers: {
-      "User-Agent":
-        "Sergeant-NutritionApp/1.0 (https://sergeant.2dmanager.com.ua)",
-    },
-    signal: AbortSignal.timeout(7000),
-  });
-  if (!r.ok) return null;
-  const data = await r.json();
-  if (data?.status !== 1 || !data?.product) return null;
-  return normalizeOFF(data.product);
+  try {
+    const r = await fetch(url, {
+      headers: {
+        "User-Agent":
+          "Sergeant-NutritionApp/1.0 (https://sergeant.2dmanager.com.ua)",
+      },
+      signal: AbortSignal.timeout(7000),
+    });
+    if (!r.ok) {
+      recordLookup("off", "miss");
+      return null;
+    }
+    const data = await r.json();
+    if (data?.status !== 1 || !data?.product) {
+      recordLookup("off", "miss");
+      return null;
+    }
+    const product = normalizeOFF(data.product);
+    recordLookup("off", product ? "hit" : "miss");
+    return product;
+  } catch (e) {
+    recordLookup("off", "error");
+    throw e;
+  }
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -132,22 +160,36 @@ async function lookupUSDA(barcode) {
   const key = process.env.USDA_FDC_API_KEY || "DEMO_KEY";
   // Search Branded Foods by GTIN/UPC (barcode is stored in gtinUpc field)
   const url = `${FDC_BASE}/foods/search?query=${encodeURIComponent(barcode)}&dataType=Branded&pageSize=5&api_key=${key}`;
-  const r = await fetch(url, {
-    headers: { "User-Agent": "Sergeant-NutritionApp/1.0" },
-    signal: AbortSignal.timeout(7000),
-  });
-  if (!r.ok) return null;
-  const data = await r.json();
-  const foods = data?.foods;
-  if (!Array.isArray(foods) || foods.length === 0) return null;
+  try {
+    const r = await fetch(url, {
+      headers: { "User-Agent": "Sergeant-NutritionApp/1.0" },
+      signal: AbortSignal.timeout(7000),
+    });
+    if (!r.ok) {
+      recordLookup("usda", "miss");
+      return null;
+    }
+    const data = await r.json();
+    const foods = data?.foods;
+    if (!Array.isArray(foods) || foods.length === 0) {
+      recordLookup("usda", "miss");
+      return null;
+    }
 
-  // Prefer exact gtinUpc match, fallback to first result
-  const exact = foods.find(
-    (f) =>
-      String(f.gtinUpc || "").replace(/^0+/, "") === barcode.replace(/^0+/, ""),
-  );
-  const food = exact || foods[0];
-  return normalizeUSDA(food);
+    // Prefer exact gtinUpc match, fallback to first result
+    const exact = foods.find(
+      (f) =>
+        String(f.gtinUpc || "").replace(/^0+/, "") ===
+        barcode.replace(/^0+/, ""),
+    );
+    const food = exact || foods[0];
+    const product = normalizeUSDA(food);
+    recordLookup("usda", product ? "hit" : "miss");
+    return product;
+  } catch (e) {
+    recordLookup("usda", "error");
+    throw e;
+  }
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -157,38 +199,54 @@ async function lookupUSDA(barcode) {
 // ──────────────────────────────────────────────────────────────────────────────
 async function lookupUPCitemdb(barcode) {
   const url = `https://api.upcitemdb.com/prod/trial/lookup?upc=${encodeURIComponent(barcode)}`;
-  const r = await fetch(url, {
-    headers: { "User-Agent": "Sergeant-NutritionApp/1.0" },
-    signal: AbortSignal.timeout(6000),
-  });
-  if (!r.ok) return null;
-  const data = await r.json();
-  const item = Array.isArray(data?.items) ? data.items[0] : null;
-  if (!item) return null;
+  try {
+    const r = await fetch(url, {
+      headers: { "User-Agent": "Sergeant-NutritionApp/1.0" },
+      signal: AbortSignal.timeout(6000),
+    });
+    if (!r.ok) {
+      recordLookup("upcitemdb", "miss");
+      return null;
+    }
+    const data = await r.json();
+    const item = Array.isArray(data?.items) ? data.items[0] : null;
+    if (!item) {
+      recordLookup("upcitemdb", "miss");
+      return null;
+    }
 
-  const name = item.title || null;
-  if (!name) return null;
+    const name = item.title || null;
+    if (!name) {
+      recordLookup("upcitemdb", "miss");
+      return null;
+    }
 
-  const brand = item.brand || null;
+    const brand = item.brand || null;
 
-  return {
-    name,
-    brand,
-    kcal_100g: null,
-    protein_100g: null,
-    fat_100g: null,
-    carbs_100g: null,
-    servingSize: null,
-    servingGrams: null,
-    source: "upcitemdb",
-    partial: true, // no nutrition data — frontend should prompt user to fill in macros
-  };
+    recordLookup("upcitemdb", "hit");
+    return {
+      name,
+      brand,
+      kcal_100g: null,
+      protein_100g: null,
+      fat_100g: null,
+      carbs_100g: null,
+      servingSize: null,
+      servingGrams: null,
+      source: "upcitemdb",
+      partial: true, // no nutrition data — frontend should prompt user to fill in macros
+    };
+  } catch (e) {
+    recordLookup("upcitemdb", "error");
+    throw e;
+  }
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Handler
 // ──────────────────────────────────────────────────────────────────────────────
 export default async function handler(req, res) {
+  setRequestModule("barcode");
   setCorsHeaders(res, req, {
     methods: "GET, OPTIONS",
     allowHeaders: "Content-Type",

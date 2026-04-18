@@ -1,5 +1,6 @@
 import { assertAiQuota } from "../aiQuota.js";
 import { setCorsHeaders } from "./lib/cors.js";
+import { setRequestModule } from "../obs/requestContext.js";
 
 function extractJsonObject(raw) {
   if (typeof raw !== "string") return null;
@@ -49,6 +50,7 @@ function extractJsonObject(raw) {
 }
 
 export default async function handler(req, res) {
+  setRequestModule("weekly-digest");
   setCorsHeaders(res, req, {
     allowHeaders: "Content-Type",
     methods: "POST, OPTIONS",

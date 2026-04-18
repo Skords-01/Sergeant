@@ -1,4 +1,5 @@
 import { setCorsHeaders } from "../lib/cors.js";
+import { setRequestModule } from "../../obs/requestContext.js";
 import {
   checkRateLimit,
   requireNutritionTokenIfConfigured,
@@ -18,6 +19,7 @@ function safeKeyFromToken(req) {
 }
 
 export default async function handler(req, res) {
+  setRequestModule("nutrition");
   setCorsHeaders(res, req, {
     allowHeaders: "X-Token, Content-Type",
     methods: "POST, OPTIONS",

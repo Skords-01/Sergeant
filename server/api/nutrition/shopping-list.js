@@ -1,5 +1,6 @@
 import { assertAiQuota } from "../../aiQuota.js";
 import { setCorsHeaders } from "../lib/cors.js";
+import { setRequestModule } from "../../obs/requestContext.js";
 import { extractJsonFromText } from "../lib/jsonSafe.js";
 import {
   anthropicMessages,
@@ -43,6 +44,7 @@ const SYSTEM = `Ти помічник з планування покупок і 
 - Якщо список покупок порожній (все є в коморі) — поверни порожній масив categories`;
 
 export default async function handler(req, res) {
+  setRequestModule("nutrition");
   setCorsHeaders(res, req, {
     allowHeaders: "X-Token, Content-Type",
     methods: "POST, OPTIONS",

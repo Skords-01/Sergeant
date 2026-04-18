@@ -2,6 +2,8 @@ import pool from "../db.js";
 import { getSessionUser } from "../auth.js";
 import { assertAiQuota } from "../aiQuota.js";
 import { setCorsHeaders } from "./lib/cors.js";
+import { setRequestModule } from "../obs/requestContext.js";
+import { aiTokensTotal, externalHttpRequestsTotal } from "../obs/metrics.js";
 
 const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
 
@@ -128,6 +130,7 @@ function buildMemorySummary(memory) {
 }
 
 export default async function coachHandler(req, res) {
+  setRequestModule("coach");
   setCorsHeaders(res, req, {
     allowHeaders: "Content-Type",
     methods: "GET, POST, OPTIONS",
@@ -237,9 +240,46 @@ ${snapshotText}
 
     const aiData = await aiRes.json();
     if (!aiRes.ok) {
+      try {
+        externalHttpRequestsTotal.inc({
+          upstream: "anthropic",
+          outcome: aiRes.status === 429 ? "rate_limited" : "error",
+        });
+      } catch {
+        /* ignore */
+      }
       return res
         .status(aiRes.status)
         .json({ error: aiData?.error?.message || "AI error" });
+    }
+
+    try {
+      externalHttpRequestsTotal.inc({ upstream: "anthropic", outcome: "ok" });
+      const usage = aiData?.usage;
+      if (usage) {
+        if (Number.isFinite(usage.input_tokens)) {
+          aiTokensTotal.inc(
+            {
+              provider: "anthropic",
+              model: "claude-sonnet-4-6",
+              kind: "prompt",
+            },
+            usage.input_tokens,
+          );
+        }
+        if (Number.isFinite(usage.output_tokens)) {
+          aiTokensTotal.inc(
+            {
+              provider: "anthropic",
+              model: "claude-sonnet-4-6",
+              kind: "completion",
+            },
+            usage.output_tokens,
+          );
+        }
+      }
+    } catch {
+      /* ignore */
     }
 
     const text = (aiData?.content || [])

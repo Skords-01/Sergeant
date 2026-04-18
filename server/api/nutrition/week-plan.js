@@ -1,5 +1,6 @@
 import { assertAiQuota } from "../../aiQuota.js";
 import { setCorsHeaders } from "../lib/cors.js";
+import { setRequestModule } from "../../obs/requestContext.js";
 import { extractJsonFromText } from "../lib/jsonSafe.js";
 import {
   anthropicMessages,
@@ -51,6 +52,7 @@ const SYSTEM = `Ти шеф-кухар і планувальник харчув�
 Максимум 7 днів. Не вигадуй екзотичні інгредієнти поза списком — дозволено додати сіль, олію, базові спеції.`;
 
 export default async function handler(req, res) {
+  setRequestModule("nutrition");
   setCorsHeaders(res, req, {
     allowHeaders: "X-Token, Content-Type",
     methods: "POST, OPTIONS",

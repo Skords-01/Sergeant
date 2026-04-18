@@ -1,10 +1,21 @@
 import pool from "../db.js";
 import { getSessionUser } from "../auth.js";
+import { setRequestModule } from "../obs/requestContext.js";
+import { syncConflictsTotal } from "../obs/metrics.js";
+
+function recordConflict(module) {
+  try {
+    syncConflictsTotal.inc({ module });
+  } catch {
+    /* ignore */
+  }
+}
 
 const VALID_MODULES = new Set(["finyk", "fizruk", "routine", "nutrition"]);
 const MAX_BLOB_SIZE = 5 * 1024 * 1024;
 
 export async function syncPush(req, res) {
+  setRequestModule("sync");
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
@@ -43,6 +54,7 @@ export async function syncPush(req, res) {
   );
 
   if (result.rows.length === 0) {
+    recordConflict(module);
     const existing = await pool.query(
       `SELECT server_updated_at, version FROM module_data WHERE user_id = $1 AND module = $2`,
       [user.id, module],
@@ -65,6 +77,7 @@ export async function syncPush(req, res) {
 }
 
 export async function syncPull(req, res) {
+  setRequestModule("sync");
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
@@ -116,6 +129,7 @@ export async function syncPull(req, res) {
 }
 
 export async function syncPullAll(req, res) {
+  setRequestModule("sync");
   if (req.method !== "POST" && req.method !== "GET") {
     return res.status(405).json({ error: "Method not allowed" });
   }
@@ -152,6 +166,7 @@ export async function syncPullAll(req, res) {
 }
 
 export async function syncPushAll(req, res) {
+  setRequestModule("sync");
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
@@ -191,6 +206,7 @@ export async function syncPushAll(req, res) {
         [user.id, mod, blob, clientTs],
       );
       if (r.rows.length === 0) {
+        recordConflict(mod);
         const existing = await client.query(
           `SELECT server_updated_at, version FROM module_data WHERE user_id = $1 AND module = $2`,
           [user.id, mod],

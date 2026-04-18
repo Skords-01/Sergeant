@@ -1,6 +1,18 @@
 import { setCorsHeaders } from "./lib/cors.js";
+import { setRequestModule } from "../obs/requestContext.js";
+import { logger } from "../obs/logger.js";
+import { externalHttpRequestsTotal } from "../obs/metrics.js";
+
+function recordMono(outcome) {
+  try {
+    externalHttpRequestsTotal.inc({ upstream: "monobank", outcome });
+  } catch {
+    /* ignore */
+  }
+}
 
 export default async function handler(req, res) {
+  setRequestModule("finyk");
   setCorsHeaders(res, req, {
     allowHeaders: "X-Token, Content-Type",
     methods: "GET, POST, OPTIONS",
@@ -36,6 +48,7 @@ export default async function handler(req, res) {
     });
 
     if (!response.ok) {
+      recordMono(response.status === 429 ? "rate_limited" : "error");
       const errorText = await response.text();
       return res.status(response.status).json({
         error: response.status === 429 ? "Занадто багато запитів" : errorText,
@@ -43,9 +56,14 @@ export default async function handler(req, res) {
     }
 
     const data = await response.json();
+    recordMono("ok");
     res.status(200).json(data);
   } catch (e) {
-    console.error("API Error:", e);
+    recordMono("error");
+    logger.error({
+      msg: "mono_proxy_failed",
+      err: { message: e?.message || String(e), code: e?.code },
+    });
     res.status(500).json({ error: "Помилка сервера" });
   }
 }
