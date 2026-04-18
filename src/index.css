@@ -154,38 +154,10 @@
   }
 
   /* ═══════════════════════════════════════════════════════════════════════
-     MODULE HERO CARDS — Branded surfaces for each module
+     MODULE HERO SURFACES — Branded headers for module routes.
+     Card variants (finyk/fizruk/routine/nutrition) are the primary API.
+     The remaining rules below style sub-areas that aren't just cards.
      ═══════════════════════════════════════════════════════════════════════ */
-
-  /* Фінік — Emerald finance hero */
-  .finyk-hero-card {
-    @apply rounded-3xl p-5 border bg-hero-emerald shadow-card;
-    border-color: rgba(167, 243, 208, 0.5); /* brand-200/50 */
-  }
-  .dark .finyk-hero-card {
-    @apply bg-panel;
-    border-color: rgba(6, 95, 70, 0.3); /* brand-800/30 */
-    background-image: linear-gradient(
-      135deg,
-      rgba(16, 185, 129, 0.1) 0%,
-      transparent 100%
-    );
-  }
-
-  /* Фізрук — Teal fitness hero */
-  .fizruk-hero-card {
-    @apply rounded-3xl p-5 border bg-hero-teal shadow-card;
-    border-color: rgba(153, 246, 228, 0.5); /* teal-200/50 */
-  }
-  .dark .fizruk-hero-card {
-    @apply bg-panel;
-    border-color: rgba(15, 118, 110, 0.3); /* teal-800/30 */
-    background-image: linear-gradient(
-      135deg,
-      rgba(20, 184, 166, 0.1) 0%,
-      transparent 100%
-    );
-  }
 
   .fizruk-cta-accent {
     @apply bg-teal-500 text-white font-semibold rounded-2xl
@@ -202,36 +174,6 @@
     background-image: linear-gradient(
       135deg,
       rgba(20, 184, 166, 0.15) 0%,
-      transparent 100%
-    );
-  }
-
-  /* Рутина — Coral habit hero */
-  .routine-hero-card {
-    @apply rounded-3xl p-5 border bg-hero-coral shadow-card;
-    border-color: rgba(255, 212, 203, 0.5); /* coral-200/50 */
-  }
-  .dark .routine-hero-card {
-    @apply bg-panel;
-    border-color: rgba(162, 51, 51, 0.3); /* coral-800/30 */
-    background-image: linear-gradient(
-      135deg,
-      rgba(249, 112, 102, 0.1) 0%,
-      transparent 100%
-    );
-  }
-
-  /* Харчування — Lime nutrition hero */
-  .nutrition-hero-card {
-    @apply rounded-3xl p-5 border bg-hero-lime shadow-card;
-    border-color: rgba(223, 249, 157, 0.5); /* lime-200/50 */
-  }
-  .dark .nutrition-hero-card {
-    @apply bg-panel;
-    border-color: rgba(70, 98, 18, 0.3); /* lime-800/30 */
-    background-image: linear-gradient(
-      135deg,
-      rgba(146, 204, 23, 0.1) 0%,
       transparent 100%
     );
   }
