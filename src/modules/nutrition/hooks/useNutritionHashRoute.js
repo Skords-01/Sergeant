@@ -8,17 +8,17 @@ export function useNutritionHashRoute() {
   const [activePage, setActivePage] = useState(() => parseNutritionHash().page);
 
   useEffect(() => {
-    // One-time normalization on mount: handle legacy `#products` → `#pantry`
-    // by rewriting the URL in place, without triggering an extra render cycle
-    // via the hashchange listener below (the state already holds the correct
-    // page because parseNutritionHash maps `products` to `pantry`).
+    // One-time normalization on mount: handle legacy routes
+    // (`#products`, `#plan`, `#recipes`, `#shop`) by rewriting the URL in
+    // place. The state already holds the correct page because
+    // parseNutritionHash resolves the redirect.
     const initial = parseNutritionHash();
-    if (initial.redirectFrom === "products") setNutritionHash("pantry");
+    if (initial.redirectFrom) setNutritionHash(initial.page);
 
     const onHash = () => {
       const p = parseNutritionHash();
       setActivePage(p.page);
-      if (p.redirectFrom === "products") setNutritionHash("pantry");
+      if (p.redirectFrom) setNutritionHash(p.page);
     };
     window.addEventListener("hashchange", onHash);
     return () => window.removeEventListener("hashchange", onHash);

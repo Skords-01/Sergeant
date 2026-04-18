@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { NutritionHeader } from "./components/NutritionHeader.jsx";
 import { NutritionBottomNav } from "./components/NutritionBottomNav.jsx";
+import { SubTabs } from "./components/SubTabs.jsx";
 import { PhotoAnalyzeCard } from "./components/PhotoAnalyzeCard.jsx";
 import { NutritionDashboard } from "./components/NutritionDashboard.jsx";
 import { PantryCard } from "./components/PantryCard.jsx";
@@ -46,6 +47,12 @@ export default function NutritionApp({
   const [statusText, setStatusText] = useState("");
 
   const { activePage, setActivePageAndHash } = useNutritionHashRoute();
+
+  // Sub-tab state for merged pages (pantry = Склад + Покупки,
+  // menu = План + Рецепти). Lives in component state because deep-linking
+  // into sub-tabs wasn't part of the old router either.
+  const [pantrySubTab, setPantrySubTab] = useState("items");
+  const [menuSubTab, setMenuSubTab] = useState("plan");
 
   const pantry = useNutritionPantries({ setBusy, setErr, setStatusText });
   const log = useNutritionLog();
@@ -310,32 +317,58 @@ export default function NutritionApp({
 
             {activePage === "pantry" && (
               <>
-                <PantryCard
-                  busy={busy}
-                  parsePantry={pantry.parsePantry}
-                  newItemName={pantry.newItemName}
-                  setNewItemName={pantry.setNewItemName}
-                  upsertItem={pantry.upsertItem}
-                  pantryText={pantry.pantryText}
-                  setPantryText={pantry.setPantryText}
-                  effectiveItems={pantry.effectiveItems}
-                  editItemAt={pantry.editItemAt}
-                  removeItemAtOrByName={(idx, name) =>
-                    pantry.pantryItems.length > 0
-                      ? pantry.removeItemAt(idx)
-                      : pantry.removeItem(name)
-                  }
-                  pantryItemsLength={pantry.pantryItems.length}
-                  pantrySummary={pantry.pantrySummary}
-                  onScanBarcode={() => {
-                    setPantryScanStatus("");
-                    setPantryScannerOpen(true);
-                  }}
+                <SubTabs
+                  value={pantrySubTab}
+                  onChange={setPantrySubTab}
+                  tabs={[
+                    { id: "items", label: "Склад" },
+                    { id: "shopping", label: "Покупки" },
+                  ]}
                 />
-                {pantryScanStatus && (
-                  <div className="text-xs text-subtle px-1">
-                    {pantryScanStatus}
-                  </div>
+                {pantrySubTab === "items" ? (
+                  <>
+                    <PantryCard
+                      busy={busy}
+                      parsePantry={pantry.parsePantry}
+                      newItemName={pantry.newItemName}
+                      setNewItemName={pantry.setNewItemName}
+                      upsertItem={pantry.upsertItem}
+                      pantryText={pantry.pantryText}
+                      setPantryText={pantry.setPantryText}
+                      effectiveItems={pantry.effectiveItems}
+                      editItemAt={pantry.editItemAt}
+                      removeItemAtOrByName={(idx, name) =>
+                        pantry.pantryItems.length > 0
+                          ? pantry.removeItemAt(idx)
+                          : pantry.removeItem(name)
+                      }
+                      pantryItemsLength={pantry.pantryItems.length}
+                      pantrySummary={pantry.pantrySummary}
+                      onScanBarcode={() => {
+                        setPantryScanStatus("");
+                        setPantryScannerOpen(true);
+                      }}
+                    />
+                    {pantryScanStatus && (
+                      <div className="text-xs text-subtle px-1">
+                        {pantryScanStatus}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <ShoppingListCard
+                    recipes={recipes}
+                    weekPlan={weekPlan}
+                    pantryItems={pantry.effectiveItems}
+                    shoppingList={shopping.shoppingList}
+                    shoppingBusy={shoppingBusy}
+                    onGenerate={generateShoppingList}
+                    onToggleItem={shopping.toggle}
+                    onClearChecked={shopping.clearChecked}
+                    onClearAll={shopping.clearAll}
+                    onAddCheckedToPantry={addCheckedItemsToPantry}
+                    checkedItems={shopping.checkedItems}
+                  />
                 )}
               </>
             )}
@@ -381,55 +414,49 @@ export default function NutritionApp({
               />
             )}
 
-            {activePage === "plan" && (
-              <DailyPlanCard
-                prefs={prefs}
-                setPrefs={setPrefs}
-                pantryItems={pantry.effectiveItems}
-                busy={busy}
-                dayPlan={dayPlan}
-                dayPlanBusy={dayPlanBusy}
-                fetchDayPlan={() => fetchDayPlan(null)}
-                regenMeal={(mealType) => fetchDayPlan(mealType)}
-                addMealToLog={addMealFromPlan}
-              />
-            )}
-
-            {activePage === "recipes" && (
-              <RecipesCard
-                busy={busy}
-                activePantry={pantry.activePantry}
-                prefs={prefs}
-                setPrefs={setPrefs}
-                recommendRecipes={recommendRecipes}
-                recipes={recipes}
-                recipesTried={recipesTried}
-                recipesRaw={recipesRaw}
-                err={err}
-                fmtMacro={fmtMacro}
-                recipeCacheEntry={recipeCacheEntry}
-                weekPlan={weekPlan}
-                weekPlanRaw={weekPlanRaw}
-                weekPlanBusy={weekPlanBusy}
-                fetchWeekPlan={fetchWeekPlan}
-                addMealToLog={wrappedSaveMeal}
-              />
-            )}
-
-            {activePage === "shop" && (
-              <ShoppingListCard
-                recipes={recipes}
-                weekPlan={weekPlan}
-                pantryItems={pantry.effectiveItems}
-                shoppingList={shopping.shoppingList}
-                shoppingBusy={shoppingBusy}
-                onGenerate={generateShoppingList}
-                onToggleItem={shopping.toggle}
-                onClearChecked={shopping.clearChecked}
-                onClearAll={shopping.clearAll}
-                onAddCheckedToPantry={addCheckedItemsToPantry}
-                checkedItems={shopping.checkedItems}
-              />
+            {activePage === "menu" && (
+              <>
+                <SubTabs
+                  value={menuSubTab}
+                  onChange={setMenuSubTab}
+                  tabs={[
+                    { id: "plan", label: "План на день" },
+                    { id: "recipes", label: "Рецепти" },
+                  ]}
+                />
+                {menuSubTab === "plan" ? (
+                  <DailyPlanCard
+                    prefs={prefs}
+                    setPrefs={setPrefs}
+                    pantryItems={pantry.effectiveItems}
+                    busy={busy}
+                    dayPlan={dayPlan}
+                    dayPlanBusy={dayPlanBusy}
+                    fetchDayPlan={() => fetchDayPlan(null)}
+                    regenMeal={(mealType) => fetchDayPlan(mealType)}
+                    addMealToLog={addMealFromPlan}
+                  />
+                ) : (
+                  <RecipesCard
+                    busy={busy}
+                    activePantry={pantry.activePantry}
+                    prefs={prefs}
+                    setPrefs={setPrefs}
+                    recommendRecipes={recommendRecipes}
+                    recipes={recipes}
+                    recipesTried={recipesTried}
+                    recipesRaw={recipesRaw}
+                    err={err}
+                    fmtMacro={fmtMacro}
+                    recipeCacheEntry={recipeCacheEntry}
+                    weekPlan={weekPlan}
+                    weekPlanRaw={weekPlanRaw}
+                    weekPlanBusy={weekPlanBusy}
+                    fetchWeekPlan={fetchWeekPlan}
+                    addMealToLog={wrappedSaveMeal}
+                  />
+                )}
+              </>
             )}
           </div>
         </div>
