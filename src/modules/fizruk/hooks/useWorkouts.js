@@ -92,6 +92,7 @@ export function makeDefaultCooldown() {
  *
  * @returns {{
  *   workouts: Workout[],
+ *   loaded: boolean,
  *   createWorkout: () => Workout,
  *   createWorkoutWithTimes: (opts: { startedAt: string }) => Workout,
  *   updateWorkout: (id: string, patch: Partial<Workout>) => void,
@@ -104,6 +105,7 @@ export function makeDefaultCooldown() {
  */
 export function useWorkouts() {
   const [workouts, setWorkouts] = useState([]);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     try {
@@ -111,6 +113,7 @@ export function useWorkouts() {
       const parsed = parseWorkoutsFromStorage(raw);
       if (Array.isArray(parsed)) setWorkouts(parsed);
     } catch {}
+    setLoaded(true);
   }, []);
 
   /**
@@ -310,6 +313,7 @@ export function useWorkouts() {
 
   return {
     workouts: sorted,
+    loaded,
     createWorkout,
     createWorkoutWithTimes,
     updateWorkout,

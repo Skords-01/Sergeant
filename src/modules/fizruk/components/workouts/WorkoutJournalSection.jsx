@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import { Virtuoso } from "react-virtuoso";
 import { Button } from "@shared/components/ui/Button";
 import { EmptyState } from "@shared/components/ui/EmptyState";
@@ -88,6 +89,10 @@ export function WorkoutJournalSection({
     workoutList.length * JOURNAL_ITEM_HEIGHT,
     MAX_JOURNAL_HEIGHT,
   );
+  // Guard the finish flow against double-click re-entry — the state updates
+  // inside onFinishClick are async, so React may still render the "Завершити"
+  // button for one more frame while a second click is already queued.
+  const finishingRef = useRef(false);
 
   return (
     <div className="space-y-3">
@@ -141,6 +146,12 @@ export function WorkoutJournalSection({
             updateWorkout={updateWorkout}
             setRestTimer={setRestTimer}
             onFinishClick={() => {
+              // Ignore re-entry from rapid double-clicks and from any stray
+              // invocation on an already-ended workout (e.g. when viewing
+              // a finished session from the history list).
+              if (finishingRef.current) return;
+              if (!activeWorkout || activeWorkout.endedAt) return;
+              finishingRef.current = true;
               const sum = summarizeWorkoutForFinish(activeWorkout);
               const wid = activeWorkout.id;
               endWorkout(wid);
@@ -150,6 +161,10 @@ export function WorkoutJournalSection({
               // The workout itself is not deleted: it can only be removed
               // via explicit delete (swipe / "Видалити" confirm dialog).
               setActiveWorkoutId(null);
+              // A dangling rest timer from the last set must not keep ticking
+              // after finish — otherwise it eventually beeps/vibrates long
+              // after the session is over.
+              setRestTimer?.(null);
               if (sum) {
                 setFinishFlash({
                   step: "wellbeing",
@@ -160,6 +175,12 @@ export function WorkoutJournalSection({
                   mood: null,
                 });
               }
+              // Release the guard on the next tick — by then React has
+              // already committed `activeWorkoutId = null` and the button
+              // is unmounted, so any further clicks are impossible anyway.
+              setTimeout(() => {
+                finishingRef.current = false;
+              }, 0);
             }}
             onDeleteWorkout={() => setDeleteWorkoutConfirm(true)}
           />
