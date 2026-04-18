@@ -1,10 +1,14 @@
-import { useRef } from "react";
+import { useRef, type ChangeEvent } from "react";
 import { Button } from "@shared/components/ui/Button";
 import { cn } from "@shared/lib/cn";
 import { applyHubBackupPayload, buildHubBackupPayload } from "./hubBackup.js";
 
-export function HubBackupPanel({ className }) {
-  const fileRef = useRef(null);
+export interface HubBackupPanelProps {
+  className?: string;
+}
+
+export function HubBackupPanel({ className }: HubBackupPanelProps) {
+  const fileRef = useRef<HTMLInputElement | null>(null);
 
   const exportJson = () => {
     const payload = buildHubBackupPayload({ includeChat: false });
@@ -18,19 +22,24 @@ export function HubBackupPanel({ className }) {
     URL.revokeObjectURL(a.href);
   };
 
-  const runImport = (e) => {
+  const runImport = (e: ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (!f) return;
+    const input = e.target;
     const r = new FileReader();
     r.onload = () => {
       try {
-        const data = JSON.parse(r.result);
+        const data = JSON.parse(String(r.result ?? ""));
         applyHubBackupPayload(data);
         window.location.reload();
       } catch (err) {
-        alert(err?.message || "Не вдалось імпортувати файл");
+        const msg =
+          err instanceof Error && err.message
+            ? err.message
+            : "Не вдалось імпортувати файл";
+        alert(msg);
       }
-      e.target.value = "";
+      input.value = "";
     };
     r.readAsText(f);
   };

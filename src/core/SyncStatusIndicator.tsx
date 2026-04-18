@@ -1,6 +1,14 @@
 import { useSyncStatus } from "./useCloudSync.js";
 import { Icon } from "@shared/components/ui/Icon";
 
+export interface SyncStatusIndicatorProps {
+  user: unknown;
+  syncing?: boolean;
+  className?: string;
+}
+
+type Tone = "idle" | "syncing" | "dirty" | "offline" | "queued";
+
 /**
  * Small pill that reflects the current cloud-sync state.
  *
@@ -13,12 +21,16 @@ import { Icon } from "@shared/components/ui/Icon";
  * The component is intentionally tiny — a single glyph + tooltip — so it can
  * sit next to the gear/menu icon without crowding the header.
  */
-export function SyncStatusIndicator({ user, syncing = false, className = "" }) {
+export function SyncStatusIndicator({
+  user,
+  syncing = false,
+  className = "",
+}: SyncStatusIndicatorProps) {
   const { dirtyCount, queuedCount, isOnline } = useSyncStatus();
 
   if (!user) return null;
 
-  let tone = "idle";
+  let tone: Tone = "idle";
   let title = "Все синхронізовано";
   let iconName = "cloud-check";
 
@@ -40,7 +52,7 @@ export function SyncStatusIndicator({ user, syncing = false, className = "" }) {
     iconName = "cloud-off";
   }
 
-  const toneClasses = {
+  const toneClasses: Record<Tone, string> = {
     idle: "text-success/80",
     syncing: "text-primary animate-spin",
     dirty: "text-warning",

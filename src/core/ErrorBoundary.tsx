@@ -1,4 +1,4 @@
-import { Component } from "react";
+import { Component, type ComponentType, type ReactNode } from "react";
 import { captureException } from "./sentry.js";
 
 /**
@@ -13,18 +13,40 @@ import { captureException } from "./sentry.js";
  * динамічним імпортом. Коли SDK буде готовий (див. `initSentry`), виклики
  * автоматично перенаправляться в реальний `Sentry.captureException`.
  */
-export class ErrorBoundary extends Component {
-  constructor(props) {
+export interface ErrorBoundaryFallbackProps {
+  error: unknown;
+  resetError: () => void;
+}
+
+export interface ErrorBoundaryProps {
+  children?: ReactNode;
+  fallback?: ComponentType<ErrorBoundaryFallbackProps> | ReactNode;
+}
+
+interface ErrorBoundaryState {
+  error: unknown;
+}
+
+export class ErrorBoundary extends Component<
+  ErrorBoundaryProps,
+  ErrorBoundaryState
+> {
+  resetError: () => void;
+
+  constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = { error: null };
     this.resetError = () => this.setState({ error: null });
   }
 
-  static getDerivedStateFromError(error) {
+  static getDerivedStateFromError(error: unknown): ErrorBoundaryState {
     return { error };
   }
 
-  componentDidCatch(error, info) {
+  componentDidCatch(
+    error: unknown,
+    info: { componentStack?: string | null },
+  ): void {
     // Lazy-forward: якщо Sentry SDK ще не підтягнувся, це no-op;
     // якщо вже підтягнувся — піде у Sentry.captureException.
     try {
@@ -41,9 +63,11 @@ export class ErrorBoundary extends Component {
     const { fallback: Fallback, children } = this.props;
     if (error) {
       if (typeof Fallback === "function") {
-        return <Fallback error={error} resetError={this.resetError} />;
+        const FallbackComponent =
+          Fallback as ComponentType<ErrorBoundaryFallbackProps>;
+        return <FallbackComponent error={error} resetError={this.resetError} />;
       }
-      return Fallback || null;
+      return (Fallback as ReactNode) ?? null;
     }
     return children;
   }
