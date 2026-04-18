@@ -37,7 +37,10 @@ export function Budgets({ mono, storage }) {
     editCustomCategory,
     removeCustomCategory,
   } = storage;
-  const statTx = realTx.filter((t) => !excludedTxIds.has(t.id));
+  const statTx = useMemo(
+    () => realTx.filter((t) => !excludedTxIds.has(t.id)),
+    [realTx, excludedTxIds],
+  );
   const [editIdx, setEditIdx] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [showCategories, setShowCategories] = useState(false);
@@ -563,7 +566,7 @@ export function Budgets({ mono, storage }) {
             </div>
             {loadingTx && forecasts.length === 0 ? (
               limitBudgets.map((b) => (
-                <Skeleton key={b.id} className="h-36 rounded-2xl" />
+                <Skeleton key={b.id} className="h-64 rounded-2xl" />
               ))
             ) : forecasts.length === 0 ? (
               <div className="text-sm text-muted px-1">

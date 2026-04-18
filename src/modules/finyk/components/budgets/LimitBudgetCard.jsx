@@ -106,22 +106,25 @@ export function LimitBudgetCard({
               : `Залишок ${remaining.toLocaleString("uk-UA")} ₴ · ${pctRounded}% використано`}
           </div>
 
-          {showProactiveAdvice &&
-            (proactiveLoading ? (
-              <div className="mt-3 space-y-1.5">
-                <Skeleton className="h-3 w-full rounded" />
-                <Skeleton className="h-3 w-4/5 rounded" />
-              </div>
-            ) : proactiveText ? (
-              <div className="mt-3 flex gap-2 items-start bg-bg rounded-xl px-3 py-2.5">
-                <span className="text-base leading-none mt-0.5 shrink-0">
-                  ✨
-                </span>
-                <p className="text-xs text-text leading-relaxed">
-                  {proactiveText}
-                </p>
-              </div>
-            ) : null)}
+          {showProactiveAdvice && (
+            <div className="mt-3 bg-bg rounded-xl px-3 py-2.5 min-h-[3.5rem]">
+              {proactiveText ? (
+                <div className="flex gap-2 items-start">
+                  <span className="text-base leading-none mt-0.5 shrink-0">
+                    ✨
+                  </span>
+                  <p className="text-xs text-text leading-relaxed">
+                    {proactiveText}
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-1.5" aria-busy={proactiveLoading}>
+                  <Skeleton className="h-3 w-full rounded" />
+                  <Skeleton className="h-3 w-4/5 rounded" />
+                </div>
+              )}
+            </div>
+          )}
         </>
       )}
     </div>
