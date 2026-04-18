@@ -184,13 +184,13 @@ app.use((err, req, res, _next) => {
   }
 });
 
-ensureSchema()
-  .then(() => {
-    console.log("[db] Schema verified");
-  })
-  .catch((err) => {
-    console.error("[db] Schema check failed:", err.message);
-  });
+try {
+  await ensureSchema();
+  console.log("[db] Schema verified");
+} catch (err) {
+  console.error("[db] Schema check failed:", err.message);
+  process.exit(1);
+}
 
 app.listen(port, "0.0.0.0", () => {
   console.log(`[replit] Server listening on port ${port}`);

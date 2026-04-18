@@ -39,7 +39,7 @@ export default async function handler(req, res) {
     windowMs: 60_000,
   });
   if (!rl.ok) {
-    res.setHeader("Retry-After", String(rl.retryAfterSec || 60));
+    res.setHeader("Retry-After", String(Math.ceil(rl.resetMs / 1000) || 60));
     return res
       .status(429)
       .json({ error: "Забагато запитів. Спробуй пізніше." });
