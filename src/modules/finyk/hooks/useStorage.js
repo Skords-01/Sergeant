@@ -8,41 +8,21 @@ import {
 } from "../lib/finykBackup.js";
 import { toLocalISODate } from "@shared/lib/date";
 import { safeJsonSet } from "@shared/lib/storageQuota.js";
+import { finykStorageManager } from "../lib/storageManager";
 
 function reportSilentError(scope, error) {
   console.warn(`[finyk] ${scope}`, error);
 }
 
-// Одноразова міграція ключів finto_* → finyk_*
-const LEGACY_KEYS = [
-  ["finto_hidden", "finyk_hidden"],
-  ["finto_budgets", "finyk_budgets"],
-  ["finto_subs", "finyk_subs"],
-  ["finto_assets", "finyk_assets"],
-  ["finto_debts", "finyk_debts"],
-  ["finto_recv", "finyk_recv"],
-  ["finto_hidden_txs", "finyk_hidden_txs"],
-  ["finto_monthly_plan", "finyk_monthly_plan"],
-  ["finto_tx_cats", "finyk_tx_cats"],
-  ["finto_mono_debt_linked", "finyk_mono_debt_linked"],
-  ["finto_networth_history", "finyk_networth_history"],
-  ["finto_tx_splits", "finyk_tx_splits"],
-];
 try {
-  for (const [oldKey, newKey] of LEGACY_KEYS) {
-    const old = localStorage.getItem(oldKey);
-    if (old !== null && localStorage.getItem(newKey) === null) {
-      localStorage.setItem(newKey, old);
-    }
-    if (old !== null) localStorage.removeItem(oldKey);
-  }
-} catch {}
-
+  finykStorageManager.runAll();
+} catch (error) {
+  reportSilentError("storage migrations", error);
+}
 function usePersist(key, defaultVal) {
   const [val, setVal] = useState(() => {
     try {
-      const s = localStorage.getItem(key);
-      return s ? JSON.parse(s) : defaultVal;
+      return finykStorageManager.getJSON(key, defaultVal);
     } catch {
       return defaultVal;
     }
@@ -237,10 +217,12 @@ export function useStorage({ onImportFeedback } = {}) {
       prev.map((c) => {
         if (c.id !== id) return c;
         const next = { ...c };
-        if (patch.label != null) next.label = String(patch.label).trim() || c.label;
+        if (patch.label != null)
+          next.label = String(patch.label).trim() || c.label;
         if (patch.color !== undefined) next.color = patch.color || undefined;
         if (patch.icon !== undefined) next.icon = patch.icon || undefined;
-        if (patch.parentId !== undefined) next.parentId = patch.parentId || undefined;
+        if (patch.parentId !== undefined)
+          next.parentId = patch.parentId || undefined;
         return next;
       }),
     );

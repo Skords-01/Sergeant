@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useMonobank } from "./hooks/useMonobank";
 import { usePrivatbank } from "./hooks/usePrivatbank";
 import { useStorage } from "./hooks/useStorage";
@@ -13,6 +13,7 @@ import { Budgets } from "./pages/Budgets.jsx";
 import { Assets } from "./pages/Assets.jsx";
 import { Analytics } from "./pages/Analytics.jsx";
 import { ManualExpenseSheet } from "./components/ManualExpenseSheet.jsx";
+import { useUnifiedFinanceData } from "./hooks/useUnifiedFinanceData";
 
 const NAV_ICONS = {
   overview: (
@@ -210,69 +211,7 @@ export default function App({
     }
   }, []);
 
-  const mergedRefresh = useCallback(async () => {
-    const tasks = [mono.refresh()];
-    if (privat.connected) tasks.push(privat.refresh());
-    await Promise.allSettled(tasks);
-  }, [mono, privat]);
-
-  const mergedMono = useMemo(() => {
-    const privatTxs = privat.transactions || [];
-    const monoTxs = mono.realTx || [];
-    const combined = [...monoTxs, ...privatTxs].sort(
-      (a, b) => (b.time || 0) - (a.time || 0),
-    );
-    const privatTotal = (privat.accounts || [])
-      .filter((a) => a.currency === "UAH" || a.currency === "980")
-      .reduce((s, a) => s + (a.balance || 0) / 100, 0);
-
-    const monoAccounts = (mono.accounts || []).map((a) => ({
-      ...a,
-      _source: "monobank",
-    }));
-    const privatAccounts = (privat.accounts || []).map((a) => ({
-      ...a,
-      _source: "privatbank",
-    }));
-    const allAccounts = [...monoAccounts, ...privatAccounts];
-
-    const hasPrivatError = !!privat.error;
-    const privatSyncBad =
-      privat.syncState?.status === "error" ||
-      privat.syncState?.status === "partial";
-    const combinedError =
-      mono.error && hasPrivatError
-        ? `${mono.error}; ПриватБанк: ${privat.error}`
-        : mono.error || (hasPrivatError ? `ПриватБанк: ${privat.error}` : "");
-    const combinedSyncStatus =
-      mono.syncState?.status === "error" || (privatSyncBad && !privat.loadingTx)
-        ? "error"
-        : mono.syncState?.status === "partial" || privatSyncBad
-          ? "partial"
-          : mono.syncState?.status === "loading" || privat.loadingTx
-            ? "loading"
-            : mono.syncState?.status === "success"
-              ? "success"
-              : mono.syncState?.status;
-    const combinedSyncState = {
-      ...mono.syncState,
-      status: combinedSyncStatus,
-      lastError: combinedError,
-    };
-
-    return {
-      ...mono,
-      realTx: combined,
-      transactions: combined,
-      accounts: allAccounts,
-      refresh: mergedRefresh,
-      loadingTx: mono.loadingTx || privat.loadingTx,
-      error: combinedError,
-      syncState: combinedSyncState,
-      privatTotal,
-      privat,
-    };
-  }, [mono, privat, mergedRefresh]);
+  const { mergedMono } = useUnifiedFinanceData({ mono, privat });
 
   const { clientInfo, connecting, error, authError, connect } = mono;
   const syncTone =
@@ -315,16 +254,18 @@ export default function App({
           <div className="absolute -top-40 -right-40 w-80 h-80 rounded-full bg-gradient-to-br from-brand-200/30 to-teal-200/20 blur-3xl" />
           <div className="absolute -bottom-40 -left-40 w-80 h-80 rounded-full bg-gradient-to-tr from-teal-200/25 to-brand-100/20 blur-3xl" />
         </div>
-        
+
         <div className="w-full max-w-sm relative">
           <div className="text-center mb-8">
-            <div className={cn(
-              "w-20 h-20 mx-auto rounded-3xl flex items-center justify-center mb-4",
-              "bg-gradient-to-br from-brand-100 to-teal-100",
-              "dark:from-brand-900/40 dark:to-teal-900/30",
-              "border border-brand-200/60 dark:border-brand-700/30",
-              "shadow-card"
-            )}>
+            <div
+              className={cn(
+                "w-20 h-20 mx-auto rounded-3xl flex items-center justify-center mb-4",
+                "bg-gradient-to-br from-brand-100 to-teal-100",
+                "dark:from-brand-900/40 dark:to-teal-900/30",
+                "border border-brand-200/60 dark:border-brand-700/30",
+                "shadow-card",
+              )}
+            >
               <svg
                 width="40"
                 height="40"
@@ -348,10 +289,12 @@ export default function App({
             </p>
           </div>
 
-          <div className={cn(
-            "bg-panel/95 backdrop-blur-xl border rounded-3xl p-6 shadow-float",
-            "border-line/80 dark:border-line"
-          )}>
+          <div
+            className={cn(
+              "bg-panel/95 backdrop-blur-xl border rounded-3xl p-6 shadow-float",
+              "border-line/80 dark:border-line",
+            )}
+          >
             <label
               className="text-sm text-muted mb-2 block"
               htmlFor="finyk-mono-token"
@@ -486,7 +429,7 @@ export default function App({
                 "text-white font-semibold",
                 "shadow-md hover:shadow-glow",
                 "transition-all duration-200",
-                "active:scale-[0.98]"
+                "active:scale-[0.98]",
               )}
               onClick={() => connect(tokenInput.trim(), false, rememberToken)}
               disabled={connecting}

@@ -1,21 +1,15 @@
 import { useMemo } from "react";
 import {
-  getMonthlySummary,
-  getTopCategories,
   getCategoryDistribution,
   getTopMerchants,
   getMonthlySpendSeries,
   getMonthlyTrendComparison,
 } from "../lib/finykStats";
+import { getMonthlySummary, getTopCategories } from "../domain/selectors";
 
 export function useAnalytics({ mono, storage, monthlyHistory = [] }) {
   const { realTx = [], loadingTx } = mono;
-  const {
-    excludedTxIds,
-    txCategories,
-    txSplits,
-    customCategories,
-  } = storage;
+  const { excludedTxIds, txCategories, txSplits, customCategories } = storage;
 
   const opts = useMemo(
     () => ({ excludedTxIds, txCategories, txSplits, customCategories }),

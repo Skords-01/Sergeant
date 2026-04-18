@@ -1,8 +1,6 @@
-import {
-  getTxStatAmount,
-  getCategory,
-  resolveExpenseCategoryMeta,
-} from "../utils";
+import { getTxStatAmount } from "../utils";
+import { normalizeTransaction } from "../domain/transactions";
+import { getMonthlySummary, getTopCategories } from "../domain/selectors";
 
 const CAT_COLORS = {
   food: "#10b981",
@@ -24,8 +22,16 @@ const CAT_COLORS = {
 };
 
 const FALLBACK_COLORS = [
-  "#6366f1", "#10b981", "#f59e0b", "#ec4899", "#0ea5e9",
-  "#f97316", "#14b8a6", "#8b5cf6", "#22c55e", "#e879f9",
+  "#6366f1",
+  "#10b981",
+  "#f59e0b",
+  "#ec4899",
+  "#0ea5e9",
+  "#f97316",
+  "#14b8a6",
+  "#8b5cf6",
+  "#22c55e",
+  "#e879f9",
 ];
 
 export function getCatColor(categoryId, customCategories = [], idx = 0) {
@@ -35,90 +41,6 @@ export function getCatColor(categoryId, customCategories = [], idx = 0) {
     : null;
   if (custom?.color) return custom.color;
   return FALLBACK_COLORS[idx % FALLBACK_COLORS.length];
-}
-
-export function getMonthlySummary(
-  transactions,
-  { excludedTxIds = new Set(), txSplits = {} } = {},
-) {
-  const list = Array.isArray(transactions) ? transactions : [];
-  const excluded =
-    excludedTxIds instanceof Set ? excludedTxIds : new Set(excludedTxIds);
-  let spent = 0;
-  let income = 0;
-  let txCount = 0;
-
-  for (const tx of list) {
-    if (!tx || excluded.has(tx.id)) continue;
-    txCount++;
-    if (tx.amount < 0) {
-      spent += getTxStatAmount(tx, txSplits);
-    } else {
-      income += tx.amount / 100;
-    }
-  }
-
-  spent = Math.round(spent);
-  income = Math.round(income);
-  return { spent, income, balance: income - spent, txCount };
-}
-
-export function getTopCategories(
-  transactions,
-  {
-    txCategories = {},
-    txSplits = {},
-    customCategories = [],
-    excludedTxIds = new Set(),
-  } = {},
-  limit = 5,
-) {
-  const list = Array.isArray(transactions) ? transactions : [];
-  const excluded =
-    excludedTxIds instanceof Set ? excludedTxIds : new Set(excludedTxIds);
-  const catSpend = {};
-  let totalSpent = 0;
-
-  for (const tx of list) {
-    if (!tx || excluded.has(tx.id) || tx.amount >= 0) continue;
-    const splits = txSplits[tx.id];
-    if (splits && splits.length > 0) {
-      for (const s of splits) {
-        if (!s.categoryId || !s.amount) continue;
-        catSpend[s.categoryId] = (catSpend[s.categoryId] || 0) + s.amount;
-        totalSpent += s.amount;
-      }
-    } else {
-      const cat = getCategory(
-        tx.description,
-        tx.mcc,
-        txCategories[tx.id],
-        customCategories,
-      );
-      const amt = Math.abs(tx.amount / 100);
-      catSpend[cat.id] = (catSpend[cat.id] || 0) + amt;
-      totalSpent += amt;
-    }
-  }
-
-  const sorted = Object.entries(catSpend)
-    .map(([categoryId, rawSpent], idx) => {
-      const meta = resolveExpenseCategoryMeta(categoryId, customCategories) || {
-        id: categoryId,
-        label: "💳 Інше",
-      };
-      return {
-        categoryId,
-        label: meta.label,
-        spent: Math.round(rawSpent),
-        pct:
-          totalSpent > 0 ? Math.round((rawSpent / totalSpent) * 100) : 0,
-        color: getCatColor(categoryId, customCategories, idx),
-      };
-    })
-    .sort((a, b) => b.spent - a.spent);
-
-  return sorted.slice(0, limit);
 }
 
 export function getRecentTransactions(
@@ -131,15 +53,19 @@ export function getRecentTransactions(
   const excluded =
     excludedTxIds instanceof Set ? excludedTxIds : new Set(excludedTxIds);
 
-  const normalizedManual = manual.map((e) => ({
-    id: `manual_${e.id}`,
-    time: e.date ? Math.floor(new Date(e.date).getTime() / 1000) : 0,
-    amount: -(Math.abs(e.amount) * 100),
-    description: e.description || "",
-    mcc: 0,
-    _manual: true,
-    _category: e.category,
-  }));
+  const normalizedManual = manual.map((e) =>
+    normalizeTransaction(
+      {
+        id: `manual_${e.id}`,
+        time: e.date ? Math.floor(new Date(e.date).getTime() / 1000) : 0,
+        amount: -(Math.abs(e.amount) * 100),
+        description: e.description || "",
+        mcc: 0,
+        raw: { category: e.category },
+      },
+      { source: "manual", accountId: null },
+    ),
+  );
 
   const all = [
     ...list.filter((tx) => tx && !excluded.has(tx.id)),
@@ -157,8 +83,7 @@ export function getMonthlyTrendComparison(
   const curr = getMonthlySummary(currentTx, { excludedTxIds, txSplits });
   const prev = getMonthlySummary(prevTx, { excludedTxIds, txSplits });
   const diff = curr.spent - prev.spent;
-  const diffPct =
-    prev.spent > 0 ? Math.round((diff / prev.spent) * 100) : null;
+  const diffPct = prev.spent > 0 ? Math.round((diff / prev.spent) * 100) : null;
 
   return {
     currentSpent: curr.spent,
@@ -172,27 +97,23 @@ export function getMonthlyTrendComparison(
 
 export function getMonthlySpendSeries(monthlyData) {
   if (!Array.isArray(monthlyData)) return [];
-  return monthlyData.map(
-    ({ month, transactions, excludedTxIds, txSplits }) => {
-      const txList = Array.isArray(transactions) ? transactions : [];
-      const excluded =
-        excludedTxIds instanceof Set ? excludedTxIds : new Set();
-      const { spent, income } = getMonthlySummary(txList, {
-        excludedTxIds: excluded,
-        txSplits: txSplits || {},
-      });
-      const [year, mon] = (month || "").split("-");
-      const label =
-        year && mon
-          ? new Date(
-              Number(year),
-              Number(mon) - 1,
-              1,
-            ).toLocaleDateString("uk-UA", { month: "short" })
-          : month;
-      return { month, label, spent, income };
-    },
-  );
+  return monthlyData.map(({ month, transactions, excludedTxIds, txSplits }) => {
+    const txList = Array.isArray(transactions) ? transactions : [];
+    const excluded = excludedTxIds instanceof Set ? excludedTxIds : new Set();
+    const { spent, income } = getMonthlySummary(txList, {
+      excludedTxIds: excluded,
+      txSplits: txSplits || {},
+    });
+    const [year, mon] = (month || "").split("-");
+    const label =
+      year && mon
+        ? new Date(Number(year), Number(mon) - 1, 1).toLocaleDateString(
+            "uk-UA",
+            { month: "short" },
+          )
+        : month;
+    return { month, label, spent, income };
+  });
 }
 
 export function getCategoryDistribution(

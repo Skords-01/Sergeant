@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect, useCallback } from "react";
 import { GroupedVirtuoso } from "react-virtuoso";
 import { TxRow } from "../components/TxRow";
 import { getCategory, getIncomeCategory } from "../utils";
+import { normalizeTransaction } from "../domain/transactions";
 import { mergeExpenseCategoryDefinitions } from "../constants";
 import { Skeleton } from "@shared/components/ui/Skeleton";
 import { EmptyState } from "@shared/components/ui/EmptyState";
@@ -141,16 +142,21 @@ export function Transactions({
         const ts = new Date(e.date).getTime();
         return ts >= monthStart && ts < monthEnd;
       })
-      .map((e) => ({
-        id: `manual_${e.id}`,
-        _manual: true,
-        _manualId: e.id,
-        time: Math.floor(new Date(e.date).getTime() / 1000),
-        amount: -Math.abs(Math.round(e.amount * 100)),
-        description: e.description,
-        _category: e.category,
-        _accountId: null,
-      }));
+      .map((e) =>
+        normalizeTransaction(
+          {
+            id: `manual_${e.id}`,
+            manual: true,
+            manualId: e.id,
+            time: Math.floor(new Date(e.date).getTime() / 1000),
+            amount: -Math.abs(Math.round(e.amount * 100)),
+            description: e.description,
+            mcc: 0,
+            raw: { category: e.category },
+          },
+          { source: "manual", accountId: null },
+        ),
+      );
   }, [manualExpenses, selMonth]);
 
   const activeTx = useMemo(

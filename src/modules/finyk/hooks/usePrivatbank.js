@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { apiUrl } from "@shared/lib/apiUrl.js";
+import { normalizeTransaction } from "../domain/transactions";
 
 const PRIVAT_ID_KEY = "finyk_privat_id";
 const PRIVAT_TOKEN_KEY = "finyk_privat_token";
@@ -108,21 +109,26 @@ function toTimestamp(trandate, trantime) {
   return Math.floor(Date.now() / 1000);
 }
 
-function normalizeTransaction(row, accountId) {
+function normalizePrivatTransaction(row, accountId) {
   const amountRaw = parseFloat(row.SUM) || 0;
   const amountKopecks = Math.round(amountRaw * 100);
   const ts = toTimestamp(row.TRANDATE, row.TRANTIME);
   const description =
     row.OSND || row.PRYZNACH || row.AUT_CNTR_NAM || "Транзакція";
-  return {
-    id: `privat_${row.REF || row.REFN || row.DOC_NUMBER || ts + "_" + amountKopecks}`,
-    time: ts,
-    amount: amountKopecks,
-    description,
-    mcc: 0,
-    _accountId: accountId || row.AUT_MY_ACC || null,
-    _source: "privatbank",
-  };
+  const sourceId =
+    row.REF || row.REFN || row.DOC_NUMBER || `${ts}_${amountKopecks}`;
+
+  return normalizeTransaction(
+    {
+      id: `privat_${sourceId}`,
+      time: ts,
+      amount: amountKopecks,
+      description,
+      mcc: 0,
+      raw: row,
+    },
+    { source: "privatbank", accountId: accountId || row.AUT_MY_ACC || null },
+  );
 }
 
 function normalizeAccount(raw) {
@@ -216,7 +222,9 @@ export function usePrivatbank(enabled = true) {
             data?.data ||
             (Array.isArray(data) ? data : []);
 
-          const normalized = rows.map((r) => normalizeTransaction(r, acc.id));
+          const normalized = rows.map((r) =>
+            normalizePrivatTransaction(r, acc.id),
+          );
           allTxs.push(...normalized);
         } catch (e) {
           if (e.name === "AuthError") throw e;
