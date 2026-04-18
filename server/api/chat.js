@@ -353,7 +353,14 @@ export default async function handler(req, res) {
       .status(200)
       .json({ text: textParts || "Немає відповіді від AI." });
   } catch (e) {
-    return res.status(500).json({ error: e?.message || "Помилка AI сервера" });
+    console.error(
+      JSON.stringify({
+        level: "error",
+        msg: "chat_handler_error",
+        error: e?.message || String(e),
+      }),
+    );
+    return res.status(500).json({ error: "Помилка AI сервера" });
   }
 }
 
@@ -428,7 +435,14 @@ async function streamAnthropicToSse(res, apiKey, payload) {
       }
     }
   } catch (e) {
-    res.write(`data: ${JSON.stringify({ err: String(e?.message || e) })}\n\n`);
+    console.error(
+      JSON.stringify({
+        level: "error",
+        msg: "chat_stream_error",
+        error: e?.message || String(e),
+      }),
+    );
+    res.write(`data: ${JSON.stringify({ err: "Помилка AI сервера" })}\n\n`);
   }
   res.write("data: [DONE]\n\n");
   res.end();

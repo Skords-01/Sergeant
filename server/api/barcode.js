@@ -249,6 +249,13 @@ export default async function handler(req, res) {
         .status(504)
         .json({ error: "Сервіс недоступний (таймаут). Спробуй пізніше." });
     }
-    return res.status(500).json({ error: e?.message || "Server error" });
+    console.error(
+      JSON.stringify({
+        level: "error",
+        msg: "barcode_lookup_error",
+        error: e?.message || String(e),
+      }),
+    );
+    return res.status(500).json({ error: "Помилка пошуку. Спробуй пізніше." });
   }
 }

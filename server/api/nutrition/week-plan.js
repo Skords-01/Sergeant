@@ -128,6 +128,13 @@ export default async function handler(req, res) {
       .status(200)
       .json({ plan, rawText: plan.days.length === 0 ? out : null });
   } catch (e) {
-    return res.status(500).json({ error: e?.message || "Помилка AI сервера" });
+    console.error(
+      JSON.stringify({
+        level: "error",
+        msg: "ai_handler_error",
+        error: e?.message || String(e),
+      }),
+    );
+    return res.status(500).json({ error: "Помилка AI сервера" });
   }
 }

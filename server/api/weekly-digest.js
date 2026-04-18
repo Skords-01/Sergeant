@@ -209,6 +209,13 @@ ${dataContext}`;
       .status(200)
       .json({ report, generatedAt: new Date().toISOString() });
   } catch (e) {
-    return res.status(500).json({ error: e?.message || "Помилка сервера" });
+    console.error(
+      JSON.stringify({
+        level: "error",
+        msg: "weekly_digest_error",
+        error: e?.message || String(e),
+      }),
+    );
+    return res.status(500).json({ error: "Помилка сервера" });
   }
 }

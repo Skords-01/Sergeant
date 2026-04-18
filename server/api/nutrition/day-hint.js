@@ -109,6 +109,13 @@ ${contextNote}${sourcesNote}Факт за день: ккал ${m.kcal ?? "—"},
     if (!hint) hint = "Не вдалося сформувати підказку.";
     return res.status(200).json({ hint });
   } catch (e) {
-    return res.status(500).json({ error: e?.message || "Помилка AI сервера" });
+    console.error(
+      JSON.stringify({
+        level: "error",
+        msg: "ai_handler_error",
+        error: e?.message || String(e),
+      }),
+    );
+    return res.status(500).json({ error: "Помилка AI сервера" });
   }
 }

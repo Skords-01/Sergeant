@@ -37,9 +37,21 @@ export default async function handler(req, res) {
 
     if (!response.ok) {
       const errorText = await response.text();
-      return res.status(response.status).json({
-        error: response.status === 429 ? "Занадто багато запитів" : errorText,
-      });
+      console.error(
+        JSON.stringify({
+          level: "error",
+          msg: "monobank_api_error",
+          status: response.status,
+          body: errorText,
+        }),
+      );
+      const userMsg =
+        response.status === 429
+          ? "Занадто багато запитів"
+          : response.status === 401
+            ? "Невірний токен Monobank"
+            : "Помилка Monobank API";
+      return res.status(response.status).json({ error: userMsg });
     }
 
     const data = await response.json();

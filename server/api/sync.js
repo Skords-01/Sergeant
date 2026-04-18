@@ -32,35 +32,30 @@ export async function syncPush(req, res) {
   const clientTs = clientUpdatedAt ? new Date(clientUpdatedAt) : new Date();
 
   const result = await pool.query(
-    `INSERT INTO module_data (user_id, module, data, client_updated_at, version)
-     VALUES ($1, $2, $3, $4, 1)
-     ON CONFLICT (user_id, module) DO UPDATE
-       SET data = $3, client_updated_at = $4, server_updated_at = NOW(),
-           version = module_data.version + 1
-     WHERE module_data.client_updated_at <= $4
-     RETURNING server_updated_at, version`,
+    `WITH attempt AS (
+       INSERT INTO module_data (user_id, module, data, client_updated_at, version)
+       VALUES ($1, $2, $3, $4, 1)
+       ON CONFLICT (user_id, module) DO UPDATE
+         SET data = $3, client_updated_at = $4, server_updated_at = NOW(),
+             version = module_data.version + 1
+       WHERE module_data.client_updated_at <= $4
+       RETURNING server_updated_at, version, false AS conflict
+     )
+     SELECT * FROM attempt
+     UNION ALL
+     SELECT server_updated_at, version, true AS conflict
+     FROM module_data
+     WHERE user_id = $1 AND module = $2 AND NOT EXISTS (SELECT 1 FROM attempt)`,
     [user.id, module, blob, clientTs],
   );
 
-  if (result.rows.length === 0) {
-    const existing = await pool.query(
-      `SELECT server_updated_at, version FROM module_data WHERE user_id = $1 AND module = $2`,
-      [user.id, module],
-    );
-    return res.json({
-      ok: true,
-      module,
-      conflict: true,
-      serverUpdatedAt: existing.rows[0]?.server_updated_at,
-      version: existing.rows[0]?.version ?? 0,
-    });
-  }
-
+  const row = result.rows[0];
   return res.json({
     ok: true,
     module,
-    serverUpdatedAt: result.rows[0].server_updated_at,
-    version: result.rows[0].version,
+    ...(row?.conflict ? { conflict: true } : {}),
+    serverUpdatedAt: row?.server_updated_at,
+    version: row?.version ?? 0,
   });
 }
 
@@ -181,33 +176,29 @@ export async function syncPushAll(req, res) {
       }
       const clientTs = clientUpdatedAt ? new Date(clientUpdatedAt) : new Date();
       const r = await client.query(
-        `INSERT INTO module_data (user_id, module, data, client_updated_at, version)
-         VALUES ($1, $2, $3, $4, 1)
-         ON CONFLICT (user_id, module) DO UPDATE
-           SET data = $3, client_updated_at = $4, server_updated_at = NOW(),
-               version = module_data.version + 1
-         WHERE module_data.client_updated_at <= $4
-         RETURNING server_updated_at, version`,
+        `WITH attempt AS (
+           INSERT INTO module_data (user_id, module, data, client_updated_at, version)
+           VALUES ($1, $2, $3, $4, 1)
+           ON CONFLICT (user_id, module) DO UPDATE
+             SET data = $3, client_updated_at = $4, server_updated_at = NOW(),
+                 version = module_data.version + 1
+           WHERE module_data.client_updated_at <= $4
+           RETURNING server_updated_at, version, false AS conflict
+         )
+         SELECT * FROM attempt
+         UNION ALL
+         SELECT server_updated_at, version, true AS conflict
+         FROM module_data
+         WHERE user_id = $1 AND module = $2 AND NOT EXISTS (SELECT 1 FROM attempt)`,
         [user.id, mod, blob, clientTs],
       );
-      if (r.rows.length === 0) {
-        const existing = await client.query(
-          `SELECT server_updated_at, version FROM module_data WHERE user_id = $1 AND module = $2`,
-          [user.id, mod],
-        );
-        results[mod] = {
-          ok: true,
-          conflict: true,
-          serverUpdatedAt: existing.rows[0]?.server_updated_at,
-          version: existing.rows[0]?.version ?? 0,
-        };
-      } else {
-        results[mod] = {
-          ok: true,
-          serverUpdatedAt: r.rows[0].server_updated_at,
-          version: r.rows[0].version,
-        };
-      }
+      const row = r.rows[0];
+      results[mod] = {
+        ok: true,
+        ...(row?.conflict ? { conflict: true } : {}),
+        serverUpdatedAt: row?.server_updated_at,
+        version: row?.version ?? 0,
+      };
     }
     await client.query("COMMIT");
   } catch (err) {

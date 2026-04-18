@@ -206,6 +206,13 @@ ${regenStr}`;
       rawText: plan.meals.length === 0 ? out || null : null,
     });
   } catch (e) {
-    return res.status(500).json({ error: e?.message || "Помилка AI сервера" });
+    console.error(
+      JSON.stringify({
+        level: "error",
+        msg: "ai_handler_error",
+        error: e?.message || String(e),
+      }),
+    );
+    return res.status(500).json({ error: "Помилка AI сервера" });
   }
 }

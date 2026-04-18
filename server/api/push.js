@@ -1,3 +1,4 @@
+import { timingSafeEqual } from "crypto";
 import webpush from "web-push";
 import pool from "../db.js";
 import { auth } from "../auth.js";
@@ -83,7 +84,13 @@ export async function unsubscribe(req, res) {
  */
 export async function sendPush(req, res) {
   const secret = req.headers["x-api-secret"];
-  if (!secret || secret !== process.env.API_SECRET) {
+  const expected = process.env.API_SECRET;
+  const valid =
+    secret &&
+    expected &&
+    secret.length === expected.length &&
+    timingSafeEqual(Buffer.from(secret), Buffer.from(expected));
+  if (!valid) {
     return res.status(401).json({ error: "Unauthorized" });
   }
   if (!VAPID_PUBLIC)
