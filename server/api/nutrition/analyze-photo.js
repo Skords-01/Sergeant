@@ -1,6 +1,8 @@
 import { assertAiQuota } from "../../aiQuota.js";
 import { setCorsHeaders } from "../lib/cors.js";
 import { extractJsonFromText } from "../lib/jsonSafe.js";
+import { validateBody } from "../lib/validate.js";
+import { AnalyzePhotoSchema } from "../lib/schemas.js";
 import {
   anthropicMessages,
   extractAnthropicText,
@@ -54,19 +56,13 @@ export default async function handler(req, res) {
   if (!apiKey)
     return res.status(500).json({ error: "ANTHROPIC_API_KEY is not set" });
 
-  try {
-    const { image_base64, mime_type, locale } = req.body || {};
-    const b64 = typeof image_base64 === "string" ? image_base64.trim() : "";
-    const mediaType =
-      typeof mime_type === "string" && mime_type ? mime_type : "image/jpeg";
+  const parsed = validateBody(AnalyzePhotoSchema, req, res);
+  if (!parsed.ok) return;
 
-    if (!b64)
-      return res.status(400).json({ error: "image_base64 is required" });
-    if (b64.length > 7_000_000) {
-      return res
-        .status(413)
-        .json({ error: "Image too large (base64 payload)" });
-    }
+  try {
+    const { image_base64, mime_type, locale } = parsed.data;
+    const b64 = image_base64.trim();
+    const mediaType = mime_type || "image/jpeg";
 
     const userText = `Мова: ${locale || "uk-UA"}.
 Опиши, що на фото і порахуй приблизне КБЖВ. Якщо треба — задай уточнення.`;

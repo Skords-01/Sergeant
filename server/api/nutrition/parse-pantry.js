@@ -1,6 +1,8 @@
 import { assertAiQuota } from "../../aiQuota.js";
 import { setCorsHeaders } from "../lib/cors.js";
 import { extractJsonFromText } from "../lib/jsonSafe.js";
+import { validateBody } from "../lib/validate.js";
+import { ParsePantrySchema } from "../lib/schemas.js";
 import {
   anthropicMessages,
   extractAnthropicText,
@@ -60,12 +62,11 @@ export default async function handler(req, res) {
   if (!apiKey)
     return res.status(500).json({ error: "ANTHROPIC_API_KEY is not set" });
 
+  const parsed = validateBody(ParsePantrySchema, req, res);
+  if (!parsed.ok) return;
+
   try {
-    const { text, locale } = req.body || {};
-    const raw = typeof text === "string" ? text.trim() : "";
-    if (!raw) return res.status(400).json({ error: "text is required" });
-    if (raw.length > 10_000)
-      return res.status(413).json({ error: "Text too large" });
+    const { text: raw, locale } = parsed.data;
 
     const payload = {
       model: "claude-sonnet-4-6",

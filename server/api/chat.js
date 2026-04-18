@@ -1,5 +1,7 @@
 import { assertAiQuota } from "../aiQuota.js";
 import { setCorsHeaders } from "./lib/cors.js";
+import { validateBody } from "./lib/validate.js";
+import { ChatRequestSchema } from "./lib/schemas.js";
 
 const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
 
@@ -224,6 +226,9 @@ export default async function handler(req, res) {
 
   if (!(await assertAiQuota(req, res))) return;
 
+  const parsed = validateBody(ChatRequestSchema, req, res);
+  if (!parsed.ok) return;
+
   try {
     const {
       context = "",
@@ -231,7 +236,7 @@ export default async function handler(req, res) {
       tool_results,
       tool_calls_raw,
       stream,
-    } = req.body || {};
+    } = parsed.data;
 
     // Другий крок: клієнт виконав tool calls і повертає результати
     if (tool_results && tool_calls_raw) {
