@@ -7,6 +7,7 @@ import { useOnlineStatus } from "@shared/hooks/useOnlineStatus";
 import { ToastProvider } from "@shared/hooks/useToast";
 import { ToastContainer } from "@shared/components/ui/Toast";
 import { Icon } from "@shared/components/ui/Icon";
+import { HUB_OPEN_MODULE_EVENT } from "@shared/lib/hubNav";
 import { AuthProvider, useAuth } from "./AuthContext.jsx";
 import { useCloudSync } from "./useCloudSync.js";
 import { HubDashboard } from "./HubDashboard.jsx";
@@ -161,6 +162,19 @@ function AppInner() {
       return () =>
         navigator.serviceWorker.removeEventListener("message", onMessage);
     }
+  }, [openModule]);
+
+  // Крос-модульний deep-link через `openHubModule(...)` з @shared/lib/hubNav —
+  // дозволяє будь-якому компоненту будь-якого модуля стрибнути в інший
+  // модуль+hash без прокидування `onOpenModule` через дерево.
+  useEffect(() => {
+    const onHubOpen = (ev) => {
+      const { module, hash } = ev.detail || {};
+      if (!VALID_MODULES.has(module)) return;
+      openModule(module, hash ? { hash } : undefined);
+    };
+    window.addEventListener(HUB_OPEN_MODULE_EVENT, onHubOpen);
+    return () => window.removeEventListener(HUB_OPEN_MODULE_EVENT, onHubOpen);
   }, [openModule]);
 
   if (migrationPending) {

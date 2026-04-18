@@ -17,6 +17,7 @@ import {
 } from "../utils";
 import { getDebtTxRole, getReceivableTxRole } from "../domain/debtEngine";
 import { cn } from "@shared/lib/cn";
+import { openHubModule } from "@shared/lib/hubNav";
 import { notifyFinykRoutineCalendarSync } from "../hubRoutineSync.js";
 import { VoiceMicButton } from "@shared/components/ui/VoiceMicButton.jsx";
 import { parseExpenseSpeech as parseExpenseVoice } from "../../../core/lib/speechParsers.js";
@@ -422,6 +423,17 @@ export function Assets({
         />
         {open.subscriptions && (
           <div className="mb-3 space-y-0">
+            {subscriptions.length > 0 && (
+              <button
+                type="button"
+                onClick={() => openHubModule("routine", "")}
+                className="w-full text-[11px] text-muted hover:text-text transition-colors pb-2 flex items-center justify-center gap-1.5"
+              >
+                <span aria-hidden>📅</span>
+                <span>Побачити у календарі Рутини</span>
+                <span aria-hidden>→</span>
+              </button>
+            )}
             {subscriptions.map((sub, i) => (
               <SubCard
                 key={sub.id}

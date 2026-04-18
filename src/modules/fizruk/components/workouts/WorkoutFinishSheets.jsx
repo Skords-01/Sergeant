@@ -2,6 +2,7 @@ import { useRef } from "react";
 import { Button } from "@shared/components/ui/Button";
 import { cn } from "@shared/lib/cn";
 import { useDialogFocusTrap } from "@shared/hooks/useDialogFocusTrap";
+import { openHubModule } from "@shared/lib/hubNav";
 import { formatDurShort } from "../../lib/workoutUi";
 
 export function WorkoutFinishSheets({
@@ -213,24 +214,38 @@ export function WorkoutFinishSheets({
                   </span>
                 </div>
               )}
-            <div className="flex gap-2 p-3 bg-panel">
-              <Button
-                variant="ghost"
-                className="flex-1 h-12 min-h-[44px] rounded-full"
-                type="button"
-                onClick={() =>
-                  setFinishFlash((f) => f && { ...f, collapsed: true })
-                }
-              >
-                Згорнути
-              </Button>
+            <div className="flex flex-col gap-2 p-3 bg-panel">
               <button
                 type="button"
-                className="fizruk-cta-accent flex-1 py-3 rounded-full text-[15px]"
-                onClick={() => setFinishFlash(null)}
+                className="w-full text-xs text-muted hover:text-text transition-colors py-1.5 flex items-center justify-center gap-1.5"
+                onClick={() => {
+                  setFinishFlash(null);
+                  openHubModule("nutrition", "log");
+                }}
               >
-                Готово
+                <span aria-hidden>🥩</span>
+                <span>Додати білок після тренування</span>
+                <span aria-hidden>→</span>
               </button>
+              <div className="flex gap-2">
+                <Button
+                  variant="ghost"
+                  className="flex-1 h-12 min-h-[44px] rounded-full"
+                  type="button"
+                  onClick={() =>
+                    setFinishFlash((f) => f && { ...f, collapsed: true })
+                  }
+                >
+                  Згорнути
+                </Button>
+                <button
+                  type="button"
+                  className="fizruk-cta-accent flex-1 py-3 rounded-full text-[15px]"
+                  onClick={() => setFinishFlash(null)}
+                >
+                  Готово
+                </button>
+              </div>
             </div>
           </div>
         )}
