@@ -42,7 +42,11 @@ export const auth = betterAuth({
   basePath: "/api/auth",
   emailAndPassword: {
     enabled: true,
-    minPasswordLength: 6,
+    // NIST SP 800-63B рекомендує мінімум 8 символів; 10 — розумний trade-off,
+    // що блокує атаки брут-форсом через словники без UX-пенальті для юзера.
+    // maxPasswordLength захищає від DoS через надто довгі bcrypt-пейлоади.
+    minPasswordLength: Number(process.env.MIN_PASSWORD_LENGTH) || 10,
+    maxPasswordLength: Number(process.env.MAX_PASSWORD_LENGTH) || 128,
   },
   session: {
     expiresIn: 60 * 60 * 24 * 30,

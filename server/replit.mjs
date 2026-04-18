@@ -48,7 +48,9 @@ const port = Number(process.env.PORT) || 5000;
 app.disable("x-powered-by");
 app.use(requestIdMiddleware);
 app.use(requestLogMiddleware);
-app.use(apiHelmetMiddleware());
+// Replit обслуговує і API, і SPA одним процесом, тому строга API-CSP тут
+// зламала б фронтенд (див. httpCommon.mjs → apiHelmetMiddleware).
+app.use(apiHelmetMiddleware({ servesFrontend: true }));
 app.use(express.json({ limit: "12mb" }));
 
 app.use("/api", (req, res, next) => {
