@@ -1,0 +1,104 @@
+import { cn } from "@shared/lib/cn";
+import { Input } from "@shared/components/ui/Input";
+import { ROUTINE_THEME as C } from "../../lib/routineConstants.js";
+import { REMINDER_PRESETS } from "../../lib/routineDraftUtils.js";
+
+export function ReminderPresets({ habitDraft, setHabitDraft }) {
+  const times = habitDraft.reminderTimes || [];
+  return (
+    <div className="space-y-2">
+      <div className="text-xs text-subtle">Нагадування (необовʼязково)</div>
+      <div className="flex flex-wrap gap-1.5">
+        {REMINDER_PRESETS.map((preset) => (
+          <button
+            key={preset.id}
+            type="button"
+            className={cn(
+              "text-[11px] px-2.5 py-1.5 rounded-lg border font-medium transition-colors min-h-[32px]",
+              JSON.stringify(times.slice().sort()) ===
+                JSON.stringify(preset.times.slice().sort())
+                ? C.chipOn
+                : C.chipOff,
+            )}
+            onClick={() =>
+              setHabitDraft((d) => ({
+                ...d,
+                reminderTimes: [...preset.times],
+                timeOfDay: preset.times[0] || "",
+              }))
+            }
+          >
+            {preset.label}
+          </button>
+        ))}
+        <button
+          type="button"
+          className={cn(
+            "text-[11px] px-2.5 py-1.5 rounded-lg border font-medium transition-colors min-h-[32px]",
+            times.length === 0 ? C.chipOn : C.chipOff,
+          )}
+          onClick={() =>
+            setHabitDraft((d) => ({
+              ...d,
+              reminderTimes: [],
+              timeOfDay: "",
+            }))
+          }
+        >
+          Без
+        </button>
+      </div>
+      {times.map((t, i) => (
+        <div key={i} className="flex items-center gap-2">
+          <Input
+            type="time"
+            className="routine-touch-field flex-1"
+            value={t}
+            onChange={(e) =>
+              setHabitDraft((d) => {
+                const arr = [...(d.reminderTimes || [])];
+                arr[i] = e.target.value;
+                return {
+                  ...d,
+                  reminderTimes: arr,
+                  timeOfDay: arr[0] || "",
+                };
+              })
+            }
+          />
+          <button
+            type="button"
+            className="w-8 h-8 flex items-center justify-center rounded-lg text-subtle hover:text-danger hover:bg-danger/10 transition-colors"
+            onClick={() =>
+              setHabitDraft((d) => {
+                const arr = (d.reminderTimes || []).filter((_, j) => j !== i);
+                return {
+                  ...d,
+                  reminderTimes: arr,
+                  timeOfDay: arr[0] || "",
+                };
+              })
+            }
+            aria-label="Видалити час"
+          >
+            ✕
+          </button>
+        </div>
+      ))}
+      {times.length < 5 && times.length > 0 && (
+        <button
+          type="button"
+          className="text-[11px] text-routine font-semibold hover:underline"
+          onClick={() =>
+            setHabitDraft((d) => ({
+              ...d,
+              reminderTimes: [...(d.reminderTimes || []), "12:00"],
+            }))
+          }
+        >
+          + Додати час
+        </button>
+      )}
+    </div>
+  );
+}

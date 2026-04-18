@@ -1,41 +1,28 @@
-import { useRef, useState, useMemo, useId } from "react";
-import { cn } from "@shared/lib/cn";
-import { Button } from "@shared/components/ui/Button";
+import { useState } from "react";
 import { ConfirmDialog } from "@shared/components/ui/ConfirmDialog";
 import { useToast } from "@shared/hooks/useToast";
-import { Input } from "@shared/components/ui/Input";
 import {
   loadRoutineState,
   createHabit,
-  createTag,
-  createCategory,
-  deleteTag,
   deleteHabit,
   updateHabit,
-  updateTag,
-  updateCategory,
-  deleteCategory,
-  setHabitArchived,
   applyRoutineBackupPayload,
-  moveHabitInOrder,
-  setHabitOrder,
 } from "../lib/routineStorage.js";
 import { dateKeyFromDate } from "../lib/hubCalendarAggregate.js";
-import { sortHabitsByOrder } from "../lib/habitOrder.js";
-import {
-  ROUTINE_THEME as C,
-  RECURRENCE_OPTIONS,
-  WEEKDAY_LABELS,
-} from "../lib/routineConstants.js";
+import { ROUTINE_THEME as C } from "../lib/routineConstants.js";
 import {
   emptyHabitDraft,
   habitDraftToPatch,
   routineTodayDate,
-  REMINDER_PRESETS,
   normalizeReminderTimes,
 } from "../lib/routineDraftUtils.js";
 import { HabitDetailSheet } from "./HabitDetailSheet.jsx";
 import { RoutineBackupSection } from "./RoutineBackupSection.jsx";
+import { HabitForm } from "./settings/HabitForm.jsx";
+import { TagsSection } from "./settings/TagsSection.jsx";
+import { CategoriesSection } from "./settings/CategoriesSection.jsx";
+import { ActiveHabitsSection } from "./settings/ActiveHabitsSection.jsx";
+import { ArchivedHabitsSection } from "./settings/ArchivedHabitsSection.jsx";
 
 export function RoutineSettingsSection({
   routine,
@@ -51,31 +38,9 @@ export function RoutineSettingsSection({
 }) {
   const toast = useToast();
   const [editingId, setEditingId] = useState(null);
-  const [dragId, setDragId] = useState(null);
   const [detailHabitId, setDetailHabitId] = useState(null);
-  const [habitListQuery, setHabitListQuery] = useState("");
   const [deleteHabitPending, setDeleteHabitPending] = useState(null);
   const [importConfirm, setImportConfirm] = useState(null);
-  const [editingCatId, setEditingCatId] = useState(null);
-  const [deleteCatPending, setDeleteCatPending] = useState(null);
-  const [editingTagId, setEditingTagId] = useState(null);
-  const [editingTagName, setEditingTagName] = useState("");
-  const tagSavedRef = useRef(false);
-  const habitDateFieldIds = useId();
-  const habitStartDateId = `${habitDateFieldIds}-start`;
-  const habitEndDateId = `${habitDateFieldIds}-end`;
-
-  const q = habitListQuery.trim().toLowerCase();
-  const filteredActiveHabits = useMemo(() => {
-    const active = sortHabitsByOrder(
-      routine.habits.filter((h) => !h.archived),
-      routine.habitOrder || [],
-    );
-    if (!q) return active;
-    return active.filter((h) =>
-      `${h.emoji} ${h.name}`.toLowerCase().includes(q),
-    );
-  }, [routine.habits, routine.habitOrder, q]);
 
   const loadHabitIntoDraft = (h) => {
     const times = normalizeReminderTimes(h);
@@ -134,751 +99,50 @@ export function RoutineSettingsSection({
         onImportParsed={(parsed) => setImportConfirm({ parsed })}
       />
 
-      <section className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card space-y-3">
-        <h2 className="text-xs font-bold text-subtle uppercase tracking-widest">
-          {editingId ? "Редагувати звичку" : "Нова звичка"}
-        </h2>
-        <div className="flex gap-2 items-stretch">
-          <Input
-            className="routine-touch-field w-16 shrink-0 text-center"
-            value={habitDraft.emoji}
-            onChange={(e) =>
-              setHabitDraft((d) => ({
-                ...d,
-                emoji: e.target.value.slice(0, 4),
-              }))
-            }
-            aria-label="Емодзі"
-          />
-          <Input
-            className="routine-touch-field min-w-0 flex-1"
-            placeholder="Назва"
-            value={habitDraft.name}
-            onChange={(e) =>
-              setHabitDraft((d) => ({ ...d, name: e.target.value }))
-            }
-          />
-        </div>
+      <HabitForm
+        routine={routine}
+        habitDraft={habitDraft}
+        setHabitDraft={setHabitDraft}
+        editingId={editingId}
+        onSave={saveHabit}
+        onCancel={cancelEdit}
+      />
 
-        <label className="block text-xs text-subtle">
-          Регулярність
-          <select
-            className="routine-touch-select mt-1"
-            value={habitDraft.recurrence || "daily"}
-            onChange={(e) =>
-              setHabitDraft((d) => ({ ...d, recurrence: e.target.value }))
-            }
-          >
-            {RECURRENCE_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </select>
-        </label>
+      <TagsSection
+        routine={routine}
+        setRoutine={setRoutine}
+        tagDraft={tagDraft}
+        setTagDraft={setTagDraft}
+      />
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <label
-            className="block text-xs text-subtle"
-            htmlFor={habitStartDateId}
-          >
-            Початок (дата)
-            <Input
-              id={habitStartDateId}
-              type="date"
-              className="routine-touch-field mt-1 w-full"
-              value={habitDraft.startDate || ""}
-              onChange={(e) =>
-                setHabitDraft((d) => ({ ...d, startDate: e.target.value }))
-              }
-            />
-          </label>
-          <label className="block text-xs text-subtle" htmlFor={habitEndDateId}>
-            Кінець (необовʼязково)
-            <Input
-              id={habitEndDateId}
-              type="date"
-              className="routine-touch-field mt-1 w-full"
-              value={habitDraft.endDate || ""}
-              onChange={(e) =>
-                setHabitDraft((d) => ({ ...d, endDate: e.target.value }))
-              }
-            />
-          </label>
-        </div>
+      <CategoriesSection
+        routine={routine}
+        setRoutine={setRoutine}
+        catDraft={catDraft}
+        setCatDraft={setCatDraft}
+      />
 
-        <div className="space-y-2">
-          <div className="text-xs text-subtle">Нагадування (необовʼязково)</div>
-          <div className="flex flex-wrap gap-1.5">
-            {REMINDER_PRESETS.map((preset) => (
-              <button
-                key={preset.id}
-                type="button"
-                className={cn(
-                  "text-[11px] px-2.5 py-1.5 rounded-lg border font-medium transition-colors min-h-[32px]",
-                  JSON.stringify(
-                    (habitDraft.reminderTimes || []).slice().sort(),
-                  ) === JSON.stringify(preset.times.slice().sort())
-                    ? C.chipOn
-                    : C.chipOff,
-                )}
-                onClick={() =>
-                  setHabitDraft((d) => ({
-                    ...d,
-                    reminderTimes: [...preset.times],
-                    timeOfDay: preset.times[0] || "",
-                  }))
-                }
-              >
-                {preset.label}
-              </button>
-            ))}
-            <button
-              type="button"
-              className={cn(
-                "text-[11px] px-2.5 py-1.5 rounded-lg border font-medium transition-colors min-h-[32px]",
-                (habitDraft.reminderTimes || []).length === 0
-                  ? C.chipOn
-                  : C.chipOff,
-              )}
-              onClick={() =>
-                setHabitDraft((d) => ({
-                  ...d,
-                  reminderTimes: [],
-                  timeOfDay: "",
-                }))
-              }
-            >
-              Без
-            </button>
-          </div>
-          {(habitDraft.reminderTimes || []).map((t, i) => (
-            <div key={i} className="flex items-center gap-2">
-              <Input
-                type="time"
-                className="routine-touch-field flex-1"
-                value={t}
-                onChange={(e) =>
-                  setHabitDraft((d) => {
-                    const arr = [...(d.reminderTimes || [])];
-                    arr[i] = e.target.value;
-                    return {
-                      ...d,
-                      reminderTimes: arr,
-                      timeOfDay: arr[0] || "",
-                    };
-                  })
-                }
-              />
-              <button
-                type="button"
-                className="w-8 h-8 flex items-center justify-center rounded-lg text-subtle hover:text-danger hover:bg-danger/10 transition-colors"
-                onClick={() =>
-                  setHabitDraft((d) => {
-                    const arr = (d.reminderTimes || []).filter(
-                      (_, j) => j !== i,
-                    );
-                    return {
-                      ...d,
-                      reminderTimes: arr,
-                      timeOfDay: arr[0] || "",
-                    };
-                  })
-                }
-                aria-label="Видалити час"
-              >
-                ✕
-              </button>
-            </div>
-          ))}
-          {(habitDraft.reminderTimes || []).length < 5 &&
-            (habitDraft.reminderTimes || []).length > 0 && (
-              <button
-                type="button"
-                className="text-[11px] text-routine font-semibold hover:underline"
-                onClick={() =>
-                  setHabitDraft((d) => ({
-                    ...d,
-                    reminderTimes: [...(d.reminderTimes || []), "12:00"],
-                  }))
-                }
-              >
-                + Додати час
-              </button>
-            )}
-        </div>
+      <ActiveHabitsSection
+        routine={routine}
+        setRoutine={setRoutine}
+        editingId={editingId}
+        onEdit={(h) => {
+          setEditingId(h.id);
+          loadHabitIntoDraft(h);
+        }}
+        onCancelEditIf={(id) => {
+          if (editingId === id) cancelEdit();
+        }}
+        onOpenDetails={(id) => setDetailHabitId(id)}
+        onOpenCalendar={onOpenCalendar}
+        onRequestDelete={(pending) => setDeleteHabitPending(pending)}
+      />
 
-        {habitDraft.recurrence === "weekly" && (
-          <div>
-            <p className="text-xs text-subtle mb-2">Дні тижня</p>
-            <div className="flex flex-wrap gap-2">
-              {WEEKDAY_LABELS.map((label, wd) => {
-                const on = (habitDraft.weekdays || []).includes(wd);
-                return (
-                  <button
-                    key={label}
-                    type="button"
-                    onClick={() => {
-                      setHabitDraft((d) => {
-                        const cur = [...(d.weekdays || [])];
-                        const i = cur.indexOf(wd);
-                        if (i >= 0) {
-                          if (cur.length <= 1) return d;
-                          cur.splice(i, 1);
-                        } else cur.push(wd);
-                        cur.sort((a, b) => a - b);
-                        return { ...d, weekdays: cur };
-                      });
-                    }}
-                    className={cn(
-                      "min-h-[40px] px-3 rounded-xl text-xs font-semibold border transition-colors",
-                      on ? C.chipOn : C.chipOff,
-                    )}
-                  >
-                    {label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {(habitDraft.recurrence === "once" ||
-          habitDraft.recurrence === "monthly") && (
-          <p className="text-[11px] text-subtle leading-snug">
-            {habitDraft.recurrence === "once"
-              ? "Подія зʼявиться лише в день «Початок». Кінець можна залишити порожнім."
-              : "Орієнтир — день місяця з «Початок». У коротких місяцях (наприклад 31 → лютий) — останній день місяця."}
-          </p>
-        )}
-
-        {routine.tags.length > 0 && (
-          <label className="block text-xs text-subtle">
-            Тег
-            <select
-              className="routine-touch-select mt-1"
-              value={habitDraft.tagIds[0] || ""}
-              onChange={(e) => {
-                const id = e.target.value;
-                setHabitDraft((d) => ({
-                  ...d,
-                  tagIds: id ? [id] : [],
-                }));
-              }}
-            >
-              <option value="">— без тегу —</option>
-              {routine.tags.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name}
-                </option>
-              ))}
-            </select>
-            <span className="block text-[10px] text-subtle mt-1 leading-snug">
-              Один тег на звичку (поле tagIds у даних — масив для сумісності).
-            </span>
-          </label>
-        )}
-        {routine.categories.length > 0 && (
-          <label className="block text-xs text-subtle">
-            Категорія
-            <select
-              className="routine-touch-select mt-1"
-              value={habitDraft.categoryId || ""}
-              onChange={(e) => {
-                const id = e.target.value;
-                setHabitDraft((d) => ({ ...d, categoryId: id || null }));
-              }}
-            >
-              <option value="">— без категорії —</option>
-              {routine.categories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.emoji ? `${c.emoji} ` : ""}
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </label>
-        )}
-
-        <div className="flex flex-col gap-2">
-          <Button
-            type="button"
-            className={cn("w-full font-bold", C.primary)}
-            onClick={saveHabit}
-          >
-            {editingId ? "Зберегти зміни" : "Додати звичку"}
-          </Button>
-          {editingId && (
-            <Button
-              type="button"
-              variant="ghost"
-              className="w-full border border-line/70"
-              onClick={cancelEdit}
-            >
-              Скасувати
-            </Button>
-          )}
-        </div>
-      </section>
-
-      <section className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card space-y-3">
-        <h2 className="text-xs font-bold text-subtle uppercase tracking-widest">
-          Теги
-        </h2>
-        <div className="flex gap-2 items-stretch">
-          <Input
-            className="routine-touch-field min-w-0 flex-1"
-            placeholder="Новий тег"
-            value={tagDraft}
-            onChange={(e) => setTagDraft(e.target.value)}
-          />
-          <Button
-            type="button"
-            variant="ghost"
-            className="min-h-[44px] shrink-0 border border-line/70 px-4"
-            onClick={() => {
-              setRoutine((s) => createTag(s, tagDraft));
-              setTagDraft("");
-            }}
-          >
-            +
-          </Button>
-        </div>
-        <ul className="flex flex-wrap gap-2">
-          {routine.tags.map((t) => (
-            <li
-              key={t.id}
-              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-panelHi text-xs border border-line/50 font-medium"
-            >
-              {editingTagId === t.id ? (
-                <form
-                  className="inline-flex items-center gap-1"
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    if (!tagSavedRef.current && editingTagName.trim()) {
-                      tagSavedRef.current = true;
-                      setRoutine((s) => updateTag(s, t.id, editingTagName));
-                    }
-                    setEditingTagId(null);
-                    setEditingTagName("");
-                  }}
-                >
-                  <Input
-                    className="!h-7 !px-1.5 !text-xs w-24"
-                    value={editingTagName}
-                    onChange={(e) => setEditingTagName(e.target.value)}
-                    onBlur={() => {
-                      if (!tagSavedRef.current && editingTagName.trim()) {
-                        tagSavedRef.current = true;
-                        setRoutine((s) => updateTag(s, t.id, editingTagName));
-                      }
-                      setEditingTagId(null);
-                      setEditingTagName("");
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === "Escape") {
-                        tagSavedRef.current = true;
-                        setEditingTagId(null);
-                        setEditingTagName("");
-                      }
-                    }}
-                  />
-                </form>
-              ) : (
-                <>
-                  {t.name}
-                  <button
-                    type="button"
-                    className="text-subtle hover:text-text min-w-[28px] min-h-[28px] flex items-center justify-center rounded-lg"
-                    onClick={() => {
-                      tagSavedRef.current = false;
-                      setEditingTagId(t.id);
-                      setEditingTagName(t.name);
-                    }}
-                    aria-label={`Змінити ${t.name}`}
-                  >
-                    ✎
-                  </button>
-                  <button
-                    type="button"
-                    className="text-subtle hover:text-danger min-w-[28px] min-h-[28px] flex items-center justify-center rounded-lg"
-                    onClick={() => setRoutine((s) => deleteTag(s, t.id))}
-                    aria-label={`Видалити ${t.name}`}
-                  >
-                    ×
-                  </button>
-                </>
-              )}
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <section className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card space-y-3">
-        <h2 className="text-xs font-bold text-subtle uppercase tracking-widest">
-          {editingCatId ? "Редагувати категорію" : "Категорії"}
-        </h2>
-        <div className="flex flex-wrap gap-2 items-stretch">
-          <Input
-            className="routine-touch-field w-16 shrink-0"
-            placeholder="🏠"
-            value={catDraft.emoji}
-            onChange={(e) =>
-              setCatDraft((d) => ({ ...d, emoji: e.target.value }))
-            }
-          />
-          <Input
-            className="routine-touch-field min-w-0 flex-1 basis-[min(100%,14rem)]"
-            placeholder="Назва категорії"
-            value={catDraft.name}
-            onChange={(e) =>
-              setCatDraft((d) => ({ ...d, name: e.target.value }))
-            }
-          />
-          {editingCatId ? (
-            <>
-              <Button
-                type="button"
-                variant="ghost"
-                className="min-h-[44px] min-w-0 border border-line/70 sm:min-w-[7rem]"
-                onClick={() => {
-                  setRoutine((s) =>
-                    updateCategory(s, editingCatId, {
-                      name: catDraft.name,
-                      emoji: catDraft.emoji,
-                    }),
-                  );
-                  setEditingCatId(null);
-                  setCatDraft({ name: "", emoji: "" });
-                }}
-              >
-                Зберегти
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                className="min-h-[44px] min-w-0 border border-line/70"
-                onClick={() => {
-                  setEditingCatId(null);
-                  setCatDraft({ name: "", emoji: "" });
-                }}
-              >
-                Скасувати
-              </Button>
-            </>
-          ) : (
-            <Button
-              type="button"
-              variant="ghost"
-              className="min-h-[44px] w-full min-w-0 border border-line/70 sm:w-auto sm:min-w-[7rem]"
-              onClick={() => {
-                setRoutine((s) =>
-                  createCategory(s, catDraft.name, catDraft.emoji),
-                );
-                setCatDraft({ name: "", emoji: "" });
-              }}
-            >
-              Додати
-            </Button>
-          )}
-        </div>
-        {routine.categories.length > 0 && (
-          <ul className="space-y-2 mt-2">
-            {routine.categories.map((c) => {
-              const habitCount = routine.habits.filter(
-                (h) => h.categoryId === c.id,
-              ).length;
-              return (
-                <li
-                  key={c.id}
-                  className={cn(
-                    "flex items-center justify-between gap-2 px-3 py-2 rounded-xl bg-panelHi border border-line/50",
-                    editingCatId === c.id &&
-                      "ring-2 ring-routine-ring/60 dark:ring-routine/40",
-                  )}
-                >
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className="text-sm font-medium truncate">
-                      {c.emoji ? `${c.emoji} ` : ""}
-                      {c.name}
-                    </span>
-                    <span className="shrink-0 text-[10px] text-subtle bg-panel border border-line/50 rounded-full px-2 py-0.5">
-                      {habitCount}{" "}
-                      {habitCount === 1
-                        ? "звичка"
-                        : habitCount >= 2 && habitCount <= 4
-                          ? "звички"
-                          : "звичок"}
-                    </span>
-                  </div>
-                  <div className="flex gap-1 shrink-0">
-                    <button
-                      type="button"
-                      className="text-subtle hover:text-text min-w-[32px] min-h-[32px] flex items-center justify-center rounded-lg text-xs"
-                      onClick={() => {
-                        setEditingCatId(c.id);
-                        setCatDraft({ name: c.name, emoji: c.emoji || "" });
-                      }}
-                      aria-label={`Змінити ${c.name}`}
-                    >
-                      ✎
-                    </button>
-                    <button
-                      type="button"
-                      className="text-subtle hover:text-danger min-w-[32px] min-h-[32px] flex items-center justify-center rounded-lg text-xs"
-                      onClick={() =>
-                        setDeleteCatPending({
-                          id: c.id,
-                          name: c.name,
-                          habitCount,
-                        })
-                      }
-                      aria-label={`Видалити ${c.name}`}
-                    >
-                      ×
-                    </button>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </section>
-
-      <section className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card space-y-2">
-        <h2 className="text-xs font-bold text-subtle uppercase tracking-widest">
-          Активні звички
-        </h2>
-        <p className="text-[10px] text-subtle leading-snug">
-          Порядок у списку = порядок у календарі. На десктопі можна перетягнути;
-          на телефоні — кнопки ↑↓. Для клавіатури та скрінрідерів зручніші
-          кнопки ↑↓.
-        </p>
-        <Input
-          className="routine-touch-field w-full max-w-md"
-          placeholder="Пошук у списку звичок…"
-          value={habitListQuery}
-          onChange={(e) => setHabitListQuery(e.target.value)}
-          aria-label="Пошук звичок у списку"
-        />
-        <p className="sr-only" aria-live="polite">
-          Порядок у списку можна змінити перетягуванням або кнопками вгору вниз.
-        </p>
-        {routine.habits.filter((h) => !h.archived).length === 0 && (
-          <div className="rounded-xl border border-dashed border-line/70 bg-panelHi/50 p-4 text-center">
-            <p className="text-sm text-muted">
-              Поки порожньо — додай першу звичку формою вище.
-            </p>
-            {typeof onOpenCalendar === "function" && (
-              <Button
-                type="button"
-                variant="ghost"
-                className="mt-3 border border-line/70"
-                onClick={onOpenCalendar}
-              >
-                Перейти до календаря
-              </Button>
-            )}
-          </div>
-        )}
-        <ul className="space-y-2">
-          {filteredActiveHabits.map((h) => {
-            const recLabel =
-              RECURRENCE_OPTIONS.find(
-                (o) => o.value === (h.recurrence || "daily"),
-              )?.label || "";
-            return (
-              <li
-                key={h.id}
-                draggable
-                aria-grabbed={dragId === h.id}
-                className={cn(
-                  "flex flex-col gap-2 border-b border-line/40 pb-3 last:border-0 last:pb-0 cursor-grab active:cursor-grabbing",
-                  editingId === h.id &&
-                    "ring-2 ring-routine-ring/60 dark:ring-routine/40 rounded-xl p-2 -mx-1",
-                  dragId === h.id && "opacity-70",
-                )}
-                onDragStart={(e) => {
-                  setDragId(h.id);
-                  try {
-                    e.dataTransfer.setData("text/plain", h.id);
-                    e.dataTransfer.effectAllowed = "move";
-                  } catch {
-                    /* noop */
-                  }
-                }}
-                onDragEnd={() => setDragId(null)}
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  try {
-                    e.dataTransfer.dropEffect = "move";
-                  } catch {
-                    /* noop */
-                  }
-                }}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  const fromId = e.dataTransfer.getData("text/plain");
-                  setDragId(null);
-                  if (!fromId || fromId === h.id) return;
-                  setRoutine((s) => {
-                    const ordered = sortHabitsByOrder(
-                      s.habits.filter((x) => !x.archived),
-                      s.habitOrder || [],
-                    ).map((x) => x.id);
-                    const fi = ordered.indexOf(fromId);
-                    const ti = ordered.indexOf(h.id);
-                    if (fi < 0 || ti < 0) return s;
-                    const next = [...ordered];
-                    const [row] = next.splice(fi, 1);
-                    next.splice(ti, 0, row);
-                    return setHabitOrder(s, next);
-                  });
-                }}
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <span className="text-sm font-medium">
-                      {h.emoji} {h.name}
-                    </span>
-                    <p className="text-[10px] text-subtle mt-0.5">
-                      {recLabel}
-                      {h.timeOfDay ? ` · ${h.timeOfDay}` : ""}
-                      {h.startDate ? ` · з ${h.startDate}` : ""}
-                      {h.endDate ? ` до ${h.endDate}` : ""}
-                    </p>
-                  </div>
-                  <div className="flex flex-wrap gap-1.5 justify-end shrink-0 max-w-[min(100%,12rem)] sm:max-w-none">
-                    <div className="flex gap-1">
-                      <button
-                        type="button"
-                        className="min-w-[32px] min-h-[36px] rounded-lg border border-line/70 text-xs text-muted hover:text-text"
-                        onClick={() =>
-                          setRoutine((s) => moveHabitInOrder(s, h.id, -1))
-                        }
-                        aria-label="Вгору в списку"
-                      >
-                        ↑
-                      </button>
-                      <button
-                        type="button"
-                        className="min-w-[32px] min-h-[36px] rounded-lg border border-line/70 text-xs text-muted hover:text-text"
-                        onClick={() =>
-                          setRoutine((s) => moveHabitInOrder(s, h.id, 1))
-                        }
-                        aria-label="Вниз в списку"
-                      >
-                        ↓
-                      </button>
-                    </div>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="!h-9 !px-3 !text-xs border border-routine-line/60 dark:border-routine/25 bg-routine-surface/40 dark:bg-routine/10"
-                      onClick={() => setDetailHabitId(h.id)}
-                    >
-                      Деталі
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="!h-9 !px-3 !text-xs border border-line/70"
-                      onClick={() => {
-                        setEditingId(h.id);
-                        loadHabitIntoDraft(h);
-                      }}
-                    >
-                      Змінити
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="!h-9 !px-3 !text-xs border border-line/70"
-                      onClick={() => {
-                        setRoutine((s) => setHabitArchived(s, h.id, true));
-                        if (editingId === h.id) cancelEdit();
-                      }}
-                    >
-                      В архів
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="!h-9 !px-3 !text-xs text-danger border border-danger/25"
-                      onClick={() =>
-                        setDeleteHabitPending({
-                          id: h.id,
-                          name: h.name,
-                          archived: false,
-                        })
-                      }
-                    >
-                      Видалити
-                    </Button>
-                  </div>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
-      </section>
-
-      {routine.habits.some((h) => h.archived) && (
-        <section className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card space-y-2 opacity-95">
-          <h2 className="text-xs font-bold text-subtle uppercase tracking-widest">
-            Архів
-          </h2>
-          <p className="text-[10px] text-subtle">
-            Не показуються в календарі; відмітки збережені.
-          </p>
-          <ul className="space-y-2">
-            {routine.habits
-              .filter((h) => h.archived)
-              .map((h) => (
-                <li
-                  key={h.id}
-                  className="flex flex-col gap-2 border-b border-line/40 pb-3 last:border-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between"
-                >
-                  <span className="text-sm text-muted">
-                    {h.emoji} {h.name}
-                  </span>
-                  <div className="flex flex-wrap gap-1.5">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="!h-9 !px-3 !text-xs border border-line/70"
-                      onClick={() =>
-                        setRoutine((s) => setHabitArchived(s, h.id, false))
-                      }
-                    >
-                      Відновити
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="!h-9 !px-3 !text-xs text-danger border border-danger/25"
-                      onClick={() =>
-                        setDeleteHabitPending({
-                          id: h.id,
-                          name: h.name,
-                          archived: true,
-                        })
-                      }
-                    >
-                      Видалити
-                    </Button>
-                  </div>
-                </li>
-              ))}
-          </ul>
-        </section>
-      )}
+      <ArchivedHabitsSection
+        routine={routine}
+        setRoutine={setRoutine}
+        onRequestDelete={(pending) => setDeleteHabitPending(pending)}
+      />
 
       <ConfirmDialog
         open={!!deleteHabitPending}
@@ -905,28 +169,6 @@ export function RoutineSettingsSection({
           setDeleteHabitPending(null);
         }}
         onCancel={() => setDeleteHabitPending(null)}
-      />
-
-      <ConfirmDialog
-        open={!!deleteCatPending}
-        title={`Видалити категорію «${deleteCatPending?.name}»?`}
-        description={
-          deleteCatPending?.habitCount > 0
-            ? `${deleteCatPending.habitCount} ${deleteCatPending.habitCount === 1 ? "звичка втратить" : "звичок втратять"} прив'язку до цієї категорії.`
-            : "Категорія буде видалена."
-        }
-        confirmLabel="Видалити"
-        onConfirm={() => {
-          if (deleteCatPending) {
-            setRoutine((s) => deleteCategory(s, deleteCatPending.id));
-            if (editingCatId === deleteCatPending.id) {
-              setEditingCatId(null);
-              setCatDraft({ name: "", emoji: "" });
-            }
-          }
-          setDeleteCatPending(null);
-        }}
-        onCancel={() => setDeleteCatPending(null)}
       />
 
       <ConfirmDialog

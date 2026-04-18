@@ -1,0 +1,116 @@
+import { memo } from "react";
+import { cn } from "@shared/lib/cn";
+import { Button } from "@shared/components/ui/Button";
+import { RECURRENCE_OPTIONS } from "../../lib/routineConstants.js";
+
+/**
+ * Єдиний рядок у списку активних звичок: перетягування, кнопки ↑↓,
+ * «Деталі», «Змінити», «В архів», «Видалити». Мемоізовано, щоб редагування
+ * іншої звички не спричиняло re-render усіх рядків.
+ */
+export const HabitListItem = memo(function HabitListItem({
+  habit: h,
+  editing,
+  dragging,
+  onDragStart,
+  onDragEnd,
+  onDragOver,
+  onDrop,
+  onMoveUp,
+  onMoveDown,
+  onOpenDetails,
+  onStartEdit,
+  onArchive,
+  onRequestDelete,
+}) {
+  const recLabel =
+    RECURRENCE_OPTIONS.find((o) => o.value === (h.recurrence || "daily"))
+      ?.label || "";
+
+  return (
+    <li
+      draggable
+      aria-grabbed={dragging}
+      className={cn(
+        "flex flex-col gap-2 border-b border-line/40 pb-3 last:border-0 last:pb-0 cursor-grab active:cursor-grabbing",
+        editing &&
+          "ring-2 ring-routine-ring/60 dark:ring-routine/40 rounded-xl p-2 -mx-1",
+        dragging && "opacity-70",
+      )}
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
+      onDragOver={onDragOver}
+      onDrop={onDrop}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <span className="text-sm font-medium">
+            {h.emoji} {h.name}
+          </span>
+          <p className="text-[10px] text-subtle mt-0.5">
+            {recLabel}
+            {h.timeOfDay ? ` · ${h.timeOfDay}` : ""}
+            {h.startDate ? ` · з ${h.startDate}` : ""}
+            {h.endDate ? ` до ${h.endDate}` : ""}
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-1.5 justify-end shrink-0 max-w-[min(100%,12rem)] sm:max-w-none">
+          <div className="flex gap-1">
+            <button
+              type="button"
+              className="min-w-[32px] min-h-[36px] rounded-lg border border-line/70 text-xs text-muted hover:text-text"
+              onClick={onMoveUp}
+              aria-label="Вгору в списку"
+            >
+              ↑
+            </button>
+            <button
+              type="button"
+              className="min-w-[32px] min-h-[36px] rounded-lg border border-line/70 text-xs text-muted hover:text-text"
+              onClick={onMoveDown}
+              aria-label="Вниз в списку"
+            >
+              ↓
+            </button>
+          </div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="!h-9 !px-3 !text-xs border border-routine-line/60 dark:border-routine/25 bg-routine-surface/40 dark:bg-routine/10"
+            onClick={onOpenDetails}
+          >
+            Деталі
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="!h-9 !px-3 !text-xs border border-line/70"
+            onClick={onStartEdit}
+          >
+            Змінити
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="!h-9 !px-3 !text-xs border border-line/70"
+            onClick={onArchive}
+          >
+            В архів
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="!h-9 !px-3 !text-xs text-danger border border-danger/25"
+            onClick={onRequestDelete}
+          >
+            Видалити
+          </Button>
+        </div>
+      </div>
+    </li>
+  );
+});

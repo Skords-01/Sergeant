@@ -1,0 +1,136 @@
+import { useMemo, useState } from "react";
+import { Button } from "@shared/components/ui/Button";
+import { Input } from "@shared/components/ui/Input";
+import { sortHabitsByOrder } from "../../lib/habitOrder.js";
+import {
+  moveHabitInOrder,
+  setHabitArchived,
+  setHabitOrder,
+} from "../../lib/routineStorage.js";
+import { HabitListItem } from "./HabitListItem.jsx";
+
+export function ActiveHabitsSection({
+  routine,
+  setRoutine,
+  editingId,
+  onEdit,
+  onCancelEditIf,
+  onOpenDetails,
+  onOpenCalendar,
+  onRequestDelete,
+}) {
+  const [dragId, setDragId] = useState(null);
+  const [habitListQuery, setHabitListQuery] = useState("");
+
+  const q = habitListQuery.trim().toLowerCase();
+  const filteredActiveHabits = useMemo(() => {
+    const active = sortHabitsByOrder(
+      routine.habits.filter((h) => !h.archived),
+      routine.habitOrder || [],
+    );
+    if (!q) return active;
+    return active.filter((h) =>
+      `${h.emoji} ${h.name}`.toLowerCase().includes(q),
+    );
+  }, [routine.habits, routine.habitOrder, q]);
+
+  const hasActive = routine.habits.some((h) => !h.archived);
+
+  return (
+    <section className="bg-panel border border-line/60 rounded-2xl p-4 shadow-card space-y-2">
+      <h2 className="text-xs font-bold text-subtle uppercase tracking-widest">
+        Активні звички
+      </h2>
+      <p className="text-[10px] text-subtle leading-snug">
+        Порядок у списку = порядок у календарі. На десктопі можна перетягнути;
+        на телефоні — кнопки ↑↓. Для клавіатури та скрінрідерів зручніші кнопки
+        ↑↓.
+      </p>
+      <Input
+        className="routine-touch-field w-full max-w-md"
+        placeholder="Пошук у списку звичок…"
+        value={habitListQuery}
+        onChange={(e) => setHabitListQuery(e.target.value)}
+        aria-label="Пошук звичок у списку"
+      />
+      <p className="sr-only" aria-live="polite">
+        Порядок у списку можна змінити перетягуванням або кнопками вгору вниз.
+      </p>
+      {!hasActive && (
+        <div className="rounded-xl border border-dashed border-line/70 bg-panelHi/50 p-4 text-center">
+          <p className="text-sm text-muted">
+            Поки порожньо — додай першу звичку формою вище.
+          </p>
+          {typeof onOpenCalendar === "function" && (
+            <Button
+              type="button"
+              variant="ghost"
+              className="mt-3 border border-line/70"
+              onClick={onOpenCalendar}
+            >
+              Перейти до календаря
+            </Button>
+          )}
+        </div>
+      )}
+      <ul className="space-y-2">
+        {filteredActiveHabits.map((h) => (
+          <HabitListItem
+            key={h.id}
+            habit={h}
+            editing={editingId === h.id}
+            dragging={dragId === h.id}
+            onDragStart={(e) => {
+              setDragId(h.id);
+              try {
+                e.dataTransfer.setData("text/plain", h.id);
+                e.dataTransfer.effectAllowed = "move";
+              } catch {
+                /* noop */
+              }
+            }}
+            onDragEnd={() => setDragId(null)}
+            onDragOver={(e) => {
+              e.preventDefault();
+              try {
+                e.dataTransfer.dropEffect = "move";
+              } catch {
+                /* noop */
+              }
+            }}
+            onDrop={(e) => {
+              e.preventDefault();
+              const fromId = e.dataTransfer.getData("text/plain");
+              setDragId(null);
+              if (!fromId || fromId === h.id) return;
+              setRoutine((s) => {
+                const ordered = sortHabitsByOrder(
+                  s.habits.filter((x) => !x.archived),
+                  s.habitOrder || [],
+                ).map((x) => x.id);
+                const fi = ordered.indexOf(fromId);
+                const ti = ordered.indexOf(h.id);
+                if (fi < 0 || ti < 0) return s;
+                const next = [...ordered];
+                const [row] = next.splice(fi, 1);
+                next.splice(ti, 0, row);
+                return setHabitOrder(s, next);
+              });
+            }}
+            onMoveUp={() => setRoutine((s) => moveHabitInOrder(s, h.id, -1))}
+            onMoveDown={() => setRoutine((s) => moveHabitInOrder(s, h.id, 1))}
+            onOpenDetails={() => onOpenDetails(h.id)}
+            onStartEdit={() => onEdit(h)}
+            onArchive={() => {
+              setRoutine((s) => setHabitArchived(s, h.id, true));
+              onCancelEditIf(h.id);
+            }}
+            onRequestDelete={() =>
+              onRequestDelete({ id: h.id, name: h.name, archived: false })
+            }
+          />
+        ))}
+      </ul>
+    </section>
+  );
+}
