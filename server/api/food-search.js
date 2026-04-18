@@ -1,5 +1,4 @@
 import { setCorsHeaders } from "./lib/cors.js";
-import { checkRateLimit } from "./lib/rateLimit.js";
 
 const OFF_SEARCH = "https://world.openfoodfacts.org/api/v2/search";
 const OFF_FIELDS =
@@ -248,16 +247,6 @@ export default async function handler(req, res) {
   if (req.method !== "GET")
     return res.status(405).json({ error: "Method not allowed" });
 
-  const rl = checkRateLimit(req, {
-    key: "api:food-search",
-    limit: 40,
-    windowMs: 60_000,
-  });
-  if (!rl.ok)
-    return res
-      .status(429)
-      .json({ error: "Забагато запитів. Спробуй пізніше." });
-
   const query = String(req.query.q || "").trim();
   if (!query || query.length < 2) {
     return res.status(400).json({ error: "Запит занадто короткий" });
@@ -306,6 +295,10 @@ export default async function handler(req, res) {
       })
       .slice(0, 8);
 
+    res.setHeader(
+      "Cache-Control",
+      "public, max-age=300, stale-while-revalidate=60",
+    );
     return res.status(200).json({ products });
   } catch (e) {
     if (e?.name === "TimeoutError" || e?.name === "AbortError") {
@@ -313,6 +306,13 @@ export default async function handler(req, res) {
         .status(504)
         .json({ error: "Сервіс недоступний (таймаут). Спробуй пізніше." });
     }
-    return res.status(500).json({ error: e?.message || "Server error" });
+    console.error(
+      JSON.stringify({
+        level: "error",
+        msg: "food_search_error",
+        error: e?.message || String(e),
+      }),
+    );
+    return res.status(500).json({ error: "Помилка пошуку. Спробуй пізніше." });
   }
 }

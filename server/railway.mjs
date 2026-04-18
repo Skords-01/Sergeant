@@ -51,6 +51,8 @@ import { rateLimitExpress } from "./api/lib/rateLimit.js";
 const app = express();
 const port = Number(process.env.PORT) || 3000;
 
+// Railway sits behind a load balancer — trust the first XFF hop so req.ip is correct.
+app.set("trust proxy", 1);
 app.disable("x-powered-by");
 app.use(requestIdMiddleware);
 app.use(requestLogMiddleware);
@@ -183,13 +185,13 @@ app.use((err, req, res, _next) => {
   }
 });
 
-ensureSchema()
-  .then(() => {
-    console.log("[db] Schema verified");
-  })
-  .catch((err) => {
-    console.error("[db] Schema check failed:", err.message);
-  });
+try {
+  await ensureSchema();
+  console.log("[db] Schema verified");
+} catch (err) {
+  console.error("[db] Schema check failed:", err.message);
+  process.exit(1);
+}
 
 app.listen(port, "0.0.0.0", () => {
   console.log(`[railway] API listening on ${port}`);
