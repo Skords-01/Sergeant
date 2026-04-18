@@ -149,7 +149,6 @@ function AppInner() {
           onDismissInstall={dismiss}
           onboarding={ui.onboarding}
           setOnboarding={ui.setOnboarding}
-          onSetPwaAction={setPwaAction}
           onOpenModule={openModule}
           iosVisible={iosVisible}
           onDismissIos={iosDismiss}
@@ -161,6 +160,7 @@ function AppInner() {
           onSync={sync.pushAll}
           onPull={sync.pullAll}
           user={user}
+          onShowAuth={() => setShowAuth(true)}
         />
 
         <HubFloatingActions onOpenChat={() => ui.openChat()} />

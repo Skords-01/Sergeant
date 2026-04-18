@@ -1,13 +1,15 @@
+import { useEffect, useState } from "react";
 import { Icon } from "@shared/components/ui/Icon";
 import { HubDashboard } from "../HubDashboard.jsx";
 import { HubReports } from "../HubReports.jsx";
 import { HubSettingsPage } from "../HubSettingsPage.jsx";
 import { OnboardingWizard } from "../OnboardingWizard.jsx";
+import { FirstActionSheet } from "../onboarding/FirstActionSheet.jsx";
 import { IOSInstallBanner } from "./IOSInstallBanner.jsx";
 import {
-  enableFinykManualOnly,
-  seedFinykDemoData,
-} from "../../modules/finyk/lib/demoData.js";
+  isFirstActionPending,
+  clearFirstActionPending,
+} from "../onboarding/vibePicks.js";
 
 export function HubMainContent({
   updateAvailable,
@@ -17,7 +19,6 @@ export function HubMainContent({
   onDismissInstall,
   onboarding,
   setOnboarding,
-  onSetPwaAction,
   onOpenModule,
   iosVisible,
   onDismissIos,
@@ -29,7 +30,19 @@ export function HubMainContent({
   onSync,
   onPull,
   user,
+  onShowAuth,
 }) {
+  // The first-action sheet is the third beat of the FTUX flow: wizard →
+  // demo-populated dashboard → quick-win sheet. It is controlled by a
+  // localStorage flag so a refresh mid-flow doesn't swallow it.
+  const [firstActionOpen, setFirstActionOpen] = useState(false);
+
+  useEffect(() => {
+    if (!onboarding && isFirstActionPending()) {
+      setFirstActionOpen(true);
+    }
+  }, [onboarding]);
+
   return (
     <>
       {updateAvailable && (
@@ -113,13 +126,26 @@ export function HubMainContent({
         <OnboardingWizard
           onDone={(startModuleId, opts = {}) => {
             setOnboarding(false);
-            if (opts.intent === "demo") {
-              seedFinykDemoData();
-            } else if (opts.intent === "manual") {
-              enableFinykManualOnly();
-              onSetPwaAction("add_expense");
+            if (opts.intent === "vibe_demo") {
+              // Wizard already seeded demo data and flipped the pending
+              // first-action flag. We land on the hub dashboard so the
+              // user sees a populated dashboard before the quick-win
+              // sheet appears.
+              setFirstActionOpen(true);
+            } else if (startModuleId) {
+              // Legacy paths / external callers: if a module id is
+              // explicitly passed, open it immediately.
+              onOpenModule(startModuleId);
             }
-            if (startModuleId) onOpenModule(startModuleId);
+          }}
+        />
+      )}
+
+      {firstActionOpen && (
+        <FirstActionSheet
+          onClose={() => {
+            clearFirstActionPending();
+            setFirstActionOpen(false);
           }}
         />
       )}
@@ -129,7 +155,12 @@ export function HubMainContent({
       <main className="flex-1 px-5 pb-28 max-w-lg mx-auto w-full overflow-y-auto">
         {hubView === "dashboard" && (
           <div className="flex flex-col gap-5 pt-2">
-            <HubDashboard onOpenModule={onOpenModule} onOpenChat={onOpenChat} />
+            <HubDashboard
+              onOpenModule={onOpenModule}
+              onOpenChat={onOpenChat}
+              user={user}
+              onShowAuth={onShowAuth}
+            />
           </div>
         )}
 
