@@ -272,12 +272,17 @@ export function useCoachInsight() {
     } catch {}
   }
 
+  // `query.refetch` is a stable reference in react-query v5; depending on
+  // the whole `query` object would recreate `refresh` on every state
+  // transition (isFetching flip, etc.) and defeat its `useCallback`.
+  const { refetch } = query;
+
   const refresh = useCallback(() => {
     // Drop stale cache entries from prior days so they can't be resurrected
     // via `initialData` on a remount.
     queryClient.invalidateQueries({ queryKey: ["coach", "insight"] });
-    return query.refetch();
-  }, [queryClient, query]);
+    return refetch();
+  }, [queryClient, refetch]);
 
   return {
     insight: query.data ?? null,
