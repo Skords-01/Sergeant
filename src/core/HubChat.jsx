@@ -397,7 +397,7 @@ function HubChat({ onClose, initialMessage }) {
   return (
     <div className="fixed inset-0 z-50 flex flex-col safe-area-pt-pb">
       <div
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
         onClick={onClose}
         aria-hidden
         tabIndex={-1}
