@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { apiUrl } from "@shared/lib/apiUrl.js";
+import { barcodeApi, isApiError } from "@shared/api";
 import {
   bindBarcodeToFood,
   lookupFoodByBarcode,
@@ -36,20 +36,26 @@ export function useBarcodeLookup({
         return;
       }
 
+      let data;
       try {
-        const res = await fetch(
-          apiUrl(`/api/barcode?barcode=${encodeURIComponent(code)}`),
-        );
-        if (res.status === 404) {
+        data = await barcodeApi.lookup(code);
+      } catch (e) {
+        if (isApiError(e) && e.status === 404) {
           setBarcodeStatus("Продукт не знайдено. Можна ввести дані вручну.");
           return;
         }
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({}));
-          setBarcodeStatus(err?.error || "Помилка пошуку. Спробуй пізніше.");
+        if (isApiError(e) && e.kind === "http") {
+          setBarcodeStatus(
+            e.serverMessage || "Помилка пошуку. Спробуй пізніше.",
+          );
           return;
         }
-        const data = await res.json();
+        setBarcodeStatus(
+          "Помилка пошуку. Перевір з'єднання і спробуй пізніше.",
+        );
+        return;
+      }
+      try {
         const p = data?.product;
         if (!p?.name) {
           setBarcodeStatus("Продукт знайдено, але дані неповні. Введи вручну.");

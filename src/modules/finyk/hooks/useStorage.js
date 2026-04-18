@@ -89,6 +89,10 @@ export function useStorage({ onImportFeedback } = {}) {
     "finyk_excluded_stat_txs",
     [],
   );
+  const [dismissedRecurring, setDismissedRecurring] = usePersist(
+    "finyk_rec_dismissed",
+    [],
+  );
   const networthSnapshotRef = useRef(
     readJSON("finyk_networth_last_snap", { date: null, value: null }),
   );
@@ -199,6 +203,48 @@ export function useStorage({ onImportFeedback } = {}) {
     );
   };
 
+  const dismissRecurring = (key) => {
+    const trimmed = String(key || "").trim();
+    if (!trimmed) return;
+    setDismissedRecurring((prev) =>
+      prev.includes(trimmed) ? prev : [...prev, trimmed],
+    );
+  };
+
+  const restoreDismissedRecurring = (key) => {
+    if (!key) {
+      setDismissedRecurring([]);
+      return;
+    }
+    setDismissedRecurring((prev) => prev.filter((k) => k !== key));
+  };
+
+  /**
+   * Створити підписку з кандидата автодетекції. Повертає новий sub.
+   * @param {object} candidate — елемент з detectRecurring(...)
+   */
+  const addSubscriptionFromRecurring = (candidate) => {
+    if (!candidate || !candidate.key) return null;
+    const id = `auto_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
+    const sub = {
+      id,
+      name: candidate.displayName || candidate.key,
+      emoji: "🔄",
+      keyword: candidate.key,
+      billingDay: candidate.billingDay || 1,
+      currency: candidate.currency === "USD" ? "USD" : "UAH",
+    };
+    if (candidate.sampleTxIds && candidate.sampleTxIds[0]) {
+      sub.linkedTxId = candidate.sampleTxIds[0];
+    }
+    setSubscriptions((prev) => [...prev, sub]);
+    // Автоматично прибираємо з пропозицій — sub з таким keyword уже його покриває,
+    // але ключ лишиться в localStorage як запасна страховка.
+    dismissRecurring(candidate.key);
+    notifyFinykRoutineCalendarSync();
+    return sub;
+  };
+
   const updateSubscription = (subId, patch) => {
     setSubscriptions((subs) =>
       subs.map((s) => {
@@ -299,6 +345,7 @@ export function useStorage({ onImportFeedback } = {}) {
       setMonoDebtLinkedTxIds(data.monoDebtLinkedTxIds);
     if (data.networthHistory) setNetworthHistory(data.networthHistory);
     if (data.customCategories) setCustomCategories(data.customCategories);
+    if (data.dismissedRecurring) setDismissedRecurring(data.dismissedRecurring);
     notifyFinykRoutineCalendarSync();
   };
 
@@ -318,6 +365,7 @@ export function useStorage({ onImportFeedback } = {}) {
       monoDebtLinkedTxIds,
       networthHistory,
       customCategories,
+      dismissedRecurring,
     };
     const blob = new Blob([JSON.stringify(data)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
@@ -370,6 +418,7 @@ export function useStorage({ onImportFeedback } = {}) {
       md: monoDebtLinkedTxIds,
       nh: networthHistory,
       cc: customCategories,
+      dr: dismissedRecurring,
     };
     const encoded = btoa(encodeURIComponent(JSON.stringify(data)));
     return `${window.location.origin}${window.location.pathname}?sync=${encoded}`;
@@ -420,6 +469,10 @@ export function useStorage({ onImportFeedback } = {}) {
     subscriptions,
     setSubscriptions,
     updateSubscription,
+    addSubscriptionFromRecurring,
+    dismissedRecurring,
+    dismissRecurring,
+    restoreDismissedRecurring,
     manualAssets,
     setManualAssets,
     manualDebts,

@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { apiUrl } from "@shared/lib/apiUrl.js";
+import { barcodeApi, isApiError } from "@shared/api";
 
 export function usePantryBarcodeScan({
   pantry,
@@ -21,20 +21,22 @@ export function usePantryBarcodeScan({
         setPantryScanStatus("Немає підключення до інтернету.");
         return;
       }
+      let data;
       try {
-        const res = await fetch(
-          apiUrl(`/api/barcode?barcode=${encodeURIComponent(code)}`),
-        );
-        if (res.status === 404) {
+        data = await barcodeApi.lookup(code);
+      } catch (e) {
+        if (isApiError(e) && e.status === 404) {
           setPantryScanStatus("Продукт не знайдено в базі. Додай вручну.");
           return;
         }
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({}));
-          setPantryScanStatus(err?.error || "Помилка пошуку.");
+        if (isApiError(e) && e.kind === "http") {
+          setPantryScanStatus(e.serverMessage || "Помилка пошуку.");
           return;
         }
-        const data = await res.json();
+        setPantryScanStatus("Помилка пошуку. Перевір з\u2019єднання.");
+        return;
+      }
+      try {
         const p = data?.product;
         if (!p?.name) {
           setPantryScanStatus(

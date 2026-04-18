@@ -1,44 +1,34 @@
-import { apiUrl } from "@shared/lib/apiUrl.js";
+import { nutritionApi, isApiError } from "@shared/api";
 import { friendlyApiError } from "./nutritionErrors.js";
 
+/**
+ * Тонкий адаптер над централізованим `nutritionApi.postJson`:
+ * зберігає старий контракт (`throw new Error(friendlyApiError(...))`),
+ * щоб хуки nutrition-модуля не потребували переписування.
+ */
 export async function postJson(url, body) {
-  const token =
-    typeof import.meta !== "undefined" &&
-    import.meta.env &&
-    import.meta.env.VITE_NUTRITION_API_TOKEN
-      ? String(import.meta.env.VITE_NUTRITION_API_TOKEN)
-      : "";
-  let res;
   try {
-    res = await fetch(apiUrl(url), {
-      method: "POST",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-        ...(token ? { "X-Token": token } : {}),
-      },
-      body: JSON.stringify(body || {}),
-    });
+    return await nutritionApi.postJson(url, body);
   } catch (err) {
-    if (!navigator.onLine) {
-      throw new Error("Немає підключення до інтернету. Спробуй пізніше.");
+    if (!isApiError(err)) {
+      throw new Error(err?.message || "Не вдалося зʼєднатися із сервером.");
     }
-    throw new Error(err?.message || "Не вдалося зʼєднатися із сервером.");
-  }
-  const ct = (res.headers.get("content-type") || "").toLowerCase();
-  const raw = await res.text();
-  let data = {};
-  try {
-    data = raw ? JSON.parse(raw) : {};
-  } catch {
-    // Частий кейс на Vercel: /api/* перехоплено rewrite і повернувся index.html
-    if (ct.includes("text/html") || /<!doctype html/i.test(raw)) {
-      throw new Error(
-        "API повернув HTML замість JSON (ймовірно, rewrite перехоплює /api/*).",
-      );
+    if (err.kind === "network") {
+      if (typeof navigator !== "undefined" && navigator.onLine === false) {
+        throw new Error("Немає підключення до інтернету. Спробуй пізніше.");
+      }
+      throw new Error(err.message || "Не вдалося зʼєднатися із сервером.");
     }
-    data = { error: raw || "Некоректна відповідь сервера" };
+    if (err.kind === "parse") {
+      // Частий кейс на Vercel: /api/* перехоплено rewrite і повернувся index.html
+      if (/<!doctype html/i.test(err.bodyText || "")) {
+        throw new Error(
+          "API повернув HTML замість JSON (ймовірно, rewrite перехоплює /api/*).",
+        );
+      }
+      throw new Error(err.bodyText || "Некоректна відповідь сервера");
+    }
+    // kind === "http" або "aborted"
+    throw new Error(friendlyApiError(err.status, err.serverMessage));
   }
-  if (!res.ok) throw new Error(friendlyApiError(res.status, data?.error));
-  return data;
 }

@@ -25,7 +25,8 @@ import { cn } from "@shared/lib/cn";
 import { calcForecast } from "../lib/forecastEngine";
 import { BudgetTrendChart } from "../components/charts/lazy";
 import { ChartFallback } from "../components/charts/ChartFallback";
-import { apiUrl } from "@shared/lib/apiUrl.js";
+import { chatApi } from "@shared/api";
+import { finykKeys } from "@shared/lib/queryKeys.js";
 import { LimitBudgetCard } from "../components/budgets/LimitBudgetCard.jsx";
 import { GoalBudgetCard } from "../components/budgets/GoalBudgetCard.jsx";
 import { CategorySelector } from "../components/CategorySelector.jsx";
@@ -55,12 +56,9 @@ const PROACTIVE_CACHE_TTL = 24 * 60 * 60 * 1000;
 const proactiveCacheKey = (categoryId, monthKey) =>
   `${PROACTIVE_CACHE_PREFIX}${categoryId}_${monthKey}`;
 
-export const proactiveAdviceQueryKey = (monthKey, categoryId) => [
-  "finyk",
-  "proactive-advice",
-  monthKey,
-  categoryId,
-];
+// Re-export from the centralized queryKeys module for callers that still
+// import this name from the Budgets page.
+export const proactiveAdviceQueryKey = finykKeys.proactiveAdvice;
 
 function loadProactiveAdviceFromLS(categoryId, monthKey) {
   const cached = readJSON(proactiveCacheKey(categoryId, monthKey), null);
@@ -96,19 +94,12 @@ async function fetchProactiveAdvice({
   )} ₴). Залишок: ${remaining.toLocaleString(
     "uk-UA",
   )} ₴. До кінця місяця ${daysRemaining} днів.${forecastNote} Дай конкретну коротку пораду (1-2 речення) що зробити, щоб не перевищити ліміт. Відповідь виключно українською.`;
-  const res = await fetch(apiUrl("/api/chat"), {
-    method: "POST",
-    credentials: "include",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      context: `[Проактивна AI-порада] Категорія: ${catLabel}, витрачено: ${spent} ₴, ліміт: ${limit} ₴, залишок: ${remaining} ₴, прогноз: ${
-        forecast ?? "—"
-      } ₴, днів до кінця місяця: ${daysRemaining}`,
-      messages: [{ role: "user", content: prompt }],
-    }),
+  const data = await chatApi.send({
+    context: `[Проактивна AI-порада] Категорія: ${catLabel}, витрачено: ${spent} ₴, ліміт: ${limit} ₴, залишок: ${remaining} ₴, прогноз: ${
+      forecast ?? "—"
+    } ₴, днів до кінця місяця: ${daysRemaining}`,
+    messages: [{ role: "user", content: prompt }],
   });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const data = await res.json();
   const text = data.text || null;
   if (text) saveProactiveAdviceToLS(categoryId, monthKey, text);
   return text;
@@ -118,17 +109,10 @@ async function fetchCategoryExplanation({ catLabel, spent, forecast, limit }) {
   const prompt = `Категорія: ${catLabel}. Витрачено за місяць: ${spent} ₴. Прогноз на кінець місяця: ${forecast} ₴. Ліміт: ${limit} ₴. Чому витрати можуть бути ${
     forecast > limit ? "вищими за ліміт" : "нижчими за план"
   } і що варто зробити? Дай коротку відповідь (2-3 речення) українською.`;
-  const res = await fetch(apiUrl("/api/chat"), {
-    method: "POST",
-    credentials: "include",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      context: `[Бюджетний прогноз] Категорія: ${catLabel}, витрачено: ${spent} ₴, прогноз: ${forecast} ₴, ліміт: ${limit} ₴`,
-      messages: [{ role: "user", content: prompt }],
-    }),
+  const data = await chatApi.send({
+    context: `[Бюджетний прогноз] Категорія: ${catLabel}, витрачено: ${spent} ₴, прогноз: ${forecast} ₴, ліміт: ${limit} ₴`,
+    messages: [{ role: "user", content: prompt }],
   });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const data = await res.json();
   return data.text || "Не вдалося отримати пояснення.";
 }
 

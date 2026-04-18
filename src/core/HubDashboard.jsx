@@ -31,13 +31,12 @@ import {
   SortableContext,
   useSortable,
   arrayMove,
-  rectSortingStrategy,
+  verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
 const DASHBOARD_ORDER_KEY = STORAGE_KEYS.DASHBOARD_ORDER;
 const DEFAULT_ORDER = ["finyk", "fizruk", "routine", "nutrition"];
-const DRAG_HINT_KEY = "hub_drag_hint_seen_v1";
 
 function loadOrder() {
   const saved = safeReadLS(DASHBOARD_ORDER_KEY, null);
@@ -248,9 +247,12 @@ function DateHeader() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// MODULE CARD — calm surface with colored left accent
+// MODULE ROW — compact "Today at a glance" list item
+// One icon + label, one number, one thin progress bar. Neutral text; the
+// module's color shows only as a 1px leading accent, so four rows read as a
+// single list rather than four competing heroes.
 // ═══════════════════════════════════════════════════════════════════════════
-function ModuleCard({ config, onClick, dragProps, isDragging }) {
+function ModuleRow({ config, onClick, dragProps, isDragging }) {
   const preview = config.getPreview();
   const showProgress =
     config.hasGoal && preview.progress !== undefined && preview.progress > 0;
@@ -260,70 +262,65 @@ function ModuleCard({ config, onClick, dragProps, isDragging }) {
       type="button"
       onClick={onClick}
       className={cn(
-        "group relative w-full text-left overflow-hidden",
-        "p-4 rounded-2xl border border-line/60 bg-panel",
-        "shadow-card transition-shadow duration-200",
-        "hover:shadow-float",
-        "active:scale-[0.98]",
-        "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2",
+        "group relative w-full text-left",
+        "flex items-center gap-3 px-3 py-2.5",
+        "bg-panel hover:bg-panelHi transition-colors",
+        "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-inset",
         isDragging && "opacity-70 shadow-float z-50 cursor-grabbing",
       )}
       {...dragProps}
     >
-      {/* Left accent bar — the only color on the card */}
       <div
         className={cn(
-          "absolute left-0 top-3 bottom-3 w-1 rounded-r-full",
+          "absolute left-0 top-2 bottom-2 w-0.5 rounded-r-full",
           config.accentClass,
         )}
         aria-hidden
       />
 
-      <div className="pl-2">
-        <div className="flex items-center gap-2 mb-2.5">
+      <div
+        className={cn(
+          "w-7 h-7 rounded-lg flex items-center justify-center shrink-0",
+          config.iconClass,
+        )}
+      >
+        {config.icon}
+      </div>
+
+      <span className="text-xs font-semibold text-text truncate">
+        {config.label}
+      </span>
+
+      <div className="ml-auto flex items-center gap-2 min-w-0">
+        {showProgress && (
           <div
-            className={cn(
-              "w-7 h-7 rounded-lg flex items-center justify-center shrink-0",
-              config.iconClass,
-            )}
+            className="w-12 sm:w-16 h-1 rounded-full bg-line/40 dark:bg-white/10 overflow-hidden shrink-0"
+            aria-hidden
           >
-            {config.icon}
-          </div>
-          <span className="text-[11px] font-semibold text-muted uppercase tracking-wider truncate">
-            {config.label}
-          </span>
-        </div>
-
-        <div className="space-y-1">
-          {preview.main ? (
-            <>
-              <p className="text-xl font-bold text-text tabular-nums leading-tight">
-                {preview.main}
-              </p>
-              {preview.sub && (
-                <p className="text-xs text-muted leading-snug truncate">
-                  {preview.sub}
-                </p>
+            <div
+              className={cn(
+                "h-full rounded-full transition-all duration-700 ease-out",
+                config.accentClass,
               )}
-            </>
-          ) : (
-            <p className="text-sm text-muted leading-snug">
-              {preview.sub || config.description}
-            </p>
-          )}
-
-          {showProgress && (
-            <div className="mt-2.5 h-1 rounded-full bg-line/40 dark:bg-white/10 overflow-hidden">
-              <div
-                className={cn(
-                  "h-full rounded-full transition-all duration-700 ease-out",
-                  config.accentClass,
-                )}
-                style={{ width: `${Math.min(preview.progress, 100)}%` }}
-              />
-            </div>
-          )}
-        </div>
+              style={{ width: `${Math.min(preview.progress, 100)}%` }}
+            />
+          </div>
+        )}
+        {preview.main ? (
+          <span className="text-sm font-semibold text-text tabular-nums truncate">
+            {preview.main}
+          </span>
+        ) : (
+          <span className="text-xs text-muted truncate">
+            {preview.sub || config.description}
+          </span>
+        )}
+        <Icon
+          name="chevron-right"
+          size={14}
+          strokeWidth={2.5}
+          className="text-muted shrink-0"
+        />
       </div>
     </button>
   );
@@ -352,7 +349,7 @@ function SortableCard({ id, onOpenModule }) {
 
   return (
     <div ref={setNodeRef} style={style}>
-      <ModuleCard
+      <ModuleRow
         config={cfg}
         onClick={() => onOpenModule(id)}
         isDragging={isDragging}
@@ -385,9 +382,11 @@ function useMondayAutoDigest() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// WEEKLY DIGEST FOOTER — compact link when no fresh digest
+// WEEKLY DIGEST FOOTER — always-collapsed link on the dashboard. Renders a
+// small "fresh" dot when a live digest exists so users still notice it
+// without letting the full card hijack the primary block on Mondays.
 // ═══════════════════════════════════════════════════════════════════════════
-function WeeklyDigestFooter({ onExpand }) {
+function WeeklyDigestFooter({ onExpand, fresh }) {
   return (
     <button
       type="button"
@@ -398,7 +397,15 @@ function WeeklyDigestFooter({ onExpand }) {
         "hover:bg-panelHi transition-colors",
       )}
     >
-      <span>Тижневий звіт</span>
+      <span className="flex items-center gap-2">
+        Тижневий звіт
+        {fresh && (
+          <span
+            className="inline-block w-1.5 h-1.5 rounded-full bg-primary"
+            aria-label="Новий звіт"
+          />
+        )}
+      </span>
       <Icon name="chevron-right" size={14} strokeWidth={2.5} />
     </button>
   );
@@ -456,34 +463,25 @@ export function HubDashboard({ onOpenModule, onOpenChat, user, onShowAuth }) {
         const newIndex = prev.indexOf(over.id);
         const next = arrayMove(prev, oldIndex, newIndex);
         saveOrder(next);
-        try {
-          localStorage.setItem(DRAG_HINT_KEY, "1");
-        } catch {}
         return next;
       });
     }
   }, []);
 
-  const [showDragHint, setShowDragHint] = useState(() => {
-    try {
-      return localStorage.getItem(DRAG_HINT_KEY) !== "1";
-    } catch {
-      return false;
-    }
-  });
-  useEffect(() => {
-    if (!showDragHint) return;
-    const t = setTimeout(() => setShowDragHint(false), 6000);
-    return () => clearTimeout(t);
-  }, [showDragHint]);
-
   const [digestExpanded, setDigestExpanded] = useState(false);
   const digestFresh = hasLiveWeeklyDigest();
-  const renderDigestCard = digestFresh || digestExpanded;
 
   return (
     <div className="space-y-4">
       <DateHeader />
+
+      {/* Today focus — the ONE primary action on the dashboard. Rendered
+          before any banner so it is always the first thing the user sees. */}
+      <TodayFocusCard
+        focus={focus}
+        onAction={onOpenModule}
+        onDismiss={dismiss}
+      />
 
       {/* Banner budget: one system card at a time on the dashboard.
           Priority: first-action hero (post-wizard FTUX) > demo banner >
@@ -505,33 +503,19 @@ export function HubDashboard({ onOpenModule, onOpenChat, user, onShowAuth }) {
         />
       ) : null}
 
-      {/* Today focus — the ONE primary action on the dashboard */}
-      <TodayFocusCard
-        focus={focus}
-        onAction={onOpenModule}
-        onDismiss={dismiss}
-      />
-
-      {/* Module grid */}
+      {/* Today at a glance — compact module list (replaces the 2×2 grid) */}
       <section className="space-y-2">
-        <div className="flex items-center justify-between px-0.5 min-h-[18px]">
-          <h2 className="text-[11px] font-semibold text-muted uppercase tracking-wider">
-            Модулі
-          </h2>
-          {showDragHint && (
-            <span className="text-[10px] text-subtle">
-              Утримуй, щоб переставити
-            </span>
-          )}
-        </div>
+        <h2 className="px-0.5 text-[11px] font-semibold text-muted uppercase tracking-wider">
+          Сьогодні
+        </h2>
 
         <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}
           onDragEnd={handleDragEnd}
         >
-          <SortableContext items={order} strategy={rectSortingStrategy}>
-            <div className="grid grid-cols-2 gap-3">
+          <SortableContext items={order} strategy={verticalListSortingStrategy}>
+            <div className="rounded-2xl border border-line/60 bg-panel overflow-hidden divide-y divide-line/60">
               {order.map((id) => (
                 <SortableCard key={id} id={id} onOpenModule={onOpenModule} />
               ))}
@@ -548,11 +532,16 @@ export function HubDashboard({ onOpenModule, onOpenChat, user, onShowAuth }) {
         onDismiss={dismiss}
       />
 
-      {/* Weekly digest — full card only when fresh/newly generated */}
-      {renderDigestCard ? (
+      {/* Weekly digest — always a footer link on the dashboard; expands
+          inline on demand. Prevents Monday auto-generation from hijacking
+          the primary block. */}
+      {digestExpanded ? (
         <WeeklyDigestCard />
       ) : (
-        <WeeklyDigestFooter onExpand={() => setDigestExpanded(true)} />
+        <WeeklyDigestFooter
+          fresh={digestFresh}
+          onExpand={() => setDigestExpanded(true)}
+        />
       )}
     </div>
   );

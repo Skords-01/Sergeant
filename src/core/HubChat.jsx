@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
-import { apiUrl } from "@shared/lib/apiUrl.js";
+import { chatApi, isApiError } from "@shared/api";
 import { cn } from "@shared/lib/cn";
 import { Icon } from "@shared/components/ui/Icon";
 import { perfMark, perfEnd } from "@shared/lib/perf";
@@ -264,22 +264,18 @@ function HubChat({ onClose, initialMessage }) {
         setContextState({ status: "ready", ts: contextRef.current.ts });
       }
 
-      const res = await fetch(apiUrl("/api/chat"), {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ context, messages: history }),
-      });
-      const raw = await res.text();
       let data;
       try {
-        data = raw ? JSON.parse(raw) : {};
-      } catch {
-        throw new Error(
-          res.ok ? "Некоректна відповідь сервера" : `Помилка ${res.status}`,
-        );
+        data = await chatApi.send({ context, messages: history });
+      } catch (err) {
+        if (isApiError(err) && err.kind === "http") {
+          throw new Error(friendlyApiError(err.status, err.serverMessage));
+        }
+        if (isApiError(err) && err.kind === "parse") {
+          throw new Error("Некоректна відповідь сервера");
+        }
+        throw err;
       }
-      if (!res.ok) throw new Error(friendlyApiError(res.status, data?.error));
 
       if (data.tool_calls && data.tool_calls.length > 0) {
         const toolResults = data.tool_calls.map((tc) => ({
@@ -299,17 +295,12 @@ function HubChat({ onClose, initialMessage }) {
 
         let followUpText = "";
         try {
-          const res2 = await fetch(apiUrl("/api/chat"), {
-            method: "POST",
-            credentials: "include",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              context: contextRef.current.text || context,
-              messages: history,
-              tool_results: toolResults,
-              tool_calls_raw: data.tool_calls_raw,
-              stream: true,
-            }),
+          const res2 = await chatApi.stream({
+            context: contextRef.current.text || context,
+            messages: history,
+            tool_results: toolResults,
+            tool_calls_raw: data.tool_calls_raw,
+            stream: true,
           });
 
           const ct = res2.headers.get("content-type") || "";

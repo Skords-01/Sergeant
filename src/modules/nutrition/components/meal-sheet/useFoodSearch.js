@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { apiUrl } from "@shared/lib/apiUrl.js";
+import { foodSearchApi, isApiError } from "@shared/api";
+import { nutritionKeys } from "@shared/lib/queryKeys.js";
 import { searchFoods } from "../../lib/foodDb/foodDb.js";
 
 const LOCAL_DEBOUNCE_MS = 180;
@@ -13,17 +14,17 @@ const OFF_MIN_LEN = 2;
 // the built-in retry policy from the shared QueryClient handles flaky
 // mobile networks without the component having to know.
 async function fetchOpenFoodFacts(query, signal) {
-  const res = await fetch(
-    apiUrl(`/api/food-search?q=${encodeURIComponent(query)}`),
-    { signal },
-  );
-  if (!res.ok) {
-    const err = new Error(`food-search failed with ${res.status}`);
-    err.status = res.status;
-    throw err;
+  try {
+    const data = await foodSearchApi.search(query, { signal });
+    return Array.isArray(data?.products) ? data.products : [];
+  } catch (e) {
+    if (isApiError(e) && e.kind === "http") {
+      const err = new Error(`food-search failed with ${e.status}`);
+      err.status = e.status;
+      throw err;
+    }
+    throw e;
   }
-  const data = await res.json();
-  return Array.isArray(data?.products) ? data.products : [];
 }
 
 // Debounce user input separately from the queries themselves. We don't want
@@ -44,14 +45,14 @@ export function useFoodSearch(foodQuery) {
   const offQuery = useDebouncedValue(trimmed, OFF_DEBOUNCE_MS);
 
   const local = useQuery({
-    queryKey: ["nutrition", "food-search", "local", localQuery],
+    queryKey: nutritionKeys.foodSearchLocal(localQuery),
     queryFn: () => searchFoods(localQuery, 8),
     enabled: localQuery.length > 0,
     staleTime: 5 * 60_000,
   });
 
   const off = useQuery({
-    queryKey: ["nutrition", "food-search", "off", offQuery],
+    queryKey: nutritionKeys.foodSearchOff(offQuery),
     queryFn: ({ signal }) => fetchOpenFoodFacts(offQuery, signal),
     enabled: offQuery.length >= OFF_MIN_LEN,
     staleTime: 5 * 60_000,

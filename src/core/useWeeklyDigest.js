@@ -1,8 +1,9 @@
 import { useCallback } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { apiUrl } from "@shared/lib/apiUrl.js";
+import { coachApi, weeklyDigestApi, isApiError } from "@shared/api";
 import { STORAGE_KEYS } from "@shared/lib/storageKeys.js";
 import { safeReadLS } from "@shared/lib/storage.js";
+import { coachKeys, digestKeys } from "@shared/lib/queryKeys.js";
 import { MCC_CATEGORIES, INCOME_CATEGORIES } from "@finyk/constants.js";
 
 const DIGEST_PREFIX = STORAGE_KEYS.WEEKLY_DIGEST_PREFIX;
@@ -295,24 +296,22 @@ async function generateWeeklyDigest(weekKey) {
   const nutrition = aggregateNutrition(weekKey);
   const routine = aggregateRoutine(weekKey);
 
-  const res = await fetch(apiUrl("/api/weekly-digest"), {
-    method: "POST",
-    credentials: "include",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
+  let json;
+  try {
+    json = await weeklyDigestApi.generate({
       weekRange: currentWeekRange,
       finyk,
       fizruk,
       nutrition,
       routine,
-    }),
-  });
-
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    const err = new Error(json?.error || "Помилка генерації звіту");
-    err.status = res.status;
-    throw err;
+    });
+  } catch (e) {
+    if (isApiError(e) && e.kind === "http") {
+      const err = new Error(e.serverMessage || "Помилка генерації звіту");
+      err.status = e.status;
+      throw err;
+    }
+    throw e;
   }
 
   return {
@@ -331,8 +330,11 @@ async function generateWeeklyDigest(weekKey) {
 // mutation writes through to both localStorage and the query cache, which
 // replaces the previous `hub-weekly-digest-updated` CustomEvent fan-out.
 
-export const weeklyDigestQueryKey = (weekKey) => ["weekly-digest", weekKey];
-export const weeklyDigestHistoryQueryKey = ["weekly-digest", "history"];
+// Re-exported from the centralized queryKeys module — consumers may import
+// these names directly for historical reasons, but new code should import
+// `digestKeys` and `coachKeys` from "@shared/lib/queryKeys.js".
+export const weeklyDigestQueryKey = (weekKey) => digestKeys.byWeek(weekKey);
+export const weeklyDigestHistoryQueryKey = digestKeys.history;
 
 export function useDigestHistory() {
   return useQuery({
@@ -390,24 +392,21 @@ export function useWeeklyDigest(selectedWeekKey) {
       // The generated digest is also pushed into the coach memory (below),
       // so today's coach insight is now based on stale context. Drop it so
       // the next mount / refresh regenerates with the richer context.
-      queryClient.invalidateQueries({ queryKey: ["coach", "insight"] });
+      queryClient.invalidateQueries({ queryKey: coachKeys.all });
 
       // Fire-and-forget push of digest into coach memory so /api/coach/insight
       // has richer context on the next call. Failures are non-fatal.
       try {
-        fetch(apiUrl("/api/coach/memory"), {
-          method: "POST",
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
+        coachApi
+          .postMemory({
             weeklyDigest: {
               weekKey: wk,
               weekRange: wr,
               generatedAt,
               ...(report || {}),
             },
-          }),
-        }).catch(() => {});
+          })
+          .catch(() => {});
       } catch {}
     },
   });

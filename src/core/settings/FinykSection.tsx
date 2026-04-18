@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { cn } from "@shared/lib/cn";
 import { Button } from "@shared/components/ui/Button";
-import { apiUrl } from "@shared/lib/apiUrl";
+import { privatApi, isApiError } from "@shared/api";
 import { safeReadLS } from "@shared/lib/storage";
 import { useStorage as useFinykStorage } from "../../modules/finyk/hooks/useStorage.js";
 import { getAccountLabel } from "../../modules/finyk/utils.js";
@@ -107,22 +107,17 @@ export function FinykSection() {
     setPrivatConnecting(true);
     setPrivatError("");
     try {
-      const params = new URLSearchParams({
-        path: "/statements/balance/final",
-        country: "UA",
-        showRest: "true",
-      });
-      const res = await fetch(`${apiUrl("/api/privat")}?${params}`, {
-        headers: { "X-Privat-Id": cleanId, "X-Privat-Token": cleanToken },
-      });
-      if (!res.ok) {
-        const payload = await res
-          .json()
-          .catch(() => ({}) as { error?: string });
-        setPrivatError(
-          (payload as { error?: string })?.error || `Помилка ${res.status}`,
-        );
-        return;
+      try {
+        await privatApi.balanceFinal({
+          merchantId: cleanId,
+          merchantToken: cleanToken,
+        });
+      } catch (err) {
+        if (isApiError(err) && err.kind === "http") {
+          setPrivatError(err.serverMessage || `Помилка ${err.status}`);
+          return;
+        }
+        throw err;
       }
       if (rememberPrivat) {
         localStorage.setItem("finyk_privat_id", cleanId);

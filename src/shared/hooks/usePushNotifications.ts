@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { apiUrl } from "@shared/lib/apiUrl";
+import { pushApi, isApiError } from "@shared/api";
 
 const PUSH_SUB_KEY = "hub_push_subscribed";
 
@@ -56,9 +56,12 @@ export function usePushNotifications(): UsePushNotificationsResult {
       setPermission(perm);
       if (perm !== "granted") return;
 
-      const vapidRes = await fetch(apiUrl("/api/push/vapid-public"));
-      if (!vapidRes.ok) throw new Error("VAPID not configured");
-      const { publicKey } = (await vapidRes.json()) as { publicKey: string };
+      let publicKey: string;
+      try {
+        publicKey = (await pushApi.getVapidPublic()).publicKey;
+      } catch {
+        throw new Error("VAPID not configured");
+      }
 
       const reg = await navigator.serviceWorker.ready;
       const sub = await reg.pushManager.subscribe({
@@ -66,24 +69,15 @@ export function usePushNotifications(): UsePushNotificationsResult {
         applicationServerKey: urlBase64ToUint8Array(publicKey),
       });
 
-      const subJson = sub.toJSON();
-      const res = await fetch(apiUrl("/api/push/subscribe"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify(subJson),
-      });
-      if (!res.ok) {
-        const data = (await res.json().catch(() => ({}))) as {
-          error?: string;
-        };
-        throw new Error(data.error || `Server error ${res.status}`);
-      }
+      await pushApi.subscribe(sub.toJSON());
 
       localStorage.setItem(PUSH_SUB_KEY, "1");
       setSubscribed(true);
     } catch (e) {
-      console.warn("[push] subscribe failed:", (e as Error).message);
+      const message = isApiError(e)
+        ? e.serverMessage || `Server error ${e.status}`
+        : (e as Error).message;
+      console.warn("[push] subscribe failed:", message);
     } finally {
       setLoading(false);
     }
@@ -98,12 +92,7 @@ export function usePushNotifications(): UsePushNotificationsResult {
       if (sub) {
         const endpoint = sub.endpoint;
         await sub.unsubscribe();
-        await fetch(apiUrl("/api/push/subscribe"), {
-          method: "DELETE",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({ endpoint }),
-        }).catch(() => {});
+        await pushApi.unsubscribe(endpoint).catch(() => {});
       }
       localStorage.removeItem(PUSH_SUB_KEY);
       setSubscribed(false);
