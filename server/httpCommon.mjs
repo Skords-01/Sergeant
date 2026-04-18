@@ -1,6 +1,16 @@
 import { randomUUID } from "crypto";
 import helmet from "helmet";
 import { rateLimitExpress } from "./api/lib/rateLimit.js";
+import { logger } from "./obs/logger.js";
+import { withRequestContext } from "./obs/requestContext.js";
+import {
+  httpInFlight,
+  httpRequestDurationMs,
+  httpRequestsTotal,
+} from "./obs/metrics.js";
+import { isOperationalError } from "./obs/errors.js";
+
+export { withRequestContext };
 
 /** Клієнт може передати X-Request-Id; інакше генеруємо UUID. */
 export function requestIdMiddleware(req, res, next) {
@@ -11,24 +21,56 @@ export function requestIdMiddleware(req, res, next) {
   next();
 }
 
-/** Один рядок JSON на відповідь — зручно для Railway / grep. */
+/**
+ * Один JSON-рядок на відповідь + емісія HTTP-RED метрик.
+ * `requestId`/`userId`/`module` додаються автоматично через ALS у logger.
+ *
+ * `path` = route pattern (`/api/nutrition/food/:id`), не сирий URL — інакше
+ * cardinality метрик вибухне.
+ */
 export function requestLogMiddleware(req, res, next) {
   const url = req.originalUrl || "";
-  if (url.startsWith("/assets/")) return next();
+  // Не спамимо логи запитами на статику/health.
+  if (
+    url.startsWith("/assets/") ||
+    url === "/livez" ||
+    url === "/readyz" ||
+    url === "/health"
+  ) {
+    return next();
+  }
 
-  const start = Date.now();
+  const start = process.hrtime.bigint();
+  httpInFlight.inc({ method: req.method });
+
   res.on("finish", () => {
-    const path = url.split("?")[0];
-    const line = {
-      level: "info",
+    httpInFlight.dec({ method: req.method });
+    const ms = Number(process.hrtime.bigint() - start) / 1e6;
+    const routePath = req.route?.path;
+    const basePath = typeof req.baseUrl === "string" ? req.baseUrl : "";
+    const path =
+      routePath != null ? `${basePath}${routePath}` : url.split("?")[0];
+    const status = res.statusCode;
+    const level = status >= 500 ? "error" : status >= 400 ? "warn" : "info";
+    const bytesOut = Number(res.getHeader("content-length")) || 0;
+
+    logger[level]({
       msg: "http",
-      requestId: req.requestId,
       method: req.method,
       path,
-      status: res.statusCode,
-      ms: Date.now() - start,
-    };
-    console.log(JSON.stringify(line));
+      status,
+      ms: Math.round(ms),
+      bytesOut,
+      ip: req.ip,
+      ua: req.get("user-agent") || undefined,
+    });
+
+    try {
+      httpRequestsTotal.inc({ method: req.method, path, status });
+      httpRequestDurationMs.observe({ method: req.method, path }, ms);
+    } catch {
+      /* metrics must never break a request */
+    }
   });
   next();
 }
@@ -109,25 +151,76 @@ export function authSensitiveRateLimit(req, res, next) {
   })(req, res, next);
 }
 
+/**
+ * @deprecated Використовуй `livezHandler` + `readyzHandler`. Лишено для
+ * зворотної сумісності зі старими health-probe в інфраструктурі.
+ */
 export function createHealthHandler(pool) {
+  return createReadyzHandler(pool);
+}
+
+/** Liveness: процес живий. Дешево і не чіпає БД. */
+export function livezHandler(_req, res) {
+  res.status(200).type("text/plain").send("ok");
+}
+
+/**
+ * Readiness: процес готовий обслуговувати трафік. Пінгує БД; якщо БД не
+ * відповідає — 503, платформа перестає маршрутизувати запити сюди.
+ */
+export function createReadyzHandler(pool) {
   return async (_req, res) => {
     let dbOk = false;
     try {
       await pool.query("SELECT 1");
       dbOk = true;
     } catch (e) {
-      console.error(
-        JSON.stringify({
-          level: "error",
-          msg: "health_db_ping",
-          error: e?.message || String(e),
-        }),
-      );
+      logger.error({
+        msg: "readyz_db_ping_failed",
+        err: { message: e?.message || String(e), code: e?.code },
+      });
     }
-    if (dbOk) {
-      res.status(200).type("text/plain").send("ok");
-    } else {
-      res.status(503).type("text/plain").send("unhealthy");
-    }
+    if (dbOk) res.status(200).type("text/plain").send("ok");
+    else res.status(503).type("text/plain").send("unhealthy");
   };
+}
+
+/**
+ * Термінальний error handler Express. Має стояти ПІСЛЯ
+ * `attachSentryErrorHandler(app)` — той захопить stack і передасть далі.
+ *
+ * Правила:
+ *  - `AppError` і підкласи → 4xx + `warn` + стабільне JSON body з `code`.
+ *  - Все інше → 500 + `error` + generic message; деталі лише в логах/Sentry.
+ *  - Клієнт завжди отримує `requestId`, щоб було що вставити в тікет.
+ */
+export function errorHandler(err, req, res, _next) {
+  const operational = isOperationalError(err);
+  const status = Number(err?.status) || (operational ? 400 : 500);
+  const code =
+    (typeof err?.code === "string" && err.code) ||
+    (status === 429 ? "RATE_LIMIT" : operational ? "BAD_REQUEST" : "INTERNAL");
+
+  const level = status >= 500 ? "error" : "warn";
+  logger[level]({
+    msg: "request_failed",
+    method: req.method,
+    path: req.route?.path || req.originalUrl,
+    status,
+    code,
+    err: {
+      name: err?.name,
+      message: err?.message || String(err),
+      stack: status >= 500 ? err?.stack : undefined,
+      cause: err?.cause?.message,
+    },
+  });
+
+  if (res.headersSent) return;
+
+  res.status(status).json({
+    error: operational ? err.message : "Server error",
+    code,
+    requestId: req.requestId,
+  });
 }

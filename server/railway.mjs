@@ -17,10 +17,15 @@ import { ensureSchema, pool } from "./db.js";
 import {
   apiHelmetMiddleware,
   authSensitiveRateLimit,
-  createHealthHandler,
+  createReadyzHandler,
+  errorHandler,
+  livezHandler,
   requestIdMiddleware,
   requestLogMiddleware,
+  withRequestContext,
 } from "./httpCommon.mjs";
+import { logger } from "./obs/logger.js";
+import { metricsHandler, startPoolSampler } from "./obs/metrics.js";
 import chatHandler from "./api/chat.js";
 import monoHandler from "./api/mono.js";
 import privatHandler from "./api/privat.js";
@@ -52,7 +57,9 @@ const app = express();
 const port = Number(process.env.PORT) || 3000;
 
 app.disable("x-powered-by");
+app.set("trust proxy", 1); // Railway термінує TLS upstream; `req.ip` має бути реальним клієнтським.
 app.use(requestIdMiddleware);
+app.use(withRequestContext);
 app.use(requestLogMiddleware);
 app.use(apiHelmetMiddleware());
 app.use(express.json({ limit: "12mb" }));
@@ -73,7 +80,11 @@ function wrap(handler) {
   };
 }
 
-app.get("/health", createHealthHandler(pool));
+app.get("/livez", livezHandler);
+app.get("/readyz", createReadyzHandler(pool));
+// Залишаємо `/health` як alias на `/readyz` для старих probe-ів в інфраструктурі.
+app.get("/health", createReadyzHandler(pool));
+app.get("/metrics", metricsHandler);
 
 app.use("/api/auth", authSensitiveRateLimit);
 app.all("/api/auth/*", toNodeHandler(auth));
@@ -155,42 +166,21 @@ app.post("/api/push/send", wrap(sendPush));
 
 // Sentry error handler має стояти перед нашим, щоб захопити stack trace.
 attachSentryErrorHandler(app);
+app.use(errorHandler);
 
-app.use((err, req, res, _next) => {
-  const rid = req?.requestId;
-  console.error(
-    JSON.stringify({
-      level: "error",
-      msg: "express_error",
-      requestId: rid,
-      error: err?.message || String(err),
-    }),
-  );
-  if (err?.stack) console.error(err.stack);
-  if (!res.headersSent) {
-    const status = Number(err?.status) || 500;
-    const code =
-      typeof err?.code === "string"
-        ? err.code
-        : status === 429
-          ? "RATE_LIMIT"
-          : "INTERNAL";
-    res.status(status).json({
-      error: err?.message || "Server error",
-      code,
-      requestId: rid,
-    });
-  }
-});
+startPoolSampler(pool);
 
 ensureSchema()
   .then(() => {
-    console.log("[db] Schema verified");
+    logger.info({ msg: "db_schema_verified" });
   })
   .catch((err) => {
-    console.error("[db] Schema check failed:", err.message);
+    logger.error({
+      msg: "db_schema_check_failed",
+      err: { message: err?.message || String(err), code: err?.code },
+    });
   });
 
 app.listen(port, "0.0.0.0", () => {
-  console.log(`[railway] API listening on ${port}`);
+  logger.info({ msg: "server_listening", role: "railway", port });
 });

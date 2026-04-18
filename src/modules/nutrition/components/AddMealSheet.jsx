@@ -216,7 +216,14 @@ export function AddMealSheet({
               {step === "fill" && !initialMeal?.id && !photoResult && (
                 <button
                   type="button"
-                  onClick={() => setStep("source")}
+                  onClick={() => {
+                    // Also clear any picked source, otherwise the
+                    // auto-advance effect immediately pushes us back to
+                    // "fill" as soon as we return to "source".
+                    setPickedFood(null);
+                    setFromPantryItem(null);
+                    setStep("source");
+                  }}
                   className="w-9 h-9 flex items-center justify-center rounded-full bg-panelHi text-muted hover:text-text transition-colors"
                   aria-label="Назад до вибору джерела"
                 >

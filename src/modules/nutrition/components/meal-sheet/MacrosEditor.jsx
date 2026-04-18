@@ -30,7 +30,7 @@ export function MacrosEditor({
     if (!pendingUnlink) return;
     const { key, value } = pendingUnlink;
     setPickedFood(null);
-    field(key)(value);
+    if (key) field(key)(value);
     setPendingUnlink(null);
   };
 
@@ -78,14 +78,22 @@ export function MacrosEditor({
               inputMode="decimal"
               placeholder={placeholder}
               aria-label={label}
-              readOnly={Boolean(pickedFood && !pendingUnlink)}
             />
           </div>
         ))}
       </div>
       {pickedFood && !pendingUnlink && (
-        <div className="text-[11px] text-subtle mt-1.5">
-          Щоб змінити вручну — відʼєднайте продукт
+        <div className="mt-1.5 flex items-center justify-between gap-2">
+          <span className="text-[11px] text-subtle">
+            Щоб змінити вручну — відʼєднайте продукт
+          </span>
+          <button
+            type="button"
+            onClick={() => setPendingUnlink({ key: null, value: null })}
+            className="text-[11px] font-semibold text-nutrition hover:underline shrink-0"
+          >
+            Відʼєднати
+          </button>
         </div>
       )}
       {pendingUnlink && (

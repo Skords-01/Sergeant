@@ -31,6 +31,16 @@ export const ANALYTICS_EVENTS = Object.freeze({
   // Activation funnel — fired at most once per user to measure time-to-value.
   FIRST_EXPENSE_ADDED: "first_expense_added",
   FIRST_INSIGHT_SEEN: "first_insight_seen",
+  // 30-second FTUX funnel. Each step narrows the gap between "first open"
+  // and "user felt real value", so every transition has a named event.
+  ONBOARDING_VIBE_PICKED: "onboarding_vibe_picked",
+  ONBOARDING_DEMO_RENDERED: "onboarding_demo_rendered",
+  ONBOARDING_FIRST_ACTION_SHOWN: "onboarding_first_action_shown",
+  ONBOARDING_FIRST_ACTION_PICKED: "onboarding_first_action_picked",
+  FIRST_REAL_ENTRY: "first_real_entry",
+  AUTH_PROMPT_SHOWN: "auth_prompt_shown",
+  AUTH_PROMPT_DISMISSED: "auth_prompt_dismissed",
+  AUTH_AFTER_VALUE: "auth_after_value",
 });
 
 /**

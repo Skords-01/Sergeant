@@ -1,6 +1,8 @@
 import { getSessionUser } from "./auth.js";
 import pool from "./db.js";
 import { getIp } from "./api/lib/rateLimit.js";
+import { logger } from "./obs/logger.js";
+import { aiQuotaBlocksTotal, aiQuotaFailOpenTotal } from "./obs/metrics.js";
 
 function parseLimit(name, fallback) {
   const v = process.env[name];
@@ -25,13 +27,10 @@ async function safeSessionUser(req) {
   try {
     return await getSessionUser(req);
   } catch (e) {
-    console.error(
-      JSON.stringify({
-        level: "warn",
-        msg: "ai_quota_session_lookup_failed",
-        error: e?.message || String(e),
-      }),
-    );
+    logger.warn({
+      msg: "ai_quota_session_lookup_failed",
+      err: { message: e?.message || String(e) },
+    });
     return null;
   }
 }
@@ -55,6 +54,11 @@ export async function assertAiQuota(req, res) {
   if (limit == null) return true;
 
   if (limit === 0) {
+    try {
+      aiQuotaBlocksTotal.inc({ reason: "disabled" });
+    } catch {
+      /* ignore */
+    }
     res.status(429).json({
       error: "AI-квота вимкнена для цього типу доступу.",
       code: "AI_QUOTA",
@@ -74,6 +78,11 @@ export async function assertAiQuota(req, res) {
   try {
     const result = await consumeQuota(subject, day, limit);
     if (!result.ok) {
+      try {
+        aiQuotaBlocksTotal.inc({ reason: "limit" });
+      } catch {
+        /* ignore */
+      }
       res.status(429).json({
         error: "Денний ліміт AI вичерпано. Спробуй завтра.",
         code: "AI_QUOTA",
@@ -100,15 +109,16 @@ function setRemainingHeader(res, value) {
 }
 
 function logQuotaStoreUnavailable(reason, e) {
-  console.error(
-    JSON.stringify({
-      level: "error",
-      msg: "ai_quota_store_unavailable",
-      reason,
-      error: e?.message || (e ? String(e) : undefined),
-      code: e?.code,
-    }),
-  );
+  try {
+    aiQuotaFailOpenTotal.inc({ reason });
+  } catch {
+    /* ignore */
+  }
+  logger.error({
+    msg: "ai_quota_store_unavailable",
+    reason,
+    err: e ? { message: e?.message || String(e), code: e?.code } : undefined,
+  });
 }
 
 async function consumeQuota(subject, day, limit) {

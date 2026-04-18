@@ -3,6 +3,12 @@ import { cn } from "@shared/lib/cn";
 import { Button } from "@shared/components/ui/Button";
 import { Icon } from "@shared/components/ui/Icon";
 import { trackEvent, ANALYTICS_EVENTS } from "./analytics";
+import {
+  ALL_MODULES,
+  markFirstActionPending,
+  saveVibePicks,
+} from "./onboarding/vibePicks.js";
+import { seedDemoForModules } from "./onboarding/demoSeeds.js";
 
 export const ONBOARDING_DONE_KEY = "hub_onboarding_done_v1";
 
@@ -78,34 +84,34 @@ function StepDots({ total, current }) {
   );
 }
 
-function WelcomeStep({ name, setName, onNext }) {
+// Step 0 — Value prop. No name field, no form. The goal of this screen
+// is to answer "what is this?" in one sentence and then get out of the way.
+function SplashStep({ onNext }) {
   return (
     <div className="flex flex-col items-center text-center space-y-5">
       <div className="w-20 h-20 rounded-3xl bg-brand-500/10 text-brand-600 flex items-center justify-center">
         <Icon name="sparkle" size={40} strokeWidth={1.8} aria-hidden />
       </div>
       <div>
-        <h2 className="text-2xl font-bold text-text">Вітаємо в Sergeant!</h2>
+        <h2 className="text-2xl font-bold text-text">Життя в одному екрані.</h2>
         <p className="text-sm text-muted mt-2 leading-relaxed">
-          Особистий хаб для фінансів, звичок, тренувань та харчування.
+          Гроші, тренування, звички та їжа — одне місце, одна статистика, один
+          AI-помічник.
         </p>
       </div>
-      <div className="w-full space-y-1.5 text-left">
-        <label
-          htmlFor="onboarding-display-name"
-          className="text-xs font-semibold text-muted uppercase tracking-wider"
-        >
-          Як вас звати?
-        </label>
-        <input
-          id="onboarding-display-name"
-          type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder={"Ваше ім'я (необов'язково)"}
-          className="w-full min-h-[44px] bg-panelHi border border-line rounded-2xl px-4 py-3 text-[16px] md:text-sm text-text placeholder:text-subtle outline-none focus:border-brand-500/50 focus:ring-2 focus:ring-brand-500/30 transition-colors"
-        />
-      </div>
+      <ul className="w-full space-y-2 text-left text-sm text-muted">
+        <li className="flex items-start gap-2">
+          <span className="mt-0.5 text-brand-600">•</span>
+          <span>
+            Без акаунту. Дані живуть на телефоні, поки сам не вирішиш
+            синхронізувати.
+          </span>
+        </li>
+        <li className="flex items-start gap-2">
+          <span className="mt-0.5 text-brand-600">•</span>
+          <span>Працює офлайн, встановлюється як додаток.</span>
+        </li>
+      </ul>
       <Button
         type="button"
         onClick={onNext}
@@ -113,84 +119,107 @@ function WelcomeStep({ name, setName, onNext }) {
         size="lg"
         className="w-full"
       >
-        Далі
+        Спробувати за 30 секунд
         <Icon name="chevron-right" size={16} />
       </Button>
     </div>
   );
 }
 
-// Step 2: module picker. Shows all 4 modules so the user knows Sergeant is
-// more than Finyk before being routed to a specific quick-start flow.
-const MODULE_OPTIONS = [
+// Step 1 — Vibe picker. Multi-select across the 4 modules, preselected
+// to "all" so the lazy user still gets a full dashboard, but motivated
+// users can narrow to just what they came for.
+const VIBE_OPTIONS = [
   {
     id: "finyk",
     icon: "credit-card",
     title: "Фінік",
-    desc: "Бюджет, витрати, банки",
-    accent: "bg-finyk/10 text-finyk",
-  },
-  {
-    id: "routine",
-    icon: "check",
-    title: "Рутина",
-    desc: "Звички, трекер, серії",
-    accent: "bg-routine/10 text-routine",
+    desc: "Куди зникають гроші",
+    accent: "text-finyk bg-finyk-soft",
   },
   {
     id: "fizruk",
     icon: "dumbbell",
     title: "Фізрук",
-    desc: "Тренування, кардіо, вага",
-    accent: "bg-fizruk/10 text-fizruk",
+    desc: "Тренування без хаосу",
+    accent: "text-fizruk bg-fizruk-soft",
+  },
+  {
+    id: "routine",
+    icon: "check",
+    title: "Рутина",
+    desc: "Звички та стріки",
+    accent: "text-routine bg-routine-soft",
   },
   {
     id: "nutrition",
     icon: "utensils",
     title: "Харчування",
-    desc: "Журнал їжі, склад, рецепти",
-    accent: "bg-nutrition/10 text-nutrition",
+    desc: "Фото → калорії",
+    accent: "text-nutrition bg-nutrition-soft",
   },
 ];
 
-function ModulePickerStep({ selected, setSelected, onNext, onBack }) {
+function VibePickerStep({ picks, togglePick, onNext, onBack }) {
+  const hasPicks = picks.length > 0;
   return (
     <div className="space-y-4">
       <div className="text-center">
         <div className="w-14 h-14 mx-auto rounded-2xl bg-brand-500/10 text-brand-600 flex items-center justify-center mb-2">
           <Icon name="target" size={28} strokeWidth={1.8} />
         </div>
-        <h2 className="text-xl font-bold text-text">З чого почнемо?</h2>
+        <h2 className="text-xl font-bold text-text">
+          Що тобі зараз болить найбільше?
+        </h2>
         <p className="text-sm text-muted mt-1">
-          Оберіть модуль — інші завжди під рукою на дашборді
+          Обери одне або кілька — решту ввімкнеш потім.
         </p>
       </div>
-      <div className="grid grid-cols-2 gap-2">
-        {MODULE_OPTIONS.map((o) => {
-          const isActive = selected === o.id;
+      <div className="space-y-2">
+        {VIBE_OPTIONS.map((o) => {
+          const active = picks.includes(o.id);
           return (
             <button
               key={o.id}
               type="button"
-              onClick={() => setSelected(o.id)}
+              onClick={() => togglePick(o.id)}
+              aria-pressed={active}
               className={cn(
-                "text-left px-3 py-3 rounded-2xl border transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50",
-                isActive
-                  ? "border-brand-500 bg-brand-500/5"
+                "w-full text-left px-4 py-3 rounded-2xl border transition-all",
+                "focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50",
+                active
+                  ? "border-brand-500/60 bg-brand-500/5 shadow-card"
                   : "border-line bg-panelHi hover:border-brand-500/40",
               )}
             >
-              <div
-                className={cn(
-                  "w-9 h-9 rounded-xl flex items-center justify-center mb-1.5",
-                  o.accent,
-                )}
-              >
-                <Icon name={o.icon} size={18} />
-              </div>
-              <div className="text-sm font-semibold text-text">{o.title}</div>
-              <div className="text-[11px] text-muted mt-0.5 leading-tight">
-                {o.desc}
+              <div className="flex items-center gap-3">
+                <div
+                  className={cn(
+                    "w-10 h-10 shrink-0 rounded-2xl flex items-center justify-center",
+                    o.accent,
+                  )}
+                >
+                  <Icon name={o.icon} size={20} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm font-semibold text-text">
+                    {o.title}
+                  </div>
+                  <div className="text-xs text-muted mt-0.5 truncate">
+                    {o.desc}
+                  </div>
+                </div>
+                <div
+                  className={cn(
+                    "w-5 h-5 shrink-0 rounded-md border flex items-center justify-center transition-colors",
+                    active
+                      ? "bg-brand-500 border-brand-500 text-white"
+                      : "border-line",
+                  )}
+                  aria-hidden
+                >
+                  {active && <Icon name="check" size={14} />}
+                </div>
               </div>
             </button>
           );
@@ -211,82 +240,11 @@ function ModulePickerStep({ selected, setSelected, onNext, onBack }) {
           onClick={onNext}
           variant="primary"
           size="md"
-          className="flex-1"
-          disabled={!selected}
+          className="flex-[2]"
+          disabled={!hasPicks}
         >
-          Далі
-          <Icon name="chevron-right" size={14} />
-        </Button>
-      </div>
-    </div>
-  );
-}
-
-// The three "first value" paths a new user can pick inside Фінік.
-function FinykQuickStartStep({ onPick, onBack }) {
-  const options = [
-    {
-      id: "manual",
-      icon: "edit",
-      title: "Додати першу витрату",
-      desc: "Швидко, без входу в банк",
-    },
-    {
-      id: "bank",
-      icon: "credit-card",
-      title: "Підключити Monobank",
-      desc: "Автоматичні транзакції за 30 секунд",
-    },
-    {
-      id: "demo",
-      icon: "sparkle",
-      title: "Спробувати з демо",
-      desc: "Пара тижнів прикладів — щоб побачити, як це виглядає",
-    },
-  ];
-
-  return (
-    <div className="space-y-4">
-      <div className="text-center">
-        <div className="w-14 h-14 mx-auto rounded-2xl bg-brand-500/10 text-brand-600 flex items-center justify-center mb-2">
-          <Icon name="target" size={28} strokeWidth={1.8} />
-        </div>
-        <h2 className="text-xl font-bold text-text">Швидкий старт</h2>
-        <p className="text-sm text-muted mt-1">
-          Оберіть, з чого почнемо у Фініку
-        </p>
-      </div>
-      <div className="space-y-2">
-        {options.map((o) => (
-          <button
-            key={o.id}
-            type="button"
-            onClick={() => onPick(o.id)}
-            className="w-full text-left px-4 py-3 rounded-2xl border border-line bg-panelHi hover:border-brand-500/50 hover:bg-brand-500/5 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 shrink-0 rounded-2xl bg-brand-500/10 text-brand-600 flex items-center justify-center">
-                <Icon name={o.icon} size={20} />
-              </div>
-              <div className="min-w-0">
-                <div className="text-sm font-semibold text-text">{o.title}</div>
-                <div className="text-xs text-muted mt-0.5 truncate">
-                  {o.desc}
-                </div>
-              </div>
-            </div>
-          </button>
-        ))}
-      </div>
-      <div className="flex gap-2 pt-1">
-        <Button
-          type="button"
-          onClick={onBack}
-          variant="secondary"
-          size="md"
-          className="flex-1"
-        >
-          Назад
+          Показати мій хаб
+          <Icon name="chevron-right" size={16} />
         </Button>
       </div>
     </div>
@@ -295,47 +253,41 @@ function FinykQuickStartStep({ onPick, onBack }) {
 
 export function OnboardingWizard({ onDone }) {
   const [step, setStep] = useState(0);
-  const [name, setName] = useState("");
-  const [pickedModule, setPickedModule] = useState("finyk");
+  const [picks, setPicks] = useState(() => [...ALL_MODULES]);
 
-  // For Finyk we keep the 3-way quick-start; other modules get a single
-  // "Відкрити" step so total step count flexes between 3 and 3.
-  const TOTAL = 3;
+  const TOTAL = 2;
 
   useEffect(() => {
     trackEvent(ANALYTICS_EVENTS.ONBOARDING_STARTED);
   }, []);
 
-  const persistName = () => {
-    if (name.trim()) {
-      try {
-        localStorage.setItem("hub_user_name", name.trim());
-      } catch {
-        /* ignore */
-      }
-    }
+  const togglePick = (id) => {
+    setPicks((prev) =>
+      prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id],
+    );
   };
 
-  const finishWithIntent = (intent) => {
-    trackEvent(ANALYTICS_EVENTS.ONBOARDING_COMPLETED, {
-      intent,
-      providedName: Boolean(name.trim()),
-      module: pickedModule,
+  const finish = () => {
+    const chosen = picks.length > 0 ? picks : [...ALL_MODULES];
+    saveVibePicks(chosen);
+    const seededCounts = seedDemoForModules(chosen);
+    trackEvent(ANALYTICS_EVENTS.ONBOARDING_VIBE_PICKED, {
+      picks: chosen,
+      picksCount: chosen.length,
     });
-    persistName();
-    markOnboardingDone();
-    onDone(pickedModule, { intent });
-  };
-
-  const finishSimple = () => {
-    trackEvent(ANALYTICS_EVENTS.ONBOARDING_COMPLETED, {
-      intent: "open_module",
-      providedName: Boolean(name.trim()),
-      module: pickedModule,
+    trackEvent(ANALYTICS_EVENTS.ONBOARDING_DEMO_RENDERED, {
+      seededCounts,
     });
-    persistName();
+    trackEvent(ANALYTICS_EVENTS.ONBOARDING_COMPLETED, {
+      intent: "vibe_demo",
+      picksCount: chosen.length,
+    });
+    markFirstActionPending();
     markOnboardingDone();
-    onDone(pickedModule, { intent: "open_module" });
+    // Stay on the hub dashboard so the user's "aha" is the whole populated
+    // hub, not a single module. The FirstActionSheet will appear on top of
+    // the dashboard a tick later via the `first_action_pending` flag.
+    onDone(null, { intent: "vibe_demo", picks: chosen });
   };
 
   return (
@@ -352,92 +304,30 @@ export function OnboardingWizard({ onDone }) {
           <button
             type="button"
             onClick={() => {
+              // Skip is an escape hatch for returning users who already know
+              // the product. Name its cost honestly so casual skippers
+              // understand why the hub is empty.
               trackEvent(ANALYTICS_EVENTS.ONBOARDING_COMPLETED, {
                 intent: "skipped",
-                providedName: Boolean(name.trim()),
               });
               markOnboardingDone();
               onDone(null, { intent: "skipped" });
             }}
             className="text-xs text-muted hover:text-text transition-colors px-2 py-1 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50"
           >
-            Пропустити
+            Пропустити до пустого хабу
           </button>
         </div>
 
-        {step === 0 && (
-          <WelcomeStep
-            name={name}
-            setName={setName}
-            onNext={() => setStep(1)}
-          />
-        )}
+        {step === 0 && <SplashStep onNext={() => setStep(1)} />}
         {step === 1 && (
-          <ModulePickerStep
-            selected={pickedModule}
-            setSelected={setPickedModule}
-            onNext={() => setStep(2)}
+          <VibePickerStep
+            picks={picks}
+            togglePick={togglePick}
+            onNext={finish}
             onBack={() => setStep(0)}
           />
         )}
-        {step === 2 && pickedModule === "finyk" && (
-          <FinykQuickStartStep
-            onPick={finishWithIntent}
-            onBack={() => setStep(1)}
-          />
-        )}
-        {step === 2 && pickedModule !== "finyk" && (
-          <ModuleOpenStep
-            moduleId={pickedModule}
-            onOpen={finishSimple}
-            onBack={() => setStep(1)}
-          />
-        )}
-      </div>
-    </div>
-  );
-}
-
-function ModuleOpenStep({ moduleId, onOpen, onBack }) {
-  const opt =
-    MODULE_OPTIONS.find((o) => o.id === moduleId) || MODULE_OPTIONS[0];
-  return (
-    <div className="space-y-4 text-center">
-      <div
-        className={cn(
-          "w-16 h-16 mx-auto rounded-2xl flex items-center justify-center",
-          opt.accent,
-        )}
-      >
-        <Icon name={opt.icon} size={32} strokeWidth={1.8} />
-      </div>
-      <div>
-        <h2 className="text-xl font-bold text-text">{opt.title}</h2>
-        <p className="text-sm text-muted mt-1 leading-relaxed">
-          Готово. Натисніть «Відкрити», щоб почати. Решту модулів знайдете на
-          дашборді.
-        </p>
-      </div>
-      <div className="flex gap-2 pt-1">
-        <Button
-          type="button"
-          onClick={onBack}
-          variant="secondary"
-          size="md"
-          className="flex-1"
-        >
-          Назад
-        </Button>
-        <Button
-          type="button"
-          onClick={onOpen}
-          variant="primary"
-          size="md"
-          className="flex-1"
-        >
-          Відкрити
-          <Icon name="chevron-right" size={14} />
-        </Button>
       </div>
     </div>
   );

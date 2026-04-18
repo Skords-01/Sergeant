@@ -134,7 +134,9 @@ export default function NutritionApp({
   );
 
   useEffect(() => {
-    if (activePage !== "recipes") return;
+    // Recipes moved to a sub-tab inside the "menu" page (#8). Only read
+    // the cache when the menu page is actually showing the recipes tab.
+    if (activePage !== "menu" || menuSubTab !== "recipes") return;
     const c = readRecipeCache(recipeCacheKey);
     if (c?.recipes?.length) {
       setRecipes(
@@ -146,7 +148,14 @@ export default function NutritionApp({
       setRecipesRaw(c.recipesRaw || "");
       setRecipesTried(true);
     }
-  }, [activePage, recipeCacheKey, setRecipes, setRecipesRaw, setRecipesTried]);
+  }, [
+    activePage,
+    menuSubTab,
+    recipeCacheKey,
+    setRecipes,
+    setRecipesRaw,
+    setRecipesTried,
+  ]);
 
   useNutritionReminders(prefs);
 
