@@ -3,6 +3,8 @@ import {
   calculateRemainingBudget,
   calculateSafeToSpendPerDay,
   getMonthBudgetSummary,
+  getLimitBudgets,
+  getGoalBudgets,
 } from "../domain/budget";
 
 export { calculateRemainingBudget, calculateSafeToSpendPerDay };
@@ -17,14 +19,8 @@ export function useBudget(storage) {
     txSplits,
   } = storage;
 
-  const limitBudgets = useMemo(
-    () => budgets.filter((b) => b.type === "limit"),
-    [budgets],
-  );
-  const goalBudgets = useMemo(
-    () => budgets.filter((b) => b.type === "goal"),
-    [budgets],
-  );
+  const limitBudgets = useMemo(() => getLimitBudgets(budgets), [budgets]);
+  const goalBudgets = useMemo(() => getGoalBudgets(budgets), [budgets]);
 
   const getMonthBudgetSummaryLocal = (transactions) =>
     getMonthBudgetSummary(transactions, {

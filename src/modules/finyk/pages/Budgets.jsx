@@ -11,11 +11,26 @@ import { Skeleton } from "@shared/components/ui/Skeleton";
 import { EmptyState } from "@shared/components/ui/EmptyState";
 import {
   calcCategorySpent,
-  getTxStatAmount,
   resolveExpenseCategoryMeta,
-  calcMonthlyNeeded,
 } from "../utils";
-import { mergeExpenseCategoryDefinitions } from "../constants";
+import {
+  buildExpenseCategoryList,
+} from "../domain/categories";
+import {
+  getLimitBudgets,
+  getGoalBudgets,
+  calculateLimitUsage,
+  calculateGoalProgress,
+  getGoalMonthlyLabel,
+  shouldShowProactiveAdvice,
+  buildAtRiskKey,
+  getCurrentMonthContext,
+  getMonthlyPlanUsage,
+  calculateTotalExpenseFact,
+  validateLimitBudgetForm,
+  validateGoalBudgetForm,
+} from "../domain/budget";
+import { filterStatTransactions } from "../domain/transactions";
 import { cn } from "@shared/lib/cn";
 import { calcForecast } from "../lib/forecastEngine";
 import { BudgetTrendChart } from "../components/charts/lazy";
@@ -25,7 +40,6 @@ import { LimitBudgetCard } from "../components/budgets/LimitBudgetCard.jsx";
 import { GoalBudgetCard } from "../components/budgets/GoalBudgetCard.jsx";
 import { CategorySelector } from "../components/CategorySelector.jsx";
 import { CategoryManager } from "../components/CategoryManager.jsx";
-import { calculateSafeToSpendPerDay } from "../hooks/useBudget.js";
 import { readJSON, writeJSON } from "../lib/finykStorage.js";
 import { trackEvent, ANALYTICS_EVENTS } from "../../../core/analytics";
 
@@ -48,7 +62,7 @@ export function Budgets({ mono, storage }) {
     removeCustomCategory,
   } = storage;
   const statTx = useMemo(
-    () => realTx.filter((t) => !excludedTxIds.has(t.id)),
+    () => filterStatTransactions(realTx, excludedTxIds),
     [realTx, excludedTxIds],
   );
   const [editIdx, setEditIdx] = useState(null);
@@ -67,9 +81,9 @@ export function Budgets({ mono, storage }) {
   });
 
   const now = useMemo(() => new Date(), []);
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const { monthStart } = getCurrentMonthContext(now);
   const expenseCategoryList = useMemo(
-    () => mergeExpenseCategoryDefinitions(customCategories),
+    () => buildExpenseCategoryList(customCategories, { excludeIncome: false }),
     [customCategories],
   );
   const calcSpent = useCallback(
@@ -83,24 +97,13 @@ export function Budgets({ mono, storage }) {
       ),
     [customCategories, statTx, txCategories, txSplits],
   );
-  const limitBudgets = useMemo(
-    () => budgets.filter((b) => b.type === "limit"),
-    [budgets],
-  );
-  const goalBudgets = useMemo(
-    () => budgets.filter((b) => b.type === "goal"),
-    [budgets],
-  );
+  const limitBudgets = useMemo(() => getLimitBudgets(budgets), [budgets]);
+  const goalBudgets = useMemo(() => getGoalBudgets(budgets), [budgets]);
   const planIncome = Number(monthlyPlan?.income || 0);
   const planExpense = Number(monthlyPlan?.expense || 0);
 
   const totalExpenseFact = useMemo(
-    () =>
-      Math.round(
-        statTx
-          .filter((t) => t.amount < 0)
-          .reduce((s, t) => s + getTxStatAmount(t, txSplits), 0),
-      ),
+    () => calculateTotalExpenseFact(statTx, txSplits),
     [statTx, txSplits],
   );
 
@@ -149,17 +152,10 @@ export function Budgets({ mono, storage }) {
     );
   }, [statTx, limitBudgets, now, txCategories, txSplits, customCategories]);
 
-  const atRiskKey = useMemo(() => {
-    if (forecasts.length === 0) return "";
-    const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-    const ids = forecasts
-      .filter(
-        (fc) => fc.overLimit || (fc.limit > 0 && fc.spent / fc.limit >= 0.8),
-      )
-      .map((fc) => fc.categoryId)
-      .sort();
-    return ids.length > 0 ? `${monthKey}|${ids.join(",")}` : "";
-  }, [forecasts, now]);
+  const atRiskKey = useMemo(
+    () => buildAtRiskKey(forecasts, now),
+    [forecasts, now],
+  );
 
   useEffect(() => {
     if (!atRiskKey) return;
@@ -170,12 +166,7 @@ export function Budgets({ mono, storage }) {
     const forecastByCategory = {};
     for (const fc of forecasts) forecastByCategory[fc.categoryId] = fc;
 
-    const daysInMonth = new Date(
-      now.getFullYear(),
-      now.getMonth() + 1,
-      0,
-    ).getDate();
-    const daysRemaining = daysInMonth - now.getDate();
+    const { daysLeft: daysRemaining } = getCurrentMonthContext(now);
 
     const toFetch = [];
     const preloaded = {};
@@ -309,60 +300,22 @@ export function Budgets({ mono, storage }) {
 
   const addBudget = () => {
     setFormError("");
-    if (newB.type === "limit") {
-      if (!newB.categoryId) {
-        setFormError("Оберіть категорію");
-        return;
-      }
-      const limitVal = Number(newB.limit);
-      if (!newB.limit || isNaN(limitVal) || limitVal <= 0) {
-        setFormError("Вкажіть ліміт більше 0");
-        return;
-      }
-      if (
-        budgets.some(
-          (b) => b.type === "limit" && b.categoryId === newB.categoryId,
-        )
-      ) {
-        setFormError("Ліміт для цієї категорії вже існує");
-        return;
-      }
-      setBudgets((b) => [
-        ...b,
-        { ...newB, limit: limitVal, id: crypto.randomUUID() },
-      ]);
-      trackEvent(ANALYTICS_EVENTS.BUDGET_SET, {
-        type: "limit",
-        categoryId: newB.categoryId,
-      });
-      resetForm();
-    } else if (newB.type === "goal") {
-      if (!newB.name || !newB.name.trim()) {
-        setFormError("Вкажіть назву цілі");
-        return;
-      }
-      const targetVal = Number(newB.targetAmount);
-      if (!newB.targetAmount || isNaN(targetVal) || targetVal <= 0) {
-        setFormError("Вкажіть суму цілі більше 0");
-        return;
-      }
-      const savedVal = Number(newB.savedAmount || 0);
-      if (savedVal < 0) {
-        setFormError("Відкладена сума не може бути від'ємною");
-        return;
-      }
-      setBudgets((b) => [
-        ...b,
-        {
-          ...newB,
-          targetAmount: targetVal,
-          savedAmount: savedVal,
-          id: crypto.randomUUID(),
-        },
-      ]);
-      trackEvent(ANALYTICS_EVENTS.BUDGET_SET, { type: "goal" });
-      resetForm();
+    const { error, normalized } =
+      newB.type === "limit"
+        ? validateLimitBudgetForm(newB, budgets)
+        : validateGoalBudgetForm(newB);
+    if (error || !normalized) {
+      setFormError(error || "Помилка валідації");
+      return;
     }
+    setBudgets((b) => [...b, { ...normalized, id: crypto.randomUUID() }]);
+    trackEvent(
+      ANALYTICS_EVENTS.BUDGET_SET,
+      normalized.type === "limit"
+        ? { type: "limit", categoryId: normalized.categoryId }
+        : { type: "goal" },
+    );
+    resetForm();
   };
 
   if (loadingTx && realTx.length === 0) {
@@ -375,20 +328,16 @@ export function Budgets({ mono, storage }) {
     );
   }
 
-  const now2 = new Date();
-  const daysInMonth2 = new Date(
-    now2.getFullYear(),
-    now2.getMonth() + 1,
-    0,
-  ).getDate();
-  const daysLeft2 = daysInMonth2 - now2.getDate();
-  const remaining2 = Math.max(0, planExpense - totalExpenseFact);
-  const safePerDay = calculateSafeToSpendPerDay(remaining2, daysLeft2);
-  const pctExpense =
-    planExpense > 0
-      ? Math.min(100, Math.round((totalExpenseFact / planExpense) * 100))
-      : 0;
-  const isOver = planExpense > 0 && totalExpenseFact > planExpense;
+  const {
+    remaining: remaining2,
+    safePerDay,
+    pctExpense,
+    isOver,
+    daysLeft: daysLeft2,
+  } = getMonthlyPlanUsage(
+    { planIncome, planExpense, totalFact: totalExpenseFact },
+    new Date(),
+  );
 
   return (
     <div className="flex-1 overflow-y-auto">
@@ -565,27 +514,24 @@ export function Budgets({ mono, storage }) {
             customCategories,
           );
           const bspent = calcSpent(b);
-          const pctRaw = b.limit > 0 ? (bspent / b.limit) * 100 : 0;
-          const pct = Math.min(100, Math.round(pctRaw));
-          const remaining = Math.max(0, b.limit - bspent);
+          const usage = calculateLimitUsage(b, bspent);
           const globalIdx = budgets.indexOf(b);
           const forecastForCat = forecasts.find(
             (fc) => fc.categoryId === b.categoryId,
           );
-          const showProactiveAdvice =
-            pctRaw >= 80 || (forecastForCat && forecastForCat.overLimit);
+          const showAdvice = shouldShowProactiveAdvice(usage, forecastForCat);
           const isEditing = editIdx === globalIdx;
           return (
             <LimitBudgetCard
               key={b.id || i}
               budget={b}
               categoryLabel={cat?.label || "—"}
-              spent={bspent}
-              pctRaw={pctRaw}
-              pctRounded={pct}
-              remaining={remaining}
+              spent={usage.spent}
+              pctRaw={usage.pctRaw}
+              pctRounded={usage.pctRounded}
+              remaining={usage.remaining}
               isEditing={isEditing}
-              showProactiveAdvice={!!showProactiveAdvice}
+              showProactiveAdvice={showAdvice}
               proactiveText={proactiveAdvice[b.categoryId]}
               proactiveLoading={proactiveLoading[b.categoryId]}
               onBeginEdit={() => setEditIdx(globalIdx)}
@@ -745,37 +691,17 @@ export function Budgets({ mono, storage }) {
           />
         )}
         {goalBudgets.map((b, i) => {
-          const saved = b.savedAmount || 0;
-          const pct = Math.min(
-            100,
-            b.targetAmount > 0 ? Math.round((saved / b.targetAmount) * 100) : 0,
-          );
-          const daysLeft = b.targetDate
-            ? Math.ceil((new Date(b.targetDate) - now) / 86400000)
-            : null;
-          const monthly = calcMonthlyNeeded(
-            b.targetAmount,
-            saved,
-            b.targetDate,
-          );
+          const progress = calculateGoalProgress(b, now);
           const globalIdx = budgets.indexOf(b);
           const isEditing = editIdx === globalIdx;
           return (
             <GoalBudgetCard
               key={b.id || i}
               budget={b}
-              saved={saved}
-              pct={pct}
-              daysLeft={daysLeft}
-              monthlyLabel={
-                monthly.isAchieved
-                  ? "Ціль досягнута 🎉"
-                  : monthly.isOverdue
-                    ? "Термін минув"
-                    : monthly.monthlyNeeded !== null
-                      ? `Потрібно відкладати: ${monthly.monthlyNeeded.toLocaleString("uk-UA")} ₴/міс.`
-                      : null
-              }
+              saved={progress.saved}
+              pct={progress.pct}
+              daysLeft={progress.daysLeft}
+              monthlyLabel={getGoalMonthlyLabel(progress)}
               isEditing={isEditing}
               onBeginEdit={() => setEditIdx(globalIdx)}
               onChangeSaved={(nextSaved) =>
