@@ -1,11 +1,9 @@
 import { memo } from "react";
 import { Button } from "@shared/components/ui/Button";
 import { Card } from "@shared/components/ui/Card";
+import { Input } from "@shared/components/ui/Input";
 import { cn } from "@shared/lib/cn";
 import { CategorySelector } from "../CategorySelector.jsx";
-
-const formInp =
-  "w-full h-10 rounded-xl border border-line bg-bg px-3 text-sm text-text outline-none focus:border-primary";
 
 const GOAL_EMOJIS = [
   "🎯",
@@ -73,8 +71,7 @@ function AddBudgetFormComponent({
             categories={expenseCategoryList.filter((c) => c.id !== "income")}
             placeholder="Вибери категорію"
           />
-          <input
-            className={formInp}
+          <Input
             placeholder="Ліміт ₴"
             type="number"
             value={newB.limit}
@@ -101,16 +98,14 @@ function AddBudgetFormComponent({
               </button>
             ))}
           </div>
-          <input
-            className={formInp}
+          <Input
             placeholder="Назва цілі"
             value={newB.name}
             onChange={(e) =>
               onChangeNewB((b) => ({ ...b, name: e.target.value }))
             }
           />
-          <input
-            className={formInp}
+          <Input
             placeholder="Сума цілі ₴"
             type="number"
             value={newB.targetAmount}
@@ -118,8 +113,7 @@ function AddBudgetFormComponent({
               onChangeNewB((b) => ({ ...b, targetAmount: e.target.value }))
             }
           />
-          <input
-            className={formInp}
+          <Input
             placeholder="Вже відкладено ₴"
             type="number"
             value={newB.savedAmount}
@@ -127,8 +121,7 @@ function AddBudgetFormComponent({
               onChangeNewB((b) => ({ ...b, savedAmount: e.target.value }))
             }
           />
-          <input
-            className={formInp}
+          <Input
             type="date"
             value={newB.targetDate}
             onChange={(e) =>

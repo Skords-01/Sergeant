@@ -1,8 +1,6 @@
 import { memo } from "react";
 import { cn } from "@shared/lib/cn";
-
-const formInp =
-  "w-full h-10 rounded-xl border border-line bg-bg px-3 text-sm text-text outline-none focus:border-primary";
+import { Input } from "@shared/components/ui/Input";
 
 // Merged monthly-plan block: income/expense/savings inputs + fact summary +
 // progress + safe-to-spend hint. Pure presentational; parent owns
@@ -30,8 +28,7 @@ function MonthlyPlanCardComponent({
         Фінплан на місяць
       </div>
       <div className="space-y-2">
-        <input
-          className={formInp}
+        <Input
           type="number"
           placeholder="План доходу ₴"
           value={monthlyPlan?.income ?? ""}
@@ -42,8 +39,7 @@ function MonthlyPlanCardComponent({
             }))
           }
         />
-        <input
-          className={formInp}
+        <Input
           type="number"
           placeholder="План витрат ₴"
           value={monthlyPlan?.expense ?? ""}
@@ -54,8 +50,7 @@ function MonthlyPlanCardComponent({
             }))
           }
         />
-        <input
-          className={formInp}
+        <Input
           type="number"
           placeholder="План накопичень ₴"
           value={monthlyPlan?.savings ?? ""}
