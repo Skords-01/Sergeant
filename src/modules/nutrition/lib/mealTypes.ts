@@ -50,14 +50,18 @@ export function labelForMealType(id: MealTypeId | string): string {
 
 /**
  * Time-of-day → most likely meal type. Used to seed the "Додати прийом їжі"
- * form so the default doesn't say "Сніданок" at 9 PM. Bands are wide on
- * purpose — we'd rather be a bit sloppy than make the user tap the picker
- * just to flip the obvious option.
+ * form so the default doesn't say "Сніданок" at 9 PM. Bands are wide and
+ * contiguous between 5:00–22:00 on purpose — we'd rather pick an obvious-
+ * enough option than force the user to tap the picker just to flip it.
+ *
+ * Bands: 5–10 breakfast · 11–15 lunch · 16–21 dinner · else snack. Dinner
+ * intentionally covers 16:00 so the picker doesn't collapse to "Перекус" at
+ * 4 PM (that was a gap in the original 11–15 / 17–21 split).
  */
 export function mealTypeByHour(hour: number): MealTypeId {
   if (hour >= 5 && hour < 11) return "breakfast";
   if (hour >= 11 && hour < 16) return "lunch";
-  if (hour >= 17 && hour < 22) return "dinner";
+  if (hour >= 16 && hour < 22) return "dinner";
   return "snack";
 }
 
