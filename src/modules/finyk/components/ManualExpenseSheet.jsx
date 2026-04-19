@@ -1,5 +1,6 @@
 import { useState, useEffect, useId, useMemo } from "react";
 import { Button } from "@shared/components/ui/Button";
+import { Input } from "@shared/components/ui/Input";
 import { Sheet } from "@shared/components/ui/Sheet";
 import { VoiceMicButton } from "@shared/components/ui/VoiceMicButton.jsx";
 import { parseExpenseSpeech } from "../../../core/lib/speechParsers.js";
@@ -81,9 +82,6 @@ function mergeAmountSuggestions(frequentMerchants) {
   }
   return merged.slice(0, 6);
 }
-
-const formInp =
-  "w-full h-11 rounded-2xl border border-line bg-panelHi px-4 text-text outline-none focus:border-muted transition-colors";
 
 // Сортує доступні підписи категорій за персональною частотою, зберігаючи
 // стабільний порядок для категорій без статистики.
@@ -262,9 +260,8 @@ export function ManualExpenseSheet({
                 · необов&apos;язково
               </span>
             </label>
-            <input
+            <Input
               id={descId}
-              className={formInp}
               placeholder="Кава, продукти, таксі..."
               value={form.description}
               onChange={(e) =>
@@ -353,9 +350,8 @@ export function ManualExpenseSheet({
               ))}
             </div>
           )}
-          <input
+          <Input
             id={amountId}
-            className={formInp}
             type="number"
             inputMode="decimal"
             placeholder="0"
@@ -401,9 +397,8 @@ export function ManualExpenseSheet({
           >
             Дата
           </label>
-          <input
+          <Input
             id={dateId}
-            className={formInp}
             type="date"
             value={form.date}
             onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}

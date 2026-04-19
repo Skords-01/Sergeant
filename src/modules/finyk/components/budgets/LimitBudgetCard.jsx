@@ -3,9 +3,7 @@ import { Button } from "@shared/components/ui/Button";
 import { Skeleton } from "@shared/components/ui/Skeleton";
 import { cn } from "@shared/lib/cn";
 import { Card } from "@shared/components/ui/Card";
-
-const formInp =
-  "w-full h-10 rounded-xl border border-line bg-bg px-3 text-sm text-text outline-none focus:border-primary";
+import { Input } from "@shared/components/ui/Input";
 
 // Презентаційна картка ліміту бюджету. Усі дані приходять готовими пропсами,
 // тому memo потрібен, щоб картка не перемальовувалась при змінах сусідніх
@@ -33,8 +31,8 @@ function LimitBudgetCardComponent({
     <Card radius="lg" padding="lg">
       {isEditing ? (
         <div className="space-y-2">
-          <input
-            className={formInp}
+          <Input
+            size="sm"
             type="number"
             placeholder="Ліміт ₴"
             value={budget.limit}

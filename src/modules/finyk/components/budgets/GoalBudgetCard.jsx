@@ -1,9 +1,7 @@
 import { memo } from "react";
 import { Button } from "@shared/components/ui/Button";
 import { Card } from "@shared/components/ui/Card";
-
-const formInp =
-  "w-full h-10 rounded-xl border border-line bg-bg px-3 text-sm text-text outline-none focus:border-primary";
+import { Input } from "@shared/components/ui/Input";
 
 // Картка цілі накопичення — детерміновані пропси, memo дозволяє не
 // перераховувати розмітку при перерендерах сторінки Budgets.
@@ -23,8 +21,8 @@ function GoalBudgetCardComponent({
     <Card radius="lg" padding="lg">
       {isEditing ? (
         <div className="space-y-2">
-          <input
-            className={formInp}
+          <Input
+            size="sm"
             type="number"
             placeholder="Відкладено ₴"
             value={budget.savedAmount || ""}
