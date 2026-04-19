@@ -6,7 +6,7 @@
 
 Загальне:
 
-- Прод entry point — `server/railway.mjs`. Хостинг — Railway.
+- Прод entry point — `server/index.js` (режим вибирається `SERVER_MODE` або авто з `REPLIT_DOMAINS`; для Railway — `SERVER_MODE=railway` / автодефолт). Хостинг — Railway.
 - Метрики за bearer-токен: `GET /metrics` з `Authorization: Bearer $METRICS_TOKEN`.
 - Логи — Pino JSON у stdout, з ALS-контекстом `{requestId, userId, module}`.
 - Sentry ловить fatal/error (включно з `err.cause` чейном).

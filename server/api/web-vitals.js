@@ -10,7 +10,7 @@ import { webVitalsCls, webVitalsDurationMs } from "../obs/metrics.js";
  *
  * Endpoint навмисно анонімний (web-vitals важливо міряти в тому числі на
  * неавторизованих відвідувачах) і rate-limited на рівні роутера — див.
- * `rateLimitExpress({ key: "api:web-vitals", ... })` у railway.mjs.
+ * `rateLimitExpress({ key: "api:web-vitals", ... })` у server/app.js.
  *
  * Завжди відповідає `204 No Content` — навіть на поганий payload. sendBeacon
  * ігнорує відповідь, а тіло з помилками не сенс повертати: клієнта немає кому

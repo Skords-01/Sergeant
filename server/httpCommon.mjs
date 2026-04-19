@@ -120,7 +120,7 @@ export function buildApiCspDirectives() {
  *
  * @param {{ servesFrontend?: boolean }} [opts]
  * - `servesFrontend: true` — цей процес окрім API віддає ще й React SPA
- *   (наприклад, `server/replit.mjs`). У цьому режимі CSP вимикається, бо
+ *   (режим Replit, `SERVER_MODE=replit`). У цьому режимі CSP вимикається, бо
  *   API-CSP з `script-src 'none'` зламала б фронтенд (Vite-PWA вбудовує
  *   інлайн-скрипт реєстрації SW, плюс `blob:` worker). Для розгортань, де
  *   потрібна CSP на SPA, політика задається на CDN-рівні (Vercel headers).

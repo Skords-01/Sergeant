@@ -10,11 +10,11 @@ A personal hub app with React + Vite frontend and an Express API backend, runnin
 - **Backend**: Express.js serving API routes under `/api/*`
 - **Database**: PostgreSQL (Replit built-in) — stores users, sessions, and per-module JSON data blobs
 - **Auth**: Better Auth with email/password, session cookies, cookie caching
-- **Unified server**: `server/replit.mjs` serves both the built frontend and the API on port 5000
+- **Unified server**: `server/index.js` with `SERVER_MODE=replit` serves both the built frontend and the API on port 5000
 
 ## Running the App
 
-The workflow `Start application` runs `npm run start:replit` which executes `server/replit.mjs`.
+The workflow `Start application` runs `npm run start:replit` which executes `SERVER_MODE=replit node server/index.js`.
 
 For production build the frontend first:
 
@@ -26,14 +26,15 @@ npm run start:replit
 For local Vite dev server (with proxy to Express):
 
 ```
-npm run start         # Express API on port 3000 (railway.mjs)
+npm run start         # Express API on port 3000 (server/index.js)
 npm run dev           # Vite dev server on port 5173 (proxies /api to 3000)
 ```
 
 ## Key Files
 
-- `server/replit.mjs` — Unified server for Replit (frontend + API, port 5000)
-- `server/railway.mjs` — API-only server for Railway deployment (port 3000)
+- `server/index.js` — Single unified entrypoint (mode selected via `SERVER_MODE` or auto-detected from `REPLIT_DOMAINS`)
+- `server/app.js` — `createApp(...)` factory that wires all middleware and routes
+- `server/config.js` — Runtime config (port, SPA-static, trust proxy) per mode
 - `server/auth.js` — Better Auth configuration (email/password, PostgreSQL adapter, session settings)
 - `server/db.js` — PostgreSQL connection pool
 - `server/api/sync.js` — Cloud sync endpoints (push/pull per-module data)
@@ -90,7 +91,7 @@ npm run dev           # Vite dev server on port 5173 (proxies /api to 3000)
 ### Schema management & connection pooling
 
 - **Single `pg.Pool`** in [`server/db.js`](server/db.js): shared by API routes, [`server/auth.js`](server/auth.js) (Better Auth), and startup `ensureSchema()`.
-- **Baseline DDL**: `ensureSchema()` runs `CREATE TABLE IF NOT EXISTS` and idempotent `ALTER` where needed on each server start ([`server/railway.mjs`](server/railway.mjs), [`server/replit.mjs`](server/replit.mjs)).
+- **Baseline DDL**: `ensureSchema()` runs `CREATE TABLE IF NOT EXISTS` and idempotent `ALTER` where needed on each server start ([`server/index.js`](server/index.js)).
 - **Incremental migrations**: sorted `server/migrations/*.sql` files run once per environment, recorded in `schema_migrations` (see `runPendingSqlMigrations` in `db.js`).
 
 ### PostgreSQL backups (production)

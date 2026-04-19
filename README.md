@@ -144,12 +144,13 @@ src/
 └── main.jsx                      # Точка входу, реєстрація SW
 
 server/
-├── railway.mjs                   # Express-агрегатор API (Railway / npm start)
-├── replit.mjs                    # Entrypoint для Replit (фронт + API, порт 5000)
+├── index.js                      # Єдиний entrypoint (npm start; SERVER_MODE=replit для Replit-режиму)
+├── app.js                        # createApp({ servesFrontend, distPath, trustProxy }) — Express factory
+├── config.js                     # Конфіг рантайм-режиму (порт, SPA-static, trust proxy)
 ├── auth.js                       # Better Auth (спільний pg pool з db.js)
 ├── db.js                         # PostgreSQL pool, ensureSchema(), SQL-міграції з migrations/
 ├── aiQuota.js                    # Денні AI-квоти (ai_usage_daily) per-user / per-IP
-├── httpCommon.mjs                # Спільні утиліти HTTP для railway/replit entrypoints
+├── httpCommon.mjs                # Спільні HTTP-утиліти (middleware, helmet, errorHandler)
 ├── migrations/                   # 001_noop.sql, 002_ai_usage_daily.sql, schema_migrations
 └── api/
     ├── barcode.js                # Пошук продукту за штрихкодом (OFF → USDA FDC → UPCitemdb)
@@ -196,7 +197,7 @@ Hub — повноцінний Progressive Web App:
 
 ```bash
 npm install
-npm run start      # 1) Express API (railway.mjs, порт 3000)
+npm run start      # 1) Express API (server/index.js, порт 3000)
 npm run dev        # 2) Vite dev server (фронт, порт 5173) — проксує /api → 3000
 ```
 

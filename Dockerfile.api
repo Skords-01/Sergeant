@@ -9,4 +9,4 @@ RUN npm ci --omit=dev --ignore-scripts
 COPY server ./server
 
 ENV NODE_ENV=production
-CMD ["node", "server/railway.mjs"]
+CMD ["node", "server/index.js"]

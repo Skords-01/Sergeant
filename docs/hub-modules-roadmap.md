@@ -203,7 +203,7 @@
 - [x] Єдиний `pg.Pool` у [server/db.js](server/db.js) для API та Better Auth; інкрементальні SQL-файли в `server/migrations/` + `schema_migrations`
 - [x] Web Push стек на бекенді: `server/api/push.js` (vapid-public / subscribe / unsubscribe / send), `web-push` у `package.json`, `API_SECRET` для захисту `/send`
 - [x] Щоденні AI-квоти: `server/aiQuota.js` + міграція `002_ai_usage_daily.sql`, `AI_DAILY_USER_LIMIT` / `AI_DAILY_ANON_LIMIT` / `AI_QUOTA_DISABLED`
-- [x] Спільні HTTP-утиліти для entrypoints (`server/httpCommon.mjs`), роздільні `railway.mjs` / `replit.mjs`
+- [x] Спільні HTTP-утиліти для entrypoints (`server/httpCommon.mjs`), уніфікований `server/index.js` + `server/app.js` (режим через `SERVER_MODE`)
 - [x] CI/CD pipeline: GitHub Actions (`.github/workflows/ci.yml`) — `npm audit`, license policy check, `npm run check` (format, lint, test, build) з SHA-pinned actions
 
 ### Наступні кроки
