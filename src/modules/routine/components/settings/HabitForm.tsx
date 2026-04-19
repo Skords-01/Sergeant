@@ -8,6 +8,7 @@ import {
 } from "react";
 import { cn } from "@shared/lib/cn";
 import { Button } from "@shared/components/ui/Button";
+import { Card } from "@shared/components/ui/Card";
 import { Input } from "@shared/components/ui/Input";
 import {
   ROUTINE_THEME as C,
@@ -80,10 +81,7 @@ export function HabitForm({
   }, [focusTick]);
 
   return (
-    <section
-      ref={sectionRef}
-      className="bg-panel border border-line rounded-2xl p-4 shadow-card space-y-3"
-    >
+    <Card as="section" ref={sectionRef} radius="lg" className="space-y-3">
       <h2 className="text-xs font-bold text-subtle uppercase tracking-widest">
         {editingId ? "Редагувати звичку" : "Нова звичка"}
       </h2>
@@ -263,6 +261,6 @@ export function HabitForm({
           </Button>
         )}
       </div>
-    </section>
+    </Card>
   );
 }

@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { subtleNavButtonClass } from "@shared/components/ui/buttonPresets";
 import { cn } from "@shared/lib/cn";
 import { useDailyLog } from "../hooks/useDailyLog";
+import { Card } from "@shared/components/ui/Card";
 import { MiniLineChart } from "../components/MiniLineChart";
 import { PhotoProgress } from "../components/PhotoProgress";
 
@@ -193,10 +194,7 @@ export function Body({ onOpenMeasurements }) {
           </div>
         </div>
 
-        <section
-          className="bg-panel border border-line rounded-2xl p-4 shadow-card"
-          aria-label="Записати показники"
-        >
+        <Card as="section" radius="lg" aria-label="Записати показники">
           <h2 className="text-xs font-bold text-subtle uppercase tracking-widest mb-3">
             Записати сьогодні
           </h2>
@@ -328,13 +326,10 @@ export function Body({ onOpenMeasurements }) {
               {submitSuccess ? "Записано ✓" : "Записати"}
             </button>
           </form>
-        </section>
+        </Card>
 
         {weightData.length >= 2 && (
-          <section
-            className="bg-panel border border-line rounded-2xl p-4 shadow-card"
-            aria-label="Динаміка ваги"
-          >
+          <Card as="section" radius="lg" aria-label="Динаміка ваги">
             <h2 className="text-xs font-bold text-subtle uppercase tracking-widest mb-3">
               Динаміка ваги
             </h2>
@@ -344,14 +339,11 @@ export function Body({ onOpenMeasurements }) {
               color="rgb(22 163 74)"
               metricLabel="вагу"
             />
-          </section>
+          </Card>
         )}
 
         {sleepData.length >= 2 && (
-          <section
-            className="bg-panel border border-line rounded-2xl p-4 shadow-card"
-            aria-label="Динаміка сну"
-          >
+          <Card as="section" radius="lg" aria-label="Динаміка сну">
             <h2 className="text-xs font-bold text-subtle uppercase tracking-widest mb-3">
               Сон
             </h2>
@@ -361,14 +353,11 @@ export function Body({ onOpenMeasurements }) {
               color="rgb(99 102 241)"
               metricLabel="сон"
             />
-          </section>
+          </Card>
         )}
 
         {energyData.length >= 2 && (
-          <section
-            className="bg-panel border border-line rounded-2xl p-4 shadow-card"
-            aria-label="Динаміка енергії"
-          >
+          <Card as="section" radius="lg" aria-label="Динаміка енергії">
             <h2 className="text-xs font-bold text-subtle uppercase tracking-widest mb-3">
               Рівень енергії
             </h2>
@@ -378,14 +367,11 @@ export function Body({ onOpenMeasurements }) {
               color="rgb(245 158 11)"
               metricLabel="рівень енергії"
             />
-          </section>
+          </Card>
         )}
 
         {moodData.length >= 2 && (
-          <section
-            className="bg-panel border border-line rounded-2xl p-4 shadow-card"
-            aria-label="Динаміка настрою"
-          >
+          <Card as="section" radius="lg" aria-label="Динаміка настрою">
             <h2 className="text-xs font-bold text-subtle uppercase tracking-widest mb-3">
               Настрій
             </h2>
@@ -395,16 +381,13 @@ export function Body({ onOpenMeasurements }) {
               color="rgb(236 72 153)"
               metricLabel="настрій"
             />
-          </section>
+          </Card>
         )}
 
         <PhotoProgress />
 
         {entries.length > 0 && (
-          <section
-            className="bg-panel border border-line rounded-2xl p-4 shadow-card"
-            aria-label="Журнал записів"
-          >
+          <Card as="section" radius="lg" aria-label="Журнал записів">
             <h2 className="text-xs font-bold text-subtle uppercase tracking-widest mb-3">
               Журнал
             </h2>
@@ -484,7 +467,7 @@ export function Body({ onOpenMeasurements }) {
                 </div>
               ))}
             </div>
-          </section>
+          </Card>
         )}
       </div>
     </div>

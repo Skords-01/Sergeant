@@ -1,5 +1,6 @@
 import { useMemo, useState, useCallback, useEffect, useRef } from "react";
 import { cn } from "@shared/lib/cn";
+import { Card } from "@shared/components/ui/Card";
 import type { Habit, RoutineState } from "../lib/types";
 
 const WEEKS = 53;
@@ -132,10 +133,7 @@ export function HabitHeatmap({ habits, completions }: HabitHeatmapProps) {
   }, [selected, weeks]);
 
   return (
-    <div
-      ref={rootRef}
-      className="bg-panel border border-line rounded-2xl p-4 shadow-card"
-    >
+    <Card ref={rootRef} radius="lg">
       <p className="text-xs font-bold text-subtle uppercase tracking-widest mb-3">
         Активність за рік
       </p>
@@ -238,6 +236,6 @@ export function HabitHeatmap({ habits, completions }: HabitHeatmapProps) {
           <span>більше</span>
         </div>
       )}
-    </div>
+    </Card>
   );
 }
