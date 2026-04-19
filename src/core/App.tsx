@@ -396,7 +396,12 @@ function AppInner() {
       )}
 
       <Suspense fallback={<PageLoader />}>
-        <main
+        {/* Skip-link target — deliberately a `<div>` (not `<main>`) because
+            some modules (e.g. Routine) render their own `<main>` landmark
+            internally. Having two visible `<main>` elements violates the
+            HTML spec and confuses AT landmark navigation. The SkipLink only
+            needs an `id` + focusability to do its job. */}
+        <div
           key={activeModule}
           id="main"
           tabIndex={-1}
@@ -433,7 +438,7 @@ function AppInner() {
               />
             )}
           </ModuleErrorBoundary>
-        </main>
+        </div>
       </Suspense>
     </div>
   );
