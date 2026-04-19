@@ -43,11 +43,22 @@ export default {
         // ─── Semantic aliases (preferred in new code) ──────────────────────
         // Map 1:1 to the existing tokens above; dark mode "just works" because
         // they resolve through the same CSS variables.
+        //
+        // Naming contract:
+        //   surface / surface-muted / surface-strong — background surfaces
+        //   fg / fg-muted / fg-subtle               — text / icon foregrounds
+        //   border / border-strong                  — dividers & outlines
+        //   accent                                  — brand accent (focus/CTA)
         surface: "rgb(var(--c-panel) / <alpha-value>)",
         "surface-muted": "rgb(var(--c-panel-hi) / <alpha-value>)",
+        "surface-strong": "rgb(var(--c-bg) / <alpha-value>)",
         fg: "rgb(var(--c-text) / <alpha-value>)",
         "fg-muted": "rgb(var(--c-muted) / <alpha-value>)",
+        "fg-subtle": "rgb(var(--c-subtle) / <alpha-value>)",
+        border: "rgb(var(--c-border) / <alpha-value>)",
+        "border-strong": "rgb(var(--c-border-strong) / <alpha-value>)",
         accent: "rgb(var(--c-accent) / <alpha-value>)",
+        ring: "rgb(var(--c-accent) / <alpha-value>)",
 
         // ═══════════════════════════════════════════════════════════════════
         // BRAND COLORS — Soft & Organic palette with Emerald/Teal accent
@@ -67,11 +78,18 @@ export default {
 
         // ═══════════════════════════════════════════════════════════════════
         // STATUS COLORS — Consistent semantic meanings
+        // Each status has a solid accent (for fills / icons / rings) plus a
+        // `-soft` background token that resolves through CSS variables so
+        // dark mode works without bespoke dark: overrides.
         // ═══════════════════════════════════════════════════════════════════
         success: statusColors.success,
         danger: statusColors.danger,
         warning: statusColors.warning,
         info: statusColors.info,
+        "success-soft": "rgb(var(--c-success-soft) / <alpha-value>)",
+        "warning-soft": "rgb(var(--c-warning-soft) / <alpha-value>)",
+        "danger-soft": "rgb(var(--c-danger-soft) / <alpha-value>)",
+        "info-soft": "rgb(var(--c-info-soft) / <alpha-value>)",
 
         // ═══════════════════════════════════════════════════════════════════
         // CHART PALETTE — For pie charts, graphs, data visualization

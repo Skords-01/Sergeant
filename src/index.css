@@ -58,6 +58,19 @@
     --c-danger: 239 68 68; /* red-500       — statusColors.danger  */
     --c-info: 14 165 233; /* sky-500        — statusColors.info    */
 
+    /* Semantic border tokens — alias `line` for back-compat, add a stronger
+       divider for inputs/separators that need extra weight. */
+    --c-border: var(--c-line);
+    --c-border-strong: 221 211 197; /* #ddd3c5 — stronger warm divider */
+
+    /* Soft status backgrounds — tinted surfaces for banners/badges/cards.
+       These resolve automatically between light & dark themes, eliminating
+       the `bg-red-50 dark:bg-danger/15` string-gymnastics pattern. */
+    --c-success-soft: 209 250 229; /* emerald-100 */
+    --c-warning-soft: 254 243 199; /* amber-100 */
+    --c-danger-soft: 254 226 226; /* red-100 */
+    --c-info-soft: 224 242 254; /* sky-100 */
+
     /* Motion tokens — single source of truth for duration/easing. */
     --motion-duration-fast: 150ms;
     --motion-duration: 200ms;
@@ -99,6 +112,13 @@
       inset 0 1px 0 rgba(255, 255, 255, 0.03);
 
     --shadow-soft: 0 8px 32px rgba(0, 0, 0, 0.5);
+
+    /* Dark-theme overrides for the new semantic tokens added above. */
+    --c-border-strong: 74 66 58; /* warm elevated divider for dark theme */
+    --c-success-soft: 6 78 59; /* emerald-900-ish */
+    --c-warning-soft: 120 53 15; /* amber-900-ish */
+    --c-danger-soft: 127 29 29; /* red-900-ish */
+    --c-info-soft: 12 74 110; /* sky-900-ish */
   }
 
   /* ═══════════════════════════════════════════════════════════════════════
