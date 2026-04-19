@@ -1,4 +1,11 @@
-export const SEED_FOODS_UK = [
+import type { Macros } from "../macros.js";
+
+export interface SeedFood {
+  name: string;
+  per100: Macros;
+}
+
+export const SEED_FOODS_UK: SeedFood[] = [
   // М'ясо та птиця
   {
     name: "Куряча грудка",

@@ -1,11 +1,49 @@
 import { SEED_FOODS_UK } from "./seedFoodsUk.js";
+import type { Macros } from "../macros.js";
 
 const DB_NAME = "hub_nutrition_food_db";
 const DB_VERSION = 1;
 const STORE_PRODUCTS = "products";
 const STORE_BARCODES = "barcodes";
 
-function normText(s) {
+export interface FoodProduct {
+  id: string;
+  name: string;
+  brand: string;
+  norm: string;
+  defaultGrams: number;
+  per100: Macros;
+  updatedAt: number;
+}
+
+export interface FoodProductInput {
+  id?: unknown;
+  name?: unknown;
+  brand?: unknown;
+  norm?: unknown;
+  defaultGrams?: unknown;
+  per100?: unknown;
+  updatedAt?: unknown;
+}
+
+export type UpsertFoodResult =
+  | { ok: true; product: FoodProduct }
+  | { ok: false; error: string };
+
+export interface FoodDbExport {
+  version: 1;
+  exportedAt: number;
+  foods: FoodProduct[];
+  barcodes: Record<string, string>;
+}
+
+export type ImportFoodDbMode = "merge" | "replace";
+
+export type ImportFoodDbResult =
+  | { ok: true; added: number }
+  | { ok: false; error: string };
+
+function normText(s: unknown): string {
   return String(s || "")
     .trim()
     .toLowerCase()
@@ -13,13 +51,16 @@ function normText(s) {
     .replace(/\s+/g, " ");
 }
 
-function clamp0(n) {
+function clamp0(n: unknown): number {
   const v = Number(n);
   return Number.isFinite(v) ? Math.max(0, v) : 0;
 }
 
-function normalizeMacros(per100) {
-  const m = per100 && typeof per100 === "object" ? per100 : {};
+function normalizeMacros(per100: unknown): Macros {
+  const m =
+    per100 && typeof per100 === "object"
+      ? (per100 as Record<string, unknown>)
+      : {};
   return {
     kcal: clamp0(m.kcal),
     protein_g: clamp0(m.protein_g),
@@ -28,7 +69,7 @@ function normalizeMacros(per100) {
   };
 }
 
-function openDb() {
+function openDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const req = indexedDB.open(DB_NAME, DB_VERSION);
     req.onerror = () => reject(req.error);
@@ -46,7 +87,7 @@ function openDb() {
   });
 }
 
-function txDone(tx) {
+function txDone(tx: IDBTransaction): Promise<void> {
   return new Promise((resolve, reject) => {
     tx.oncomplete = () => resolve();
     tx.onerror = () => reject(tx.error);
@@ -54,8 +95,11 @@ function txDone(tx) {
   });
 }
 
-export function makeFoodProduct(partial) {
-  const p = partial && typeof partial === "object" ? partial : {};
+export function makeFoodProduct(partial: unknown): FoodProduct {
+  const p =
+    partial && typeof partial === "object"
+      ? (partial as FoodProductInput)
+      : ({} as FoodProductInput);
   const name = String(p.name || "").trim();
   const brand = p.brand != null ? String(p.brand).trim() : "";
   const id =
@@ -75,12 +119,12 @@ export function makeFoodProduct(partial) {
   };
 }
 
-export async function ensureSeedFoods() {
+export async function ensureSeedFoods(): Promise<boolean> {
   try {
     const db = await openDb();
     const tx = db.transaction([STORE_PRODUCTS], "readonly");
     const store = tx.objectStore(STORE_PRODUCTS);
-    const count = await new Promise((resolve, reject) => {
+    const count = await new Promise<number>((resolve, reject) => {
       const r = store.count();
       r.onsuccess = () => resolve(r.result || 0);
       r.onerror = () => reject(r.error);
@@ -112,14 +156,15 @@ export async function ensureSeedFoods() {
   }
 }
 
-export async function listFoods(limit = 500) {
+export async function listFoods(limit = 500): Promise<FoodProduct[]> {
   try {
     const db = await openDb();
     const tx = db.transaction([STORE_PRODUCTS], "readonly");
     const store = tx.objectStore(STORE_PRODUCTS);
-    const items = await new Promise((resolve, reject) => {
+    const items = await new Promise<FoodProduct[]>((resolve, reject) => {
       const r = store.getAll();
-      r.onsuccess = () => resolve(Array.isArray(r.result) ? r.result : []);
+      r.onsuccess = () =>
+        resolve(Array.isArray(r.result) ? (r.result as FoodProduct[]) : []);
       r.onerror = () => reject(r.error);
     });
     await txDone(tx);
@@ -132,12 +177,15 @@ export async function listFoods(limit = 500) {
   }
 }
 
-export async function searchFoods(query, limit = 20) {
+export async function searchFoods(
+  query: string,
+  limit = 20,
+): Promise<FoodProduct[]> {
   const q = normText(query);
   if (!q) return [];
   const all = await listFoods(2000);
   const tokens = q.split(" ").filter(Boolean).slice(0, 6);
-  const scored = [];
+  const scored: Array<{ score: number; p: FoodProduct }> = [];
   for (const p of all) {
     const hay = normText(p?.norm || p?.name || "");
     let ok = true;
@@ -157,7 +205,7 @@ export async function searchFoods(query, limit = 20) {
   return scored.slice(0, Math.max(1, Number(limit) || 20)).map((x) => x.p);
 }
 
-export async function upsertFood(product) {
+export async function upsertFood(product: unknown): Promise<UpsertFoodResult> {
   const p = makeFoodProduct(product);
   if (!p.name) return { ok: false, error: "Назва продукту порожня" };
   try {
@@ -172,7 +220,7 @@ export async function upsertFood(product) {
   }
 }
 
-export async function deleteFood(id) {
+export async function deleteFood(id: string): Promise<boolean> {
   const key = String(id || "").trim();
   if (!key) return false;
   try {
@@ -181,13 +229,13 @@ export async function deleteFood(id) {
     tx.objectStore(STORE_PRODUCTS).delete(key);
     // best-effort: видалимо всі barcode→id
     const barcodeStore = tx.objectStore(STORE_BARCODES);
-    const all = await new Promise((resolve, reject) => {
+    const all = await new Promise<IDBValidKey[]>((resolve, reject) => {
       const r = barcodeStore.getAllKeys();
       r.onsuccess = () => resolve(Array.isArray(r.result) ? r.result : []);
       r.onerror = () => reject(r.error);
     });
     for (const bc of all) {
-      const v = await new Promise((resolve) => {
+      const v = await new Promise<unknown>((resolve) => {
         const r = barcodeStore.get(bc);
         r.onsuccess = () => resolve(r.result || null);
         r.onerror = () => resolve(null);
@@ -202,7 +250,7 @@ export async function deleteFood(id) {
   }
 }
 
-export function macrosForGrams(per100, grams) {
+export function macrosForGrams(per100: unknown, grams: unknown): Macros {
   const g = clamp0(grams);
   const k = g / 100;
   const m = normalizeMacros(per100);
@@ -214,7 +262,10 @@ export function macrosForGrams(per100, grams) {
   };
 }
 
-export async function bindBarcodeToFood(barcode, foodId) {
+export async function bindBarcodeToFood(
+  barcode: string,
+  foodId: string,
+): Promise<boolean> {
   const bc = String(barcode || "").trim();
   const id = String(foodId || "").trim();
   if (!bc || !id) return false;
@@ -231,24 +282,26 @@ export async function bindBarcodeToFood(barcode, foodId) {
   }
 }
 
-export async function lookupFoodByBarcode(barcode) {
+export async function lookupFoodByBarcode(
+  barcode: string,
+): Promise<FoodProduct | null> {
   const bc = String(barcode || "").trim();
   if (!/^\d{8,14}$/.test(bc)) return null;
   try {
     const db = await openDb();
     const tx = db.transaction([STORE_BARCODES, STORE_PRODUCTS], "readonly");
-    const id = await new Promise((resolve, reject) => {
+    const id = await new Promise<string>((resolve, reject) => {
       const r = tx.objectStore(STORE_BARCODES).get(bc);
-      r.onsuccess = () => resolve(r.result || "");
+      r.onsuccess = () => resolve(String(r.result || ""));
       r.onerror = () => reject(r.error);
     });
     if (!id) {
       db.close();
       return null;
     }
-    const product = await new Promise((resolve, reject) => {
+    const product = await new Promise<FoodProduct | null>((resolve, reject) => {
       const r = tx.objectStore(STORE_PRODUCTS).get(String(id));
-      r.onsuccess = () => resolve(r.result || null);
+      r.onsuccess = () => resolve((r.result as FoodProduct) || null);
       r.onerror = () => reject(r.error);
     });
     await txDone(tx);
@@ -259,23 +312,23 @@ export async function lookupFoodByBarcode(barcode) {
   }
 }
 
-export async function exportFoodDbJson() {
+export async function exportFoodDbJson(): Promise<FoodDbExport | null> {
   try {
     const foods = await listFoods(5000);
     // barcodes
     const db = await openDb();
     const tx = db.transaction([STORE_BARCODES], "readonly");
     const store = tx.objectStore(STORE_BARCODES);
-    const keys = await new Promise((resolve, reject) => {
+    const keys = await new Promise<IDBValidKey[]>((resolve, reject) => {
       const r = store.getAllKeys();
       r.onsuccess = () => resolve(Array.isArray(r.result) ? r.result : []);
       r.onerror = () => reject(r.error);
     });
-    const map = {};
+    const map: Record<string, string> = {};
     for (const k of keys) {
-      const v = await new Promise((resolve) => {
+      const v = await new Promise<string>((resolve) => {
         const r = store.get(k);
-        r.onsuccess = () => resolve(r.result || "");
+        r.onsuccess = () => resolve(String(r.result || ""));
         r.onerror = () => resolve("");
       });
       if (v) map[String(k)] = String(v);
@@ -293,10 +346,10 @@ export async function exportFoodDbJson() {
   }
 }
 
-export async function replaceAllFoodsFromList(list) {
+export async function replaceAllFoodsFromList(list: unknown): Promise<boolean> {
   try {
     const foods = Array.isArray(list)
-      ? list.map((x) => makeFoodProduct(x)).filter((x) => x.name)
+      ? (list as unknown[]).map((x) => makeFoodProduct(x)).filter((x) => x.name)
       : [];
     const db = await openDb();
     const tx = db.transaction([STORE_PRODUCTS, STORE_BARCODES], "readwrite");
@@ -312,15 +365,23 @@ export async function replaceAllFoodsFromList(list) {
   }
 }
 
-export async function importFoodDbJson(payload, mode = "merge") {
-  const p = payload && typeof payload === "object" ? payload : null;
+export async function importFoodDbJson(
+  payload: unknown,
+  mode: ImportFoodDbMode = "merge",
+): Promise<ImportFoodDbResult> {
+  const p =
+    payload && typeof payload === "object"
+      ? (payload as { foods?: unknown; barcodes?: unknown })
+      : null;
   if (!p) return { ok: false, error: "Некоректний файл" };
-  const incomingFoodsRaw = Array.isArray(p.foods) ? p.foods : [];
+  const incomingFoodsRaw = Array.isArray(p.foods) ? (p.foods as unknown[]) : [];
   const incomingFoods = incomingFoodsRaw
     .map((x) => makeFoodProduct(x))
     .filter((x) => x.name);
   const incomingBarcodes =
-    p.barcodes && typeof p.barcodes === "object" ? p.barcodes : {};
+    p.barcodes && typeof p.barcodes === "object"
+      ? (p.barcodes as Record<string, unknown>)
+      : {};
 
   try {
     if (mode === "replace") {
