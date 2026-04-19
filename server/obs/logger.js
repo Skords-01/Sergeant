@@ -15,17 +15,35 @@ import { als } from "./requestContext.js";
 const isDev = process.env.NODE_ENV !== "production";
 const level = process.env.LOG_LEVEL || (isDev ? "debug" : "info");
 
+// Список шляхів, які pino маскуватиме на `[redacted]`, щоб PII та секрети
+// ніколи не просочувались у JSON-логи. Розширюємо консервативно: email і phone
+// — навіть у вкладених user-об'єктах; усі типові варіанти токенів і secret.
+// Якщо треба додати новий шлях — додавай тут, а НЕ робиш `logger.info({...})`
+// з плейнтекстовим email, обходячи редакцію.
 const redactPaths = [
   "req.headers.authorization",
   "req.headers.cookie",
   'req.headers["x-api-key"]',
   'req.headers["x-token"]',
   "password",
+  "newPassword",
+  "currentPassword",
   "token",
   "accessToken",
   "refreshToken",
   "idToken",
   "apiKey",
+  "secret",
+  "clientSecret",
+  // PII — емейл/телефон в корені і всередині `user`/`body`.
+  "email",
+  "phone",
+  "*.email",
+  "*.phone",
+  "user.email",
+  "user.phone",
+  "body.email",
+  "body.phone",
 ];
 
 const usePretty = process.env.LOG_PRETTY === "1";

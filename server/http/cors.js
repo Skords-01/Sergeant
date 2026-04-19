@@ -38,7 +38,9 @@ export function getAllowedOrigins() {
 }
 
 // Кешуємо скомпільований regex, щоб не пересправляти його на кожен запит.
-// Якщо regex невалідний — логуємо один раз і ігноруємо (fail-closed).
+// Якщо regex невалідний — логуємо один раз (одне повідомлення на значення env)
+// і ігноруємо (fail-closed). Для test-оточення логування придушене, щоб не
+// спамити тестовий stdout — у тестах помилка перевіряється через `isOriginAllowed`.
 let cachedRegexSrc = null;
 let cachedRegex = null;
 function getAllowedOriginRegex() {
@@ -51,8 +53,18 @@ function getAllowedOriginRegex() {
   }
   try {
     cachedRegex = new RegExp(src);
-  } catch {
+  } catch (err) {
     cachedRegex = null;
+    if (process.env.NODE_ENV !== "test") {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error(
+        JSON.stringify({
+          level: "error",
+          msg: "cors_invalid_allowed_origin_regex",
+          err: { message },
+        }),
+      );
+    }
   }
   return cachedRegex;
 }

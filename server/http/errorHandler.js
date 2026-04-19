@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/node";
 import { logger, serializeError } from "../obs/logger.js";
 import { als } from "../obs/requestContext.js";
 import { appErrorsTotal } from "../obs/metrics.js";
@@ -41,6 +42,19 @@ export function errorHandler(err, req, res, _next) {
     module: mod,
     err: serializeError(err, { includeStack: status >= 500 }),
   });
+
+  // Явний виклик `Sentry.captureException` на справжні помилки (5xx /
+  // не-operational). `setupExpressErrorHandler` з `server/sentry.js` теж це
+  // ловить, але дубль-safe: якщо порядок middleware колись зміниться і
+  // Sentry-хендлер не спрацює, ми все одно отримаємо подію. Sentry сам дедупає
+  // однакові events, тому подвійних подій у проді не буде.
+  if (status >= 500 && !operational) {
+    try {
+      Sentry.captureException(err);
+    } catch {
+      /* Sentry must never break error handling */
+    }
+  }
 
   if (res.headersSent) return;
 
