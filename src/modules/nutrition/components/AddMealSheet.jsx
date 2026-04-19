@@ -117,7 +117,18 @@ export function AddMealSheet({
   }, [pickedFood, fromPantryItem, step]);
 
   function handleSave() {
-    const name = form.name.trim();
+    // Fall back to the picked source's name when the user emptied the name
+    // input (or a rare race where autofill never caught up). The source
+    // already has an authoritative label — erroring out forces the user to
+    // retype the food they just picked.
+    const pickedFoodName = pickedFood
+      ? [pickedFood.name, pickedFood.brand].filter(Boolean).join(" ").trim()
+      : "";
+    const name =
+      form.name.trim() ||
+      pickedFoodName ||
+      (typeof fromPantryItem === "string" ? fromPantryItem.trim() : "") ||
+      (photoResult?.dishName || "").trim();
     if (!name) {
       setForm((s) => ({ ...s, err: "Введіть назву страви." }));
       return;

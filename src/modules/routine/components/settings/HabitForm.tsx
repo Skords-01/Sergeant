@@ -110,22 +110,51 @@ export function HabitForm({
         />
       </div>
 
-      <label className="block text-xs text-subtle">
-        Регулярність
-        <select
-          className="routine-touch-select mt-1"
-          value={habitDraft.recurrence || "daily"}
-          onChange={(e) =>
-            setHabitDraft((d) => ({ ...d, recurrence: e.target.value }))
-          }
+      {/* Segmented chips — a native <select> sits right on top of the
+          keyboard on mobile and collapses long labels into a single line.
+          Chip row puts every regularity option one tap away with no
+          picker sheet, and the selected state is visible without opening
+          anything. `once` is rare enough to live behind the advanced
+          disclosure (it also swaps the UI semantics from repeat to
+          single date), so we only surface the 4 repeating patterns
+          here. */}
+      <div>
+        <div className="text-xs text-subtle mb-1">Регулярність</div>
+        <div
+          className="flex flex-wrap gap-1.5"
+          role="radiogroup"
+          aria-label="Регулярність"
         >
-          {RECURRENCE_OPTIONS.map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.label}
-            </option>
-          ))}
-        </select>
-      </label>
+          {RECURRENCE_OPTIONS.map((o) => {
+            const active = (habitDraft.recurrence || "daily") === o.value;
+            return (
+              <button
+                key={o.value}
+                type="button"
+                role="radio"
+                aria-checked={active}
+                className={cn(
+                  "text-xs px-2.5 py-1.5 rounded-lg border font-medium transition-colors min-h-[32px]",
+                  active ? C.chipOn : C.chipOff,
+                )}
+                onClick={() =>
+                  setHabitDraft((d) => ({ ...d, recurrence: o.value }))
+                }
+              >
+                {o.shortLabel ?? o.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Reminder presets — previously hidden under "Більше опцій". Push
+          notifications are the single highest-value habit feature, so the
+          chip row lives on the first screen. The time-input list and the
+          "+ Додати час" affordance still live in advanced for users who
+          want to customise — the inline version only renders the preset
+          chips. */}
+      <ReminderPresets habitDraft={habitDraft} setHabitDraft={setHabitDraft} />
 
       <button
         type="button"
@@ -168,11 +197,6 @@ export function HabitForm({
               />
             </label>
           </div>
-
-          <ReminderPresets
-            habitDraft={habitDraft}
-            setHabitDraft={setHabitDraft}
-          />
 
           {habitDraft.recurrence === "weekly" && (
             <WeekdayPicker

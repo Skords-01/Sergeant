@@ -269,10 +269,18 @@ export function ManualExpenseSheet({
               }
             />
           </div>
-          <div className="mt-5">
+          {/* Mic-only icon was indistinguishable from the rest of the form
+              chrome — users didn't realise they could dictate the whole
+              expense. Pair the mic with a "Сказати" label so the affordance
+              is visible at rest. `VoiceMicButton` hides itself when the
+              Web Speech API isn't supported, so we hide the label too in
+              that case via `hidden:*`-style absent fallback (the button
+              returns null and the flex container collapses to the input
+              alone). */}
+          <div className="mt-5 flex flex-col items-center gap-0.5">
             <VoiceMicButton
               size="md"
-              label="Голосовий ввід"
+              label="Сказати голосом"
               onResult={(transcript) => {
                 const parsed = parseExpenseSpeech(transcript);
                 if (!parsed) return;
@@ -286,8 +294,41 @@ export function ManualExpenseSheet({
                 }));
               }}
             />
+            <span className="text-2xs text-subtle select-none" aria-hidden>
+              Сказати
+            </span>
           </div>
         </div>
+
+        {/* Date is "today" 95%+ of the time — the always-visible picker
+            forced a tap out to a native date sheet just to confirm what
+            was already true. Collapse behind a chip; reveal only when the
+            user explicitly says "not today" or when editing an older
+            entry where the date is already not today. */}
+        {form.date !== toLocalISODate() || form.showDateField ? (
+          <div>
+            <label
+              htmlFor={dateId}
+              className="text-xs text-muted uppercase tracking-wide font-semibold mb-1 block"
+            >
+              Дата
+            </label>
+            <Input
+              id={dateId}
+              type="date"
+              value={form.date}
+              onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
+            />
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setForm((f) => ({ ...f, showDateField: true }))}
+            className="text-xs text-muted hover:text-text underline decoration-dotted underline-offset-2 transition-colors"
+          >
+            Не сьогодні? Змінити дату
+          </button>
+        )}
 
         {merchantSuggestions.length > 0 && (
           <div
@@ -388,21 +429,6 @@ export function ManualExpenseSheet({
               </button>
             ))}
           </div>
-        </div>
-
-        <div>
-          <label
-            htmlFor={dateId}
-            className="text-xs text-muted uppercase tracking-wide font-semibold mb-1 block"
-          >
-            Дата
-          </label>
-          <Input
-            id={dateId}
-            type="date"
-            value={form.date}
-            onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
-          />
         </div>
 
         {error && <p className="text-xs text-red-500">{error}</p>}

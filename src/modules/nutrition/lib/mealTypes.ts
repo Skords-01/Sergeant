@@ -47,3 +47,20 @@ export function mealTypeFromLabel(label: unknown): MealTypeId {
 export function labelForMealType(id: MealTypeId | string): string {
   return MEAL_TYPES.find((t) => t.id === id)?.label || "Прийом їжі";
 }
+
+/**
+ * Time-of-day → most likely meal type. Used to seed the "Додати прийом їжі"
+ * form so the default doesn't say "Сніданок" at 9 PM. Bands are wide on
+ * purpose — we'd rather be a bit sloppy than make the user tap the picker
+ * just to flip the obvious option.
+ */
+export function mealTypeByHour(hour: number): MealTypeId {
+  if (hour >= 5 && hour < 11) return "breakfast";
+  if (hour >= 11 && hour < 16) return "lunch";
+  if (hour >= 17 && hour < 22) return "dinner";
+  return "snack";
+}
+
+export function mealTypeByNow(now: Date = new Date()): MealTypeId {
+  return mealTypeByHour(now.getHours());
+}

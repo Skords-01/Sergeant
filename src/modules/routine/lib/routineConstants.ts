@@ -92,13 +92,24 @@ export const ROUTINE_TIME_MODES: readonly RoutineTimeMode[] = [
 export interface RecurrenceOption {
   value: "daily" | "weekdays" | "weekly" | "monthly" | "once";
   label: string;
+  /**
+   * Compact label used by the segmented chip row in `HabitForm`.
+   * Falls back to `label` when omitted. Full `label` is still used in
+   * any remaining `<option>` contexts so existing selects don't lose
+   * their clarifying copy.
+   */
+  shortLabel?: string;
 }
 export const RECURRENCE_OPTIONS: readonly RecurrenceOption[] = [
   { value: "daily", label: "Щодня" },
-  { value: "weekdays", label: "Будні (пн-пт)" },
-  { value: "weekly", label: "Обрані дні тижня" },
-  { value: "monthly", label: "Щомісяця (число; лютий - останній день)" },
-  { value: "once", label: "Одноразово (одна дата)" },
+  { value: "weekdays", label: "Будні (пн-пт)", shortLabel: "Будні" },
+  { value: "weekly", label: "Обрані дні тижня", shortLabel: "По тижню" },
+  {
+    value: "monthly",
+    label: "Щомісяця (число; лютий - останній день)",
+    shortLabel: "Щомісяця",
+  },
+  { value: "once", label: "Одноразово (одна дата)", shortLabel: "Одноразово" },
 ];
 
 // Weekday labels (Ukrainian, Monday first)
