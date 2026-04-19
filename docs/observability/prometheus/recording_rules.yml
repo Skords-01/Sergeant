@@ -78,7 +78,7 @@ groups:
 
       - record: sli:sync_conflict:ratio_rate1h
         expr: |
-          sum(rate(sync_operations_total{outcome="conflict"}[1h]))
+          sum(rate(sync_operations_total{op=~"push|push_all",outcome="conflict"}[1h]))
           /
           clamp_min(sum(rate(sync_operations_total{op=~"push|push_all"}[1h])), 1)
 
