@@ -1,17 +1,17 @@
 import type { ReactNode } from "react";
-import { cn } from "@shared/lib/cn";
-import { ROUTINE_THEME as C } from "../lib/routineConstants.js";
+import {
+  ModuleBottomNav,
+  type ModuleBottomNavItem,
+} from "@shared/components/ui/ModuleBottomNav";
 
 export type RoutineMainTab = "calendar" | "stats" | "settings";
 
-interface NavItem {
+interface RoutineNavItem extends ModuleBottomNavItem {
   id: RoutineMainTab;
-  label: string;
-  panelId: string;
   icon: ReactNode;
 }
 
-const NAV: readonly NavItem[] = [
+const NAV: readonly RoutineNavItem[] = [
   {
     id: "calendar",
     label: "Календар",
@@ -90,71 +90,13 @@ export function RoutineBottomNav({
   onSelectTab,
 }: RoutineBottomNavProps) {
   return (
-    <nav
-      className={cn(
-        "shrink-0 relative z-30 safe-area-pb",
-        "bg-panel/95 backdrop-blur-xl",
-        "border-t border-line",
-      )}
-      aria-label="Розділи Рутини"
-    >
-      <div className="flex h-[60px]" role="tablist">
-        {NAV.map((item) => {
-          const active = mainTab === item.id;
-          return (
-            <button
-              key={item.id}
-              type="button"
-              role="tab"
-              id={`routine-tab-${item.id}`}
-              aria-selected={active}
-              aria-controls={item.panelId}
-              tabIndex={active ? 0 : -1}
-              onClick={() => onSelectTab(item.id)}
-              className={cn(
-                "relative flex-1 flex flex-col items-center justify-center gap-1.5",
-                "transition-all duration-200 min-h-[48px]",
-                "active:scale-95",
-                active ? "text-text" : "text-muted hover:text-text/70",
-              )}
-            >
-              {/* Active indicator pill */}
-              {active && (
-                <span
-                  className={cn(
-                    "absolute top-0 left-1/2 -translate-x-1/2",
-                    "w-10 h-1 rounded-full",
-                    "bg-gradient-to-r from-coral-400 to-coral-500",
-                    "shadow-sm",
-                  )}
-                  aria-hidden
-                />
-              )}
-
-              {/* Icon with glow effect when active */}
-              <span
-                className={cn(
-                  "transition-all duration-200",
-                  active && C.navActive,
-                  active && "drop-shadow-[0_0_8px_rgba(249,112,102,0.3)]",
-                )}
-                aria-hidden
-              >
-                {item.icon}
-              </span>
-
-              <span
-                className={cn(
-                  "text-xs leading-none font-semibold transition-colors",
-                  active ? "text-text" : "text-muted",
-                )}
-              >
-                {item.label}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-    </nav>
+    <ModuleBottomNav
+      items={NAV}
+      activeId={mainTab}
+      onChange={(id) => onSelectTab(id as RoutineMainTab)}
+      module="routine"
+      role="tablist"
+      ariaLabel="Розділи Рутини"
+    />
   );
 }

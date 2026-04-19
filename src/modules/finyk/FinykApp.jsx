@@ -10,6 +10,7 @@ import {
 import { PAGES } from "./constants";
 import { Button } from "@shared/components/ui/Button";
 import { Input } from "@shared/components/ui/Input";
+import { ModuleBottomNav } from "@shared/components/ui/ModuleBottomNav";
 import { SectionErrorBoundary } from "@shared/components/ui/SectionErrorBoundary.jsx";
 import { cn } from "@shared/lib/cn";
 import { useToast } from "@shared/hooks/useToast";
@@ -747,44 +748,16 @@ export default function App({
       />
 
       {/* Bottom navigation */}
-      <nav className="shrink-0 bg-panel/95 backdrop-blur-md border-t border-line relative z-30 safe-area-pb">
-        <div className="flex h-[58px]">
-          {NAV_ITEMS.map((item) => {
-            const active = page === item.id;
-            return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => navigate(item.id)}
-                aria-current={active ? "page" : undefined}
-                aria-label={item.label}
-                className={cn(
-                  "relative flex-1 flex flex-col items-center justify-center gap-0.5 transition-all duration-200 ease-smooth min-h-[48px] active:scale-95 focus:outline-none",
-                  active ? "text-emerald-600" : "text-muted hover:text-text",
-                )}
-              >
-                {active && (
-                  <span
-                    className="absolute top-0 left-1/2 -translate-x-1/2 w-10 h-0.5 rounded-full bg-emerald-500 motion-safe:animate-scale-in"
-                    aria-hidden
-                  />
-                )}
-                <span
-                  className={cn(
-                    "flex items-center justify-center w-8 h-6 rounded-lg transition-all duration-200 ease-smooth",
-                    active && "bg-emerald-500/12 motion-safe:animate-scale-in",
-                  )}
-                >
-                  {NAV_ICONS[item.id]}
-                </span>
-                <span className="text-2xs leading-none font-semibold">
-                  {item.label}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </nav>
+      <ModuleBottomNav
+        items={NAV_ITEMS.map((item) => ({
+          id: item.id,
+          label: item.label,
+          icon: NAV_ICONS[item.id],
+        }))}
+        activeId={page}
+        onChange={navigate}
+        module="finyk"
+      />
     </div>
   );
 }

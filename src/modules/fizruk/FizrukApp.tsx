@@ -18,6 +18,7 @@ import { useExerciseCatalog } from "./hooks/useExerciseCatalog";
 import { ACTIVE_WORKOUT_KEY } from "./lib/workoutUi";
 import { cn } from "@shared/lib/cn";
 import { Icon } from "@shared/components/ui/Icon";
+import { ModuleBottomNav } from "@shared/components/ui/ModuleBottomNav";
 
 const NAV = [
   {
@@ -452,50 +453,15 @@ export default function FizrukApp({
       </div>
 
       {!isAtlas && !isExercise && (
-        <nav className="shrink-0 bg-panel/95 backdrop-blur-md border-t border-line relative z-30 safe-area-pb">
-          <div className="flex h-[58px]">
-            {NAV.map((item) => {
-              const active = page === item.id;
-              const hasDot =
-                item.id === "programs" && activeProgram && todaySession;
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => setHash(item.id)}
-                  className={cn(
-                    "relative flex-1 flex flex-col items-center justify-center gap-1 transition-all min-h-[48px]",
-                    active ? "text-text" : "text-muted",
-                  )}
-                >
-                  {active && (
-                    <span
-                      className="absolute top-0 left-1/2 -translate-x-1/2 w-9 h-0.5 rounded-full bg-success"
-                      aria-hidden
-                    />
-                  )}
-                  <span className={cn("relative", active && "text-success")}>
-                    {item.icon}
-                    {hasDot && !active && (
-                      <span
-                        className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-fizruk border border-panel"
-                        aria-hidden
-                      />
-                    )}
-                  </span>
-                  <span
-                    className={cn(
-                      "text-2xs leading-none font-semibold",
-                      active ? "text-text" : "text-muted",
-                    )}
-                  >
-                    {item.label}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </nav>
+        <ModuleBottomNav
+          items={NAV.map((item) => ({
+            ...item,
+            badge: item.id === "programs" && !!activeProgram && !!todaySession,
+          }))}
+          activeId={page}
+          onChange={setHash}
+          module="fizruk"
+        />
       )}
     </div>
   );
