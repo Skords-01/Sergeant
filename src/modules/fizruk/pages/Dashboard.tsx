@@ -9,25 +9,11 @@ import { useWorkouts } from "../hooks/useWorkouts";
 import { useMonthlyPlan } from "../hooks/useMonthlyPlan";
 import { BodyAtlas } from "../components/BodyAtlas";
 import { recoveryConflictsForExercise } from "../lib/recoveryConflict";
-import {
-  completedWorkoutsCount,
-  countCompletedInCurrentWeek,
-  formatCompactKg,
-  personalRecordsExerciseCount,
-  totalCompletedVolumeKg,
-  workoutDurationSec,
-} from "../lib/workoutStats";
+import { workoutDurationSec } from "../lib/workoutStats";
 import { ACTIVE_WORKOUT_KEY } from "../lib/workoutUi";
 import { Card } from "@shared/components/ui/Card";
 
 const SELECTED_TEMPLATE_KEY = "fizruk_selected_template_id_v1";
-
-function formatDurShort(sec) {
-  const m = Math.floor(sec / 60);
-  const s = sec % 60;
-  if (m <= 0) return `${s} с`;
-  return `${m} хв ${s} с`;
-}
 
 export function Dashboard({
   onOpenAtlas,
@@ -74,31 +60,6 @@ export function Dashboard({
       } catch {}
     }
   }, [templates, selectedTemplateId]);
-
-  const streakDays = (() => {
-    const days = new Set(
-      (workouts || [])
-        .map((w) => (w.startedAt ? new Date(w.startedAt) : null))
-        .filter(Boolean)
-        .map((d) =>
-          new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime(),
-        ),
-    );
-
-    const now = new Date();
-    let cur = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate(),
-    ).getTime();
-    let s = 0;
-    const DAY = 24 * 60 * 60 * 1000;
-    while (days.has(cur)) {
-      s += 1;
-      cur -= DAY;
-    }
-    return s;
-  })();
 
   const statusByMuscle = (() => {
     const map = (id) => {
@@ -167,27 +128,6 @@ export function Dashboard({
     rec.avoid,
     musclesUk,
   ]);
-
-  const dashMetrics = useMemo(
-    () => ({
-      total: completedWorkoutsCount(workouts),
-      week: countCompletedInCurrentWeek(workouts),
-      volume: totalCompletedVolumeKg(workouts),
-      pr: personalRecordsExerciseCount(workouts),
-    }),
-    [workouts],
-  );
-
-  const monthCompletedCount = useMemo(() => {
-    const now = new Date();
-    return (workouts || []).filter((w) => {
-      if (!w.endedAt) return false;
-      const d = new Date(w.startedAt);
-      return (
-        d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth()
-      );
-    }).length;
-  }, [workouts]);
 
   const avgDurationSec = useMemo(() => {
     const done = (workouts || []).filter((w) => w.endedAt);
@@ -299,13 +239,12 @@ export function Dashboard({
     exercises,
   ]);
 
-  const estimatedDurationMin = useMemo(() => {
-    if (!primaryAction?.exerciseCount) return null;
-    if (avgDurationSec > 300) {
-      return Math.max(10, Math.round(avgDurationSec / 60 / 5) * 5);
-    }
-    return Math.max(10, primaryAction.exerciseCount * 8);
-  }, [primaryAction, avgDurationSec]);
+  // Rule 5.3: primitive result + trivial arithmetic → no useMemo needed.
+  const estimatedDurationMin = !primaryAction?.exerciseCount
+    ? null
+    : avgDurationSec > 300
+      ? Math.max(10, Math.round(avgDurationSec / 60 / 5) * 5)
+      : Math.max(10, primaryAction.exerciseCount * 8);
 
   const handleStartPrimary = () => {
     if (!primaryAction) return;
@@ -318,37 +257,6 @@ export function Dashboard({
     }
     tryStartPlan(primaryAction.picks, primaryAction.templateId);
   };
-
-  const kpi = [
-    {
-      id: "total",
-      label: "Всього тренувань",
-      value: String(dashMetrics.total),
-      sub: "завершених",
-      icon: "dumbbell",
-    },
-    {
-      id: "week",
-      label: "Цього тижня",
-      value: String(dashMetrics.week),
-      sub: streakDays > 0 ? `${streakDays} дн поспіль` : "поточний тиждень",
-      icon: "flame",
-    },
-    {
-      id: "vol",
-      label: "Загальний обʼєм",
-      value: `${formatCompactKg(dashMetrics.volume)}`,
-      sub: "кг × повторення",
-      icon: "chart",
-    },
-    {
-      id: "pr",
-      label: "Рекорди (вправи)",
-      value: String(dashMetrics.pr),
-      sub: "за оцінкою 1ПМ",
-      icon: "trophy",
-    },
-  ];
 
   return (
     <div className="flex-1 overflow-y-auto">
@@ -365,41 +273,7 @@ export function Dashboard({
             <br />
             зібраний в одному місці
           </h1>
-          <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2">
-            <div className="rounded-2xl bg-white/10 border border-white/15 p-3 text-center">
-              <p className="text-2xs uppercase tracking-wide text-white/60">
-                Тиждень
-              </p>
-              <p className="text-xl font-black text-white tabular-nums mt-1">
-                {dashMetrics.week}
-              </p>
-            </div>
-            <div className="rounded-2xl bg-white/10 border border-white/15 p-3 text-center">
-              <p className="text-2xs uppercase tracking-wide text-white/60">
-                Серія
-              </p>
-              <p className="text-xl font-black text-white tabular-nums mt-1">
-                {streakDays}
-              </p>
-            </div>
-            <div className="rounded-2xl bg-white/10 border border-white/15 p-3 text-center">
-              <p className="text-2xs uppercase tracking-wide text-white/60">
-                Сер. час
-              </p>
-              <p className="text-xl font-black text-white tabular-nums mt-1">
-                {avgDurationSec ? formatDurShort(avgDurationSec) : "—"}
-              </p>
-            </div>
-            <div className="rounded-2xl bg-white/10 border border-white/15 p-3 text-center">
-              <p className="text-2xs uppercase tracking-wide text-white/60">
-                Місяць
-              </p>
-              <p className="text-xl font-black text-white tabular-nums mt-1">
-                {monthCompletedCount}
-              </p>
-            </div>
-          </div>
-          <div className="mt-5 flex flex-col gap-3">
+          <div className="mt-6 flex flex-col gap-3">
             {primaryAction ? (
               <button
                 type="button"
@@ -677,100 +551,6 @@ export function Dashboard({
             </>
           )}
         </Card>
-
-        <div
-          className="grid grid-cols-2 lg:grid-cols-4 gap-3"
-          role="list"
-          aria-label="Ключові показники"
-        >
-          {kpi.map((card) => (
-            <Card
-              key={card.id}
-              role="listitem"
-              radius="lg"
-              className="min-h-[100px]"
-            >
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <div className="text-2xl font-extrabold text-text tabular-nums leading-none">
-                    {card.value}
-                  </div>
-                  <div className="text-2xs font-semibold text-subtle uppercase tracking-wide mt-2">
-                    {card.label}
-                  </div>
-                  <div className="text-3xs text-muted mt-0.5 leading-snug">
-                    {card.sub}
-                  </div>
-                </div>
-                <div
-                  className="shrink-0 w-10 h-10 rounded-xl bg-success/10 flex items-center justify-center text-success"
-                  aria-hidden
-                >
-                  {card.icon === "dumbbell" && (
-                    <svg
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.7"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M6.5 6.5h11M6.5 17.5h11M3 12h18M6 9l-3 3 3 3M18 9l3 3-3 3" />
-                    </svg>
-                  )}
-                  {card.icon === "flame" && (
-                    <svg
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.7"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.5-.5-3-1.5-4.5 2 2.5 2.5 5 1.5 7.5-1 2.5-3 4-5.5 4-3 0-5-2.5-5-5.5 0-3 2-5.5 5-7 0 3 1 5.5 3 7.5z" />
-                    </svg>
-                  )}
-                  {card.icon === "chart" && (
-                    <svg
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.7"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M3 3v18h18" />
-                      <path d="M7 12l4-4 4 4 5-6" />
-                    </svg>
-                  )}
-                  {card.icon === "trophy" && (
-                    <svg
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.7"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M8 21h8" />
-                      <path d="M12 17v4" />
-                      <path d="M7 4h10v4a5 5 0 0 1-10 0V4z" />
-                      <path d="M7 8H5a2 2 0 0 1-2-2V4h4M17 8h2a2 2 0 0 0 2-2V4h-4" />
-                    </svg>
-                  )}
-                </div>
-              </div>
-            </Card>
-          ))}
-        </div>
 
         <Card radius="lg" padding="lg">
           <div className="flex items-center justify-between gap-2 mb-3">
