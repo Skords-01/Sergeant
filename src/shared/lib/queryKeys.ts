@@ -57,6 +57,8 @@ export const finykKeys = {
   mono: ["finyk", "mono"] as const,
   monoClientInfo: (tokenHash: string) =>
     ["finyk", "mono", "client-info", tokenHash] as const,
+  /** Префікс для всіх statement-ключів — зручно для bulk-invalidate/remove. */
+  monoStatements: ["finyk", "mono", "statement"] as const,
   monoStatement: (accId: string, from: number, to: number) =>
     ["finyk", "mono", "statement", accId, from, to] as const,
 
