@@ -132,7 +132,9 @@ const NAV_IDS = NAV_ITEMS.map((n) => n.id);
 
 const ALL_PAGE_IDS = PAGES.map((p) => p.id);
 
-function useHashRouter(defaultPage = "overview") {
+function useHashRouter(
+  defaultPage = "overview",
+): [string, (p: string) => void] {
   const getPage = useCallback(() => {
     // Accept both `#page` (canonical, matches fizruk/nutrition) and legacy `#/page`.
     let p =
@@ -146,7 +148,7 @@ function useHashRouter(defaultPage = "overview") {
     window.addEventListener("hashchange", handler);
     return () => window.removeEventListener("hashchange", handler);
   }, [getPage]);
-  const navigate = (p) => {
+  const navigate = (p: string) => {
     window.location.hash = p;
   };
   return [ALL_PAGE_IDS.includes(page) ? page : defaultPage, navigate];
@@ -154,11 +156,17 @@ function useHashRouter(defaultPage = "overview") {
 
 const PRIVAT_ENABLED = false;
 
+interface FinykAppProps {
+  onBackToHub?: () => void;
+  pwaAction?: string | null;
+  onPwaActionConsumed?: () => void;
+}
+
 export default function App({
   onBackToHub,
   pwaAction,
   onPwaActionConsumed,
-} = {}) {
+}: FinykAppProps = {}) {
   const mono = useMonobank();
   const privat = usePrivatbank(PRIVAT_ENABLED);
   const toast = useToast();
