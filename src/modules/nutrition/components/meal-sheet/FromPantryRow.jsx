@@ -1,4 +1,5 @@
 import { cn } from "@shared/lib/cn";
+import { SectionHeading } from "@shared/components/ui/SectionHeading";
 
 export function FromPantryRow({
   pantryItems,
@@ -10,14 +11,14 @@ export function FromPantryRow({
   if (!pantryItems || pantryItems.length === 0) return null;
   return (
     <div className="mb-4 rounded-2xl border border-line bg-panel/40 px-3 py-3">
-      <div className="text-2xs font-bold text-subtle uppercase tracking-widest mb-2">
+      <SectionHeading as="div" size="xs" className="mb-2">
         Зі складу
         {fromPantryItem && (
           <span className="ml-2 text-nutrition font-semibold normal-case tracking-normal">
             · {fromPantryItem}
           </span>
         )}
-      </div>
+      </SectionHeading>
       <div className="flex flex-wrap gap-1.5">
         {pantryItems.slice(0, 20).map((item) => {
           const isActive = fromPantryItem === item.name;

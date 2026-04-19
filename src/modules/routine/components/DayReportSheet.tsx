@@ -1,3 +1,4 @@
+import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { Sheet } from "@shared/components/ui/Sheet";
 import { cn } from "@shared/lib/cn";
 import { ROUTINE_THEME as C } from "../lib/routineConstants.js";
@@ -43,9 +44,9 @@ export function DayReportSheet({
 
       {done.length > 0 && (
         <div className="mb-4">
-          <p className="text-2xs font-bold uppercase tracking-widest text-subtle mb-2">
+          <SectionHeading as="p" size="xs" className="mb-2">
             Виконано ({done.length})
-          </p>
+          </SectionHeading>
           <ul className="space-y-1.5">
             {done.map((h) => (
               <li
@@ -74,9 +75,9 @@ export function DayReportSheet({
 
       {missed.length > 0 && (
         <div>
-          <p className="text-2xs font-bold uppercase tracking-widest text-subtle mb-2">
+          <SectionHeading as="p" size="xs" className="mb-2">
             Пропущено ({missed.length})
-          </p>
+          </SectionHeading>
           <ul className="space-y-1.5">
             {missed.map((h) => (
               <li

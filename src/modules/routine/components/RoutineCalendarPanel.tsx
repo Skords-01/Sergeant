@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type ChangeEvent } from "react";
 import { Virtuoso } from "react-virtuoso";
 import { cn } from "@shared/lib/cn";
+import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { Button } from "@shared/components/ui/Button";
 import { Card } from "@shared/components/ui/Card";
 import { Input } from "@shared/components/ui/Input";
@@ -249,9 +250,9 @@ export function RoutineCalendarPanel({
       />
 
       <div className="flex flex-wrap gap-1.5 items-center">
-        <span className="text-2xs font-bold text-subtle uppercase tracking-widest w-full sm:w-auto">
+        <SectionHeading as="span" size="xs" className="w-full sm:w-auto">
           Теги
-        </span>
+        </SectionHeading>
         <button
           type="button"
           onClick={() => setTagFilter(null)}
@@ -477,9 +478,9 @@ export function RoutineCalendarPanel({
             itemContent={(_, item) => {
               if (item.kind === "header") {
                 return (
-                  <h3 className="text-xs font-bold text-subtle uppercase tracking-widest mb-2 mt-3">
+                  <SectionHeading as="h3" size="sm" className="mb-2 mt-3">
                     {item.label}
-                  </h3>
+                  </SectionHeading>
                 );
               }
               const e = item.e;

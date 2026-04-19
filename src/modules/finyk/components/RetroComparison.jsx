@@ -1,4 +1,5 @@
 import { memo, useMemo } from "react";
+import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { cn } from "@shared/lib/cn";
 import {
   formatComparisonSummary,
@@ -109,9 +110,9 @@ export const RetroComparison = memo(function RetroComparison({
     >
       <div className="flex items-start justify-between gap-3">
         <div>
-          <div className="text-xs font-bold text-subtle uppercase tracking-widest">
+          <SectionHeading as="div" size="sm">
             Порівняння з попереднім місяцем
-          </div>
+          </SectionHeading>
           <p className="text-xs text-subtle/80 mt-1 capitalize">
             vs {formatMonthKeyLabel(comparison.previousMonth)}
           </p>

@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { subtleNavButtonClass } from "@shared/components/ui/buttonPresets";
 import { cn } from "@shared/lib/cn";
 import { useDailyLog } from "../hooks/useDailyLog";
@@ -195,9 +196,9 @@ export function Body({ onOpenMeasurements }) {
         </div>
 
         <Card as="section" radius="lg" aria-label="Записати показники">
-          <h2 className="text-xs font-bold text-subtle uppercase tracking-widest mb-3">
+          <SectionHeading as="h2" size="sm" className="mb-3">
             Записати сьогодні
-          </h2>
+          </SectionHeading>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -247,9 +248,9 @@ export function Body({ onOpenMeasurements }) {
             </div>
 
             <div>
-              <p className="text-2xs font-bold text-subtle uppercase tracking-widest mb-2">
+              <SectionHeading as="p" size="xs" className="mb-2">
                 Рівень енергії
-              </p>
+              </SectionHeading>
               <div
                 className="flex gap-1.5"
                 role="group"
@@ -273,9 +274,9 @@ export function Body({ onOpenMeasurements }) {
             </div>
 
             <div>
-              <p className="text-2xs font-bold text-subtle uppercase tracking-widest mb-2">
+              <SectionHeading as="p" size="xs" className="mb-2">
                 Настрій
-              </p>
+              </SectionHeading>
               <div className="flex gap-1.5" role="group" aria-label="Настрій">
                 {[1, 2, 3, 4, 5].map((v) => (
                   <ScoreButton
@@ -330,9 +331,9 @@ export function Body({ onOpenMeasurements }) {
 
         {weightData.length >= 2 && (
           <Card as="section" radius="lg" aria-label="Динаміка ваги">
-            <h2 className="text-xs font-bold text-subtle uppercase tracking-widest mb-3">
+            <SectionHeading as="h2" size="sm" className="mb-3">
               Динаміка ваги
-            </h2>
+            </SectionHeading>
             <MiniLineChart
               data={weightData}
               unit="кг"
@@ -344,9 +345,9 @@ export function Body({ onOpenMeasurements }) {
 
         {sleepData.length >= 2 && (
           <Card as="section" radius="lg" aria-label="Динаміка сну">
-            <h2 className="text-xs font-bold text-subtle uppercase tracking-widest mb-3">
+            <SectionHeading as="h2" size="sm" className="mb-3">
               Сон
-            </h2>
+            </SectionHeading>
             <MiniLineChart
               data={sleepData}
               unit="год"
@@ -358,9 +359,9 @@ export function Body({ onOpenMeasurements }) {
 
         {energyData.length >= 2 && (
           <Card as="section" radius="lg" aria-label="Динаміка енергії">
-            <h2 className="text-xs font-bold text-subtle uppercase tracking-widest mb-3">
+            <SectionHeading as="h2" size="sm" className="mb-3">
               Рівень енергії
-            </h2>
+            </SectionHeading>
             <MiniLineChart
               data={energyData}
               unit="/5"
@@ -372,9 +373,9 @@ export function Body({ onOpenMeasurements }) {
 
         {moodData.length >= 2 && (
           <Card as="section" radius="lg" aria-label="Динаміка настрою">
-            <h2 className="text-xs font-bold text-subtle uppercase tracking-widest mb-3">
+            <SectionHeading as="h2" size="sm" className="mb-3">
               Настрій
-            </h2>
+            </SectionHeading>
             <MiniLineChart
               data={moodData}
               unit="/5"
@@ -388,9 +389,9 @@ export function Body({ onOpenMeasurements }) {
 
         {entries.length > 0 && (
           <Card as="section" radius="lg" aria-label="Журнал записів">
-            <h2 className="text-xs font-bold text-subtle uppercase tracking-widest mb-3">
+            <SectionHeading as="h2" size="sm" className="mb-3">
               Журнал
-            </h2>
+            </SectionHeading>
             <div className="space-y-2">
               {entries.slice(0, 15).map((entry) => (
                 <div

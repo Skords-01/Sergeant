@@ -1,5 +1,6 @@
 import { useMemo, useState, useCallback } from "react";
 import { useMutation, useQueries } from "@tanstack/react-query";
+import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { Skeleton } from "@shared/components/ui/Skeleton";
 import { EmptyState } from "@shared/components/ui/EmptyState";
 import { calcCategorySpent, resolveExpenseCategoryMeta } from "../utils";
@@ -385,9 +386,9 @@ export function Budgets({ mono, storage }) {
         />
 
         {/* Limits */}
-        <div className="text-xs font-bold text-subtle uppercase tracking-widest">
+        <SectionHeading as="div" size="sm">
           Ліміти · {monthStart.toLocaleDateString("uk-UA", { month: "long" })}
-        </div>
+        </SectionHeading>
         {limitBudgets.length === 0 && (
           <EmptyState
             compact
@@ -458,9 +459,9 @@ export function Budgets({ mono, storage }) {
         {/* Forecast — shown whenever there are limit budgets to avoid layout shifts */}
         {limitBudgets.length > 0 && (
           <>
-            <div className="text-xs font-bold text-subtle uppercase tracking-widest pt-1">
+            <SectionHeading as="div" size="sm" className="pt-1">
               Прогноз · кінець місяця
-            </div>
+            </SectionHeading>
             {loadingTx && forecasts.length === 0 ? (
               limitBudgets.map((b) => (
                 <Skeleton key={b.id} className="h-64 rounded-2xl" />
@@ -499,9 +500,9 @@ export function Budgets({ mono, storage }) {
         )}
 
         {/* Goals */}
-        <div className="text-xs font-bold text-subtle uppercase tracking-widest pt-1">
+        <SectionHeading as="div" size="sm" className="pt-1">
           Цілі накопичення
-        </div>
+        </SectionHeading>
         {goalBudgets.length === 0 && (
           <EmptyState
             compact

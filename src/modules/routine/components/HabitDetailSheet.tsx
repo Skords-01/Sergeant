@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { cn } from "@shared/lib/cn";
+import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { Sheet } from "@shared/components/ui/Sheet";
 import {
   dateKeyFromDate,
@@ -224,9 +225,9 @@ export function HabitDetailSheet({
       </div>
 
       <section className="mb-5" aria-label="Статистика">
-        <h3 className="text-xs font-bold text-subtle uppercase tracking-widest mb-2">
+        <SectionHeading as="h3" size="sm" className="mb-2">
           Статистика
-        </h3>
+        </SectionHeading>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           <div className={C.statCard}>
             <p className="text-2xl font-black text-text tabular-nums">
@@ -274,9 +275,9 @@ export function HabitDetailSheet({
 
       <section className="mb-5" aria-label="Календар виконань">
         <div className="flex items-center justify-between mb-2">
-          <h3 className="text-xs font-bold text-subtle uppercase tracking-widest">
+          <SectionHeading as="h3" size="sm">
             Календар
-          </h3>
+          </SectionHeading>
           <div className="flex items-center gap-2">
             <button
               type="button"
@@ -353,9 +354,9 @@ export function HabitDetailSheet({
 
       {notes.length > 0 && (
         <section className="mb-2" aria-label="Нотатки">
-          <h3 className="text-xs font-bold text-subtle uppercase tracking-widest mb-2">
+          <SectionHeading as="h3" size="sm" className="mb-2">
             Останні нотатки
-          </h3>
+          </SectionHeading>
           <ul className="space-y-1.5">
             {notes.map((n) => (
               <li

@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { cn } from "@shared/lib/cn";
+import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { EmptyState } from "@shared/components/ui/EmptyState";
 import { MEASURE_FIELDS, useMeasurements } from "../hooks/useMeasurements";
 import { Card } from "@shared/components/ui/Card";
@@ -70,9 +71,9 @@ export function Measurements() {
             </svg>
           </div>
           <div className="min-w-0">
-            <div className="text-xs font-bold text-subtle uppercase tracking-widest">
+            <SectionHeading as="div" size="sm">
               Мануал
-            </div>
+            </SectionHeading>
             <div className="text-sm font-semibold text-success mt-0.5">
               Як правильно робити заміри →
             </div>
@@ -107,15 +108,15 @@ export function Measurements() {
         </div>
 
         <Card radius="lg">
-          <div className="text-xs font-bold text-subtle uppercase tracking-widest mb-3">
+          <SectionHeading as="div" size="sm" className="mb-3">
             Додати замір
-          </div>
+          </SectionHeading>
           <div className="grid grid-cols-2 gap-2">
             {MEASURE_FIELDS.map((f) => (
               <div key={f.id} className="space-y-1">
-                <div className="text-2xs font-bold text-subtle uppercase tracking-widest px-1">
+                <SectionHeading as="div" size="xs" className="px-1">
                   {f.label} · {f.unit}
-                </div>
+                </SectionHeading>
                 <input
                   className={inp}
                   inputMode="decimal"
@@ -153,12 +154,12 @@ export function Measurements() {
           <Card radius="lg">
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-xs font-bold text-subtle uppercase tracking-widest">
+                <SectionHeading as="div" size="sm">
                   Останній замір{" "}
                   <span className="ml-1 normal-case tracking-normal font-medium text-subtle">
                     · {stats.latestAt}
                   </span>
-                </div>
+                </SectionHeading>
               </div>
               <div className="text-xs text-subtle">
                 {Object.keys(deltas).length ? "Δ від попереднього" : ""}
@@ -170,9 +171,9 @@ export function Measurements() {
                   key={f.id}
                   className="bg-bg border border-line rounded-2xl p-3"
                 >
-                  <div className="text-2xs font-bold text-subtle uppercase tracking-widest">
+                  <SectionHeading as="div" size="xs">
                     {f.label}
-                  </div>
+                  </SectionHeading>
                   <div className="text-lg font-extrabold tabular-nums text-text mt-1">
                     {Number.isFinite(Number(latest[f.id]))
                       ? Number(latest[f.id]).toLocaleString("uk-UA")
@@ -198,9 +199,9 @@ export function Measurements() {
 
         <Card radius="lg" padding="none" className="overflow-hidden">
           <div className="px-4 py-3 bg-panelHi/60 border-b border-line">
-            <div className="text-xs font-bold text-subtle uppercase tracking-widest">
+            <SectionHeading as="div" size="sm">
               Історія
-            </div>
+            </SectionHeading>
           </div>
           {(entries || []).map((e) => (
             <div

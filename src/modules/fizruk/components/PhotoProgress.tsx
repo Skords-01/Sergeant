@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { Card } from "@shared/components/ui/Card";
 import { cn } from "@shared/lib/cn";
 import { useBodyPhotos } from "../hooks/useBodyPhotos";
@@ -272,9 +273,9 @@ export function PhotoProgress() {
       aria-label="Фото-прогрес"
     >
       <div className="flex items-center justify-between gap-3 mb-3">
-        <h2 className="text-xs font-bold text-subtle uppercase tracking-widest">
+        <SectionHeading as="h2" size="sm">
           Фото-прогрес
-        </h2>
+        </SectionHeading>
         {photos.length >= 2 && (
           <button
             type="button"

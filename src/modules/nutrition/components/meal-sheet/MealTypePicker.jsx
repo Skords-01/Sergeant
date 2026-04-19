@@ -1,12 +1,13 @@
 import { cn } from "@shared/lib/cn";
+import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { MEAL_TYPES } from "../../lib/mealTypes.js";
 
 export function MealTypePicker({ mealType, setForm }) {
   return (
     <div className="mb-4">
-      <div className="text-2xs font-bold text-subtle uppercase tracking-widest mb-2">
+      <SectionHeading as="div" size="xs" className="mb-2">
         Прийом їжі
-      </div>
+      </SectionHeading>
       <div className="flex gap-2 flex-wrap">
         {MEAL_TYPES.map((mt) => (
           <button

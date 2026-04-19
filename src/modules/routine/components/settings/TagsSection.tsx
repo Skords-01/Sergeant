@@ -1,4 +1,5 @@
 import { useRef, useState, type Dispatch, type SetStateAction } from "react";
+import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { Button } from "@shared/components/ui/Button";
 import { Card } from "@shared/components/ui/Card";
 import { Input } from "@shared/components/ui/Input";
@@ -33,9 +34,9 @@ export function TagsSection({
 
   return (
     <Card as="section" radius="lg" padding="md" className="space-y-3">
-      <h2 className="text-xs font-bold text-subtle uppercase tracking-widest">
+      <SectionHeading as="h2" size="sm">
         Теги
-      </h2>
+      </SectionHeading>
       <div className="flex gap-2 items-stretch">
         <Input
           className="routine-touch-field min-w-0 flex-1"

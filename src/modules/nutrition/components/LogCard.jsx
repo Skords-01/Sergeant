@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Virtuoso } from "react-virtuoso";
+import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { Input } from "@shared/components/ui/Input";
 import { cn } from "@shared/lib/cn";
 import { ConfirmDialog } from "@shared/components/ui/ConfirmDialog";
@@ -191,9 +192,9 @@ export function LogCard({
         </div>
 
         <div className="rounded-2xl border border-line bg-panel/40 px-3 py-3 space-y-2">
-          <div className="text-2xs font-bold text-subtle uppercase tracking-widest">
+          <SectionHeading as="div" size="xs">
             Пошук по журналу
-          </div>
+          </SectionHeading>
           <Input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -326,9 +327,9 @@ export function LogCard({
 
         <div className="rounded-2xl border border-line bg-panel/40 px-3 py-3 space-y-3">
           <div className="flex items-center justify-between gap-2">
-            <div className="text-2xs font-bold text-subtle uppercase tracking-widest">
+            <SectionHeading as="div" size="xs">
               Аналітика (тренди)
-            </div>
+            </SectionHeading>
             <div className="flex gap-2">
               {[30, 90].map((d) => (
                 <button
@@ -368,9 +369,9 @@ export function LogCard({
           </div>
 
           <div className="bg-panelHi rounded-2xl px-3 py-3">
-            <div className="text-2xs font-bold text-subtle uppercase tracking-widest mb-2">
+            <SectionHeading as="div" size="xs" className="mb-2">
               Калорії по днях (останні {Math.min(statsRange, statsRows.length)})
-            </div>
+            </SectionHeading>
             {statsRows.length === 0 ? (
               <div className="text-xs text-muted">Поки що порожньо</div>
             ) : (
@@ -397,9 +398,9 @@ export function LogCard({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <div className="bg-panelHi rounded-2xl px-3 py-3">
-              <div className="text-2xs font-bold text-subtle uppercase tracking-widest mb-2">
+              <SectionHeading as="div" size="xs" className="mb-2">
                 Топ страв
-              </div>
+              </SectionHeading>
               {statsTop.length === 0 ? (
                 <div className="text-xs text-muted">Поки що порожньо</div>
               ) : (
@@ -421,9 +422,9 @@ export function LogCard({
               )}
             </div>
             <div className="bg-panelHi rounded-2xl px-3 py-3">
-              <div className="text-2xs font-bold text-subtle uppercase tracking-widest mb-2">
+              <SectionHeading as="div" size="xs" className="mb-2">
                 Розподіл прийомів
-              </div>
+              </SectionHeading>
               {Object.keys(statsMealTypes).length === 0 ? (
                 <div className="text-xs text-muted">Поки що порожньо</div>
               ) : (
@@ -545,9 +546,9 @@ function VirtualMealList({
           return (
             <div className="flex items-center gap-2 pt-2 pb-1">
               <span className="text-base">{meta.emoji}</span>
-              <span className="text-xs font-bold text-subtle uppercase tracking-widest">
+              <SectionHeading as="span" size="sm">
                 {meta.label}
-              </span>
+              </SectionHeading>
             </div>
           );
         }

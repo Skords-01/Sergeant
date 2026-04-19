@@ -3,6 +3,7 @@ import { DebtCard } from "../components/DebtCard";
 import { SubCard } from "../components/SubCard";
 import { RecurringSuggestions } from "../components/RecurringSuggestions";
 import { TxRow } from "../components/TxRow";
+import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { Button } from "@shared/components/ui/Button";
 import { Card } from "@shared/components/ui/Card";
 import { Input } from "@shared/components/ui/Input";
@@ -551,9 +552,9 @@ export function Assets({
         />
         {open.assets && (
           <div className="mb-3 space-y-2">
-            <div className="text-xs font-bold text-subtle uppercase tracking-widest pt-1">
+            <SectionHeading as="div" size="sm" className="pt-1">
               💳 Картки Monobank
-            </div>
+            </SectionHeading>
             {accounts
               .filter((a) => !hiddenAccounts.includes(a.id))
               .map((a, i) => (
@@ -582,9 +583,9 @@ export function Assets({
                 </div>
               ))}
 
-            <div className="text-xs font-bold text-subtle uppercase tracking-widest pt-2">
+            <SectionHeading as="div" size="sm" className="pt-2">
               💰 Мені винні
-            </div>
+            </SectionHeading>
             {receivables.map((r) => (
               <DebtCard
                 key={r.id}
@@ -680,9 +681,9 @@ export function Assets({
               </button>
             )}
 
-            <div className="text-xs font-bold text-subtle uppercase tracking-widest pt-2">
+            <SectionHeading as="div" size="sm" className="pt-2">
               🏦 Інші активи
-            </div>
+            </SectionHeading>
             {manualAssets.map((a, i) => (
               <div
                 key={i}

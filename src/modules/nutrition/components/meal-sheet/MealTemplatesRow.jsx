@@ -1,10 +1,12 @@
+import { SectionHeading } from "@shared/components/ui/SectionHeading";
+
 export function MealTemplatesRow({ mealTemplates, setForm, onSelected }) {
   if (!Array.isArray(mealTemplates) || mealTemplates.length === 0) return null;
   return (
     <div className="mb-4">
-      <div className="text-2xs font-bold text-subtle uppercase tracking-widest mb-2">
+      <SectionHeading as="div" size="xs" className="mb-2">
         Шаблони
-      </div>
+      </SectionHeading>
       <div className="flex flex-wrap gap-2">
         {mealTemplates.map((t) => (
           <button

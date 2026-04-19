@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { Input } from "@shared/components/ui/Input";
 import { Button } from "@shared/components/ui/Button";
 import { emptyForm } from "./mealFormUtils.js";
@@ -39,9 +40,9 @@ export function MacrosEditor({
   return (
     <div className="mb-1">
       <div className="flex items-center justify-between mb-2">
-        <div className="text-2xs font-bold text-subtle uppercase tracking-widest">
+        <SectionHeading as="div" size="xs">
           {pickedFood ? "КБЖВ (редагувати вручну)" : "КБЖВ"}
-        </div>
+        </SectionHeading>
         {hasPhotoMacros && (
           <button
             type="button"
@@ -69,9 +70,9 @@ export function MacrosEditor({
           { key: "carbs_g", label: "Вуглев. г", placeholder: "60" },
         ].map(({ key, label, placeholder }) => (
           <div key={key}>
-            <div className="text-2xs font-bold text-subtle uppercase tracking-widest mb-1">
+            <SectionHeading as="div" size="xs" className="mb-1">
               {label}
-            </div>
+            </SectionHeading>
             <Input
               value={form[key]}
               onChange={handleMacroChange(key)}

@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { cn } from "@shared/lib/cn";
 import { generateInsights } from "./lib/insightsEngine";
 import {
@@ -446,9 +447,9 @@ export function HubReports() {
 
       {insights.length >= 2 ? (
         <div className="space-y-3">
-          <p className="text-xs font-bold text-subtle uppercase tracking-widest">
+          <SectionHeading as="p" size="sm">
             Інсайти
-          </p>
+          </SectionHeading>
           {insights.map((ins) => (
             <InsightCard key={ins.id} {...ins} />
           ))}

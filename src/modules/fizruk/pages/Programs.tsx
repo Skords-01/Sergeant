@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { subtleNavButtonClass } from "@shared/components/ui/buttonPresets";
 import { cn } from "@shared/lib/cn";
 import { useExerciseCatalog } from "../hooks/useExerciseCatalog";
@@ -169,9 +170,9 @@ export function Programs({
 function ProgramDetails({ prog, exercises }) {
   return (
     <div className="border-t border-line px-4 pb-4 pt-3 space-y-3 bg-bg/50">
-      <div className="text-2xs font-bold text-subtle uppercase tracking-widest">
+      <SectionHeading as="div" size="xs">
         Розклад та вправи
-      </div>
+      </SectionHeading>
       {prog.schedule.map((schedEntry) => {
         const session = prog.sessions[schedEntry.sessionKey];
         if (!session) return null;

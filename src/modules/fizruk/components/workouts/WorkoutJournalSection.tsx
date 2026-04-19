@@ -1,5 +1,6 @@
 import { useRef } from "react";
 import { Virtuoso } from "react-virtuoso";
+import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { Button } from "@shared/components/ui/Button";
 import { compactToolbarButtonClass } from "@shared/components/ui/buttonPresets";
 import { EmptyState } from "@shared/components/ui/EmptyState";
@@ -194,9 +195,9 @@ export function WorkoutJournalSection({
 
       <Card radius="lg" padding="none" className="overflow-hidden">
         <div className="px-4 py-3 bg-panelHi/60 border-b border-line flex items-center justify-between gap-2">
-          <div className="text-xs font-bold text-subtle uppercase tracking-widest">
+          <SectionHeading as="div" size="sm">
             Останні тренування
-          </div>
+          </SectionHeading>
           <button
             type="button"
             onClick={() => setRetroOpen((o) => !o)}
@@ -219,9 +220,9 @@ export function WorkoutJournalSection({
             </p>
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <div className="text-2xs font-bold text-subtle uppercase tracking-widest mb-1">
+                <SectionHeading as="div" size="xs" className="mb-1">
                   Дата
-                </div>
+                </SectionHeading>
                 <input
                   type="date"
                   className="w-full h-11 rounded-xl border border-line bg-panelHi px-3 text-sm text-text outline-none"
@@ -230,9 +231,9 @@ export function WorkoutJournalSection({
                 />
               </div>
               <div>
-                <div className="text-2xs font-bold text-subtle uppercase tracking-widest mb-1">
+                <SectionHeading as="div" size="xs" className="mb-1">
                   Час початку
-                </div>
+                </SectionHeading>
                 <input
                   type="time"
                   className="w-full h-11 rounded-xl border border-line bg-panelHi px-3 text-sm text-text outline-none"

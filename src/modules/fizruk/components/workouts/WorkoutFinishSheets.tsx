@@ -1,4 +1,5 @@
 import { useRef } from "react";
+import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { Button } from "@shared/components/ui/Button";
 import { cn } from "@shared/lib/cn";
 import { useDialogFocusTrap } from "@shared/hooks/useDialogFocusTrap";
@@ -43,9 +44,9 @@ export function WorkoutFinishSheets({
               Оціни по шкалі 1–5 (можна пропустити).
             </p>
             <div>
-              <div className="text-2xs font-bold text-subtle uppercase tracking-widest mb-2">
+              <SectionHeading as="div" size="xs" className="mb-2">
                 Енергія
-              </div>
+              </SectionHeading>
               <div className="flex flex-wrap gap-2">
                 {[1, 2, 3, 4, 5].map((n) => (
                   <button
@@ -68,9 +69,9 @@ export function WorkoutFinishSheets({
               </div>
             </div>
             <div>
-              <div className="text-2xs font-bold text-subtle uppercase tracking-widest mb-2">
+              <SectionHeading as="div" size="xs" className="mb-2">
                 Настрій
-              </div>
+              </SectionHeading>
               <div className="flex flex-wrap gap-2">
                 {[1, 2, 3, 4, 5].map((n) => (
                   <button

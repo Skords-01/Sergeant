@@ -1,4 +1,5 @@
 import { type ReactNode } from "react";
+import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { cn } from "../../lib/cn";
 
 /**
@@ -7,7 +8,7 @@ import { cn } from "../../lib/cn";
  * The canonical "eyebrow + big number + sublabel" triple that repeats
  * dozens of times across Fizruk dashboards and Finyk summaries:
  *
- *   <div className="text-2xs font-bold text-subtle uppercase tracking-widest">Вага</div>
+ *   <SectionHeading as="div" size="xs">Вага</SectionHeading>
  *   <div className="text-2xl font-extrabold text-text mt-1 tabular-nums">82 кг</div>
  *   <div className="text-xs text-subtle mt-1">+0.4 кг</div>
  *
@@ -77,9 +78,9 @@ export function Stat({
 
   return (
     <div className={cn(alignClass, className)}>
-      <div className="text-2xs font-bold text-subtle uppercase tracking-widest">
+      <SectionHeading as="div" size="xs">
         {label}
-      </div>
+      </SectionHeading>
       <div
         className={cn(
           "mt-1 flex items-baseline gap-1.5",

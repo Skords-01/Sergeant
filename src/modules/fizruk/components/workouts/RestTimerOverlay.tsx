@@ -1,3 +1,4 @@
+import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { Button } from "@shared/components/ui/Button";
 import { formatRestClock } from "../../lib/workoutUi";
 
@@ -47,9 +48,9 @@ export function RestTimerOverlay({ restTimer, onCancel }) {
             </svg>
           </div>
           <div>
-            <div className="text-2xs font-bold text-subtle uppercase tracking-widest">
+            <SectionHeading as="div" size="xs">
               Відпочинок
-            </div>
+            </SectionHeading>
             <div
               className={
                 "text-3xl font-extrabold tabular-nums leading-tight " +

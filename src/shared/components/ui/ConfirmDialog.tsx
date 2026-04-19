@@ -69,11 +69,8 @@ export function ConfirmDialog({
         )}
         <div className="flex flex-col gap-2">
           <Button
-            variant={danger ? "danger" : "primary"}
-            className={cn(
-              "w-full h-12",
-              danger && "!bg-danger !text-white border-0",
-            )}
+            variant={danger ? "destructive" : "primary"}
+            className="w-full h-12"
             onClick={onConfirm}
           >
             {confirmLabel}

@@ -1,3 +1,4 @@
+import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { Input } from "@shared/components/ui/Input";
 import { Button } from "@shared/components/ui/Button";
 import { Sheet } from "@shared/components/ui/Sheet";
@@ -73,9 +74,9 @@ export function PantryManagerSheet({
       </div>
 
       <div className="rounded-2xl border border-line bg-panelHi p-4">
-        <div className="text-2xs font-bold text-subtle uppercase tracking-widest">
+        <SectionHeading as="div" size="xs">
           {pantryForm.mode === "rename" ? "Нова назва" : "Назва складу"}
-        </div>
+        </SectionHeading>
         <div className="mt-2">
           <Input
             value={pantryForm.name}

@@ -1,10 +1,12 @@
 import { useRef } from "react";
 import { Button } from "@shared/components/ui/Button";
+import { useToast } from "@shared/hooks/useToast";
 import { cn } from "@shared/lib/cn";
 import { applyHubBackupPayload, buildHubBackupPayload } from "./hubBackup.js";
 
 export function HubBackupPanel({ className }) {
   const fileRef = useRef(null);
+  const toast = useToast();
 
   const exportJson = () => {
     const payload = buildHubBackupPayload({ includeChat: false });
@@ -28,7 +30,7 @@ export function HubBackupPanel({ className }) {
         applyHubBackupPayload(data);
         window.location.reload();
       } catch (err) {
-        alert(err?.message || "Не вдалось імпортувати файл");
+        toast.error(err?.message || "Не вдалось імпортувати файл");
       }
       e.target.value = "";
     };

@@ -1,3 +1,4 @@
+import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { Button } from "@shared/components/ui/Button";
 import { Sheet } from "@shared/components/ui/Sheet";
 import { useEffect, useMemo, useState } from "react";
@@ -363,9 +364,9 @@ export function Dashboard({
             return (
               <Card as="section" radius="lg" aria-label="Швидкий старт">
                 <div className="flex items-center justify-between gap-2 mb-3">
-                  <h2 className="text-xs font-bold text-subtle uppercase tracking-widest">
+                  <SectionHeading as="h2" size="sm">
                     Швидкий старт
-                  </h2>
+                  </SectionHeading>
                   <span className="text-2xs text-muted">
                     {recentlyUsed.length > 0
                       ? "Нещодавно використані"
@@ -420,9 +421,9 @@ export function Dashboard({
           <Card as="section" radius="lg" aria-label="Програма сьогодні">
             <div className="flex items-center justify-between gap-2 mb-3">
               <div>
-                <h2 className="text-xs font-bold text-subtle uppercase tracking-widest">
+                <SectionHeading as="h2" size="sm">
                   Програма: {activeProgram.name}
-                </h2>
+                </SectionHeading>
                 {todaySession ? (
                   <p className="text-sm font-semibold text-text mt-0.5">
                     {todaySession.name}
@@ -535,9 +536,9 @@ export function Dashboard({
               />
 
               <div className="mt-4 pt-3 border-t border-line">
-                <p className="text-2xs font-bold text-subtle uppercase tracking-widest mb-2">
+                <SectionHeading as="p" size="xs" className="mb-2">
                   Пріоритет після відпочинку
-                </p>
+                </SectionHeading>
                 <div className="flex flex-wrap gap-2">
                   {(plan.focus || []).map((m) => (
                     <span
@@ -682,9 +683,9 @@ export function Dashboard({
             </p>
           )}
           <div className="rounded-2xl border border-line bg-panelHi px-3">
-            <div className="text-2xs font-bold text-subtle uppercase tracking-widest pt-2">
+            <SectionHeading as="div" size="xs" className="pt-2">
               Мій шаблон
-            </div>
+            </SectionHeading>
             <select
               className="w-full min-h-[44px] bg-transparent text-sm text-text outline-none"
               value={selectedTemplateId}

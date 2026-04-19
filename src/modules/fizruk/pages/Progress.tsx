@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from "react";
 import { Button } from "@shared/components/ui/Button";
 import { ConfirmDialog } from "@shared/components/ui/ConfirmDialog";
 import { EmptyState } from "@shared/components/ui/EmptyState";
+import { useToast } from "@shared/hooks/useToast";
 import { cn } from "@shared/lib/cn";
 import { useExerciseCatalog } from "../hooks/useExerciseCatalog";
 import { useMeasurements } from "../hooks/useMeasurements";
@@ -29,6 +30,7 @@ function weekStartMs(d) {
 }
 
 export function Progress() {
+  const toast = useToast();
   const { workouts } = useWorkouts();
   const { entries } = useMeasurements();
   const { exercises, musclesUk } = useExerciseCatalog();
@@ -358,9 +360,9 @@ export function Progress() {
         {/* Cross-module activity */}
         {hasPushupData && (
           <Card radius="lg">
-            <div className="text-xs font-bold text-subtle uppercase tracking-widest mb-3">
+            <SectionHeading as="div" size="sm" className="mb-3">
               Активність з інших модулів
-            </div>
+            </SectionHeading>
             <div className="flex items-center gap-3 mb-3">
               <div className="w-9 h-9 rounded-xl bg-fizruk/10 flex items-center justify-center shrink-0 text-base">
                 💪
@@ -549,9 +551,9 @@ export function Progress() {
           return (
             <Card radius="lg" padding="lg">
               <div className="flex items-center justify-between gap-2 mb-3">
-                <div className="text-xs font-bold text-subtle uppercase tracking-widest">
+                <SectionHeading as="div" size="sm">
                   Рекорди (PR) · {prs.length}
-                </div>
+                </SectionHeading>
                 {filtered.length !== prs.length && (
                   <div className="text-xs text-subtle">
                     {filtered.length} показано
@@ -668,9 +670,9 @@ export function Progress() {
 
         {/* Data management */}
         <Card radius="lg" padding="lg">
-          <div className="text-xs font-bold text-subtle uppercase tracking-widest mb-3">
+          <SectionHeading as="div" size="sm" className="mb-3">
             Дані
-          </div>
+          </SectionHeading>
           <button
             type="button"
             className="w-full py-4 rounded-full font-bold text-base bg-fizruk text-white mb-2 transition-all active:scale-[0.98]"
@@ -702,7 +704,9 @@ export function Progress() {
             onChange={(e) => {
               const f = e.target.files?.[0];
               if (!f) return;
-              importJson(f).catch(() => alert("Не вдалося імпортувати файл"));
+              importJson(f).catch(() =>
+                toast.error("Не вдалося імпортувати файл"),
+              );
             }}
           />
           <div className="mt-3">

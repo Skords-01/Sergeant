@@ -1,4 +1,5 @@
 import type { Dispatch, SetStateAction } from "react";
+import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { Button } from "@shared/components/ui/Button";
 import { Card } from "@shared/components/ui/Card";
 import { setHabitArchived } from "../../lib/routineStorage.js";
@@ -25,9 +26,9 @@ export function ArchivedHabitsSection({
       padding="md"
       className="space-y-2 opacity-95"
     >
-      <h2 className="text-xs font-bold text-subtle uppercase tracking-widest">
+      <SectionHeading as="h2" size="sm">
         Архів
-      </h2>
+      </SectionHeading>
       <p className="text-2xs text-subtle">
         Не показуються в календарі; відмітки збережені.
       </p>

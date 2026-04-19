@@ -7,6 +7,7 @@ import {
   useRef,
   Suspense,
 } from "react";
+import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { Skeleton } from "@shared/components/ui/Skeleton";
 import { EmptyState } from "@shared/components/ui/EmptyState";
 import { cn } from "@shared/lib/cn";
@@ -37,9 +38,9 @@ const Section = memo(function Section({ title, children, className }) {
         className,
       )}
     >
-      <div className="text-xs font-bold text-subtle uppercase tracking-widest mb-4">
+      <SectionHeading as="div" size="sm" className="mb-4">
         {title}
-      </div>
+      </SectionHeading>
       {children}
     </div>
   );
