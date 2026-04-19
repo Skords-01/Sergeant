@@ -13,6 +13,23 @@
 
 import { useEffect, useRef } from "react";
 import { useToast } from "@shared/hooks/useToast";
+import { getTimeToValueMs } from "./vibePicks.js";
+
+/**
+ * Compose the success-moment toast. If we measured a time-to-value
+ * within the 30-second window we lead with the number so the user sees
+ * the promise literally kept. Outside the window (or for returning
+ * users with no stamp) we fall back to the generic copy.
+ *
+ * @param {number | null} ttvMs
+ * @returns {string}
+ */
+function buildToastCopy(ttvMs) {
+  if (ttvMs == null) return "Готово. Це вже твої дані.";
+  const sec = Math.max(1, Math.round(ttvMs / 1000));
+  if (sec > 60) return "Готово. Це вже твої дані.";
+  return `Готово за ${sec} с. Це вже твої дані.`;
+}
 
 export function useFirstEntryCelebration(hasRealEntry) {
   // Narrow to the stable `success` callback rather than the whole
@@ -36,6 +53,10 @@ export function useFirstEntryCelebration(hasRealEntry) {
     }
     if (!hasRealEntry) return;
     firedRef.current = true;
-    success("Готово. Це вже твої дані.", 4000);
+    // `detectFirstRealEntry` ran before this effect (the dashboard
+    // calls it synchronously in render), so the TTV value is already
+    // persisted by the time we read it here.
+    const ttv = getTimeToValueMs();
+    success(buildToastCopy(ttv), 4500);
   }, [hasRealEntry, success]);
 }
