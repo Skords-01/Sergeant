@@ -1,28 +1,61 @@
 import { memo } from "react";
 import { cn } from "@shared/lib/cn";
 
+// Convert a polar angle (0° = 12 o'clock, clockwise) to cartesian coordinates.
 function polarToXY(cx, cy, r, angleDeg) {
   const rad = ((angleDeg - 90) * Math.PI) / 180;
   return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
 }
 
-function describeArc(cx, cy, r, startDeg, endDeg) {
-  const start = polarToXY(cx, cy, r, startDeg);
-  const end = polarToXY(cx, cy, r, endDeg);
-  const largeArc = endDeg - startDeg > 180 ? 1 : 0;
-  return `M ${start.x.toFixed(2)} ${start.y.toFixed(2)} A ${r} ${r} 0 ${largeArc} 1 ${end.x.toFixed(2)} ${end.y.toFixed(2)}`;
+// Build a closed donut-sector path: outer arc (CW) + line to inner +
+// inner arc (CCW) + close. Using filled sectors avoids stroke-linecap
+// artifacts that make thick stroked arcs look polygonal at segment
+// boundaries.
+function describeSector(cx, cy, outerR, innerR, startDeg, endDeg) {
+  const sweep = endDeg - startDeg;
+  // Full ring: draw as two concentric circles via two half-sweeps so the
+  // path is valid even when sweep === 360°.
+  if (sweep >= 360) {
+    const midDeg = startDeg + 180;
+    const o1 = polarToXY(cx, cy, outerR, startDeg);
+    const o2 = polarToXY(cx, cy, outerR, midDeg);
+    const i1 = polarToXY(cx, cy, innerR, startDeg);
+    const i2 = polarToXY(cx, cy, innerR, midDeg);
+    return [
+      `M ${o1.x} ${o1.y}`,
+      `A ${outerR} ${outerR} 0 0 1 ${o2.x} ${o2.y}`,
+      `A ${outerR} ${outerR} 0 0 1 ${o1.x} ${o1.y}`,
+      `M ${i1.x} ${i1.y}`,
+      `A ${innerR} ${innerR} 0 0 0 ${i2.x} ${i2.y}`,
+      `A ${innerR} ${innerR} 0 0 0 ${i1.x} ${i1.y}`,
+      "Z",
+    ].join(" ");
+  }
+  const largeArc = sweep > 180 ? 1 : 0;
+  const outerStart = polarToXY(cx, cy, outerR, startDeg);
+  const outerEnd = polarToXY(cx, cy, outerR, endDeg);
+  const innerEnd = polarToXY(cx, cy, innerR, endDeg);
+  const innerStart = polarToXY(cx, cy, innerR, startDeg);
+  return [
+    `M ${outerStart.x} ${outerStart.y}`,
+    `A ${outerR} ${outerR} 0 ${largeArc} 1 ${outerEnd.x} ${outerEnd.y}`,
+    `L ${innerEnd.x} ${innerEnd.y}`,
+    `A ${innerR} ${innerR} 0 ${largeArc} 0 ${innerStart.x} ${innerStart.y}`,
+    "Z",
+  ].join(" ");
 }
 
-// Презентаційна кругова діаграма для статистики категорій.
-// Результат повністю залежить від вхідних пропсів, тому `memo` вимикає зайві
-// перерендери при змінах стану сторінки Analytics.
+// Presentational donut chart for category spending. Output is fully
+// derived from props, so `memo` skips redundant re-renders when the
+// parent Analytics page re-renders for unrelated reasons.
 function CategoryPieChartComponent({ data = [], size = 160, className }) {
   if (!data || data.length === 0) return null;
 
   const cx = size / 2;
   const cy = size / 2;
-  const r = size / 2 - 10;
-  const innerR = r * 0.55;
+  // Pad by 1px so the filled sector never touches the viewBox edge.
+  const outerR = size / 2 - 1;
+  const innerR = outerR * 0.62;
 
   const total = data.reduce((s, d) => s + d.spent, 0);
   if (total === 0) return null;
@@ -52,6 +85,11 @@ function CategoryPieChartComponent({ data = [], size = 160, className }) {
     return { ...seg, start, end: currentAngle, pct };
   });
 
+  // Gap between segments, in degrees. Only applied when there are 2+
+  // visible slices; a single full-ring slice has no neighbours to separate.
+  const visible = arcs.filter((a) => a.end - a.start > 0.1);
+  const GAP_DEG = visible.length > 1 ? 1 : 0;
+
   return (
     <div className={cn("w-full", className)}>
       <div className="flex flex-col sm:flex-row items-center gap-4">
@@ -66,15 +104,18 @@ function CategoryPieChartComponent({ data = [], size = 160, className }) {
           {arcs.map((arc, i) => {
             const sweep = arc.end - arc.start;
             if (sweep < 0.5) return null;
-            const d = describeArc(cx, cy, r, arc.start, arc.end - 0.3);
+            // Shrink each sector symmetrically so neighbouring slices
+            // get a clean radial gap. Never let a slice collapse.
+            const pad = Math.min(GAP_DEG / 2, sweep / 2 - 0.01);
+            const start = arc.start + pad;
+            const end = arc.end - pad;
+            const d = describeSector(cx, cy, outerR, innerR, start, end);
             return (
               <path
                 key={arc.categoryId || i}
                 d={d}
-                fill="none"
-                stroke={arc.color}
-                strokeWidth={r - innerR}
-                strokeLinecap="butt"
+                fill={arc.color}
+                stroke="none"
               />
             );
           })}
@@ -114,10 +155,9 @@ function CategoryPieChartComponent({ data = [], size = 160, className }) {
               </span>
               {(() => {
                 // `arc.pct` is the fraction of `total` (0..1), not a
-                // percentage. The old guard `arc.pct < 1` was effectively
-                // always true and showed "<1%" on every slice. Round to the
-                // integer percentage first, then keep the "<1" hint for
-                // segments that round to zero but are still > 0.
+                // percentage. Round to the integer percentage first, then
+                // keep the "<1" hint for segments that round to zero but
+                // are still > 0.
                 const pctInt = Math.round(arc.pct * 100);
                 return (
                   <span className="text-muted tabular-nums text-xs shrink-0">
