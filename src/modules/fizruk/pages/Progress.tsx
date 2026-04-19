@@ -337,7 +337,7 @@ export function Progress() {
         </div>
 
         {!hasAny && (
-          <Card radius="lg" padding="xl" className="text-center">
+          <Card radius="lg" padding="xl" className="p-8 text-center">
             <div className="text-3xl mb-3">📈</div>
             <div className="text-sm font-medium text-text mb-1">
               Даних ще немає
