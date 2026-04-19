@@ -163,7 +163,7 @@ describe("noTxRecentRule", () => {
     amount: 120,
   });
 
-  it("тригериться, якщо ≥5 записів і останній ≥3 дні тому", () => {
+  it("тригериться, якщо ≥5 записів і останній ≥3 дні тому (5 днів → many)", () => {
     const ctx = baseCtx({
       now,
       transactions: [
@@ -178,7 +178,22 @@ describe("noTxRecentRule", () => {
     expect(recs).toHaveLength(1);
     expect(recs[0].id).toBe("finyk_no_tx_recent");
     expect(recs[0].pwaAction).toBe("add_expense");
-    expect(recs[0].title).toMatch(/5 дні/);
+    expect(recs[0].title).toMatch(/5 днів/);
+  });
+
+  it("плюралізація: 3 дні (few), а не «3 днів»", () => {
+    const ctx = baseCtx({
+      now,
+      transactions: [
+        mkTx("t1", 10),
+        mkTx("t2", 9),
+        mkTx("t3", 8),
+        mkTx("t4", 7),
+        mkTx("t5", 3),
+      ],
+    });
+    const recs = noTxRecentRule.evaluate(ctx);
+    expect(recs[0].title).toMatch(/^3 дні /);
   });
 
   it("не тригериться, якщо активність була сьогодні", () => {
