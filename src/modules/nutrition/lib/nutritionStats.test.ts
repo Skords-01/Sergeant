@@ -7,7 +7,7 @@ import {
   getRowsForRange,
   type RowsSummary,
 } from "./nutritionStats";
-import type { DaySummary } from "./nutritionStorage";
+import type { DaySummary, NutritionLog } from "./nutritionStorage";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -164,6 +164,10 @@ describe("nutrition/avgFromSummary", () => {
 // ─── topMeals ─────────────────────────────────────────────────────────────────
 
 describe("nutrition/topMeals", () => {
+  // Намірено неповні `Meal` — у цих тестах ми дивимось лише на ім'я/kcal,
+  // решта полів `Meal` (id, time, mealType, label, …) функції `topMeals`
+  // нерелевантні. Каст через `unknown` тримає вхід як `NutritionLog`, не
+  // переписуючи фікстури під повний тип.
   const log = {
     "2026-01-10": {
       meals: [
@@ -183,20 +187,20 @@ describe("nutrition/topMeals", () => {
   };
 
   it("returns meals sorted by frequency desc", () => {
-    const result = topMeals(log, "2026-01-10", 3);
+    const result = topMeals(log as unknown as NutritionLog, "2026-01-10", 3);
     expect(result[0].name).toBe("Гречка");
     expect(result[0].count).toBe(3);
   });
 
   it("accumulates kcal for repeated meals", () => {
-    const result = topMeals(log, "2026-01-10", 3);
+    const result = topMeals(log as unknown as NutritionLog, "2026-01-10", 3);
     const buckwheat = result.find((m) => m.name === "Гречка")!;
     expect(buckwheat.kcal).toBe(900);
   });
 
   it("respects the dayCount window — excludes days before start", () => {
     // Only last 2 days → Гречка appears 2 times, not 3
-    const result = topMeals(log, "2026-01-10", 2);
+    const result = topMeals(log as unknown as NutritionLog, "2026-01-10", 2);
     const buckwheat = result.find((m) => m.name === "Гречка")!;
     expect(buckwheat.count).toBe(2);
   });
@@ -210,7 +214,11 @@ describe("nutrition/topMeals", () => {
     const logWithEmpty = {
       "2026-01-10": { meals: [{ name: "" }, { name: "  " }, { name: "Рис" }] },
     };
-    const result = topMeals(logWithEmpty, "2026-01-10", 1);
+    const result = topMeals(
+      logWithEmpty as unknown as NutritionLog,
+      "2026-01-10",
+      1,
+    );
     expect(result.every((m) => m.name.trim().length > 0)).toBe(true);
   });
 
@@ -221,7 +229,12 @@ describe("nutrition/topMeals", () => {
         { meals: [{ name: `Страва${i}`, macros: { kcal: 100 } }] },
       ]),
     );
-    const result = topMeals(manyMeals, "2026-01-20", 20, 5);
+    const result = topMeals(
+      manyMeals as unknown as NutritionLog,
+      "2026-01-20",
+      20,
+      5,
+    );
     expect(result.length).toBeLessThanOrEqual(5);
   });
 });
@@ -229,6 +242,7 @@ describe("nutrition/topMeals", () => {
 // ─── mealTypeBreakdown ────────────────────────────────────────────────────────
 
 describe("nutrition/mealTypeBreakdown", () => {
+  // Див. коментар у `nutrition/topMeals` вище — той самий підхід до фікстур.
   const log = {
     "2026-01-10": {
       meals: [
@@ -237,7 +251,7 @@ describe("nutrition/mealTypeBreakdown", () => {
         { mealType: "lunch", macros: { kcal: 550 } },
       ],
     },
-  };
+  } as unknown as NutritionLog;
 
   it("groups meals by mealType with count and kcal", () => {
     const result = mealTypeBreakdown(log, "2026-01-10", 1);
