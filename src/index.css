@@ -83,6 +83,8 @@
 
   /* ═══════════════════════════════════════════════════════════════════════
      DARK THEME — Rich, Cozy, Premium
+     Contrast tuned to WCAG AA: tertiary text (subtle) ≥ 4.5:1, prominent
+     dividers (border-strong) ≥ 3:1 against the page background.
      ═══════════════════════════════════════════════════════════════════════ */
   .dark {
     color-scheme: dark;
@@ -90,17 +92,20 @@
     /* Page background — deep warm charcoal */
     --c-bg: 23 20 18; /* #171412 — warm dark */
 
-    /* Cards/panels — elevated warm surface */
+    /* Cards/panels — elevated warm surface. `panel-hi` is bumped so hover
+       and input backgrounds are distinguishable from the base panel. */
     --c-panel: 32 28 25; /* #201c19 — warm elevated */
-    --c-panel-hi: 41 36 32; /* #292420 — warm input/hover */
+    --c-panel-hi: 48 42 37; /* #302a25 — warm input/hover (was #292420) */
 
-    /* Borders — warm muted */
-    --c-line: 58 52 46; /* #3a342e — warm border */
+    /* Borders — warm muted. Raised from #3a342e (≈1.5:1) so card edges,
+       dividers, and input outlines are actually visible. */
+    --c-line: 82 74 65; /* #524a41 — warm border (was #3a342e) */
 
-    /* Text hierarchy */
+    /* Text hierarchy — `subtle` raised from #57534e (≈2.4:1) to meet WCAG
+       AA for small tertiary copy (eyebrow headings, captions, meta). */
     --c-text: 250 247 241; /* #faf7f1 — warm white */
-    --c-muted: 168 162 158; /* #a8a29e — medium warm gray */
-    --c-subtle: 87 83 78; /* #57534e — dimmed labels */
+    --c-muted: 180 174 169; /* #b4aea9 — medium warm gray (brightened) */
+    --c-subtle: 135 128 121; /* #878079 — readable tertiary (was #57534e) */
     --c-primary: 250 247 241; /* reversed */
 
     --shadow-card:
@@ -113,12 +118,14 @@
 
     --shadow-soft: 0 8px 32px rgba(0, 0, 0, 0.5);
 
-    /* Dark-theme overrides for the new semantic tokens added above. */
-    --c-border-strong: 74 66 58; /* warm elevated divider for dark theme */
-    --c-success-soft: 6 78 59; /* emerald-900-ish */
-    --c-warning-soft: 120 53 15; /* amber-900-ish */
-    --c-danger-soft: 127 29 29; /* red-900-ish */
-    --c-info-soft: 12 74 110; /* sky-900-ish */
+    /* Dark-theme overrides for the new semantic tokens added above.
+       `border-strong` now clears the 3:1 UI-contrast threshold so
+       separators between sections read clearly on the dark bg. */
+    --c-border-strong: 112 102 90; /* #70665a — prominent divider (was #4a423a) */
+    --c-success-soft: 6 95 70; /* slightly brighter emerald-900 */
+    --c-warning-soft: 146 64 14; /* slightly brighter amber-900 */
+    --c-danger-soft: 153 27 27; /* red-800 — brighter than red-900 */
+    --c-info-soft: 7 89 133; /* sky-800 — brighter than sky-900 */
   }
 
   /* ═══════════════════════════════════════════════════════════════════════
@@ -637,7 +644,7 @@ textarea {
 }
 
 .dark .glass-subtle {
-  @apply bg-white/5 border-white/10;
+  @apply bg-white/[0.08] border-white/20;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
