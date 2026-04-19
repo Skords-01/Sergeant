@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { cn } from "@shared/lib/cn";
 import { Card } from "@shared/components/ui/Card";
 
@@ -6,7 +7,7 @@ import { Card } from "@shared/components/ui/Card";
  * фактичними income/spent/factSavings. Показується лише якщо юзер задав
  * хоч одну цифру плану.
  */
-export function PlanFactCard({
+const PlanFactCardImpl = function PlanFactCard({
   planIncome,
   planExpense,
   planSavings,
@@ -55,4 +56,6 @@ export function PlanFactCard({
       </div>
     </Card>
   );
-}
+};
+
+export const PlanFactCard = memo(PlanFactCardImpl);

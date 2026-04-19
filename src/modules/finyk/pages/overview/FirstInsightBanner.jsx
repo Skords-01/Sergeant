@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Icon } from "@shared/components/ui/Icon";
 
 /**
@@ -5,7 +6,10 @@ import { Icon } from "@shared/components/ui/Icon";
  * з реальними даними (mono/manual-витрата). CTA веде у бюджети.
  * State та Аналитика-івент керується з Overview; тут — чиста презентація.
  */
-export function FirstInsightBanner({ onSetBudget, onDismiss }) {
+const FirstInsightBannerImpl = function FirstInsightBanner({
+  onSetBudget,
+  onDismiss,
+}) {
   return (
     <div className="rounded-2xl border border-emerald-500/25 bg-emerald-500/10 p-4 flex items-start gap-3">
       <div
@@ -48,4 +52,6 @@ export function FirstInsightBanner({ onSetBudget, onDismiss }) {
       </button>
     </div>
   );
-}
+};
+
+export const FirstInsightBanner = memo(FirstInsightBannerImpl);

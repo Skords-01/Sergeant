@@ -1,4 +1,4 @@
-import { Suspense } from "react";
+import { Suspense, memo } from "react";
 import { NetworthChart } from "../../components/charts/lazy";
 import { ChartFallback } from "../../components/charts/ChartFallback";
 
@@ -6,7 +6,7 @@ import { ChartFallback } from "../../components/charts/ChartFallback";
  * Секція графіка нетворсу. Показує графік якщо історія містить ≥2 точки,
  * інакше — placeholder-картку з підказкою.
  */
-export function NetworthSection({ networthHistory }) {
+const NetworthSectionImpl = function NetworthSection({ networthHistory }) {
   if (networthHistory.length >= 2) {
     return (
       <div className="bg-panel border border-line rounded-2xl px-5 pt-4 pb-3 shadow-card">
@@ -33,4 +33,6 @@ export function NetworthSection({ networthHistory }) {
       </p>
     </div>
   );
-}
+};
+
+export const NetworthSection = memo(NetworthSectionImpl);

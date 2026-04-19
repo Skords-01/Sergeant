@@ -1,4 +1,4 @@
-import { useMemo, useEffect, useRef, useState } from "react";
+import { useMemo, useEffect, useRef, useState, useCallback } from "react";
 import { trackEvent, ANALYTICS_EVENTS } from "../../../core/analytics";
 import {
   calcDebtRemaining,
@@ -201,7 +201,11 @@ export function Overview({
       source: manualExpenses.length > 0 ? "manual" : "bank",
     });
   }, [showFirstInsight, hasAnyData, manualExpenses.length]);
-  const dismissFirstInsight = () => setShowFirstInsight(false);
+  const dismissFirstInsight = useCallback(() => setShowFirstInsight(false), []);
+  const handleSetBudgetFromInsight = useCallback(() => {
+    dismissFirstInsight();
+    onNavigate?.("budgets");
+  }, [dismissFirstInsight, onNavigate]);
 
   const budgetAlerts = useMemo(
     () =>
@@ -407,10 +411,7 @@ export function Overview({
 
         {showFirstInsight && hasAnyData && (
           <FirstInsightBanner
-            onSetBudget={() => {
-              dismissFirstInsight();
-              onNavigate?.("budgets");
-            }}
+            onSetBudget={handleSetBudgetFromInsight}
             onDismiss={dismissFirstInsight}
           />
         )}

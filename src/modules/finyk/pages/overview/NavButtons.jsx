@@ -1,8 +1,9 @@
+import { memo } from "react";
 /**
  * Дві кнопки-ярлики під Hero-ом: «Операції» / «Бюджети». Винесено щоб Hero
  * не ставав ще довшим і щоб префіксний фокус-стиль був консистентним.
  */
-export function NavButtons({ onNavigate }) {
+const NavButtonsImpl = function NavButtons({ onNavigate }) {
   return (
     <div className="flex flex-wrap gap-2">
       <button
@@ -21,4 +22,6 @@ export function NavButtons({ onNavigate }) {
       </button>
     </div>
   );
-}
+};
+
+export const NavButtons = memo(NavButtonsImpl);

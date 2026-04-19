@@ -1,4 +1,4 @@
-import { Suspense } from "react";
+import { Suspense, memo } from "react";
 import { CategoryChart } from "../../components/charts/lazy";
 import { ChartFallback } from "../../components/charts/ChartFallback";
 import { EmptyState } from "@shared/components/ui/EmptyState";
@@ -8,7 +8,7 @@ import { Card } from "@shared/components/ui/Card";
  * «Витрати за категоріями». Відмальовує chart якщо є дані, або empty-state
  * з CTA на «Операції». Клік по bar-у викликає onCategoryClick + перехід.
  */
-export function CategoryChartSection({
+const CategoryChartSectionImpl = function CategoryChartSection({
   catSpends,
   onNavigate,
   onCategoryClick,
@@ -53,4 +53,6 @@ export function CategoryChartSection({
       />
     </div>
   );
-}
+};
+
+export const CategoryChartSection = memo(CategoryChartSectionImpl);

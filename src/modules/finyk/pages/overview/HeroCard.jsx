@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { cn } from "@shared/lib/cn";
 
 /**
@@ -5,7 +6,7 @@ import { cn } from "@shared/lib/cn";
  * (картки / борги / місяць). Чисто презентаційна — усі значення обчислює
  * Overview.
  */
-export function HeroCard({
+const HeroCardImpl = function HeroCard({
   networth,
   monoTotal,
   totalDebt,
@@ -84,4 +85,6 @@ export function HeroCard({
       </div>
     </div>
   );
-}
+};
+
+export const HeroCard = memo(HeroCardImpl);

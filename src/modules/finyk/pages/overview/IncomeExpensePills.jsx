@@ -1,9 +1,14 @@
+import { memo } from "react";
 import { Card } from "@shared/components/ui/Card";
 /**
  * Пара карток «Дохід» / «Витрати» під Hero-ом. Стрілки з inline-SVG лишаємо
  * тут — це декоративні іконки конкретні для цієї секції.
  */
-export function IncomeExpensePills({ income, spent, showBalance = true }) {
+const IncomeExpensePillsImpl = function IncomeExpensePills({
+  income,
+  spent,
+  showBalance = true,
+}) {
   return (
     <div className="grid grid-cols-2 gap-3">
       <Card radius="lg">
@@ -58,4 +63,6 @@ export function IncomeExpensePills({ income, spent, showBalance = true }) {
       </Card>
     </div>
   );
-}
+};
+
+export const IncomeExpensePills = memo(IncomeExpensePillsImpl);

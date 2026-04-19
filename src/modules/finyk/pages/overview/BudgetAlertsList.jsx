@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { cn } from "@shared/lib/cn";
 import { calcCategorySpent, resolveExpenseCategoryMeta } from "../../utils";
 
@@ -5,7 +6,7 @@ import { calcCategorySpent, resolveExpenseCategoryMeta } from "../../utils";
  * Список плашок-алертів про перевищення 60%/100% ліміту бюджету.
  * Overview уже відфільтрував `budgets` → `budgetAlerts`; тут лише рендер.
  */
-export function BudgetAlertsList({
+const BudgetAlertsListImpl = function BudgetAlertsList({
   budgetAlerts,
   statTx,
   txCategories,
@@ -52,4 +53,6 @@ export function BudgetAlertsList({
       })}
     </div>
   );
-}
+};
+
+export const BudgetAlertsList = memo(BudgetAlertsListImpl);

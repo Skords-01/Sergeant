@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { cn } from "@shared/lib/cn";
 import { computePulseStyle } from "./pulseStyle.js";
 
@@ -6,7 +7,7 @@ import { computePulseStyle } from "./pulseStyle.js";
  * Це найбільша картка на Overview, тому винесена окремо; pulse-стилі
  * рахуються чистою функцією computePulseStyle.
  */
-export function MonthPulseCard({
+const MonthPulseCardImpl = function MonthPulseCard({
   dateLabel,
   daysInMonth,
   daysPassed,
@@ -194,4 +195,6 @@ export function MonthPulseCard({
       </div>
     </div>
   );
-}
+};
+
+export const MonthPulseCard = memo(MonthPulseCardImpl);

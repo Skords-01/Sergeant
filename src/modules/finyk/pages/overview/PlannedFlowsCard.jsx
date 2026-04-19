@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { FlowRow } from "./FlowRow.jsx";
 import { Card } from "@shared/components/ui/Card";
 
@@ -5,7 +6,11 @@ import { Card } from "@shared/components/ui/Card";
  * Список «Найближчі платежі» (до 5 рядків). plannedFlows — вже відфільтрований
  * і відсортований масив, тому компонент просто маппить його.
  */
-export function PlannedFlowsCard({ plannedFlows, onNavigate, showBalance }) {
+const PlannedFlowsCardImpl = function PlannedFlowsCard({
+  plannedFlows,
+  onNavigate,
+  showBalance,
+}) {
   if (plannedFlows.length === 0) return null;
 
   return (
@@ -28,4 +33,6 @@ export function PlannedFlowsCard({ plannedFlows, onNavigate, showBalance }) {
       </div>
     </Card>
   );
-}
+};
+
+export const PlannedFlowsCard = memo(PlannedFlowsCardImpl);

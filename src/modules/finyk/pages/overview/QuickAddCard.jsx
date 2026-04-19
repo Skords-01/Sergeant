@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { CANONICAL_TO_MANUAL_LABEL } from "../../domain/personalization";
 import { Card } from "@shared/components/ui/Card";
 
@@ -5,7 +6,7 @@ import { Card } from "@shared/components/ui/Card";
  * Квікадд-картка: топ-категорії + «нещодавнє». Показуємо лише коли
  * `onQuickAdd` переданий І зібралась хоч якась релевантна статистика.
  */
-export function QuickAddCard({
+const QuickAddCardImpl = function QuickAddCard({
   onQuickAdd,
   frequentCategories = [],
   frequentMerchants = [],
@@ -80,4 +81,6 @@ export function QuickAddCard({
       )}
     </Card>
   );
-}
+};
+
+export const QuickAddCard = memo(QuickAddCardImpl);
