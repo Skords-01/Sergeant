@@ -1,21 +1,68 @@
 import type { Request, Response } from "express";
+import { getSessionUser } from "../auth.js";
+import { getToken } from "../lib/bankVault.js";
 import { bankProxyFetch } from "../lib/bankProxy.js";
 import { validateQuery } from "../http/validate.js";
 import { MonoQuerySchema } from "../http/schemas.js";
+import { logger } from "../obs/logger.js";
 
 /**
  * `/api/mono` — проксі до Monobank personal API. CORS/rate-limit/module-tag
  * зроблені middleware-ами роутера; тут — лише upstream credentials,
  * path-валідація (whitelist), делегація transport-шару в `bankProxy.js`
  * (timeout/retry/breaker/TTL-cache).
+ *
+ * Source of truth для токена:
+ *   1) Якщо юзер залогінений І має рядок у `bank_tokens` — читаємо з vault.
+ *   2) Fallback: `X-Token` заголовок (legacy, для ще-не-мігрованих клієнтів).
+ * Порядок важливий: якщо vault доступний, ми ігноруємо заголовок —
+ * так недовірлива ланка "LocalStorage + XSS" не може підмінити credentials
+ * юзера, який уже переїхав на vault.
  */
 const ALLOWED_PATHS = ["/personal/client-info", "/personal/statement"];
+
+async function resolveToken(req: Request): Promise<string | null> {
+  // 1) Vault. Якщо сесії нема — тихо пропускаємо (частина юзерів на
+  // legacy-клієнті ще не має auth-сесії при виклику /api/mono).
+  let userId: string | null = null;
+  try {
+    const user = await getSessionUser(req);
+    userId = user?.id ?? null;
+  } catch (e) {
+    // Auth-lookup тимчасово зламаний — логуємо і падаємо на fallback,
+    // щоб не зламати активних користувачів.
+    logger.warn({
+      msg: "mono_session_lookup_failed",
+      err: e instanceof Error ? e.message : String(e),
+    });
+  }
+
+  if (userId) {
+    try {
+      const vaulted = await getToken(userId, "monobank");
+      if (vaulted) return vaulted;
+    } catch (e) {
+      // Vault недоступний (немає ключа, помилка БД) — падаємо на
+      // заголовок. Не ламаємо користувачів.
+      logger.warn({
+        msg: "mono_vault_read_failed",
+        err: e instanceof Error ? e.message : String(e),
+      });
+    }
+  }
+
+  // 2) Legacy header.
+  const header = req.headers["x-token"];
+  if (typeof header === "string" && header.length > 0) return header;
+  if (Array.isArray(header) && header.length > 0) return header[0]!;
+  return null;
+}
 
 export default async function handler(
   req: Request,
   res: Response,
 ): Promise<void> {
-  const token = req.headers["x-token"];
+  const token = await resolveToken(req);
 
   if (!token) {
     res.status(401).json({ error: "Токен відсутній" });
@@ -38,8 +85,8 @@ export default async function handler(
     upstream: "monobank",
     baseUrl: "https://api.monobank.ua",
     path,
-    headers: { "X-Token": String(token) },
-    cacheKeySecret: String(token),
+    headers: { "X-Token": token },
+    cacheKeySecret: token,
   });
 
   if (status < 200 || status >= 300) {

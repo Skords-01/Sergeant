@@ -10,6 +10,7 @@ import { ErrorBoundary } from "./core/ErrorBoundary.jsx";
 import { initSentry } from "./core/sentry.js";
 import { initWebVitals } from "./core/webVitals.js";
 import { runDemoCleanupOnce } from "./core/onboarding/cleanupDemoData.js";
+import { migrateBankTokensToVault } from "./core/bankVaultMigration";
 
 const queryClient = createAppQueryClient();
 
@@ -75,6 +76,10 @@ ReactDOM.createRoot(document.getElementById("root")).render(
 const scheduleInit = () => {
   void initSentry();
   void initWebVitals();
+  // Одноразова міграція банк-токенів з localStorage у server-side vault.
+  // Запускаємо в idle-фазі: потребує мережу (GET /api/bank/status), не
+  // блокує TTI. При помилці/401/503 тихо no-op.
+  void migrateBankTokensToVault();
 };
 if (typeof window !== "undefined") {
   if ("requestIdleCallback" in window) {

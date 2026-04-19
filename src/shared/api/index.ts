@@ -53,6 +53,8 @@ export type {
   MonoCashbackType,
 } from "./endpoints/mono";
 export { privatApi } from "./endpoints/privat";
+export { bankApi } from "./endpoints/bank";
+export type { BankStatusResponse } from "./endpoints/bank";
 export type {
   PrivatCredentials,
   PrivatBalanceRecord,
