@@ -1,13 +1,12 @@
-import { logger } from "../obs/logger.js";
-import { recordExternalHttp } from "../lib/externalHttp.js";
+import { bankProxyFetch } from "../lib/bankProxy.js";
 import { validateQuery } from "../http/validate.js";
 import { PrivatQuerySchema } from "../http/schemas.js";
-import { ExternalServiceError } from "../obs/errors.js";
 
 /**
  * `/api/privat` — проксі до PrivatBank merchant API. CORS/rate-limit/tag
- * зроблені middleware-ами роутера; тут тільки upstream credentials,
- * path-валідація і фільтрація заголовків від CRLF-injection.
+ * зроблені middleware-ами роутера; тут — лише upstream credentials,
+ * path-валідація, CRLF-фільтр заголовків і делегація transport-шару в
+ * `bankProxy.js` (timeout/retry/breaker/TTL-cache).
  */
 const ALLOWED_PATHS = ["/statements/balance/final", "/statements/transactions"];
 
@@ -44,56 +43,37 @@ export default async function handler(req, res) {
 
   const queryParams = new URLSearchParams(req.query);
   queryParams.delete("path");
-  const queryString = queryParams.toString();
+  const query = Object.fromEntries(queryParams.entries());
 
-  const start = process.hrtime.bigint();
-  let response;
+  const { status, body, contentType } = await bankProxyFetch({
+    upstream: "privatbank",
+    baseUrl: "https://acp.privatbank.ua/api",
+    path,
+    query,
+    headers: {
+      id: safeId,
+      token: safeToken,
+      "Content-Type": "application/json;charset=utf-8",
+    },
+    cacheKeySecret: `${safeId}|${safeToken}`,
+  });
+
+  if (status < 200 || status >= 300) {
+    const errorMessage =
+      status === 429
+        ? "Занадто багато запитів"
+        : status === 401 || status === 403
+          ? "Невірні credentials PrivatBank"
+          : body || `Помилка ${status}`;
+    return res.status(status).json({ error: errorMessage });
+  }
+
+  let data;
   try {
-    const url = `https://acp.privatbank.ua/api${path}${queryString ? "?" + queryString : ""}`;
-    response = await fetch(url, {
-      headers: {
-        id: safeId,
-        token: safeToken,
-        "Content-Type": "application/json;charset=utf-8",
-      },
-    });
-  } catch (e) {
-    const ms = Number(process.hrtime.bigint() - start) / 1e6;
-    recordExternalHttp("privatbank", "error", ms);
-    logger.error({
-      msg: "privat_proxy_failed",
-      err: { message: e?.message || String(e), code: e?.code },
-    });
-    throw new ExternalServiceError("Помилка сервера", {
-      code: "PRIVATBANK_FETCH_FAILED",
-      cause: e,
-    });
+    data = JSON.parse(body);
+  } catch {
+    res.setHeader("Content-Type", contentType || "text/plain; charset=utf-8");
+    return res.status(status).send(body);
   }
-  const ms = Number(process.hrtime.bigint() - start) / 1e6;
-
-  if (!response.ok) {
-    recordExternalHttp(
-      "privatbank",
-      response.status === 429 ? "rate_limited" : "error",
-      ms,
-    );
-    let errorText = "";
-    try {
-      errorText = await response.text();
-    } catch {
-      /* response body may be unreadable — surface status text only */
-    }
-    return res.status(response.status).json({
-      error:
-        response.status === 429
-          ? "Занадто багато запитів"
-          : response.status === 401 || response.status === 403
-            ? "Невірні credentials PrivatBank"
-            : errorText || `Помилка ${response.status}`,
-    });
-  }
-
-  recordExternalHttp("privatbank", "ok", ms);
-  const data = await response.json();
   res.status(200).json(data);
 }

@@ -1,17 +1,12 @@
-import { logger } from "../obs/logger.js";
-import { recordExternalHttp } from "../lib/externalHttp.js";
+import { bankProxyFetch } from "../lib/bankProxy.js";
 import { validateQuery } from "../http/validate.js";
 import { MonoQuerySchema } from "../http/schemas.js";
-import { ExternalServiceError } from "../obs/errors.js";
 
 /**
  * `/api/mono` — проксі до Monobank personal API. CORS/rate-limit/module-tag
- * зроблені middleware-ами роутера; тут тільки upstream credentials,
- * path-валідація та HTTP-виклик.
- *
- * Формат `path` (whitelist-regex) валідується через `validateQuery` + zod;
- * allowlist конкретних upstream шляхів — нижче (не чистий shape-check,
- * тому тримаємо тут).
+ * зроблені middleware-ами роутера; тут — лише upstream credentials,
+ * path-валідація (whitelist), делегація transport-шару в `bankProxy.js`
+ * (timeout/retry/breaker/TTL-cache).
  */
 const ALLOWED_PATHS = ["/personal/client-info", "/personal/statement"];
 
@@ -33,39 +28,27 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "Недозволений API шлях" });
   }
 
-  const start = process.hrtime.bigint();
-  let response;
+  const { status, body, contentType } = await bankProxyFetch({
+    upstream: "monobank",
+    baseUrl: "https://api.monobank.ua",
+    path,
+    headers: { "X-Token": String(token) },
+    cacheKeySecret: String(token),
+  });
+
+  if (status < 200 || status >= 300) {
+    return res.status(status).json({
+      error: status === 429 ? "Занадто багато запитів" : body,
+    });
+  }
+
+  let data;
   try {
-    response = await fetch(`https://api.monobank.ua${path}`, {
-      headers: { "X-Token": String(token) },
-    });
-  } catch (e) {
-    const ms = Number(process.hrtime.bigint() - start) / 1e6;
-    recordExternalHttp("monobank", "error", ms);
-    logger.error({
-      msg: "mono_proxy_failed",
-      err: { message: e?.message || String(e), code: e?.code },
-    });
-    throw new ExternalServiceError("Помилка сервера", {
-      code: "MONOBANK_FETCH_FAILED",
-      cause: e,
-    });
+    data = JSON.parse(body);
+  } catch {
+    // upstream повернув не-JSON на 2xx — віддаємо як plain text, щоб не мовчки ковтати.
+    res.setHeader("Content-Type", contentType || "text/plain; charset=utf-8");
+    return res.status(status).send(body);
   }
-  const ms = Number(process.hrtime.bigint() - start) / 1e6;
-
-  if (!response.ok) {
-    recordExternalHttp(
-      "monobank",
-      response.status === 429 ? "rate_limited" : "error",
-      ms,
-    );
-    const errorText = await response.text();
-    return res.status(response.status).json({
-      error: response.status === 429 ? "Занадто багато запитів" : errorText,
-    });
-  }
-
-  const data = await response.json();
-  recordExternalHttp("monobank", "ok", ms);
   res.status(200).json(data);
 }
