@@ -1,3 +1,4 @@
+import { Button } from "@shared/components/ui/Button";
 import { Card } from "@shared/components/ui/Card";
 import { Icon } from "@shared/components/ui/Icon";
 
@@ -39,14 +40,16 @@ export function IOSInstallBanner({ onDismiss }) {
             <span className="font-semibold">На початковий екран</span>.
           </p>
         </div>
-        <button
-          type="button"
+        <Button
+          variant="ghost"
+          size="xs"
+          iconOnly
           onClick={onDismiss}
-          className="text-muted hover:text-text shrink-0 p-1 -mt-1 -mr-1"
           aria-label="Закрити"
+          className="shrink-0 -mt-1 -mr-1 text-muted hover:text-text"
         >
           <Icon name="close" size={16} />
-        </button>
+        </Button>
       </Card>
     </div>
   );

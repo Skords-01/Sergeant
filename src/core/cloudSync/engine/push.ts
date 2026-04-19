@@ -8,18 +8,12 @@ import {
   getDirtyModules,
   getModuleModifiedTimes,
 } from "../state/dirtyModules";
-import { collectModuleData } from "../state/moduleData";
 import { setModuleVersion } from "../state/versions";
-import type { CurrentUser, ModulePayload, PushAllResponse } from "../types";
+import type { EngineArgs, PushAllResponse } from "../types";
+import { buildModulesPayload } from "./buildPayload";
 import { replayOfflineQueue } from "./replay";
 
-export interface PushArgs {
-  user: CurrentUser | null | undefined;
-  onStart(): void;
-  onSuccess(when: Date): void;
-  onError(message: string): void;
-  onSettled(): void;
-}
+export type PushArgs = EngineArgs;
 
 /**
  * Push all currently-dirty modules. Behavior matches the original
@@ -41,16 +35,7 @@ export async function pushDirty(args: PushArgs): Promise<void> {
   // only clear a module's dirty flag if its modifiedAt hasn't advanced —
   // otherwise a change that happened mid-request would be silently dropped.
   const modifiedSnapshot = getModuleModifiedTimes();
-  const modules: Record<string, ModulePayload> = {};
-  for (const mod of dirtyMods) {
-    const data = collectModuleData(mod);
-    if (data && Object.keys(data).length > 0) {
-      modules[mod] = {
-        data,
-        clientUpdatedAt: modifiedSnapshot[mod] || new Date().toISOString(),
-      };
-    }
-  }
+  const modules = buildModulesPayload(dirtyMods, modifiedSnapshot);
   try {
     if (Object.keys(modules).length === 0) {
       clearAllDirty();
@@ -100,17 +85,10 @@ export async function pushAll(args: PushArgs): Promise<void> {
   const { user, onStart, onSuccess, onError, onSettled } = args;
   onStart();
   try {
-    const modifiedTimes = getModuleModifiedTimes();
-    const modules: Record<string, ModulePayload> = {};
-    for (const mod of Object.keys(SYNC_MODULES)) {
-      const data = collectModuleData(mod);
-      if (data && Object.keys(data).length > 0) {
-        modules[mod] = {
-          data,
-          clientUpdatedAt: modifiedTimes[mod] || new Date().toISOString(),
-        };
-      }
-    }
+    const modules = buildModulesPayload(
+      Object.keys(SYNC_MODULES),
+      getModuleModifiedTimes(),
+    );
     if (Object.keys(modules).length === 0) return;
 
     if (!navigator.onLine) {

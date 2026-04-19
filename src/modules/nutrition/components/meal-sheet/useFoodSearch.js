@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { foodSearchApi, isApiError } from "@shared/api";
+import { foodSearchApi } from "@shared/api";
 import { nutritionKeys } from "@shared/lib/queryKeys.js";
 import { searchFoods } from "../../lib/foodDb/foodDb.js";
 
@@ -13,18 +13,14 @@ const OFF_MIN_LEN = 2;
 // retype), requests for stale queries are auto-cancelled via `signal`, and
 // the built-in retry policy from the shared QueryClient handles flaky
 // mobile networks without the component having to know.
+//
+// Помилки від `foodSearchApi` — це вже `ApiError` з коректним `.status`,
+// так що `isRetriableError` у `queryClient` сам вирішить, чи варто ретраїти.
+// Раніше тут була конверсія у plain `Error` — лишали лише `.status` і
+// втрачали `kind`/`serverMessage`/`isOffline`. React Query таке не любить.
 async function fetchOpenFoodFacts(query, signal) {
-  try {
-    const data = await foodSearchApi.search(query, { signal });
-    return Array.isArray(data?.products) ? data.products : [];
-  } catch (e) {
-    if (isApiError(e) && e.kind === "http") {
-      const err = new Error(`food-search failed with ${e.status}`);
-      err.status = e.status;
-      throw err;
-    }
-    throw e;
-  }
+  const data = await foodSearchApi.search(query, { signal });
+  return Array.isArray(data?.products) ? data.products : [];
 }
 
 // Debounce user input separately from the queries themselves. We don't want

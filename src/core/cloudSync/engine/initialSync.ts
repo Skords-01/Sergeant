@@ -7,27 +7,59 @@ import {
   getModuleModifiedTimes,
 } from "../state/dirtyModules";
 import { isMigrationDone, markMigrationDone } from "../state/migration";
-import {
-  applyModuleData,
-  collectModuleData,
-  hasLocalData,
-} from "../state/moduleData";
+import { applyModuleData, hasLocalData } from "../state/moduleData";
 import { getModuleVersion, setModuleVersion } from "../state/versions";
-import type {
-  CurrentUser,
-  ModulePayload,
-  PullAllModuleBody,
-  PullAllResponse,
-} from "../types";
+import type { EngineArgs, PullAllModuleBody, PullAllResponse } from "../types";
+import { buildModulesPayload } from "./buildPayload";
 import { replayOfflineQueue } from "./replay";
 
-export interface InitialSyncArgs {
-  user: CurrentUser | null | undefined;
-  onStart(): void;
-  onSuccess(when: Date): void;
-  onError(message: string): void;
+export type InitialSyncArgs = EngineArgs & {
   onNeedMigration(): void;
-  onSettled(): void;
+};
+
+type UserId = string | undefined;
+
+function ensureMigrationDone(userId: UserId): void {
+  if (!isMigrationDone(userId)) markMigrationDone(userId);
+}
+
+function applyAdoptCloud(
+  applyModules: Array<{
+    mod: string;
+    data: Record<string, unknown>;
+    version?: number;
+  }>,
+  userId: UserId,
+): void {
+  for (const { mod, data, version } of applyModules) {
+    applyModuleData(mod, data);
+    if (userId && version) setModuleVersion(userId, mod, version);
+  }
+}
+
+async function applyMerge(
+  plan: {
+    applyModules: Array<{ mod: string; data: Record<string, unknown> }>;
+    setVersions: Array<{ mod: string; version: number }>;
+    dirtyMods: string[];
+  },
+  userId: UserId,
+): Promise<void> {
+  for (const { mod, data } of plan.applyModules) applyModuleData(mod, data);
+  if (userId) {
+    for (const { mod, version } of plan.setVersions) {
+      setModuleVersion(userId, mod, version);
+    }
+  }
+  if (plan.dirtyMods.length === 0) return;
+  const modules = buildModulesPayload(plan.dirtyMods, getModuleModifiedTimes());
+  if (Object.keys(modules).length === 0) return;
+  // Let ApiError propagate to the caller's catch so onError fires and
+  // markMigrationDone is skipped — matches pre-refactor behavior where
+  // `if (pushRes.ok) clearAllDirty()` combined with the syncApi-throwing
+  // transport meant a push failure aborted the whole initialSync.
+  await syncApi.pushAll(modules);
+  clearAllDirty();
 }
 
 /**
@@ -63,60 +95,22 @@ export async function initialSync(args: InitialSyncArgs): Promise<boolean> {
       dirtyModules: getDirtyModules(),
     });
 
-    switch (plan.kind) {
-      case "adoptCloud": {
-        for (const { mod, data, version } of plan.applyModules) {
-          applyModuleData(mod, data);
-          if (user?.id && version) {
-            setModuleVersion(user.id, mod, version);
-          }
-        }
-        if (!isMigrationDone(user?.id)) markMigrationDone(user?.id);
-        break;
-      }
-      case "needMigration": {
-        onNeedMigration();
-        return true;
-      }
-      case "merge": {
-        for (const { mod, data } of plan.applyModules) {
-          applyModuleData(mod, data);
-        }
-        if (user?.id) {
-          for (const { mod, version } of plan.setVersions) {
-            setModuleVersion(user.id, mod, version);
-          }
-        }
-        if (plan.dirtyMods.length > 0) {
-          const modifiedTimes = getModuleModifiedTimes();
-          const modules: Record<string, ModulePayload> = {};
-          for (const mod of plan.dirtyMods) {
-            const data = collectModuleData(mod);
-            if (data && Object.keys(data).length > 0) {
-              modules[mod] = {
-                data,
-                clientUpdatedAt: modifiedTimes[mod] || new Date().toISOString(),
-              };
-            }
-          }
-          if (Object.keys(modules).length > 0) {
-            // Let ApiError propagate to the outer catch so onError fires and
-            // markMigrationDone is skipped — matches pre-refactor behavior
-            // where `if (pushRes.ok) clearAllDirty()` combined with the
-            // syncApi-throwing transport meant a push failure aborted the
-            // whole initialSync.
-            await syncApi.pushAll(modules);
-            clearAllDirty();
-          }
-        }
-        if (!isMigrationDone(user?.id)) markMigrationDone(user?.id);
-        break;
-      }
-      case "noop": {
-        if (!isMigrationDone(user?.id)) markMigrationDone(user?.id);
-        break;
-      }
+    if (plan.kind === "needMigration") {
+      onNeedMigration();
+      return true;
     }
+
+    switch (plan.kind) {
+      case "adoptCloud":
+        applyAdoptCloud(plan.applyModules, user?.id);
+        break;
+      case "merge":
+        await applyMerge(plan, user?.id);
+        break;
+      case "noop":
+        break;
+    }
+    ensureMigrationDone(user?.id);
 
     onSuccess(new Date());
     return true;

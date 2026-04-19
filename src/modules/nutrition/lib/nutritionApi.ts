@@ -1,6 +1,7 @@
 import {
   nutritionApi,
   isApiError,
+  ApiError,
   type NutritionPhotoResponse,
   type NutritionRecipesResponse,
   type NutritionWeekPlanResponse,
@@ -14,9 +15,12 @@ import {
 import { friendlyApiError } from "./nutritionErrors.js";
 
 /**
- * Тонкий адаптер над централізованим `nutritionApi`. Переводить
- * `ApiError` з `@shared/api` у юзер-френдлі `new Error(message)` —
- * старий контракт, якого очікують nutrition-хуки.
+ * Тонкий адаптер над централізованим `nutritionApi`. Переписує `message`
+ * у `ApiError` на юзер-френдлі текст (той, що очікують nutrition-хуки
+ * і показують у банері помилки), але зберігає `kind` / `status` / `body`
+ * — щоб React Query міг коректно ретраїти (`isRetriableError` читає
+ * `.status`) і щоб консьюмери могли розрізняти `isOffline` / `isAuth`
+ * через `isApiError`.
  *
  * Generic-параметр `T` пробрасує типізовану відповідь із
  * `@shared/api/endpoints/nutrition` у споживача (наприклад,
@@ -24,6 +28,24 @@ import { friendlyApiError } from "./nutritionErrors.js";
  * Типізовані helper-и нижче (`recommendRecipes`, `parsePantry`, …)
  * роблять це автоматично — вони кращий вибір для нового коду.
  */
+function friendlyNutritionMessage(err: ApiError): string {
+  if (err.kind === "network") {
+    if (typeof navigator !== "undefined" && navigator.onLine === false) {
+      return "Немає підключення до інтернету. Спробуй пізніше.";
+    }
+    return err.message || "Не вдалося зʼєднатися із сервером.";
+  }
+  if (err.kind === "parse") {
+    // Частий кейс на Vercel: /api/* перехоплено rewrite і повернувся index.html
+    if (/<!doctype html/i.test(err.bodyText || "")) {
+      return "API повернув HTML замість JSON (ймовірно, rewrite перехоплює /api/*).";
+    }
+    return err.bodyText || "Некоректна відповідь сервера";
+  }
+  // kind === "http" або "aborted"
+  return friendlyApiError(err.status, err.serverMessage);
+}
+
 export async function postJson<T = unknown>(
   url: string,
   body: unknown,
@@ -36,25 +58,24 @@ export async function postJson<T = unknown>(
         err instanceof Error && err.message
           ? err.message
           : "Не вдалося зʼєднатися із сервером.";
-      throw new Error(message);
+      // Обгортаємо невідому помилку у ApiError(kind:"network"), щоб
+      // подальший onError не мусив розрізняти "шар API" і "все інше".
+      throw new ApiError({
+        kind: "network",
+        message,
+        url,
+        cause: err,
+      });
     }
-    if (err.kind === "network") {
-      if (typeof navigator !== "undefined" && navigator.onLine === false) {
-        throw new Error("Немає підключення до інтернету. Спробуй пізніше.");
-      }
-      throw new Error(err.message || "Не вдалося зʼєднатися із сервером.");
-    }
-    if (err.kind === "parse") {
-      // Частий кейс на Vercel: /api/* перехоплено rewrite і повернувся index.html
-      if (/<!doctype html/i.test(err.bodyText || "")) {
-        throw new Error(
-          "API повернув HTML замість JSON (ймовірно, rewrite перехоплює /api/*).",
-        );
-      }
-      throw new Error(err.bodyText || "Некоректна відповідь сервера");
-    }
-    // kind === "http" або "aborted"
-    throw new Error(friendlyApiError(err.status, err.serverMessage));
+    throw new ApiError({
+      kind: err.kind,
+      message: friendlyNutritionMessage(err),
+      status: err.status,
+      body: err.body,
+      bodyText: err.bodyText,
+      url: err.url,
+      cause: err,
+    });
   }
 }
 

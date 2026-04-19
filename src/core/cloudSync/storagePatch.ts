@@ -1,8 +1,10 @@
+// Side-effect import: ensure the dirty-modules module is evaluated before
+// we install the localStorage patch below, so `markModuleDirty` can run
+// against an initialized module graph.
+import "./state/dirtyModules";
+
 import { ALL_TRACKED_KEYS, keyToModule } from "./config";
-import {
-  markModuleDirty,
-  getDirtyModules as _unused_getDirty, // keep import so the module graph pulls in state before patching
-} from "./state/dirtyModules";
+import { markModuleDirty } from "./state/dirtyModules";
 import { emitSyncEvent } from "./state/events";
 
 // Capture raw references BEFORE installing the patch so `clearSyncManagedData`
@@ -11,11 +13,6 @@ const origSetItem = localStorage.setItem.bind(localStorage);
 const origRemoveItem = localStorage.removeItem.bind(localStorage);
 
 export const rawRemoveItem: (key: string) => void = origRemoveItem;
-
-// Reference to satisfy the import (we only want the side-effect of loading
-// state/dirtyModules before our patch runs). Prefix with underscore to
-// appease no-unused-vars lint rules.
-void _unused_getDirty;
 
 declare global {
   interface Window {

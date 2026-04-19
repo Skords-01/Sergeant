@@ -1,4 +1,5 @@
 import { memo } from "react";
+import { Button } from "@shared/components/ui/Button";
 import { Icon } from "@shared/components/ui/Icon";
 
 /**
@@ -42,14 +43,16 @@ const FirstInsightBannerImpl = function FirstInsightBanner({
           </button>
         </div>
       </div>
-      <button
-        type="button"
+      <Button
+        variant="ghost"
+        size="xs"
+        iconOnly
         onClick={onDismiss}
-        className="text-muted hover:text-text shrink-0 -mr-1"
         aria-label="Закрити підказку"
+        className="shrink-0 -mr-1 text-muted hover:text-text"
       >
         <Icon name="close" size={16} />
-      </button>
+      </Button>
     </div>
   );
 };

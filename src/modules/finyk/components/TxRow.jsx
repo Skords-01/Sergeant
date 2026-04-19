@@ -8,6 +8,7 @@ import {
   mergeExpenseCategoryDefinitions,
 } from "../constants";
 import { cn } from "@shared/lib/cn";
+import { Button } from "@shared/components/ui/Button";
 import { Icon } from "@shared/components/ui/Icon";
 
 const splitInp =
@@ -383,13 +384,15 @@ function TxRowImpl({
             + Додати частину
           </button>
           <div className="flex gap-2 pt-1">
-            <button
+            <Button
+              variant="primary"
+              size="xs"
               onClick={saveSplits}
               disabled={Math.abs(remaining) >= 0.01}
-              className="flex-1 text-xs py-2 rounded-xl bg-primary text-white disabled:opacity-40 transition-opacity"
+              className="flex-1"
             >
               Зберегти
-            </button>
+            </Button>
             {existingSplits.length > 0 && (
               <button
                 onClick={() => {

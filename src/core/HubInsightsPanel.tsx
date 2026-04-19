@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { cn } from "@shared/lib/cn";
+import { Button } from "@shared/components/ui/Button";
 import { Icon } from "@shared/components/ui/Icon";
 
 const MODULE_ACCENT = {
@@ -51,15 +52,17 @@ function RecRow({ rec, onAction, onDismiss }) {
         )}
       </div>
       {onDismiss && (
-        <button
-          type="button"
+        <Button
+          variant="ghost"
+          size="xs"
+          iconOnly
           onClick={() => onDismiss(rec.id)}
           aria-label="Прибрати"
           title="Прибрати"
-          className="shrink-0 -mr-1 -mt-1 w-7 h-7 rounded-lg flex items-center justify-center text-muted hover:text-text hover:bg-panelHi transition-colors"
+          className="shrink-0 -mr-1 -mt-1 text-muted hover:text-text"
         >
           <Icon name="close" size={14} />
-        </button>
+        </Button>
       )}
     </div>
   );

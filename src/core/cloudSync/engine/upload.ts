@@ -2,17 +2,12 @@ import { syncApi } from "@shared/api";
 import { SYNC_MODULES } from "../config";
 import { clearAllDirty, getModuleModifiedTimes } from "../state/dirtyModules";
 import { markMigrationDone } from "../state/migration";
-import { collectModuleData } from "../state/moduleData";
-import type { CurrentUser, ModulePayload } from "../types";
+import type { EngineArgs } from "../types";
+import { buildModulesPayload } from "./buildPayload";
 
-export interface UploadArgs {
-  user: CurrentUser | null | undefined;
-  onStart(): void;
-  onSuccess(when: Date): void;
-  onError(message: string): void;
+export type UploadArgs = EngineArgs & {
   onMigrated(): void;
-  onSettled(): void;
-}
+};
 
 /**
  * Upload all local data to the cloud and mark the migration as done for this
@@ -23,17 +18,10 @@ export async function uploadLocalData(args: UploadArgs): Promise<void> {
   if (!user?.id) return;
   onStart();
   try {
-    const modifiedTimes = getModuleModifiedTimes();
-    const modules: Record<string, ModulePayload> = {};
-    for (const mod of Object.keys(SYNC_MODULES)) {
-      const data = collectModuleData(mod);
-      if (data && Object.keys(data).length > 0) {
-        modules[mod] = {
-          data,
-          clientUpdatedAt: modifiedTimes[mod] || new Date().toISOString(),
-        };
-      }
-    }
+    const modules = buildModulesPayload(
+      Object.keys(SYNC_MODULES),
+      getModuleModifiedTimes(),
+    );
     if (Object.keys(modules).length > 0) {
       await syncApi.pushAll(modules);
     }

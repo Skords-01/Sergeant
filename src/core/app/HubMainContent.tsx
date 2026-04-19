@@ -1,3 +1,4 @@
+import { Button } from "@shared/components/ui/Button";
 import { Card } from "@shared/components/ui/Card";
 import { Icon } from "@shared/components/ui/Icon";
 import { HubDashboard } from "../HubDashboard.jsx";
@@ -106,19 +107,24 @@ export function HubMainContent({
                 Офлайн · пуш-нагадування · ярлик на екрані
               </p>
             </div>
-            <button
+            <Button
+              variant="primary"
+              size="sm"
               onClick={onInstall}
-              className="px-4 py-2 rounded-xl bg-primary text-white text-sm font-semibold shrink-0 hover:bg-primary/90 transition-colors"
+              className="shrink-0 font-semibold"
             >
               Так
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="ghost"
+              size="xs"
+              iconOnly
               onClick={onDismissInstall}
-              className="text-muted hover:text-text shrink-0 p-1"
               aria-label="Закрити"
+              className="shrink-0 text-muted hover:text-text"
             >
               <Icon name="close" size={16} />
-            </button>
+            </Button>
           </Card>
         </div>
       )}

@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { chatApi, isApiError } from "@shared/api";
+import { ApiError, chatApi, isApiError } from "@shared/api";
 import { cn } from "@shared/lib/cn";
 import { Icon } from "@shared/components/ui/Icon";
 import { perfMark, perfEnd } from "@shared/lib/perf";
@@ -262,11 +262,30 @@ function HubChat({ onClose, initialMessage }) {
       try {
         data = await chatApi.send({ context, messages: history });
       } catch (err) {
+        // Переписуємо `message` на юзер-френдлі, але лишаємося в межах
+        // `ApiError` — щоб зовнішній `friendlyChatError` бачив ту саму
+        // форму помилки, що й решта викликів, і щоб `isApiError` тут
+        // продовжував працювати вгору по стеку.
         if (isApiError(err) && err.kind === "http") {
-          throw new Error(friendlyApiError(err.status, err.serverMessage));
+          throw new ApiError({
+            kind: "http",
+            message: friendlyApiError(err.status, err.serverMessage),
+            status: err.status,
+            body: err.body,
+            bodyText: err.bodyText,
+            url: err.url,
+            cause: err,
+          });
         }
         if (isApiError(err) && err.kind === "parse") {
-          throw new Error("Некоректна відповідь сервера");
+          throw new ApiError({
+            kind: "parse",
+            message: "Некоректна відповідь сервера",
+            body: err.body,
+            bodyText: err.bodyText,
+            url: err.url,
+            cause: err,
+          });
         }
         throw err;
       }
@@ -319,7 +338,14 @@ function HubChat({ onClose, initialMessage }) {
             }
             const parsed = data2 as { error?: string; text?: string };
             if (!res2.ok)
-              throw new Error(friendlyApiError(res2.status, parsed?.error));
+              throw new ApiError({
+                kind: "http",
+                message: friendlyApiError(res2.status, parsed?.error),
+                status: res2.status,
+                body: data2,
+                bodyText: raw2,
+                url: res2.url,
+              });
             followUpText = parsed.text || "";
             setMessages((m) =>
               m.map((x) =>

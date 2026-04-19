@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { cn } from "@shared/lib/cn";
+import { Button } from "@shared/components/ui/Button";
 import { Icon } from "@shared/components/ui/Icon";
 import { trackEvent, ANALYTICS_EVENTS } from "../analytics";
 import { clearFirstActionPending, getVibePicks } from "./vibePicks.js";
@@ -142,14 +143,16 @@ export function FirstActionHeroCard({ onDismiss }) {
               Цифри нижче — приклад. Твої з&apos;являться, щойно щось додаси.
             </p>
           </div>
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="xs"
+            iconOnly
             onClick={dismiss}
-            className="shrink-0 -mt-1 -mr-1 text-muted hover:text-text p-1.5 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/45"
             aria-label="Сховати"
+            className="shrink-0 -mt-1 -mr-1 text-muted hover:text-text"
           >
             <Icon name="close" size={16} />
-          </button>
+          </Button>
         </div>
 
         <button
