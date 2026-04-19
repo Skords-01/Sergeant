@@ -397,25 +397,17 @@ async function generateWeeklyDigest(weekKey: string): Promise<{
   const nutrition = aggregateNutrition(weekKey);
   const routine = aggregateRoutine(weekKey);
 
-  let json: { report: unknown; generatedAt: string };
-  try {
-    json = (await weeklyDigestApi.generate({
-      weekRange: currentWeekRange,
-      finyk,
-      fizruk,
-      nutrition,
-      routine,
-    })) as { report: unknown; generatedAt: string };
-  } catch (e) {
-    if (isApiError(e) && e.kind === "http") {
-      const err = Object.assign(
-        new Error(e.serverMessage || "Помилка генерації звіту"),
-        { status: e.status },
-      );
-      throw err;
-    }
-    throw e;
-  }
+  // Не огортаємо `ApiError` у plain `Error` — це ламало retry-логіку
+  // React Query (`isRetriableError` читає `.status`) і приховувало `kind`
+  // від UI-селекторів. Консьюмери тепер читають `.serverMessage` через
+  // `isApiError(query.error)`.
+  const json = (await weeklyDigestApi.generate({
+    weekRange: currentWeekRange,
+    finyk,
+    fizruk,
+    nutrition,
+    routine,
+  })) as { report: unknown; generatedAt: string };
 
   return {
     report: json.report,
@@ -508,7 +500,9 @@ export function useWeeklyDigest(selectedWeekKey?: string) {
     digest: query.data ?? null,
     loading: mutation.isPending,
     error: mutation.error
-      ? (mutation.error as Error).message || "Помилка мережі"
+      ? isApiError(mutation.error) && mutation.error.kind === "http"
+        ? mutation.error.serverMessage || "Помилка генерації звіту"
+        : (mutation.error as Error).message || "Помилка мережі"
       : null,
     weekKey,
     weekRange,

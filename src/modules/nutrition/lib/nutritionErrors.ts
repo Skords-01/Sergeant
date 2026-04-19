@@ -1,3 +1,14 @@
+import { friendlyApiError as baseFriendlyApiError } from "@shared/lib/friendlyApiError";
+
+/**
+ * Nutrition-специфічний варіант `friendlyApiError`. Додає дві речі,
+ * яких немає у загальному мапері:
+ *  - 500 без ключа AI → окремий текст про «сервер харчування»;
+ *  - 413 для завеликого фото → конкретна інструкція.
+ *
+ * Усе інше делегуємо у `@shared/lib/friendlyApiError` — щоб
+ * 401/403/429/дефолт поводились однаково по всьому застосунку.
+ */
 export function friendlyApiError(
   status: number,
   message?: string | null,
@@ -6,9 +17,8 @@ export function friendlyApiError(
   if (status === 500 && /ANTHROPIC|not set|key/i.test(m)) {
     return "Сервер харчування не налаштовано (немає ключа AI).";
   }
-  if (status === 413)
+  if (status === 413) {
     return "Занадто велике фото. Стисни/обріж і спробуй ще раз.";
-  if (status === 429) return "Забагато запитів. Спробуй через хвилину.";
-  if (status === 401 || status === 403) return "Доступ заборонено.";
-  return m || `Помилка ${status}`;
+  }
+  return baseFriendlyApiError(status, message);
 }

@@ -21,21 +21,36 @@
  */
 
 import { QueryClient } from "@tanstack/react-query";
+import { isApiError } from "@shared/api";
 
 interface MaybeHttpError {
   status?: number;
   response?: { status?: number };
 }
 
-function isRetriableError(error: unknown): boolean {
+export function isRetriableError(error: unknown): boolean {
   if (!error) return false;
+
+  // Канонічний шлях: помилки з `@shared/api` — це завжди `ApiError`.
+  // Ретраємо лише те, що має шанс пройти з другої спроби.
+  if (isApiError(error)) {
+    if (error.kind === "aborted") return false; // користувач пішов — не повторюємо
+    if (error.kind === "network" || error.kind === "parse") return true;
+    // kind === "http"
+    return (
+      error.status === 408 ||
+      error.status === 429 ||
+      (error.status >= 500 && error.status <= 599)
+    );
+  }
+
+  // Fallback для можливих легасі-помилок, які ще не пройшли через ApiError.
   const e = error as MaybeHttpError;
   const status = e?.status ?? e?.response?.status;
   if (typeof status === "number") {
-    // 408 Request Timeout, 429 Too Many Requests, 5xx
     return status === 408 || status === 429 || status >= 500;
   }
-  // Мережеві помилки (TypeError: Failed to fetch, AbortError і т.ін.)
+  // Невідома форма (TypeError: Failed to fetch тощо) — спробуємо ще раз.
   return true;
 }
 
