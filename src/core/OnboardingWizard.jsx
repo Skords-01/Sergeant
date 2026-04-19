@@ -141,7 +141,7 @@ function VibeChipRow({ picks, togglePick }) {
   return (
     <div className="w-full space-y-2">
       <p className="text-[11px] text-muted text-center">
-        Тапни, щоб виключити, що зараз не актуально.
+        Зніми зайве — решту легко додати потім.
       </p>
       <div className="flex flex-wrap gap-2 justify-center">
         {VIBE_CHIPS.map((chip) => {

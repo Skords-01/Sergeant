@@ -288,24 +288,24 @@ export default function FizrukApp({
             <button
               type="button"
               onClick={onBackToHub}
-              className="shrink-0 w-10 h-10 min-w-[40px] min-h-[40px] -ml-1 flex items-center justify-center rounded-xl text-muted hover:text-text hover:bg-panelHi transition-colors border border-line bg-panel/80"
-              aria-label="До вибору модуля"
+              className="shrink-0 h-10 min-h-[40px] -ml-1 pl-2 pr-3 gap-1.5 flex items-center justify-center rounded-xl text-muted hover:text-text hover:bg-panelHi transition-colors border border-line bg-panel/80"
+              aria-label="До хабу"
               title="До хабу"
             >
               <svg
-                width="22"
-                height="22"
+                width="20"
+                height="20"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
-                strokeWidth="1.8"
+                strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 aria-hidden
               >
-                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                <polyline points="9 22 9 12 15 12 15 22" />
+                <path d="M15 18l-6-6 6-6" />
               </svg>
+              <span className="text-sm font-semibold">Хаб</span>
             </button>
           ) : (
             <div

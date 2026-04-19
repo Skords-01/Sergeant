@@ -32,6 +32,11 @@ import RoutineApp from "../modules/routine/RoutineApp.jsx";
 const AuthPage = lazy(() =>
   import("./AuthPage.jsx").then((m) => ({ default: m.AuthPage })),
 );
+const ResetPasswordPage = lazy(() =>
+  import("./ResetPasswordPage.jsx").then((m) => ({
+    default: m.ResetPasswordPage,
+  })),
+);
 const FinykApp = lazy(() => import("../modules/finyk/FinykApp"));
 const FizrukApp = lazy(() => import("../modules/fizruk/FizrukApp"));
 const NutritionApp = lazy(() => import("../modules/nutrition/NutritionApp"));
@@ -61,6 +66,7 @@ const SIGN_IN_PATH = "/sign-in";
 // populated-hub peek behind itself instead of hovering over an empty
 // dashboard.
 const WELCOME_PATH = "/welcome";
+const RESET_PASSWORD_PATH = "/reset-password";
 
 // Tiny effect-only component so the redirect is a declarative render,
 // not a `navigate()` call in the middle of AppInner — keeps the render
@@ -79,6 +85,7 @@ function AppInner() {
   const navigate = useNavigate();
   const onSignInRoute = location.pathname === SIGN_IN_PATH;
   const onWelcomeRoute = location.pathname === WELCOME_PATH;
+  const onResetPasswordRoute = location.pathname === RESET_PASSWORD_PATH;
 
   const openAuth = useCallback(() => {
     navigate(SIGN_IN_PATH);
@@ -159,6 +166,19 @@ function AppInner() {
       <Suspense fallback={<PageLoader />}>
         <div className="page-enter">
           <AuthPage onContinueWithoutAccount={leaveAuth} />
+        </div>
+      </Suspense>
+    );
+  }
+
+  // `/reset-password` is the Better Auth magic-link landing page. We
+  // render it unconditionally — even for logged-in users — because the
+  // token may belong to a different account they want to recover.
+  if (onResetPasswordRoute) {
+    return (
+      <Suspense fallback={<PageLoader />}>
+        <div className="page-enter">
+          <ResetPasswordPage />
         </div>
       </Suspense>
     );
@@ -252,29 +272,33 @@ function AppInner() {
   return (
     <div className="h-dvh flex flex-col bg-bg text-text overflow-hidden">
       {!online && <OfflineBanner />}
-      {activeModule !== "fizruk" && activeModule !== "routine" && (
+      {/* Finyk has no in-module header of its own, so we provide a
+          floating back-to-hub pill here. Fizruk, Routine and Nutrition
+          render their own inline "← Хаб" button inside the module header
+          for consistency — see #S0.5. */}
+      {activeModule === "finyk" && (
         <div className="shrink-0 absolute top-0 left-0 z-50 p-2 safe-area-pt-8">
           <button
             type="button"
             onClick={goToHub}
-            className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-2xl bg-panel/90 backdrop-blur-md border border-line text-muted hover:text-text shadow-card transition-colors"
-            title="До вибору модуля"
-            aria-label="До вибору модуля"
+            className="h-11 min-h-[44px] pl-2 pr-3 flex items-center gap-1.5 rounded-2xl bg-panel/90 backdrop-blur-md border border-line text-muted hover:text-text shadow-card transition-colors"
+            title="До хабу"
+            aria-label="До хабу"
           >
             <svg
-              width="22"
-              height="22"
+              width="20"
+              height="20"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
-              strokeWidth="1.8"
+              strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
               aria-hidden
             >
-              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-              <polyline points="9 22 9 12 15 12 15 22" />
+              <path d="M15 18l-6-6 6-6" />
             </svg>
+            <span className="text-sm font-semibold">Хаб</span>
           </button>
         </div>
       )}

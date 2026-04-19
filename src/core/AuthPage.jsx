@@ -3,18 +3,39 @@ import { Button } from "@shared/components/ui/Button";
 import { useAuth } from "./AuthContext.jsx";
 
 export function AuthPage({ onContinueWithoutAccount }) {
-  const { login, register, authError, setAuthError } = useAuth();
+  const { login, register, requestPasswordReset, authError, setAuthError } =
+    useAuth();
   const [mode, setMode] = useState("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
   const [showForgot, setShowForgot] = useState(false);
+  // "idle" → the panel renders the reset form; "sending" disables the
+  // button while the request flies; "sent" replaces the form with a
+  // neutral confirmation (no enumeration hints) so the user knows to
+  // check their inbox.
+  const [forgotState, setForgotState] = useState("idle");
+  const [forgotEmail, setForgotEmail] = useState("");
 
   const switchMode = () => {
     setMode((m) => (m === "login" ? "register" : "login"));
     setAuthError(null);
     setShowForgot(false);
+    setForgotState("idle");
+    setForgotEmail("");
+  };
+
+  const handleForgotSubmit = async (e) => {
+    e.preventDefault();
+    const target = (forgotEmail || email || "").trim();
+    if (!target) {
+      setAuthError("Введіть email, на який відправити лист.");
+      return;
+    }
+    setForgotState("sending");
+    const ok = await requestPasswordReset(target);
+    setForgotState(ok ? "sent" : "idle");
   };
 
   const handleSubmit = async (e) => {
@@ -100,7 +121,12 @@ export function AuthPage({ onContinueWithoutAccount }) {
               {mode === "login" && (
                 <button
                   type="button"
-                  onClick={() => setShowForgot((v) => !v)}
+                  onClick={() => {
+                    setAuthError(null);
+                    setForgotState("idle");
+                    setForgotEmail((cur) => cur || email || "");
+                    setShowForgot((v) => !v);
+                  }}
                   className="text-xs text-brand-600 dark:text-brand-400 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/45 rounded"
                 >
                   Забули пароль?
@@ -124,18 +150,49 @@ export function AuthPage({ onContinueWithoutAccount }) {
 
           {showForgot && (
             <div
-              role="note"
-              className="text-xs text-text bg-brand-500/10 border border-brand-500/30 rounded-xl px-4 py-3 leading-relaxed"
+              role="group"
+              aria-label="Скидання пароля"
+              className="text-xs text-text bg-brand-500/10 border border-brand-500/30 rounded-xl px-4 py-3 leading-relaxed space-y-2"
             >
-              Напишіть з email акаунту на{" "}
-              <a
-                href="mailto:support@sergeant.app?subject=Password%20reset"
-                className="font-semibold underline"
-              >
-                support@sergeant.app
-              </a>{" "}
-              — скинемо пароль вручну. Локальні дані на пристрої залишаються без
-              змін.
+              {forgotState === "sent" ? (
+                <p>
+                  Якщо такий email зареєстровано — ми відправили лист із
+                  посиланням для скидання пароля. Перевір вхідні та папку
+                  «Спам». Локальні дані на пристрої залишаються без змін.
+                </p>
+              ) : (
+                <>
+                  <p>
+                    Введи email акаунту — пришлемо посилання для скидання
+                    пароля. Локальні дані на пристрої залишаються без змін.
+                  </p>
+                  <label
+                    htmlFor="auth-forgot-email"
+                    className="block text-xs font-medium text-muted"
+                  >
+                    Email для скидання
+                  </label>
+                  <input
+                    id="auth-forgot-email"
+                    type="email"
+                    value={forgotEmail}
+                    onChange={(e) => setForgotEmail(e.target.value)}
+                    className={INPUT_CLS}
+                    placeholder="email@example.com"
+                    autoComplete="email"
+                  />
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="md"
+                    loading={forgotState === "sending"}
+                    onClick={handleForgotSubmit}
+                    className="w-full"
+                  >
+                    {forgotState === "sending" ? "Надсилаю…" : "Надіслати лист"}
+                  </Button>
+                </>
+              )}
             </div>
           )}
 

@@ -1,5 +1,11 @@
 import { createContext, useContext, useCallback, useState } from "react";
-import { useSession, signIn, signUp, signOut } from "./authClient.js";
+import {
+  useSession,
+  signIn,
+  signUp,
+  signOut,
+  forgetPassword,
+} from "./authClient.js";
 
 const AuthContext = createContext(null);
 
@@ -46,6 +52,28 @@ export function AuthProvider({ children }) {
     } catch {}
   }, []);
 
+  // Request a password reset email via Better Auth. Returns `true` when
+  // the request was accepted (the server still answers OK even if the
+  // address isn't registered — we don't leak account enumeration). The
+  // UI uses that flag to show a neutral "check your inbox" state.
+  const requestPasswordReset = useCallback(async (email) => {
+    setAuthError(null);
+    try {
+      const redirectTo = `${window.location.origin}/reset-password`;
+      const result = await forgetPassword({ email, redirectTo });
+      if (result?.error) {
+        setAuthError(
+          result.error.message || "Не вдалося надіслати лист для скидання.",
+        );
+        return false;
+      }
+      return true;
+    } catch (err) {
+      setAuthError(err?.message || "Не вдалося надіслати лист для скидання.");
+      return false;
+    }
+  }, []);
+
   return (
     <AuthContext.Provider
       value={{
@@ -56,6 +84,7 @@ export function AuthProvider({ children }) {
         login,
         register,
         logout,
+        requestPasswordReset,
       }}
     >
       {children}

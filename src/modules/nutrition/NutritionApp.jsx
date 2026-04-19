@@ -60,11 +60,44 @@ export default function NutritionApp({
   const photo = usePhotoAnalysis({ setBusy, setErr, setStatusText });
   const shopping = useShoppingList();
 
+  // When the photo-first FTUX CTA lands us here (#S0.3), we force the
+  // "Аналіз фото страви" disclosure open and pop the native file picker
+  // on the next frame — no extra "Звідки страва?" detour.
+  const [photoCardForceOpen, setPhotoCardForceOpen] = useState(false);
+
   useEffect(() => {
     if (pwaAction === "add_meal") {
       setActivePageAndHash("log");
       log.setAddMealSheetOpen(true);
       onPwaActionConsumed?.();
+      return;
+    }
+    if (pwaAction === "add_meal_photo") {
+      setActivePageAndHash("start");
+      setPhotoCardForceOpen(true);
+      // Defer the file-picker click until after the disclosure has
+      // rendered the `<input ref={fileRef}>`. requestAnimationFrame is
+      // enough on desktop; the 80ms fallback covers mobile browsers
+      // that stall the first frame behind route transitions.
+      const raf = requestAnimationFrame(() => {
+        try {
+          photo.fileRef.current?.click();
+        } catch {
+          /* noop — picker may be blocked without a user gesture */
+        }
+      });
+      const fallback = window.setTimeout(() => {
+        try {
+          photo.fileRef.current?.click();
+        } catch {
+          /* noop */
+        }
+      }, 80);
+      onPwaActionConsumed?.();
+      return () => {
+        cancelAnimationFrame(raf);
+        window.clearTimeout(fallback);
+      };
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [log, onPwaActionConsumed, pwaAction]);
@@ -291,7 +324,13 @@ export default function NutritionApp({
                     }, 80);
                   }}
                 />
-                <details className="group">
+                <details
+                  className="group"
+                  open={photoCardForceOpen || undefined}
+                  onToggle={(e) => {
+                    if (!e.currentTarget.open) setPhotoCardForceOpen(false);
+                  }}
+                >
                   <summary className="flex items-center gap-2 cursor-pointer select-none py-2 px-1 text-sm font-semibold text-text">
                     <Icon
                       name="chevron-right"

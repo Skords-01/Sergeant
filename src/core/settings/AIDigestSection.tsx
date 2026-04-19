@@ -1,13 +1,19 @@
 import { useState } from "react";
 import { Button } from "@shared/components/ui/Button";
 import { useToast } from "@shared/hooks/useToast.jsx";
+import { safeReadLS, safeWriteLS } from "@shared/lib/storage.js";
+import { STORAGE_KEYS } from "@shared/lib/storageKeys.js";
 import { useWeeklyDigest } from "../useWeeklyDigest.js";
-import { SettingsGroup } from "./SettingsPrimitives.jsx";
+import { SettingsGroup, ToggleRow } from "./SettingsPrimitives.jsx";
 
 export function AIDigestSection() {
   const { digest, loading, error, weekRange, generate } = useWeeklyDigest();
   const [done, setDone] = useState(false);
   const { success: toastSuccess } = useToast();
+  const [mondayAuto, setMondayAuto] = useState<boolean>(
+    () =>
+      safeReadLS<string>(STORAGE_KEYS.WEEKLY_DIGEST_MONDAY_AUTO, "") === "1",
+  );
 
   const handleGenerate = async () => {
     setDone(false);
@@ -16,6 +22,14 @@ export function AIDigestSection() {
       setDone(true);
       toastSuccess("Звіт тижня згенеровано!");
     }
+  };
+
+  const handleToggleMondayAuto = (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const next = event.target.checked;
+    setMondayAuto(next);
+    safeWriteLS(STORAGE_KEYS.WEEKLY_DIGEST_MONDAY_AUTO, next ? "1" : "0");
   };
 
   const generatedAt = digest?.generatedAt
@@ -63,6 +77,14 @@ export function AIDigestSection() {
                 ? "Оновити звіт тижня"
                 : "Згенерувати звіт зараз"}
         </Button>
+        <div className="pt-2 border-t border-line">
+          <ToggleRow
+            label="Автогенерація щопонеділка"
+            description="Якщо ввімкнено, ранкова сесія в понеділок запускає звіт у фоні. Вимкнуто за замовчуванням — інакше AI-виклик зʼїдається без твого запиту."
+            checked={mondayAuto}
+            onChange={handleToggleMondayAuto}
+          />
+        </div>
       </div>
     </SettingsGroup>
   );

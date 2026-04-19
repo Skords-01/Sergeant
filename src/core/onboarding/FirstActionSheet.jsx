@@ -31,7 +31,9 @@ const ACTIONS = {
     title: "Запиши перший прийом їжі",
     desc: "Калорії порахую я.",
     accent: "text-nutrition bg-nutrition-soft",
-    run: () => openHubModuleWithAction("nutrition", "add_meal"),
+    // Photo-first FTUX (#S0.3): skip the "Звідки страва?" source
+    // picker and open the camera/file picker immediately.
+    run: () => openHubModuleWithAction("nutrition", "add_meal_photo"),
   },
   fizruk: {
     icon: "dumbbell",

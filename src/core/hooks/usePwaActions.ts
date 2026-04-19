@@ -5,12 +5,14 @@ export type PwaAction =
   | "add_expense"
   | "start_workout"
   | "add_meal"
+  | "add_meal_photo"
   | "add_habit";
 
 const VALID_ACTIONS = new Set<PwaAction>([
   "add_expense",
   "start_workout",
   "add_meal",
+  "add_meal_photo",
   "add_habit",
 ]);
 

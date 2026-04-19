@@ -376,10 +376,17 @@ function SortableCard({ id, onOpenModule }) {
 // ═══════════════════════════════════════════════════════════════════════════
 // MONDAY AUTO DIGEST HOOK
 // ═══════════════════════════════════════════════════════════════════════════
+// Opt-in: users must explicitly enable this in Hub → Settings → AI Звіт тижня.
+// Default is OFF so a cold-start Monday visit never spends an AI call the
+// user didn't ask for. Toggle is persisted in localStorage.
 function useMondayAutoDigest() {
   const { generate } = useWeeklyDigest();
 
   useEffect(() => {
+    const enabled =
+      safeReadLS(STORAGE_KEYS.WEEKLY_DIGEST_MONDAY_AUTO, "") === "1";
+    if (!enabled) return;
+
     const now = new Date();
     const isMonday = now.getDay() === 1;
     if (!isMonday) return;
