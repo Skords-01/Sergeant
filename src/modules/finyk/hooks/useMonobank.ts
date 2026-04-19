@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { monoApi, isApiError } from "@shared/api";
-import { finykKeys, hashToken } from "@shared/lib/queryKeys";
+import { finykKeys, hubKeys, hashToken } from "@shared/lib/queryKeys";
 import { TX_CACHE_TTL, CURRENCY } from "../constants";
 import {
   readJSON,
@@ -39,12 +39,13 @@ import { trackEvent, ANALYTICS_EVENTS } from "../../../core/analytics";
  * Current synchronisation state for the Monobank data fetch.
  */
 
-const HUB_FINYK_CACHE_EVENT = "hub-finyk-cache-updated";
-
-function notifyHubFinykCache() {
-  try {
-    window.dispatchEvent(new CustomEvent(HUB_FINYK_CACHE_EVENT));
-  } catch {}
+/**
+ * Signal every subscriber of `hubKeys.preview("finyk")` that the Monobank
+ * cache on disk changed. Replaces the legacy `window.dispatchEvent(
+ * "hub-finyk-cache-updated")` bus — see `useFinykHubPreview`.
+ */
+function notifyHubFinykPreview(queryClient: QueryClient) {
+  queryClient.invalidateQueries({ queryKey: hubKeys.preview("finyk") });
 }
 
 const CACHE_KEY = "finyk_tx_cache";
@@ -74,9 +75,9 @@ function loadAnyCache() {
   return cache;
 }
 
-function saveCache(txs) {
+function saveCache(txs, queryClient: QueryClient) {
   if (writeJSON(CACHE_KEY, { txs, timestamp: Date.now() })) {
-    notifyHubFinykCache();
+    notifyHubFinykPreview(queryClient);
   }
 }
 
@@ -414,7 +415,7 @@ export function useMonobank() {
 
       if (unique.length > 0) {
         setTransactions(unique);
-        saveCache(unique);
+        saveCache(unique, queryClient);
         if (accountsOk === targetAccounts.length || unique.length >= 15) {
           saveLastGoodBackup(unique);
         }
@@ -724,7 +725,7 @@ export function useMonobank() {
     // (`useMonoClientInfo`, `useMonoStatements`) не видавали кешовані
     // дані попереднього користувача.
     queryClient.removeQueries({ queryKey: finykKeys.mono });
-    notifyHubFinykCache();
+    notifyHubFinykPreview(queryClient);
   };
 
   const clearTxCache = () => {
@@ -733,7 +734,7 @@ export function useMonobank() {
     // Очищуємо тільки statement-кеш RQ; client-info залишаємо,
     // токен не змінювався — профіль валідний.
     queryClient.removeQueries({ queryKey: finykKeys.monoStatements });
-    notifyHubFinykCache();
+    notifyHubFinykPreview(queryClient);
     setTransactions([]);
     setLastUpdated(null);
     setSyncState((s) => ({

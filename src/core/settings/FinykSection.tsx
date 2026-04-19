@@ -1,8 +1,10 @@
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@shared/lib/cn";
 import { Button } from "@shared/components/ui/Button";
 import { privatApi, isApiError } from "@shared/api";
 import { safeReadLS } from "@shared/lib/storage";
+import { hubKeys } from "@shared/lib/queryKeys";
 import { useStorage as useFinykStorage } from "../../modules/finyk/hooks/useStorage.js";
 import { getAccountLabel } from "../../modules/finyk/utils.js";
 import {
@@ -42,6 +44,7 @@ interface FinykStorageShape {
 }
 
 export function FinykSection() {
+  const queryClient = useQueryClient();
   const {
     hiddenAccounts,
     toggleHideAccount,
@@ -181,7 +184,7 @@ export function FinykSection() {
     try {
       localStorage.removeItem("finyk_tx_cache");
       localStorage.removeItem("finyk_tx_cache_last_good");
-      window.dispatchEvent(new CustomEvent("hub-finyk-cache-updated"));
+      queryClient.invalidateQueries({ queryKey: hubKeys.preview("finyk") });
     } catch {
       /* storage may be disabled — safe to ignore */
     }

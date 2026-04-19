@@ -1,6 +1,5 @@
 // Utility functions shared across HubChat modules
 
-export const HUB_FINYK_CACHE_EVENT = "hub-finyk-cache-updated";
 export const CONTEXT_TTL_MS = 15_000;
 export const CHAT_HISTORY_WRITE_DEBOUNCE_MS = 600;
 
@@ -136,13 +135,4 @@ export function cancelIdle(id: IdleHandle): void {
   if (typeof window === "undefined") return clearTimeout(id);
   if (window.cancelIdleCallback) return window.cancelIdleCallback(id);
   return clearTimeout(id);
-}
-
-export function checkHasMonoData(): boolean {
-  try {
-    const c = ls<{ txs?: unknown[] } | null>("finyk_tx_cache", null);
-    return !!c?.txs?.length;
-  } catch {
-    return false;
-  }
 }
