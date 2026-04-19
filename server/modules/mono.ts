@@ -1,3 +1,4 @@
+import type { Request, Response } from "express";
 import { bankProxyFetch } from "../lib/bankProxy.js";
 import { validateQuery } from "../http/validate.js";
 import { MonoQuerySchema } from "../http/schemas.js";
@@ -10,11 +11,15 @@ import { MonoQuerySchema } from "../http/schemas.js";
  */
 const ALLOWED_PATHS = ["/personal/client-info", "/personal/statement"];
 
-export default async function handler(req, res) {
+export default async function handler(
+  req: Request,
+  res: Response,
+): Promise<void> {
   const token = req.headers["x-token"];
 
   if (!token) {
-    return res.status(401).json({ error: "Токен відсутній" });
+    res.status(401).json({ error: "Токен відсутній" });
+    return;
   }
 
   const parsedQ = validateQuery(MonoQuerySchema, req, res);
@@ -25,7 +30,8 @@ export default async function handler(req, res) {
     (allowed) => path === allowed || path.startsWith(allowed + "/"),
   );
   if (!pathAllowed) {
-    return res.status(400).json({ error: "Недозволений API шлях" });
+    res.status(400).json({ error: "Недозволений API шлях" });
+    return;
   }
 
   const { status, body, contentType } = await bankProxyFetch({
@@ -37,18 +43,20 @@ export default async function handler(req, res) {
   });
 
   if (status < 200 || status >= 300) {
-    return res.status(status).json({
+    res.status(status).json({
       error: status === 429 ? "Занадто багато запитів" : body,
     });
+    return;
   }
 
-  let data;
+  let data: unknown;
   try {
     data = JSON.parse(body);
   } catch {
     // upstream повернув не-JSON на 2xx — віддаємо як plain text, щоб не мовчки ковтати.
     res.setHeader("Content-Type", contentType || "text/plain; charset=utf-8");
-    return res.status(status).send(body);
+    res.status(status).send(body);
+    return;
   }
   res.status(200).json(data);
 }

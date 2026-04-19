@@ -1,3 +1,4 @@
+import type { Request, Response } from "express";
 import { bankProxyFetch } from "../lib/bankProxy.js";
 import { validateQuery } from "../http/validate.js";
 import { PrivatQuerySchema } from "../http/schemas.js";
@@ -10,12 +11,16 @@ import { PrivatQuerySchema } from "../http/schemas.js";
  */
 const ALLOWED_PATHS = ["/statements/balance/final", "/statements/transactions"];
 
-export default async function handler(req, res) {
+export default async function handler(
+  req: Request,
+  res: Response,
+): Promise<void> {
   const merchantId = req.headers["x-privat-id"];
   const merchantToken = req.headers["x-privat-token"];
 
   if (!merchantId || !merchantToken) {
-    return res.status(401).json({ error: "Credentials відсутні" });
+    res.status(401).json({ error: "Credentials відсутні" });
+    return;
   }
 
   const parsedQ = validateQuery(PrivatQuerySchema, req, res);
@@ -26,11 +31,12 @@ export default async function handler(req, res) {
     (p) => path === p || path.startsWith(p + "/"),
   );
   if (!pathAllowed) {
-    return res.status(400).json({ error: "Недозволений API шлях" });
+    res.status(400).json({ error: "Недозволений API шлях" });
+    return;
   }
 
   // Відкидаємо небезпечні символи у значеннях заголовків (CRLF-injection захист).
-  const safeHeader = (v) => {
+  const safeHeader = (v: unknown): string | null => {
     const s = String(v);
     if (/[\r\n]/.test(s)) return null;
     return s;
@@ -38,10 +44,11 @@ export default async function handler(req, res) {
   const safeId = safeHeader(merchantId);
   const safeToken = safeHeader(merchantToken);
   if (!safeId || !safeToken) {
-    return res.status(400).json({ error: "Недозволений заголовок" });
+    res.status(400).json({ error: "Недозволений заголовок" });
+    return;
   }
 
-  const queryParams = new URLSearchParams(req.query);
+  const queryParams = new URLSearchParams(req.query as Record<string, string>);
   queryParams.delete("path");
   const query = Object.fromEntries(queryParams.entries());
 
@@ -65,15 +72,17 @@ export default async function handler(req, res) {
         : status === 401 || status === 403
           ? "Невірні credentials PrivatBank"
           : body || `Помилка ${status}`;
-    return res.status(status).json({ error: errorMessage });
+    res.status(status).json({ error: errorMessage });
+    return;
   }
 
-  let data;
+  let data: unknown;
   try {
     data = JSON.parse(body);
   } catch {
     res.setHeader("Content-Type", contentType || "text/plain; charset=utf-8");
-    return res.status(status).send(body);
+    res.status(status).send(body);
+    return;
   }
   res.status(200).json(data);
 }

@@ -1,4 +1,5 @@
-import webpush from "web-push";
+import type { Request, Response } from "express";
+import webpush, { WebPushError } from "web-push";
 import pool from "../db.js";
 import { logger } from "../obs/logger.js";
 import { recordExternalHttp } from "../lib/externalHttp.js";
@@ -10,13 +11,15 @@ import {
   PushUnsubscribeSchema,
 } from "../http/schemas.js";
 
+type WithSessionUser = Request & { user?: { id: string } };
+
 /**
  * Дублюємо два лейбли для одного outcome: історичну domain-метрику
  * `push_sends_total` (яку можуть читати старі дашборди/алерти) та уніфіковану
  * `external_http_requests_total{upstream="push"}`. Це свідома тимчасова
  * дуплікація — якщо й зносити, то окремим PR зі знесенням дашборду.
  */
-function recordSend(outcome) {
+function recordSend(outcome: string): void {
   try {
     pushSendsTotal.inc({ outcome });
   } catch {
@@ -34,19 +37,22 @@ if (VAPID_PUBLIC && VAPID_PRIVATE) {
 }
 
 /** GET /api/push/vapid-public — повертає публічний VAPID ключ для підписки. */
-export async function vapidPublic(_req, res) {
+export async function vapidPublic(_req: Request, res: Response): Promise<void> {
   if (!VAPID_PUBLIC) {
-    return res.status(503).json({ error: "Push not configured" });
+    res.status(503).json({ error: "Push not configured" });
+    return;
   }
   res.json({ publicKey: VAPID_PUBLIC });
 }
 
 /** POST /api/push/subscribe — зберегти підписку. Session в `req.user`. */
-export async function subscribe(req, res) {
-  if (!VAPID_PUBLIC)
-    return res.status(503).json({ error: "Push not configured" });
+export async function subscribe(req: Request, res: Response): Promise<void> {
+  if (!VAPID_PUBLIC) {
+    res.status(503).json({ error: "Push not configured" });
+    return;
+  }
 
-  const user = req.user;
+  const user = (req as WithSessionUser).user!;
   const parsed = validateBody(PushSubscribeSchema, req, res);
   if (!parsed.ok) return;
   const { endpoint, keys } = parsed.data;
@@ -71,8 +77,8 @@ export async function subscribe(req, res) {
 }
 
 /** DELETE /api/push/subscribe — soft-delete підписки. Session в `req.user`. */
-export async function unsubscribe(req, res) {
-  const user = req.user;
+export async function unsubscribe(req: Request, res: Response): Promise<void> {
+  const user = (req as WithSessionUser).user!;
   const parsed = validateBody(PushUnsubscribeSchema, req, res);
   if (!parsed.ok) return;
   const { endpoint } = parsed.data;
@@ -94,6 +100,12 @@ export async function unsubscribe(req, res) {
   res.json({ ok: true });
 }
 
+interface PushSubscriptionRow {
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+}
+
 /**
  * POST /api/push/send — надіслати push конкретному користувачу (внутрішній API).
  * Body: { userId, title, body, module, tag }
@@ -101,9 +113,11 @@ export async function unsubscribe(req, res) {
  * Auth через `X-Api-Secret` зроблено в `requireApiSecret("API_SECRET")` на
  * рівні роутера; handler вже отримує запит з перевіреним секретом.
  */
-export async function sendPush(req, res) {
-  if (!VAPID_PUBLIC)
-    return res.status(503).json({ error: "Push not configured" });
+export async function sendPush(req: Request, res: Response): Promise<void> {
+  if (!VAPID_PUBLIC) {
+    res.status(503).json({ error: "Push not configured" });
+    return;
+  }
 
   const parsed = validateBody(PushSendSchema, req, res);
   if (!parsed.ok) return;
@@ -114,13 +128,16 @@ export async function sendPush(req, res) {
   //     Index Cond: (user_id = $1)
   //     (фільтр deleted_at IS NULL уже вбудований у partial-index,
   //      тому Rows Removed by Filter = 0)
-  const { rows } = await pool.query(
+  const { rows } = await pool.query<PushSubscriptionRow>(
     `SELECT endpoint, p256dh, auth
        FROM push_subscriptions
       WHERE user_id = $1 AND deleted_at IS NULL`,
     [userId],
   );
-  if (rows.length === 0) return res.json({ sent: 0 });
+  if (rows.length === 0) {
+    res.json({ sent: 0 });
+    return;
+  }
 
   const payload = JSON.stringify({
     title,
@@ -129,7 +146,7 @@ export async function sendPush(req, res) {
     tag: tag || null,
   });
   let sent = 0;
-  const stale = [];
+  const stale: string[] = [];
 
   // Вузький per-subscription catch: одна невдала підписка не повинна
   // зривати весь fan-out. Інші помилки (DB, тощо) летять наверх в errorHandler.
@@ -143,23 +160,25 @@ export async function sendPush(req, res) {
         await webpush.sendNotification(sub, payload);
         sent++;
         recordSend("ok");
-      } catch (e) {
-        if (e.statusCode === 404 || e.statusCode === 410) {
+      } catch (e: unknown) {
+        const statusCode = e instanceof WebPushError ? e.statusCode : undefined;
+        const message = e instanceof Error ? e.message : String(e);
+        if (statusCode === 404 || statusCode === 410) {
           stale.push(row.endpoint);
           recordSend("invalid_endpoint");
-        } else if (e.statusCode === 429) {
+        } else if (statusCode === 429) {
           recordSend("rate_limited");
           logger.warn({
             msg: "push_rate_limited",
-            status: e.statusCode,
-            err: { message: e?.message },
+            status: statusCode,
+            err: { message },
           });
         } else {
           recordSend("error");
           logger.warn({
             msg: "push_send_error",
-            status: e.statusCode,
-            err: { message: e?.message },
+            status: statusCode,
+            err: { message },
           });
         }
       }

@@ -1,3 +1,4 @@
+import type { Request, Response } from "express";
 import { z } from "zod";
 import { logger } from "../obs/logger.js";
 import { webVitalsCls, webVitalsDurationMs } from "../obs/metrics.js";
@@ -20,7 +21,12 @@ import { webVitalsCls, webVitalsDurationMs } from "../obs/metrics.js";
  * Pino потоком з публічного endpoint.
  */
 
-const TIMING_METRICS = new Set(["LCP", "INP", "FCP", "TTFB"]);
+const TIMING_METRICS = new Set<"LCP" | "INP" | "FCP" | "TTFB">([
+  "LCP",
+  "INP",
+  "FCP",
+  "TTFB",
+]);
 
 // CLS — безрозмірний, в реальних умовах 0..1+ (0.25 вже "poor"). Таймінги
 // (LCP/INP/FCP/TTFB) — мс, з приватним upper-bound 120_000 (2 хв — будь-що
@@ -42,7 +48,7 @@ const PayloadSchema = z.object({
   metrics: z.array(MetricSchema).min(1).max(10),
 });
 
-export default function webVitalsHandler(req, res) {
+export default function webVitalsHandler(req: Request, res: Response): void {
   // sendBeacon з `type: "application/json"` приходить як Buffer/string залежно
   // від middleware-а — Express `express.json()` уже парсить у req.body, але
   // якщо клієнт помилиться з content-type, body може бути undefined.
@@ -54,14 +60,15 @@ export default function webVitalsHandler(req, res) {
         issues: parsed.error.issues?.slice(0, 3),
       });
     }
-    return res.status(204).end();
+    res.status(204).end();
+    return;
   }
 
   for (const m of parsed.data.metrics) {
     try {
       if (m.name === "CLS") {
         webVitalsCls.observe({ rating: m.rating }, m.value);
-      } else if (TIMING_METRICS.has(m.name)) {
+      } else if (TIMING_METRICS.has(m.name as "LCP" | "INP" | "FCP" | "TTFB")) {
         webVitalsDurationMs.observe(
           { metric: m.name, rating: m.rating },
           m.value,
@@ -72,5 +79,5 @@ export default function webVitalsHandler(req, res) {
     }
   }
 
-  return res.status(204).end();
+  res.status(204).end();
 }
