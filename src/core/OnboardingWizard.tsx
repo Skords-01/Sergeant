@@ -9,6 +9,7 @@ import {
   markFirstActionStartedAt,
   saveVibePicks,
 } from "./onboarding/vibePicks.js";
+import { MODULE_LABELS } from "@shared/lib/moduleLabels";
 
 const ONBOARDING_DONE_KEY = "hub_onboarding_done_v1";
 
@@ -65,37 +66,38 @@ function markOnboardingDone() {
 }
 
 // Module chips shown inline on the splash — the single source of truth
-// for module taxonomy on this screen. Previously accompanied by a
-// separate 2×2 preview grid that duplicated the four modules with
-// different labels ("Гроші" chip vs "−320 грн" preview tile), so new
-// users saw two competing taxonomies on one screen. We now fold a
-// small aspirational metric into each chip instead, so the chip is
-// both the selector and the teaser — one object, one label.
+// for module taxonomy on this screen. Labels read from `MODULE_LABELS`
+// so цей splash, hub-header і module bottom-nav усі показують одне й те
+// ж бренд-ім'я («Фінік», а не «Гроші»). Раніше splash використовував
+// аспіраційні слова («Гроші / Тіло / Їжа»), а потім модулі — бренд, і
+// користувач не був певен що це одне й те ж. Бренд виграє, бо його й
+// так видно на кожному внутрішньому екрані; аспіраційний опис живе в
+// `teaser` ряду нижче.
 //
 // Keys match `ALL_MODULES` so picks feed straight into `saveVibePicks`.
 const VIBE_CHIPS = [
   {
     id: "finyk",
     icon: "credit-card",
-    label: "Гроші",
+    label: MODULE_LABELS.finyk,
     teaser: "−320₴ / тиждень",
   },
   {
     id: "fizruk",
     icon: "dumbbell",
-    label: "Тіло",
+    label: MODULE_LABELS.fizruk,
     teaser: "5 трен. за 14 днів",
   },
   {
     id: "routine",
     icon: "check",
-    label: "Рутина",
+    label: MODULE_LABELS.routine,
     teaser: "стрік «вода» 7 днів",
   },
   {
     id: "nutrition",
     icon: "utensils",
-    label: "Їжа",
+    label: MODULE_LABELS.nutrition,
     teaser: "сніданок · 420 ккал",
   },
 ];

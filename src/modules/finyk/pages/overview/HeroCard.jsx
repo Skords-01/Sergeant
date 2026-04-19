@@ -16,7 +16,7 @@ const HeroCardImpl = function HeroCard({
   showBalance = true,
 }) {
   return (
-    <div className="rounded-3xl bg-gradient-to-br from-emerald-600 via-emerald-700 to-teal-800 text-white p-5 shadow-float border border-white/10">
+    <div className="rounded-3xl bg-gradient-to-br from-emerald-600 via-emerald-700 to-emerald-900 text-white p-5 shadow-float border border-white/10">
       <div className="flex items-start justify-between gap-2">
         <div>
           <p className="text-emerald-100/90 text-sm">Загальний нетворс</p>

@@ -64,9 +64,20 @@ function DashboardIcon() {
 interface HubTabsProps {
   hubView: HubView;
   onChange: (view: HubView) => void;
+  /**
+   * «Звіти» прибрана з tab-strip-а, поки у користувача немає жодного
+   * реального запису. Порожній звіт — найгірший FTUX-стан: юзер тапне,
+   * побачить «— ₴» і втратить довіру до модуля. Тому tab з'являється
+   * лише коли `hasAnyRealEntry()` повертає `true` (див. `firstRealEntry.ts`).
+   */
+  showReports?: boolean;
 }
 
-export function HubTabs({ hubView, onChange }: HubTabsProps) {
+export function HubTabs({
+  hubView,
+  onChange,
+  showReports = true,
+}: HubTabsProps) {
   return (
     <nav
       aria-label="Розділи хабу"
@@ -84,13 +95,15 @@ export function HubTabs({ hubView, onChange }: HubTabsProps) {
           Головна
         </TabButton>
 
-        <TabButton
-          active={hubView === "reports"}
-          onClick={() => onChange("reports")}
-          iconName="bar-chart"
-        >
-          Звіти
-        </TabButton>
+        {showReports && (
+          <TabButton
+            active={hubView === "reports"}
+            onClick={() => onChange("reports")}
+            iconName="bar-chart"
+          >
+            Звіти
+          </TabButton>
+        )}
 
         <TabButton
           active={hubView === "settings"}

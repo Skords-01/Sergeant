@@ -8,6 +8,7 @@ import { VoiceMicButton } from "@shared/components/ui/VoiceMicButton.jsx";
 import { parseExpenseSpeech } from "../../../core/lib/speechParsers.js";
 import { useVisualKeyboardInset } from "@shared/hooks/useVisualKeyboardInset";
 import { toLocalISODate } from "@shared/lib/date";
+import { hapticSuccess } from "@shared/lib/haptic";
 import { CANONICAL_TO_MANUAL_LABEL } from "../domain/personalization";
 
 // Manual-expense categories. Labels map to the MCC canonical ids used
@@ -223,6 +224,7 @@ export function ManualExpenseSheet({
     // searchable.
     const trimmedDesc = form.description.trim();
     const description = trimmedDesc || stripEmoji(form.category);
+    hapticSuccess();
     onSave?.({
       ...(initialExpense?.id ? { id: String(initialExpense.id) } : {}),
       description,

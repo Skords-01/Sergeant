@@ -382,7 +382,7 @@ export function Assets({
     <div className="flex-1 overflow-y-auto">
       <div className="max-w-4xl mx-auto px-4 pt-4 page-tabbar-pad space-y-1">
         {/* Networth */}
-        <div className="bg-gradient-to-br from-emerald-600 via-emerald-700 to-teal-800 text-white rounded-2xl p-5 mb-3 border border-white/10 shadow-float">
+        <div className="bg-gradient-to-br from-emerald-600 via-emerald-700 to-emerald-900 text-white rounded-2xl p-5 mb-3 border border-white/10 shadow-float">
           <div className="text-xs text-emerald-100/90 mb-1">
             Загальний нетворс
           </div>

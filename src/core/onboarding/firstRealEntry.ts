@@ -34,8 +34,11 @@ function hasNonDemoItem(list) {
 /**
  * Returns true if the user has at least one non-demo entry anywhere.
  * Called on every dashboard render; O(modules) and cheap (no reserialize).
+ *
+ * Exported for the hub shell: «Звіти» tab is hidden until this becomes
+ * true — an empty reports view is worse than no tab at all.
  */
-function hasAnyRealEntry() {
+export function hasAnyRealEntry() {
   // Finyk — manual expenses.
   const manual = safeReadJSON("finyk_manual_expenses_v1");
   if (hasNonDemoItem(manual)) return true;

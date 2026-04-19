@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@shared/components/ui/Button";
 import { Sheet } from "@shared/components/ui/Sheet";
 import { useVisualKeyboardInset } from "@shared/hooks/useVisualKeyboardInset";
+import { hapticSuccess } from "@shared/lib/haptic";
 import { MEAL_TYPES } from "../lib/mealTypes.js";
 import { ensureSeedFoods } from "../lib/foodDb/foodDb.js";
 import { BarcodeScanner } from "./BarcodeScanner.jsx";
@@ -158,6 +159,7 @@ export function AddMealSheet({
     // скидається в null при відкритті схита.
     const effectiveFoodId = pickedFood?.id ?? initialMeal?.foodId ?? null;
     const hasAmount = pickedFood || initialMeal?.amount_g != null;
+    hapticSuccess();
     const macroSource = photoResult
       ? "photoAI"
       : pickedFood

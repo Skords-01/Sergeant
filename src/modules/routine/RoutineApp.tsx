@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { cn } from "@shared/lib/cn";
 import { useToast } from "@shared/hooks/useToast";
+import { hapticTap } from "@shared/lib/haptic";
 import {
   loadRoutineState,
   toggleHabitCompletion,
@@ -390,6 +391,10 @@ export default function RoutineApp({
 
   const onToggleHabit = useCallback(
     (habitId: string, dateKey: string) => {
+      // Легкий тап на ✓ — фізичне відчуття підтверджує дію до того, як
+      // око встигне відскакувати до heatmap-анімації. `hapticTap` —
+      // noop на desktop/iOS Safari і під prefers-reduced-motion.
+      hapticTap();
       setRoutine((prev) => toggleHabitCompletion(prev, habitId, dateKey));
     },
     [setRoutine],

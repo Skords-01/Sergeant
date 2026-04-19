@@ -31,6 +31,7 @@ import { ActiveWorkoutBanner } from "./app/ActiveWorkoutBanner.jsx";
 import { WelcomeScreen } from "./app/WelcomeScreen.jsx";
 import { shouldShowOnboarding } from "./OnboardingWizard.jsx";
 import { isFirstRealEntryDone } from "./onboarding/vibePicks.js";
+import { hasAnyRealEntry } from "./onboarding/firstRealEntry.js";
 import { useHubNavigation } from "./hooks/useHubNavigation.js";
 import { useHubUIState } from "./hooks/useHubUIState.js";
 import { usePwaActions, type PwaAction } from "./hooks/usePwaActions.js";
@@ -294,7 +295,15 @@ function AppInner() {
           hideAuthButton={inFtuxSession}
         />
 
-        <HubTabs hubView={ui.hubView} onChange={ui.setHubView} />
+        <HubTabs
+          hubView={ui.hubView}
+          onChange={ui.setHubView}
+          // «Звіти» — пустий екран без даних, тому ховаємо tab до
+          // першого реального запису. Якщо юзер уже обрав «Звіти» і
+          // потім стер дані — повертаємо його на дашборд, щоб не
+          // лишався на неіснуючому табі.
+          showReports={hasAnyRealEntry()}
+        />
 
         <HubMainContent
           updateAvailable={updateAvailable}
