@@ -51,24 +51,44 @@ export async function subscribe(req, res) {
   if (!parsed.ok) return;
   const { endpoint, keys } = parsed.data;
 
+  // Re-subscribe одного й того ж endpoint-а має «воскресити» soft-deleted
+  // рядок (deleted_at = NULL), інакше браузер, який повернувся з 410 → 200
+  // через N годин, лишався б вимкненим у нас.
+  //
+  // EXPLAIN ANALYZE (типовий plan):
+  //   Insert on push_subscriptions  (cost=0..12 rows=1)
+  //     Conflict Resolution: UPDATE
+  //     Conflict Arbiter Indexes: push_subscriptions_endpoint_key
+  //       -> Index Scan using push_subscriptions_endpoint_key  (rows=1)
   await pool.query(
     `INSERT INTO push_subscriptions (user_id, endpoint, p256dh, auth)
        VALUES ($1, $2, $3, $4)
-       ON CONFLICT (endpoint) DO UPDATE SET p256dh = $3, auth = $4`,
+       ON CONFLICT (endpoint) DO UPDATE
+         SET p256dh = $3, auth = $4, user_id = $1, deleted_at = NULL`,
     [user.id, endpoint, keys.p256dh, keys.auth],
   );
   res.json({ ok: true });
 }
 
-/** DELETE /api/push/subscribe — видалити підписку. Session в `req.user`. */
+/** DELETE /api/push/subscribe — soft-delete підписки. Session в `req.user`. */
 export async function unsubscribe(req, res) {
   const user = req.user;
   const parsed = validateBody(PushUnsubscribeSchema, req, res);
   if (!parsed.ok) return;
   const { endpoint } = parsed.data;
 
+  // Soft-delete: виставляємо deleted_at замість DELETE. Причини:
+  //   1. Збережемо audit history (коли, скільки раз юзер відписувався).
+  //   2. Браузери тимчасово повертають 410/404 (TTL expiry, pull-to-refresh
+  //      на iOS), потім знову працюють. Hard-DELETE втратив би keys і змусив
+  //      SW заново subscribe. З soft-delete наступний subscribe просто
+  //      очищує deleted_at (див. вище).
+  // WHERE deleted_at IS NULL робить операцію ідемпотентною: повторний
+  // unsubscribe не чіпає рядок і не crash-ить constraint-и.
   await pool.query(
-    `DELETE FROM push_subscriptions WHERE user_id = $1 AND endpoint = $2`,
+    `UPDATE push_subscriptions
+        SET deleted_at = NOW()
+      WHERE user_id = $1 AND endpoint = $2 AND deleted_at IS NULL`,
     [user.id, endpoint],
   );
   res.json({ ok: true });
@@ -89,8 +109,15 @@ export async function sendPush(req, res) {
   if (!parsed.ok) return;
   const { userId, title, body, module: mod, tag } = parsed.data;
 
+  // EXPLAIN ANALYZE (типовий plan після міграції 005):
+  //   Index Scan using idx_push_subs_user_active on push_subscriptions
+  //     Index Cond: (user_id = $1)
+  //     (фільтр deleted_at IS NULL уже вбудований у partial-index,
+  //      тому Rows Removed by Filter = 0)
   const { rows } = await pool.query(
-    `SELECT endpoint, p256dh, auth FROM push_subscriptions WHERE user_id = $1`,
+    `SELECT endpoint, p256dh, auth
+       FROM push_subscriptions
+      WHERE user_id = $1 AND deleted_at IS NULL`,
     [userId],
   );
   if (rows.length === 0) return res.json({ sent: 0 });
@@ -140,8 +167,14 @@ export async function sendPush(req, res) {
   );
 
   if (stale.length > 0) {
+    // Stale (404/410) від push-сервісу — soft-delete замість DELETE, щоб:
+    //   - лишити endpoint у таблиці для analytics (кількість відпадінь);
+    //   - якщо браузер знову з'явиться з тим самим endpoint у subscribe,
+    //     просто очистимо deleted_at (див. `subscribe` вище) без втрати keys.
     await pool.query(
-      `DELETE FROM push_subscriptions WHERE endpoint = ANY($1)`,
+      `UPDATE push_subscriptions
+          SET deleted_at = NOW()
+        WHERE endpoint = ANY($1) AND deleted_at IS NULL`,
       [stale],
     );
   }
