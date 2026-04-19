@@ -20,7 +20,7 @@
     "check": "npm run format:check && npm run lint && npm run typecheck && npm test && npm run build",
     "db:up": "docker compose up -d",
     "db:down": "docker compose down",
-    "db:migrate": "node scripts/migrate.mjs",
+    "db:migrate": "node --import tsx scripts/migrate.mjs",
     "prepare": "husky"
   },
   "dependencies": {
