@@ -160,7 +160,7 @@ ratio пульсує.
 
 ---
 
-## 6. Frontend Core Web Vitals (baseline збір)
+## 8. Frontend Core Web Vitals (baseline збір)
 
 **SLI** (per-metric): частка "good"-вимірів по CWV порогах Google.
 

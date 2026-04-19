@@ -24,6 +24,7 @@ const MAX_BATCH = 10;
 const buffer = [];
 let flushScheduled = false;
 let wiredLifecycle = false;
+let initialized = false;
 
 function flush() {
   flushScheduled = false;
@@ -117,6 +118,11 @@ function enqueue(metric) {
  * web-vitals chunk не потрапив у критичний шлях.
  */
 export async function initWebVitals() {
+  // Guard проти подвійної ініціалізації (Vite HMR, повторний виклик з іншої
+  // entry-точки тощо). Без нього `onLCP(enqueue)` реєструється двічі і кожне
+  // `web_vitals_*` спостереження дублюється — отруює baseline, який цей
+  // модуль і мав збирати.
+  if (initialized) return;
   if (typeof window === "undefined") return;
   if (import.meta.env.VITE_WEB_VITALS_ENDPOINT === "0") return;
   // SSR / jsdom — немає сенсу.
@@ -128,6 +134,9 @@ export async function initWebVitals() {
   } catch {
     return;
   }
+  // Ставимо прапорець ПІСЛЯ успішного імпорту — щоб невдала спроба
+  // (offline, CDN 404) не заблокувала наступний legitimate виклик.
+  initialized = true;
 
   wireLifecycle();
 
