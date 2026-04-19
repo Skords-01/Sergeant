@@ -6,7 +6,7 @@
 
 Загальне:
 
-- Прод entry point — `server/railway.mjs`. Заборгована реплікація — Railway.
+- Прод entry point — `server/railway.mjs`. Хостинг — Railway.
 - Метрики за bearer-токен: `GET /metrics` з `Authorization: Bearer $METRICS_TOKEN`.
 - Логи — Pino JSON у stdout, з ALS-контекстом `{requestId, userId, module}`.
 - Sentry ловить fatal/error (включно з `err.cause` чейном).
@@ -51,10 +51,10 @@
 2. `too_large` → хтось б'ється у `MAX_BLOB_SIZE`. Знайди user у логах
    (`path=/api/sync, module=sync`) і проінформуй / обріж.
 3. `unauthorized` підскочив → перевір `auth_attempts_total` — можливо
-   глобальна auth-пробл'ема відбивається на sync.
+   глобальна auth-проблема відбивається на sync.
 4. `error` підскочив → Pino-логи + Sentry issues. Найчастіше це DB
    timeout на `sync_push`.
-5. Перевір `sync_payload_bytes` — raptor payload-и можуть зʼїдати pool.
+5. Перевір `sync_payload_bytes` — великі payload-и можуть зʼїдати pool.
 6. При повному пробої — тимчасово пропиши `rate_limit` жорсткіше, щоб
    клієнти не добивали бекенд ретраями.
 
