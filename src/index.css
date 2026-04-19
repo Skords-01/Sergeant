@@ -42,6 +42,29 @@
 
     /* Brand accent for focus states */
     --c-accent: 16 185 129; /* emerald-500 */
+
+    /* Semantic aliases (design-token contract) — map 1:1 to existing vars.
+       Prefer these names in new code: surface / surface-muted / fg / fg-muted.
+       Existing bg / panel / text / muted remain valid for back-compat. */
+    --c-surface: var(--c-panel);
+    --c-surface-muted: var(--c-panel-hi);
+    --c-fg: var(--c-text);
+    --c-fg-muted: var(--c-muted);
+
+    /* Status semantic tokens (kept in sync with tailwind `statusColors`). */
+    --c-success: 16 185 129; /* emerald-500 */
+    --c-warning: 245 158 11; /* amber-500 */
+    --c-danger: 239 68 68; /* red-500 */
+    --c-info: 59 130 246; /* blue-500 */
+
+    /* Motion tokens — single source of truth for duration/easing. */
+    --motion-duration-fast: 150ms;
+    --motion-duration: 200ms;
+    --motion-duration-slow: 300ms;
+    --motion-duration-slower: 400ms;
+    --motion-ease-smooth: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    --motion-ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --motion-ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
   }
 
   /* ═══════════════════════════════════════════════════════════════════════
@@ -135,6 +158,17 @@
 }
 
 @layer components {
+  /* ═══════════════════════════════════════════════════════════════════════
+     FOCUS RING — consistent keyboard a11y affordance across the app.
+     Apply to any interactive element that doesn't already define its own
+     focus-visible ring (Button already does). Uses the `accent` semantic
+     token so light & dark themes stay in sync automatically.
+     ═══════════════════════════════════════════════════════════════════════ */
+  .focus-ring {
+    @apply outline-none focus-visible:ring-2 focus-visible:ring-accent/60
+           focus-visible:ring-offset-2 focus-visible:ring-offset-surface;
+  }
+
   /* ═══════════════════════════════════════════════════════════════════════
      PANELS & CARDS — Core UI surfaces
      ═══════════════════════════════════════════════════════════════════════ */

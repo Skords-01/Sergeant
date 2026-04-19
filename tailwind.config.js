@@ -40,6 +40,15 @@ export default {
         subtle: "rgb(var(--c-subtle) / <alpha-value>)",
         primary: "rgb(var(--c-primary) / <alpha-value>)",
 
+        // ─── Semantic aliases (preferred in new code) ──────────────────────
+        // Map 1:1 to the existing tokens above; dark mode "just works" because
+        // they resolve through the same CSS variables.
+        surface: "rgb(var(--c-panel) / <alpha-value>)",
+        "surface-muted": "rgb(var(--c-panel-hi) / <alpha-value>)",
+        fg: "rgb(var(--c-text) / <alpha-value>)",
+        "fg-muted": "rgb(var(--c-muted) / <alpha-value>)",
+        accent: "rgb(var(--c-accent) / <alpha-value>)",
+
         // ═══════════════════════════════════════════════════════════════════
         // BRAND COLORS — Soft & Organic palette with Emerald/Teal accent
         // ═══════════════════════════════════════════════════════════════════
