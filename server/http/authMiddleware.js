@@ -1,5 +1,5 @@
 import { createHash } from "crypto";
-import { rateLimitExpress } from "../api/lib/rateLimit.js";
+import { rateLimitExpress } from "./rateLimit.js";
 import { logger } from "../obs/logger.js";
 import { authAttemptsTotal } from "../obs/metrics.js";
 

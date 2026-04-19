@@ -1,0 +1,155 @@
+import { describe, it, expect, beforeEach } from "vitest";
+import webVitalsHandler from "./web-vitals.js";
+import { register, webVitalsCls, webVitalsDurationMs } from "../obs/metrics.js";
+
+function makeRes() {
+  const res = {
+    statusCode: 200,
+    _body: null,
+    status(code) {
+      this.statusCode = code;
+      return this;
+    },
+    json(obj) {
+      this._body = obj;
+      return this;
+    },
+    end() {
+      return this;
+    },
+  };
+  return res;
+}
+
+async function getMetricText() {
+  return register.metrics();
+}
+
+describe("webVitalsHandler", () => {
+  beforeEach(() => {
+    webVitalsDurationMs.reset();
+    webVitalsCls.reset();
+  });
+
+  // Method-guard перенесений у роутер (див. server/routes/web-vitals.js:
+  // router.post(...)), хендлер більше не відповідає 405.
+  it("returns 204 on invalid payload and does not throw", async () => {
+    const req = { method: "POST", body: { foo: "bar" } };
+    const res = makeRes();
+    webVitalsHandler(req, res);
+    expect(res.statusCode).toBe(204);
+  });
+
+  it("records LCP/INP/FCP/TTFB into web_vitals_duration_ms", async () => {
+    const req = {
+      method: "POST",
+      body: {
+        metrics: [
+          { name: "LCP", value: 1200, rating: "good" },
+          { name: "INP", value: 250, rating: "needs-improvement" },
+          { name: "FCP", value: 900, rating: "good" },
+          { name: "TTFB", value: 50, rating: "good" },
+        ],
+      },
+    };
+    const res = makeRes();
+    webVitalsHandler(req, res);
+
+    expect(res.statusCode).toBe(204);
+    const text = await getMetricText();
+    expect(text).toMatch(
+      /web_vitals_duration_ms_count\{metric="LCP",rating="good"\} 1/,
+    );
+    expect(text).toMatch(
+      /web_vitals_duration_ms_count\{metric="INP",rating="needs-improvement"\} 1/,
+    );
+    expect(text).toMatch(
+      /web_vitals_duration_ms_count\{metric="FCP",rating="good"\} 1/,
+    );
+    expect(text).toMatch(
+      /web_vitals_duration_ms_count\{metric="TTFB",rating="good"\} 1/,
+    );
+  });
+
+  it("records CLS into web_vitals_cls with unitless bucketing", async () => {
+    const req = {
+      method: "POST",
+      body: {
+        metrics: [
+          { name: "CLS", value: 0.08, rating: "good" },
+          { name: "CLS", value: 0.3, rating: "poor" },
+        ],
+      },
+    };
+    const res = makeRes();
+    webVitalsHandler(req, res);
+
+    expect(res.statusCode).toBe(204);
+    const text = await getMetricText();
+    expect(text).toMatch(/web_vitals_cls_count\{rating="good"\} 1/);
+    expect(text).toMatch(/web_vitals_cls_count\{rating="poor"\} 1/);
+  });
+
+  it("rejects value out of range without throwing", async () => {
+    const req = {
+      method: "POST",
+      body: {
+        metrics: [{ name: "LCP", value: 999999999, rating: "poor" }],
+      },
+    };
+    const res = makeRes();
+    webVitalsHandler(req, res);
+
+    expect(res.statusCode).toBe(204);
+    const text = await getMetricText();
+    expect(text).not.toMatch(/web_vitals_duration_ms_count\{metric="LCP"/);
+  });
+
+  it("rejects CLS with timing-sized value (separate upper-bound)", async () => {
+    // CLS — безрозмірний (0..1+). Зловмисник міг би надіслати value=100000
+    // якби max був спільний з таймінгами (120_000ms) — це знищило б
+    // `web_vitals_cls_sum` і зробило baseline марним.
+    const req = {
+      method: "POST",
+      body: {
+        metrics: [{ name: "CLS", value: 100000, rating: "poor" }],
+      },
+    };
+    const res = makeRes();
+    webVitalsHandler(req, res);
+
+    expect(res.statusCode).toBe(204);
+    const text = await getMetricText();
+    expect(text).not.toMatch(/web_vitals_cls_count\{rating="poor"\}/);
+  });
+
+  it("accepts CLS at realistic upper-bound (value=5)", async () => {
+    const req = {
+      method: "POST",
+      body: {
+        metrics: [{ name: "CLS", value: 5, rating: "poor" }],
+      },
+    };
+    const res = makeRes();
+    webVitalsHandler(req, res);
+
+    expect(res.statusCode).toBe(204);
+    const text = await getMetricText();
+    expect(text).toMatch(/web_vitals_cls_count\{rating="poor"\} 1/);
+  });
+
+  it("rejects batch of 11 metrics (enforces max=10)", async () => {
+    const metrics = Array.from({ length: 11 }, () => ({
+      name: "LCP",
+      value: 1000,
+      rating: "good",
+    }));
+    const req = { method: "POST", body: { metrics } };
+    const res = makeRes();
+    webVitalsHandler(req, res);
+
+    expect(res.statusCode).toBe(204);
+    const text = await getMetricText();
+    expect(text).not.toMatch(/web_vitals_duration_ms_count\{metric="LCP"/);
+  });
+});
