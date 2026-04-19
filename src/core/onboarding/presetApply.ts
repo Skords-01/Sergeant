@@ -81,7 +81,7 @@ function applyFinykPreset(preset) {
   };
   safeWriteJSON(FINYK_MANUAL_EXPENSES_KEY, [entry, ...list]);
   // Keep the user out of the Monobank login gate — mirrors what
-  // `seedFinykDemoData()` does after demo seeding.
+  // `enableFinykManualOnly()` does on the «Далі без банку» path.
   try {
     localStorage.setItem(FINYK_MANUAL_ONLY_KEY, "1");
   } catch {

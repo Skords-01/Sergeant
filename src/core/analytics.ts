@@ -34,7 +34,6 @@ export const ANALYTICS_EVENTS = Object.freeze({
   // 30-second FTUX funnel. Each step narrows the gap between "first open"
   // and "user felt real value", so every transition has a named event.
   ONBOARDING_VIBE_PICKED: "onboarding_vibe_picked",
-  ONBOARDING_DEMO_RENDERED: "onboarding_demo_rendered",
   ONBOARDING_FIRST_ACTION_SHOWN: "onboarding_first_action_shown",
   ONBOARDING_FIRST_ACTION_PICKED: "onboarding_first_action_picked",
   FTUX_PRESET_SHEET_SHOWN: "ftux_preset_sheet_shown",

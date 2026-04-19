@@ -197,6 +197,34 @@ export default function NutritionApp({
     log.setAddMealSheetOpen(true);
   };
 
+  // Requested from inside AddMealSheet's source-step (S13). Close the
+  // sheet, route to the Start page where PhotoAnalyzeCard lives, force
+  // the disclosure open and pop the native file picker — mirrors the
+  // `add_meal_photo` PWA shortcut so there's a single path for "дати
+  // фото" regardless of where the user starts.
+  const handleRequestMealPhoto = () => {
+    log.setAddMealSheetOpen(false);
+    log.setAddMealPhotoResult(null);
+    setEditingMeal(null);
+    setActivePageAndHash("start");
+    setPhotoCardForceOpen(true);
+    const raf = requestAnimationFrame(() => {
+      try {
+        photo.fileRef.current?.click();
+      } catch {
+        /* noop — picker may be blocked without a user gesture */
+      }
+    });
+    window.setTimeout(() => {
+      cancelAnimationFrame(raf);
+      try {
+        photo.fileRef.current?.click();
+      } catch {
+        /* noop */
+      }
+    }, 80);
+  };
+
   const handlePantryBarcodeDetected = usePantryBarcodeScan({
     pantry,
     setPantryScannerOpen,
@@ -532,6 +560,7 @@ export default function NutritionApp({
         restoreConfirm={restoreConfirm}
         setRestoreConfirm={setRestoreConfirm}
         applyRestorePayload={applyRestorePayload}
+        onRequestMealPhoto={handleRequestMealPhoto}
       />
     </div>
   );

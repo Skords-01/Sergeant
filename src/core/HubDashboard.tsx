@@ -11,18 +11,14 @@ import { WeeklyDigestCard, hasLiveWeeklyDigest } from "./WeeklyDigestCard.jsx";
 import { useWeeklyDigest, loadDigest, getWeekKey } from "./useWeeklyDigest.js";
 import { useCoachInsight } from "./useCoachInsight.js";
 import { SoftAuthPromptCard } from "./onboarding/SoftAuthPromptCard.jsx";
-import { DemoModeBanner } from "./onboarding/DemoModeBanner.jsx";
 import { FirstActionHeroCard } from "./onboarding/FirstActionSheet.jsx";
 import { detectFirstRealEntry } from "./onboarding/firstRealEntry.js";
 import {
   isSoftAuthDismissed,
-  isDemoBannerDismissed,
-  dismissDemoBanner,
   isFirstActionPending,
   recordSessionDay,
   getSessionDays,
 } from "./onboarding/vibePicks.js";
-import { wasDemoSeeded } from "./onboarding/demoSeeds.js";
 import { useFirstEntryCelebration } from "./onboarding/useFirstEntryCelebration.js";
 import {
   DndContext,
@@ -405,29 +401,6 @@ function useMondayAutoDigest() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// DEMO STRIP — один тихий рядок над статус-списком, замість per-row «Демо»
-// пілюль на кожному модулі. Не inline-dismissable, знімається автоматично
-// після першого реального запису (див. `modulePreviewsAreDemo`).
-// ═══════════════════════════════════════════════════════════════════════════
-function DemoStrip() {
-  return (
-    <div
-      className={cn(
-        "px-3 py-1.5 text-2xs font-semibold uppercase tracking-wider",
-        "text-brand-600 bg-brand-500/10 border border-brand-500/20 rounded-lg",
-        "flex items-center justify-between gap-2",
-      )}
-      title="Це приклад — заміниться на твої дані після першого запису"
-    >
-      <span>Дані — приклад</span>
-      <span className="font-normal normal-case tracking-normal text-muted">
-        Заміниться після першого запису
-      </span>
-    </div>
-  );
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
 // SECONDARY CHIPS — ≤2 contextual quick-add chips, які підсвічуються тільки
 // коли є сигнал (recs з pwaAction). Стоять між NextCard і списком статусу.
 // Не дублює primary-CTA з NextCard — береться з `rest`, не з `focus`.
@@ -521,9 +494,12 @@ export function HubDashboard({
   useFirstEntryCelebration(hasRealEntry);
   // Record today's session on mount so the proactive nudge actually
   // accumulates days; scoped to once-per-mount via ref to avoid
-  // double-counting if the component re-renders.
-  const sessionDaysRef = useRef<number>(0);
-  if (sessionDaysRef.current === 0) {
+  // double-counting if the component re-renders. `-1` is used as the
+  // "uninitialized" marker because `recordSessionDay()` / `getSessionDays()`
+  // return `0` from their localStorage-unavailable catch path, which would
+  // otherwise re-fire the guard on every render.
+  const sessionDaysRef = useRef<number>(-1);
+  if (sessionDaysRef.current === -1) {
     sessionDaysRef.current = recordSessionDay() || getSessionDays();
   }
   const SOFT_AUTH_SESSION_DAYS_THRESHOLD = 3;
@@ -536,20 +512,6 @@ export function HubDashboard({
     typeof onShowAuth === "function" &&
     (hasRealEntry ||
       sessionDaysRef.current >= SOFT_AUTH_SESSION_DAYS_THRESHOLD);
-
-  // Demo banner: only while we're still showing seeded FTUX data and the
-  // user hasn't contributed anything of their own yet. Dismissible; once
-  // there's a real entry or the user closes it, it stays gone.
-  const [demoBannerDismissed, setDemoBannerDismissed] = useState(() =>
-    isDemoBannerDismissed(),
-  );
-  const showDemoBanner =
-    !hasRealEntry && !demoBannerDismissed && wasDemoSeeded();
-
-  // Фактичний «демо-mode» контексту залишається, поки немає жодного
-  // реального запису. Раніше це малювало «Демо»-пілюлю на КОЖНОМУ рядку
-  // статус-списку — тепер це один тихий strip над списком (див. DemoStrip).
-  const modulePreviewsAreDemo = !hasRealEntry && wasDemoSeeded();
 
   const { focus, rest, dismiss } = useDashboardFocus();
 
@@ -637,7 +599,7 @@ export function HubDashboard({
 
   // ─────────────────────────────────────────────────────────────────────
   // ONE-HERO RULE. На екрані завжди рівно одна primary-картка:
-  //   FirstAction → DemoBanner → SoftAuth → NextCard
+  //   FirstAction → SoftAuth → NextCard
   // FTUX-онбординг-картки мають власні CTA, тому їх не треба дублювати з
   // NextCard. Як тільки вони зняті, хероєм стає NextCard (focus чи empty).
   // ─────────────────────────────────────────────────────────────────────
@@ -645,15 +607,6 @@ export function HubDashboard({
   if (firstActionVisible) {
     hero = (
       <FirstActionHeroCard onDismiss={() => setFirstActionVisible(false)} />
-    );
-  } else if (showDemoBanner) {
-    hero = (
-      <DemoModeBanner
-        onDismiss={() => {
-          dismissDemoBanner();
-          setDemoBannerDismissed(true);
-        }}
-      />
     );
   } else if (showSoftAuth) {
     hero = (
@@ -679,15 +632,12 @@ export function HubDashboard({
 
       <SecondaryChips chips={secondaryChips} />
 
-      {/* STATUS — тихий список модулів. Колапсована секція з одним демо-strip
-          зверху (коли актуально). Рядок, під який підʼїхала рекомендація,
-          отримує inline `+` для quick-add. */}
+      {/* STATUS — тихий список модулів. Рядок, під який підʼїхала
+          рекомендація, отримує inline `+` для quick-add. */}
       <section className="space-y-2">
         <h2 className="px-0.5 text-xs font-semibold text-muted uppercase tracking-wider">
           Статус
         </h2>
-
-        {modulePreviewsAreDemo && <DemoStrip />}
 
         <DndContext
           sensors={sensors}

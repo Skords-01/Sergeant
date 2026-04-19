@@ -28,6 +28,7 @@ export function AddMealSheet({
   setPrefs,
   pantryItems = [],
   onConsumePantryItem,
+  onRequestPhoto,
 }) {
   const kbInsetPx = useVisualKeyboardInset(open);
   const [form, setForm] = useState(() => emptyForm(null));
@@ -284,6 +285,28 @@ export function AddMealSheet({
               handleBarcodeBind={handleBarcodeBind}
               setScannerOpen={setScannerOpen}
             />
+
+            {onRequestPhoto && (
+              <div className="mt-4">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  className="w-full h-12 min-h-[44px] flex items-center justify-center gap-2"
+                  onClick={() => {
+                    // Hand off to the host (NutritionApp) so the heavy
+                    // photo-analysis UI stays in one place. The host
+                    // closes this sheet, opens the Photo disclosure and
+                    // triggers the native file picker — same flow the
+                    // `add_meal_photo` PWA shortcut already uses.
+                    onRequestPhoto();
+                  }}
+                  aria-label="Сфотографувати страву"
+                >
+                  <span aria-hidden>📷</span>
+                  <span>Сфотографувати страву</span>
+                </Button>
+              </div>
+            )}
 
             <div className="mt-5 flex items-center gap-3 text-xs text-muted uppercase tracking-wider">
               <span className="flex-1 h-px bg-line" />
