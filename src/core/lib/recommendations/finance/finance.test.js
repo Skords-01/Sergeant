@@ -178,7 +178,7 @@ describe("noTxRecentRule", () => {
     expect(recs).toHaveLength(1);
     expect(recs[0].id).toBe("finyk_no_tx_recent");
     expect(recs[0].pwaAction).toBe("add_expense");
-    expect(recs[0].title).toMatch(/5 дні/);
+    expect(recs[0].title).toMatch(/5 днів/);
   });
 
   it("не тригериться, якщо активність була сьогодні", () => {
