@@ -1,8 +1,7 @@
 import type { Request, Response } from "express";
-import webpush, { WebPushError } from "web-push";
+import webpush from "web-push";
 import pool from "../db.js";
-import { logger } from "../obs/logger.js";
-import { recordExternalHttp } from "../lib/externalHttp.js";
+import { sendWebPush } from "../lib/webpushSend.js";
 import { pushSendsTotal } from "../obs/metrics.js";
 import { validateBody } from "../http/validate.js";
 import {
@@ -14,18 +13,17 @@ import {
 type WithSessionUser = Request & { user?: { id: string } };
 
 /**
- * Дублюємо два лейбли для одного outcome: історичну domain-метрику
- * `push_sends_total` (яку можуть читати старі дашборди/алерти) та уніфіковану
- * `external_http_requests_total{upstream="push"}`. Це свідома тимчасова
- * дуплікація — якщо й зносити, то окремим PR зі знесенням дашборду.
+ * Historical domain-metric `push_sends_total` — зберігаємо для сумісності
+ * з існуючими дашбордами/алертами. Уніфікована `external_http_requests_total
+ * {upstream="push"}` вже інкрементиться всередині `sendWebPush` через
+ * `recordExternalHttp`, тож тут лише дублюємо domain-лейбл.
  */
-function recordSend(outcome: string): void {
+function recordDomainOutcome(outcome: string): void {
   try {
     pushSendsTotal.inc({ outcome });
   } catch {
     /* ignore */
   }
-  recordExternalHttp("push", outcome);
 }
 
 const VAPID_PUBLIC = process.env.VAPID_PUBLIC_KEY;
@@ -148,40 +146,24 @@ export async function sendPush(req: Request, res: Response): Promise<void> {
   let sent = 0;
   const stale: string[] = [];
 
-  // Вузький per-subscription catch: одна невдала підписка не повинна
-  // зривати весь fan-out. Інші помилки (DB, тощо) летять наверх в errorHandler.
+  // Per-subscription fan-out: sendWebPush всередині вже має timeout/retry/
+  // circuit-breaker і повертає структурований `outcome`. Одна невдала
+  // підписка не зриває весь fan-out — Promise.all резолвиться завжди, бо
+  // sendWebPush не кидає для очікуваних помилок (4xx/5xx/timeout/breaker).
   await Promise.all(
     rows.map(async (row) => {
       const sub = {
         endpoint: row.endpoint,
         keys: { p256dh: row.p256dh, auth: row.auth },
       };
-      try {
-        await webpush.sendNotification(sub, payload);
+      const result = await sendWebPush(sub, payload);
+      recordDomainOutcome(result.outcome);
+      if (result.outcome === "ok") {
         sent++;
-        recordSend("ok");
-      } catch (e: unknown) {
-        const statusCode = e instanceof WebPushError ? e.statusCode : undefined;
-        const message = e instanceof Error ? e.message : String(e);
-        if (statusCode === 404 || statusCode === 410) {
-          stale.push(row.endpoint);
-          recordSend("invalid_endpoint");
-        } else if (statusCode === 429) {
-          recordSend("rate_limited");
-          logger.warn({
-            msg: "push_rate_limited",
-            status: statusCode,
-            err: { message },
-          });
-        } else {
-          recordSend("error");
-          logger.warn({
-            msg: "push_send_error",
-            status: statusCode,
-            err: { message },
-          });
-        }
+      } else if (result.outcome === "invalid_endpoint") {
+        stale.push(row.endpoint);
       }
+      // timeout/rate_limited/circuit_open/error — вже залоговані у sendWebPush.
     }),
   );
 
