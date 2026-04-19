@@ -1,10 +1,15 @@
+import type { NextFunction, Request, Response } from "express";
 import { createHash } from "crypto";
 import { rateLimitExpress } from "./rateLimit.js";
 import { logger } from "../obs/logger.js";
 import { authAttemptsTotal } from "../obs/metrics.js";
 
 /** Жорсткіший ліміт на sign-in / sign-up / reset (POST). */
-export function authSensitiveRateLimit(req, res, next) {
+export function authSensitiveRateLimit(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): void {
   const url = req.originalUrl || "";
   const sensitive =
     req.method === "POST" &&
@@ -12,8 +17,11 @@ export function authSensitiveRateLimit(req, res, next) {
       url.includes("/sign-up") ||
       url.includes("forget-password") ||
       url.includes("reset-password"));
-  if (!sensitive) return next();
-  return rateLimitExpress({
+  if (!sensitive) {
+    next();
+    return;
+  }
+  rateLimitExpress({
     key: "api:auth:sensitive",
     limit: 20,
     windowMs: 60_000,
@@ -26,7 +34,7 @@ export function authSensitiveRateLimit(req, res, next) {
  * і **не є PII**: не reversible без offline brute-force по словнику.
  * У Prometheus цей лейбл НЕ йде (cardinality), тільки у Pino-лог.
  */
-function emailFingerprint(raw) {
+function emailFingerprint(raw: unknown): string | undefined {
   if (typeof raw !== "string" || raw.length === 0) return undefined;
   return createHash("sha256")
     .update(raw.toLowerCase())
@@ -43,25 +51,43 @@ function emailFingerprint(raw) {
  * `next()`, тому реєстрація listener-а мусить відбутись раніше за сам
  * limiter, щоб 429 ловились.
  */
-export function authMetricsMiddleware(req, res, next) {
-  if (req.method !== "POST") return next();
+type AuthOp =
+  | "sign_in"
+  | "sign_up"
+  | "forget_password"
+  | "reset_password"
+  | "signout";
+
+export function authMetricsMiddleware(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): void {
+  if (req.method !== "POST") {
+    next();
+    return;
+  }
   const url = req.originalUrl || "";
-  const op =
+  const op: AuthOp | null =
     (url.includes("/sign-in") && "sign_in") ||
     (url.includes("/sign-up") && "sign_up") ||
     (url.includes("forget-password") && "forget_password") ||
     (url.includes("reset-password") && "reset_password") ||
     (url.includes("/sign-out") && "signout") ||
     null;
-  if (!op) return next();
+  if (!op) {
+    next();
+    return;
+  }
 
   // Читаємо body ДО `res.on("finish")`: better-auth toNodeHandler може
   // консьюмити stream і замінити/зачистити `req.body` до моменту емісії.
   // express.json() у app.js парсить auth-роути глобальним дефолтом (128kb),
   // тож на /sign-in `req.body` — це завжди object або undefined.
+  const body = (req.body ?? {}) as { email?: unknown };
   const emailHash =
     op === "sign_in" || op === "sign_up" || op === "forget_password"
-      ? emailFingerprint(req.body?.email)
+      ? emailFingerprint(body.email)
       : undefined;
 
   res.on("finish", () => {

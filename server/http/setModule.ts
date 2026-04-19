@@ -1,3 +1,4 @@
+import type { RequestHandler } from "express";
 import { setRequestModule } from "../obs/requestContext.js";
 
 /**
@@ -8,11 +9,8 @@ import { setRequestModule } from "../obs/requestContext.js";
  *
  * Замінює per-handler виклики `setRequestModule("...")`, що повторювалися у
  * 25+ місцях.
- *
- * @param {string} name
- * @returns {import("express").RequestHandler}
  */
-export function setModule(name) {
+export function setModule(name: string): RequestHandler {
   return (_req, _res, next) => {
     setRequestModule(name);
     next();

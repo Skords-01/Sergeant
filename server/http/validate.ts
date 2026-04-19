@@ -1,4 +1,8 @@
+import type { Request, Response } from "express";
 import { z } from "zod";
+import type { ZodTypeAny } from "zod";
+
+export type ValidationResult<T> = { ok: true; data: T } | { ok: false };
 
 /**
  * Валідація тіла запиту за zod-схемою.
@@ -14,11 +18,15 @@ import { z } from "zod";
  * Помилки локалізовані українською, деталі — масив `{ path, message }` для
  * клієнта, який хоче підсвітити поля.
  */
-export function validateBody(schema, req, res) {
+export function validateBody<S extends ZodTypeAny>(
+  schema: S,
+  req: Request,
+  res: Response,
+): ValidationResult<z.infer<S>> {
   const body = req.body ?? {};
   const result = schema.safeParse(body);
   if (result.success) {
-    return { ok: true, data: result.data };
+    return { ok: true, data: result.data as z.infer<S> };
   }
   const issues = result.error.issues.map((i) => ({
     path: i.path.join("."),
@@ -34,11 +42,15 @@ export function validateBody(schema, req, res) {
 /**
  * Те саме, але для query-параметрів (req.query).
  */
-export function validateQuery(schema, req, res) {
+export function validateQuery<S extends ZodTypeAny>(
+  schema: S,
+  req: Request,
+  res: Response,
+): ValidationResult<z.infer<S>> {
   const query = req.query ?? {};
   const result = schema.safeParse(query);
   if (result.success) {
-    return { ok: true, data: result.data };
+    return { ok: true, data: result.data as z.infer<S> };
   }
   const issues = result.error.issues.map((i) => ({
     path: i.path.join("."),

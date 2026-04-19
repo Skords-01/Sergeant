@@ -2,7 +2,7 @@
  * Витягує JSON-об'єкт або масив з довільного тексту.
  * Потрібно, бо LLM інколи додає пояснення/текст навколо JSON.
  */
-export function extractJsonFromText(raw) {
+export function extractJsonFromText(raw: unknown): unknown {
   const s = typeof raw === "string" ? raw.trim() : "";
   if (!s) return null;
 
@@ -53,7 +53,11 @@ export function extractJsonFromText(raw) {
   }
 }
 
-function extractBalancedJsonSlice(text, open, close) {
+function extractBalancedJsonSlice(
+  text: string,
+  open: string,
+  close: string,
+): string | null {
   let depth = 0;
   let inStr = false;
   let esc = false;

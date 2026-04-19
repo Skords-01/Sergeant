@@ -1,13 +1,12 @@
+import type { RequestHandler } from "express";
 import { assertAiQuota } from "../aiQuota.js";
 
 /**
  * Router-middleware обгортка над `assertAiQuota`. Якщо квоту вичерпано —
  * `assertAiQuota` вже віддасть 429 через `res`; middleware тоді мовчки
  * повертає (чейн перериваэться). Інакше пропускає запит далі.
- *
- * @returns {import("express").RequestHandler}
  */
-export function requireAiQuota() {
+export function requireAiQuota(): RequestHandler {
   return async (req, res, next) => {
     try {
       const ok = await assertAiQuota(req, res);

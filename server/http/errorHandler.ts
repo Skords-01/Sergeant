@@ -1,3 +1,4 @@
+import type { ErrorRequestHandler, Request, Response } from "express";
 import * as Sentry from "@sentry/node";
 import { logger, serializeError } from "../obs/logger.js";
 import { als } from "../obs/requestContext.js";
@@ -13,11 +14,23 @@ import { isOperationalError } from "../obs/errors.js";
  *  - Все інше → 500 + `error` + generic message; деталі лише в логах/Sentry.
  *  - Клієнт завжди отримує `requestId`, щоб було що вставити в тікет.
  */
-export function errorHandler(err, req, res, _next) {
+type AppLikeError = Error & {
+  status?: number | string;
+  code?: string;
+  message: string;
+};
+
+export const errorHandler: ErrorRequestHandler = (
+  err: unknown,
+  req: Request,
+  res: Response,
+  _next,
+) => {
   const operational = isOperationalError(err);
-  const status = Number(err?.status) || (operational ? 400 : 500);
+  const e = (err && typeof err === "object" ? err : {}) as AppLikeError;
+  const status = Number(e.status) || (operational ? 400 : 500);
   const code =
-    (typeof err?.code === "string" && err.code) ||
+    (typeof e.code === "string" && e.code) ||
     (status === 429 ? "RATE_LIMIT" : operational ? "BAD_REQUEST" : "INTERNAL");
   const mod = als.getStore()?.module || "unknown";
 
@@ -40,7 +53,7 @@ export function errorHandler(err, req, res, _next) {
     status,
     code,
     module: mod,
-    err: serializeError(err, { includeStack: status >= 500 }),
+    err: serializeError(e, { includeStack: status >= 500 }),
   });
 
   // Явний виклик `Sentry.captureException` на справжні помилки (5xx /
@@ -59,8 +72,8 @@ export function errorHandler(err, req, res, _next) {
   if (res.headersSent) return;
 
   res.status(status).json({
-    error: operational ? err.message : "Server error",
+    error: operational ? e.message : "Server error",
     code,
-    requestId: req.requestId,
+    requestId: (req as Request & { requestId?: string }).requestId,
   });
-}
+};
