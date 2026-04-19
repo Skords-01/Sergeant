@@ -33,6 +33,7 @@ export function DayReportSheet({
       onClose={onClose}
       title="Денний звіт"
       description={dayLabel}
+      zIndex={200}
     >
       {scheduledHabits.length === 0 && (
         <p className="text-sm text-muted text-center py-6">
