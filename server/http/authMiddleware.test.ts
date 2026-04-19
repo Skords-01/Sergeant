@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { createHash } from "crypto";
+import type { Request, Response } from "express";
+import type { Mock } from "vitest";
 
 // Мокаємо logger ДО імпорту модуля, щоб зафіксувати виклики.
 vi.mock("../obs/logger.js", async () => {
@@ -29,40 +31,53 @@ import { authAttemptsTotal } from "../obs/metrics.js";
 import { authMetricsMiddleware } from "./authMiddleware.js";
 
 describe("authMetricsMiddleware structured auth_event log", () => {
+  interface TestRes {
+    statusCode: number;
+    on(event: string, handler: () => void): TestRes;
+    _finish(status: number): void;
+  }
   function makeReqRes({
     url = "/api/auth/sign-in/email",
-    body = {},
+    body = {} as unknown,
     ip = "1.2.3.4",
     ua = "vitest/1.0",
   } = {}) {
-    const listeners = {};
+    const listeners: Record<string, () => void> = {};
     const req = {
       method: "POST",
       originalUrl: url,
       body,
       ip,
-      get: (h) => (h.toLowerCase() === "user-agent" ? ua : undefined),
-    };
-    const res = {
+      get: (h: string) => (h.toLowerCase() === "user-agent" ? ua : undefined),
+    } as unknown as Request;
+    const res: TestRes = {
       statusCode: 200,
-      on(event, handler) {
+      on(event: string, handler: () => void) {
         listeners[event] = handler;
         return this;
       },
-      _finish(status) {
+      _finish(status: number) {
         this.statusCode = status;
         listeners.finish?.();
       },
     };
-    return { req, res };
+    return { req, res: res as TestRes & Response };
   }
 
-  function expectedEmailHash(email) {
+  function expectedEmailHash(email: string) {
     return createHash("sha256")
       .update(email.toLowerCase())
       .digest("hex")
       .slice(0, 12);
   }
+
+  const loggerMocks = logger as unknown as {
+    debug: Mock;
+    info: Mock;
+    warn: Mock;
+    error: Mock;
+    fatal: Mock;
+  };
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -123,11 +138,11 @@ describe("authMetricsMiddleware structured auth_event log", () => {
     );
     // Прискіпливий захист: плейн-текст email НЕ має протекти в жоден лог-виклик.
     const allCalls = [
-      ...logger.debug.mock.calls,
-      ...logger.info.mock.calls,
-      ...logger.warn.mock.calls,
-      ...logger.error.mock.calls,
-      ...logger.fatal.mock.calls,
+      ...loggerMocks.debug.mock.calls,
+      ...loggerMocks.info.mock.calls,
+      ...loggerMocks.warn.mock.calls,
+      ...loggerMocks.error.mock.calls,
+      ...loggerMocks.fatal.mock.calls,
     ];
     for (const [arg] of allCalls) {
       const s = JSON.stringify(arg);
@@ -154,7 +169,11 @@ describe("authMetricsMiddleware structured auth_event log", () => {
     expect(logger.info).not.toHaveBeenCalled();
 
     vi.clearAllMocks();
-    const getReq = { ...req, method: "GET", originalUrl: "/api/auth/sign-in" };
+    const getReq = {
+      ...req,
+      method: "GET",
+      originalUrl: "/api/auth/sign-in",
+    } as unknown as Request;
     authMetricsMiddleware(getReq, res, next);
     expect(authAttemptsTotal.inc).not.toHaveBeenCalled();
   });

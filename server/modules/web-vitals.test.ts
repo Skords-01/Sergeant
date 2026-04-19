@@ -1,16 +1,25 @@
 import { describe, it, expect, beforeEach } from "vitest";
+import type { Request, Response } from "express";
 import webVitalsHandler from "./web-vitals.js";
 import { register, webVitalsCls, webVitalsDurationMs } from "../obs/metrics.js";
 
-function makeRes() {
-  const res = {
+interface TestRes {
+  statusCode: number;
+  _body: unknown;
+  status(code: number): TestRes;
+  json(obj: unknown): TestRes;
+  end(): TestRes;
+}
+
+function makeRes(): TestRes & Response {
+  const res: TestRes = {
     statusCode: 200,
     _body: null,
-    status(code) {
+    status(code: number) {
       this.statusCode = code;
       return this;
     },
-    json(obj) {
+    json(obj: unknown) {
       this._body = obj;
       return this;
     },
@@ -18,7 +27,11 @@ function makeRes() {
       return this;
     },
   };
-  return res;
+  return res as TestRes & Response;
+}
+
+function asReq(r: unknown): Request {
+  return r as Request;
 }
 
 async function getMetricText() {
@@ -36,7 +49,7 @@ describe("webVitalsHandler", () => {
   it("returns 204 on invalid payload and does not throw", async () => {
     const req = { method: "POST", body: { foo: "bar" } };
     const res = makeRes();
-    webVitalsHandler(req, res);
+    webVitalsHandler(asReq(req), res);
     expect(res.statusCode).toBe(204);
   });
 
@@ -53,7 +66,7 @@ describe("webVitalsHandler", () => {
       },
     };
     const res = makeRes();
-    webVitalsHandler(req, res);
+    webVitalsHandler(asReq(req), res);
 
     expect(res.statusCode).toBe(204);
     const text = await getMetricText();
@@ -82,7 +95,7 @@ describe("webVitalsHandler", () => {
       },
     };
     const res = makeRes();
-    webVitalsHandler(req, res);
+    webVitalsHandler(asReq(req), res);
 
     expect(res.statusCode).toBe(204);
     const text = await getMetricText();
@@ -98,7 +111,7 @@ describe("webVitalsHandler", () => {
       },
     };
     const res = makeRes();
-    webVitalsHandler(req, res);
+    webVitalsHandler(asReq(req), res);
 
     expect(res.statusCode).toBe(204);
     const text = await getMetricText();
@@ -116,7 +129,7 @@ describe("webVitalsHandler", () => {
       },
     };
     const res = makeRes();
-    webVitalsHandler(req, res);
+    webVitalsHandler(asReq(req), res);
 
     expect(res.statusCode).toBe(204);
     const text = await getMetricText();
@@ -131,7 +144,7 @@ describe("webVitalsHandler", () => {
       },
     };
     const res = makeRes();
-    webVitalsHandler(req, res);
+    webVitalsHandler(asReq(req), res);
 
     expect(res.statusCode).toBe(204);
     const text = await getMetricText();
@@ -146,7 +159,7 @@ describe("webVitalsHandler", () => {
     }));
     const req = { method: "POST", body: { metrics } };
     const res = makeRes();
-    webVitalsHandler(req, res);
+    webVitalsHandler(asReq(req), res);
 
     expect(res.statusCode).toBe(204);
     const text = await getMetricText();

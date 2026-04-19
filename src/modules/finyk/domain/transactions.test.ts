@@ -192,7 +192,7 @@ describe("normalizeTransactions / dedupeAndSortTransactions", () => {
       "garbage",
       42,
       { id: "a", time: 3, amount: 1 },
-    ]);
+    ] as never);
     expect(result).toHaveLength(1);
     expect(result[0].id).toBe("a");
   });
@@ -200,7 +200,7 @@ describe("normalizeTransactions / dedupeAndSortTransactions", () => {
   it("повертає порожній масив для не-масиву", () => {
     expect(dedupeAndSortTransactions(null)).toEqual([]);
     expect(dedupeAndSortTransactions(undefined)).toEqual([]);
-    expect(dedupeAndSortTransactions({})).toEqual([]);
+    expect(dedupeAndSortTransactions({} as never)).toEqual([]);
   });
 });
 

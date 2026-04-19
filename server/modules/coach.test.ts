@@ -1,4 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
+import type { Request, Response } from "express";
+import type { Mock } from "vitest";
 
 vi.mock("../db.js", () => {
   const pool = { query: vi.fn() };
@@ -10,33 +12,57 @@ vi.mock("../lib/anthropic.js", () => ({
   // Дзеркалимо реальну реалізацію з `server/lib/anthropic.js`, включно з
   // `.trim()` — без нього LLM-відповіді з trailing newline-ами проходили б у
   // моку, але не у проді, а assert-и на точний `toBe()` давали б false-pass.
-  extractAnthropicText: vi.fn((d) =>
-    (d?.content || [])
-      .filter((b) => b.type === "text")
-      .map((b) => b.text)
-      .join("\n")
-      .trim(),
+  extractAnthropicText: vi.fn(
+    (d: { content?: { type: string; text?: string }[] }) =>
+      (d?.content || [])
+        .filter((b) => b.type === "text")
+        .map((b) => b.text)
+        .join("\n")
+        .trim(),
   ),
 }));
 
-import pool from "../db.js";
-import { anthropicMessages } from "../lib/anthropic.js";
+import _pool from "../db.js";
+import { anthropicMessages as _anthropicMessages } from "../lib/anthropic.js";
 import { coachInsight, coachMemoryGet, coachMemoryPost } from "./coach.js";
 import { MAX_BLOB_SIZE } from "./sync.js";
 
-function makeRes() {
-  return {
+const pool = _pool as unknown as { query: Mock };
+const anthropicMessages = _anthropicMessages as unknown as Mock;
+
+interface TestRes {
+  statusCode: number;
+  body:
+    | {
+        error?: string;
+        details?: unknown;
+        ok?: boolean;
+        insight?: string;
+        memory?: unknown;
+      }
+    | undefined;
+  status(code: number): TestRes;
+  json(payload: unknown): TestRes;
+}
+
+function makeRes(): TestRes & Response {
+  const res: TestRes = {
     statusCode: 200,
     body: undefined,
-    status(code) {
+    status(code: number) {
       this.statusCode = code;
       return this;
     },
-    json(payload) {
-      this.body = payload;
+    json(payload: unknown) {
+      this.body = payload as TestRes["body"];
       return this;
     },
   };
+  return res as TestRes & Response;
+}
+
+function asReq(v: unknown): Request {
+  return v as Request;
 }
 
 beforeEach(() => {
@@ -61,7 +87,7 @@ describe("coachMemoryPost blob-size guard", () => {
     };
     const res = makeRes();
 
-    await coachMemoryPost(req, res);
+    await coachMemoryPost(asReq(req), res);
 
     expect(res.statusCode).toBe(413);
     expect(res.body).toEqual({ error: "Coach memory blob too large" });
@@ -85,12 +111,12 @@ describe("coachMemoryPost blob-size guard", () => {
     };
     const res = makeRes();
 
-    await coachMemoryPost(req, res);
+    await coachMemoryPost(asReq(req), res);
 
     expect(res.statusCode).toBe(200);
     expect(res.body).toEqual({ ok: true });
     expect(pool.query).toHaveBeenCalledTimes(2);
-    const insertCall = pool.query.mock.calls[1];
+    const insertCall = pool.query.mock.calls[1] as [string, unknown[]];
     expect(insertCall[0]).toMatch(/INSERT INTO module_data/);
     expect(insertCall[1][0]).toBe("user_1");
   });
@@ -101,10 +127,10 @@ describe("coachMemoryPost blob-size guard", () => {
       body: { weeklyDigest: { weekRange: "no key here" } },
     };
     const res = makeRes();
-    await coachMemoryPost(req, res);
+    await coachMemoryPost(asReq(req), res);
     expect(res.statusCode).toBe(400);
-    expect(res.body.error).toBe("Некоректні дані запиту");
-    expect(res.body.details).toBeInstanceOf(Array);
+    expect(res.body!.error).toBe("Некоректні дані запиту");
+    expect(res.body!.details).toBeInstanceOf(Array);
     expect(pool.query).not.toHaveBeenCalled();
   });
 });
@@ -118,7 +144,7 @@ describe("coachMemoryGet", () => {
       rows: [{ data: JSON.stringify(memory) }],
     });
     const res = makeRes();
-    await coachMemoryGet({ user: { id: "user_1" } }, res);
+    await coachMemoryGet(asReq({ user: { id: "user_1" } }), res);
     expect(res.statusCode).toBe(200);
     expect(res.body).toEqual({ ok: true, memory });
   });
@@ -126,14 +152,18 @@ describe("coachMemoryGet", () => {
   it("повертає null коли для користувача ще нема coach-рядка", async () => {
     pool.query.mockResolvedValueOnce({ rows: [] });
     const res = makeRes();
-    await coachMemoryGet({ user: { id: "user_1" } }, res);
+    await coachMemoryGet(asReq({ user: { id: "user_1" } }), res);
     expect(res.body).toEqual({ ok: true, memory: null });
   });
 });
 
 describe("coachInsight", () => {
-  function makeReq(body) {
-    return { user: { id: "user_1" }, anthropicKey: "sk-test", body };
+  function makeReq(body: unknown): Request {
+    return {
+      user: { id: "user_1" },
+      anthropicKey: "sk-test",
+      body,
+    } as unknown as Request;
   }
 
   it("happy: віддає insight-текст на основі snapshot+memory", async () => {
@@ -167,10 +197,16 @@ describe("coachInsight", () => {
 
     expect(res.statusCode).toBe(200);
     expect(res.body).toMatchObject({ ok: true });
-    expect(res.body.insight).toContain("дефіцит");
+    expect(res.body!.insight).toContain("дефіцит");
 
     // System prompt повинен містити блоки SNAPSHOT/MEMORY і звертання до AI.
-    const [, payload] = anthropicMessages.mock.calls[0];
+    const [, payload] = anthropicMessages.mock.calls[0] as [
+      unknown,
+      {
+        model: string;
+        messages: { content: string }[];
+      },
+    ];
     expect(payload.model).toMatch(/^claude-/);
     const user = payload.messages[0].content;
     expect(user).toContain("ФІНАНСИ ЦЬОГО ТИЖНЯ");
@@ -186,7 +222,7 @@ describe("coachInsight", () => {
       res,
     );
     expect(res.statusCode).toBe(400);
-    expect(res.body.error).toBe("Некоректні дані запиту");
+    expect(res.body!.error).toBe("Некоректні дані запиту");
     expect(anthropicMessages).not.toHaveBeenCalled();
   });
 
@@ -220,7 +256,10 @@ describe("coachInsight", () => {
     const res = makeRes();
     await coachInsight(makeReq({}), res);
     expect(res.statusCode).toBe(200);
-    const [, payload] = anthropicMessages.mock.calls[0];
+    const [, payload] = anthropicMessages.mock.calls[0] as [
+      unknown,
+      { messages: { content: string }[] },
+    ];
     expect(payload.messages[0].content).toContain(
       "Даних за поточний тиждень ще немає.",
     );

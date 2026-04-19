@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
+import type { Request, Response } from "express";
 
 vi.mock("@sentry/node", () => {
   return {
@@ -11,29 +12,29 @@ import { errorHandler } from "./errorHandler.js";
 import { AppError } from "../obs/errors.js";
 
 function makeReqRes() {
-  const headers = {};
+  const headers: Record<string, string> = {};
   return {
     req: {
       method: "POST",
       originalUrl: "/api/x",
       requestId: "req_1",
-    },
+    } as unknown as Request,
     res: {
       statusCode: 200,
-      body: undefined,
+      body: undefined as unknown,
       headersSent: false,
-      setHeader(name, value) {
+      setHeader(name: string, value: string) {
         headers[name] = value;
       },
-      status(code) {
+      status(code: number) {
         this.statusCode = code;
         return this;
       },
-      json(payload) {
+      json(payload: unknown) {
         this.body = payload;
         return this;
       },
-    },
+    } as unknown as Response & { statusCode: number; body: unknown },
   };
 }
 
