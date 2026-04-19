@@ -1,6 +1,7 @@
 import { extractJsonFromText } from "../../http/jsonSafe.js";
 import { validateBody } from "../../http/validate.js";
 import { ParsePantrySchema } from "../../http/schemas.js";
+import { ExternalServiceError } from "../../obs/errors.js";
 import {
   anthropicMessages,
   extractAnthropicText,
@@ -38,39 +39,35 @@ export default async function handler(req, res) {
 
   const parsed = validateBody(ParsePantrySchema, req, res);
   if (!parsed.ok) return;
+  const { text: raw, locale } = parsed.data;
 
-  try {
-    const { text: raw, locale } = parsed.data;
+  const payload = {
+    model: "claude-sonnet-4-6",
+    max_tokens: 500,
+    temperature: 0.2,
+    system: SYSTEM,
+    messages: [
+      {
+        role: "user",
+        content: `Мова: ${locale || "uk-UA"}.\nОсь список продуктів:\n${raw}`,
+      },
+    ],
+  };
 
-    const payload = {
-      model: "claude-sonnet-4-6",
-      max_tokens: 500,
-      temperature: 0.2,
-      system: SYSTEM,
-      messages: [
-        {
-          role: "user",
-          content: `Мова: ${locale || "uk-UA"}.\nОсь список продуктів:\n${raw}`,
-        },
-      ],
-    };
-
-    const { response, data } = await anthropicMessages(apiKey, payload, {
-      timeoutMs: 20000,
-      endpoint: "parse-pantry",
+  const { response, data } = await anthropicMessages(apiKey, payload, {
+    timeoutMs: 20000,
+    endpoint: "parse-pantry",
+  });
+  if (!response.ok) {
+    throw new ExternalServiceError(data?.error?.message || "AI error", {
+      status: response.status,
+      code: "ANTHROPIC_ERROR",
     });
-    if (!response.ok) {
-      return res
-        .status(response.status)
-        .json({ error: data?.error?.message || "AI error" });
-    }
-
-    const out = extractAnthropicText(data);
-
-    const parsed = extractJsonFromText(out);
-    const items = normalizePantryItems(parsed);
-    return res.status(200).json({ items, rawText: out || null });
-  } catch (e) {
-    return res.status(500).json({ error: e?.message || "Помилка AI сервера" });
   }
+
+  const out = extractAnthropicText(data);
+
+  const jsonParsed = extractJsonFromText(out);
+  const items = normalizePantryItems(jsonParsed);
+  return res.status(200).json({ items, rawText: out || null });
 }

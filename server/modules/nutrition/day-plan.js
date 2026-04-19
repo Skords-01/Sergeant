@@ -1,4 +1,7 @@
 import { extractJsonFromText } from "../../http/jsonSafe.js";
+import { validateBody } from "../../http/validate.js";
+import { DayPlanSchema } from "../../http/schemas.js";
+import { ExternalServiceError } from "../../obs/errors.js";
 import {
   anthropicMessages,
   extractAnthropicText,
@@ -109,44 +112,45 @@ function normalizeDayPlan(parsed) {
 export default async function handler(req, res) {
   const apiKey = req.anthropicKey;
 
-  try {
-    const { items, targets, regenerateMealType, locale } = req.body || {};
-    const arr = Array.isArray(items) ? items : [];
-    const loc = String(locale || "uk-UA");
+  const parsed = validateBody(DayPlanSchema, req, res);
+  if (!parsed.ok) return;
+  const { pantry: pantryIn, targets, regenerateMealType, locale } = parsed.data;
+  const arr = Array.isArray(pantryIn) ? pantryIn : [];
+  const loc = String(locale || "uk-UA");
 
-    const tgt = targets && typeof targets === "object" ? targets : {};
-    const kcal = tgt.kcal != null ? Number(tgt.kcal) : null;
-    const protein = tgt.protein_g != null ? Number(tgt.protein_g) : null;
-    const fat = tgt.fat_g != null ? Number(tgt.fat_g) : null;
-    const carbs = tgt.carbs_g != null ? Number(tgt.carbs_g) : null;
+  const tgt = targets || {};
+  const kcal = tgt.kcal != null ? Number(tgt.kcal) : null;
+  const protein = tgt.protein_g != null ? Number(tgt.protein_g) : null;
+  const fat = tgt.fat_g != null ? Number(tgt.fat_g) : null;
+  const carbs = tgt.carbs_g != null ? Number(tgt.carbs_g) : null;
 
-    const pantryStr =
-      arr.length > 0
-        ? arr
-            .map((x) => {
-              if (typeof x === "string") return x;
-              const name = x?.name ? String(x.name) : "";
-              const qty = x?.qty != null ? String(x.qty) : "";
-              const unit = x?.unit ? String(x.unit) : "";
-              return [name, qty && unit ? `${qty} ${unit}` : qty || unit]
-                .filter(Boolean)
-                .join(" — ");
-            })
-            .filter(Boolean)
-            .slice(0, 50)
-            .join("\n- ")
-        : "продукти не вказані";
+  const pantryStr =
+    arr.length > 0
+      ? arr
+          .map((x) => {
+            if (typeof x === "string") return x;
+            const name = x?.name ? String(x.name) : "";
+            const qty = x?.qty != null ? String(x.qty) : "";
+            const unit = x?.unit ? String(x.unit) : "";
+            return [name, qty && unit ? `${qty} ${unit}` : qty || unit]
+              .filter(Boolean)
+              .join(" — ");
+          })
+          .filter(Boolean)
+          .slice(0, 50)
+          .join("\n- ")
+      : "продукти не вказані";
 
-    const targetsStr =
-      kcal != null
-        ? `Ціль ккал: ${kcal}. Білки: ${protein ?? "не задано"} г. Жири: ${fat ?? "не задано"} г. Вуглеводи: ${carbs ?? "не задано"} г.`
-        : "Цілі не задані — запропонуй збалансоване харчування.";
+  const targetsStr =
+    kcal != null
+      ? `Ціль ккал: ${kcal}. Білки: ${protein ?? "не задано"} г. Жири: ${fat ?? "не задано"} г. Вуглеводи: ${carbs ?? "не задано"} г.`
+      : "Цілі не задані — запропонуй збалансоване харчування.";
 
-    const regenStr = regenerateMealType
-      ? `Потрібно перегенерувати ТІЛЬКИ прийом їжі типу: "${regenerateMealType}". Решту не включай.`
-      : "Згенеруй повний план на день: сніданок, обід, вечеря, 1-2 перекуси.";
+  const regenStr = regenerateMealType
+    ? `Потрібно перегенерувати ТІЛЬКИ прийом їжі типу: "${regenerateMealType}". Решту не включай.`
+    : "Згенеруй повний план на день: сніданок, обід, вечеря, 1-2 перекуси.";
 
-    const prompt = `Мова: ${loc}.
+  const prompt = `Мова: ${loc}.
 ${targetsStr}
 
 Наявні продукти (намагайся використовувати їх):
@@ -154,33 +158,31 @@ ${targetsStr}
 
 ${regenStr}`;
 
-    const payload = {
-      model: "claude-sonnet-4-6",
-      max_tokens: 1500,
-      temperature: 0.3,
-      system: SYSTEM,
-      messages: [{ role: "user", content: prompt }],
-    };
+  const payload = {
+    model: "claude-sonnet-4-6",
+    max_tokens: 1500,
+    temperature: 0.3,
+    system: SYSTEM,
+    messages: [{ role: "user", content: prompt }],
+  };
 
-    const { response, data } = await anthropicMessages(apiKey, payload, {
-      timeoutMs: 30000,
-      endpoint: "day-plan",
+  const { response, data } = await anthropicMessages(apiKey, payload, {
+    timeoutMs: 30000,
+    endpoint: "day-plan",
+  });
+  if (!response.ok) {
+    throw new ExternalServiceError(data?.error?.message || "AI error", {
+      status: response.status,
+      code: "ANTHROPIC_ERROR",
     });
-    if (!response.ok) {
-      return res
-        .status(response.status)
-        .json({ error: data?.error?.message || "AI error" });
-    }
-
-    const out = extractAnthropicText(data);
-    const parsed = extractJsonFromText(out);
-    const plan = normalizeDayPlan(parsed);
-
-    return res.status(200).json({
-      plan,
-      rawText: plan.meals.length === 0 ? out || null : null,
-    });
-  } catch (e) {
-    return res.status(500).json({ error: e?.message || "Помилка AI сервера" });
   }
+
+  const out = extractAnthropicText(data);
+  const jsonParsed = extractJsonFromText(out);
+  const plan = normalizeDayPlan(jsonParsed);
+
+  return res.status(200).json({
+    plan,
+    rawText: plan.meals.length === 0 ? out || null : null,
+  });
 }

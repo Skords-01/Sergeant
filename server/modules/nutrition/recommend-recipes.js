@@ -1,4 +1,7 @@
 import { extractJsonFromText } from "../../http/jsonSafe.js";
+import { validateBody } from "../../http/validate.js";
+import { RecommendRecipesSchema } from "../../http/schemas.js";
+import { ExternalServiceError } from "../../obs/errors.js";
 import {
   anthropicMessages,
   extractAnthropicText,
@@ -35,38 +38,34 @@ const SYSTEM = `Ти шеф-кухар і нутріціолог. Відпові
 export default async function handler(req, res) {
   const apiKey = req.anthropicKey;
 
-  try {
-    const { items, preferences } = req.body || {};
-    const arr = Array.isArray(items) ? items : [];
-    if (arr.length === 0)
-      return res.status(400).json({ error: "items is required" });
-    if (arr.length > 60)
-      return res.status(413).json({ error: "Too many items" });
+  const parsed = validateBody(RecommendRecipesSchema, req, res);
+  if (!parsed.ok) return;
+  const { pantry: pantryIn, preferences } = parsed.data;
+  const arr = Array.isArray(pantryIn) ? pantryIn : [];
 
-    const prefs =
-      preferences && typeof preferences === "object" ? preferences : {};
-    const goal = String(prefs.goal || "balanced");
-    const servings = Number(prefs.servings || 1);
-    const timeMinutes = Number(prefs.timeMinutes || 25);
-    const exclude = String(prefs.exclude || "");
-    const locale = String(prefs.locale || "uk-UA");
+  const prefs = preferences || {};
+  const goal = String(prefs.goal || "balanced");
+  const servings = Number(prefs.servings || 1);
+  const timeMinutes = Number(prefs.timeMinutes || 25);
+  const exclude = String(prefs.exclude || "");
+  const locale = String(prefs.locale || "uk-UA");
 
-    const pantry = arr
-      .map((x) => {
-        if (typeof x === "string") return x;
-        const name = x?.name ? String(x.name) : "";
-        const qty = x?.qty != null && x.qty !== "" ? String(x.qty) : "";
-        const unit = x?.unit ? String(x.unit) : "";
-        const notes = x?.notes ? String(x.notes) : "";
-        return [name, qty && unit ? `${qty} ${unit}` : qty || unit, notes]
-          .filter(Boolean)
-          .join(" — ");
-      })
-      .filter(Boolean)
-      .slice(0, 60)
-      .join("\n- ");
+  const pantry = arr
+    .map((x) => {
+      if (typeof x === "string") return x;
+      const name = x?.name ? String(x.name) : "";
+      const qty = x?.qty != null && x.qty !== "" ? String(x.qty) : "";
+      const unit = x?.unit ? String(x.unit) : "";
+      const notes = x?.notes ? String(x.notes) : "";
+      return [name, qty && unit ? `${qty} ${unit}` : qty || unit, notes]
+        .filter(Boolean)
+        .join(" — ");
+    })
+    .filter(Boolean)
+    .slice(0, 60)
+    .join("\n- ");
 
-    const prompt = `Мова: ${locale}.
+  const prompt = `Мова: ${locale}.
 Ціль: ${goal}.
 Порції: ${Number.isFinite(servings) && servings > 0 ? servings : 1}.
 Час: ${Number.isFinite(timeMinutes) && timeMinutes > 0 ? timeMinutes : 25} хв.
@@ -82,33 +81,31 @@ export default async function handler(req, res) {
 - ingredients: тільки ключові позиції
 Якщо продуктів мало — все одно поверни 2 прості рецепти.`;
 
-    const payload = {
-      model: "claude-sonnet-4-6",
-      max_tokens: 2800,
-      temperature: 0.2,
-      system: SYSTEM,
-      messages: [{ role: "user", content: prompt }],
-    };
+  const payload = {
+    model: "claude-sonnet-4-6",
+    max_tokens: 2800,
+    temperature: 0.2,
+    system: SYSTEM,
+    messages: [{ role: "user", content: prompt }],
+  };
 
-    const { response, data } = await anthropicMessages(apiKey, payload, {
-      timeoutMs: 45000,
-      endpoint: "recommend-recipes",
+  const { response, data } = await anthropicMessages(apiKey, payload, {
+    timeoutMs: 45000,
+    endpoint: "recommend-recipes",
+  });
+  if (!response.ok) {
+    throw new ExternalServiceError(data?.error?.message || "AI error", {
+      status: response.status,
+      code: "ANTHROPIC_ERROR",
     });
-    if (!response.ok) {
-      return res
-        .status(response.status)
-        .json({ error: data?.error?.message || "AI error" });
-    }
-
-    const out = extractAnthropicText(data);
-
-    const parsed = extractJsonFromText(out);
-    const recipes = normalizeRecipes(parsed);
-    return res.status(200).json({
-      recipes,
-      rawText: recipes.length === 0 ? out || null : null,
-    });
-  } catch (e) {
-    return res.status(500).json({ error: e?.message || "Помилка AI сервера" });
   }
+
+  const out = extractAnthropicText(data);
+
+  const jsonParsed = extractJsonFromText(out);
+  const recipes = normalizeRecipes(jsonParsed);
+  return res.status(200).json({
+    recipes,
+    rawText: recipes.length === 0 ? out || null : null,
+  });
 }

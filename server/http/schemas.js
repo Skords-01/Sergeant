@@ -48,9 +48,26 @@ export const AnalyzePhotoSchema = z.object({
 
 /** /api/nutrition/refine-photo */
 export const RefinePhotoSchema = z.object({
-  previous: z.unknown(),
-  answers: z.record(z.string().max(200), z.string().max(500)).optional(),
-  note: z.string().max(2000).optional(),
+  image_base64: z
+    .string()
+    .min(100, "Порожнє зображення")
+    .max(7_000_000, "Зображення завелике"),
+  mime_type: z
+    .string()
+    .regex(/^image\/[a-z+.-]+$/i)
+    .max(64)
+    .optional(),
+  prior_result: z.unknown().optional(),
+  portion_grams: z.number().finite().positive().optional().nullable(),
+  qna: z
+    .array(
+      z.object({
+        question: z.string().max(500).optional(),
+        answer: z.string().max(500).optional(),
+      }),
+    )
+    .max(8)
+    .optional(),
   locale: Locale,
 });
 
@@ -64,22 +81,42 @@ export const ParsePantrySchema = z.object({
   locale: Locale,
 });
 
+/** /api/nutrition/backup-upload */
+export const BackupUploadSchema = z.object({
+  // Зашифровано на клієнті; сервер не заглядає всередину структуру. Обмежуємо
+  // лише тип і загальний розмір (останнє — у handler-і, бо z.object не
+  // міряє JSON.stringify-байти).
+  blob: z.record(z.string(), z.unknown()),
+});
+
+/** Спільний формат елемента комори для nutrition-ендпойнтів. */
+const PantryItem = z.union([
+  z.string().max(200),
+  z.object({
+    name: z.string().max(120).optional(),
+    qty: z
+      .union([z.number().finite(), z.string().max(32)])
+      .optional()
+      .nullable(),
+    unit: z.string().max(32).optional().nullable(),
+    notes: z.string().max(200).optional().nullable(),
+  }),
+]);
+
 /** /api/nutrition/recommend-recipes */
 export const RecommendRecipesSchema = z.object({
-  pantry: z
-    .array(
-      z.object({
-        name: z.string().max(120),
-        qty: z.number().finite().optional().nullable(),
-        unit: z.string().max(16).optional().nullable(),
-        notes: z.string().max(200).optional().nullable(),
-      }),
-    )
-    .max(200)
+  pantry: z.array(PantryItem).max(200).optional(),
+  preferences: z
+    .object({
+      goal: z.string().max(40).optional(),
+      servings: z.number().finite().positive().optional(),
+      timeMinutes: z.number().finite().positive().optional(),
+      exclude: z.string().max(500).optional(),
+      locale: Locale,
+    })
+    .partial()
     .optional(),
-  preferences: z.string().max(1000).optional(),
-  exclude: z.array(z.string().max(120)).max(50).optional(),
-  count: z.number().int().min(1).max(10).optional(),
+  count: z.number().finite().int().positive().max(10).optional(),
   locale: Locale,
 });
 
@@ -91,32 +128,87 @@ const Macros = z.object({
   carbs_g: z.number().finite().nonnegative().nullable().optional(),
 });
 
+/**
+ * Цілі КБЖВ у форматі, який реально шле клієнт у day-hint:
+ * `dailyTargetKcal`, `dailyTargetProtein_g`, ... Приймаємо і короткі
+ * `kcal/protein_g/...` (як у day-plan), і довгі — тому `passthrough()`.
+ */
+const NutritionTargets = z
+  .object({
+    kcal: z.number().finite().nonnegative().nullable().optional(),
+    protein_g: z.number().finite().nonnegative().nullable().optional(),
+    fat_g: z.number().finite().nonnegative().nullable().optional(),
+    carbs_g: z.number().finite().nonnegative().nullable().optional(),
+    dailyTargetKcal: z.number().finite().nonnegative().nullable().optional(),
+    dailyTargetProtein_g: z
+      .number()
+      .finite()
+      .nonnegative()
+      .nullable()
+      .optional(),
+    dailyTargetFat_g: z.number().finite().nonnegative().nullable().optional(),
+    dailyTargetCarbs_g: z.number().finite().nonnegative().nullable().optional(),
+  })
+  .passthrough();
+
 export const DayHintSchema = z.object({
   macros: Macros.optional(),
-  targets: Macros.optional(),
+  targets: NutritionTargets.optional(),
   hasMeals: z.boolean().optional(),
   hasAnyMacros: z.boolean().optional(),
-  macroSources: z.array(z.string().max(50)).max(20).optional(),
+  macroSources: z
+    .union([
+      z.record(z.string().max(50), z.number().finite()),
+      z.array(z.string().max(50)).max(20),
+    ])
+    .optional(),
   locale: Locale,
 });
 
 export const DayPlanSchema = z.object({
-  targets: Macros.optional(),
-  preferences: z.string().max(1000).optional(),
-  exclude: z.array(z.string().max(120)).max(50).optional(),
+  pantry: z.array(PantryItem).max(200).optional(),
+  targets: NutritionTargets.optional(),
+  regenerateMealType: z
+    .enum(["breakfast", "lunch", "dinner", "snack"])
+    .optional(),
   locale: Locale,
 });
 
 export const WeekPlanSchema = z.object({
-  targets: Macros.optional(),
-  preferences: z.string().max(1000).optional(),
-  exclude: z.array(z.string().max(120)).max(50).optional(),
+  pantry: z.array(PantryItem).max(200).optional(),
+  preferences: z
+    .object({
+      goal: z.string().max(40).optional(),
+    })
+    .partial()
+    .optional(),
   locale: Locale,
 });
 
+/** Рецепт для shopping-list — довільна форма з клієнта, обмежуємо розміри. */
+const ShoppingListRecipe = z.object({
+  title: z.string().max(200).optional(),
+  ingredients: z.array(z.string().max(200)).max(50).optional(),
+});
+
+const ShoppingListWeekPlan = z
+  .object({
+    days: z
+      .array(
+        z.object({
+          label: z.string().max(80).optional(),
+          meals: z.array(z.string().max(500)).max(10).optional(),
+        }),
+      )
+      .max(7)
+      .optional(),
+  })
+  .partial();
+
 export const ShoppingListSchema = z.object({
-  plan: z.unknown().optional(),
-  pantry: z.array(z.unknown()).max(300).optional(),
+  recipes: z.array(ShoppingListRecipe).max(20).optional(),
+  weekPlan: ShoppingListWeekPlan.optional(),
+  pantryItems: z.array(PantryItem).max(300).optional(),
   locale: Locale,
 });
 
@@ -229,6 +321,57 @@ export const CoachMemoryPostSchema = z.object({
     })
     .optional(),
 });
+
+// ────────────────────── Sync ──────────────────────
+// Повторюємо константу `VALID_MODULES` з `server/modules/sync.js` у zod-enum:
+// єдина SSOT — той Set; тут лише back-compat перелік для 400 з деталями поля.
+const SyncModuleEnum = z.enum(["finyk", "fizruk", "routine", "nutrition"]);
+
+export const SyncPushSchema = z.object({
+  module: SyncModuleEnum,
+  // Клієнт може слати будь-який JSON всередині `data` (зашифрований blob),
+  // тому глибоко не валідуємо — розмір обмежується у handler-і (5 MB).
+  data: z.unknown().refine((v) => v !== undefined && v !== null, {
+    message: "Missing data",
+  }),
+  clientUpdatedAt: z.union([z.string(), z.number(), z.date()]).optional(),
+});
+
+export const SyncPullSchema = z.object({
+  module: SyncModuleEnum,
+});
+
+export const SyncPushAllSchema = z.object({
+  modules: z.record(
+    z.string(),
+    z.object({
+      data: z.unknown(),
+      clientUpdatedAt: z.union([z.string(), z.number(), z.date()]).optional(),
+    }),
+  ),
+});
+
+// ────────────────────── Bank proxies (query validation) ──────────────────────
+// `path` перевіряється ще raw-regex-ом в handler-ах (whitelist), тут тільки
+// формат: починається з `/`, без CRLF і розумна довжина.
+const BankApiPath = z
+  .string()
+  .trim()
+  .min(1)
+  .max(256)
+  .regex(/^\/[A-Za-z0-9\-_/]+$/, "Некоректний шлях API");
+
+export const MonoQuerySchema = z
+  .object({
+    path: BankApiPath.optional(),
+  })
+  .passthrough();
+
+export const PrivatQuerySchema = z
+  .object({
+    path: BankApiPath.optional(),
+  })
+  .passthrough();
 
 // ────────────────────── Web-push ──────────────────────
 // PushSubscription.endpoint — URL, але браузери видають доволі довгі

@@ -1,5 +1,8 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import { validateBody } from "../../http/validate.js";
+import { BackupUploadSchema } from "../../http/schemas.js";
+import { AppError } from "../../obs/errors.js";
 
 function safeKeyFromToken(req) {
   const tok = req?.headers?.["x-token"];
@@ -18,14 +21,19 @@ function safeKeyFromToken(req) {
  * CORS / token / rate-limit виставляє роутер.
  */
 export default async function handler(req, res) {
-  const blob = req.body?.blob;
-  if (!blob || typeof blob !== "object" || Array.isArray(blob))
-    return res.status(400).json({ error: "Некоректний blob" });
+  const parsed = validateBody(BackupUploadSchema, req, res);
+  if (!parsed.ok) return;
+  const { blob } = parsed.data;
 
-  // Keep it small-ish; this is encrypted client-side anyway.
+  // Keep it small-ish; this is encrypted client-side anyway. `z.object`
+  // не міряє JSON.stringify-байти, тому розмір перевіряємо тут.
   const raw = JSON.stringify(blob);
-  if (raw.length > 2_500_000)
-    return res.status(413).json({ error: "Бекап завеликий" });
+  if (raw.length > 2_500_000) {
+    throw new AppError("Бекап завеликий", {
+      status: 413,
+      code: "PAYLOAD_TOO_LARGE",
+    });
+  }
 
   const dir = path.join(process.cwd(), ".data");
   await fs.mkdir(dir, { recursive: true });
