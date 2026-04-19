@@ -1,9 +1,15 @@
 import { cn } from "@shared/lib/cn";
 import { EmptyState } from "@shared/components/ui/EmptyState";
+import {
+  chartGradients,
+  chartGrid,
+  chartSeries,
+  chartTick,
+} from "@shared/charts/chartTheme";
 
 const LABELS_UK = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Нд"];
 
-/** Легкий area-chart без залежностей; акцент — success з tailwind. */
+/** Легкий area-chart без залежностей; акцент — module accent (fizruk/teal). */
 interface WeeklyVolumeChartProps {
   volumeKg?: number[];
   className?: string;
@@ -30,7 +36,10 @@ export function WeeklyVolumeChart({
             className="text-2xs text-subtle flex items-center gap-1.5"
             aria-hidden
           >
-            <span className="inline-block w-2 h-2 rounded-full bg-success" />
+            <span
+              className="inline-block w-2 h-2 rounded-full"
+              style={{ backgroundColor: chartSeries.fizruk.primary }}
+            />
             кг×повт
           </span>
         </div>
@@ -80,7 +89,10 @@ export function WeeklyVolumeChart({
           className="text-2xs text-subtle flex items-center gap-1.5"
           aria-hidden
         >
-          <span className="inline-block w-2 h-2 rounded-full bg-success" />
+          <span
+            className="inline-block w-2 h-2 rounded-full"
+            style={{ backgroundColor: chartSeries.fizruk.primary }}
+          />
           кг×повт
         </span>
       </div>
@@ -92,8 +104,9 @@ export function WeeklyVolumeChart({
       >
         <defs>
           <linearGradient id="wvFill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="rgb(22 163 74)" stopOpacity="0.28" />
-            <stop offset="100%" stopColor="rgb(22 163 74)" stopOpacity="0" />
+            {chartGradients.fizruk.map((stop, i) => (
+              <stop key={i} {...stop} />
+            ))}
           </linearGradient>
         </defs>
         {yTicks.map((t, i) => (
@@ -103,15 +116,14 @@ export function WeeklyVolumeChart({
               x2={w - padR}
               y1={t.y}
               y2={t.y}
-              stroke="currentColor"
-              className="text-line/80"
-              strokeWidth="1"
-              strokeDasharray="3 4"
+              className={chartGrid.horizontal.className}
+              strokeWidth={chartGrid.horizontal.strokeWidth}
+              strokeDasharray={chartGrid.horizontal.strokeDasharray}
             />
             <text
               x={4}
               y={t.y + 4}
-              className="fill-subtle text-3xs font-medium"
+              className={cn(chartTick.className, "font-medium")}
             >
               {t.lab}
             </text>
@@ -121,7 +133,7 @@ export function WeeklyVolumeChart({
         <path
           d={lineD}
           fill="none"
-          stroke="rgb(22 163 74)"
+          stroke={chartSeries.fizruk.primary}
           strokeWidth="2.25"
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -132,7 +144,8 @@ export function WeeklyVolumeChart({
             cx={p.x}
             cy={p.y}
             r="3.5"
-            className="fill-success stroke-white"
+            fill={chartSeries.fizruk.primary}
+            stroke="white"
             strokeWidth="2"
           />
         ))}
@@ -155,7 +168,7 @@ export function WeeklyVolumeChart({
   );
 }
 
-function formatYAxis(kg) {
+function formatYAxis(kg: number) {
   const n = Number(kg) || 0;
   if (n >= 1000) return `${(n / 1000).toFixed(1)}k`;
   return String(Math.round(n));

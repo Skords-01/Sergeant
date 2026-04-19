@@ -1,5 +1,10 @@
 import { memo } from "react";
-import { THEME_HEX } from "@shared/lib/themeHex.js";
+import {
+  chartAxis,
+  chartGrid,
+  chartTick,
+  statusColors,
+} from "@shared/charts/chartTheme";
 
 // SVG-графік нетворсу повністю детермінований вхідним `data`.
 // `memo` запобігає перерендеру при незв'язаних оновленнях стану Overview.
@@ -28,7 +33,7 @@ function NetworthChartComponent({ data }) {
   ].join(" ");
 
   const isPositive = values[values.length - 1] >= values[0];
-  const color = isPositive ? THEME_HEX.success : THEME_HEX.danger;
+  const color = isPositive ? statusColors.success : statusColors.danger;
 
   const fmt = (v) => {
     if (Math.abs(v) >= 1000) return `${Math.round(v / 1000)}к`;
@@ -59,7 +64,7 @@ function NetworthChartComponent({ data }) {
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full overflow-visible">
         <defs>
           <linearGradient id="nwGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={color} stopOpacity="0.15" />
+            <stop offset="0%" stopColor={color} stopOpacity="0.28" />
             <stop offset="100%" stopColor={color} stopOpacity="0" />
           </linearGradient>
         </defs>
@@ -71,10 +76,9 @@ function NetworthChartComponent({ data }) {
             y1={py(0)}
             x2={W - PAD.right}
             y2={py(0)}
-            stroke="currentColor"
-            strokeOpacity="0.15"
-            strokeWidth="1"
-            strokeDasharray="3 3"
+            className={chartGrid.horizontal.className}
+            strokeDasharray={chartGrid.horizontal.strokeDasharray}
+            strokeWidth={chartGrid.horizontal.strokeWidth}
           />
         )}
 
@@ -99,10 +103,9 @@ function NetworthChartComponent({ data }) {
             <text
               x={px(i)}
               y={H - 4}
-              textAnchor="middle"
+              textAnchor={chartTick.textAnchor}
               fontSize="8"
-              fill="currentColor"
-              opacity="0.5"
+              className={chartTick.className}
             >
               {monthLabel(d.month)}
             </text>
@@ -115,6 +118,7 @@ function NetworthChartComponent({ data }) {
                 fontSize="8"
                 fill={color}
                 fontWeight="600"
+                className={chartAxis.label.className}
               >
                 {fmt(d.networth)}₴
               </text>

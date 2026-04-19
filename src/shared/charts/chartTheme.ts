@@ -110,6 +110,29 @@ export const chartTooltip = {
 } as const;
 
 /**
+ * Heatmap cell tokens — four monotonic steps per module plus a neutral
+ * "empty" and a disabled "future" shade. Values are Tailwind className
+ * strings so dark mode resolves through the same CSS variables.
+ *
+ * Level scale (0 → 3):
+ *   0 = no activity, 1 < 34 %, 2 < 67 %, 3 ≥ 67 %
+ */
+export const chartHeatmap = {
+  routine: {
+    empty: "bg-panelHi dark:bg-line/25",
+    future: "bg-line/15 dark:bg-line/10",
+    levels: [
+      "bg-panelHi dark:bg-line/25",
+      "bg-coral-200/80 dark:bg-coral-900/55",
+      "bg-coral-400/75 dark:bg-coral-600/70",
+      "bg-coral-500/90 dark:bg-coral-500/80",
+    ] as const,
+    ring: "ring-coral-400/80 dark:ring-coral-300/70",
+    outline: "outline-coral-400",
+  },
+} as const;
+
+/**
  * Gradient stops used by area/fill series, keyed by module. Consumers can
  * embed these as `<linearGradient>` stops without re-picking hex codes.
  */

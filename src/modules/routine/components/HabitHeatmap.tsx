@@ -2,11 +2,13 @@ import { useMemo, useState, useCallback, useEffect, useRef } from "react";
 import { cn } from "@shared/lib/cn";
 import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { Card } from "@shared/components/ui/Card";
+import { chartHeatmap } from "@shared/charts/chartTheme";
 import type { Habit, RoutineState } from "../lib/types";
 
 const WEEKS = 53;
 const DAYS = 7;
 const DAY_LABELS = ["Пн", "", "Ср", "", "Пт", "", "Нд"];
+const HEATMAP = chartHeatmap.routine;
 
 interface HeatmapCell {
   key: string;
@@ -28,11 +30,11 @@ function localDateKey(d: Date): string {
 }
 
 function cellBg(ratio: number, isFuture: boolean): string {
-  if (isFuture) return "bg-line/15 dark:bg-line/10";
-  if (ratio === 0) return "bg-panelHi dark:bg-line/25";
-  if (ratio < 0.34) return "bg-orange-200/80 dark:bg-orange-900/55";
-  if (ratio < 0.67) return "bg-orange-400/75 dark:bg-orange-600/70";
-  return "bg-orange-500/90 dark:bg-orange-500/80";
+  if (isFuture) return HEATMAP.future;
+  if (ratio === 0) return HEATMAP.levels[0];
+  if (ratio < 0.34) return HEATMAP.levels[1];
+  if (ratio < 0.67) return HEATMAP.levels[2];
+  return HEATMAP.levels[3];
 }
 
 export interface HabitHeatmapProps {
@@ -186,10 +188,10 @@ export function HabitHeatmap({ habits, completions }: HabitHeatmapProps) {
                     aria-label={`${cell.key}: ${cell.cnt} з ${cell.total} звичок`}
                     aria-pressed={cell.key === selected}
                     className={cn(
-                      "rounded-sm transition-opacity focus-visible:outline focus-visible:outline-2 focus-visible:outline-orange-400",
+                      "rounded-sm transition-opacity focus-visible:outline focus-visible:outline-2",
+                      HEATMAP.outline,
                       cellBg(cell.ratio, cell.isFuture),
-                      cell.isToday &&
-                        "ring-1 ring-orange-400/80 dark:ring-orange-300/70",
+                      cell.isToday && cn("ring-1", HEATMAP.ring),
                       cell.key === selected && "opacity-60",
                     )}
                     style={{ width: 12, height: 12, flexShrink: 0 }}
@@ -222,12 +224,7 @@ export function HabitHeatmap({ habits, completions }: HabitHeatmapProps) {
       ) : (
         <div className="mt-3 flex items-center gap-2 text-3xs text-subtle/70 select-none">
           <span>менше</span>
-          {[
-            "bg-panelHi dark:bg-line/25",
-            "bg-orange-200/80 dark:bg-orange-900/55",
-            "bg-orange-400/75 dark:bg-orange-600/70",
-            "bg-orange-500/90 dark:bg-orange-500/80",
-          ].map((c, i) => (
+          {HEATMAP.levels.map((c, i) => (
             <span
               key={i}
               className={cn("rounded-sm inline-block flex-shrink-0", c)}
