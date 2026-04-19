@@ -5,16 +5,16 @@ import { setCorsHeaders } from "./cors.js";
  * `server/app.js` і дублювалось у кожному handler-і через `setCorsHeaders` +
  * OPTIONS-guard; PR 4 зробив це єдиним source of truth.
  *
- * `allowHeaders` — union усіх custom-хедерів, які очікують різні домени:
+ * `allowHeaders` містить тільки ті хедери, що МАЮТЬ приходити з браузера:
  *   - `X-Token` — nutrition/monobank (proxy)
  *   - `X-Privat-Id`, `X-Privat-Token` — privatbank (proxy)
- *   - `X-Api-Secret` — internal cron/worker endpoint-и (push/send)
  *   - `Content-Type` — для POST/JSON
- * Для preflight CORS різниці немає: браузеру байдуже, що deduped union
- * ширший за те, що конкретний endpoint реально читає, — це advisory-список.
+ *
+ * `X-Api-Secret` свідомо НЕ в цьому списку: `/api/push/send` — внутрішній
+ * cron/worker endpoint, браузер не має могти preflight-нути його навіть з
+ * allowed origin (defense-in-depth проти XSS / протечки секрета в logs).
  */
-const ALLOW_HEADERS =
-  "Content-Type, X-Token, X-Privat-Id, X-Privat-Token, X-Api-Secret";
+const ALLOW_HEADERS = "Content-Type, X-Token, X-Privat-Id, X-Privat-Token";
 
 export function apiCorsMiddleware() {
   return (req, res, next) => {

@@ -3,7 +3,7 @@ import {
   asyncHandler,
   rateLimitExpress,
   requireApiSecret,
-  requireSession,
+  requireSessionSoft,
   setModule,
 } from "../http/index.js";
 import {
@@ -18,8 +18,12 @@ import {
  * під час реєстрації сервіс-воркера і він має бути швидким/дешевим. Решта
  * endpoint-ів (subscribe/unsubscribe/send) лімітуються.
  *
- * subscribe/unsubscribe вимагають сесії; send — внутрішній API для
- * cron/worker-ів, захищений `X-Api-Secret`.
+ * subscribe/unsubscribe використовують `requireSessionSoft`, а не
+ * `requireSession`: service worker смикає ці endpoint-и у фоні, і
+ * історично handler трактував будь-яку невдачу `getSessionUser` як 401
+ * (а не 500), щоб тимчасовий збій БД не перетворювався на notification
+ * "server error" на фронті. `send` — внутрішній API cron/worker-ів,
+ * захищений `X-Api-Secret`.
  */
 export function createPushRouter() {
   const r = Router();
@@ -29,10 +33,14 @@ export function createPushRouter() {
     "/api/push",
     rateLimitExpress({ key: "api:push", limit: 30, windowMs: 60_000 }),
   );
-  r.post("/api/push/subscribe", requireSession(), asyncHandler(pushSubscribe));
+  r.post(
+    "/api/push/subscribe",
+    requireSessionSoft(),
+    asyncHandler(pushSubscribe),
+  );
   r.delete(
     "/api/push/subscribe",
-    requireSession(),
+    requireSessionSoft(),
     asyncHandler(pushUnsubscribe),
   );
   r.post(

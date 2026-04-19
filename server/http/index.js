@@ -36,7 +36,7 @@ export * as schemas from "./schemas.js";
 // використовувати їх замість per-handler boilerplate).
 export { asyncHandler } from "./asyncHandler.js";
 export { setModule } from "./setModule.js";
-export { requireSession } from "./requireSession.js";
+export { requireSession, requireSessionSoft } from "./requireSession.js";
 export { requireApiSecret } from "./requireApiSecret.js";
 export { requireAnthropicKey } from "./requireAnthropicKey.js";
 export { requireAiQuota } from "./requireAiQuota.js";
