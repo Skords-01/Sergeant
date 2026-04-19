@@ -62,12 +62,15 @@ export function apiHelmetMiddleware({
   // Логуємо один раз на boot з рівнем warn у проді і info у дев-режимі.
   if (cspEnvDisabled) {
     const isProd = process.env.NODE_ENV === "production";
-    const log = isProd ? logger.warn : logger.info;
-    log({
+    // pino-методи читають `this` внутрішньо (this[writeSym], this[msgPrefixSym]),
+    // тож витягання у змінну без .bind() крашне процес у strict-mode ESM.
+    const payload = {
       msg: "csp_disabled",
       reason: "CSP_DISABLE=1",
       env: process.env.NODE_ENV || "unknown",
-    });
+    };
+    if (isProd) logger.warn(payload);
+    else logger.info(payload);
   } else if (reportOnly) {
     logger.info({ msg: "csp_report_only" });
   }
