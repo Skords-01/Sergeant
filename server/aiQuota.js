@@ -4,6 +4,26 @@ import { getIp } from "./http/rateLimit.js";
 import { logger } from "./obs/logger.js";
 import { aiQuotaBlocksTotal, aiQuotaFailOpenTotal } from "./obs/metrics.js";
 
+/**
+ * Денна AI-квота. Зберігається в `ai_usage_daily` як лічильник по (subject, day,
+ * bucket). Є два типи bucket-ів: `default` — звичайний chat/coach/digest/nutrition
+ * (cost=1), `tool:<name>` — окремий tool-use виклик (cost = AI_QUOTA_TOOL_COST,
+ * default 3). tool-ліміти задаються JSON-ом через AI_QUOTA_TOOL_LIMITS.
+ *
+ * Інкремент — атомарний UPSERT з умовою `request_count + cost <= limit` на
+ * ON CONFLICT DO UPDATE. Raceʼу між паралельними запитами немає: у Postgres
+ * ON CONFLICT взаємовиключний per-row, тож два конкурентні інкременти не
+ * можуть одночасно перевищити ліміт.
+ *
+ * Сховище advisory: при недоступності БД (no DATABASE_URL, ECONNREFUSED, no
+ * table) — fail-open, щоб збій квоти не поклав усі AI-фічі. Це прийнятно, бо
+ * upstream-ліміти Anthropic і per-route rate-limit все одно працюють.
+ */
+
+const DEFAULT_BUCKET = "default";
+const TOOL_BUCKET_PREFIX = "tool:";
+const DEFAULT_TOOL_COST = 3;
+
 function parseLimit(name, fallback) {
   const v = process.env[name];
   if (v === undefined || v === "") return fallback;
@@ -23,6 +43,35 @@ function effectiveLimits() {
   };
 }
 
+function toolCost() {
+  return parseLimit("AI_QUOTA_TOOL_COST", DEFAULT_TOOL_COST);
+}
+
+/**
+ * Парсить AI_QUOTA_TOOL_LIMITS як JSON {"tool_name": maxPerDay, ...}.
+ * Повертає ліміт для конкретного tool-а, або null (unlimited). На битому
+ * JSON-і — null + лог-попередження (advisory-фіча не повинна блокувати запити).
+ */
+function toolLimit(toolName) {
+  const raw = process.env.AI_QUOTA_TOOL_LIMITS;
+  if (!raw) {
+    return parseLimit("AI_QUOTA_TOOL_DEFAULT_LIMIT", null);
+  }
+  try {
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed === "object" && toolName in parsed) {
+      const v = parsed[toolName];
+      if (typeof v === "number" && Number.isFinite(v) && v >= 0) return v;
+    }
+  } catch (e) {
+    logger.warn({
+      msg: "ai_quota_tool_limits_parse_failed",
+      err: { message: e?.message || String(e) },
+    });
+  }
+  return parseLimit("AI_QUOTA_TOOL_DEFAULT_LIMIT", null);
+}
+
 async function safeSessionUser(req) {
   try {
     return await getSessionUser(req);
@@ -35,14 +84,17 @@ async function safeSessionUser(req) {
   }
 }
 
+function subjectFor(sessionUser, req) {
+  return sessionUser ? `u:${sessionUser.id}` : `ip:${getIp(req)}`;
+}
+
+function today() {
+  return new Date().toISOString().slice(0, 10);
+}
+
 /**
- * Перевірка та збільшення денного лічильника AI для залогіненого користувача або IP.
- * Повертає false, якщо відповідь вже відправлена (429).
- *
- * Квота зберігається в Postgres (ai_usage_daily). Якщо сховище тимчасово недоступне
- * (немає DATABASE_URL, впала БД, відсутня таблиця тощо) — fail-open: пропускаємо запит
- * і логуємо подію. Це advisory-ліміт, а не механізм безпеки: upstream (Anthropic) і
- * роут-специфічні `checkRateLimit` все одно захищають від зловживань.
+ * Default-bucket (plain chat) quota check. Shape збережено (backwards compat):
+ * повертає true/false; при вичерпанні сама відправляє 429 у `res`.
  */
 export async function assertAiQuota(req, res) {
   if (isAiQuotaDisabled()) return true;
@@ -72,11 +124,15 @@ export async function assertAiQuota(req, res) {
     return true;
   }
 
-  const subject = sessionUser ? `u:${sessionUser.id}` : `ip:${getIp(req)}`;
-  const day = new Date().toISOString().slice(0, 10);
-
+  const subject = subjectFor(sessionUser, req);
   try {
-    const result = await consumeQuota(subject, day, limit);
+    const result = await consumeQuota({
+      subject,
+      day: today(),
+      limit,
+      cost: 1,
+      bucket: DEFAULT_BUCKET,
+    });
     if (!result.ok) {
       try {
         aiQuotaBlocksTotal.inc({ reason: "limit" });
@@ -94,9 +150,67 @@ export async function assertAiQuota(req, res) {
     return true;
   } catch (e) {
     logQuotaStoreUnavailable("db_error", e);
-    // Fail-open: краще пропустити запит, ніж блокувати всі AI-фічі через збій сховища квот.
     setRemainingHeader(res, "unknown");
     return true;
+  }
+}
+
+/**
+ * Per-tool quota check. Викликається з chat-хендлера, коли Anthropic повертає
+ * tool_use-блок (або при обробці tool_results). Тут НЕ відправляється 429
+ * автоматично — caller сам вирішує, як сигналізувати користувачу (напр.,
+ * повернути текстову відповідь "ліміт вичерпано" замість виклику tool-а).
+ *
+ * Повертає `{ok, remaining, limit, reason?}`. `reason` — `"disabled" | "limit"
+ * | "store_unavailable"` — для телеметрії.
+ *
+ * @param {import("express").Request} req
+ * @param {string} toolName
+ */
+export async function consumeToolQuota(req, toolName) {
+  if (isAiQuotaDisabled()) {
+    return { ok: true, remaining: null, limit: null };
+  }
+  const limit = toolLimit(toolName);
+  if (limit == null) {
+    return { ok: true, remaining: null, limit: null };
+  }
+  if (limit === 0) {
+    try {
+      aiQuotaBlocksTotal.inc({ reason: "tool_disabled" });
+    } catch {
+      /* ignore */
+    }
+    return { ok: false, remaining: 0, limit: 0, reason: "disabled" };
+  }
+
+  if (!process.env.DATABASE_URL) {
+    logQuotaStoreUnavailable("database_url_missing");
+    return { ok: true, remaining: null, limit, reason: "store_unavailable" };
+  }
+
+  const sessionUser = await safeSessionUser(req);
+  const subject = subjectFor(sessionUser, req);
+  try {
+    const result = await consumeQuota({
+      subject,
+      day: today(),
+      limit,
+      cost: toolCost(),
+      bucket: `${TOOL_BUCKET_PREFIX}${toolName}`,
+    });
+    if (!result.ok) {
+      try {
+        aiQuotaBlocksTotal.inc({ reason: "tool_limit" });
+      } catch {
+        /* ignore */
+      }
+      return { ...result, reason: "limit" };
+    }
+    return result;
+  } catch (e) {
+    logQuotaStoreUnavailable("db_error", e);
+    return { ok: true, remaining: null, limit, reason: "store_unavailable" };
   }
 }
 
@@ -121,41 +235,45 @@ function logQuotaStoreUnavailable(reason, e) {
   });
 }
 
-async function consumeQuota(subject, day, limit) {
-  const client = await pool.connect();
-  try {
-    await client.query("BEGIN");
-    const sel = await client.query(
-      `SELECT request_count FROM ai_usage_daily WHERE subject_key = $1 AND usage_day = $2::date FOR UPDATE`,
-      [subject, day],
-    );
-    const cur = sel.rows[0]?.request_count ?? 0;
-    if (cur >= limit) {
-      await client.query("ROLLBACK");
-      return { ok: false, remaining: 0, limit };
-    }
-    const next = cur + 1;
-    if (sel.rows.length === 0) {
-      await client.query(
-        `INSERT INTO ai_usage_daily (subject_key, usage_day, request_count) VALUES ($1, $2::date, 1)`,
-        [subject, day],
-      );
-    } else {
-      await client.query(
-        `UPDATE ai_usage_daily SET request_count = $3 WHERE subject_key = $1 AND usage_day = $2::date`,
-        [subject, day, next],
-      );
-    }
-    await client.query("COMMIT");
-    return { ok: true, remaining: limit - next, limit };
-  } catch (e) {
-    try {
-      await client.query("ROLLBACK");
-    } catch {
-      /* ignore */
-    }
-    throw e;
-  } finally {
-    client.release();
+/**
+ * Атомарний інкремент лічильника з verifi-ON-CONFLICT:
+ *   INSERT (cost) — якщо рядка ще немає (завжди проходить, бо cost <= limit
+ *                   перевіряємо наперед).
+ *   ON CONFLICT UPDATE count = count + cost WHERE count + cost <= limit
+ *                — якщо рядок існує і новий count не перевищить limit.
+ *
+ * Якщо WHERE на DO UPDATE false — RETURNING повертає 0 рядків → блокуємо.
+ *
+ * NOTE: pre-check `cost > limit` покриває крайовий випадок: коли рядка ще
+ * немає, ON CONFLICT WHERE не спрацьовує, і ми б вставили count=cost > limit.
+ *
+ * @param {{subject:string, day:string, limit:number, cost:number, bucket:string}} opts
+ * @returns {Promise<{ok:boolean, remaining:number, limit:number}>}
+ */
+async function consumeQuota({ subject, day, limit, cost, bucket }) {
+  if (cost > limit) {
+    return { ok: false, remaining: 0, limit };
   }
+
+  const sql = `
+    INSERT INTO ai_usage_daily AS t (subject_key, usage_day, bucket, request_count)
+    VALUES ($1, $2::date, $3, $4)
+    ON CONFLICT (subject_key, usage_day, bucket)
+    DO UPDATE SET request_count = t.request_count + EXCLUDED.request_count
+      WHERE t.request_count + EXCLUDED.request_count <= $5
+    RETURNING request_count
+  `;
+  const r = await pool.query(sql, [subject, day, bucket, cost, limit]);
+  if (r.rows.length === 0) {
+    return { ok: false, remaining: 0, limit };
+  }
+  const next = r.rows[0].request_count;
+  return { ok: true, remaining: Math.max(0, limit - next), limit };
 }
+
+/** Test-only: прямий доступ до атомарного інкременту без HTTP-прошарку. */
+export const __aiQuotaTestHooks = {
+  consumeQuota,
+  DEFAULT_BUCKET,
+  TOOL_BUCKET_PREFIX,
+};
