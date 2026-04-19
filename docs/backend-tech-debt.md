@@ -549,9 +549,7 @@
 
 1. ~~Таймаути/ретраї/breaker на `mono`/`privat`/`web-push`~~ — ✅ `bankProxy.ts` + PR #335.
 2. ~~`aiQuota.consumeQuota` → атомарний upsert~~ — ✅ PR C.
-3. ```12 широких `catch(e){res.json({error:e.message})}` → `next(e)`~~ — ✅ PR A (grep → 0).
-
-   ```
+3. ~~12 широких `catch(e){res.json({error:e.message})}` → `next(e)`~~ — ✅ PR A (grep → 0).
 4. ~~Sync zod-схем з handler-ами (`RefinePhotoSchema`)~~ — ✅ PR A.
 5. ~~Supertest-smoke на 8 ендпоінтів через `createApp()` factory~~ — ✅ PR #336.
 
