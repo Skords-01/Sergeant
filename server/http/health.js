@@ -25,11 +25,3 @@ export function createReadyzHandler(pool) {
     else res.status(503).type("text/plain").send("unhealthy");
   };
 }
-
-/**
- * @deprecated Використовуй `livezHandler` + `createReadyzHandler`. Лишено для
- * зворотної сумісності зі старими health-probe в інфраструктурі.
- */
-export function createHealthHandler(pool) {
-  return createReadyzHandler(pool);
-}

@@ -15,11 +15,7 @@ export {
   authMetricsMiddleware,
 } from "./authMiddleware.js";
 
-export {
-  livezHandler,
-  createReadyzHandler,
-  createHealthHandler,
-} from "./health.js";
+export { livezHandler, createReadyzHandler } from "./health.js";
 
 export { errorHandler } from "./errorHandler.js";
 
