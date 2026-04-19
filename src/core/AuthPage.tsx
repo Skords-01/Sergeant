@@ -207,7 +207,7 @@ export function AuthPage({ onContinueWithoutAccount }) {
             className="w-full"
           >
             {loading
-              ? "Зачекайте..."
+              ? "Зачекайте…"
               : mode === "login"
                 ? "Увійти"
                 : "Зареєструватися"}

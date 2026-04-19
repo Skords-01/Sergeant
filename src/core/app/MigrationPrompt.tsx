@@ -32,7 +32,7 @@ export function MigrationPrompt({ onUpload, onSkip, syncing }) {
             loading={syncing}
             className="w-full"
           >
-            {syncing ? "Завантаження..." : "Завантажити в хмару"}
+            {syncing ? "Завантаження…" : "Завантажити в хмару"}
           </Button>
           <Button
             type="button"

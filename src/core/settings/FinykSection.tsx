@@ -487,7 +487,7 @@ export function FinykSection() {
                 onClick={connectPrivat}
                 disabled={privatConnecting}
               >
-                {privatConnecting ? "Підключення..." : "Підключити ПриватБанк"}
+                {privatConnecting ? "Підключення…" : "Підключити ПриватБанк"}
               </Button>
             </div>
           )}

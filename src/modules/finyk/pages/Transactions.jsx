@@ -488,7 +488,7 @@ export function Transactions({
         {syncState?.status !== "idle" && (
           <div className={cn("text-xs mb-1", syncColor)}>
             {syncState.status === "loading"
-              ? "⟳ оновлення..."
+              ? "⟳ оновлення…"
               : syncState.status === "success"
                 ? "✓ синхронізовано"
                 : syncState.status === "partial"
@@ -522,7 +522,7 @@ export function Transactions({
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Пошук по транзакціях..."
+            placeholder="Пошук по транзакціях…"
             className="w-full bg-panelHi border border-line rounded-2xl pl-9 pr-4 py-2.5 text-sm text-text placeholder:text-subtle focus:outline-none focus:border-primary/50 transition-colors"
           />
           {search && (
@@ -662,7 +662,7 @@ export function Transactions({
         )}
 
         {activeLoading && activeTx.length > 0 && (
-          <p className="text-center text-xs text-subtle py-2">⟳ оновлення...</p>
+          <p className="text-center text-xs text-subtle py-2">⟳ оновлення…</p>
         )}
       </div>
 

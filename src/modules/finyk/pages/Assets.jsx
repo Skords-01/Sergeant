@@ -837,7 +837,7 @@ export function Assets({
                 <div className="flex gap-2">
                   <Input
                     className="flex-1"
-                    placeholder="Назва пасиву (кредит, борг...)"
+                    placeholder="Назва пасиву (кредит, борг…)"
                     value={newDebt.name}
                     onChange={(e) =>
                       setNewDebt((a) => ({ ...a, name: e.target.value }))

@@ -20,7 +20,7 @@ export function WorkoutCatalogSection({
     <>
       <div className="relative mb-3">
         <Input
-          placeholder="Пошук (жим, підтягування, спина...)"
+          placeholder="Пошук (жим, підтягування, спина…)"
           value={q}
           onChange={(e) => setQ(e.target.value)}
         />

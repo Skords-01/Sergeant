@@ -368,7 +368,7 @@ export function ManualExpenseSheet({
           </Label>
           <Input
             id={descId}
-            placeholder="Кава, продукти, таксі..."
+            placeholder="Кава, продукти, таксі…"
             value={form.description}
             onChange={(e) =>
               setForm((f) => ({ ...f, description: e.target.value }))

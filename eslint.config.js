@@ -48,6 +48,11 @@ export default [
       // in one place. Add the file-scoped override below for the DS
       // primitives themselves.
       "sergeant-design/no-eyebrow-drift": "error",
+      // Typography guardrail — user-facing strings must use the single
+      // ellipsis glyph `…` (U+2026), not three ASCII dots `...`. The
+      // typographic glyph kerns correctly and is what Web Interface
+      // Guidelines recommend for truncation cues. Auto-fixable.
+      "sergeant-design/no-ellipsis-dots": "error",
       "no-empty": ["error", { allowEmptyCatch: true }],
       "no-unused-vars": [
         "error",
@@ -101,6 +106,15 @@ export default [
     ],
     rules: {
       "sergeant-design/no-eyebrow-drift": "off",
+    },
+  },
+  // The plugin that defines `no-ellipsis-dots` contains `...` in its
+  // own error message + docs — it would be tautological to lint
+  // itself.
+  {
+    files: ["eslint-plugins/sergeant-design/**/*.js"],
+    rules: {
+      "sergeant-design/no-ellipsis-dots": "off",
     },
   },
   eslintConfigPrettier,

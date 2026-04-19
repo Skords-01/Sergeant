@@ -515,7 +515,7 @@ export function Overview({
           </button>
         )}
         {loadingTx && (
-          <p className="text-center text-xs text-subtle py-4">Оновлення...</p>
+          <p className="text-center text-xs text-subtle py-4">Оновлення…</p>
         )}
       </div>
     </div>

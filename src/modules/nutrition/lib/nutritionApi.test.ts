@@ -116,6 +116,7 @@ describe("nutritionApi adapter postJson", () => {
       new ApiError({
         kind: "parse",
         message: "Unexpected token <",
+        // eslint-disable-next-line sergeant-design/no-ellipsis-dots -- literal HTML fixture, not user-facing copy
         bodyText: "<!doctype html><html>...</html>",
         url: URL,
       }),
@@ -125,6 +126,7 @@ describe("nutritionApi adapter postJson", () => {
     expect(err.message).toBe(
       "API повернув HTML замість JSON (ймовірно, rewrite перехоплює /api/*).",
     );
+    // eslint-disable-next-line sergeant-design/no-ellipsis-dots -- literal HTML fixture, not user-facing copy
     expect(err.bodyText).toBe("<!doctype html><html>...</html>");
   });
 

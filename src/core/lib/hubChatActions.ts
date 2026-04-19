@@ -830,7 +830,7 @@ export function executeAction(action: ChatAction): string {
         const id = String(tx_id || "").trim();
         if (!id) return "Потрібен tx_id для видалення.";
         if (!id.startsWith("m_")) {
-          return `Транзакцію ${id} не видалено: можна видаляти лише ручні (m_...). Для монобанк-транзакцій використайте hide_transaction.`;
+          return `Транзакцію ${id} не видалено: можна видаляти лише ручні (m_…). Для монобанк-транзакцій використайте hide_transaction.`;
         }
         const list = ls<Array<{ id: string }>>("finyk_manual_expenses_v1", []);
         const idx = list.findIndex((t) => t.id === id);

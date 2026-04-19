@@ -7,6 +7,12 @@
  *     <Label normalCase={false}>) instead. Add
  *       // eslint-disable-next-line sergeant-design/no-eyebrow-drift
  *     for intentional stylistic exceptions (e.g. narrative overlay stories).
+ *
+ *   - no-ellipsis-dots: forbid three consecutive ASCII dots (`...`) inside
+ *     string literals and JSX text nodes — the typographic ellipsis `…`
+ *     (U+2026) is a single glyph, renders with correct kerning, and is
+ *     what Web Interface Guidelines recommend for truncation cues
+ *     ("Loading…", "Пошук…", etc.). Auto-fixable.
  */
 
 const EYEBROW_MESSAGE =
@@ -57,9 +63,68 @@ const noEyebrowDrift = {
   },
 };
 
+const ELLIPSIS_MESSAGE =
+  "Use `…` (U+2026, a single ellipsis glyph) instead of three ASCII dots `...` in user-facing strings. The typographic ellipsis renders with correct kerning and is what Web Interface Guidelines recommend for truncation cues (e.g. 'Loading…').";
+
+const RX_THREE_DOTS = /\.{3}/;
+
+function replaceEllipsisDots(text) {
+  return text.replace(/\.{3}/g, "…");
+}
+
+const noEllipsisDots = {
+  meta: {
+    type: "suggestion",
+    docs: {
+      description:
+        "Forbid three ASCII dots (`...`) inside string literals — use the typographic ellipsis `…` (U+2026).",
+    },
+    fixable: "code",
+    schema: [],
+    messages: { ellipsis: ELLIPSIS_MESSAGE },
+  },
+  create(context) {
+    function reportLiteral(node, raw) {
+      if (!RX_THREE_DOTS.test(raw)) return;
+      context.report({
+        node,
+        messageId: "ellipsis",
+        fix(fixer) {
+          const sourceCode = context.sourceCode ?? context.getSourceCode();
+          const text = sourceCode.getText(node);
+          return fixer.replaceText(node, replaceEllipsisDots(text));
+        },
+      });
+    }
+    return {
+      Literal(node) {
+        if (typeof node.value !== "string") return;
+        reportLiteral(node, node.value);
+      },
+      TemplateElement(node) {
+        const raw = node.value && node.value.cooked;
+        if (typeof raw !== "string") return;
+        reportLiteral(node, raw);
+      },
+      JSXText(node) {
+        if (typeof node.value !== "string") return;
+        if (!RX_THREE_DOTS.test(node.value)) return;
+        context.report({
+          node,
+          messageId: "ellipsis",
+          fix(fixer) {
+            return fixer.replaceText(node, replaceEllipsisDots(node.value));
+          },
+        });
+      },
+    };
+  },
+};
+
 const plugin = {
   rules: {
     "no-eyebrow-drift": noEyebrowDrift,
+    "no-ellipsis-dots": noEllipsisDots,
   },
 };
 

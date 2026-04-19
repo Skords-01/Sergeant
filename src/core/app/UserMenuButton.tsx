@@ -96,7 +96,7 @@ export function UserMenuButton({
               className="w-full text-left px-3 py-2 rounded-xl text-sm text-text hover:bg-panelHi transition-colors disabled:opacity-50 flex items-center gap-2"
             >
               <Icon name="upload" size={16} />
-              {syncing ? "Синхронізація..." : "Зберегти в хмару"}
+              {syncing ? "Синхронізація…" : "Зберегти в хмару"}
             </button>
             <button
               type="button"

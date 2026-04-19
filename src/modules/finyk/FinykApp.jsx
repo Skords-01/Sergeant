@@ -497,7 +497,7 @@ export default function App({
               onClick={() => connect(tokenInput.trim(), false, rememberToken)}
               disabled={connecting || !tokenInput.trim()}
             >
-              {connecting ? "Підключення..." : "Підключити Monobank"}
+              {connecting ? "Підключення…" : "Підключити Monobank"}
             </Button>
             {typeof onBackToHub === "function" && (
               <Button
