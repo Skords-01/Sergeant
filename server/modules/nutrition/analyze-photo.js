@@ -1,6 +1,7 @@
 import { extractJsonFromText } from "../../http/jsonSafe.js";
 import { validateBody } from "../../http/validate.js";
 import { AnalyzePhotoSchema } from "../../http/schemas.js";
+import { ExternalServiceError } from "../../obs/errors.js";
 import {
   anthropicMessages,
   extractAnthropicText,
@@ -26,57 +27,59 @@ const SYSTEM = `Ти нутріціолог-помічник. Відповіда
 /**
  * POST /api/nutrition/analyze-photo — розпізнати страву з фото і повернути
  * оцінені КБЖВ. CORS / token / quota / rate-limit виставляє роутер.
+ *
+ * Широкий `try/catch` свідомо не використовуємо: всі очікувані помилки
+ * (bad input) ловить zod + central errorHandler; непередбачені (таймаут
+ * Anthropic, мережа) — теж піднімаємо наверх, щоб Sentry/логи отримали
+ * повноцінний контекст, а не замаскований `{ error: e.message }`.
  */
 export default async function handler(req, res) {
   const apiKey = req.anthropicKey;
 
   const parsed = validateBody(AnalyzePhotoSchema, req, res);
   if (!parsed.ok) return;
+  const { image_base64, mime_type, locale } = parsed.data;
 
-  try {
-    const { image_base64, mime_type, locale } = parsed.data;
-    const b64 = image_base64.trim();
-    const mediaType = mime_type || "image/jpeg";
+  const b64 = image_base64.trim();
+  const mediaType = mime_type || "image/jpeg";
 
-    const userText = `Мова: ${locale || "uk-UA"}.
+  const userText = `Мова: ${locale || "uk-UA"}.
 Опиши, що на фото і порахуй приблизне КБЖВ. Якщо треба — задай уточнення.`;
 
-    const payload = {
-      model: "claude-sonnet-4-6",
-      max_tokens: 700,
-      temperature: 0.2,
-      system: SYSTEM,
-      messages: [
-        {
-          role: "user",
-          content: [
-            {
-              type: "image",
-              source: { type: "base64", media_type: mediaType, data: b64 },
-            },
-            { type: "text", text: userText },
-          ],
-        },
-      ],
-    };
+  const payload = {
+    model: "claude-sonnet-4-6",
+    max_tokens: 700,
+    temperature: 0.2,
+    system: SYSTEM,
+    messages: [
+      {
+        role: "user",
+        content: [
+          {
+            type: "image",
+            source: { type: "base64", media_type: mediaType, data: b64 },
+          },
+          { type: "text", text: userText },
+        ],
+      },
+    ],
+  };
 
-    const { response, data } = await anthropicMessages(apiKey, payload, {
-      timeoutMs: 20000,
-      endpoint: "analyze-photo",
+  const { response, data } = await anthropicMessages(apiKey, payload, {
+    timeoutMs: 20000,
+    endpoint: "analyze-photo",
+  });
+  if (!response.ok) {
+    throw new ExternalServiceError(data?.error?.message || "AI error", {
+      status: response.status,
+      code: "ANTHROPIC_ERROR",
     });
-    if (!response.ok) {
-      return res
-        .status(response.status)
-        .json({ error: data?.error?.message || "AI error" });
-    }
-
-    const text = extractAnthropicText(data);
-
-    const parsed = extractJsonFromText(text);
-    const result = normalizePhotoResult(parsed);
-
-    return res.status(200).json({ result, rawText: text || null });
-  } catch (e) {
-    return res.status(500).json({ error: e?.message || "Помилка AI сервера" });
   }
+
+  const text = extractAnthropicText(data);
+
+  const jsonParsed = extractJsonFromText(text);
+  const result = normalizePhotoResult(jsonParsed);
+
+  return res.status(200).json({ result, rawText: text || null });
 }

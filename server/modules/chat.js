@@ -686,86 +686,55 @@ export default async function handler(req, res) {
   const parsed = validateBody(ChatRequestSchema, req, res);
   if (!parsed.ok) return;
 
-  try {
-    const {
-      context = "",
-      messages = [],
-      tool_results,
-      tool_calls_raw,
-      stream,
-    } = parsed.data;
+  const {
+    context = "",
+    messages = [],
+    tool_results,
+    tool_calls_raw,
+    stream,
+  } = parsed.data;
 
-    // Другий крок: клієнт виконав tool calls і повертає результати
-    if (tool_results && tool_calls_raw) {
-      const toolResultMessages = tool_results.map((r) => ({
-        type: "tool_result",
-        tool_use_id: r.tool_use_id,
-        content: String(r.content || "ok"),
-      }));
+  // Другий крок: клієнт виконав tool calls і повертає результати
+  if (tool_results && tool_calls_raw) {
+    const toolResultMessages = tool_results.map((r) => ({
+      type: "tool_result",
+      tool_use_id: r.tool_use_id,
+      content: String(r.content || "ok"),
+    }));
 
-      // Беремо лише останнє user-повідомлення (питання що спричинило tool call)
-      const lastUserMsg = [...(Array.isArray(messages) ? messages : [])]
-        .reverse()
-        .find(
-          (m) =>
-            m?.role === "user" &&
-            typeof m?.content === "string" &&
-            m.content.trim(),
-        );
+    // Беремо лише останнє user-повідомлення (питання що спричинило tool call)
+    const lastUserMsg = [...(Array.isArray(messages) ? messages : [])]
+      .reverse()
+      .find(
+        (m) =>
+          m?.role === "user" &&
+          typeof m?.content === "string" &&
+          m.content.trim(),
+      );
 
-      const fullMessages = [
-        ...(lastUserMsg
-          ? [{ role: "user", content: lastUserMsg.content }]
-          : []),
-        { role: "assistant", content: tool_calls_raw },
-        { role: "user", content: toolResultMessages },
-      ];
+    const fullMessages = [
+      ...(lastUserMsg ? [{ role: "user", content: lastUserMsg.content }] : []),
+      { role: "assistant", content: tool_calls_raw },
+      { role: "user", content: toolResultMessages },
+    ];
 
-      const payload = {
-        model: "claude-sonnet-4-6",
-        max_tokens: 400,
-        system: SYSTEM_PREFIX + context,
-        tools: TOOLS,
-        messages: fullMessages,
-      };
+    const payload = {
+      model: "claude-sonnet-4-6",
+      max_tokens: 400,
+      system: SYSTEM_PREFIX + context,
+      tools: TOOLS,
+      messages: fullMessages,
+    };
 
-      if (stream) {
-        await streamAnthropicToSse(res, apiKey, payload, "chat-tool-result");
-        return;
-      }
-
-      const { response, data } = await anthropicMessages(apiKey, payload, {
-        timeoutMs: 30000,
-        endpoint: "chat-tool-result",
-      });
-
-      if (!response?.ok) {
-        return res
-          .status(response?.status || 500)
-          .json({ error: data?.error?.message || "AI error" });
-      }
-
-      const text = extractAnthropicText(data);
-      return res.status(200).json({ text: text || "Готово." });
+    if (stream) {
+      await streamAnthropicToSse(res, apiKey, payload, "chat-tool-result");
+      return;
     }
 
-    // Перший запит — може повернути tool_use або текст
-    const cleaned = sanitizeMessages(messages);
-    if (cleaned.length === 0) {
-      return res.status(400).json({ error: "Немає повідомлень" });
-    }
-
-    const { response, data } = await anthropicMessages(
-      apiKey,
-      {
-        model: "claude-sonnet-4-6",
-        max_tokens: 600,
-        system: SYSTEM_PREFIX + context,
-        tools: TOOLS,
-        messages: cleaned,
-      },
-      { timeoutMs: 30000, endpoint: "chat" },
-    );
+    const { response, data } = await anthropicMessages(apiKey, payload, {
+      timeoutMs: 30000,
+      endpoint: "chat-tool-result",
+    });
 
     if (!response?.ok) {
       return res
@@ -773,31 +742,54 @@ export default async function handler(req, res) {
         .json({ error: data?.error?.message || "AI error" });
     }
 
-    const content = data?.content || [];
-    const toolUses = content.filter((b) => b.type === "tool_use");
-    const textParts = content
-      .filter((b) => b.type === "text")
-      .map((b) => b.text)
-      .join("\n");
-
-    if (toolUses.length > 0) {
-      return res.status(200).json({
-        text: textParts || null,
-        tool_calls: toolUses.map((t) => ({
-          id: t.id,
-          name: t.name,
-          input: t.input,
-        })),
-        tool_calls_raw: content,
-      });
-    }
-
-    return res
-      .status(200)
-      .json({ text: textParts || "Немає відповіді від AI." });
-  } catch (e) {
-    return res.status(500).json({ error: e?.message || "Помилка AI сервера" });
+    const text = extractAnthropicText(data);
+    return res.status(200).json({ text: text || "Готово." });
   }
+
+  // Перший запит — може повернути tool_use або текст
+  const cleaned = sanitizeMessages(messages);
+  if (cleaned.length === 0) {
+    return res.status(400).json({ error: "Немає повідомлень" });
+  }
+
+  const { response, data } = await anthropicMessages(
+    apiKey,
+    {
+      model: "claude-sonnet-4-6",
+      max_tokens: 600,
+      system: SYSTEM_PREFIX + context,
+      tools: TOOLS,
+      messages: cleaned,
+    },
+    { timeoutMs: 30000, endpoint: "chat" },
+  );
+
+  if (!response?.ok) {
+    return res
+      .status(response?.status || 500)
+      .json({ error: data?.error?.message || "AI error" });
+  }
+
+  const content = data?.content || [];
+  const toolUses = content.filter((b) => b.type === "tool_use");
+  const textParts = content
+    .filter((b) => b.type === "text")
+    .map((b) => b.text)
+    .join("\n");
+
+  if (toolUses.length > 0) {
+    return res.status(200).json({
+      text: textParts || null,
+      tool_calls: toolUses.map((t) => ({
+        id: t.id,
+        name: t.name,
+        input: t.input,
+      })),
+      tool_calls_raw: content,
+    });
+  }
+
+  return res.status(200).json({ text: textParts || "Немає відповіді від AI." });
 }
 
 /**

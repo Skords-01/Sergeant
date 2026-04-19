@@ -1,5 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import { NotFoundError } from "../../obs/errors.js";
 
 function safeKeyFromToken(req) {
   const tok = req?.headers?.["x-token"];
@@ -15,16 +16,25 @@ function safeKeyFromToken(req) {
 /**
  * POST /api/nutrition/backup-download — відновити збережений бекап.
  * CORS / token / rate-limit виставляє роутер.
+ *
+ * Вузький catch тільки на очікувану ситуацію "файл відсутній" (ENOENT).
+ * Пошкоджений JSON і файлові помилки летять наверх в errorHandler.
  */
 export default async function handler(req, res) {
+  const dir = path.join(process.cwd(), ".data");
+  const key = safeKeyFromToken(req);
+  const file = path.join(dir, `nutrition-backup-${key}.json`);
+
+  let raw;
   try {
-    const dir = path.join(process.cwd(), ".data");
-    const key = safeKeyFromToken(req);
-    const file = path.join(dir, `nutrition-backup-${key}.json`);
-    const raw = await fs.readFile(file, "utf8");
-    const blob = JSON.parse(raw);
-    return res.status(200).json({ ok: true, blob });
-  } catch {
-    return res.status(404).json({ error: "Бекап не знайдено" });
+    raw = await fs.readFile(file, "utf8");
+  } catch (e) {
+    if (e?.code === "ENOENT") {
+      throw new NotFoundError("Бекап не знайдено");
+    }
+    throw e;
   }
+
+  const blob = JSON.parse(raw);
+  return res.status(200).json({ ok: true, blob });
 }

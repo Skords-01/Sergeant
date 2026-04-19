@@ -1,4 +1,7 @@
 import { extractJsonFromText } from "../../http/jsonSafe.js";
+import { validateBody } from "../../http/validate.js";
+import { ShoppingListSchema } from "../../http/schemas.js";
+import { ValidationError, ExternalServiceError } from "../../obs/errors.js";
 import {
   anthropicMessages,
   extractAnthropicText,
@@ -42,50 +45,49 @@ const SYSTEM = `Ти помічник з планування покупок і 
 export default async function handler(req, res) {
   const apiKey = req.anthropicKey;
 
-  try {
-    const { recipes, weekPlan, pantryItems, locale } = req.body || {};
-    const loc = String(locale || "uk-UA");
+  const parsed = validateBody(ShoppingListSchema, req, res);
+  if (!parsed.ok) return;
+  const { recipes, weekPlan, pantryItems, locale } = parsed.data;
+  const loc = String(locale || "uk-UA");
 
-    const pantryArr = Array.isArray(pantryItems) ? pantryItems : [];
-    const pantryStr =
-      pantryArr.length > 0
-        ? pantryArr
-            .map((x) =>
-              typeof x === "string" ? x : x?.name ? String(x.name) : "",
-            )
-            .filter(Boolean)
-            .join(", ")
-        : "нічого";
+  const pantryArr = Array.isArray(pantryItems) ? pantryItems : [];
+  const pantryStr =
+    pantryArr.length > 0
+      ? pantryArr
+          .map((x) =>
+            typeof x === "string" ? x : x?.name ? String(x.name) : "",
+          )
+          .filter(Boolean)
+          .join(", ")
+      : "нічого";
 
-    let ingredientsList = "";
+  let ingredientsList = "";
 
-    if (Array.isArray(recipes) && recipes.length > 0) {
-      ingredientsList = recipes
-        .map((r) => {
-          const title = r?.title || "Рецепт";
-          const ings = Array.isArray(r?.ingredients)
-            ? r.ingredients.join(", ")
-            : "";
-          return `• ${title}: ${ings || "без деталей"}`;
-        })
-        .join("\n");
-    } else if (weekPlan?.days?.length > 0) {
-      ingredientsList = weekPlan.days
-        .map((d) => {
-          const day = d?.label || "День";
-          const meals = Array.isArray(d?.meals) ? d.meals.join("; ") : "";
-          return `• ${day}: ${meals}`;
-        })
-        .join("\n");
-    }
+  if (Array.isArray(recipes) && recipes.length > 0) {
+    ingredientsList = recipes
+      .map((r) => {
+        const title = r?.title || "Рецепт";
+        const ings = Array.isArray(r?.ingredients)
+          ? r.ingredients.join(", ")
+          : "";
+        return `• ${title}: ${ings || "без деталей"}`;
+      })
+      .join("\n");
+  } else if (weekPlan?.days?.length > 0) {
+    ingredientsList = weekPlan.days
+      .map((d) => {
+        const day = d?.label || "День";
+        const meals = Array.isArray(d?.meals) ? d.meals.join("; ") : "";
+        return `• ${day}: ${meals}`;
+      })
+      .join("\n");
+  }
 
-    if (!ingredientsList) {
-      return res
-        .status(400)
-        .json({ error: "Потрібно передати рецепти або тижневий план." });
-    }
+  if (!ingredientsList) {
+    throw new ValidationError("Потрібно передати рецепти або тижневий план.");
+  }
 
-    const prompt = `Мова: ${loc}.
+  const prompt = `Мова: ${loc}.
 
 Що вже є в коморі (НЕ додавай до списку покупок):
 ${pantryStr}
@@ -95,70 +97,68 @@ ${ingredientsList}
 
 Склади список покупок, виключи все що вже є в коморі, згрупуй за категоріями.`;
 
-    const payload = {
-      model: "claude-sonnet-4-6",
-      max_tokens: 1200,
-      temperature: 0.15,
-      system: SYSTEM,
-      messages: [{ role: "user", content: prompt }],
-    };
+  const payload = {
+    model: "claude-sonnet-4-6",
+    max_tokens: 1200,
+    temperature: 0.15,
+    system: SYSTEM,
+    messages: [{ role: "user", content: prompt }],
+  };
 
-    const { response, data } = await anthropicMessages(apiKey, payload, {
-      timeoutMs: 25000,
-      endpoint: "shopping-list",
+  const { response, data } = await anthropicMessages(apiKey, payload, {
+    timeoutMs: 25000,
+    endpoint: "shopping-list",
+  });
+  if (!response.ok) {
+    throw new ExternalServiceError(data?.error?.message || "AI error", {
+      status: response.status,
+      code: "ANTHROPIC_ERROR",
     });
-    if (!response.ok) {
-      return res
-        .status(response.status)
-        .json({ error: data?.error?.message || "AI error" });
-    }
-
-    const out = extractAnthropicText(data);
-    const parsed = extractJsonFromText(out);
-
-    const obj =
-      parsed && typeof parsed === "object" && !Array.isArray(parsed)
-        ? parsed
-        : {};
-
-    const seenNames = new Set();
-    const normalize = (s) => s.toLowerCase().replace(/\s+/g, " ").trim();
-
-    const categories = Array.isArray(obj.categories)
-      ? obj.categories
-          .map((cat) => {
-            if (!cat || typeof cat !== "object") return null;
-            const name = String(cat.name || "Інше").trim();
-            const items = Array.isArray(cat.items)
-              ? cat.items
-                  .map((item) => {
-                    if (!item || typeof item !== "object") return null;
-                    const itemName = String(item.name || "").trim();
-                    if (!itemName) return null;
-                    const key = normalize(itemName);
-                    if (seenNames.has(key)) return null;
-                    seenNames.add(key);
-                    return {
-                      id: `si_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-                      name: itemName,
-                      quantity: String(item.quantity || "").trim(),
-                      note: String(item.note || "").trim(),
-                      checked: false,
-                    };
-                  })
-                  .filter(Boolean)
-              : [];
-            if (items.length === 0) return null;
-            return { name, items };
-          })
-          .filter(Boolean)
-      : [];
-
-    return res.status(200).json({
-      categories,
-      rawText: categories.length === 0 ? out || null : null,
-    });
-  } catch (e) {
-    return res.status(500).json({ error: e?.message || "Помилка AI сервера" });
   }
+
+  const out = extractAnthropicText(data);
+  const jsonParsed = extractJsonFromText(out);
+
+  const obj =
+    jsonParsed && typeof jsonParsed === "object" && !Array.isArray(jsonParsed)
+      ? jsonParsed
+      : {};
+
+  const seenNames = new Set();
+  const normalize = (s) => s.toLowerCase().replace(/\s+/g, " ").trim();
+
+  const categories = Array.isArray(obj.categories)
+    ? obj.categories
+        .map((cat) => {
+          if (!cat || typeof cat !== "object") return null;
+          const name = String(cat.name || "Інше").trim();
+          const items = Array.isArray(cat.items)
+            ? cat.items
+                .map((item) => {
+                  if (!item || typeof item !== "object") return null;
+                  const itemName = String(item.name || "").trim();
+                  if (!itemName) return null;
+                  const key = normalize(itemName);
+                  if (seenNames.has(key)) return null;
+                  seenNames.add(key);
+                  return {
+                    id: `si_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+                    name: itemName,
+                    quantity: String(item.quantity || "").trim(),
+                    note: String(item.note || "").trim(),
+                    checked: false,
+                  };
+                })
+                .filter(Boolean)
+            : [];
+          if (items.length === 0) return null;
+          return { name, items };
+        })
+        .filter(Boolean)
+    : [];
+
+  return res.status(200).json({
+    categories,
+    rawText: categories.length === 0 ? out || null : null,
+  });
 }
