@@ -22,6 +22,7 @@ import { Analytics } from "./pages/Analytics.jsx";
 import { ManualExpenseSheet } from "./components/ManualExpenseSheet.jsx";
 import { useUnifiedFinanceData } from "./hooks/useUnifiedFinanceData";
 import { useFinykPersonalization } from "./hooks/useFinykPersonalization";
+import { consumePresetPrefill } from "../../core/onboarding/presetPrefill.js";
 
 const NAV_ICONS = {
   overview: (
@@ -183,6 +184,10 @@ export default function App({
   const [editingManualExpenseId, setEditingManualExpenseId] = useState(null);
   // Для prefill категорії при кліку на quick-add картку з Overview.
   const [quickAddCategory, setQuickAddCategory] = useState(null);
+  // Prefill опису з FTUX preset sheet («Кава», «Таксі», «Обід»). Окрема
+  // стейт-клітинка, бо quick-add з Overview задає лише категорію —
+  // description лишається порожнім і поповнюється користувачем.
+  const [quickAddDescription, setQuickAddDescription] = useState(null);
   // "Manual only" bypass: user completed onboarding without Monobank or
   // pressed «Далі без банку» on the login screen. When set, we render the
   // normal Finyk UI populated from manual expenses even if `clientInfo` is
@@ -207,7 +212,21 @@ export default function App({
 
   useEffect(() => {
     if (pwaAction === "add_expense") {
+      // FTUX preset sheet може стешити `item.data` у sessionStorage
+      // (див. `writePresetPrefill`), щоб плитки «Кава» / «Таксі» / «Обід»
+      // не деградували до трьох ідентичних порожніх форм. Споживаємо
+      // prefill ТІЛЬКИ для нового запису — без `editingManualExpenseId`,
+      // щоб випадковий stale prefill не перезаписав категорію під час
+      // редагування існуючої витрати.
+      const prefill = consumePresetPrefill("finyk");
       navigate("transactions");
+      setEditingManualExpenseId(null);
+      setQuickAddCategory(
+        typeof prefill?.category === "string" ? prefill.category : null,
+      );
+      setQuickAddDescription(
+        typeof prefill?.description === "string" ? prefill.description : null,
+      );
       setShowExpenseSheet(true);
       onPwaActionConsumed?.();
     }
@@ -728,6 +747,7 @@ export default function App({
           setShowExpenseSheet(false);
           setEditingManualExpenseId(null);
           setQuickAddCategory(null);
+          setQuickAddDescription(null);
         }}
         initialExpense={
           editingManualExpenseId
@@ -737,6 +757,7 @@ export default function App({
             : null
         }
         initialCategory={quickAddCategory}
+        initialDescription={quickAddDescription}
         frequentCategories={frequentCategories}
         frequentMerchants={frequentMerchants}
         onSave={(expense) => {

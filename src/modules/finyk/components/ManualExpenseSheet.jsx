@@ -124,6 +124,7 @@ export function ManualExpenseSheet({
   frequentCategories = [],
   frequentMerchants = [],
   initialCategory,
+  initialDescription,
 }) {
   const formId = useId();
   const descId = `${formId}-desc`;
@@ -173,7 +174,8 @@ export function ManualExpenseSheet({
           }
         }
         setForm({
-          description: "",
+          description:
+            typeof initialDescription === "string" ? initialDescription : "",
           amount: "",
           category: startCategory,
           date: toLocalISODate(),
@@ -181,8 +183,9 @@ export function ManualExpenseSheet({
       }
       setError("");
     }
-    // frequentCategories/initialCategory лише задають стартовий стан при
-    // відкритті — навмисно не реагуємо на їхні оновлення у відкритому sheet.
+    // frequentCategories/initialCategory/initialDescription лише задають
+    // стартовий стан при відкритті — навмисно не реагуємо на їхні
+    // оновлення у відкритому sheet.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, initialExpense]);
 

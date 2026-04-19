@@ -115,13 +115,21 @@ export function FirstActionHeroCard({ onDismiss }) {
     setActivePresetId(id);
   };
 
-  const handlePresetPick = () => {
-    // The preset writer already persisted the entry; dismiss the hero
-    // card so the next dashboard render surfaces the celebration toast
-    // (from `useFirstEntryCelebration`) against a clean layout.
-    clearFirstActionPending();
+  const handlePresetPick = ({ persisted } = { persisted: true }) => {
+    // Тільки routine-пресет дійсно пише запис у storage. Для
+    // finyk/fizruk/nutrition ми лише навігуємо у повний add-sheet
+    // модуля, а реальне збереження відбудеться, коли користувач
+    // натисне «Зберегти» там. Якщо б ми гасили FTUX-прапор одразу,
+    // hero-картка зникала б назавжди навіть коли юзер скасував
+    // add-sheet — і `detectFirstRealEntry` → `useFirstEntryCelebration`
+    // ніколи б не спрацювали. Натомість лишаємо прапор висіти: при
+    // наступному маунті дашборду hero-картка повертається, а коли
+    // справжній запис з'явиться — обидва механізми знімуть її разом.
     setActivePresetId(null);
-    onDismiss?.();
+    if (persisted) {
+      clearFirstActionPending();
+      onDismiss?.();
+    }
   };
 
   if (!primary) return null;

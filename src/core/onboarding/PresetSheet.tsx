@@ -5,6 +5,7 @@ import { Sheet } from "@shared/components/ui/Sheet";
 import { openHubModuleWithAction } from "@shared/lib/hubNav";
 import { trackEvent, ANALYTICS_EVENTS } from "../analytics";
 import { applyPreset } from "./presetApply.js";
+import { writePresetPrefill } from "./presetPrefill.js";
 
 /**
  * Per-module "tap-to-log" presets. Each entry is deliberately narrow —
@@ -84,36 +85,18 @@ const PRESETS = {
   },
   nutrition: {
     title: "Що з'їв зараз?",
-    desc: "Відкрию форму з назвою — калорії підтвердиш у модулі.",
+    desc: "Відкрию форму добавляння страви — калорії підтвердиш у модулі.",
     accent: "text-nutrition bg-nutrition-soft",
     moduleIcon: "utensils",
-    fallback: { action: "add_meal", label: "Своя страва", icon: "plus" },
-    // Fake kcal-и («~420 ккал») прибрані: модуль сам рахує макро на
-    // основі ваги/складу у своєму повному sheet-і, а не у preset data.
+    fallback: { action: "add_meal", label: "Додати страву", icon: "plus" },
+    // Три плитки (Омлет / Салат / Яблуко) свого часу давали
+    // різні дані — але без каналу прокидування `item.data` у
+    // `AddMealSheet` усі три тапи відкривали один і той самий порожній
+    // sheet. Три візуально-різні CTA з однаковим результатом — це
+    // міні-обман: краще одна чесна кнопка, ніж три, що вдають вибір.
+    // Коли модуль отримає prefill-канал — повернемо плитки.
     action: "add_meal" as const,
-    items: [
-      {
-        id: "omelette",
-        emoji: "🍳",
-        title: "Омлет з авокадо",
-        desc: "сніданок · у модулі",
-        data: { name: "Омлет з авокадо", mealType: "breakfast" },
-      },
-      {
-        id: "salad",
-        emoji: "🥗",
-        title: "Салат з куркою",
-        desc: "обід · у модулі",
-        data: { name: "Салат з куркою", mealType: "lunch" },
-      },
-      {
-        id: "snack",
-        emoji: "🍎",
-        title: "Яблуко + горіхи",
-        desc: "перекус · у модулі",
-        data: { name: "Яблуко + горіхи", mealType: "snack" },
-      },
-    ],
+    items: [],
   },
   fizruk: {
     title: "Швидкий старт",
@@ -122,33 +105,15 @@ const PRESETS = {
     moduleIcon: "dumbbell",
     fallback: {
       action: "start_workout",
-      label: "Своє тренування",
+      label: "Почати тренування",
       icon: "plus",
     },
+    // Те ж саме, що й у nutrition: fizruk не має prefill-каналу для
+    // імені тренування, тому три плитки («Розминка», «Прогулянка»,
+    // «Швидке HIIT») всі деградували до одного й того ж старту без
+    // імені. Лишаємо один fallback-CTA.
     action: "start_workout" as const,
-    items: [
-      {
-        id: "warmup",
-        emoji: "🤸",
-        title: "Розминка",
-        desc: "легко · запусти таймер",
-        data: { name: "Розминка" },
-      },
-      {
-        id: "walk",
-        emoji: "🚶",
-        title: "Прогулянка",
-        desc: "кардіо · запусти таймер",
-        data: { name: "Прогулянка" },
-      },
-      {
-        id: "quick",
-        emoji: "⚡",
-        title: "Швидке HIIT",
-        desc: "інтенсив · запусти таймер",
-        data: { name: "Швидке HIIT" },
-      },
-    ],
+    items: [],
   },
 };
 
@@ -184,16 +149,21 @@ export function PresetSheet({ open, moduleId, onClose, onPick }) {
       module: moduleId,
       presetId: item.id,
     });
-    // Routine преcets пишуться одразу — звичка це «ім'я + ✓», тут
-    // немає метрики, яку можна сфабрикувати. Для finyk/fizruk/nutrition
-    // натомість відкриваємо повний add-sheet модуля (без fake-сум і
-    // fake-ккал у ledger-і), зберігаючи «одне тапання до дії».
+    // Routine preсети пишуться одразу — звичка це «ім'я + ✓», тут
+    // немає метрики, яку можна сфабрикувати. Для finyk (а в перспективі
+    // й інших) натомість стешимо `item.data` у sessionStorage і
+    // відкриваємо повний add-sheet модуля — без фейкових сум у ledger-і,
+    // але з префіллом назви/категорії, щоб три плитки не деградували
+    // до трьох ідентичних порожніх форм.
+    let persisted = false;
     if (moduleId === "routine") {
       applyPreset(moduleId, item.data);
+      persisted = true;
     } else if (config.action) {
+      writePresetPrefill(moduleId, item.data);
       openHubModuleWithAction(moduleId, config.action);
     }
-    onPick?.({ moduleId, presetId: item.id });
+    onPick?.({ moduleId, presetId: item.id, persisted });
     onClose?.();
   };
 
@@ -202,7 +172,11 @@ export function PresetSheet({ open, moduleId, onClose, onPick }) {
       module: moduleId,
       via: "fallback",
     });
-    onPick?.({ moduleId, presetId: null, custom: true });
+    // Fallback CTA = явне «без префілу». Стираємо будь-який stale prefill
+    // від попередньої відкритої плитки, щоб наступний `consumePresetPrefill`
+    // у модулі не підчепив чужі дані.
+    writePresetPrefill(moduleId, null);
+    onPick?.({ moduleId, presetId: null, custom: true, persisted: false });
     onClose?.();
     openHubModuleWithAction(moduleId, config.fallback.action);
   };
