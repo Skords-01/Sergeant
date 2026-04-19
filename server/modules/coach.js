@@ -5,6 +5,8 @@ import { validateBody } from "../http/validate.js";
 import { CoachInsightSchema, CoachMemoryPostSchema } from "../http/schemas.js";
 
 async function getMemory(userId) {
+  // EXPLAIN ANALYZE: Index Scan using module_data_user_id_module_key
+  //   на UNIQUE(user_id, module) — point-lookup, O(log N), < 1мс.
   const result = await pool.query(
     `SELECT data FROM module_data WHERE user_id = $1 AND module = 'coach'`,
     [userId],

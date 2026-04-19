@@ -101,6 +101,13 @@ export async function syncPush(req, res) {
   const clientTs = clientUpdatedAt ? new Date(clientUpdatedAt) : new Date();
 
   try {
+    // EXPLAIN ANALYZE (типовий plan):
+    //   Insert on module_data  (rows=1)
+    //     Conflict Resolution: UPDATE
+    //     Conflict Arbiter Indexes: module_data_user_id_module_key
+    //       -> Index Scan using module_data_user_id_module_key  (rows=1)
+    // WHERE module_data.client_updated_at <= $4 — це last-write-wins guard;
+    // старіший клієнт отримує 0 рядків і сервер віддає 409-like conflict.
     const result = await pool.query(
       `INSERT INTO module_data (user_id, module, data, client_updated_at, version)
        VALUES ($1, $2, $3, $4, 1)
@@ -169,6 +176,9 @@ export async function syncPull(req, res) {
   }
 
   try {
+    // EXPLAIN ANALYZE: Index Scan using module_data_user_id_module_key,
+    //   Index Cond: (user_id = $1 AND module = $2). Point-lookup на
+    //   UNIQUE-індексі — data читається одним I/O (toast-ed JSONB).
     const result = await pool.query(
       `SELECT data, client_updated_at, server_updated_at, version
        FROM module_data
