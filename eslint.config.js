@@ -45,22 +45,26 @@ export default [
         { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
       ],
       "react/prop-types": "off",
-      // Prevent reintroduction of legacy `accent`/`forest` tokens that were
-      // retired when Sergeant migrated to the Emerald/Teal/Coral/Lime palette.
-      // Use brand-*, fizruk, routine, nutrition, finyk tokens instead.
+      // Prevent reintroduction of the legacy `forest` palette retired when
+      // Sergeant migrated to the Emerald/Teal/Coral/Lime palette. The old
+      // `accent-*` tonal palette was also retired, but `accent` has since
+      // been re-introduced as a semantic alias for the brand accent colour
+      // (see tailwind.config.js colors.accent → rgb(var(--c-accent))). The
+      // rule therefore forbids `*-forest*` and `*-accent-<number>` (tonal
+      // variants) but allows the new semantic `*-accent` / `*-accent/<N>`.
       "no-restricted-syntax": [
         "error",
         {
           selector:
-            "Literal[value=/\\b(?:bg|text|border|ring|from|to|via|fill|stroke|shadow|outline|divide|placeholder|caret)-(?:accent|forest)(?:-grad)?(?:\\/\\d+)?\\b/]",
+            "Literal[value=/\\b(?:bg|text|border|ring|from|to|via|fill|stroke|shadow|outline|divide|placeholder|caret)-(?:forest(?:-grad)?|accent-\\d+)(?:\\/\\d+)?\\b/]",
           message:
-            "Legacy token `accent`/`forest` retired — use `brand-500`, `fizruk`, `routine`, `nutrition`, or `finyk` instead.",
+            "Legacy `forest` / tonal `accent-NNN` retired — use semantic `accent`, `brand-500`, `fizruk`, `routine`, `nutrition`, or `finyk` instead.",
         },
         {
           selector:
-            "TemplateElement[value.raw=/\\b(?:bg|text|border|ring|from|to|via|fill|stroke|shadow|outline|divide|placeholder|caret)-(?:accent|forest)(?:-grad)?(?:\\/\\d+)?\\b/]",
+            "TemplateElement[value.raw=/\\b(?:bg|text|border|ring|from|to|via|fill|stroke|shadow|outline|divide|placeholder|caret)-(?:forest(?:-grad)?|accent-\\d+)(?:\\/\\d+)?\\b/]",
           message:
-            "Legacy token `accent`/`forest` retired — use `brand-500`, `fizruk`, `routine`, `nutrition`, or `finyk` instead.",
+            "Legacy `forest` / tonal `accent-NNN` retired — use semantic `accent`, `brand-500`, `fizruk`, `routine`, `nutrition`, or `finyk` instead.",
         },
       ],
     },

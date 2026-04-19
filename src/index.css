@@ -51,11 +51,12 @@
     --c-fg: var(--c-text);
     --c-fg-muted: var(--c-muted);
 
-    /* Status semantic tokens (kept in sync with tailwind `statusColors`). */
-    --c-success: 16 185 129; /* emerald-500 */
-    --c-warning: 245 158 11; /* amber-500 */
-    --c-danger: 239 68 68; /* red-500 */
-    --c-info: 59 130 246; /* blue-500 */
+    /* Status semantic tokens (kept in sync with tailwind `statusColors`
+       from `src/modules/finyk/constants/chartPalette.js`). */
+    --c-success: 16 185 129; /* emerald-500  — statusColors.success */
+    --c-warning: 245 158 11; /* amber-500    — statusColors.warning */
+    --c-danger: 239 68 68; /* red-500       — statusColors.danger  */
+    --c-info: 14 165 233; /* sky-500        — statusColors.info    */
 
     /* Motion tokens — single source of truth for duration/easing. */
     --motion-duration-fast: 150ms;
