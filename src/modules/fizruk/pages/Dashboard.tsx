@@ -246,6 +246,78 @@ export function Dashboard({
     startWorkoutFromPlan(picks, templateId);
   };
 
+  const primaryAction = useMemo(() => {
+    if (activeProgram && todaySession) {
+      const session = activeProgram.sessions?.[todaySession.sessionKey];
+      if (session) {
+        return {
+          kind: "program" as const,
+          label: todaySession.name,
+          hint: activeProgram.name,
+          exerciseCount: (session.exerciseIds || []).length,
+          sessionKey: todaySession.sessionKey,
+        };
+      }
+    }
+    const fallbackTemplateId =
+      monthlyPlan.todayTemplateId ||
+      recentlyUsed[0]?.id ||
+      templates[0]?.id ||
+      null;
+    if (fallbackTemplateId) {
+      const tpl = templates.find((t) => t.id === fallbackTemplateId);
+      if (tpl) {
+        const picks = (tpl.exerciseIds || [])
+          .map((id) => exercises.find((e) => e.id === id))
+          .filter(Boolean);
+        if (picks.length > 0) {
+          let hint: string | null = null;
+          if (monthlyPlan.todayTemplateId === tpl.id) {
+            hint = "З місячного плану";
+          } else if (recentlyUsed[0]?.id === tpl.id) {
+            hint = "Останнє тренування";
+          }
+          return {
+            kind: "template" as const,
+            label: tpl.name,
+            hint,
+            exerciseCount: picks.length,
+            templateId: tpl.id,
+            picks,
+          };
+        }
+      }
+    }
+    return null;
+  }, [
+    activeProgram,
+    todaySession,
+    monthlyPlan.todayTemplateId,
+    recentlyUsed,
+    templates,
+    exercises,
+  ]);
+
+  const estimatedDurationMin = useMemo(() => {
+    if (!primaryAction?.exerciseCount) return null;
+    if (avgDurationSec > 300) {
+      return Math.max(10, Math.round(avgDurationSec / 60 / 5) * 5);
+    }
+    return Math.max(10, primaryAction.exerciseCount * 8);
+  }, [primaryAction, avgDurationSec]);
+
+  const handleStartPrimary = () => {
+    if (!primaryAction) return;
+    if (primaryAction.kind === "program") {
+      const session = activeProgram?.sessions?.[primaryAction.sessionKey];
+      if (session && onStartProgramWorkout) {
+        onStartProgramWorkout(session, activeProgram);
+      }
+      return;
+    }
+    tryStartPlan(primaryAction.picks, primaryAction.templateId);
+  };
+
   const kpi = [
     {
       id: "total",
@@ -327,19 +399,57 @@ export function Dashboard({
             </div>
           </div>
           <div className="mt-5 flex flex-col gap-3">
-            <button
-              type="button"
-              className="w-full py-4 rounded-full font-bold text-base bg-fizruk text-white transition-all active:scale-[0.98]"
-              onClick={() => {
-                try {
-                  sessionStorage.setItem("fizruk_workouts_mode", "log");
-                } catch {}
-                window.location.hash = "#workouts";
-              }}
-              aria-label="Почати тренування"
-            >
-              Почати тренування
-            </button>
+            {primaryAction ? (
+              <button
+                type="button"
+                className="w-full py-4 px-5 rounded-2xl bg-fizruk text-white transition-all active:scale-[0.98] flex items-center gap-3 text-left"
+                onClick={handleStartPrimary}
+                aria-label={`Почати: ${primaryAction.label}`}
+              >
+                <span
+                  className="shrink-0 w-11 h-11 rounded-full bg-white/15 flex items-center justify-center"
+                  aria-hidden
+                >
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                  >
+                    <path d="M8 5v14l11-7z" />
+                  </svg>
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-2xs font-bold uppercase tracking-widest text-white/70">
+                    Почати
+                  </span>
+                  <span className="block text-base font-black truncate leading-tight">
+                    {primaryAction.label}
+                  </span>
+                  <span className="block text-2xs text-white/70 mt-0.5 truncate">
+                    {primaryAction.exerciseCount} вправ
+                    {estimatedDurationMin
+                      ? ` · ~${estimatedDurationMin} хв`
+                      : ""}
+                    {primaryAction.hint ? ` · ${primaryAction.hint}` : ""}
+                  </span>
+                </span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="w-full py-4 rounded-full font-bold text-base bg-fizruk text-white transition-all active:scale-[0.98]"
+                onClick={() => {
+                  try {
+                    sessionStorage.setItem("fizruk_workouts_mode", "templates");
+                  } catch {}
+                  window.location.hash = "#workouts";
+                }}
+                aria-label="Створити перший шаблон"
+              >
+                Створити перший шаблон
+              </button>
+            )}
             <button
               type="button"
               className="w-full py-4 rounded-full font-semibold text-base text-white border border-white/25 transition-colors active:bg-white/10"
