@@ -53,7 +53,7 @@ export const errorHandler: ErrorRequestHandler = (
     status,
     code,
     module: mod,
-    err: serializeError(e, { includeStack: status >= 500 }),
+    err: serializeError(err, { includeStack: status >= 500 }),
   });
 
   // Явний виклик `Sentry.captureException` на справжні помилки (5xx /

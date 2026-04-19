@@ -1,4 +1,7 @@
+import type { Request, Response } from "express";
 import client from "prom-client";
+import type { Counter, Histogram } from "prom-client";
+import type { Pool } from "pg";
 
 /**
  * Prometheus-реєстр з default-метриками (event loop lag, RSS, heap, GC)
@@ -264,8 +267,10 @@ export const webVitalsCls = new client.Histogram({
 });
 
 // ───────────────────────── Helpers ────────────────────────────
+export type StatusClass = "5xx" | "4xx" | "3xx" | "2xx" | "other";
+
 /** Класифікує HTTP-статус у одне з 4 відер для SLO / latency-дашбордів. */
-export function statusClass(status) {
+export function statusClass(status: number | string | undefined): StatusClass {
   const s = Number(status) || 0;
   if (s >= 500) return "5xx";
   if (s >= 400) return "4xx";
@@ -274,22 +279,22 @@ export function statusClass(status) {
   return "other";
 }
 
+export interface ObserveAsyncOptions<T> {
+  histogram: Histogram<string>;
+  labels: Record<string, string>;
+  counter?: Counter<string>;
+  counterLabels?: (outcome: string) => Record<string, string>;
+  classify?: (result: T) => string;
+}
+
 /**
  * Обгортка, що міряє тривалість async-операції в мс і пише в histogram
  * разом з outcome counter (опційно).
- *
- * @template T
- * @param {{
- *   histogram: import("prom-client").Histogram<string>,
- *   labels: Record<string, string>,
- *   counter?: import("prom-client").Counter<string>,
- *   counterLabels?: (outcome: string) => Record<string, string>,
- *   classify?: (result: T) => string,
- * }} opts
- * @param {() => Promise<T>} fn
- * @returns {Promise<T>}
  */
-export async function observeAsync(opts, fn) {
+export async function observeAsync<T>(
+  opts: ObserveAsyncOptions<T>,
+  fn: () => Promise<T>,
+): Promise<T> {
   const start = process.hrtime.bigint();
   let outcome = "ok";
   try {
@@ -303,7 +308,8 @@ export async function observeAsync(opts, fn) {
     }
     return result;
   } catch (e) {
-    outcome = e?.name === "AbortError" ? "timeout" : "error";
+    const name = (e as { name?: string } | null | undefined)?.name;
+    outcome = name === "AbortError" ? "timeout" : "error";
     throw e;
   } finally {
     const ms = Number(process.hrtime.bigint() - start) / 1e6;
@@ -325,11 +331,18 @@ export async function observeAsync(opts, fn) {
   }
 }
 
+export interface PoolSamplerOptions {
+  intervalMs?: number;
+}
+
 /**
  * Sample pg pool gauges periodically. Call once at boot.
  * Returns an unref-ed interval handle so the process can still exit cleanly.
  */
-export function startPoolSampler(pool, { intervalMs = 10_000 } = {}) {
+export function startPoolSampler(
+  pool: Pool,
+  { intervalMs = 10_000 }: PoolSamplerOptions = {},
+): NodeJS.Timeout {
   const sample = () => {
     try {
       dbPoolTotal.set(pool.totalCount ?? 0);
@@ -349,7 +362,7 @@ export function startPoolSampler(pool, { intervalMs = 10_000 } = {}) {
  * Express handler для `GET /metrics`. Якщо задано `METRICS_TOKEN` — вимагає
  * `Authorization: Bearer <token>`. У dev/локально можна не ставити токен.
  */
-export function metricsHandler(req, res) {
+export function metricsHandler(req: Request, res: Response): void {
   const expected = process.env.METRICS_TOKEN;
   if (expected) {
     const auth = req.get("authorization") || "";
@@ -365,10 +378,11 @@ export function metricsHandler(req, res) {
       res.setHeader("Content-Type", register.contentType);
       res.send(body);
     })
-    .catch((err) => {
-      res
-        .status(500)
-        .type("text/plain")
-        .send(`metrics_error: ${err?.message || err}`);
+    .catch((err: unknown) => {
+      const msg =
+        err && typeof err === "object" && "message" in err
+          ? String((err as { message?: unknown }).message)
+          : String(err);
+      res.status(500).type("text/plain").send(`metrics_error: ${msg}`);
     });
 }

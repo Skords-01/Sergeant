@@ -7,58 +7,71 @@
  * Все інше (undefined is not a function, DB ECONNREFUSED тощо) — це
  * programmer error: 500 + `error` + Sentry.
  */
+export interface AppErrorOptions {
+  status?: number;
+  code?: string;
+  cause?: unknown;
+}
+
 export class AppError extends Error {
-  constructor(message, { status = 500, code = "INTERNAL", cause } = {}) {
+  status: number;
+  code: string;
+  override cause?: unknown;
+
+  constructor(message: string, opts: AppErrorOptions = {}) {
     super(message);
     this.name = "AppError";
-    this.status = status;
-    this.code = code;
-    if (cause !== undefined) this.cause = cause;
+    this.status = opts.status ?? 500;
+    this.code = opts.code ?? "INTERNAL";
+    if (opts.cause !== undefined) this.cause = opts.cause;
   }
 }
 
 export class ValidationError extends AppError {
-  constructor(message, opts = {}) {
+  constructor(message: string, opts: AppErrorOptions = {}) {
     super(message, { status: 400, code: "VALIDATION", ...opts });
     this.name = "ValidationError";
   }
 }
 
 export class UnauthorizedError extends AppError {
-  constructor(message = "Unauthorized", opts = {}) {
+  constructor(message: string = "Unauthorized", opts: AppErrorOptions = {}) {
     super(message, { status: 401, code: "UNAUTHORIZED", ...opts });
     this.name = "UnauthorizedError";
   }
 }
 
 export class ForbiddenError extends AppError {
-  constructor(message = "Forbidden", opts = {}) {
+  constructor(message: string = "Forbidden", opts: AppErrorOptions = {}) {
     super(message, { status: 403, code: "FORBIDDEN", ...opts });
     this.name = "ForbiddenError";
   }
 }
 
 export class NotFoundError extends AppError {
-  constructor(message = "Not found", opts = {}) {
+  constructor(message: string = "Not found", opts: AppErrorOptions = {}) {
     super(message, { status: 404, code: "NOT_FOUND", ...opts });
     this.name = "NotFoundError";
   }
 }
 
 export class RateLimitError extends AppError {
-  constructor(message = "Rate limit exceeded", opts = {}) {
+  constructor(
+    message: string = "Rate limit exceeded",
+    opts: AppErrorOptions = {},
+  ) {
     super(message, { status: 429, code: "RATE_LIMIT", ...opts });
     this.name = "RateLimitError";
   }
 }
 
 export class ExternalServiceError extends AppError {
-  constructor(message, opts = {}) {
+  constructor(message: string, opts: AppErrorOptions = {}) {
     super(message, { status: 502, code: "EXTERNAL_SERVICE", ...opts });
     this.name = "ExternalServiceError";
   }
 }
 
-export function isOperationalError(err) {
+export function isOperationalError(err: unknown): err is AppError {
   return err instanceof AppError;
 }

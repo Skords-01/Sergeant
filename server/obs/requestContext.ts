@@ -1,3 +1,4 @@
+import type { NextFunction, Request, Response } from "express";
 import { AsyncLocalStorage } from "async_hooks";
 
 /**
@@ -12,27 +13,37 @@ import { AsyncLocalStorage } from "async_hooks";
  *   setUserId("usr_123");                // коли сесія отримана
  *   setRequestModule("nutrition");       // коли відомий модуль
  */
-export const als = new AsyncLocalStorage();
+export interface RequestContextStore {
+  requestId: string | null;
+  userId: string | null;
+  module: string | null;
+}
 
-export function withRequestContext(req, _res, next) {
-  const store = {
-    requestId: req.requestId,
+export const als = new AsyncLocalStorage<RequestContextStore>();
+
+export function withRequestContext(
+  req: Request,
+  _res: Response,
+  next: NextFunction,
+): void {
+  const store: RequestContextStore = {
+    requestId: (req as Request & { requestId?: string }).requestId ?? null,
     userId: null,
     module: null,
   };
   als.run(store, () => next());
 }
 
-export function getRequestContext() {
+export function getRequestContext(): RequestContextStore | null {
   return als.getStore() ?? null;
 }
 
-export function setUserId(userId) {
+export function setUserId(userId: string | null): void {
   const store = als.getStore();
   if (store) store.userId = userId;
 }
 
-export function setRequestModule(mod) {
+export function setRequestModule(mod: string | null): void {
   const store = als.getStore();
   if (store) store.module = mod;
 }
