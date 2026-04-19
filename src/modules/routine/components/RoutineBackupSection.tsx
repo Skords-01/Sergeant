@@ -1,10 +1,28 @@
-import { useRef } from "react";
+import { useRef, type ChangeEvent } from "react";
 import { Button } from "@shared/components/ui/Button";
 import { cn } from "@shared/lib/cn";
 import { buildRoutineBackupPayload } from "../lib/routineStorage.js";
 
-export function RoutineBackupSection({ theme, toast, onImportParsed }) {
-  const backupRef = useRef(null);
+export interface RoutineBackupTheme {
+  primary?: string;
+}
+
+export interface RoutineBackupToast {
+  warning?: (message: string) => void;
+}
+
+export interface RoutineBackupSectionProps {
+  theme?: RoutineBackupTheme;
+  toast?: RoutineBackupToast;
+  onImportParsed?: (parsed: unknown) => void;
+}
+
+export function RoutineBackupSection({
+  theme,
+  toast,
+  onImportParsed,
+}: RoutineBackupSectionProps) {
+  const backupRef = useRef<HTMLInputElement | null>(null);
 
   return (
     <section className="bg-panel border border-line rounded-2xl p-4 shadow-card space-y-3">
@@ -45,15 +63,19 @@ export function RoutineBackupSection({ theme, toast, onImportParsed }) {
           type="file"
           accept="application/json,.json"
           className="hidden"
-          onChange={async (e) => {
+          onChange={async (e: ChangeEvent<HTMLInputElement>) => {
             const f = e.target.files?.[0];
             if (!f) return;
             try {
               const text = await f.text();
-              const parsed = JSON.parse(text);
+              const parsed: unknown = JSON.parse(text);
               onImportParsed?.(parsed);
             } catch (err) {
-              toast?.warning?.(err?.message || "Не вдалося імпортувати файл.");
+              const msg =
+                err instanceof Error
+                  ? err.message
+                  : "Не вдалося імпортувати файл.";
+              toast?.warning?.(msg);
             }
             e.target.value = "";
           }}

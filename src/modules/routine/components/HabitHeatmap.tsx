@@ -1,15 +1,31 @@
 import { useMemo, useState, useCallback, useEffect, useRef } from "react";
 import { cn } from "@shared/lib/cn";
+import type { Habit, RoutineState } from "../lib/types";
 
 const WEEKS = 53;
 const DAYS = 7;
 const DAY_LABELS = ["Пн", "", "Ср", "", "Пт", "", "Нд"];
 
-function localDateKey(d) {
+interface HeatmapCell {
+  key: string;
+  dt: Date;
+  isFuture: boolean;
+  isToday: boolean;
+  cnt: number;
+  total: number;
+  ratio: number;
+}
+
+interface MonthMarker {
+  weekIdx: number;
+  label: string;
+}
+
+function localDateKey(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-function cellBg(ratio, isFuture) {
+function cellBg(ratio: number, isFuture: boolean): string {
   if (isFuture) return "bg-line/15 dark:bg-line/10";
   if (ratio === 0) return "bg-panelHi dark:bg-line/25";
   if (ratio < 0.34) return "bg-orange-200/80 dark:bg-orange-900/55";
@@ -17,14 +33,23 @@ function cellBg(ratio, isFuture) {
   return "bg-orange-500/90 dark:bg-orange-500/80";
 }
 
-export function HabitHeatmap({ habits, completions }) {
-  const [selected, setSelected] = useState(null);
-  const rootRef = useRef(null);
+export interface HabitHeatmapProps {
+  habits: Habit[] | null | undefined;
+  completions: RoutineState["completions"] | null | undefined;
+}
+
+export function HabitHeatmap({ habits, completions }: HabitHeatmapProps) {
+  const [selected, setSelected] = useState<string | null>(null);
+  const rootRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!selected) return;
-    function onPointerDown(e) {
-      if (rootRef.current && !rootRef.current.contains(e.target)) {
+    function onPointerDown(e: PointerEvent) {
+      if (
+        rootRef.current &&
+        e.target instanceof Node &&
+        !rootRef.current.contains(e.target)
+      ) {
         setSelected(null);
       }
     }
@@ -52,19 +77,19 @@ export function HabitHeatmap({ habits, completions }) {
     const startDate = new Date(mondayThisWeek);
     startDate.setDate(mondayThisWeek.getDate() - (WEEKS - 1) * 7);
 
-    const cntByDay = {};
+    const cntByDay: Record<string, number> = {};
     for (const h of activeHabits) {
       for (const dk of completions?.[h.id] || []) {
         cntByDay[dk] = (cntByDay[dk] || 0) + 1;
       }
     }
 
-    const weeks = [];
-    const seenMonths = new Set();
-    const monthMarkers = [];
+    const weeks: HeatmapCell[][] = [];
+    const seenMonths = new Set<string>();
+    const monthMarkers: MonthMarker[] = [];
 
     for (let w = 0; w < WEEKS; w++) {
-      const week = [];
+      const week: HeatmapCell[] = [];
       for (let d = 0; d < DAYS; d++) {
         const dt = new Date(startDate);
         dt.setDate(startDate.getDate() + w * 7 + d);
@@ -92,7 +117,7 @@ export function HabitHeatmap({ habits, completions }) {
     return { weeks, monthMarkers };
   }, [activeHabits, completions]);
 
-  const handleClick = useCallback((key) => {
+  const handleClick = useCallback((key: string) => {
     setSelected((prev) => (prev === key ? null : key));
   }, []);
 

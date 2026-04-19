@@ -1,7 +1,17 @@
+import type { ReactNode } from "react";
 import { cn } from "@shared/lib/cn";
 import { ROUTINE_THEME as C } from "../lib/routineConstants.js";
 
-const NAV = [
+export type RoutineMainTab = "calendar" | "stats" | "settings";
+
+interface NavItem {
+  id: RoutineMainTab;
+  label: string;
+  panelId: string;
+  icon: ReactNode;
+}
+
+const NAV: readonly NavItem[] = [
   {
     id: "calendar",
     label: "Календар",
@@ -70,7 +80,15 @@ const NAV = [
   },
 ];
 
-export function RoutineBottomNav({ mainTab, onSelectTab }) {
+export interface RoutineBottomNavProps {
+  mainTab: RoutineMainTab;
+  onSelectTab: (tab: RoutineMainTab) => void;
+}
+
+export function RoutineBottomNav({
+  mainTab,
+  onSelectTab,
+}: RoutineBottomNavProps) {
   return (
     <nav
       className={cn(

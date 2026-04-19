@@ -1,8 +1,17 @@
 import { useMemo } from "react";
 import { habitCompletionRate } from "../lib/streaks.js";
 import { Card } from "@shared/components/ui/Card";
+import type { Habit, RoutineState } from "../lib/types";
 
-export function HabitLeadersBlock({ habits, completions }) {
+export interface HabitLeadersBlockProps {
+  habits: Habit[];
+  completions: RoutineState["completions"];
+}
+
+export function HabitLeadersBlock({
+  habits,
+  completions,
+}: HabitLeadersBlockProps) {
   const { best, worst } = useMemo(() => {
     const active = habits.filter((h) => !h.archived);
     if (active.length === 0) return { best: null, worst: null };

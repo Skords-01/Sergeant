@@ -6,9 +6,17 @@ import {
   startOfIsoWeek,
 } from "../lib/weekUtils.js";
 
-function weekKeysFromAnchor(anchorKey) {
+function weekKeysFromAnchor(anchorKey: string): string[] {
   const s = startOfIsoWeek(parseDateKey(anchorKey));
   return Array.from({ length: 7 }, (_, i) => dateKeyFromDate(addDays(s, i)));
+}
+
+export interface WeekDayStripProps {
+  anchorKey: string;
+  selectedDay: string;
+  todayKey: string;
+  onSelectDay: (dateKey: string) => void;
+  onShiftWeek: (delta: number) => void;
 }
 
 export function WeekDayStrip({
@@ -17,7 +25,7 @@ export function WeekDayStrip({
   todayKey,
   onSelectDay,
   onShiftWeek,
-}) {
+}: WeekDayStripProps) {
   const keys = weekKeysFromAnchor(anchorKey);
   const short = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Нд"];
 

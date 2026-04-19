@@ -1,7 +1,7 @@
 /** @vitest-environment jsdom */
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
-import { RoutineBottomNav } from "./RoutineBottomNav.jsx";
+import { RoutineBottomNav } from "./RoutineBottomNav";
 
 describe("RoutineBottomNav", () => {
   it("renders tablist and switches tab", () => {
