@@ -6,7 +6,6 @@ const ICON_BUTTON_CLS =
   "w-11 h-11 flex items-center justify-center rounded-2xl text-muted hover:text-text hover:bg-panelHi transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/45 focus-visible:ring-offset-2 focus-visible:ring-offset-bg";
 
 export function HubHeader({
-  hubView,
   onOpenSearch,
   onOpenChat,
   user,
@@ -23,21 +22,10 @@ export function HubHeader({
 }) {
   return (
     <header
-      className="px-5 pt-10 pb-2 max-w-lg mx-auto w-full flex items-start justify-between"
+      className="px-5 pt-10 pb-2 max-w-lg mx-auto w-full flex items-center justify-between"
       style={{ paddingTop: "max(2.5rem, env(safe-area-inset-top))" }}
     >
-      <div>
-        <h1 className="text-3xl font-bold text-text tracking-tight">
-          Sergeant
-        </h1>
-        <p className="text-sm text-muted mt-1">
-          {hubView === "reports"
-            ? "Звіти та статистика"
-            : hubView === "settings"
-              ? "Налаштування"
-              : "Дашборд та модулі"}
-        </p>
-      </div>
+      <h1 className="text-3xl font-bold text-text tracking-tight">Sergeant</h1>
       <div className="pt-1 flex items-center gap-1">
         {onOpenChat && (
           <button

@@ -50,95 +50,103 @@ const PRESETS = {
   },
   finyk: {
     title: "На що витратив?",
-    desc: "Занотую миттєво. Суму можна змінити потім.",
+    desc: "Тицяй — відкриється форма з назвою. Суму введеш сам.",
     accent: "text-finyk bg-finyk-soft",
     moduleIcon: "credit-card",
-    fallback: { action: "add_expense", label: "Інша сума", icon: "plus" },
+    fallback: { action: "add_expense", label: "Своя витрата", icon: "plus" },
+    // Presets тут — лише заготовки назви/категорії. Реальну суму
+    // вводить користувач у формі модуля. Було: «кава 95 ₴» писалася
+    // прямо у ledger, що топило довіру з першої секунди.
+    action: "add_expense" as const,
     items: [
       {
         id: "coffee",
         emoji: "☕",
         title: "Кава",
-        desc: "95 ₴ · їжа",
-        data: { description: "Кава", amount: 95, category: "їжа" },
+        desc: "їжа · введи суму",
+        data: { description: "Кава", category: "їжа" },
       },
       {
         id: "ride",
         emoji: "🚕",
         title: "Таксі",
-        desc: "180 ₴ · транспорт",
-        data: { description: "Таксі", amount: 180, category: "транспорт" },
+        desc: "транспорт · введи суму",
+        data: { description: "Таксі", category: "транспорт" },
       },
       {
         id: "lunch",
         emoji: "🥗",
         title: "Обід",
-        desc: "220 ₴ · їжа",
-        data: { description: "Обід", amount: 220, category: "їжа" },
+        desc: "їжа · введи суму",
+        data: { description: "Обід", category: "їжа" },
       },
     ],
   },
   nutrition: {
     title: "Що з'їв зараз?",
-    desc: "Калорії й макро — вже прораховано.",
+    desc: "Відкрию форму з назвою — калорії підтвердиш у модулі.",
     accent: "text-nutrition bg-nutrition-soft",
     moduleIcon: "utensils",
-    fallback: { action: "add_meal", label: "Інша страва", icon: "plus" },
+    fallback: { action: "add_meal", label: "Своя страва", icon: "plus" },
+    // Fake kcal-и («~420 ккал») прибрані: модуль сам рахує макро на
+    // основі ваги/складу у своєму повному sheet-і, а не у preset data.
+    action: "add_meal" as const,
     items: [
       {
         id: "omelette",
         emoji: "🍳",
         title: "Омлет з авокадо",
-        desc: "~420 ккал · сніданок",
-        data: { name: "Омлет з авокадо", kcal: 420, mealType: "breakfast" },
+        desc: "сніданок · у модулі",
+        data: { name: "Омлет з авокадо", mealType: "breakfast" },
       },
       {
         id: "salad",
         emoji: "🥗",
         title: "Салат з куркою",
-        desc: "~380 ккал · обід",
-        data: { name: "Салат з куркою", kcal: 380, mealType: "lunch" },
+        desc: "обід · у модулі",
+        data: { name: "Салат з куркою", mealType: "lunch" },
       },
       {
         id: "snack",
         emoji: "🍎",
         title: "Яблуко + горіхи",
-        desc: "~220 ккал · перекус",
-        data: { name: "Яблуко + горіхи", kcal: 220, mealType: "snack" },
+        desc: "перекус · у модулі",
+        data: { name: "Яблуко + горіхи", mealType: "snack" },
       },
     ],
   },
   fizruk: {
     title: "Швидкий старт",
-    desc: "Залогую як завершене тренування. Деталі — потім.",
+    desc: "Відкрию старт тренування — тривалість вкажеш на фініші.",
     accent: "text-fizruk bg-fizruk-soft",
     moduleIcon: "dumbbell",
     fallback: {
       action: "start_workout",
-      label: "Повне тренування",
+      label: "Своє тренування",
       icon: "plus",
     },
+    action: "start_workout" as const,
     items: [
       {
         id: "warmup",
         emoji: "🤸",
         title: "Розминка",
-        desc: "10 хв · легко",
-        data: { name: "Розминка", durationMin: 10 },
+        desc: "легко · запусти таймер",
+        data: { name: "Розминка" },
       },
       {
         id: "walk",
         emoji: "🚶",
         title: "Прогулянка",
-        desc: "25 хв · кардіо",
-        data: { name: "Прогулянка", durationMin: 25 },
+        desc: "кардіо · запусти таймер",
+        data: { name: "Прогулянка" },
       },
       {
         id: "quick",
         emoji: "⚡",
         title: "Швидке HIIT",
-        desc: "15 хв · інтенсив",
-        data: { name: "Швидке HIIT", durationMin: 15 },
+        desc: "інтенсив · запусти таймер",
+        data: { name: "Швидке HIIT" },
       },
     ],
   },
@@ -176,7 +184,15 @@ export function PresetSheet({ open, moduleId, onClose, onPick }) {
       module: moduleId,
       presetId: item.id,
     });
-    applyPreset(moduleId, item.data);
+    // Routine преcets пишуться одразу — звичка це «ім'я + ✓», тут
+    // немає метрики, яку можна сфабрикувати. Для finyk/fizruk/nutrition
+    // натомість відкриваємо повний add-sheet модуля (без fake-сум і
+    // fake-ккал у ledger-і), зберігаючи «одне тапання до дії».
+    if (moduleId === "routine") {
+      applyPreset(moduleId, item.data);
+    } else if (config.action) {
+      openHubModuleWithAction(moduleId, config.action);
+    }
     onPick?.({ moduleId, presetId: item.id });
     onClose?.();
   };

@@ -115,8 +115,16 @@ function AppInner() {
     navigate(SIGN_IN_PATH);
   }, [navigate]);
 
+  // «Продовжити без акаунту» на /sign-in для cold-start користувача має
+  // завести його у FTUX splash (/welcome), а не на порожній дашборд.
+  // Інакше тап «Вже маю акаунт» → назад стає тихим dead-end-ом, який
+  // пропускає онбординг назавжди.
   const leaveAuth = useCallback(() => {
-    navigate("/");
+    if (shouldShowOnboarding()) {
+      navigate(WELCOME_PATH, { replace: true });
+    } else {
+      navigate("/", { replace: true });
+    }
   }, [navigate]);
 
   const leaveWelcome = useCallback(() => {
@@ -260,7 +268,6 @@ function AppInner() {
         {!online && <OfflineBanner />}
 
         <HubHeader
-          hubView={ui.hubView}
           onOpenSearch={() => ui.setSearchOpen(true)}
           onOpenChat={() => ui.openChat()}
           user={user}
