@@ -126,6 +126,11 @@ export default defineConfig(({ mode }) => {
               // імпортами main bundle. Див. правило 2.3 у
               // `.agents/skills/vercel-react-best-practices/AGENTS.md`.
               if (id.includes("@sentry")) return "vendor-sentry";
+              // Те саме міркування для `web-vitals` — пакет малий (~1 KB
+              // gzip), але імпортується через dynamic `import()` після
+              // `requestIdleCallback`, тож не повинен тягнутись у main.
+              if (id.includes("/node_modules/web-vitals/"))
+                return "vendor-web-vitals";
               return "vendor";
             }
           },
