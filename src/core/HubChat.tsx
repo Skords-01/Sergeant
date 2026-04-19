@@ -1,12 +1,14 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { chatApi, isApiError } from "@shared/api";
 import { cn } from "@shared/lib/cn";
 import { Icon } from "@shared/components/ui/Icon";
 import { perfMark, perfEnd } from "@shared/lib/perf";
 import { useOnlineStatus } from "@shared/hooks/useOnlineStatus";
+import { hubKeys } from "@shared/lib/queryKeys";
+import { useFinykHubPreview } from "./hub/useFinykHubPreview";
 
 import {
-  HUB_FINYK_CACHE_EVENT,
   CONTEXT_TTL_MS,
   CHAT_HISTORY_WRITE_DEBOUNCE_MS,
   friendlyApiError,
@@ -16,7 +18,6 @@ import {
   makeAssistantMsg,
   makeUserMsg,
   normalizeStoredMessages,
-  checkHasMonoData,
   requestIdle,
   cancelIdle,
 } from "./lib/hubChatUtils.js";
@@ -101,7 +102,9 @@ function HubChat({ onClose, initialMessage }) {
     }
   }, [initialMessage]);
 
-  const [hasData, setHasData] = useState(() => checkHasMonoData());
+  const queryClient = useQueryClient();
+  const finykPreview = useFinykHubPreview();
+  const hasData = finykPreview.data?.hasMonoData ?? false;
   const online = useOnlineStatus();
 
   // Context cache
@@ -136,34 +139,25 @@ function HubChat({ onClose, initialMessage }) {
   }, []);
 
   useEffect(() => {
-    const refresh = () => setHasData(checkHasMonoData());
-    window.addEventListener("storage", refresh);
-    window.addEventListener(HUB_FINYK_CACHE_EVENT, refresh);
-    window.addEventListener("focus", refresh);
-    const onVis = () => {
-      if (document.visibilityState === "visible") refresh();
-    };
-    document.addEventListener("visibilitychange", onVis);
-    return () => {
-      window.removeEventListener("storage", refresh);
-      window.removeEventListener(HUB_FINYK_CACHE_EVENT, refresh);
-      window.removeEventListener("focus", refresh);
-      document.removeEventListener("visibilitychange", onVis);
-    };
-  }, []);
-
-  useEffect(() => {
     scheduleContextBuild("mount", true);
     return () => {
       if (idleJobRef.current) cancelIdle(idleJobRef.current);
     };
   }, [scheduleContextBuild]);
 
+  // Rebuild the chat context whenever the Finyk preview snapshot flips
+  // (Monobank sync, clear-cache, disconnect, or a cross-tab storage event).
+  // Previously signalled via `HUB_FINYK_CACHE_EVENT`; now driven by RQ
+  // invalidation of `hubKeys.preview("finyk")`.
+  const finykPreviewUpdatedAt = finykPreview.dataUpdatedAt;
+  const mountedRef = useRef(false);
   useEffect(() => {
-    const onUpdate = () => scheduleContextBuild("finyk-cache", true);
-    window.addEventListener(HUB_FINYK_CACHE_EVENT, onUpdate);
-    return () => window.removeEventListener(HUB_FINYK_CACHE_EVENT, onUpdate);
-  }, [scheduleContextBuild]);
+    if (!mountedRef.current) {
+      mountedRef.current = true;
+      return;
+    }
+    scheduleContextBuild("finyk-cache", true);
+  }, [finykPreviewUpdatedAt, scheduleContextBuild]);
 
   const quickPrompts = useMemo(
     () => (hasData ? QUICK_WITH_MONO : QUICK_NO_MONO),
@@ -350,7 +344,9 @@ function HubChat({ onClose, initialMessage }) {
           if (speakTarget) maybeSpeak(speakTarget);
         }
 
-        window.dispatchEvent(new CustomEvent(HUB_FINYK_CACHE_EVENT));
+        queryClient.invalidateQueries({
+          queryKey: hubKeys.preview("finyk"),
+        });
         scheduleContextBuild("after-tools", true);
       } else {
         const reply = data.text || "Немає відповіді.";

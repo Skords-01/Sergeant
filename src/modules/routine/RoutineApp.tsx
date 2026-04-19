@@ -20,10 +20,8 @@ import {
   habitScheduledOnDate,
 } from "./lib/hubCalendarAggregate.js";
 import { FINYK_SUB_GROUP_LABEL } from "./lib/finykSubscriptionCalendar.js";
-import {
-  HUB_FINYK_ROUTINE_SYNC_EVENT,
-  HUB_FINYK_TX_CACHE_EVENT,
-} from "../finyk/hubRoutineSync.js";
+import { HUB_FINYK_ROUTINE_SYNC_EVENT } from "../finyk/hubRoutineSync.js";
+import { useFinykHubPreview } from "../../core/hub/useFinykHubPreview";
 import { ROUTINE_THEME as C } from "./lib/routineConstants.js";
 import { emptyHabitDraft } from "./lib/routineDraftUtils.js";
 import { RoutineBottomNav } from "./components/RoutineBottomNav";
@@ -163,16 +161,20 @@ export default function RoutineApp({
 }: RoutineAppProps = {}) {
   const [routine, setRoutine] = useRoutineState();
   const toast = useToast();
-  const [finykCalendarTick, setFinykCalendarTick] = useState<number>(0);
+  // Finyk calendar events depend on both the Finyk Monobank cache and the
+  // subscription calendar. The former now flows through React Query
+  // (`hubKeys.preview("finyk")`), the latter still uses a custom event
+  // because nothing else observes the subscription-only signal.
+  const finykPreview = useFinykHubPreview();
+  const [routineSyncBump, setRoutineSyncBump] = useState<number>(0);
   useEffect(() => {
-    const bump = () => setFinykCalendarTick((n) => n + 1);
+    const bump = () => setRoutineSyncBump((n) => n + 1);
     window.addEventListener(HUB_FINYK_ROUTINE_SYNC_EVENT, bump);
-    window.addEventListener(HUB_FINYK_TX_CACHE_EVENT, bump);
     return () => {
       window.removeEventListener(HUB_FINYK_ROUTINE_SYNC_EVENT, bump);
-      window.removeEventListener(HUB_FINYK_TX_CACHE_EVENT, bump);
     };
   }, []);
+  const finykCalendarTick = finykPreview.dataUpdatedAt + routineSyncBump;
 
   useEffect(() => {
     const onErr = (ev: Event) => {
