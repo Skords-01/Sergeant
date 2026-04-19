@@ -1,6 +1,7 @@
 import { useState, useEffect, useId, useMemo } from "react";
 import { Button } from "@shared/components/ui/Button";
 import { Input } from "@shared/components/ui/Input";
+import { Label } from "@shared/components/ui/FormField";
 import { Sheet } from "@shared/components/ui/Sheet";
 import { VoiceMicButton } from "@shared/components/ui/VoiceMicButton.jsx";
 import { parseExpenseSpeech } from "../../../core/lib/speechParsers.js";
@@ -260,12 +261,7 @@ export function ManualExpenseSheet({
             produces both the amount and the description in one shot. */}
         <div className="flex gap-2 items-end">
           <div className="flex-1">
-            <label
-              htmlFor={amountId}
-              className="text-xs text-muted uppercase tracking-wide font-semibold mb-1 block"
-            >
-              Сума ₴
-            </label>
+            <Label htmlFor={amountId}>Сума ₴</Label>
             {(frequentAmounts.length > 0 || quickAmounts.length > 0) && (
               <div className="space-y-1.5 mb-2">
                 {frequentAmounts.length > 0 && (
@@ -361,15 +357,9 @@ export function ManualExpenseSheet({
         </div>
 
         <div>
-          <label
-            htmlFor={descId}
-            className="text-xs text-muted uppercase tracking-wide font-semibold mb-1 block"
-          >
-            Назва{" "}
-            <span className="text-subtle normal-case">
-              · необов&apos;язково
-            </span>
-          </label>
+          <Label htmlFor={descId} optional>
+            Назва
+          </Label>
           <Input
             id={descId}
             placeholder="Кава, продукти, таксі..."
@@ -387,12 +377,7 @@ export function ManualExpenseSheet({
             entry where the date is already not today. */}
         {form.date !== toLocalISODate() || form.showDateField ? (
           <div>
-            <label
-              htmlFor={dateId}
-              className="text-xs text-muted uppercase tracking-wide font-semibold mb-1 block"
-            >
-              Дата
-            </label>
+            <Label htmlFor={dateId}>Дата</Label>
             <Input
               id={dateId}
               type="date"
@@ -449,7 +434,7 @@ export function ManualExpenseSheet({
         <div>
           <div
             id={catLabelId}
-            className="text-xs text-muted uppercase tracking-wide font-semibold mb-1 block"
+            className="block text-xs text-muted uppercase tracking-wide font-semibold mb-1"
           >
             Категорія
           </div>
