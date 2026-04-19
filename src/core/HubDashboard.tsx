@@ -3,10 +3,13 @@ import { cn } from "@shared/lib/cn";
 import { Icon } from "@shared/components/ui/Icon";
 import { safeReadLS, safeWriteLS, safeRemoveLS } from "@shared/lib/storage.js";
 import { STORAGE_KEYS } from "@shared/lib/storageKeys.js";
+import { openHubModuleWithAction } from "@shared/lib/hubNav";
+import { getModulePrimaryAction } from "@shared/lib/moduleQuickActions";
 import { TodayFocusCard, useDashboardFocus } from "./TodayFocusCard.jsx";
 import { HubInsightsPanel } from "./HubInsightsPanel.jsx";
 import { WeeklyDigestCard, hasLiveWeeklyDigest } from "./WeeklyDigestCard.jsx";
 import { useWeeklyDigest, loadDigest, getWeekKey } from "./useWeeklyDigest.js";
+import { useCoachInsight } from "./useCoachInsight.js";
 import { SoftAuthPromptCard } from "./onboarding/SoftAuthPromptCard.jsx";
 import { DemoModeBanner } from "./onboarding/DemoModeBanner.jsx";
 import { FirstActionHeroCard } from "./onboarding/FirstActionSheet.jsx";
@@ -238,123 +241,108 @@ const MODULE_CONFIGS = {
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
-// DATE HEADER — replaces the decorative hero with a dense info line
+// STATUS ROW — «тихий» рядок модуля в секції «Статус»
 // ═══════════════════════════════════════════════════════════════════════════
-function DateHeader() {
-  const text = useMemo(() => {
-    try {
-      return new Date().toLocaleDateString("uk-UA", {
-        weekday: "short",
-        day: "numeric",
-        month: "long",
-      });
-    } catch {
-      return "";
-    }
-  }, []);
-
-  return (
-    <p className="px-0.5 text-xs font-medium text-muted uppercase tracking-wider">
-      {text}
-    </p>
-  );
-}
-
+// Раніше це був ModuleRow із chevron-ом, завжди-видимим progress-баром і
+// per-row Demo-піллю. Стало: без chevron-а (весь рядок клікабельний), без
+// progress-бару (крім випадків коли модуль справді має ціль і прогрес), без
+// «Демо» пілюлі (єдиний strip над секцією статус). Рядок, що відповідає
+// модулю з активним сигналом (focus/rest), отримує inline-кнопку `+`, що
+// dispatchає primary-дію без додаткового тапа «відкрити модуль».
 // ═══════════════════════════════════════════════════════════════════════════
-// MODULE ROW — compact "Today at a glance" list item
-// One icon + label, one number, one thin progress bar. Neutral text; the
-// module's color shows only as a 1px leading accent, so four rows read as a
-// single list rather than four competing heroes.
-// ═══════════════════════════════════════════════════════════════════════════
-function ModuleRow({ config, onClick, dragProps, isDragging, isDemo }) {
+function StatusRow({ config, onClick, onQuickAdd, dragProps, isDragging }) {
   const preview = config.getPreview();
   const showProgress =
     config.hasGoal && preview.progress !== undefined && preview.progress > 0;
-  // Show the pill only when the module has a real preview number to label —
-  // an empty row's "tracking…" copy is self-evidently not demo data.
-  const showDemoPill = isDemo && Boolean(preview.main);
 
   return (
-    <button
-      type="button"
-      onClick={onClick}
+    <div
       className={cn(
-        "group relative w-full text-left",
-        "flex items-center gap-3 px-3 py-2.5",
+        "group relative flex items-center",
         "bg-panel hover:bg-panelHi transition-colors",
-        "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-inset",
         isDragging && "opacity-70 shadow-float z-50 cursor-grabbing",
       )}
-      {...dragProps}
     >
-      <div
+      <button
+        type="button"
+        onClick={onClick}
         className={cn(
-          "absolute left-0 top-2 bottom-2 w-0.5 rounded-r-full",
-          config.accentClass,
+          "flex items-center gap-3 px-3 py-2.5 flex-1 min-w-0 text-left",
+          "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-inset",
         )}
-        aria-hidden
-      />
-
-      <div
-        className={cn(
-          "w-7 h-7 rounded-lg flex items-center justify-center shrink-0",
-          config.iconClass,
-        )}
+        {...dragProps}
       >
-        {config.icon}
-      </div>
-
-      <span className="text-xs font-semibold text-text truncate">
-        {config.label}
-      </span>
-
-      <div className="ml-auto flex items-center gap-2 min-w-0">
-        {showDemoPill && (
-          <span
-            className="shrink-0 px-1.5 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wider text-brand-600 bg-brand-500/10 border border-brand-500/20"
-            title="Це приклад — заміниться на твої дані після першого запису"
-          >
-            Демо
-          </span>
-        )}
-        {showProgress && (
-          <div
-            className="w-12 sm:w-16 h-1 rounded-full bg-line/40 dark:bg-white/10 overflow-hidden shrink-0"
-            aria-hidden
-          >
-            <div
-              className={cn(
-                "h-full rounded-full transition-all duration-700 ease-out",
-                config.accentClass,
-              )}
-              style={{ width: `${Math.min(preview.progress, 100)}%` }}
-            />
-          </div>
-        )}
-        {preview.main ? (
-          <span className="text-sm font-semibold text-text tabular-nums truncate">
-            {preview.main}
-          </span>
-        ) : (
-          <span className="text-xs text-muted truncate">
-            {preview.sub || config.description}
-          </span>
-        )}
-        <Icon
-          name="chevron-right"
-          size={14}
-          strokeWidth={2.5}
-          className="text-muted shrink-0"
+        <div
+          className={cn(
+            "absolute left-0 top-2 bottom-2 w-0.5 rounded-r-full",
+            config.accentClass,
+          )}
+          aria-hidden
         />
-      </div>
-    </button>
+
+        <div
+          className={cn(
+            "w-7 h-7 rounded-lg flex items-center justify-center shrink-0",
+            config.iconClass,
+          )}
+        >
+          {config.icon}
+        </div>
+
+        <span className="text-xs font-semibold text-text truncate">
+          {config.label}
+        </span>
+
+        <div className="ml-auto flex items-center gap-2 min-w-0">
+          {showProgress && (
+            <div
+              className="w-12 sm:w-16 h-1 rounded-full bg-line/40 dark:bg-white/10 overflow-hidden shrink-0"
+              aria-hidden
+            >
+              <div
+                className={cn(
+                  "h-full rounded-full transition-all duration-700 ease-out",
+                  config.accentClass,
+                )}
+                style={{ width: `${Math.min(preview.progress, 100)}%` }}
+              />
+            </div>
+          )}
+          {preview.main ? (
+            <span className="text-sm font-semibold text-text tabular-nums truncate">
+              {preview.main}
+            </span>
+          ) : (
+            <span className="text-xs text-muted truncate">
+              {preview.sub || config.description}
+            </span>
+          )}
+        </div>
+      </button>
+
+      {onQuickAdd && (
+        <button
+          type="button"
+          onClick={onQuickAdd.run}
+          aria-label={onQuickAdd.label}
+          title={onQuickAdd.label}
+          className={cn(
+            "shrink-0 mr-2 w-7 h-7 rounded-lg flex items-center justify-center",
+            "text-text bg-panelHi hover:bg-primary hover:text-bg",
+            "transition-colors",
+          )}
+        >
+          <Icon name="plus" size={14} strokeWidth={2.5} />
+        </button>
+      )}
+    </div>
   );
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
 // SORTABLE CARD WRAPPER
 // ═══════════════════════════════════════════════════════════════════════════
-function SortableCard({ id, onOpenModule, isDemo }) {
+function SortableCard({ id, onOpenModule, quickAdd }) {
   const {
     attributes,
     listeners,
@@ -374,11 +362,11 @@ function SortableCard({ id, onOpenModule, isDemo }) {
 
   return (
     <div ref={setNodeRef} style={style}>
-      <ModuleRow
+      <StatusRow
         config={cfg}
         onClick={() => onOpenModule(id)}
+        onQuickAdd={quickAdd}
         isDragging={isDragging}
-        isDemo={isDemo}
         dragProps={{ ...attributes, ...listeners }}
       />
     </div>
@@ -415,9 +403,60 @@ function useMondayAutoDigest() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// WEEKLY DIGEST FOOTER — always-collapsed link on the dashboard. Renders a
-// small "fresh" dot when a live digest exists so users still notice it
-// without letting the full card hijack the primary block on Mondays.
+// DEMO STRIP — один тихий рядок над статус-списком, замість per-row «Демо»
+// пілюль на кожному модулі. Не inline-dismissable, знімається автоматично
+// після першого реального запису (див. `modulePreviewsAreDemo`).
+// ═══════════════════════════════════════════════════════════════════════════
+function DemoStrip() {
+  return (
+    <div
+      className={cn(
+        "px-3 py-1.5 text-2xs font-semibold uppercase tracking-wider",
+        "text-brand-600 bg-brand-500/10 border border-brand-500/20 rounded-lg",
+        "flex items-center justify-between gap-2",
+      )}
+      title="Це приклад — заміниться на твої дані після першого запису"
+    >
+      <span>Дані — приклад</span>
+      <span className="font-normal normal-case tracking-normal text-muted">
+        Заміниться після першого запису
+      </span>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SECONDARY CHIPS — ≤2 contextual quick-add chips, які підсвічуються тільки
+// коли є сигнал (recs з pwaAction). Стоять між NextCard і списком статусу.
+// Не дублює primary-CTA з NextCard — береться з `rest`, не з `focus`.
+// ═══════════════════════════════════════════════════════════════════════════
+function SecondaryChips({ chips }) {
+  if (!chips || chips.length === 0) return null;
+  return (
+    <div className="flex flex-wrap gap-2">
+      {chips.map((chip) => (
+        <button
+          key={chip.id}
+          type="button"
+          onClick={chip.run}
+          className={cn(
+            "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full",
+            "text-xs font-medium text-text",
+            "bg-panel border border-line hover:bg-panelHi transition-colors",
+          )}
+          title={chip.hint}
+        >
+          <span aria-hidden>{chip.icon}</span>
+          {chip.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// WEEKLY DIGEST FOOTER — тихий лінк у нижньому ряду. Fresh-dot показується,
+// коли live-digest за цей тиждень існує.
 // ═══════════════════════════════════════════════════════════════════════════
 function WeeklyDigestFooter({ onExpand, fresh }) {
   return (
@@ -444,10 +483,22 @@ function WeeklyDigestFooter({ onExpand, fresh }) {
   );
 }
 
+const MODULE_ICON_EMOJI = {
+  finyk: "💳",
+  fizruk: "🏋️",
+  routine: "✅",
+  nutrition: "🥗",
+};
+
 // ═══════════════════════════════════════════════════════════════════════════
 // MAIN HUB DASHBOARD
 // ═══════════════════════════════════════════════════════════════════════════
-export function HubDashboard({ onOpenModule, onOpenChat, user, onShowAuth }) {
+export function HubDashboard({
+  onOpenModule,
+  onOpenChat: _onOpenChat,
+  user,
+  onShowAuth,
+}) {
   const [order, setOrder] = useState(loadOrder);
   useMondayAutoDigest();
 
@@ -479,13 +530,62 @@ export function HubDashboard({ onOpenModule, onOpenChat, user, onShowAuth }) {
   const showDemoBanner =
     !hasRealEntry && !demoBannerDismissed && wasDemoSeeded();
 
-  // The banner is one-shot dismissible, but the underlying fact that the
-  // numbers in "Сьогодні" are seeded demo data persists until the first real
-  // entry. A per-row "Демо" pill stays visible after the banner is closed so
-  // the user never mistakes the preview for their own data.
+  // Фактичний «демо-mode» контексту залишається, поки немає жодного
+  // реального запису. Раніше це малювало «Демо»-пілюлю на КОЖНОМУ рядку
+  // статус-списку — тепер це один тихий strip над списком (див. DemoStrip).
   const modulePreviewsAreDemo = !hasRealEntry && wasDemoSeeded();
 
   const { focus, rest, dismiss } = useDashboardFocus();
+
+  // Coach insight підʼєднується на рівні дашборду і передається в NextCard
+  // як inline italic-рядок. Раніше він жив у `HubInsightsPanel` і
+  // змушував секцію авто-розкриватись — зараз інсайт стоїть поруч із
+  // фокусом, без окремого місця у списку.
+  const { insight: coachInsightText } = useCoachInsight();
+
+  // ─────────────────────────────────────────────────────────────────────
+  // «Є сигнал?» мапа — які модулі мають видиму рекомендацію. Використовується
+  // для inline-`+` у StatusRow. focus+rest охоплює всі recs, які не були
+  // dismissed.
+  // ─────────────────────────────────────────────────────────────────────
+  const modulesWithSignal = useMemo(() => {
+    const all = focus ? [focus, ...rest] : rest;
+    const set = new Set<string>();
+    for (const r of all) {
+      if (r.module && r.module !== "hub") set.add(r.module);
+    }
+    return set;
+  }, [focus, rest]);
+
+  // Secondary chips: до 2-х рекомендацій (без focus), які несуть pwaAction.
+  // Показуються тільки коли у нас >1 recs (інакше focus вистачає). Кожен
+  // chip відкриває модуль із інтентом, не просто навігуючи.
+  const secondaryChips = useMemo(() => {
+    const withAction = rest.filter((r) => r.pwaAction && r.module !== "hub");
+    // де-дублюємо за модулем — один сигнал на модуль достатньо
+    const seen = new Set<string>();
+    const picked: typeof withAction = [];
+    for (const r of withAction) {
+      if (seen.has(r.module)) continue;
+      seen.add(r.module);
+      picked.push(r);
+      if (picked.length >= 2) break;
+    }
+    return picked.map((r) => {
+      const quick = getModulePrimaryAction(r.module);
+      return {
+        id: r.id,
+        label: quick?.shortLabel || "Додати",
+        hint: r.title,
+        icon: MODULE_ICON_EMOJI[r.module] || "➕",
+        run: () =>
+          openHubModuleWithAction(
+            r.module as Parameters<typeof openHubModuleWithAction>[0],
+            r.pwaAction!,
+          ),
+      };
+    });
+  }, [rest]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -507,46 +607,71 @@ export function HubDashboard({ onOpenModule, onOpenChat, user, onShowAuth }) {
     }
   }, []);
 
+  // Weekly digest: не показуємо картку автоматично. Fresh-дот у footer
+  // появляється, якщо користувач явно згенерував digest цього тижня. Сам
+  // card розкривається тільки по тапу на footer-link.
   const [digestExpanded, setDigestExpanded] = useState(false);
   const digestFresh = hasLiveWeeklyDigest();
+  // Footer-лінк видно тільки коли є свіжий digest АБО сьогодні Пн/Вт
+  // (коли має сенс нагадати про підсумок тижня). Інакше лінк ховається,
+  // щоб не створювати постійного шуму.
+  const now = new Date();
+  const isMondayOrTuesday = now.getDay() === 1 || now.getDay() === 2;
+  const showDigestFooter = digestFresh || isMondayOrTuesday;
 
-  return (
-    <div className="space-y-4">
-      <DateHeader />
-
-      {/* Today focus — the ONE primary action on the dashboard. Rendered
-          before any banner so it is always the first thing the user sees. */}
+  // ─────────────────────────────────────────────────────────────────────
+  // ONE-HERO RULE. На екрані завжди рівно одна primary-картка:
+  //   FirstAction → DemoBanner → SoftAuth → NextCard
+  // FTUX-онбординг-картки мають власні CTA, тому їх не треба дублювати з
+  // NextCard. Як тільки вони зняті, хероєм стає NextCard (focus чи empty).
+  // ─────────────────────────────────────────────────────────────────────
+  let hero: React.ReactNode;
+  if (firstActionVisible) {
+    hero = (
+      <FirstActionHeroCard onDismiss={() => setFirstActionVisible(false)} />
+    );
+  } else if (showDemoBanner) {
+    hero = (
+      <DemoModeBanner
+        onDismiss={() => {
+          dismissDemoBanner();
+          setDemoBannerDismissed(true);
+        }}
+      />
+    );
+  } else if (showSoftAuth) {
+    hero = (
+      <SoftAuthPromptCard
+        onOpenAuth={onShowAuth}
+        onDismiss={() => setSoftAuthDismissed(true)}
+      />
+    );
+  } else {
+    hero = (
       <TodayFocusCard
         focus={focus}
         onAction={onOpenModule}
         onDismiss={dismiss}
+        coachInsight={coachInsightText}
       />
+    );
+  }
 
-      {/* Banner budget: one system card at a time on the dashboard.
-          Priority: first-action hero (post-wizard FTUX) > demo banner >
-          soft-auth nudge. Prevents the cold-start where two or three
-          "meta" cards push real data below the fold. */}
-      {firstActionVisible ? (
-        <FirstActionHeroCard onDismiss={() => setFirstActionVisible(false)} />
-      ) : showDemoBanner ? (
-        <DemoModeBanner
-          onDismiss={() => {
-            dismissDemoBanner();
-            setDemoBannerDismissed(true);
-          }}
-        />
-      ) : showSoftAuth ? (
-        <SoftAuthPromptCard
-          onOpenAuth={onShowAuth}
-          onDismiss={() => setSoftAuthDismissed(true)}
-        />
-      ) : null}
+  return (
+    <div className="space-y-4">
+      {hero}
 
-      {/* Today at a glance — compact module list (replaces the 2×2 grid) */}
+      <SecondaryChips chips={secondaryChips} />
+
+      {/* STATUS — тихий список модулів. Колапсована секція з одним демо-strip
+          зверху (коли актуально). Рядок, під який підʼїхала рекомендація,
+          отримує inline `+` для quick-add. */}
       <section className="space-y-2">
         <h2 className="px-0.5 text-xs font-semibold text-muted uppercase tracking-wider">
-          Сьогодні
+          Статус
         </h2>
+
+        {modulePreviewsAreDemo && <DemoStrip />}
 
         <DndContext
           sensors={sensors}
@@ -555,38 +680,53 @@ export function HubDashboard({ onOpenModule, onOpenChat, user, onShowAuth }) {
         >
           <SortableContext items={order} strategy={verticalListSortingStrategy}>
             <div className="rounded-2xl border border-line bg-panel overflow-hidden divide-y divide-line/60">
-              {order.map((id) => (
-                <SortableCard
-                  key={id}
-                  id={id}
-                  onOpenModule={onOpenModule}
-                  isDemo={modulePreviewsAreDemo}
-                />
-              ))}
+              {order.map((id) => {
+                const hasSignal = modulesWithSignal.has(id);
+                const quick = getModulePrimaryAction(id);
+                const quickAdd =
+                  hasSignal && quick
+                    ? {
+                        label: quick.label,
+                        run: () =>
+                          openHubModuleWithAction(
+                            id as Parameters<typeof openHubModuleWithAction>[0],
+                            quick.action,
+                          ),
+                      }
+                    : null;
+                return (
+                  <SortableCard
+                    key={id}
+                    id={id}
+                    onOpenModule={onOpenModule}
+                    quickAdd={quickAdd}
+                  />
+                );
+              })}
             </div>
           </SortableContext>
         </DndContext>
       </section>
 
-      {/* Unified insights — collapsed by default */}
-      <HubInsightsPanel
-        items={rest}
-        onOpenModule={onOpenModule}
-        onOpenChat={onOpenChat}
-        onDismiss={dismiss}
-      />
-
-      {/* Weekly digest — always a footer link on the dashboard; expands
-          inline on demand. Prevents Monday auto-generation from hijacking
-          the primary block. */}
-      {digestExpanded ? (
-        <WeeklyDigestCard />
-      ) : (
-        <WeeklyDigestFooter
-          fresh={digestFresh}
-          onExpand={() => setDigestExpanded(true)}
+      {/* «ще» — тихий футер-ряд з вторинними точками входу. HubInsightsPanel
+          ховає rest за колапсом; WeeklyDigest-link показується лише в Пн/Вт
+          або коли є свіжий звіт, щоб не створювати постійного шуму. */}
+      <div className="space-y-2">
+        <HubInsightsPanel
+          items={rest}
+          onOpenModule={onOpenModule}
+          onDismiss={dismiss}
         />
-      )}
+
+        {digestExpanded ? (
+          <WeeklyDigestCard />
+        ) : showDigestFooter ? (
+          <WeeklyDigestFooter
+            fresh={digestFresh}
+            onExpand={() => setDigestExpanded(true)}
+          />
+        ) : null}
+      </div>
     </div>
   );
 }

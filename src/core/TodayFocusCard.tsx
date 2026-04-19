@@ -1,6 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { cn } from "@shared/lib/cn";
 import { Icon } from "@shared/components/ui/Icon";
+import {
+  openHubModuleWithAction,
+  type HubModuleAction,
+  type HubModuleId,
+} from "@shared/lib/hubNav";
+import {
+  MODULE_PRIMARY_ACTION,
+  getModulePrimaryAction,
+} from "@shared/lib/moduleQuickActions";
 import { generateRecommendations } from "./lib/recommendationEngine.js";
 
 // Reuse the same dismissed-map key HubRecommendations used so user
@@ -26,7 +35,11 @@ const MODULE_WASH = {
   hub: "bg-panelHi",
 };
 
-const MODULE_CTA = {
+// Fallback for CTA коли rec не несе свого `pwaAction`: просто відкриває
+// модуль. Імперативна дія (`add_expense`, `start_workout`, …) береться з
+// `MODULE_PRIMARY_ACTION` і dispatchається через hubNav — центральний шлях
+// квік-адду з дашборду.
+const MODULE_OPEN_CTA = {
   finyk: "Відкрити Фінік",
   fizruk: "Відкрити Фізрук",
   routine: "Відкрити Рутину",
@@ -34,7 +47,14 @@ const MODULE_CTA = {
   hub: "Подивитись",
 };
 
-function readJSON(key) {
+const MODULE_SHORT_LABEL: Record<HubModuleId, string> = {
+  finyk: "Фінік",
+  fizruk: "Фізрук",
+  routine: "Рутина",
+  nutrition: "Харчування",
+};
+
+function readJSON(key: string) {
   try {
     const raw = localStorage.getItem(key);
     return raw ? JSON.parse(raw) : null;
@@ -43,56 +63,7 @@ function readJSON(key) {
   }
 }
 
-/**
- * Derive a single "reward" line for the empty focus state from the latest
- * quick-stats each module writes to localStorage. Priority:
- *   1. longest active streak (habits > training)
- *   2. today's habit completion ratio (if any progress made)
- *   3. nutrition on-goal today
- *   4. fallback neutral message
- */
-function deriveRewardSignal() {
-  const routine = readJSON("routine_quick_stats") || {};
-  const fizruk = readJSON("fizruk_quick_stats") || {};
-  const nutrition = readJSON("nutrition_quick_stats") || {};
-
-  const streaks = [
-    { module: "routine", days: Number(routine.streak) || 0 },
-    { module: "fizruk", days: Number(fizruk.streak) || 0 },
-  ]
-    .filter((s) => s.days >= 2)
-    .sort((a, b) => b.days - a.days);
-
-  if (streaks.length > 0) {
-    const top = streaks[0];
-    return {
-      line: `Серія ${top.days} днів досі`,
-      module: top.module,
-    };
-  }
-
-  if (routine.todayTotal > 0 && routine.todayDone > 0) {
-    return {
-      line: `Звички сьогодні: ${routine.todayDone}/${routine.todayTotal}`,
-      module: "routine",
-    };
-  }
-
-  if (
-    nutrition.calGoal &&
-    nutrition.todayCal &&
-    nutrition.todayCal <= nutrition.calGoal
-  ) {
-    return {
-      line: `Уклався в ціль по калоріях: ${nutrition.todayCal}/${nutrition.calGoal} ккал`,
-      module: "nutrition",
-    };
-  }
-
-  return null;
-}
-
-function loadDismissed() {
+function loadDismissed(): Record<string, number> {
   try {
     const raw = localStorage.getItem(DISMISSED_KEY);
     return raw ? JSON.parse(raw) : {};
@@ -101,10 +72,12 @@ function loadDismissed() {
   }
 }
 
-function saveDismissed(map) {
+function saveDismissed(map: Record<string, number>) {
   try {
     localStorage.setItem(DISMISSED_KEY, JSON.stringify(map));
-  } catch {}
+  } catch {
+    /* noop */
+  }
 }
 
 /**
@@ -128,7 +101,7 @@ export function useDashboardFocus() {
     [recs, dismissed],
   );
 
-  const dismiss = useCallback((id) => {
+  const dismiss = useCallback((id: string) => {
     setDismissed((prev) => {
       const next = { ...prev, [id]: Date.now() };
       saveDismissed(next);
@@ -143,89 +116,181 @@ export function useDashboardFocus() {
   };
 }
 
-function EmptyFocus({ onOpenReports }) {
+/**
+ * Snapshot reward-сигналу для хедера Next: серія, що горить, або щойно
+ * виконана ціль. Повертається маленьким chip'ом у хедері Next, замість
+ * того щоб забирати окрему картку.
+ */
+function deriveRewardSignal(): {
+  line: string;
+  module: keyof typeof MODULE_ACCENT;
+} | null {
+  const routine = readJSON("routine_quick_stats") || {};
+  const fizruk = readJSON("fizruk_quick_stats") || {};
+
+  const streaks = [
+    { module: "routine" as const, days: Number(routine.streak) || 0 },
+    { module: "fizruk" as const, days: Number(fizruk.streak) || 0 },
+  ]
+    .filter((s) => s.days >= 2)
+    .sort((a, b) => b.days - a.days);
+
+  if (streaks.length > 0) {
+    const top = streaks[0];
+    return {
+      line: `${top.days} днів поспіль`,
+      module: top.module,
+    };
+  }
+  return null;
+}
+
+interface QuickAddChip {
+  module: HubModuleId;
+  label: string;
+  action: HubModuleAction;
+}
+
+const QUICK_ADD_CHIPS: QuickAddChip[] = (
+  ["finyk", "nutrition", "routine", "fizruk"] as HubModuleId[]
+).map((mod) => {
+  const a = MODULE_PRIMARY_ACTION[mod];
+  return { module: mod, label: a.shortLabel, action: a.action };
+});
+
+const MODULE_CHIP_CLASS: Record<HubModuleId, string> = {
+  finyk: "bg-finyk-soft text-finyk",
+  fizruk: "bg-fizruk-soft text-fizruk",
+  routine: "bg-routine-surface text-routine",
+  nutrition: "bg-nutrition-soft text-nutrition",
+};
+
+/**
+ * Empty-state Next: коли жодної рекомендації немає. Замість пасивного
+ * «Сьогодні нічого термінового» показує 4 quick-add чипи — один тап і
+ * користувач фіксує запис, не мусячи шукати «+» FAB.
+ */
+function EmptyFocus() {
   const reward = deriveRewardSignal();
-  const washClass = reward ? MODULE_WASH[reward.module] : null;
-  const accentClass = reward ? MODULE_ACCENT[reward.module] : null;
+  const washClass = reward
+    ? MODULE_WASH[reward.module]
+    : "bg-panelHi/60 dark:bg-panelHi/30";
 
   return (
     <div
       className={cn(
         "relative overflow-hidden rounded-2xl border border-line bg-panel p-4",
-        "flex items-center gap-3",
         washClass,
       )}
     >
-      {accentClass && (
-        <div
-          className={cn(
-            "absolute left-0 top-4 bottom-4 w-1 rounded-r-full",
-            accentClass,
-          )}
-          aria-hidden
-        />
-      )}
-      <div
-        className={cn(
-          "relative shrink-0 w-10 h-10 rounded-xl flex items-center justify-center",
-          reward
-            ? "bg-panel/70 text-text"
-            : "bg-brand-100/70 dark:bg-brand-900/30 text-brand-600 dark:text-brand-400",
+      <div className="flex items-center justify-between gap-2 mb-2">
+        <span className="text-2xs font-semibold uppercase tracking-widest text-muted">
+          Зараз
+        </span>
+        {reward && (
+          <span
+            className={cn(
+              "inline-flex items-center gap-1 px-2 py-0.5 rounded-full",
+              "text-2xs font-semibold text-text bg-panel/80 border border-line",
+            )}
+            title="Не розривай серію"
+          >
+            <span aria-hidden>🔥</span>
+            {reward.line}
+          </span>
         )}
-      >
-        <Icon name={reward ? "sparkle" : "check"} size={18} strokeWidth={2.5} />
       </div>
-      <div className="relative flex-1 min-w-0">
-        <p className="text-sm font-semibold text-text leading-snug">
-          {reward ? "Ти в грі" : "Сьогодні нічого термінового"}
-        </p>
-        <p className="text-xs text-muted mt-0.5 leading-snug">
-          {reward
-            ? reward.line
-            : "Все зафіксовано. Переглянь тижневий прогрес або відкрий модуль."}
-        </p>
+
+      <h2 className="text-base font-bold text-text leading-snug">
+        Що зафіксуємо?
+      </h2>
+      <p className="text-xs text-muted mt-0.5 leading-relaxed">
+        Один тап — один запис. Обери модуль і продовжуй.
+      </p>
+
+      <div className="mt-3 flex flex-wrap gap-2">
+        {QUICK_ADD_CHIPS.map((chip) => (
+          <button
+            key={chip.module}
+            type="button"
+            onClick={() => openHubModuleWithAction(chip.module, chip.action)}
+            className={cn(
+              "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full",
+              "text-xs font-semibold",
+              "hover:brightness-110 active:scale-[0.98] transition-all",
+              MODULE_CHIP_CLASS[chip.module],
+            )}
+          >
+            {chip.label}
+          </button>
+        ))}
       </div>
-      {onOpenReports && (
-        <button
-          type="button"
-          onClick={onOpenReports}
-          className={cn(
-            "relative shrink-0 text-xs font-semibold text-muted hover:text-text",
-            "px-2.5 py-1.5 rounded-lg hover:bg-panelHi transition-colors",
-          )}
-        >
-          Звіти →
-        </button>
-      )}
     </div>
   );
 }
 
+interface FocusRec {
+  id: string;
+  module: keyof typeof MODULE_ACCENT;
+  title: string;
+  body?: string;
+  icon?: string;
+  action: string;
+  pwaAction?: HubModuleAction;
+}
+
 /**
- * Primary hero on the dashboard: shows a single next-best-action derived from
- * the recommendation engine, or a neutral empty state. Replaces the old
- * decorative DailyProgressHero.
+ * Primary hero on the dashboard: one next-best-action derived from the
+ * recommendation engine, or an action-driven empty state when nothing is
+ * pending. CTA виконує дію (PWA-intent) інлайн, а не навігує в модуль —
+ * це ключова зміна action-driven дашборду.
  */
 export function TodayFocusCard({
   focus,
   onAction,
   onDismiss,
-  onOpenReports,
+  coachInsight,
 }: {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  focus: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  onAction: (module: any) => void;
+  focus: FocusRec | null;
+  onAction: (module: string) => void;
   onDismiss: (id: string) => void;
-  onOpenReports?: () => void;
+  coachInsight?: string | null;
 }) {
   if (!focus) {
-    return <EmptyFocus onOpenReports={onOpenReports} />;
+    return <EmptyFocus />;
   }
 
   const accent = MODULE_ACCENT[focus.module] || "bg-primary";
   const wash = MODULE_WASH[focus.module] || "bg-panelHi";
-  const cta = MODULE_CTA[focus.module] || "Відкрити";
+
+  const primary = focus.pwaAction
+    ? (() => {
+        const quick = getModulePrimaryAction(focus.module);
+        return {
+          label: quick?.label || MODULE_OPEN_CTA[focus.module] || "Відкрити",
+          run: () =>
+            openHubModuleWithAction(
+              focus.module as HubModuleId,
+              focus.pwaAction as HubModuleAction,
+            ),
+        };
+      })()
+    : {
+        label: MODULE_OPEN_CTA[focus.module] || "Відкрити",
+        run: () => onAction(focus.action),
+      };
+
+  // Fallback: коли primary був імперативним, додаємо текстовий линк
+  // «Відкрити X» як secondary — для юзерів, які хочуть спершу
+  // перевірити контекст у модулі, не фіксуючи нічого.
+  const secondary =
+    focus.pwaAction && onAction
+      ? {
+          label:
+            `Відкрити ${MODULE_SHORT_LABEL[focus.module as HubModuleId] ?? ""}`.trim(),
+          run: () => onAction(focus.action),
+        }
+      : null;
 
   return (
     <div
@@ -245,24 +310,10 @@ export function TodayFocusCard({
       />
 
       <div className="pl-3">
-        <div className="flex items-start justify-between gap-3 mb-1">
+        <div className="flex items-center justify-between gap-3 mb-1">
           <span className="text-2xs font-semibold uppercase tracking-widest text-muted">
             Зараз
           </span>
-          {onDismiss && (
-            <button
-              type="button"
-              onClick={() => onDismiss(focus.id)}
-              aria-label="Відкласти"
-              title="Відкласти"
-              className={cn(
-                "shrink-0 w-7 h-7 -mr-1 -mt-1 rounded-lg flex items-center justify-center",
-                "text-muted hover:text-text hover:bg-panelHi transition-colors",
-              )}
-            >
-              <Icon name="close" size={14} />
-            </button>
-          )}
         </div>
 
         <h2 className="text-base font-bold text-text leading-snug text-balance">
@@ -280,34 +331,50 @@ export function TodayFocusCard({
           </p>
         )}
 
-        {focus.action && (
-          <div className="mt-3 flex items-center gap-2">
+        {coachInsight && (
+          <p className="text-xs text-text/85 italic mt-2 leading-relaxed border-l-2 border-primary/40 pl-2">
+            {coachInsight}
+          </p>
+        )}
+
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={primary.run}
+            className={cn(
+              "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg",
+              "bg-primary text-bg text-xs font-semibold",
+              "hover:brightness-110 active:scale-[0.98] transition-all",
+            )}
+          >
+            {primary.label}
+            <Icon name="chevron-right" size={14} strokeWidth={2.5} />
+          </button>
+          {secondary && (
             <button
               type="button"
-              onClick={() => onAction(focus.action)}
+              onClick={secondary.run}
               className={cn(
-                "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg",
-                "bg-primary text-bg text-xs font-semibold",
-                "hover:brightness-110 active:scale-[0.98] transition-all",
+                "text-xs font-medium text-muted hover:text-text",
+                "px-2.5 py-1.5 rounded-lg hover:bg-panelHi transition-colors",
               )}
             >
-              {cta}
-              <Icon name="chevron-right" size={14} strokeWidth={2.5} />
+              {secondary.label}
             </button>
-            {onDismiss && (
-              <button
-                type="button"
-                onClick={() => onDismiss(focus.id)}
-                className={cn(
-                  "text-xs font-medium text-muted hover:text-text",
-                  "px-2.5 py-1.5 rounded-lg hover:bg-panelHi transition-colors",
-                )}
-              >
-                Пізніше
-              </button>
-            )}
-          </div>
-        )}
+          )}
+          {onDismiss && (
+            <button
+              type="button"
+              onClick={() => onDismiss(focus.id)}
+              className={cn(
+                "ml-auto text-xs font-medium text-muted hover:text-text",
+                "px-2.5 py-1.5 rounded-lg hover:bg-panelHi transition-colors",
+              )}
+            >
+              Пізніше
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

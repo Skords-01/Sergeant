@@ -181,6 +181,7 @@ function buildFizrukRecs(): Rec[] {
       title: `${Math.round(daysSinceWorkout)} днів без тренування`,
       body: "Пора відновити активність! Навіть легке тренування краще, ніж нічого.",
       action: "fizruk",
+      pwaAction: "start_workout",
     });
   }
 
@@ -198,6 +199,7 @@ function buildFizrukRecs(): Rec[] {
         title: `${label} не тренували ${days} днів`,
         body: "Включи вправи на ці м'язи в наступне тренування.",
         action: "fizruk",
+        pwaAction: "start_workout",
       });
     }
   }
@@ -217,6 +219,7 @@ function buildFizrukRecs(): Rec[] {
       title: "Цього тижня ще немає тренувань",
       body: "Тиждень вже в розпалі — час запланувати тренування!",
       action: "fizruk",
+      pwaAction: "start_workout",
     });
   }
 
@@ -327,6 +330,7 @@ function buildNutritionRecs(): Rec[] {
       title: "Сьогодні ще немає записів про їжу",
       body: "Зафіксуй свій прийом їжі, щоб стежити за КБЖВ.",
       action: "nutrition",
+      pwaAction: "add_meal",
     });
   } else if (meals.length > 0) {
     const pctKcal = kcal / targetKcal;
@@ -339,6 +343,7 @@ function buildNutritionRecs(): Rec[] {
         title: `Лише ${Math.round(kcal)} ккал з ${targetKcal} ккал цілі`,
         body: "Недостатнє споживання калорій може уповільнити відновлення.",
         action: "nutrition",
+        pwaAction: "add_meal",
       });
     }
 
@@ -352,6 +357,7 @@ function buildNutritionRecs(): Rec[] {
         title: `Лише ${Math.round(protein)}г білка з ${targetProtein}г`,
         body: "Додай протеїновий прийом їжі — це важливо для м'язів.",
         action: "nutrition",
+        pwaAction: "add_meal",
       });
     }
 
@@ -373,6 +379,7 @@ function buildNutritionRecs(): Rec[] {
           title: "Після тренування — час поповнити білок!",
           body: "У вас є ~30 хвилин на протеїновий прийом для кращого відновлення.",
           action: "nutrition",
+          pwaAction: "add_meal",
         });
       }
     }
