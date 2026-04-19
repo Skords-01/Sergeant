@@ -20,8 +20,23 @@ vi.mock("../obs/metrics.js", () => ({
   syncPayloadBytes: { observe: vi.fn() },
 }));
 
+vi.mock("../obs/logger.js", async () => {
+  const actual = await vi.importActual("../obs/logger.js");
+  return {
+    ...actual,
+    logger: {
+      debug: vi.fn(),
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+      fatal: vi.fn(),
+    },
+  };
+});
+
 import { getSessionUser } from "../auth.js";
 import pool from "../db.js";
+import { logger } from "../obs/logger.js";
 import { syncConflictsTotal, syncOperationsTotal } from "../obs/metrics.js";
 import { syncPushAll } from "./sync.js";
 
@@ -203,5 +218,100 @@ describe("syncPushAll metric correctness around transaction boundary", () => {
     expect(syncConflictsTotal.inc).toHaveBeenCalledWith({
       module: "nutrition",
     });
+  });
+});
+
+describe("sync_event structured log", () => {
+  it("емітить sync_event на кожен recordSync — level по outcome", async () => {
+    const client = { query: vi.fn(), release: vi.fn() };
+    client.query
+      .mockResolvedValueOnce({}) // BEGIN
+      .mockResolvedValueOnce({
+        rows: [{ server_updated_at: "2026-01-01T00:00:00Z", version: 2 }],
+      }) // finyk ok
+      .mockResolvedValueOnce({}); // COMMIT
+    pool.connect.mockResolvedValue(client);
+
+    const res = makeRes();
+    await syncPushAll(
+      makeReq({
+        modules: {
+          finyk: { data: { x: 1 }, clientUpdatedAt: "2026-01-01T00:00:00Z" },
+        },
+      }),
+      res,
+    );
+
+    // ok-outcome → info; push + push_all по одному info-виклику
+    const infos = logger.info.mock.calls.map(([arg]) => arg);
+    expect(infos).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          msg: "sync_event",
+          op: "push",
+          module: "finyk",
+          outcome: "ok",
+        }),
+        expect.objectContaining({
+          msg: "sync_event",
+          op: "push_all",
+          module: "all",
+          outcome: "ok",
+        }),
+      ]),
+    );
+    expect(logger.error).not.toHaveBeenCalled();
+  });
+
+  it("error outcome пише через logger.error (ROLLBACK path reclassifies pending)", async () => {
+    const client = { query: vi.fn(), release: vi.fn() };
+    client.query
+      .mockResolvedValueOnce({}) // BEGIN
+      .mockResolvedValueOnce({
+        rows: [{ server_updated_at: "2026-01-01T00:00:00Z", version: 2 }],
+      }) // finyk «ок» у транзакції → потрапляє в pending
+      .mockRejectedValueOnce(
+        Object.assign(new Error("deadlock"), { code: "40P01" }),
+      ) // routine кидає → catch
+      .mockResolvedValueOnce({}); // ROLLBACK
+    pool.connect.mockResolvedValue(client);
+
+    await expect(
+      syncPushAll(
+        makeReq({
+          modules: {
+            finyk: { data: { x: 1 }, clientUpdatedAt: "2026-01-01T00:00:00Z" },
+            routine: {
+              data: { y: 2 },
+              clientUpdatedAt: "2026-01-01T00:00:00Z",
+            },
+          },
+        }),
+        makeRes(),
+      ),
+    ).rejects.toThrow(/deadlock/);
+
+    const errors = logger.error.mock.calls.map(([arg]) => arg);
+    expect(errors).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          msg: "sync_event",
+          op: "push",
+          module: "finyk",
+          outcome: "error",
+        }),
+        expect.objectContaining({
+          msg: "sync_event",
+          op: "push_all",
+          module: "all",
+          outcome: "error",
+        }),
+      ]),
+    );
+    // ok-лог НЕ має існувати, хоча finyk «пройшов» INSERT: транзакція впала.
+    const okLogs = logger.info.mock.calls.filter(
+      ([arg]) => arg.msg === "sync_event" && arg.outcome === "ok",
+    );
+    expect(okLogs).toHaveLength(0);
   });
 });
