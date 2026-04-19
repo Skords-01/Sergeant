@@ -64,31 +64,11 @@ function markOnboardingDone() {
   }
 }
 
-function StepDots({ total, current }) {
-  return (
-    <div className="flex items-center justify-center gap-1.5">
-      {Array.from({ length: total }).map((_, i) => (
-        <div
-          key={i}
-          className={cn(
-            "rounded-full transition-all duration-300",
-            i === current
-              ? "w-5 h-2 bg-brand-500"
-              : i < current
-                ? "w-2 h-2 bg-brand-500/40"
-                : "w-2 h-2 bg-line",
-          )}
-        />
-      ))}
-    </div>
-  );
-}
-
-// A tiny auto-cycling preview of what a "full" Sergeant screen looks like:
-// one metric per module, rotating on a 2.2s interval. Purely decorative —
-// it exists so the user sees concrete numbers (not just words) in the first
-// second of the splash, which is what sells the "life in one screen" pitch.
-const SPLASH_TICKER_ITEMS = [
+// Static preview of what a "full" Sergeant hub looks like: four concrete
+// metrics rendered at once in a compact 2×2 grid. Replaces the earlier
+// auto-cycling ticker — a full rotation took ~9 s, which burnt a third of
+// the 30-second FTUX promise before the user could even tap the CTA.
+const SPLASH_PREVIEW_ITEMS = [
   {
     icon: "credit-card",
     accent: "text-finyk bg-finyk-soft",
@@ -99,248 +79,149 @@ const SPLASH_TICKER_ITEMS = [
     icon: "dumbbell",
     accent: "text-fizruk bg-fizruk-soft",
     metric: "5 трен.",
-    label: "за останні 14 днів",
+    label: "за 14 днів",
   },
   {
     icon: "check",
     accent: "text-routine bg-routine-soft",
     metric: "7 днів",
-    label: "стрік — «випити воду»",
+    label: "стрік — «вода»",
   },
   {
     icon: "utensils",
     accent: "text-nutrition bg-nutrition-soft",
     metric: "420 ккал",
-    label: "сніданок сьогодні",
+    label: "сніданок",
   },
 ];
 
-function SplashTicker() {
-  const [idx, setIdx] = useState(0);
-  useEffect(() => {
-    const t = setInterval(
-      () => setIdx((i) => (i + 1) % SPLASH_TICKER_ITEMS.length),
-      2200,
-    );
-    return () => clearInterval(t);
-  }, []);
-  const item = SPLASH_TICKER_ITEMS[idx];
+function SplashPreviewGrid() {
   return (
-    <div
-      className={cn(
-        "w-full rounded-2xl border border-line bg-surface",
-        "px-4 py-3 flex items-center gap-3",
-      )}
-      aria-live="polite"
-    >
-      <div
-        key={`icon-${idx}`}
-        className={cn(
-          "shrink-0 w-10 h-10 rounded-xl flex items-center justify-center",
-          "animate-fade-in",
-          item.accent,
-        )}
-      >
-        <Icon name={item.icon} size={20} strokeWidth={2} aria-hidden />
-      </div>
-      <div key={`text-${idx}`} className="animate-fade-in text-left">
-        <div className="text-base font-semibold text-text leading-tight">
-          {item.metric}
-        </div>
-        <div className="text-xs text-muted leading-tight">{item.label}</div>
-      </div>
-      <div className="ml-auto flex items-center gap-1" aria-hidden>
-        {SPLASH_TICKER_ITEMS.map((_, i) => (
-          <span
-            key={i}
+    <div className="grid grid-cols-2 gap-2 w-full">
+      {SPLASH_PREVIEW_ITEMS.map((item) => (
+        <div
+          key={item.icon}
+          className={cn(
+            "rounded-xl border border-line bg-surface",
+            "px-3 py-2.5 flex items-center gap-2.5 text-left",
+          )}
+        >
+          <div
             className={cn(
-              "rounded-full transition-all",
-              i === idx ? "w-1.5 h-1.5 bg-brand-500" : "w-1 h-1 bg-line",
+              "shrink-0 w-9 h-9 rounded-lg flex items-center justify-center",
+              item.accent,
             )}
-          />
-        ))}
+          >
+            <Icon name={item.icon} size={18} strokeWidth={2} aria-hidden />
+          </div>
+          <div className="min-w-0">
+            <div className="text-sm font-semibold text-text leading-tight truncate">
+              {item.metric}
+            </div>
+            <div className="text-[11px] text-muted leading-tight truncate">
+              {item.label}
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// Short per-module chips shown inline on the splash. Keys match
+// `ALL_MODULES` so picks feed straight into `saveVibePicks`.
+const VIBE_CHIPS = [
+  { id: "finyk", icon: "credit-card", label: "Гроші" },
+  { id: "fizruk", icon: "dumbbell", label: "Тіло" },
+  { id: "routine", icon: "check", label: "Рутина" },
+  { id: "nutrition", icon: "utensils", label: "Їжа" },
+];
+
+function VibeChipRow({ picks, togglePick }) {
+  return (
+    <div className="w-full space-y-2">
+      <p className="text-[11px] text-muted text-center">
+        Тапни, щоб виключити, що зараз не актуально.
+      </p>
+      <div className="flex flex-wrap gap-2 justify-center">
+        {VIBE_CHIPS.map((chip) => {
+          const active = picks.includes(chip.id);
+          return (
+            <button
+              key={chip.id}
+              type="button"
+              onClick={() => togglePick(chip.id)}
+              aria-pressed={active}
+              className={cn(
+                "inline-flex items-center gap-1.5 h-9 px-3 rounded-full border transition-all",
+                "focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/45",
+                active
+                  ? "border-brand-500/60 bg-brand-500/10 text-text"
+                  : "border-line bg-panelHi text-muted hover:border-brand-500/40",
+              )}
+            >
+              <Icon name={chip.icon} size={14} strokeWidth={2} aria-hidden />
+              <span className="text-xs font-medium">{chip.label}</span>
+            </button>
+          );
+        })}
       </div>
     </div>
   );
 }
 
-// Step 0 — Value prop. No name field, no form. The goal of this screen
-// is to answer "what is this?" in one sentence and then get out of the way.
-function SplashStep({ onNext }) {
+// Single-step splash. Value prop, static preview and the vibe picker live
+// in the same view so the user spends one screen — not two — before they
+// see their populated hub. CTA stays enabled only while at least one
+// module is picked; all four default to active so the lazy path is
+// "tap → done".
+function SplashStep({ picks, togglePick, onContinue }) {
+  const hasPicks = picks.length > 0;
   return (
     <div className="flex flex-col items-center text-center space-y-5">
       <div className="w-20 h-20 rounded-3xl bg-brand-500/10 text-brand-600 flex items-center justify-center">
         <Icon name="sparkle" size={40} strokeWidth={1.8} aria-hidden />
       </div>
       <div>
-        <h2 className="text-2xl font-bold text-text">Життя в одному екрані.</h2>
-        <p className="text-sm text-muted mt-2 leading-relaxed">
-          Гроші, тренування, звички та їжа — одне місце, одна статистика, один
-          AI-помічник.
-        </p>
-      </div>
-      <SplashTicker />
-      <ul className="w-full space-y-2 text-left text-sm text-muted">
-        <li className="flex items-start gap-2">
-          <span className="mt-0.5 text-brand-600">•</span>
-          <span>
-            Без акаунту. Дані живуть на телефоні, поки сам не вирішиш
-            синхронізувати.
-          </span>
-        </li>
-        <li className="flex items-start gap-2">
-          <span className="mt-0.5 text-brand-600">•</span>
-          <span>Працює офлайн, встановлюється як додаток.</span>
-        </li>
-      </ul>
-      <Button
-        type="button"
-        onClick={onNext}
-        variant="primary"
-        size="lg"
-        className="w-full"
-      >
-        Спробувати за 30 секунд
-        <Icon name="chevron-right" size={16} />
-      </Button>
-    </div>
-  );
-}
-
-// Step 1 — Vibe picker. Multi-select across the 4 modules, preselected
-// to "all" so the lazy user still gets a full dashboard, but motivated
-// users can narrow to just what they came for.
-const VIBE_OPTIONS = [
-  {
-    id: "finyk",
-    icon: "credit-card",
-    title: "Фінік",
-    desc: "Куди зникають гроші",
-    accent: "text-finyk bg-finyk-soft",
-  },
-  {
-    id: "fizruk",
-    icon: "dumbbell",
-    title: "Фізрук",
-    desc: "Тренування без хаосу",
-    accent: "text-fizruk bg-fizruk-soft",
-  },
-  {
-    id: "routine",
-    icon: "check",
-    title: "Рутина",
-    desc: "Звички та стріки",
-    accent: "text-routine bg-routine-soft",
-  },
-  {
-    id: "nutrition",
-    icon: "utensils",
-    title: "Харчування",
-    desc: "Фото → калорії",
-    accent: "text-nutrition bg-nutrition-soft",
-  },
-];
-
-function VibePickerStep({ picks, togglePick, onNext, onBack }) {
-  const hasPicks = picks.length > 0;
-  return (
-    <div className="space-y-4">
-      <div className="text-center">
-        <div className="w-14 h-14 mx-auto rounded-2xl bg-brand-500/10 text-brand-600 flex items-center justify-center mb-2">
-          <Icon name="target" size={28} strokeWidth={1.8} />
-        </div>
-        <h2 className="text-xl font-bold text-text">
-          Що тобі зараз болить найбільше?
+        <h2 className="text-2xl font-bold text-text">
+          Твоє життя — один екран.
         </h2>
-        <p className="text-sm text-muted mt-1">
-          Обери одне або кілька — решту ввімкнеш потім.
+        <p className="text-sm text-muted mt-2 leading-relaxed">
+          Гроші, тіло, звички, їжа. Офлайн. 30 секунд до першого запису.
         </p>
       </div>
-      <div className="space-y-2">
-        {VIBE_OPTIONS.map((o) => {
-          const active = picks.includes(o.id);
-          return (
-            <button
-              key={o.id}
-              type="button"
-              onClick={() => togglePick(o.id)}
-              aria-pressed={active}
-              className={cn(
-                "w-full text-left px-4 py-3 rounded-2xl border transition-all",
-                "focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/45",
-                active
-                  ? "border-brand-500/60 bg-brand-500/5 shadow-card"
-                  : "border-line bg-panelHi hover:border-brand-500/40",
-              )}
-            >
-              <div className="flex items-center gap-3">
-                <div
-                  className={cn(
-                    "w-10 h-10 shrink-0 rounded-2xl flex items-center justify-center",
-                    o.accent,
-                  )}
-                >
-                  <Icon name={o.icon} size={20} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="text-sm font-semibold text-text">
-                    {o.title}
-                  </div>
-                  <div className="text-xs text-muted mt-0.5 truncate">
-                    {o.desc}
-                  </div>
-                </div>
-                <div
-                  className={cn(
-                    "w-5 h-5 shrink-0 rounded-md border flex items-center justify-center transition-colors",
-                    active
-                      ? "bg-brand-500 border-brand-500 text-white"
-                      : "border-line",
-                  )}
-                  aria-hidden
-                >
-                  {active && <Icon name="check" size={14} />}
-                </div>
-              </div>
-            </button>
-          );
-        })}
-      </div>
-      <div className="flex gap-2 pt-1">
+      <SplashPreviewGrid />
+      <VibeChipRow picks={picks} togglePick={togglePick} />
+      <div className="w-full space-y-2">
         <Button
           type="button"
-          onClick={onBack}
-          variant="secondary"
-          size="md"
-          className="flex-1"
-        >
-          Назад
-        </Button>
-        <Button
-          type="button"
-          onClick={onNext}
+          onClick={onContinue}
           variant="primary"
-          size="md"
-          className="flex-[2]"
+          size="lg"
+          className="w-full"
           disabled={!hasPicks}
         >
-          Показати мій хаб
+          Заповни мій хаб
           <Icon name="chevron-right" size={16} />
         </Button>
+        {!hasPicks && (
+          <p className="text-[11px] text-muted">Обери хоч один модуль.</p>
+        )}
       </div>
+      <p className="text-[11px] text-subtle leading-relaxed">
+        Усе локально. Синхрон — коли сам захочеш.
+      </p>
     </div>
   );
 }
 
 export function OnboardingWizard({ onDone }) {
-  const [step, setStep] = useState(0);
-  // Start empty so the vibe picker's question ("Що тобі зараз болить?") is an
-  // actual choice. Preselecting everything made the default answer
-  // "все", which defeated the narrowing and rendered the demo + first
-  // action flow generic.
-  const [picks, setPicks] = useState(() => []);
-
-  const TOTAL = 2;
+  // Single-step flow: default to "all four modules active" so the lazy
+  // path is one tap. The vibe picker is still a real choice — motivated
+  // users can deselect what they don't want before tapping the primary
+  // CTA. Previously the default was `[]`, which forced every user through
+  // an explicit-selection gate and added ~6 s to the time-to-value.
+  const [picks, setPicks] = useState(() => [...ALL_MODULES]);
 
   useEffect(() => {
     trackEvent(ANALYTICS_EVENTS.ONBOARDING_STARTED);
@@ -370,7 +251,7 @@ export function OnboardingWizard({ onDone }) {
     markFirstActionPending();
     markOnboardingDone();
     // Stay on the hub dashboard so the user's "aha" is the whole populated
-    // hub, not a single module. The FirstActionSheet will appear on top of
+    // hub, not a single module. The FirstActionHeroCard appears on top of
     // the dashboard a tick later via the `first_action_pending` flag.
     onDone(null, { intent: "vibe_demo", picks: chosen });
   };
@@ -384,37 +265,7 @@ export function OnboardingWizard({ onDone }) {
     >
       <div className="absolute inset-0 bg-bg/80 backdrop-blur-md" />
       <div className="relative w-full max-w-sm bg-panel border border-line rounded-3xl shadow-float p-6 space-y-5 animate-onboarding-enter">
-        <div className="flex items-center justify-between">
-          <StepDots total={TOTAL} current={step} />
-          {step === 0 && (
-            <button
-              type="button"
-              onClick={() => {
-                // Skip is an escape hatch for returning users who already
-                // know the product. Only show it on the splash step — on
-                // the vibe picker the primary CTA already gates progress.
-                trackEvent(ANALYTICS_EVENTS.ONBOARDING_COMPLETED, {
-                  intent: "skipped",
-                });
-                markOnboardingDone();
-                onDone(null, { intent: "skipped" });
-              }}
-              className="text-xs text-muted hover:text-text transition-colors px-2 py-1 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/45"
-            >
-              Пропустити
-            </button>
-          )}
-        </div>
-
-        {step === 0 && <SplashStep onNext={() => setStep(1)} />}
-        {step === 1 && (
-          <VibePickerStep
-            picks={picks}
-            togglePick={togglePick}
-            onNext={finish}
-            onBack={() => setStep(0)}
-          />
-        )}
+        <SplashStep picks={picks} togglePick={togglePick} onContinue={finish} />
       </div>
     </div>
   );
