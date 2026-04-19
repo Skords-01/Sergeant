@@ -1,16 +1,16 @@
 import { useCallback, useState } from "react";
-import { shouldShowOnboarding } from "../OnboardingWizard.jsx";
 
 export type HubView = "dashboard" | "reports" | "recommendations";
 
+// Onboarding is now a URL-addressable route (`/welcome`) owned by
+// `AppInner`; it no longer lives in hub UI state. The router handles
+// gating and redirects, so this hook only tracks chat/search/hub-view.
 export interface HubUIState {
   chatOpen: boolean;
   chatInitialMessage: string | null;
   searchOpen: boolean;
   hubView: HubView;
-  onboarding: boolean;
   setHubView: (view: HubView) => void;
-  setOnboarding: (value: boolean) => void;
   setSearchOpen: (value: boolean) => void;
   openChat: (message?: string | null) => void;
   closeChat: () => void;
@@ -24,9 +24,6 @@ export function useHubUIState(): HubUIState {
   );
   const [searchOpen, setSearchOpen] = useState(false);
   const [hubView, setHubView] = useState<HubView>("dashboard");
-  const [onboarding, setOnboarding] = useState<boolean>(() =>
-    shouldShowOnboarding(),
-  );
 
   const openChat = useCallback((message: string | null = null) => {
     setChatInitialMessage(message || null);
@@ -45,9 +42,7 @@ export function useHubUIState(): HubUIState {
     chatInitialMessage,
     searchOpen,
     hubView,
-    onboarding,
     setHubView,
-    setOnboarding,
     setSearchOpen,
     openChat,
     closeChat,

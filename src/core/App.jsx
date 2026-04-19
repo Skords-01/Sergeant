@@ -21,6 +21,9 @@ import { HubTabs } from "./app/HubTabs.jsx";
 import { HubMainContent } from "./app/HubMainContent.jsx";
 import { HubFloatingActions } from "./app/HubFloatingActions.jsx";
 import { HubModals } from "./app/HubModals.jsx";
+import { WelcomeScreen } from "./app/WelcomeScreen.jsx";
+import { shouldShowOnboarding } from "./OnboardingWizard.jsx";
+import { isFirstRealEntryDone } from "./onboarding/vibePicks.js";
 import { useHubNavigation } from "./hooks/useHubNavigation.js";
 import { useHubUIState } from "./hooks/useHubUIState.js";
 import { usePwaActions } from "./hooks/usePwaActions.js";
@@ -52,15 +55,21 @@ export default function App() {
 // a named route also lets us link straight to sign-in from emails,
 // push-notification landing pages, etc.
 const SIGN_IN_PATH = "/sign-in";
+// URL-addressable cold-start splash. Having a real route (not just a
+// modal overlay on `/`) means the splash can be deep-linked, shows the
+// right title in history/back navigation, and — crucially — renders the
+// populated-hub peek behind itself instead of hovering over an empty
+// dashboard.
+const WELCOME_PATH = "/welcome";
 
 // Tiny effect-only component so the redirect is a declarative render,
 // not a `navigate()` call in the middle of AppInner — keeps the render
 // phase free of side effects and avoids the React warning.
-function RedirectHome() {
+function RedirectTo({ to }) {
   const navigate = useNavigate();
   useEffect(() => {
-    navigate("/", { replace: true });
-  }, [navigate]);
+    navigate(to, { replace: true });
+  }, [navigate, to]);
   return <PageLoader />;
 }
 
@@ -69,6 +78,7 @@ function AppInner() {
   const location = useLocation();
   const navigate = useNavigate();
   const onSignInRoute = location.pathname === SIGN_IN_PATH;
+  const onWelcomeRoute = location.pathname === WELCOME_PATH;
 
   const openAuth = useCallback(() => {
     navigate(SIGN_IN_PATH);
@@ -76,6 +86,10 @@ function AppInner() {
 
   const leaveAuth = useCallback(() => {
     navigate("/");
+  }, [navigate]);
+
+  const leaveWelcome = useCallback(() => {
+    navigate("/", { replace: true });
   }, [navigate]);
 
   const { activeModule, openModule, goToHub, moduleAnimClass } =
@@ -139,7 +153,7 @@ function AppInner() {
   // the form before `user` hydrates.
   if (onSignInRoute) {
     if (!authLoading && user) {
-      return <RedirectHome />;
+      return <RedirectTo to="/" />;
     }
     return (
       <Suspense fallback={<PageLoader />}>
@@ -150,7 +164,31 @@ function AppInner() {
     );
   }
 
+  // `/welcome` is the cold-start surface. A returning user who somehow
+  // lands here (stale link, auto-complete, shared URL) bounces back to
+  // the dashboard instead of being asked to re-onboard.
+  if (onWelcomeRoute) {
+    if (!shouldShowOnboarding()) {
+      return <RedirectTo to="/" />;
+    }
+    return <WelcomeScreen onDone={leaveWelcome} onOpenAuth={openAuth} />;
+  }
+
+  // First-time visitors at `/` get redirected to `/welcome` so the
+  // splash is a real route (back button, deep links, peek-of-product
+  // backdrop) rather than a modal over an empty dashboard.
+  if (!activeModule && shouldShowOnboarding()) {
+    return <RedirectTo to={WELCOME_PATH} />;
+  }
+
   if (!activeModule) {
+    // FTUX session = the window between the splash and the user's first
+    // real (non-demo) entry. During this window we intentionally
+    // suppress PWA install / iOS install / SW update banners and the
+    // "Sign in" header button so the one signal on screen is the
+    // FirstActionRow. The update banner comes back the moment a real
+    // entry is logged.
+    const inFtuxSession = !user && !isFirstRealEntryDone();
     return (
       <div className="min-h-dvh bg-bg flex flex-col safe-area-pt-pb page-enter">
         {!online && <OfflineBanner />}
@@ -169,6 +207,7 @@ function AppInner() {
           onShowAuth={openAuth}
           dark={dark}
           onToggleDark={toggleDark}
+          hideAuthButton={inFtuxSession}
         />
 
         <HubTabs hubView={ui.hubView} onChange={ui.setHubView} />
@@ -179,8 +218,6 @@ function AppInner() {
           canInstall={canInstall}
           onInstall={install}
           onDismissInstall={dismiss}
-          onboarding={ui.onboarding}
-          setOnboarding={ui.setOnboarding}
           onOpenModule={openModule}
           iosVisible={iosVisible}
           onDismissIos={iosDismiss}
@@ -193,6 +230,7 @@ function AppInner() {
           onPull={sync.pullAll}
           user={user}
           onShowAuth={openAuth}
+          inFtuxSession={inFtuxSession}
         />
 
         {/* Primary quick-add surface for the hub. AI chat moved to the

@@ -215,7 +215,21 @@ function SplashStep({ picks, togglePick, onContinue }) {
   );
 }
 
-export function OnboardingWizard({ onDone }) {
+/**
+ * Onboarding splash. Renders the same single-step content either as a
+ * modal overlay (default, for legacy callers) or inline inside a larger
+ * layout when a parent already owns the page chrome.
+ *
+ * The `fullPage` variant is used by the `/welcome` route so the splash
+ * becomes a URL-addressable cold-start surface with the populated hub
+ * peeking through behind it, instead of a dialog that hovers over an
+ * empty page.
+ *
+ * @param {object} props
+ * @param {(startModuleId: string | null, opts?: { intent: string, picks: string[] }) => void} props.onDone
+ * @param {"modal" | "fullPage"} [props.variant="modal"]
+ */
+export function OnboardingWizard({ onDone, variant = "modal" }) {
   // Single-step flow: default to "all four modules active" so the lazy
   // path is one tap. The vibe picker is still a real choice — motivated
   // users can deselect what they don't want before tapping the primary
@@ -256,6 +270,24 @@ export function OnboardingWizard({ onDone }) {
     onDone(null, { intent: "vibe_demo", picks: chosen });
   };
 
+  const content = (
+    <SplashStep picks={picks} togglePick={togglePick} onContinue={finish} />
+  );
+
+  if (variant === "fullPage") {
+    // Parent (`WelcomeScreen`) owns the full-page frame + peek backdrop.
+    // We render just the card so the splash can share the same viewport
+    // with a blurred hub preview without a modal dialog wrapper.
+    return (
+      <div
+        className="relative w-full max-w-sm bg-panel border border-line rounded-3xl shadow-float p-6 space-y-5 animate-onboarding-enter"
+        aria-label="Вітальний екран"
+      >
+        {content}
+      </div>
+    );
+  }
+
   return (
     <div
       className="fixed inset-0 z-[500] flex items-end sm:items-center justify-center p-4 pb-safe"
@@ -265,7 +297,7 @@ export function OnboardingWizard({ onDone }) {
     >
       <div className="absolute inset-0 bg-bg/80 backdrop-blur-md" />
       <div className="relative w-full max-w-sm bg-panel border border-line rounded-3xl shadow-float p-6 space-y-5 animate-onboarding-enter">
-        <SplashStep picks={picks} togglePick={togglePick} onContinue={finish} />
+        {content}
       </div>
     </div>
   );

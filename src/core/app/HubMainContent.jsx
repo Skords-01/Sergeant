@@ -2,7 +2,6 @@ import { Icon } from "@shared/components/ui/Icon";
 import { HubDashboard } from "../HubDashboard.jsx";
 import { HubReports } from "../HubReports.jsx";
 import { HubSettingsPage } from "../HubSettingsPage.jsx";
-import { OnboardingWizard } from "../OnboardingWizard.jsx";
 import { IOSInstallBanner } from "./IOSInstallBanner.jsx";
 
 export function HubMainContent({
@@ -11,8 +10,6 @@ export function HubMainContent({
   canInstall,
   onInstall,
   onDismissInstall,
-  onboarding,
-  setOnboarding,
   onOpenModule,
   iosVisible,
   onDismissIos,
@@ -25,19 +22,21 @@ export function HubMainContent({
   onPull,
   user,
   onShowAuth,
+  inFtuxSession = false,
 }) {
-  // Post-wizard FTUX is now a non-blocking hero card rendered inline on
-  // the dashboard (see `FirstActionHeroCard`), not a third stacked modal.
-  // The wizard just flips the `first_action_pending` flag and lands the
-  // user on the populated hub.
-  //
   // Banner budget: at most one chrome banner above the hub content.
-  // Priority: update > install (PWA) > iOS install. This prevents a cold
-  // start where update + install + iOS stack three banners before any
-  // real data is visible.
-  const showUpdate = !!updateAvailable;
-  const showInstall = !showUpdate && !!canInstall;
-  const showIos = !showUpdate && !showInstall && iosVisible;
+  // Priority: update > install (PWA) > iOS install.
+  //
+  // During the FTUX session — between the splash and the user's first
+  // real (non-demo) entry — we suppress all three so the dashboard
+  // delivers one signal: the FirstActionRow. Otherwise a first-time
+  // install would see update + install + iOS stack three chrome rows
+  // before any data is visible, which contradicts the 30-second
+  // promise. Banners rehydrate the moment the user logs their first
+  // real entry (see `isFirstRealEntryDone`).
+  const showUpdate = !inFtuxSession && !!updateAvailable;
+  const showInstall = !inFtuxSession && !showUpdate && !!canInstall;
+  const showIos = !inFtuxSession && !showUpdate && !showInstall && iosVisible;
 
   return (
     <>
@@ -116,20 +115,6 @@ export function HubMainContent({
             </button>
           </div>
         </div>
-      )}
-
-      {onboarding && (
-        <OnboardingWizard
-          onDone={(startModuleId, opts = {}) => {
-            setOnboarding(false);
-            if (opts.intent !== "vibe_demo" && startModuleId) {
-              // Legacy paths / external callers: if a module id is
-              // explicitly passed, open it immediately. vibe_demo lands
-              // on the dashboard where the inline hero card picks up.
-              onOpenModule(startModuleId);
-            }
-          }}
-        />
       )}
 
       {showIos && <IOSInstallBanner onDismiss={onDismissIos} />}
