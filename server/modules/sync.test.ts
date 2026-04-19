@@ -1,4 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
+import type { Request, Response } from "express";
+import type { Mock } from "vitest";
 
 vi.mock("../auth.js", () => ({
   getSessionUser: vi.fn(),
@@ -37,10 +39,13 @@ vi.mock("../obs/logger.js", async () => {
   };
 });
 
-import { getSessionUser } from "../auth.js";
-import pool from "../db.js";
-import { logger } from "../obs/logger.js";
-import { syncConflictsTotal, syncOperationsTotal } from "../obs/metrics.js";
+import { getSessionUser as _getSessionUser } from "../auth.js";
+import _pool from "../db.js";
+import { logger as _logger } from "../obs/logger.js";
+import {
+  syncConflictsTotal,
+  syncOperationsTotal as _syncOperationsTotal,
+} from "../obs/metrics.js";
 import {
   MAX_BLOB_SIZE,
   syncPull,
@@ -50,30 +55,73 @@ import {
   VALID_MODULES,
 } from "./sync.js";
 
-function makeRes() {
-  return {
+const getSessionUser = _getSessionUser as unknown as Mock;
+const pool = _pool as unknown as { connect: Mock; query: Mock };
+const logger = _logger as unknown as {
+  debug: Mock;
+  info: Mock;
+  warn: Mock;
+  error: Mock;
+  fatal: Mock;
+};
+const syncOperationsTotal = _syncOperationsTotal as unknown as { inc: Mock };
+
+interface TestRes {
+  statusCode: number;
+  body:
+    | {
+        ok?: boolean;
+        error?: string;
+        details?: unknown;
+        results?: Record<
+          string,
+          { ok: boolean; error?: string; conflict?: boolean; version?: number }
+        >;
+        data?: unknown;
+        module?: string;
+        version?: number;
+        conflict?: boolean;
+      }
+    | undefined;
+  status(code: number): TestRes;
+  json(payload: unknown): TestRes;
+}
+
+function makeRes(): TestRes & Response {
+  const res: TestRes = {
     statusCode: 200,
     body: undefined,
-    status(code) {
+    status(code: number) {
       this.statusCode = code;
       return this;
     },
-    json(payload) {
-      this.body = payload;
+    json(payload: unknown) {
+      this.body = payload as TestRes["body"];
       return this;
     },
   };
+  return res as TestRes & Response;
 }
 
 // `req.user` проставляє `requireSession` middleware у роутері; у юніт-тестах
 // викликаємо хендлер напряму, тож імітуємо його тут.
-function makeReq(body) {
-  return { method: "POST", body, user: { id: "user_1" } };
+function makeReq(body: unknown): Request {
+  return {
+    method: "POST",
+    body,
+    user: { id: "user_1" },
+  } as unknown as Request;
+}
+
+interface OutcomeLabels {
+  op: string;
+  module?: string;
+  outcome?: string;
 }
 
 /** Збирає всі виклики `.inc(labels)` у масив для зручних assert-ів. */
-function outcomesFor(op) {
-  return syncOperationsTotal.inc.mock.calls
+function outcomesFor(op: string): OutcomeLabels[] {
+  return (syncOperationsTotal.inc.mock.calls as [OutcomeLabels][])
     .map(([labels]) => labels)
     .filter((l) => l.op === op);
 }

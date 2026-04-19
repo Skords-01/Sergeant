@@ -1,34 +1,48 @@
 import { describe, it, expect } from "vitest";
+import type { Request, Response } from "express";
 import { validateBody, validateQuery } from "./validate.js";
 import {
   ChatRequestSchema,
   AnalyzePhotoSchema,
   ParsePantrySchema,
   RecommendRecipesSchema,
+  WeeklyDigestSchema,
+  CoachInsightSchema,
   z,
 } from "./schemas.js";
 
-function mockRes() {
-  const res = {
+interface TestRes {
+  statusCode: number;
+  body: { error?: string; details?: { path: string }[] } | null;
+  status(code: number): TestRes;
+  json(payload: unknown): TestRes;
+}
+
+function mockRes(): TestRes & Response {
+  const res: TestRes = {
     statusCode: 200,
     body: null,
-    status(code) {
+    status(code: number) {
       this.statusCode = code;
       return this;
     },
-    json(payload) {
-      this.body = payload;
+    json(payload: unknown) {
+      this.body = payload as TestRes["body"];
       return this;
     },
   };
-  return res;
+  return res as TestRes & Response;
 }
 
 describe("validateBody", () => {
   it("повертає parsed data для валідного payload-у", () => {
     const schema = z.object({ a: z.string(), b: z.number() });
     const res = mockRes();
-    const result = validateBody(schema, { body: { a: "x", b: 1 } }, res);
+    const result = validateBody(
+      schema,
+      { body: { a: "x", b: 1 } } as Request,
+      res,
+    );
     expect(result).toEqual({ ok: true, data: { a: "x", b: 1 } });
     expect(res.statusCode).toBe(200);
   });
@@ -36,18 +50,18 @@ describe("validateBody", () => {
   it("повертає 400 з деталями при помилці", () => {
     const schema = z.object({ a: z.string() });
     const res = mockRes();
-    const result = validateBody(schema, { body: { a: 42 } }, res);
+    const result = validateBody(schema, { body: { a: 42 } } as Request, res);
     expect(result.ok).toBe(false);
     expect(res.statusCode).toBe(400);
-    expect(res.body.error).toBe("Некоректні дані запиту");
-    expect(res.body.details).toHaveLength(1);
-    expect(res.body.details[0].path).toBe("a");
+    expect(res.body!.error).toBe("Некоректні дані запиту");
+    expect(res.body!.details).toHaveLength(1);
+    expect(res.body!.details![0].path).toBe("a");
   });
 
   it("обробляє відсутній body як {}", () => {
     const schema = z.object({ a: z.string().optional() });
     const res = mockRes();
-    const result = validateBody(schema, {}, res);
+    const result = validateBody(schema, {} as Request, res);
     expect(result.ok).toBe(true);
   });
 });
@@ -56,7 +70,11 @@ describe("validateQuery", () => {
   it("працює на req.query", () => {
     const schema = z.object({ q: z.string() });
     const res = mockRes();
-    const ok = validateQuery(schema, { query: { q: "foo" } }, res);
+    const ok = validateQuery(
+      schema,
+      { query: { q: "foo" } } as unknown as Request,
+      res,
+    );
     expect(ok).toEqual({ ok: true, data: { q: "foo" } });
   });
 });
@@ -180,6 +198,63 @@ describe("RecommendRecipesSchema", () => {
     const r = RecommendRecipesSchema.safeParse({
       pantry: [{ name: "яйце", qty: 5, unit: "шт" }],
       count: 3,
+    });
+    expect(r.success).toBe(true);
+  });
+});
+
+describe("WeeklyDigestSchema", () => {
+  // На новому пристрої `aggregateFizruk`/`aggregateNutrition`/`aggregateRoutine`
+  // повертають null, коли у модулі ще немає даних, — клієнт серіалізує
+  // їх як `null` у JSON-теле запиту. Схема має приймати null поряд із
+  // undefined, інакше сервер віддає 400 на цілком валідний запит.
+  it("приймає null для модулів без даних", () => {
+    const r = WeeklyDigestSchema.safeParse({
+      weekRange: "14 кві — 20 кві",
+      finyk: { totalSpent: 0, totalIncome: 0, txCount: 0, topCategories: [] },
+      fizruk: null,
+      nutrition: null,
+      routine: null,
+    });
+    expect(r.success).toBe(true);
+  });
+
+  it("приймає пропущені поля модулів", () => {
+    const r = WeeklyDigestSchema.safeParse({});
+    expect(r.success).toBe(true);
+  });
+
+  it("приймає валідний повний payload", () => {
+    const r = WeeklyDigestSchema.safeParse({
+      weekRange: "14 кві — 20 кві",
+      finyk: {
+        totalSpent: 1234,
+        totalIncome: 500,
+        monthlyBudget: 20000,
+        txCount: 10,
+        topCategories: [{ name: "Їжа", amount: 800 }],
+      },
+      fizruk: {
+        workoutsCount: 3,
+        totalVolume: 4000,
+        recoveryLabel: "Готовий до тренування",
+        topExercises: [{ name: "Присідання", totalVolume: 1500 }],
+      },
+    });
+    expect(r.success).toBe(true);
+  });
+});
+
+describe("CoachInsightSchema", () => {
+  it("приймає null для snapshot і memory (перший сеанс)", () => {
+    const r = CoachInsightSchema.safeParse({ snapshot: null, memory: null });
+    expect(r.success).toBe(true);
+  });
+
+  it("приймає null для внутрішніх модулів snapshot-у", () => {
+    const r = CoachInsightSchema.safeParse({
+      snapshot: { finyk: null, fizruk: null, nutrition: null, routine: null },
+      memory: null,
     });
     expect(r.success).toBe(true);
   });

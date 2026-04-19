@@ -1,24 +1,30 @@
 import { describe, it, expect, vi } from "vitest";
+import type { Request, Response } from "express";
 import { requestIdMiddleware } from "./requestId.js";
 
-function mockReq({ headers = {} } = {}) {
+interface TestReq {
+  requestId?: string;
+  get(name: string): string | undefined;
+}
+
+function mockReq({ headers = {} as Record<string, string> } = {}) {
   return {
-    get(name) {
+    get(name: string) {
       return headers[name.toLowerCase()];
     },
-  };
+  } as TestReq & Request;
 }
 
 function mockRes() {
-  const headers = {};
+  const headers: Record<string, string> = {};
   return {
-    setHeader(name, value) {
+    setHeader(name: string, value: string) {
       headers[name] = value;
     },
-    getHeader(name) {
+    getHeader(name: string) {
       return headers[name];
     },
-  };
+  } as unknown as Response;
 }
 
 describe("requestIdMiddleware", () => {
@@ -28,7 +34,7 @@ describe("requestIdMiddleware", () => {
     const next = vi.fn();
     requestIdMiddleware(req, res, next);
     expect(typeof req.requestId).toBe("string");
-    expect(req.requestId.length).toBeGreaterThanOrEqual(36);
+    expect(req.requestId!.length).toBeGreaterThanOrEqual(36);
     expect(res.getHeader("X-Request-Id")).toBe(req.requestId);
     expect(next).toHaveBeenCalledOnce();
   });
@@ -48,7 +54,7 @@ describe("requestIdMiddleware", () => {
     const res = mockRes();
     requestIdMiddleware(req, res, vi.fn());
     expect(req.requestId).not.toBe(huge);
-    expect(req.requestId.length).toBeLessThanOrEqual(128);
+    expect(req.requestId!.length).toBeLessThanOrEqual(128);
   });
 
   it("тримує response header навіть коли клієнт не передав ID", () => {

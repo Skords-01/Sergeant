@@ -1,38 +1,64 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import type { Request, Response } from "express";
 import monoHandler from "./mono.js";
 import privatHandler from "./privat.js";
 import { bankProxyFetch, __bankProxyTestHooks } from "../lib/bankProxy.js";
 
-function mockRes() {
-  const res = {
+interface TestRes {
+  statusCode: number;
+  headers: Record<string, string>;
+  body: unknown;
+  status(code: number): TestRes;
+  json(payload: unknown): TestRes;
+  send(payload: unknown): TestRes;
+  setHeader(name: string, value: string): void;
+  end(): TestRes;
+}
+
+function mockRes(): TestRes & Response {
+  const res: TestRes = {
     statusCode: 200,
     headers: {},
     body: undefined,
+    status(code: number) {
+      this.statusCode = code;
+      return this;
+    },
+    json(payload: unknown) {
+      this.body = payload;
+      return this;
+    },
+    send(payload: unknown) {
+      this.body = payload;
+      return this;
+    },
+    setHeader(name: string, value: string) {
+      this.headers[name] = value;
+    },
+    end() {
+      return this;
+    },
   };
-  res.status = (code) => {
-    res.statusCode = code;
-    return res;
-  };
-  res.json = (payload) => {
-    res.body = payload;
-    return res;
-  };
-  res.send = (payload) => {
-    res.body = payload;
-    return res;
-  };
-  res.setHeader = (name, value) => {
-    res.headers[name] = value;
-  };
-  res.end = () => res;
-  return res;
+  return res as TestRes & Response;
+}
+
+function asReq(r: unknown): Request {
+  return r as Request;
 }
 
 /**
  * Фабрика mock-responses, сумісна з `bankProxyFetch` (потребує .text() і .headers).
  * `body` — або object (серіалізуємо через JSON.stringify), або string.
  */
-function mockFetchResponse({ status = 200, body = {}, contentType } = {}) {
+function mockFetchResponse({
+  status = 200,
+  body = {} as unknown,
+  contentType,
+}: {
+  status?: number;
+  body?: unknown;
+  contentType?: string;
+} = {}) {
   const text = typeof body === "string" ? body : JSON.stringify(body);
   const ct =
     contentType ??
@@ -43,7 +69,8 @@ function mockFetchResponse({ status = 200, body = {}, contentType } = {}) {
     text: async () => text,
     json: async () => (typeof body === "string" ? body : body),
     headers: {
-      get: (name) => (name.toLowerCase() === "content-type" ? ct : null),
+      get: (name: string) =>
+        name.toLowerCase() === "content-type" ? ct : null,
     },
   };
 }
@@ -68,7 +95,7 @@ describe("mono proxy path validation", () => {
       query: { path: "/personal/client-info\r\nX-Evil: yes" },
     };
     const res = mockRes();
-    await monoHandler(req, res);
+    await monoHandler(asReq(req), res);
     expect(res.statusCode).toBe(400);
     expect(global.fetch).not.toHaveBeenCalled();
   });
@@ -80,7 +107,7 @@ describe("mono proxy path validation", () => {
       query: { path: "/personal/../admin" },
     };
     const res = mockRes();
-    await monoHandler(req, res);
+    await monoHandler(asReq(req), res);
     expect(res.statusCode).toBe(400);
     expect(global.fetch).not.toHaveBeenCalled();
   });
@@ -92,7 +119,7 @@ describe("mono proxy path validation", () => {
       query: { path: "/personal/client-info-extra" },
     };
     const res = mockRes();
-    await monoHandler(req, res);
+    await monoHandler(asReq(req), res);
     expect(res.statusCode).toBe(400);
     expect(global.fetch).not.toHaveBeenCalled();
   });
@@ -107,7 +134,7 @@ describe("mono proxy path validation", () => {
       query: { path: "/personal/client-info" },
     };
     const res = mockRes();
-    await monoHandler(req, res);
+    await monoHandler(asReq(req), res);
     expect(res.statusCode).toBe(200);
     expect(global.fetch).toHaveBeenCalledOnce();
   });
@@ -122,7 +149,7 @@ describe("mono proxy path validation", () => {
       query: { path: "/personal/statement/abc123" },
     };
     const res = mockRes();
-    await monoHandler(req, res);
+    await monoHandler(asReq(req), res);
     expect(res.statusCode).toBe(200);
     expect(global.fetch).toHaveBeenCalledOnce();
   });
@@ -152,7 +179,7 @@ describe("privat proxy path validation", () => {
       query: { path: "/statements/balance/final-evil" },
     };
     const res = mockRes();
-    await privatHandler(req, res);
+    await privatHandler(asReq(req), res);
     expect(res.statusCode).toBe(400);
     expect(global.fetch).not.toHaveBeenCalled();
   });
@@ -168,7 +195,7 @@ describe("privat proxy path validation", () => {
       query: { path: "/statements/balance/final" },
     };
     const res = mockRes();
-    await privatHandler(req, res);
+    await privatHandler(asReq(req), res);
     expect(res.statusCode).toBe(400);
     expect(global.fetch).not.toHaveBeenCalled();
   });
@@ -187,7 +214,7 @@ describe("privat proxy path validation", () => {
       query: { path: "/statements/transactions/UA11" },
     };
     const res = mockRes();
-    await privatHandler(req, res);
+    await privatHandler(asReq(req), res);
     expect(res.statusCode).toBe(200);
     expect(global.fetch).toHaveBeenCalledOnce();
   });
@@ -298,7 +325,7 @@ describe("bankProxyFetch — retry + breaker + cache + timeout", () => {
   it("aborts on timeout and surfaces ExternalServiceError", async () => {
     __bankProxyTestHooks().configure({ timeoutMs: 5 });
     global.fetch = vi.fn().mockImplementation(
-      (_url, init) =>
+      (_url: unknown, init: { signal: AbortSignal }) =>
         new Promise((_, reject) => {
           init.signal.addEventListener("abort", () => {
             const err = new Error("aborted");

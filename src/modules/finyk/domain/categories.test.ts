@@ -12,9 +12,9 @@ describe("categories: getCatColor", () => {
   });
 
   it("falls back to custom color, then palette by idx", () => {
-    expect(getCatColor("custom1", [{ id: "custom1", color: "#abcdef" }])).toBe(
-      "#abcdef",
-    );
+    expect(
+      getCatColor("custom1", [{ id: "custom1", color: "#abcdef" } as never]),
+    ).toBe("#abcdef");
     const a = getCatColor("unknown", [], 0);
     const b = getCatColor("unknown", [], 1);
     expect(a).not.toBe(b);
@@ -24,7 +24,7 @@ describe("categories: getCatColor", () => {
 describe("categories: buildExpenseCategoryList", () => {
   it("excludes income by default, includes custom categories", () => {
     const list = buildExpenseCategoryList([
-      { id: "custom_x", label: "X", emoji: "🧪" },
+      { id: "custom_x", label: "X", emoji: "🧪" } as never,
     ]);
     expect(list.some((c) => c.id === "income")).toBe(false);
     expect(list.some((c) => c.id === "custom_x")).toBe(true);

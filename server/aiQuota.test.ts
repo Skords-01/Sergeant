@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import type { Request, Response } from "express";
 
 vi.mock("./auth.js", () => ({
   getSessionUser: vi.fn(),
@@ -9,38 +10,54 @@ vi.mock("./db.js", () => {
   return { default: pool, pool };
 });
 
-import { getSessionUser } from "./auth.js";
-import pool from "./db.js";
+import { getSessionUser as _getSessionUser } from "./auth.js";
+import _pool from "./db.js";
 import {
   assertAiQuota,
   consumeToolQuota,
   __aiQuotaTestHooks,
 } from "./aiQuota.js";
 
-function makeRes() {
-  return {
+const getSessionUser = _getSessionUser as unknown as ReturnType<typeof vi.fn>;
+const pool = _pool as unknown as {
+  connect: ReturnType<typeof vi.fn>;
+  query: ReturnType<typeof vi.fn>;
+};
+
+interface TestRes {
+  headers: Record<string, string>;
+  statusCode: number;
+  body: unknown;
+  status(code: number): TestRes;
+  json(payload: unknown): TestRes;
+  setHeader(name: string, value: string): void;
+}
+
+function makeRes(): TestRes & Response {
+  const res: TestRes = {
     headers: {},
     statusCode: 200,
     body: undefined,
-    status(code) {
+    status(code: number) {
       this.statusCode = code;
       return this;
     },
-    json(payload) {
+    json(payload: unknown) {
       this.body = payload;
       return this;
     },
-    setHeader(name, value) {
+    setHeader(name: string, value: string) {
       this.headers[name] = value;
     },
   };
+  return res as unknown as TestRes & Response;
 }
 
-function makeReq(headers = {}) {
+function makeReq(headers: Record<string, string> = {}): Request {
   return {
     headers,
     socket: { remoteAddress: "1.2.3.4" },
-  };
+  } as unknown as Request;
 }
 
 const ENV_VARS = [
@@ -52,7 +69,7 @@ const ENV_VARS = [
   "AI_QUOTA_TOOL_DEFAULT_LIMIT",
   "DATABASE_URL",
 ];
-const savedEnv = {};
+const savedEnv: Record<string, string | undefined> = {};
 
 beforeEach(() => {
   for (const k of ENV_VARS) savedEnv[k] = process.env[k];
@@ -74,10 +91,15 @@ afterEach(() => {
  * БД з row-lock).
  */
 function makeAtomicPoolMock() {
-  const store = new Map();
-  const queue = [];
+  const store = new Map<string, number>();
+  interface QueueItem {
+    fn: () => unknown;
+    resolve: (v: unknown) => void;
+    reject: (e: unknown) => void;
+  }
+  const queue: QueueItem[] = [];
   let running = false;
-  function enqueue(fn) {
+  function enqueue(fn: () => unknown) {
     return new Promise((resolve, reject) => {
       queue.push({ fn, resolve, reject });
       flush();
@@ -101,11 +123,17 @@ function makeAtomicPoolMock() {
         flush();
       });
   }
-  const query = vi.fn(async (text, values) => {
+  const query = vi.fn(async (text: string, values: unknown[]) => {
     return enqueue(() => {
       const isUpsert = /INSERT INTO ai_usage_daily/i.test(text);
       if (!isUpsert) return { rows: [], rowCount: 0 };
-      const [subject, day, bucket, cost, limit] = values;
+      const [subject, day, bucket, cost, limit] = values as [
+        string,
+        string,
+        string,
+        number,
+        number,
+      ];
       const key = `${subject}|${day}|${bucket}`;
       const cur = store.get(key) ?? 0;
       const next = cur + cost;
@@ -185,7 +213,7 @@ describe("assertAiQuota (default bucket)", () => {
     const ok = await assertAiQuota(makeReq(), res);
     expect(ok).toBe(false);
     expect(res.statusCode).toBe(429);
-    expect(res.body?.code).toBe("AI_QUOTA");
+    expect((res.body as { code?: string } | undefined)?.code).toBe("AI_QUOTA");
   });
 
   it("returns true and sets remaining header on success", async () => {

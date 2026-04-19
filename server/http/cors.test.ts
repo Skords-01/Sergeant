@@ -25,28 +25,28 @@ describe("getAllowedOrigins", () => {
 
 describe("setCorsHeaders", () => {
   it("sets ACAO when origin is allowed", () => {
-    const headers = {};
+    const headers: Record<string, string> = {};
     const res = {
-      setHeader(name, value) {
+      setHeader(name: string, value: string) {
         headers[name] = value;
       },
     };
     const req = { headers: { origin: "http://localhost:5173" } };
-    setCorsHeaders(res, req);
+    setCorsHeaders(res as never, req as never);
     expect(headers["Access-Control-Allow-Origin"]).toBe(
       "http://localhost:5173",
     );
   });
 
   it("does not set ACAO when origin is unknown", () => {
-    const headers = {};
+    const headers: Record<string, string> = {};
     const res = {
-      setHeader(name, value) {
+      setHeader(name: string, value: string) {
         headers[name] = value;
       },
     };
     const req = { headers: { origin: "https://evil.example" } };
-    setCorsHeaders(res, req);
+    setCorsHeaders(res as never, req as never);
     expect(headers["Access-Control-Allow-Origin"]).toBeUndefined();
   });
 });

@@ -3,11 +3,15 @@ import {
   getFrequentCategories,
   getFrequentMerchants,
   manualCategoryToCanonicalId,
-} from "./personalization.ts";
+} from "./personalization.js";
 
 // Зручний helper: робить банківську транзакцію-витрату у canonical-формі
 // finyk (amount у копійках, time у секундах).
-function bankTx(overrides = {}) {
+type BankTxOverrides = { id?: string; dateMs?: number } & Record<
+  string,
+  unknown
+>;
+function bankTx(overrides: BankTxOverrides = {}) {
   return {
     id: overrides.id || Math.random().toString(36).slice(2),
     amount: -10000,
@@ -18,7 +22,8 @@ function bankTx(overrides = {}) {
   };
 }
 
-function manual(overrides = {}) {
+type ManualOverrides = { id?: string; date?: string } & Record<string, unknown>;
+function manual(overrides: ManualOverrides = {}) {
   return {
     id: overrides.id || Math.random().toString(36).slice(2),
     date: overrides.date || new Date().toISOString(),
@@ -86,7 +91,9 @@ describe("getFrequentCategories", () => {
         date: new Date(now.getTime() - 3 * 86400000).toISOString(),
       }),
     ];
-    const result = getFrequentCategories(txs, manuals, { now });
+    const result = getFrequentCategories(txs as never, manuals as never, {
+      now,
+    });
     const ids = result.map((r) => r.id);
     expect(ids[0]).toBe("food"); // 3 використання (2 банк + 1 manual)
     expect(result[0].count).toBe(3);
@@ -106,7 +113,10 @@ describe("getFrequentCategories", () => {
         dateMs: now.getTime() - 2 * 86400000,
       }),
     ];
-    const res = getFrequentCategories(txs, [], { now, windowDays: 60 });
+    const res = getFrequentCategories(txs as never, [], {
+      now,
+      windowDays: 60,
+    });
     expect(res[0].count).toBe(1);
   });
 
@@ -115,7 +125,7 @@ describe("getFrequentCategories", () => {
       bankTx({ id: "x", mcc: 5411, dateMs: now.getTime() }),
       bankTx({ id: "y", mcc: 5411, dateMs: now.getTime() }),
     ];
-    const res = getFrequentCategories(txs, [], {
+    const res = getFrequentCategories(txs as never, [], {
       now,
       excludedTxIds: new Set(["x"]),
     });
@@ -131,7 +141,7 @@ describe("getFrequentCategories", () => {
         dateMs: now.getTime(),
       }),
     ];
-    const res = getFrequentCategories(txs, [], {
+    const res = getFrequentCategories(txs as never, [], {
       now,
       txCategories: { t1: "entertainment" },
     });
@@ -166,7 +176,7 @@ describe("getFrequentMerchants", () => {
         mcc: 5411,
       }),
     ];
-    const res = getFrequentMerchants(txs, [], { now });
+    const res = getFrequentMerchants(txs as never, [], { now });
     // АТБ — 2 хіти → у топі; Сільпо — 1, отже відфільтрований (threshold = 2).
     expect(res.length).toBe(1);
     expect(res[0].count).toBe(2);
@@ -192,7 +202,7 @@ describe("getFrequentMerchants", () => {
         date: new Date(now.getTime() - 1 * 86400000).toISOString(),
       }),
     ];
-    const res = getFrequentMerchants(txs, manuals, { now });
+    const res = getFrequentMerchants(txs as never, manuals as never, { now });
     expect(res[0].count).toBe(2);
     expect(res[0].suggestedCategoryId).toBe("transport");
   });
@@ -217,7 +227,7 @@ describe("getFrequentMerchants", () => {
         }),
       );
     }
-    const res = getFrequentMerchants(txs, [], { now, limit: 3 });
+    const res = getFrequentMerchants(txs as never, [], { now, limit: 3 });
     expect(res).toHaveLength(3);
   });
 });

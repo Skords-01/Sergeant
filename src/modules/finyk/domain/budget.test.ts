@@ -27,7 +27,7 @@ describe("budget: split helpers", () => {
       { id: "b", type: "goal" },
       { id: "c", type: "limit" },
       { id: "d" },
-    ];
+    ] as never;
     expect(getLimitBudgets(list)).toHaveLength(2);
     expect(getGoalBudgets(list).map((b) => b.id)).toEqual(["b"]);
     expect(getLimitBudgets(null)).toEqual([]);
@@ -153,7 +153,7 @@ describe("budget: month context and totals", () => {
       { id: "b", amount: 5000 }, // income — ignored
       { id: "c", amount: -5060 }, // 50.60 ₴
       null,
-    ];
+    ] as never;
     expect(calculateTotalExpenseFact(txs)).toBe(Math.round(123.4 + 50.6));
   });
 
@@ -187,7 +187,7 @@ describe("budget: form validators", () => {
     ).toBeTruthy();
     expect(
       validateLimitBudgetForm({ categoryId: "food", limit: 100 }, [
-        { type: "limit", categoryId: "food" },
+        { type: "limit", categoryId: "food" } as never,
       ]).error,
     ).toMatch(/вже існує/);
     const ok = validateLimitBudgetForm({ categoryId: "food", limit: "100" });

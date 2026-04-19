@@ -40,7 +40,7 @@ function makeWorkouts(count, dayOfWeek = 1) {
 
 describe("generateInsights", () => {
   beforeEach(() => {
-    globalThis.localStorage = createLocalStorageMock();
+    globalThis.localStorage = createLocalStorageMock() as Storage;
     clearAll();
   });
   afterEach(clearAll);
