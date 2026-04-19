@@ -56,7 +56,7 @@ export function Atlas() {
           <p className="text-[11px] font-bold tracking-widest uppercase text-fizruk">
             Атлас мʼязів
           </p>
-          <h1 className="text-2xl font-black text-white mt-2 leading-tight">
+          <h1 className="text-hero font-black text-white mt-2 leading-tight">
             Стан відновлення
           </h1>
           <div className="flex gap-4 mt-3">

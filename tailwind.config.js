@@ -206,6 +206,9 @@ export default {
         lg: ["18px", { lineHeight: "28px" }],
         xl: ["20px", { lineHeight: "28px" }],
         "2xl": ["24px", { lineHeight: "32px" }],
+        // `hero`: hero-section H1s and hero stat numbers (slightly larger
+        // than 2xl for the page-greeting / headline-stat slot).
+        hero: ["26px", { lineHeight: "32px" }],
         "3xl": ["30px", { lineHeight: "36px" }],
         "4xl": ["36px", { lineHeight: "40px" }],
         "5xl": ["48px", { lineHeight: "1" }],

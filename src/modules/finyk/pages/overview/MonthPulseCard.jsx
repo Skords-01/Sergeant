@@ -56,7 +56,7 @@ export function MonthPulseCard({
       <div className="flex justify-between items-start gap-4">
         <div>
           <div className="text-xs text-subtle font-medium">Витрати</div>
-          <div className="text-[26px] font-bold tabular-nums mt-1 leading-tight">
+          <div className="text-hero font-bold tabular-nums mt-1 leading-tight">
             {showBalance
               ? spent.toLocaleString("uk-UA", { maximumFractionDigits: 0 })
               : "••••"}
@@ -67,7 +67,7 @@ export function MonthPulseCard({
         </div>
         <div className="text-right">
           <div className="text-xs text-subtle font-medium">Дохід</div>
-          <div className="text-[26px] font-bold tabular-nums mt-1 leading-tight text-success">
+          <div className="text-hero font-bold tabular-nums mt-1 leading-tight text-success">
             {showBalance ? (
               <>
                 +
