@@ -668,7 +668,7 @@ export function Transactions({
       {/* Batch action toolbar */}
       {selectMode && (
         <div className="fixed bottom-0 left-0 right-0 z-[60] safe-area-pb">
-          <div className="max-w-4xl mx-auto px-4 pb-[calc(58px+env(safe-area-inset-bottom,0px)+0.5rem)] pt-3">
+          <div className="max-w-4xl mx-auto px-4 pb-[calc(60px+env(safe-area-inset-bottom,0px)+0.5rem)] pt-3">
             <div className="bg-panel border border-line rounded-2xl shadow-float px-4 py-3 flex items-center justify-between gap-3">
               <span className="text-sm font-semibold text-text">
                 {selectedIds.size > 0
