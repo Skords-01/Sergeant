@@ -181,6 +181,45 @@ server/
 
 **Деплой:** фронт Vercel + API/PostgreSQL на Railway — покроково [docs/railway-vercel.md](docs/railway-vercel.md). Локальна БД: `npm run db:up` (Docker Compose).
 
+## HubChat (AI-чат)
+
+**Архітектура:** клієнт `src/core/HubChat.tsx` + `src/core/lib/hubChatActions.ts` (виконавець tool-calls) ↔ сервер `server/modules/chat.js` (Anthropic tool-use, Claude Sonnet 4.6). Користувач керує всіма 4 модулями голосом або текстом без переходу в UI.
+
+**Інструменти (32):**
+
+| Модуль     | Tools                                                                                                                                                                                                                                  |
+| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Фінік      | `create_transaction`, `delete_transaction`, `change_category`, `hide_transaction`, `create_debt`, `mark_debt_paid`, `create_receivable`, `set_budget_limit`, `update_budget`, `set_monthly_plan`, `add_asset`, `import_monobank_range` |
+| Фізрук     | `plan_workout`, `start_workout`, `finish_workout`, `log_set`, `add_program_day`, `log_measurement`, `log_wellbeing`                                                                                                                    |
+| Рутина     | `create_habit`, `mark_habit_done`, `complete_habit_for_date`, `create_reminder`, `archive_habit`, `add_calendar_event`                                                                                                                 |
+| Харчування | `log_meal`, `log_water`, `add_recipe`, `add_to_shopping_list`, `consume_from_pantry`, `set_daily_plan`, `log_weight`                                                                                                                   |
+
+**Приклади промптів:**
+
+- "Видали транзакцію m_abc123" → `delete_transaction`
+- "Постав ліміт на кафе 3000 грн" → `update_budget { scope:'limit', ... }`
+- "Створи ціль 'Відпустка' на 30 000 грн, вже зібрано 5000" → `update_budget { scope:'goal', ... }`
+- "Закрий борг оренди" → `mark_debt_paid`
+- "Додай актив депозит Приват 100 000 грн" → `add_asset`
+- "Оновити монобанк з 1 травня до сьогодні" → `import_monobank_range`
+- "Почни тренування" / "Заверши тренування" → `start_workout` / `finish_workout`
+- "Запиши заміри: вага 78.5, талія 82" → `log_measurement`
+- "В понеділок груди/трицепс: жим 4×8 80 кг, розводка 3×12" → `add_program_day`
+- "Самопочуття: вага 78, сон 7.5 год, енергія 4/5" → `log_wellbeing`
+- "Нагадай про розминку о 8:00" → `create_reminder`
+- "Познач 'Пити воду' виконаною на 10 червня" → `complete_habit_for_date`
+- "Заархівуй звичку ..." → `archive_habit`
+- "Додай у календар 'Лікар' 1 липня о 9:30" → `add_calendar_event`
+- "Збережи рецепт 'Овочевий суп', інгредієнти ..." → `add_recipe`
+- "Додай у список покупок молоко 2 л" → `add_to_shopping_list`
+- "Використав яйця з комори" → `consume_from_pantry`
+- "Постав щоденний план: 2200 ккал, білок 150 г, вода 2.5 л" → `set_daily_plan`
+- "Запиши вагу 77.3" → `log_weight`
+
+**Квоти:** кожен виклик `/api/chat` (перший крок та tool-result-продовження) інкрементує `aiQuota` через `requireAiQuota()`-middleware. Ліміти — `AI_DAILY_USER_LIMIT` / `AI_DAILY_ANON_LIMIT`.
+
+**Тести:** `src/core/lib/hubChatActions.test.ts` + `hubChatActionsExtended.test.ts` (клієнтські обробники, localStorage mutations), `server/modules/chat.test.js` (tool-parsing з мок-Anthropic).
+
 ## PWA
 
 Hub — повноцінний Progressive Web App:

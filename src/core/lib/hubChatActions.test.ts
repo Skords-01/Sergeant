@@ -130,6 +130,7 @@ describe("log_set", () => {
 
     const saved = readLS<{
       workouts: Array<{
+        id: string;
         endedAt: string | null;
         items: Array<{
           nameUk: string;
