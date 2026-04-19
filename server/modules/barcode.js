@@ -1,5 +1,6 @@
 import { recordExternalHttp } from "../lib/externalHttp.js";
 import { barcodeLookupsTotal } from "../obs/metrics.js";
+import { BarcodeQuerySchema } from "../http/schemas.js";
 
 /**
  * Record-helper одночасно емітить і domain-specific метрику
@@ -270,10 +271,12 @@ async function lookupUPCitemdb(barcode) {
  * module-tag і rate-limit; тут лише бізнес-логіка.
  */
 export default async function handler(req, res) {
-  const barcode = String(req.query.barcode || "")
-    .trim()
-    .replace(/\D/g, "");
-  if (!barcode || !/^\d{8,14}$/.test(barcode)) {
+  const parsed = BarcodeQuerySchema.safeParse(req.query);
+  if (!parsed.success) {
+    return res.status(400).json({ error: "Невірний штрихкод (8–14 цифр)" });
+  }
+  const barcode = parsed.data.barcode.replace(/\D/g, "");
+  if (!/^\d{8,14}$/.test(barcode)) {
     return res.status(400).json({ error: "Невірний штрихкод (8–14 цифр)" });
   }
 

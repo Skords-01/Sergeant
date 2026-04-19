@@ -21,7 +21,7 @@ export { errorHandler } from "./errorHandler.js";
 
 // CORS / rate-limit / validation / schemas / json-extract — перенесено сюди
 // з історичної `server/api/lib/` у PR 1 (#236); реекспортимо з одного місця.
-export { setCorsHeaders, getAllowedOrigins } from "./cors.js";
+export { setCorsHeaders, getAllowedOrigins, isOriginAllowed } from "./cors.js";
 export { apiCorsMiddleware } from "./apiCors.js";
 export { checkRateLimit, getIp, rateLimitExpress } from "./rateLimit.js";
 export { validateBody, validateQuery } from "./validate.js";

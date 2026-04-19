@@ -1,6 +1,8 @@
 import pool from "../db.js";
 import { anthropicMessages, extractAnthropicText } from "../lib/anthropic.js";
 import { MAX_BLOB_SIZE } from "./sync.js";
+import { validateBody } from "../http/validate.js";
+import { CoachInsightSchema, CoachMemoryPostSchema } from "../http/schemas.js";
 
 async function getMemory(userId) {
   const result = await pool.query(
@@ -153,7 +155,9 @@ export async function coachMemoryGet(req, res) {
  * `req.user` гарантовано заповнений middleware-ом `requireSession`.
  */
 export async function coachMemoryPost(req, res) {
-  const incoming = req.body || {};
+  const parsed = validateBody(CoachMemoryPostSchema, req, res);
+  if (!parsed.ok) return;
+  const incoming = parsed.data;
   const existing = await getMemory(req.user.id);
   const merged = mergeMemory(existing, incoming);
   try {
@@ -173,7 +177,9 @@ export async function coachMemoryPost(req, res) {
  */
 export async function coachInsight(req, res) {
   const apiKey = req.anthropicKey;
-  const { snapshot, memory } = req.body || {};
+  const parsed = validateBody(CoachInsightSchema, req, res);
+  if (!parsed.ok) return;
+  const { snapshot, memory } = parsed.data;
 
   const memorySummary = buildMemorySummary(memory);
 

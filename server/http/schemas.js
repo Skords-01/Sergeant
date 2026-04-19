@@ -120,4 +120,150 @@ export const ShoppingListSchema = z.object({
   locale: Locale,
 });
 
+// ────────────────────── Weekly digest / coach ──────────────────────
+// Верхня межа рядків на аналітичних полях — захист від безконтрольного
+// prompt-injection payload-у в Anthropic. Числа тримаємо скінченними, щоб
+// Infinity/NaN не просочились у промт.
+const Num = z.number().finite().optional().nullable();
+
+const FinykDigestSchema = z
+  .object({
+    totalSpent: Num,
+    totalIncome: Num,
+    monthlyBudget: Num,
+    txCount: Num,
+    topCategories: z
+      .array(z.object({ name: z.string().max(120), amount: Num }))
+      .max(20)
+      .optional(),
+  })
+  .partial();
+
+const FizrukDigestSchema = z
+  .object({
+    workoutsCount: Num,
+    totalVolume: Num,
+    recoveryLabel: z.string().max(120).optional().nullable(),
+    topExercises: z
+      .array(z.object({ name: z.string().max(120), totalVolume: Num }))
+      .max(20)
+      .optional(),
+  })
+  .partial();
+
+const NutritionDigestSchema = z
+  .object({
+    avgKcal: Num,
+    targetKcal: Num,
+    avgProtein: Num,
+    avgFat: Num,
+    avgCarbs: Num,
+    daysLogged: Num,
+  })
+  .partial();
+
+const RoutineDigestSchema = z
+  .object({
+    overallRate: Num,
+    habitCount: Num,
+    habits: z
+      .array(
+        z.object({
+          name: z.string().max(120),
+          completionRate: Num,
+          done: Num,
+          total: Num,
+        }),
+      )
+      .max(50)
+      .optional(),
+  })
+  .partial();
+
+export const WeeklyDigestSchema = z.object({
+  weekRange: z.string().max(80).optional(),
+  finyk: FinykDigestSchema.optional(),
+  fizruk: FizrukDigestSchema.optional(),
+  nutrition: NutritionDigestSchema.optional(),
+  routine: RoutineDigestSchema.optional(),
+});
+
+const CoachSnapshotSchema = z
+  .object({
+    finyk: FinykDigestSchema.optional(),
+    fizruk: FizrukDigestSchema.optional(),
+    nutrition: NutritionDigestSchema.optional(),
+    routine: RoutineDigestSchema.optional(),
+  })
+  .partial();
+
+// Пам'ять coach-а зберігається сервером і повертається назад клієнтом —
+// не валідуємо глибоко, лише обмежуємо кількість digest-ів.
+const CoachMemoryEchoSchema = z
+  .object({
+    weeklyDigests: z.array(z.unknown()).max(24).optional(),
+    lastInsightDate: z.string().max(80).optional().nullable(),
+    lastInsightText: z.string().max(4000).optional().nullable(),
+  })
+  .partial();
+
+export const CoachInsightSchema = z.object({
+  snapshot: CoachSnapshotSchema.optional(),
+  memory: CoachMemoryEchoSchema.optional(),
+});
+
+// Розмірні ліміти на окремі поля не застосовуємо — загальний
+// blob-size check у `coachMemoryPost` (через `MAX_BLOB_SIZE`) слугує єдиним
+// джерелом правди про розмір payload-у. Тут лише структура.
+export const CoachMemoryPostSchema = z.object({
+  weeklyDigest: z
+    .object({
+      weekKey: z.string(),
+      weekRange: z.string().optional(),
+      generatedAt: z.string().optional(),
+      finyk: z.unknown().optional(),
+      fizruk: z.unknown().optional(),
+      nutrition: z.unknown().optional(),
+      routine: z.unknown().optional(),
+      overallRecommendations: z.array(z.string()).optional(),
+    })
+    .optional(),
+});
+
+// ────────────────────── Web-push ──────────────────────
+// PushSubscription.endpoint — URL, але браузери видають доволі довгі
+// (FCM/Apple > 300 символів), тому лише розумна верхня межа.
+const PushKeys = z.object({
+  p256dh: z.string().min(1).max(256),
+  auth: z.string().min(1).max(256),
+});
+
+export const PushSubscribeSchema = z.object({
+  endpoint: z.string().url().max(2048),
+  keys: PushKeys,
+});
+
+export const PushUnsubscribeSchema = z.object({
+  endpoint: z.string().url().max(2048),
+});
+
+export const PushSendSchema = z.object({
+  userId: z.string().min(1).max(200),
+  title: z.string().min(1).max(200),
+  body: z.string().max(2000).optional(),
+  module: z.string().max(40).optional().nullable(),
+  tag: z.string().max(120).optional().nullable(),
+});
+
+// ────────────────────── Food-search / barcode ──────────────────────
+export const FoodSearchQuerySchema = z.object({
+  q: z.string().trim().min(2).max(120),
+});
+
+export const BarcodeQuerySchema = z.object({
+  // клієнт може присилати з пробілами/знаками — нормалізуємо у handler-і,
+  // тут лише обмежуємо довжину й склад.
+  barcode: z.string().trim().max(32),
+});
+
 export { z };
