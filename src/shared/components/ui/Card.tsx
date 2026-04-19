@@ -13,11 +13,24 @@ import { cn } from "../../lib/cn";
  * - default: Standard panel card
  * - interactive: Hover lift effect for clickable cards
  * - flat: No shadow, minimal border
+ * - elevated: Soft float shadow for hero/preview surfaces
+ * - ghost: Transparent (use only when nesting in a coloured wrapper)
  *
  * Plus module-branded variants (finyk, fizruk, routine, nutrition) and
- * their soft counterparts.
+ * their soft counterparts (`*-soft`).
  *
  * Padding: none | sm | md (default) | lg | xl.
+ *
+ * Radius hierarchy (canonical):
+ *   - md  → rounded-xl  (16px) — inline / list cards & chips
+ *   - lg  → rounded-2xl (24px) — section/panel cards (DEFAULT for content
+ *                                blocks inside a page)
+ *   - xl  → rounded-3xl (32px) — hero & module-branded cards (the four
+ *                                module variants bake this in already)
+ *
+ * The default `radius="xl"` matches the largest hero treatment so that
+ * branded cards and `<Card variant="default" radius="xl">` wrappers feel
+ * consistent. Use `radius="lg"` for the typical settings/list panel.
  */
 
 export type CardVariant =

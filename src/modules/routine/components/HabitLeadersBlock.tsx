@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { habitCompletionRate } from "../lib/streaks.js";
+import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { Card } from "@shared/components/ui/Card";
 import type { Habit, RoutineState } from "../lib/types";
 
@@ -38,9 +39,9 @@ export function HabitLeadersBlock({
 
   return (
     <Card radius="lg">
-      <p className="text-xs font-bold text-subtle uppercase tracking-widest mb-3">
+      <SectionHeading as="p" size="sm" className="mb-3">
         Лідери та аутсайдери (30 днів)
-      </p>
+      </SectionHeading>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         <div className="rounded-xl border border-routine-line/40 dark:border-routine/20 bg-routine-surface/30 dark:bg-routine/8 p-3">
           <p className="text-2xs uppercase tracking-wide text-subtle mb-1">

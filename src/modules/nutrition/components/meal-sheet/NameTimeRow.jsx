@@ -1,4 +1,5 @@
 import { useCallback } from "react";
+import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { Input } from "@shared/components/ui/Input";
 import { VoiceMicButton } from "@shared/components/ui/VoiceMicButton.jsx";
 import { parseMealSpeech } from "../../../../core/lib/speechParsers.js";
@@ -25,7 +26,11 @@ export function NameTimeRow({ form, field, setForm }) {
   return (
     <div className="grid grid-cols-[1fr_auto] gap-3 mb-4">
       <div>
-        <div className="text-2xs font-bold text-subtle uppercase tracking-widest mb-1 flex items-center gap-2">
+        <SectionHeading
+          as="div"
+          size="xs"
+          className="mb-1 flex items-center gap-2"
+        >
           Назва страви
           <VoiceMicButton
             size="sm"
@@ -33,7 +38,7 @@ export function NameTimeRow({ form, field, setForm }) {
             onError={(e) => setForm((s) => ({ ...s, err: e }))}
             label="Голосовий ввід страви"
           />
-        </div>
+        </SectionHeading>
         <Input
           value={form.name}
           onChange={(e) => field("name")(e.target.value)}
@@ -42,9 +47,9 @@ export function NameTimeRow({ form, field, setForm }) {
         />
       </div>
       <div>
-        <div className="text-2xs font-bold text-subtle uppercase tracking-widest mb-1">
+        <SectionHeading as="div" size="xs" className="mb-1">
           Час
-        </div>
+        </SectionHeading>
         <Input
           type="time"
           value={form.time}

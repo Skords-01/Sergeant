@@ -1,5 +1,6 @@
 import { useMemo, useState, useCallback, useEffect, useRef } from "react";
 import { cn } from "@shared/lib/cn";
+import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { Card } from "@shared/components/ui/Card";
 import type { Habit, RoutineState } from "../lib/types";
 
@@ -134,9 +135,9 @@ export function HabitHeatmap({ habits, completions }: HabitHeatmapProps) {
 
   return (
     <Card ref={rootRef} radius="lg">
-      <p className="text-xs font-bold text-subtle uppercase tracking-widest mb-3">
+      <SectionHeading as="p" size="sm" className="mb-3">
         Активність за рік
-      </p>
+      </SectionHeading>
 
       <div className="overflow-x-auto -mx-1 px-1 pb-1">
         <div style={{ display: "flex", gap: 0, alignItems: "flex-start" }}>

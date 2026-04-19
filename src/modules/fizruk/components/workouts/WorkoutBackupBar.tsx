@@ -1,5 +1,7 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { Button } from "@shared/components/ui/Button";
+import { ConfirmDialog } from "@shared/components/ui/ConfirmDialog";
+import { useToast } from "@shared/hooks/useToast";
 import { cn } from "@shared/lib/cn";
 import {
   applyFizrukBackupPayload,
@@ -9,6 +11,8 @@ import {
 export function WorkoutBackupBar({ className }) {
   const fileRef = useRef(null);
   const fileReplaceRef = useRef(null);
+  const toast = useToast();
+  const [confirmReplace, setConfirmReplace] = useState(false);
 
   const exportJson = () => {
     const payload = buildFizrukBackupPayload();
@@ -32,7 +36,7 @@ export function WorkoutBackupBar({ className }) {
         applyFizrukBackupPayload(data, { replace });
         window.location.reload();
       } catch (err) {
-        alert((err as Error)?.message || "Не вдалось імпортувати файл");
+        toast.error((err as Error)?.message || "Не вдалось імпортувати файл");
       }
       e.target.value = "";
     };
@@ -73,14 +77,7 @@ export function WorkoutBackupBar({ className }) {
           size="sm"
           className="h-9 min-h-[44px] text-warning"
           type="button"
-          onClick={() => {
-            if (
-              confirm(
-                "Замінити всі тренування та власні вправи даними з файлу?",
-              )
-            )
-              fileReplaceRef.current?.click();
-          }}
+          onClick={() => setConfirmReplace(true)}
         >
           Імпорт (замінити)
         </Button>
@@ -98,6 +95,19 @@ export function WorkoutBackupBar({ className }) {
         accept="application/json,.json"
         className="hidden"
         onChange={(e) => runImport(e, true)}
+      />
+      <ConfirmDialog
+        open={confirmReplace}
+        title="Замінити всі дані Фізрука?"
+        description="Поточні тренування та власні вправи буде замінено даними з файлу. Цю дію неможливо відмінити."
+        confirmLabel="Замінити"
+        cancelLabel="Скасувати"
+        danger
+        onConfirm={() => {
+          setConfirmReplace(false);
+          fileReplaceRef.current?.click();
+        }}
+        onCancel={() => setConfirmReplace(false)}
       />
     </div>
   );

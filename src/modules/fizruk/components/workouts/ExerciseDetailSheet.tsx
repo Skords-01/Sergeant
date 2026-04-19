@@ -1,3 +1,4 @@
+import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { Button } from "@shared/components/ui/Button";
 import { Sheet } from "@shared/components/ui/Sheet";
 import { cn } from "@shared/lib/cn";
@@ -90,9 +91,9 @@ export function ExerciseDetailSheet({
       )}
 
       <div className="space-y-2">
-        <div className="text-xs font-bold text-subtle uppercase tracking-widest">
+        <SectionHeading as="div" size="sm">
           Мʼязи
-        </div>
+        </SectionHeading>
         <div className="flex flex-wrap gap-1.5">
           {(selected?.muscles?.primary || []).map((m) => (
             <span
@@ -114,9 +115,9 @@ export function ExerciseDetailSheet({
       </div>
 
       <div className="mt-4 space-y-2">
-        <div className="text-xs font-bold text-subtle uppercase tracking-widest">
+        <SectionHeading as="div" size="sm">
           Обладнання
-        </div>
+        </SectionHeading>
         <div className="flex flex-wrap gap-1.5">
           {(selected.equipmentUk || selected.equipment || []).map((eq) => (
             <span
@@ -131,9 +132,9 @@ export function ExerciseDetailSheet({
 
       {selected.tips?.length ? (
         <div className="mt-4">
-          <div className="text-xs font-bold text-subtle uppercase tracking-widest mb-2">
+          <SectionHeading as="div" size="sm" className="mb-2">
             Підказки
-          </div>
+          </SectionHeading>
           <ul className="space-y-1.5">
             {selected.tips.map((t, i) => (
               <li key={i} className="text-sm text-text leading-relaxed">

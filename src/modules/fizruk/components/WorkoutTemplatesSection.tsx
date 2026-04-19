@@ -1,7 +1,9 @@
 import { useMemo, useState } from "react";
+import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { Input } from "@shared/components/ui/Input";
 import { Button } from "@shared/components/ui/Button";
 import { Card } from "@shared/components/ui/Card";
+import { ConfirmDialog } from "@shared/components/ui/ConfirmDialog";
 
 function uid(prefix = "g") {
   return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
@@ -23,6 +25,7 @@ export function WorkoutTemplatesSection({
   const [groups, setGroups] = useState([]);
   const [groupSelectMode, setGroupSelectMode] = useState(false);
   const [groupSelected, setGroupSelected] = useState(new Set());
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
 
   const pickList = useMemo(() => search(q).slice(0, 40), [search, q]);
 
@@ -156,9 +159,9 @@ export function WorkoutTemplatesSection({
             aria-label="Назва шаблону"
           />
           <div>
-            <div className="text-2xs font-bold text-subtle uppercase tracking-widest mb-2">
+            <SectionHeading as="div" size="xs" className="mb-2">
               Додати вправу з каталогу
-            </div>
+            </SectionHeading>
             <Input
               placeholder="Пошук…"
               value={q}
@@ -186,9 +189,9 @@ export function WorkoutTemplatesSection({
 
           <div>
             <div className="flex items-center justify-between mb-2">
-              <div className="text-2xs font-bold text-subtle uppercase tracking-widest">
+              <SectionHeading as="div" size="xs">
                 Порядок ({orderIds.length})
-              </div>
+              </SectionHeading>
               {orderIds.length >= 2 && !groupSelectMode && (
                 <button
                   type="button"
@@ -357,9 +360,9 @@ export function WorkoutTemplatesSection({
 
       <Card radius="lg" padding="none" className="overflow-hidden">
         <div className="px-4 py-3 bg-panelHi/60 border-b border-line">
-          <div className="text-xs font-bold text-subtle uppercase tracking-widest">
+          <SectionHeading as="div" size="sm">
             Збережені шаблони
-          </div>
+          </SectionHeading>
         </div>
         {(templates || []).length === 0 ? (
           <div className="p-6 text-center text-sm text-subtle">
@@ -408,9 +411,7 @@ export function WorkoutTemplatesSection({
                   size="sm"
                   variant="danger"
                   className="h-10 min-w-[44px] px-3"
-                  onClick={() => {
-                    if (confirm("Видалити шаблон?")) removeTemplate(t.id);
-                  }}
+                  onClick={() => setConfirmDeleteId(t.id)}
                 >
                   ✕
                 </Button>
@@ -419,6 +420,19 @@ export function WorkoutTemplatesSection({
           ))
         )}
       </Card>
+      <ConfirmDialog
+        open={confirmDeleteId != null}
+        title="Видалити шаблон?"
+        description="Цю дію неможливо відмінити."
+        confirmLabel="Видалити"
+        cancelLabel="Скасувати"
+        danger
+        onConfirm={() => {
+          if (confirmDeleteId != null) removeTemplate(confirmDeleteId);
+          setConfirmDeleteId(null);
+        }}
+        onCancel={() => setConfirmDeleteId(null)}
+      />
     </div>
   );
 }

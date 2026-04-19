@@ -1,5 +1,6 @@
 import { useRef, useState, useEffect, type ChangeEvent } from "react";
 import { cn } from "@shared/lib/cn";
+import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { Sheet } from "@shared/components/ui/Sheet";
 import { Card } from "@shared/components/ui/Card";
 import { useRoutinePushups } from "../hooks/useRoutinePushups.js";
@@ -30,9 +31,9 @@ export function PushupsWidget() {
       <Card as="section" radius="lg" aria-label="Відтискання">
         <div className="flex items-center justify-between gap-2">
           <div>
-            <p className="text-xs font-bold text-subtle uppercase tracking-widest">
+            <SectionHeading as="p" size="sm">
               Відтискання сьогодні
-            </p>
+            </SectionHeading>
             <p className="text-4xl font-black text-text tabular-nums mt-1">
               {todayCount}
             </p>

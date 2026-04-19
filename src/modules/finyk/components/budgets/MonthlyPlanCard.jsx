@@ -1,5 +1,6 @@
 import { memo } from "react";
 import { cn } from "@shared/lib/cn";
+import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { Input } from "@shared/components/ui/Input";
 
 // Merged monthly-plan block: income/expense/savings inputs + fact summary +
@@ -24,9 +25,9 @@ function MonthlyPlanCardComponent({
         isOver ? "border-danger/40" : "border-line",
       )}
     >
-      <div className="text-xs font-bold text-subtle uppercase tracking-widest mb-3">
+      <SectionHeading as="div" size="sm" className="mb-3">
         Фінплан на місяць
-      </div>
+      </SectionHeading>
       <div className="space-y-2">
         <Input
           type="number"

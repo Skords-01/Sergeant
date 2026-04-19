@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { Button } from "@shared/components/ui/Button";
 import { Input } from "@shared/components/ui/Input";
 import { ConfirmDialog } from "@shared/components/ui/ConfirmDialog";
@@ -201,9 +202,9 @@ export function CategoryManager({
 
   return (
     <div>
-      <div className="text-xs font-bold text-subtle uppercase tracking-widest mb-3">
+      <SectionHeading as="div" size="sm" className="mb-3">
         Власні категорії
-      </div>
+      </SectionHeading>
 
       {customCategories.length === 0 && !showForm && (
         <p className="text-sm text-muted mb-3">Власних категорій ще немає</p>

@@ -1,4 +1,5 @@
 import { useCallback, useEffect } from "react";
+import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { Input } from "@shared/components/ui/Input";
 import { cn } from "@shared/lib/cn";
 import { FoodHitRow } from "./FoodHitRow.jsx";
@@ -51,9 +52,9 @@ export function FoodPickerSection({
   return (
     <div className="mb-4 space-y-2">
       <div className="flex items-center justify-between gap-2">
-        <div className="text-2xs font-bold text-subtle uppercase tracking-widest">
+        <SectionHeading as="div" size="xs">
           Продукт
-        </div>
+        </SectionHeading>
         {(foodBusy || offBusy) && (
           <span className="text-2xs text-subtle flex items-center gap-1.5">
             <span className="inline-block w-3 h-3 border border-nutrition/40 border-t-nutrition rounded-full animate-spin" />

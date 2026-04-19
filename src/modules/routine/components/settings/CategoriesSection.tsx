@@ -1,5 +1,6 @@
 import { useState, type Dispatch, type SetStateAction } from "react";
 import { cn } from "@shared/lib/cn";
+import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { Button } from "@shared/components/ui/Button";
 import { Card } from "@shared/components/ui/Card";
 import { Input } from "@shared/components/ui/Input";
@@ -35,9 +36,9 @@ export function CategoriesSection({
   return (
     <>
       <Card as="section" radius="lg" padding="md" className="space-y-3">
-        <h2 className="text-xs font-bold text-subtle uppercase tracking-widest">
+        <SectionHeading as="h2" size="sm">
           {editingCatId ? "Редагувати категорію" : "Категорії"}
-        </h2>
+        </SectionHeading>
         <div className="flex flex-wrap gap-2 items-stretch">
           <Input
             className="routine-touch-field w-16 shrink-0"

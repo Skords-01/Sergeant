@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { Card } from "@shared/components/ui/Card";
 import { Button } from "@shared/components/ui/Button";
 import { Input } from "@shared/components/ui/Input";
@@ -62,9 +63,9 @@ function MacroRatioBar({ prefs }) {
 
   return (
     <div className="mt-3 space-y-1.5">
-      <div className="text-2xs font-bold text-subtle uppercase tracking-widest">
+      <SectionHeading as="div" size="xs">
         Відсоткове співвідношення макро
-      </div>
+      </SectionHeading>
       <div className="flex rounded-lg overflow-hidden h-5">
         {pctP > 0 && (
           <div

@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { cn } from "@shared/lib/cn";
+import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { EmptyState } from "@shared/components/ui/EmptyState";
 import { useExerciseCatalog } from "../hooks/useExerciseCatalog";
 import { useWorkouts } from "../hooks/useWorkouts";
@@ -47,9 +48,9 @@ function LoadCalculator({ oneRM }) {
   return (
     <Card radius="lg">
       <div className="flex items-baseline justify-between gap-2 mb-3">
-        <div className="text-xs font-bold text-subtle uppercase tracking-widest">
+        <SectionHeading as="div" size="sm">
           Калькулятор навантаження
-        </div>
+        </SectionHeading>
         <div className="text-2xs text-subtle">1RM = {fmt(oneRM, 0)} кг</div>
       </div>
       <div className="space-y-3">
@@ -441,9 +442,9 @@ export function Exercise({ exerciseId }) {
 
         <div className="grid grid-cols-2 gap-3">
           <Card radius="lg">
-            <div className="text-2xs font-bold text-subtle uppercase tracking-widest">
+            <SectionHeading as="div" size="xs">
               Особистий рекорд
-            </div>
+            </SectionHeading>
             <div className="text-2xl font-extrabold text-text mt-1 tabular-nums">
               {best.best1rm ? `${fmt(best.best1rm, 0)} кг` : "—"}
             </div>
@@ -463,9 +464,9 @@ export function Exercise({ exerciseId }) {
             )}
           </Card>
           <Card radius="lg">
-            <div className="text-2xs font-bold text-subtle uppercase tracking-widest">
+            <SectionHeading as="div" size="xs">
               Наступного разу
-            </div>
+            </SectionHeading>
             <div className="text-2xl font-extrabold text-text mt-1 tabular-nums">
               {suggestedNext ? `${fmt(suggestedNext.weightKg, 1)} кг` : "—"}
             </div>
@@ -489,9 +490,9 @@ export function Exercise({ exerciseId }) {
 
         {hasStrength && (
           <Card radius="lg">
-            <div className="text-xs font-bold text-subtle uppercase tracking-widest mb-3">
+            <SectionHeading as="div" size="sm" className="mb-3">
               Прогресія 1RM (за тижнями)
-            </div>
+            </SectionHeading>
             <ProgressChart
               points={progressData.rmPoints}
               label="1RM"
@@ -503,9 +504,9 @@ export function Exercise({ exerciseId }) {
 
         {hasStrength && (
           <Card radius="lg">
-            <div className="text-xs font-bold text-subtle uppercase tracking-widest mb-3">
+            <SectionHeading as="div" size="sm" className="mb-3">
               Обʼєм тренування (кг × повтори, за тижнями)
-            </div>
+            </SectionHeading>
             <ProgressChart
               points={progressData.volPoints}
               label="Обсяг"
@@ -517,9 +518,9 @@ export function Exercise({ exerciseId }) {
 
         {hasCardio && (
           <Card radius="lg">
-            <div className="text-xs font-bold text-subtle uppercase tracking-widest mb-3">
+            <SectionHeading as="div" size="sm" className="mb-3">
               Темп (хв/км) — кардіо
-            </div>
+            </SectionHeading>
             <ProgressChart
               points={cardioData.pacePoints}
               label="Темп"
@@ -534,9 +535,9 @@ export function Exercise({ exerciseId }) {
 
         {hasCardio && (
           <Card radius="lg">
-            <div className="text-xs font-bold text-subtle uppercase tracking-widest mb-3">
+            <SectionHeading as="div" size="sm" className="mb-3">
               Дистанція (км) — кардіо
-            </div>
+            </SectionHeading>
             <ProgressChart
               points={cardioData.distPoints}
               label="Дистанція"
@@ -549,9 +550,9 @@ export function Exercise({ exerciseId }) {
         {best.best1rm > 0 && <LoadCalculator oneRM={best.best1rm} />}
 
         <Card radius="lg" padding="lg">
-          <div className="text-xs font-bold text-subtle uppercase tracking-widest mb-3">
+          <SectionHeading as="div" size="sm" className="mb-3">
             Історія сетів
-          </div>
+          </SectionHeading>
           {history.length === 0 ? (
             <EmptyState
               compact

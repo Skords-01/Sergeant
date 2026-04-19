@@ -1,3 +1,4 @@
+import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { Input } from "@shared/components/ui/Input";
 import { Button } from "@shared/components/ui/Button";
 import { Sheet } from "@shared/components/ui/Sheet";
@@ -14,9 +15,9 @@ export function ItemEditSheet({ itemEdit, setItemEdit, onClose, onSave }) {
     >
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
-          <div className="text-2xs font-bold text-subtle uppercase tracking-widest mb-1">
+          <SectionHeading as="div" size="xs" className="mb-1">
             Кількість
-          </div>
+          </SectionHeading>
           <Input
             value={itemEdit.qty}
             onChange={(e) =>
@@ -28,9 +29,9 @@ export function ItemEditSheet({ itemEdit, setItemEdit, onClose, onSave }) {
           />
         </div>
         <div>
-          <div className="text-2xs font-bold text-subtle uppercase tracking-widest mb-1">
+          <SectionHeading as="div" size="xs" className="mb-1">
             Одиниця
-          </div>
+          </SectionHeading>
           <Input
             value={itemEdit.unit}
             onChange={(e) =>

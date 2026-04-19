@@ -1,4 +1,5 @@
 import { useMemo, useState, type Dispatch, type SetStateAction } from "react";
+import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { Button } from "@shared/components/ui/Button";
 import { Card } from "@shared/components/ui/Card";
 import { Input } from "@shared/components/ui/Input";
@@ -55,9 +56,9 @@ export function ActiveHabitsSection({
 
   return (
     <Card as="section" radius="lg" padding="md" className="space-y-2">
-      <h2 className="text-xs font-bold text-subtle uppercase tracking-widest">
+      <SectionHeading as="h2" size="sm">
         Активні звички
-      </h2>
+      </SectionHeading>
       <p className="text-2xs text-subtle leading-snug">
         Порядок у списку = порядок у календарі. На десктопі можна перетягнути;
         на телефоні — кнопки ↑↓. Для клавіатури та скрінрідерів зручніші кнопки

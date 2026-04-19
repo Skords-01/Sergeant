@@ -7,6 +7,7 @@ import {
   type SetStateAction,
 } from "react";
 import { cn } from "@shared/lib/cn";
+import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { Button } from "@shared/components/ui/Button";
 import { Card } from "@shared/components/ui/Card";
 import { Input } from "@shared/components/ui/Input";
@@ -82,9 +83,9 @@ export function HabitForm({
 
   return (
     <Card as="section" ref={sectionRef} radius="lg" className="space-y-3">
-      <h2 className="text-xs font-bold text-subtle uppercase tracking-widest">
+      <SectionHeading as="h2" size="sm">
         {editingId ? "Редагувати звичку" : "Нова звичка"}
-      </h2>
+      </SectionHeading>
 
       <div className="flex gap-2 items-stretch">
         <Input

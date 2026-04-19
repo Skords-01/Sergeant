@@ -1,4 +1,5 @@
 import { useRef, type ChangeEvent } from "react";
+import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { Button } from "@shared/components/ui/Button";
 import { Card } from "@shared/components/ui/Card";
 import { cn } from "@shared/lib/cn";
@@ -27,9 +28,9 @@ export function RoutineBackupSection({
 
   return (
     <Card as="section" radius="lg" padding="md" className="space-y-3">
-      <h2 className="text-xs font-bold text-subtle uppercase tracking-widest">
+      <SectionHeading as="h2" size="sm">
         Резервна копія
-      </h2>
+      </SectionHeading>
       <p className="text-xs text-subtle">
         Експорт/імпорт JSON для переносу даних між пристроями.
       </p>

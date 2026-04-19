@@ -1,4 +1,5 @@
 import { useCallback, useId, useMemo, useState } from "react";
+import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { Button } from "@shared/components/ui/Button";
 import { recoveryConflictsForWorkoutItem } from "../../lib/recoveryConflict";
 import {
@@ -374,9 +375,9 @@ export function ActiveWorkoutPanel({
 
           <div className="mt-2">
             <div className="rounded-2xl border border-line bg-panelHi px-3">
-              <div className="text-2xs font-bold text-subtle uppercase tracking-widest pt-2">
+              <SectionHeading as="div" size="xs" className="pt-2">
                 Тип
-              </div>
+              </SectionHeading>
               <select
                 className="w-full h-10 bg-transparent text-sm text-text outline-none disabled:opacity-70"
                 value={it.type || "strength"}
@@ -519,9 +520,9 @@ export function ActiveWorkoutPanel({
               {!activeWorkout.endedAt && !group && (
                 <div className="flex flex-wrap items-center gap-2 mt-2 pt-2 border-t border-line">
                   <div className="flex items-center justify-between w-full gap-1">
-                    <span className="text-2xs font-bold text-subtle uppercase tracking-widest">
+                    <SectionHeading as="span" size="xs">
                       Таймер відпочинку
-                    </span>
+                    </SectionHeading>
                     <span className="text-3xs text-muted">
                       {catLabel} · реком. {defSec}с
                     </span>
@@ -705,9 +706,9 @@ export function ActiveWorkoutPanel({
           {groupItems.map((gIt) => renderItem(gIt))}
           {!activeWorkout?.endedAt && (
             <div className="flex flex-wrap items-center gap-2 px-1 pt-1 border-t border-success/20">
-              <span className="text-2xs font-bold text-subtle uppercase tracking-widest w-full">
+              <SectionHeading as="span" size="xs" className="w-full">
                 Спільний таймер відпочинку між колами
-              </span>
+              </SectionHeading>
               <button
                 type="button"
                 className="min-h-[40px] px-3 rounded-xl border-2 border-success bg-success/10 text-sm font-semibold text-success hover:bg-success/20 transition-colors"

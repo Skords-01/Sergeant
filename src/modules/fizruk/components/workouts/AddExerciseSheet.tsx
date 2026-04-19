@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { Input } from "@shared/components/ui/Input";
 import { Button } from "@shared/components/ui/Button";
 import { Sheet } from "@shared/components/ui/Sheet";
@@ -69,9 +70,9 @@ export function AddExerciseSheet({
         />
 
         <div className="rounded-2xl border border-line bg-panelHi px-3">
-          <div className="text-2xs font-bold text-subtle uppercase tracking-widest pt-2">
+          <SectionHeading as="div" size="xs" className="pt-2">
             Основна група
-          </div>
+          </SectionHeading>
           <select
             className="w-full min-h-[44px] bg-transparent text-sm text-text outline-none py-2"
             value={form.primaryGroup}
@@ -94,9 +95,9 @@ export function AddExerciseSheet({
         </div>
 
         <div className="rounded-2xl border border-line bg-panelHi px-3 py-2">
-          <div className="text-2xs font-bold text-subtle uppercase tracking-widest">
+          <SectionHeading as="div" size="xs">
             Обладнання
-          </div>
+          </SectionHeading>
           <div className="py-2 flex flex-wrap gap-2">
             {EQUIPMENT_OPTIONS.map((o) => {
               const active = (form.equipment || []).includes(o.id);
@@ -126,9 +127,9 @@ export function AddExerciseSheet({
         </div>
 
         <div className="rounded-2xl border border-line bg-panelHi px-3 py-2">
-          <div className="text-2xs font-bold text-subtle uppercase tracking-widest">
+          <SectionHeading as="div" size="xs">
             Основні мʼязи
-          </div>
+          </SectionHeading>
           <div className="flex flex-wrap gap-1.5 mt-2">
             {suggestedMuscles.map((id) => (
               <button
@@ -154,9 +155,9 @@ export function AddExerciseSheet({
         </div>
 
         <div className="rounded-2xl border border-line bg-panelHi px-3 py-2">
-          <div className="text-2xs font-bold text-subtle uppercase tracking-widest">
+          <SectionHeading as="div" size="xs">
             Супутні мʼязи
-          </div>
+          </SectionHeading>
           <div className="flex flex-wrap gap-1.5 mt-2">
             {suggestedMuscles.map((id) => (
               <button

@@ -8,7 +8,8 @@ import { cn } from "../../lib/cn";
  * - primary: Main CTA, emerald brand color
  * - secondary: Secondary actions, outlined
  * - ghost: Minimal, text-only actions
- * - danger: Destructive actions
+ * - danger: Soft destructive affordance (red-tinted, for inline "Delete" chips)
+ * - destructive: Solid destructive CTA (use for confirmation dialogs / primary delete buttons)
  * - success: Confirmation actions
  *
  * Module-specific variants:
@@ -23,6 +24,7 @@ export type ButtonVariant =
   | "secondary"
   | "ghost"
   | "danger"
+  | "destructive"
   | "success"
   | "finyk"
   | "fizruk"
@@ -45,6 +47,8 @@ const variants: Record<ButtonVariant, string> = {
     "bg-transparent text-muted hover:bg-panelHi hover:text-text active:bg-line/50",
   danger:
     "bg-red-50 text-red-600 border border-red-200/50 hover:bg-red-100 hover:border-red-300 active:scale-[0.98]",
+  destructive:
+    "bg-danger text-white shadow-sm hover:bg-red-600 hover:shadow-[0_0_0_3px_rgba(239,68,68,0.15)] active:scale-[0.98]",
   success:
     "bg-brand-50 text-brand-700 border border-brand-200/50 hover:bg-brand-100 active:scale-[0.98]",
 

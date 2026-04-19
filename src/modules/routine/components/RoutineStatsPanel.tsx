@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { cn } from "@shared/lib/cn";
+import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { Card } from "@shared/components/ui/Card";
 import { PushupsWidget } from "./PushupsWidget";
 import { HabitHeatmap } from "./HabitHeatmap";
@@ -67,9 +68,9 @@ export function RoutineStatsPanel({
       className="space-y-4"
     >
       <Card as="section" radius="lg" aria-label="Зведена статистика">
-        <p className="text-xs font-bold text-subtle uppercase tracking-widest mb-3">
+        <SectionHeading as="p" size="sm" className="mb-3">
           Зведення
-        </p>
+        </SectionHeading>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
           <div className={C.statCard}>
             <p className="text-2xs uppercase tracking-wide text-subtle">

@@ -1,3 +1,4 @@
+import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { Input } from "@shared/components/ui/Input";
 import { Button } from "@shared/components/ui/Button";
 
@@ -12,9 +13,9 @@ export function BarcodeSection({
 }) {
   return (
     <div className="mb-4 rounded-2xl border border-line bg-panel/40 px-3 py-3">
-      <div className="text-2xs font-bold text-subtle uppercase tracking-widest mb-2">
+      <SectionHeading as="div" size="xs" className="mb-2">
         Штрихкод
-      </div>
+      </SectionHeading>
       <div className="flex flex-wrap gap-2 items-center">
         <Input
           value={barcode}
