@@ -141,16 +141,16 @@ describe("collectQueuedModules (corruption tolerance)", () => {
 
 describe("addToOfflineQueue coalescing", () => {
   it("merges consecutive push entries into the last row", () => {
-    enqueue({ type: "push", modules: { finyk: { data: { v: 1 } } } });
-    enqueue({ type: "push", modules: { fizruk: { data: { v: 2 } } } });
+    enqueue({ type: "push", modules: { finyk: { data: { v: 1 } } } } as never);
+    enqueue({ type: "push", modules: { fizruk: { data: { v: 2 } } } } as never);
     const q = getOfflineQueue();
     expect(q).toHaveLength(1);
     expect(Object.keys(q[0].modules).sort()).toEqual(["finyk", "fizruk"]);
   });
 
   it("later merged module payload overwrites earlier one", () => {
-    enqueue({ type: "push", modules: { finyk: { data: { v: 1 } } } });
-    enqueue({ type: "push", modules: { finyk: { data: { v: 2 } } } });
+    enqueue({ type: "push", modules: { finyk: { data: { v: 1 } } } } as never);
+    enqueue({ type: "push", modules: { finyk: { data: { v: 2 } } } } as never);
     const q = getOfflineQueue();
     expect(q).toHaveLength(1);
     expect(q[0].modules.finyk.data.v).toBe(2);
@@ -159,7 +159,7 @@ describe("addToOfflineQueue coalescing", () => {
   it("caps queue length when many non-coalescing entries accumulate", () => {
     // Force non-push entries that don't coalesce so we can exercise the cap.
     for (let i = 0; i < 120; i++) {
-      enqueue({ type: `other-${i}`, payload: i });
+      enqueue({ type: `other-${i}`, payload: i } as never);
     }
     const q = getOfflineQueue();
     expect(q.length).toBeLessThanOrEqual(50);
@@ -169,8 +169,8 @@ describe("addToOfflineQueue coalescing", () => {
   });
 
   it("does not coalesce into a non-push last entry", () => {
-    enqueue({ type: "other", payload: {} });
-    enqueue({ type: "push", modules: { finyk: { data: {} } } });
+    enqueue({ type: "other", payload: {} } as never);
+    enqueue({ type: "push", modules: { finyk: { data: {} } } } as never);
     const q = getOfflineQueue();
     expect(q).toHaveLength(2);
     expect(q[0].type).toBe("other");
@@ -179,9 +179,9 @@ describe("addToOfflineQueue coalescing", () => {
 
   it("is idempotent wrt queue contents when coalescing repeated pushes", () => {
     const payload = { finyk: { data: { v: "same" } } };
-    enqueue({ type: "push", modules: payload });
-    enqueue({ type: "push", modules: payload });
-    enqueue({ type: "push", modules: payload });
+    enqueue({ type: "push", modules: payload } as never);
+    enqueue({ type: "push", modules: payload } as never);
+    enqueue({ type: "push", modules: payload } as never);
     const q = getOfflineQueue();
     expect(q).toHaveLength(1);
     expect(q[0].modules.finyk.data.v).toBe("same");

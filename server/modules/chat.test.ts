@@ -8,37 +8,54 @@
  * - Всі нові tools присутні у TOOLS з валідними input_schema.
  */
 import { describe, it, expect, beforeEach, vi } from "vitest";
+import type { Request, Response } from "express";
+import type { Mock } from "vitest";
 
 vi.mock("../lib/anthropic.js", () => ({
   anthropicMessages: vi.fn(),
   anthropicMessagesStream: vi.fn(),
-  extractAnthropicText: vi.fn((d) =>
-    (d?.content || [])
-      .filter((b) => b.type === "text")
-      .map((b) => b.text)
-      .join("\n"),
+  extractAnthropicText: vi.fn(
+    (d: { content?: { type: string; text?: string }[] }) =>
+      (d?.content || [])
+        .filter((b) => b.type === "text")
+        .map((b) => b.text)
+        .join("\n"),
   ),
 }));
 
-import { anthropicMessages } from "../lib/anthropic.js";
+import { anthropicMessages as _anthropicMessages } from "../lib/anthropic.js";
 import handler from "./chat.js";
 
-function makeReq(body) {
-  return { anthropicKey: "sk-test", body };
+const anthropicMessages = _anthropicMessages as unknown as Mock;
+
+interface TestRes {
+  statusCode: number;
+  body: unknown;
+  status(code: number): TestRes;
+  json(payload: unknown): TestRes;
 }
-function makeRes() {
-  return {
+
+function makeReq(body: unknown): Request {
+  return { anthropicKey: "sk-test", body } as unknown as Request;
+}
+function makeRes(): TestRes & Response {
+  const res: TestRes = {
     statusCode: 200,
     body: undefined,
-    status(code) {
+    status(code: number) {
       this.statusCode = code;
       return this;
     },
-    json(payload) {
+    json(payload: unknown) {
       this.body = payload;
       return this;
     },
   };
+  return res as TestRes & Response;
+}
+
+function asRec(v: unknown): Record<string, unknown> {
+  return v as Record<string, unknown>;
 }
 
 beforeEach(() => {
@@ -75,9 +92,11 @@ describe("chat handler — tool_use parsing", () => {
         },
       ],
     });
-    expect(res.body.tool_calls_raw).toHaveLength(2);
+    expect(asRec(res.body).tool_calls_raw).toHaveLength(2);
     // Перевіряємо, що TOOLS передалися
-    const callArg = anthropicMessages.mock.calls[0][1];
+    const callArg = anthropicMessages.mock.calls[0][1] as {
+      tools: unknown[];
+    };
     expect(Array.isArray(callArg.tools)).toBe(true);
     expect(callArg.tools.length).toBeGreaterThan(20);
   });
@@ -124,10 +143,15 @@ describe("chat handler — tool_use parsing", () => {
     await handler(req, res);
 
     expect(res.statusCode).toBe(200);
-    expect(res.body.text).toContain("видалено");
+    expect(asRec(res.body).text).toContain("видалено");
 
     // Перевіряємо формат повідомлень до Anthropic на другому кроці
-    const payload = anthropicMessages.mock.calls[0][1];
+    const payload = anthropicMessages.mock.calls[0][1] as {
+      messages: Array<{
+        role: string;
+        content: Array<{ type: string; tool_use_id?: string }>;
+      }>;
+    };
     expect(payload.messages).toHaveLength(3);
     expect(payload.messages[0]).toMatchObject({ role: "user" });
     expect(payload.messages[1]).toMatchObject({ role: "assistant" });
@@ -200,8 +224,20 @@ describe("TOOLS registry — структура нових tools", () => {
     const res = makeRes();
     await handler(req, res);
 
-    const tools = anthropicMessages.mock.calls[0][1].tools;
-    const byName = Object.fromEntries(tools.map((t) => [t.name, t]));
+    interface Tool {
+      name: string;
+      description: string;
+      input_schema: {
+        type: string;
+        properties: Record<string, unknown>;
+        required?: string[];
+      };
+    }
+    const tools = (anthropicMessages.mock.calls[0][1] as { tools: Tool[] })
+      .tools;
+    const byName: Record<string, Tool> = Object.fromEntries(
+      tools.map((t) => [t.name, t]),
+    );
     for (const name of expected) {
       expect(
         byName[name],

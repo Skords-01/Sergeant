@@ -1,11 +1,11 @@
 // Per-rule тести для модуля Finyk. Доводимо цінність реєстру: правило можна
 // юніт-тестити без LS-мокінгу цілого engine.
 import { describe, it, expect } from "vitest";
-import { budgetLimitsRule } from "./budgetLimits.ts";
-import { frequentNoBudgetRule } from "./frequentNoBudget.ts";
-import { goalProgressRule } from "./goalProgress.ts";
-import { noTxRecentRule } from "./noTxRecent.ts";
-import { dailyVsWeeklyPaceRule } from "./dailyVsWeeklyPace.ts";
+import { budgetLimitsRule } from "./budgetLimits.js";
+import { frequentNoBudgetRule } from "./frequentNoBudget.js";
+import { goalProgressRule } from "./goalProgress.js";
+import { noTxRecentRule } from "./noTxRecent.js";
+import { dailyVsWeeklyPaceRule } from "./dailyVsWeeklyPace.js";
 
 function baseCtx(overrides = {}) {
   return {
@@ -17,8 +17,8 @@ function baseCtx(overrides = {}) {
     limits: [],
     txCategories: {},
     customCategories: [],
-    hiddenTxIds: new Set(),
-    transferIds: new Set(),
+    hiddenTxIds: new Set<string>(),
+    transferIds: new Set<string>(),
     thisMonthTx: [],
     categorySpend: {},
     canonicalMonthSpend: new Map(),

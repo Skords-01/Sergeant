@@ -110,7 +110,7 @@ describe("flushPendingWrites", () => {
 describe("Domain API", () => {
   it("transactions: default/get/save", () => {
     expect(getTransactions()).toEqual([]);
-    saveTransactions([{ id: "1" }]);
+    saveTransactions([{ id: "1" } as never]);
     flushPendingWrites();
     expect(getTransactions()).toEqual([{ id: "1" }]);
     expect(
@@ -120,7 +120,7 @@ describe("Domain API", () => {
 
   it("categories: default/get/save", () => {
     expect(getCategories()).toEqual([]);
-    saveCategories([{ id: "c1", name: "Food" }]);
+    saveCategories([{ id: "c1", name: "Food" } as never]);
     flushPendingWrites();
     expect(getCategories()).toEqual([{ id: "c1", name: "Food" }]);
   });

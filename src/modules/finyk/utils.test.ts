@@ -93,7 +93,7 @@ describe("fmtAmt", () => {
   });
   it("підтримує USD та EUR символи", () => {
     expect(fmtAmt(10000, CURRENCY.USD)).toContain("$");
-    expect(fmtAmt(10000, CURRENCY.EUR || "EUR")).toContain("€");
+    expect(fmtAmt(10000, (CURRENCY.EUR || "EUR") as never)).toContain("€");
   });
 });
 
@@ -133,12 +133,20 @@ describe("getAccountLabel", () => {
   });
   it("кредитна картка коли ліміт>0 і type=black", () => {
     expect(
-      getAccountLabel({ type: "black", creditLimit: 5000, balance: 0 }),
+      getAccountLabel({
+        type: "black",
+        creditLimit: 5000,
+        balance: 0,
+      } as never),
     ).toContain("Кредитна");
   });
   it("кредит коли ліміт>0 і інший type", () => {
     expect(
-      getAccountLabel({ type: "white", creditLimit: 5000, balance: 0 }),
+      getAccountLabel({
+        type: "white",
+        creditLimit: 5000,
+        balance: 0,
+      } as never),
     ).toContain("Кредит");
   });
   it("fallback коли нічого не співпадає", () => {
@@ -309,7 +317,7 @@ describe("getFinykTxSplitsFromStorage", () => {
       "finyk_tx_splits",
       JSON.stringify({ t1: [{ amount: 10, categoryId: "food" }] }),
     );
-    const v = getFinykTxSplitsFromStorage();
+    const v = getFinykTxSplitsFromStorage() as Record<string, unknown[]>;
     expect(v.t1).toHaveLength(1);
   });
   it("повертає {} коли значення — не об'єкт", () => {

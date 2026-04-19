@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import type { Request, Response } from "express";
 import { validateBody, validateQuery } from "./validate.js";
 import {
   ChatRequestSchema,
@@ -8,27 +9,38 @@ import {
   z,
 } from "./schemas.js";
 
-function mockRes() {
-  const res = {
+interface TestRes {
+  statusCode: number;
+  body: { error?: string; details?: { path: string }[] } | null;
+  status(code: number): TestRes;
+  json(payload: unknown): TestRes;
+}
+
+function mockRes(): TestRes & Response {
+  const res: TestRes = {
     statusCode: 200,
     body: null,
-    status(code) {
+    status(code: number) {
       this.statusCode = code;
       return this;
     },
-    json(payload) {
-      this.body = payload;
+    json(payload: unknown) {
+      this.body = payload as TestRes["body"];
       return this;
     },
   };
-  return res;
+  return res as TestRes & Response;
 }
 
 describe("validateBody", () => {
   it("повертає parsed data для валідного payload-у", () => {
     const schema = z.object({ a: z.string(), b: z.number() });
     const res = mockRes();
-    const result = validateBody(schema, { body: { a: "x", b: 1 } }, res);
+    const result = validateBody(
+      schema,
+      { body: { a: "x", b: 1 } } as Request,
+      res,
+    );
     expect(result).toEqual({ ok: true, data: { a: "x", b: 1 } });
     expect(res.statusCode).toBe(200);
   });
@@ -36,18 +48,18 @@ describe("validateBody", () => {
   it("повертає 400 з деталями при помилці", () => {
     const schema = z.object({ a: z.string() });
     const res = mockRes();
-    const result = validateBody(schema, { body: { a: 42 } }, res);
+    const result = validateBody(schema, { body: { a: 42 } } as Request, res);
     expect(result.ok).toBe(false);
     expect(res.statusCode).toBe(400);
-    expect(res.body.error).toBe("Некоректні дані запиту");
-    expect(res.body.details).toHaveLength(1);
-    expect(res.body.details[0].path).toBe("a");
+    expect(res.body!.error).toBe("Некоректні дані запиту");
+    expect(res.body!.details).toHaveLength(1);
+    expect(res.body!.details![0].path).toBe("a");
   });
 
   it("обробляє відсутній body як {}", () => {
     const schema = z.object({ a: z.string().optional() });
     const res = mockRes();
-    const result = validateBody(schema, {}, res);
+    const result = validateBody(schema, {} as Request, res);
     expect(result.ok).toBe(true);
   });
 });
@@ -56,7 +68,11 @@ describe("validateQuery", () => {
   it("працює на req.query", () => {
     const schema = z.object({ q: z.string() });
     const res = mockRes();
-    const ok = validateQuery(schema, { query: { q: "foo" } }, res);
+    const ok = validateQuery(
+      schema,
+      { query: { q: "foo" } } as unknown as Request,
+      res,
+    );
     expect(ok).toEqual({ ok: true, data: { q: "foo" } });
   });
 });
