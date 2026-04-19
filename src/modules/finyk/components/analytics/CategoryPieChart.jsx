@@ -7,6 +7,11 @@ function polarToXY(cx, cy, r, angleDeg) {
   return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
 }
 
+// Trim SVG path coordinates to 2 decimals. For a 160×160 viewBox this is
+// well below sub-pixel precision and keeps the inlined <path d="…"> data
+// compact (AGENTS.md §6.4).
+const f2 = (v) => v.toFixed(2);
+
 // Build a closed donut-sector path: outer arc (CW) + line to inner +
 // inner arc (CCW) + close. Using filled sectors avoids stroke-linecap
 // artifacts that make thick stroked arcs look polygonal at segment
@@ -22,12 +27,12 @@ function describeSector(cx, cy, outerR, innerR, startDeg, endDeg) {
     const i1 = polarToXY(cx, cy, innerR, startDeg);
     const i2 = polarToXY(cx, cy, innerR, midDeg);
     return [
-      `M ${o1.x} ${o1.y}`,
-      `A ${outerR} ${outerR} 0 0 1 ${o2.x} ${o2.y}`,
-      `A ${outerR} ${outerR} 0 0 1 ${o1.x} ${o1.y}`,
-      `M ${i1.x} ${i1.y}`,
-      `A ${innerR} ${innerR} 0 0 0 ${i2.x} ${i2.y}`,
-      `A ${innerR} ${innerR} 0 0 0 ${i1.x} ${i1.y}`,
+      `M ${f2(o1.x)} ${f2(o1.y)}`,
+      `A ${outerR} ${outerR} 0 0 1 ${f2(o2.x)} ${f2(o2.y)}`,
+      `A ${outerR} ${outerR} 0 0 1 ${f2(o1.x)} ${f2(o1.y)}`,
+      `M ${f2(i1.x)} ${f2(i1.y)}`,
+      `A ${innerR} ${innerR} 0 0 0 ${f2(i2.x)} ${f2(i2.y)}`,
+      `A ${innerR} ${innerR} 0 0 0 ${f2(i1.x)} ${f2(i1.y)}`,
       "Z",
     ].join(" ");
   }
@@ -37,10 +42,10 @@ function describeSector(cx, cy, outerR, innerR, startDeg, endDeg) {
   const innerEnd = polarToXY(cx, cy, innerR, endDeg);
   const innerStart = polarToXY(cx, cy, innerR, startDeg);
   return [
-    `M ${outerStart.x} ${outerStart.y}`,
-    `A ${outerR} ${outerR} 0 ${largeArc} 1 ${outerEnd.x} ${outerEnd.y}`,
-    `L ${innerEnd.x} ${innerEnd.y}`,
-    `A ${innerR} ${innerR} 0 ${largeArc} 0 ${innerStart.x} ${innerStart.y}`,
+    `M ${f2(outerStart.x)} ${f2(outerStart.y)}`,
+    `A ${outerR} ${outerR} 0 ${largeArc} 1 ${f2(outerEnd.x)} ${f2(outerEnd.y)}`,
+    `L ${f2(innerEnd.x)} ${f2(innerEnd.y)}`,
+    `A ${innerR} ${innerR} 0 ${largeArc} 0 ${f2(innerStart.x)} ${f2(innerStart.y)}`,
     "Z",
   ].join(" ");
 }
@@ -86,8 +91,11 @@ function CategoryPieChartComponent({ data = [], size = 160, className }) {
   });
 
   // Gap between segments, in degrees. Only applied when there are 2+
-  // visible slices; a single full-ring slice has no neighbours to separate.
-  const visible = arcs.filter((a) => a.end - a.start > 0.1);
+  // rendered slices; a single full-ring slice has no neighbours to separate.
+  // Threshold matches the render skip below (`sweep < 0.5`) so we never add
+  // padding for a neighbour that won't actually be drawn.
+  const RENDER_MIN_SWEEP = 0.5;
+  const visible = arcs.filter((a) => a.end - a.start >= RENDER_MIN_SWEEP);
   const GAP_DEG = visible.length > 1 ? 1 : 0;
 
   return (
@@ -103,7 +111,7 @@ function CategoryPieChartComponent({ data = [], size = 160, className }) {
         >
           {arcs.map((arc, i) => {
             const sweep = arc.end - arc.start;
-            if (sweep < 0.5) return null;
+            if (sweep < RENDER_MIN_SWEEP) return null;
             // Shrink each sector symmetrically so neighbouring slices
             // get a clean radial gap. Never let a slice collapse.
             const pad = Math.min(GAP_DEG / 2, sweep / 2 - 0.01);
