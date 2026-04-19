@@ -9,7 +9,12 @@
 // We re-check on each render and fire the first-entry event once.
 
 import { trackEvent, ANALYTICS_EVENTS } from "../analytics";
-import { isFirstRealEntryDone, markFirstRealEntryDone } from "./vibePicks.js";
+import {
+  getFirstActionStartedAt,
+  isFirstRealEntryDone,
+  markFirstRealEntryDone,
+  saveTimeToValueMs,
+} from "./vibePicks.js";
 
 function safeReadJSON(key) {
   try {
@@ -82,5 +87,18 @@ export function detectFirstRealEntry() {
   if (!hasAnyRealEntry()) return false;
   markFirstRealEntryDone();
   trackEvent(ANALYTICS_EVENTS.FIRST_REAL_ENTRY);
+  // Headline 30-second metric: how long did it actually take? The
+  // start stamp is captured when the user taps «Заповни мій хаб» on
+  // the splash. Missing stamp = returning user from a pre-Ship-3
+  // install; we still fire `first_real_entry` but skip the TTV event.
+  const startedAt = getFirstActionStartedAt();
+  if (startedAt) {
+    const durationMs = Math.max(0, Date.now() - startedAt);
+    saveTimeToValueMs(durationMs);
+    trackEvent(ANALYTICS_EVENTS.FTUX_TIME_TO_VALUE, {
+      durationMs,
+      durationSec: Math.round(durationMs / 1000),
+    });
+  }
   return true;
 }

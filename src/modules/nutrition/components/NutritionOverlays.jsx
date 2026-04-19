@@ -58,12 +58,10 @@ export function NutritionOverlays({
       />
 
       {pantryScannerOpen && (
-        <div className="fixed inset-0 z-[120]">
-          <BarcodeScanner
-            onDetected={handlePantryBarcodeDetected}
-            onClose={() => setPantryScannerOpen(false)}
-          />
-        </div>
+        <BarcodeScanner
+          onDetected={handlePantryBarcodeDetected}
+          onClose={() => setPantryScannerOpen(false)}
+        />
       )}
 
       <AddMealSheet

@@ -16,9 +16,9 @@ function postNutrition<T>(path: string, body: unknown): Promise<T> {
 }
 
 // ---------------------------------------------------------------------------
-// Response shapes returned by `server/api/nutrition/*`.
+// Response shapes returned by `server/modules/nutrition/*`.
 // These match the server normalizers in
-// `server/api/nutrition/lib/nutritionResponse.js` and inline normalizers in
+// `server/modules/nutrition/lib/nutritionResponse.js` and inline normalizers in
 // individual handlers.
 // ---------------------------------------------------------------------------
 

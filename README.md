@@ -245,7 +245,7 @@ npm run dev        # 2) Vite dev server (фронт, порт 5173) — прок
 1. У Railway: новий сервіс з цього репозиторію, білд через [`Dockerfile.api`](Dockerfile.api) (див. [`railway.toml`](railway.toml)).
 2. У змінних сервісу Railway задати секрети: `ANTHROPIC_API_KEY`, `DATABASE_URL`, `BETTER_AUTH_SECRET`, для Web Push — `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_EMAIL`, `API_SECRET`; опційно `NUTRITION_API_TOKEN`, `USDA_FDC_API_KEY`, `ALLOWED_ORIGINS`.
 3. У **Vercel** (Environment Variables для Production/Preview): `VITE_API_BASE_URL` = публічний URL Railway (HTTPS).
-4. Каталог API — у [`server/api/`](server/api/), у корені репо немає `api/`, тож Vercel Hobby не створює десятки serverless-функцій.
+4. Каталог API — у [`server/modules/`](server/modules/), у корені репо немає `api/`, тож Vercel Hobby не створює десятки serverless-функцій.
 
 Локально: `npm start` (Express, порт 3000). Фронт `npm run dev`: без `VITE_API_BASE_URL` запити йдуть на `/api/*` і проксуються на `VITE_API_PROXY_TARGET`.
 

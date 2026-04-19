@@ -101,7 +101,7 @@ export function WorkoutJournalSection({
   return (
     <div className="space-y-3">
       {!activeWorkout && (
-        <div className="bg-panel border border-line rounded-2xl p-5 shadow-card text-center">
+        <Card radius="lg" padding="lg" className="text-center">
           <div className="text-sm font-semibold text-text">
             Немає активного тренування
           </div>
@@ -127,7 +127,7 @@ export function WorkoutJournalSection({
               Шаблони
             </Button>
           </div>
-        </div>
+        </Card>
       )}
 
       {activeWorkout && (

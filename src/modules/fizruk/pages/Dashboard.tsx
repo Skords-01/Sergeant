@@ -1,6 +1,6 @@
 import { Button } from "@shared/components/ui/Button";
-import { useDialogFocusTrap } from "@shared/hooks/useDialogFocusTrap";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Sheet } from "@shared/components/ui/Sheet";
+import { useEffect, useMemo, useState } from "react";
 import { useExerciseCatalog } from "../hooks/useExerciseCatalog";
 import { useRecovery } from "../hooks/useRecovery";
 import { useWorkoutTemplates } from "../hooks/useWorkoutTemplates";
@@ -57,13 +57,11 @@ export function Dashboard({
   });
   const [planConfirmOpen, setPlanConfirmOpen] = useState(false);
   const [pendingPicks, setPendingPicks] = useState(null);
-  const planConfirmRef = useRef(null);
-  useDialogFocusTrap(planConfirmOpen, planConfirmRef, {
-    onEscape: () => {
-      setPlanConfirmOpen(false);
-      setPendingPicks(null);
-    },
-  });
+
+  const closePlanConfirm = () => {
+    setPlanConfirmOpen(false);
+    setPendingPicks(null);
+  };
 
   useEffect(() => {
     if (selectedTemplateId) return;
@@ -363,10 +361,7 @@ export function Dashboard({
             const quickTemplates =
               recentlyUsed.length > 0 ? recentlyUsed : templates.slice(0, 3);
             return (
-              <section
-                className="bg-panel border border-line rounded-2xl p-4 shadow-card"
-                aria-label="Швидкий старт"
-              >
+              <Card as="section" radius="lg" aria-label="Швидкий старт">
                 <div className="flex items-center justify-between gap-2 mb-3">
                   <h2 className="text-xs font-bold text-subtle uppercase tracking-widest">
                     Швидкий старт
@@ -417,15 +412,12 @@ export function Dashboard({
                     );
                   })}
                 </div>
-              </section>
+              </Card>
             );
           })()}
 
         {activeProgram && (
-          <section
-            className="bg-panel border border-line rounded-2xl p-4 shadow-card"
-            aria-label="Програма сьогодні"
-          >
+          <Card as="section" radius="lg" aria-label="Програма сьогодні">
             <div className="flex items-center justify-between gap-2 mb-3">
               <div>
                 <h2 className="text-xs font-bold text-subtle uppercase tracking-widest">
@@ -464,11 +456,12 @@ export function Dashboard({
                 Розпочати тренування за програмою
               </button>
             )}
-          </section>
+          </Card>
         )}
 
-        <section
-          className="bg-panel border border-line rounded-2xl p-4 shadow-card"
+        <Card
+          as="section"
+          radius="lg"
           aria-label="Відновлення та фокус тренування"
         >
           <div className="flex items-start justify-between gap-2">
@@ -572,7 +565,7 @@ export function Dashboard({
               </div>
             </>
           )}
-        </section>
+        </Card>
 
         <div
           className="grid grid-cols-2 lg:grid-cols-4 gap-3"
@@ -580,10 +573,11 @@ export function Dashboard({
           aria-label="Ключові показники"
         >
           {kpi.map((card) => (
-            <div
+            <Card
               key={card.id}
               role="listitem"
-              className="bg-panel border border-line rounded-2xl p-4 shadow-card min-h-[100px]"
+              radius="lg"
+              className="min-h-[100px]"
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
@@ -663,7 +657,7 @@ export function Dashboard({
                   )}
                 </div>
               </div>
-            </div>
+            </Card>
           ))}
         </div>
 
@@ -794,66 +788,40 @@ export function Dashboard({
         </Card>
       </div>
 
-      {planConfirmOpen && (
-        <div
-          className="fixed inset-0 z-[100] flex items-end justify-center fizruk-sheet"
-          role="presentation"
-        >
-          <button
-            type="button"
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-            aria-label="Закрити"
-            onClick={() => {
-              setPlanConfirmOpen(false);
-              setPendingPicks(null);
-            }}
-          />
-          <div
-            ref={planConfirmRef}
-            className="relative w-full max-w-4xl bg-panel border-t border-line rounded-t-3xl p-5 shadow-soft fizruk-sheet-pad"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="plan-confirm-title"
-          >
-            <div
-              id="plan-confirm-title"
-              className="text-lg font-extrabold text-text"
+      <Sheet
+        open={planConfirmOpen}
+        onClose={closePlanConfirm}
+        title="Увага"
+        panelClassName="max-w-4xl"
+        zIndex={100}
+        footer={
+          <div className="flex gap-2">
+            <Button
+              variant="ghost"
+              className="flex-1 h-12 min-h-[44px]"
+              onClick={closePlanConfirm}
             >
-              Увага
-            </div>
-            <p className="text-sm text-subtle mt-2 leading-relaxed">
-              У цьому шаблоні є вправи на мʼязи, які ще відновлюються.
-              Продовжити старт тренування?
-            </p>
-            <div className="flex gap-2 mt-4">
-              <Button
-                variant="ghost"
-                className="flex-1 h-12 min-h-[44px]"
-                onClick={() => {
-                  setPlanConfirmOpen(false);
-                  setPendingPicks(null);
-                }}
-              >
-                Скасувати
-              </Button>
-              <Button
-                className="flex-1 h-12 min-h-[44px]"
-                onClick={() => {
-                  const picks = pendingPicks?.length
-                    ? pendingPicks
-                    : plan.picked;
-                  setPlanConfirmOpen(false);
-                  setPendingPicks(null);
-                  startWorkoutFromPlan(picks, pendingTemplateId);
-                  setPendingTemplateId(null);
-                }}
-              >
-                Продовжити
-              </Button>
-            </div>
+              Скасувати
+            </Button>
+            <Button
+              className="flex-1 h-12 min-h-[44px]"
+              onClick={() => {
+                const picks = pendingPicks?.length ? pendingPicks : plan.picked;
+                closePlanConfirm();
+                startWorkoutFromPlan(picks, pendingTemplateId);
+                setPendingTemplateId(null);
+              }}
+            >
+              Продовжити
+            </Button>
           </div>
-        </div>
-      )}
+        }
+      >
+        <p className="text-sm text-subtle leading-relaxed">
+          У цьому шаблоні є вправи на мʼязи, які ще відновлюються. Продовжити
+          старт тренування?
+        </p>
+      </Sheet>
     </div>
   );
 }

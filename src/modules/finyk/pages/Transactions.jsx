@@ -7,6 +7,7 @@ import { mergeExpenseCategoryDefinitions } from "../constants";
 import { Skeleton } from "@shared/components/ui/Skeleton";
 import { EmptyState } from "@shared/components/ui/EmptyState";
 import { Icon } from "@shared/components/ui/Icon";
+import { Sheet } from "@shared/components/ui/Sheet";
 import { cn } from "@shared/lib/cn";
 import { perfMark, perfEnd } from "@shared/lib/perf";
 import { useToast } from "@shared/hooks/useToast";
@@ -708,46 +709,28 @@ export function Transactions({
       )}
 
       {/* Batch category picker */}
-      {batchCatPicker && (
-        <div className="fixed inset-0 z-[70] flex items-end">
-          <div
-            className="absolute inset-0 bg-text/40 backdrop-blur-sm"
-            onClick={() => setBatchCatPicker(false)}
-            aria-hidden
-          />
-          <div className="relative z-10 w-full max-w-lg mx-auto bg-panel rounded-t-3xl border-t border-line shadow-soft max-h-[70vh] flex flex-col safe-area-pb">
-            <div className="flex justify-center pt-3 pb-1 shrink-0">
-              <div className="w-10 h-1 bg-line rounded-full" aria-hidden />
-            </div>
-            <div className="px-5 pb-3 shrink-0">
-              <div className="text-base font-bold text-text">
-                Вибрати категорію
-              </div>
-              <div className="text-xs text-subtle mt-0.5">
-                Застосується до {selectedIds.size} транзакц
-                {selectedIds.size === 1 ? "ії" : "ій"}
-              </div>
-            </div>
-            <div className="overflow-y-auto px-4 pb-6 flex flex-col gap-1">
-              {mergeExpenseCategoryDefinitions(customCategories)
-                .filter((c) => c.id !== "income")
-                .map((cat) => (
-                  <button
-                    key={cat.id}
-                    type="button"
-                    onClick={() => applyBatchCategory(cat.id)}
-                    className="w-full text-left flex items-center gap-3 px-4 py-3 rounded-2xl hover:bg-panelHi transition-colors min-h-[48px]"
-                  >
-                    <span className="text-lg">{cat.emoji}</span>
-                    <span className="text-sm font-medium text-text">
-                      {cat.label}
-                    </span>
-                  </button>
-                ))}
-            </div>
-          </div>
-        </div>
-      )}
+      <Sheet
+        open={batchCatPicker}
+        onClose={() => setBatchCatPicker(false)}
+        title="Вибрати категорію"
+        description={`Застосується до ${selectedIds.size} транзакц${selectedIds.size === 1 ? "ії" : "ій"}`}
+        zIndex={70}
+        bodyClassName="px-4 pb-6 flex flex-col gap-1"
+      >
+        {mergeExpenseCategoryDefinitions(customCategories)
+          .filter((c) => c.id !== "income")
+          .map((cat) => (
+            <button
+              key={cat.id}
+              type="button"
+              onClick={() => applyBatchCategory(cat.id)}
+              className="w-full text-left flex items-center gap-3 px-4 py-3 rounded-2xl hover:bg-panelHi transition-colors min-h-[48px]"
+            >
+              <span className="text-lg">{cat.emoji}</span>
+              <span className="text-sm font-medium text-text">{cat.label}</span>
+            </button>
+          ))}
+      </Sheet>
     </div>
   );
 }

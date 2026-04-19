@@ -37,7 +37,13 @@ export const ANALYTICS_EVENTS = Object.freeze({
   ONBOARDING_DEMO_RENDERED: "onboarding_demo_rendered",
   ONBOARDING_FIRST_ACTION_SHOWN: "onboarding_first_action_shown",
   ONBOARDING_FIRST_ACTION_PICKED: "onboarding_first_action_picked",
+  FTUX_PRESET_SHEET_SHOWN: "ftux_preset_sheet_shown",
+  FTUX_PRESET_PICKED: "ftux_preset_picked",
+  FTUX_PRESET_CUSTOM: "ftux_preset_custom",
   FIRST_REAL_ENTRY: "first_real_entry",
+  // Headline metric: milliseconds from splash CTA tap to first real
+  // (non-demo) entry anywhere in the app. Target p50 < 20_000.
+  FTUX_TIME_TO_VALUE: "ftux_time_to_value",
   AUTH_PROMPT_SHOWN: "auth_prompt_shown",
   AUTH_PROMPT_DISMISSED: "auth_prompt_dismissed",
   AUTH_AFTER_VALUE: "auth_after_value",

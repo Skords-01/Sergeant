@@ -6,6 +6,7 @@ import { trackEvent, ANALYTICS_EVENTS } from "./analytics";
 import {
   ALL_MODULES,
   markFirstActionPending,
+  markFirstActionStartedAt,
   saveVibePicks,
 } from "./onboarding/vibePicks.js";
 import { seedDemoForModules } from "./onboarding/demoSeeds.js";
@@ -262,6 +263,7 @@ export function OnboardingWizard({ onDone, variant = "modal" }) {
       intent: "vibe_demo",
       picksCount: chosen.length,
     });
+    markFirstActionStartedAt();
     markFirstActionPending();
     markOnboardingDone();
     // Stay on the hub dashboard so the user's "aha" is the whole populated

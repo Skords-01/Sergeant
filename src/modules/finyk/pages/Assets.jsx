@@ -4,6 +4,8 @@ import { SubCard } from "../components/SubCard";
 import { RecurringSuggestions } from "../components/RecurringSuggestions";
 import { TxRow } from "../components/TxRow";
 import { Button } from "@shared/components/ui/Button";
+import { Card } from "@shared/components/ui/Card";
+import { Input } from "@shared/components/ui/Input";
 import {
   getAccountLabel,
   getMonoDebt,
@@ -39,9 +41,6 @@ function SectionBar({ title, summary, open, onToggle }) {
     </button>
   );
 }
-
-const formInp =
-  "w-full h-11 rounded-2xl border border-line bg-panelHi px-4 text-text outline-none focus:border-muted transition-colors";
 
 export function Assets({
   mono,
@@ -154,7 +153,7 @@ export function Assets({
           </div>
           <div className="flex-1 overflow-y-auto">
             <div className="max-w-4xl mx-auto px-4 pt-4 page-tabbar-pad">
-              <div className="bg-panel border border-line rounded-xl p-4 mb-3">
+              <Card variant="flat" radius="md" className="mb-3">
                 <div className="text-xs text-subtle mb-1">{label}</div>
                 <div className="text-2xl font-extrabold text-danger">
                   −
@@ -178,7 +177,7 @@ export function Assets({
                     }}
                   />
                 </div>
-              </div>
+              </Card>
               <p className="text-xs text-subtle mb-3 px-1">
                 Тапни транзакцію щоб прив&apos;язати як погашення. Виділені
                 зеленим — автоматично виявлені поповнення картки.
@@ -247,7 +246,7 @@ export function Assets({
           </div>
           <div className="flex-1 overflow-y-auto">
             <div className="max-w-4xl mx-auto px-4 pt-4 page-tabbar-pad">
-              <div className="bg-panel border border-line rounded-xl p-4 mb-4">
+              <Card variant="flat" radius="md" className="mb-4">
                 <p className="text-xs text-subtle leading-relaxed">
                   Обери списання (наприклад через Apple/Google). День місяця з
                   транзакції підставиться в «день списання»; сума піде в огляд і
@@ -265,7 +264,7 @@ export function Assets({
                     </button>
                   )}
                 </p>
-              </div>
+              </Card>
               {expenses.map((t, i) => {
                 const isLinked = linkedId === t.id;
                 return (
@@ -329,7 +328,7 @@ export function Assets({
         </div>
         <div className="flex-1 overflow-y-auto">
           <div className="max-w-4xl mx-auto px-4 pt-4 page-tabbar-pad">
-            <div className="bg-panel border border-line rounded-xl p-4 mb-4">
+            <Card variant="flat" radius="md" className="mb-4">
               <div className="text-xs text-subtle">
                 {item?.emoji} {item?.name}
               </div>
@@ -346,7 +345,7 @@ export function Assets({
                 Сплачено: {paid.toLocaleString("uk-UA")} з{" "}
                 {total?.toLocaleString("uk-UA")} ₴
               </div>
-            </div>
+            </Card>
             {transactions.map((t, i) => {
               const isLinked = linked.includes(t.id);
               const role = isLinked ? getTxRole(t) : null;
@@ -470,25 +469,22 @@ export function Assets({
               />
             ))}
             {showSubForm ? (
-              <div className="bg-panel border border-line rounded-xl p-4 space-y-3 mt-2">
-                <input
-                  className={formInp}
+              <Card variant="flat" radius="md" className="space-y-3 mt-2">
+                <Input
                   placeholder="Назва"
                   value={newSub.name}
                   onChange={(e) =>
                     setNewSub((a) => ({ ...a, name: e.target.value }))
                   }
                 />
-                <input
-                  className={formInp}
+                <Input
                   placeholder="Ключове слово з транзакції"
                   value={newSub.keyword}
                   onChange={(e) =>
                     setNewSub((a) => ({ ...a, keyword: e.target.value }))
                   }
                 />
-                <input
-                  className={formInp}
+                <Input
                   placeholder="День списання (1-31)"
                   type="number"
                   min="1"
@@ -534,7 +530,7 @@ export function Assets({
                     Скасувати
                   </Button>
                 </div>
-              </div>
+              </Card>
             ) : (
               <button
                 onClick={() => setShowSubForm(true)}
@@ -607,17 +603,15 @@ export function Assets({
               />
             ))}
             {showRecvForm ? (
-              <div className="bg-panel border border-line rounded-xl p-4 space-y-3">
-                <input
-                  className={formInp}
+              <Card variant="flat" radius="md" className="space-y-3">
+                <Input
                   placeholder="Ім'я або назва"
                   value={newRecv.name}
                   onChange={(e) =>
                     setNewRecv((a) => ({ ...a, name: e.target.value }))
                   }
                 />
-                <input
-                  className={formInp}
+                <Input
                   placeholder="Сума ₴"
                   type="number"
                   value={newRecv.amount}
@@ -625,16 +619,14 @@ export function Assets({
                     setNewRecv((a) => ({ ...a, amount: e.target.value }))
                   }
                 />
-                <input
-                  className={formInp}
+                <Input
                   placeholder="Нотатка (необов'язково)"
                   value={newRecv.note}
                   onChange={(e) =>
                     setNewRecv((a) => ({ ...a, note: e.target.value }))
                   }
                 />
-                <input
-                  className={formInp}
+                <Input
                   type="date"
                   value={newRecv.dueDate}
                   onChange={(e) =>
@@ -678,7 +670,7 @@ export function Assets({
                     Скасувати
                   </Button>
                 </div>
-              </div>
+              </Card>
             ) : (
               <button
                 onClick={() => setShowRecvForm(true)}
@@ -724,17 +716,15 @@ export function Assets({
               </div>
             ))}
             {showAssetForm ? (
-              <div className="bg-panel border border-line rounded-xl p-4 space-y-3">
-                <input
-                  className={formInp}
+              <Card variant="flat" radius="md" className="space-y-3">
+                <Input
                   placeholder="Назва"
                   value={newAsset.name}
                   onChange={(e) =>
                     setNewAsset((a) => ({ ...a, name: e.target.value }))
                   }
                 />
-                <input
-                  className={formInp}
+                <Input
                   placeholder="Сума"
                   type="number"
                   value={newAsset.amount}
@@ -743,7 +733,7 @@ export function Assets({
                   }
                 />
                 <select
-                  className={formInp}
+                  className="w-full h-11 rounded-2xl border border-line bg-panelHi px-4 text-text outline-none focus:border-muted transition-colors"
                   value={newAsset.currency}
                   onChange={(e) =>
                     setNewAsset((a) => ({ ...a, currency: e.target.value }))
@@ -782,7 +772,7 @@ export function Assets({
                     Скасувати
                   </Button>
                 </div>
-              </div>
+              </Card>
             ) : (
               <button
                 onClick={() => setShowAssetForm(true)}
@@ -842,10 +832,10 @@ export function Assets({
               />
             ))}
             {showDebtForm ? (
-              <div className="bg-panel border border-line rounded-xl p-4 space-y-3">
+              <Card variant="flat" radius="md" className="space-y-3">
                 <div className="flex gap-2">
-                  <input
-                    className={cn(formInp, "flex-1")}
+                  <Input
+                    className="flex-1"
                     placeholder="Назва пасиву (кредит, борг...)"
                     value={newDebt.name}
                     onChange={(e) =>
@@ -869,8 +859,7 @@ export function Assets({
                     }}
                   />
                 </div>
-                <input
-                  className={formInp}
+                <Input
                   placeholder="Загальна сума ₴"
                   type="number"
                   value={newDebt.totalAmount}
@@ -878,8 +867,7 @@ export function Assets({
                     setNewDebt((a) => ({ ...a, totalAmount: e.target.value }))
                   }
                 />
-                <input
-                  className={formInp}
+                <Input
                   type="date"
                   value={newDebt.dueDate}
                   onChange={(e) =>
@@ -922,7 +910,7 @@ export function Assets({
                     Скасувати
                   </Button>
                 </div>
-              </div>
+              </Card>
             ) : (
               <button
                 onClick={() => setShowDebtForm(true)}

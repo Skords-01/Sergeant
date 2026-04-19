@@ -242,7 +242,7 @@ function buildContext(): string {
 
   if (d.accounts.length > 0) {
     const { balance, debt: monoDebt } = getMonoTotals(
-      d.accounts,
+      d.accounts as Parameters<typeof getMonoTotals>[0],
       d.hiddenAccounts,
     );
     const manualDebtTotal = d.manualDebts.reduce(

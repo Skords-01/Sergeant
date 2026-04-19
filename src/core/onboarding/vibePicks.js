@@ -7,6 +7,12 @@ const FIRST_ACTION_PENDING_KEY = "hub_first_action_pending_v1";
 const FIRST_REAL_ENTRY_KEY = "hub_first_real_entry_done_v1";
 const SOFT_AUTH_DISMISSED_KEY = "hub_soft_auth_dismissed_v1";
 const DEMO_BANNER_DISMISSED_KEY = "hub_demo_banner_dismissed_v1";
+// Millisecond epoch stamp captured the moment the user taps «Заповни
+// мій хаб» on the splash. Used by `firstRealEntry.js` to compute the
+// `ftux_time_to_value` duration — the single headline metric for the
+// 30-second promise.
+const FIRST_ACTION_STARTED_AT_KEY = "hub_first_action_started_at_v1";
+const TTV_MS_KEY = "hub_ftux_ttv_ms_v1";
 
 /** @typedef {"finyk" | "fizruk" | "routine" | "nutrition"} HubModuleId */
 
@@ -123,5 +129,67 @@ export function dismissSoftAuth() {
     localStorage.setItem(SOFT_AUTH_DISMISSED_KEY, "1");
   } catch {
     /* noop */
+  }
+}
+
+/**
+ * Start the 30-second FTUX clock. Called the moment the splash CTA is
+ * tapped so `getTimeToValueMs()` (computed on first real entry) has a
+ * deterministic origin regardless of routing/navigation timing.
+ *
+ * Idempotent: does nothing if a timestamp is already recorded — a user
+ * who bounces in and out of /welcome shouldn't reset the clock.
+ */
+export function markFirstActionStartedAt() {
+  try {
+    if (localStorage.getItem(FIRST_ACTION_STARTED_AT_KEY)) return;
+    localStorage.setItem(FIRST_ACTION_STARTED_AT_KEY, String(Date.now()));
+  } catch {
+    /* noop */
+  }
+}
+
+/**
+ * @returns {number | null} epoch ms, or `null` if the stamp is missing
+ *   (returning users / anyone who completed onboarding before this ship).
+ */
+export function getFirstActionStartedAt() {
+  try {
+    const v = localStorage.getItem(FIRST_ACTION_STARTED_AT_KEY);
+    if (!v) return null;
+    const n = Number(v);
+    return Number.isFinite(n) && n > 0 ? n : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Persist the final time-to-value (ms from splash CTA tap to first
+ * real entry). The celebration toast reads this so the number is
+ * stable across re-renders even though the source timestamp is cleared.
+ *
+ * @param {number} ms
+ */
+export function saveTimeToValueMs(ms) {
+  try {
+    if (!Number.isFinite(ms) || ms < 0) return;
+    localStorage.setItem(TTV_MS_KEY, String(Math.round(ms)));
+  } catch {
+    /* noop */
+  }
+}
+
+/**
+ * @returns {number | null} ms, or `null` if not yet measured.
+ */
+export function getTimeToValueMs() {
+  try {
+    const v = localStorage.getItem(TTV_MS_KEY);
+    if (!v) return null;
+    const n = Number(v);
+    return Number.isFinite(n) && n >= 0 ? n : null;
+  } catch {
+    return null;
   }
 }

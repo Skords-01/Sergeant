@@ -1,15 +1,19 @@
 import { useEffect, useMemo, useState } from "react";
 import { cn } from "@shared/lib/cn";
 import { Icon } from "@shared/components/ui/Icon";
-import { openHubModuleWithAction } from "@shared/lib/hubNav";
 import { trackEvent, ANALYTICS_EVENTS } from "../analytics";
 import { clearFirstActionPending, getVibePicks } from "./vibePicks.js";
+import { PresetSheet, getPresetModule } from "./PresetSheet.jsx";
 
 /**
- * Per-module "one tap to your first real entry" definitions. Each action
- * routes into its module with a PWA action (the same handler PWA
- * shortcuts use), so a single tap lands the user on an already-open
- * input sheet.
+ * Per-module "one tap to your first real entry" copy. Tapping a row
+ * opens `PresetSheet` for that module instead of routing into the
+ * module's full input wizard — the preset sheet's tiles write a real
+ * entry directly to storage, which is materially faster than any
+ * module's stock flow and the shortest path to the 30-second promise.
+ * If the user wants the full input, the preset sheet has a
+ * «Власний варіант» fallback that still deep-links via
+ * `openHubModuleWithAction`.
  */
 const ACTIONS = {
   routine: {
@@ -17,30 +21,24 @@ const ACTIONS = {
     title: "Створи першу звичку",
     desc: "30 секунд. Стрік почнеться сьогодні.",
     accent: "text-routine bg-routine-soft",
-    run: () => openHubModuleWithAction("routine", "add_habit"),
   },
   finyk: {
     icon: "credit-card",
     title: "Додай першу витрату",
     desc: "5 секунд, будь-яка сума.",
     accent: "text-finyk bg-finyk-soft",
-    run: () => openHubModuleWithAction("finyk", "add_expense"),
   },
   nutrition: {
     icon: "utensils",
     title: "Запиши перший прийом їжі",
     desc: "Калорії порахую я.",
     accent: "text-nutrition bg-nutrition-soft",
-    // Photo-first FTUX (#S0.3): skip the "Звідки страва?" source
-    // picker and open the camera/file picker immediately.
-    run: () => openHubModuleWithAction("nutrition", "add_meal_photo"),
   },
   fizruk: {
     icon: "dumbbell",
     title: "Увімкни розминку",
     desc: "10 хв, таймер сам.",
     accent: "text-fizruk bg-fizruk-soft",
-    run: () => openHubModuleWithAction("fizruk", "start_workout"),
   },
 };
 
@@ -76,7 +74,10 @@ export function FirstActionHeroCard({ onDismiss }) {
     return raw.length > 0 ? raw : Object.keys(ACTIONS);
   }, []);
 
-  const primaryId = useMemo(() => pickPrimary(picks), [picks]);
+  // `pickPrimary` returns a primitive string from a trivial scan of a
+  // 4-element constant; wrapping it in `useMemo` wouldn't prevent any
+  // work and the dependency compare costs more than the scan.
+  const primaryId = pickPrimary(picks);
   const primary = ACTIONS[primaryId];
   const others = useMemo(
     () => picks.filter((id) => id !== primaryId && ACTIONS[id]),
@@ -84,6 +85,11 @@ export function FirstActionHeroCard({ onDismiss }) {
   );
 
   const [expanded, setExpanded] = useState(false);
+  // Module id whose PresetSheet is currently open, or `null` if closed.
+  // Keeping the hero card mounted while the sheet is open means the
+  // user can dismiss the sheet and try another module without losing
+  // their FTUX context.
+  const [activePresetId, setActivePresetId] = useState(null);
 
   useEffect(() => {
     trackEvent(ANALYTICS_EVENTS.ONBOARDING_FIRST_ACTION_SHOWN, {
@@ -97,142 +103,158 @@ export function FirstActionHeroCard({ onDismiss }) {
     onDismiss?.();
   };
 
-  const run = (id) => {
+  const openPreset = (id) => {
+    if (!getPresetModule(id)) return;
     trackEvent(ANALYTICS_EVENTS.ONBOARDING_FIRST_ACTION_PICKED, {
       module: id,
       primary: primaryId,
       via: id === primaryId ? "primary" : "expand",
     });
+    setActivePresetId(id);
+  };
+
+  const handlePresetPick = () => {
+    // The preset writer already persisted the entry; dismiss the hero
+    // card so the next dashboard render surfaces the celebration toast
+    // (from `useFirstEntryCelebration`) against a clean layout.
     clearFirstActionPending();
+    setActivePresetId(null);
     onDismiss?.();
-    ACTIONS[id]?.run();
   };
 
   if (!primary) return null;
 
   return (
-    <section
-      className="relative bg-panel border border-line rounded-2xl p-4 shadow-card space-y-3"
-      aria-label="Перша дія"
-    >
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="text-xs font-semibold uppercase tracking-wide text-subtle">
-            Старт
-          </div>
-          <h2 className="text-base font-bold text-text mt-0.5">
-            Зроби одну річ — і хаб твій
-          </h2>
-          <p className="text-xs text-muted mt-0.5 leading-snug">
-            Цифри нижче — приклад. Твої з&apos;являться, щойно щось додаси.
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={dismiss}
-          className="shrink-0 -mt-1 -mr-1 text-muted hover:text-text p-1.5 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/45"
-          aria-label="Сховати"
-        >
-          <Icon name="close" size={16} />
-        </button>
-      </div>
-
-      <button
-        type="button"
-        onClick={() => run(primaryId)}
-        className={cn(
-          "w-full text-left px-4 py-3 rounded-xl border-2 border-brand-500/50 bg-brand-500/5",
-          "hover:border-brand-500 hover:bg-brand-500/10 transition-all",
-          "focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/45",
-        )}
+    <>
+      <section
+        className="relative bg-panel border border-line rounded-2xl p-4 shadow-card space-y-3"
+        aria-label="Перша дія"
       >
-        <div className="flex items-center gap-3">
-          <div
-            className={cn(
-              "w-11 h-11 shrink-0 rounded-xl flex items-center justify-center",
-              primary.accent,
-            )}
-          >
-            <Icon name={primary.icon} size={22} />
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="text-sm font-bold text-text">{primary.title}</div>
-            <div className="text-xs text-muted mt-0.5 truncate">
-              {primary.desc}
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="text-xs font-semibold uppercase tracking-wide text-subtle">
+              Старт
             </div>
+            <h2 className="text-base font-bold text-text mt-0.5">
+              Зроби одну річ — і хаб твій
+            </h2>
+            <p className="text-xs text-muted mt-0.5 leading-snug">
+              Цифри нижче — приклад. Твої з&apos;являться, щойно щось додаси.
+            </p>
           </div>
-          <Icon name="chevron-right" size={18} className="text-brand-600" />
-        </div>
-      </button>
-
-      {others.length > 0 && (
-        <>
           <button
             type="button"
-            onClick={() => setExpanded((v) => !v)}
-            aria-expanded={expanded}
-            className={cn(
-              "w-full text-xs font-medium text-muted hover:text-text",
-              "flex items-center justify-center gap-1 py-1",
-              "focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/45 rounded-md",
-            )}
+            onClick={dismiss}
+            className="shrink-0 -mt-1 -mr-1 text-muted hover:text-text p-1.5 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/45"
+            aria-label="Сховати"
           >
-            <span>{expanded ? "Сховати" : "Інший модуль"}</span>
-            <Icon
-              name="chevron-right"
-              size={12}
-              className={cn(
-                "transition-transform",
-                expanded ? "rotate-90" : "rotate-0",
-              )}
-            />
+            <Icon name="close" size={16} />
           </button>
+        </div>
 
-          {expanded && (
-            <div className="space-y-2">
-              {others.map((id) => {
-                const a = ACTIONS[id];
-                return (
-                  <button
-                    key={id}
-                    type="button"
-                    onClick={() => run(id)}
-                    className={cn(
-                      "w-full text-left px-3 py-2 rounded-xl border border-line bg-panelHi",
-                      "hover:border-brand-500/50 hover:bg-brand-500/5 transition-all",
-                      "focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/45",
-                    )}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={cn(
-                          "w-9 h-9 shrink-0 rounded-xl flex items-center justify-center",
-                          a.accent,
-                        )}
-                      >
-                        <Icon name={a.icon} size={18} />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="text-sm font-semibold text-text">
-                          {a.title}
-                        </div>
-                        <div className="text-xs text-muted mt-0.5 truncate">
-                          {a.desc}
-                        </div>
-                      </div>
-                      <Icon
-                        name="chevron-right"
-                        size={14}
-                        className="text-muted"
-                      />
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
+        <button
+          type="button"
+          onClick={() => openPreset(primaryId)}
+          className={cn(
+            "w-full text-left px-4 py-3 rounded-xl border-2 border-brand-500/50 bg-brand-500/5",
+            "hover:border-brand-500 hover:bg-brand-500/10 transition-all",
+            "focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/45",
           )}
-        </>
-      )}
-    </section>
+        >
+          <div className="flex items-center gap-3">
+            <div
+              className={cn(
+                "w-11 h-11 shrink-0 rounded-xl flex items-center justify-center",
+                primary.accent,
+              )}
+            >
+              <Icon name={primary.icon} size={22} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="text-sm font-bold text-text">{primary.title}</div>
+              <div className="text-xs text-muted mt-0.5 truncate">
+                {primary.desc}
+              </div>
+            </div>
+            <Icon name="chevron-right" size={18} className="text-brand-600" />
+          </div>
+        </button>
+
+        {others.length > 0 && (
+          <>
+            <button
+              type="button"
+              onClick={() => setExpanded((v) => !v)}
+              aria-expanded={expanded}
+              className={cn(
+                "w-full text-xs font-medium text-muted hover:text-text",
+                "flex items-center justify-center gap-1 py-1",
+                "focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/45 rounded-md",
+              )}
+            >
+              <span>{expanded ? "Сховати" : "Інший модуль"}</span>
+              <Icon
+                name="chevron-right"
+                size={12}
+                className={cn(
+                  "transition-transform",
+                  expanded ? "rotate-90" : "rotate-0",
+                )}
+              />
+            </button>
+
+            {expanded && (
+              <div className="space-y-2">
+                {others.map((id) => {
+                  const a = ACTIONS[id];
+                  return (
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() => openPreset(id)}
+                      className={cn(
+                        "w-full text-left px-3 py-2 rounded-xl border border-line bg-panelHi",
+                        "hover:border-brand-500/50 hover:bg-brand-500/5 transition-all",
+                        "focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/45",
+                      )}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={cn(
+                            "w-9 h-9 shrink-0 rounded-xl flex items-center justify-center",
+                            a.accent,
+                          )}
+                        >
+                          <Icon name={a.icon} size={18} />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="text-sm font-semibold text-text">
+                            {a.title}
+                          </div>
+                          <div className="text-xs text-muted mt-0.5 truncate">
+                            {a.desc}
+                          </div>
+                        </div>
+                        <Icon
+                          name="chevron-right"
+                          size={14}
+                          className="text-muted"
+                        />
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </>
+        )}
+      </section>
+      <PresetSheet
+        open={activePresetId != null}
+        moduleId={activePresetId}
+        onClose={() => setActivePresetId(null)}
+        onPick={handlePresetPick}
+      />
+    </>
   );
 }

@@ -390,9 +390,9 @@ export function Exercise({ exerciseId }) {
     return (
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-4xl mx-auto px-4 pt-4 page-tabbar-pad">
-          <div className="bg-panel border border-line rounded-2xl p-5 shadow-card text-sm text-subtle">
+          <Card radius="lg" padding="lg" className="text-sm text-subtle">
             Невірний ID вправи
-          </div>
+          </Card>
         </div>
       </div>
     );
