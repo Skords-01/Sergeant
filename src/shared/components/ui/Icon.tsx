@@ -1,3 +1,5 @@
+import type { ReactNode, SVGAttributes } from "react";
+
 /**
  * Shared SVG icon system.
  *
@@ -6,13 +8,6 @@
  *
  *     import { Icon } from "@shared/components/ui";
  *     <Icon name="chevron-right" size={18} />
- *
- * Adding a new icon: append it to the `PATHS` map below. Keep paths small —
- * they are bundled into the JS.
- *
- * The audit identified 141 inline SVGs in 55 files. This module covers the
- * most-duplicated glyphs; the remainder are migrated opportunistically in
- * follow-up PRs using the same pattern.
  */
 
 const PATHS = {
@@ -99,19 +94,21 @@ const PATHS = {
       <line x1="12" y1="16" x2="12.01" y2="16" />
     </>
   ),
-};
+} as const satisfies Record<string, ReactNode>;
 
-/**
- * Icon component.
- *
- * @param {Object} props
- * @param {keyof typeof PATHS} props.name
- * @param {number} [props.size=20]
- * @param {number} [props.strokeWidth=2]
- * @param {string} [props.className]
- * @param {string} [props.title] - if provided, icon is announced to AT;
- *                                  otherwise it is hidden via aria-hidden.
- */
+export type IconName = keyof typeof PATHS;
+
+export interface IconProps extends Omit<
+  SVGAttributes<SVGSVGElement>,
+  "name" | "title"
+> {
+  name: IconName;
+  size?: number;
+  strokeWidth?: number;
+  className?: string;
+  title?: string;
+}
+
 export function Icon({
   name,
   size = 20,
@@ -119,7 +116,7 @@ export function Icon({
   className,
   title,
   ...rest
-}) {
+}: IconProps) {
   const body = PATHS[name];
   if (!body) {
     if (import.meta.env?.DEV) {
@@ -127,7 +124,7 @@ export function Icon({
     }
     return null;
   }
-  const labelProps = title
+  const labelProps: SVGAttributes<SVGSVGElement> = title
     ? { role: "img", "aria-label": title }
     : { "aria-hidden": true };
   return (
@@ -150,4 +147,4 @@ export function Icon({
   );
 }
 
-export const ICON_NAMES = Object.keys(PATHS);
+export const ICON_NAMES = Object.keys(PATHS) as IconName[];

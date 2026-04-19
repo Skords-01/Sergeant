@@ -1,13 +1,26 @@
+import type { HTMLAttributes, ReactNode } from "react";
 import { cn } from "@shared/lib/cn";
 
-const variants = {
+export type BannerVariant = "info" | "success" | "warning" | "danger";
+
+const variants: Record<BannerVariant, string> = {
   info: "border-line bg-panelHi/60 text-text",
   success: "border-emerald-500/25 bg-emerald-500/10 text-emerald-100",
   warning: "border-amber-500/35 bg-amber-500/10 text-amber-200",
   danger: "border-danger/30 bg-danger/10 text-danger",
 };
 
-export function Banner({ variant = "info", className, children, ...props }) {
+export interface BannerProps extends HTMLAttributes<HTMLDivElement> {
+  variant?: BannerVariant;
+  children?: ReactNode;
+}
+
+export function Banner({
+  variant = "info",
+  className,
+  children,
+  ...props
+}: BannerProps) {
   return (
     <div
       className={cn(

@@ -1,18 +1,9 @@
 import { forwardRef } from "react";
+import type { ElementType, HTMLAttributes, ReactNode, Ref } from "react";
 import { cn } from "../../lib/cn";
 
 /**
  * Sergeant Design System — Card Component
- *
- * Variants:
- * - default: Standard panel card
- * - interactive: Hover lift effect for clickable cards
- * - flat: No shadow, minimal border
- *
- * Plus module-branded variants (finyk, fizruk, routine, nutrition) and
- * their soft counterparts.
- *
- * Padding: none | sm | md (default) | lg | xl.
  */
 
 const variants = {
@@ -23,13 +14,11 @@ const variants = {
   elevated: "bg-panel border border-line rounded-3xl shadow-float",
   ghost: "bg-transparent border border-transparent rounded-3xl",
 
-  // Module hero cards
   finyk: "rounded-3xl border border-brand-200/50 bg-hero-emerald shadow-card",
   fizruk: "rounded-3xl border border-teal-200/50 bg-hero-teal shadow-card",
   routine: "rounded-3xl border border-coral-200/50 bg-hero-coral shadow-card",
   nutrition: "rounded-3xl border border-lime-200/50 bg-hero-lime shadow-card",
 
-  // Soft module cards (less prominent)
   "finyk-soft":
     "rounded-2xl border border-brand-100 bg-brand-50/50 backdrop-blur-sm",
   "fizruk-soft":
@@ -38,7 +27,9 @@ const variants = {
     "rounded-2xl border border-coral-100 bg-coral-50/50 backdrop-blur-sm",
   "nutrition-soft":
     "rounded-2xl border border-lime-100 bg-lime-50/50 backdrop-blur-sm",
-};
+} as const;
+
+export type CardVariant = keyof typeof variants;
 
 const paddings = {
   none: "",
@@ -46,9 +37,18 @@ const paddings = {
   md: "p-4",
   lg: "p-5",
   xl: "p-6",
-};
+} as const;
 
-export const Card = forwardRef(function Card(
+export type CardPadding = keyof typeof paddings;
+
+export interface CardProps extends HTMLAttributes<HTMLElement> {
+  variant?: CardVariant;
+  padding?: CardPadding;
+  as?: ElementType;
+  children?: ReactNode;
+}
+
+export const Card = forwardRef<HTMLElement, CardProps>(function Card(
   {
     className,
     variant = "default",
@@ -61,7 +61,7 @@ export const Card = forwardRef(function Card(
 ) {
   return (
     <Component
-      ref={ref}
+      ref={ref as Ref<HTMLElement>}
       className={cn(variants[variant], paddings[padding], className)}
       {...props}
     >
@@ -70,10 +70,11 @@ export const Card = forwardRef(function Card(
   );
 });
 
-/**
- * CardHeader — Consistent header section for cards
- */
-export function CardHeader({ className, children, ...props }) {
+export function CardHeader({
+  className,
+  children,
+  ...props
+}: HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       className={cn("flex items-center justify-between mb-4", className)}
@@ -84,10 +85,15 @@ export function CardHeader({ className, children, ...props }) {
   );
 }
 
-/**
- * CardTitle — Title text for cards
- */
-export function CardTitle({ className, as: Component = "h3", ...props }) {
+export interface CardTitleProps extends HTMLAttributes<HTMLElement> {
+  as?: ElementType;
+}
+
+export function CardTitle({
+  className,
+  as: Component = "h3",
+  ...props
+}: CardTitleProps) {
   return (
     <Component
       className={cn("text-lg font-semibold text-text", className)}
@@ -96,24 +102,24 @@ export function CardTitle({ className, as: Component = "h3", ...props }) {
   );
 }
 
-/**
- * CardDescription — Secondary text for cards
- */
-export function CardDescription({ className, ...props }) {
+export function CardDescription({
+  className,
+  ...props
+}: HTMLAttributes<HTMLParagraphElement>) {
   return <p className={cn("text-sm text-muted mt-1", className)} {...props} />;
 }
 
-/**
- * CardContent — Main content area with optional overflow handling
- */
-export function CardContent({ className, ...props }) {
+export function CardContent({
+  className,
+  ...props
+}: HTMLAttributes<HTMLDivElement>) {
   return <div className={cn("", className)} {...props} />;
 }
 
-/**
- * CardFooter — Footer section for actions
- */
-export function CardFooter({ className, ...props }) {
+export function CardFooter({
+  className,
+  ...props
+}: HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       className={cn(

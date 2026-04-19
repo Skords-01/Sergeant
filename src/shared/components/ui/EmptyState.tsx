@@ -1,15 +1,17 @@
+import type { ReactNode } from "react";
 import { cn } from "@shared/lib/cn";
+
+export interface EmptyStateProps {
+  icon?: ReactNode;
+  title: ReactNode;
+  description?: ReactNode;
+  action?: ReactNode;
+  className?: string;
+  compact?: boolean;
+}
 
 /**
  * Reusable empty state component.
- *
- * Props:
- *   icon       — ReactNode, SVG icon to display (optional)
- *   title      — string, main heading
- *   description — string | ReactNode, body text (optional)
- *   action     — ReactNode, CTA button/link (optional)
- *   className  — string, extra classes on wrapper
- *   compact    — boolean, smaller layout (default false)
  */
 export function EmptyState({
   icon,
@@ -18,7 +20,7 @@ export function EmptyState({
   action,
   className,
   compact = false,
-}) {
+}: EmptyStateProps) {
   return (
     <div
       className={cn(

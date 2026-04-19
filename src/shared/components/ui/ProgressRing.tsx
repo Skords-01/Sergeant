@@ -1,15 +1,16 @@
 import { cn } from "../../lib/cn";
-import { useState, useEffect } from "react";
+import { useState, useEffect, type CSSProperties, type ReactNode } from "react";
 
 /**
  * Sergeant Design System — ProgressRing Component
- *
- * Duolingo-inspired circular progress indicator with animation support,
- * completion celebrations, and glowing effects.
- *
- * Sizes: xs (32px), sm (48px), md (64px), lg (96px), xl (128px)
- * Variants: brand, finyk, fizruk, routine, nutrition
  */
+
+interface SizeConfig {
+  size: number;
+  strokeWidth: number;
+  fontSize: string;
+  glowSize: number;
+}
 
 const sizes = {
   xs: { size: 32, strokeWidth: 3, fontSize: "text-2xs", glowSize: 4 },
@@ -17,7 +18,17 @@ const sizes = {
   md: { size: 64, strokeWidth: 5, fontSize: "text-sm", glowSize: 8 },
   lg: { size: 96, strokeWidth: 6, fontSize: "text-lg", glowSize: 12 },
   xl: { size: 128, strokeWidth: 8, fontSize: "text-xl", glowSize: 16 },
-};
+} satisfies Record<string, SizeConfig>;
+
+export type ProgressRingSize = keyof typeof sizes;
+
+interface VariantConfig {
+  track: string;
+  fill: string;
+  text: string;
+  glow: string;
+  gradient: readonly [string, string];
+}
 
 const variants = {
   brand: {
@@ -55,7 +66,6 @@ const variants = {
     glow: "rgba(132, 204, 22, 0.4)",
     gradient: ["#84cc16", "#a3e635"],
   },
-  // Status variants
   success: {
     track: "stroke-brand-100 dark:stroke-brand-900/40",
     fill: "stroke-success",
@@ -77,7 +87,24 @@ const variants = {
     glow: "rgba(239, 68, 68, 0.4)",
     gradient: ["#ef4444", "#f87171"],
   },
-};
+} satisfies Record<string, VariantConfig>;
+
+export type ProgressRingVariant = keyof typeof variants;
+
+export interface ProgressRingProps {
+  value?: number;
+  max?: number;
+  size?: ProgressRingSize;
+  variant?: ProgressRingVariant;
+  showValue?: boolean;
+  valueFormat?: (value: number, max: number) => ReactNode;
+  label?: ReactNode;
+  animate?: boolean;
+  showGlow?: boolean;
+  celebrateOnComplete?: boolean;
+  className?: string;
+  children?: ReactNode;
+}
 
 export function ProgressRing({
   value = 0,
@@ -92,10 +119,10 @@ export function ProgressRing({
   celebrateOnComplete = false,
   className,
   children,
-}) {
+}: ProgressRingProps) {
   const config = sizes[sizeProp];
   const colors = variants[variant];
-  const [celebrating, setCelebrating] = useState(false);
+  const [celebrating, setCelebrating] = useState<boolean>(false);
 
   const { size, strokeWidth, glowSize } = config;
   const radius = (size - strokeWidth) / 2;
@@ -105,7 +132,6 @@ export function ProgressRing({
   const offset = circumference - (percentage / 100) * circumference;
   const isComplete = percentage >= 100;
 
-  // Celebrate on completion
   useEffect(() => {
     if (celebrateOnComplete && isComplete) {
       setCelebrating(true);
@@ -118,7 +144,6 @@ export function ProgressRing({
     ? valueFormat(value, max)
     : `${Math.round(percentage)}%`;
 
-  // Generate unique gradient ID
   const gradientId = `progress-gradient-${variant}-${size}`;
 
   return (
@@ -129,7 +154,6 @@ export function ProgressRing({
         className,
       )}
     >
-      {/* Glow effect behind the ring */}
       {showGlow && percentage > 0 && (
         <div
           className={cn(
@@ -152,7 +176,6 @@ export function ProgressRing({
         className="progress-ring relative"
         aria-hidden="true"
       >
-        {/* Gradient definition */}
         <defs>
           <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor={colors.gradient[0]} />
@@ -160,7 +183,6 @@ export function ProgressRing({
           </linearGradient>
         </defs>
 
-        {/* Background track */}
         <circle
           cx={size / 2}
           cy={size / 2}
@@ -170,7 +192,6 @@ export function ProgressRing({
           className={cn(colors.track)}
         />
 
-        {/* Progress fill with gradient */}
         <circle
           cx={size / 2}
           cy={size / 2}
@@ -186,15 +207,16 @@ export function ProgressRing({
             animate && "transition-[stroke-dashoffset] duration-700 ease-out",
             isComplete && "progress-ring-complete",
           )}
-          style={{
-            "--progress-offset": offset,
-            filter: isComplete
-              ? `drop-shadow(0 0 ${glowSize / 2}px ${colors.glow})`
-              : "none",
-          }}
+          style={
+            {
+              "--progress-offset": offset,
+              filter: isComplete
+                ? `drop-shadow(0 0 ${glowSize / 2}px ${colors.glow})`
+                : "none",
+            } as CSSProperties
+          }
         />
 
-        {/* Completion checkmark overlay */}
         {isComplete && celebrating && (
           <g className="animate-check-draw">
             <circle
@@ -208,7 +230,6 @@ export function ProgressRing({
         )}
       </svg>
 
-      {/* Center content */}
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         {children ? (
           children

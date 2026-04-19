@@ -1,10 +1,78 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { ReactNode } from "react";
 import { cn } from "@shared/lib/cn";
 
-export function useVoiceInput({ lang = "uk-UA", onResult, onError } = {}) {
-  const [listening, setListening] = useState(false);
-  const [supported, setSupported] = useState(false);
-  const recRef = useRef(null);
+type SpeechRecognitionErrorName =
+  | "not-allowed"
+  | "no-speech"
+  | "aborted"
+  | string;
+
+interface SpeechRecognitionAlternative {
+  transcript: string;
+  confidence: number;
+}
+interface SpeechRecognitionResult {
+  isFinal: boolean;
+  length: number;
+  [index: number]: SpeechRecognitionAlternative;
+}
+interface SpeechRecognitionResultList {
+  length: number;
+  [index: number]: SpeechRecognitionResult;
+}
+interface SpeechRecognitionEventLike {
+  results?: SpeechRecognitionResultList;
+}
+interface SpeechRecognitionErrorEventLike {
+  error: SpeechRecognitionErrorName;
+}
+
+interface SpeechRecognitionLike {
+  lang: string;
+  interimResults: boolean;
+  maxAlternatives: number;
+  continuous: boolean;
+  onstart: (() => void) | null;
+  onend: (() => void) | null;
+  onresult: ((e: SpeechRecognitionEventLike) => void) | null;
+  onerror: ((e: SpeechRecognitionErrorEventLike) => void) | null;
+  start(): void;
+  stop(): void;
+  abort(): void;
+}
+
+type SpeechRecognitionCtor = new () => SpeechRecognitionLike;
+
+declare global {
+  interface Window {
+    SpeechRecognition?: SpeechRecognitionCtor;
+    webkitSpeechRecognition?: SpeechRecognitionCtor;
+  }
+}
+
+export interface UseVoiceInputOptions {
+  lang?: string;
+  onResult?: (transcript: string) => void;
+  onError?: (message: string) => void;
+}
+
+export interface UseVoiceInputResult {
+  listening: boolean;
+  supported: boolean;
+  start: () => void;
+  stop: () => void;
+  toggle: () => void;
+}
+
+export function useVoiceInput({
+  lang = "uk-UA",
+  onResult,
+  onError,
+}: UseVoiceInputOptions = {}): UseVoiceInputResult {
+  const [listening, setListening] = useState<boolean>(false);
+  const [supported, setSupported] = useState<boolean>(false);
+  const recRef = useRef<SpeechRecognitionLike | null>(null);
 
   useEffect(() => {
     const SpeechRecognition =
@@ -22,7 +90,9 @@ export function useVoiceInput({ lang = "uk-UA", onResult, onError } = {}) {
     if (recRef.current) {
       try {
         recRef.current.abort();
-      } catch {}
+      } catch {
+        /* noop */
+      }
       recRef.current = null;
     }
     const rec = new SpeechRecognition();
@@ -65,7 +135,9 @@ export function useVoiceInput({ lang = "uk-UA", onResult, onError } = {}) {
     if (recRef.current) {
       try {
         recRef.current.stop();
-      } catch {}
+      } catch {
+        /* noop */
+      }
     }
   }, []);
 
@@ -79,12 +151,26 @@ export function useVoiceInput({ lang = "uk-UA", onResult, onError } = {}) {
       if (recRef.current) {
         try {
           recRef.current.abort();
-        } catch {}
+        } catch {
+          /* noop */
+        }
       }
     };
   }, []);
 
   return { listening, supported, start, stop, toggle };
+}
+
+export type VoiceMicButtonSize = "sm" | "md" | "lg";
+
+export interface VoiceMicButtonProps {
+  onResult?: (transcript: string) => void;
+  onError?: (message: string) => void;
+  lang?: string;
+  className?: string;
+  size?: VoiceMicButtonSize;
+  label?: ReactNode;
+  disabled?: boolean;
 }
 
 export function VoiceMicButton({
@@ -95,7 +181,7 @@ export function VoiceMicButton({
   size = "md",
   label,
   disabled = false,
-}) {
+}: VoiceMicButtonProps) {
   const { listening, supported, toggle } = useVoiceInput({
     lang,
     onResult,
@@ -104,20 +190,26 @@ export function VoiceMicButton({
 
   if (!supported) return null;
 
-  const sizeMap = {
+  const sizeMap: Record<VoiceMicButtonSize, string> = {
     sm: "w-8 h-8",
     md: "w-10 h-10",
     lg: "w-12 h-12",
   };
   const iconSize = size === "sm" ? 14 : size === "lg" ? 20 : 16;
 
+  const accessibleLabel = listening
+    ? "Зупинити запис"
+    : typeof label === "string"
+      ? label
+      : "Голосовий ввід";
+
   return (
     <button
       type="button"
       onClick={toggle}
       disabled={disabled}
-      aria-label={listening ? "Зупинити запис" : label || "Голосовий ввід"}
-      title={listening ? "Зупинити запис" : label || "Голосовий ввід"}
+      aria-label={accessibleLabel}
+      title={accessibleLabel}
       className={cn(
         "relative flex items-center justify-center rounded-2xl shrink-0 transition-all",
         sizeMap[size] || sizeMap.md,

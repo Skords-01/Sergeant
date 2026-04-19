@@ -1,8 +1,20 @@
 import { memo, useRef, useState, useCallback } from "react";
+import type { ReactNode, TouchEvent } from "react";
 import { cn } from "@shared/lib/cn";
 
 const SWIPE_THRESHOLD = 60;
 const MAX_SWIPE = 100;
+
+export interface SwipeToActionProps {
+  children: ReactNode;
+  onSwipeLeft?: () => void;
+  onSwipeRight?: () => void;
+  leftLabel?: ReactNode;
+  rightLabel?: ReactNode;
+  leftColor?: string;
+  rightColor?: string;
+  disabled?: boolean;
+}
 
 function SwipeToActionImpl({
   children,
@@ -13,13 +25,13 @@ function SwipeToActionImpl({
   leftColor = "bg-success",
   rightColor = "bg-danger",
   disabled = false,
-}) {
-  const [offset, setOffset] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
-  const [committed, setCommitted] = useState(false);
-  const startX = useRef(null);
-  const startY = useRef(null);
-  const isHorizontal = useRef(null);
+}: SwipeToActionProps) {
+  const [offset, setOffset] = useState<number>(0);
+  const [isDragging, setIsDragging] = useState<boolean>(false);
+  const [committed, setCommitted] = useState<boolean>(false);
+  const startX = useRef<number | null>(null);
+  const startY = useRef<number | null>(null);
+  const isHorizontal = useRef<boolean | null>(null);
 
   const reset = useCallback(() => {
     setOffset(0);
@@ -30,7 +42,7 @@ function SwipeToActionImpl({
   }, []);
 
   const onTouchStart = useCallback(
-    (e) => {
+    (e: TouchEvent<HTMLDivElement>) => {
       if (disabled) return;
       setCommitted(false);
       startX.current = e.touches[0].clientX;
@@ -42,8 +54,9 @@ function SwipeToActionImpl({
   );
 
   const onTouchMove = useCallback(
-    (e) => {
-      if (!isDragging || startX.current === null) return;
+    (e: TouchEvent<HTMLDivElement>) => {
+      if (!isDragging || startX.current === null || startY.current === null)
+        return;
       const dx = e.touches[0].clientX - startX.current;
       const dy = e.touches[0].clientY - startY.current;
 

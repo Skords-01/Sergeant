@@ -1,25 +1,12 @@
 import { forwardRef } from "react";
+import type { ButtonHTMLAttributes } from "react";
 import { cn } from "../../lib/cn";
 
 /**
  * Sergeant Design System — Button Component
- *
- * Variants:
- * - primary: Main CTA, emerald brand color
- * - secondary: Secondary actions, outlined
- * - ghost: Minimal, text-only actions
- * - danger: Destructive actions
- * - success: Confirmation actions
- *
- * Module-specific variants:
- * - finyk: Emerald finance theme
- * - fizruk: Teal fitness theme
- * - routine: Coral habit theme
- * - nutrition: Lime nutrition theme
  */
 
 const variants = {
-  // Core variants
   primary:
     "bg-brand-500 text-white shadow-sm hover:bg-brand-600 hover:shadow-glow active:bg-brand-700 active:scale-[0.98]",
   secondary:
@@ -31,7 +18,6 @@ const variants = {
   success:
     "bg-brand-50 text-brand-700 border border-brand-200/50 hover:bg-brand-100 active:scale-[0.98]",
 
-  // Module-specific branded buttons
   finyk:
     "bg-finyk text-white shadow-sm hover:bg-finyk-hover hover:shadow-glow active:scale-[0.98]",
   fizruk:
@@ -41,7 +27,6 @@ const variants = {
   nutrition:
     "bg-nutrition text-white shadow-sm hover:bg-nutrition-hover hover:shadow-glow-lime active:scale-[0.98]",
 
-  // Soft module variants (for secondary actions within modules)
   "finyk-soft":
     "bg-finyk-soft text-finyk border border-finyk-ring/50 hover:bg-brand-100 active:scale-[0.98]",
   "fizruk-soft":
@@ -50,7 +35,9 @@ const variants = {
     "bg-routine-surface text-routine border border-routine-ring/50 hover:bg-coral-100 active:scale-[0.98]",
   "nutrition-soft":
     "bg-nutrition-soft text-nutrition border border-nutrition-ring/50 hover:bg-lime-100 active:scale-[0.98]",
-};
+} as const;
+
+export type ButtonVariant = keyof typeof variants;
 
 const sizes = {
   xs: "h-8 px-3 text-xs font-medium rounded-xl gap-1.5",
@@ -58,10 +45,11 @@ const sizes = {
   md: "h-11 px-5 text-sm font-semibold rounded-2xl gap-2",
   lg: "h-12 px-6 text-base font-semibold rounded-2xl gap-2",
   xl: "h-14 px-8 text-base font-bold rounded-3xl gap-2.5",
-};
+} as const;
 
-// Icon-only button sizes
-const iconSizes = {
+export type ButtonSize = keyof typeof sizes;
+
+const iconSizes: Record<ButtonSize, string> = {
   xs: "h-8 w-8 rounded-xl",
   sm: "h-9 w-9 rounded-xl",
   md: "h-11 w-11 rounded-2xl",
@@ -69,55 +57,60 @@ const iconSizes = {
   xl: "h-14 w-14 rounded-3xl",
 };
 
-export const Button = forwardRef(function Button(
-  {
-    className,
-    variant = "primary",
-    size = "md",
-    type = "button",
-    iconOnly = false,
-    loading = false,
-    disabled,
-    children,
-    ...props
+export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: ButtonVariant;
+  size?: ButtonSize;
+  iconOnly?: boolean;
+  loading?: boolean;
+}
+
+export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
+  function Button(
+    {
+      className,
+      variant = "primary",
+      size = "md",
+      type = "button",
+      iconOnly = false,
+      loading = false,
+      disabled,
+      children,
+      ...props
+    },
+    ref,
+  ) {
+    const isDisabled = disabled || loading;
+
+    return (
+      <button
+        ref={ref}
+        type={type}
+        disabled={isDisabled}
+        className={cn(
+          "inline-flex items-center justify-center",
+          "transition-all duration-200 ease-smooth",
+          "focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-panel",
+          "disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none",
+          variants[variant],
+          iconOnly ? iconSizes[size] : sizes[size],
+          className,
+        )}
+        {...props}
+      >
+        {loading ? (
+          <>
+            <LoadingSpinner className="animate-spin" />
+            {!iconOnly && <span className="opacity-0">{children}</span>}
+          </>
+        ) : (
+          children
+        )}
+      </button>
+    );
   },
-  ref,
-) {
-  const isDisabled = disabled || loading;
+);
 
-  return (
-    <button
-      ref={ref}
-      type={type}
-      disabled={isDisabled}
-      className={cn(
-        // Base styles
-        "inline-flex items-center justify-center",
-        "transition-all duration-200 ease-smooth",
-        "focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-panel",
-        "disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none",
-        // Variant
-        variants[variant],
-        // Size
-        iconOnly ? iconSizes[size] : sizes[size],
-        className,
-      )}
-      {...props}
-    >
-      {loading ? (
-        <>
-          <LoadingSpinner className="animate-spin" />
-          {!iconOnly && <span className="opacity-0">{children}</span>}
-        </>
-      ) : (
-        children
-      )}
-    </button>
-  );
-});
-
-// Loading spinner component
-function LoadingSpinner({ className }) {
+function LoadingSpinner({ className }: { className?: string }) {
   return (
     <svg
       className={cn("h-4 w-4", className)}
