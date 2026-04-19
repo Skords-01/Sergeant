@@ -7,6 +7,25 @@ import { aiQuotaBlocksTotal, aiQuotaFailOpenTotal } from "./obs/metrics.js";
 
 type SessionUser = { id: string } | null;
 
+/**
+ * Квиток на refund у разі неуспіху upstream AI-виклику. Атачиться до `req`
+ * (див. `WithAiQuotaRefund`), handler викликає його якщо Anthropic повернув
+ * помилку / timeout / клієнт відвалився — тоді квоту не сп'ємо за провалений
+ * запит. Без-db режим (fail-open) повертає no-op refund.
+ */
+export interface AiQuotaRefund {
+  (): Promise<void>;
+}
+
+export type WithAiQuotaRefund = { aiQuotaRefund?: AiQuotaRefund };
+
+interface ConsumedTicket {
+  subject: string;
+  day: string;
+  bucket: string;
+  cost: number;
+}
+
 interface QuotaResult {
   ok: boolean;
   remaining: number | null;
@@ -165,11 +184,13 @@ export async function assertAiQuota(
 
   const subject = subjectFor(sessionUser, req);
   try {
+    const day = today();
+    const cost = 1;
     const result = await consumeQuota({
       subject,
-      day: today(),
+      day,
       limit,
-      cost: 1,
+      cost,
       bucket: DEFAULT_BUCKET,
     });
     if (!result.ok) {
@@ -185,6 +206,7 @@ export async function assertAiQuota(
       });
       return false;
     }
+    attachRefund(req, { subject, day, bucket: DEFAULT_BUCKET, cost });
     setRemainingHeader(res, String(result.remaining));
     return true;
   } catch (e) {
@@ -326,9 +348,51 @@ async function consumeQuota({
   return { ok: true, remaining: Math.max(0, limit - next), limit };
 }
 
+/**
+ * Атомарний decrement лічильника у разі неуспіху upstream AI-виклику.
+ * GREATEST захищає від race-ів, коли лічильник уже був скинутий денним
+ * ролловером, або коли refund викликається двічі помилково. Не кидає винятки —
+ * refund не повинен ламати відповідь на помилку.
+ */
+async function refundConsumed(ticket: ConsumedTicket): Promise<void> {
+  if (!process.env.DATABASE_URL) return;
+  try {
+    await pool.query(
+      `UPDATE ai_usage_daily
+          SET request_count = GREATEST(0, request_count - $4)
+        WHERE subject_key = $1 AND usage_day = $2::date AND bucket = $3`,
+      [ticket.subject, ticket.day, ticket.bucket, ticket.cost],
+    );
+  } catch (e: unknown) {
+    const err = e as { message?: string; code?: string } | undefined;
+    logger.warn({
+      msg: "ai_quota_refund_failed",
+      subject: ticket.subject,
+      bucket: ticket.bucket,
+      cost: ticket.cost,
+      err: { message: err?.message || String(e), code: err?.code },
+    });
+  }
+}
+
+/**
+ * Атачить один-раз-використовуваний refund closure до `req`. Handler може
+ * викликати `(req as WithAiQuotaRefund).aiQuotaRefund?.()` якщо upstream
+ * повернув помилку — кожен наступний виклик no-op (ідемпотентно).
+ */
+function attachRefund(req: Request, ticket: ConsumedTicket): void {
+  let used = false;
+  (req as Request & WithAiQuotaRefund).aiQuotaRefund = async () => {
+    if (used) return;
+    used = true;
+    await refundConsumed(ticket);
+  };
+}
+
 /** Test-only: прямий доступ до атомарного інкременту без HTTP-прошарку. */
 export const __aiQuotaTestHooks = {
   consumeQuota,
+  refundConsumed,
   DEFAULT_BUCKET,
   TOOL_BUCKET_PREFIX,
 };

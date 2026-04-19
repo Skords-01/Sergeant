@@ -11,6 +11,42 @@ const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
 export interface AnthropicCallOptions {
   timeoutMs?: number;
   endpoint?: string;
+  /**
+   * Зовнішній AbortSignal (зазвичай — client-disconnect на Express `req`).
+   * Комбінується з внутрішнім timeout-signal через `AbortSignal.any`, тому
+   * спрацьовує що завгодно: таймаут, клієнт закрив вкладку, або зовнішній
+   * caller вирішив перервати.
+   */
+  signal?: AbortSignal;
+}
+
+/**
+ * Компонує внутрішній timeout-signal з опціональним зовнішнім caller-signal-ом.
+ * Використовує `AbortSignal.any` (Node 20+): aборт будь-якого з signals
+ * скасовує результатний. Старий шлях (тільки timeout-контролер) залишається
+ * для викликів без `external`.
+ */
+function composeSignal(
+  internalController: AbortController,
+  external: AbortSignal | undefined,
+): AbortSignal {
+  if (!external) return internalController.signal;
+  try {
+    const anyAny = (AbortSignal as unknown as { any?: typeof AbortSignal.any })
+      .any;
+    if (typeof anyAny === "function") {
+      return anyAny([internalController.signal, external]);
+    }
+  } catch {
+    /* fallthrough to listener-based fallback */
+  }
+  if (external.aborted) internalController.abort();
+  else {
+    external.addEventListener("abort", () => internalController.abort(), {
+      once: true,
+    });
+  }
+  return internalController.signal;
 }
 
 export interface AnthropicMessagesResult {
@@ -92,7 +128,11 @@ function recordUsage(model: string, data: AnthropicResponseData | null): void {
 export async function anthropicMessages(
   apiKey: string,
   payload: Record<string, unknown>,
-  { timeoutMs = 20000, endpoint = "unknown" }: AnthropicCallOptions = {},
+  {
+    timeoutMs = 20000,
+    endpoint = "unknown",
+    signal: externalSignal,
+  }: AnthropicCallOptions = {},
 ): Promise<AnthropicMessagesResult> {
   const maxAttempts = 3;
   const retryDelayMs = [0, 250, 750];
@@ -103,8 +143,16 @@ export async function anthropicMessages(
   let lastData: Record<string, unknown> = {};
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    // Зовнішній abort (клієнт відвалився) має перервати retry-цикл одразу —
+    // немає сенсу ретраїти запит, на який уже ніхто не чекає.
+    if (externalSignal?.aborted) {
+      const ms = Number(process.hrtime.bigint() - overallStart) / 1e6;
+      recordOutcome("timeout", { model, endpoint, ms });
+      throw new DOMException("client disconnected", "AbortError");
+    }
     const controller = new AbortController();
     const t = setTimeout(() => controller.abort(), timeoutMs);
+    const signal = composeSignal(controller, externalSignal);
     try {
       if (retryDelayMs[attempt - 1]) {
         await sleep(retryDelayMs[attempt - 1]);
@@ -118,7 +166,7 @@ export async function anthropicMessages(
           "anthropic-version": "2023-06-01",
         },
         body: JSON.stringify(payload),
-        signal: controller.signal,
+        signal,
       });
 
       const data = (await response
@@ -176,12 +224,17 @@ export async function anthropicMessages(
 export async function anthropicMessagesStream(
   apiKey: string,
   payload: Record<string, unknown>,
-  { endpoint = "unknown", timeoutMs = 60000 }: AnthropicCallOptions = {},
+  {
+    endpoint = "unknown",
+    timeoutMs = 60000,
+    signal: externalSignal,
+  }: AnthropicCallOptions = {},
 ): Promise<AnthropicStreamResult> {
   const model = (payload?.model as string) || "unknown";
   const start = process.hrtime.bigint();
   const controller = new AbortController();
   const t = setTimeout(() => controller.abort(), timeoutMs);
+  const signal = composeSignal(controller, externalSignal);
 
   let response: Response;
   try {
@@ -193,7 +246,7 @@ export async function anthropicMessagesStream(
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({ ...payload, stream: true }),
-      signal: controller.signal,
+      signal,
     });
   } catch (e: unknown) {
     clearTimeout(t);
