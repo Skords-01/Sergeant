@@ -23,11 +23,20 @@ const sizes: Record<InputSize, string> = {
   lg: "h-12 px-5 text-base rounded-2xl",
 };
 
+/**
+ * Focus treatment — mirrors `Button`'s `focus-visible:ring-2 ring-brand-500/45`
+ * contract so all interactive elements share one a11y language. Keyboard
+ * users always see a ring; pointer clicks on text inputs don't flash it.
+ * Fallback `focus:` rules keep legacy browsers without :focus-visible on
+ * par with click-visible behaviour.
+ */
 const variants: Record<InputVariant, string> = {
   default:
-    "bg-panelHi border border-line focus:border-brand-400 focus:ring-2 focus:ring-brand-100",
-  filled: "bg-panelHi border-transparent focus:bg-panel focus:border-brand-400",
-  ghost: "bg-transparent border-transparent hover:bg-panelHi focus:bg-panelHi",
+    "bg-panelHi border border-line focus-visible:border-brand-400 focus-visible:ring-2 focus-visible:ring-brand-500/30 focus:border-brand-400",
+  filled:
+    "bg-panelHi border-transparent focus-visible:bg-panel focus-visible:border-brand-400 focus-visible:ring-2 focus-visible:ring-brand-500/30 focus:bg-panel focus:border-brand-400",
+  ghost:
+    "bg-transparent border-transparent hover:bg-panelHi focus-visible:bg-panelHi focus-visible:ring-2 focus-visible:ring-brand-500/30 focus:bg-panelHi",
 };
 
 export interface InputProps extends Omit<
@@ -56,9 +65,9 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
   ref,
 ) {
   const stateClass = error
-    ? "border-red-400 focus:border-red-500 focus:ring-red-100"
+    ? "border-danger/70 focus-visible:border-danger focus-visible:ring-danger/25 focus:border-danger"
     : success
-      ? "border-brand-400 focus:border-brand-500 focus:ring-brand-100"
+      ? "border-brand-400 focus-visible:border-brand-500 focus-visible:ring-brand-500/25 focus:border-brand-500"
       : "";
 
   return (
@@ -73,7 +82,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
         aria-invalid={error ? true : undefined}
         className={cn(
           "w-full text-text placeholder:text-subtle/70",
-          "outline-none transition-all duration-200",
+          "outline-none transition-colors duration-200",
           "disabled:opacity-50 disabled:cursor-not-allowed",
           sizes[size],
           variants[variant],
@@ -107,7 +116,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
     ref,
   ) {
     const stateClass = error
-      ? "border-red-400 focus:border-red-500 focus:ring-red-100"
+      ? "border-danger/70 focus-visible:border-danger focus-visible:ring-danger/25 focus:border-danger"
       : "";
 
     return (
@@ -117,7 +126,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
         aria-invalid={error ? true : undefined}
         className={cn(
           "w-full px-4 py-3 text-base text-text placeholder:text-subtle/70 rounded-2xl",
-          "outline-none transition-all duration-200 resize-none",
+          "outline-none transition-colors duration-200 resize-none",
           "disabled:opacity-50 disabled:cursor-not-allowed",
           variants[variant],
           stateClass,

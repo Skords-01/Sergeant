@@ -21,11 +21,19 @@ const sizes: Record<SelectSize, string> = {
   lg: "h-12 pl-5 pr-10 text-base rounded-2xl",
 };
 
+/**
+ * Focus treatment — mirrors `Input` and `Button`: keyboard focus shows a
+ * `focus-visible:ring-2 ring-brand-500/30` ring, pointer clicks don't.
+ * Legacy `focus:` fallback is kept so browsers without :focus-visible
+ * still render a visible cue.
+ */
 const variants: Record<SelectVariant, string> = {
   default:
-    "bg-panelHi border border-line focus:border-brand-400 focus:ring-2 focus:ring-brand-100",
-  filled: "bg-panelHi border-transparent focus:bg-panel focus:border-brand-400",
-  ghost: "bg-transparent border-transparent hover:bg-panelHi focus:bg-panelHi",
+    "bg-panelHi border border-line focus-visible:border-brand-400 focus-visible:ring-2 focus-visible:ring-brand-500/30 focus:border-brand-400",
+  filled:
+    "bg-panelHi border-transparent focus-visible:bg-panel focus-visible:border-brand-400 focus-visible:ring-2 focus-visible:ring-brand-500/30 focus:bg-panel focus:border-brand-400",
+  ghost:
+    "bg-transparent border-transparent hover:bg-panelHi focus-visible:bg-panelHi focus-visible:ring-2 focus-visible:ring-brand-500/30 focus:bg-panelHi",
 };
 
 export interface SelectProps extends Omit<
@@ -44,7 +52,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
     ref,
   ) {
     const stateClass = error
-      ? "border-red-400 focus:border-red-500 focus:ring-red-100"
+      ? "border-danger/70 focus-visible:border-danger focus-visible:ring-danger/25 focus:border-danger"
       : "";
 
     return (
@@ -54,7 +62,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
           aria-invalid={error ? true : undefined}
           className={cn(
             "w-full appearance-none text-text",
-            "outline-none transition-all duration-200",
+            "outline-none transition-colors duration-200",
             "disabled:opacity-50 disabled:cursor-not-allowed",
             sizes[size],
             variants[variant],
