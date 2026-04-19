@@ -65,77 +65,40 @@ function markOnboardingDone() {
   }
 }
 
-// Static preview of what a "full" Sergeant hub looks like: four concrete
-// metrics rendered at once in a compact 2×2 grid. Replaces the earlier
-// auto-cycling ticker — a full rotation took ~9 s, which burnt a third of
-// the 30-second FTUX promise before the user could even tap the CTA.
-const SPLASH_PREVIEW_ITEMS = [
-  {
-    icon: "credit-card",
-    accent: "text-finyk bg-finyk-soft",
-    metric: "−320 грн",
-    label: "на каву цього тижня",
-  },
-  {
-    icon: "dumbbell",
-    accent: "text-fizruk bg-fizruk-soft",
-    metric: "5 трен.",
-    label: "за 14 днів",
-  },
-  {
-    icon: "check",
-    accent: "text-routine bg-routine-soft",
-    metric: "7 днів",
-    label: "стрік — «вода»",
-  },
-  {
-    icon: "utensils",
-    accent: "text-nutrition bg-nutrition-soft",
-    metric: "420 ккал",
-    label: "сніданок",
-  },
-];
-
-function SplashPreviewGrid() {
-  return (
-    <div className="grid grid-cols-2 gap-2 w-full">
-      {SPLASH_PREVIEW_ITEMS.map((item) => (
-        <div
-          key={item.icon}
-          className={cn(
-            "rounded-xl border border-line bg-surface",
-            "px-3 py-2.5 flex items-center gap-2.5 text-left",
-          )}
-        >
-          <div
-            className={cn(
-              "shrink-0 w-9 h-9 rounded-lg flex items-center justify-center",
-              item.accent,
-            )}
-          >
-            <Icon name={item.icon} size={18} strokeWidth={2} aria-hidden />
-          </div>
-          <div className="min-w-0">
-            <div className="text-sm font-semibold text-text leading-tight truncate">
-              {item.metric}
-            </div>
-            <div className="text-[11px] text-muted leading-tight truncate">
-              {item.label}
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-// Short per-module chips shown inline on the splash. Keys match
-// `ALL_MODULES` so picks feed straight into `saveVibePicks`.
+// Module chips shown inline on the splash — the single source of truth
+// for module taxonomy on this screen. Previously accompanied by a
+// separate 2×2 preview grid that duplicated the four modules with
+// different labels ("Гроші" chip vs "−320 грн" preview tile), so new
+// users saw two competing taxonomies on one screen. We now fold a
+// small aspirational metric into each chip instead, so the chip is
+// both the selector and the teaser — one object, one label.
+//
+// Keys match `ALL_MODULES` so picks feed straight into `saveVibePicks`.
 const VIBE_CHIPS = [
-  { id: "finyk", icon: "credit-card", label: "Гроші" },
-  { id: "fizruk", icon: "dumbbell", label: "Тіло" },
-  { id: "routine", icon: "check", label: "Рутина" },
-  { id: "nutrition", icon: "utensils", label: "Їжа" },
+  {
+    id: "finyk",
+    icon: "credit-card",
+    label: "Гроші",
+    teaser: "−320₴ / тиждень",
+  },
+  {
+    id: "fizruk",
+    icon: "dumbbell",
+    label: "Тіло",
+    teaser: "5 трен. за 14 днів",
+  },
+  {
+    id: "routine",
+    icon: "check",
+    label: "Рутина",
+    teaser: "стрік «вода» 7 днів",
+  },
+  {
+    id: "nutrition",
+    icon: "utensils",
+    label: "Їжа",
+    teaser: "сніданок · 420 ккал",
+  },
 ];
 
 function VibeChipRow({ picks, togglePick }) {
@@ -144,7 +107,7 @@ function VibeChipRow({ picks, togglePick }) {
       <p className="text-[11px] text-muted text-center">
         Зніми зайве — решту легко додати потім.
       </p>
-      <div className="flex flex-wrap gap-2 justify-center">
+      <div className="grid grid-cols-2 gap-2">
         {VIBE_CHIPS.map((chip) => {
           const active = picks.includes(chip.id);
           return (
@@ -154,15 +117,30 @@ function VibeChipRow({ picks, togglePick }) {
               onClick={() => togglePick(chip.id)}
               aria-pressed={active}
               className={cn(
-                "inline-flex items-center gap-1.5 h-9 px-3 rounded-full border transition-all",
+                "flex items-center gap-2.5 px-3 py-2.5 rounded-xl border text-left transition-all",
                 "focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/45",
                 active
-                  ? "border-brand-500/60 bg-brand-500/10 text-text"
-                  : "border-line bg-panelHi text-muted hover:border-brand-500/40",
+                  ? "border-brand-500/60 bg-brand-500/10 text-text shadow-card"
+                  : "border-line bg-panel text-muted hover:border-brand-500/40",
               )}
             >
-              <Icon name={chip.icon} size={14} strokeWidth={2} aria-hidden />
-              <span className="text-xs font-medium">{chip.label}</span>
+              <span
+                className={cn(
+                  "shrink-0 w-8 h-8 rounded-lg flex items-center justify-center",
+                  active ? "bg-brand-500/15 text-brand-600" : "bg-panelHi",
+                )}
+                aria-hidden
+              >
+                <Icon name={chip.icon} size={16} strokeWidth={2} />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-semibold text-text leading-tight truncate">
+                  {chip.label}
+                </span>
+                <span className="block text-[11px] text-muted leading-tight truncate">
+                  {chip.teaser}
+                </span>
+              </span>
             </button>
           );
         })}
@@ -191,10 +169,9 @@ function SplashStep({ picks, togglePick, onContinue }) {
           Твоє життя — один екран.
         </h2>
         <p className="text-sm text-muted mt-2 leading-relaxed">
-          Гроші, тіло, звички, їжа. Офлайн. 30 секунд до першого запису.
+          Гроші, тіло, звички, їжа. Офлайн. ~5 секунд на перший запис.
         </p>
       </div>
-      <SplashPreviewGrid />
       <VibeChipRow picks={picks} togglePick={togglePick} />
       <div className="w-full space-y-2">
         <Button

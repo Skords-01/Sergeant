@@ -63,24 +63,26 @@ function stripEmoji(label) {
 }
 
 // Amount suggestion pills. Defaults give a first-run user sane round
-// values; once the user has spending history we merge in the top-3
-// distinct recent amounts (see `mergeAmountSuggestions`).
+// values; once the user has spending history we show personalised
+// «Часте» amounts (from top merchants’ average spend) separately
+// from the «Швидко» round-number defaults, so the user can tell
+// which suggestion is based on their own history and which is a
+// generic shortcut.
 const DEFAULT_AMOUNTS = [50, 100, 200, 500];
 
-function mergeAmountSuggestions(frequentMerchants) {
-  const fromMerchants = [];
+function buildAmountSuggestions(frequentMerchants) {
+  const frequent = [];
   for (const m of frequentMerchants || []) {
     if (!m || typeof m.total !== "number" || !m.count) continue;
     const avg = Math.round(m.total / m.count);
-    if (avg > 0 && !fromMerchants.includes(avg)) fromMerchants.push(avg);
-    if (fromMerchants.length >= 3) break;
+    if (avg > 0 && !frequent.includes(avg)) frequent.push(avg);
+    if (frequent.length >= 3) break;
   }
-  const merged = [...fromMerchants];
-  for (const v of DEFAULT_AMOUNTS) {
-    if (!merged.includes(v)) merged.push(v);
-    if (merged.length >= 6) break;
-  }
-  return merged.slice(0, 6);
+  const quick = DEFAULT_AMOUNTS.filter((v) => !frequent.includes(v)).slice(
+    0,
+    4,
+  );
+  return { frequent, quick };
 }
 
 // Сортує доступні підписи категорій за персональною частотою, зберігаючи
@@ -187,8 +189,8 @@ export function ManualExpenseSheet({
     [frequentCategories],
   );
 
-  const amountSuggestions = useMemo(
-    () => mergeAmountSuggestions(frequentMerchants),
+  const { frequent: frequentAmounts, quick: quickAmounts } = useMemo(
+    () => buildAmountSuggestions(frequentMerchants),
     [frequentMerchants],
   );
   // Ховаємо зі списку пропозицій мерчанта, якого вже введено у полі description.
@@ -249,23 +251,80 @@ export function ManualExpenseSheet({
       }
     >
       <div className="space-y-3">
-        <div className="flex gap-2 items-center">
+        {/* S15: amount is the only «must-fill» field — it used to live
+            under the name input, so new users had to scroll past an
+            optional field before they could do the single thing that
+            makes an expense valid. Amount is now the first block on the
+            sheet; the mic stays near it because dictation typically
+            produces both the amount and the description in one shot. */}
+        <div className="flex gap-2 items-end">
           <div className="flex-1">
             <label
-              htmlFor={descId}
+              htmlFor={amountId}
               className="text-xs text-muted uppercase tracking-wide font-semibold mb-1 block"
             >
-              Назва{" "}
-              <span className="text-subtle normal-case">
-                · необов&apos;язково
-              </span>
+              Сума ₴
             </label>
+            {(frequentAmounts.length > 0 || quickAmounts.length > 0) && (
+              <div className="space-y-1.5 mb-2">
+                {frequentAmounts.length > 0 && (
+                  <div
+                    className="flex flex-wrap items-center gap-1.5"
+                    role="group"
+                    aria-label="Часті суми"
+                  >
+                    <span className="text-2xs text-subtle uppercase tracking-wide font-semibold">
+                      Часте
+                    </span>
+                    {frequentAmounts.map((v) => (
+                      <button
+                        key={`f-${v}`}
+                        type="button"
+                        onClick={() =>
+                          setForm((f) => ({ ...f, amount: String(v) }))
+                        }
+                        className="px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-600 border border-emerald-500/30 hover:bg-emerald-500/15 transition-colors tabular-nums"
+                      >
+                        {v.toLocaleString("uk-UA")} ₴
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {quickAmounts.length > 0 && (
+                  <div
+                    className="flex flex-wrap items-center gap-1.5"
+                    role="group"
+                    aria-label="Швидкі суми"
+                  >
+                    <span className="text-2xs text-subtle uppercase tracking-wide font-semibold">
+                      Швидко
+                    </span>
+                    {quickAmounts.map((v) => (
+                      <button
+                        key={`q-${v}`}
+                        type="button"
+                        onClick={() =>
+                          setForm((f) => ({ ...f, amount: String(v) }))
+                        }
+                        className="px-2.5 py-1 rounded-full text-xs font-medium bg-panelHi text-muted border border-line hover:border-muted/50 transition-colors tabular-nums"
+                      >
+                        {v.toLocaleString("uk-UA")} ₴
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
             <Input
-              id={descId}
-              placeholder="Кава, продукти, таксі..."
-              value={form.description}
+              id={amountId}
+              type="number"
+              inputMode="decimal"
+              placeholder="0"
+              min="0"
+              step="0.01"
+              value={form.amount}
               onChange={(e) =>
-                setForm((f) => ({ ...f, description: e.target.value }))
+                setForm((f) => ({ ...f, amount: e.target.value }))
               }
             />
           </div>
@@ -277,7 +336,7 @@ export function ManualExpenseSheet({
               that case via `hidden:*`-style absent fallback (the button
               returns null and the flex container collapses to the input
               alone). */}
-          <div className="mt-5 flex flex-col items-center gap-0.5">
+          <div className="flex flex-col items-center gap-0.5 pb-1">
             <VoiceMicButton
               size="md"
               label="Сказати голосом"
@@ -298,6 +357,26 @@ export function ManualExpenseSheet({
               Сказати
             </span>
           </div>
+        </div>
+
+        <div>
+          <label
+            htmlFor={descId}
+            className="text-xs text-muted uppercase tracking-wide font-semibold mb-1 block"
+          >
+            Назва{" "}
+            <span className="text-subtle normal-case">
+              · необов&apos;язково
+            </span>
+          </label>
+          <Input
+            id={descId}
+            placeholder="Кава, продукти, таксі..."
+            value={form.description}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, description: e.target.value }))
+            }
+          />
         </div>
 
         {/* Date is "today" 95%+ of the time — the always-visible picker
@@ -365,43 +444,6 @@ export function ManualExpenseSheet({
             ))}
           </div>
         )}
-
-        <div>
-          <label
-            htmlFor={amountId}
-            className="text-xs text-muted uppercase tracking-wide font-semibold mb-1 block"
-          >
-            Сума ₴
-          </label>
-          {amountSuggestions.length > 0 && (
-            <div
-              className="flex flex-wrap gap-1.5 mb-2"
-              role="group"
-              aria-label="Швидкі суми"
-            >
-              {amountSuggestions.map((v) => (
-                <button
-                  key={v}
-                  type="button"
-                  onClick={() => setForm((f) => ({ ...f, amount: String(v) }))}
-                  className="px-2.5 py-1 rounded-full text-xs font-medium bg-panelHi text-muted border border-line hover:border-muted/50 transition-colors tabular-nums"
-                >
-                  {v.toLocaleString("uk-UA")} ₴
-                </button>
-              ))}
-            </div>
-          )}
-          <Input
-            id={amountId}
-            type="number"
-            inputMode="decimal"
-            placeholder="0"
-            min="0"
-            step="0.01"
-            value={form.amount}
-            onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))}
-          />
-        </div>
 
         <div>
           <div

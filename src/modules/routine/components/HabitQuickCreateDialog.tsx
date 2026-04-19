@@ -7,7 +7,7 @@ import {
   emptyHabitDraft,
   habitDraftToPatch,
 } from "../lib/routineDraftUtils.js";
-import { HabitForm } from "./settings/HabitForm";
+import { HabitForm, type HabitFormErrors } from "./settings/HabitForm";
 import type { HabitDraft, RoutineState } from "../lib/types";
 import type { Dispatch, SetStateAction } from "react";
 
@@ -47,6 +47,7 @@ export function HabitQuickCreateDialog({
   const toast = useToast();
   const [draft, setDraft] = useState<HabitDraft>(() => emptyHabitDraft());
   const [internalFocusTick, setInternalFocusTick] = useState(0);
+  const [errors, setErrors] = useState<HabitFormErrors>({});
 
   // Reset the draft and re-fire the focus tick each time the dialog
   // opens. Keeps reopens feeling like a fresh entry point instead of
@@ -54,24 +55,46 @@ export function HabitQuickCreateDialog({
   useEffect(() => {
     if (!open) return;
     setDraft(emptyHabitDraft());
+    setErrors({});
     setInternalFocusTick((t) => t + 1);
   }, [open, focusTick]);
+
+  // Clear field errors as soon as the user touches the relevant field
+  // so the red border doesn't linger once they start fixing the input.
+  useEffect(() => {
+    if (errors.name && draft.name.trim()) {
+      setErrors((e) => ({ ...e, name: undefined }));
+    }
+  }, [draft.name, errors.name]);
+  useEffect(() => {
+    if (
+      errors.weekdays &&
+      Array.isArray(draft.weekdays) &&
+      draft.weekdays.length > 0
+    ) {
+      setErrors((e) => ({ ...e, weekdays: undefined }));
+    }
+  }, [draft.weekdays, errors.weekdays]);
 
   if (!open) return null;
 
   const handleSave = () => {
     const patch = habitDraftToPatch(draft);
+    const nextErrors: HabitFormErrors = {};
     if (!patch.name) {
-      toast.warning("Додай назву звички.");
-      return;
+      nextErrors.name = "Додай назву звички.";
     }
     if (
       patch.recurrence === "weekly" &&
       (!patch.weekdays || patch.weekdays.length === 0)
     ) {
-      toast.warning("Обери хоча б один день тижня.");
+      nextErrors.weekdays = "Обери хоча б один день тижня.";
+    }
+    if (nextErrors.name || nextErrors.weekdays) {
+      setErrors(nextErrors);
       return;
     }
+    setErrors({});
     setRoutine((s) => createHabit(s, patch));
     toast.success("Звичку створено.");
     onClose();
@@ -136,6 +159,8 @@ export function HabitQuickCreateDialog({
             onSave={handleSave}
             onCancel={onClose}
             focusTick={internalFocusTick}
+            hideHeading
+            errors={errors}
           />
         </div>
       </div>

@@ -19,6 +19,11 @@ import { ReminderPresets } from "./ReminderPresets.jsx";
 import { WeekdayPicker } from "./WeekdayPicker.jsx";
 import type { HabitDraft, RoutineState } from "../../lib/types";
 
+export interface HabitFormErrors {
+  name?: string;
+  weekdays?: string;
+}
+
 export interface HabitFormProps {
   routine: RoutineState;
   habitDraft: HabitDraft;
@@ -34,7 +39,39 @@ export interface HabitFormProps {
    * reset anything.
    */
   focusTick?: number;
+  /**
+   * When true, suppress the internal "Нова звичка / Редагувати звичку"
+   * heading. The dialog host already renders a bolder title so we skip
+   * the duplicate for a cleaner one-title-per-screen look.
+   */
+  hideHeading?: boolean;
+  /**
+   * Inline error messages for individual fields, rendered next to the
+   * offending field (red border + message). Replaces the old toast-only
+   * validation pattern so users can see what to fix without scrolling
+   * back up.
+   */
+  errors?: HabitFormErrors;
 }
+
+const EMOJI_SUGGESTIONS: readonly string[] = [
+  "✓",
+  "💧",
+  "🚶",
+  "🏃",
+  "💪",
+  "🧘",
+  "📖",
+  "✍️",
+  "🧠",
+  "💊",
+  "🥗",
+  "😴",
+  "☕",
+  "🎯",
+  "⏰",
+  "🌙",
+];
 
 export function HabitForm({
   routine,
@@ -44,13 +81,43 @@ export function HabitForm({
   onSave,
   onCancel,
   focusTick,
+  hideHeading = false,
+  errors,
 }: HabitFormProps) {
   const fieldIds = useId();
   const startId = `${fieldIds}-start`;
   const endId = `${fieldIds}-end`;
   const advancedId = `${fieldIds}-advanced`;
+  const nameErrId = `${fieldIds}-name-err`;
+  const weekdaysErrId = `${fieldIds}-weekdays-err`;
   const sectionRef = useRef<HTMLElement | null>(null);
   const nameRef = useRef<HTMLInputElement | null>(null);
+  const weekdaysRef = useRef<HTMLDivElement | null>(null);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const emojiWrapRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (!showEmojiPicker) return;
+    const handleOutside = (e: MouseEvent) => {
+      if (
+        emojiWrapRef.current &&
+        !emojiWrapRef.current.contains(e.target as Node)
+      ) {
+        setShowEmojiPicker(false);
+      }
+    };
+    document.addEventListener("mousedown", handleOutside);
+    return () => document.removeEventListener("mousedown", handleOutside);
+  }, [showEmojiPicker]);
+  // Scroll the weekday picker into view when the parent surfaces a
+  // weekdays error (e.g. user picked «По тижню» but no days). Without
+  // this the inline error can sit off-screen on small viewports.
+  useEffect(() => {
+    if (!errors?.weekdays) return;
+    const el = weekdaysRef.current;
+    if (el && typeof el.scrollIntoView === "function") {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [errors?.weekdays]);
   // Minimal-first UX: emoji + name + regularity are visible on first
   // render. Dates, reminders, tags and categories live behind a
   // "Більше опцій" disclosure. When editing an existing habit we open
@@ -83,31 +150,79 @@ export function HabitForm({
 
   return (
     <Card as="section" ref={sectionRef} radius="lg" className="space-y-3">
-      <SectionHeading as="h2" size="sm">
-        {editingId ? "Редагувати звичку" : "Нова звичка"}
-      </SectionHeading>
+      {!hideHeading && (
+        <SectionHeading as="h2" size="sm">
+          {editingId ? "Редагувати звичку" : "Нова звичка"}
+        </SectionHeading>
+      )}
 
-      <div className="flex gap-2 items-stretch">
-        <Input
-          className="routine-touch-field w-16 shrink-0 text-center"
-          value={habitDraft.emoji}
-          onChange={(e) =>
-            setHabitDraft((d) => ({
-              ...d,
-              emoji: e.target.value.slice(0, 4),
-            }))
-          }
-          aria-label="Емодзі"
-        />
-        <Input
-          ref={nameRef}
-          className="routine-touch-field min-w-0 flex-1"
-          placeholder="Назва"
-          value={habitDraft.name}
-          onChange={(e) =>
-            setHabitDraft((d) => ({ ...d, name: e.target.value }))
-          }
-        />
+      <div>
+        <div className="flex gap-2 items-stretch">
+          <div className="relative" ref={emojiWrapRef}>
+            <button
+              type="button"
+              onClick={() => setShowEmojiPicker((v) => !v)}
+              aria-label="Обрати емодзі"
+              aria-expanded={showEmojiPicker}
+              className={cn(
+                "routine-touch-field w-16 h-full shrink-0 flex items-center justify-center",
+                "rounded-2xl border border-line bg-panel text-xl",
+                "hover:bg-panelHi transition-colors",
+              )}
+            >
+              <span aria-hidden>{habitDraft.emoji || "✓"}</span>
+            </button>
+            {showEmojiPicker && (
+              <div
+                role="dialog"
+                aria-label="Обрати емодзі"
+                className={cn(
+                  "absolute z-30 mt-2 left-0",
+                  "rounded-2xl border border-line bg-panel shadow-float p-2",
+                  "grid grid-cols-4 gap-1",
+                )}
+              >
+                {EMOJI_SUGGESTIONS.map((e) => (
+                  <button
+                    key={e}
+                    type="button"
+                    onClick={() => {
+                      setHabitDraft((d) => ({ ...d, emoji: e }));
+                      setShowEmojiPicker(false);
+                    }}
+                    className={cn(
+                      "w-9 h-9 rounded-lg text-lg",
+                      "hover:bg-panelHi transition-colors",
+                      habitDraft.emoji === e && "bg-panelHi ring-1 ring-line",
+                    )}
+                    aria-label={`Емодзі ${e}`}
+                  >
+                    <span aria-hidden>{e}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          <Input
+            ref={nameRef}
+            className={cn(
+              "routine-touch-field min-w-0 flex-1",
+              errors?.name && "border-danger",
+            )}
+            placeholder="Назва"
+            aria-invalid={errors?.name ? true : undefined}
+            aria-describedby={errors?.name ? nameErrId : undefined}
+            value={habitDraft.name}
+            onChange={(e) =>
+              setHabitDraft((d) => ({ ...d, name: e.target.value }))
+            }
+          />
+        </div>
+        {errors?.name && (
+          <p id={nameErrId} className="text-xs text-danger mt-1">
+            {errors.name}
+          </p>
+        )}
       </div>
 
       {/* Segmented chips — a native <select> sits right on top of the
@@ -147,6 +262,36 @@ export function HabitForm({
           })}
         </div>
       </div>
+
+      {/* When user picks «По тижню», surface the weekday selector inline
+          — previously buried under «Більше опцій», which meant the user
+          had to pick a recurrence, then Save, then hunt for the hidden
+          disclosure when the toast complained. S3 / S10. */}
+      {habitDraft.recurrence === "weekly" && (
+        <div
+          ref={weekdaysRef}
+          className={cn(
+            "rounded-2xl border p-3 transition-colors",
+            errors?.weekdays
+              ? "border-danger bg-danger/5"
+              : "border-line bg-panel/40",
+          )}
+          aria-invalid={errors?.weekdays ? true : undefined}
+          aria-describedby={errors?.weekdays ? weekdaysErrId : undefined}
+        >
+          <WeekdayPicker
+            weekdays={habitDraft.weekdays}
+            onChange={(next) =>
+              setHabitDraft((d) => ({ ...d, weekdays: next }))
+            }
+          />
+          {errors?.weekdays && (
+            <p id={weekdaysErrId} className="text-xs text-danger mt-2">
+              {errors.weekdays}
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Reminder presets — previously hidden under "Більше опцій". Push
           notifications are the single highest-value habit feature, so the
@@ -197,15 +342,6 @@ export function HabitForm({
               />
             </label>
           </div>
-
-          {habitDraft.recurrence === "weekly" && (
-            <WeekdayPicker
-              weekdays={habitDraft.weekdays}
-              onChange={(next) =>
-                setHabitDraft((d) => ({ ...d, weekdays: next }))
-              }
-            />
-          )}
 
           {(habitDraft.recurrence === "once" ||
             habitDraft.recurrence === "monthly") && (

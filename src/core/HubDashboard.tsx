@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@shared/lib/cn";
 import { Icon } from "@shared/components/ui/Icon";
 import { safeReadLS, safeWriteLS, safeRemoveLS } from "@shared/lib/storage.js";
@@ -16,6 +16,8 @@ import {
   isDemoBannerDismissed,
   dismissDemoBanner,
   isFirstActionPending,
+  recordSessionDay,
+  getSessionDays,
 } from "./onboarding/vibePicks.js";
 import { wasDemoSeeded } from "./onboarding/demoSeeds.js";
 import { useFirstEntryCelebration } from "./onboarding/useFirstEntryCelebration.js";
@@ -457,18 +459,32 @@ export function HubDashboard({ onOpenModule, onOpenChat, user, onShowAuth }) {
     isFirstActionPending(),
   );
 
-  // Soft auth prompt appears only once the user has typed in real data and
-  // has no account yet — an "offer to save", never a toll gate.
+  // Soft auth prompt — an "offer to save", never a toll gate. Two triggers:
+  //   1. user has entered real data (the moment the local data becomes
+  //      worth losing), or
+  //   2. user has been opening the hub for N+ distinct days without ever
+  //      creating an account — catches the browse-only cohort that would
+  //      otherwise silently lose everything on a device swap. N is small
+  //      enough that a regular user hits it within their first week.
   const hasRealEntry = detectFirstRealEntry();
   useFirstEntryCelebration(hasRealEntry);
+  // Record today's session on mount so the proactive nudge actually
+  // accumulates days; scoped to once-per-mount via ref to avoid
+  // double-counting if the component re-renders.
+  const sessionDaysRef = useRef<number>(0);
+  if (sessionDaysRef.current === 0) {
+    sessionDaysRef.current = recordSessionDay() || getSessionDays();
+  }
+  const SOFT_AUTH_SESSION_DAYS_THRESHOLD = 3;
   const [softAuthDismissed, setSoftAuthDismissed] = useState(() =>
     isSoftAuthDismissed(),
   );
   const showSoftAuth =
     !user &&
-    hasRealEntry &&
     !softAuthDismissed &&
-    typeof onShowAuth === "function";
+    typeof onShowAuth === "function" &&
+    (hasRealEntry ||
+      sessionDaysRef.current >= SOFT_AUTH_SESSION_DAYS_THRESHOLD);
 
   // Demo banner: only while we're still showing seeded FTUX data and the
   // user hasn't contributed anything of their own yet. Dismissible; once

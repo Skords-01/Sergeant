@@ -19,13 +19,13 @@ const ACTIONS = {
   routine: {
     icon: "check",
     title: "Створи першу звичку",
-    desc: "30 секунд. Стрік почнеться сьогодні.",
+    desc: "~5 секунд. Стрік почнеться сьогодні.",
     accent: "text-routine bg-routine-soft",
   },
   finyk: {
     icon: "credit-card",
     title: "Додай першу витрату",
-    desc: "5 секунд, будь-яка сума.",
+    desc: "~5 секунд, будь-яка сума.",
     accent: "text-finyk bg-finyk-soft",
   },
   nutrition: {

@@ -124,19 +124,34 @@ export function HubFloatingActions({ hidden = false }) {
         </div>
       )}
 
+      {/* S5 / S14: extended FAB pill — shows an always-visible "Додати"
+          label on first paint so the primary action isn't just a blue
+          circle users have to guess at (especially on touch, where the
+          `title` tooltip never appears). Collapses to an icon-only
+          rotated × when the speed-dial is open. */}
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-haspopup="menu"
         aria-label={open ? "Закрити меню додавання" : "Додати"}
-        title="Додати"
+        title={open ? "Закрити" : "Додати"}
         className={cn(
-          "pointer-events-auto w-14 h-14 flex items-center justify-center rounded-full bg-brand-500 text-white shadow-float hover:bg-brand-600 hover:shadow-glow active:scale-95 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/45 focus-visible:ring-offset-2 focus-visible:ring-offset-bg",
-          open && "rotate-45",
+          "pointer-events-auto h-14 flex items-center justify-center gap-2 rounded-full bg-brand-500 text-white shadow-float hover:bg-brand-600 hover:shadow-glow active:scale-95 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/45 focus-visible:ring-offset-2 focus-visible:ring-offset-bg",
+          open ? "w-14" : "pl-4 pr-5",
         )}
       >
-        <Icon name="plus" size={26} strokeWidth={2.5} />
+        <Icon
+          name="plus"
+          size={26}
+          strokeWidth={2.5}
+          className={cn("transition-transform", open && "rotate-45")}
+        />
+        {!open && (
+          <span className="text-sm font-semibold whitespace-nowrap">
+            Додати
+          </span>
+        )}
       </button>
     </div>
   );

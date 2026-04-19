@@ -7,6 +7,13 @@ const FIRST_ACTION_PENDING_KEY = "hub_first_action_pending_v1";
 const FIRST_REAL_ENTRY_KEY = "hub_first_real_entry_done_v1";
 const SOFT_AUTH_DISMISSED_KEY = "hub_soft_auth_dismissed_v1";
 const DEMO_BANNER_DISMISSED_KEY = "hub_demo_banner_dismissed_v1";
+// Rolling count of distinct calendar days the user has opened the hub.
+// Used by the proactive soft-auth nudge so users who never make a
+// "real entry" (e.g. they open the app, browse, close) still get
+// offered cloud sync after a few days instead of being silently locked
+// out of their data if they switch devices.
+const SESSION_DAYS_KEY = "hub_session_days_v1";
+const LAST_SESSION_DAY_KEY = "hub_last_session_day_v1";
 // Millisecond epoch stamp captured the moment the user taps «Заповни
 // мій хаб» on the splash. Used by `firstRealEntry.js` to compute the
 // `ftux_time_to_value` duration — the single headline metric for the
@@ -191,5 +198,48 @@ export function getTimeToValueMs() {
     return Number.isFinite(n) && n >= 0 ? n : null;
   } catch {
     return null;
+  }
+}
+
+function todayKey(): string {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+/**
+ * Record a hub session for today. If the current calendar day has
+ * already been counted, this is a no-op, so repeat navigations within
+ * the same day don't inflate the counter. Returns the (possibly
+ * incremented) session-day count so callers can render conditional UI
+ * without a second read.
+ */
+export function recordSessionDay(): number {
+  try {
+    const key = todayKey();
+    const last = localStorage.getItem(LAST_SESSION_DAY_KEY);
+    const current = Number(localStorage.getItem(SESSION_DAYS_KEY) || "0") || 0;
+    if (last === key) return current;
+    const next = current + 1;
+    localStorage.setItem(LAST_SESSION_DAY_KEY, key);
+    localStorage.setItem(SESSION_DAYS_KEY, String(next));
+    return next;
+  } catch {
+    return 0;
+  }
+}
+
+/**
+ * @returns Total number of distinct calendar days the user has opened
+ *   the hub (0 if never recorded / localStorage disabled).
+ */
+export function getSessionDays(): number {
+  try {
+    const n = Number(localStorage.getItem(SESSION_DAYS_KEY) || "0");
+    return Number.isFinite(n) && n > 0 ? n : 0;
+  } catch {
+    return 0;
   }
 }
