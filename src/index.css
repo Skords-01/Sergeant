@@ -221,22 +221,22 @@
      ═══════════════════════════════════════════════════════════════════════ */
   .fizruk-sheet button:focus-visible,
   .fizruk-sheet a:focus-visible {
-    @apply outline-none ring-2 ring-teal-500/45 ring-offset-2 ring-offset-panel rounded-xl;
+    @apply outline-none ring-2 ring-teal-500/45 ring-offset-2 ring-offset-panel;
   }
 
   .routine-sheet button:focus-visible,
   .routine-sheet a:focus-visible {
-    @apply outline-none ring-2 ring-coral-500/45 ring-offset-2 ring-offset-panel rounded-xl;
+    @apply outline-none ring-2 ring-coral-500/45 ring-offset-2 ring-offset-panel;
   }
 
   .nutrition-sheet button:focus-visible,
   .nutrition-sheet a:focus-visible {
-    @apply outline-none ring-2 ring-lime-500/45 ring-offset-2 ring-offset-panel rounded-xl;
+    @apply outline-none ring-2 ring-lime-500/45 ring-offset-2 ring-offset-panel;
   }
 
   .finyk-sheet button:focus-visible,
   .finyk-sheet a:focus-visible {
-    @apply outline-none ring-2 ring-brand-500/45 ring-offset-2 ring-offset-panel rounded-xl;
+    @apply outline-none ring-2 ring-brand-500/45 ring-offset-2 ring-offset-panel;
   }
 
   /* ═══════════════════════════════════════════════════════════════════════
