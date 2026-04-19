@@ -38,7 +38,14 @@ import { getSessionUser } from "../auth.js";
 import pool from "../db.js";
 import { logger } from "../obs/logger.js";
 import { syncConflictsTotal, syncOperationsTotal } from "../obs/metrics.js";
-import { syncPushAll, syncPullAll, VALID_MODULES } from "./sync.js";
+import {
+  MAX_BLOB_SIZE,
+  syncPull,
+  syncPullAll,
+  syncPush,
+  syncPushAll,
+  VALID_MODULES,
+} from "./sync.js";
 
 function makeRes() {
   return {
@@ -332,5 +339,205 @@ describe("sync_event structured log", () => {
       ([arg]) => arg.msg === "sync_event" && arg.outcome === "ok",
     );
     expect(okLogs).toHaveLength(0);
+  });
+});
+
+describe("syncPush (singular) — contract tests", () => {
+  it("happy: INSERT повертає row → 200 + serverUpdatedAt/version", async () => {
+    pool.query.mockResolvedValueOnce({
+      rows: [{ server_updated_at: "2026-01-01T00:00:00Z", version: 3 }],
+    });
+
+    const res = makeRes();
+    await syncPush(
+      makeReq({
+        module: "finyk",
+        data: { balance: 100 },
+        clientUpdatedAt: "2026-01-01T00:00:00Z",
+      }),
+      res,
+    );
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({
+      ok: true,
+      module: "finyk",
+      version: 3,
+    });
+    // INSERT … ON CONFLICT … RETURNING (без supplementary SELECT).
+    expect(pool.query).toHaveBeenCalledTimes(1);
+    const [sql, params] = pool.query.mock.calls[0];
+    expect(sql).toMatch(/INSERT INTO module_data/);
+    expect(params[0]).toBe("user_1");
+    expect(params[1]).toBe("finyk");
+  });
+
+  it("invalid module → 400 + metric outcome='invalid'", async () => {
+    const res = makeRes();
+    await syncPush(makeReq({ module: "not-a-module", data: { x: 1 } }), res);
+    expect(res.statusCode).toBe(400);
+    expect(res.body).toEqual({ error: "Invalid module" });
+    expect(pool.query).not.toHaveBeenCalled();
+    expect(syncOperationsTotal.inc.mock.calls.map(([l]) => l)).toContainEqual(
+      expect.objectContaining({ op: "push", outcome: "invalid" }),
+    );
+  });
+
+  it("missing data → 400 (пустий/undefined payload)", async () => {
+    const res = makeRes();
+    await syncPush(makeReq({ module: "finyk" }), res);
+    expect(res.statusCode).toBe(400);
+    expect(res.body).toEqual({ error: "Missing data" });
+    expect(pool.query).not.toHaveBeenCalled();
+  });
+
+  it("blob > MAX_BLOB_SIZE → 413 + outcome='too_large'", async () => {
+    const huge = "x".repeat(MAX_BLOB_SIZE);
+    const res = makeRes();
+    await syncPush(
+      makeReq({
+        module: "finyk",
+        data: huge,
+        clientUpdatedAt: "2026-01-01T00:00:00Z",
+      }),
+      res,
+    );
+    expect(res.statusCode).toBe(413);
+    expect(res.body).toEqual({ error: "Data too large" });
+    expect(pool.query).not.toHaveBeenCalled();
+    expect(syncOperationsTotal.inc.mock.calls.map(([l]) => l)).toContainEqual(
+      expect.objectContaining({
+        op: "push",
+        module: "finyk",
+        outcome: "too_large",
+      }),
+    );
+  });
+
+  it("conflict (INSERT вертає 0 рядків) → SELECT existing + outcome='conflict'", async () => {
+    pool.query
+      .mockResolvedValueOnce({ rows: [] }) // INSERT no-op (last-write-wins guard)
+      .mockResolvedValueOnce({
+        rows: [{ server_updated_at: "2026-01-02T00:00:00Z", version: 9 }],
+      });
+
+    const res = makeRes();
+    await syncPush(
+      makeReq({
+        module: "routine",
+        data: { y: 2 },
+        clientUpdatedAt: "2026-01-01T00:00:00Z",
+      }),
+      res,
+    );
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({
+      ok: true,
+      module: "routine",
+      conflict: true,
+      version: 9,
+    });
+    expect(syncConflictsTotal.inc).toHaveBeenCalledWith({ module: "routine" });
+    expect(syncOperationsTotal.inc.mock.calls.map(([l]) => l)).toContainEqual(
+      expect.objectContaining({
+        op: "push",
+        module: "routine",
+        outcome: "conflict",
+      }),
+    );
+  });
+
+  it("DB-exception → metric outcome='error' і помилка пробулькує", async () => {
+    pool.query.mockRejectedValueOnce(new Error("boom"));
+    const res = makeRes();
+    await expect(
+      syncPush(
+        makeReq({
+          module: "finyk",
+          data: { x: 1 },
+          clientUpdatedAt: "2026-01-01T00:00:00Z",
+        }),
+        res,
+      ),
+    ).rejects.toThrow(/boom/);
+    expect(syncOperationsTotal.inc.mock.calls.map(([l]) => l)).toContainEqual(
+      expect.objectContaining({
+        op: "push",
+        module: "finyk",
+        outcome: "error",
+      }),
+    );
+  });
+});
+
+describe("syncPull (singular) — contract tests", () => {
+  it("happy: віддає data+version+timestamps", async () => {
+    pool.query.mockResolvedValueOnce({
+      rows: [
+        {
+          data: JSON.stringify({ balance: 100 }),
+          client_updated_at: "2026-01-01T00:00:00Z",
+          server_updated_at: "2026-01-01T00:00:01Z",
+          version: 4,
+        },
+      ],
+    });
+    const res = makeRes();
+    await syncPull(makeReq({ module: "finyk" }), res);
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({
+      ok: true,
+      module: "finyk",
+      data: { balance: 100 },
+      version: 4,
+    });
+  });
+
+  it("empty (рядка ще немає) → 200 + data=null, version=0, outcome='empty'", async () => {
+    pool.query.mockResolvedValueOnce({ rows: [] });
+    const res = makeRes();
+    await syncPull(makeReq({ module: "nutrition" }), res);
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toEqual({
+      ok: true,
+      module: "nutrition",
+      data: null,
+      serverUpdatedAt: null,
+      version: 0,
+    });
+    expect(syncOperationsTotal.inc.mock.calls.map(([l]) => l)).toContainEqual(
+      expect.objectContaining({
+        op: "pull",
+        module: "nutrition",
+        outcome: "empty",
+      }),
+    );
+  });
+
+  it("invalid module → 400", async () => {
+    const res = makeRes();
+    await syncPull(makeReq({ module: "coach" }), res);
+    expect(res.statusCode).toBe(400);
+    expect(res.body).toEqual({ error: "Invalid module" });
+    expect(pool.query).not.toHaveBeenCalled();
+  });
+
+  it("повертає raw об'єкт коли `data` — не-string (JSONB)", async () => {
+    // pg драйвер повертає JSONB як обʼєкт, не як string — перевіряємо
+    // обидві гілки парсера.
+    pool.query.mockResolvedValueOnce({
+      rows: [
+        {
+          data: { cached: true, items: [1, 2, 3] },
+          client_updated_at: "2026-01-01T00:00:00Z",
+          server_updated_at: "2026-01-01T00:00:01Z",
+          version: 2,
+        },
+      ],
+    });
+    const res = makeRes();
+    await syncPull(makeReq({ module: "routine" }), res);
+    expect(res.body.data).toEqual({ cached: true, items: [1, 2, 3] });
   });
 });
