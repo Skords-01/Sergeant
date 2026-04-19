@@ -186,7 +186,7 @@ export function HabitForm({
 
           {(habitDraft.recurrence === "once" ||
             habitDraft.recurrence === "monthly") && (
-            <p className="text-[11px] text-subtle leading-snug">
+            <p className="text-xs text-subtle leading-snug">
               {habitDraft.recurrence === "once"
                 ? "Подія зʼявиться лише в день «Початок». Кінець можна залишити порожнім."
                 : "Орієнтир — день місяця з «Початок». У коротких місяцях (наприклад 31 → лютий) — останній день місяця."}

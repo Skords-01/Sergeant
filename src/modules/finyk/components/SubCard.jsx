@@ -164,7 +164,7 @@ function SubCardComponent({
           · {sub.billingDay}-го
         </div>
         {sub.linkedTxId && lastTx && (
-          <div className="text-[11px] text-emerald-600 dark:text-emerald-400 mt-0.5">
+          <div className="text-xs text-emerald-600 dark:text-emerald-400 mt-0.5">
             Привʼязано до транзакції · оновлює суму та дату
           </div>
         )}

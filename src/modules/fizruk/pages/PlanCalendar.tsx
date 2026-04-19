@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { Button } from "@shared/components/ui/Button";
+import { Card } from "@shared/components/ui/Card";
 import { EmptyState } from "@shared/components/ui/EmptyState";
 import { cn } from "@shared/lib/cn";
 import { useDialogFocusTrap } from "@shared/hooks/useDialogFocusTrap";
@@ -119,7 +120,7 @@ export function PlanCalendar() {
   return (
     <div className="flex-1 overflow-y-auto">
       <div className="max-w-4xl mx-auto px-4 pt-4 page-tabbar-pad space-y-4">
-        <section className="bg-panel border border-line rounded-2xl p-4 shadow-card">
+        <Card as="section" radius="lg" padding="md">
           <div className="flex items-center justify-between gap-2 mb-4">
             <button
               type="button"
@@ -201,13 +202,13 @@ export function PlanCalendar() {
           <p className="text-2xs text-subtle mt-3">
             Натисни день, щоб призначити або зняти шаблон.
           </p>
-        </section>
+        </Card>
 
-        <section className="bg-panel border border-line rounded-2xl p-4 shadow-card">
+        <Card as="section" radius="lg" padding="md">
           <h2 className="text-sm font-semibold text-text mb-1">
             Повне відновлення м’язів (прогноз)
           </h2>
-          <p className="text-[11px] text-subtle mb-3 leading-snug">
+          <p className="text-xs text-subtle mb-3 leading-snug">
             Орієнтовна дата, коли навантаження спаде до «зеленого» стану (модель
             як у блоці відновлення).
           </p>
@@ -237,7 +238,7 @@ export function PlanCalendar() {
               ))}
             </ul>
           )}
-        </section>
+        </Card>
       </div>
 
       {sheet && (
@@ -289,7 +290,7 @@ export function PlanCalendar() {
                           {w.note || "Тренування"}
                         </div>
                         {w.items?.length > 0 && (
-                          <div className="text-[11px] text-subtle mt-0.5">
+                          <div className="text-xs text-subtle mt-0.5">
                             {w.items
                               .map((it) => it.nameUk || it.name)
                               .filter(Boolean)

@@ -55,7 +55,7 @@ export function MacrosEditor({
                 err: "",
               }))
             }
-            className="text-[11px] text-nutrition font-semibold hover:underline"
+            className="text-xs text-nutrition font-semibold hover:underline"
           >
             ← З результату фото
           </button>
@@ -84,13 +84,13 @@ export function MacrosEditor({
       </div>
       {pickedFood && !pendingUnlink && (
         <div className="mt-1.5 flex items-center justify-between gap-2">
-          <span className="text-[11px] text-subtle">
+          <span className="text-xs text-subtle">
             Щоб змінити вручну — відʼєднайте продукт
           </span>
           <button
             type="button"
             onClick={() => setPendingUnlink({ key: null, value: null })}
-            className="text-[11px] font-semibold text-nutrition hover:underline shrink-0"
+            className="text-xs font-semibold text-nutrition hover:underline shrink-0"
           >
             Відʼєднати
           </button>

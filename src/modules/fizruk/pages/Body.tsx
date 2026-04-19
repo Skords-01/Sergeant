@@ -415,7 +415,7 @@ export function Body({ onOpenMeasurements }) {
                   className="flex items-start gap-3 rounded-xl border border-line bg-bg p-3"
                 >
                   <div className="min-w-0 flex-1">
-                    <div className="text-[11px] text-subtle mb-1">
+                    <div className="text-xs text-subtle mb-1">
                       {new Date(entry.at).toLocaleDateString("uk-UA", {
                         weekday: "short",
                         day: "numeric",

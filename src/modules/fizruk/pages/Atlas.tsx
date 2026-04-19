@@ -53,7 +53,7 @@ export function Atlas() {
           className="rounded-3xl p-5 border border-line/20 bg-hero-teal"
           aria-label="Атлас мʼязів"
         >
-          <p className="text-[11px] font-bold tracking-widest uppercase text-fizruk">
+          <p className="text-xs font-bold tracking-widest uppercase text-fizruk">
             Атлас мʼязів
           </p>
           <h1 className="text-hero font-black text-white mt-2 leading-tight">

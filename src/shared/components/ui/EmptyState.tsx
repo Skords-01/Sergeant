@@ -39,7 +39,7 @@ export function EmptyState({
       <p
         className={cn(
           "font-semibold text-text",
-          compact ? "text-sm" : "text-[15px]",
+          compact ? "text-sm" : "text-base",
         )}
       >
         {title}

@@ -58,7 +58,7 @@ export function ShoppingListCard({
 
       <div className="mt-4 space-y-3">
         <div>
-          <div className="text-[11px] text-subtle mb-2">Джерело для списку</div>
+          <div className="text-xs text-subtle mb-2">Джерело для списку</div>
           <div className="flex gap-2">
             <button
               type="button"
@@ -176,7 +176,7 @@ export function ShoppingListCard({
                       <span className="text-xs font-semibold text-text">
                         {cat.name}
                       </span>
-                      <span className="text-[11px] text-muted ml-auto">
+                      <span className="text-xs text-muted ml-auto">
                         {cat.items.filter((i) => i.checked).length}/
                         {cat.items.length}
                       </span>
@@ -230,12 +230,12 @@ export function ShoppingListCard({
                             {item.name}
                           </span>
                           {item.quantity && (
-                            <span className="ml-1.5 text-[11px] text-subtle">
+                            <span className="ml-1.5 text-xs text-subtle">
                               {item.quantity}
                             </span>
                           )}
                           {item.note && (
-                            <div className="text-[11px] text-muted mt-0.5">
+                            <div className="text-xs text-muted mt-0.5">
                               {item.note}
                             </div>
                           )}
@@ -258,7 +258,7 @@ export function ShoppingListCard({
         <button
           type="button"
           onClick={() => openHubModule("finyk", "/analytics")}
-          className="w-full text-[11px] text-muted hover:text-text transition-colors pt-1 flex items-center justify-center gap-1.5"
+          className="w-full text-xs text-muted hover:text-text transition-colors pt-1 flex items-center justify-center gap-1.5"
         >
           <span aria-hidden>💸</span>
           <span>Скільки витратив на їжу цього місяця?</span>

@@ -172,7 +172,7 @@ export function LogCard({
             <span className="font-extrabold text-text text-base">
               {formatDate(selectedDate)}
             </span>
-            <span className="text-[11px] text-subtle">{selectedDate}</span>
+            <span className="text-xs text-subtle">{selectedDate}</span>
           </div>
           <button
             type="button"
@@ -296,7 +296,7 @@ export function LogCard({
         {weekOpen && (
           <div className="rounded-2xl border border-line bg-panel/40 px-3 py-3">
             <div className="overflow-x-auto">
-              <table className="w-full text-[11px] text-left">
+              <table className="w-full text-xs text-left">
                 <thead>
                   <tr className="text-subtle">
                     <th className="py-1 pr-2">Дата</th>
@@ -336,7 +336,7 @@ export function LogCard({
                   type="button"
                   onClick={() => setStatsRange(d)}
                   className={cn(
-                    "px-2 py-1 rounded-lg text-[11px] font-semibold border",
+                    "px-2 py-1 rounded-lg text-xs font-semibold border",
                     statsRange === d
                       ? "border-nutrition/60 text-nutrition bg-nutrition/10"
                       : "border-line text-subtle bg-panelHi",
@@ -412,7 +412,7 @@ export function LogCard({
                       <span className="text-xs text-text truncate">
                         {x.name}
                       </span>
-                      <span className="text-[11px] text-subtle shrink-0">
+                      <span className="text-xs text-subtle shrink-0">
                         {x.count}× · {Math.round(x.kcal)} ккал
                       </span>
                     </li>
@@ -437,7 +437,7 @@ export function LogCard({
                         <span className="text-xs text-text">
                           {MEAL_META[t]?.emoji} {MEAL_META[t]?.label || t}
                         </span>
-                        <span className="text-[11px] text-subtle shrink-0">
+                        <span className="text-xs text-subtle shrink-0">
                           {statsMealTypes[t].count}× ·{" "}
                           {Math.round(statsMealTypes[t].kcal)} ккал
                         </span>
@@ -604,9 +604,7 @@ function MealRow({ meal, onRemove, onEdit }) {
             {meal.name}
           </span>
           {meal.time && (
-            <span className="text-[11px] text-subtle shrink-0">
-              {meal.time}
-            </span>
+            <span className="text-xs text-subtle shrink-0">{meal.time}</span>
           )}
           {sourceLabel && (
             <span
@@ -619,22 +617,22 @@ function MealRow({ meal, onRemove, onEdit }) {
         </div>
         <div className="flex gap-2 mt-0.5 flex-wrap">
           {mac.kcal != null && (
-            <span className="text-[11px] text-nutrition font-bold">
+            <span className="text-xs text-nutrition font-bold">
               {Math.round(mac.kcal)} ккал
             </span>
           )}
           {mac.protein_g != null && (
-            <span className="text-[11px] text-subtle">
+            <span className="text-xs text-subtle">
               Б {Math.round(mac.protein_g)}г
             </span>
           )}
           {mac.fat_g != null && (
-            <span className="text-[11px] text-subtle">
+            <span className="text-xs text-subtle">
               Ж {Math.round(mac.fat_g)}г
             </span>
           )}
           {mac.carbs_g != null && (
-            <span className="text-[11px] text-subtle">
+            <span className="text-xs text-subtle">
               В {Math.round(mac.carbs_g)}г
             </span>
           )}

@@ -235,9 +235,9 @@ export function BarcodeScanner({ onDetected, onClose }) {
             </div>
           </div>
           {status ? (
-            <p className="text-[11px] text-danger">{status}</p>
+            <p className="text-xs text-danger">{status}</p>
           ) : (
-            <p className="text-[11px] text-subtle text-center">
+            <p className="text-xs text-subtle text-center">
               Наведи камеру на штрих-код. Якщо не зчитує — введи код вручну.
             </p>
           )}

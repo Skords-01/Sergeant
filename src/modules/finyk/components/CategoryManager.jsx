@@ -201,7 +201,7 @@ export function CategoryManager({
 
   return (
     <div>
-      <div className="text-[11px] font-bold text-subtle uppercase tracking-widest mb-3">
+      <div className="text-xs font-bold text-subtle uppercase tracking-widest mb-3">
         Власні категорії
       </div>
 

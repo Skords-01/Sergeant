@@ -14,7 +14,7 @@ function MerchantListComponent({ merchants = [], className }) {
         const barPct = Math.round((m.total / maxTotal) * 100);
         return (
           <div key={m.name} className="flex items-center gap-3">
-            <span className="text-[11px] text-subtle w-4 shrink-0 text-right tabular-nums">
+            <span className="text-xs text-subtle w-4 shrink-0 text-right tabular-nums">
               {i + 1}
             </span>
             <div className="flex-1 min-w-0">

@@ -31,7 +31,7 @@ function ModuleReorderList({ order, onMove }: ModuleReorderListProps) {
         const isLast = index === order.length - 1;
         return (
           <li key={id} className="flex items-center gap-2 px-3 py-2 bg-panel">
-            <span className="text-[11px] font-semibold text-muted tabular-nums w-4">
+            <span className="text-xs font-semibold text-muted tabular-nums w-4">
               {index + 1}
             </span>
             <span className="flex-1 text-sm text-text truncate">
@@ -123,7 +123,7 @@ export function GeneralSection({
         />
       </SettingsSubGroup>
       <SettingsSubGroup title="Упорядкувати модулі">
-        <p className="text-[11px] text-subtle leading-snug">
+        <p className="text-xs text-subtle leading-snug">
           Порядок модулів у списку «Сьогодні» на дашборді.
         </p>
         <ModuleReorderList order={order} onMove={handleMove} />

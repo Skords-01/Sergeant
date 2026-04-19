@@ -1,5 +1,6 @@
 import type { Dispatch, SetStateAction } from "react";
 import { Button } from "@shared/components/ui/Button";
+import { Card } from "@shared/components/ui/Card";
 import { setHabitArchived } from "../../lib/routineStorage.js";
 import type { PendingHabitDeletion, RoutineState } from "../../lib/types";
 
@@ -18,7 +19,12 @@ export function ArchivedHabitsSection({
   if (archived.length === 0) return null;
 
   return (
-    <section className="bg-panel border border-line rounded-2xl p-4 shadow-card space-y-2 opacity-95">
+    <Card
+      as="section"
+      radius="lg"
+      padding="md"
+      className="space-y-2 opacity-95"
+    >
       <h2 className="text-xs font-bold text-subtle uppercase tracking-widest">
         Архів
       </h2>
@@ -61,6 +67,6 @@ export function ArchivedHabitsSection({
           </li>
         ))}
       </ul>
-    </section>
+    </Card>
   );
 }

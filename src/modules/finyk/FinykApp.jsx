@@ -457,12 +457,12 @@ export default function App({
             >
               Почати без банку
             </Button>
-            <p className="mt-2 text-center text-[11px] text-subtle">
+            <p className="mt-2 text-center text-xs text-subtle">
               Ручні витрати, бюджети та аналітика — без API-токена. Monobank
               можна підключити пізніше.
             </p>
 
-            <div className="my-4 flex items-center gap-3 text-[11px] text-muted uppercase tracking-wider">
+            <div className="my-4 flex items-center gap-3 text-xs text-muted uppercase tracking-wider">
               <span className="flex-1 h-px bg-line" />
               або через API
               <span className="flex-1 h-px bg-line" />

@@ -519,7 +519,7 @@ export function HubDashboard({ onOpenModule, onOpenChat, user, onShowAuth }) {
 
       {/* Today at a glance — compact module list (replaces the 2×2 grid) */}
       <section className="space-y-2">
-        <h2 className="px-0.5 text-[11px] font-semibold text-muted uppercase tracking-wider">
+        <h2 className="px-0.5 text-xs font-semibold text-muted uppercase tracking-wider">
           Сьогодні
         </h2>
 

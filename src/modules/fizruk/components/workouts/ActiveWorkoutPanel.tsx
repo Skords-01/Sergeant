@@ -263,7 +263,7 @@ export function ActiveWorkoutPanel({
           className={`border rounded-2xl p-3 bg-bg transition-colors ${groupSelectMode && isSelected ? "border-success bg-success/5" : "border-line"}`}
         >
           {it.exerciseId && lastByExerciseId[it.exerciseId] && (
-            <div className="text-[11px] text-subtle/70 mb-1">
+            <div className="text-xs text-subtle/70 mb-1">
               Минулого разу{" "}
               {lastByExerciseId[it.exerciseId]._startedAt
                 ? `(${new Date(lastByExerciseId[it.exerciseId]._startedAt).toLocaleDateString("uk-UA", { month: "short", day: "numeric" })})`
@@ -343,7 +343,7 @@ export function ActiveWorkoutPanel({
                 const redL = cf.red.map((x) => x.label).join(", ");
                 const yelL = cf.yellow.map((x) => x.label).join(", ");
                 return (
-                  <div className="text-[11px] mt-1.5 rounded-xl border border-warning/40 bg-warning/10 px-2 py-1.5 text-warning leading-snug">
+                  <div className="text-xs mt-1.5 rounded-xl border border-warning/40 bg-warning/10 px-2 py-1.5 text-warning leading-snug">
                     {cf.red.length ? (
                       <>
                         Рано навантажувати:{" "}
@@ -869,7 +869,7 @@ export function ActiveWorkoutPanel({
             {!groupSelectMode ? (
               <button
                 type="button"
-                className="text-[11px] px-3 py-1.5 rounded-lg border border-line text-subtle hover:text-text hover:bg-panelHi transition-colors"
+                className="text-xs px-3 py-1.5 rounded-lg border border-line text-subtle hover:text-text hover:bg-panelHi transition-colors"
                 onClick={() => {
                   setGroupSelectMode(true);
                   setGroupSelected(new Set());
@@ -881,7 +881,7 @@ export function ActiveWorkoutPanel({
               <>
                 <button
                   type="button"
-                  className="text-[11px] px-3 py-1.5 rounded-lg border border-success/40 text-success bg-success/10 hover:bg-success/20 transition-colors disabled:opacity-40"
+                  className="text-xs px-3 py-1.5 rounded-lg border border-success/40 text-success bg-success/10 hover:bg-success/20 transition-colors disabled:opacity-40"
                   disabled={groupSelected.size < 2 || groupSelected.size > 3}
                   onClick={() => handleCreateSuperset("superset")}
                   title="Виберіть 2-3 вправи"
@@ -890,7 +890,7 @@ export function ActiveWorkoutPanel({
                 </button>
                 <button
                   type="button"
-                  className="text-[11px] px-3 py-1.5 rounded-lg border border-fizruk/40 text-fizruk bg-fizruk/10 hover:bg-fizruk/20 transition-colors disabled:opacity-40"
+                  className="text-xs px-3 py-1.5 rounded-lg border border-fizruk/40 text-fizruk bg-fizruk/10 hover:bg-fizruk/20 transition-colors disabled:opacity-40"
                   disabled={groupSelected.size < 2 || groupSelected.size > 3}
                   onClick={() => handleCreateSuperset("circuit")}
                   title="Виберіть 2-3 вправи"
@@ -899,7 +899,7 @@ export function ActiveWorkoutPanel({
                 </button>
                 <button
                   type="button"
-                  className="text-[11px] px-3 py-1.5 rounded-lg border border-line text-subtle hover:text-text transition-colors"
+                  className="text-xs px-3 py-1.5 rounded-lg border border-line text-subtle hover:text-text transition-colors"
                   onClick={() => {
                     setGroupSelectMode(false);
                     setGroupSelected(new Set());

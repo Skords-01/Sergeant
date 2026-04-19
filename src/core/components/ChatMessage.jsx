@@ -32,7 +32,7 @@ export function ChatMessage({ message, onSpeak }) {
               speak(text);
               onSpeak?.();
             }}
-            className="mt-1.5 flex items-center gap-1 text-[11px] text-subtle hover:text-text transition-colors"
+            className="mt-1.5 flex items-center gap-1 text-xs text-subtle hover:text-text transition-colors"
             title="Озвучити"
             aria-label="Озвучити відповідь"
           >

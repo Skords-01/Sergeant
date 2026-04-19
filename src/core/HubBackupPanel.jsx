@@ -45,7 +45,7 @@ export function HubBackupPanel({ className }) {
       <p className="font-semibold text-text leading-snug">
         Резервна копія всього Hub (Фінік, Фізрук, Рутина, останній модуль).
       </p>
-      <p className="leading-relaxed text-[11px]">
+      <p className="leading-relaxed text-xs">
         Токен Monobank і кеш транзакцій не входять у файл — після імпорту
         підключи рахунок знову в Фініку.
       </p>

@@ -39,7 +39,7 @@ export function WaterTrackerCard({ goalMl = 2000 }) {
             <div className="text-sm font-semibold text-text leading-none">
               Вода
             </div>
-            <div className="text-[11px] text-subtle mt-0.5">
+            <div className="text-xs text-subtle mt-0.5">
               {fmt(todayMl)}
               {goalMl > 0 && ` / ${fmt(goalMl)}`}
               {done && <span aria-hidden="true"> ✓</span>}
@@ -70,7 +70,7 @@ export function WaterTrackerCard({ goalMl = 2000 }) {
                 }, 2500);
               }
             }}
-            className="text-[11px] text-subtle hover:text-danger transition-colors px-2 py-1 rounded-lg"
+            className="text-xs text-subtle hover:text-danger transition-colors px-2 py-1 rounded-lg"
             aria-label={
               resetPending
                 ? "Підтвердити скидання води за сьогодні"

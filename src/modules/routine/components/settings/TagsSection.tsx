@@ -1,5 +1,6 @@
 import { useRef, useState, type Dispatch, type SetStateAction } from "react";
 import { Button } from "@shared/components/ui/Button";
+import { Card } from "@shared/components/ui/Card";
 import { Input } from "@shared/components/ui/Input";
 import { createTag, deleteTag, updateTag } from "../../lib/routineStorage.js";
 import type { RoutineState } from "../../lib/types";
@@ -31,7 +32,7 @@ export function TagsSection({
   };
 
   return (
-    <section className="bg-panel border border-line rounded-2xl p-4 shadow-card space-y-3">
+    <Card as="section" radius="lg" padding="md" className="space-y-3">
       <h2 className="text-xs font-bold text-subtle uppercase tracking-widest">
         Теги
       </h2>
@@ -110,6 +111,6 @@ export function TagsSection({
           </li>
         ))}
       </ul>
-    </section>
+    </Card>
   );
 }

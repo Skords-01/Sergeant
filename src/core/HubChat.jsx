@@ -519,7 +519,7 @@ function HubChat({ onClose, initialMessage }) {
         {!online && (
           <div
             role="status"
-            className="mx-4 mb-2 mt-1 px-3 py-2 bg-warning/10 border border-warning/30 rounded-xl text-[11px] text-warning text-center shrink-0"
+            className="mx-4 mb-2 mt-1 px-3 py-2 bg-warning/10 border border-warning/30 rounded-xl text-xs text-warning text-center shrink-0"
           >
             Асистент недоступний без інтернету. Дані модулів видно офлайн, але
             AI-відповіді потребують підключення.

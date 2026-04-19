@@ -625,7 +625,7 @@ export function Transactions({
               increaseViewportBy={{ top: 400, bottom: 400 }}
               groupContent={(groupIndex) => (
                 <div
-                  className="px-3 py-2 bg-bg/95 backdrop-blur-sm border-b border-line text-[11px] font-semibold text-subtle tracking-wide"
+                  className="px-3 py-2 bg-bg/95 backdrop-blur-sm border-b border-line text-xs font-semibold text-subtle tracking-wide"
                   role="presentation"
                 >
                   {formatStickyDayLabel(groupedByDate[groupIndex].key)}

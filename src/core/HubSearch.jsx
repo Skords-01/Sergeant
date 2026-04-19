@@ -321,7 +321,7 @@ export function HubSearch({ onClose, onOpenModule }) {
 
         {Object.entries(grouped).map(([moduleId, group]) => (
           <div key={moduleId}>
-            <p className="text-[11px] font-semibold text-muted uppercase tracking-wider mb-1.5">
+            <p className="text-xs font-semibold text-muted uppercase tracking-wider mb-1.5">
               {group.label}
             </p>
             <div className="space-y-1">

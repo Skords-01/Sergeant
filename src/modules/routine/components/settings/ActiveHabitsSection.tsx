@@ -1,5 +1,6 @@
 import { useMemo, useState, type Dispatch, type SetStateAction } from "react";
 import { Button } from "@shared/components/ui/Button";
+import { Card } from "@shared/components/ui/Card";
 import { Input } from "@shared/components/ui/Input";
 import { sortHabitsByOrder } from "../../lib/habitOrder.js";
 import {
@@ -53,7 +54,7 @@ export function ActiveHabitsSection({
   const hasActive = routine.habits.some((h) => !h.archived);
 
   return (
-    <section className="bg-panel border border-line rounded-2xl p-4 shadow-card space-y-2">
+    <Card as="section" radius="lg" padding="md" className="space-y-2">
       <h2 className="text-xs font-bold text-subtle uppercase tracking-widest">
         Активні звички
       </h2>
@@ -147,6 +148,6 @@ export function ActiveHabitsSection({
           />
         ))}
       </ul>
-    </section>
+    </Card>
   );
 }

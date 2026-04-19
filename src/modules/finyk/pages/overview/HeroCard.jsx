@@ -19,7 +19,7 @@ export function HeroCard({
       <div className="flex items-start justify-between gap-2">
         <div>
           <p className="text-emerald-100/90 text-sm">Загальний нетворс</p>
-          <p className="text-[11px] text-emerald-200/70 mt-0.5">
+          <p className="text-xs text-emerald-200/70 mt-0.5">
             {firstName} · {dateLabel}
           </p>
         </div>
@@ -65,9 +65,7 @@ export function HeroCard({
       </div>
       <div className="flex flex-wrap gap-x-4 gap-y-2 mt-4 pt-4 border-t border-white/20 text-sm">
         <div>
-          <div className="text-[11px] text-emerald-200/80 mb-0.5">
-            На картках
-          </div>
+          <div className="text-xs text-emerald-200/80 mb-0.5">На картках</div>
           <div className="font-semibold tabular-nums text-emerald-50">
             {showBalance
               ? `+${monoTotal.toLocaleString("uk-UA", { maximumFractionDigits: 0 })} ₴`
@@ -76,7 +74,7 @@ export function HeroCard({
         </div>
         <div className="w-px bg-white/25 hidden sm:block self-stretch min-h-[2.5rem]" />
         <div>
-          <div className="text-[11px] text-emerald-200/80 mb-0.5">Борги</div>
+          <div className="text-xs text-emerald-200/80 mb-0.5">Борги</div>
           <div className="font-semibold tabular-nums text-emerald-50">
             {showBalance
               ? `−${totalDebt.toLocaleString("uk-UA", { maximumFractionDigits: 0 })} ₴`

@@ -142,7 +142,7 @@ export function NotificationsSection() {
           </Button>
         )}
         {permStatus === "denied" && (
-          <p className="text-[11px] text-subtle">
+          <p className="text-xs text-subtle">
             Відкрий налаштування браузера, щоб дозволити
           </p>
         )}

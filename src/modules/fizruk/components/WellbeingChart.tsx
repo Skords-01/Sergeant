@@ -45,7 +45,7 @@ export function WellbeingChart({ data }) {
   return (
     <div className="w-full">
       {/* Legend */}
-      <div className="flex items-center gap-4 mb-2 text-[11px] text-subtle">
+      <div className="flex items-center gap-4 mb-2 text-xs text-subtle">
         <span className="flex items-center gap-1.5">
           <span
             className="inline-block w-2.5 h-2.5 rounded-sm"

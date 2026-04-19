@@ -1,6 +1,7 @@
 import { useState, type Dispatch, type SetStateAction } from "react";
 import { cn } from "@shared/lib/cn";
 import { Button } from "@shared/components/ui/Button";
+import { Card } from "@shared/components/ui/Card";
 import { Input } from "@shared/components/ui/Input";
 import { ConfirmDialog } from "@shared/components/ui/ConfirmDialog";
 import {
@@ -33,7 +34,7 @@ export function CategoriesSection({
 
   return (
     <>
-      <section className="bg-panel border border-line rounded-2xl p-4 shadow-card space-y-3">
+      <Card as="section" radius="lg" padding="md" className="space-y-3">
         <h2 className="text-xs font-bold text-subtle uppercase tracking-widest">
           {editingCatId ? "Редагувати категорію" : "Категорії"}
         </h2>
@@ -162,7 +163,7 @@ export function CategoriesSection({
             })}
           </ul>
         )}
-      </section>
+      </Card>
 
       <ConfirmDialog
         open={!!deleteCatPending}

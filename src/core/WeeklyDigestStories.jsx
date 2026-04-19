@@ -163,7 +163,7 @@ function IntroSlide({ slide }) {
         <h2 className="text-[40px] leading-[1.05] font-black mb-4">
           Твій тиждень
         </h2>
-        <p className="text-[15px] text-white/85 leading-relaxed max-w-[22rem]">
+        <p className="text-base text-white/85 leading-relaxed max-w-[22rem]">
           Коротке зведення по всіх модулях. Тапай праворуч, щоб гортати далі,
           ліворуч — назад. Утримуй, щоб зупинити.
         </p>
@@ -202,7 +202,7 @@ function FinykSlide({ slide }) {
 
       {topCats.length > 0 && (
         <div className="mb-6 space-y-2">
-          <p className="text-[11px] uppercase tracking-wider text-white/75 font-bold">
+          <p className="text-xs uppercase tracking-wider text-white/75 font-bold">
             Куди пішли гроші
           </p>
           {topCats.map((c) => {
@@ -265,7 +265,7 @@ function FizrukSlide({ slide }) {
 
       <div className="grid grid-cols-2 gap-3 mb-6">
         <div className="rounded-2xl bg-white/15 border border-white/20 px-4 py-3">
-          <div className="text-[11px] uppercase tracking-wider text-white/75 font-bold">
+          <div className="text-xs uppercase tracking-wider text-white/75 font-bold">
             Тренувань
           </div>
           <div className="text-[36px] leading-none font-black tabular-nums mt-1">
@@ -273,7 +273,7 @@ function FizrukSlide({ slide }) {
           </div>
         </div>
         <div className="rounded-2xl bg-white/15 border border-white/20 px-4 py-3">
-          <div className="text-[11px] uppercase tracking-wider text-white/75 font-bold">
+          <div className="text-xs uppercase tracking-wider text-white/75 font-bold">
             Обсяг, кг
           </div>
           <div className="text-[36px] leading-none font-black tabular-nums mt-1">
@@ -284,7 +284,7 @@ function FizrukSlide({ slide }) {
 
       {topEx.length > 0 && (
         <div className="mb-4">
-          <p className="text-[11px] uppercase tracking-wider text-white/75 font-bold mb-2">
+          <p className="text-xs uppercase tracking-wider text-white/75 font-bold mb-2">
             Головні вправи
           </p>
           <div className="space-y-1">
@@ -353,7 +353,7 @@ function NutritionSlide({ slide }) {
             style={{ width: `${Math.min(100, kcalPct)}%` }}
           />
         </div>
-        <div className="text-[11px] text-white/75 mt-1">
+        <div className="text-xs text-white/75 mt-1">
           {kcalPct}% від цілі · залоговано {agg?.daysLogged ?? 0} / 7 днів
         </div>
       </div>
@@ -455,7 +455,7 @@ function RoutineSlide({ slide }) {
 
       {top.length > 0 && (
         <div className="mb-4 space-y-2">
-          <p className="text-[11px] uppercase tracking-wider text-white/75 font-bold">
+          <p className="text-xs uppercase tracking-wider text-white/75 font-bold">
             Топ-звички
           </p>
           {top.map((h) => (

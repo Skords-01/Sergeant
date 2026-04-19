@@ -157,7 +157,7 @@ export function WorkoutFinishSheets({
             <div className="fizruk-summary-header">
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <div className="text-[11px] font-bold tracking-widest uppercase text-fizruk">
+                  <div className="text-xs font-bold tracking-widest uppercase text-fizruk">
                     Завершено
                   </div>
                   <div className="text-lg font-black text-white mt-1 leading-tight">
@@ -240,7 +240,7 @@ export function WorkoutFinishSheets({
                 </Button>
                 <button
                   type="button"
-                  className="fizruk-cta-accent flex-1 py-3 rounded-full text-[15px]"
+                  className="fizruk-cta-accent flex-1 py-3 rounded-full text-base"
                   onClick={() => setFinishFlash(null)}
                 >
                   Готово

@@ -24,7 +24,7 @@ export function ReminderPresets({
             key={preset.id}
             type="button"
             className={cn(
-              "text-[11px] px-2.5 py-1.5 rounded-lg border font-medium transition-colors min-h-[32px]",
+              "text-xs px-2.5 py-1.5 rounded-lg border font-medium transition-colors min-h-[32px]",
               JSON.stringify(times.slice().sort()) ===
                 JSON.stringify(preset.times.slice().sort())
                 ? C.chipOn
@@ -44,7 +44,7 @@ export function ReminderPresets({
         <button
           type="button"
           className={cn(
-            "text-[11px] px-2.5 py-1.5 rounded-lg border font-medium transition-colors min-h-[32px]",
+            "text-xs px-2.5 py-1.5 rounded-lg border font-medium transition-colors min-h-[32px]",
             times.length === 0 ? C.chipOn : C.chipOff,
           )}
           onClick={() =>
@@ -98,7 +98,7 @@ export function ReminderPresets({
       {times.length < 5 && times.length > 0 && (
         <button
           type="button"
-          className="text-[11px] text-routine font-semibold hover:underline"
+          className="text-xs text-routine font-semibold hover:underline"
           onClick={() =>
             setHabitDraft((d) => ({
               ...d,

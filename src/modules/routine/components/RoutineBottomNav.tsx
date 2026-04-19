@@ -145,7 +145,7 @@ export function RoutineBottomNav({
 
               <span
                 className={cn(
-                  "text-[11px] leading-none font-semibold transition-colors",
+                  "text-xs leading-none font-semibold transition-colors",
                   active ? "text-text" : "text-muted",
                 )}
               >

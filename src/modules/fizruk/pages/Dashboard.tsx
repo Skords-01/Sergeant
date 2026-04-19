@@ -286,7 +286,7 @@ export function Dashboard({
           className="rounded-3xl p-6 overflow-hidden bg-hero-teal"
           aria-label="Привітання"
         >
-          <p className="text-[11px] font-bold tracking-widest uppercase text-fizruk">
+          <p className="text-xs font-bold tracking-widest uppercase text-fizruk">
             {greeting} · {today}
           </p>
           <h1 className="text-hero font-black text-white mt-3 leading-tight">
@@ -331,7 +331,7 @@ export function Dashboard({
           <div className="mt-5 flex flex-col gap-3">
             <button
               type="button"
-              className="w-full py-4 rounded-full font-bold text-[15px] bg-fizruk text-white transition-all active:scale-[0.98]"
+              className="w-full py-4 rounded-full font-bold text-base bg-fizruk text-white transition-all active:scale-[0.98]"
               onClick={() => {
                 try {
                   sessionStorage.setItem("fizruk_workouts_mode", "log");
@@ -344,7 +344,7 @@ export function Dashboard({
             </button>
             <button
               type="button"
-              className="w-full py-4 rounded-full font-semibold text-[15px] text-white border border-white/25 transition-colors active:bg-white/10"
+              className="w-full py-4 rounded-full font-semibold text-base text-white border border-white/25 transition-colors active:bg-white/10"
               onClick={() => {
                 try {
                   sessionStorage.setItem("fizruk_workouts_mode", "templates");
@@ -407,7 +407,7 @@ export function Dashboard({
                           <div className="text-sm font-semibold text-text truncate">
                             {tpl.name}
                           </div>
-                          <div className="text-[11px] text-subtle mt-0.5">
+                          <div className="text-xs text-subtle mt-0.5">
                             {picks.length > 0
                               ? `${picks.length} вправ`
                               : "Немає вправ у каталозі"}
@@ -443,7 +443,7 @@ export function Dashboard({
               </div>
               <button
                 type="button"
-                className="text-[11px] font-semibold text-success hover:underline shrink-0"
+                className="text-xs font-semibold text-success hover:underline shrink-0"
                 onClick={() => onOpenPrograms?.()}
               >
                 Програми →
@@ -482,7 +482,7 @@ export function Dashboard({
                 <h2 className="text-base font-semibold text-text">
                   Відновлення й фокус
                 </h2>
-                <p className="text-[11px] text-subtle mt-1 leading-snug">
+                <p className="text-xs text-subtle mt-1 leading-snug">
                   Колір на силуеті — готовність груп; чіпи — пріоритет після
                   відпочинку.
                 </p>
@@ -525,7 +525,7 @@ export function Dashboard({
                   <span className="text-base shrink-0" aria-hidden>
                     😴
                   </span>
-                  <p className="text-[11px] text-warning leading-snug">
+                  <p className="text-xs text-warning leading-snug">
                     {rec.wellbeingMult >= 1.3
                       ? "Поганий сон або дуже низька енергія — відновлення значно сповільнене."
                       : "Недостатній сон або низька енергія — відновлення сповільнене."}{" "}
@@ -674,7 +674,7 @@ export function Dashboard({
             </div>
             <button
               type="button"
-              className="text-[11px] font-semibold text-primary hover:underline shrink-0"
+              className="text-xs font-semibold text-primary hover:underline shrink-0"
               onClick={() => {
                 window.location.hash = "#plan";
               }}
@@ -683,7 +683,7 @@ export function Dashboard({
             </button>
           </div>
           {monthlyPlan.todayTemplateId && (
-            <p className="text-[11px] text-success/90 mb-2">
+            <p className="text-xs text-success/90 mb-2">
               Шаблон з місячного плану на сьогодні.
             </p>
           )}

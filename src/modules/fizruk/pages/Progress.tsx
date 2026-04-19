@@ -367,7 +367,7 @@ export function Progress() {
                 <div className="text-sm font-semibold text-text">
                   Відтискання
                 </div>
-                <div className="text-[11px] text-subtle">
+                <div className="text-xs text-subtle">
                   за даними щоденних звичок
                 </div>
               </div>
@@ -551,7 +551,7 @@ export function Progress() {
                   Рекорди (PR) · {prs.length}
                 </div>
                 {filtered.length !== prs.length && (
-                  <div className="text-[11px] text-subtle">
+                  <div className="text-xs text-subtle">
                     {filtered.length} показано
                   </div>
                 )}
@@ -564,7 +564,7 @@ export function Progress() {
                     type="button"
                     onClick={() => setPrFilter("all")}
                     className={cn(
-                      "shrink-0 px-3 h-7 rounded-full text-[11px] font-semibold transition-colors border",
+                      "shrink-0 px-3 h-7 rounded-full text-xs font-semibold transition-colors border",
                       prFilter === "all"
                         ? "bg-fizruk text-white border-fizruk"
                         : "bg-panel border-line text-subtle hover:text-text",
@@ -578,7 +578,7 @@ export function Progress() {
                       type="button"
                       onClick={() => setPrFilter(g === prFilter ? "all" : g)}
                       className={cn(
-                        "shrink-0 px-3 h-7 rounded-full text-[11px] font-semibold transition-colors border whitespace-nowrap",
+                        "shrink-0 px-3 h-7 rounded-full text-xs font-semibold transition-colors border whitespace-nowrap",
                         prFilter === g
                           ? "bg-fizruk text-white border-fizruk"
                           : "bg-panel border-line text-subtle hover:text-text",
@@ -641,7 +641,7 @@ export function Progress() {
                             {p.weightKg ?? 0} кг × {p.reps ?? 0}
                           </span>
                           {p.at && (
-                            <span className="text-[11px] text-muted">
+                            <span className="text-xs text-muted">
                               ·{" "}
                               {new Date(p.at).toLocaleDateString("uk-UA", {
                                 month: "short",
@@ -671,7 +671,7 @@ export function Progress() {
           </div>
           <button
             type="button"
-            className="w-full py-4 rounded-full font-bold text-[15px] bg-fizruk text-white mb-2 transition-all active:scale-[0.98]"
+            className="w-full py-4 rounded-full font-bold text-base bg-fizruk text-white mb-2 transition-all active:scale-[0.98]"
             onClick={exportJson}
           >
             Експорт (backup)
@@ -712,7 +712,7 @@ export function Progress() {
               Скинути всі дані
             </Button>
           </div>
-          <div className="text-[11px] text-subtle/70 mt-2">
+          <div className="text-xs text-subtle/70 mt-2">
             Порада: роби експорт перед великими змінами/оновленнями.
           </div>
         </Card>

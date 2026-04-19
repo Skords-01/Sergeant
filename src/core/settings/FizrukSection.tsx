@@ -15,7 +15,7 @@ export function FizrukSection() {
   return (
     <SettingsGroup title="Фізрук" emoji="🏋️">
       <SettingsSubGroup title="Таймер відпочинку">
-        <p className="text-[11px] text-subtle leading-snug">
+        <p className="text-xs text-subtle leading-snug">
           Рекомендований час відпочинку підбирається автоматично за типом
           вправи. Ці значення з&apos;являться як кнопка за замовчуванням у
           кожній вправі.

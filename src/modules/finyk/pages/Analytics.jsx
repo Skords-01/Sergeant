@@ -37,7 +37,7 @@ const Section = memo(function Section({ title, children, className }) {
         className,
       )}
     >
-      <div className="text-[11px] font-bold text-subtle uppercase tracking-widest mb-4">
+      <div className="text-xs font-bold text-subtle uppercase tracking-widest mb-4">
         {title}
       </div>
       {children}

@@ -192,7 +192,7 @@ export function WorkoutTemplatesSection({
               {orderIds.length >= 2 && !groupSelectMode && (
                 <button
                   type="button"
-                  className="text-[11px] px-2 py-1 rounded-lg border border-line text-subtle hover:text-text hover:bg-panelHi transition-colors"
+                  className="text-xs px-2 py-1 rounded-lg border border-line text-subtle hover:text-text hover:bg-panelHi transition-colors"
                   onClick={() => {
                     setGroupSelectMode(true);
                     setGroupSelected(new Set());
@@ -205,7 +205,7 @@ export function WorkoutTemplatesSection({
                 <div className="flex gap-1">
                   <button
                     type="button"
-                    className="text-[11px] px-2 py-1 rounded-lg border border-success/40 text-success disabled:opacity-40"
+                    className="text-xs px-2 py-1 rounded-lg border border-success/40 text-success disabled:opacity-40"
                     disabled={groupSelected.size < 2 || groupSelected.size > 3}
                     onClick={() => handleCreateGroup("superset")}
                     title="Виберіть 2-3 вправи"
@@ -214,7 +214,7 @@ export function WorkoutTemplatesSection({
                   </button>
                   <button
                     type="button"
-                    className="text-[11px] px-2 py-1 rounded-lg border border-fizruk/40 text-fizruk disabled:opacity-40"
+                    className="text-xs px-2 py-1 rounded-lg border border-fizruk/40 text-fizruk disabled:opacity-40"
                     disabled={groupSelected.size < 2 || groupSelected.size > 3}
                     onClick={() => handleCreateGroup("circuit")}
                     title="Виберіть 2-3 вправи"
@@ -223,7 +223,7 @@ export function WorkoutTemplatesSection({
                   </button>
                   <button
                     type="button"
-                    className="text-[11px] px-2 py-1 rounded-lg border border-line text-subtle"
+                    className="text-xs px-2 py-1 rounded-lg border border-line text-subtle"
                     onClick={() => {
                       setGroupSelectMode(false);
                       setGroupSelected(new Set());

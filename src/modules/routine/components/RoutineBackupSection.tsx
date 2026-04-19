@@ -1,5 +1,6 @@
 import { useRef, type ChangeEvent } from "react";
 import { Button } from "@shared/components/ui/Button";
+import { Card } from "@shared/components/ui/Card";
 import { cn } from "@shared/lib/cn";
 import { buildRoutineBackupPayload } from "../lib/routineStorage.js";
 
@@ -25,7 +26,7 @@ export function RoutineBackupSection({
   const backupRef = useRef<HTMLInputElement | null>(null);
 
   return (
-    <section className="bg-panel border border-line rounded-2xl p-4 shadow-card space-y-3">
+    <Card as="section" radius="lg" padding="md" className="space-y-3">
       <h2 className="text-xs font-bold text-subtle uppercase tracking-widest">
         Резервна копія
       </h2>
@@ -81,6 +82,6 @@ export function RoutineBackupSection({
           }}
         />
       </div>
-    </section>
+    </Card>
   );
 }

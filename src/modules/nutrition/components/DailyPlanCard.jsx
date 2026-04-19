@@ -114,7 +114,7 @@ function MacroBadge({ label, value, unit = "г", color }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 text-[11px] rounded-lg px-2 py-0.5",
+        "inline-flex items-center gap-1 text-xs rounded-lg px-2 py-0.5",
         color || "bg-bg border border-line text-subtle",
       )}
     >
@@ -136,7 +136,7 @@ function MealRow({ meal, onAddToLog, onRegen, busy }) {
             <span className="text-base leading-none" aria-hidden>
               {MEAL_TYPE_ICONS[meal.type] || "🍴"}
             </span>
-            <span className="text-[11px] font-bold text-nutrition/80 uppercase tracking-widest">
+            <span className="text-xs font-bold text-nutrition/80 uppercase tracking-widest">
               {MEAL_TYPE_LABELS[meal.type] || meal.label}
             </span>
           </div>
@@ -186,7 +186,7 @@ function MealRow({ meal, onAddToLog, onRegen, busy }) {
       {meal.ingredients?.length > 0 && (
         <button
           type="button"
-          className="mt-2 text-[11px] text-nutrition/70 hover:text-nutrition transition-colors"
+          className="mt-2 text-xs text-nutrition/70 hover:text-nutrition transition-colors"
           onClick={() => setExpanded((v) => !v)}
         >
           {expanded ? "▲ Сховати інгредієнти" : "▼ Інгредієнти"}
@@ -253,9 +253,7 @@ export function DailyPlanCard({
 
       <div className="mt-4 space-y-4">
         <div>
-          <div className="text-[11px] text-subtle mb-2">
-            Пресет або ручні цілі
-          </div>
+          <div className="text-xs text-subtle mb-2">Пресет або ручні цілі</div>
           <div className="flex gap-2 flex-wrap">
             {PRESETS.map((preset) => (
               <button
@@ -322,7 +320,7 @@ export function DailyPlanCard({
                 <div key={key}>
                   <div
                     className={cn(
-                      "text-[11px] mb-1 font-semibold",
+                      "text-xs mb-1 font-semibold",
                       color ?? "text-subtle",
                     )}
                   >
@@ -377,28 +375,28 @@ export function DailyPlanCard({
           {hasTargets && (
             <div className="mt-2 flex flex-wrap gap-1 items-center">
               {prefs.dailyTargetKcal != null && (
-                <span className="text-[11px] bg-nutrition/10 text-nutrition border border-nutrition/20 rounded-lg px-2 py-0.5">
+                <span className="text-xs bg-nutrition/10 text-nutrition border border-nutrition/20 rounded-lg px-2 py-0.5">
                   {prefs.dailyTargetKcal} ккал
                 </span>
               )}
               {prefs.dailyTargetProtein_g != null && (
-                <span className="text-[11px] bg-bg border border-line rounded-lg px-2 py-0.5 text-subtle">
+                <span className="text-xs bg-bg border border-line rounded-lg px-2 py-0.5 text-subtle">
                   Б: {prefs.dailyTargetProtein_g}г
                 </span>
               )}
               {prefs.dailyTargetFat_g != null && (
-                <span className="text-[11px] bg-bg border border-line rounded-lg px-2 py-0.5 text-subtle">
+                <span className="text-xs bg-bg border border-line rounded-lg px-2 py-0.5 text-subtle">
                   Ж: {prefs.dailyTargetFat_g}г
                 </span>
               )}
               {prefs.dailyTargetCarbs_g != null && (
-                <span className="text-[11px] bg-bg border border-line rounded-lg px-2 py-0.5 text-subtle">
+                <span className="text-xs bg-bg border border-line rounded-lg px-2 py-0.5 text-subtle">
                   В: {prefs.dailyTargetCarbs_g}г
                 </span>
               )}
               <button
                 type="button"
-                className="text-[11px] text-muted hover:text-danger transition-colors px-1 ml-auto"
+                className="text-xs text-muted hover:text-danger transition-colors px-1 ml-auto"
                 onClick={() =>
                   setPrefs((p) => ({
                     ...p,
@@ -448,7 +446,7 @@ export function DailyPlanCard({
 
             {dayPlan?.totalKcal != null && prefs.dailyTargetKcal != null && (
               <div className="rounded-xl bg-panel border border-line px-3 py-2">
-                <div className="flex justify-between text-[11px] text-subtle mb-1">
+                <div className="flex justify-between text-xs text-subtle mb-1">
                   <span>Прогрес до цілі</span>
                   <span>
                     {Math.round(dayPlan.totalKcal)} / {prefs.dailyTargetKcal}{" "}

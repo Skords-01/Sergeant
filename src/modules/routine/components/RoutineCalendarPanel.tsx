@@ -126,7 +126,7 @@ export function RoutineCalendarPanel({
       >
         <p
           className={cn(
-            "text-[11px] font-bold tracking-widest uppercase",
+            "text-xs font-bold tracking-widest uppercase",
             C.heroKicker,
           )}
         >
@@ -256,7 +256,7 @@ export function RoutineCalendarPanel({
           type="button"
           onClick={() => setTagFilter(null)}
           className={cn(
-            "px-2.5 py-1.5 rounded-full text-[11px] font-medium border",
+            "px-2.5 py-1.5 rounded-full text-xs font-medium border",
             tagFilter === null ? C.chipOn : C.chipOff,
           )}
         >
@@ -269,7 +269,7 @@ export function RoutineCalendarPanel({
               setTagFilter((f) => (f === "__fizruk" ? null : "__fizruk"))
             }
             className={cn(
-              "px-2.5 py-1.5 rounded-full text-[11px] font-medium border",
+              "px-2.5 py-1.5 rounded-full text-xs font-medium border",
               tagFilter === "__fizruk"
                 ? "border-sky-400/50 bg-sky-500/10 text-text"
                 : C.chipOff,
@@ -285,7 +285,7 @@ export function RoutineCalendarPanel({
               setTagFilter((f) => (f === "__finyk_sub" ? null : "__finyk_sub"))
             }
             className={cn(
-              "px-2.5 py-1.5 rounded-full text-[11px] font-medium border max-w-[200px] truncate",
+              "px-2.5 py-1.5 rounded-full text-xs font-medium border max-w-[200px] truncate",
               tagFilter === "__finyk_sub"
                 ? "border-emerald-500/40 bg-emerald-500/10 text-text"
                 : C.chipOff,
@@ -300,7 +300,7 @@ export function RoutineCalendarPanel({
             type="button"
             onClick={() => setTagFilter((f) => (f === name ? null : name))}
             className={cn(
-              "px-2.5 py-1.5 rounded-full text-[11px] font-medium border max-w-[160px] truncate",
+              "px-2.5 py-1.5 rounded-full text-xs font-medium border max-w-[160px] truncate",
               tagFilter === name ? C.chipOn : C.chipOff,
             )}
           >
@@ -346,7 +346,7 @@ export function RoutineCalendarPanel({
       )}
 
       {timeMode === "month" && (
-        <section className="bg-panel border border-line rounded-2xl p-4 shadow-card">
+        <Card as="section" radius="lg" padding="md">
           <div className="grid grid-cols-7 gap-1 text-center text-2xs font-semibold text-subtle mb-2">
             {["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Нд"].map((d) => (
               <div key={d}>{d}</div>
@@ -408,7 +408,7 @@ export function RoutineCalendarPanel({
               month: "long",
             })}
           </p>
-        </section>
+        </Card>
       )}
 
       <section className="space-y-4 pb-2">
@@ -538,10 +538,10 @@ export function RoutineCalendarPanel({
                             e.habitId ? `Деталі: ${e.title}` : undefined
                           }
                         >
-                          <p className="font-semibold text-text text-[15px] leading-snug">
+                          <p className="font-semibold text-text text-base leading-snug">
                             {e.title}
                           </p>
-                          <p className="text-[11px] text-subtle mt-0.5">
+                          <p className="text-xs text-subtle mt-0.5">
                             {parseDateKey(e.date).toLocaleDateString("uk-UA", {
                               weekday: "short",
                               day: "numeric",

@@ -17,7 +17,7 @@ export function FoodHitRow({ p, badge, onPick }) {
             {Math.round(p.per100?.kcal || 0)} ккал
           </div>
         </div>
-        <div className="text-[11px] text-subtle mt-0.5">
+        <div className="text-xs text-subtle mt-0.5">
           Б {Math.round(p.per100?.protein_g || 0)}г · Ж{" "}
           {Math.round(p.per100?.fat_g || 0)}г · В{" "}
           {Math.round(p.per100?.carbs_g || 0)}г{" "}

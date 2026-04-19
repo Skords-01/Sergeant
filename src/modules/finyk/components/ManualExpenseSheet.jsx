@@ -319,7 +319,7 @@ export function ManualExpenseSheet({
                       return next;
                     })
                   }
-                  className="px-2.5 py-1 rounded-full text-[11px] font-medium bg-panelHi text-muted border border-line hover:border-muted/50 transition-colors"
+                  className="px-2.5 py-1 rounded-full text-xs font-medium bg-panelHi text-muted border border-line hover:border-muted/50 transition-colors"
                   title={`${m.count} разів · ${m.total.toLocaleString("uk-UA")} ₴`}
                 >
                   {m.name}
@@ -348,7 +348,7 @@ export function ManualExpenseSheet({
                     onClick={() =>
                       setForm((f) => ({ ...f, amount: String(v) }))
                     }
-                    className="px-2.5 py-1 rounded-full text-[11px] font-medium bg-panelHi text-muted border border-line hover:border-muted/50 transition-colors tabular-nums"
+                    className="px-2.5 py-1 rounded-full text-xs font-medium bg-panelHi text-muted border border-line hover:border-muted/50 transition-colors tabular-nums"
                   >
                     {v.toLocaleString("uk-UA")} ₴
                   </button>

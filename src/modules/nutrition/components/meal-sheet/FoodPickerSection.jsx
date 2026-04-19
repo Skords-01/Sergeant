@@ -71,7 +71,7 @@ export function FoodPickerSection({
             placeholder="Курка, Activia, вівсянка, Lays…"
             aria-label="Пошук продукту"
           />
-          {foodErr && <div className="text-[11px] text-muted">{foodErr}</div>}
+          {foodErr && <div className="text-xs text-muted">{foodErr}</div>}
           {(foodHits.length > 0 || offHits.length > 0) && (
             <div className="max-h-56 overflow-y-auto rounded-2xl border border-line bg-bg shadow-sm">
               <ul className="divide-y divide-line/20">
@@ -127,7 +127,7 @@ export function FoodPickerSection({
                   <span className="ml-1 text-2xs text-subtle">🌍</span>
                 )}
               </div>
-              <div className="text-[11px] text-subtle mt-0.5">
+              <div className="text-xs text-subtle mt-0.5">
                 {Math.round(pickedFood.per100?.kcal || 0)} ккал · Б{" "}
                 {Math.round(pickedFood.per100?.protein_g || 0)}г · Ж{" "}
                 {Math.round(pickedFood.per100?.fat_g || 0)}г · В{" "}
@@ -178,7 +178,7 @@ export function FoodPickerSection({
                   aria-label="Грами"
                   className="w-[76px] text-center bg-panel border border-line rounded-xl px-2 py-2 text-sm font-bold text-text outline-none focus:border-nutrition/60 transition-colors [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                 />
-                <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[11px] text-subtle pointer-events-none">
+                <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-subtle pointer-events-none">
                   г
                 </span>
               </div>
@@ -202,7 +202,7 @@ export function FoodPickerSection({
                   type="button"
                   onClick={() => setPickedGrams(String(g))}
                   className={cn(
-                    "px-2 py-0.5 rounded-lg text-[11px] font-semibold border transition-all",
+                    "px-2 py-0.5 rounded-lg text-xs font-semibold border transition-all",
                     Number(pickedGrams) === g
                       ? "bg-nutrition text-white border-nutrition"
                       : "bg-panelHi text-subtle border-line hover:border-nutrition/40",

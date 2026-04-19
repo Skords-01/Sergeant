@@ -69,7 +69,7 @@ function RecRow({ rec, onAction, onDismiss }) {
           <button
             type="button"
             onClick={() => onAction(rec.action)}
-            className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-semibold text-text hover:text-primary transition-colors"
+            className="mt-1.5 inline-flex items-center gap-1 text-xs font-semibold text-text hover:text-primary transition-colors"
           >
             Відкрити
             <Icon name="chevron-right" size={12} strokeWidth={2.5} />
@@ -137,7 +137,7 @@ function CoachRow({ insight, loading, error, onDiscuss, onRefresh }) {
           <button
             type="button"
             onClick={onDiscuss}
-            className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-semibold text-text hover:text-primary transition-colors"
+            className="mt-1.5 inline-flex items-center gap-1 text-xs font-semibold text-text hover:text-primary transition-colors"
           >
             Обговорити
             <Icon name="chevron-right" size={12} strokeWidth={2.5} />

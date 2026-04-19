@@ -84,7 +84,7 @@ export function FirstActionHeroCard({ onDismiss }) {
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <div className="text-[11px] font-semibold uppercase tracking-wide text-subtle">
+          <div className="text-xs font-semibold uppercase tracking-wide text-subtle">
             Старт
           </div>
           <h2 className="text-base font-bold text-text mt-0.5">

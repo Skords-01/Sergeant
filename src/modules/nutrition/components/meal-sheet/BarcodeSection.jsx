@@ -56,7 +56,7 @@ export function BarcodeSection({
         </Button>
       </div>
       {barcodeStatus && (
-        <div className="text-[11px] text-subtle mt-1">{barcodeStatus}</div>
+        <div className="text-xs text-subtle mt-1">{barcodeStatus}</div>
       )}
     </div>
   );

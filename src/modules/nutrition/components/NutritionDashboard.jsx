@@ -184,7 +184,7 @@ export function NutritionDashboard({
                   <div className="relative">
                     {ring(p, m.color)}
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="text-[11px] font-bold text-text leading-none">
+                      <span className="text-xs font-bold text-text leading-none">
                         {cur}
                       </span>
                     </div>

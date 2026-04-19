@@ -384,7 +384,7 @@ export function Budgets({ mono, storage }) {
             isOver ? "border-danger/40" : "border-line",
           )}
         >
-          <div className="text-[11px] font-bold text-subtle uppercase tracking-widest mb-3">
+          <div className="text-xs font-bold text-subtle uppercase tracking-widest mb-3">
             Фінплан на місяць
           </div>
           <div className="space-y-2">
@@ -471,7 +471,7 @@ export function Budgets({ mono, storage }) {
               {/* Progress bar */}
               {planExpense > 0 && (
                 <>
-                  <div className="flex justify-between text-[11px] text-subtle">
+                  <div className="flex justify-between text-xs text-subtle">
                     <span>{pctExpense}% від плану</span>
                     <span>план {planExpense.toLocaleString("uk-UA")} ₴</span>
                   </div>
@@ -506,7 +506,7 @@ export function Budgets({ mono, storage }) {
                   <span className="font-semibold">
                     {safePerDay.toLocaleString("uk-UA")} ₴/день
                   </span>
-                  <span className="text-[11px] ml-1 opacity-75">
+                  <span className="text-xs ml-1 opacity-75">
                     · безпечно витрачати ({daysLeft2} дн.)
                   </span>
                 </div>
@@ -516,7 +516,7 @@ export function Budgets({ mono, storage }) {
         </div>
 
         {/* Limits */}
-        <div className="text-[11px] font-bold text-subtle uppercase tracking-widest">
+        <div className="text-xs font-bold text-subtle uppercase tracking-widest">
           Ліміти · {monthStart.toLocaleDateString("uk-UA", { month: "long" })}
         </div>
         {limitBudgets.length === 0 && (
@@ -589,7 +589,7 @@ export function Budgets({ mono, storage }) {
         {/* Forecast — shown whenever there are limit budgets to avoid layout shifts */}
         {limitBudgets.length > 0 && (
           <>
-            <div className="text-[11px] font-bold text-subtle uppercase tracking-widest pt-1">
+            <div className="text-xs font-bold text-subtle uppercase tracking-widest pt-1">
               Прогноз · кінець місяця
             </div>
             {loadingTx && forecasts.length === 0 ? (
@@ -700,7 +700,7 @@ export function Budgets({ mono, storage }) {
         )}
 
         {/* Goals */}
-        <div className="text-[11px] font-bold text-subtle uppercase tracking-widest pt-1">
+        <div className="text-xs font-bold text-subtle uppercase tracking-widest pt-1">
           Цілі накопичення
         </div>
         {goalBudgets.length === 0 && (

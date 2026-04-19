@@ -425,7 +425,7 @@ export function Overview({
           showBalance={showBalance}
         />
 
-        <p className="text-[11px] text-subtle px-1 -mt-1 leading-relaxed">
+        <p className="text-xs text-subtle px-1 -mt-1 leading-relaxed">
           Огляд, категорії та бюджети на цій сторінці — у гривні (UAH). Інші
           валюти рахунків у загальному балансі не конвертуються автоматично.
         </p>

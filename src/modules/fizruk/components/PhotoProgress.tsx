@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { Card } from "@shared/components/ui/Card";
 import { cn } from "@shared/lib/cn";
 import { useBodyPhotos } from "../hooks/useBodyPhotos";
 
@@ -257,11 +258,11 @@ export function PhotoProgress() {
 
   if (!ready) {
     return (
-      <section className="bg-panel border border-line rounded-2xl p-4 shadow-card">
+      <Card as="section" radius="lg" padding="md">
         <div className="text-xs text-subtle text-center py-4">
           Завантаження…
         </div>
-      </section>
+      </Card>
     );
   }
 

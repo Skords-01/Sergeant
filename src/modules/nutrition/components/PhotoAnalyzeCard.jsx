@@ -172,7 +172,7 @@ export function PhotoAnalyzeCard({
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <div className="text-[11px] text-subtle mb-1">
+                    <div className="text-xs text-subtle mb-1">
                       Порція (г), якщо знаєш
                     </div>
                     <Input
@@ -200,7 +200,7 @@ export function PhotoAnalyzeCard({
 
                 {photoResult.questions.slice(0, 6).map((q) => (
                   <div key={q}>
-                    <div className="text-[11px] text-subtle mb-1">{q}</div>
+                    <div className="text-xs text-subtle mb-1">{q}</div>
                     <Input
                       value={answers[q] || ""}
                       onChange={(e) =>

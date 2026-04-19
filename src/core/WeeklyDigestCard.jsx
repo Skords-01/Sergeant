@@ -91,7 +91,7 @@ function ModuleBlock({ moduleKey, data }) {
       >
         <div
           className={cn(
-            "w-6 h-6 rounded-lg flex items-center justify-center text-[11px] shrink-0",
+            "w-6 h-6 rounded-lg flex items-center justify-center text-xs shrink-0",
             cfg.bgClass,
           )}
         >
@@ -100,9 +100,7 @@ function ModuleBlock({ moduleKey, data }) {
         <div className="flex-1 min-w-0 text-left">
           <span className="text-xs font-semibold text-text">{cfg.label}</span>
           {data.summary && (
-            <p className="text-[11px] text-muted truncate mt-0.5">
-              {data.summary}
-            </p>
+            <p className="text-xs text-muted truncate mt-0.5">{data.summary}</p>
           )}
         </div>
         <ChevronIcon expanded={open} />
@@ -134,7 +132,7 @@ function ModuleBlock({ moduleKey, data }) {
                       >
                         →
                       </span>
-                      <span className="text-[11px] text-text leading-snug">
+                      <span className="text-xs text-text leading-snug">
                         {rec}
                       </span>
                     </div>
@@ -277,7 +275,7 @@ function DigestContent({
                       <span className="text-2xs font-bold text-primary mt-0.5 shrink-0">
                         ★
                       </span>
-                      <span className="text-[11px] text-text leading-snug">
+                      <span className="text-xs text-text leading-snug">
                         {rec}
                       </span>
                     </div>
@@ -374,7 +372,7 @@ export function WeeklyDigestCard() {
         </div>
         <div className="flex-1 min-w-0">
           <div className="text-sm font-bold text-text">Звіт тижня</div>
-          <div className="text-[11px] text-muted mt-0.5">{weekRange}</div>
+          <div className="text-xs text-muted mt-0.5">{weekRange}</div>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
           {digest?.generatedAt && (
@@ -430,7 +428,7 @@ export function WeeklyDigestCard() {
                   setShowHistory(false);
                 }}
                 className={cn(
-                  "px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-colors",
+                  "px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors",
                   selectedWeekKey === h.weekKey
                     ? "bg-primary/15 text-primary"
                     : "bg-panelHi text-muted hover:text-text",
@@ -451,7 +449,7 @@ export function WeeklyDigestCard() {
           <button
             type="button"
             onClick={() => setSelectedWeekKey(currentWeekKey)}
-            className="text-[11px] text-primary hover:underline"
+            className="text-xs text-primary hover:underline"
           >
             ← Поточний тиждень
           </button>

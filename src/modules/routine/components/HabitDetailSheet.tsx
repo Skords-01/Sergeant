@@ -236,7 +236,7 @@ export function HabitDetailSheet({
           </button>
         </div>
 
-        <div className="text-[11px] text-subtle space-y-0.5 mb-5">
+        <div className="text-xs text-subtle space-y-0.5 mb-5">
           <p>
             {recLabel}
             {habit.timeOfDay ? ` · ${habit.timeOfDay}` : ""}
@@ -282,7 +282,7 @@ export function HabitDetailSheet({
                   </span>
                 )}
                 {pct30 !== null && (
-                  <span className="text-[11px] text-muted tabular-nums">
+                  <span className="text-xs text-muted tabular-nums">
                     {pct30}%
                   </span>
                 )}
@@ -346,7 +346,7 @@ export function HabitDetailSheet({
                 <div
                   key={dk}
                   className={cn(
-                    "aspect-square flex items-center justify-center rounded-lg text-[11px] font-medium transition-colors",
+                    "aspect-square flex items-center justify-center rounded-lg text-xs font-medium transition-colors",
                     done
                       ? "bg-routine-surface2 dark:bg-routine/15 text-routine-done dark:text-routine border border-routine-ring/40 dark:border-routine/30 font-bold"
                       : scheduled

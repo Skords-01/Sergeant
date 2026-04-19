@@ -210,7 +210,7 @@ function ProgramDetails({ prog, exercises }) {
                 {exList.map((ex) => (
                   <span
                     key={ex.id}
-                    className="text-[11px] px-2 py-0.5 rounded-full bg-panelHi border border-line text-subtle"
+                    className="text-xs px-2 py-0.5 rounded-full bg-panelHi border border-line text-subtle"
                   >
                     {ex.name?.uk || ex.name?.en || ex.id}
                   </span>

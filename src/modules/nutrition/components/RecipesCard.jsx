@@ -144,11 +144,11 @@ export function RecipesCard({
           <div className="flex items-center gap-2">
             <span className="text-sm font-semibold text-text">Мої рецепти</span>
             {!savedBusy && saved.length > 0 && (
-              <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-nutrition/15 text-nutrition">
+              <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-nutrition/15 text-nutrition">
                 {saved.length}
               </span>
             )}
-            {savedBusy && <span className="text-[11px] text-subtle">…</span>}
+            {savedBusy && <span className="text-xs text-subtle">…</span>}
           </div>
           <ChevronIcon open={savedOpen} />
         </button>
@@ -185,7 +185,7 @@ export function RecipesCard({
                             <span className="block text-sm font-semibold text-text break-words">
                               {r.title}
                             </span>
-                            <span className="block text-[11px] text-subtle mt-0.5">
+                            <span className="block text-xs text-subtle mt-0.5">
                               {r.timeMinutes ? `${r.timeMinutes} хв` : "—"} ·{" "}
                               {r.servings ? `${r.servings} порц.` : "—"}
                               {r.macros?.kcal != null
@@ -214,7 +214,7 @@ export function RecipesCard({
                         </div>
                       </div>
                       <div className="mt-2 flex items-center gap-2">
-                        <span className="text-[11px] text-subtle">
+                        <span className="text-xs text-subtle">
                           Порції (множник):
                         </span>
                         <Input
@@ -228,7 +228,7 @@ export function RecipesCard({
                           inputMode="decimal"
                           className="w-20"
                         />
-                        <span className="text-[11px] text-subtle">
+                        <span className="text-xs text-subtle">
                           × макроси рецепту
                         </span>
                       </div>
@@ -272,7 +272,7 @@ export function RecipesCard({
                             (r.macros.protein_g != null ||
                               r.macros.fat_g != null ||
                               r.macros.carbs_g != null) && (
-                              <div className="text-[11px] text-subtle">
+                              <div className="text-xs text-subtle">
                                 Б: {fmtMacro(r.macros.protein_g)} г · Ж:{" "}
                                 {fmtMacro(r.macros.fat_g)} г · В:{" "}
                                 {fmtMacro(r.macros.carbs_g)} г
@@ -290,7 +290,7 @@ export function RecipesCard({
                   );
                 })}
                 {saved.length > 8 && (
-                  <div className="text-[11px] text-subtle">
+                  <div className="text-xs text-subtle">
                     Показано 8 з {saved.length}.
                   </div>
                 )}
@@ -318,7 +318,7 @@ export function RecipesCard({
         <div className="mt-3 grid gap-3">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <div className="text-[11px] text-subtle mb-1">Ціль</div>
+              <div className="text-xs text-subtle mb-1">Ціль</div>
               <select
                 value={prefs.goal}
                 onChange={(e) =>
@@ -334,7 +334,7 @@ export function RecipesCard({
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <div className="text-[11px] text-subtle mb-1">Порції</div>
+                <div className="text-xs text-subtle mb-1">Порції</div>
                 <Input
                   value={String(prefs.servings)}
                   onChange={(e) =>
@@ -345,7 +345,7 @@ export function RecipesCard({
                 />
               </div>
               <div>
-                <div className="text-[11px] text-subtle mb-1">Хвилин</div>
+                <div className="text-xs text-subtle mb-1">Хвилин</div>
                 <Input
                   value={String(prefs.timeMinutes)}
                   onChange={(e) =>
@@ -359,7 +359,7 @@ export function RecipesCard({
           </div>
 
           <div>
-            <div className="text-[11px] text-subtle mb-1">
+            <div className="text-xs text-subtle mb-1">
               Не використовувати / алергени
             </div>
             <Input
@@ -438,7 +438,7 @@ export function RecipesCard({
               <summary className="cursor-pointer text-xs text-muted">
                 Діагностика плану (raw)
               </summary>
-              <pre className="mt-2 whitespace-pre-wrap text-[11px] text-subtle max-h-48 overflow-auto">
+              <pre className="mt-2 whitespace-pre-wrap text-xs text-subtle max-h-48 overflow-auto">
                 {weekPlanRaw}
               </pre>
             </details>
@@ -540,7 +540,7 @@ export function RecipesCard({
                   <summary className="cursor-pointer text-xs text-muted hover:text-text">
                     Показати діагностику (raw відповідь AI)
                   </summary>
-                  <pre className="mt-2 whitespace-pre-wrap text-[11px] leading-snug text-subtle bg-bg border border-line rounded-xl p-3 max-h-64 overflow-auto">
+                  <pre className="mt-2 whitespace-pre-wrap text-xs leading-snug text-subtle bg-bg border border-line rounded-xl p-3 max-h-64 overflow-auto">
                     {recipesRaw}
                   </pre>
                 </details>

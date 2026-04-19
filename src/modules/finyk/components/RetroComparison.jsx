@@ -109,10 +109,10 @@ export const RetroComparison = memo(function RetroComparison({
     >
       <div className="flex items-start justify-between gap-3">
         <div>
-          <div className="text-[11px] font-bold text-subtle uppercase tracking-widest">
+          <div className="text-xs font-bold text-subtle uppercase tracking-widest">
             Порівняння з попереднім місяцем
           </div>
-          <p className="text-[11px] text-subtle/80 mt-1 capitalize">
+          <p className="text-xs text-subtle/80 mt-1 capitalize">
             vs {formatMonthKeyLabel(comparison.previousMonth)}
           </p>
         </div>
@@ -120,7 +120,7 @@ export const RetroComparison = memo(function RetroComparison({
 
       <div className="grid grid-cols-2 gap-3 mt-4">
         <div>
-          <div className="text-[11px] text-subtle mb-1">Цього місяця</div>
+          <div className="text-xs text-subtle mb-1">Цього місяця</div>
           <div className="text-lg font-semibold tabular-nums text-text">
             {showBalance
               ? `${comparison.currentSpent.toLocaleString("uk-UA")} ₴`
@@ -128,7 +128,7 @@ export const RetroComparison = memo(function RetroComparison({
           </div>
         </div>
         <div>
-          <div className="text-[11px] text-subtle mb-1">Різниця</div>
+          <div className="text-xs text-subtle mb-1">Різниця</div>
           <div
             className={cn(
               "text-lg font-semibold tabular-nums flex items-baseline gap-2",

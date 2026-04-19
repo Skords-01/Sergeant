@@ -13,7 +13,7 @@ export function ExperimentalSection() {
 
   return (
     <SettingsGroup title="Експериментальне" emoji="🧪">
-      <p className="text-[11px] text-subtle leading-snug">
+      <p className="text-xs text-subtle leading-snug">
         Ці можливості ще тестуються. Вмикайте на свій ризик — поведінка може
         змінитись у наступних версіях.
       </p>

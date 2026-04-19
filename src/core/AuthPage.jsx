@@ -177,7 +177,7 @@ export function AuthPage({ onContinueWithoutAccount }) {
 
         {typeof onContinueWithoutAccount === "function" && (
           <>
-            <div className="my-6 flex items-center gap-3 text-[11px] text-muted uppercase tracking-wider">
+            <div className="my-6 flex items-center gap-3 text-xs text-muted uppercase tracking-wider">
               <span className="flex-1 h-px bg-line" />
               або
               <span className="flex-1 h-px bg-line" />
@@ -191,7 +191,7 @@ export function AuthPage({ onContinueWithoutAccount }) {
             >
               Продовжити без акаунту
             </Button>
-            <p className="mt-2 text-center text-[11px] text-subtle leading-relaxed">
+            <p className="mt-2 text-center text-xs text-subtle leading-relaxed">
               Все працює локально. Акаунт потрібен лише для синхронізації між
               пристроями.
             </p>

@@ -225,7 +225,7 @@ export function FinykSection() {
       />
 
       <SettingsSubGroup title="Власні категорії витрат">
-        <p className="text-[11px] text-subtle leading-snug">
+        <p className="text-xs text-subtle leading-snug">
           Додаються до списку категорій у транзакціях, сплітах і лімітах (можна
           вказати емодзі на початку назви).
         </p>
@@ -280,7 +280,7 @@ export function FinykSection() {
 
       {uahAccounts.length > 0 && (
         <SettingsSubGroup title="Рахунки">
-          <p className="text-[11px] text-subtle leading-snug">
+          <p className="text-xs text-subtle leading-snug">
             Сховані рахунки не враховуються у балансі та нетворсі.
           </p>
           <div className="space-y-0 -mx-4">
@@ -354,7 +354,7 @@ export function FinykSection() {
       )}
 
       <SettingsSubGroup title="Сервіс">
-        <p className="text-[11px] text-subtle leading-snug">
+        <p className="text-xs text-subtle leading-snug">
           Якщо список операцій виглядає некоректно — очисти кеш і синхронізуй
           знову.
         </p>
@@ -414,7 +414,7 @@ export function FinykSection() {
             </div>
           ) : (
             <div className="space-y-3">
-              <p className="text-[11px] text-subtle leading-snug">
+              <p className="text-xs text-subtle leading-snug">
                 API Приват24 для підприємців. Merchant ID та токен знаходяться у
                 Приват24 Бізнес → Налаштування → API.
               </p>
