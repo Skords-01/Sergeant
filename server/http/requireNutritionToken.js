@@ -5,7 +5,7 @@
  * Якщо токен не заданий (локальний dev) — пропускаємо: це ручка для дешевого
  * захисту публічних AI-ендпоінтів у проді, а не повноцінна auth-схема.
  *
- * Історично жив у `server/api/nutrition/lib/nutritionSecurity.js`; залишено
+ * Історично жив у `server/modules/nutrition/lib/nutritionSecurity.js`; залишено
  * re-export там для зворотної сумісності — буде видалено у debolerplate-хвилі.
  */
 export function requireNutritionTokenIfConfigured(req, res) {
