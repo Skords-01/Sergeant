@@ -80,30 +80,30 @@ export function Measurements() {
         </a>
 
         <div className="grid grid-cols-3 gap-2">
-          <div className="bg-panel border border-line rounded-2xl p-3 shadow-card text-center">
+          <Card radius="lg" padding="sm" className="text-center">
             <div className="text-2xs font-semibold text-subtle uppercase tracking-widest">
               Записів
             </div>
             <div className="text-lg font-extrabold text-text tabular-nums mt-1">
               {stats.total}
             </div>
-          </div>
-          <div className="bg-panel border border-line rounded-2xl p-3 shadow-card text-center">
+          </Card>
+          <Card radius="lg" padding="sm" className="text-center">
             <div className="text-2xs font-semibold text-subtle uppercase tracking-widest">
               Останній
             </div>
             <div className="text-sm font-bold text-text mt-1">
               {stats.latestAt}
             </div>
-          </div>
-          <div className="bg-panel border border-line rounded-2xl p-3 shadow-card text-center">
+          </Card>
+          <Card radius="lg" padding="sm" className="text-center">
             <div className="text-2xs font-semibold text-subtle uppercase tracking-widest">
               Полів
             </div>
             <div className="text-lg font-extrabold text-text tabular-nums mt-1">
               {stats.filledLatest}
             </div>
-          </div>
+          </Card>
         </div>
 
         <Card radius="lg">

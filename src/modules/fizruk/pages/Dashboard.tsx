@@ -361,10 +361,7 @@ export function Dashboard({
             const quickTemplates =
               recentlyUsed.length > 0 ? recentlyUsed : templates.slice(0, 3);
             return (
-              <section
-                className="bg-panel border border-line rounded-2xl p-4 shadow-card"
-                aria-label="Швидкий старт"
-              >
+              <Card as="section" radius="lg" aria-label="Швидкий старт">
                 <div className="flex items-center justify-between gap-2 mb-3">
                   <h2 className="text-xs font-bold text-subtle uppercase tracking-widest">
                     Швидкий старт
@@ -415,15 +412,12 @@ export function Dashboard({
                     );
                   })}
                 </div>
-              </section>
+              </Card>
             );
           })()}
 
         {activeProgram && (
-          <section
-            className="bg-panel border border-line rounded-2xl p-4 shadow-card"
-            aria-label="Програма сьогодні"
-          >
+          <Card as="section" radius="lg" aria-label="Програма сьогодні">
             <div className="flex items-center justify-between gap-2 mb-3">
               <div>
                 <h2 className="text-xs font-bold text-subtle uppercase tracking-widest">
@@ -462,11 +456,12 @@ export function Dashboard({
                 Розпочати тренування за програмою
               </button>
             )}
-          </section>
+          </Card>
         )}
 
-        <section
-          className="bg-panel border border-line rounded-2xl p-4 shadow-card"
+        <Card
+          as="section"
+          radius="lg"
           aria-label="Відновлення та фокус тренування"
         >
           <div className="flex items-start justify-between gap-2">
@@ -570,7 +565,7 @@ export function Dashboard({
               </div>
             </>
           )}
-        </section>
+        </Card>
 
         <div
           className="grid grid-cols-2 lg:grid-cols-4 gap-3"
@@ -578,10 +573,11 @@ export function Dashboard({
           aria-label="Ключові показники"
         >
           {kpi.map((card) => (
-            <div
+            <Card
               key={card.id}
               role="listitem"
-              className="bg-panel border border-line rounded-2xl p-4 shadow-card min-h-[100px]"
+              radius="lg"
+              className="min-h-[100px]"
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
@@ -661,7 +657,7 @@ export function Dashboard({
                   )}
                 </div>
               </div>
-            </div>
+            </Card>
           ))}
         </div>
 

@@ -1,6 +1,7 @@
 import { useRef, useState, useEffect, type ChangeEvent } from "react";
 import { cn } from "@shared/lib/cn";
 import { Sheet } from "@shared/components/ui/Sheet";
+import { Card } from "@shared/components/ui/Card";
 import { useRoutinePushups } from "../hooks/useRoutinePushups.js";
 import { useVisualKeyboardInset } from "../hooks/useVisualKeyboardInset.js";
 import { dateKeyFromDate } from "../lib/hubCalendarAggregate.js";
@@ -26,10 +27,7 @@ export function PushupsWidget() {
 
   return (
     <>
-      <section
-        className="bg-panel border border-line rounded-2xl p-4 shadow-card"
-        aria-label="Відтискання"
-      >
+      <Card as="section" radius="lg" aria-label="Відтискання">
         <div className="flex items-center justify-between gap-2">
           <div>
             <p className="text-xs font-bold text-subtle uppercase tracking-widest">
@@ -97,7 +95,7 @@ export function PushupsWidget() {
             </div>
           </div>
         )}
-      </section>
+      </Card>
 
       <Sheet
         open={open}

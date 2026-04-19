@@ -337,7 +337,7 @@ export function Progress() {
         </div>
 
         {!hasAny && (
-          <div className="bg-panel border border-line rounded-2xl p-8 shadow-card text-center">
+          <Card radius="lg" padding="xl" className="text-center">
             <div className="text-3xl mb-3">📈</div>
             <div className="text-sm font-medium text-text mb-1">
               Даних ще немає
@@ -345,7 +345,7 @@ export function Progress() {
             <div className="text-xs text-subtle">
               Додай тренування або заміри — і тут зʼявиться аналітика
             </div>
-          </div>
+          </Card>
         )}
 
         {/* Weekly volume chart */}
