@@ -250,7 +250,7 @@ function Delta({ cur, prev, higherIsBetter = true }) {
     <span
       className={cn(
         "text-xs font-medium",
-        positive ? "text-emerald-600 dark:text-emerald-400" : "text-red-500",
+        positive ? "text-success" : "text-danger",
       )}
     >
       {sign}

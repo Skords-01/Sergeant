@@ -131,7 +131,7 @@ function AddBudgetFormComponent({
         </>
       )}
       {formError && (
-        <p className="text-xs text-red-500 bg-red-500/10 rounded-xl px-3 py-2">
+        <p className="text-xs text-danger bg-danger-soft rounded-xl px-3 py-2">
           {formError}
         </p>
       )}

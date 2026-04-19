@@ -53,7 +53,7 @@ const softVariants: Record<BadgeVariant, string> = {
   warning:
     "bg-amber-50 text-amber-700 border-amber-200/70 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/30",
   danger:
-    "bg-red-50 text-red-700 border-red-200/70 dark:bg-danger/15 dark:text-red-300 dark:border-danger/30",
+    "bg-danger-soft text-danger border-danger/30 dark:bg-danger/15 dark:border-danger/30",
   info: "bg-blue-50 text-blue-700 border-blue-200/70 dark:bg-info/15 dark:text-blue-300 dark:border-info/30",
   finyk:
     "bg-finyk-soft text-finyk border-finyk-ring/50 dark:bg-finyk/15 dark:border-finyk/30",
