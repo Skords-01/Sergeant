@@ -32,10 +32,16 @@ export interface InitialSyncArgs {
 
 /**
  * First-run sync after auth: drain offline queue, pull cloud state, and
- * reconcile with local state via `resolveInitialSync`. Behavior matches the
- * original `initialSync` in `useCloudSync.js` 1:1.
+ * reconcile with local state via `resolveInitialSync`.
+ *
+ * Returns `true` when the run completed without throwing (including the
+ * `needMigration` branch, which is a completed decision — not a failure —
+ * and whose resolution happens via the modal). Returns `false` if any
+ * network / API error was caught, so the caller can decide whether to
+ * retry. Behavior otherwise matches the original `initialSync` in
+ * `useCloudSync.js` 1:1.
  */
-export async function initialSync(args: InitialSyncArgs): Promise<void> {
+export async function initialSync(args: InitialSyncArgs): Promise<boolean> {
   const { user, onStart, onSuccess, onError, onNeedMigration, onSettled } =
     args;
   onStart();
@@ -70,7 +76,7 @@ export async function initialSync(args: InitialSyncArgs): Promise<void> {
       }
       case "needMigration": {
         onNeedMigration();
-        return;
+        return true;
       }
       case "merge": {
         for (const { mod, data } of plan.applyModules) {
@@ -113,8 +119,10 @@ export async function initialSync(args: InitialSyncArgs): Promise<void> {
     }
 
     onSuccess(new Date());
+    return true;
   } catch (err) {
     onError(err instanceof Error ? err.message : String(err));
+    return false;
   } finally {
     onSettled();
   }

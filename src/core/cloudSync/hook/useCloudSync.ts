@@ -84,8 +84,8 @@ export function useCloudSync(user: CurrentUser | null | undefined) {
     });
   }, [user, onStart, onSuccess, onError, onSettled, claimBusy]);
 
-  const doInitialSync = useCallback(async () => {
-    await runExclusive(
+  const doInitialSync = useCallback(async (): Promise<boolean> => {
+    return runExclusive(
       () =>
         initialSync({
           user,
@@ -95,7 +95,7 @@ export function useCloudSync(user: CurrentUser | null | undefined) {
           onNeedMigration: () => setMigrationPending(true),
           onSettled,
         }),
-      undefined,
+      false,
     );
   }, [user, onStart, onSuccess, onError, onSettled, runExclusive]);
 
@@ -118,8 +118,23 @@ export function useCloudSync(user: CurrentUser | null | undefined) {
       setMigrationPending(false);
     }
     if (!user || didInitialSync.current) return;
+    // Reserve the slot before awaiting so concurrent renders don't fire a
+    // second initialSync for the same user. If the run fails (network,
+    // 5xx, ApiError), release the slot so the next render — or a
+    // subsequent user-change effect — can retry. Without this, a transient
+    // failure on the very first sign-in would leave the app in a
+    // permanently "initial-synced" state with no cloud reconciliation
+    // until the page is reloaded.
     didInitialSync.current = true;
-    doInitialSync();
+    const uidAtStart = user.id;
+    doInitialSync().then((ok) => {
+      if (ok) return;
+      // Only clear the flag if the user is still the same — a user change
+      // will reset it anyway and we must not race that reset.
+      if (lastUserId.current === uidAtStart) {
+        didInitialSync.current = false;
+      }
+    });
   }, [user, doInitialSync]);
 
   useSyncRetry(!!user, doPushDirty);
