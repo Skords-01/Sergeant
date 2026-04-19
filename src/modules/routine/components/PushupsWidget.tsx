@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect, type ChangeEvent } from "react";
 import { cn } from "@shared/lib/cn";
-import { useDialogFocusTrap } from "@shared/hooks/useDialogFocusTrap";
+import { Sheet } from "@shared/components/ui/Sheet";
 import { useRoutinePushups } from "../hooks/useRoutinePushups.js";
 import { useVisualKeyboardInset } from "../hooks/useVisualKeyboardInset.js";
 import { dateKeyFromDate } from "../lib/hubCalendarAggregate.js";
@@ -15,10 +15,8 @@ export function PushupsWidget() {
   const { todayCount, addReps, recentHistory } = useRoutinePushups();
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
-  const ref = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const keyboardInset = useVisualKeyboardInset(open);
-  useDialogFocusTrap(open, ref, { onEscape: () => setOpen(false) });
 
   useEffect(() => {
     if (!open) return;
@@ -101,102 +99,70 @@ export function PushupsWidget() {
         )}
       </section>
 
-      {open && (
-        <div
-          className="routine-sheet fixed inset-0 z-[200] flex items-end justify-center"
-          role="presentation"
-        >
+      <Sheet
+        open={open}
+        onClose={() => setOpen(false)}
+        title="Додати відтискання"
+        kbInsetPx={keyboardInset}
+      >
+        <div className="mb-4 grid grid-cols-5 gap-1.5 sm:gap-2">
+          {[5, 10, 15, 20, 25].map((n) => (
+            <button
+              key={n}
+              type="button"
+              onClick={() => {
+                addReps(n);
+                setOpen(false);
+              }}
+              className="min-h-[44px] rounded-2xl border border-routine-line/80 dark:border-routine/30 bg-routine-surface dark:bg-routine/12 px-1 py-2.5 text-center text-xs font-bold text-routine-kicker dark:text-routine transition-colors active:opacity-90 sm:px-2 sm:text-sm"
+            >
+              +{n}
+            </button>
+          ))}
+        </div>
+
+        <p className="mb-2 text-center text-xs text-subtle">
+          або введи кількість вручну
+        </p>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
+          <input
+            ref={inputRef}
+            type="number"
+            inputMode="numeric"
+            min="1"
+            max="999"
+            value={input}
+            onChange={(e: ChangeEvent<HTMLInputElement>) =>
+              setInput(e.target.value)
+            }
+            placeholder="Скільки?"
+            className="routine-touch-field min-h-[48px] min-w-0 flex-1 rounded-2xl border border-line bg-panelHi px-4 text-text outline-none focus:border-routine [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && input) {
+                addReps(Number(input));
+                setOpen(false);
+              }
+            }}
+          />
           <button
             type="button"
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-            aria-label="Закрити"
-            onClick={() => setOpen(false)}
-          />
-          <div
-            ref={ref}
-            className="routine-sheet-pad relative max-h-[min(92dvh,100%)] w-full max-w-4xl overflow-y-auto overflow-x-hidden rounded-t-3xl border-t border-line bg-panel p-5 shadow-soft transition-transform duration-150 ease-out"
-            style={{
-              transform:
-                keyboardInset > 0
-                  ? `translateY(-${keyboardInset}px)`
-                  : undefined,
+            className={cn(
+              "min-h-[48px] w-full shrink-0 rounded-2xl px-6 text-base font-bold disabled:opacity-40 sm:w-auto sm:min-w-[7rem]",
+              C.primary,
+            )}
+            disabled={!input || Number(input) <= 0}
+            onClick={() => {
+              addReps(Number(input));
+              setOpen(false);
             }}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="routine-pushup-modal-title"
           >
-            <div
-              className="w-10 h-1 shrink-0 rounded-full bg-line mx-auto mb-4"
-              aria-hidden
-            />
-            <div
-              id="routine-pushup-modal-title"
-              className="text-lg font-extrabold text-text mb-4"
-            >
-              Додати відтискання
-            </div>
-
-            <div className="mb-4 grid grid-cols-5 gap-1.5 sm:gap-2">
-              {[5, 10, 15, 20, 25].map((n) => (
-                <button
-                  key={n}
-                  type="button"
-                  onClick={() => {
-                    addReps(n);
-                    setOpen(false);
-                  }}
-                  className="min-h-[44px] rounded-2xl border border-routine-line/80 dark:border-routine/30 bg-routine-surface dark:bg-routine/12 px-1 py-2.5 text-center text-xs font-bold text-routine-kicker dark:text-routine transition-colors active:opacity-90 sm:px-2 sm:text-sm"
-                >
-                  +{n}
-                </button>
-              ))}
-            </div>
-
-            <p className="mb-2 text-center text-xs text-subtle">
-              або введи кількість вручну
-            </p>
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
-              <input
-                ref={inputRef}
-                type="number"
-                inputMode="numeric"
-                min="1"
-                max="999"
-                value={input}
-                onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                  setInput(e.target.value)
-                }
-                placeholder="Скільки?"
-                className="routine-touch-field min-h-[48px] min-w-0 flex-1 rounded-2xl border border-line bg-panelHi px-4 text-text outline-none focus:border-routine [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && input) {
-                    addReps(Number(input));
-                    setOpen(false);
-                  }
-                }}
-              />
-              <button
-                type="button"
-                className={cn(
-                  "min-h-[48px] w-full shrink-0 rounded-2xl px-6 text-base font-bold disabled:opacity-40 sm:w-auto sm:min-w-[7rem]",
-                  C.primary,
-                )}
-                disabled={!input || Number(input) <= 0}
-                onClick={() => {
-                  addReps(Number(input));
-                  setOpen(false);
-                }}
-              >
-                Додати
-              </button>
-            </div>
-            <p className="mt-3 text-center text-xs text-subtle">
-              Сьогодні:{" "}
-              <span className="font-bold text-text">{todayCount}</span>
-            </p>
-          </div>
+            Додати
+          </button>
         </div>
-      )}
+        <p className="mt-3 text-center text-xs text-subtle">
+          Сьогодні: <span className="font-bold text-text">{todayCount}</span>
+        </p>
+      </Sheet>
     </>
   );
 }
