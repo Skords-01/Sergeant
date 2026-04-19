@@ -90,6 +90,7 @@ export function FoodPickerSection({
                 {offHits.length > 0 && (
                   <>
                     {foodHits.length > 0 && (
+                      // eslint-disable-next-line sergeant-design/no-eyebrow-drift -- Group-separator <li> inside a <ul> combobox listbox; SectionHeading would change semantics.
                       <li className="px-3 py-1.5 text-2xs text-subtle bg-panelHi/50 font-semibold uppercase tracking-widest">
                         🌍 Open Food Facts
                       </li>

@@ -44,9 +44,9 @@ export function HabitLeadersBlock({
       </SectionHeading>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         <div className="rounded-xl border border-routine-line/40 dark:border-routine/20 bg-routine-surface/30 dark:bg-routine/8 p-3">
-          <p className="text-2xs uppercase tracking-wide text-subtle mb-1">
+          <SectionHeading as="p" size="xs" tone="subtle" className="mb-1">
             Найстабільніша
-          </p>
+          </SectionHeading>
           <p className="text-sm font-semibold text-text truncate">
             {best.habit.emoji} {best.habit.name}
           </p>
@@ -56,9 +56,9 @@ export function HabitLeadersBlock({
         </div>
         {worst && (
           <div className="rounded-xl border border-line bg-panel p-3">
-            <p className="text-2xs uppercase tracking-wide text-subtle mb-1">
+            <SectionHeading as="p" size="xs" tone="subtle" className="mb-1">
               Найслабша
-            </p>
+            </SectionHeading>
             <p className="text-sm font-semibold text-text truncate">
               {worst.habit.emoji} {worst.habit.name}
             </p>

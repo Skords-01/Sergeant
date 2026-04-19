@@ -129,6 +129,7 @@ function WarmupCooldownChecklist({ title, items, onToggle, onInit, color }) {
 function SupersetBadge({ type }) {
   return (
     <span
+      // eslint-disable-next-line sergeant-design/no-eyebrow-drift -- Superset/circuit indicator pill at text-3xs with dynamic module tint; defer Badge migration.
       className={`text-3xs font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full ${type === "circuit" ? "bg-fizruk/15 text-fizruk border border-fizruk/30" : "bg-success/15 text-success border border-success/30"}`}
     >
       {type === "circuit" ? "Коло" : "Суперсет"}
@@ -617,6 +618,10 @@ export function ActiveWorkoutPanel({
               {cardioMetrics && (
                 <div className="grid grid-cols-2 gap-2">
                   <div className="rounded-xl border border-line bg-bg px-3 py-2 text-center">
+                    {/* eslint-disable-next-line sergeant-design/no-eyebrow-drift --
+                        Cardio metric caption at text-3xs (smaller than
+                        SectionHeading xs's text-2xs) inside a compact stat
+                        tile; intentional microtype. */}
                     <div className="text-3xs font-bold text-subtle uppercase tracking-widest">
                       Темп
                     </div>
@@ -625,6 +630,8 @@ export function ActiveWorkoutPanel({
                     </div>
                   </div>
                   <div className="rounded-xl border border-line bg-bg px-3 py-2 text-center">
+                    {/* eslint-disable-next-line sergeant-design/no-eyebrow-drift --
+                        Matching caption on the speed tile; see sibling above. */}
                     <div className="text-3xs font-bold text-subtle uppercase tracking-widest">
                       Швидкість
                     </div>

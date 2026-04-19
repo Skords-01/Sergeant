@@ -81,6 +81,10 @@ export function SettingsSubGroup({
         className="flex items-center gap-1.5 w-full text-left group mb-1"
       >
         <ChevronIcon expanded={open} />
+        {/* eslint-disable-next-line sergeant-design/no-eyebrow-drift --
+            Collapsible header uses `group-hover:text-text` interactive state +
+            transition-colors, which SectionHeading can't express via its
+            static tone tokens. */}
         <span className="text-xs font-bold text-muted uppercase tracking-widest group-hover:text-text transition-colors">
           {title}
         </span>

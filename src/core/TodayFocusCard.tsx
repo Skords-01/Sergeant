@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { cn } from "@shared/lib/cn";
 import { Icon } from "@shared/components/ui/Icon";
+import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import {
   openHubModuleWithAction,
   type HubModuleAction,
@@ -184,9 +185,9 @@ function EmptyFocus() {
       )}
     >
       <div className="flex items-center justify-between gap-2 mb-2">
-        <span className="text-2xs font-semibold uppercase tracking-widest text-muted">
+        <SectionHeading as="span" size="xs" tone="muted">
           Зараз
-        </span>
+        </SectionHeading>
         {reward && (
           <span
             className={cn(
@@ -311,9 +312,9 @@ export function TodayFocusCard({
 
       <div className="pl-3">
         <div className="flex items-center justify-between gap-3 mb-1">
-          <span className="text-2xs font-semibold uppercase tracking-widest text-muted">
+          <SectionHeading as="span" size="xs" tone="muted">
             Зараз
-          </span>
+          </SectionHeading>
         </div>
 
         <h2 className="text-base font-bold text-text leading-snug text-balance">

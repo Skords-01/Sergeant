@@ -463,6 +463,9 @@ export default function App({
               можна підключити пізніше.
             </p>
 
+            {/* eslint-disable-next-line sergeant-design/no-eyebrow-drift --
+                "або через API" divider row — structurally a delimiter
+                between two bg-line spans, not a heading. */}
             <div className="my-4 flex items-center gap-3 text-xs text-muted uppercase tracking-wider">
               <span className="flex-1 h-px bg-line" />
               або через API

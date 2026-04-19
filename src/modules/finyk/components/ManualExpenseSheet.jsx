@@ -2,6 +2,7 @@ import { useState, useEffect, useId, useMemo } from "react";
 import { Button } from "@shared/components/ui/Button";
 import { Input } from "@shared/components/ui/Input";
 import { Label } from "@shared/components/ui/FormField";
+import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { Sheet } from "@shared/components/ui/Sheet";
 import { VoiceMicButton } from "@shared/components/ui/VoiceMicButton.jsx";
 import { parseExpenseSpeech } from "../../../core/lib/speechParsers.js";
@@ -270,9 +271,9 @@ export function ManualExpenseSheet({
                     role="group"
                     aria-label="Часті суми"
                   >
-                    <span className="text-2xs text-subtle uppercase tracking-wide font-semibold">
+                    <SectionHeading as="span" size="xs" tone="subtle">
                       Часте
-                    </span>
+                    </SectionHeading>
                     {frequentAmounts.map((v) => (
                       <button
                         key={`f-${v}`}
@@ -293,9 +294,9 @@ export function ManualExpenseSheet({
                     role="group"
                     aria-label="Швидкі суми"
                   >
-                    <span className="text-2xs text-subtle uppercase tracking-wide font-semibold">
+                    <SectionHeading as="span" size="xs" tone="subtle">
                       Швидко
-                    </span>
+                    </SectionHeading>
                     {quickAmounts.map((v) => (
                       <button
                         key={`q-${v}`}
@@ -401,9 +402,14 @@ export function ManualExpenseSheet({
             role="group"
             aria-label="Нещодавні мерчанти"
           >
-            <span className="text-2xs text-subtle uppercase tracking-wide font-semibold w-full">
+            <SectionHeading
+              as="span"
+              size="xs"
+              tone="subtle"
+              className="w-full"
+            >
               Нещодавнє
-            </span>
+            </SectionHeading>
             {merchantSuggestions.map((m) => (
               <button
                 key={m.key}
@@ -434,6 +440,7 @@ export function ManualExpenseSheet({
         <div>
           <div
             id={catLabelId}
+            // eslint-disable-next-line sergeant-design/no-eyebrow-drift -- Category group label needs a stable id (catLabelId) for aria-labelledby; Label would require dropping htmlFor.
             className="block text-xs text-muted uppercase tracking-wide font-semibold mb-1"
           >
             Категорія

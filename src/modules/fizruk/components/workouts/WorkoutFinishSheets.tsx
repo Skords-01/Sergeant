@@ -158,6 +158,10 @@ export function WorkoutFinishSheets({
             <div className="fizruk-summary-header">
               <div className="flex items-start justify-between gap-2">
                 <div>
+                  {/* eslint-disable-next-line sergeant-design/no-eyebrow-drift --
+                      "Завершено" hero kicker in module tint (`text-fizruk`)
+                      over `fizruk-summary-header` — intentional branded
+                      treatment. */}
                   <div className="text-xs font-bold tracking-widest uppercase text-fizruk">
                     Завершено
                   </div>
@@ -176,6 +180,9 @@ export function WorkoutFinishSheets({
               </div>
               <div className="grid grid-cols-3 gap-2 mt-3">
                 <div className="rounded-xl bg-white/10 border border-white/15 p-2.5 text-center">
+                  {/* eslint-disable-next-line sergeant-design/no-eyebrow-drift --
+                      Summary-sheet stat caption on dark hero background —
+                      `text-white/60` isn't expressed by SectionHeading tones. */}
                   <div className="text-2xs uppercase tracking-wide text-white/60">
                     Час
                   </div>
@@ -184,6 +191,8 @@ export function WorkoutFinishSheets({
                   </div>
                 </div>
                 <div className="rounded-xl bg-white/10 border border-white/15 p-2.5 text-center">
+                  {/* eslint-disable-next-line sergeant-design/no-eyebrow-drift --
+                      Sibling caption; same rationale as above. */}
                   <div className="text-2xs uppercase tracking-wide text-white/60">
                     Вправ
                   </div>
@@ -192,6 +201,8 @@ export function WorkoutFinishSheets({
                   </div>
                 </div>
                 <div className="rounded-xl bg-white/10 border border-white/15 p-2.5 text-center">
+                  {/* eslint-disable-next-line sergeant-design/no-eyebrow-drift --
+                      Sibling caption; same rationale as above. */}
                   <div className="text-2xs uppercase tracking-wide text-white/60">
                     Обʼєм
                   </div>

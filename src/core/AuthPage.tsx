@@ -234,6 +234,10 @@ export function AuthPage({ onContinueWithoutAccount }) {
 
         {typeof onContinueWithoutAccount === "function" && (
           <>
+            {/* eslint-disable-next-line sergeant-design/no-eyebrow-drift --
+                Inline "або" divider between two <span> rules — structurally
+                a delimiter, not a heading, so SectionHeading is the wrong
+                abstraction. */}
             <div className="my-6 flex items-center gap-3 text-xs text-muted uppercase tracking-wider">
               <span className="flex-1 h-px bg-line" />
               або

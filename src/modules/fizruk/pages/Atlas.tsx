@@ -53,6 +53,8 @@ export function Atlas() {
           className="rounded-3xl p-5 border border-line/20 bg-hero-teal"
           aria-label="Атлас мʼязів"
         >
+          {/* eslint-disable-next-line sergeant-design/no-eyebrow-drift --
+              Module hero kicker in branded `text-fizruk` above an h1. */}
           <p className="text-xs font-bold tracking-widest uppercase text-fizruk">
             Атлас мʼязів
           </p>

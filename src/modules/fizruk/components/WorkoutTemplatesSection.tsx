@@ -284,6 +284,7 @@ export function WorkoutTemplatesSection({
                       </span>
                       {group && (
                         <span
+                          // eslint-disable-next-line sergeant-design/no-eyebrow-drift -- Inline superset/circuit pill at text-3xs with dynamic module tint; defer Badge migration.
                           className={`text-3xs font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full ${group.type === "circuit" ? "bg-fizruk/15 text-fizruk border border-fizruk/30" : "bg-success/15 text-success border border-success/30"}`}
                         >
                           {group.type === "circuit" ? "Коло" : "СС"}

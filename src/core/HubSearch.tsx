@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { cn } from "@shared/lib/cn";
 import { Icon } from "@shared/components/ui/Icon";
 import { EmptyState } from "@shared/components/ui/EmptyState";
+import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { hapticTap } from "@shared/lib/haptic";
 import {
   scoreMatch,
@@ -427,9 +428,9 @@ export function HubSearch({ onClose, onOpenModule }: HubSearchProps) {
         {showRecents && (
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <p className="text-xs font-semibold text-muted uppercase tracking-wider">
+              <SectionHeading as="p" size="sm" tone="muted">
                 Недавні запити
-              </p>
+              </SectionHeading>
               <button
                 type="button"
                 onClick={() => {
@@ -489,9 +490,9 @@ export function HubSearch({ onClose, onOpenModule }: HubSearchProps) {
 
         {Object.entries(grouped).map(([moduleId, group]) => (
           <div key={moduleId}>
-            <p className="text-xs font-semibold text-muted uppercase tracking-wider mb-1.5">
+            <SectionHeading as="p" size="sm" tone="muted" className="mb-1.5">
               {group.label}
-            </p>
+            </SectionHeading>
             <div className="space-y-1">
               {group.items.map((item) => {
                 runningIdx += 1;

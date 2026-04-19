@@ -265,6 +265,8 @@ export function Dashboard({
           className="rounded-3xl p-6 overflow-hidden bg-hero-teal"
           aria-label="Привітання"
         >
+          {/* eslint-disable-next-line sergeant-design/no-eyebrow-drift --
+              Branded fizruk hero kicker above h1 — dynamic greeting string. */}
           <p className="text-xs font-bold tracking-widest uppercase text-fizruk">
             {greeting} · {today}
           </p>

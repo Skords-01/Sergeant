@@ -267,6 +267,10 @@ function DigestContent({
             {Array.isArray(digest.overallRecommendations) &&
               digest.overallRecommendations.length > 0 && (
                 <div className="rounded-xl border border-primary/20 bg-primary/5 px-3 py-2.5 space-y-1.5">
+                  {/* eslint-disable-next-line sergeant-design/no-eyebrow-drift --
+                      Recommendation block eyebrow uses `text-primary` (a bespoke
+                      accent not exposed through SectionHeading tone tokens) so
+                      it stays inline until a `primary` tone is added to DS. */}
                   <p className="text-2xs font-bold text-primary uppercase tracking-wider">
                     Загальні рекомендації
                   </p>

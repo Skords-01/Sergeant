@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { cn } from "@shared/lib/cn";
 import { Button } from "@shared/components/ui/Button";
 import { Icon } from "@shared/components/ui/Icon";
+import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { trackEvent, ANALYTICS_EVENTS } from "../analytics";
 import { clearFirstActionPending, getVibePicks } from "./vibePicks.js";
 import { PresetSheet, getPresetModule } from "./PresetSheet.jsx";
@@ -133,9 +134,9 @@ export function FirstActionHeroCard({ onDismiss }) {
       >
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <div className="text-xs font-semibold uppercase tracking-wide text-subtle">
+            <SectionHeading as="div" size="sm" tone="subtle">
               Старт
-            </div>
+            </SectionHeading>
             <h2 className="text-base font-bold text-text mt-0.5">
               Зроби одну річ — і хаб твій
             </h2>

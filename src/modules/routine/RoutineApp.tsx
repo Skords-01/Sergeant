@@ -544,6 +544,7 @@ export default function RoutineApp({
           <div className="min-w-0 flex-1">
             <span
               className={cn(
+                // eslint-disable-next-line sergeant-design/no-eyebrow-drift -- Module hero kicker composed via cn(..., C.eyebrow) with dynamic routine-branded class; SectionHeading can't express the conditional tint.
                 "text-3xs font-bold tracking-widest uppercase block leading-none mb-0.5",
                 C.eyebrow,
               )}

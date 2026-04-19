@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Virtuoso } from "react-virtuoso";
 import { Card } from "@shared/components/ui/Card";
 import { SectionHeading } from "@shared/components/ui/SectionHeading";
+import { Badge } from "@shared/components/ui/Badge";
 import { Input } from "@shared/components/ui/Input";
 import { cn } from "@shared/lib/cn";
 import { ConfirmDialog } from "@shared/components/ui/ConfirmDialog";
@@ -616,12 +617,15 @@ function MealRow({ meal, onRemove, onEdit }) {
             <span className="text-xs text-subtle shrink-0">{meal.time}</span>
           )}
           {sourceLabel && (
-            <span
-              className="text-2xs px-1.5 py-0.5 rounded-full bg-line/60 text-subtle font-bold uppercase tracking-wider shrink-0"
+            <Badge
+              variant="neutral"
+              tone="soft"
+              size="xs"
+              className="shrink-0 rounded-full uppercase tracking-wider"
               title="Походження КБЖВ"
             >
               {sourceLabel}
-            </span>
+            </Badge>
           )}
         </div>
         <div className="flex gap-2 mt-0.5 flex-wrap">

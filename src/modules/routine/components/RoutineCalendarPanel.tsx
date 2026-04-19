@@ -134,6 +134,7 @@ export function RoutineCalendarPanel({
       >
         <p
           className={cn(
+            // eslint-disable-next-line sergeant-design/no-eyebrow-drift -- Calendar hero kicker composed with dynamic C.heroKicker routine tint; see RoutineApp header for the sibling pattern.
             "text-xs font-bold tracking-widest uppercase",
             C.heroKicker,
           )}
@@ -149,25 +150,25 @@ export function RoutineCalendarPanel({
           />
           <div className="flex-1 grid grid-cols-2 gap-2 w-full sm:grid-cols-2 lg:grid-cols-4">
             <div className={C.statCard}>
-              <p className="text-2xs uppercase tracking-wide text-subtle">
+              <SectionHeading as="p" size="xs" tone="subtle">
                 Подій у зрізі
-              </p>
+              </SectionHeading>
               <p className="text-2xl font-black text-text tabular-nums mt-0.5">
                 {filtered.length}
               </p>
             </div>
             <div className={C.statCard}>
-              <p className="text-2xs uppercase tracking-wide text-subtle">
+              <SectionHeading as="p" size="xs" tone="subtle">
                 Звичок активних
-              </p>
+              </SectionHeading>
               <p className="text-2xl font-black text-text tabular-nums mt-0.5">
                 {routine.habits.filter((h) => !h.archived).length}
               </p>
             </div>
             <div className={C.statCard}>
-              <p className="text-2xs uppercase tracking-wide text-subtle">
+              <SectionHeading as="p" size="xs" tone="subtle">
                 Виконання
-              </p>
+              </SectionHeading>
               <p className="text-2xl font-black text-text tabular-nums mt-0.5">
                 {Math.round(completionRate.rate * 100)}%
               </p>
@@ -176,9 +177,9 @@ export function RoutineCalendarPanel({
               </p>
             </div>
             <div className={C.statCard}>
-              <p className="text-2xs uppercase tracking-wide text-subtle">
+              <SectionHeading as="p" size="xs" tone="subtle">
                 Поточна серія
-              </p>
+              </SectionHeading>
               <p className="text-2xl font-black text-text tabular-nums mt-0.5">
                 {currentStreak}
               </p>

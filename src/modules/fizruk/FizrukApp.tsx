@@ -335,6 +335,7 @@ export default function FizrukApp({
           )}
           <div className="min-w-0 flex-1">
             {!isAtlas && !isExercise && (
+              // eslint-disable-next-line sergeant-design/no-eyebrow-drift -- Module hero kicker at text-3xs with text-success/70 tint; SectionHeading xs is text-2xs and doesn't expose a /70-opacity success tone.
               <span className="text-3xs text-success/70 font-bold tracking-widest uppercase block leading-none mb-0.5">
                 ОСОБИСТИЙ ЖУРНАЛ
               </span>

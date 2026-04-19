@@ -5,6 +5,7 @@ import jsxA11y from "eslint-plugin-jsx-a11y";
 import react from "eslint-plugin-react";
 import reactHooks from "eslint-plugin-react-hooks";
 import tseslint from "typescript-eslint";
+import sergeantDesign from "./eslint-plugins/sergeant-design/index.js";
 
 const tsRecommendedScoped = tseslint.configs.recommended.map((cfg) => ({
   ...cfg,
@@ -36,9 +37,15 @@ export default [
     },
     plugins: {
       "react-hooks": reactHooks,
+      "sergeant-design": sergeantDesign,
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
+      // Design-system guardrail — the canonical eyebrow label must go
+      // through <SectionHeading> (or <Label>) so tone/size changes stay
+      // in one place. Add the file-scoped override below for the DS
+      // primitives themselves.
+      "sergeant-design/no-eyebrow-drift": "error",
       "no-empty": ["error", { allowEmptyCatch: true }],
       "no-unused-vars": [
         "error",
@@ -77,6 +84,21 @@ export default [
         "error",
         { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
       ],
+    },
+  },
+  // DS primitives that legitimately define the eyebrow treatment.
+  // SectionHeading owns the uppercase+tracking+text size tokens, Label
+  // owns the field-label eyebrow variant, and chartTheme defines the
+  // tooltip label token — all three are the single source-of-truth
+  // callers should import from.
+  {
+    files: [
+      "src/shared/components/ui/SectionHeading.tsx",
+      "src/shared/components/ui/FormField.tsx",
+      "src/shared/charts/chartTheme.ts",
+    ],
+    rules: {
+      "sergeant-design/no-eyebrow-drift": "off",
     },
   },
   eslintConfigPrettier,

@@ -65,6 +65,9 @@ export function NutritionHeader({ busy: _busy, onBackToHub }) {
         )}
 
         <div className="min-w-0 flex-1">
+          {/* eslint-disable-next-line sergeant-design/no-eyebrow-drift --
+              Module hero kicker with bespoke light/dark lime tints at
+              text-3xs; mirrors FizrukApp / RoutineApp header kickers. */}
           <span className="text-3xs text-lime-600/80 dark:text-lime-400/70 font-bold tracking-widest uppercase block leading-none mb-0.5">
             ХАРЧУВАННЯ
           </span>
