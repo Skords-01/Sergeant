@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { SectionHeading } from "@shared/components/ui/SectionHeading";
+import { Label } from "@shared/components/ui/FormField";
 import { Card } from "@shared/components/ui/Card";
 import { cn } from "@shared/lib/cn";
 import { useBodyPhotos } from "../hooks/useBodyPhotos";
@@ -296,12 +297,7 @@ export function PhotoProgress() {
         <div className="mb-4 space-y-3">
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label
-                htmlFor={compareBeforeId}
-                className="text-2xs font-bold text-subtle uppercase tracking-widest block mb-1"
-              >
-                До
-              </label>
+              <Label htmlFor={compareBeforeId}>До</Label>
               <select
                 id={compareBeforeId}
                 value={beforeId}
@@ -318,12 +314,7 @@ export function PhotoProgress() {
               </select>
             </div>
             <div>
-              <label
-                htmlFor={compareAfterId}
-                className="text-2xs font-bold text-subtle uppercase tracking-widest block mb-1"
-              >
-                Після
-              </label>
+              <Label htmlFor={compareAfterId}>Після</Label>
               <select
                 id={compareAfterId}
                 value={afterId}
@@ -369,12 +360,7 @@ export function PhotoProgress() {
           />
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label
-                htmlFor={addDateId}
-                className="text-2xs font-bold text-subtle uppercase tracking-widest block mb-1"
-              >
-                Дата
-              </label>
+              <Label htmlFor={addDateId}>Дата</Label>
               <input
                 id={addDateId}
                 type="date"
@@ -384,12 +370,7 @@ export function PhotoProgress() {
               />
             </div>
             <div>
-              <label
-                htmlFor={addNoteId}
-                className="text-2xs font-bold text-subtle uppercase tracking-widest block mb-1"
-              >
-                Нотатка
-              </label>
+              <Label htmlFor={addNoteId}>Нотатка</Label>
               <input
                 id={addNoteId}
                 type="text"

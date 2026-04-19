@@ -1,11 +1,13 @@
+import { SectionHeading } from "@shared/components/ui/SectionHeading";
+
 export function NutritionPantrySelector({ pantry, busy }) {
   const pantries = Array.isArray(pantry.pantries) ? pantry.pantries : [];
   return (
     <div className="rounded-2xl bg-nutrition/10 border border-nutrition/20 px-4 py-3 mb-4 flex items-center gap-3">
       <div className="min-w-0 flex-1">
-        <div className="text-2xs font-bold text-nutrition/70 uppercase tracking-widest mb-0.5">
+        <SectionHeading as="div" size="xs" className="text-nutrition/70 mb-0.5">
           Активний склад
-        </div>
+        </SectionHeading>
         <div className="text-base font-extrabold text-text leading-tight">
           {pantry.activePantry?.name || "Склад"}
         </div>

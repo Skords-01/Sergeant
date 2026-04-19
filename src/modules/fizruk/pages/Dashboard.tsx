@@ -295,9 +295,13 @@ export function Dashboard({
                   </svg>
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block text-2xs font-bold uppercase tracking-widest text-white/70">
+                  <SectionHeading
+                    as="span"
+                    size="xs"
+                    className="block text-white/70"
+                  >
                     Почати
-                  </span>
+                  </SectionHeading>
                   <span className="block text-base font-black truncate leading-tight">
                     {primaryAction.label}
                   </span>

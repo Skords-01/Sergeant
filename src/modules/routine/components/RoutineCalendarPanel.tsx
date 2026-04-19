@@ -218,9 +218,9 @@ export function RoutineCalendarPanel({
       </div>
 
       <div className="rounded-2xl border border-line bg-panel/80 p-3 shadow-card">
-        <p className="mb-2 text-2xs font-bold uppercase tracking-widest text-subtle">
+        <SectionHeading as="p" size="xs" className="mb-2">
           Тиждень
-        </p>
+        </SectionHeading>
         <WeekDayStrip
           anchorKey={selectedDay}
           selectedDay={selectedDay}

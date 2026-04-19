@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { SectionHeading } from "@shared/components/ui/SectionHeading";
+import { Label } from "@shared/components/ui/FormField";
 import { subtleNavButtonClass } from "@shared/components/ui/buttonPresets";
 import { cn } from "@shared/lib/cn";
 import { useDailyLog } from "../hooks/useDailyLog";
@@ -202,12 +203,7 @@ export function Body({ onOpenMeasurements }) {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label
-                  htmlFor="body-weight"
-                  className="text-2xs font-bold text-subtle uppercase tracking-widest block mb-1"
-                >
-                  Вага (кг)
-                </label>
+                <Label htmlFor="body-weight">Вага (кг)</Label>
                 <input
                   id="body-weight"
                   type="number"
@@ -224,12 +220,7 @@ export function Body({ onOpenMeasurements }) {
                 />
               </div>
               <div>
-                <label
-                  htmlFor="body-sleep"
-                  className="text-2xs font-bold text-subtle uppercase tracking-widest block mb-1"
-                >
-                  Сон (год)
-                </label>
+                <Label htmlFor="body-sleep">Сон (год)</Label>
                 <input
                   id="body-sleep"
                   type="number"
@@ -296,12 +287,9 @@ export function Body({ onOpenMeasurements }) {
             </div>
 
             <div>
-              <label
-                htmlFor="body-note"
-                className="text-2xs font-bold text-subtle uppercase tracking-widest block mb-1"
-              >
-                Нотатка (необов&apos;язково)
-              </label>
+              <Label htmlFor="body-note" optional>
+                Нотатка
+              </Label>
               <input
                 id="body-note"
                 type="text"

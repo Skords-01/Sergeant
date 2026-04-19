@@ -277,10 +277,12 @@ export function LogCard({
           </div>
         )}
 
-        <button
+        <SectionHeading
+          as="button"
+          size="xs"
           type="button"
           onClick={() => setWeekOpen((v) => !v)}
-          className="flex items-center gap-2 text-2xs font-bold text-subtle uppercase tracking-widest w-full text-left py-1"
+          className="flex items-center gap-2 w-full text-left py-1"
         >
           <Icon
             name="chevron-right"
@@ -292,7 +294,7 @@ export function LogCard({
             )}
           />
           Журнал за тиждень
-        </button>
+        </SectionHeading>
 
         {weekOpen && (
           <div className="rounded-2xl border border-line bg-panel/40 px-3 py-3">
