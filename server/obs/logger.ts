@@ -1,4 +1,4 @@
-import pino from "pino";
+import pino, { type Logger, type LoggerOptions } from "pino";
 import { als } from "./requestContext.js";
 
 /**
@@ -48,7 +48,7 @@ const redactPaths = [
 
 const usePretty = process.env.LOG_PRETTY === "1";
 
-export const logger = pino({
+const pinoOptions: LoggerOptions = {
   level,
   base: {
     service: "sergeant-api",
@@ -69,7 +69,7 @@ export const logger = pino({
   mixin() {
     const ctx = als.getStore();
     if (!ctx) return {};
-    const out = {};
+    const out: Record<string, string> = {};
     if (ctx.requestId) out.requestId = ctx.requestId;
     if (ctx.userId) out.userId = ctx.userId;
     if (ctx.module) out.module = ctx.module;
@@ -81,38 +81,65 @@ export const logger = pino({
         options: { colorize: true, translateTime: "SYS:HH:MM:ss.l" },
       }
     : undefined,
-});
+};
+
+export const logger: Logger = pino(pinoOptions);
 
 /** Дочірній логер із додатковими bindings (напр. `logger.child({ module: "nutrition" })`). */
-export function childLogger(bindings) {
+export function childLogger(bindings: Record<string, unknown>): Logger {
   return logger.child(bindings);
 }
+
+export interface SerializedError {
+  name?: string;
+  message: string;
+  code?: string;
+  status?: number;
+  stack?: string;
+  cause?: SerializedError;
+}
+
+export interface SerializeErrorOptions {
+  includeStack?: boolean;
+  depth?: number;
+}
+
+type ErrorShape = {
+  name?: string;
+  message?: string;
+  code?: string;
+  status?: number;
+  stack?: string;
+  cause?: unknown;
+};
 
 /**
  * Розгортає `err.cause` ланцюжком у plain об'єкт, безпечний для JSON/pino.
  * Корисно в `errorHandler` і process-level hooks, щоб у Loki/Grafana причину
  * бачити без розгортання stack.
- *
- * @param {unknown} err
- * @param {{ includeStack?: boolean, depth?: number }} [opts]
  */
-export function serializeError(err, { includeStack = false, depth = 4 } = {}) {
+export function serializeError(
+  err: unknown,
+  { includeStack = false, depth = 4 }: SerializeErrorOptions = {},
+): SerializedError | undefined {
   if (err == null || depth < 0) return undefined;
   if (typeof err !== "object") {
     return { message: String(err) };
   }
-  const out = {
-    name: err.name,
-    message: err.message || String(err),
+  const e = err as ErrorShape;
+  const out: SerializedError = {
+    name: e.name,
+    message: e.message || String(err),
   };
-  if (err.code !== undefined) out.code = err.code;
-  if (err.status !== undefined) out.status = err.status;
-  if (includeStack && err.stack) out.stack = err.stack;
-  if (err.cause) {
-    out.cause = serializeError(err.cause, {
+  if (e.code !== undefined) out.code = e.code;
+  if (e.status !== undefined) out.status = e.status;
+  if (includeStack && e.stack) out.stack = e.stack;
+  if (e.cause) {
+    const cause = serializeError(e.cause, {
       includeStack,
       depth: depth - 1,
     });
+    if (cause) out.cause = cause;
   }
   return out;
 }
