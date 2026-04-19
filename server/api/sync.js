@@ -257,6 +257,13 @@ export async function syncPushAll(req, res) {
   }
 
   const results = {};
+  // Per-module метрики `push` накопичуємо тут і емітимо ЛИШЕ після COMMIT.
+  // Якщо один із модулів посеред транзакції кине — `ROLLBACK` відкотить
+  // уже «успішні» INSERT-и, але лічильник `sync_operations_total{outcome="ok"}`
+  // уже був би інкрементований → SLI бреше, `SyncErrorBudgetBurn` пропускає
+  // реальні збої. `too_large` — виняток: це per-item reject ДО будь-якого
+  // DML, тому rollback його не зачіпає, фіксуємо одразу.
+  const pending = [];
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
@@ -282,12 +289,11 @@ export async function syncPushAll(req, res) {
         [user.id, mod, blob, clientTs],
       );
       if (r.rows.length === 0) {
-        recordConflict(mod);
-        recordSync("push", mod, "conflict", { bytes: blob.length });
         const existing = await client.query(
           `SELECT server_updated_at, version FROM module_data WHERE user_id = $1 AND module = $2`,
           [user.id, mod],
         );
+        pending.push({ module: mod, outcome: "conflict", bytes: blob.length });
         results[mod] = {
           ok: true,
           conflict: true,
@@ -295,7 +301,7 @@ export async function syncPushAll(req, res) {
           version: existing.rows[0]?.version ?? 0,
         };
       } else {
-        recordSync("push", mod, "ok", { bytes: blob.length });
+        pending.push({ module: mod, outcome: "ok", bytes: blob.length });
         results[mod] = {
           ok: true,
           serverUpdatedAt: r.rows[0].server_updated_at,
@@ -305,13 +311,26 @@ export async function syncPushAll(req, res) {
     }
     await client.query("COMMIT");
   } catch (err) {
-    await client.query("ROLLBACK");
+    try {
+      await client.query("ROLLBACK");
+    } catch {
+      /* ignore secondary rollback failure — original error matters more */
+    }
+    // Все, що «встигло» в pending — насправді відкотилося. Перекласифікуй
+    // як error, щоб метрики відображали реальний стан БД.
+    for (const p of pending) {
+      recordSync("push", p.module, "error", { bytes: p.bytes });
+    }
     recordSync("push_all", "all", "error", { ms: elapsedMs(start) });
     throw err;
   } finally {
     client.release();
   }
 
+  for (const p of pending) {
+    if (p.outcome === "conflict") recordConflict(p.module);
+    recordSync("push", p.module, p.outcome, { bytes: p.bytes });
+  }
   recordSync("push_all", "all", "ok", { ms: elapsedMs(start) });
   return res.json({ ok: true, results });
 }
