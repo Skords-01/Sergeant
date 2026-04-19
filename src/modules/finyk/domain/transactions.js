@@ -1,22 +1,81 @@
 /**
- * @typedef {'monobank'|'privatbank'|'manual'|'unknown'} TransactionSource
+ * Уніфікована модель транзакції модуля Finyk.
+ *
+ * Будь-яка транзакція (manual, Monobank, AI-розбір, імпорт) проходить через
+ * normalizeTransaction() перед тим як потрапити у внутрішню логіку селекторів
+ * та UI. Мета — прибрати «сирі» формати з домену.
+ *
+ * Конвенції поля amount:
+ *   • Signed integer у мінорних одиницях (копійках). Така конвенція історично
+ *     закладена в модулі: Monobank API віддає кілокопійки, статистика/графіки
+ *     діляться на 100 на рівні UI. Якщо вхід — float (гривні), normalizeAmount
+ *     приведе його до цілих копійок.
+ *
+ * @typedef {'expense'|'income'|'transfer'} TransactionType
+ * @typedef {'manual'|'mono'|'ai'|'import'} TransactionSource
+ * @typedef {'monobank'|'privatbank'|'manual'|'unknown'} LegacyTransactionSource
  */
 
 /**
- * Unified transaction entity for Finyk domain.
- *
  * @typedef {Object} Transaction
+ * Канонічні поля:
  * @property {string} id
- * @property {number} time Unix timestamp in seconds
- * @property {number} amount Signed amount in minor units (kopecks)
- * @property {string} description
+ * @property {number} amount Signed int у копійках.
+ * @property {string} date ISO-8601 рядок.
+ * @property {string} categoryId Порожній рядок, якщо ще не відома.
+ * @property {TransactionType} type
+ * @property {TransactionSource} source
+ * @property {string} [merchant] Назва контрагента/мерчанта.
+ * @property {string} [note] Довільна примітка.
+ *
+ * Легасі-поля для сумісності з існуючим UI і даними в localStorage:
+ * @property {number} time Unix timestamp у секундах.
+ * @property {string} description Аліас merchant.
  * @property {number} mcc
  * @property {string|null} accountId
- * @property {TransactionSource} source
  * @property {boolean} manual
  * @property {string|undefined} manualId
+ * @property {LegacyTransactionSource} _source
+ * @property {string|null} _accountId
+ * @property {boolean} _manual
+ * @property {string|undefined} _manualId
  * @property {Object|undefined} raw
  */
+
+// Маппінг «старий формат» → «новий канонічний» і навпаки.
+const LEGACY_TO_CANONICAL_SOURCE = {
+  monobank: "mono",
+  mono: "mono",
+  privatbank: "import",
+  import: "import",
+  manual: "manual",
+  ai: "ai",
+  unknown: "manual",
+};
+
+const CANONICAL_TO_LEGACY_SOURCE = {
+  mono: "monobank",
+  import: "privatbank",
+  manual: "manual",
+  ai: "manual",
+};
+
+function toCanonicalSource(raw) {
+  if (!raw) return null;
+  return LEGACY_TO_CANONICAL_SOURCE[String(raw)] || null;
+}
+
+function toLegacySource(raw) {
+  if (!raw) return null;
+  const key = String(raw);
+  if (LEGACY_TO_CANONICAL_SOURCE[key] && key in CANONICAL_TO_LEGACY_SOURCE) {
+    return CANONICAL_TO_LEGACY_SOURCE[key];
+  }
+  // Приймаємо як легасі-значення (monobank/privatbank/manual/unknown).
+  if (key === "monobank" || key === "privatbank" || key === "manual")
+    return key;
+  return null;
+}
 
 function toSafeTimestampSeconds(input) {
   if (typeof input === "number" && Number.isFinite(input)) {
@@ -31,8 +90,63 @@ function toSafeTimestampSeconds(input) {
     : Math.floor(Date.now() / 1000);
 }
 
+// amount: int → вважаємо копійками; float → гривні, переводимо в копійки.
+function normalizeAmount(input) {
+  const n = Number(input);
+  if (!Number.isFinite(n)) return 0;
+  if (Number.isInteger(n)) return n;
+  return Math.round(n * 100);
+}
+
+function generateId(prefix) {
+  try {
+    if (
+      typeof crypto !== "undefined" &&
+      typeof crypto.randomUUID === "function"
+    ) {
+      return `${prefix || "tx"}_${crypto.randomUUID()}`;
+    }
+  } catch {}
+  return `${prefix || "tx"}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function pickCategoryId(input) {
+  if (input.categoryId != null && input.categoryId !== "")
+    return String(input.categoryId);
+  if (input.raw && input.raw.category != null && input.raw.category !== "")
+    return String(input.raw.category);
+  if (input.category != null && input.category !== "")
+    return String(input.category);
+  return "";
+}
+
+function deriveType(input, amount) {
+  if (
+    input.type === "transfer" ||
+    input.type === "income" ||
+    input.type === "expense"
+  ) {
+    return input.type;
+  }
+  if (amount > 0) return "income";
+  return "expense";
+}
+
+function pickString(value) {
+  if (value == null) return "";
+  return String(value).trim();
+}
+
 /**
- * Normalizes any provider/manual transaction into unified domain Transaction.
+ * Нормалізує будь-яку «сиру» транзакцію до канонічної моделі Transaction.
+ *
+ * Гарантує:
+ *   • id — згенерує, якщо відсутній;
+ *   • date — ISO-рядок (з date/time/createdAt/raw);
+ *   • amount — число (signed int у копійках);
+ *   • categoryId/type/source — мають дефолти;
+ *   • merchant/description — синхронізовано (старий UI читає description);
+ *   • Легасі-поля (_source, _manual, time, mcc, ...) — збережено.
  *
  * @param {Object} input
  * @param {Object} [defaults]
@@ -40,39 +154,93 @@ function toSafeTimestampSeconds(input) {
  */
 export function normalizeTransaction(input, defaults = {}) {
   const tx = input || {};
+  const d = defaults || {};
+
   const source =
-    tx.source ||
-    tx._source ||
-    defaults.source ||
-    (tx._manual ? "manual" : "unknown");
+    toCanonicalSource(tx.source) ||
+    toCanonicalSource(tx._source) ||
+    toCanonicalSource(d.source) ||
+    (tx.manual || tx._manual ? "manual" : "manual");
+
+  const legacySource =
+    toLegacySource(tx._source) ||
+    toLegacySource(tx.source) ||
+    toLegacySource(d.source) ||
+    CANONICAL_TO_LEGACY_SOURCE[source] ||
+    "unknown";
 
   const manual = Boolean(tx.manual ?? tx._manual ?? source === "manual");
   const manualId = tx.manualId ?? tx._manualId;
-  const accountId = tx.accountId ?? tx._accountId ?? defaults.accountId ?? null;
-  const amount = Number(tx.amount);
-  const normalizedAmount = Number.isFinite(amount) ? Math.round(amount) : 0;
-  const time = toSafeTimestampSeconds(tx.time ?? tx.date ?? tx.createdAt);
+  const accountId = tx.accountId ?? tx._accountId ?? d.accountId ?? null;
 
-  const fallbackId = `${source}_${time}_${normalizedAmount}_${Math.random().toString(36).slice(2, 8)}`;
+  const amount = normalizeAmount(tx.amount);
+  const time = toSafeTimestampSeconds(tx.time ?? tx.date ?? tx.createdAt);
+  const dateIso = new Date(time * 1000).toISOString();
+
+  const merchant = pickString(tx.merchant ?? tx.description);
+  const note = tx.note != null ? String(tx.note) : undefined;
+  const categoryId = pickCategoryId(tx);
+  const type = deriveType(tx, amount);
+
+  const id =
+    tx.id != null && tx.id !== ""
+      ? String(tx.id)
+      : manual && manualId != null
+        ? `manual_${manualId}`
+        : generateId(source);
 
   return {
-    id: String(tx.id || fallbackId),
+    // ── Канонічні поля уніфікованої моделі ───────────────────────
+    id,
+    amount,
+    date: dateIso,
+    categoryId,
+    type,
+    source,
+    merchant: merchant || undefined,
+    note,
+
+    // ── Легасі-поля, які читає існуючий UI/селектори ─────────────
     time,
-    amount: normalizedAmount,
-    description: String(tx.description || ""),
+    description: merchant,
     mcc: Number.isFinite(Number(tx.mcc)) ? Number(tx.mcc) : 0,
     accountId: accountId == null ? null : String(accountId),
-    source,
     manual,
     manualId: manualId == null ? undefined : String(manualId),
     raw: tx.raw || undefined,
 
-    // Backward-compatible fields used across module UI.
-    _source: source,
+    _source: legacySource,
     _accountId: accountId == null ? null : String(accountId),
     _manual: manual,
     _manualId: manualId == null ? undefined : String(manualId),
   };
+}
+
+/**
+ * Зручний шорткат для ручних витрат з localStorage (finyk_manual_expenses_v1),
+ * де amount зберігається в гривнях (позитивне число), а категорія — окремим полем.
+ *
+ * @param {{ id?: string, date?: string, description?: string, amount?: number, category?: string }} expense
+ * @returns {Transaction}
+ */
+export function normalizeManualExpense(expense) {
+  const e = expense || {};
+  const manualId = e.id != null ? String(e.id) : undefined;
+  const amountHryvnia = Math.abs(Number(e.amount) || 0);
+  return normalizeTransaction(
+    {
+      id: manualId ? `manual_${manualId}` : undefined,
+      manual: true,
+      manualId,
+      date: e.date || new Date().toISOString(),
+      amount: -Math.round(amountHryvnia * 100),
+      description: e.description,
+      mcc: 0,
+      categoryId: e.category,
+      raw: { category: e.category },
+    },
+    { source: "manual", accountId: null },
+  );
 }
 
 export function normalizeTransactions(items, defaults = {}) {

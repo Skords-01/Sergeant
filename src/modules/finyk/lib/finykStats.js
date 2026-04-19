@@ -1,4 +1,4 @@
-import { normalizeTransaction } from "../domain/transactions";
+import { normalizeManualExpense } from "../domain/transactions";
 import {
   getMonthlySummary,
   getTopCategories,
@@ -65,19 +65,7 @@ export function getRecentTransactions(
   const excluded =
     excludedTxIds instanceof Set ? excludedTxIds : new Set(excludedTxIds);
 
-  const normalizedManual = manual.map((e) =>
-    normalizeTransaction(
-      {
-        id: `manual_${e.id}`,
-        time: e.date ? Math.floor(new Date(e.date).getTime() / 1000) : 0,
-        amount: -(Math.abs(e.amount) * 100),
-        description: e.description || "",
-        mcc: 0,
-        raw: { category: e.category },
-      },
-      { source: "manual", accountId: null },
-    ),
-  );
+  const normalizedManual = manual.map((e) => normalizeManualExpense(e));
 
   const all = [
     ...list.filter((tx) => tx && !excluded.has(tx.id)),
