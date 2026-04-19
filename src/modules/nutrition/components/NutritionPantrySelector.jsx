@@ -5,7 +5,7 @@ export function NutritionPantrySelector({ pantry, busy }) {
   return (
     <div className="rounded-2xl bg-nutrition/10 border border-nutrition/20 px-4 py-3 mb-4 flex items-center gap-3">
       <div className="min-w-0 flex-1">
-        <SectionHeading as="div" size="xs" className="text-nutrition/70 mb-0.5">
+        <SectionHeading as="div" size="xs" tone="nutrition" className="mb-0.5">
           Активний склад
         </SectionHeading>
         <div className="text-base font-extrabold text-text leading-tight">

@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { Card } from "@shared/components/ui/Card";
+import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { cn } from "@shared/lib/cn";
 import {
   getDayMacros,
@@ -211,9 +212,14 @@ export function NutritionDashboard({
                   key={m.key}
                   className="rounded-xl border border-nutrition/20 bg-nutrition/8 px-2 py-2.5 text-center"
                 >
-                  <div className="text-2xs text-nutrition/70 font-bold uppercase tracking-wide leading-none mb-1">
+                  <SectionHeading
+                    as="div"
+                    size="xs"
+                    tone="nutrition"
+                    className="leading-none mb-1"
+                  >
                     {m.label}
-                  </div>
+                  </SectionHeading>
                   <div className="text-sm font-extrabold text-text leading-none">
                     {cur}
                     {m.unit ? ` ${m.unit}` : ""}

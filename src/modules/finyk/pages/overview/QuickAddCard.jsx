@@ -20,7 +20,7 @@ const QuickAddCardImpl = function QuickAddCard({
     <Card radius="lg" padding="lg" className="space-y-3">
       <div className="flex items-center justify-between">
         <div>
-          <SectionHeading as="div" size="xs">
+          <SectionHeading as="div" size="sm">
             Швидке додавання
           </SectionHeading>
           <div className="text-sm text-muted mt-0.5">
@@ -62,7 +62,7 @@ const QuickAddCardImpl = function QuickAddCard({
       )}
       {frequentMerchants.length > 0 && (
         <div className="pt-2 border-t border-line">
-          <SectionHeading as="div" size="xs" className="mb-2">
+          <SectionHeading as="div" size="sm" className="mb-2">
             Нещодавнє
           </SectionHeading>
           <div className="flex flex-wrap gap-1.5">

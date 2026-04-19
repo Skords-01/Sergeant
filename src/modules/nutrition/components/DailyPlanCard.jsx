@@ -137,9 +137,9 @@ function MealRow({ meal, onAddToLog, onRegen, busy }) {
             <span className="text-base leading-none" aria-hidden>
               {MEAL_TYPE_ICONS[meal.type] || "🍴"}
             </span>
-            <span className="text-xs font-bold text-nutrition/80 uppercase tracking-widest">
+            <SectionHeading as="span" size="sm" tone="nutrition">
               {MEAL_TYPE_LABELS[meal.type] || meal.label}
-            </span>
+            </SectionHeading>
           </div>
           <div className="text-sm font-semibold text-text leading-tight">
             {meal.name}

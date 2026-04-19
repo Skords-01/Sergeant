@@ -129,9 +129,14 @@ export function PhotoAnalyzeCard({
                 key={m.label}
                 className="rounded-xl border border-nutrition/20 bg-nutrition/8 px-2 py-2 text-center"
               >
-                <div className="text-2xs text-nutrition/70 font-bold uppercase tracking-wide leading-none mb-1">
+                <SectionHeading
+                  as="div"
+                  size="xs"
+                  tone="nutrition"
+                  className="leading-none mb-1"
+                >
                   {m.label}
-                </div>
+                </SectionHeading>
                 <div className="text-sm font-extrabold text-text leading-none">
                   {m.value}
                 </div>
@@ -167,7 +172,7 @@ export function PhotoAnalyzeCard({
           {Array.isArray(photoResult.questions) &&
             photoResult.questions.length > 0 && (
               <div className="rounded-2xl border border-line bg-panelHi p-3 grid gap-3">
-                <SectionHeading as="div" size="xs">
+                <SectionHeading as="div" size="sm">
                   Уточнення порції
                 </SectionHeading>
 

@@ -277,6 +277,41 @@ Home/End, `role="tablist"`.
 </SectionHeader>
 ```
 
+**Розмір (`size`) vs колір (`tone`)** — окремі осі:
+
+| size | type-scale                                     | коли                    |
+| ---- | ---------------------------------------------- | ----------------------- |
+| `xs` | `text-2xs font-bold uppercase tracking-widest` | compact in-card eyebrow |
+| `sm` | `text-xs  font-bold uppercase tracking-widest` | standard section title  |
+| `md` | `text-sm font-semibold`                        | inline group heading    |
+| `lg` | `text-lg font-extrabold leading-tight`         | page sub-section        |
+| `xl` | `text-xl font-extrabold leading-tight`         | page/route title        |
+
+| tone        | клас                | коли                                  |
+| ----------- | ------------------- | ------------------------------------- |
+| `subtle` \* | `text-subtle`       | eyebrow по замовчуванню для `xs`/`sm` |
+| `muted`     | `text-muted`        | послаблений підпис                    |
+| `text` \*   | `text-text`         | за замовчуванням для `md`/`lg`/`xl`   |
+| `accent`    | `text-accent`       | глобальний фокус/лінк (emerald)       |
+| `finyk`     | `text-finyk/70`     | brand-tint у модулі ФІНІК             |
+| `fizruk`    | `text-fizruk/70`    | brand-tint у модулі ФІЗРУК            |
+| `routine`   | `text-routine/70`   | brand-tint у модулі Рутина            |
+| `nutrition` | `text-nutrition/70` | brand-tint у модулі Харчування        |
+
+Зірочкою (\*) — це значення за замовчуванням; їх можна не передавати.
+
+**Branded eyebrow** (напр. KJВЖ-картки в Харчуванні):
+
+```tsx
+<SectionHeading as="div" size="xs" tone="nutrition">
+  Білки
+</SectionHeading>
+```
+
+Перед `tone` уникай `text-nutrition/70` / `text-nutrition/80` /
+`text-nutrition/90` драфту — усі branded eyebrow'и нормалізовані до
+`/70`.
+
 ### EmptyState
 
 - `icon` · `title` · `description` · `action`.
