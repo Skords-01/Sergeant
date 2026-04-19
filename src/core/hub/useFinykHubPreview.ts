@@ -58,7 +58,8 @@ export function useFinykHubPreview() {
     staleTime: 60_000,
     gcTime: Infinity,
     // Returning to the tab rebuilds the preview — covers the case where a
-    // storage event was dropped (Safari occasionally does).
-    refetchOnWindowFocus: true,
+    // storage event was dropped (Safari occasionally does). Use "always" so
+    // the refetch fires even when the query is still fresh within staleTime.
+    refetchOnWindowFocus: "always",
   });
 }
