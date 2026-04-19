@@ -22,7 +22,7 @@ function createLocalStorageMock() {
 }
 
 beforeEach(() => {
-  globalThis.localStorage = createLocalStorageMock();
+  globalThis.localStorage = createLocalStorageMock() as unknown as Storage;
 });
 
 describe("normalizeShoppingList", () => {

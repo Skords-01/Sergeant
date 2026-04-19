@@ -1,13 +1,22 @@
-import { addDaysISODate, getDaySummary } from "./nutritionStorage.js";
+import {
+  addDaysISODate,
+  getDaySummary,
+  type DaySummary,
+  type NutritionLog,
+} from "./nutritionStorage.js";
 import { mealTypeFromLabel } from "./mealTypes.js";
 
-function clamp0(n) {
+function clamp0(n: unknown): number {
   const v = Number(n);
   return Number.isFinite(v) ? Math.max(0, v) : 0;
 }
 
-export function getRowsForRange(log, endIso, dayCount) {
-  const rows = [];
+export function getRowsForRange(
+  log: NutritionLog,
+  endIso: string,
+  dayCount: number,
+): DaySummary[] {
+  const rows: DaySummary[] = [];
   for (let i = dayCount - 1; i >= 0; i--) {
     const d = addDaysISODate(endIso, -i);
     rows.push(getDaySummary(log, d));
@@ -15,8 +24,20 @@ export function getRowsForRange(log, endIso, dayCount) {
   return rows;
 }
 
-export function summarizeRows(rows) {
-  const out = {
+export interface RowsSummary {
+  days: number;
+  kcal: number;
+  protein_g: number;
+  fat_g: number;
+  carbs_g: number;
+  daysWithMeals: number;
+  daysWithAnyMacros: number;
+  /** Backward-compatible alias for daysWithMeals. */
+  nonEmptyDays: number;
+}
+
+export function summarizeRows(rows: DaySummary[]): RowsSummary {
+  const out: RowsSummary = {
     days: rows.length,
     kcal: 0,
     protein_g: 0,
@@ -24,7 +45,7 @@ export function summarizeRows(rows) {
     carbs_g: 0,
     daysWithMeals: 0,
     daysWithAnyMacros: 0,
-    nonEmptyDays: 0, // backward-compatible alias for daysWithMeals
+    nonEmptyDays: 0,
   };
   for (const r of rows) {
     const hasMeals = Boolean(r?.hasMeals) || (Number(r?.mealCount) || 0) > 0;
@@ -40,7 +61,15 @@ export function summarizeRows(rows) {
   return out;
 }
 
-export function avgFromSummary(sum) {
+export interface AvgMacros {
+  kcal: number;
+  protein_g: number;
+  fat_g: number;
+  carbs_g: number;
+  denom: number;
+}
+
+export function avgFromSummary(sum: RowsSummary): AvgMacros {
   // Prefer averaging only over days where some macros exist to avoid dragging
   // averages down to 0 when meals were logged without macros.
   const denom = Math.max(1, Number(sum?.daysWithAnyMacros) || 0);
@@ -53,9 +82,20 @@ export function avgFromSummary(sum) {
   };
 }
 
-export function topMeals(log, endIso, dayCount, limit = 8) {
+export interface TopMeal {
+  name: string;
+  count: number;
+  kcal: number;
+}
+
+export function topMeals(
+  log: NutritionLog | null | undefined,
+  endIso: string,
+  dayCount: number,
+  limit = 8,
+): TopMeal[] {
   const start = addDaysISODate(endIso, -(dayCount - 1));
-  const map = new Map(); // name -> {name,count,kcal}
+  const map = new Map<string, TopMeal>();
   for (const [date, day] of Object.entries(log || {})) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) continue;
     if (date < start || date > endIso) continue;
@@ -74,9 +114,15 @@ export function topMeals(log, endIso, dayCount, limit = 8) {
     .slice(0, Math.max(1, Number(limit) || 8));
 }
 
-export function mealTypeBreakdown(log, endIso, dayCount) {
+export type MealTypeBreakdown = Record<string, { count: number; kcal: number }>;
+
+export function mealTypeBreakdown(
+  log: NutritionLog | null | undefined,
+  endIso: string,
+  dayCount: number,
+): MealTypeBreakdown {
   const start = addDaysISODate(endIso, -(dayCount - 1));
-  const out = {}; // type -> {count,kcal}
+  const out: MealTypeBreakdown = {};
   for (const [date, day] of Object.entries(log || {})) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) continue;
     if (date < start || date > endIso) continue;

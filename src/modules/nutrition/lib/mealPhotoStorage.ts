@@ -7,7 +7,7 @@ const DB_NAME = "hub_nutrition_meal_photos";
 const STORE = "thumbs";
 const DB_VERSION = 1;
 
-function openDb() {
+function openDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const req = indexedDB.open(DB_NAME, DB_VERSION);
     req.onerror = () => reject(req.error);
@@ -21,11 +21,14 @@ function openDb() {
   });
 }
 
-export async function saveMealThumbnail(mealId, blob) {
+export async function saveMealThumbnail(
+  mealId: string | null | undefined,
+  blob: Blob | null | undefined,
+): Promise<boolean> {
   if (!mealId || !blob) return false;
   try {
     const db = await openDb();
-    await new Promise((resolve, reject) => {
+    await new Promise<void>((resolve, reject) => {
       const tx = db.transaction(STORE, "readwrite");
       tx.objectStore(STORE).put(blob, mealId);
       tx.oncomplete = () => resolve();
@@ -38,11 +41,13 @@ export async function saveMealThumbnail(mealId, blob) {
   }
 }
 
-export async function getMealThumbnailBlob(mealId) {
+export async function getMealThumbnailBlob(
+  mealId: string | null | undefined,
+): Promise<Blob | null> {
   if (!mealId) return null;
   try {
     const db = await openDb();
-    const blob = await new Promise((resolve, reject) => {
+    const blob = await new Promise<unknown>((resolve, reject) => {
       const tx = db.transaction(STORE, "readonly");
       const req = tx.objectStore(STORE).get(mealId);
       req.onsuccess = () => resolve(req.result || null);
@@ -55,11 +60,13 @@ export async function getMealThumbnailBlob(mealId) {
   }
 }
 
-export async function deleteMealThumbnail(mealId) {
+export async function deleteMealThumbnail(
+  mealId: string | null | undefined,
+): Promise<void> {
   if (!mealId) return;
   try {
     const db = await openDb();
-    await new Promise((resolve, reject) => {
+    await new Promise<void>((resolve, reject) => {
       const tx = db.transaction(STORE, "readwrite");
       tx.objectStore(STORE).delete(mealId);
       tx.oncomplete = () => resolve();
@@ -71,10 +78,10 @@ export async function deleteMealThumbnail(mealId) {
   }
 }
 
-export async function listMealThumbnailIds() {
+export async function listMealThumbnailIds(): Promise<string[]> {
   try {
     const db = await openDb();
-    const ids = await new Promise((resolve, reject) => {
+    const ids = await new Promise<string[]>((resolve, reject) => {
       const tx = db.transaction(STORE, "readonly");
       const req = tx.objectStore(STORE).getAllKeys();
       req.onsuccess = () =>
@@ -88,19 +95,25 @@ export async function listMealThumbnailIds() {
   }
 }
 
+export interface GcMealThumbnailsOptions {
+  maxDeletes?: number;
+}
+
 export async function gcMealThumbnails(
-  validMealIds,
-  { maxDeletes = 500 } = {},
-) {
+  validMealIds: Iterable<string> | Set<string> | null | undefined,
+  { maxDeletes = 500 }: GcMealThumbnailsOptions = {},
+): Promise<{ ok: boolean; deleted: number }> {
   const keep =
     validMealIds instanceof Set
-      ? validMealIds
-      : new Set(Array.isArray(validMealIds) ? validMealIds : []);
+      ? (validMealIds as Set<string>)
+      : new Set<string>(
+          Array.isArray(validMealIds) ? (validMealIds as string[]) : [],
+        );
   try {
     const db = await openDb();
     const tx = db.transaction(STORE, "readwrite");
     const store = tx.objectStore(STORE);
-    const keys = await new Promise((resolve, reject) => {
+    const keys = await new Promise<string[]>((resolve, reject) => {
       const r = store.getAllKeys();
       r.onsuccess = () =>
         resolve(Array.isArray(r.result) ? r.result.map(String) : []);
@@ -114,7 +127,7 @@ export async function gcMealThumbnails(
         deleted += 1;
       }
     }
-    await new Promise((resolve, reject) => {
+    await new Promise<void>((resolve, reject) => {
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);
     });
@@ -125,7 +138,10 @@ export async function gcMealThumbnails(
   }
 }
 
-export function fileToThumbnailBlob(file, maxSize = 128) {
+export function fileToThumbnailBlob(
+  file: Blob,
+  maxSize = 128,
+): Promise<Blob | null> {
   return new Promise((resolve) => {
     const img = new Image();
     const url = URL.createObjectURL(file);

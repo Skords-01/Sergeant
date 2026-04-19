@@ -1,15 +1,19 @@
 import { normalizeFoodName } from "./pantryTextParser.js";
 import { mergeItems } from "./mergeItems.js";
+import type { PantryItem } from "./pantryTextParser.js";
 import {
   macrosHasAnyValue,
   macrosToTotals,
   normalizeMacrosNullable,
+  type Macros,
+  type NullableMacros,
 } from "./macros.js";
 import { nutritionStorage } from "./nutritionStorageInstance.js";
 import {
   isMealTypeId,
   labelForMealType,
   mealTypeFromLabel,
+  type MealTypeId,
 } from "./mealTypes.js";
 
 export const NUTRITION_PANTRIES_KEY = "nutrition_pantries_v1";
@@ -17,7 +21,72 @@ export const NUTRITION_ACTIVE_PANTRY_KEY = "nutrition_active_pantry_v1";
 export const NUTRITION_PREFS_KEY = "nutrition_prefs_v1";
 export const NUTRITION_LOG_KEY = "nutrition_log_v1";
 
-export function toLocalISODate(d = new Date()) {
+export type NutritionGoal = string;
+export type MealMacroSource = "manual" | "productDb" | "photoAI" | "recipeAI";
+export type MealSource = "manual" | "photo";
+
+export interface MealTemplate {
+  id: string;
+  name: string;
+  mealType: MealTypeId;
+  macros: NullableMacros;
+}
+
+export interface NutritionPrefs {
+  goal: NutritionGoal;
+  servings: number;
+  timeMinutes: number;
+  exclude: string;
+  dailyTargetKcal: number | null;
+  dailyTargetProtein_g: number | null;
+  dailyTargetFat_g: number | null;
+  dailyTargetCarbs_g: number | null;
+  mealTemplates: MealTemplate[];
+  reminderEnabled: boolean;
+  reminderHour: number;
+  waterGoalMl: number;
+}
+
+export interface Pantry {
+  id: string;
+  name: string;
+  items: PantryItem[];
+  text: string;
+}
+
+export interface Meal {
+  id: string;
+  name: string;
+  time: string;
+  mealType: MealTypeId;
+  label: string;
+  macros: NullableMacros;
+  source: MealSource;
+  macroSource: MealMacroSource;
+  amount_g: number | null;
+  foodId: string | null;
+  demo?: true;
+}
+
+export interface NutritionDay {
+  meals: Meal[];
+}
+
+export type NutritionLog = Record<string, NutritionDay>;
+
+export type NutritionLogLike =
+  | Record<string, { meals?: unknown[] | null } | null | undefined>
+  | null
+  | undefined;
+
+export interface DaySummary extends Macros {
+  date: string;
+  mealCount: number;
+  hasMeals: boolean;
+  hasAnyMacros: boolean;
+}
+
+export function toLocalISODate(d: Date | string | number = new Date()): string {
   const dt = d instanceof Date ? d : new Date(d);
   if (Number.isNaN(dt.getTime())) return "1970-01-01";
   const y = dt.getFullYear();
@@ -26,13 +95,13 @@ export function toLocalISODate(d = new Date()) {
   return `${y}-${m}-${day}`;
 }
 
-function optionalPositiveNumber(v) {
+function optionalPositiveNumber(v: unknown): number | null {
   if (v == null || v === "") return null;
   const n = Number(v);
   return Number.isFinite(n) && n > 0 ? n : null;
 }
 
-export function defaultNutritionPrefs() {
+export function defaultNutritionPrefs(): NutritionPrefs {
   return {
     goal: "balanced",
     servings: 1,
@@ -49,40 +118,46 @@ export function defaultNutritionPrefs() {
   };
 }
 
-export function loadNutritionPrefs(key = NUTRITION_PREFS_KEY) {
-  const p = nutritionStorage.readJSON(key, null);
+export function loadNutritionPrefs(
+  key: string = NUTRITION_PREFS_KEY,
+): NutritionPrefs {
+  const p = nutritionStorage.readJSON(key, null) as unknown;
   if (!p || typeof p !== "object" || Array.isArray(p))
     return defaultNutritionPrefs();
   try {
     const defaults = defaultNutritionPrefs();
-    const waterGoalMl = optionalPositiveNumber(p.waterGoalMl);
+    const raw = p as Record<string, unknown>;
+    const waterGoalMl = optionalPositiveNumber(raw.waterGoalMl);
+    const mealTemplates: MealTemplate[] = Array.isArray(raw.mealTemplates)
+      ? (raw.mealTemplates as unknown[])
+          .filter(
+            (t): t is Record<string, unknown> => !!t && typeof t === "object",
+          )
+          .map((t) => ({
+            id: String(t.id || `tpl_${Date.now()}`),
+            name: String(t.name || "").trim(),
+            mealType: isMealTypeId(t.mealType) ? t.mealType : "snack",
+            macros: normalizeMacros(t.macros),
+          }))
+          .filter((t) => t.name)
+          .slice(0, 40)
+      : [];
     return {
       ...defaults,
-      ...p,
-      servings: p.servings != null ? Number(p.servings) || 1 : 1,
-      timeMinutes: p.timeMinutes != null ? Number(p.timeMinutes) || 25 : 25,
-      exclude: p.exclude == null ? "" : String(p.exclude),
-      goal: p.goal ? String(p.goal) : "balanced",
-      dailyTargetKcal: optionalPositiveNumber(p.dailyTargetKcal),
-      dailyTargetProtein_g: optionalPositiveNumber(p.dailyTargetProtein_g),
-      dailyTargetFat_g: optionalPositiveNumber(p.dailyTargetFat_g),
-      dailyTargetCarbs_g: optionalPositiveNumber(p.dailyTargetCarbs_g),
-      mealTemplates: Array.isArray(p.mealTemplates)
-        ? p.mealTemplates
-            .filter((t) => t && typeof t === "object")
-            .map((t) => ({
-              id: String(t.id || `tpl_${Date.now()}`),
-              name: String(t.name || "").trim(),
-              mealType: isMealTypeId(t.mealType) ? t.mealType : "snack",
-              macros: normalizeMacros(t.macros),
-            }))
-            .filter((t) => t.name)
-            .slice(0, 40)
-        : [],
-      reminderEnabled: Boolean(p.reminderEnabled),
+      ...(raw as Partial<NutritionPrefs>),
+      servings: raw.servings != null ? Number(raw.servings) || 1 : 1,
+      timeMinutes: raw.timeMinutes != null ? Number(raw.timeMinutes) || 25 : 25,
+      exclude: raw.exclude == null ? "" : String(raw.exclude),
+      goal: raw.goal ? String(raw.goal) : "balanced",
+      dailyTargetKcal: optionalPositiveNumber(raw.dailyTargetKcal),
+      dailyTargetProtein_g: optionalPositiveNumber(raw.dailyTargetProtein_g),
+      dailyTargetFat_g: optionalPositiveNumber(raw.dailyTargetFat_g),
+      dailyTargetCarbs_g: optionalPositiveNumber(raw.dailyTargetCarbs_g),
+      mealTemplates,
+      reminderEnabled: Boolean(raw.reminderEnabled),
       reminderHour:
-        p.reminderHour != null && Number.isFinite(Number(p.reminderHour))
-          ? Math.min(23, Math.max(0, Math.floor(Number(p.reminderHour))))
+        raw.reminderHour != null && Number.isFinite(Number(raw.reminderHour))
+          ? Math.min(23, Math.max(0, Math.floor(Number(raw.reminderHour))))
           : 12,
       waterGoalMl: waterGoalMl != null ? waterGoalMl : defaults.waterGoalMl,
     };
@@ -91,56 +166,65 @@ export function loadNutritionPrefs(key = NUTRITION_PREFS_KEY) {
   }
 }
 
-export function persistNutritionPrefs(prefs, key = NUTRITION_PREFS_KEY) {
+export function persistNutritionPrefs(
+  prefs: NutritionPrefs | null | undefined,
+  key: string = NUTRITION_PREFS_KEY,
+): boolean {
   return nutritionStorage.writeJSON(key, prefs || defaultNutritionPrefs());
 }
 
-export function makeDefaultPantry() {
+export function makeDefaultPantry(): Pantry {
   return { id: "home", name: "Дім", items: [], text: "" };
 }
 
-function sanitizePantryItem(raw) {
+function sanitizePantryItem(raw: unknown): PantryItem | null {
   if (!raw || typeof raw !== "object") return null;
-  const name = String(raw.name || "").trim();
+  const r = raw as Record<string, unknown>;
+  const name = String(r.name || "").trim();
   if (!name) return null;
-  const qtyNum = Number(raw.qty);
-  const qty = raw.qty == null || !Number.isFinite(qtyNum) ? null : qtyNum;
+  const qtyNum = Number(r.qty);
+  const qty = r.qty == null || !Number.isFinite(qtyNum) ? null : qtyNum;
   return {
     name,
     qty,
-    unit: raw.unit == null ? null : String(raw.unit),
-    notes: raw.notes == null ? null : String(raw.notes),
+    unit: r.unit == null ? null : String(r.unit),
+    notes: r.notes == null ? null : String(r.notes),
   };
 }
 
-export function normalizePantries(raw) {
+export function normalizePantries(raw: unknown): Pantry[] {
   if (!Array.isArray(raw)) return [];
-  const out = [];
-  const seenIds = new Set();
-  for (const p of raw) {
+  const out: Pantry[] = [];
+  const seenIds = new Set<string>();
+  for (const p of raw as unknown[]) {
     if (!p || typeof p !== "object") continue;
-    let id = p.id != null ? String(p.id).trim() : "";
+    const rp = p as Record<string, unknown>;
+    let id = rp.id != null ? String(rp.id).trim() : "";
     if (!id || seenIds.has(id)) id = `p_${Date.now()}_${out.length}`;
     seenIds.add(id);
-    const name = String(p.name || "Склад").trim() || "Склад";
-    const items = Array.isArray(p.items)
-      ? p.items.map(sanitizePantryItem).filter(Boolean)
+    const name = String(rp.name || "Склад").trim() || "Склад";
+    const items = Array.isArray(rp.items)
+      ? (rp.items as unknown[])
+          .map(sanitizePantryItem)
+          .filter((x): x is PantryItem => x != null)
       : [];
-    const text = p.text == null ? "" : String(p.text);
+    const text = rp.text == null ? "" : String(rp.text);
     out.push({ id, name, items, text });
   }
   return out;
 }
 
-export function loadActivePantryId(activeKey = NUTRITION_ACTIVE_PANTRY_KEY) {
+export function loadActivePantryId(
+  activeKey: string = NUTRITION_ACTIVE_PANTRY_KEY,
+): string {
   const v = nutritionStorage.readRaw(activeKey, null);
   return v ? String(v) : "home";
 }
 
 export function loadPantries(
-  key = NUTRITION_PANTRIES_KEY,
-  activeKey = NUTRITION_ACTIVE_PANTRY_KEY,
-) {
+  key: string = NUTRITION_PANTRIES_KEY,
+  activeKey: string = NUTRITION_ACTIVE_PANTRY_KEY,
+): Pantry[] {
   const parsed = nutritionStorage.readJSON(key, null);
   const normalized = normalizePantries(parsed);
   if (normalized.length > 0) return normalized;
@@ -153,11 +237,11 @@ export function loadPantries(
 }
 
 export function persistPantries(
-  key = NUTRITION_PANTRIES_KEY,
-  activeKey = NUTRITION_ACTIVE_PANTRY_KEY,
-  pantries,
-  activeId,
-) {
+  key: string = NUTRITION_PANTRIES_KEY,
+  activeKey: string = NUTRITION_ACTIVE_PANTRY_KEY,
+  pantries?: Pantry[] | null,
+  activeId?: string | null,
+): boolean {
   const a = nutritionStorage.writeJSON(
     key,
     Array.isArray(pantries) ? pantries : [],
@@ -168,7 +252,11 @@ export function persistPantries(
   return a && b;
 }
 
-export function updatePantry(pantries, activeId, fn) {
+export function updatePantry(
+  pantries: Pantry[] | null | undefined,
+  activeId: string | null | undefined,
+  fn: (p: Pantry) => Pantry,
+): Pantry[] {
   const arr = Array.isArray(pantries) ? pantries : [];
   const id = String(activeId || "home");
   const idx = arr.findIndex((p) => p.id === id);
@@ -181,7 +269,7 @@ export function updatePantry(pantries, activeId, fn) {
   return next;
 }
 
-export function upsertPantryItem(pantry, name) {
+export function upsertPantryItem(pantry: Pantry, name: string): Pantry {
   const n = normalizeFoodName(name);
   if (!n) return pantry;
   const arr = Array.isArray(pantry?.items) ? pantry.items : [];
@@ -192,7 +280,7 @@ export function upsertPantryItem(pantry, name) {
   };
 }
 
-export function removePantryItem(pantry, name) {
+export function removePantryItem(pantry: Pantry, name: string): Pantry {
   const n = normalizeFoodName(name);
   if (!n) return pantry;
   const arr = Array.isArray(pantry?.items) ? pantry.items : [];
@@ -202,18 +290,21 @@ export function removePantryItem(pantry, name) {
   };
 }
 
-export function mergePantryItems(pantry, incomingItems) {
+export function mergePantryItems(
+  pantry: Pantry,
+  incomingItems: unknown,
+): Pantry {
   return { ...pantry, items: mergeItems(pantry?.items, incomingItems) };
 }
 
-function normalizeMacros(mac) {
+function normalizeMacros(mac: unknown): NullableMacros {
   // Backward-compatible export name used across this module:
   // meals/templates store nullable macros; totals are computed separately.
   return normalizeMacrosNullable(mac);
 }
 
-export function normalizeMeal(m, idx) {
-  const raw = m && typeof m === "object" ? m : {};
+export function normalizeMeal(m: unknown, idx: number): Meal {
+  const raw = (m && typeof m === "object" ? m : {}) as Record<string, unknown>;
   let id = raw.id != null && String(raw.id).trim() ? String(raw.id).trim() : "";
   if (!id)
     id = `meal_mig_${Date.now()}_${idx}_${Math.random().toString(36).slice(2, 8)}`;
@@ -221,8 +312,10 @@ export function normalizeMeal(m, idx) {
   const name = raw.name != null ? String(raw.name).trim() : "";
   const time = raw.time != null ? String(raw.time).trim() : "";
 
-  let mealType = raw.mealType;
-  if (!isMealTypeId(mealType)) {
+  let mealType: MealTypeId;
+  if (isMealTypeId(raw.mealType)) {
+    mealType = raw.mealType;
+  } else {
     mealType = mealTypeFromLabel(raw.label);
   }
 
@@ -232,17 +325,17 @@ export function normalizeMeal(m, idx) {
       : labelForMealType(mealType);
 
   const macros = normalizeMacros(raw.macros);
-  const source =
+  const source: MealSource =
     raw.source && String(raw.source) === "photo" ? "photo" : "manual";
 
   const rawMacroSource =
     raw.macroSource != null ? String(raw.macroSource).trim() : "";
-  const macroSource =
+  const macroSource: MealMacroSource =
     rawMacroSource === "manual" ||
     rawMacroSource === "productDb" ||
     rawMacroSource === "photoAI" ||
     rawMacroSource === "recipeAI"
-      ? rawMacroSource
+      ? (rawMacroSource as MealMacroSource)
       : source === "photo"
         ? "photoAI"
         : "manual";
@@ -265,7 +358,7 @@ export function normalizeMeal(m, idx) {
   // property dropped here is lost on the first module visit — which is
   // what used to silently re-classify demo meals as real entries and
   // trip the soft-auth prompt.
-  const out = {
+  const out: Meal = {
     id,
     name,
     time,
@@ -281,12 +374,12 @@ export function normalizeMeal(m, idx) {
   return out;
 }
 
-export function normalizeNutritionLog(raw) {
+export function normalizeNutritionLog(raw: unknown): NutritionLog {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
-  const out = {};
-  for (const [dateKey, day] of Object.entries(raw)) {
+  const out: NutritionLog = {};
+  for (const [dateKey, day] of Object.entries(raw as Record<string, unknown>)) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) continue;
-    const mealsRaw = day?.meals;
+    const mealsRaw = (day as { meals?: unknown } | null)?.meals;
     if (!Array.isArray(mealsRaw)) {
       out[dateKey] = { meals: [] };
       continue;
@@ -302,16 +395,25 @@ export function normalizeNutritionLog(raw) {
 // Nutrition log (журнал прийомів їжі)
 // ─────────────────────────────────────────────
 
-export function loadNutritionLog(key = NUTRITION_LOG_KEY) {
+export function loadNutritionLog(
+  key: string = NUTRITION_LOG_KEY,
+): NutritionLog {
   const parsed = nutritionStorage.readJSON(key, null);
   return normalizeNutritionLog(parsed);
 }
 
-export function persistNutritionLog(log, key = NUTRITION_LOG_KEY) {
+export function persistNutritionLog(
+  log: NutritionLog | null | undefined,
+  key: string = NUTRITION_LOG_KEY,
+): boolean {
   return nutritionStorage.writeJSON(key, log || {});
 }
 
-export function addLogEntry(log, date, meal) {
+export function addLogEntry(
+  log: NutritionLog,
+  date: string,
+  meal: unknown,
+): NutritionLog {
   const normalized = normalizeMeal(meal, 0);
   const day = log[date] || { meals: [] };
   return {
@@ -323,21 +425,29 @@ export function addLogEntry(log, date, meal) {
   };
 }
 
-export function removeLogEntry(log, date, id) {
+export function removeLogEntry(
+  log: NutritionLog,
+  date: string,
+  id: string,
+): NutritionLog {
   const day = log[date];
   if (!day) return log;
   const meals = (Array.isArray(day.meals) ? day.meals : []).filter(
     (m) => m.id !== id,
   );
   if (meals.length === 0) {
-    const next = { ...log };
+    const next: NutritionLog = { ...log };
     delete next[date];
     return next;
   }
   return { ...log, [date]: { ...day, meals } };
 }
 
-export function updateLogEntry(log, date, meal) {
+export function updateLogEntry(
+  log: NutritionLog,
+  date: string,
+  meal: unknown,
+): NutritionLog {
   const normalized = normalizeMeal(meal, 0);
   const day = log[date];
   if (!day) return log;
@@ -349,11 +459,11 @@ export function updateLogEntry(log, date, meal) {
   return { ...log, [date]: { ...day, meals: nextMeals } };
 }
 
-export function getDayMacros(log, date) {
-  const day = log[date];
+export function getDayMacros(log: NutritionLogLike, date: string): Macros {
+  const day = log?.[date];
   if (!day || !Array.isArray(day.meals))
     return { kcal: 0, protein_g: 0, fat_g: 0, carbs_g: 0 };
-  return day.meals.reduce(
+  return (day.meals as Meal[]).reduce<Macros>(
     (acc, m) => {
       const mac = macrosToTotals(m?.macros);
       return {
@@ -367,9 +477,9 @@ export function getDayMacros(log, date) {
   );
 }
 
-export function getDaySummary(log, date) {
+export function getDaySummary(log: NutritionLogLike, date: string): DaySummary {
   const day = log?.[date];
-  const meals = Array.isArray(day?.meals) ? day.meals : [];
+  const meals = (Array.isArray(day?.meals) ? day.meals : []) as Meal[];
   const totals = getDayMacros(log, date);
   const hasAnyMacros = meals.some((m) => macrosHasAnyValue(m?.macros));
   return {
@@ -381,13 +491,16 @@ export function getDaySummary(log, date) {
   };
 }
 
-export function addDaysISODate(iso, deltaDays) {
+export function addDaysISODate(iso: string, deltaDays: number): string {
   const [y, m, d] = iso.split("-").map(Number);
   const dt = new Date(y, m - 1, d + deltaDays);
   return toLocalISODate(dt);
 }
 
-export function duplicatePreviousDayMeals(log, targetDate) {
+export function duplicatePreviousDayMeals(
+  log: NutritionLog,
+  targetDate: string,
+): NutritionLog {
   const prev = addDaysISODate(targetDate, -1);
   const prevDay = log[prev];
   if (!prevDay || !Array.isArray(prevDay.meals) || prevDay.meals.length === 0)
@@ -405,10 +518,13 @@ export function duplicatePreviousDayMeals(log, targetDate) {
   };
 }
 
-export function mergeNutritionLogs(base, incoming) {
+export function mergeNutritionLogs(
+  base: unknown,
+  incoming: unknown,
+): NutritionLog {
   const a = normalizeNutritionLog(base);
   const b = normalizeNutritionLog(incoming);
-  const out = { ...a };
+  const out: NutritionLog = { ...a };
   for (const [d, dayB] of Object.entries(b)) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) continue;
     const mealsB = Array.isArray(dayB?.meals) ? dayB.meals : [];
@@ -423,15 +539,23 @@ export function mergeNutritionLogs(base, incoming) {
   return out;
 }
 
-export function searchMealsByName(log, query) {
+export interface MealSearchResult {
+  date: string;
+  meal: Meal;
+}
+
+export function searchMealsByName(
+  log: NutritionLogLike,
+  query: string,
+): MealSearchResult[] {
   const q = String(query || "")
     .trim()
     .toLowerCase();
   if (!q) return [];
-  const results = [];
-  for (const [date, day] of Object.entries(log)) {
+  const results: MealSearchResult[] = [];
+  for (const [date, day] of Object.entries(log || {})) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) continue;
-    for (const m of day?.meals || []) {
+    for (const m of (day?.meals || []) as Meal[]) {
       const n = String(m?.name || "").toLowerCase();
       if (n.includes(q)) results.push({ date, meal: m });
     }
@@ -439,8 +563,16 @@ export function searchMealsByName(log, query) {
   return results.sort((a, b) => b.date.localeCompare(a.date));
 }
 
-export function getMacrosForDateRange(log, endIso, dayCount) {
-  const rows = [];
+export interface MacrosRow extends Macros {
+  date: string;
+}
+
+export function getMacrosForDateRange(
+  log: NutritionLogLike,
+  endIso: string,
+  dayCount: number,
+): MacrosRow[] {
+  const rows: MacrosRow[] = [];
   for (let i = dayCount - 1; i >= 0; i--) {
     const d = addDaysISODate(endIso, -i);
     rows.push({ date: d, ...getDayMacros(log, d) });
@@ -448,7 +580,7 @@ export function getMacrosForDateRange(log, endIso, dayCount) {
   return rows;
 }
 
-export function estimateLogBytes(log) {
+export function estimateLogBytes(log: NutritionLogLike): number {
   try {
     return new Blob([JSON.stringify(log || {})]).size;
   } catch {
@@ -457,14 +589,17 @@ export function estimateLogBytes(log) {
 }
 
 /** Залишає лише останні `keepCount` календарних днів (за сортуванням дат). */
-export function trimLogOldestDays(log, keepCount) {
+export function trimLogOldestDays(
+  log: unknown,
+  keepCount: number,
+): NutritionLog {
   const normalized = normalizeNutritionLog(log);
   const dates = Object.keys(normalized)
     .filter((k) => /^\d{4}-\d{2}-\d{2}$/.test(k))
     .sort();
   if (dates.length <= keepCount) return normalized;
   const drop = dates.slice(0, dates.length - keepCount);
-  const out = { ...normalized };
+  const out: NutritionLog = { ...normalized };
   for (const d of drop) delete out[d];
   return out;
 }

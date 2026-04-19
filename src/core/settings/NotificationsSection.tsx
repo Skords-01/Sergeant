@@ -9,6 +9,7 @@ import {
   loadNutritionPrefs,
   persistNutritionPrefs,
   NUTRITION_PREFS_KEY,
+  type NutritionPrefs,
 } from "../../modules/nutrition/lib/nutritionStorage.js";
 import { PushNotificationToggle } from "../components/PushNotificationToggle.jsx";
 import {
@@ -18,12 +19,6 @@ import {
 } from "./SettingsPrimitives.jsx";
 
 type PermStatus = NotificationPermission | "unsupported";
-
-interface NutritionPrefs {
-  reminderEnabled?: boolean;
-  reminderHour?: number;
-  [key: string]: unknown;
-}
 
 export function NotificationsSection() {
   const [permStatus, setPermStatus] = useState<PermStatus>(() =>
