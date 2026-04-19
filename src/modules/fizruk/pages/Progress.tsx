@@ -17,6 +17,8 @@ import {
 } from "../lib/fizrukStorage";
 import { epley1rm, weeklyVolumeSeriesNow } from "../lib/workoutStats";
 import { Card } from "@shared/components/ui/Card";
+import { SectionHeading } from "@shared/components/ui/SectionHeading";
+import { Stat } from "@shared/components/ui/Stat";
 
 function weekStartMs(d) {
   const x = new Date(d);
@@ -404,67 +406,67 @@ export function Progress() {
         {/* Weight + fat cards */}
         <div className="grid grid-cols-2 gap-3">
           <Card radius="lg">
-            <div className="text-2xs font-bold text-subtle uppercase tracking-widest">
-              Вага
-            </div>
-            <div className="text-2xl font-extrabold text-text mt-1 tabular-nums">
-              {meas.latest?.weightKg != null
-                ? `${meas.latest.weightKg} кг`
-                : "—"}
-            </div>
-            <div className="text-xs text-subtle mt-1">
-              {meas.delta("weightKg") == null ? (
-                "Немає порівняння"
-              ) : (
-                <span
-                  className={cn(
-                    "font-semibold",
-                    meas.delta("weightKg") > 0
-                      ? "text-warning"
-                      : "text-success",
-                  )}
-                >
-                  {meas.delta("weightKg") > 0 ? "+" : ""}
-                  {meas.delta("weightKg").toFixed(1)} кг
-                </span>
-              )}
-            </div>
+            <Stat
+              label="Вага"
+              value={
+                meas.latest?.weightKg != null
+                  ? `${meas.latest.weightKg} кг`
+                  : "—"
+              }
+              sublabel={
+                meas.delta("weightKg") == null ? (
+                  "Немає порівняння"
+                ) : (
+                  <span
+                    className={cn(
+                      "font-semibold",
+                      meas.delta("weightKg") > 0
+                        ? "text-warning"
+                        : "text-success",
+                    )}
+                  >
+                    {meas.delta("weightKg") > 0 ? "+" : ""}
+                    {meas.delta("weightKg").toFixed(1)} кг
+                  </span>
+                )
+              }
+            />
           </Card>
           <Card radius="lg">
-            <div className="text-2xs font-bold text-subtle uppercase tracking-widest">
-              % жиру
-            </div>
-            <div className="text-2xl font-extrabold text-text mt-1 tabular-nums">
-              {meas.latest?.bodyFatPct != null
-                ? `${meas.latest.bodyFatPct}%`
-                : "—"}
-            </div>
-            <div className="text-xs text-subtle mt-1">
-              {meas.delta("bodyFatPct") == null ? (
-                "—"
-              ) : (
-                <span
-                  className={cn(
-                    "font-semibold",
-                    meas.delta("bodyFatPct") > 0
-                      ? "text-warning"
-                      : "text-success",
-                  )}
-                >
-                  {meas.delta("bodyFatPct") > 0 ? "+" : ""}
-                  {meas.delta("bodyFatPct").toFixed(1)}%
-                </span>
-              )}
-            </div>
+            <Stat
+              label="% жиру"
+              value={
+                meas.latest?.bodyFatPct != null
+                  ? `${meas.latest.bodyFatPct}%`
+                  : "—"
+              }
+              sublabel={
+                meas.delta("bodyFatPct") == null ? (
+                  "—"
+                ) : (
+                  <span
+                    className={cn(
+                      "font-semibold",
+                      meas.delta("bodyFatPct") > 0
+                        ? "text-warning"
+                        : "text-success",
+                    )}
+                  >
+                    {meas.delta("bodyFatPct") > 0 ? "+" : ""}
+                    {meas.delta("bodyFatPct").toFixed(1)}%
+                  </span>
+                )
+              }
+            />
           </Card>
         </div>
 
         {/* Weight trend chart */}
         {weightTrend.filter((d) => d.value != null).length >= 2 && (
           <Card radius="lg">
-            <div className="text-xs font-bold text-subtle uppercase tracking-widest mb-3">
+            <SectionHeading size="sm" className="mb-3">
               Тренд ваги
-            </div>
+            </SectionHeading>
             <MiniLineChart
               data={weightTrend}
               unit="кг"
@@ -477,9 +479,9 @@ export function Progress() {
         {/* Body fat trend chart */}
         {fatTrend.filter((d) => d.value != null).length >= 2 && (
           <Card radius="lg">
-            <div className="text-xs font-bold text-subtle uppercase tracking-widest mb-3">
+            <SectionHeading size="sm" className="mb-3">
               Тренд % жиру
-            </div>
+            </SectionHeading>
             <MiniLineChart
               data={fatTrend}
               unit="%"
@@ -492,18 +494,18 @@ export function Progress() {
         {/* Wellbeing chart */}
         {wellbeingData.length >= 2 && (
           <Card radius="lg">
-            <div className="text-xs font-bold text-subtle uppercase tracking-widest mb-3">
+            <SectionHeading size="sm" className="mb-3">
               Самопочуття
-            </div>
+            </SectionHeading>
             <WellbeingChart data={wellbeingData} />
           </Card>
         )}
 
         {/* Muscle volume bars */}
         <Card radius="lg" padding="lg">
-          <div className="text-xs font-bold text-subtle uppercase tracking-widest mb-3">
+          <SectionHeading size="sm" className="mb-3">
             Обʼєм по мʼязах
-          </div>
+          </SectionHeading>
           {weeklyByMuscle.top.length === 0 ? (
             <EmptyState
               compact

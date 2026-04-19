@@ -20,8 +20,20 @@ export {
   resolveExpenseCategoryMeta,
 };
 
+interface Category {
+  id: string;
+  label: string;
+  mccs?: number[];
+  keywords?: string[];
+  color?: string;
+}
+
+interface CustomCategory extends Category {
+  color?: string;
+}
+
 // Стабільні кольори для базових категорій витрат.
-const CAT_COLORS = {
+const CAT_COLORS: Record<string, string> = {
   food: "#10b981",
   restaurant: "#f59e0b",
   transport: "#3b82f6",
@@ -56,7 +68,11 @@ const FALLBACK_COLORS = [
 ];
 
 // Повертає HEX-колір для категорії: базовий → користувацький → з палітри.
-export function getCatColor(categoryId, customCategories = [], idx = 0) {
+export function getCatColor(
+  categoryId: string,
+  customCategories: CustomCategory[] = [],
+  idx = 0,
+): string {
   if (CAT_COLORS[categoryId]) return CAT_COLORS[categoryId];
   const custom = Array.isArray(customCategories)
     ? customCategories.find((c) => c.id === categoryId)
@@ -69,20 +85,28 @@ export function getCatColor(categoryId, customCategories = [], idx = 0) {
 // виключає псевдо-категорію доходу `income`, бо вона не потрібна у фільтрах
 // бюджетів та графіках витрат.
 export function buildExpenseCategoryList(
-  customCategories = [],
+  customCategories: CustomCategory[] = [],
   { excludeIncome = true } = {},
-) {
-  const all = mergeExpenseCategoryDefinitions(customCategories);
+): Category[] {
+  const all = mergeExpenseCategoryDefinitions(customCategories) as Category[];
   return excludeIncome ? all.filter((c) => c.id !== "income") : all;
+}
+
+interface CategorySpend extends Category {
+  spent: number;
 }
 
 // Сумарні витрати по кожній категорії для заданого списку транзакцій.
 // Повертає відсортований масив лише з категоріями, де spent > 0 —
 // готовий для рендеру карток/графіків.
 export function getCategorySpendList(
-  transactions,
-  { txCategories = {}, txSplits = {}, customCategories = [] } = {},
-) {
+  transactions: unknown[],
+  {
+    txCategories = {} as Record<string, string>,
+    txSplits = {} as Record<string, unknown[]>,
+    customCategories = [] as CustomCategory[],
+  } = {},
+): CategorySpend[] {
   return buildExpenseCategoryList(customCategories)
     .map((cat) => ({
       ...cat,

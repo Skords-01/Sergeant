@@ -10,14 +10,27 @@ const DIGEST_PREFIX = STORAGE_KEYS.WEEKLY_DIGEST_PREFIX;
 
 const ALL_CATS = [...MCC_CATEGORIES, ...INCOME_CATEGORIES];
 
-function resolveCatLabel(catIdOrMcc, customCategories = []) {
+interface Category {
+  id?: string;
+  label?: string;
+  name?: string;
+  mccs?: number[];
+}
+
+function resolveCatLabel(
+  catIdOrMcc: string | number,
+  customCategories: Category[] = [],
+): string {
   if (!catIdOrMcc || catIdOrMcc === "other") return "Інше";
-  // Спочатку шукаємо по id (рядок)
   const byId = [...ALL_CATS, ...customCategories].find(
     (c) => c.id === catIdOrMcc,
   );
-  if (byId) return byId.label ?? byId.name ?? catIdOrMcc;
-  // Потім по MCC-коду (число або рядок)
+  if (byId)
+    return (
+      (byId as { label?: string; name?: string }).label ??
+      (byId as { name?: string }).name ??
+      String(catIdOrMcc)
+    );
   const mcc = Number(catIdOrMcc);
   if (!Number.isNaN(mcc) && mcc > 0) {
     const byMcc = MCC_CATEGORIES.find(
@@ -26,36 +39,47 @@ function resolveCatLabel(catIdOrMcc, customCategories = []) {
     if (byMcc) return byMcc.label;
     return `MCC ${mcc}`;
   }
-  // Якщо нічого не знайдено — повертаємо оригінальний рядок (щоб AI розумів хоч щось)
   return String(catIdOrMcc);
 }
 
-function localDateKey(d = new Date()) {
+function localDateKey(d = new Date()): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-export function getWeekKey(d = new Date()) {
+export function getWeekKey(d = new Date()): string {
   const monday = new Date(d);
   monday.setDate(d.getDate() - ((d.getDay() + 6) % 7));
   return localDateKey(monday);
 }
 
-function getWeekRange(d = new Date()) {
+function getWeekRange(d = new Date()): string {
   const monday = new Date(d);
   monday.setDate(d.getDate() - ((d.getDay() + 6) % 7));
   const sunday = new Date(monday);
   sunday.setDate(monday.getDate() + 6);
-  const fmt = (dt) =>
+  const fmt = (dt: Date) =>
     dt.toLocaleDateString("uk-UA", { day: "numeric", month: "short" });
   return `${fmt(monday)} — ${fmt(sunday)}`;
 }
 
-export function loadDigest(weekKey) {
-  return safeReadLS(`${DIGEST_PREFIX}${weekKey}`, null);
+export interface WeeklyDigest {
+  generatedAt: string;
+  weekKey: string;
+  weekRange: string;
+  [key: string]: unknown;
 }
 
-function listDigestHistory() {
-  const results = [];
+export function loadDigest(weekKey: string): WeeklyDigest | null {
+  return safeReadLS<WeeklyDigest | null>(`${DIGEST_PREFIX}${weekKey}`, null);
+}
+
+interface DigestHistoryEntry {
+  weekKey: string;
+  weekRange: string;
+}
+
+function listDigestHistory(): DigestHistoryEntry[] {
+  const results: DigestHistoryEntry[] = [];
   try {
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
@@ -69,22 +93,34 @@ function listDigestHistory() {
         }
       }
     }
-  } catch {}
+  } catch {
+    /* non-fatal */
+  }
   return results.sort((a, b) => b.weekKey.localeCompare(a.weekKey));
 }
 
-function saveDigest(weekKey, data) {
+function saveDigest(weekKey: string, data: unknown): void {
   try {
     localStorage.setItem(`${DIGEST_PREFIX}${weekKey}`, JSON.stringify(data));
-  } catch {}
+  } catch {
+    /* non-fatal */
+  }
 }
 
-export function aggregateFinyk(weekKey) {
-  const txRaw = safeReadLS("finyk_tx_cache", null);
-  const txList = txRaw?.txs ?? txRaw ?? [];
-  const txCategories = safeReadLS("finyk_tx_cats", {});
-  const hiddenIds = new Set(safeReadLS("finyk_hidden_txs", []));
-  const customCategories = safeReadLS("finyk_custom_cats_v1", []);
+interface FinykAggregate {
+  totalSpent: number;
+  totalIncome: number;
+  txCount: number;
+  topCategories: { name: string; amount: number }[];
+  monthlyBudget: number | null;
+}
+
+export function aggregateFinyk(weekKey: string): FinykAggregate {
+  const txRaw = safeReadLS<{ txs?: unknown[] } | null>("finyk_tx_cache", null);
+  const txList: unknown[] = txRaw?.txs ?? (Array.isArray(txRaw) ? txRaw : []);
+  const txCategories = safeReadLS<Record<string, string>>("finyk_tx_cats", {});
+  const hiddenIds = new Set(safeReadLS<string[]>("finyk_hidden_txs", []));
+  const customCategories = safeReadLS<Category[]>("finyk_custom_cats_v1", []);
   const transferIds = new Set(
     Object.entries(txCategories)
       .filter(([, v]) => v === "internal_transfer")
@@ -98,10 +134,15 @@ export function aggregateFinyk(weekKey) {
   let totalSpent = 0;
   let totalIncome = 0;
   let txCount = 0;
-  const catAmounts = {};
+  const catAmounts: Record<string, number> = {};
 
   if (Array.isArray(txList)) {
-    for (const tx of txList) {
+    for (const tx of txList as Array<{
+      id: string;
+      time: number;
+      amount: number;
+      mcc?: number;
+    }>) {
       const ts = tx.time > 1e10 ? tx.time : tx.time * 1000;
       const d = new Date(ts);
       if (d < monday || d >= sunday) continue;
@@ -125,7 +166,9 @@ export function aggregateFinyk(weekKey) {
     .slice(0, 5)
     .map(([name, amount]) => ({ name, amount: Math.round(amount) }));
 
-  const finykStorage = safeReadLS("finyk_storage_v2", {});
+  const finykStorage = safeReadLS<{
+    monthlyPlan?: { expense?: number };
+  } | null>("finyk_storage_v2", null);
   const monthlyBudget = finykStorage?.monthlyPlan?.expense ?? null;
 
   return {
@@ -137,13 +180,26 @@ export function aggregateFinyk(weekKey) {
   };
 }
 
-export function aggregateFizruk(weekKey) {
-  // Storage shape is historically either an array or { workouts: [...] }, so
-  // we read the raw value through `safeReadLS` (handles SecurityError / quota
-  // exceptions) and then normalize.
-  const parsed = safeReadLS("fizruk_workouts_v1", null);
+interface FizrukAggregate {
+  workoutsCount: number;
+  totalVolume: number;
+  recoveryLabel: string;
+  topExercises: { name: string; totalVolume: number }[];
+}
+
+export function aggregateFizruk(weekKey: string): FizrukAggregate | null {
+  const parsed = safeReadLS<unknown>("fizruk_workouts_v1", null);
   if (!parsed) return null;
-  const workouts = Array.isArray(parsed) ? parsed : (parsed?.workouts ?? []);
+  const workouts: Array<{
+    endedAt?: string;
+    startedAt: string;
+    exercises?: Array<{
+      name?: string;
+      sets?: Array<{ weight?: number; reps?: number }>;
+    }>;
+  }> = Array.isArray(parsed)
+    ? parsed
+    : ((parsed as { workouts?: unknown[] })?.workouts ?? []);
   if (!Array.isArray(workouts) || workouts.length === 0) return null;
 
   const monday = new Date(`${weekKey}T00:00:00`);
@@ -157,7 +213,7 @@ export function aggregateFizruk(weekKey) {
   });
 
   let totalVolume = 0;
-  const exerciseVolumes = {};
+  const exerciseVolumes: Record<string, number> = {};
 
   for (const w of weekWorkouts) {
     if (Array.isArray(w.exercises)) {
@@ -179,14 +235,11 @@ export function aggregateFizruk(weekKey) {
   const topExercises = Object.entries(exerciseVolumes)
     .sort(([, a], [, b]) => b - a)
     .slice(0, 3)
-    .map(([name, totalVolume]) => ({
-      name,
-      totalVolume: Math.round(totalVolume),
-    }));
+    .map(([name, vol]) => ({ name, totalVolume: Math.round(vol) }));
 
   const allCompleted = workouts.filter((w) => w.endedAt);
   const sorted = [...allCompleted].sort(
-    (a, b) => new Date(b.startedAt) - new Date(a.startedAt),
+    (a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime(),
   );
   const last = sorted[0];
   let recoveryLabel = "Немає даних";
@@ -206,17 +259,43 @@ export function aggregateFizruk(weekKey) {
   };
 }
 
-export function aggregateNutrition(weekKey) {
-  const log = safeReadLS("nutrition_log_v1", {});
-  const prefs = safeReadLS("nutrition_prefs_v1", null);
+interface NutritionAggregate {
+  avgKcal: number;
+  avgProtein: number;
+  avgFat: number;
+  avgCarbs: number;
+  targetKcal: number;
+  daysLogged: number;
+}
+
+export function aggregateNutrition(weekKey: string): NutritionAggregate | null {
+  const log = safeReadLS<
+    Record<
+      string,
+      {
+        meals?: Array<{
+          macros?: {
+            kcal?: number;
+            protein_g?: number;
+            fat_g?: number;
+            carbs_g?: number;
+          };
+        }>;
+      }
+    >
+  >("nutrition_log_v1", {});
+  const prefs = safeReadLS<{ dailyTargetKcal?: number } | null>(
+    "nutrition_prefs_v1",
+    null,
+  );
   const targetKcal = prefs?.dailyTargetKcal ?? 2000;
 
   const monday = new Date(`${weekKey}T00:00:00`);
-  let totalKcal = 0;
-  let totalProtein = 0;
-  let totalFat = 0;
-  let totalCarbs = 0;
-  let daysLogged = 0;
+  let totalKcal = 0,
+    totalProtein = 0,
+    totalFat = 0,
+    totalCarbs = 0,
+    daysLogged = 0;
 
   for (let i = 0; i < 7; i++) {
     const d = new Date(monday);
@@ -247,8 +326,29 @@ export function aggregateNutrition(weekKey) {
   };
 }
 
-export function aggregateRoutine(weekKey) {
-  const state = safeReadLS("hub_routine_v1", null);
+interface HabitStat {
+  name: string;
+  done: number;
+  total: number;
+  completionRate: number;
+}
+
+interface RoutineAggregate {
+  habitCount: number;
+  overallRate: number;
+  habits: HabitStat[];
+}
+
+export function aggregateRoutine(weekKey: string): RoutineAggregate | null {
+  const state = safeReadLS<{
+    habits?: Array<{
+      id: string;
+      name?: string;
+      title?: string;
+      archived?: boolean;
+    }>;
+    completions?: Record<string, string[]>;
+  } | null>("hub_routine_v1", null);
   if (!state) return null;
 
   const habits = Array.isArray(state.habits)
@@ -259,7 +359,7 @@ export function aggregateRoutine(weekKey) {
   const completions = state.completions ?? {};
   const monday = new Date(`${weekKey}T00:00:00`);
 
-  const habitStats = habits.map((h) => {
+  const habitStats: HabitStat[] = habits.map((h) => {
     let done = 0;
     for (let i = 0; i < 7; i++) {
       const d = new Date(monday);
@@ -282,33 +382,36 @@ export function aggregateRoutine(weekKey) {
   const overallRate =
     totalPossible > 0 ? Math.round((totalDone / totalPossible) * 100) : 0;
 
-  return {
-    habitCount: habits.length,
-    overallRate,
-    habits: habitStats,
-  };
+  return { habitCount: habits.length, overallRate, habits: habitStats };
 }
 
-async function generateWeeklyDigest(weekKey) {
+async function generateWeeklyDigest(weekKey: string): Promise<{
+  report: unknown;
+  generatedAt: string;
+  weekKey: string;
+  weekRange: string;
+}> {
   const currentWeekRange = getWeekRange(new Date(weekKey + "T12:00:00"));
   const finyk = aggregateFinyk(weekKey);
   const fizruk = aggregateFizruk(weekKey);
   const nutrition = aggregateNutrition(weekKey);
   const routine = aggregateRoutine(weekKey);
 
-  let json;
+  let json: { report: unknown; generatedAt: string };
   try {
-    json = await weeklyDigestApi.generate({
+    json = (await weeklyDigestApi.generate({
       weekRange: currentWeekRange,
       finyk,
       fizruk,
       nutrition,
       routine,
-    });
+    })) as { report: unknown; generatedAt: string };
   } catch (e) {
     if (isApiError(e) && e.kind === "http") {
-      const err = new Error(e.serverMessage || "Помилка генерації звіту");
-      err.status = e.status;
+      const err = Object.assign(
+        new Error(e.serverMessage || "Помилка генерації звіту"),
+        { status: e.status },
+      );
       throw err;
     }
     throw e;
@@ -322,32 +425,19 @@ async function generateWeeklyDigest(weekKey) {
   };
 }
 
-// ─── React Query integration ─────────────────────────────────────────────
-//
-// localStorage is the source of truth for persisted digests; React Query
-// caches it in memory so multiple mounted consumers (dashboard card,
-// settings panel, Monday auto-digest) share a single observable copy. The
-// mutation writes through to both localStorage and the query cache, which
-// replaces the previous `hub-weekly-digest-updated` CustomEvent fan-out.
-
-// Re-exported from the centralized queryKeys module — consumers may import
-// these names directly for historical reasons, but new code should import
-// `digestKeys` and `coachKeys` from "@shared/lib/queryKeys.js".
-const weeklyDigestQueryKey = (weekKey) => digestKeys.byWeek(weekKey);
+const weeklyDigestQueryKey = (weekKey: string) => digestKeys.byWeek(weekKey);
 const weeklyDigestHistoryQueryKey = digestKeys.history;
 
 export function useDigestHistory() {
   return useQuery({
     queryKey: weeklyDigestHistoryQueryKey,
     queryFn: listDigestHistory,
-    // Pure localStorage read — only mutates when the generation mutation
-    // invalidates this key explicitly.
     staleTime: Infinity,
     gcTime: Infinity,
   });
 }
 
-export function useWeeklyDigest(selectedWeekKey) {
+export function useWeeklyDigest(selectedWeekKey?: string) {
   const queryClient = useQueryClient();
   const currentWeekKey = getWeekKey();
   const weekKey = selectedWeekKey || currentWeekKey;
@@ -356,17 +446,9 @@ export function useWeeklyDigest(selectedWeekKey) {
 
   const query = useQuery({
     queryKey: weeklyDigestQueryKey(weekKey),
-    // Synchronous localStorage read. Any update flows through
-    // `setQueryData` from the mutation below, so this effectively runs
-    // once per weekKey per session.
     queryFn: () => loadDigest(weekKey) ?? null,
     staleTime: Infinity,
     gcTime: Infinity,
-    // React Query wraps even a synchronous `queryFn` in a Promise, so
-    // without `initialData` `query.data` is `undefined` for one render
-    // and `WeeklyDigestCard` would briefly render its empty state. Seed
-    // synchronously from localStorage so the first paint matches the
-    // pre-migration behavior (old code used `useState(() => loadDigest(...))`).
     initialData: () => loadDigest(weekKey) ?? undefined,
     initialDataUpdatedAt: () => {
       const existing = loadDigest(weekKey);
@@ -378,24 +460,16 @@ export function useWeeklyDigest(selectedWeekKey) {
     mutationFn: generateWeeklyDigest,
     onSuccess: ({ report, generatedAt, weekKey: wk, weekRange: wr }) => {
       const newDigest = {
-        ...report,
+        ...(report as object),
         generatedAt,
         weekKey: wk,
         weekRange: wr,
       };
       saveDigest(wk, newDigest);
-      // Fan out to every observer of this week's digest — dashboard,
-      // settings, stories. Replaces the CustomEvent broadcast.
       queryClient.setQueryData(weeklyDigestQueryKey(wk), newDigest);
-      // Picker + history list must pick up the new entry.
       queryClient.invalidateQueries({ queryKey: weeklyDigestHistoryQueryKey });
-      // The generated digest is also pushed into the coach memory (below),
-      // so today's coach insight is now based on stale context. Drop it so
-      // the next mount / refresh regenerates with the richer context.
       queryClient.invalidateQueries({ queryKey: coachKeys.all });
 
-      // Fire-and-forget push of digest into coach memory so /api/coach/insight
-      // has richer context on the next call. Failures are non-fatal.
       try {
         coachApi
           .postMemory({
@@ -403,27 +477,24 @@ export function useWeeklyDigest(selectedWeekKey) {
               weekKey: wk,
               weekRange: wr,
               generatedAt,
-              ...(report || {}),
+              ...(report as object),
             },
           })
           .catch(() => {});
-      } catch {}
+      } catch {
+        /* non-fatal */
+      }
     },
   });
 
   const { mutateAsync } = mutation;
 
-  // `mutateAsync` is a stable reference from react-query, so `generate`
-  // stays referentially stable across renders as long as
-  // `weekKey`/`isCurrentWeek` don't change. Consumers (e.g.
-  // `useMondayAutoDigest`) rely on this to avoid re-running effects that
-  // trigger additional AI calls.
   const generate = useCallback(async () => {
     if (!isCurrentWeek) return null;
     try {
       const result = await mutateAsync(weekKey);
       return {
-        ...result.report,
+        ...(result.report as object),
         generatedAt: result.generatedAt,
         weekKey: result.weekKey,
         weekRange: result.weekRange,
@@ -436,7 +507,9 @@ export function useWeeklyDigest(selectedWeekKey) {
   return {
     digest: query.data ?? null,
     loading: mutation.isPending,
-    error: mutation.error ? mutation.error.message || "Помилка мережі" : null,
+    error: mutation.error
+      ? (mutation.error as Error).message || "Помилка мережі"
+      : null,
     weekKey,
     weekRange,
     generate,

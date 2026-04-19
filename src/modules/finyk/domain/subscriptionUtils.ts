@@ -1,7 +1,30 @@
 import { CURRENCY } from "../constants.js";
 
-/** Остання релевантна транзакція: спочатку прив’язана вручну, інакше за ключовим словом (найновіша). */
-export function getLastTxForSubscription(sub, transactions) {
+interface Subscription {
+  linkedTxId?: string;
+  keyword?: string;
+  currency?: string;
+}
+
+interface Transaction {
+  id: string;
+  amount: number;
+  time?: number;
+  description?: string;
+  currencyCode?: number;
+}
+
+interface AmountMeta {
+  amount: number | null;
+  currency: string;
+  lastTx: Transaction | null;
+}
+
+/** Остання релевантна транзакція: спочатку прив'язана вручну, інакше за ключовим словом (найновіша). */
+export function getLastTxForSubscription(
+  sub: Subscription,
+  transactions: Transaction[],
+): Transaction | null {
   if (!transactions || !transactions.length) return null;
   const list = [...transactions].sort((a, b) => (b.time || 0) - (a.time || 0));
   if (sub.linkedTxId) {
@@ -17,7 +40,10 @@ export function getLastTxForSubscription(sub, transactions) {
   );
 }
 
-export function getSubscriptionAmountMeta(sub, transactions) {
+export function getSubscriptionAmountMeta(
+  sub: Subscription,
+  transactions: Transaction[],
+): AmountMeta {
   const lastTx = getLastTxForSubscription(sub, transactions);
   if (!lastTx) {
     return {

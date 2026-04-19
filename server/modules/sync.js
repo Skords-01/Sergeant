@@ -1,4 +1,5 @@
 import pool from "../db.js";
+import { logger } from "../obs/logger.js";
 import {
   syncConflictsTotal,
   syncDurationMs,
@@ -14,13 +15,47 @@ function recordConflict(module) {
   }
 }
 
-function recordSync(op, module, outcome, { ms, bytes } = {}) {
+/**
+ * Спільно: метрика + structured `sync_event` лог. Карта outcome→level:
+ *   ok | empty                         → info
+ *   conflict | invalid | too_large | unauthorized → warn
+ *   error                              → error
+ *
+ * `extra` — довільні JSON-поля для тріажу (версії, timestamp-и). requestId,
+ * userId, module підтягуються з ALS у Pino `mixin()` автоматично — не дублюй.
+ *
+ * Query pattern (Loki/Railway):
+ *   {service="sergeant-api"} | json | msg="sync_event" | outcome="conflict" | module="routine"
+ */
+function recordSync(op, module, outcome, { ms, bytes, extra } = {}) {
   try {
     syncOperationsTotal.inc({ op, module, outcome });
     if (ms != null) syncDurationMs.observe({ op, module }, ms);
     if (bytes != null) syncPayloadBytes.observe({ op, module }, bytes);
   } catch {
     /* metrics must never break a request */
+  }
+  const level =
+    outcome === "error"
+      ? "error"
+      : outcome === "conflict" ||
+          outcome === "invalid" ||
+          outcome === "too_large" ||
+          outcome === "unauthorized"
+        ? "warn"
+        : "info";
+  try {
+    logger[level]({
+      msg: "sync_event",
+      op,
+      module,
+      outcome,
+      ms: ms != null ? Math.round(ms) : undefined,
+      bytes,
+      ...(extra || {}),
+    });
+  } catch {
+    /* logging must never break a request */
   }
 }
 
@@ -73,15 +108,20 @@ export async function syncPush(req, res) {
     );
 
     if (result.rows.length === 0) {
-      recordConflict(module);
-      recordSync("push", module, "conflict", {
-        ms: elapsedMs(start),
-        bytes: blob.length,
-      });
       const existing = await pool.query(
         `SELECT server_updated_at, version FROM module_data WHERE user_id = $1 AND module = $2`,
         [user.id, module],
       );
+      recordConflict(module);
+      recordSync("push", module, "conflict", {
+        ms: elapsedMs(start),
+        bytes: blob.length,
+        extra: {
+          clientUpdatedAt: clientTs.toISOString(),
+          serverUpdatedAt: existing.rows[0]?.server_updated_at,
+          serverVersion: existing.rows[0]?.version ?? 0,
+        },
+      });
       return res.json({
         ok: true,
         module,

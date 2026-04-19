@@ -4,6 +4,7 @@ import { SubCard } from "../components/SubCard";
 import { RecurringSuggestions } from "../components/RecurringSuggestions";
 import { TxRow } from "../components/TxRow";
 import { Button } from "@shared/components/ui/Button";
+import { Input } from "@shared/components/ui/Input";
 import {
   getAccountLabel,
   getMonoDebt,
@@ -39,9 +40,6 @@ function SectionBar({ title, summary, open, onToggle }) {
     </button>
   );
 }
-
-const formInp =
-  "w-full h-11 rounded-2xl border border-line bg-panelHi px-4 text-text outline-none focus:border-muted transition-colors";
 
 export function Assets({
   mono,
@@ -471,24 +469,21 @@ export function Assets({
             ))}
             {showSubForm ? (
               <div className="bg-panel border border-line rounded-xl p-4 space-y-3 mt-2">
-                <input
-                  className={formInp}
+                <Input
                   placeholder="Назва"
                   value={newSub.name}
                   onChange={(e) =>
                     setNewSub((a) => ({ ...a, name: e.target.value }))
                   }
                 />
-                <input
-                  className={formInp}
+                <Input
                   placeholder="Ключове слово з транзакції"
                   value={newSub.keyword}
                   onChange={(e) =>
                     setNewSub((a) => ({ ...a, keyword: e.target.value }))
                   }
                 />
-                <input
-                  className={formInp}
+                <Input
                   placeholder="День списання (1-31)"
                   type="number"
                   min="1"
@@ -608,16 +603,14 @@ export function Assets({
             ))}
             {showRecvForm ? (
               <div className="bg-panel border border-line rounded-xl p-4 space-y-3">
-                <input
-                  className={formInp}
+                <Input
                   placeholder="Ім'я або назва"
                   value={newRecv.name}
                   onChange={(e) =>
                     setNewRecv((a) => ({ ...a, name: e.target.value }))
                   }
                 />
-                <input
-                  className={formInp}
+                <Input
                   placeholder="Сума ₴"
                   type="number"
                   value={newRecv.amount}
@@ -625,16 +618,14 @@ export function Assets({
                     setNewRecv((a) => ({ ...a, amount: e.target.value }))
                   }
                 />
-                <input
-                  className={formInp}
+                <Input
                   placeholder="Нотатка (необов'язково)"
                   value={newRecv.note}
                   onChange={(e) =>
                     setNewRecv((a) => ({ ...a, note: e.target.value }))
                   }
                 />
-                <input
-                  className={formInp}
+                <Input
                   type="date"
                   value={newRecv.dueDate}
                   onChange={(e) =>
@@ -725,16 +716,14 @@ export function Assets({
             ))}
             {showAssetForm ? (
               <div className="bg-panel border border-line rounded-xl p-4 space-y-3">
-                <input
-                  className={formInp}
+                <Input
                   placeholder="Назва"
                   value={newAsset.name}
                   onChange={(e) =>
                     setNewAsset((a) => ({ ...a, name: e.target.value }))
                   }
                 />
-                <input
-                  className={formInp}
+                <Input
                   placeholder="Сума"
                   type="number"
                   value={newAsset.amount}
@@ -743,7 +732,7 @@ export function Assets({
                   }
                 />
                 <select
-                  className={formInp}
+                  className="w-full h-11 rounded-2xl border border-line bg-panelHi px-4 text-text outline-none focus:border-muted transition-colors"
                   value={newAsset.currency}
                   onChange={(e) =>
                     setNewAsset((a) => ({ ...a, currency: e.target.value }))
@@ -844,8 +833,8 @@ export function Assets({
             {showDebtForm ? (
               <div className="bg-panel border border-line rounded-xl p-4 space-y-3">
                 <div className="flex gap-2">
-                  <input
-                    className={cn(formInp, "flex-1")}
+                  <Input
+                    className="flex-1"
                     placeholder="Назва пасиву (кредит, борг...)"
                     value={newDebt.name}
                     onChange={(e) =>
@@ -869,8 +858,7 @@ export function Assets({
                     }}
                   />
                 </div>
-                <input
-                  className={formInp}
+                <Input
                   placeholder="Загальна сума ₴"
                   type="number"
                   value={newDebt.totalAmount}
@@ -878,8 +866,7 @@ export function Assets({
                     setNewDebt((a) => ({ ...a, totalAmount: e.target.value }))
                   }
                 />
-                <input
-                  className={formInp}
+                <Input
                   type="date"
                   value={newDebt.dueDate}
                   onChange={(e) =>

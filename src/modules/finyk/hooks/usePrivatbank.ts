@@ -136,7 +136,17 @@ function normalizeAccount(raw) {
   };
 }
 
-async function apiFetch(merchantId, merchantToken, path, queryParams = {}) {
+type PrivatApiResponse = {
+  StatementsResponse?: { data?: unknown[] };
+  data?: unknown[];
+} & Record<string, unknown>;
+
+async function apiFetch(
+  merchantId: string,
+  merchantToken: string,
+  path: string,
+  queryParams: Record<string, string> = {},
+): Promise<PrivatApiResponse> {
   try {
     return await privatApi.request(
       { merchantId, merchantToken },
@@ -208,7 +218,7 @@ export function usePrivatbank(enabled = true) {
           const rows =
             data?.StatementsResponse?.data ||
             data?.data ||
-            (Array.isArray(data) ? data : []);
+            (Array.isArray(data) ? (data as unknown[]) : []);
 
           const normalized = rows.map((r) =>
             normalizePrivatTransaction(r, acc.id),
@@ -303,7 +313,7 @@ export function usePrivatbank(enabled = true) {
         const rawAccs =
           data?.StatementsResponse?.data ||
           data?.data ||
-          (Array.isArray(data) ? data : []);
+          (Array.isArray(data) ? (data as unknown[]) : []);
 
         accs = rawAccs.map(normalizeAccount);
         saveBalanceCache(accs);

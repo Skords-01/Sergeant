@@ -5,25 +5,69 @@ import { coachKeys } from "@shared/lib/queryKeys.js";
 
 const CACHE_KEY = "hub_coach_insight_cache_v1";
 
-function localDateKey(d = new Date()) {
+function localDateKey(d = new Date()): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-function safeParseLS(key, fallback) {
+function safeParseLS<T>(key: string, fallback: T): T {
   try {
     const raw = localStorage.getItem(key);
     if (!raw) return fallback;
-    return JSON.parse(raw) ?? fallback;
+    return (JSON.parse(raw) as T) ?? fallback;
   } catch {
     return fallback;
   }
 }
 
-function aggregateCurrentSnapshot() {
-  const txRaw = safeParseLS("finyk_tx_cache", null);
-  const txList = txRaw?.txs ?? txRaw ?? [];
-  const txCategories = safeParseLS("finyk_tx_cats", {});
-  const hiddenIds = new Set(safeParseLS("finyk_hidden_txs", []));
+interface CategoryAmount {
+  name: string;
+  amount: number;
+}
+
+interface FinykSnapshot {
+  totalSpent: number;
+  totalIncome: number;
+  txCount: number;
+  topCategories: CategoryAmount[];
+}
+
+interface FizrukSnapshot {
+  workoutsCount: number;
+  totalVolume: number;
+  recoveryLabel: string;
+}
+
+interface NutritionSnapshot {
+  avgKcal: number;
+  avgProtein: number;
+  targetKcal: number;
+  daysLogged: number;
+}
+
+interface RoutineSnapshot {
+  habitCount: number;
+  overallRate: number;
+}
+
+interface CoachSnapshot {
+  finyk: FinykSnapshot;
+  fizruk: FizrukSnapshot | null;
+  nutrition: NutritionSnapshot | null;
+  routine: RoutineSnapshot | null;
+}
+
+function aggregateCurrentSnapshot(): CoachSnapshot {
+  const txRaw = safeParseLS<{ txs?: unknown[]; length?: number } | null>(
+    "finyk_tx_cache",
+    null,
+  );
+  const txList: unknown[] = (txRaw as { txs?: unknown[] })?.txs
+    ? ((txRaw as { txs: unknown[] }).txs ?? [])
+    : Array.isArray(txRaw)
+      ? (txRaw as unknown[])
+      : [];
+  const txCategories = safeParseLS<Record<string, string>>("finyk_tx_cats", {});
+  const hiddenIds = new Set(safeParseLS<string[]>("finyk_hidden_txs", []));
   const transferIds = new Set(
     Object.entries(txCategories)
       .filter(([, v]) => v === "internal_transfer")
@@ -39,10 +83,15 @@ function aggregateCurrentSnapshot() {
   let totalSpent = 0;
   let totalIncome = 0;
   let txCount = 0;
-  const catAmounts = {};
+  const catAmounts: Record<string, number> = {};
 
   if (Array.isArray(txList)) {
-    for (const tx of txList) {
+    for (const tx of txList as Array<{
+      id: string;
+      time: number;
+      amount: number;
+      mcc?: number;
+    }>) {
       const ts = tx.time > 1e10 ? tx.time : tx.time * 1000;
       const d = new Date(ts);
       if (d < weekStart) continue;
@@ -52,9 +101,8 @@ function aggregateCurrentSnapshot() {
       txCount++;
       if (amount < 0) {
         totalSpent += Math.abs(amount);
-        const cat = txCategories[tx.id] || tx.mcc || "other";
-        catAmounts[String(cat)] =
-          (catAmounts[String(cat)] ?? 0) + Math.abs(amount);
+        const cat = txCategories[tx.id] || String(tx.mcc ?? "other");
+        catAmounts[cat] = (catAmounts[cat] ?? 0) + Math.abs(amount);
       } else {
         totalIncome += amount;
       }
@@ -66,19 +114,25 @@ function aggregateCurrentSnapshot() {
     .slice(0, 5)
     .map(([name, amount]) => ({ name, amount: Math.round(amount) }));
 
-  const finyk = {
+  const finyk: FinykSnapshot = {
     totalSpent: Math.round(totalSpent),
     totalIncome: Math.round(totalIncome),
     txCount,
     topCategories,
   };
 
-  let fizruk = null;
+  let fizruk: FizrukSnapshot | null = null;
   try {
     const raw = localStorage.getItem("fizruk_workouts_v1");
     if (raw) {
-      const p = JSON.parse(raw);
-      const allWorkouts = Array.isArray(p) ? p : (p?.workouts ?? []);
+      const p = JSON.parse(raw) as unknown;
+      const allWorkouts: Array<{
+        endedAt?: string;
+        startedAt: string;
+        exercises?: Array<{ sets?: Array<{ weight?: number; reps?: number }> }>;
+      }> = Array.isArray(p)
+        ? p
+        : ((p as { workouts?: unknown[] })?.workouts ?? []);
       const weekWorkouts = allWorkouts.filter((w) => {
         if (!w.endedAt) return false;
         return new Date(w.startedAt) >= weekStart;
@@ -98,7 +152,8 @@ function aggregateCurrentSnapshot() {
       }
       const completed = allWorkouts.filter((w) => w.endedAt);
       const last = [...completed].sort(
-        (a, b) => new Date(b.startedAt) - new Date(a.startedAt),
+        (a, b) =>
+          new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime(),
       )[0];
       let recoveryLabel = "Немає даних";
       if (last) {
@@ -114,12 +169,22 @@ function aggregateCurrentSnapshot() {
         recoveryLabel,
       };
     }
-  } catch {}
+  } catch {
+    /* non-fatal */
+  }
 
-  let nutrition = null;
+  let nutrition: NutritionSnapshot | null = null;
   try {
-    const log = safeParseLS("nutrition_log_v1", {});
-    const prefs = safeParseLS("nutrition_prefs_v1", null);
+    const log = safeParseLS<
+      Record<
+        string,
+        { meals?: Array<{ macros?: { kcal?: number; protein_g?: number } }> }
+      >
+    >("nutrition_log_v1", {});
+    const prefs = safeParseLS<{ dailyTargetKcal?: number } | null>(
+      "nutrition_prefs_v1",
+      null,
+    );
     let totalKcal = 0,
       totalProtein = 0,
       daysLogged = 0;
@@ -144,11 +209,16 @@ function aggregateCurrentSnapshot() {
         daysLogged,
       };
     }
-  } catch {}
+  } catch {
+    /* non-fatal */
+  }
 
-  let routine = null;
+  let routine: RoutineSnapshot | null = null;
   try {
-    const state = safeParseLS("hub_routine_v1", null);
+    const state = safeParseLS<{
+      habits?: Array<{ id: string; archived?: boolean }>;
+      completions?: Record<string, string[]>;
+    } | null>("hub_routine_v1", null);
     if (state) {
       const habits = (state.habits || []).filter((h) => !h.archived);
       const completions = state.completions ?? {};
@@ -170,53 +240,61 @@ function aggregateCurrentSnapshot() {
         routine = { habitCount: habits.length, overallRate };
       }
     }
-  } catch {}
+  } catch {
+    /* non-fatal */
+  }
 
   return { finyk, fizruk, nutrition, routine };
 }
 
-async function fetchCoachInsight() {
-  let memory = null;
+async function fetchCoachInsight(): Promise<string | null> {
+  let memory: string | null = null;
   try {
     const memJson = await coachApi.getMemory();
-    memory = memJson.memory;
+    memory = (memJson as { memory?: string }).memory ?? null;
   } catch {
-    // Пам’ять не обов’язкова — інсайт будуємо й без неї.
+    // Пам'ять не обов'язкова — інсайт будуємо й без неї.
   }
 
   const snapshot = aggregateCurrentSnapshot();
 
   try {
     const insightJson = await coachApi.postInsight({ snapshot, memory });
-    return insightJson.insight ?? null;
+    return (insightJson as { insight?: string }).insight ?? null;
   } catch (e) {
     if (isApiError(e) && e.kind === "http") {
-      const error = new Error(e.serverMessage || "Помилка генерації інсайту");
-      error.status = e.status;
+      const error = Object.assign(
+        new Error(e.serverMessage || "Помилка генерації інсайту"),
+        { status: e.status },
+      );
       throw error;
     }
     throw e;
   }
 }
 
-// React Query key factory — re-exported from the centralized queryKeys
-// module so other callers (e.g. the weekly digest mutation) can invalidate
-// the insight when the underlying data signature changes.
 const coachInsightQueryKey = (todayKey = localDateKey()) =>
   coachKeys.insight(todayKey);
 
-// Seed the query from localStorage only when the cached date matches the
-// *current* calendar day. At midnight the query key rolls over, producing a
-// fresh cache entry, and stale cross-day localStorage is ignored.
-function loadInitialInsight(todayKey) {
-  const cached = safeParseLS(CACHE_KEY, null);
+function loadInitialInsight(todayKey: string): string | undefined {
+  const cached = safeParseLS<{ date?: string; text?: string } | null>(
+    CACHE_KEY,
+    null,
+  );
   if (cached?.date === todayKey && typeof cached?.text === "string") {
     return cached.text;
   }
   return undefined;
 }
 
-export function useCoachInsight() {
+interface UseCoachInsightResult {
+  insight: string | null;
+  loading: boolean;
+  error: string | null;
+  refresh: () => Promise<unknown>;
+}
+
+export function useCoachInsight(): UseCoachInsightResult {
   const queryClient = useQueryClient();
   const todayKey = localDateKey();
   const queryKey = coachInsightQueryKey(todayKey);
@@ -224,51 +302,40 @@ export function useCoachInsight() {
   const query = useQuery({
     queryKey,
     queryFn: fetchCoachInsight,
-    // The snapshot depends on localStorage that can change during a session
-    // (new transaction, new workout, etc.), but regenerating costs an AI
-    // call — so we keep the day's insight cached until the user explicitly
-    // refreshes or the date-keyed cache rolls at midnight.
     staleTime: Infinity,
     gcTime: 24 * 60 * 60_000,
     initialData: () => loadInitialInsight(todayKey),
-    // Without a fetched-at marker, React Query would still consider the
-    // seeded data stale and refetch on mount. We only want to refetch when
-    // there was no cached insight for today.
     initialDataUpdatedAt: () => {
-      const cached = safeParseLS(CACHE_KEY, null);
+      const cached = safeParseLS<{ date?: string } | null>(CACHE_KEY, null);
       if (cached?.date !== todayKey) return undefined;
       return Date.now();
     },
   });
 
-  // Write-through to localStorage so cross-session hydration keeps working.
-  // We do this in a subscription-free callback rather than an effect to
-  // avoid an extra render and to stay in sync with `data` changes from
-  // both mount-time `initialData` and fresh fetches.
   if (
     typeof query.data === "string" &&
     query.data.length > 0 &&
     !query.isFetching
   ) {
     try {
-      const cached = safeParseLS(CACHE_KEY, null);
+      const cached = safeParseLS<{ date?: string; text?: string } | null>(
+        CACHE_KEY,
+        null,
+      );
       if (cached?.date !== todayKey || cached?.text !== query.data) {
         localStorage.setItem(
           CACHE_KEY,
           JSON.stringify({ date: todayKey, text: query.data }),
         );
       }
-    } catch {}
+    } catch {
+      /* non-fatal */
+    }
   }
 
-  // `query.refetch` is a stable reference in react-query v5; depending on
-  // the whole `query` object would recreate `refresh` on every state
-  // transition (isFetching flip, etc.) and defeat its `useCallback`.
   const { refetch } = query;
 
   const refresh = useCallback(() => {
-    // Drop stale cache entries from prior days so they can't be resurrected
-    // via `initialData` on a remount.
     queryClient.invalidateQueries({ queryKey: coachKeys.all });
     return refetch();
   }, [queryClient, refetch]);
@@ -276,7 +343,9 @@ export function useCoachInsight() {
   return {
     insight: query.data ?? null,
     loading: query.isPending || query.isFetching,
-    error: query.error ? query.error.message || "Помилка завантаження" : null,
+    error: query.error
+      ? (query.error as Error).message || "Помилка завантаження"
+      : null,
     refresh,
   };
 }

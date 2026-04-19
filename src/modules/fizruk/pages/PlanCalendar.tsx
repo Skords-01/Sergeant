@@ -1,9 +1,9 @@
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "@shared/components/ui/Button";
 import { Card } from "@shared/components/ui/Card";
 import { EmptyState } from "@shared/components/ui/EmptyState";
+import { Sheet } from "@shared/components/ui/Sheet";
 import { cn } from "@shared/lib/cn";
-import { useDialogFocusTrap } from "@shared/hooks/useDialogFocusTrap";
 import { useExerciseCatalog } from "../hooks/useExerciseCatalog";
 import { useMonthlyPlan } from "../hooks/useMonthlyPlan";
 import { useRecovery } from "../hooks/useRecovery";
@@ -41,8 +41,6 @@ export function PlanCalendar() {
   const { setDayTemplate, getTemplateForDate, days } = useMonthlyPlan();
 
   const [sheet, setSheet] = useState(null);
-  const sheetRef = useRef(null);
-  useDialogFocusTrap(!!sheet, sheetRef, { onEscape: () => setSheet(null) });
 
   const plannedByDate = useMemo(() => {
     const map = {};
@@ -241,30 +239,33 @@ export function PlanCalendar() {
         </Card>
       </div>
 
-      {sheet && (
-        <div
-          className="fixed inset-0 z-[100] flex items-end justify-center"
-          role="presentation"
-        >
-          <button
-            type="button"
-            className="absolute inset-0 bg-black/50"
-            aria-label="Закрити"
-            onClick={() => setSheet(null)}
-          />
-          <div
-            ref={sheetRef}
-            className="relative w-full max-w-md bg-panel border-t border-line rounded-t-3xl p-5 shadow-soft pb-8"
-            role="dialog"
-            aria-modal="true"
-          >
-            <div className="text-sm font-bold text-text mb-3">
-              {new Date(sheet.key + "T12:00:00").toLocaleDateString("uk-UA", {
+      <Sheet
+        open={!!sheet}
+        onClose={() => setSheet(null)}
+        title={
+          sheet
+            ? new Date(sheet.key + "T12:00:00").toLocaleDateString("uk-UA", {
                 weekday: "long",
                 day: "numeric",
                 month: "long",
-              })}
-            </div>
+              })
+            : ""
+        }
+        panelClassName="max-w-md"
+        zIndex={100}
+        footer={
+          <Button
+            type="button"
+            variant="ghost"
+            className="w-full"
+            onClick={() => setSheet(null)}
+          >
+            Закрити
+          </Button>
+        }
+      >
+        {sheet && (
+          <>
             {sheet.planned?.length > 0 && (
               <div className="mb-4">
                 <p className="text-xs font-bold text-success mb-2">
@@ -340,17 +341,9 @@ export function PlanCalendar() {
                 Спочатку створи шаблон у «Тренування → Шаблони».
               </p>
             )}
-            <Button
-              type="button"
-              variant="ghost"
-              className="w-full mt-4"
-              onClick={() => setSheet(null)}
-            >
-              Закрити
-            </Button>
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      </Sheet>
     </div>
   );
 }

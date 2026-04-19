@@ -51,7 +51,9 @@ function usePersist(key, defaultVal) {
   return [val, setVal];
 }
 
-export function useStorage({ onImportFeedback } = {}) {
+export function useStorage({
+  onImportFeedback,
+}: { onImportFeedback?: (msg: string, type: string) => void } = {}) {
   const defaultMonthlyPlan = { income: "", expense: "", savings: "" };
   const [hiddenAccounts, setHiddenAccounts] = usePersist("finyk_hidden", []);
   const [budgets, setBudgets] = usePersist("finyk_budgets", []);
@@ -226,7 +228,15 @@ export function useStorage({ onImportFeedback } = {}) {
   const addSubscriptionFromRecurring = (candidate) => {
     if (!candidate || !candidate.key) return null;
     const id = `auto_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
-    const sub = {
+    const sub: {
+      id: string;
+      name: string;
+      emoji: string;
+      keyword: string;
+      billingDay: number;
+      currency: string;
+      linkedTxId?: string;
+    } = {
       id,
       name: candidate.displayName || candidate.key,
       emoji: "🔄",
@@ -268,7 +278,14 @@ export function useStorage({ onImportFeedback } = {}) {
     );
   };
 
-  const addCustomCategory = (label, { color, icon, parentId } = {}) => {
+  const addCustomCategory = (
+    label: string,
+    {
+      color,
+      icon,
+      parentId,
+    }: { color?: string; icon?: string; parentId?: string } = {},
+  ) => {
     const trimmed = String(label || "").trim();
     if (!trimmed || trimmed.length > 80) return;
     setCustomCategories((prev) => {
@@ -276,7 +293,13 @@ export function useStorage({ onImportFeedback } = {}) {
       if (prev.some((c) => c.label.toLowerCase() === trimmed.toLowerCase()))
         return prev;
       const id = `cus_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 9)}`;
-      const entry = { id, label: trimmed };
+      const entry: {
+        id: string;
+        label: string;
+        color?: string;
+        icon?: string;
+        parentId?: string;
+      } = { id, label: trimmed };
       if (color) entry.color = color;
       if (icon) entry.icon = icon;
       if (parentId) entry.parentId = parentId;
@@ -382,7 +405,7 @@ export function useStorage({ onImportFeedback } = {}) {
       const reader = new FileReader();
       reader.onload = (e) => {
         try {
-          const parsed = JSON.parse(e.target.result);
+          const parsed = JSON.parse(e.target!.result as string);
           const normalized = normalizeFinykBackup(parsed);
           applyData(normalized);
           onImportFeedback?.("✅ Дані імпортовано", "success");

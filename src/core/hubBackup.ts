@@ -23,10 +23,24 @@ const VALID_MODULES = new Set(["finyk", "fizruk", "routine", "nutrition"]);
 export const HUB_BACKUP_KIND = "hub-backup";
 export const HUB_BACKUP_SCHEMA_VERSION = 1;
 
-/**
- * @param {{ includeChat?: boolean }} [options]
- */
-export function buildHubBackupPayload(options = {}) {
+interface HubBackupOptions {
+  includeChat?: boolean;
+}
+
+interface HubBackupPayload {
+  kind: typeof HUB_BACKUP_KIND;
+  schemaVersion: number;
+  exportedAt: string;
+  finyk: unknown;
+  fizruk: unknown;
+  routine: unknown;
+  nutrition: unknown;
+  hub?: { lastModule?: string; chatHistory?: string };
+}
+
+export function buildHubBackupPayload(
+  options: HubBackupOptions = {},
+): HubBackupPayload {
   const { includeChat = false } = options;
   let finyk;
   try {
@@ -34,7 +48,7 @@ export function buildHubBackupPayload(options = {}) {
   } catch {
     finyk = {};
   }
-  const hub = {};
+  const hub: Record<string, string> = {};
   if (typeof localStorage !== "undefined") {
     const m = localStorage.getItem(HUB_MODULE_KEY);
     if (m) hub.lastModule = m;
@@ -55,33 +69,31 @@ export function buildHubBackupPayload(options = {}) {
   };
 }
 
-/**
- * @param {unknown} parsed
- */
-export function isHubBackupPayload(parsed) {
+export function isHubBackupPayload(
+  parsed: unknown,
+): parsed is HubBackupPayload {
   return (
     parsed != null &&
     typeof parsed === "object" &&
     !Array.isArray(parsed) &&
-    parsed.kind === HUB_BACKUP_KIND &&
-    typeof parsed.schemaVersion === "number"
+    (parsed as Record<string, unknown>).kind === HUB_BACKUP_KIND &&
+    typeof (parsed as Record<string, unknown>).schemaVersion === "number"
   );
 }
 
-/**
- * @param {unknown} parsed
- */
-export function applyHubBackupPayload(parsed) {
+export function applyHubBackupPayload(parsed: unknown): void {
   if (!isHubBackupPayload(parsed)) {
     throw new Error("Некоректний файл резервної копії Hub.");
   }
   if (parsed.finyk && typeof parsed.finyk === "object") {
-    const keys = Object.keys(parsed.finyk).filter((k) => k !== "version");
+    const keys = Object.keys(parsed.finyk as object).filter(
+      (k) => k !== "version",
+    );
     if (keys.length > 0) {
       const withVer =
-        "version" in parsed.finyk
+        "version" in (parsed.finyk as object)
           ? parsed.finyk
-          : { ...parsed.finyk, version: 1 };
+          : { ...(parsed.finyk as object), version: 1 };
       persistFinykNormalizedToStorage(normalizeFinykBackup(withVer));
     }
   }

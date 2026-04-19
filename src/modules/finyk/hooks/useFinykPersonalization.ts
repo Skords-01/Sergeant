@@ -2,12 +2,30 @@ import { useMemo } from "react";
 import {
   getFrequentCategories,
   getFrequentMerchants,
+  type ManualExpense,
+  type PersonalizationOptions as DomainPersonalizationOptions,
 } from "../domain/personalization";
+import type { Transaction } from "../domain/types";
 
 // Memo-обгортка навколо чистих селекторів персоналізації. Повертає список
 // найчастіших категорій і мерчантів для поточного користувача — використовується
 // у quick add, dashboard-картках та в компонентах, що сортують UI за частотою.
-export function useFinykPersonalization({ mono, storage, now } = {}) {
+interface PersonalizationOptions {
+  mono?: { realTx?: unknown[] };
+  storage?: {
+    manualExpenses?: unknown[];
+    customCategories?: unknown[];
+    txCategories?: Record<string, string>;
+    excludedTxIds?: Set<string>;
+  };
+  now?: Date;
+}
+
+export function useFinykPersonalization({
+  mono,
+  storage,
+  now,
+}: PersonalizationOptions = {}) {
   const rawTransactions = mono?.realTx;
   const rawManualExpenses = storage?.manualExpenses;
   const rawCustomCategories = storage?.customCategories;
@@ -48,12 +66,22 @@ export function useFinykPersonalization({ mono, storage, now } = {}) {
   );
 
   const frequentCategories = useMemo(
-    () => getFrequentCategories(transactions, manualExpenses, opts),
+    () =>
+      getFrequentCategories(
+        transactions as unknown as readonly Transaction[],
+        manualExpenses as unknown as readonly ManualExpense[],
+        opts as unknown as DomainPersonalizationOptions,
+      ),
     [transactions, manualExpenses, opts],
   );
 
   const frequentMerchants = useMemo(
-    () => getFrequentMerchants(transactions, manualExpenses, opts),
+    () =>
+      getFrequentMerchants(
+        transactions as unknown as readonly Transaction[],
+        manualExpenses as unknown as readonly ManualExpense[],
+        opts as unknown as DomainPersonalizationOptions,
+      ),
     [transactions, manualExpenses, opts],
   );
 

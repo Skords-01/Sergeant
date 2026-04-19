@@ -95,7 +95,7 @@ function loadLastGoodBackup() {
   return c;
 }
 
-function dedupeByIdSort(txs) {
+function dedupeByIdSort(txs: Array<{ id: string; time: number }>) {
   const map = new Map(txs.map((t) => [t.id, t]));
   return Array.from(map.values()).sort((a, b) => b.time - a.time);
 }
@@ -105,10 +105,13 @@ function dedupeByIdSort(txs) {
  * Транзакції без _accountId лишаємо лише якщо є хоча б один невдалий рахунок (можливо вони з нього).
  */
 function mergeTxWithPrevious(
-  prevTxs,
-  fetchedByAccount,
-  succeededAccountIds,
-  allTargetAccountIds,
+  prevTxs: Array<{ id: string; time: number; _accountId?: string | null }>,
+  fetchedByAccount: Record<
+    string,
+    Array<{ id: string; time: number; _accountId?: string | null }>
+  >,
+  succeededAccountIds: string[],
+  allTargetAccountIds: string[],
 ) {
   const succ = new Set(succeededAccountIds);
   const flatNew = Object.values(fetchedByAccount).flat();
@@ -330,7 +333,7 @@ export function useMonobank() {
       const errors = [];
       const now = new Date();
       const from = Math.floor(
-        new Date(now.getFullYear(), now.getMonth(), 1) / 1000,
+        new Date(now.getFullYear(), now.getMonth(), 1).getTime() / 1000,
       );
       const to = Math.floor(Date.now() / 1000);
       let accountsOk = 0;
@@ -589,8 +592,10 @@ export function useMonobank() {
       const targetAccounts = accounts.filter(
         (a) => a.currencyCode === CURRENCY.UAH,
       );
-      const from = Math.floor(new Date(year, month, 1) / 1000);
-      const to = Math.floor(new Date(year, month + 1, 0, 23, 59, 59) / 1000);
+      const from = Math.floor(new Date(year, month, 1).getTime() / 1000);
+      const to = Math.floor(
+        new Date(year, month + 1, 0, 23, 59, 59).getTime() / 1000,
+      );
       const results = [];
       for (let i = 0; i < targetAccounts.length; i++) {
         const acc = targetAccounts[i];
