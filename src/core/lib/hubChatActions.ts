@@ -1,4 +1,8 @@
 import { resolveExpenseCategoryMeta } from "../../modules/finyk/utils";
+import {
+  createHabit as routineCreateHabit,
+  loadRoutineState,
+} from "../../modules/routine/lib/routineStorage";
 import { ls, lsSet } from "./hubChatUtils.js";
 
 interface ChangeCategoryAction {
@@ -71,6 +75,46 @@ interface LogMealAction {
   };
 }
 
+interface CreateHabitAction {
+  name: "create_habit";
+  input: {
+    name: string;
+    emoji?: string;
+    recurrence?: string;
+    weekdays?: number[];
+    time_of_day?: string;
+  };
+}
+
+interface CreateTransactionAction {
+  name: "create_transaction";
+  input: {
+    type?: string;
+    amount: number | string;
+    category?: string;
+    description?: string;
+    date?: string;
+  };
+}
+
+interface LogSetAction {
+  name: "log_set";
+  input: {
+    exercise_name: string;
+    weight_kg?: number | string;
+    reps: number | string;
+    sets?: number | string;
+  };
+}
+
+interface LogWaterAction {
+  name: "log_water";
+  input: {
+    amount_ml: number | string;
+    date?: string;
+  };
+}
+
 export type ChatAction =
   | ChangeCategoryAction
   | CreateDebtAction
@@ -81,6 +125,10 @@ export type ChatAction =
   | MarkHabitDoneAction
   | PlanWorkoutAction
   | LogMealAction
+  | CreateHabitAction
+  | CreateTransactionAction
+  | LogSetAction
+  | LogWaterAction
   | { name: string; input: Record<string, unknown> };
 
 interface BudgetLimit {
@@ -391,6 +439,225 @@ export function executeAction(action: ChatAction): string {
         nutritionLog[todayKey] = { ...dayData, meals };
         lsSet("nutrition_log_v1", nutritionLog);
         return `Прийом їжі "${name || "Без назви"}" записано: ${Math.round(Number(kcal) || 0)} ккал`;
+      }
+      case "create_habit": {
+        const {
+          name,
+          emoji,
+          recurrence,
+          weekdays,
+          time_of_day: timeOfDay,
+        } = (action as CreateHabitAction).input;
+        const trimmed = (name || "").trim();
+        if (!trimmed) return "Не можу створити звичку без назви.";
+        const allowedRec = new Set([
+          "daily",
+          "weekdays",
+          "weekly",
+          "monthly",
+          "once",
+        ]);
+        const rec =
+          recurrence && allowedRec.has(recurrence) ? recurrence : "daily";
+        const wdays = Array.isArray(weekdays)
+          ? weekdays
+              .map((d) => Number(d))
+              .filter((d) => Number.isInteger(d) && d >= 0 && d <= 6)
+          : undefined;
+        const tod =
+          timeOfDay && /^\d{1,2}:\d{2}$/.test(String(timeOfDay).trim())
+            ? String(timeOfDay).trim().padStart(5, "0")
+            : "";
+        const state = loadRoutineState();
+        const nextState = routineCreateHabit(state, {
+          name: trimmed,
+          emoji: emoji || "✓",
+          recurrence: rec,
+          weekdays: wdays && wdays.length ? wdays : undefined,
+          timeOfDay: tod,
+        });
+        const created = nextState.habits[nextState.habits.length - 1];
+        const recLabelMap: Record<string, string> = {
+          daily: "щодня",
+          weekdays: "по буднях",
+          weekly: "щотижня",
+          monthly: "щомісяця",
+          once: "разово",
+        };
+        return `Звичку "${trimmed}" створено (${recLabelMap[rec] || rec}, id:${created?.id || "?"})`;
+      }
+      case "create_transaction": {
+        const { type, amount, category, description, date } = (
+          action as CreateTransactionAction
+        ).input;
+        const amt = Number(amount);
+        if (!Number.isFinite(amt) || amt <= 0) {
+          return "Некоректна сума транзакції.";
+        }
+        const txType = type === "income" ? "income" : "expense";
+        const nowIso = new Date().toISOString();
+        const isoDate =
+          date && /^\d{4}-\d{2}-\d{2}$/.test(date)
+            ? new Date(`${date}T12:00:00`).toISOString()
+            : nowIso;
+        const customC = ls<Array<{ id: string; label?: string }>>(
+          "finyk_custom_cats_v1",
+          [],
+        );
+        let categoryLabel = "";
+        if (category && category.trim()) {
+          const meta = resolveExpenseCategoryMeta(category.trim(), customC);
+          categoryLabel = meta?.label || category.trim();
+        }
+        const manualId = `m_${Date.now().toString(36)}_${Math.random()
+          .toString(36)
+          .slice(2, 8)}`;
+        const manualExpenses = ls<
+          Array<{
+            id: string;
+            date: string;
+            description?: string;
+            amount: number;
+            category?: string;
+            type?: string;
+          }>
+        >("finyk_manual_expenses_v1", []);
+        const entry = {
+          id: manualId,
+          date: isoDate,
+          description: description?.trim() || "",
+          amount: Math.abs(amt),
+          category: category?.trim() || "",
+          type: txType,
+        };
+        manualExpenses.unshift(entry);
+        lsSet("finyk_manual_expenses_v1", manualExpenses);
+        const label = categoryLabel ? ` (${categoryLabel})` : "";
+        const human = txType === "income" ? "Дохід" : "Витрату";
+        return `${human} ${amt} грн${description ? ` "${description.trim()}"` : ""}${label} записано (id:${manualId})`;
+      }
+      case "log_set": {
+        const { exercise_name, weight_kg, reps, sets } = (
+          action as LogSetAction
+        ).input;
+        const exName = (exercise_name || "").trim();
+        if (!exName) return "Потрібна назва вправи для підходу.";
+        const repsN = Number(reps);
+        if (!Number.isFinite(repsN) || repsN <= 0) {
+          return "Некоректна кількість повторень.";
+        }
+        const weightN = Number(weight_kg);
+        const weightKg = Number.isFinite(weightN) && weightN >= 0 ? weightN : 0;
+        const setsN = Math.max(1, Math.min(20, Number(sets) || 1));
+        const newSets: WorkoutSet[] = Array.from({ length: setsN }, () => ({
+          weightKg,
+          reps: repsN,
+        }));
+
+        const wRaw = localStorage.getItem("fizruk_workouts_v1");
+        let workouts: Workout[] = [];
+        try {
+          const parsed = wRaw ? JSON.parse(wRaw) : null;
+          if (Array.isArray(parsed)) workouts = parsed as Workout[];
+          else if (parsed && Array.isArray(parsed.workouts))
+            workouts = parsed.workouts as Workout[];
+        } catch {}
+
+        const activeId = ls<string | null>("fizruk_active_workout_id_v1", null);
+        const exerciseNameLower = exName.toLowerCase();
+
+        let targetIdx = -1;
+        if (activeId) {
+          targetIdx = workouts.findIndex((w) => w.id === activeId);
+        }
+        if (targetIdx < 0) {
+          targetIdx = workouts.findIndex((w) => !w.endedAt);
+        }
+
+        let workout: Workout;
+        let created = false;
+        if (targetIdx >= 0) {
+          workout = {
+            ...workouts[targetIdx],
+            items: [...workouts[targetIdx].items],
+          };
+        } else {
+          created = true;
+          workout = {
+            id: `w_${Date.now().toString(36)}_${Math.random()
+              .toString(36)
+              .slice(2, 8)}`,
+            startedAt: new Date().toISOString(),
+            endedAt: null,
+            items: [],
+            groups: [],
+            warmup: null,
+            cooldown: null,
+            note: "",
+            planned: false,
+          };
+        }
+
+        const itemIdx = workout.items.findIndex(
+          (it) => it.nameUk.trim().toLowerCase() === exerciseNameLower,
+        );
+        if (itemIdx >= 0) {
+          const item = { ...workout.items[itemIdx] };
+          item.sets = [...item.sets, ...newSets];
+          workout.items[itemIdx] = item;
+        } else {
+          workout.items.push({
+            id: `i_${Date.now().toString(36)}_${Math.random()
+              .toString(36)
+              .slice(2, 6)}`,
+            nameUk: exName,
+            type: "strength",
+            musclesPrimary: [],
+            musclesSecondary: [],
+            sets: newSets,
+            durationSec: 0,
+            distanceM: 0,
+          });
+        }
+
+        if (created) {
+          workouts = [workout, ...workouts];
+          lsSet("fizruk_active_workout_id_v1", workout.id);
+        } else {
+          workouts[targetIdx] = workout;
+        }
+        lsSet("fizruk_workouts_v1", {
+          schemaVersion: 1,
+          workouts,
+        });
+
+        const weightLabel = weightKg > 0 ? `${weightKg} кг × ` : "";
+        const setsLabel =
+          setsN === 1 ? "1 підхід" : `${setsN} підходи${setsN >= 5 ? "в" : ""}`;
+        const prefix = created ? "Нове тренування розпочато. " : "";
+        return `${prefix}Додано ${setsLabel} "${exName}": ${weightLabel}${repsN} повторень`;
+      }
+      case "log_water": {
+        const { amount_ml, date: waterDate } = (action as LogWaterAction).input;
+        const ml = Math.floor(Number(amount_ml));
+        if (!Number.isFinite(ml) || ml <= 0) {
+          return "Некоректна кількість води.";
+        }
+        const now = new Date();
+        const today = [
+          now.getFullYear(),
+          String(now.getMonth() + 1).padStart(2, "0"),
+          String(now.getDate()).padStart(2, "0"),
+        ].join("-");
+        const dateKey =
+          waterDate && /^\d{4}-\d{2}-\d{2}$/.test(waterDate)
+            ? waterDate
+            : today;
+        const log = ls<Record<string, number>>("nutrition_water_v1", {});
+        const prev = Number(log[dateKey]) || 0;
+        log[dateKey] = prev + ml;
+        lsSet("nutrition_water_v1", log);
+        return `Додано ${ml} мл води (разом за ${dateKey}: ${log[dateKey]} мл)`;
       }
       default:
         return `Невідома дія: ${action.name}`;
