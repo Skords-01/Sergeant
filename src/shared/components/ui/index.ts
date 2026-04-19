@@ -78,6 +78,9 @@ export type { SelectProps, SelectSize, SelectVariant } from "./Select";
 export { Skeleton, SkeletonText } from "./Skeleton";
 export type { SkeletonProps } from "./Skeleton";
 
+export { SkipLink } from "./SkipLink";
+export type { SkipLinkProps } from "./SkipLink";
+
 export { Spinner } from "./Spinner";
 export type { SpinnerProps, SpinnerSize } from "./Spinner";
 

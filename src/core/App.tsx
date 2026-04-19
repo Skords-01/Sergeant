@@ -7,6 +7,7 @@ import {
 } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { cn } from "@shared/lib/cn";
+import { SkipLink } from "@shared/components/ui/SkipLink";
 import ModuleErrorBoundary from "./ModuleErrorBoundary";
 import { useDarkMode } from "@shared/hooks/useDarkMode";
 import { useOnlineStatus } from "@shared/hooks/useOnlineStatus";
@@ -277,6 +278,7 @@ function AppInner() {
     const inFtuxSession = !user && !isFirstRealEntryDone();
     return (
       <div className="min-h-dvh bg-bg flex flex-col safe-area-pt-pb page-enter">
+        <SkipLink />
         {!online && <OfflineBanner />}
 
         <HubHeader
@@ -353,6 +355,7 @@ function AppInner() {
 
   return (
     <div className="h-dvh flex flex-col bg-bg text-text overflow-hidden">
+      <SkipLink />
       {!online && <OfflineBanner />}
       {/* Persistent "resume workout" shortcut — rendered in Finyk,
           Routine, Nutrition (but not inside Fizruk itself, where the
@@ -393,9 +396,11 @@ function AppInner() {
       )}
 
       <Suspense fallback={<PageLoader />}>
-        <div
+        <main
           key={activeModule}
-          className={cn(moduleAnimClass, "h-full flex flex-col")}
+          id="main"
+          tabIndex={-1}
+          className={cn(moduleAnimClass, "h-full flex flex-col outline-none")}
         >
           <ModuleErrorBoundary onBackToHub={goToHub}>
             {activeModule === "finyk" && (
@@ -428,7 +433,7 @@ function AppInner() {
               />
             )}
           </ModuleErrorBoundary>
-        </div>
+        </main>
       </Suspense>
     </div>
   );
