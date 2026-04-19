@@ -151,7 +151,11 @@ export function HubMainContent({
 
       {showIos && <IOSInstallBanner onDismiss={onDismissIos} />}
 
-      <main className="flex-1 px-5 pb-28 max-w-lg mx-auto w-full overflow-y-auto">
+      <main
+        id="main"
+        tabIndex={-1}
+        className="flex-1 px-5 pb-28 max-w-lg mx-auto w-full overflow-y-auto outline-none"
+      >
         {hubView === "dashboard" && (
           <ErrorBoundary key="dashboard" fallback={HubSectionFallback}>
             <div className="flex flex-col gap-5 pt-2">
