@@ -183,20 +183,20 @@ describe("nutrition/topMeals", () => {
   };
 
   it("returns meals sorted by frequency desc", () => {
-    const result = topMeals(log, "2026-01-10", 3);
+    const result = topMeals(log as never, "2026-01-10", 3);
     expect(result[0].name).toBe("Гречка");
     expect(result[0].count).toBe(3);
   });
 
   it("accumulates kcal for repeated meals", () => {
-    const result = topMeals(log, "2026-01-10", 3);
+    const result = topMeals(log as never, "2026-01-10", 3);
     const buckwheat = result.find((m) => m.name === "Гречка")!;
     expect(buckwheat.kcal).toBe(900);
   });
 
   it("respects the dayCount window — excludes days before start", () => {
     // Only last 2 days → Гречка appears 2 times, not 3
-    const result = topMeals(log, "2026-01-10", 2);
+    const result = topMeals(log as never, "2026-01-10", 2);
     const buckwheat = result.find((m) => m.name === "Гречка")!;
     expect(buckwheat.count).toBe(2);
   });
@@ -210,7 +210,7 @@ describe("nutrition/topMeals", () => {
     const logWithEmpty = {
       "2026-01-10": { meals: [{ name: "" }, { name: "  " }, { name: "Рис" }] },
     };
-    const result = topMeals(logWithEmpty, "2026-01-10", 1);
+    const result = topMeals(logWithEmpty as never, "2026-01-10", 1);
     expect(result.every((m) => m.name.trim().length > 0)).toBe(true);
   });
 
@@ -221,7 +221,7 @@ describe("nutrition/topMeals", () => {
         { meals: [{ name: `Страва${i}`, macros: { kcal: 100 } }] },
       ]),
     );
-    const result = topMeals(manyMeals, "2026-01-20", 20, 5);
+    const result = topMeals(manyMeals as never, "2026-01-20", 20, 5);
     expect(result.length).toBeLessThanOrEqual(5);
   });
 });
@@ -240,7 +240,7 @@ describe("nutrition/mealTypeBreakdown", () => {
   };
 
   it("groups meals by mealType with count and kcal", () => {
-    const result = mealTypeBreakdown(log, "2026-01-10", 1);
+    const result = mealTypeBreakdown(log as never, "2026-01-10", 1);
     expect(result.breakfast).toEqual({ count: 1, kcal: 400 });
     expect(result.lunch).toEqual({ count: 2, kcal: 1150 });
   });
@@ -250,7 +250,7 @@ describe("nutrition/mealTypeBreakdown", () => {
   });
 
   it("excludes days outside the date range", () => {
-    const result = mealTypeBreakdown(log, "2026-01-09", 1);
+    const result = mealTypeBreakdown(log as never, "2026-01-09", 1);
     // 2026-01-10 is outside the 1-day window ending 2026-01-09
     expect(Object.keys(result).length).toBe(0);
   });
