@@ -162,6 +162,113 @@ const TOOLS = [
     },
   },
   {
+    name: "create_habit",
+    description:
+      "Створити нову звичку в модулі Рутина. Використовуй коли користувач просить додати / завести / почати нову звичку (напр. 'додай звичку пити воду', 'заведи пробіжку щопонеділка').",
+    input_schema: {
+      type: "object",
+      properties: {
+        name: { type: "string", description: "Назва звички" },
+        emoji: {
+          type: "string",
+          description: "Емодзі (опційно, за замовчуванням ✓)",
+        },
+        recurrence: {
+          type: "string",
+          description:
+            "Регулярність: 'daily' (щодня), 'weekdays' (будні), 'weekly' (у конкретні дні тижня), 'monthly' (щомісяця). За замовчуванням — 'daily'.",
+        },
+        weekdays: {
+          type: "array",
+          description:
+            "Для recurrence='weekly': номери днів 0-6 (0 — неділя, 1 — понеділок, ..., 6 — субота). Опційно.",
+          items: { type: "number" },
+        },
+        time_of_day: {
+          type: "string",
+          description: "Час доби HH:MM (опційно, напр. '08:00')",
+        },
+      },
+      required: ["name"],
+    },
+  },
+  {
+    name: "create_transaction",
+    description:
+      "Записати ручну витрату або дохід у Фінік. Використовуй коли користувач повідомляє що витратив/отримав кошти (напр. 'я витратив 200 грн на каву', 'запиши дохід 5000 грн').",
+    input_schema: {
+      type: "object",
+      properties: {
+        type: {
+          type: "string",
+          description:
+            "'expense' (витрата) або 'income' (дохід). Default: expense.",
+        },
+        amount: {
+          type: "number",
+          description: "Сума в грн (завжди додатнє число)",
+        },
+        category: {
+          type: "string",
+          description:
+            "Категорія: або id канонічної категорії (food, transport, restaurant, subscriptions, health тощо) з блоку [Категорії], або підпис manual-категорії (напр. 'їжа', 'транспорт'). Для доходу можна лишити порожнім.",
+        },
+        description: {
+          type: "string",
+          description: "Короткий опис / мерчант (опційно)",
+        },
+        date: {
+          type: "string",
+          description: "Дата YYYY-MM-DD (опційно, за замовчуванням — сьогодні)",
+        },
+      },
+      required: ["amount"],
+    },
+  },
+  {
+    name: "log_set",
+    description:
+      "Додати підхід (set) до тренування у Фізрук. Використовуй коли користувач каже 'я зробив X повторень Y кг жиму/присіду' тощо. Якщо зараз є активне тренування — додає підхід до відповідної вправи; інакше — створює нове тренування на сьогодні й додає туди.",
+    input_schema: {
+      type: "object",
+      properties: {
+        exercise_name: {
+          type: "string",
+          description: "Назва вправи (напр. 'Жим штанги лежачи')",
+        },
+        weight_kg: {
+          type: "number",
+          description: "Вага в кг (0 — якщо власна вага)",
+        },
+        reps: { type: "number", description: "Кількість повторень у підході" },
+        sets: {
+          type: "number",
+          description: "Скільки однакових підходів додати (опційно, default 1)",
+        },
+      },
+      required: ["exercise_name", "reps"],
+    },
+  },
+  {
+    name: "log_water",
+    description:
+      "Додати випиту воду в журнал Харчування. Використовуй коли користувач каже 'я випив X мл/склянку води'. Одна склянка ≈ 250 мл.",
+    input_schema: {
+      type: "object",
+      properties: {
+        amount_ml: {
+          type: "number",
+          description: "Кількість випитої води в мілілітрах (напр. 250, 500)",
+        },
+        date: {
+          type: "string",
+          description: "Дата YYYY-MM-DD (опційно, за замовчуванням — сьогодні)",
+        },
+      },
+      required: ["amount_ml"],
+    },
+  },
+  {
     name: "log_meal",
     description:
       "Записати прийом їжі в щоденник харчування на сьогодні. Використовуй коли користувач каже що з'їв щось і хоче записати.",
@@ -200,10 +307,10 @@ const SYSTEM_PREFIX = `Ти персональний асистент додат
 - Усі числа бери з блоку ДАНІ нижче.
 - Якщо потрібно порахувати (середня/день, прогноз, залишок ліміту, відсоток виконання) — рахуй на основі наданих чисел.
 - Якщо користувач просить змінити або записати дані — використай відповідний tool.
-  - Фінанси: change_category, create_debt, create_receivable, hide_transaction, set_budget_limit, set_monthly_plan
-  - Фізрук: plan_workout (запланувати тренування на дату; можна одразу зі списком вправ)
-  - Рутина: mark_habit_done (id звички з [Рутина сьогодні])
-  - Харчування: log_meal (назва + ккал; білок/жири/вуглеводи опційно)
+  - Фінанси: create_transaction (записати витрату/дохід), change_category, create_debt, create_receivable, hide_transaction, set_budget_limit, set_monthly_plan
+  - Фізрук: plan_workout (запланувати тренування на дату; можна одразу зі списком вправ), log_set (додати підхід у активне або нове тренування)
+  - Рутина: create_habit (додати нову звичку), mark_habit_done (id звички з [Рутина сьогодні])
+  - Харчування: log_meal (назва + ккал; білок/жири/вуглеводи опційно), log_water (мл води)
 - Транзакції мають id і дату — використовуй для tool calls.
 - Категорії та їх id перелічені в [Категорії].
 - Відповідай на питання по всіх 4 модулях.
