@@ -77,11 +77,16 @@ export function createApp({
   //   backup-upload                : 4mb  (internal cap 2.5MB post-stringify)
   //   sync push/pull               : 6mb  (MAX_BLOB_SIZE = 5MB)
   //   coach memory                 : 6mb  (той самий MAX_BLOB_SIZE)
+  //   chat                         : 1mb  (ChatRequestSchema: context 40KB +
+  //                                        50 messages × 8KB + 20 tool_results ×
+  //                                        8KB + 20 tool_calls_raw ≈ до ~1MB
+  //                                        на активній сесії з tool-calling)
   app.use("/api/nutrition/analyze-photo", express.json({ limit: "10mb" }));
   app.use("/api/nutrition/refine-photo", express.json({ limit: "10mb" }));
   app.use("/api/nutrition/backup-upload", express.json({ limit: "4mb" }));
   app.use("/api/sync", express.json({ limit: "6mb" }));
   app.use("/api/coach/memory", express.json({ limit: "6mb" }));
+  app.use("/api/chat", express.json({ limit: "1mb" }));
   app.use(express.json({ limit: "128kb" }));
 
   // Global CORS for the whole /api surface. Individual handlers may re-set
