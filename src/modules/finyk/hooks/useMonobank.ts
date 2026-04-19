@@ -1,8 +1,12 @@
-import { useState, useEffect, useRef } from "react";
-import { useQueryClient, type QueryClient } from "@tanstack/react-query";
-import { monoApi, isApiError } from "@shared/api";
+import { useState, useEffect, useMemo, useRef } from "react";
+import {
+  useQuery,
+  useQueryClient,
+  type QueryClient,
+} from "@tanstack/react-query";
+import { monoApi, isApiError, type MonoClientInfo } from "@shared/api";
 import { finykKeys, hubKeys, hashToken } from "@shared/lib/queryKeys";
-import { TX_CACHE_TTL, CURRENCY } from "../constants";
+import { CURRENCY } from "../constants";
 import {
   readJSON,
   writeJSON,
@@ -10,8 +14,9 @@ import {
   writeRaw,
   removeItem,
 } from "../lib/finykStorage.js";
-import { normalizeTransaction } from "../domain/transactions";
+import { normalizeTransaction, type Transaction } from "../domain/transactions";
 import { trackEvent, ANALYTICS_EVENTS } from "../../../core/analytics";
+import { useMonoStatements } from "./useMonoStatements";
 
 /**
  * @typedef {{
@@ -23,7 +28,7 @@ import { trackEvent, ANALYTICS_EVENTS } from "../../../core/analytics";
  *   _accountId?: string|null,
  *   _manual?: boolean,
  *   _manualId?: string,
- * }} Transaction
+ * }} MonoTransaction
  * A Monobank transaction (or manual expense) with metadata.
  */
 
@@ -36,209 +41,98 @@ import { trackEvent, ANALYTICS_EVENTS } from "../../../core/analytics";
  *   accountsTotal: number,
  *   accountsOk: number,
  * }} SyncState
- * Current synchronisation state for the Monobank data fetch.
  */
-
-/**
- * Signal every subscriber of `hubKeys.preview("finyk")` that the Monobank
- * cache on disk changed. Replaces the legacy `window.dispatchEvent(
- * "hub-finyk-cache-updated")` bus — see `useFinykHubPreview`.
- */
-function notifyHubFinykPreview(queryClient: QueryClient) {
-  queryClient.invalidateQueries({ queryKey: hubKeys.preview("finyk") });
-}
 
 const CACHE_KEY = "finyk_tx_cache";
+const LAST_GOOD_KEY = "finyk_tx_cache_last_good";
 const INFO_CACHE_KEY = "finyk_info_cache";
 const TOKEN_KEY = "finyk_token";
 const REMEMBER_KEY = "finyk_token_remembered";
 
-function reportSilentError(scope, error) {
+const CLIENT_INFO_STALE_TIME = 10 * 60_000;
+const CLIENT_INFO_GC_TIME = 60 * 60_000;
+const STATEMENT_STALE_TIME = 60_000;
+
+function reportSilentError(scope: string, error: unknown) {
   console.warn(`[finyk] ${scope}`, error);
 }
 
-// Migration from "finto_*" keys to "finyk_*" is handled by storageManager (finyk_001_rename_finto_keys).
-
-function loadCache() {
-  const cache = readJSON(CACHE_KEY, null);
-  if (!cache || typeof cache !== "object") return null;
-  if (!cache.timestamp || Date.now() - cache.timestamp > TX_CACHE_TTL)
-    return null;
-  if (!Array.isArray(cache.txs) || cache.txs.length === 0) return null;
-  return cache;
-}
-
-function loadAnyCache() {
-  const cache = readJSON(CACHE_KEY, null);
-  if (!cache || typeof cache !== "object") return null;
-  if (!Array.isArray(cache.txs) || cache.txs.length === 0) return null;
-  return cache;
-}
-
-function saveCache(txs, queryClient: QueryClient) {
-  if (writeJSON(CACHE_KEY, { txs, timestamp: Date.now() })) {
-    notifyHubFinykPreview(queryClient);
+function readStoredToken(): string {
+  const remembered = readRaw(REMEMBER_KEY, "");
+  if (remembered) return remembered;
+  let sessionToken = "";
+  try {
+    sessionToken = sessionStorage.getItem(TOKEN_KEY) || "";
+  } catch {
+    sessionToken = "";
   }
+  if (sessionToken) return sessionToken;
+  const legacy = readRaw(TOKEN_KEY, "");
+  if (legacy) {
+    try {
+      sessionStorage.setItem(TOKEN_KEY, legacy);
+    } catch {
+      /* ignore */
+    }
+    removeItem(TOKEN_KEY);
+    return legacy;
+  }
+  return "";
 }
 
-/** Останній повний знімок — якщо поточний кеш зіпсований (мало транзакцій), відновлюємо звідси */
-const LAST_GOOD_KEY = "finyk_tx_cache_last_good";
-
-function saveLastGoodBackup(txs) {
-  if (!txs || txs.length < 3) return;
-  writeJSON(LAST_GOOD_KEY, { txs, timestamp: Date.now() });
+interface Snapshot {
+  txs: Transaction[];
+  timestamp: number;
 }
 
-function loadLastGoodBackup() {
-  const c = readJSON(LAST_GOOD_KEY, null);
-  if (!c || typeof c !== "object") return null;
-  if (!Array.isArray(c.txs) || c.txs.length === 0) return null;
+function loadCacheSnapshot(): Snapshot | null {
+  const c = readJSON<Snapshot | null>(CACHE_KEY, null);
+  if (!c || !Array.isArray(c.txs) || c.txs.length === 0) return null;
   return c;
 }
 
-function dedupeByIdSort(txs: Array<{ id: string; time: number }>) {
-  const map = new Map(txs.map((t) => [t.id, t]));
-  return Array.from(map.values()).sort((a, b) => b.time - a.time);
+function loadLastGoodBackup(): Snapshot | null {
+  const c = readJSON<Snapshot | null>(LAST_GOOD_KEY, null);
+  if (!c || !Array.isArray(c.txs) || c.txs.length === 0) return null;
+  return c;
 }
 
-/**
- * Зливає нові транзакції з попередніми: для рахунків, де запит впав, лишаємо старі дані.
- * Транзакції без _accountId лишаємо лише якщо є хоча б один невдалий рахунок (можливо вони з нього).
- */
-function mergeTxWithPrevious(
-  prevTxs: Array<{ id: string; time: number; _accountId?: string | null }>,
-  fetchedByAccount: Record<
-    string,
-    Array<{ id: string; time: number; _accountId?: string | null }>
-  >,
-  succeededAccountIds: string[],
-  allTargetAccountIds: string[],
-) {
-  const succ = new Set(succeededAccountIds);
-  const flatNew = Object.values(fetchedByAccount).flat();
-  const newById = new Map(flatNew.map((t) => [t.id, t]));
-
-  const hasFailure = allTargetAccountIds.some((id) => !succ.has(id));
-
-  if (!hasFailure && flatNew.length > 0) {
-    return dedupeByIdSort(flatNew);
-  }
-
-  if (!hasFailure && flatNew.length === 0 && prevTxs.length > 0) {
-    return prevTxs;
-  }
-
-  if (!hasFailure && flatNew.length === 0) {
-    return [];
-  }
-
-  const keepFromPrev = prevTxs.filter((t) => {
-    if (newById.has(t.id)) return false;
-    const aid = t._accountId;
-    if (aid == null) return hasFailure;
-    return !succ.has(aid);
-  });
-
-  return dedupeByIdSort([...keepFromPrev, ...flatNew]);
+function notifyHubFinykPreview(queryClient: QueryClient) {
+  queryClient.invalidateQueries({ queryKey: hubKeys.preview("finyk") });
 }
 
-function sleep(ms) {
+function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-class AuthError extends Error {
-  constructor(message) {
-    super(message);
-    this.name = "AuthError";
-  }
-}
-
-const STATEMENT_STALE_TIME = 60_000;
-const STATEMENT_GC_TIME = 5 * 60_000;
-const CLIENT_INFO_STALE_TIME = 10 * 60_000;
-const CLIENT_INFO_GC_TIME = 60 * 60_000;
-
 /**
- * Per-account statement fetch через React Query-кеш. Раніше тут був
- * ручний retry/backoff (fetchStatementWithRetry); тепер RQ сам ретраїть
- * і зберігає результат під `finykKeys.monoStatement(accId, from, to)`,
- * щоб відокремлені спостерігачі (`useMonoStatements`) мали той самий
- * кеш-rail. `queryClient.fetchQuery` чекає на ретраї перш ніж повернути
- * дані, тож зовнішній контракт `fetchAllTx`/`fetchMonth` не міняється:
- * повертаємо масив або кидаємо `AuthError` на 401/403.
- */
-async function fetchStatementViaRQ(queryClient, tok, accId, from, to) {
-  if (!navigator.onLine) {
-    throw new Error("Немає підключення до інтернету. Спробуй пізніше.");
-  }
-  try {
-    const data = await queryClient.fetchQuery({
-      queryKey: finykKeys.monoStatement(accId, from, to),
-      queryFn: ({ signal }) =>
-        monoApi.statement(tok, accId, from, to, { signal }),
-      staleTime: STATEMENT_STALE_TIME,
-      gcTime: STATEMENT_GC_TIME,
-      retry: (n, e) => {
-        if (n >= 2) return false;
-        if (isApiError(e) && e.kind === "http" && e.isAuth) return false;
-        return true;
-      },
-      retryDelay: (attempt) => 1000 * (attempt + 1),
-    });
-    return Array.isArray(data) ? data : [];
-  } catch (e) {
-    if (isApiError(e) && e.kind === "http") {
-      if (e.isAuth) {
-        throw new AuthError(e.serverMessage || `HTTP ${e.status}`);
-      }
-      throw new Error(e.serverMessage || `HTTP ${e.status}`);
-    }
-    if (e instanceof AuthError) throw e;
-    throw e;
-  }
-}
-
-/**
- * Client-info fetch через RQ-кеш. `useMonoClientInfo(token)` читає той
- * самий ключ і одразу віддає свіжі дані без додаткового запиту.
- */
-async function fetchClientInfoViaRQ(queryClient, tok) {
-  try {
-    return await queryClient.fetchQuery({
-      queryKey: finykKeys.monoClientInfo(hashToken(tok)),
-      queryFn: ({ signal }) => monoApi.clientInfo(tok, { signal }),
-      staleTime: CLIENT_INFO_STALE_TIME,
-      gcTime: CLIENT_INFO_GC_TIME,
-      retry: (n, e) => {
-        if (n >= 1) return false;
-        if (isApiError(e) && e.kind === "http" && e.isAuth) return false;
-        return true;
-      },
-      retryDelay: (attempt) => 1000 * (attempt + 1),
-    });
-  } catch (e) {
-    if (isApiError(e) && e.kind === "http") {
-      if (e.isAuth) {
-        throw new AuthError(e.serverMessage || `HTTP ${e.status}`);
-      }
-      throw new Error(e.serverMessage || `HTTP ${e.status}`);
-    }
-    if (e instanceof AuthError) throw e;
-    throw e;
-  }
-}
-
-/**
- * Hook for fetching and caching Monobank transactions.
- * Handles token storage, multi-account sync with retry, cache fallback,
- * and automatic refresh on visibility change / online event.
+ * Hook для зчитування Monobank-транзакцій поточного місяця через React Query.
+ *
+ * **Архітектура:** `useQuery(monoClientInfo)` → `useMonoStatements(accounts)`
+ * → derived `syncState` / `transactions` / `loadingTx`. Більше немає власної
+ * sync-стейт-машини (`fetchAllTx`, `mergeTxWithPrevious`, `loadLastGoodBackup`
+ * fallback як активного кода-шляху): RQ-кеш сам тримає per-account дані,
+ * а `useQueries.combine` злиттям відновлює дані успішних рахунків навіть
+ * коли інші впали (та сама семантика, що колишній merge-with-previous).
+ *
+ * **Cross-device / offline-first:** `localStorage` `finyk_tx_cache` —
+ * тільки read-only snapshot для холодного старту (до першої успішної
+ * відповіді RQ) та UI-fallback, коли поточний місяць пустий. При кожному
+ * непустому результаті ми оновлюємо snapshot і сигналимо Hub preview
+ * через `invalidateQueries(hubKeys.preview("finyk"))`.
+ *
+ * **fetchMonth(year, month)** — історичні місяці тримаються окремо,
+ * бо мають інший ключ (`finykKeys.monoStatement(accId, from, to)` з
+ * іншим діапазоном) і інше UI-місце (сторінка `Transactions`, виписка
+ * минулих місяців). Фетч там послідовний з паузами — аби не натрапити
+ * на rate-limit Monobank.
  *
  * @returns {{
  *   token: string,
- *   clientInfo: object|null,
+ *   clientInfo: MonoClientInfo|null,
  *   accounts: object[],
- *   transactions: Transaction[],
- *   realTx: Transaction[],
+ *   transactions: MonoTransaction[],
+ *   realTx: MonoTransaction[],
  *   connecting: boolean,
  *   loadingTx: boolean,
  *   error: string,
@@ -249,7 +143,7 @@ async function fetchClientInfoViaRQ(queryClient, tok) {
  *   connect: (token: string, forceRefresh?: boolean, remember?: boolean) => Promise<void>,
  *   refresh: () => Promise<void>,
  *   fetchMonth: (year: number, month: number) => Promise<void>,
- *   historyTx: Transaction[],
+ *   historyTx: MonoTransaction[],
  *   loadingHistory: boolean,
  *   clearTxCache: () => void,
  *   disconnect: () => void,
@@ -257,326 +151,314 @@ async function fetchClientInfoViaRQ(queryClient, tok) {
  */
 export function useMonobank() {
   const queryClient = useQueryClient();
-  const [token, setToken] = useState(() => {
-    const rememberedToken = readRaw(REMEMBER_KEY, "");
-    if (rememberedToken) return rememberedToken;
+  const [token, setToken] = useState<string>(readStoredToken);
+  const [connecting, setConnecting] = useState<boolean>(false);
+  const [error, setError] = useState<string>("");
+  const [authError, setAuthError] = useState<string>("");
 
-    let sessionToken = "";
-    try {
-      sessionToken = sessionStorage.getItem(TOKEN_KEY) || "";
-    } catch {
-      sessionToken = "";
-    }
-    if (sessionToken) return sessionToken;
-
-    const legacyToken = readRaw(TOKEN_KEY, "");
-    if (legacyToken) {
-      try {
-        sessionStorage.setItem(TOKEN_KEY, legacyToken);
-      } catch {}
-      removeItem(TOKEN_KEY);
-      return legacyToken;
-    }
-    return "";
-  });
-  const [clientInfo, setClientInfo] = useState(null);
-  const [accounts, setAccounts] = useState([]);
-  const [transactions, setTransactions] = useState([]);
-  const [connecting, setConnecting] = useState(false);
-  const [loadingTx, setLoadingTx] = useState(false);
-  const [error, setError] = useState("");
-  const [lastUpdated, setLastUpdated] = useState(null);
-  const [historyTx, setHistoryTx] = useState([]);
-  const [loadingHistory, setLoadingHistory] = useState(false);
-  const [syncState, setSyncState] = useState({
-    status: "idle",
-    source: "none",
-    lastSuccess: null,
-    lastError: "",
-    accountsTotal: 0,
-    accountsOk: 0,
-  });
-
-  const lastAutoRefreshAtRef = useRef(0);
-  const syncStateRef = useRef(syncState);
-  syncStateRef.current = syncState;
-  const [authError, setAuthError] = useState("");
-
-  const fetchAllTx = async (tok, allAccounts) => {
-    const targetAccounts = allAccounts.filter(
-      (a) => a.currencyCode === CURRENCY.UAH,
+  // === Client info ===
+  //
+  // `useQuery` керує запитом профілю Monobank. Перед першим запитом
+  // гідратуємо RQ-кеш з `localStorage` (INFO_CACHE_KEY), щоб UI не блимав
+  // "підключення…" при поверненні на сторінку.
+  useEffect(() => {
+    if (!token) return;
+    const key = finykKeys.monoClientInfo(hashToken(token));
+    if (queryClient.getQueryData(key)) return;
+    const cached = readJSON<{ token?: string; info?: MonoClientInfo } | null>(
+      INFO_CACHE_KEY,
+      null,
     );
-    if (targetAccounts.length === 0) {
-      setTransactions([]);
-      setSyncState({
-        status: "success",
-        source: "network",
-        lastSuccess: new Date(),
-        lastError: "",
-        accountsTotal: 0,
-        accountsOk: 0,
-      });
+    if (cached && cached.token === token && cached.info) {
+      queryClient.setQueryData(key, cached.info);
+    }
+  }, [token, queryClient]);
+
+  const clientInfoQuery = useQuery<MonoClientInfo>({
+    queryKey: finykKeys.monoClientInfo(hashToken(token)),
+    queryFn: ({ signal }) => monoApi.clientInfo(token, { signal }),
+    enabled: Boolean(token),
+    staleTime: CLIENT_INFO_STALE_TIME,
+    gcTime: CLIENT_INFO_GC_TIME,
+    refetchOnWindowFocus: false,
+    retry: (failureCount, err) => {
+      if (failureCount >= 1) return false;
+      if (isApiError(err) && err.kind === "http" && err.isAuth) return false;
+      return true;
+    },
+    retryDelay: (attempt) => 1000 * (attempt + 1),
+  });
+
+  // Після кожного успішного фетчу профілю зберігаємо його у localStorage.
+  useEffect(() => {
+    if (!token || !clientInfoQuery.data) return;
+    if (!writeJSON(INFO_CACHE_KEY, { token, info: clientInfoQuery.data })) {
+      reportSilentError("save client-info cache", "write failed");
+    }
+  }, [token, clientInfoQuery.data]);
+
+  // Auth-помилки з client-info пробрасуємо у `authError`, решту — у `error`.
+  useEffect(() => {
+    const e = clientInfoQuery.error;
+    if (!e) return;
+    if (isApiError(e) && e.kind === "http" && e.isAuth) {
+      setAuthError(
+        e.serverMessage ||
+          "Токен Monobank недійсний або закінчився. Оновіть токен.",
+      );
+    } else {
+      setError(
+        (e as Error)?.message || "Не вдалось завантажити профіль Monobank",
+      );
+    }
+  }, [clientInfoQuery.error]);
+
+  const clientInfo: MonoClientInfo | null = clientInfoQuery.data ?? null;
+  const accounts = useMemo(
+    () => clientInfo?.accounts ?? [],
+    [clientInfo?.accounts],
+  );
+
+  // === Statements ===
+  const statements = useMonoStatements(token, accounts);
+
+  // Проброс auth-помилки, якщо хоч один `/statement/...` повернув 401/403.
+  useEffect(() => {
+    const e = statements.error;
+    if (!e) return;
+    if (isApiError(e) && e.kind === "http" && e.isAuth) {
+      setAuthError(
+        e.serverMessage ||
+          "Токен Monobank недійсний або закінчився. Оновіть токен.",
+      );
+    }
+  }, [statements.error]);
+
+  // === Snapshot fallback ===
+  //
+  // Для UI важлива стабільність: поки RQ перевантажує дані (`isLoading`),
+  // або якщо поточний місяць поверне порожньо, показуємо останній
+  // непустий snapshot з localStorage.
+  const [snapshot, setSnapshot] = useState<Snapshot | null>(
+    () => loadCacheSnapshot() ?? loadLastGoodBackup(),
+  );
+
+  useEffect(() => {
+    if (statements.transactions.length === 0) return;
+    const payload: Snapshot = {
+      txs: statements.transactions,
+      timestamp: Date.now(),
+    };
+    if (writeJSON(CACHE_KEY, payload)) {
+      notifyHubFinykPreview(queryClient);
+    }
+    setSnapshot(payload);
+    // "Last good" — тільки коли усі рахунки успішні або транзакцій ≥ 15
+    // (той самий поріг, що й раніше; захист від порожніх відповідей, які
+    // іноді віддає Monobank при rate-limit відновленні).
+    if (!statements.hasPartialFailure || statements.transactions.length >= 15) {
+      if (statements.transactions.length >= 3) {
+        writeJSON(LAST_GOOD_KEY, payload);
+      }
+    }
+  }, [statements.transactions, statements.hasPartialFailure, queryClient]);
+
+  const transactions: Transaction[] =
+    statements.transactions.length > 0
+      ? statements.transactions
+      : (snapshot?.txs ?? []);
+
+  // `lastUpdated` — час останньої успішної відповіді RQ серед усіх
+  // per-account запитів. Поки ще нема успіху або нульовий фетч — беремо
+  // timestamp snapshot-а з localStorage. Пам'ятаємо: snapshot сам
+  // оновлюється через `useEffect` вище, тож UI бачить одне і те саме.
+  const lastUpdated: Date | null = useMemo(() => {
+    if (statements.transactions.length > 0) {
+      const updates = queryClient
+        .getQueriesData({ queryKey: finykKeys.monoStatements })
+        .map(([key]) => queryClient.getQueryState(key)?.dataUpdatedAt ?? 0);
+      const max = updates.length > 0 ? Math.max(...updates) : 0;
+      if (max > 0) return new Date(max);
+    }
+    return snapshot ? new Date(snapshot.timestamp) : null;
+  }, [statements.transactions, snapshot, queryClient]);
+
+  // === Derived sync state ===
+  const syncState = useMemo(() => {
+    let status: "idle" | "loading" | "success" | "partial" | "error" = "idle";
+    if (!token || accounts.length === 0) {
+      status = token ? "loading" : "idle";
+    } else if (statements.isLoading) {
+      status = "loading";
+    } else if (statements.accountsTotal === 0) {
+      // Підключений клієнт без жодного UAH-рахунку.
+      status = "success";
+    } else if (
+      statements.hasPartialFailure &&
+      statements.accountsOk === 0 &&
+      snapshot
+    ) {
+      status = "partial";
+    } else if (statements.hasPartialFailure) {
+      status = "partial";
+    } else if (statements.error) {
+      status = "error";
+    } else {
+      status = "success";
+    }
+
+    const source: "none" | "network" | "cache" =
+      statements.transactions.length > 0
+        ? "network"
+        : snapshot
+          ? "cache"
+          : "none";
+
+    const lastError = statements.error
+      ? (statements.error as Error)?.message || String(statements.error)
+      : "";
+
+    return {
+      status,
+      source,
+      lastSuccess: lastUpdated,
+      lastError,
+      accountsTotal: statements.accountsTotal,
+      accountsOk: statements.accountsOk,
+    };
+  }, [
+    token,
+    accounts.length,
+    statements.isLoading,
+    statements.accountsTotal,
+    statements.accountsOk,
+    statements.hasPartialFailure,
+    statements.error,
+    statements.transactions.length,
+    snapshot,
+    lastUpdated,
+  ]);
+
+  // === Connect / disconnect / refresh ===
+  const connect = async (
+    tok: string,
+    forceRefresh: boolean = false,
+    remember: boolean = false,
+  ) => {
+    const clean = (tok ?? "").trim();
+    if (!clean) {
+      setError("Введіть токен");
       return;
     }
-
-    setLoadingTx(true);
-    setSyncState({
-      status: "loading",
-      source: "none",
-      lastSuccess: syncStateRef.current.lastSuccess,
-      lastError: "",
-      accountsTotal: targetAccounts.length,
-      accountsOk: 0,
-    });
-    try {
-      const prevSnapshot = loadAnyCache();
-      const prevTxs = prevSnapshot?.txs || [];
-      const errors = [];
-      const now = new Date();
-      const from = Math.floor(
-        new Date(now.getFullYear(), now.getMonth(), 1).getTime() / 1000,
-      );
-      const to = Math.floor(Date.now() / 1000);
-      let accountsOk = 0;
-      const fetchedByAccount = {};
-      const succeededIds = [];
-
-      // Monobank часто ріже запити — послідовно + retry; при падінні рахунку лишаємо старі транзакції з нього.
-      for (let i = 0; i < targetAccounts.length; i++) {
-        const acc = targetAccounts[i];
-        try {
-          const txs = await fetchStatementViaRQ(
-            queryClient,
-            tok,
-            acc.id,
-            from,
-            to,
-          );
-          const tagged = txs.map((t) =>
-            normalizeTransaction(t, { source: "monobank", accountId: acc.id }),
-          );
-          fetchedByAccount[acc.id] = tagged;
-          succeededIds.push(acc.id);
-          accountsOk += 1;
-        } catch (e) {
-          if (e instanceof AuthError) {
-            setAuthError(
-              e.message ||
-                "Токен Monobank недійсний або закінчився. Оновіть токен.",
-            );
-            setError("");
-            setSyncState({
-              status: "error",
-              source: syncStateRef.current.lastSuccess ? "cache" : "none",
-              lastSuccess: syncStateRef.current.lastSuccess,
-              lastError: e.message,
-              accountsTotal: targetAccounts.length,
-              accountsOk,
-            });
-            setLoadingTx(false);
-            return;
-          }
-          errors.push(
-            `${acc.id}: ${e?.message || "Помилка отримання транзакцій"}`,
-          );
-        }
-        if (i < targetAccounts.length - 1) {
-          await sleep(1200);
-        }
-      }
-
-      const allIds = targetAccounts.map((a) => a.id);
-      let unique = mergeTxWithPrevious(
-        prevTxs,
-        fetchedByAccount,
-        succeededIds,
-        allIds,
-      );
-
-      // Якщо API повернув майже нічого, а в кеші було більше — не втрачаємо дані
-      if (
-        unique.length < Math.min(prevTxs.length, 8) &&
-        prevTxs.length > unique.length + 3
-      ) {
-        const backup = loadLastGoodBackup();
-        if (backup && backup.txs.length > unique.length) {
-          unique = mergeTxWithPrevious(
-            backup.txs,
-            fetchedByAccount,
-            succeededIds,
-            allIds,
-          );
-        }
-      }
-
-      if (unique.length === 0 && prevTxs.length > 0) {
-        unique = prevTxs;
-      }
-
-      if (unique.length > 0) {
-        setTransactions(unique);
-        saveCache(unique, queryClient);
-        if (accountsOk === targetAccounts.length || unique.length >= 15) {
-          saveLastGoodBackup(unique);
-        }
-        const nowTs = new Date();
-        setLastUpdated(nowTs);
-        setError(
-          errors.length > 0
-            ? "Частина рахунків не оновилась — показано злиті дані (старі + нові)."
-            : "",
-        );
-        setSyncState({
-          status: errors.length > 0 ? "partial" : "success",
-          source: "network",
-          lastSuccess: nowTs,
-          lastError: errors.join("; "),
-          accountsTotal: targetAccounts.length,
-          accountsOk,
-        });
-      } else {
-        const fallback = loadAnyCache() || loadLastGoodBackup();
-        if (fallback) {
-          setTransactions(fallback.txs);
-          setLastUpdated(new Date(fallback.timestamp));
-          setSyncState({
-            status: "partial",
-            source: "cache",
-            lastSuccess: new Date(fallback.timestamp),
-            lastError: errors.join("; "),
-            accountsTotal: targetAccounts.length,
-            accountsOk,
-          });
-        } else {
-          setTransactions([]);
-          setSyncState({
-            status: "error",
-            source: "none",
-            lastSuccess: null,
-            lastError: errors.join("; "),
-            accountsTotal: targetAccounts.length,
-            accountsOk,
-          });
-        }
-        if (errors.length > 0) {
-          setError(
-            "Mono API тимчасово обмежив запити. Повторіть через 1-2 хв.",
-          );
-        }
-      }
-    } catch (e) {
-      setError(e?.message || "Помилка завантаження транзакцій");
-      setSyncState({
-        status: "error",
-        source: "none",
-        lastSuccess: syncStateRef.current.lastSuccess,
-        lastError: e?.message || "Помилка завантаження транзакцій",
-        accountsTotal: targetAccounts.length,
-        accountsOk: 0,
-      });
-    } finally {
-      setLoadingTx(false);
-    }
-  };
-
-  const connect = async (tok, forceRefresh = false, remember = false) => {
     setConnecting(true);
     setError("");
+    setAuthError("");
 
-    const cleanToken = tok.trim();
-    if (!cleanToken) {
-      setError("Введіть токен");
-      setConnecting(false);
-      return;
-    }
-
-    // Fire before the network call so we measure attempts, not just
-    // successes. Payload stays minimal — no token, no personal data.
     trackEvent(ANALYTICS_EVENTS.BANK_CONNECT_STARTED, {
       bank: "monobank",
       forceRefresh: Boolean(forceRefresh),
     });
 
     try {
-      let info;
-      const parsedInfoCache = readJSON(INFO_CACHE_KEY, null);
-      if (!forceRefresh && parsedInfoCache) {
-        if (parsedInfoCache?.token && parsedInfoCache.token !== cleanToken) {
-          throw new Error("Кеш профілю належить іншому токену");
-        }
-        info = parsedInfoCache?.info || parsedInfoCache;
-      } else {
-        if (forceRefresh) {
-          queryClient.removeQueries({
-            queryKey: finykKeys.monoClientInfo(hashToken(cleanToken)),
-          });
-        }
-        info = await fetchClientInfoViaRQ(queryClient, cleanToken);
-        if (!writeJSON(INFO_CACHE_KEY, { token: cleanToken, info })) {
-          reportSilentError("save client-info cache", "write failed");
-        }
+      const key = finykKeys.monoClientInfo(hashToken(clean));
+      if (forceRefresh) {
+        queryClient.removeQueries({ queryKey: key });
       }
+      const info = await queryClient.fetchQuery({
+        queryKey: key,
+        queryFn: ({ signal }) => monoApi.clientInfo(clean, { signal }),
+        staleTime: CLIENT_INFO_STALE_TIME,
+        retry: (failureCount, err) => {
+          if (failureCount >= 1) return false;
+          if (isApiError(err) && err.kind === "http" && err.isAuth)
+            return false;
+          return true;
+        },
+        retryDelay: (attempt) => 1000 * (attempt + 1),
+      });
 
-      setClientInfo(info);
-      setAccounts(info.accounts || []);
       try {
-        sessionStorage.setItem(TOKEN_KEY, cleanToken);
+        sessionStorage.setItem(TOKEN_KEY, clean);
       } catch (e) {
         reportSilentError("save session token", e);
       }
-      removeItem(TOKEN_KEY);
+      removeItem(TOKEN_KEY); // legacy fallback
       if (remember) {
-        writeRaw(REMEMBER_KEY, cleanToken);
+        writeRaw(REMEMBER_KEY, clean);
       } else {
         removeItem(REMEMBER_KEY);
       }
-      setToken(cleanToken);
+      if (!writeJSON(INFO_CACHE_KEY, { token: clean, info })) {
+        reportSilentError("save client-info cache", "write failed");
+      }
+      setToken(clean);
 
       trackEvent(ANALYTICS_EVENTS.BANK_CONNECT_SUCCESS, {
         bank: "monobank",
         accountsTotal: Array.isArray(info.accounts) ? info.accounts.length : 0,
       });
-
-      const cache = forceRefresh ? null : loadCache();
-      if (cache) {
-        setTransactions(cache.txs);
-        setLastUpdated(new Date(cache.timestamp));
-        setSyncState({
-          status: "success",
-          source: "cache",
-          lastSuccess: new Date(cache.timestamp),
-          lastError: "",
-          accountsTotal: (info.accounts || []).filter(
-            (a) => a.currencyCode === CURRENCY.UAH,
-          ).length,
-          accountsOk: (info.accounts || []).filter(
-            (a) => a.currencyCode === CURRENCY.UAH,
-          ).length,
-        });
-      } else {
-        await fetchAllTx(cleanToken, info.accounts || []);
-      }
     } catch (e) {
-      if (e instanceof AuthError) {
+      if (isApiError(e) && e.kind === "http" && e.isAuth) {
         setAuthError(
-          e.message ||
+          e.serverMessage ||
             "Токен Monobank недійсний або закінчився. Оновіть токен.",
         );
       } else {
-        setError(e?.message || "Помилка авторизації");
+        const msg =
+          e instanceof Error && e.message ? e.message : "Помилка авторизації";
+        setError(msg);
       }
     } finally {
       setConnecting(false);
     }
   };
 
-  const fetchMonth = async (year, month) => {
+  const refresh = async () => {
+    setError("");
+    await queryClient.invalidateQueries({ queryKey: finykKeys.mono });
+  };
+
+  const disconnect = () => {
+    setToken("");
+    setError("");
+    setAuthError("");
+    try {
+      sessionStorage.removeItem(TOKEN_KEY);
+    } catch (e) {
+      reportSilentError("disconnect cleanup", e);
+    }
+    removeItem(TOKEN_KEY); // legacy fallback
+    removeItem(REMEMBER_KEY);
+    removeItem("finto_token");
+    removeItem(CACHE_KEY);
+    removeItem(LAST_GOOD_KEY);
+    removeItem(INFO_CACHE_KEY);
+    setSnapshot(null);
+    queryClient.removeQueries({ queryKey: finykKeys.mono });
+    notifyHubFinykPreview(queryClient);
+  };
+
+  const clearTxCache = () => {
+    removeItem(CACHE_KEY);
+    removeItem(LAST_GOOD_KEY);
+    // Client-info залишаємо — токен не змінювався, профіль валідний.
+    queryClient.removeQueries({ queryKey: finykKeys.monoStatements });
+    setSnapshot(null);
+    notifyHubFinykPreview(queryClient);
+    setError("");
+  };
+
+  // === Historical months (separate reactive stream) ===
+  const [historyTx, setHistoryTx] = useState<Transaction[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState<boolean>(false);
+
+  const fetchMonth = async (year: number, month: number) => {
     const cacheKey = `finyk_tx_cache_${year}_${month}`;
     const legacyKey = `finto_tx_cache_${year}_${month}`;
 
-    let cached = readJSON(cacheKey, null);
+    let cached = readJSON<Snapshot | null>(cacheKey, null);
     if (!cached) {
-      const legacy = readJSON(legacyKey, null);
+      const legacy = readJSON<Snapshot | null>(legacyKey, null);
       if (legacy) {
         writeJSON(cacheKey, legacy);
         removeItem(legacyKey);
@@ -597,31 +479,40 @@ export function useMonobank() {
       const to = Math.floor(
         new Date(year, month + 1, 0, 23, 59, 59).getTime() / 1000,
       );
-      const results = [];
+      const results: Transaction[][] = [];
+      // Послідовно з паузами, щоб не натрапити на rate-limit Monobank.
       for (let i = 0; i < targetAccounts.length; i++) {
         const acc = targetAccounts[i];
         try {
-          const txs = await fetchStatementViaRQ(
-            queryClient,
-            token,
-            acc.id,
-            from,
-            to,
-          );
+          const txs = await queryClient.fetchQuery({
+            queryKey: finykKeys.monoStatement(acc.id, from, to),
+            queryFn: ({ signal }) =>
+              monoApi.statement(token, acc.id, from, to, { signal }),
+            staleTime: STATEMENT_STALE_TIME,
+            retry: (failureCount, err) => {
+              if (failureCount >= 2) return false;
+              if (isApiError(err) && err.kind === "http" && err.isAuth)
+                return false;
+              return true;
+            },
+            retryDelay: (attempt) => 1000 * (attempt + 1),
+          });
           results.push(
-            txs.map((t) =>
+            (txs || []).map((t) =>
               normalizeTransaction(t, {
                 source: "monobank",
                 accountId: acc.id,
               }),
             ),
           );
-        } catch {}
+        } catch {
+          // Частковий збій — продовжуємо решту рахунків.
+        }
         if (i < targetAccounts.length - 1) await sleep(800);
       }
       const unique = Array.from(
         new Map(results.flat().map((t) => [t.id, t])).values(),
-      ).sort((a, b) => b.time - a.time);
+      ).sort((a, b) => (b.time ?? 0) - (a.time ?? 0));
       setHistoryTx(unique);
       if (unique.length > 0) {
         writeJSON(cacheKey, { txs: unique, timestamp: Date.now() });
@@ -631,122 +522,19 @@ export function useMonobank() {
     }
   };
 
-  const refresh = async () => {
-    // Примусовий refresh на UI-рівні — прибиваємо RQ-кеш для Monobank,
-    // щоб наступні fetchQuery-виклики в fetchAllTx не віддавали дані
-    // у межах `staleTime` без мережевого звернення.
-    queryClient.invalidateQueries({ queryKey: finykKeys.mono });
-    try {
-      const info = await fetchClientInfoViaRQ(queryClient, token);
-      setAuthError("");
-      setClientInfo(info);
-      setAccounts(info.accounts || []);
-      if (!writeJSON(INFO_CACHE_KEY, { token, info })) {
-        reportSilentError("refresh info cache", "write failed");
-      }
-      await fetchAllTx(token, info.accounts || []);
-      return;
-    } catch (e) {
-      if (e instanceof AuthError || (isApiError(e) && e.isAuth)) {
-        setAuthError(
-          e?.message ||
-            "Токен Monobank недійсний або закінчився. Оновіть токен у налаштуваннях.",
-        );
-        return;
-      }
-      reportSilentError("refresh client-info", e);
-    }
-    await fetchAllTx(token, accounts);
-  };
-
-  const connectRef = useRef(null);
-  connectRef.current = connect;
+  // Automatic token auto-connect on mount: коли `token` відновлений з
+  // session/REMEMBER, `clientInfoQuery` вже сам стартує запит. Тут ми
+  // лише надсилаємо аналітику, щоб зберегти поведінку трекінгу старого
+  // коду.
+  const trackedRef = useRef<string>("");
   useEffect(() => {
-    if (token) {
-      const isRemembered = readRaw(REMEMBER_KEY, "") === token;
-      connectRef.current(token, false, isRemembered);
-    }
-  }, [token]);
-
-  const refreshRef = useRef(null);
-  refreshRef.current = refresh;
-  useEffect(() => {
-    if (!token || !clientInfo) return;
-
-    const HOUR = 60 * 60 * 1000;
-
-    const maybeRefresh = () => {
-      if (document.visibilityState !== "visible") return;
-      if (!navigator.onLine) return;
-      if (connecting || loadingTx) return;
-
-      const now = Date.now();
-      if (now - lastAutoRefreshAtRef.current < HOUR) return;
-      lastAutoRefreshAtRef.current = now;
-      refreshRef.current();
-    };
-
-    const id = setInterval(maybeRefresh, HOUR);
-    document.addEventListener("visibilitychange", maybeRefresh);
-    window.addEventListener("online", maybeRefresh);
-
-    return () => {
-      clearInterval(id);
-      document.removeEventListener("visibilitychange", maybeRefresh);
-      window.removeEventListener("online", maybeRefresh);
-    };
-  }, [token, clientInfo, connecting, loadingTx]);
-
-  const disconnect = () => {
-    setToken("");
-    setClientInfo(null);
-    setAccounts([]);
-    setTransactions([]);
-    setSyncState({
-      status: "idle",
-      source: "none",
-      lastSuccess: null,
-      lastError: "",
-      accountsTotal: 0,
-      accountsOk: 0,
+    if (!token || trackedRef.current === token) return;
+    trackedRef.current = token;
+    trackEvent(ANALYTICS_EVENTS.BANK_CONNECT_STARTED, {
+      bank: "monobank",
+      forceRefresh: false,
     });
-    try {
-      sessionStorage.removeItem(TOKEN_KEY);
-    } catch (e) {
-      reportSilentError("disconnect cleanup", e);
-    }
-    removeItem(TOKEN_KEY); // legacy fallback
-    removeItem(REMEMBER_KEY);
-    removeItem("finto_token");
-    removeItem(CACHE_KEY);
-    removeItem(LAST_GOOD_KEY);
-    removeItem(INFO_CACHE_KEY);
-    // Прибиваємо RQ-кеш, щоб після logout всі спостерігачі нових RQ-хуків
-    // (`useMonoClientInfo`, `useMonoStatements`) не видавали кешовані
-    // дані попереднього користувача.
-    queryClient.removeQueries({ queryKey: finykKeys.mono });
-    notifyHubFinykPreview(queryClient);
-  };
-
-  const clearTxCache = () => {
-    removeItem(CACHE_KEY);
-    removeItem(LAST_GOOD_KEY);
-    // Очищуємо тільки statement-кеш RQ; client-info залишаємо,
-    // токен не змінювався — профіль валідний.
-    queryClient.removeQueries({ queryKey: finykKeys.monoStatements });
-    notifyHubFinykPreview(queryClient);
-    setTransactions([]);
-    setLastUpdated(null);
-    setSyncState((s) => ({
-      ...s,
-      status: "idle",
-      source: "none",
-      lastError: "",
-      accountsTotal: s.accountsTotal || 0,
-      accountsOk: 0,
-    }));
-    setError("");
-  };
+  }, [token]);
 
   return {
     token,
@@ -755,7 +543,7 @@ export function useMonobank() {
     transactions,
     realTx: transactions,
     connecting,
-    loadingTx,
+    loadingTx: statements.isLoading,
     error,
     lastUpdated,
     syncState,
