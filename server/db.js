@@ -11,9 +11,18 @@ import {
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+/**
+ * Максимум активних клієнтів у пулі. На Railway Hobby-інстансі з ~512MB
+ * пам'яті та одним vCPU 10 — розумний baseline, але під пікове навантаження
+ * або після bump-у плану хочеться підняти без релізу коду. Ставиться через
+ * `PG_POOL_MAX`; Postgres-сторона (`max_connections`) лишається єдиним
+ * жорстким лімітом — значення вище за неї просто призведе до conn-помилок.
+ */
+const PG_POOL_MAX = Number(process.env.PG_POOL_MAX) || 10;
+
 const pool = new pg.Pool({
   connectionString: process.env.DATABASE_URL,
-  max: 10,
+  max: PG_POOL_MAX,
   idleTimeoutMillis: 30_000,
 });
 
@@ -129,7 +138,7 @@ async function runPendingSqlMigrations(client) {
         file,
       ]);
       await client.query("COMMIT");
-      console.log(`[db] Migration applied: ${file}`);
+      logger.info({ msg: "migration_applied", file });
     } catch (e) {
       await client.query("ROLLBACK");
       throw e;
