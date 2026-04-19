@@ -247,10 +247,12 @@ export const PushUnsubscribeSchema = z.object({
   endpoint: z.string().url().max(2048),
 });
 
+// `.nullable()` на необов'язкових полях — для back-compat із воркерами, які
+// історично слали `null` замість відсутнього поля.
 export const PushSendSchema = z.object({
   userId: z.string().min(1).max(200),
   title: z.string().min(1).max(200),
-  body: z.string().max(2000).optional(),
+  body: z.string().max(2000).optional().nullable(),
   module: z.string().max(40).optional().nullable(),
   tag: z.string().max(120).optional().nullable(),
 });
