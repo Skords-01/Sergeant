@@ -145,11 +145,27 @@ describe("useMonoStatements", () => {
     expect(result.current.transactions[0].id).toBe("tx1");
   });
 
-  it("currentMonthRange повертає межі поточного місяця в секундах", () => {
-    const now = new Date(2025, 3, 15, 12, 0, 0); // 15 квітня
+  it("currentMonthRange повертає [початок місяця, початок наступного) у секундах", () => {
+    const now = new Date(2025, 3, 15, 12, 0, 0); // 15 квітня 12:00
     const { from, to } = currentMonthRange(now);
     expect(from).toBe(Math.floor(new Date(2025, 3, 1).getTime() / 1000));
-    expect(to).toBe(Math.floor(now.getTime() / 1000));
+    // Межа `to` — початок травня; стабільна у межах квітня.
+    expect(to).toBe(Math.floor(new Date(2025, 4, 1).getTime() / 1000));
     expect(to).toBeGreaterThan(from);
+  });
+
+  it("currentMonthRange стабільний у межах місяця — ключ кешу не тече", () => {
+    // Два різні моменти одного календарного місяця повинні давати
+    // ідентичний діапазон, інакше `finykKeys.monoStatement(..., from, to)`
+    // змінюватиметься щосекунди і зламає staleTime/gcTime.
+    const a = currentMonthRange(new Date(2025, 3, 1, 0, 0, 1));
+    const b = currentMonthRange(new Date(2025, 3, 30, 23, 59, 59));
+    expect(a).toEqual(b);
+  });
+
+  it("currentMonthRange коректно перемикається через грудень-січень", () => {
+    const r = currentMonthRange(new Date(2025, 11, 20, 10, 0, 0));
+    expect(r.from).toBe(Math.floor(new Date(2025, 11, 1).getTime() / 1000));
+    expect(r.to).toBe(Math.floor(new Date(2026, 0, 1).getTime() / 1000));
   });
 });

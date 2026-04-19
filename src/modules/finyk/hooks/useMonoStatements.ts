@@ -71,14 +71,25 @@ function dedupeByIdSort(txs: Transaction[]): Transaction[] {
 
 /**
  * Повертає [from, to] у unix-секундах для поточного календарного місяця
- * локального часового поясу. Збігається з діапазоном, який рахує
- * `useMonobank.fetchAllTx` сьогодні.
+ * локального часового поясу.
+ *
+ * Обидві межі стабільні у межах календарного місяця — це критично, бо
+ * `to` йде у React Query key (`finykKeys.monoStatement(acc.id, from, to)`):
+ * якби `to` був `Math.floor(Date.now()/1000)`, кожен рендер на іншій
+ * секунді давав би новий ключ, ламаючи staleTime/gcTime і провокуючи
+ * refetch-шторм. Тому `to` — це початок наступного місяця (0 год).
+ *
+ * Monobank `/personal/statement/{from}/{to}` приймає `to` у майбутньому
+ * і все одно повертає лише транзакції, що вже відбулися — тож
+ * end-of-month безпечний.
  */
 export function currentMonthRange(now: Date = new Date()): MonoStatementsRange {
   const from = Math.floor(
     new Date(now.getFullYear(), now.getMonth(), 1).getTime() / 1000,
   );
-  const to = Math.floor(now.getTime() / 1000);
+  const to = Math.floor(
+    new Date(now.getFullYear(), now.getMonth() + 1, 1).getTime() / 1000,
+  );
   return { from, to };
 }
 
