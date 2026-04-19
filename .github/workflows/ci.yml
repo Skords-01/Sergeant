@@ -44,5 +44,20 @@ jobs:
           --onlyAllow
           "MIT;ISC;Apache-2.0;BSD-2-Clause;BSD-3-Clause;MIT-0;0BSD;BlueOak-1.0.0;CC0-1.0;MPL-2.0;(Unlicense OR Apache-2.0)"
 
-      - name: Format, lint, test, build
-        run: npm run check
+      - name: Format check
+        run: npm run format:check
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      - name: Bundle size check
+        run: node scripts/check-bundle-size.mjs
