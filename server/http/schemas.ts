@@ -400,15 +400,26 @@ export const PushSendSchema = z.object({
   tag: z.string().max(120).optional().nullable(),
 });
 
+// ────────────────────── Pagination ──────────────────────
+// Переused у будь-якому endpoint-і, що повертає список. Query-params завжди
+// приходять рядками — `z.coerce.number()` конвертує "8" → 8 автоматично.
+export const PaginationSchema = z.object({
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  offset: z.coerce.number().int().min(0).default(0),
+});
+
 // ────────────────────── Food-search / barcode ──────────────────────
 export const FoodSearchQuerySchema = z.object({
   q: z.string().trim().min(2).max(120),
+  // `limit` — скільки результатів повернути (1–20, default 8). Query-param
+  // приходить рядком — coerce конвертує автоматично.
+  limit: z.coerce.number().int().min(1).max(20).default(8),
 });
 
 export const BarcodeQuerySchema = z.object({
   // клієнт може присилати з пробілами/знаками — нормалізуємо у handler-і,
   // тут лише обмежуємо довжину й склад.
-  barcode: z.string().trim().max(32),
+  barcode: z.string().trim().min(1, "Штрихкод не може бути порожнім").max(32),
 });
 
 export { z };

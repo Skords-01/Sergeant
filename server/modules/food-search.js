@@ -1,4 +1,5 @@
 import { FoodSearchQuerySchema } from "../http/schemas.js";
+import { validateQuery } from "../http/validate.js";
 
 const OFF_SEARCH = "https://world.openfoodfacts.org/api/v2/search";
 const OFF_FIELDS =
@@ -243,11 +244,9 @@ async function fetchUSDA(query, signal) {
  * CORS і rate-limit виставляє роутер.
  */
 export default async function handler(req, res) {
-  const parsed = FoodSearchQuerySchema.safeParse(req.query);
-  if (!parsed.success) {
-    return res.status(400).json({ error: "Запит занадто короткий" });
-  }
-  const query = parsed.data.q;
+  const parsed = validateQuery(FoodSearchQuerySchema, req, res);
+  if (!parsed.ok) return;
+  const { q: query, limit } = parsed.data;
 
   const signal = AbortSignal.timeout(8000);
 
@@ -290,7 +289,7 @@ export default async function handler(req, res) {
         const n = (p.name || "").toLowerCase();
         return allTokens.some((t) => n.includes(t));
       })
-      .slice(0, 8);
+      .slice(0, limit);
 
     return res.status(200).json({ products });
   } catch (e) {

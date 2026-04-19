@@ -1,4 +1,10 @@
 import pool from "../db.js";
+import { validateBody } from "../http/validate.js";
+import {
+  SyncPullSchema,
+  SyncPushAllSchema,
+  SyncPushSchema,
+} from "../http/schemas.js";
 import { logger } from "../obs/logger.js";
 import {
   syncConflictsTotal,
@@ -75,19 +81,18 @@ export async function syncPush(req, res) {
   const start = process.hrtime.bigint();
   const user = req.user;
 
-  const { module, data, clientUpdatedAt } = req.body || {};
-
-  if (!module || !VALID_MODULES.has(module)) {
-    recordSync("push", module || "unknown", "invalid", {
-      ms: elapsedMs(start),
-    });
-    return res.status(400).json({ error: "Invalid module" });
+  const parsed = validateBody(SyncPushSchema, req, res);
+  if (!parsed.ok) {
+    const rawModule = req.body?.module;
+    recordSync(
+      "push",
+      typeof rawModule === "string" ? rawModule.slice(0, 32) : "unknown",
+      "invalid",
+      { ms: elapsedMs(start) },
+    );
+    return;
   }
-
-  if (data === undefined || data === null) {
-    recordSync("push", module, "invalid", { ms: elapsedMs(start) });
-    return res.status(400).json({ error: "Missing data" });
-  }
+  const { module, data, clientUpdatedAt } = parsed.data;
 
   const blob = JSON.stringify(data);
   if (blob.length > MAX_BLOB_SIZE) {
@@ -166,14 +171,18 @@ export async function syncPull(req, res) {
   const start = process.hrtime.bigint();
   const user = req.user;
 
-  const { module } = req.body || {};
-
-  if (!module || !VALID_MODULES.has(module)) {
-    recordSync("pull", module || "unknown", "invalid", {
-      ms: elapsedMs(start),
-    });
-    return res.status(400).json({ error: "Invalid module" });
+  const parsed = validateBody(SyncPullSchema, req, res);
+  if (!parsed.ok) {
+    const rawModule = req.body?.module;
+    recordSync(
+      "pull",
+      typeof rawModule === "string" ? rawModule.slice(0, 32) : "unknown",
+      "invalid",
+      { ms: elapsedMs(start) },
+    );
+    return;
   }
+  const { module } = parsed.data;
 
   try {
     // EXPLAIN ANALYZE: Index Scan using module_data_user_id_module_key,
@@ -271,11 +280,12 @@ export async function syncPushAll(req, res) {
   const start = process.hrtime.bigint();
   const user = req.user;
 
-  const { modules } = req.body || {};
-  if (!modules || typeof modules !== "object") {
+  const parsed = validateBody(SyncPushAllSchema, req, res);
+  if (!parsed.ok) {
     recordSync("push_all", "all", "invalid", { ms: elapsedMs(start) });
-    return res.status(400).json({ error: "Missing modules object" });
+    return;
   }
+  const { modules } = parsed.data;
 
   const results = {};
   // Per-module метрики `push` накопичуємо тут і емітимо ЛИШЕ після COMMIT.

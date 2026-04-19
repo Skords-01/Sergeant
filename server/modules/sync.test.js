@@ -376,7 +376,10 @@ describe("syncPush (singular) — contract tests", () => {
     const res = makeRes();
     await syncPush(makeReq({ module: "not-a-module", data: { x: 1 } }), res);
     expect(res.statusCode).toBe(400);
-    expect(res.body).toEqual({ error: "Invalid module" });
+    expect(res.body).toMatchObject({ error: "Некоректні дані запиту" });
+    expect(res.body.details).toEqual(
+      expect.arrayContaining([expect.objectContaining({ path: "module" })]),
+    );
     expect(pool.query).not.toHaveBeenCalled();
     expect(syncOperationsTotal.inc.mock.calls.map(([l]) => l)).toContainEqual(
       expect.objectContaining({ op: "push", outcome: "invalid" }),
@@ -387,7 +390,10 @@ describe("syncPush (singular) — contract tests", () => {
     const res = makeRes();
     await syncPush(makeReq({ module: "finyk" }), res);
     expect(res.statusCode).toBe(400);
-    expect(res.body).toEqual({ error: "Missing data" });
+    expect(res.body).toMatchObject({ error: "Некоректні дані запиту" });
+    expect(res.body.details).toEqual(
+      expect.arrayContaining([expect.objectContaining({ path: "data" })]),
+    );
     expect(pool.query).not.toHaveBeenCalled();
   });
 
@@ -519,7 +525,10 @@ describe("syncPull (singular) — contract tests", () => {
     const res = makeRes();
     await syncPull(makeReq({ module: "coach" }), res);
     expect(res.statusCode).toBe(400);
-    expect(res.body).toEqual({ error: "Invalid module" });
+    expect(res.body).toMatchObject({ error: "Некоректні дані запиту" });
+    expect(res.body.details).toEqual(
+      expect.arrayContaining([expect.objectContaining({ path: "module" })]),
+    );
     expect(pool.query).not.toHaveBeenCalled();
   });
 
