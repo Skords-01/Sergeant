@@ -120,6 +120,7 @@ export const TOOLS: AnthropicTool[] = [
       properties: {
         habit_id: {
           type: "string",
+          // eslint-disable-next-line sergeant-design/no-ellipsis-dots -- pattern syntax for the LLM (id:<id> placeholder), not user-facing copy
           description: "ID звички (id:... з блоку [Рутина сьогодні])",
         },
         date: {
@@ -189,7 +190,7 @@ export const TOOLS: AnthropicTool[] = [
         weekdays: {
           type: "array",
           description:
-            "Для recurrence='weekly': номери днів 0-6 (0 — неділя, 1 — понеділок, ..., 6 — субота). Опційно.",
+            "Для recurrence='weekly': номери днів 0-6 (0 — неділя, 1 — понеділок, …, 6 — субота). Опційно.",
           items: { type: "number" },
         },
         time_of_day: {
@@ -318,6 +319,7 @@ export const TOOLS: AnthropicTool[] = [
         tx_id: {
           type: "string",
           description:
+            // eslint-disable-next-line sergeant-design/no-ellipsis-dots -- pattern syntax for the LLM (m_<suffix> placeholder), not user-facing copy
             "ID ручної транзакції (формат 'm_...'). Напр. 'm_abc123'",
         },
       },
@@ -367,7 +369,11 @@ export const TOOLS: AnthropicTool[] = [
     input_schema: {
       type: "object",
       properties: {
-        debt_id: { type: "string", description: "ID боргу (формат 'd_...')" },
+        debt_id: {
+          type: "string",
+          // eslint-disable-next-line sergeant-design/no-ellipsis-dots -- pattern syntax for the LLM (d_<suffix> placeholder), not user-facing copy
+          description: "ID боргу (формат 'd_...')",
+        },
         amount: {
           type: "number",
           description:
@@ -477,7 +483,7 @@ export const TOOLS: AnthropicTool[] = [
       properties: {
         weekday: {
           type: "number",
-          description: "День тижня 0-6 (0=нд, 1=пн, ..., 6=сб)",
+          description: "День тижня 0-6 (0=нд, 1=пн, …, 6=сб)",
         },
         name: { type: "string", description: "Назва тренування дня" },
         exercises: {
@@ -579,7 +585,7 @@ export const TOOLS: AnthropicTool[] = [
   {
     name: "add_recipe",
     description:
-      "Зберегти рецепт у книгу рецептів (IndexedDB). Напр. коли користувач каже 'збережи рецепт омлету з ...'. Збереження асинхронне, повідомлення повертається одразу.",
+      "Зберегти рецепт у книгу рецептів (IndexedDB). Напр. коли користувач каже 'збережи рецепт омлету з …'. Збереження асинхронне, повідомлення повертається одразу.",
     input_schema: {
       type: "object",
       properties: {
@@ -673,7 +679,7 @@ export const SYSTEM_PREFIX = `Ти персональний асистент д�
 - Усі числа бери з блоку ДАНІ нижче.
 - Якщо потрібно порахувати (середня/день, прогноз, залишок ліміту, відсоток виконання) — рахуй на основі наданих чисел.
 - Якщо користувач просить змінити або записати дані — використай відповідний tool.
-  - Фінанси: create_transaction, delete_transaction (лише ручні m_...), change_category, hide_transaction, create_debt, mark_debt_paid, create_receivable, set_budget_limit, update_budget (ліміт або ціль), set_monthly_plan, add_asset, import_monobank_range
+  - Фінанси: create_transaction, delete_transaction (лише ручні m_<id>), change_category, hide_transaction, create_debt, mark_debt_paid, create_receivable, set_budget_limit, update_budget (ліміт або ціль), set_monthly_plan, add_asset, import_monobank_range
   - Фізрук: start_workout / finish_workout, log_set, plan_workout, add_program_day, log_measurement, log_wellbeing
   - Рутина: create_habit, mark_habit_done, complete_habit_for_date, create_reminder, archive_habit, add_calendar_event
   - Харчування: log_meal, log_water, add_recipe, add_to_shopping_list, consume_from_pantry, set_daily_plan, log_weight
