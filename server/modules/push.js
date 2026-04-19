@@ -3,6 +3,12 @@ import pool from "../db.js";
 import { logger } from "../obs/logger.js";
 import { recordExternalHttp } from "../lib/externalHttp.js";
 import { pushSendsTotal } from "../obs/metrics.js";
+import { validateBody } from "../http/validate.js";
+import {
+  PushSendSchema,
+  PushSubscribeSchema,
+  PushUnsubscribeSchema,
+} from "../http/schemas.js";
 
 /**
  * Дублюємо два лейбли для одного outcome: історичну domain-метрику
@@ -41,10 +47,9 @@ export async function subscribe(req, res) {
     return res.status(503).json({ error: "Push not configured" });
 
   const user = req.user;
-  const { endpoint, keys } = req.body || {};
-  if (!endpoint || !keys?.p256dh || !keys?.auth) {
-    return res.status(400).json({ error: "Invalid subscription" });
-  }
+  const parsed = validateBody(PushSubscribeSchema, req, res);
+  if (!parsed.ok) return;
+  const { endpoint, keys } = parsed.data;
 
   try {
     await pool.query(
@@ -66,8 +71,9 @@ export async function subscribe(req, res) {
 /** DELETE /api/push/subscribe — видалити підписку. Session в `req.user`. */
 export async function unsubscribe(req, res) {
   const user = req.user;
-  const { endpoint } = req.body || {};
-  if (!endpoint) return res.status(400).json({ error: "Missing endpoint" });
+  const parsed = validateBody(PushUnsubscribeSchema, req, res);
+  if (!parsed.ok) return;
+  const { endpoint } = parsed.data;
 
   try {
     await pool.query(
@@ -95,9 +101,9 @@ export async function sendPush(req, res) {
   if (!VAPID_PUBLIC)
     return res.status(503).json({ error: "Push not configured" });
 
-  const { userId, title, body, module: mod, tag } = req.body || {};
-  if (!userId || !title)
-    return res.status(400).json({ error: "Missing fields" });
+  const parsed = validateBody(PushSendSchema, req, res);
+  if (!parsed.ok) return;
+  const { userId, title, body, module: mod, tag } = parsed.data;
 
   try {
     const { rows } = await pool.query(

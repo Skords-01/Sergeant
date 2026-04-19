@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach } from "vitest";
-import { getAllowedOrigins, setCorsHeaders } from "./cors.js";
+import { getAllowedOrigins, isOriginAllowed, setCorsHeaders } from "./cors.js";
 
 describe("getAllowedOrigins", () => {
   const prev = process.env.ALLOWED_ORIGINS;
@@ -48,5 +48,30 @@ describe("setCorsHeaders", () => {
     const req = { headers: { origin: "https://evil.example" } };
     setCorsHeaders(res, req);
     expect(headers["Access-Control-Allow-Origin"]).toBeUndefined();
+  });
+});
+
+describe("isOriginAllowed (ALLOWED_ORIGIN_REGEX)", () => {
+  const prev = process.env.ALLOWED_ORIGIN_REGEX;
+  afterEach(() => {
+    if (prev === undefined) delete process.env.ALLOWED_ORIGIN_REGEX;
+    else process.env.ALLOWED_ORIGIN_REGEX = prev;
+  });
+
+  it("accepts Vercel previews matching the regex", () => {
+    process.env.ALLOWED_ORIGIN_REGEX =
+      "^https://(?:sergeant|fizruk)(?:-[a-z0-9-]+)?\\.vercel\\.app$";
+    expect(isOriginAllowed("https://sergeant-git-branch-user.vercel.app")).toBe(
+      true,
+    );
+    expect(isOriginAllowed("https://sergeant.vercel.app")).toBe(true);
+    expect(isOriginAllowed("https://attacker.vercel.app")).toBe(false);
+  });
+
+  it("ignores invalid regex (fail-closed)", () => {
+    process.env.ALLOWED_ORIGIN_REGEX = "[";
+    expect(isOriginAllowed("https://anything.vercel.app")).toBe(false);
+    // defaults still work
+    expect(isOriginAllowed("https://sergeant.vercel.app")).toBe(true);
   });
 });

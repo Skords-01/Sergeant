@@ -1,4 +1,6 @@
 import { anthropicMessages, extractAnthropicText } from "../lib/anthropic.js";
+import { validateBody } from "../http/validate.js";
+import { WeeklyDigestSchema } from "../http/schemas.js";
 
 function extractJsonObject(raw) {
   if (typeof raw !== "string") return null;
@@ -55,8 +57,11 @@ function extractJsonObject(raw) {
 export default async function handler(req, res) {
   const apiKey = req.anthropicKey;
 
+  const parsed = validateBody(WeeklyDigestSchema, req, res);
+  if (!parsed.ok) return;
+
   try {
-    const { weekRange, finyk, fizruk, nutrition, routine } = req.body || {};
+    const { weekRange, finyk, fizruk, nutrition, routine } = parsed.data;
 
     const sections = [];
 
