@@ -72,7 +72,7 @@ describe("chat handler — tool_use parsing", () => {
     };
     anthropicMessages.mockResolvedValueOnce({
       response: { ok: true, status: 200 },
-      data: { content: [{ type: "text", text: "Видаляю..." }, toolUseBlock] },
+      data: { content: [{ type: "text", text: "Видаляю…" }, toolUseBlock] },
     });
 
     const req = makeReq({
@@ -83,7 +83,7 @@ describe("chat handler — tool_use parsing", () => {
 
     expect(res.statusCode).toBe(200);
     expect(res.body).toMatchObject({
-      text: "Видаляю...",
+      text: "Видаляю…",
       tool_calls: [
         {
           id: "toolu_01ABC",
