@@ -19,6 +19,7 @@ export function HubHeader({
   onShowAuth,
   dark,
   onToggleDark,
+  hideAuthButton = false,
 }) {
   return (
     <header
@@ -73,7 +74,7 @@ export function HubHeader({
         ) : (
           <>
             <DarkModeToggle dark={dark} onToggle={onToggleDark} />
-            {!authLoading && (
+            {!authLoading && !hideAuthButton && (
               <button
                 type="button"
                 onClick={onShowAuth}
