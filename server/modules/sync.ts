@@ -1,3 +1,4 @@
+import type { Request, Response } from "express";
 import pool from "../db.js";
 import { validateBody } from "../http/validate.js";
 import {
@@ -13,7 +14,54 @@ import {
   syncPayloadBytes,
 } from "../obs/metrics.js";
 
-function recordConflict(module) {
+type WithSessionUser = Request & { user?: { id: string } };
+
+type SyncOp = "push" | "pull" | "push_all" | "pull_all";
+type SyncOutcome =
+  | "ok"
+  | "empty"
+  | "conflict"
+  | "invalid"
+  | "too_large"
+  | "unauthorized"
+  | "error";
+
+interface RecordSyncOptions {
+  ms?: number;
+  bytes?: number;
+  extra?: Record<string, unknown>;
+}
+
+interface ModuleDataRow {
+  data: unknown;
+  client_updated_at: Date;
+  server_updated_at: Date;
+  version: number;
+}
+
+interface ModuleDataRowWithModule extends ModuleDataRow {
+  module: string;
+}
+
+interface ModuleDataUpsertRow {
+  server_updated_at: Date;
+  version: number;
+}
+
+interface PushAllPayloadEntry {
+  data?: unknown;
+  clientUpdatedAt?: string | number | Date;
+}
+
+interface PushAllResult {
+  ok: boolean;
+  error?: string;
+  conflict?: boolean;
+  serverUpdatedAt?: Date;
+  version?: number;
+}
+
+function recordConflict(module: string): void {
   try {
     syncConflictsTotal.inc({ module });
   } catch {
@@ -33,7 +81,12 @@ function recordConflict(module) {
  * Query pattern (Loki/Railway):
  *   {service="sergeant-api"} | json | msg="sync_event" | outcome="conflict" | module="routine"
  */
-function recordSync(op, module, outcome, { ms, bytes, extra } = {}) {
+function recordSync(
+  op: SyncOp,
+  module: string,
+  outcome: SyncOutcome,
+  { ms, bytes, extra }: RecordSyncOptions = {},
+): void {
   try {
     syncOperationsTotal.inc({ op, module, outcome });
     if (ms != null) syncDurationMs.observe({ op, module }, ms);
@@ -41,7 +94,7 @@ function recordSync(op, module, outcome, { ms, bytes, extra } = {}) {
   } catch {
     /* metrics must never break a request */
   }
-  const level =
+  const level: "info" | "warn" | "error" =
     outcome === "error"
       ? "error"
       : outcome === "conflict" ||
@@ -65,7 +118,7 @@ function recordSync(op, module, outcome, { ms, bytes, extra } = {}) {
   }
 }
 
-function elapsedMs(start) {
+function elapsedMs(start: bigint): number {
   return Number(process.hrtime.bigint() - start) / 1e6;
 }
 
@@ -77,13 +130,13 @@ export const VALID_MODULES = new Set([
 ]);
 export const MAX_BLOB_SIZE = 5 * 1024 * 1024;
 
-export async function syncPush(req, res) {
+export async function syncPush(req: Request, res: Response): Promise<void> {
   const start = process.hrtime.bigint();
-  const user = req.user;
+  const user = (req as WithSessionUser).user!;
 
   const parsed = validateBody(SyncPushSchema, req, res);
   if (!parsed.ok) {
-    const rawModule = req.body?.module;
+    const rawModule = (req.body as { module?: unknown } | undefined)?.module;
     recordSync(
       "push",
       typeof rawModule === "string" ? rawModule.slice(0, 32) : "unknown",
@@ -100,7 +153,8 @@ export async function syncPush(req, res) {
       ms: elapsedMs(start),
       bytes: blob.length,
     });
-    return res.status(413).json({ error: "Data too large" });
+    res.status(413).json({ error: "Data too large" });
+    return;
   }
 
   const clientTs = clientUpdatedAt ? new Date(clientUpdatedAt) : new Date();
@@ -113,7 +167,7 @@ export async function syncPush(req, res) {
     //       -> Index Scan using module_data_user_id_module_key  (rows=1)
     // WHERE module_data.client_updated_at <= $4 — це last-write-wins guard;
     // старіший клієнт отримує 0 рядків і сервер віддає 409-like conflict.
-    const result = await pool.query(
+    const result = await pool.query<ModuleDataUpsertRow>(
       `INSERT INTO module_data (user_id, module, data, client_updated_at, version)
        VALUES ($1, $2, $3, $4, 1)
        ON CONFLICT (user_id, module) DO UPDATE
@@ -125,7 +179,7 @@ export async function syncPush(req, res) {
     );
 
     if (result.rows.length === 0) {
-      const existing = await pool.query(
+      const existing = await pool.query<ModuleDataUpsertRow>(
         `SELECT server_updated_at, version FROM module_data WHERE user_id = $1 AND module = $2`,
         [user.id, module],
       );
@@ -139,26 +193,27 @@ export async function syncPush(req, res) {
           serverVersion: existing.rows[0]?.version ?? 0,
         },
       });
-      return res.json({
+      res.json({
         ok: true,
         module,
         conflict: true,
         serverUpdatedAt: existing.rows[0]?.server_updated_at,
         version: existing.rows[0]?.version ?? 0,
       });
+      return;
     }
 
     recordSync("push", module, "ok", {
       ms: elapsedMs(start),
       bytes: blob.length,
     });
-    return res.json({
+    res.json({
       ok: true,
       module,
       serverUpdatedAt: result.rows[0].server_updated_at,
       version: result.rows[0].version,
     });
-  } catch (e) {
+  } catch (e: unknown) {
     recordSync("push", module, "error", {
       ms: elapsedMs(start),
       bytes: blob.length,
@@ -167,13 +222,13 @@ export async function syncPush(req, res) {
   }
 }
 
-export async function syncPull(req, res) {
+export async function syncPull(req: Request, res: Response): Promise<void> {
   const start = process.hrtime.bigint();
-  const user = req.user;
+  const user = (req as WithSessionUser).user!;
 
   const parsed = validateBody(SyncPullSchema, req, res);
   if (!parsed.ok) {
-    const rawModule = req.body?.module;
+    const rawModule = (req.body as { module?: unknown } | undefined)?.module;
     recordSync(
       "pull",
       typeof rawModule === "string" ? rawModule.slice(0, 32) : "unknown",
@@ -188,7 +243,7 @@ export async function syncPull(req, res) {
     // EXPLAIN ANALYZE: Index Scan using module_data_user_id_module_key,
     //   Index Cond: (user_id = $1 AND module = $2). Point-lookup на
     //   UNIQUE-індексі — data читається одним I/O (toast-ed JSONB).
-    const result = await pool.query(
+    const result = await pool.query<ModuleDataRow>(
       `SELECT data, client_updated_at, server_updated_at, version
        FROM module_data
        WHERE user_id = $1 AND module = $2`,
@@ -197,17 +252,18 @@ export async function syncPull(req, res) {
 
     if (result.rows.length === 0) {
       recordSync("pull", module, "empty", { ms: elapsedMs(start) });
-      return res.json({
+      res.json({
         ok: true,
         module,
         data: null,
         serverUpdatedAt: null,
         version: 0,
       });
+      return;
     }
 
     const row = result.rows[0];
-    let data;
+    let data: unknown;
     try {
       data = typeof row.data === "string" ? JSON.parse(row.data) : row.data;
     } catch {
@@ -222,7 +278,7 @@ export async function syncPull(req, res) {
           : 0;
     recordSync("pull", module, "ok", { ms: elapsedMs(start), bytes });
 
-    return res.json({
+    res.json({
       ok: true,
       module,
       data,
@@ -230,31 +286,39 @@ export async function syncPull(req, res) {
       serverUpdatedAt: row.server_updated_at,
       version: row.version,
     });
-  } catch (e) {
+  } catch (e: unknown) {
     recordSync("pull", module, "error", { ms: elapsedMs(start) });
     throw e;
   }
 }
 
-export async function syncPullAll(req, res) {
+export async function syncPullAll(req: Request, res: Response): Promise<void> {
   const start = process.hrtime.bigint();
-  const user = req.user;
+  const user = (req as WithSessionUser).user!;
 
   try {
     // Явно фільтруємо по `VALID_MODULES`. У `module_data` можуть лежати і
     // не-sync записи (напр. `coach` memory, яка пишеться через окремий
     // endpoint), і витягати їх сюди — це і зайві bytes на pull-all, і
     // ламання інкапсуляції (клієнт sync-шару не повинен знати про coach).
-    const result = await pool.query(
+    const result = await pool.query<ModuleDataRowWithModule>(
       `SELECT module, data, client_updated_at, server_updated_at, version
        FROM module_data
        WHERE user_id = $1 AND module = ANY($2::text[])`,
       [user.id, Array.from(VALID_MODULES)],
     );
 
-    const modules = {};
+    const modules: Record<
+      string,
+      {
+        data: unknown;
+        clientUpdatedAt: Date;
+        serverUpdatedAt: Date;
+        version: number;
+      }
+    > = {};
     for (const row of result.rows) {
-      let data;
+      let data: unknown;
       try {
         data = typeof row.data === "string" ? JSON.parse(row.data) : row.data;
       } catch {
@@ -269,32 +333,38 @@ export async function syncPullAll(req, res) {
     }
 
     recordSync("pull_all", "all", "ok", { ms: elapsedMs(start) });
-    return res.json({ ok: true, modules });
-  } catch (e) {
+    res.json({ ok: true, modules });
+  } catch (e: unknown) {
     recordSync("pull_all", "all", "error", { ms: elapsedMs(start) });
     throw e;
   }
 }
 
-export async function syncPushAll(req, res) {
+export async function syncPushAll(req: Request, res: Response): Promise<void> {
   const start = process.hrtime.bigint();
-  const user = req.user;
+  const user = (req as WithSessionUser).user!;
 
   const parsed = validateBody(SyncPushAllSchema, req, res);
   if (!parsed.ok) {
     recordSync("push_all", "all", "invalid", { ms: elapsedMs(start) });
     return;
   }
-  const { modules } = parsed.data;
+  const { modules } = parsed.data as {
+    modules: Record<string, PushAllPayloadEntry>;
+  };
 
-  const results = {};
+  const results: Record<string, PushAllResult> = {};
   // Per-module метрики `push` накопичуємо тут і емітимо ЛИШЕ після COMMIT.
   // Якщо один із модулів посеред транзакції кине — `ROLLBACK` відкотить
   // уже «успішні» INSERT-и, але лічильник `sync_operations_total{outcome="ok"}`
   // уже був би інкрементований → SLI бреше, `SyncErrorBudgetBurn` пропускає
   // реальні збої. `too_large` — виняток: це per-item reject ДО будь-якого
   // DML, тому rollback його не зачіпає, фіксуємо одразу.
-  const pending = [];
+  const pending: Array<{
+    module: string;
+    outcome: "ok" | "conflict";
+    bytes: number;
+  }> = [];
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
@@ -309,7 +379,7 @@ export async function syncPushAll(req, res) {
         continue;
       }
       const clientTs = clientUpdatedAt ? new Date(clientUpdatedAt) : new Date();
-      const r = await client.query(
+      const r = await client.query<ModuleDataUpsertRow>(
         `INSERT INTO module_data (user_id, module, data, client_updated_at, version)
          VALUES ($1, $2, $3, $4, 1)
          ON CONFLICT (user_id, module) DO UPDATE
@@ -320,7 +390,7 @@ export async function syncPushAll(req, res) {
         [user.id, mod, blob, clientTs],
       );
       if (r.rows.length === 0) {
-        const existing = await client.query(
+        const existing = await client.query<ModuleDataUpsertRow>(
           `SELECT server_updated_at, version FROM module_data WHERE user_id = $1 AND module = $2`,
           [user.id, mod],
         );
@@ -341,7 +411,7 @@ export async function syncPushAll(req, res) {
       }
     }
     await client.query("COMMIT");
-  } catch (err) {
+  } catch (err: unknown) {
     try {
       await client.query("ROLLBACK");
     } catch {
@@ -363,5 +433,5 @@ export async function syncPushAll(req, res) {
     recordSync("push", p.module, p.outcome, { bytes: p.bytes });
   }
   recordSync("push_all", "all", "ok", { ms: elapsedMs(start) });
-  return res.json({ ok: true, results });
+  res.json({ ok: true, results });
 }
