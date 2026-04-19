@@ -483,6 +483,7 @@ export function Workouts() {
             addTemplate={templateApi.addTemplate}
             updateTemplate={templateApi.updateTemplate}
             removeTemplate={templateApi.removeTemplate}
+            restoreTemplate={templateApi.restoreTemplate}
             onStartTemplate={startWorkoutFromTemplate}
           />
         )}

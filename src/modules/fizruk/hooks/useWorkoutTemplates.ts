@@ -63,6 +63,21 @@ export function useWorkoutTemplates() {
     [persist, templates],
   );
 
+  const restoreTemplate = useCallback(
+    (template, atIndex) => {
+      if (!template || !template.id) return;
+      if (templates.some((t) => t.id === template.id)) return;
+      const next = [...templates];
+      const idx =
+        typeof atIndex === "number" && atIndex >= 0
+          ? Math.min(atIndex, next.length)
+          : next.length;
+      next.splice(idx, 0, template);
+      persist(next);
+    },
+    [persist, templates],
+  );
+
   const markTemplateUsed = useCallback(
     (id) => {
       persist(
@@ -97,6 +112,7 @@ export function useWorkoutTemplates() {
     addTemplate,
     updateTemplate,
     removeTemplate,
+    restoreTemplate,
     markTemplateUsed,
   };
 }

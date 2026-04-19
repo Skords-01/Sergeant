@@ -1,12 +1,15 @@
 import { useState, type Dispatch, type SetStateAction } from "react";
 import { ConfirmDialog } from "@shared/components/ui/ConfirmDialog";
 import { useToast } from "@shared/hooks/useToast";
+import { showUndoToast } from "@shared/lib/undoToast";
 import {
   loadRoutineState,
   createHabit,
   deleteHabit,
   updateHabit,
   applyRoutineBackupPayload,
+  snapshotHabit,
+  restoreHabit,
 } from "../lib/routineStorage.js";
 import { dateKeyFromDate } from "../lib/hubCalendarAggregate.js";
 import { ROUTINE_THEME as C } from "../lib/routineConstants.js";
@@ -189,12 +192,19 @@ export function RoutineSettingsSection({
         confirmLabel="Видалити"
         onConfirm={() => {
           if (deleteHabitPending) {
-            setRoutine((s) => deleteHabit(s, deleteHabitPending.id));
-            if (
-              !deleteHabitPending.archived &&
-              editingId === deleteHabitPending.id
-            )
-              cancelEdit();
+            const pending = deleteHabitPending;
+            let snapshot: ReturnType<typeof snapshotHabit> = null;
+            setRoutine((s) => {
+              snapshot = snapshotHabit(s, pending.id);
+              return deleteHabit(s, pending.id);
+            });
+            if (!pending.archived && editingId === pending.id) cancelEdit();
+            if (snapshot) {
+              showUndoToast(toast, {
+                msg: `Видалено звичку «${pending.name}»`,
+                onUndo: () => setRoutine((s) => restoreHabit(s, snapshot)),
+              });
+            }
           }
           setDeleteHabitPending(null);
         }}

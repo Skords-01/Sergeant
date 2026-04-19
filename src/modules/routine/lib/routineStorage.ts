@@ -346,6 +346,62 @@ export function deleteHabit(state, id) {
   return next;
 }
 
+/**
+ * Snapshot усього, що потрібно для відновлення звички після `deleteHabit`:
+ * сам запис звички, її completions, note-and, а також позицію в habitOrder.
+ * Використовується undo-toast-ом у `RoutineSettingsSection`.
+ */
+export function snapshotHabit(state, id) {
+  const habit = state.habits.find((h) => h.id === id);
+  if (!habit) return null;
+  const completions = Array.isArray(state.completions?.[id])
+    ? [...state.completions[id]]
+    : [];
+  const notes: Record<string, string> = {};
+  const prefix = `${id}__`;
+  const rawNotes = state.completionNotes || {};
+  for (const k of Object.keys(rawNotes)) {
+    if (k.startsWith(prefix)) notes[k] = rawNotes[k];
+  }
+  const order = Array.isArray(state.habitOrder) ? state.habitOrder : [];
+  const orderIndex = order.indexOf(id);
+  return { habit, completions, notes, orderIndex };
+}
+
+/**
+ * Відновлює звичку зі знімка, отриманого `snapshotHabit`. Ідемпотентно:
+ * якщо звичка з таким id уже є — повертає state без змін.
+ */
+export function restoreHabit(state, snapshot) {
+  if (!snapshot || !snapshot.habit || !snapshot.habit.id) return state;
+  const { habit, completions, notes, orderIndex } = snapshot;
+  if (state.habits.some((h) => h.id === habit.id)) return state;
+  const nextCompletions = { ...state.completions };
+  if (Array.isArray(completions) && completions.length) {
+    nextCompletions[habit.id] = [...completions];
+  }
+  const nextNotes = { ...(state.completionNotes || {}), ...(notes || {}) };
+  const existingOrder = (state.habitOrder || []).filter((x) => x !== habit.id);
+  const insertAt =
+    typeof orderIndex === "number" && orderIndex >= 0
+      ? Math.min(orderIndex, existingOrder.length)
+      : existingOrder.length;
+  const nextOrder = [
+    ...existingOrder.slice(0, insertAt),
+    habit.id,
+    ...existingOrder.slice(insertAt),
+  ];
+  const next = {
+    ...state,
+    habits: [...state.habits, normalizeHabit(habit)],
+    completions: nextCompletions,
+    completionNotes: nextNotes,
+    habitOrder: nextOrder,
+  };
+  saveRoutineState(next);
+  return next;
+}
+
 export function addPushupReps(state, reps) {
   const n = Number(reps);
   if (!n || n <= 0) return state;

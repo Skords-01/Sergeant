@@ -34,6 +34,7 @@ import {
   saveMealThumbnail,
 } from "./lib/mealPhotoStorage.js";
 import { useToast } from "@shared/hooks/useToast";
+import { showUndoToast } from "@shared/lib/undoToast";
 import { fmtMacro, todayISODate } from "./lib/nutritionFormat.js";
 
 export default function NutritionApp({
@@ -464,9 +465,9 @@ export default function NutritionApp({
                 onRemoveMeal={(date, meal) => {
                   if (!meal?.id) return;
                   log.handleRemoveMeal(date, meal);
-                  toast.info("Запис видалено", 5000, {
-                    label: "Undo",
-                    onClick: () => log.handleRestoreMeal(date, meal),
+                  showUndoToast(toast, {
+                    msg: "Запис видалено",
+                    onUndo: () => log.handleRestoreMeal(date, meal),
                   });
                 }}
                 onEditMeal={(date, meal) => {

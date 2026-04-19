@@ -4,6 +4,8 @@ import { Input } from "@shared/components/ui/Input";
 import { Button } from "@shared/components/ui/Button";
 import { Card } from "@shared/components/ui/Card";
 import { ConfirmDialog } from "@shared/components/ui/ConfirmDialog";
+import { useToast } from "@shared/hooks/useToast";
+import { showUndoToast } from "@shared/lib/undoToast";
 
 function uid(prefix = "g") {
   return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
@@ -16,8 +18,10 @@ export function WorkoutTemplatesSection({
   addTemplate,
   updateTemplate,
   removeTemplate,
+  restoreTemplate,
   onStartTemplate,
 }) {
+  const toast = useToast();
   const [q, setQ] = useState("");
   const [editingId, setEditingId] = useState(null);
   const [name, setName] = useState("");
@@ -424,12 +428,26 @@ export function WorkoutTemplatesSection({
       <ConfirmDialog
         open={confirmDeleteId != null}
         title="Видалити шаблон?"
-        description="Цю дію неможливо відмінити."
+        description="Натисни «Повернути» у тості, якщо це була випадкова дія."
         confirmLabel="Видалити"
         cancelLabel="Скасувати"
         danger
         onConfirm={() => {
-          if (confirmDeleteId != null) removeTemplate(confirmDeleteId);
+          if (confirmDeleteId != null) {
+            const idx = (templates || []).findIndex(
+              (t) => t.id === confirmDeleteId,
+            );
+            const snapshot =
+              idx >= 0 ? { template: templates[idx], index: idx } : null;
+            removeTemplate(confirmDeleteId);
+            if (snapshot && typeof restoreTemplate === "function") {
+              showUndoToast(toast, {
+                msg: `Видалено шаблон «${snapshot.template.name}»`,
+                onUndo: () =>
+                  restoreTemplate(snapshot.template, snapshot.index),
+              });
+            }
+          }
           setConfirmDeleteId(null);
         }}
         onCancel={() => setConfirmDeleteId(null)}

@@ -9,6 +9,8 @@ import {
   createHabit,
   updateHabit,
   deleteHabit,
+  snapshotHabit,
+  restoreHabit,
   toggleHabitCompletion,
   markAllScheduledHabitsComplete,
   setHabitArchived,
@@ -94,6 +96,62 @@ describe("deleteHabit", () => {
     expect(s.habits).toHaveLength(0);
     expect(s.completions[id]).toBeUndefined();
     expect(s.habitOrder).not.toContain(id);
+  });
+});
+
+describe("snapshotHabit + restoreHabit", () => {
+  it("відновлює звичку, completions, notes та позицію в order", () => {
+    let s = fresh();
+    s = createHabit(s, { name: "A" });
+    s = createHabit(s, { name: "B" });
+    s = createHabit(s, { name: "C" });
+    const [idA, idB, idC] = s.habits.map((h) => h.id);
+    s = toggleHabitCompletion(s, idB, "2024-06-15");
+    s = setCompletionNote(s, idB, "2024-06-15", "важливо");
+
+    const snap = snapshotHabit(s, idB);
+    expect(snap).not.toBeNull();
+    expect(snap?.habit.id).toBe(idB);
+    expect(snap?.completions).toContain("2024-06-15");
+    expect(Object.keys(snap?.notes || {})).toHaveLength(1);
+    expect(snap?.orderIndex).toBe(1);
+
+    s = deleteHabit(s, idB);
+    expect(s.habits.map((h) => h.id)).toEqual([idA, idC]);
+    expect(s.completions[idB]).toBeUndefined();
+
+    s = restoreHabit(s, snap);
+    // habits array перебудовується append-ом, порядок дає habitOrder
+    expect(new Set(s.habits.map((h) => h.id))).toEqual(
+      new Set([idA, idB, idC]),
+    );
+    expect(s.habitOrder).toEqual([idA, idB, idC]);
+    expect(s.completions[idB]).toContain("2024-06-15");
+    expect(s.completionNotes[completionNoteKey(idB, "2024-06-15")]).toBe(
+      "важливо",
+    );
+  });
+
+  it("ідемпотентно: повторний restore не дублює звичку", () => {
+    let s = createHabit(fresh(), { name: "X" });
+    const id = s.habits[0].id;
+    const snap = snapshotHabit(s, id);
+    s = deleteHabit(s, id);
+    s = restoreHabit(s, snap);
+    s = restoreHabit(s, snap);
+    expect(s.habits).toHaveLength(1);
+    expect(s.habitOrder).toEqual([id]);
+  });
+
+  it("snapshotHabit повертає null для неіснуючого id", () => {
+    const s = createHabit(fresh(), { name: "A" });
+    expect(snapshotHabit(s, "ghost")).toBeNull();
+  });
+
+  it("restoreHabit ігнорує null/undefined snapshot", () => {
+    const s = createHabit(fresh(), { name: "A" });
+    expect(restoreHabit(s, null)).toBe(s);
+    expect(restoreHabit(s, undefined)).toBe(s);
   });
 });
 

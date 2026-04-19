@@ -11,6 +11,7 @@ import { Sheet } from "@shared/components/ui/Sheet";
 import { cn } from "@shared/lib/cn";
 import { perfMark, perfEnd } from "@shared/lib/perf";
 import { useToast } from "@shared/hooks/useToast";
+import { showUndoToast } from "@shared/lib/undoToast";
 import { useDebounce } from "@shared/hooks/useDebounce";
 
 const now = new Date();
@@ -154,9 +155,9 @@ export function Transactions({
       category: String(tx._category || "інше"),
     };
     removeManualExpense(tx._manualId);
-    toast.info("Витрату видалено", 5000, {
-      label: "Undo",
-      onClick: () => addManualExpense(snapshot),
+    showUndoToast(toast, {
+      msg: "Витрату видалено",
+      onUndo: () => addManualExpense(snapshot),
     });
   }, []);
 
