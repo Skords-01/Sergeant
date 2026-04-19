@@ -1,9 +1,7 @@
-import { useMemo, useState, useCallback, Suspense } from "react";
+import { useMemo, useState, useCallback } from "react";
 import { useMutation, useQueries } from "@tanstack/react-query";
-import { Button } from "@shared/components/ui/Button";
 import { Skeleton } from "@shared/components/ui/Skeleton";
 import { EmptyState } from "@shared/components/ui/EmptyState";
-import { Icon } from "@shared/components/ui/Icon";
 import { calcCategorySpent, resolveExpenseCategoryMeta } from "../utils";
 import { buildExpenseCategoryList } from "../domain/categories";
 import {
@@ -21,22 +19,17 @@ import {
   validateGoalBudgetForm,
 } from "../domain/budget";
 import { filterStatTransactions } from "../domain/transactions";
-import { cn } from "@shared/lib/cn";
 import { calcForecast } from "../lib/forecastEngine";
-import { BudgetTrendChart } from "../components/charts/lazy";
-import { ChartFallback } from "../components/charts/ChartFallback";
 import { chatApi } from "@shared/api";
 import { finykKeys } from "@shared/lib/queryKeys.js";
 import { LimitBudgetCard } from "../components/budgets/LimitBudgetCard.jsx";
 import { GoalBudgetCard } from "../components/budgets/GoalBudgetCard.jsx";
-import { CategorySelector } from "../components/CategorySelector.jsx";
-import { CategoryManager } from "../components/CategoryManager.jsx";
+import { MonthlyPlanCard } from "../components/budgets/MonthlyPlanCard.jsx";
+import { BudgetForecastCard } from "../components/budgets/BudgetForecastCard.jsx";
+import { AddBudgetForm } from "../components/budgets/AddBudgetForm.jsx";
+import { CategoryManagerSection } from "../components/budgets/CategoryManagerSection.jsx";
 import { readJSON, writeJSON } from "../lib/finykStorage.js";
 import { trackEvent, ANALYTICS_EVENTS } from "../../../core/analytics";
-import { Card } from "@shared/components/ui/Card";
-
-const formInp =
-  "w-full h-10 rounded-xl border border-line bg-bg px-3 text-sm text-text outline-none focus:border-primary";
 
 // ─── React Query integration for AI chat lookups ──────────────────────────
 //
@@ -329,6 +322,7 @@ export function Budgets({ mono, storage }) {
       targetDate: "",
       savedAmount: "",
     });
+    setFormType("limit");
     setFormError("");
     setShowForm(false);
   };
@@ -377,143 +371,18 @@ export function Budgets({ mono, storage }) {
   return (
     <div className="flex-1 overflow-y-auto">
       <div className="max-w-4xl mx-auto px-4 pt-4 page-tabbar-pad space-y-4">
-        {/* Merged monthly plan block */}
-        <div
-          className={cn(
-            "bg-panel border rounded-2xl p-5 shadow-card",
-            isOver ? "border-danger/40" : "border-line",
-          )}
-        >
-          <div className="text-xs font-bold text-subtle uppercase tracking-widest mb-3">
-            Фінплан на місяць
-          </div>
-          <div className="space-y-2">
-            <input
-              className={formInp}
-              type="number"
-              placeholder="План доходу ₴"
-              value={monthlyPlan?.income ?? ""}
-              onChange={(e) =>
-                setMonthlyPlan((p) => ({
-                  ...(p || {}),
-                  income: e.target.value,
-                }))
-              }
-            />
-            <input
-              className={formInp}
-              type="number"
-              placeholder="План витрат ₴"
-              value={monthlyPlan?.expense ?? ""}
-              onChange={(e) =>
-                setMonthlyPlan((p) => ({
-                  ...(p || {}),
-                  expense: e.target.value,
-                }))
-              }
-            />
-            <input
-              className={formInp}
-              type="number"
-              placeholder="План накопичень ₴"
-              value={monthlyPlan?.savings ?? ""}
-              onChange={(e) =>
-                setMonthlyPlan((p) => ({
-                  ...(p || {}),
-                  savings: e.target.value,
-                }))
-              }
-            />
-          </div>
-
-          {(planIncome > 0 || planExpense > 0) && (
-            <div className="mt-4 pt-4 border-t border-line space-y-3">
-              {/* Fact row */}
-              <div className="grid grid-cols-3 gap-2 text-center">
-                <div>
-                  <div className="text-2xs text-subtle mb-0.5">
-                    Дохід (план)
-                  </div>
-                  <div className="text-sm font-semibold tabular-nums">
-                    {planIncome > 0
-                      ? `${planIncome.toLocaleString("uk-UA")} ₴`
-                      : "—"}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-2xs text-subtle mb-0.5">
-                    Витрати (факт)
-                  </div>
-                  <div
-                    className={cn(
-                      "text-sm font-semibold tabular-nums",
-                      isOver ? "text-danger" : "",
-                    )}
-                  >
-                    {totalExpenseFact.toLocaleString("uk-UA")} ₴
-                  </div>
-                </div>
-                <div>
-                  <div className="text-2xs text-subtle mb-0.5">Залишок</div>
-                  <div
-                    className={cn(
-                      "text-sm font-semibold tabular-nums",
-                      isOver ? "text-danger" : "text-emerald-600",
-                    )}
-                  >
-                    {isOver
-                      ? `−${(totalExpenseFact - planExpense).toLocaleString("uk-UA")} ₴`
-                      : `${remaining2.toLocaleString("uk-UA")} ₴`}
-                  </div>
-                </div>
-              </div>
-
-              {/* Progress bar */}
-              {planExpense > 0 && (
-                <>
-                  <div className="flex justify-between text-xs text-subtle">
-                    <span>{pctExpense}% від плану</span>
-                    <span>план {planExpense.toLocaleString("uk-UA")} ₴</span>
-                  </div>
-                  <div className="h-2 bg-bg rounded-full overflow-hidden">
-                    <div
-                      className={cn(
-                        "h-full rounded-full transition-all",
-                        isOver
-                          ? "bg-danger"
-                          : pctExpense >= 85
-                            ? "bg-warning"
-                            : "bg-emerald-500",
-                      )}
-                      style={{ width: `${pctExpense}%` }}
-                    />
-                  </div>
-                </>
-              )}
-
-              {/* Safe to spend */}
-              {safePerDay > 0 && daysLeft2 > 0 && planExpense > 0 && (
-                <div
-                  className={cn(
-                    "rounded-xl px-3 py-2 text-sm",
-                    isOver
-                      ? "bg-danger/10 text-danger"
-                      : pctExpense >= 85
-                        ? "bg-warning/10 text-warning"
-                        : "bg-emerald-500/10 text-emerald-700",
-                  )}
-                >
-                  <span className="font-semibold">
-                    {safePerDay.toLocaleString("uk-UA")} ₴/день
-                  </span>
-                  <span className="text-xs ml-1 opacity-75">
-                    · безпечно витрачати ({daysLeft2} дн.)
-                  </span>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+        <MonthlyPlanCard
+          monthlyPlan={monthlyPlan}
+          onChangeMonthlyPlan={setMonthlyPlan}
+          planIncome={planIncome}
+          planExpense={planExpense}
+          totalExpenseFact={totalExpenseFact}
+          remaining={remaining2}
+          safePerDay={safePerDay}
+          pctExpense={pctExpense}
+          isOver={isOver}
+          daysLeft={daysLeft2}
+        />
 
         {/* Limits */}
         <div className="text-xs font-bold text-subtle uppercase tracking-widest">
@@ -606,94 +475,24 @@ export function Budgets({ mono, storage }) {
                 fc.categoryId,
                 customCategories,
               );
-              const explanation = aiExplanations[fc.categoryId];
-              const loading = isExplaining(fc.categoryId);
+              const label = cat?.label || fc.categoryId;
               return (
-                <div
+                <BudgetForecastCard
                   key={fc.categoryId}
-                  className={cn(
-                    "bg-panel border rounded-2xl p-5 shadow-card",
-                    fc.overLimit ? "border-danger/50" : "border-line",
-                  )}
-                >
-                  <div className="flex justify-between items-start mb-1">
-                    <span className="text-sm font-semibold">
-                      {cat?.label || fc.categoryId}
-                    </span>
-                    <div className="flex flex-col items-end gap-0.5">
-                      <span
-                        className={cn(
-                          "text-xs tabular-nums font-semibold",
-                          fc.overLimit ? "text-danger" : "text-muted",
-                        )}
-                      >
-                        {fc.forecast.toLocaleString("uk-UA")} ₴
-                      </span>
-                      <span className="text-2xs text-subtle tabular-nums">
-                        ліміт {fc.limit.toLocaleString("uk-UA")} ₴
-                      </span>
-                    </div>
-                  </div>
-
-                  {fc.overLimit ? (
-                    <div className="text-xs text-danger font-medium mb-2">
-                      ⚠️ Перевищення на {fc.overPercent}% (+
-                      {(fc.forecast - fc.limit).toLocaleString("uk-UA")} ₴)
-                    </div>
-                  ) : (
-                    <div className="text-xs text-subtle mb-2">
-                      Вкладається у ліміт · залишок{" "}
-                      {(fc.limit - fc.forecast).toLocaleString("uk-UA")} ₴
-                    </div>
-                  )}
-
-                  <Suspense fallback={<ChartFallback className="h-20 mb-2" />}>
-                    <BudgetTrendChart
-                      dailyData={fc.dailyData}
-                      limit={fc.limit}
-                      color={fc.overLimit ? "#ef4444" : "#6366f1"}
-                      className="mb-2"
-                    />
-                  </Suspense>
-
-                  <div className="flex items-center justify-between text-2xs text-subtle mt-1 mb-2">
-                    <span>Факт: {fc.spent.toLocaleString("uk-UA")} ₴</span>
-                    <span>≈{fc.avgPerDay.toLocaleString("uk-UA")} ₴/день</span>
-                    <span>Залишилось: {fc.daysRemaining} дн.</span>
-                  </div>
-
-                  {explanation && (
-                    <div className="text-xs text-text bg-bg rounded-xl px-3 py-2 mb-2 leading-relaxed">
-                      {explanation}
-                    </div>
-                  )}
-
-                  <button
-                    type="button"
-                    disabled={loading}
-                    onClick={() =>
-                      explainCategory(
-                        fc.categoryId,
-                        cat?.label || fc.categoryId,
-                        fc.spent,
-                        fc.forecast,
-                        fc.limit,
-                      )
-                    }
-                    className={cn(
-                      "text-xs px-3 py-1.5 rounded-lg border transition-colors w-full",
-                      loading
-                        ? "border-line text-subtle cursor-wait"
-                        : "border-primary/40 text-primary hover:bg-primary/10",
-                    )}
-                  >
-                    {loading
-                      ? "AI аналізує…"
-                      : explanation
-                        ? "🔄 Пояснити знову"
-                        : "✨ Пояснити"}
-                  </button>
-                </div>
+                  forecast={fc}
+                  categoryLabel={label}
+                  explanation={aiExplanations[fc.categoryId]}
+                  loading={isExplaining(fc.categoryId)}
+                  onExplain={() =>
+                    explainCategory(
+                      fc.categoryId,
+                      label,
+                      fc.spent,
+                      fc.forecast,
+                      fc.limit,
+                    )
+                  }
+                />
               );
             })}
           </>
@@ -758,143 +557,16 @@ export function Budgets({ mono, storage }) {
         })}
 
         {showForm ? (
-          <Card radius="lg" padding="lg" className="space-y-3">
-            <div className="flex gap-2">
-              <button
-                onClick={() => {
-                  setFormType("limit");
-                  setNewB((b) => ({ ...b, type: "limit" }));
-                }}
-                className={cn(
-                  "flex-1 py-2 text-sm font-semibold rounded-xl border transition-colors",
-                  formType === "limit"
-                    ? "bg-primary border-primary text-white"
-                    : "border-line text-subtle",
-                )}
-              >
-                🔴 Ліміт
-              </button>
-              <button
-                onClick={() => {
-                  setFormType("goal");
-                  setNewB((b) => ({ ...b, type: "goal" }));
-                }}
-                className={cn(
-                  "flex-1 py-2 text-sm font-semibold rounded-xl border transition-colors",
-                  formType === "goal"
-                    ? "bg-success border-success text-white"
-                    : "border-line text-subtle",
-                )}
-              >
-                🟢 Ціль
-              </button>
-            </div>
-            {formType === "limit" ? (
-              <>
-                <CategorySelector
-                  value={newB.categoryId}
-                  onChange={(val) =>
-                    setNewB((b) => ({ ...b, categoryId: val }))
-                  }
-                  categories={expenseCategoryList.filter(
-                    (c) => c.id !== "income",
-                  )}
-                  placeholder="Вибери категорію"
-                />
-                <input
-                  className={formInp}
-                  placeholder="Ліміт ₴"
-                  type="number"
-                  value={newB.limit}
-                  onChange={(e) =>
-                    setNewB((b) => ({ ...b, limit: e.target.value }))
-                  }
-                />
-              </>
-            ) : (
-              <>
-                <div className="flex flex-wrap gap-2">
-                  {[
-                    "🎯",
-                    "🏠",
-                    "🚗",
-                    "✈️",
-                    "💻",
-                    "📱",
-                    "💍",
-                    "🎓",
-                    "🏋️",
-                    "💰",
-                  ].map((e) => (
-                    <button
-                      key={e}
-                      onClick={() => setNewB((b) => ({ ...b, emoji: e }))}
-                      className={cn(
-                        "text-xl p-1.5 rounded-lg border transition-colors",
-                        newB.emoji === e
-                          ? "border-primary bg-primary/10"
-                          : "border-transparent",
-                      )}
-                    >
-                      {e}
-                    </button>
-                  ))}
-                </div>
-                <input
-                  className={formInp}
-                  placeholder="Назва цілі"
-                  value={newB.name}
-                  onChange={(e) =>
-                    setNewB((b) => ({ ...b, name: e.target.value }))
-                  }
-                />
-                <input
-                  className={formInp}
-                  placeholder="Сума цілі ₴"
-                  type="number"
-                  value={newB.targetAmount}
-                  onChange={(e) =>
-                    setNewB((b) => ({ ...b, targetAmount: e.target.value }))
-                  }
-                />
-                <input
-                  className={formInp}
-                  placeholder="Вже відкладено ₴"
-                  type="number"
-                  value={newB.savedAmount}
-                  onChange={(e) =>
-                    setNewB((b) => ({ ...b, savedAmount: e.target.value }))
-                  }
-                />
-                <input
-                  className={formInp}
-                  type="date"
-                  value={newB.targetDate}
-                  onChange={(e) =>
-                    setNewB((b) => ({ ...b, targetDate: e.target.value }))
-                  }
-                />
-              </>
-            )}
-            {formError && (
-              <p className="text-xs text-red-500 bg-red-500/10 rounded-xl px-3 py-2">
-                {formError}
-              </p>
-            )}
-            <div className="flex gap-2">
-              <Button className="flex-1" size="sm" onClick={addBudget}>
-                Додати
-              </Button>
-              <Button
-                className="flex-1"
-                size="sm"
-                variant="ghost"
-                onClick={resetForm}
-              >
-                Скасувати
-              </Button>
-            </div>
-          </Card>
+          <AddBudgetForm
+            formType={formType}
+            newB={newB}
+            onChangeFormType={setFormType}
+            onChangeNewB={setNewB}
+            expenseCategoryList={expenseCategoryList}
+            formError={formError}
+            onSubmit={addBudget}
+            onCancel={resetForm}
+          />
         ) : (
           <button
             onClick={() => setShowForm(true)}
@@ -904,35 +576,15 @@ export function Budgets({ mono, storage }) {
           </button>
         )}
 
-        {/* Category manager — collapsible at bottom so it never shifts other sections */}
-        <Card radius="lg" padding="none" className="overflow-hidden">
-          <button
-            type="button"
-            onClick={() => setShowCategories((v) => !v)}
-            className="w-full flex items-center justify-between px-5 py-4 text-sm font-semibold text-text hover:bg-panelHi transition-colors"
-          >
-            <span>Власні категорії</span>
-            <Icon
-              name="chevron-down"
-              size={16}
-              className={cn(
-                "transition-transform text-muted",
-                showCategories ? "rotate-180" : "",
-              )}
-            />
-          </button>
-          {showCategories && (
-            <div className="px-5 pb-5">
-              <CategoryManager
-                customCategories={customCategories}
-                allCategories={expenseCategoryList}
-                onAdd={addCustomCategory}
-                onEdit={editCustomCategory}
-                onRemove={removeCustomCategory}
-              />
-            </div>
-          )}
-        </Card>
+        <CategoryManagerSection
+          open={showCategories}
+          onToggle={() => setShowCategories((v) => !v)}
+          customCategories={customCategories}
+          allCategories={expenseCategoryList}
+          onAdd={addCustomCategory}
+          onEdit={editCustomCategory}
+          onRemove={removeCustomCategory}
+        />
       </div>
     </div>
   );
