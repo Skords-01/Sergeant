@@ -115,7 +115,7 @@ const MODULE_CONFIGS = {
           };
         }
       } catch {}
-      return { main: null, sub: "Відстежуй витрати" };
+      return { main: null, sub: null };
     },
   },
   fizruk: {
@@ -152,7 +152,7 @@ const MODULE_CONFIGS = {
           };
         }
       } catch {}
-      return { main: null, sub: "Плануй тренування" };
+      return { main: null, sub: null };
     },
   },
   routine: {
@@ -194,7 +194,7 @@ const MODULE_CONFIGS = {
           };
         }
       } catch {}
-      return { main: null, sub: "Формуй звички", progress: 0 };
+      return { main: null, sub: null, progress: 0 };
     },
   },
   nutrition: {
@@ -234,7 +234,7 @@ const MODULE_CONFIGS = {
           };
         }
       } catch {}
-      return { main: null, sub: "Рахуй калорії", progress: 0 };
+      return { main: null, sub: null, progress: 0 };
     },
   },
 };
@@ -274,6 +274,7 @@ const StatusRow = memo(function StatusRow(props: any) {
         onClick={onClick}
         className={cn(
           "flex items-center gap-3 px-3 py-2.5 flex-1 min-w-0 text-left",
+          "transition-transform duration-150 active:scale-[0.99]",
           "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-inset",
         )}
         {...dragProps}
@@ -318,9 +319,11 @@ const StatusRow = memo(function StatusRow(props: any) {
             <span className="text-sm font-semibold text-text tabular-nums truncate">
               {preview.main}
             </span>
+          ) : preview.sub ? (
+            <span className="text-xs text-muted truncate">{preview.sub}</span>
           ) : (
-            <span className="text-xs text-muted truncate">
-              {preview.sub || config.description}
+            <span className="text-xs text-subtle/80 truncate" aria-hidden>
+              —
             </span>
           )}
         </div>
@@ -424,35 +427,6 @@ function useMondayAutoDigest() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// SECONDARY CHIPS — ≤2 contextual quick-add chips, які підсвічуються тільки
-// коли є сигнал (recs з pwaAction). Стоять між NextCard і списком статусу.
-// Не дублює primary-CTA з NextCard — береться з `rest`, не з `focus`.
-// ═══════════════════════════════════════════════════════════════════════════
-function SecondaryChips({ chips }) {
-  if (!chips || chips.length === 0) return null;
-  return (
-    <div className="flex flex-wrap gap-2">
-      {chips.map((chip) => (
-        <button
-          key={chip.id}
-          type="button"
-          onClick={chip.run}
-          className={cn(
-            "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full",
-            "text-xs font-medium text-text",
-            "bg-panel border border-line hover:bg-panelHi transition-colors",
-          )}
-          title={chip.hint}
-        >
-          <span aria-hidden>{chip.icon}</span>
-          {chip.label}
-        </button>
-      ))}
-    </div>
-  );
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
 // WEEKLY DIGEST FOOTER — тихий лінк у нижньому ряду. Fresh-dot показується,
 // коли live-digest за цей тиждень існує.
 // ═══════════════════════════════════════════════════════════════════════════
@@ -480,13 +454,6 @@ function WeeklyDigestFooter({ onExpand, fresh }) {
     </button>
   );
 }
-
-const MODULE_ICON_EMOJI = {
-  finyk: "💳",
-  fizruk: "🏋️",
-  routine: "✅",
-  nutrition: "🥗",
-};
 
 // ═══════════════════════════════════════════════════════════════════════════
 // MAIN HUB DASHBOARD
@@ -557,36 +524,6 @@ export function HubDashboard({
     }
     return set;
   }, [focus, rest]);
-
-  // Secondary chips: до 2-х рекомендацій (без focus), які несуть pwaAction.
-  // Показуються тільки коли у нас >1 recs (інакше focus вистачає). Кожен
-  // chip відкриває модуль із інтентом, не просто навігуючи.
-  const secondaryChips = useMemo(() => {
-    const withAction = rest.filter((r) => r.pwaAction && r.module !== "hub");
-    // де-дублюємо за модулем — один сигнал на модуль достатньо
-    const seen = new Set<string>();
-    const picked: typeof withAction = [];
-    for (const r of withAction) {
-      if (seen.has(r.module)) continue;
-      seen.add(r.module);
-      picked.push(r);
-      if (picked.length >= 2) break;
-    }
-    return picked.map((r) => {
-      const quick = getModulePrimaryAction(r.module);
-      return {
-        id: r.id,
-        label: quick?.shortLabel || "Додати",
-        hint: r.title,
-        icon: MODULE_ICON_EMOJI[r.module] || "➕",
-        run: () =>
-          openHubModuleWithAction(
-            r.module as Parameters<typeof openHubModuleWithAction>[0],
-            r.pwaAction!,
-          ),
-      };
-    });
-  }, [rest]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -674,8 +611,6 @@ export function HubDashboard({
   return (
     <div className="space-y-4">
       {hero}
-
-      <SecondaryChips chips={secondaryChips} />
 
       {/* STATUS — тихий список модулів. Рядок, під який підʼїхала
           рекомендація, отримує inline `+` для quick-add. */}
