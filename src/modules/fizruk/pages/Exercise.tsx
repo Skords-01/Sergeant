@@ -20,9 +20,9 @@ function roundTo2_5(kg) {
 const CALC_ZONES = [
   {
     goal: "Сила",
-    color: "text-red-500",
-    bgColor: "bg-red-500/10",
-    borderColor: "border-red-500/20",
+    color: "text-danger",
+    bgColor: "bg-danger/10",
+    borderColor: "border-danger/20",
     percents: [95, 90, 85],
     desc: "85–95% від 1RM",
   },

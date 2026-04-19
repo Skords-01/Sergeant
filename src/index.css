@@ -340,10 +340,10 @@
   }
 
   .badge-danger {
-    @apply badge bg-red-100 text-red-700;
+    @apply badge bg-danger-soft text-danger;
   }
   .dark .badge-danger {
-    @apply bg-red-900/30 text-red-400;
+    @apply bg-danger/15 text-danger;
   }
 
   .badge-neutral {
@@ -824,7 +824,7 @@ textarea {
 }
 
 .module-card-routine {
-  @apply module-card bg-gradient-to-br from-red-50/80 via-orange-50/30 to-white;
+  @apply module-card bg-gradient-to-br from-coral-50/80 via-orange-50/30 to-white;
   border-color: rgba(255, 212, 203, 0.6);
 }
 

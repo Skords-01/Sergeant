@@ -37,7 +37,7 @@ const IncomeExpensePillsImpl = function IncomeExpensePills({
         </p>
       </Card>
       <Card radius="lg">
-        <div className="flex items-center gap-2 text-red-500">
+        <div className="flex items-center gap-2 text-danger">
           <svg
             width="16"
             height="16"
