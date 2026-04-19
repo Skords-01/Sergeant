@@ -1,4 +1,4 @@
-import { useEffect, type RefObject } from "react";
+import { useEffect, useRef, type RefObject } from "react";
 
 export interface DialogFocusTrapOptions {
   onEscape?: () => void;
@@ -6,6 +6,16 @@ export interface DialogFocusTrapOptions {
 
 /**
  * Tab циклічно лишається в межах контейнера; Escape викликає onEscape.
+ *
+ * Additionally, the element that was focused when the dialog opened is
+ * remembered and receives focus back after the dialog closes. This is a
+ * WCAG 2.4.3 (Focus Order) requirement — otherwise a keyboard user who
+ * triggers a modal and dismisses it is dropped on `<body>` and has to
+ * re-traverse the whole page to get back to where they were.
+ *
+ * If the previously focused element is no longer in the DOM when the
+ * dialog closes (e.g. a sheet that unmounts its own trigger), we quietly
+ * skip the restore instead of throwing.
  */
 export function useDialogFocusTrap(
   open: boolean,
@@ -13,11 +23,19 @@ export function useDialogFocusTrap(
   options: DialogFocusTrapOptions = {},
 ): void {
   const { onEscape } = options;
+  const previouslyFocusedRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     if (!open) return;
     const panel = containerRef.current;
     if (!panel) return;
+
+    // Snapshot the currently-focused element so we can restore focus
+    // after the dialog closes. Skip body itself — restoring focus to
+    // <body> is identical to losing focus entirely.
+    const active = document.activeElement;
+    previouslyFocusedRef.current =
+      active instanceof HTMLElement && active !== document.body ? active : null;
 
     const getFocusable = (): HTMLElement[] =>
       Array.from(
@@ -53,6 +71,20 @@ export function useDialogFocusTrap(
     };
 
     document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      const el = previouslyFocusedRef.current;
+      previouslyFocusedRef.current = null;
+      if (!el) return;
+      // The trigger may have unmounted while the dialog was open
+      // (e.g. tapping a card button that is re-rendered into a new
+      // position). Guard against focusing an orphaned node.
+      if (!el.isConnected) return;
+      try {
+        el.focus({ preventScroll: true });
+      } catch {
+        /* ignore — element became non-focusable */
+      }
+    };
   }, [open, onEscape, containerRef]);
 }

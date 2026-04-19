@@ -5,6 +5,7 @@ import { cn } from "@shared/lib/cn";
 import { Icon } from "@shared/components/ui/Icon";
 import { perfMark, perfEnd } from "@shared/lib/perf";
 import { useOnlineStatus } from "@shared/hooks/useOnlineStatus";
+import { useDialogFocusTrap } from "@shared/hooks/useDialogFocusTrap";
 import { hubKeys } from "@shared/lib/queryKeys";
 import { useFinykHubPreview } from "./hub/useFinykHubPreview";
 
@@ -169,41 +170,10 @@ function HubChat({ onClose, initialMessage }) {
       chatRef.current.scrollTop = chatRef.current.scrollHeight;
   }, [messages, loading]);
 
-  // Focus trap
-  useEffect(() => {
-    const panel = panelRef.current;
-    if (!panel) return;
-    const getFocusable = () =>
-      Array.from(
-        panel.querySelectorAll<HTMLElement>(
-          'button:not([disabled]), [href], input:not([disabled]), select, textarea, [tabindex]:not([tabindex="-1"])',
-        ),
-      ).filter((el) => !el.hasAttribute("disabled"));
-
-    const onKeyDown = (e) => {
-      if (e.key === "Escape") {
-        e.preventDefault();
-        onClose();
-        return;
-      }
-      if (e.key !== "Tab") return;
-      const nodes = getFocusable();
-      if (nodes.length === 0) return;
-      const first = nodes[0];
-      const last = nodes[nodes.length - 1];
-      if (e.shiftKey) {
-        if (document.activeElement === first) {
-          e.preventDefault();
-          last.focus();
-        }
-      } else if (document.activeElement === last) {
-        e.preventDefault();
-        first.focus();
-      }
-    };
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
-  }, [onClose]);
+  // Focus trap + Escape + restore focus to trigger on close. Shared
+  // with Sheet / ConfirmDialog / InputDialog so every modal surface
+  // gets the same WCAG 2.4.3 focus-order guarantees in one place.
+  useDialogFocusTrap(true, panelRef, { onEscape: onClose });
 
   // TTS speaking state poll
   useEffect(() => {
