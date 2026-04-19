@@ -11,4 +11,6 @@ COPY server ./server
 COPY scripts ./scripts
 
 ENV NODE_ENV=production
-CMD ["node", "server/index.js"]
+# tsx loader потрібен тому, що server/lib/* тепер .ts (див. PR #311);
+# імпорти з .js-модулів виду `from "./foo.js"` tsx резолвить на .ts.
+CMD ["node", "--import", "tsx", "server/index.js"]
