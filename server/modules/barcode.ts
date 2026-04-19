@@ -1,7 +1,51 @@
+import type { Request, Response } from "express";
 import { recordExternalHttp } from "../lib/externalHttp.js";
 import { BarcodeQuerySchema } from "../http/schemas.js";
 import { validateQuery } from "../http/validate.js";
 import { barcodeLookupsTotal } from "../obs/metrics.js";
+
+interface NormalizedProduct {
+  name: string;
+  brand: string | null;
+  kcal_100g: number | null;
+  protein_100g: number | null;
+  fat_100g: number | null;
+  carbs_100g: number | null;
+  servingSize: string | null;
+  servingGrams: number | null;
+  source: "off" | "usda" | "upcitemdb";
+  partial?: boolean;
+}
+
+interface OFFProduct {
+  product_name?: string;
+  product_name_uk?: string;
+  brands?: string;
+  nutriments?: Record<string, unknown>;
+  serving_size?: string;
+  serving_quantity?: number | string;
+}
+
+interface USDAFoodNutrient {
+  nutrientId?: number;
+  nutrient?: { id?: number };
+  value?: number;
+  amount?: number;
+}
+
+interface USDAFood {
+  description?: string;
+  brandOwner?: string;
+  brandName?: string;
+  foodNutrients?: USDAFoodNutrient[];
+  servingSize?: number;
+  servingSizeUnit?: string;
+  gtinUpc?: string;
+}
+
+function hasErrorName(e: unknown, name: string): boolean {
+  return !!e && typeof e === "object" && (e as { name?: string }).name === name;
+}
 
 /**
  * Record-helper одночасно емітить і domain-specific метрику
@@ -9,7 +53,7 @@ import { barcodeLookupsTotal } from "../obs/metrics.js";
  * уніфіковану `external_http_requests_total{upstream=source,outcome}`.
  * Свідоме дублювання — знести domain-метрику лише після оновлення дашбордів.
  */
-function recordLookup(source, outcome, ms) {
+function recordLookup(source: string, outcome: string, ms: number): void {
   try {
     barcodeLookupsTotal.inc({ source, outcome });
   } catch {
@@ -18,7 +62,7 @@ function recordLookup(source, outcome, ms) {
   recordExternalHttp(source, outcome, ms);
 }
 
-function elapsedMs(start) {
+function elapsedMs(start: bigint): number {
   return Number(process.hrtime.bigint() - start) / 1e6;
 }
 
@@ -29,14 +73,16 @@ const OFF_BASE = "https://world.openfoodfacts.org/api/v2/product";
 const OFF_FIELDS =
   "product_name,product_name_uk,brands,nutriments,serving_size,serving_quantity";
 
-function normalizeOFF(product) {
-  const n = product?.nutriments || {};
+function normalizeOFF(
+  product: OFFProduct | null | undefined,
+): NormalizedProduct | null {
+  const n = (product?.nutriments || {}) as Record<string, unknown>;
   const name = product?.product_name_uk || product?.product_name || null;
   const brand = product?.brands
     ? String(product.brands).split(",")[0].trim()
     : null;
 
-  const round1 = (v) =>
+  const round1 = (v: unknown): number | null =>
     v != null && Number.isFinite(Number(v))
       ? Math.round(Number(v) * 10) / 10
       : null;
@@ -73,7 +119,7 @@ function normalizeOFF(product) {
   };
 }
 
-async function lookupOFF(barcode) {
+async function lookupOFF(barcode: string): Promise<NormalizedProduct | null> {
   const url = `${OFF_BASE}/${barcode}.json?fields=${OFF_FIELDS}`;
   const start = process.hrtime.bigint();
   try {
@@ -88,7 +134,7 @@ async function lookupOFF(barcode) {
       recordLookup("off", "miss", elapsedMs(start));
       return null;
     }
-    const data = await r.json();
+    const data = (await r.json()) as { status?: number; product?: OFFProduct };
     if (data?.status !== 1 || !data?.product) {
       recordLookup("off", "miss", elapsedMs(start));
       return null;
@@ -96,10 +142,10 @@ async function lookupOFF(barcode) {
     const product = normalizeOFF(data.product);
     recordLookup("off", product ? "hit" : "miss", elapsedMs(start));
     return product;
-  } catch (e) {
+  } catch (e: unknown) {
     recordLookup(
       "off",
-      e?.name === "TimeoutError" ? "timeout" : "error",
+      hasErrorName(e, "TimeoutError") ? "timeout" : "error",
       elapsedMs(start),
     );
     throw e;
@@ -119,16 +165,18 @@ const FDC_NUTRIENT = {
   protein: 1003,
   fat: 1004,
   carbs: 1005,
-};
+} as const;
 
-function normalizeUSDA(food) {
+function normalizeUSDA(
+  food: USDAFood | null | undefined,
+): NormalizedProduct | null {
   if (!food) return null;
   const name = food.description || null;
   if (!name) return null;
 
   const brand = food.brandOwner || food.brandName || null;
 
-  const nutrientMap = {};
+  const nutrientMap: Record<number, number> = {};
   for (const n of food.foodNutrients || []) {
     const id = n.nutrientId ?? n.nutrient?.id;
     const value = n.value ?? n.amount;
@@ -167,7 +215,7 @@ function normalizeUSDA(food) {
   };
 }
 
-async function lookupUSDA(barcode) {
+async function lookupUSDA(barcode: string): Promise<NormalizedProduct | null> {
   const key = process.env.USDA_FDC_API_KEY || "DEMO_KEY";
   // Search Branded Foods by GTIN/UPC (barcode is stored in gtinUpc field)
   const url = `${FDC_BASE}/foods/search?query=${encodeURIComponent(barcode)}&dataType=Branded&pageSize=5&api_key=${key}`;
@@ -181,7 +229,7 @@ async function lookupUSDA(barcode) {
       recordLookup("usda", "miss", elapsedMs(start));
       return null;
     }
-    const data = await r.json();
+    const data = (await r.json()) as { foods?: USDAFood[] };
     const foods = data?.foods;
     if (!Array.isArray(foods) || foods.length === 0) {
       recordLookup("usda", "miss", elapsedMs(start));
@@ -198,10 +246,10 @@ async function lookupUSDA(barcode) {
     const product = normalizeUSDA(food);
     recordLookup("usda", product ? "hit" : "miss", elapsedMs(start));
     return product;
-  } catch (e) {
+  } catch (e: unknown) {
     recordLookup(
       "usda",
-      e?.name === "TimeoutError" ? "timeout" : "error",
+      hasErrorName(e, "TimeoutError") ? "timeout" : "error",
       elapsedMs(start),
     );
     throw e;
@@ -213,7 +261,9 @@ async function lookupUSDA(barcode) {
 // Returns product name/brand but rarely has nutrition data for food items.
 // We mark partial: true so the frontend can prompt the user to fill in macros.
 // ──────────────────────────────────────────────────────────────────────────────
-async function lookupUPCitemdb(barcode) {
+async function lookupUPCitemdb(
+  barcode: string,
+): Promise<NormalizedProduct | null> {
   const url = `https://api.upcitemdb.com/prod/trial/lookup?upc=${encodeURIComponent(barcode)}`;
   const start = process.hrtime.bigint();
   try {
@@ -225,7 +275,9 @@ async function lookupUPCitemdb(barcode) {
       recordLookup("upcitemdb", "miss", elapsedMs(start));
       return null;
     }
-    const data = await r.json();
+    const data = (await r.json()) as {
+      items?: Array<{ title?: string; brand?: string }>;
+    };
     const item = Array.isArray(data?.items) ? data.items[0] : null;
     if (!item) {
       recordLookup("upcitemdb", "miss", elapsedMs(start));
@@ -253,10 +305,10 @@ async function lookupUPCitemdb(barcode) {
       source: "upcitemdb",
       partial: true, // no nutrition data — frontend should prompt user to fill in macros
     };
-  } catch (e) {
+  } catch (e: unknown) {
     recordLookup(
       "upcitemdb",
-      e?.name === "TimeoutError" ? "timeout" : "error",
+      hasErrorName(e, "TimeoutError") ? "timeout" : "error",
       elapsedMs(start),
     );
     throw e;
@@ -271,17 +323,21 @@ async function lookupUPCitemdb(barcode) {
  * Middleware-и роутера (`setModule`, `rateLimitExpress`) забезпечують
  * module-tag і rate-limit; тут лише бізнес-логіка.
  */
-export default async function handler(req, res) {
+export default async function handler(
+  req: Request,
+  res: Response,
+): Promise<void> {
   const parsed = validateQuery(BarcodeQuerySchema, req, res);
   if (!parsed.ok) return;
   const barcode = parsed.data.barcode.replace(/\D/g, "");
   if (!/^\d{8,14}$/.test(barcode)) {
-    return res.status(400).json({ error: "Невірний штрихкод (8–14 цифр)" });
+    res.status(400).json({ error: "Невірний штрихкод (8–14 цифр)" });
+    return;
   }
 
   try {
     // Cascade: OFF → USDA → UPCitemdb
-    let product = null;
+    let product: NormalizedProduct | null = null;
 
     try {
       product = await lookupOFF(barcode);
@@ -304,16 +360,19 @@ export default async function handler(req, res) {
     }
 
     if (!product) {
-      return res.status(404).json({ error: "Продукт не знайдено" });
+      res.status(404).json({ error: "Продукт не знайдено" });
+      return;
     }
 
-    return res.status(200).json({ product });
-  } catch (e) {
-    if (e?.name === "TimeoutError" || e?.name === "AbortError") {
-      return res
+    res.status(200).json({ product });
+  } catch (e: unknown) {
+    if (hasErrorName(e, "TimeoutError") || hasErrorName(e, "AbortError")) {
+      res
         .status(504)
         .json({ error: "Сервіс недоступний (таймаут). Спробуй пізніше." });
+      return;
     }
-    return res.status(500).json({ error: e?.message || "Server error" });
+    const message = e instanceof Error ? e.message : "Server error";
+    res.status(500).json({ error: message });
   }
 }

@@ -1,36 +1,75 @@
+import type { Request, Response } from "express";
 import pool from "../db.js";
 import { anthropicMessages, extractAnthropicText } from "../lib/anthropic.js";
 import { MAX_BLOB_SIZE } from "./sync.js";
 import { validateBody } from "../http/validate.js";
 import { CoachInsightSchema, CoachMemoryPostSchema } from "../http/schemas.js";
 
-async function getMemory(userId) {
+type WithSessionUser = Request & { user?: { id: string } };
+type WithAnthropicKey = Request & { anthropicKey?: string };
+
+interface AnthropicErrorPayload {
+  error?: { message?: string };
+}
+
+interface WeeklyDigestEntry {
+  weekKey: string;
+  weekRange?: string;
+  generatedAt: string;
+  finyk?: { summary?: string } | null;
+  fizruk?: { summary?: string } | null;
+  nutrition?: { summary?: string } | null;
+  routine?: { summary?: string } | null;
+  overallRecommendations?: string[];
+}
+
+interface CoachMemory {
+  weeklyDigests: WeeklyDigestEntry[];
+  lastInsightDate: string | null;
+  lastInsightText: string | null;
+}
+
+interface IncomingMemory {
+  weeklyDigest?: {
+    weekKey: string;
+    weekRange?: string;
+    generatedAt?: string;
+    finyk?: { summary?: string } | null;
+    fizruk?: { summary?: string } | null;
+    nutrition?: { summary?: string } | null;
+    routine?: { summary?: string } | null;
+    overallRecommendations?: string[];
+  };
+}
+
+async function getMemory(userId: string): Promise<CoachMemory | null> {
   // EXPLAIN ANALYZE: Index Scan using module_data_user_id_module_key
   //   на UNIQUE(user_id, module) — point-lookup, O(log N), < 1мс.
-  const result = await pool.query(
+  const result = await pool.query<{ data: unknown }>(
     `SELECT data FROM module_data WHERE user_id = $1 AND module = 'coach'`,
     [userId],
   );
   if (result.rows.length === 0) return null;
   const raw = result.rows[0].data;
   try {
-    return typeof raw === "string" ? JSON.parse(raw) : raw;
+    return (typeof raw === "string" ? JSON.parse(raw) : raw) as CoachMemory;
   } catch {
-    return raw;
+    return raw as CoachMemory;
   }
 }
 
 // Власний тип помилки, щоб handler міг відрізнити overflow від інших DB-фейлів
 // і повернути 413 замість 500.
 export class CoachMemoryTooLargeError extends Error {
-  constructor(bytes) {
+  public readonly bytes: number;
+  constructor(bytes: number) {
     super(`coach memory blob too large: ${bytes} bytes`);
     this.name = "CoachMemoryTooLargeError";
     this.bytes = bytes;
   }
 }
 
-async function saveMemory(userId, memory) {
+async function saveMemory(userId: string, memory: CoachMemory): Promise<void> {
   const blob = JSON.stringify(memory);
   // Ділимо той самий `MAX_BLOB_SIZE`, що й sync: це один стовпчик `module_data.data`
   // і той самий пейлоад-транспорт, тож будь-яке різне ліміти-рішення буде сюрпризом.
@@ -46,8 +85,11 @@ async function saveMemory(userId, memory) {
   );
 }
 
-function mergeMemory(existing, incoming) {
-  const base = existing || {
+function mergeMemory(
+  existing: CoachMemory | null,
+  incoming: IncomingMemory,
+): CoachMemory {
+  const base: CoachMemory = existing || {
     weeklyDigests: [],
     lastInsightDate: null,
     lastInsightText: null,
@@ -58,7 +100,7 @@ function mergeMemory(existing, incoming) {
     : [];
 
   if (incoming.weeklyDigest) {
-    const entry = {
+    const entry: WeeklyDigestEntry = {
       weekKey: incoming.weeklyDigest.weekKey,
       weekRange: incoming.weeklyDigest.weekRange,
       generatedAt:
@@ -87,7 +129,7 @@ function mergeMemory(existing, incoming) {
   };
 }
 
-function buildMemorySummary(memory) {
+function buildMemorySummary(memory: CoachMemory | null): string {
   if (
     !memory ||
     !Array.isArray(memory.weeklyDigests) ||
@@ -96,13 +138,13 @@ function buildMemorySummary(memory) {
     return "Пам'яті ще немає — це перший сеанс.";
   }
 
-  const lines = [];
+  const lines: string[] = [];
   const digests = memory.weeklyDigests.slice(0, 8);
   lines.push(`Накопичено даних за ${digests.length} тижнів.`);
 
   const finykSummaries = digests
     .filter((d) => d.finyk?.summary)
-    .map((d) => `  • ${d.weekRange || d.weekKey}: ${d.finyk.summary}`);
+    .map((d) => `  • ${d.weekRange || d.weekKey}: ${d.finyk!.summary}`);
   if (finykSummaries.length) {
     lines.push("Фінанси (по тижнях):");
     lines.push(...finykSummaries.slice(0, 4));
@@ -110,7 +152,7 @@ function buildMemorySummary(memory) {
 
   const fizrukSummaries = digests
     .filter((d) => d.fizruk?.summary)
-    .map((d) => `  • ${d.weekRange || d.weekKey}: ${d.fizruk.summary}`);
+    .map((d) => `  • ${d.weekRange || d.weekKey}: ${d.fizruk!.summary}`);
   if (fizrukSummaries.length) {
     lines.push("Тренування (по тижнях):");
     lines.push(...fizrukSummaries.slice(0, 4));
@@ -118,7 +160,7 @@ function buildMemorySummary(memory) {
 
   const nutritionSummaries = digests
     .filter((d) => d.nutrition?.summary)
-    .map((d) => `  • ${d.weekRange || d.weekKey}: ${d.nutrition.summary}`);
+    .map((d) => `  • ${d.weekRange || d.weekKey}: ${d.nutrition!.summary}`);
   if (nutritionSummaries.length) {
     lines.push("Харчування (по тижнях):");
     lines.push(...nutritionSummaries.slice(0, 4));
@@ -126,7 +168,7 @@ function buildMemorySummary(memory) {
 
   const routineSummaries = digests
     .filter((d) => d.routine?.summary)
-    .map((d) => `  • ${d.weekRange || d.weekKey}: ${d.routine.summary}`);
+    .map((d) => `  • ${d.weekRange || d.weekKey}: ${d.routine!.summary}`);
   if (routineSummaries.length) {
     lines.push("Звички (по тижнях):");
     lines.push(...routineSummaries.slice(0, 4));
@@ -147,41 +189,72 @@ function buildMemorySummary(memory) {
  * GET /api/coach/memory — віддати поточну coach-пам'ять користувача.
  * `req.user` гарантовано заповнений middleware-ом `requireSession`.
  */
-export async function coachMemoryGet(req, res) {
-  const memory = await getMemory(req.user.id);
-  return res.json({ ok: true, memory: memory || null });
+export async function coachMemoryGet(
+  req: Request,
+  res: Response,
+): Promise<void> {
+  const userId = (req as WithSessionUser).user!.id;
+  const memory = await getMemory(userId);
+  res.json({ ok: true, memory: memory || null });
 }
 
 /**
  * POST /api/coach/memory — merge incoming digest у збережену пам'ять.
  * `req.user` гарантовано заповнений middleware-ом `requireSession`.
  */
-export async function coachMemoryPost(req, res) {
+export async function coachMemoryPost(
+  req: Request,
+  res: Response,
+): Promise<void> {
   const parsed = validateBody(CoachMemoryPostSchema, req, res);
   if (!parsed.ok) return;
-  const incoming = parsed.data;
-  const existing = await getMemory(req.user.id);
+  const incoming = parsed.data as IncomingMemory;
+  const userId = (req as WithSessionUser).user!.id;
+  const existing = await getMemory(userId);
   const merged = mergeMemory(existing, incoming);
   try {
-    await saveMemory(req.user.id, merged);
-  } catch (err) {
+    await saveMemory(userId, merged);
+  } catch (err: unknown) {
     if (err instanceof CoachMemoryTooLargeError) {
-      return res.status(413).json({ error: "Coach memory blob too large" });
+      res.status(413).json({ error: "Coach memory blob too large" });
+      return;
     }
     throw err;
   }
-  return res.json({ ok: true });
+  res.json({ ok: true });
 }
 
 /**
  * POST /api/coach/insight — згенерувати AI-повідомлення дня.
  * `req.user`, `req.anthropicKey` і квота гарантуються middleware-ами роутера.
  */
-export async function coachInsight(req, res) {
-  const apiKey = req.anthropicKey;
+export async function coachInsight(req: Request, res: Response): Promise<void> {
+  const apiKey = (req as WithAnthropicKey).anthropicKey as string;
   const parsed = validateBody(CoachInsightSchema, req, res);
   if (!parsed.ok) return;
-  const { snapshot, memory } = parsed.data;
+  const { snapshot, memory } = parsed.data as {
+    snapshot: {
+      finyk?: {
+        totalSpent?: number;
+        totalIncome?: number;
+        txCount?: number;
+        topCategories?: Array<{ name: string; amount: number }>;
+      };
+      fizruk?: {
+        workoutsCount?: number;
+        totalVolume?: number;
+        recoveryLabel?: string;
+      };
+      nutrition?: {
+        avgKcal?: number;
+        targetKcal?: number;
+        avgProtein?: number;
+        daysLogged?: number;
+      };
+      routine?: { overallRate?: number; habitCount?: number };
+    };
+    memory: CoachMemory | null;
+  };
 
   const memorySummary = buildMemorySummary(memory);
 
@@ -245,12 +318,14 @@ ${snapshotText}
   );
 
   if (!aiRes?.ok) {
-    return res
+    const errData = aiData as AnthropicErrorPayload | null | undefined;
+    res
       .status(aiRes?.status || 500)
-      .json({ error: aiData?.error?.message || "AI error" });
+      .json({ error: errData?.error?.message || "AI error" });
+    return;
   }
 
   const text = extractAnthropicText(aiData);
 
-  return res.json({ ok: true, insight: text });
+  res.json({ ok: true, insight: text });
 }

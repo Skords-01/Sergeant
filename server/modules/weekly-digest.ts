@@ -1,9 +1,16 @@
+import type { Request, Response } from "express";
 import { anthropicMessages, extractAnthropicText } from "../lib/anthropic.js";
 import { validateBody } from "../http/validate.js";
 import { WeeklyDigestSchema } from "../http/schemas.js";
 import { ExternalServiceError, ValidationError } from "../obs/errors.js";
 
-function extractJsonObject(raw) {
+type WithAnthropicKey = Request & { anthropicKey?: string };
+
+interface AnthropicErrorPayload {
+  error?: { message?: string };
+}
+
+function extractJsonObject(raw: unknown): unknown {
   if (typeof raw !== "string") return null;
   let text = raw.trim();
   // Прибираємо markdown-обгортку ```json ... ``` або ``` ... ```
@@ -55,14 +62,17 @@ function extractJsonObject(raw) {
  * забезпечені middleware-ами роутера; тут лише бізнес-логіка. Ключ Anthropic
  * читається з `req.anthropicKey`.
  */
-export default async function handler(req, res) {
-  const apiKey = req.anthropicKey;
+export default async function handler(
+  req: Request,
+  res: Response,
+): Promise<void> {
+  const apiKey = (req as WithAnthropicKey).anthropicKey as string;
 
   const parsed = validateBody(WeeklyDigestSchema, req, res);
   if (!parsed.ok) return;
   const { weekRange, finyk, fizruk, nutrition, routine } = parsed.data;
 
-  const sections = [];
+  const sections: string[] = [];
 
   if (finyk) {
     const budgetLine = finyk.monthlyBudget
@@ -178,7 +188,8 @@ ${dataContext}`;
   );
 
   if (!aiRes?.ok) {
-    throw new ExternalServiceError(aiData?.error?.message || "AI error", {
+    const errData = aiData as AnthropicErrorPayload | null | undefined;
+    throw new ExternalServiceError(errData?.error?.message || "AI error", {
       status: aiRes?.status || 502,
       code: "ANTHROPIC_ERROR",
     });
@@ -194,7 +205,5 @@ ${dataContext}`;
     });
   }
 
-  return res
-    .status(200)
-    .json({ report, generatedAt: new Date().toISOString() });
+  res.status(200).json({ report, generatedAt: new Date().toISOString() });
 }

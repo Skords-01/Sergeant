@@ -1,3 +1,4 @@
+import type { Request, Response } from "express";
 import { FoodSearchQuerySchema } from "../http/schemas.js";
 import { validateQuery } from "../http/validate.js";
 
@@ -6,8 +7,39 @@ const OFF_FIELDS =
   "product_name,product_name_uk,brands,nutriments,serving_quantity";
 const USDA_SEARCH = "https://api.nal.usda.gov/fdc/v1/foods/search";
 
+interface OFFSearchProduct {
+  product_name?: string;
+  product_name_uk?: string;
+  brands?: string;
+  nutriments?: Record<string, unknown>;
+  serving_quantity?: number | string;
+}
+
+interface USDASearchFood {
+  description?: string;
+  foodNutrients?: Array<{ nutrientId?: number; value?: number }>;
+}
+
+interface NormalizedSearchProduct {
+  id: string;
+  name: string;
+  brand: string | null;
+  source: "off" | "usda";
+  per100: {
+    kcal: number;
+    protein_g: number;
+    fat_g: number;
+    carbs_g: number;
+  };
+  defaultGrams: number;
+}
+
+function hasErrorName(e: unknown, name: string): boolean {
+  return !!e && typeof e === "object" && (e as { name?: string }).name === name;
+}
+
 // Перший токен запиту → англійський еквівалент для USDA / OFF-en пошуку
-const UK_TO_EN = {
+const UK_TO_EN: Record<string, string> = {
   груша: "pear",
   яблуко: "apple",
   банан: "banana",
@@ -102,7 +134,7 @@ const UK_TO_EN = {
 };
 
 // Точний або prefix-match (напр. "груш" → "груша" → "pear")
-function translateFirstToken(query) {
+function translateFirstToken(query: string): string | null {
   const token = query.trim().toLowerCase().split(/\s+/)[0];
   if (!token || token.length < 2) return null;
   if (UK_TO_EN[token]) return UK_TO_EN[token];
@@ -114,10 +146,13 @@ function translateFirstToken(query) {
   return null;
 }
 
-function normalizeOFFProduct(product, idx) {
-  const n = product?.nutriments || {};
+function normalizeOFFProduct(
+  product: OFFSearchProduct | null | undefined,
+  idx: number,
+): NormalizedSearchProduct | null {
+  const n = (product?.nutriments || {}) as Record<string, unknown>;
 
-  const round1 = (v) =>
+  const round1 = (v: unknown): number | null =>
     v != null && Number.isFinite(Number(v))
       ? Math.round(Number(v) * 10) / 10
       : null;
@@ -163,11 +198,14 @@ function normalizeOFFProduct(product, idx) {
 }
 
 // USDA nutrient IDs: 1008=Energy(kcal), 1003=Protein, 1004=Fat, 1005=Carbs
-function normalizeUSDAProduct(food, idx) {
+function normalizeUSDAProduct(
+  food: USDASearchFood | null | undefined,
+  idx: number,
+): NormalizedSearchProduct | null {
   const name = food?.description;
   if (!name) return null;
 
-  const round1 = (v) =>
+  const round1 = (v: unknown): number | null =>
     v != null && Number.isFinite(Number(v))
       ? Math.round(Number(v) * 10) / 10
       : null;
@@ -175,7 +213,7 @@ function normalizeUSDAProduct(food, idx) {
   const nutrients = Array.isArray(food?.foodNutrients)
     ? food.foodNutrients
     : [];
-  const get = (id) => {
+  const get = (id: number): number | null => {
     const n = nutrients.find((x) => x.nutrientId === id);
     return n?.value != null ? Number(n.value) : null;
   };
@@ -204,7 +242,11 @@ function normalizeUSDAProduct(food, idx) {
   };
 }
 
-async function fetchOFF(searchTerms, lc, signal) {
+async function fetchOFF(
+  searchTerms: string,
+  lc: string,
+  signal: AbortSignal,
+): Promise<OFFSearchProduct[]> {
   const url = new URL(OFF_SEARCH);
   url.searchParams.set("search_terms", searchTerms);
   url.searchParams.set("page_size", "20");
@@ -221,11 +263,14 @@ async function fetchOFF(searchTerms, lc, signal) {
     signal,
   });
   if (!r.ok) return [];
-  const data = await r.json();
+  const data = (await r.json()) as { products?: OFFSearchProduct[] };
   return data?.products || [];
 }
 
-async function fetchUSDA(query, signal) {
+async function fetchUSDA(
+  query: string,
+  signal: AbortSignal,
+): Promise<USDASearchFood[]> {
   const apiKey = process.env.USDA_API_KEY || "DEMO_KEY";
   const url = new URL(USDA_SEARCH);
   url.searchParams.set("query", query);
@@ -235,7 +280,7 @@ async function fetchUSDA(query, signal) {
 
   const r = await fetch(url.toString(), { signal });
   if (!r.ok) return [];
-  const data = await r.json();
+  const data = (await r.json()) as { foods?: USDASearchFood[] };
   return data?.foods || [];
 }
 
@@ -243,7 +288,10 @@ async function fetchUSDA(query, signal) {
  * GET /api/food-search?q=… — каскадний пошук через Open Food Facts + USDA.
  * CORS і rate-limit виставляє роутер.
  */
-export default async function handler(req, res) {
+export default async function handler(
+  req: Request,
+  res: Response,
+): Promise<void> {
   const parsed = validateQuery(FoodSearchQuerySchema, req, res);
   if (!parsed.ok) return;
   const { q: query, limit } = parsed.data;
@@ -254,23 +302,28 @@ export default async function handler(req, res) {
     const enTerm = translateFirstToken(query);
 
     const [ukOff, enOff, usdaRaw] = await Promise.all([
-      fetchOFF(query, "uk", signal).catch(() => []),
+      fetchOFF(query, "uk", signal).catch((): OFFSearchProduct[] => []),
       enTerm
-        ? fetchOFF(enTerm, "en", signal).catch(() => [])
-        : Promise.resolve([]),
-      enTerm ? fetchUSDA(enTerm, signal).catch(() => []) : Promise.resolve([]),
+        ? fetchOFF(enTerm, "en", signal).catch((): OFFSearchProduct[] => [])
+        : Promise.resolve<OFFSearchProduct[]>([]),
+      enTerm
+        ? fetchUSDA(enTerm, signal).catch((): USDASearchFood[] => [])
+        : Promise.resolve<USDASearchFood[]>([]),
     ]);
 
     const offProducts = [...ukOff, ...enOff]
       .map((p, i) => normalizeOFFProduct(p, i))
-      .filter(Boolean);
+      .filter((p): p is NormalizedSearchProduct => p != null);
 
     const usdaProducts = usdaRaw
       .map((p, i) => normalizeUSDAProduct(p, i))
-      .filter(Boolean);
+      .filter((p): p is NormalizedSearchProduct => p != null);
 
     // OFF (з українськими назвами) йде першим, USDA — як fallback
-    const allProducts = [...offProducts, ...usdaProducts];
+    const allProducts: NormalizedSearchProduct[] = [
+      ...offProducts,
+      ...usdaProducts,
+    ];
 
     const qTokens = query
       .toLowerCase()
@@ -279,7 +332,7 @@ export default async function handler(req, res) {
     const enTokens = enTerm ? enTerm.toLowerCase().split(/\s+/) : [];
     const allTokens = [...qTokens, ...enTokens];
 
-    const seen = new Set();
+    const seen = new Set<string>();
     const products = allProducts
       .filter((p) => {
         const key = `${(p.name || "").toLowerCase()}|${(p.brand || "").toLowerCase()}`;
@@ -291,13 +344,15 @@ export default async function handler(req, res) {
       })
       .slice(0, limit);
 
-    return res.status(200).json({ products });
-  } catch (e) {
-    if (e?.name === "TimeoutError" || e?.name === "AbortError") {
-      return res
+    res.status(200).json({ products });
+  } catch (e: unknown) {
+    if (hasErrorName(e, "TimeoutError") || hasErrorName(e, "AbortError")) {
+      res
         .status(504)
         .json({ error: "Сервіс недоступний (таймаут). Спробуй пізніше." });
+      return;
     }
-    return res.status(500).json({ error: e?.message || "Server error" });
+    const message = e instanceof Error ? e.message : "Server error";
+    res.status(500).json({ error: message });
   }
 }
