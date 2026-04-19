@@ -17,6 +17,7 @@ export type HubModuleAction =
   | "add_expense"
   | "start_workout"
   | "add_meal"
+  | "add_meal_photo"
   | "add_habit";
 
 export interface HubOpenModuleDetail {
@@ -52,6 +53,7 @@ const VALID_HUB_ACTIONS = new Set<HubModuleAction>([
   "add_expense",
   "start_workout",
   "add_meal",
+  "add_meal_photo",
   "add_habit",
 ]);
 

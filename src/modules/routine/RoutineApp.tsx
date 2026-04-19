@@ -30,6 +30,7 @@ import { RoutineBottomNav } from "./components/RoutineBottomNav";
 import { RoutineCalendarPanel } from "./components/RoutineCalendarPanel";
 import { RoutineSettingsSection } from "./components/RoutineSettingsSection";
 import { RoutineStatsPanel } from "./components/RoutineStatsPanel";
+import { HabitQuickCreateDialog } from "./components/HabitQuickCreateDialog";
 import { RoutineCalendarProvider } from "./context/RoutineCalendarContext";
 import type {
   RoutineMainTab,
@@ -218,17 +219,25 @@ export default function RoutineApp({
     emoji: "",
   });
   // Monotonic tick bumped whenever something asks us to focus the habit
-  // form (e.g. the `add_habit` PWA action or the FTUX first-action
-  // sheet). A tick — not a bool — so repeated triggers always fire.
-  const [habitFormFocusTick, setHabitFormFocusTick] = useState<number>(0);
+  // form (e.g. the FTUX first-action sheet inside Settings). A tick —
+  // not a bool — so repeated triggers always fire. The setter is
+  // currently unused because the `add_habit` PWA action now opens
+  // `HabitQuickCreateDialog` instead of bouncing into Settings, but the
+  // prop is kept in the Settings HabitForm contract for future callers.
+  const [habitFormFocusTick] = useState<number>(0);
 
-  // Handle the `add_habit` PWA action: switch to the Settings tab
-  // (where the habit form lives) and bump the focus tick so the form
-  // scrolls itself into view and puts the caret in the name input.
+  // Quick-create dialog state. The `add_habit` PWA action used to
+  // shove the user into the Settings tab; now it opens a bottom-sheet
+  // modal overlaid on whatever tab they're already on (#S0.2). The
+  // tick is bumped each time so the dialog re-focuses its name input
+  // when reopened after a previous close.
+  const [quickAddHabitOpen, setQuickAddHabitOpen] = useState<boolean>(false);
+  const [quickAddFocusTick, setQuickAddFocusTick] = useState<number>(0);
+
   useEffect(() => {
     if (pwaAction !== "add_habit") return;
-    setMainTab("settings");
-    setHabitFormFocusTick((t) => t + 1);
+    setQuickAddHabitOpen(true);
+    setQuickAddFocusTick((t) => t + 1);
     onPwaActionConsumed?.();
   }, [pwaAction, onPwaActionConsumed]);
 
@@ -489,24 +498,24 @@ export default function RoutineApp({
             <button
               type="button"
               onClick={onBackToHub}
-              className="shrink-0 w-10 h-10 min-w-[40px] min-h-[40px] -ml-1 flex items-center justify-center rounded-xl text-muted hover:text-text hover:bg-panelHi transition-colors border border-line bg-panel/80"
-              aria-label="До вибору модуля"
+              className="shrink-0 h-10 min-h-[40px] -ml-1 pl-2 pr-3 gap-1.5 flex items-center justify-center rounded-xl text-muted hover:text-text hover:bg-panelHi transition-colors border border-line bg-panel/80"
+              aria-label="До хабу"
               title="До хабу"
             >
               <svg
-                width="22"
-                height="22"
+                width="20"
+                height="20"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
-                strokeWidth="1.8"
+                strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 aria-hidden
               >
-                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                <polyline points="9 22 9 12 15 12 15 22" />
+                <path d="M15 18l-6-6 6-6" />
               </svg>
+              <span className="text-sm font-semibold">Хаб</span>
             </button>
           ) : (
             <div
@@ -677,6 +686,14 @@ export default function RoutineApp({
       </div>
 
       <RoutineBottomNav mainTab={mainTab} onSelectTab={setMainTab} />
+
+      <HabitQuickCreateDialog
+        open={quickAddHabitOpen}
+        routine={routine}
+        setRoutine={setRoutine}
+        onClose={() => setQuickAddHabitOpen(false)}
+        focusTick={quickAddFocusTick}
+      />
     </div>
   );
 }

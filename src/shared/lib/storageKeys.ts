@@ -79,6 +79,10 @@ export const STORAGE_KEYS = {
 
   // ─── Weekly Digest ────────────────────────────────────────────────────
   WEEKLY_DIGEST_PREFIX: "hub_weekly_digest_",
+  // Opt-in flag for the Monday auto-generate. Default is OFF so a fresh
+  // Monday visit never triggers an unexpected AI call; the setting lives in
+  // Hub → Settings → AI Звіт тижня.
+  WEEKLY_DIGEST_MONDAY_AUTO: "hub_weekly_digest_monday_auto_v1",
 } as const;
 
 export type StorageKey = (typeof STORAGE_KEYS)[keyof typeof STORAGE_KEYS];
