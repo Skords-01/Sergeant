@@ -230,6 +230,25 @@ groups:
             Likely Anthropic-side degradation. Check status.anthropic.com.
           runbook: "docs/observability/runbook.md#ailatencyp95high"
 
+      # Квота зберігається в Postgres; якщо сховище впало — `assertAiQuota`
+      # fail-open пропускає запити, тобто ми тимчасово НЕ стримуємо юзерів
+      # від перевитрати Anthropic-бюджету. Це не поломка бекенду в сенсі 5xx
+      # (response = ok), але реальна фінансова ризик-подія, тому ticket.
+      - alert: AiQuotaStoreDown
+        expr: increase(ai_quota_fail_open_total[10m]) > 0
+        for: 5m
+        labels:
+          severity: ticket
+        annotations:
+          summary: "AI quota store unavailable → fail-open (users can exceed limits)"
+          description: |
+            `ai_quota_fail_open_total` інкрементується, коли assertAiQuota
+            не може записати у `ai_usage_daily` (DB down / DATABASE_URL
+            missing / table dropped). Запити пропускаються → юзери можуть
+            вийти за денний ліміт, і ми заплатимо за Anthropic.
+            Reason label: {{ $labels.reason }}.
+          runbook: "docs/observability/runbook.md#aiquotastoredown"
+
   # ──────────────────────────── External HTTP (SLO 95.0% per-upstream) ─
   - name: slo_external_http
     rules:
@@ -278,6 +297,25 @@ groups:
             killed (Sentry captures + Railway restarts on health failure),
             but state may be inconsistent. Investigate immediately.
           runbook: "docs/observability/runbook.md#uncaughtexception"
+
+      # Leading indicator. `DbPoolSaturated` (нижче) page-ить аж через 10m —
+      # до того моменту p95 API вже просів, бо кожен session-check чекає
+      # вільний слот. Ticket на 5m дає команді час почати дослідження до
+      # того, як SLO починає гриміти.
+      - alert: DbPoolWaitingSustained
+        expr: db_pool_waiting > 0
+        for: 5m
+        labels:
+          severity: ticket
+        annotations:
+          summary: "Postgres pool has waiting clients for >5m (leading indicator)"
+          description: |
+            `db_pool_waiting` > 0 вже 5 хвилин. p95 API починає деградувати
+            через чергування session-check-ів. Якщо не розсмокчеться — за
+            ще 5m трігернеться page `DbPoolSaturated`. Перевір
+            `db_query_duration_ms{op}` і `db_slow_queries_total{op}` ЗАРАЗ,
+            знайди нового винуватця (недавній deploy / зміна схеми).
+          runbook: "docs/observability/runbook.md#dbpoolwaitingsustained"
 
       - alert: DbPoolSaturated
         expr: db_pool_waiting > 0

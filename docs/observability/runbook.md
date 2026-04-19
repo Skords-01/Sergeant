@@ -140,6 +140,21 @@
 3. Patch гіпотетично в наступному релізі; temporary — тримай за алерт.
 4. `unhandledRejectionsTotal` не має бути >0 у нормі, навіть не короткочасно.
 
+## DbPoolWaitingSustained
+
+Leading indicator. `db_pool_waiting > 0` 5m → ticket. Пейдж
+`DbPoolSaturated` ще не впав, але p95 уже просідає, бо кожен
+session-check чекає слот.
+
+1. `sum by (op) (rate(db_query_duration_ms_count[5m]))` — хто раптом
+   почав робити багато запитів? Новий endpoint? N+1?
+2. `histogram_quantile(0.95, sum by (le, op) (rate(db_query_duration_ms_bucket[5m])))`
+   — який op п'є pool.
+3. Сверь із git-log: недавній deploy (< 1h) з новою heavy query —
+   найчастіший винуватець. Якщо так — розкати або патчі запит.
+4. Якщо `db_pool_waiting` падає до 0 за кілька хвилин — резолв.
+   Якщо росте далі — чекай `DbPoolSaturated` і дій за ним.
+
 ## DbPoolSaturated
 
 `db_pool_waiting > 0` 10m → connection contention.
@@ -149,6 +164,27 @@
 3. Знайди потенційні long-running transactions у логах
    (`level=info` з `module=db, msg="slow query"`).
 4. Перевір, чи не відбувся нещодавно deploy, що додав новий heavy read-path.
+
+## AiQuotaStoreDown
+
+`ai_quota_fail_open_total` зростає → `assertAiQuota` не може
+записати в `ai_usage_daily` і **пропускає запити без ліку**. Юзери
+можуть вийти за денний ліміт → непередбачуваний Anthropic-білл.
+
+1. `sum by (reason) (increase(ai_quota_fail_open_total[30m]))` — зрозумій
+   категорію:
+   - `database_url_missing` → env зник/не переексопортнувся. Перевір
+     Railway service vars і deploy-логи.
+   - `db_error` → Postgres down/unreachable/table missing. Глянь
+     `db_errors_total{code}` і Pino `msg=ai_quota_store_unavailable`
+     (там є `err.code`).
+2. Поки fix не виїхав — **тимчасово заборони AI-фічі** через
+   `AI_QUOTA_DISABLED=0` і `AI_DAILY_ANON_LIMIT=0` / `AI_DAILY_USER_LIMIT=0`,
+   щоб `assertAiQuota` повертав 429 замість fail-open.
+3. Перевір міграцію `ai_usage_daily`: `SELECT to_regclass('ai_usage_daily')`.
+   Якщо null — запусти міграції.
+4. Після відновлення — дивись Anthropic-dashboard, чи не було сплеску
+   витрат за вікно fail-open.
 
 ## ProgrammerErrors
 
