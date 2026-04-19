@@ -4,6 +4,7 @@ import { cn } from "@shared/lib/cn";
 import { Card } from "@shared/components/ui/Card";
 import { Button } from "@shared/components/ui/Button";
 import { Input } from "@shared/components/ui/Input";
+import { Select } from "@shared/components/ui/Select";
 import {
   getLastTxForSubscription,
   getSubscriptionAmountMeta,
@@ -26,13 +27,6 @@ const EMOJI_OPTIONS = [
   "🌐",
   "📡",
 ];
-
-// Matches <Input size="md"> visual shell so the currency select sits flush
-// with the day-of-month input (proper <Select> comes in PR #4).
-const SELECT_CLASS =
-  "h-11 w-full px-4 text-base rounded-2xl text-text bg-panelHi " +
-  "border border-line outline-none transition-all duration-200 " +
-  "focus:border-brand-400 focus:ring-2 focus:ring-brand-100";
 
 // Картка підписки. Всередині тримає лише локальний стан редагування,
 // тож memo уникає перерендеру при змінах інших підписок/сторінки.
@@ -111,8 +105,7 @@ function SubCardComponent({
             />
           </div>
           <div className="flex-1">
-            <select
-              className={SELECT_CLASS}
+            <Select
               value={form.currency}
               aria-label="Валюта"
               onChange={(e) =>
@@ -122,7 +115,7 @@ function SubCardComponent({
               <option value="UAH">₴ UAH</option>
               <option value="USD">$ USD</option>
               <option value="EUR">€ EUR</option>
-            </select>
+            </Select>
           </div>
         </div>
         <div className="flex gap-2">
