@@ -56,7 +56,33 @@ export function createApp({
   app.use(withRequestContext);
   app.use(requestLogMiddleware);
   app.use(apiHelmetMiddleware({ servesFrontend }));
-  app.use(express.json({ limit: "12mb" }));
+
+  // Body-size policy: tight default, explicit loosening on routes that
+  // legitimately carry large payloads.
+  //
+  // Контекст. Раніше глобально стояв `express.json({ limit: "12mb" })`, що
+  // робило будь-який POST-ендпоінт потенційним каналом для 12MB сміття
+  // (OOM-amplifier, повільний парс, зайва RSS на Railway-інстансі з
+  // скромним лімітом пам'яті). 99% наших ендпоінтів обмінюються пейлоадами
+  // <4KB — дефолт 128KB дає комфортний запас навіть під великий textarea
+  // і одразу закриває 413 до того, як handler/zod навіть побачать тіло.
+  //
+  // Порядок важливий. Mount-и на конкретні шляхи мусять іти ПЕРЕД
+  // глобальним мініатюрним, інакше 128KB-парсер спрацює першим і вб'є
+  // великий legit-payload. `express.json()` no-op-ить, якщо body вже
+  // розпарсене, тож другий виклик на тому самому request-і безпечний.
+  //
+  // Ліміти підібрані: schema-level max + невеликий запас під JSON-оверхед:
+  //   analyze-photo / refine-photo : 10mb (schema допускає base64 до ~7MB)
+  //   backup-upload                : 4mb  (internal cap 2.5MB post-stringify)
+  //   sync push/pull               : 6mb  (MAX_BLOB_SIZE = 5MB)
+  //   coach memory                 : 6mb  (той самий MAX_BLOB_SIZE)
+  app.use("/api/nutrition/analyze-photo", express.json({ limit: "10mb" }));
+  app.use("/api/nutrition/refine-photo", express.json({ limit: "10mb" }));
+  app.use("/api/nutrition/backup-upload", express.json({ limit: "4mb" }));
+  app.use("/api/sync", express.json({ limit: "6mb" }));
+  app.use("/api/coach/memory", express.json({ limit: "6mb" }));
+  app.use(express.json({ limit: "128kb" }));
 
   // Global CORS for the whole /api surface. Individual handlers may re-set
   // headers (e.g. to widen allow-headers) — `setCorsHeaders` is idempotent.

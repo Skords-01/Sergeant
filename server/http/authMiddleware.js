@@ -57,8 +57,8 @@ export function authMetricsMiddleware(req, res, next) {
 
   // Читаємо body ДО `res.on("finish")`: better-auth toNodeHandler може
   // консьюмити stream і замінити/зачистити `req.body` до моменту емісії.
-  // express.json() у app.js парсить лімітом 12mb, тож на /sign-in
-  // це завжди object або undefined.
+  // express.json() у app.js парсить auth-роути глобальним дефолтом (128kb),
+  // тож на /sign-in `req.body` — це завжди object або undefined.
   const emailHash =
     op === "sign_in" || op === "sign_up" || op === "forget_password"
       ? emailFingerprint(req.body?.email)
