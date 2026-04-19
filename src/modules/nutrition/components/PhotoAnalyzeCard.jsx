@@ -1,5 +1,6 @@
 import { Card } from "@shared/components/ui/Card";
 import { Input } from "@shared/components/ui/Input";
+import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { cn } from "@shared/lib/cn";
 
 export function PhotoAnalyzeCard({
@@ -166,9 +167,9 @@ export function PhotoAnalyzeCard({
           {Array.isArray(photoResult.questions) &&
             photoResult.questions.length > 0 && (
               <div className="rounded-2xl border border-line bg-panelHi p-3 grid gap-3">
-                <div className="text-xs font-semibold text-subtle uppercase tracking-widest">
+                <SectionHeading as="div" size="xs">
                   Уточнення порції
-                </div>
+                </SectionHeading>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>

@@ -1,6 +1,7 @@
 import { memo } from "react";
 import { CANONICAL_TO_MANUAL_LABEL } from "../../domain/personalization";
 import { Card } from "@shared/components/ui/Card";
+import { SectionHeading } from "@shared/components/ui/SectionHeading";
 
 /**
  * Квікадд-картка: топ-категорії + «нещодавнє». Показуємо лише коли
@@ -19,9 +20,9 @@ const QuickAddCardImpl = function QuickAddCard({
     <Card radius="lg" padding="lg" className="space-y-3">
       <div className="flex items-center justify-between">
         <div>
-          <div className="text-xs font-semibold uppercase tracking-wide text-subtle">
+          <SectionHeading as="div" size="xs">
             Швидке додавання
-          </div>
+          </SectionHeading>
           <div className="text-sm text-muted mt-0.5">
             Ваші найчастіші категорії
           </div>
@@ -61,9 +62,9 @@ const QuickAddCardImpl = function QuickAddCard({
       )}
       {frequentMerchants.length > 0 && (
         <div className="pt-2 border-t border-line">
-          <div className="text-xs font-semibold uppercase tracking-wide text-subtle mb-2">
+          <SectionHeading as="div" size="xs" className="mb-2">
             Нещодавнє
-          </div>
+          </SectionHeading>
           <div className="flex flex-wrap gap-1.5">
             {frequentMerchants.slice(0, 4).map((m) => (
               <button
