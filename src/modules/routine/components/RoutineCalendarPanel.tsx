@@ -5,6 +5,7 @@ import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { Button } from "@shared/components/ui/Button";
 import { Card } from "@shared/components/ui/Card";
 import { Input } from "@shared/components/ui/Input";
+import { Segmented } from "@shared/components/ui/Segmented";
 import { WeekDayStrip } from "./WeekDayStrip";
 import { HabitDetailSheet } from "./HabitDetailSheet";
 import { SwipeToAction } from "@shared/components/ui/SwipeToAction";
@@ -19,6 +20,7 @@ import {
 import {
   ROUTINE_THEME as C,
   ROUTINE_TIME_MODES as TIME_MODES,
+  type RoutineTimeModeId,
 } from "../lib/routineConstants.js";
 import { setCompletionNote } from "../lib/routineStorage.js";
 import {
@@ -30,6 +32,11 @@ import type { HubCalendarEvent } from "../lib/types";
 type GroupedListItem =
   | { kind: "header"; label: string }
   | { kind: "event"; e: HubCalendarEvent };
+
+const timeModeItems: ReadonlyArray<{
+  value: RoutineTimeModeId;
+  label: string;
+}> = TIME_MODES.map((tm) => ({ value: tm.id, label: tm.label }));
 
 export interface RoutineCalendarPanelProps {
   hidden?: boolean;
@@ -201,21 +208,15 @@ export function RoutineCalendarPanel({
         </div>
       )}
 
-      <div className="flex flex-wrap gap-1.5">
-        {TIME_MODES.map((tm) => (
-          <button
-            key={tm.id}
-            type="button"
-            onClick={() => applyTimeMode(tm.id)}
-            className={cn(
-              "px-3 py-2 rounded-full text-xs font-semibold border transition-all",
-              timeMode === tm.id ? C.chipOn : C.chipOff,
-            )}
-          >
-            {tm.label}
-          </button>
-        ))}
-      </div>
+      <Segmented
+        tone="soft"
+        size="sm"
+        accent="routine"
+        ariaLabel="Часовий діапазон"
+        items={timeModeItems}
+        value={timeMode}
+        onChange={applyTimeMode}
+      />
 
       <div className="rounded-2xl border border-line bg-panel/80 p-3 shadow-card">
         <SectionHeading as="p" size="xs" className="mb-2">

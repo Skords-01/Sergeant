@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@shared/components/ui/Button";
 import { subtleNavButtonClass } from "@shared/components/ui/buttonPresets";
 import { ConfirmDialog } from "@shared/components/ui/ConfirmDialog";
-import { cn } from "@shared/lib/cn";
+import { Segmented } from "@shared/components/ui/Segmented";
 import { useToast } from "@shared/hooks/useToast";
 import { WorkoutTemplatesSection } from "../components/WorkoutTemplatesSection";
 import { RestTimerOverlay } from "../components/workouts/RestTimerOverlay";
@@ -71,6 +71,13 @@ function vibrateRestComplete() {
     if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
   } catch {}
 }
+
+type WorkoutsMode = "catalog" | "log" | "templates";
+const WORKOUTS_MODE_ITEMS = [
+  { value: "catalog", label: "Каталог" },
+  { value: "log", label: "Журнал" },
+  { value: "templates", label: "Шаблони" },
+] as const satisfies ReadonlyArray<{ value: WorkoutsMode; label: string }>;
 
 export function Workouts() {
   const toast = useToast();
@@ -415,45 +422,15 @@ export function Workouts() {
 
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-3">
           <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              className={cn(
-                "text-xs px-3 py-2.5 min-h-[44px] rounded-full border transition-colors",
-                mode === "catalog"
-                  ? "bg-fizruk text-white border-fizruk"
-                  : "border-line text-subtle hover:text-text",
-              )}
-              onClick={() => setMode("catalog")}
-              aria-pressed={mode === "catalog"}
-            >
-              Каталог
-            </button>
-            <button
-              type="button"
-              className={cn(
-                "text-xs px-3 py-2.5 min-h-[44px] rounded-full border transition-colors",
-                mode === "log"
-                  ? "bg-fizruk text-white border-fizruk"
-                  : "border-line text-subtle hover:text-text",
-              )}
-              onClick={() => setMode("log")}
-              aria-pressed={mode === "log"}
-            >
-              Журнал
-            </button>
-            <button
-              type="button"
-              className={cn(
-                "text-xs px-3 py-2.5 min-h-[44px] rounded-full border transition-colors",
-                mode === "templates"
-                  ? "bg-fizruk text-white border-fizruk"
-                  : "border-line text-subtle hover:text-text",
-              )}
-              onClick={() => setMode("templates")}
-              aria-pressed={mode === "templates"}
-            >
-              Шаблони
-            </button>
+            <Segmented
+              tone="solid"
+              size="md"
+              accent="fizruk"
+              ariaLabel="Режим екрану тренувань"
+              items={WORKOUTS_MODE_ITEMS}
+              value={mode}
+              onChange={setMode}
+            />
             {mode === "catalog" && (
               <Button
                 size="sm"
