@@ -1,16 +1,7 @@
 import { useCallback, useRef, useState } from "react";
+import type { SyncCallbacks } from "../types";
 
-/**
- * The four callbacks every engine entry point (pushDirty, pushAll, pullAll,
- * initialSync, uploadLocalData) accepts. Kept as a named shape so the
- * orchestrator can spread them into engine args without enumerating.
- */
-export interface SyncCallbacks {
-  onStart(): void;
-  onSuccess(when: Date): void;
-  onError(message: string): void;
-  onSettled(): void;
-}
+export type { SyncCallbacks };
 
 export interface SyncLifecycle extends SyncCallbacks {
   syncing: boolean;

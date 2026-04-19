@@ -1,15 +1,9 @@
 import { syncApi } from "@shared/api";
 import { applyModuleData } from "../state/moduleData";
 import { setModuleVersion } from "../state/versions";
-import type { CurrentUser, PullAllResponse } from "../types";
+import type { EngineArgs, PullAllResponse } from "../types";
 
-export interface PullArgs {
-  user: CurrentUser | null | undefined;
-  onStart(): void;
-  onSuccess(when: Date): void;
-  onError(message: string): void;
-  onSettled(): void;
-}
+export type PullArgs = EngineArgs;
 
 export async function pullAll(args: PullArgs): Promise<boolean> {
   const { user, onStart, onSuccess, onError, onSettled } = args;
