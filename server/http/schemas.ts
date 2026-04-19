@@ -272,20 +272,25 @@ const RoutineDigestSchema = z
   })
   .partial();
 
+// Клієнтські агрегатори повертають `null`, коли у модулі немає даних за
+// тиждень (див. `aggregateFizruk`/`aggregateNutrition`/`aggregateRoutine` у
+// `src/core/useWeeklyDigest.ts`). `.nullish()` приймає і `null`, і
+// `undefined`, тож запит проходить валідацію незалежно від того, чи
+// клієнт пропускає поле, чи надсилає його як `null`.
 export const WeeklyDigestSchema = z.object({
   weekRange: z.string().max(80).optional(),
-  finyk: FinykDigestSchema.optional(),
-  fizruk: FizrukDigestSchema.optional(),
-  nutrition: NutritionDigestSchema.optional(),
-  routine: RoutineDigestSchema.optional(),
+  finyk: FinykDigestSchema.nullish(),
+  fizruk: FizrukDigestSchema.nullish(),
+  nutrition: NutritionDigestSchema.nullish(),
+  routine: RoutineDigestSchema.nullish(),
 });
 
 const CoachSnapshotSchema = z
   .object({
-    finyk: FinykDigestSchema.optional(),
-    fizruk: FizrukDigestSchema.optional(),
-    nutrition: NutritionDigestSchema.optional(),
-    routine: RoutineDigestSchema.optional(),
+    finyk: FinykDigestSchema.nullish(),
+    fizruk: FizrukDigestSchema.nullish(),
+    nutrition: NutritionDigestSchema.nullish(),
+    routine: RoutineDigestSchema.nullish(),
   })
   .partial();
 
@@ -299,9 +304,12 @@ const CoachMemoryEchoSchema = z
   })
   .partial();
 
+// `snapshot` і `memory` можуть надходити як `null` (нема даних / перший
+// сеанс без збереженої пам'яті), тому приймаємо `nullish`, а handler уже
+// коректно обробляє обидва випадки через `snapshot?.finyk` / `memory || null`.
 export const CoachInsightSchema = z.object({
-  snapshot: CoachSnapshotSchema.optional(),
-  memory: CoachMemoryEchoSchema.optional(),
+  snapshot: CoachSnapshotSchema.nullish(),
+  memory: CoachMemoryEchoSchema.nullish(),
 });
 
 // Розмірні ліміти на окремі поля не застосовуємо — загальний
