@@ -258,19 +258,8 @@ async function fetchCoachInsight(): Promise<string | null> {
 
   const snapshot = aggregateCurrentSnapshot();
 
-  try {
-    const insightJson = await coachApi.postInsight({ snapshot, memory });
-    return (insightJson as { insight?: string }).insight ?? null;
-  } catch (e) {
-    if (isApiError(e) && e.kind === "http") {
-      const error = Object.assign(
-        new Error(e.serverMessage || "Помилка генерації інсайту"),
-        { status: e.status },
-      );
-      throw error;
-    }
-    throw e;
-  }
+  const insightJson = await coachApi.postInsight({ snapshot, memory });
+  return (insightJson as { insight?: string }).insight ?? null;
 }
 
 const coachInsightQueryKey = (todayKey = localDateKey()) =>
@@ -344,7 +333,9 @@ export function useCoachInsight(): UseCoachInsightResult {
     insight: query.data ?? null,
     loading: query.isPending || query.isFetching,
     error: query.error
-      ? (query.error as Error).message || "Помилка завантаження"
+      ? isApiError(query.error) && query.error.kind === "http"
+        ? query.error.serverMessage || "Помилка генерації інсайту"
+        : (query.error as Error).message || "Помилка завантаження"
       : null,
     refresh,
   };
