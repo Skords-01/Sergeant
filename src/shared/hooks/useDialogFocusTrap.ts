@@ -16,6 +16,15 @@ export interface DialogFocusTrapOptions {
  * If the previously focused element is no longer in the DOM when the
  * dialog closes (e.g. a sheet that unmounts its own trigger), we quietly
  * skip the restore instead of throwing.
+ *
+ * `onEscape` is intentionally NOT in the effect dependency array. It is
+ * stored in a ref and read on each keydown. Most callers pass an inline
+ * arrow (`onEscape: () => setOpen(false)`) whose identity changes on
+ * every parent render — if we depended on it, every parent re-render
+ * while the dialog was open would tear down the effect and run the
+ * focus-restore cleanup, yanking focus out of the open dialog back to
+ * the trigger element. This is the "Store Event Handlers in Refs" rule
+ * from AGENTS.md §8.3.
  */
 export function useDialogFocusTrap(
   open: boolean,
@@ -23,7 +32,13 @@ export function useDialogFocusTrap(
   options: DialogFocusTrapOptions = {},
 ): void {
   const { onEscape } = options;
+  const onEscapeRef = useRef(onEscape);
   const previouslyFocusedRef = useRef<HTMLElement | null>(null);
+
+  // Keep the latest onEscape callable without re-running the trap effect.
+  useEffect(() => {
+    onEscapeRef.current = onEscape;
+  }, [onEscape]);
 
   useEffect(() => {
     if (!open) return;
@@ -49,10 +64,13 @@ export function useDialogFocusTrap(
       );
 
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && onEscape) {
-        e.preventDefault();
-        onEscape();
-        return;
+      if (e.key === "Escape") {
+        const cb = onEscapeRef.current;
+        if (cb) {
+          e.preventDefault();
+          cb();
+          return;
+        }
       }
       if (e.key !== "Tab") return;
       const nodes = getFocusable();
@@ -86,5 +104,6 @@ export function useDialogFocusTrap(
         /* ignore — element became non-focusable */
       }
     };
-  }, [open, onEscape, containerRef]);
+    // onEscape is read via a ref — see block comment above.
+  }, [open, containerRef]);
 }
