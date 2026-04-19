@@ -1,5 +1,16 @@
-import { SEED_FOODS_UK } from "./seedFoodsUk.js";
 import type { Macros } from "../macros.js";
+import type { SeedFood } from "./seedFoodsUk.js";
+
+/**
+ * Lazy-loader для 1600+ seed-продуктів. Статичний import затягував весь
+ * масив у initial bundle (~300 KB min+gz), хоча він потрібен лише при
+ * першому відкритті Харчування (або якщо база порожня). `import()`
+ * ізолює ці дані у власний chunk, який vite/rollup вантажить на вимогу.
+ */
+async function loadSeedFoods(): Promise<readonly SeedFood[]> {
+  const mod = await import("./seedFoodsUk.js");
+  return mod.SEED_FOODS_UK;
+}
 
 const DB_NAME = "hub_nutrition_food_db";
 const DB_VERSION = 1;
@@ -131,11 +142,11 @@ export async function ensureSeedFoods(): Promise<boolean> {
     });
     db.close();
 
+    const seeds = await loadSeedFoods();
+
     if (count === 0) {
       return await replaceAllFoodsFromList(
-        SEED_FOODS_UK.map((x) =>
-          makeFoodProduct({ name: x.name, per100: x.per100 }),
-        ),
+        seeds.map((x) => makeFoodProduct({ name: x.name, per100: x.per100 })),
       );
     }
 
@@ -144,7 +155,7 @@ export async function ensureSeedFoods(): Promise<boolean> {
     const byNorm = new Map(
       existing.map((x) => [normText(x.norm || x.name), x]),
     );
-    for (const seed of SEED_FOODS_UK) {
+    for (const seed of seeds) {
       if (byNorm.has(normText(seed.name))) continue;
       await upsertFood(
         makeFoodProduct({ name: seed.name, per100: seed.per100 }),
