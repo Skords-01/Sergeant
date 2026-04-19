@@ -112,9 +112,19 @@ function CategoryPieChartComponent({ data = [], size = 160, className }) {
               <span className="text-text truncate flex-1 min-w-0 text-xs">
                 {arc.label}
               </span>
-              <span className="text-muted tabular-nums text-xs shrink-0">
-                {arc.pct < 1 ? "<1" : Math.round(arc.pct * 100)}%
-              </span>
+              {(() => {
+                // `arc.pct` is the fraction of `total` (0..1), not a
+                // percentage. The old guard `arc.pct < 1` was effectively
+                // always true and showed "<1%" on every slice. Round to the
+                // integer percentage first, then keep the "<1" hint for
+                // segments that round to zero but are still > 0.
+                const pctInt = Math.round(arc.pct * 100);
+                return (
+                  <span className="text-muted tabular-nums text-xs shrink-0">
+                    {pctInt < 1 ? "<1" : pctInt}%
+                  </span>
+                );
+              })()}
               <span className="text-text tabular-nums text-xs font-medium shrink-0">
                 {arc.spent.toLocaleString("uk-UA")} ₴
               </span>
