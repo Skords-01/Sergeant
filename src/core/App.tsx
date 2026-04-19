@@ -1,4 +1,10 @@
-import { useCallback, useEffect, lazy, Suspense } from "react";
+import {
+  useCallback,
+  useEffect,
+  lazy,
+  Suspense,
+  type ComponentType,
+} from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { cn } from "@shared/lib/cn";
 import ModuleErrorBoundary from "./ModuleErrorBoundary";
@@ -26,7 +32,7 @@ import { shouldShowOnboarding } from "./OnboardingWizard.jsx";
 import { isFirstRealEntryDone } from "./onboarding/vibePicks.js";
 import { useHubNavigation } from "./hooks/useHubNavigation.js";
 import { useHubUIState } from "./hooks/useHubUIState.js";
-import { usePwaActions } from "./hooks/usePwaActions.js";
+import { usePwaActions, type PwaAction } from "./hooks/usePwaActions.js";
 
 import RoutineApp from "../modules/routine/RoutineApp.jsx";
 const AuthPage = lazy(() =>
@@ -37,9 +43,20 @@ const ResetPasswordPage = lazy(() =>
     default: m.ResetPasswordPage,
   })),
 );
-const FinykApp = lazy(() => import("../modules/finyk/FinykApp"));
+interface ModuleAppProps {
+  onBackToHub: () => void;
+  pwaAction?: PwaAction;
+  onPwaActionConsumed?: () => void;
+  onOpenModule?: (module: string) => void;
+}
+
+const FinykApp = lazy(
+  () => import("../modules/finyk/FinykApp"),
+) as unknown as ComponentType<ModuleAppProps>;
 const FizrukApp = lazy(() => import("../modules/fizruk/FizrukApp"));
-const NutritionApp = lazy(() => import("../modules/nutrition/NutritionApp"));
+const NutritionApp = lazy(
+  () => import("../modules/nutrition/NutritionApp"),
+) as unknown as ComponentType<ModuleAppProps>;
 
 export default function App() {
   return (

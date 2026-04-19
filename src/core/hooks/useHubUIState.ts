@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 
-export type HubView = "dashboard" | "reports" | "recommendations";
+export type HubView = "dashboard" | "reports" | "settings";
 
 // Onboarding is now a URL-addressable route (`/welcome`) owned by
 // `AppInner`; it no longer lives in hub UI state. The router handles

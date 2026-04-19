@@ -206,7 +206,19 @@ function EmptyFocus({ onOpenReports }) {
  * the recommendation engine, or a neutral empty state. Replaces the old
  * decorative DailyProgressHero.
  */
-export function TodayFocusCard({ focus, onAction, onDismiss, onOpenReports }) {
+export function TodayFocusCard({
+  focus,
+  onAction,
+  onDismiss,
+  onOpenReports,
+}: {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  focus: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  onAction: (module: any) => void;
+  onDismiss: (id: string) => void;
+  onOpenReports?: () => void;
+}) {
   if (!focus) {
     return <EmptyFocus onOpenReports={onOpenReports} />;
   }

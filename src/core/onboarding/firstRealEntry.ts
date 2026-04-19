@@ -67,8 +67,9 @@ function hasAnyRealEntry() {
   // The day shape is `{ meals: [...] }` (see `normalizeNutritionLog`).
   const nutrition = safeReadJSON("nutrition_log_v1");
   if (nutrition && typeof nutrition === "object" && !Array.isArray(nutrition)) {
-    for (const day of Object.values(nutrition)) {
-      if (day && hasNonDemoItem(day.meals)) return true;
+    for (const day of Object.values(nutrition as Record<string, unknown>)) {
+      const meals = (day as { meals?: unknown })?.meals;
+      if (day && hasNonDemoItem(meals)) return true;
     }
   }
 

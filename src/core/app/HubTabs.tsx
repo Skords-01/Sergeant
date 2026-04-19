@@ -1,7 +1,23 @@
+import type { ReactNode } from "react";
 import { cn } from "@shared/lib/cn";
 import { Icon } from "@shared/components/ui/Icon";
+import type { HubView } from "../hooks/useHubUIState";
 
-function TabButton({ active, onClick, children, iconName, iconBody }) {
+interface TabButtonProps {
+  active: boolean;
+  onClick: () => void;
+  children: ReactNode;
+  iconName?: string;
+  iconBody?: ReactNode;
+}
+
+function TabButton({
+  active,
+  onClick,
+  children,
+  iconName,
+  iconBody,
+}: TabButtonProps) {
   return (
     <button
       type="button"
@@ -45,7 +61,12 @@ function DashboardIcon() {
   );
 }
 
-export function HubTabs({ hubView, onChange }) {
+interface HubTabsProps {
+  hubView: HubView;
+  onChange: (view: HubView) => void;
+}
+
+export function HubTabs({ hubView, onChange }: HubTabsProps) {
   return (
     <nav
       aria-label="Розділи хабу"

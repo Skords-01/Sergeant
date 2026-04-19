@@ -99,7 +99,7 @@ function useReportData(period, offset) {
       const txSplits = getFinykTxSplitsFromStorage();
       return calcFinykSpendingByDate(txList, {
         excludedTxIds,
-        txSplits,
+        txSplits: txSplits as Record<string, unknown[]>,
         dateSet: new Set(dates),
         localDateKeyFn: localDateKey,
       });
@@ -173,7 +173,10 @@ function useReportData(period, offset) {
 function formatPeriodLabel(period, offset) {
   const { start, end } = getPeriodRange(period, offset);
   if (period === "week") {
-    const opts = { month: "short", day: "numeric" };
+    const opts: Intl.DateTimeFormatOptions = {
+      month: "short",
+      day: "numeric",
+    };
     return `${start.toLocaleDateString("uk-UA", opts)} – ${end.toLocaleDateString("uk-UA", opts)}`;
   } else {
     return start.toLocaleDateString("uk-UA", {
@@ -183,7 +186,19 @@ function formatPeriodLabel(period, offset) {
   }
 }
 
-function BarChart({ data, dates, colorClass, maxValue, unit = "" }) {
+function BarChart({
+  data,
+  dates,
+  colorClass,
+  maxValue,
+  unit = "",
+}: {
+  data: Record<string, number>;
+  dates: string[];
+  colorClass: string;
+  maxValue?: number;
+  unit?: string;
+}) {
   const vals = dates.map((d) => data[d] ?? 0);
   const max = maxValue || Math.max(...vals, 1);
   const hasData = vals.some((v) => v > 0);

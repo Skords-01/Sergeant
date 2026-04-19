@@ -1,5 +1,19 @@
-import { Component } from "react";
+import { Component, type ErrorInfo, type ReactNode } from "react";
 import { captureException } from "./sentry.js";
+
+interface FallbackProps {
+  error: Error;
+  resetError: () => void;
+}
+
+interface ErrorBoundaryProps {
+  children?: ReactNode;
+  fallback?: ReactNode | ((props: FallbackProps) => ReactNode);
+}
+
+interface ErrorBoundaryState {
+  error: Error | null;
+}
 
 /**
  * Лайтвейтний корневий ErrorBoundary — zero-cost у головному бандлі.
@@ -13,18 +27,23 @@ import { captureException } from "./sentry.js";
  * динамічним імпортом. Коли SDK буде готовий (див. `initSentry`), виклики
  * автоматично перенаправляться в реальний `Sentry.captureException`.
  */
-export class ErrorBoundary extends Component {
-  constructor(props) {
+export class ErrorBoundary extends Component<
+  ErrorBoundaryProps,
+  ErrorBoundaryState
+> {
+  resetError: () => void;
+
+  constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = { error: null };
     this.resetError = () => this.setState({ error: null });
   }
 
-  static getDerivedStateFromError(error) {
+  static getDerivedStateFromError(error: Error) {
     return { error };
   }
 
-  componentDidCatch(error, info) {
+  componentDidCatch(error: Error, info: ErrorInfo) {
     // Lazy-forward: якщо Sentry SDK ще не підтягнувся, це no-op;
     // якщо вже підтягнувся — піде у Sentry.captureException.
     try {

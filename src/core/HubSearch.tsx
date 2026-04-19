@@ -269,7 +269,9 @@ export function HubSearch({ onClose, onOpenModule }) {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [onClose]);
 
-  const grouped = results.reduce((acc, r) => {
+  const grouped = results.reduce<
+    Record<string, { label: string; items: typeof results }>
+  >((acc, r) => {
     if (!acc[r.module]) acc[r.module] = { label: r.moduleLabel, items: [] };
     acc[r.module].items.push(r);
     return acc;

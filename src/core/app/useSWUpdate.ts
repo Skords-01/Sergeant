@@ -1,6 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useToast } from "@shared/hooks/useToast";
 
+declare global {
+  interface Window {
+    __pwaUpdateSW?: (reloadPage?: boolean) => void;
+    __pwaUpdateReady?: boolean;
+  }
+}
+
 export function useSWUpdate() {
   const toast = useToast();
   const [updateAvailable, setUpdateAvailable] = useState(false);

@@ -24,7 +24,7 @@ export function HubBackupPanel({ className }) {
     const r = new FileReader();
     r.onload = () => {
       try {
-        const data = JSON.parse(r.result);
+        const data = JSON.parse(r.result as string);
         applyHubBackupPayload(data);
         window.location.reload();
       } catch (err) {

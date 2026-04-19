@@ -29,10 +29,10 @@ function sanitizePicks(raw) {
   const out = [];
   for (const v of raw) {
     if (typeof v !== "string") continue;
-    if (!ALL_MODULES.includes(/** @type {HubModuleId} */ (v))) continue;
+    if (!ALL_MODULES.includes(/** @type {HubModuleId} */ v)) continue;
     if (seen.has(v)) continue;
     seen.add(v);
-    out.push(/** @type {HubModuleId} */ (v));
+    out.push(/** @type {HubModuleId} */ v);
   }
   return out;
 }

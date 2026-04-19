@@ -47,8 +47,22 @@ const BG_GRADIENTS = {
     "from-amber-500 via-orange-400 to-coral-400 dark:from-amber-700 dark:via-orange-600 dark:to-coral-700",
 };
 
+interface Slide {
+  id: string;
+  kind: string;
+  label: string;
+  bg: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  agg?: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ai?: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  recommendations?: any;
+  weekRange?: string;
+}
+
 function buildSlides(digest, weekKey, weekRange) {
-  const slides = [
+  const slides: Slide[] = [
     {
       id: "intro",
       kind: "intro",
@@ -135,7 +149,15 @@ function StoryShell({ slide, children }) {
   );
 }
 
-function StatRow({ label, value, accent }) {
+function StatRow({
+  label,
+  value,
+  accent,
+}: {
+  label: string;
+  value: string | number;
+  accent?: boolean;
+}) {
   return (
     <div className="flex items-baseline justify-between gap-3 py-1.5 border-b border-white/10 last:border-b-0">
       <span className="text-[13px] uppercase tracking-wide text-white/70 font-semibold">

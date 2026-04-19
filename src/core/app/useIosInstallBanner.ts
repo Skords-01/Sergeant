@@ -16,7 +16,8 @@ export function useIosInstallBanner() {
       (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
     const isStandalone =
       window.matchMedia("(display-mode: standalone)").matches ||
-      window.navigator.standalone === true;
+      (window.navigator as Navigator & { standalone?: boolean }).standalone ===
+        true;
     if (isIOS && !isStandalone) {
       const timer = setTimeout(() => setVisible(true), 3000);
       return () => clearTimeout(timer);

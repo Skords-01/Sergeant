@@ -91,8 +91,8 @@ function HubChat({ onClose, initialMessage }) {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [speaking, setSpeaking] = useState(false);
-  const chatRef = useRef(null);
-  const panelRef = useRef(null);
+  const chatRef = useRef<HTMLDivElement | null>(null);
+  const panelRef = useRef<HTMLDivElement | null>(null);
   const lastWasVoice = useRef(false);
 
   useEffect(() => {
@@ -181,7 +181,7 @@ function HubChat({ onClose, initialMessage }) {
     if (!panel) return;
     const getFocusable = () =>
       Array.from(
-        panel.querySelectorAll(
+        panel.querySelectorAll<HTMLElement>(
           'button:not([disabled]), [href], input:not([disabled]), select, textarea, [tabindex]:not([tabindex="-1"])',
         ),
       ).filter((el) => !el.hasAttribute("disabled"));
@@ -227,7 +227,7 @@ function HubChat({ onClose, initialMessage }) {
     setSpeaking(true);
   }, []);
 
-  const send = async (text, fromVoice = false) => {
+  const send = async (text?: string, fromVoice = false) => {
     const msg = (text || input).trim();
     if (!msg || loading) return;
     if (!online) {
@@ -323,9 +323,10 @@ function HubChat({ onClose, initialMessage }) {
             } catch {
               data2 = { error: raw2 };
             }
+            const parsed = data2 as { error?: string; text?: string };
             if (!res2.ok)
-              throw new Error(friendlyApiError(res2.status, data2?.error));
-            followUpText = data2.text || "";
+              throw new Error(friendlyApiError(res2.status, parsed?.error));
+            followUpText = parsed.text || "";
             setMessages((m) =>
               m.map((x) =>
                 x.id === assistantId

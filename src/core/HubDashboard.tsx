@@ -384,7 +384,7 @@ function useMondayAutoDigest() {
 
   useEffect(() => {
     const enabled =
-      safeReadLS(STORAGE_KEYS.WEEKLY_DIGEST_MONDAY_AUTO, "") === "1";
+      safeReadLS<string>(STORAGE_KEYS.WEEKLY_DIGEST_MONDAY_AUTO, "") === "1";
     if (!enabled) return;
 
     const now = new Date();

@@ -1,15 +1,27 @@
-import { Component } from "react";
+import { Component, type ReactNode } from "react";
+
+interface ModuleErrorBoundaryProps {
+  onBackToHub: () => void;
+  children?: ReactNode;
+}
+
+interface ModuleErrorBoundaryState {
+  error: Error | null;
+}
 
 /**
  * Ловить помилки рендеру всередині lazy-модуля; дозволяє повернутися до хаба без перезавантаження вкладки.
  */
-export default class ModuleErrorBoundary extends Component {
-  constructor(props) {
+export default class ModuleErrorBoundary extends Component<
+  ModuleErrorBoundaryProps,
+  ModuleErrorBoundaryState
+> {
+  constructor(props: ModuleErrorBoundaryProps) {
     super(props);
     this.state = { error: null };
   }
 
-  static getDerivedStateFromError(error) {
+  static getDerivedStateFromError(error: Error) {
     return { error };
   }
 
