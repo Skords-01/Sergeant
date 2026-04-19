@@ -289,7 +289,7 @@ export function Dashboard({
           <p className="text-[11px] font-bold tracking-widest uppercase text-fizruk">
             {greeting} · {today}
           </p>
-          <h1 className="text-[26px] font-black text-white mt-3 leading-tight">
+          <h1 className="text-hero font-black text-white mt-3 leading-tight">
             Твій прогрес
             <br />
             зібраний в одному місці
