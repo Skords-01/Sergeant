@@ -160,6 +160,38 @@ ratio пульсує.
 
 ---
 
+## 6. Frontend Core Web Vitals (baseline збір)
+
+**SLI** (per-metric): частка "good"-вимірів по CWV порогах Google.
+
+```
+sum(rate(web_vitals_duration_ms_count{metric="LCP",rating="good"}[w]))
+/
+sum(rate(web_vitals_duration_ms_count{metric="LCP"}[w]))
+```
+
+Аналогічно для `INP`, `FCP`, `TTFB`; CLS — окремий histogram `web_vitals_cls`.
+
+**Ціль**: поки **не фіксуємо SLO** — спочатку збираємо ~2 тижні baseline з
+реальних браузерів, щоб побачити розподіл на наших девайсах і мережах. Google
+рекомендує таргетувати **≥75 % "good"** сесій на p75 (що еквівалентно
+`rating="good"` або кращому) — повернемось до формалізації алертів коли
+набереться дата.
+
+**Джерело**: `web-vitals` npm пакет на клієнті (див. `src/core/webVitals.js`),
+батч через `navigator.sendBeacon` на `visibilitychange=hidden` / `pagehide`,
+бекенд-ендпоінт `POST /api/metrics/web-vitals` (rate-limited 60 req/min/IP),
+запис у `web_vitals_duration_ms{metric,rating}` і `web_vitals_cls{rating}`.
+
+**Кардинальність**: 4×3 + 3 = 15 серій × бакети — безпечно.
+
+**Застереження**: endpoint анонімний (збір CWV має сенс і від гостей), тому
+дані можуть бути "забруднені" ботами / devtools-сесіями. Якщо спам стане
+проблемою — додати `window.chrome.webstore`-heuristics або CAPTCHA fingerprint
+у payload.
+
+---
+
 ## Як підключити
 
 Prometheus `scrape_config` має тягти `GET /metrics` з Railway/Replit

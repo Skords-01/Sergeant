@@ -221,6 +221,35 @@ export const aiRequestDurationMs = new client.Histogram({
   registers: [register],
 });
 
+// ───────────────────────── Frontend web-vitals ────────────────
+// LCP/INP/FCP/TTFB — таймінгові метрики в мілісекундах. Рейтинг обчислюється
+// клієнтом за порогами `web-vitals` package (Google Core Web Vitals):
+//   LCP: ≤2500 good, ≤4000 needs, >4000 poor
+//   INP: ≤200 good, ≤500 needs, >500 poor
+//   FCP: ≤1800 good, ≤3000 needs, >3000 poor
+//   TTFB: ≤800 good, ≤1800 needs, >1800 poor
+// Label `rating` тримаємо на сервері (замість обчислення з histogram quantile)
+// щоб простий PromQL `sum by (rating) (rate(...))` давав readout "скільки
+// поганих сесій" без додаткової математики. Cardinality обмежена: 4 метрики ×
+// 3 рейтинги = 12 серій.
+export const webVitalsDurationMs = new client.Histogram({
+  name: "web_vitals_duration_ms",
+  help: "Frontend Core Web Vitals (timing) reported from browsers",
+  labelNames: ["metric", "rating"], // metric=LCP|INP|FCP|TTFB
+  buckets: [50, 100, 250, 500, 800, 1200, 1800, 2500, 4000, 6000, 10000],
+  registers: [register],
+});
+
+// CLS — безрозмірний, типово 0..0.5+ (0.1 good, 0.25 poor). Зберігаємо як
+// float (не множимо ×1000) — бакети підібрані під CWV пороги.
+export const webVitalsCls = new client.Histogram({
+  name: "web_vitals_cls",
+  help: "Frontend Cumulative Layout Shift reported from browsers (unitless)",
+  labelNames: ["rating"],
+  buckets: [0.01, 0.05, 0.1, 0.15, 0.25, 0.5, 1],
+  registers: [register],
+});
+
 // ───────────────────────── Helpers ────────────────────────────
 /** Класифікує HTTP-статус у одне з 4 відер для SLO / latency-дашбордів. */
 export function statusClass(status) {

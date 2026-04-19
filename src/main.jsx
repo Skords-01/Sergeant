@@ -8,6 +8,7 @@ import { storageManager } from "@shared/lib/storageManager.js";
 import { createAppQueryClient } from "@shared/lib/queryClient.js";
 import { ErrorBoundary } from "./core/ErrorBoundary.jsx";
 import { initSentry } from "./core/sentry.js";
+import { initWebVitals } from "./core/webVitals.js";
 
 const queryClient = createAppQueryClient();
 
@@ -63,11 +64,15 @@ ReactDOM.createRoot(document.getElementById("root")).render(
   </ErrorBoundary>,
 );
 
-// Sentry init відкладаємо до після hydration — SDK (~30–40 KB gzip) не
-// повинен блокувати TTI, а до його готовності `captureException` у
-// нашому локальному ErrorBoundary просто no-op.
+// Sentry init + web-vitals збір відкладаємо до після hydration — SDK Sentry
+// (~30–40 KB gzip) і `web-vitals` (~1 KB gzip) не повинні блокувати TTI.
+// До ініта Sentry `captureException` у локальному ErrorBoundary — no-op.
+// Web-vitals слухачі мають бути на місці ДО першого hidden/pagehide, але
+// `onLCP`/`onFCP` самі реєструють свої PerformanceObserver якомога раніше
+// в межах тіку виклику, тож idle-timeout 2s прийнятний.
 const scheduleInit = () => {
   void initSentry();
+  void initWebVitals();
 };
 if (typeof window !== "undefined") {
   if ("requestIdleCallback" in window) {

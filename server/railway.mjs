@@ -56,6 +56,7 @@ import {
   sendPush,
 } from "./api/push.js";
 import foodSearchHandler from "./api/food-search.js";
+import webVitalsHandler from "./api/web-vitals.js";
 import { setCorsHeaders } from "./api/lib/cors.js";
 import { rateLimitExpress } from "./api/lib/rateLimit.js";
 
@@ -163,6 +164,12 @@ app.get(
   "/api/food-search",
   rateLimitExpress({ key: "api:food-search", limit: 40, windowMs: 60_000 }),
   wrap(foodSearchHandler),
+);
+
+app.post(
+  "/api/metrics/web-vitals",
+  rateLimitExpress({ key: "api:web-vitals", limit: 60, windowMs: 60_000 }),
+  wrap(webVitalsHandler),
 );
 
 app.get("/api/push/vapid-public", wrap(vapidPublic));
