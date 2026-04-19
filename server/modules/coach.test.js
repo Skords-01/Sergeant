@@ -7,11 +7,15 @@ vi.mock("../db.js", () => {
 
 vi.mock("../lib/anthropic.js", () => ({
   anthropicMessages: vi.fn(),
+  // Дзеркалимо реальну реалізацію з `server/lib/anthropic.js`, включно з
+  // `.trim()` — без нього LLM-відповіді з trailing newline-ами проходили б у
+  // моку, але не у проді, а assert-и на точний `toBe()` давали б false-pass.
   extractAnthropicText: vi.fn((d) =>
     (d?.content || [])
       .filter((b) => b.type === "text")
       .map((b) => b.text)
-      .join("\n"),
+      .join("\n")
+      .trim(),
   ),
 }));
 
