@@ -1,5 +1,7 @@
 // Utility functions shared across HubChat modules
 
+import { friendlyApiError as baseFriendlyApiError } from "@shared/lib/friendlyApiError";
+
 export const CONTEXT_TTL_MS = 15_000;
 export const CHAT_HISTORY_WRITE_DEBOUNCE_MS = 600;
 
@@ -13,19 +15,22 @@ export interface ChatMessage {
   [key: string]: unknown;
 }
 
+/**
+ * HubChat-специфічний `friendlyApiError`. Додає два кейси поверх
+ * загального мапера в `@shared/lib/friendlyApiError`:
+ *  - 500 без ключа AI → окремий текст про чат;
+ *  - 429 з маркером AI_QUOTA / «ліміт AI» → явне повідомлення про
+ *    денний ліміт (замість загального «Забагато запитів»).
+ */
 export function friendlyApiError(status: number, message?: string): string {
   const m = message || "";
   if (status === 500 && /ANTHROPIC|not set|key/i.test(m)) {
     return "Чат на сервері не налаштовано (немає ключа AI).";
   }
-  if (status === 429) {
-    if (/ліміт AI|AI_QUOTA|квот/i.test(m)) {
-      return "Денний ліміт AI вичерпано. Спробуй завтра або зменш навантаження.";
-    }
-    return "Забагато запитів. Спробуй через хвилину.";
+  if (status === 429 && /ліміт AI|AI_QUOTA|квот/i.test(m)) {
+    return "Денний ліміт AI вичерпано. Спробуй завтра або зменш навантаження.";
   }
-  if (status === 401 || status === 403) return "Доступ заборонено.";
-  return m || `Помилка ${status}`;
+  return baseFriendlyApiError(status, message);
 }
 
 export function friendlyChatError(e: unknown): string {
