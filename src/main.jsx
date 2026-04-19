@@ -9,6 +9,7 @@ import { createAppQueryClient } from "@shared/lib/queryClient.js";
 import { ErrorBoundary } from "./core/ErrorBoundary.jsx";
 import { initSentry } from "./core/sentry.js";
 import { initWebVitals } from "./core/webVitals.js";
+import { runDemoCleanupOnce } from "./core/onboarding/cleanupDemoData.js";
 
 const queryClient = createAppQueryClient();
 
@@ -24,6 +25,7 @@ const ReactQueryDevtools = import.meta.env.DEV
   : null;
 
 storageManager.runAll();
+runDemoCleanupOnce();
 
 function ErrorFallback({ error, resetError }) {
   return (

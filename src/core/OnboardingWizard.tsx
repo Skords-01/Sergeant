@@ -9,7 +9,6 @@ import {
   markFirstActionStartedAt,
   saveVibePicks,
 } from "./onboarding/vibePicks.js";
-import { seedDemoForModules } from "./onboarding/demoSeeds.js";
 
 const ONBOARDING_DONE_KEY = "hub_onboarding_done_v1";
 
@@ -232,25 +231,22 @@ export function OnboardingWizard({ onDone, variant = "modal" }) {
   const finish = () => {
     const chosen = picks.length > 0 ? picks : [...ALL_MODULES];
     saveVibePicks(chosen);
-    const seededCounts = seedDemoForModules(chosen);
     trackEvent(ANALYTICS_EVENTS.ONBOARDING_VIBE_PICKED, {
       picks: chosen,
       picksCount: chosen.length,
     });
-    trackEvent(ANALYTICS_EVENTS.ONBOARDING_DEMO_RENDERED, {
-      seededCounts,
-    });
     trackEvent(ANALYTICS_EVENTS.ONBOARDING_COMPLETED, {
-      intent: "vibe_demo",
+      intent: "vibe_empty",
       picksCount: chosen.length,
     });
     markFirstActionStartedAt();
     markFirstActionPending();
     markOnboardingDone();
-    // Stay on the hub dashboard so the user's "aha" is the whole populated
-    // hub, not a single module. The FirstActionHeroCard appears on top of
-    // the dashboard a tick later via the `first_action_pending` flag.
-    onDone(null, { intent: "vibe_demo", picks: chosen });
+    // Stay on the hub dashboard — the FirstActionHeroCard appears on top
+    // of the empty module rows a tick later via the
+    // `first_action_pending` flag and walks the user to their first real
+    // entry (no more fake demo numbers on fresh accounts).
+    onDone(null, { intent: "vibe_empty", picks: chosen });
   };
 
   const content = (
