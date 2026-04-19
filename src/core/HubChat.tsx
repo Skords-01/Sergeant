@@ -6,6 +6,7 @@ import { Icon } from "@shared/components/ui/Icon";
 import { perfMark, perfEnd } from "@shared/lib/perf";
 import { useOnlineStatus } from "@shared/hooks/useOnlineStatus";
 import { useDialogFocusTrap } from "@shared/hooks/useDialogFocusTrap";
+import { useVisualKeyboardInset } from "@shared/hooks/useVisualKeyboardInset";
 import { hubKeys } from "@shared/lib/queryKeys";
 import { useFinykHubPreview } from "./hub/useFinykHubPreview";
 
@@ -174,6 +175,13 @@ function HubChat({ onClose, initialMessage }) {
   // with Sheet / ConfirmDialog / InputDialog so every modal surface
   // gets the same WCAG 2.4.3 focus-order guarantees in one place.
   useDialogFocusTrap(true, panelRef, { onEscape: onClose });
+
+  // On-screen keyboard handling. Without this, when a mobile user taps
+  // the chat input, the browser's virtual keyboard covers the field
+  // and the send button — visualViewport API tells us the remaining
+  // viewport height so we can pad the panel up and keep the input
+  // visible. Matches the `kbInsetPx` pattern used by Sheet.
+  const kbInsetPx = useVisualKeyboardInset(true);
 
   // TTS speaking state poll
   useEffect(() => {
@@ -393,7 +401,8 @@ function HubChat({ onClose, initialMessage }) {
         aria-modal="true"
         aria-labelledby="hub-chat-title"
         aria-describedby="hub-chat-privacy"
-        className="relative mt-auto flex flex-col bg-bg border-t border-line rounded-t-3xl shadow-float max-h-[92dvh] outline-none"
+        className="relative mt-auto flex flex-col bg-bg border-t border-line rounded-t-3xl shadow-float max-h-[92dvh] outline-none transition-[margin] duration-150"
+        style={kbInsetPx > 0 ? { marginBottom: kbInsetPx } : undefined}
       >
         <div className="flex justify-center pt-3 pb-1 shrink-0">
           <div className="w-10 h-1 bg-line rounded-full" />
@@ -476,7 +485,7 @@ function HubChat({ onClose, initialMessage }) {
         {/* Messages */}
         <div
           ref={chatRef}
-          className="flex-1 overflow-y-auto px-4 py-3 space-y-3 min-h-0"
+          className="flex-1 overflow-y-auto overscroll-contain px-4 py-3 space-y-3 min-h-0"
           aria-live="polite"
           aria-relevant="additions"
         >

@@ -154,7 +154,11 @@ export function Sheet({
         </div>
         <div
           className={cn(
-            "flex-1 min-h-0 overflow-y-auto px-5 pb-4",
+            // `overscroll-contain` prevents rubber-band scroll from
+            // leaking out to the page under the sheet — on iOS this
+            // would otherwise scroll the body behind the modal while
+            // the sheet is open, which is disorienting.
+            "flex-1 min-h-0 overflow-y-auto overscroll-contain px-5 pb-4",
             bodyClassName,
           )}
         >

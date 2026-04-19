@@ -27,6 +27,7 @@ import { HubTabs } from "./app/HubTabs.jsx";
 import { HubMainContent } from "./app/HubMainContent.jsx";
 import { HubFloatingActions } from "./app/HubFloatingActions.jsx";
 import { HubModals } from "./app/HubModals.jsx";
+import { ActiveWorkoutBanner } from "./app/ActiveWorkoutBanner.jsx";
 import { WelcomeScreen } from "./app/WelcomeScreen.jsx";
 import { shouldShowOnboarding } from "./OnboardingWizard.jsx";
 import { isFirstRealEntryDone } from "./onboarding/vibePicks.js";
@@ -283,6 +284,12 @@ function AppInner() {
             returns the moment the first real entry lands. */}
         <HubFloatingActions hidden={inFtuxSession} />
 
+        {/* Persistent shortcut back to an in-progress Fizruk workout.
+            Hidden during FTUX so the splash stays single-CTA; otherwise
+            visible whenever `fizruk_active_workout_id_v1` is set, so the
+            user never loses the thread after jumping to another tab. */}
+        <ActiveWorkoutBanner hidden={inFtuxSession} />
+
         <HubModals
           chatOpen={ui.chatOpen}
           onCloseChat={ui.closeChat}
@@ -298,6 +305,13 @@ function AppInner() {
   return (
     <div className="h-dvh flex flex-col bg-bg text-text overflow-hidden">
       {!online && <OfflineBanner />}
+      {/* Persistent "resume workout" shortcut — rendered in Finyk,
+          Routine, Nutrition (but not inside Fizruk itself, where the
+          in-module ActiveWorkoutPanel is already the primary surface).
+          This is the "at transitions" part of the persistent-CTA
+          requirement: switching modules mid-set must not bury the
+          workout. */}
+      {activeModule !== "fizruk" && <ActiveWorkoutBanner />}
       {/* Finyk has no in-module header of its own, so we provide a
           floating back-to-hub pill here. Fizruk, Routine and Nutrition
           render their own inline "← Хаб" button inside the module header
