@@ -94,13 +94,13 @@ export async function initialSync(args: InitialSyncArgs): Promise<void> {
             }
           }
           if (Object.keys(modules).length > 0) {
-            try {
-              await syncApi.pushAll(modules);
-              clearAllDirty();
-            } catch {
-              // Keep dirty flags so the next push attempt retries. Same
-              // contract as pre-refactor: only clear on a successful push.
-            }
+            // Let ApiError propagate to the outer catch so onError fires and
+            // markMigrationDone is skipped — matches pre-refactor behavior
+            // where `if (pushRes.ok) clearAllDirty()` combined with the
+            // syncApi-throwing transport meant a push failure aborted the
+            // whole initialSync.
+            await syncApi.pushAll(modules);
+            clearAllDirty();
           }
         }
         if (!isMigrationDone(user?.id)) markMigrationDone(user?.id);
