@@ -1,3 +1,4 @@
+import type { RequestHandler } from "express";
 import { setCorsHeaders } from "./cors.js";
 
 /**
@@ -16,7 +17,7 @@ import { setCorsHeaders } from "./cors.js";
  */
 const ALLOW_HEADERS = "Content-Type, X-Token, X-Privat-Id, X-Privat-Token";
 
-export function apiCorsMiddleware() {
+export function apiCorsMiddleware(): RequestHandler {
   return (req, res, next) => {
     setCorsHeaders(res, req, {
       allowHeaders: ALLOW_HEADERS,

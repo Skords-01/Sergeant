@@ -1,6 +1,9 @@
+import type { Request, RequestHandler } from "express";
 import { rateLimitHitsTotal } from "../obs/metrics.js";
 
-function recordRateLimit(key, outcome) {
+type Outcome = "allowed" | "blocked";
+
+function recordRateLimit(key: string, outcome: Outcome): void {
   try {
     rateLimitHitsTotal.inc({ key, outcome });
   } catch {
@@ -8,7 +11,7 @@ function recordRateLimit(key, outcome) {
   }
 }
 
-export function getIp(req) {
+export function getIp(req: Request): string {
   const xf = req?.headers?.["x-forwarded-for"];
   if (typeof xf === "string" && xf.trim()) return xf.split(",")[0].trim();
   const real = req?.headers?.["x-real-ip"];
@@ -16,12 +19,30 @@ export function getIp(req) {
   return "unknown";
 }
 
+interface Bucket {
+  startMs: number;
+  count: number;
+}
+
+export interface RateLimitOptions {
+  key: string;
+  limit: number;
+  windowMs: number;
+}
+
+export interface RateLimitResult {
+  ok: boolean;
+  remaining: number;
+  resetMs: number;
+  retryAfterSec: number;
+}
+
 // In-memory fixed-window rate limit.
 // На Railway це пер-процес best-effort, але ріже очевидні спайки.
-const buckets = new Map();
+const buckets = new Map<string, Bucket>();
 let lastSweepMs = 0;
 
-function sweepBuckets(now, ttlMs) {
+function sweepBuckets(now: number, ttlMs: number): void {
   if (now - lastSweepMs < 30_000) return;
   lastSweepMs = now;
 
@@ -39,17 +60,11 @@ function sweepBuckets(now, ttlMs) {
 
 /**
  * Fixed-window rate-limit check (in-memory, per-process).
- *
- * @param {import("express").Request} req
- * @param {{ key: string, limit: number, windowMs: number }} opts
- * @returns {{
- *   ok: boolean,
- *   remaining: number,
- *   resetMs: number,
- *   retryAfterSec: number,
- * }}
  */
-export function checkRateLimit(req, { key, limit, windowMs }) {
+export function checkRateLimit(
+  req: Request,
+  { key, limit, windowMs }: RateLimitOptions,
+): RateLimitResult {
   const ip = getIp(req);
   const now = Date.now();
   sweepBuckets(now, Math.max(5 * (Number(windowMs) || 0), 10 * 60_000));
@@ -86,7 +101,11 @@ export function checkRateLimit(req, { key, limit, windowMs }) {
   };
 }
 
-export function rateLimitExpress({ key, limit, windowMs }) {
+export function rateLimitExpress({
+  key,
+  limit,
+  windowMs,
+}: RateLimitOptions): RequestHandler {
   return (req, res, next) => {
     const rl = checkRateLimit(req, { key, limit, windowMs });
     try {
@@ -100,11 +119,13 @@ export function rateLimitExpress({ key, limit, windowMs }) {
       } catch {
         /* ignore */
       }
-      return res.status(429).json({
+      const requestId = (req as Request & { requestId?: string }).requestId;
+      res.status(429).json({
         error: "Забагато запитів. Спробуй пізніше.",
         code: "RATE_LIMIT",
-        ...(req?.requestId ? { requestId: req.requestId } : {}),
+        ...(requestId ? { requestId } : {}),
       });
+      return;
     }
     next();
   };

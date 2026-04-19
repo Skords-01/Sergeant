@@ -1,3 +1,4 @@
+import type { NextFunction, Request, Response } from "express";
 import { logger } from "../obs/logger.js";
 import { als } from "../obs/requestContext.js";
 import {
@@ -15,7 +16,11 @@ import {
  * `path` = route pattern (`/api/nutrition/food/:id`), не сирий URL — інакше
  * cardinality метрик вибухне.
  */
-export function requestLogMiddleware(req, res, next) {
+export function requestLogMiddleware(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): void {
   const url = req.originalUrl || "";
   // Не спамимо логи запитами на статику/health.
   if (
@@ -24,7 +29,8 @@ export function requestLogMiddleware(req, res, next) {
     url === "/readyz" ||
     url === "/health"
   ) {
-    return next();
+    next();
+    return;
   }
 
   const start = process.hrtime.bigint();

@@ -1,4 +1,8 @@
+import type { Request, RequestHandler } from "express";
 import { getSessionUser } from "../auth.js";
+
+type SessionUser = Awaited<ReturnType<typeof getSessionUser>>;
+type AuthedRequest = Request & { user?: NonNullable<SessionUser> };
 
 /**
  * Router-level auth-middleware. Резолвить Better Auth сесію, кладе юзера в
@@ -10,19 +14,18 @@ import { getSessionUser } from "../auth.js";
  * Для endpoint-ів, де фронт історично трактує будь-яку невдачу auth як
  * "не залогінений" (push subscribe/unsubscribe — сервіс-воркер не має
  * падати у 500 при тимчасовому збої), використовуй `requireSessionSoft()`.
- *
- * @returns {import("express").RequestHandler}
  */
-export function requireSession() {
+export function requireSession(): RequestHandler {
   return async (req, res, next) => {
     try {
       const user = await getSessionUser(req);
       if (!user) {
-        return res
+        res
           .status(401)
           .json({ error: "Потрібна автентифікація", code: "UNAUTHORIZED" });
+        return;
       }
-      req.user = user;
+      (req as AuthedRequest).user = user;
       next();
     } catch (err) {
       next(err);
@@ -36,23 +39,22 @@ export function requireSession() {
  * обробляє "не залогінений" значно коректніше за "server error" —
  * насамперед push subscribe/unsubscribe, які смикає сервіс-воркер і де
  * історично був явний try/catch-to-401 у handler-і (pre-PR-4).
- *
- * @returns {import("express").RequestHandler}
  */
-export function requireSessionSoft() {
+export function requireSessionSoft(): RequestHandler {
   return async (req, res, next) => {
-    let user = null;
+    let user: SessionUser = null;
     try {
       user = await getSessionUser(req);
     } catch {
       // swallow — transient auth/DB failure treated as "not logged in".
     }
     if (!user) {
-      return res
+      res
         .status(401)
         .json({ error: "Потрібна автентифікація", code: "UNAUTHORIZED" });
+      return;
     }
-    req.user = user;
+    (req as AuthedRequest).user = user;
     next();
   };
 }

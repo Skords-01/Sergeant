@@ -1,3 +1,5 @@
+import type { IncomingMessage, ServerResponse } from "http";
+
 /**
  * CORS origins. Додаткові домени: змінна ALLOWED_ORIGINS (через кому).
  * Приклад: https://app.example.com,https://preview-xxx.vercel.app
@@ -41,9 +43,9 @@ export function getAllowedOrigins() {
 // Якщо regex невалідний — логуємо один раз (одне повідомлення на значення env)
 // і ігноруємо (fail-closed). Для test-оточення логування придушене, щоб не
 // спамити тестовий stdout — у тестах помилка перевіряється через `isOriginAllowed`.
-let cachedRegexSrc = null;
-let cachedRegex = null;
-function getAllowedOriginRegex() {
+let cachedRegexSrc: string | null = null;
+let cachedRegex: RegExp | null = null;
+function getAllowedOriginRegex(): RegExp | null {
   const src = process.env.ALLOWED_ORIGIN_REGEX || "";
   if (src === cachedRegexSrc) return cachedRegex;
   cachedRegexSrc = src;
@@ -76,12 +78,16 @@ export function isOriginAllowed(origin) {
   return re ? re.test(origin) : false;
 }
 
-/**
- * @param {import('http').ServerResponse} res
- * @param {import('http').IncomingMessage} req
- * @param {{ allowHeaders?: string; methods?: string }} [opts]
- */
-export function setCorsHeaders(res, req, opts = {}) {
+export interface CorsHeaderOptions {
+  allowHeaders?: string;
+  methods?: string;
+}
+
+export function setCorsHeaders(
+  res: ServerResponse,
+  req: IncomingMessage,
+  opts: CorsHeaderOptions = {},
+): void {
   const { allowHeaders = "Content-Type", methods = "GET, POST, OPTIONS" } =
     opts;
   const origin = req.headers.origin;

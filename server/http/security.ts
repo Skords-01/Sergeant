@@ -1,4 +1,11 @@
+import type { RequestHandler } from "express";
 import helmet from "helmet";
+
+export type ApiCspDirectives = Record<string, string[]>;
+
+export interface ApiHelmetOptions {
+  servesFrontend?: boolean;
+}
 
 /**
  * CSP директиви для API-only сервера.
@@ -13,7 +20,7 @@ import helmet from "helmet";
  * (script-src + worker-src blob:, connect-src — Railway + Anthropic-free, бо
  * AI виклики проксовані через API).
  */
-export function buildApiCspDirectives() {
+export function buildApiCspDirectives(): ApiCspDirectives {
   return {
     defaultSrc: ["'none'"],
     frameAncestors: ["'none'"],
@@ -30,7 +37,6 @@ export function buildApiCspDirectives() {
 /**
  * Helmet middleware для Express.
  *
- * @param {{ servesFrontend?: boolean }} [opts]
  * - `servesFrontend: true` — цей процес окрім API віддає ще й React SPA
  *   (режим Replit, `SERVER_MODE=replit`). У цьому режимі CSP вимикається, бо
  *   API-CSP з `script-src 'none'` зламала б фронтенд (Vite-PWA вбудовує
@@ -43,7 +49,9 @@ export function buildApiCspDirectives() {
  * `crossOriginResourcePolicy: 'cross-origin'` — щоб fetch з іншого домену
  * (Vercel → Railway) не ламався.
  */
-export function apiHelmetMiddleware({ servesFrontend = false } = {}) {
+export function apiHelmetMiddleware({
+  servesFrontend = false,
+}: ApiHelmetOptions = {}): RequestHandler {
   const cspDisabled = process.env.CSP_DISABLE === "1" || servesFrontend;
   const reportOnly = process.env.CSP_REPORT_ONLY === "1";
 
