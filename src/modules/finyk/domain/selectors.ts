@@ -542,8 +542,7 @@ export function getMonthlySpendSeries(
   if (!Array.isArray(monthlyData)) return [];
   return monthlyData.map(({ month, transactions, excludedTxIds, txSplits }) => {
     const txList = Array.isArray(transactions) ? transactions : [];
-    const excluded =
-      excludedTxIds instanceof Set ? excludedTxIds : new Set<string>();
+    const excluded = toExcludedSet(excludedTxIds);
     const { spent, income } = getMonthlySummary(txList, {
       excludedTxIds: excluded,
       txSplits: txSplits || {},
