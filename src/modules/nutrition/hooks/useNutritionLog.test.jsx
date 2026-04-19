@@ -1,8 +1,20 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { renderHook, act, waitFor } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useNutritionLog } from "./useNutritionLog.js";
 import { NUTRITION_LOG_KEY } from "../lib/nutritionStorage.js";
+
+function makeWrapper() {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  return function Wrapper({ children }) {
+    return (
+      <QueryClientProvider client={client}>{children}</QueryClientProvider>
+    );
+  };
+}
 
 describe("useNutritionLog – defensive imports", () => {
   let errorSpy;
@@ -17,7 +29,9 @@ describe("useNutritionLog – defensive imports", () => {
   });
 
   it("replaceLogFromJsonText returns false and does not throw on malformed JSON", () => {
-    const { result } = renderHook(() => useNutritionLog());
+    const { result } = renderHook(() => useNutritionLog(), {
+      wrapper: makeWrapper(),
+    });
     let ok;
     act(() => {
       ok = result.current.replaceLogFromJsonText("{not: valid json");
@@ -49,7 +63,9 @@ describe("useNutritionLog – defensive imports", () => {
     };
     localStorage.setItem(NUTRITION_LOG_KEY, JSON.stringify(seeded));
 
-    const { result } = renderHook(() => useNutritionLog());
+    const { result } = renderHook(() => useNutritionLog(), {
+      wrapper: makeWrapper(),
+    });
     await waitFor(() =>
       expect(result.current.nutritionLog["2025-01-01"]?.meals?.length).toBe(1),
     );
@@ -64,7 +80,9 @@ describe("useNutritionLog – defensive imports", () => {
   });
 
   it("replaceLogFromJsonText returns true on valid JSON and applies normalized log", async () => {
-    const { result } = renderHook(() => useNutritionLog());
+    const { result } = renderHook(() => useNutritionLog(), {
+      wrapper: makeWrapper(),
+    });
     const payload = {
       "2025-02-03": {
         meals: [
@@ -92,7 +110,9 @@ describe("useNutritionLog – defensive imports", () => {
   });
 
   it("replaceLogFromJsonText ignores non-object JSON (array / null) without throwing", () => {
-    const { result } = renderHook(() => useNutritionLog());
+    const { result } = renderHook(() => useNutritionLog(), {
+      wrapper: makeWrapper(),
+    });
     let ok1;
     act(() => {
       ok1 = result.current.replaceLogFromJsonText("null");

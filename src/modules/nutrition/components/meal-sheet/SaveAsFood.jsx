@@ -51,12 +51,13 @@ export function SaveAsFood({
             setFoodErr(res.error || "Не вдалося зберегти продукт.");
             return;
           }
-          // Bust the local food-search cache so the next search (including
-          // the refetch triggered by `setFoodQuery(name)` below) sees the
-          // freshly saved product instead of 5 min of stale IndexedDB
-          // results.
+          // Bust the food-search cache so the next search (including the
+          // refetch triggered by `setFoodQuery(name)` below) sees the
+          // freshly saved product instead of 5 min of stale results.
+          // The `foodSearch` prefix matches both local (IndexedDB) and
+          // OFF (OpenFoodFacts) sub-queries.
           queryClient.invalidateQueries({
-            queryKey: [...nutritionKeys.foodSearch, "local"],
+            queryKey: nutritionKeys.foodSearch,
           });
           setPickedFood(res.product);
           setPickedGrams("100");

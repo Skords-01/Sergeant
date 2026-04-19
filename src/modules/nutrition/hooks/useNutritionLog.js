@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { coachKeys, digestKeys } from "@shared/lib/queryKeys.js";
 import {
   NUTRITION_LOG_KEY,
   loadNutritionLog,
@@ -87,6 +89,7 @@ function collectMealIds(log) {
  * }}
  */
 export function useNutritionLog() {
+  const queryClient = useQueryClient();
   const [nutritionLog, setNutritionLog] = useState(() =>
     loadNutritionLog(NUTRITION_LOG_KEY),
   );
@@ -97,6 +100,7 @@ export function useNutritionLog() {
   const [addMealPhotoResult, setAddMealPhotoResult] = useState(null);
   const [storageErr, setStorageErr] = useState("");
   const pendingThumbDeletesRef = useRef(new Map());
+  const didMountRef = useRef(false);
 
   useEffect(() => {
     const ok = persistNutritionLog(nutritionLog, NUTRITION_LOG_KEY);
@@ -106,6 +110,20 @@ export function useNutritionLog() {
         : "Не вдалося зберегти журнал (переповнення сховища або приватний режим).",
     );
   }, [nutritionLog]);
+
+  // Coach insight and weekly digest both derive from the nutrition log.
+  // Invalidate them whenever the log changes so the next mount / user
+  // refresh regenerates with the latest context. `staleTime: Infinity`
+  // on those queries means invalidation only marks them stale — it does
+  // not trigger unsolicited AI calls.
+  useEffect(() => {
+    if (!didMountRef.current) {
+      didMountRef.current = true;
+      return;
+    }
+    queryClient.invalidateQueries({ queryKey: coachKeys.all });
+    queryClient.invalidateQueries({ queryKey: digestKeys.all });
+  }, [nutritionLog, queryClient]);
 
   /**
    * Add a meal to the currently selected date and close the add-meal sheet.
