@@ -20,6 +20,8 @@ export default [
       ".agents/**",
       "artifacts/**",
       "mcps/**",
+      "playwright-report/**",
+      "test-results/**",
     ],
   },
   js.configs.recommended,
