@@ -18,7 +18,7 @@ import "./sentry.js";
 
 import { createApp } from "./app.js";
 import { config } from "./config.js";
-import { ensureSchema, pool } from "./db.js";
+import { pool } from "./db.js";
 import { logger, serializeError } from "./obs/logger.js";
 import {
   startPoolSampler,
@@ -178,17 +178,10 @@ for (const sig of ["SIGTERM", "SIGINT"]) {
   });
 }
 
-ensureSchema()
-  .then(() => {
-    logger.info({ msg: "db_schema_verified" });
-  })
-  .catch((err) => {
-    logger.error({
-      msg: "db_schema_check_failed",
-      err: { message: err?.message || String(err), code: err?.code },
-    });
-  });
-
+// Міграції свідомо НЕ запускаються з web-процесу — це задача release-stage
+// (див. `scripts/migrate.mjs` / `npm run db:migrate`). При rolling deploy з 2+
+// реплік race на `INSERT schema_migrations` раніше валив один із процесів,
+// плюс readiness-проб затримувався часом виконання міграцій.
 httpServer = app.listen(config.port, "0.0.0.0", () => {
   logger.info({
     msg: "server_listening",
