@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@shared/lib/cn";
 import { Icon } from "@shared/components/ui/Icon";
 import { safeReadLS, safeWriteLS, safeRemoveLS } from "@shared/lib/storage.js";
@@ -248,7 +248,14 @@ const MODULE_CONFIGS = {
 // модулю з активним сигналом (focus/rest), отримує inline-кнопку `+`, що
 // dispatchає primary-дію без додаткового тапа «відкрити модуль».
 // ═══════════════════════════════════════════════════════════════════════════
-function StatusRow({ config, onClick, onQuickAdd, dragProps, isDragging }) {
+// Мемоізуємо рядок — перерендериться тільки якщо реально змінився його
+// config/quickAdd/isDragging. Без memo кожна зміна state на дашборді
+// (FTUX-герой, м'яка авторизація, digest-експанд) перераховувала всі
+// чотири модульні рядки, включно з `preview = config.getPreview()`,
+// що читає localStorage.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const StatusRow = memo(function StatusRow(props: any) {
+  const { config, onClick, onQuickAdd, dragProps, isDragging } = props;
   const preview = config.getPreview();
   const showProgress =
     config.hasGoal && preview.progress !== undefined && preview.progress > 0;
@@ -335,12 +342,17 @@ function StatusRow({ config, onClick, onQuickAdd, dragProps, isDragging }) {
       )}
     </div>
   );
-}
+});
 
 // ═══════════════════════════════════════════════════════════════════════════
 // SORTABLE CARD WRAPPER
 // ═══════════════════════════════════════════════════════════════════════════
-function SortableCard({ id, onOpenModule, quickAdd }) {
+// `memo` + локальний `useCallback` для onClick — коли `onOpenModule` і
+// `quickAdd` стабільні (див. `HubDashboard`), перерендер всього списку
+// стає no-op для рядків, які не тягнуть у dnd-kit.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const SortableCard = memo(function SortableCard(props: any) {
+  const { id, onOpenModule, quickAdd } = props;
   const {
     attributes,
     listeners,
@@ -350,10 +362,20 @@ function SortableCard({ id, onOpenModule, quickAdd }) {
     isDragging,
   } = useSortable({ id });
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
+  const style = useMemo(
+    () => ({
+      transform: CSS.Transform.toString(transform),
+      transition,
+    }),
+    [transform, transition],
+  );
+
+  const dragProps = useMemo(
+    () => ({ ...attributes, ...listeners }),
+    [attributes, listeners],
+  );
+
+  const handleClick = useCallback(() => onOpenModule(id), [onOpenModule, id]);
 
   const cfg = MODULE_CONFIGS[id];
   if (!cfg) return null;
@@ -362,14 +384,14 @@ function SortableCard({ id, onOpenModule, quickAdd }) {
     <div ref={setNodeRef} style={style}>
       <StatusRow
         config={cfg}
-        onClick={() => onOpenModule(id)}
+        onClick={handleClick}
         onQuickAdd={quickAdd}
         isDragging={isDragging}
-        dragProps={{ ...attributes, ...listeners }}
+        dragProps={dragProps}
       />
     </div>
   );
-}
+});
 
 // ═══════════════════════════════════════════════════════════════════════════
 // MONDAY AUTO DIGEST HOOK
@@ -572,6 +594,28 @@ export function HubDashboard({
     }),
   );
 
+  // Стабільна мапа quickAdd-дій по модулю — раніше обчислювалась inline у
+  // `.map()` і створювала новий об'єкт з новою closure `run` кожного рендеру,
+  // що пробивало `memo(SortableCard)`. Тепер набір перераховується лише
+  // коли реально змінюється набір модулів з сигналом.
+  const quickAddByModule = useMemo(() => {
+    const map: Record<string, { label: string; run: () => void } | undefined> =
+      {};
+    for (const id of modulesWithSignal) {
+      const quick = getModulePrimaryAction(id);
+      if (!quick) continue;
+      map[id] = {
+        label: quick.label,
+        run: () =>
+          openHubModuleWithAction(
+            id as Parameters<typeof openHubModuleWithAction>[0],
+            quick.action,
+          ),
+      };
+    }
+    return map;
+  }, [modulesWithSignal]);
+
   const handleDragEnd = useCallback((event) => {
     const { active, over } = event;
     if (active && over && active.id !== over.id) {
@@ -646,29 +690,14 @@ export function HubDashboard({
         >
           <SortableContext items={order} strategy={verticalListSortingStrategy}>
             <div className="rounded-2xl border border-line bg-panel overflow-hidden divide-y divide-line/60">
-              {order.map((id) => {
-                const hasSignal = modulesWithSignal.has(id);
-                const quick = getModulePrimaryAction(id);
-                const quickAdd =
-                  hasSignal && quick
-                    ? {
-                        label: quick.label,
-                        run: () =>
-                          openHubModuleWithAction(
-                            id as Parameters<typeof openHubModuleWithAction>[0],
-                            quick.action,
-                          ),
-                      }
-                    : null;
-                return (
-                  <SortableCard
-                    key={id}
-                    id={id}
-                    onOpenModule={onOpenModule}
-                    quickAdd={quickAdd}
-                  />
-                );
-              })}
+              {order.map((id) => (
+                <SortableCard
+                  key={id}
+                  id={id}
+                  onOpenModule={onOpenModule}
+                  quickAdd={quickAddByModule[id] || null}
+                />
+              ))}
             </div>
           </SortableContext>
         </DndContext>
