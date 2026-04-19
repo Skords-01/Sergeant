@@ -11,6 +11,7 @@ import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { Button } from "@shared/components/ui/Button";
 import { Card } from "@shared/components/ui/Card";
 import { Input } from "@shared/components/ui/Input";
+import { VoiceMicButton } from "@shared/components/ui/VoiceMicButton.jsx";
 import {
   ROUTINE_THEME as C,
   RECURRENCE_OPTIONS,
@@ -216,6 +217,16 @@ export function HabitForm({
             onChange={(e) =>
               setHabitDraft((d) => ({ ...d, name: e.target.value }))
             }
+          />
+          <VoiceMicButton
+            size="md"
+            onResult={(transcript: string) => {
+              const t = (transcript || "").trim();
+              if (!t) return;
+              setHabitDraft((d) => ({ ...d, name: t }));
+            }}
+            label="Голосовий ввід назви звички"
+            className="shrink-0"
           />
         </div>
         {errors?.name && (

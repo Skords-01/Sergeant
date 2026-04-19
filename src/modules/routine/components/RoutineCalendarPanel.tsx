@@ -218,7 +218,7 @@ export function RoutineCalendarPanel({
         onChange={applyTimeMode}
       />
 
-      <div className="rounded-2xl border border-line bg-panel/80 p-3 shadow-card">
+      <Card variant="default" radius="lg" padding="sm" className="bg-panel/80">
         <SectionHeading as="p" size="xs" className="mb-2">
           Тиждень
         </SectionHeading>
@@ -238,7 +238,7 @@ export function RoutineCalendarPanel({
             зріз
           </p>
         )}
-      </div>
+      </Card>
 
       <Input
         className="routine-touch-field w-full max-w-md"

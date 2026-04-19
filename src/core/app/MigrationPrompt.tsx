@@ -1,10 +1,16 @@
 import { Button } from "@shared/components/ui/Button";
+import { Card } from "@shared/components/ui/Card";
 import { Icon } from "@shared/components/ui/Icon";
 
 export function MigrationPrompt({ onUpload, onSkip, syncing }) {
   return (
     <div className="min-h-dvh bg-bg flex items-center justify-center p-6 page-enter">
-      <div className="max-w-sm w-full bg-panel border border-line rounded-3xl p-6 shadow-float space-y-5">
+      <Card
+        variant="elevated"
+        radius="xl"
+        padding="xl"
+        className="max-w-sm w-full space-y-5"
+      >
         <div className="text-center space-y-2">
           <div className="w-14 h-14 mx-auto bg-brand-500/10 rounded-2xl flex items-center justify-center text-brand-600">
             <Icon name="upload" size={28} strokeWidth={1.8} />
@@ -38,7 +44,7 @@ export function MigrationPrompt({ onUpload, onSkip, syncing }) {
             Пропустити
           </Button>
         </div>
-      </div>
+      </Card>
     </div>
   );
 }

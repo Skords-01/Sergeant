@@ -1,4 +1,5 @@
 import { Suspense, memo } from "react";
+import { Card } from "@shared/components/ui/Card";
 import { NetworthChart } from "../../components/charts/lazy";
 import { ChartFallback } from "../../components/charts/ChartFallback";
 
@@ -9,7 +10,12 @@ import { ChartFallback } from "../../components/charts/ChartFallback";
 const NetworthSectionImpl = function NetworthSection({ networthHistory }) {
   if (networthHistory.length >= 2) {
     return (
-      <div className="bg-panel border border-line rounded-2xl px-5 pt-4 pb-3 shadow-card">
+      <Card
+        variant="default"
+        radius="lg"
+        padding="none"
+        className="px-5 pt-4 pb-3"
+      >
         <div className="flex items-center justify-between mb-3">
           <span className="text-xs font-medium text-subtle">
             Динаміка нетворсу
@@ -21,17 +27,22 @@ const NetworthSectionImpl = function NetworthSection({ networthHistory }) {
         <Suspense fallback={<ChartFallback className="h-20" />}>
           <NetworthChart data={networthHistory} />
         </Suspense>
-      </div>
+      </Card>
     );
   }
 
   return (
-    <div className="bg-panel border border-dashed border-line rounded-2xl p-6 text-center shadow-card">
+    <Card
+      variant="default"
+      radius="lg"
+      padding="xl"
+      className="border-dashed text-center"
+    >
       <p className="text-sm text-subtle">
         Ще мало знімків для графіка нетворсу — з’явиться після кількох змін
         балансу.
       </p>
-    </div>
+    </Card>
   );
 };
 

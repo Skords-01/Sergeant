@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Virtuoso } from "react-virtuoso";
+import { Card } from "@shared/components/ui/Card";
 import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { Input } from "@shared/components/ui/Input";
 import { cn } from "@shared/lib/cn";
@@ -191,7 +192,12 @@ export function LogCard({
           </button>
         </div>
 
-        <div className="rounded-2xl border border-line bg-panel/40 px-3 py-3 space-y-2">
+        <Card
+          variant="flat"
+          radius="lg"
+          padding="none"
+          className="bg-panel/40 px-3 py-3 space-y-2"
+        >
           <SectionHeading as="div" size="xs">
             Пошук по журналу
           </SectionHeading>
@@ -262,7 +268,7 @@ export function LogCard({
               })}
             </ul>
           )}
-        </div>
+        </Card>
 
         {logSizeWarn && (
           <div className="rounded-2xl border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-100">

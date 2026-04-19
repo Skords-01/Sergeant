@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@shared/lib/cn";
+import { Card } from "@shared/components/ui/Card";
 import { Icon } from "@shared/components/ui/Icon";
 import { useSyncStatus } from "../useCloudSync.js";
 
@@ -72,7 +73,12 @@ export function UserMenuButton({
         <SyncBadge user={user} syncing={syncing} />
       </button>
       {open && (
-        <div className="absolute right-0 top-12 z-50 w-64 bg-panel border border-line rounded-2xl shadow-float p-3 space-y-2">
+        <Card
+          variant="elevated"
+          radius="lg"
+          padding="sm"
+          className="absolute right-0 top-12 z-50 w-64 space-y-2"
+        >
           <div className="px-2 py-1">
             <p className="text-sm font-semibold text-text truncate">
               {user.name || "Користувач"}
@@ -137,7 +143,7 @@ export function UserMenuButton({
               Вийти
             </button>
           </div>
-        </div>
+        </Card>
       )}
     </div>
   );

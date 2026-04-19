@@ -1,4 +1,5 @@
 import { Button } from "@shared/components/ui/Button";
+import { Card } from "@shared/components/ui/Card";
 import { Icon } from "@shared/components/ui/Icon";
 import { HubDashboard } from "../HubDashboard.jsx";
 import { HubReports } from "../HubReports.jsx";
@@ -74,7 +75,12 @@ export function HubMainContent({
 
       {showInstall && (
         <div className="px-5 max-w-lg mx-auto w-full mb-2">
-          <div className="px-4 py-3 rounded-2xl bg-panel border border-line shadow-card flex items-center gap-3">
+          <Card
+            variant="default"
+            radius="lg"
+            padding="none"
+            className="px-4 py-3 flex items-center gap-3"
+          >
             <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
               <svg
                 width="20"
@@ -119,7 +125,7 @@ export function HubMainContent({
             >
               <Icon name="close" size={16} />
             </Button>
-          </div>
+          </Card>
         </div>
       )}
 

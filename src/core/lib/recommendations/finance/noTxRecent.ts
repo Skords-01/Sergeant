@@ -11,6 +11,7 @@
 
 import type { Rule } from "../types";
 import { txTimestamp, type FinanceContext } from "../financeContext";
+import { pluralDays } from "@shared/lib/ukrainianPlural";
 
 const MIN_HISTORY = 5;
 const MIN_DAYS_SILENT = 3;
@@ -41,7 +42,7 @@ export const noTxRecentRule: Rule<FinanceContext> = {
         module: "finyk" as const,
         priority: 68,
         icon: "📝",
-        title: `${days} дні без запису витрат`,
+        title: `${days} ${pluralDays(days)} без запису витрат`,
         body: "Зафіксуй найсвіжіші витрати — картина місяця буде точнішою.",
         action: "finyk",
         pwaAction: "add_expense",

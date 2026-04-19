@@ -24,6 +24,7 @@ export function NutritionOverlays({
   restoreConfirm,
   setRestoreConfirm,
   applyRestorePayload,
+  onRequestMealPhoto,
 }) {
   return (
     <>
@@ -78,6 +79,7 @@ export function NutritionOverlays({
         setPrefs={setPrefs}
         pantryItems={pantry.effectiveItems}
         onConsumePantryItem={pantry.consumePantryItem}
+        onRequestPhoto={onRequestMealPhoto}
       />
 
       <InputDialog

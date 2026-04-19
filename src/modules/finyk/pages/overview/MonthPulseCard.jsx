@@ -1,4 +1,5 @@
 import { memo } from "react";
+import { Card } from "@shared/components/ui/Card";
 import { cn } from "@shared/lib/cn";
 import { computePulseStyle } from "./pulseStyle.js";
 
@@ -35,12 +36,11 @@ const MonthPulseCardImpl = function MonthPulseCard({
   });
 
   return (
-    <div
-      className={cn(
-        "rounded-2xl border border-line bg-panel p-5 shadow-card border-l-[4px]",
-        accentLeft,
-        bg,
-      )}
+    <Card
+      variant="default"
+      radius="lg"
+      padding="lg"
+      className={cn("border-l-[4px]", accentLeft, bg)}
     >
       <div className="flex items-start justify-between gap-3 mb-4">
         <div>
@@ -193,7 +193,7 @@ const MonthPulseCardImpl = function MonthPulseCard({
             </div>
           )}
       </div>
-    </div>
+    </Card>
   );
 };
 
