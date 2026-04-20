@@ -29,7 +29,7 @@ function formatStickyDayLabel(key) {
   t0.setHours(0, 0, 0, 0);
   const d0 = new Date(d);
   d0.setHours(0, 0, 0, 0);
-  const diffDays = Math.round((t0 - d0) / 86400000);
+  const diffDays = Math.round((t0.getTime() - d0.getTime()) / 86400000);
   if (diffDays === 0) return "Сьогодні";
   if (diffDays === 1) return "Вчора";
   return d.toLocaleDateString("uk-UA", {
@@ -728,7 +728,9 @@ export function Transactions({
               onClick={() => applyBatchCategory(cat.id)}
               className="w-full text-left flex items-center gap-3 px-4 py-3 rounded-2xl hover:bg-panelHi transition-colors min-h-[48px]"
             >
-              <span className="text-lg">{cat.emoji}</span>
+              <span className="text-lg">
+                {(cat as { emoji?: string }).emoji}
+              </span>
               <span className="text-sm font-medium text-text">{cat.label}</span>
             </button>
           ))}

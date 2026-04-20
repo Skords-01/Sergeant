@@ -1,6 +1,12 @@
 import { memo } from "react";
-import { FlowRow } from "./FlowRow.jsx";
+import { FlowRow, type FlowItem } from "./FlowRow";
 import { Card } from "@shared/components/ui/Card";
+
+interface PlannedFlowsCardProps {
+  plannedFlows: (FlowItem & { id: string })[];
+  onNavigate: (page: string) => void;
+  showBalance: boolean;
+}
 
 /**
  * Список «Найближчі платежі» (до 5 рядків). plannedFlows — вже відфільтрований
@@ -10,7 +16,7 @@ const PlannedFlowsCardImpl = function PlannedFlowsCard({
   plannedFlows,
   onNavigate,
   showBalance,
-}) {
+}: PlannedFlowsCardProps) {
   if (plannedFlows.length === 0) return null;
 
   return (

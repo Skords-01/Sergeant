@@ -1,4 +1,11 @@
-import { useMemo, useEffect, useRef, useState, useCallback } from "react";
+import {
+  useMemo,
+  useEffect,
+  useRef,
+  useState,
+  useCallback,
+  type ComponentType,
+} from "react";
 import { trackEvent, ANALYTICS_EVENTS } from "../../../core/analytics";
 import {
   calcDebtRemaining,
@@ -19,7 +26,13 @@ import { filterStatTransactions } from "../domain/transactions";
 import { Skeleton } from "@shared/components/ui/Skeleton";
 import { THEME_HEX } from "@shared/lib/themeHex.js";
 import { SyncStatusBadge } from "../components/SyncStatusBadge";
-import { RetroComparison } from "../components/RetroComparison";
+import { RetroComparison as RetroComparisonRaw } from "../components/RetroComparison";
+
+// Untyped .jsx component — loosen while RetroComparison.jsx stays JS.
+// Tightens when finyk/components/* migrates to .tsx (next PR).
+const RetroComparison = RetroComparisonRaw as unknown as ComponentType<
+  Record<string, unknown>
+>;
 
 import { FirstInsightBanner } from "./overview/FirstInsightBanner.jsx";
 import { HeroCard } from "./overview/HeroCard.jsx";
@@ -238,7 +251,9 @@ export function Overview({
           transactions,
         );
         const dueDate = getNextBillingDate(sub.billingDay, now);
-        const daysLeft = Math.ceil((dueDate - todayStart) / 86400000);
+        const daysLeft = Math.ceil(
+          (dueDate.getTime() - todayStart.getTime()) / 86400000,
+        );
         return {
           id: `sub-${sub.id}`,
           title: `${sub.emoji} ${sub.name}`,
@@ -262,7 +277,8 @@ export function Overview({
         .filter((d) => d.dueDate && d.remaining > 0)
         .map((d) => {
           const daysLeft = Math.ceil(
-            (parseLocalDate(d.dueDate) - todayStart) / 86400000,
+            (parseLocalDate(d.dueDate).getTime() - todayStart.getTime()) /
+              86400000,
           );
           return {
             id: `debt-${d.id}`,
@@ -290,7 +306,8 @@ export function Overview({
         .filter((r) => r.dueDate && r.remaining > 0)
         .map((r) => {
           const daysLeft = Math.ceil(
-            (parseLocalDate(r.dueDate) - todayStart) / 86400000,
+            (parseLocalDate(r.dueDate).getTime() - todayStart.getTime()) /
+              86400000,
           );
           return {
             id: `recv-${r.id}`,

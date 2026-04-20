@@ -18,6 +18,8 @@ import {
   calculateTotalExpenseFact,
   validateLimitBudgetForm,
   validateGoalBudgetForm,
+  type LimitFormInput,
+  type GoalFormInput,
 } from "../domain/budget";
 import { filterStatTransactions } from "../domain/transactions";
 import { calcForecast } from "../lib/forecastEngine";
@@ -100,7 +102,20 @@ async function fetchProactiveAdvice({
   return text;
 }
 
-async function fetchCategoryExplanation({ catLabel, spent, forecast, limit }) {
+interface ExplainVars {
+  categoryId: string;
+  catLabel: string;
+  spent: number;
+  forecast: number;
+  limit: number;
+}
+
+async function fetchCategoryExplanation({
+  catLabel,
+  spent,
+  forecast,
+  limit,
+}: Omit<ExplainVars, "categoryId">) {
   const prompt = `Категорія: ${catLabel}. Витрачено за місяць: ${spent} ₴. Прогноз на кінець місяця: ${forecast} ₴. Ліміт: ${limit} ₴. Чому витрати можуть бути ${
     forecast > limit ? "вищими за ліміт" : "нижчими за план"
   } і що варто зробити? Дай коротку відповідь (2-3 речення) українською.`;
@@ -276,7 +291,7 @@ export function Budgets({ mono, storage }) {
   // in local state so each forecast card renders independently. `variables`
   // carries the categoryId so we can derive per-card loading state from
   // `mutation.isPending && mutation.variables?.categoryId === fc.categoryId`.
-  const explainMutation = useMutation({
+  const explainMutation = useMutation<string | null, Error, ExplainVars>({
     mutationFn: ({ catLabel, spent, forecast, limit }) =>
       fetchCategoryExplanation({ catLabel, spent, forecast, limit }),
     onSuccess: (text, { categoryId }) => {
@@ -332,8 +347,8 @@ export function Budgets({ mono, storage }) {
     setFormError("");
     const { error, normalized } =
       newB.type === "limit"
-        ? validateLimitBudgetForm(newB, budgets)
-        : validateGoalBudgetForm(newB);
+        ? validateLimitBudgetForm(newB as LimitFormInput, budgets)
+        : validateGoalBudgetForm(newB as GoalFormInput);
     if (error || !normalized) {
       setFormError(error || "Помилка валідації");
       return;
