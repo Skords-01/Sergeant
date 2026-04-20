@@ -561,7 +561,7 @@ Web використовує кастомні компоненти + canvas/SVG.
     зараз — warn-stub у `apps/mobile/src/lib/fileDownload.ts`; Фаза 4+
     замінить його на `expo-file-system.writeAsStringAsync`
     (`cacheDirectory`) + `expo-sharing.shareAsync` без змін у споживачах.
-- **R9.** 🔵 In progress (PR #XXX — shared hook + web/mobile адаптери + 5 споживачів
+- **R9.** 🔵 In progress (PR [#433](https://github.com/Skords-01/Sergeant/pull/433) — shared hook + web/mobile адаптери + 5 споживачів
   мігровано + видалено дублікат у `routine/hooks`). Pure-контракт
   `VisualKeyboardInsetAdapter` + `useVisualKeyboardInset(active)` живе у
   `@sergeant/shared/hooks/useVisualKeyboardInset` із безпечним no-op-дефолтом,
