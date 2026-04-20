@@ -1,6 +1,19 @@
 import { memo } from "react";
 import { cn } from "@shared/lib/cn";
 
+interface CategoryOption {
+  id: string;
+  label: string;
+}
+
+interface CategorySelectorProps {
+  value: string | null | undefined;
+  onChange: (id: string) => void;
+  categories?: CategoryOption[];
+  className?: string;
+  placeholder?: string;
+}
+
 // Тонкий <select>-обгортач: рендер повністю залежить від пропсів,
 // memo робить його дешевшим у формах з частими ре-рендерами.
 function CategorySelectorComponent({
@@ -9,7 +22,7 @@ function CategorySelectorComponent({
   categories = [],
   className,
   placeholder = "Оберіть категорію",
-}) {
+}: CategorySelectorProps) {
   return (
     <select
       className={cn(
