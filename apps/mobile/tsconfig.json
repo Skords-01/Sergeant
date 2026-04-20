@@ -15,7 +15,9 @@
       "@sergeant/shared": ["../../packages/shared/src/index.ts"],
       "@sergeant/shared/*": ["../../packages/shared/src/*"],
       "@sergeant/api-client": ["../../packages/api-client/src/index.ts"],
-      "@sergeant/api-client/*": ["../../packages/api-client/src/*"]
+      "@sergeant/api-client/*": ["../../packages/api-client/src/*"],
+      "@sergeant/fizruk-domain": ["../../packages/fizruk-domain/src/index.ts"],
+      "@sergeant/fizruk-domain/*": ["../../packages/fizruk-domain/src/*"]
     }
   },
   "include": [

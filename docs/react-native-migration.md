@@ -268,6 +268,38 @@ isReduceMotionEnabled()` (WCAG 2.3.3 parity).
   сегменти). Функціональні сторінки (BodyAtlas, графіки, фотопрогрес,
   active-workout таймер, PlanCalendar, Programs, Measurements) —
   у наступних PR-ах Фази 6 (PR-B…PR-G).
+- `apps/mobile/src/modules/fizruk/hooks/useActiveFizrukWorkout.ts` +
+  `apps/mobile/src/modules/fizruk/components/RestTimerOverlay.tsx` —
+  active-workout таймер + floating rest-timer (Phase 6 · PR-B,
+  `devin/…-fizruk-active-workout-timer`). Хук об'єднує три
+  незалежні куски стану: (a) `activeWorkoutId` (MMKV-персист через
+  `STORAGE_KEYS.FIZRUK_ACTIVE_WORKOUT` зі `@sergeant/shared`, щоб
+  CloudSync уже підхопив ключ), (b) `useElapsedSeconds(startedAt)` —
+  1 Hz tick, що **похідний від `Date.now()`**, не дрифтить при
+  стоп-JS стартах, і (c) `useRestTimer` — countdown, що теж
+  re-derives `remaining` з wall-clock `endAt`. `expo-keep-awake`
+  активний лише поки є `activeWorkoutId` (lazy-require у
+  try/catch + `KeepAwakeAdapter`-seam для jest-інʼєкції). Оверлей
+  — bottom-sheet над таб-баром, `role="timer"` +
+  `accessibilityLiveRegion="polite"`, анімація прогрес-бару
+  через `Animated.timing` з повагою до
+  `AccessibilityInfo.isReduceMotionEnabled()` (парі зі
+  `Skeleton.tsx` / `SyncStatusIndicator.tsx`). `Workouts`-сторінка
+  тимчасово отримала demo-панель (start/finish + швидкі кнопки
+  `compound` / `isolation` / `cardio` з `REST_DEFAULTS` у
+  `@sergeant/fizruk-domain/lib/restSettings`), щоб хук був
+  перевірюваний рукою з реального табу до повного порту
+  каталогу вправ у PR-F. Unit-тести —
+  `src/modules/fizruk/__tests__/useActiveFizrukWorkout.test.ts`
+  (drift-resistance обох таймерів під 30 с та 45 с JS-стальтів,
+  `justFinishedNaturally` single-flip, MMKV round-trip,
+  keep-awake activate/deactivate через injected adapter; fake
+  timers + `jest.advanceTimersByTime`). Круговий SVG
+  прогрес-ring свідомо **відкладено** до PR-C (BodyAtlas), який
+  зафіксує вибір SVG-стеку — тут лінійна шкала дає ту саму
+  ергономіку без зайвих залежностей. Circular SVG + інтеграція
+  у повний active-workout UX (активний сет, rest-on-complete,
+  template-driven суггестії) прийдуть з PR-F.
 
 ### 2.5 Аудит міграційного плану (прохід по `apps/web/src`)
 
