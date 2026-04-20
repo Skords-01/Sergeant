@@ -7,6 +7,7 @@ import { createChatRouter } from "./chat.js";
 import { createCoachRouter } from "./coach.js";
 import { createFoodSearchRouter } from "./food-search.js";
 import { createHealthRouter } from "./health.js";
+import { createMeRouter } from "./me.js";
 import { createNutritionRouter } from "./nutrition.js";
 import { createPushRouter } from "./push.js";
 import { createSyncRouter } from "./sync.js";
@@ -26,6 +27,7 @@ import { createWeeklyDigestRouter } from "./weekly-digest.js";
 export function registerRoutes(app: Express, { pool }: { pool: Pool }): void {
   app.use(createHealthRouter({ pool }));
   app.use(createAuthRouter());
+  app.use(createMeRouter());
   app.use(createSyncRouter());
   app.use(createChatRouter());
   app.use(createBanksRouter());

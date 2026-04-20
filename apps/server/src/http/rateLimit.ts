@@ -84,16 +84,34 @@ function sweepBuckets(now: number): void {
 }
 
 /**
+ * Витягує userId з `req.user.id`, якщо попередній middleware (напр.
+ * `requireSession`) вже резолвнув сесію. Це використовується як пріоритетний
+ * rate-limit ключ перед IP: мобільні юзери ходять з динамічних IP (LTE,
+ * VPN, CGN), а один автентифікований користувач не має "скидувати" лімет
+ * просто перейшовши з Wi-Fi на мобільні дані.
+ *
+ * Контракт узгоджений з `server/aiQuota.ts` → `subjectFor`, який теж
+ * префіксує `u:` / `ip:`, тож метрики/логи rate-limit vs AI-квот легко
+ * корелювати по одному subject.
+ */
+export function rateLimitSubject(req: Request): string {
+  const user = (req as Request & { user?: { id?: unknown } }).user;
+  const id = user && typeof user.id === "string" ? user.id : "";
+  if (id) return `u:${id}`;
+  return `ip:${getIp(req)}`;
+}
+
+/**
  * Fixed-window rate-limit check (in-memory, per-process).
  */
 export function checkRateLimit(
   req: Request,
   { key, limit, windowMs }: RateLimitOptions,
 ): RateLimitResult {
-  const ip = getIp(req);
+  const subject = rateLimitSubject(req);
   const now = Date.now();
   sweepBuckets(now);
-  const k = `${key}:${ip}`;
+  const k = `${key}:${subject}`;
   const cur = buckets.get(k);
   if (!cur || now - cur.startMs >= windowMs) {
     buckets.set(k, { startMs: now, count: 1, windowMs });

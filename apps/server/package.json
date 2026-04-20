@@ -13,6 +13,7 @@
     "db:migrate": "node --import tsx ./migrate.mjs"
   },
   "dependencies": {
+    "@better-auth/expo": "^1.6.5",
     "@sentry/node": "^8.55.1",
     "@sergeant/shared": "workspace:*",
     "better-auth": "^1.6.4",

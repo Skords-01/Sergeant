@@ -46,7 +46,7 @@ if (!process.env.DATABASE_URL) {
   process.exit(1);
 }
 
-const { ensureSchema, pool } = await import("../server/db.js");
+const { ensureSchema, pool } = await import("./src/db.ts");
 
 async function main() {
   const startedAt = Date.now();

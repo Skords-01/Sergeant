@@ -17,6 +17,10 @@ const DEFAULT_ORIGINS = [
   "http://localhost:5173",
   "http://localhost:4173",
   "http://localhost:5000",
+  // Expo web dev (Metro bundler) за замовчуванням слухає 8081. Нативні
+  // клієнти CORS не перевіряють (Origin не шлють), але Expo-web симулятор
+  // і браузерна прев'юшка у dev-режимі — шлють, тому явно дозволяємо.
+  "http://localhost:8081",
   "https://fizruk.vercel.app",
   "https://sergeant.vercel.app",
   "https://sergeant.2dmanager.com.ua",

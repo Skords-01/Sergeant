@@ -15,7 +15,12 @@ import { setCorsHeaders } from "./cors.js";
  * cron/worker endpoint, браузер не має могти preflight-нути його навіть з
  * allowed origin (defense-in-depth проти XSS / протечки секрета в logs).
  */
-const ALLOW_HEADERS = "Content-Type, X-Token, X-Privat-Id, X-Privat-Token";
+// `Authorization` — мобільні клієнти шлють `Authorization: Bearer <token>`
+// через better-auth/bearer плагін. Браузери з cookie-сесіями цей хедер не
+// використовують, але додати його у allow-list безпечно: сервер все одно
+// валідує токен через better-auth.
+const ALLOW_HEADERS =
+  "Content-Type, Authorization, X-Token, X-Privat-Id, X-Privat-Token";
 
 export function apiCorsMiddleware(): RequestHandler {
   return (req, res, next) => {

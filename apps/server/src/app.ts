@@ -1,5 +1,11 @@
 import express from "express";
-import type { Express, Handler } from "express";
+import type {
+  Express,
+  Handler,
+  NextFunction,
+  Request,
+  Response,
+} from "express";
 
 import { pool } from "./db.js";
 import {
@@ -13,6 +19,34 @@ import {
 import { registerRoutes } from "./routes/index.js";
 import { createFrontendMiddleware } from "./routes/frontend.js";
 import { attachSentryErrorHandler } from "./sentry.js";
+
+const API_V1_PREFIX = "/api/v1";
+const API_PREFIX = "/api";
+
+/**
+ * API versioning shim. Рівно один router зареєстрований на `/api/*` (див.
+ * `registerRoutes`), але ми хочемо, щоб той самий роутер віддавав дзеркало
+ * під `/api/v1/*` — це дає мобільним клієнтам явну версію, при цьому веб
+ * (що ходить у `/api/*`) не ламається.
+ *
+ * Замість двох `app.use(router)` ми переписуємо `req.url` на канонічний
+ * `/api/...` шлях ДО маршрутизації. `req.originalUrl` зберігає оригінальний
+ * префікс, тому middleware, які читають `originalUrl` (напр. auth-метрики),
+ * бачать факт версійного виклику — без додаткової логіки.
+ */
+function apiVersionRewrite(
+  req: Request,
+  _res: Response,
+  next: NextFunction,
+): void {
+  const url = req.url;
+  if (url === API_V1_PREFIX) {
+    req.url = API_PREFIX;
+  } else if (url.startsWith(`${API_V1_PREFIX}/`)) {
+    req.url = API_PREFIX + url.slice(API_V1_PREFIX.length);
+  }
+  next();
+}
 
 interface CreateAppOptions {
   /**
@@ -64,6 +98,10 @@ export function createApp({
   app.use(requestIdMiddleware);
   app.use(withRequestContext);
   app.use(requestLogMiddleware);
+  // Rewrite /api/v1/* → /api/* ДО helmet/json-body/CORS: всі подальші
+  // path-base-middleware (body-parsers на конкретних шляхах, `/api` CORS,
+  // роутери) мусять бачити вже канонізований `req.url`.
+  app.use(apiVersionRewrite);
   app.use(apiHelmetMiddleware({ servesFrontend }));
 
   // Body-size policy: tight default, explicit loosening on routes that

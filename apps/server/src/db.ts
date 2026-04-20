@@ -160,7 +160,13 @@ async function runPendingSqlMigrations(client: PoolClient): Promise<void> {
     throw e;
   }
 
-  const sqlFiles = files.filter((f) => f.endsWith(".sql")).sort();
+  // Forward-only runner: `.down.sql` — явні rollback-скрипти, які DBA
+  // запускає руками (див. коментар у відповідному файлі). Виключаємо їх з
+  // auto-apply, інакше `006_push_devices.down.sql` відкотив би міграцію
+  // одразу після її застосування.
+  const sqlFiles = files
+    .filter((f) => f.endsWith(".sql") && !f.endsWith(".down.sql"))
+    .sort();
   for (const file of sqlFiles) {
     const { rows } = await client.query(
       "SELECT 1 AS ok FROM schema_migrations WHERE name = $1",

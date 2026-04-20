@@ -52,6 +52,9 @@ importers:
 
   apps/server:
     dependencies:
+      "@better-auth/expo":
+        specifier: ^1.6.5
+        version: 1.6.5(@better-auth/core@1.6.5(@better-auth/utils@0.4.0)(@better-fetch/fetch@1.1.21)(@opentelemetry/api@1.9.1)(better-call@1.3.5(zod@4.3.6))(jose@6.2.2)(kysely@0.28.16)(nanostores@1.3.0))(better-auth@1.6.5(@opentelemetry/api@1.9.1)(pg@8.20.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(vitest@3.2.4(@types/debug@4.1.13)(@types/node@25.6.0)(jiti@1.21.7)(jsdom@29.0.2(@noble/hashes@2.2.0))(terser@5.46.1)(tsx@4.21.0)(yaml@2.8.3)))
       "@sentry/node":
         specifier: ^8.55.1
         version: 8.55.1
@@ -1181,6 +1184,28 @@ packages:
       drizzle-orm: ^0.45.2
     peerDependenciesMeta:
       drizzle-orm:
+        optional: true
+
+  "@better-auth/expo@1.6.5":
+    resolution:
+      {
+        integrity: sha512-xLPx1d4eL24HYb9Jh9Eqeia09OiGH/2QZy41x6skKIwxEFyRW/CtntjlRKn2FI5+O8bE2AO+efGLHFefCw6IJQ==,
+      }
+    peerDependencies:
+      "@better-auth/core": ^1.6.5
+      better-auth: ^1.6.5
+      expo-constants: ">=17.0.0"
+      expo-linking: ">=7.0.0"
+      expo-network: ">=8.0.7"
+      expo-web-browser: ">=14.0.0"
+    peerDependenciesMeta:
+      expo-constants:
+        optional: true
+      expo-linking:
+        optional: true
+      expo-network:
+        optional: true
+      expo-web-browser:
         optional: true
 
   "@better-auth/kysely-adapter@1.6.5":
@@ -9111,6 +9136,14 @@ snapshots:
     dependencies:
       "@better-auth/core": 1.6.5(@better-auth/utils@0.4.0)(@better-fetch/fetch@1.1.21)(@opentelemetry/api@1.9.1)(better-call@1.3.5(zod@4.3.6))(jose@6.2.2)(kysely@0.28.16)(nanostores@1.3.0)
       "@better-auth/utils": 0.4.0
+
+  "@better-auth/expo@1.6.5(@better-auth/core@1.6.5(@better-auth/utils@0.4.0)(@better-fetch/fetch@1.1.21)(@opentelemetry/api@1.9.1)(better-call@1.3.5(zod@4.3.6))(jose@6.2.2)(kysely@0.28.16)(nanostores@1.3.0))(better-auth@1.6.5(@opentelemetry/api@1.9.1)(pg@8.20.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(vitest@3.2.4(@types/debug@4.1.13)(@types/node@25.6.0)(jiti@1.21.7)(jsdom@29.0.2(@noble/hashes@2.2.0))(terser@5.46.1)(tsx@4.21.0)(yaml@2.8.3)))":
+    dependencies:
+      "@better-auth/core": 1.6.5(@better-auth/utils@0.4.0)(@better-fetch/fetch@1.1.21)(@opentelemetry/api@1.9.1)(better-call@1.3.5(zod@4.3.6))(jose@6.2.2)(kysely@0.28.16)(nanostores@1.3.0)
+      "@better-fetch/fetch": 1.1.21
+      better-auth: 1.6.5(@opentelemetry/api@1.9.1)(pg@8.20.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(vitest@3.2.4(@types/debug@4.1.13)(@types/node@25.6.0)(jiti@1.21.7)(jsdom@29.0.2(@noble/hashes@2.2.0))(terser@5.46.1)(tsx@4.21.0)(yaml@2.8.3))
+      better-call: 1.3.5(zod@4.3.6)
+      zod: 4.3.6
 
   "@better-auth/kysely-adapter@1.6.5(@better-auth/core@1.6.5(@better-auth/utils@0.4.0)(@better-fetch/fetch@1.1.21)(@opentelemetry/api@1.9.1)(better-call@1.3.5(zod@4.3.6))(jose@6.2.2)(kysely@0.28.16)(nanostores@1.3.0))(@better-auth/utils@0.4.0)(kysely@0.28.16)":
     dependencies:

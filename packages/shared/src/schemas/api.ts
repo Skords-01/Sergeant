@@ -398,6 +398,30 @@ export const PushUnsubscribeSchema = z.object({
   endpoint: z.string().url().max(2048),
 });
 
+/**
+ * `/api/v1/push/register` — уніфікована реєстрація push-пристрою.
+ *
+ * `platform: "web"` — web-push: `token` несемо як endpoint URL, `keys`
+ * обов'язкові (див. RFC 8030). `platform: "ios"|"android"` — native push:
+ * `token` — opaque APNs/FCM device token, `endpoint`/`keys` відсутні.
+ *
+ * Валідатор нижче приймає обидва shape-и; handler сам маршрутизує у
+ * правильну таблицю (`push_subscriptions` для web vs `push_devices` для
+ * native). Довжини полів підібрані під реальні ліміти: FCM registration
+ * token — до ~4KB, APNs — 64 hex (32 bytes), endpoint URL — до 2KB.
+ */
+export const PushRegisterSchema = z.discriminatedUnion("platform", [
+  z.object({
+    platform: z.literal("web"),
+    token: z.string().url().max(2048),
+    keys: PushKeys,
+  }),
+  z.object({
+    platform: z.enum(["ios", "android"]),
+    token: z.string().min(1).max(4096),
+  }),
+]);
+
 // `.nullable()` на необов'язкових полях — для back-compat із воркерами, які
 // історично слали `null` замість відсутнього поля.
 export const PushSendSchema = z.object({

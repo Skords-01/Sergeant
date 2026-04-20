@@ -1,5 +1,7 @@
 import { betterAuth } from "better-auth";
 import { fromNodeHeaders } from "better-auth/node";
+import { bearer } from "better-auth/plugins";
+import { expo } from "@better-auth/expo";
 import type { Request } from "express";
 import pool from "./db.js";
 import {
@@ -71,11 +73,33 @@ export const auth = betterAuth({
     },
   },
   trustedOrigins: getTrustedOrigins(),
+  /**
+   * Плагіни:
+   *   - `bearer()` — дозволяє мобільним клієнтам передавати сесію через
+   *     `Authorization: Bearer <token>` без cookie. Веб-браузери й далі
+   *     можуть ходити з cookie — плагін тільки додає альтернативний
+   *     канал, нічого не ламає.
+   *   - `expo()` — коригує origin-handling для `sergeant://` / `exp://`
+   *     схем і автоматично розширює `trustedOrigins` deep-link-схемами
+   *     Expo API Routes.
+   */
+  plugins: [bearer(), expo()],
   ...(advancedCookies ? { advanced: advancedCookies } : {}),
 });
 
 function getTrustedOrigins(): string[] {
-  const origins: string[] = ["http://localhost:5000", "http://localhost:5173"];
+  // Mobile-клієнти використовують кастомні схеми deep-link (`sergeant://`,
+  // `exp://` у Expo dev) і локальний Metro bundler на `http://localhost:8081`.
+  // Better Auth перевіряє `Origin` / `Referer` проти цього списку при
+  // чутливих операціях (callback OAuth, cross-origin sign-in) — без явного
+  // додавання ці ж запити летіли б у 403.
+  const origins: string[] = [
+    "http://localhost:5000",
+    "http://localhost:5173",
+    "http://localhost:8081",
+    "sergeant://",
+    "exp://",
+  ];
   if (process.env.REPLIT_DEV_DOMAIN) {
     origins.push(`https://${process.env.REPLIT_DEV_DOMAIN}`);
   }
