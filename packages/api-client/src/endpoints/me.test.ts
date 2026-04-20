@@ -58,7 +58,12 @@ describe("createMeEndpoints", () => {
     });
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const url = fetchMock.mock.calls[0][0] as string;
-    expect(url).toContain("/api/me");
+    // `createHttpClient()` defaults to `apiPrefix = "/api/v1"` (see
+    // DEFAULT_API_PREFIX / PR #390), so `/api/me` is rewritten to
+    // `/api/v1/me` before fetch. The server mirrors both `/api/me` and
+    // `/api/v1/me` (see `apiVersionRewrite`), but the client-side URL
+    // we assert here is the post-rewrite one.
+    expect(url).toContain("/api/v1/me");
   });
 
   it("кидає ZodError на відповіді без поля user", async () => {
