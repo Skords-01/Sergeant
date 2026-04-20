@@ -19,7 +19,7 @@ import {
   __internal_addToOfflineQueue as enqueue,
   __internal_parseDateSafe as parseDate,
 } from "./useCloudSync.js";
-import { STORAGE_KEYS } from "@shared/lib/storageKeys.js";
+import { STORAGE_KEYS } from "@sergeant/shared";
 
 beforeEach(() => localStorage.clear());
 afterEach(() => localStorage.clear());

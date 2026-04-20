@@ -1,5 +1,5 @@
 import { safeReadLS } from "@shared/lib/storage.js";
-import { STORAGE_KEYS } from "@shared/lib/storageKeys.js";
+import { STORAGE_KEYS } from "@sergeant/shared";
 import { DEFAULT_SUBSCRIPTIONS } from "../../finyk/constants.js";
 import { getSubscriptionAmountMeta } from "../../finyk/domain/subscriptionUtils.js";
 import { enumerateDateKeys, parseDateKey } from "./hubCalendarAggregate.js";

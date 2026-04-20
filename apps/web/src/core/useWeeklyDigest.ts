@@ -1,7 +1,7 @@
 import { useCallback } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { coachApi, weeklyDigestApi } from "@shared/api";
-import { STORAGE_KEYS } from "@shared/lib/storageKeys.js";
+import { STORAGE_KEYS } from "@sergeant/shared";
 import { safeReadLS } from "@shared/lib/storage.js";
 import { coachKeys, digestKeys } from "@shared/lib/queryKeys.js";
 import { formatApiError } from "@shared/lib/apiErrorFormat";

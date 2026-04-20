@@ -35,7 +35,7 @@ import type {
   RoutineMainTab,
   RoutineTimeMode,
 } from "./context/RoutineCalendarContext";
-import { STORAGE_KEYS } from "@shared/lib/storageKeys";
+import { STORAGE_KEYS } from "@sergeant/shared";
 import type { Dispatch, SetStateAction } from "react";
 import type {
   CategoryDraft,

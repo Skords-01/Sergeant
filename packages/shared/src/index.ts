@@ -6,3 +6,6 @@ export * from "./utils";
 
 // Pure types (currently empty barrel for future expansion)
 export * from "./types";
+
+// Shared, DOM-free constants (storage keys, etc.)
+export * from "./lib/storageKeys";
