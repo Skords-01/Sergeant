@@ -1,8 +1,5 @@
-export * from "./lib/categories.js";
-export * from "./lib/formatting.js";
-export * from "./lib/accounts.js";
-export * from "./lib/debt.js";
-export * from "./lib/transactions.js";
-export * from "./lib/goals.js";
+// Barrel для `@finyk/utils`. Чисті (DOM-free) helper-и беремо з пакета
+// `@sergeant/finyk-domain`; web-специфічний `lsStats` (читає localStorage)
+// залишається у `./lib/lsStats.ts` і додається лише тут.
+export * from "@sergeant/finyk-domain/utils";
 export * from "./lib/lsStats.js";
-export * from "./lib/spending.js";
