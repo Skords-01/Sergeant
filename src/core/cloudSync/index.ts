@@ -13,7 +13,7 @@ export { SYNC_EVENT, SYNC_STATUS_EVENT } from "./config";
 export { getDirtyModules } from "./state/dirtyModules";
 export { getOfflineQueue } from "./queue/offlineQueue";
 
-export { notifySyncDirty } from "./storagePatch";
+export { enqueueChange, notifySyncDirty } from "./storagePatch";
 
 export { useCloudSync } from "./hook/useCloudSync";
 export { useSyncStatus } from "./hook/useSyncStatus";

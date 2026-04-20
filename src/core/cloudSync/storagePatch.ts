@@ -4,6 +4,7 @@
 import "./state/dirtyModules";
 
 import { ALL_TRACKED_KEYS, keyToModule } from "./config";
+import { syncLog } from "./logger";
 import { markModuleDirty } from "./state/dirtyModules";
 import { emitSyncEvent } from "./state/events";
 
@@ -20,35 +21,41 @@ declare global {
   }
 }
 
+/**
+ * Queue layer — single entry point for "a local change just happened".
+ *
+ * If the changed localStorage key belongs to a tracked module, mark that
+ * module dirty (persisted through `DIRTY_MODULES_KEY`). Always dispatch the
+ * `SYNC_EVENT` so the scheduler layer can debounce and fire a sync. Keeping
+ * this as the one place that writes to the dirty map avoids the earlier
+ * duplication between the patched `setItem`/`removeItem` and the public
+ * `notifySyncDirty` helper.
+ */
+export function enqueueChange(changedKey?: string): void {
+  let module: string | null = null;
+  if (changedKey && ALL_TRACKED_KEYS.has(changedKey)) {
+    module = keyToModule(changedKey);
+    if (module) markModuleDirty(module);
+  }
+  syncLog.enqueue({ key: changedKey, module });
+  emitSyncEvent();
+}
+
+/**
+ * Kept for backward compatibility with existing consumers and tests that
+ * import `notifySyncDirty` from the barrel. New code should call
+ * `enqueueChange` directly.
+ */
+export const notifySyncDirty = enqueueChange;
+
 if (!window.__hubSyncPatched) {
   window.__hubSyncPatched = true;
   localStorage.setItem = function (key: string, value: string) {
     origSetItem(key, value);
-    if (ALL_TRACKED_KEYS.has(key)) {
-      const mod = keyToModule(key);
-      if (mod) markModuleDirty(mod);
-      emitSyncEvent();
-    }
+    if (ALL_TRACKED_KEYS.has(key)) enqueueChange(key);
   };
   localStorage.removeItem = function (key: string) {
     origRemoveItem(key);
-    if (ALL_TRACKED_KEYS.has(key)) {
-      const mod = keyToModule(key);
-      if (mod) markModuleDirty(mod);
-      emitSyncEvent();
-    }
+    if (ALL_TRACKED_KEYS.has(key)) enqueueChange(key);
   };
-}
-
-/**
- * Notify the sync system that a storage key changed by other means. If the
- * key belongs to a tracked module, mark that module dirty; always dispatch
- * the SYNC_EVENT so listeners (e.g. debounced push) can react.
- */
-export function notifySyncDirty(changedKey?: string): void {
-  if (changedKey && ALL_TRACKED_KEYS.has(changedKey)) {
-    const mod = keyToModule(changedKey);
-    if (mod) markModuleDirty(mod);
-  }
-  emitSyncEvent();
 }

@@ -10,32 +10,60 @@ import { useInitialSyncOnUser } from "./useInitialSyncOnUser";
 import { useSyncRetry } from "./useSyncRetry";
 
 /**
- * React hook that orchestrates the cloud-sync engine. Owns React state
- * (`syncing`, `lastSync`, `syncError`, `migrationPending`) and wires the
- * engine to retry triggers (online listener, 5s debounce on SYNC_EVENT,
- * 2-min periodic) and the initial-sync-on-user effect.
+ * Cloud-sync orchestrator. Three clearly-separated layers, read top-down:
+ *
+ *   1. Queue (where changes accumulate)
+ *      Handled outside this hook — the patched `localStorage` in
+ *      `storagePatch.ts` calls `enqueueChange` on every write to a tracked
+ *      key. That writes the dirty map and dispatches `SYNC_EVENT`.
+ *
+ *   2. Scheduler (when to run a sync)
+ *      `useSyncRetry` wires three triggers — online / change-event /
+ *      periodic timer — to the executor below.
+ *
+ *   3. Executor (how to actually call the API)
+ *      The `run*` callbacks below each wrap one engine entry point in the
+ *      in-flight guard (`runExclusive`) so we never fire concurrent syncs.
+ *
+ * Public state surface:
+ *   - `isSyncing`   (legacy alias: `syncing`)
+ *   - `lastSyncAt`  (legacy alias: `lastSync`)
+ *   - `hasError`    derived from the underlying error message; legacy alias
+ *                   `syncError` still exposes the raw message.
+ *   - `migrationPending` drives the first-run migration modal.
  */
 export function useCloudSync(user: CurrentUser | null | undefined) {
   const [migrationPending, setMigrationPending] = useState(false);
   const { engineArgs, lifecycle } = useEngineArgs(user);
-  const { syncing, lastSync, syncError, runExclusive, claimBusy } = lifecycle;
+  const {
+    isSyncing,
+    lastSyncAt,
+    hasError,
+    syncing,
+    lastSync,
+    syncError,
+    runExclusive,
+    claimBusy,
+  } = lifecycle;
 
-  const doPushDirty = useCallback(
+  // --- 3. Executor: API calls, each serialized through the in-flight guard.
+
+  const runSync = useCallback(
     () => runExclusive(() => pushDirty(engineArgs), undefined),
     [engineArgs, runExclusive],
   );
 
-  const doPushAll = useCallback(
+  const runPushAll = useCallback(
     () => runExclusive(() => pushAll(engineArgs), undefined),
     [engineArgs, runExclusive],
   );
 
-  const doPullAll = useCallback(
+  const runPullAll = useCallback(
     () => runExclusive(() => pullAll(engineArgs), false),
     [engineArgs, runExclusive],
   );
 
-  const doInitialSync = useCallback(
+  const runInitialSync = useCallback(
     (): Promise<boolean> =>
       runExclusive(
         () =>
@@ -48,7 +76,7 @@ export function useCloudSync(user: CurrentUser | null | undefined) {
     [engineArgs, runExclusive],
   );
 
-  const doUploadLocalData = useCallback(async () => {
+  const runUploadLocal = useCallback(async () => {
     if (!user?.id) return;
     // Intentionally bypasses the in-flight guard: this is user-initiated
     // from the migration modal and must proceed even if a background retry
@@ -70,18 +98,25 @@ export function useCloudSync(user: CurrentUser | null | undefined) {
     () => setMigrationPending(false),
     [],
   );
-  useInitialSyncOnUser(user, doInitialSync, clearMigrationPending);
 
-  useSyncRetry(!!user, doPushDirty);
+  // --- 2. Scheduler: subscribe the executor to online/change/periodic.
+
+  useInitialSyncOnUser(user, runInitialSync, clearMigrationPending);
+  useSyncRetry(!!user, runSync);
 
   return {
+    // Explicit state names.
+    isSyncing,
+    lastSyncAt,
+    hasError,
+    // Legacy aliases kept so existing consumers (App.tsx, tests) compile.
     syncing,
     lastSync,
     syncError,
-    pushAll: doPushAll,
-    pullAll: doPullAll,
+    pushAll: runPushAll,
+    pullAll: runPullAll,
     migrationPending,
-    uploadLocalData: doUploadLocalData,
+    uploadLocalData: runUploadLocal,
     skipMigration,
   };
 }

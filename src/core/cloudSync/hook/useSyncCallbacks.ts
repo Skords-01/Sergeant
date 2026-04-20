@@ -1,12 +1,18 @@
 import { useCallback, useRef, useState } from "react";
+import { syncLog } from "../logger";
 import type { SyncCallbacks } from "../types";
 
 export type { SyncCallbacks };
 
 export interface SyncLifecycle extends SyncCallbacks {
+  // Legacy names — kept because existing consumers (App.tsx, tests) read them.
   syncing: boolean;
   lastSync: Date | null;
   syncError: string | null;
+  // Explicit, self-documenting aliases. Prefer these in new code.
+  isSyncing: boolean;
+  lastSyncAt: Date | null;
+  hasError: boolean;
   /**
    * Run `fn` only if no other sync operation is in flight; otherwise return
    * `fallback` synchronously. Sets the in-flight flag before calling `fn`
@@ -82,23 +88,26 @@ export async function runExclusiveWith<T>(
  * that into each engine entry point.
  */
 export function useSyncCallbacks(): SyncLifecycle {
-  const [syncing, setSyncing] = useState(false);
-  const [lastSync, setLastSync] = useState<Date | null>(null);
-  const [syncError, setSyncError] = useState<string | null>(null);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [lastSyncAt, setLastSyncAt] = useState<Date | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const guardRef = useRef<InFlightGuard>(createInFlightGuard());
 
   const onStart = useCallback(() => {
-    setSyncing(true);
-    setSyncError(null);
+    syncLog.syncStart();
+    setIsSyncing(true);
+    setErrorMessage(null);
   }, []);
   const onSuccess = useCallback((when: Date) => {
-    setLastSync(when);
+    syncLog.syncSuccess({ at: when });
+    setLastSyncAt(when);
   }, []);
   const onError = useCallback((message: string) => {
-    setSyncError(message);
+    syncLog.syncError({ message });
+    setErrorMessage(message);
   }, []);
   const onSettled = useCallback(() => {
-    setSyncing(false);
+    setIsSyncing(false);
     guardRef.current.release();
   }, []);
 
@@ -113,9 +122,14 @@ export function useSyncCallbacks(): SyncLifecycle {
   }, []);
 
   return {
-    syncing,
-    lastSync,
-    syncError,
+    // Legacy aliases (kept to preserve public shape).
+    syncing: isSyncing,
+    lastSync: lastSyncAt,
+    syncError: errorMessage,
+    // Explicit names.
+    isSyncing,
+    lastSyncAt,
+    hasError: errorMessage !== null,
     onStart,
     onSuccess,
     onError,
