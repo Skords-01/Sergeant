@@ -21,9 +21,17 @@ import { setHapticAdapter, type HapticAdapter } from "@sergeant/shared";
 
 function safe(run: () => Promise<unknown> | void): void {
   try {
-    void run();
+    // `expo-haptics` methods return Promises that may reject on
+    // unsupported hardware, simulator-without-haptics, or web preview.
+    // `try/catch` alone only catches synchronous throws; wrapping in
+    // `Promise.resolve(...).catch(...)` also swallows async rejections
+    // so React Native does not surface an unhandled-promise-rejection
+    // warning (or crash in production) for every silent haptic call.
+    void Promise.resolve(run()).catch(() => {
+      /* unsupported hardware / web — swallow */
+    });
   } catch {
-    /* expo-haptics rejects on web / unsupported hardware — swallow */
+    /* synchronous throw from the adapter body itself — swallow */
   }
 }
 
