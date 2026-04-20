@@ -54,5 +54,10 @@
     "*.{json,md,css,html,yml,yaml}": [
       "prettier --write"
     ]
+  },
+  "pnpm": {
+    "overrides": {
+      "react-server-dom-webpack": "^19.0.2"
+    }
   }
 }
