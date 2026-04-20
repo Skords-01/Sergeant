@@ -1,10 +1,22 @@
 import { cn } from "@shared/lib/cn";
 
+interface SubTab {
+  id: string;
+  label: string;
+}
+
+interface SubTabsProps {
+  value: string;
+  onChange: (id: string) => void;
+  tabs: SubTab[];
+  className?: string;
+}
+
 /**
  * Inline segmented control for splitting a merged bottom-nav page into
  * sub-sections (e.g. `Склад` / `Покупки` inside pantry).
  */
-export function SubTabs({ value, onChange, tabs, className }) {
+export function SubTabs({ value, onChange, tabs, className }: SubTabsProps) {
   return (
     <div
       role="tablist"

@@ -110,7 +110,19 @@ function MacroRatioBar({ prefs }) {
   );
 }
 
-function MacroBadge({ label, value, unit = "г", color }) {
+interface MacroBadgeProps {
+  label: string;
+  value: number | null | undefined;
+  unit?: string;
+  color?: string;
+}
+
+function MacroBadge({
+  label,
+  value,
+  unit = "г",
+  color = "bg-panelHi border border-line text-subtle",
+}: MacroBadgeProps) {
   if (value == null) return null;
   return (
     <span

@@ -2,9 +2,11 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { renderHook, act, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import type { ReactNode } from "react";
 
-vi.mock("@shared/api", async (importOriginal) => {
-  const actual = await importOriginal();
+vi.mock("@shared/api", async () => {
+  const actual =
+    await vi.importActual<typeof import("@shared/api")>("@shared/api");
   return {
     ...actual,
     nutritionApi: {
@@ -19,14 +21,18 @@ vi.mock("../lib/fileToBase64.js", () => ({
 
 import { usePhotoAnalysis } from "./usePhotoAnalysis.js";
 import { nutritionApi } from "@shared/api";
-const apiAnalyzePhoto = nutritionApi.analyzePhoto;
-const apiRefinePhoto = nutritionApi.refinePhoto;
+const apiAnalyzePhoto = nutritionApi.analyzePhoto as unknown as ReturnType<
+  typeof vi.fn
+>;
+const apiRefinePhoto = nutritionApi.refinePhoto as unknown as ReturnType<
+  typeof vi.fn
+>;
 
 function makeWrapper() {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
-  return function Wrapper({ children }) {
+  return function Wrapper({ children }: { children: ReactNode }) {
     return (
       <QueryClientProvider client={client}>{children}</QueryClientProvider>
     );
@@ -45,7 +51,8 @@ function renderUsePhotoAnalysis() {
 }
 
 // Stub fileRef.current so analyzeMutation reads file.
-function attachFile(result, file) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function attachFile(result: any, file: File) {
   // fileRef is a ref object; hook returns it directly.
   result.current.fileRef.current = { files: [file] };
 }
@@ -153,7 +160,10 @@ describe("usePhotoAnalysis", () => {
       act(() => {
         result.current.analyzePhoto();
       });
-      await waitFor(() => expect(result.current.photoResult?.name).toBe("v1"));
+      await waitFor(() =>
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        expect((result.current.photoResult as any)?.name).toBe("v1"),
+      );
 
       act(() => {
         result.current.setPortionGrams("250");
@@ -163,7 +173,10 @@ describe("usePhotoAnalysis", () => {
       act(() => {
         result.current.refinePhoto();
       });
-      await waitFor(() => expect(result.current.photoResult?.name).toBe("v2"));
+      await waitFor(() =>
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        expect((result.current.photoResult as any)?.name).toBe("v2"),
+      );
 
       expect(apiRefinePhoto).toHaveBeenCalledWith(
         expect.objectContaining({

@@ -1,4 +1,21 @@
-export function FoodHitRow({ p, badge, onPick }) {
+interface FoodHitRowProduct {
+  name?: string | null;
+  brand?: string | null;
+  per100?: {
+    kcal?: number | null;
+    protein_g?: number | null;
+    fat_g?: number | null;
+    carbs_g?: number | null;
+  };
+}
+
+interface FoodHitRowProps {
+  p: FoodHitRowProduct;
+  badge?: string;
+  onPick: () => void;
+}
+
+export function FoodHitRow({ p, badge, onPick }: FoodHitRowProps) {
   return (
     <li>
       <button

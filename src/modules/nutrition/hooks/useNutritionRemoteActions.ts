@@ -1,10 +1,26 @@
-import { useCallback } from "react";
+import { useCallback, type Dispatch, type SetStateAction } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { nutritionApi } from "@shared/api";
 import { formatNutritionError } from "../lib/nutritionErrors.js";
 import { writeRecipeCache } from "../lib/recipeCache.js";
 import { stableRecipeId } from "../lib/recipeIds.js";
 import { getDayMacros, getDaySummary } from "../lib/nutritionStorage.js";
+
+type AnySetter<T = unknown> =
+  | Dispatch<SetStateAction<T>>
+  | ((value: T) => void);
+
+interface BuildMutationHandlersParams<TData> {
+  setBusy?: AnySetter<boolean>;
+  setErr?: AnySetter<string>;
+  setStatusText?: AnySetter<string>;
+  fallbackError: string;
+  onSuccessSideEffects?: (data: TData) => void;
+  onMutateSideEffects?: {
+    statusText?: string;
+    run?: () => void;
+  };
+}
 
 /**
  * React Query mutation factory — wraps a `postJson` call and wires the
@@ -14,14 +30,14 @@ import { getDayMacros, getDaySummary } from "../lib/nutritionStorage.js";
  * `statusText` is set on mutate and cleared on settle; `busy` flags (per
  * action) and error banner mirror the previous try/catch/finally shape.
  */
-function buildMutationHandlers({
+function buildMutationHandlers<TData>({
   setBusy,
   setErr,
   setStatusText,
   fallbackError,
   onSuccessSideEffects,
   onMutateSideEffects,
-}) {
+}: BuildMutationHandlersParams<TData>) {
   return {
     onMutate: () => {
       setBusy?.(true);
@@ -31,10 +47,10 @@ function buildMutationHandlers({
       }
       onMutateSideEffects?.run?.();
     },
-    onSuccess: (data) => {
+    onSuccess: (data: TData) => {
       onSuccessSideEffects?.(data);
     },
-    onError: (err) => {
+    onError: (err: unknown) => {
       setErr?.(formatNutritionError(err, fallbackError));
     },
     onSettled: () => {
@@ -44,6 +60,39 @@ function buildMutationHandlers({
       }
     },
   };
+}
+
+export interface UseNutritionRemoteActionsParams {
+  setBusy: AnySetter<boolean>;
+  setErr: AnySetter<string>;
+  setStatusText: AnySetter<string>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  pantry: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  prefs: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  recipes: any[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  setRecipes: (value: any) => void;
+  setRecipesRaw: (value: string) => void;
+  setRecipesTried: (value: boolean) => void;
+  recipeCacheKey: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  weekPlan: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  setWeekPlan: (value: any) => void;
+  setWeekPlanRaw: (value: string) => void;
+  setWeekPlanBusy: AnySetter<boolean>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  setDayPlan: Dispatch<SetStateAction<any>>;
+  setDayPlanBusy: AnySetter<boolean>;
+  setDayHintBusy: AnySetter<boolean>;
+  setDayHintText: AnySetter<string>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  log: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  shopping: any;
+  setShoppingBusy: AnySetter<boolean>;
 }
 
 export function useNutritionRemoteActions({
@@ -74,7 +123,7 @@ export function useNutritionRemoteActions({
   log,
   shopping,
   setShoppingBusy,
-}) {
+}: UseNutritionRemoteActionsParams) {
   // ─── Recipes ────────────────────────────────────────────────────────────
   const recipesMutation = useMutation({
     mutationFn: () => {
@@ -105,9 +154,11 @@ export function useNutritionRemoteActions({
           setRecipesTried(true);
         },
       },
-      onSuccessSideEffects: (data) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      onSuccessSideEffects: (data: any) => {
         const list = Array.isArray(data?.recipes)
-          ? data.recipes.map((r) => ({
+          ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            data.recipes.map((r: any) => ({
               ...r,
               id: r?.id ? String(r.id) : stableRecipeId(r),
             }))
@@ -172,13 +223,19 @@ export function useNutritionRemoteActions({
         });
       }
       const meals = log.nutritionLog?.[log.selectedDate]?.meals || [];
-      const macroSources = meals.reduce((acc, m) => {
-        const k = String(
-          m?.macroSource || (m?.source === "photo" ? "photoAI" : "manual"),
-        );
-        acc[k] = (acc[k] || 0) + 1;
-        return acc;
-      }, {});
+      const macroSources = meals.reduce(
+        (
+          acc: Record<string, number>,
+          m: { macroSource?: string; source?: string },
+        ) => {
+          const k = String(
+            m?.macroSource || (m?.source === "photo" ? "photoAI" : "manual"),
+          );
+          acc[k] = (acc[k] || 0) + 1;
+          return acc;
+        },
+        {} as Record<string, number>,
+      );
       const macros = summary.hasAnyMacros
         ? getDayMacros(log.nutritionLog, log.selectedDate)
         : { kcal: null, protein_g: null, fat_g: null, carbs_g: null };
@@ -218,7 +275,7 @@ export function useNutritionRemoteActions({
 
   // ─── Day plan ───────────────────────────────────────────────────────────
   const dayPlanMutation = useMutation({
-    mutationFn: (regenerateMealType) =>
+    mutationFn: (regenerateMealType: string | null | undefined) =>
       nutritionApi
         .dayPlan({
           items: pantry.effectiveItems.slice(0, 50),
@@ -240,16 +297,33 @@ export function useNutritionRemoteActions({
       setDayPlanBusy(true);
       setErr("");
     },
-    onSuccess: ({ plan, regenerateMealType }) => {
-      setDayPlan((prev) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    onSuccess: ({
+      plan,
+      regenerateMealType,
+    }: {
+      plan: any;
+      regenerateMealType: string | null | undefined;
+    }) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      setDayPlan((prev: any) => {
         if (regenerateMealType && prev?.meals?.length > 0) {
           const newMeals = Array.isArray(plan.meals) ? plan.meals : [];
           const merged = [
-            ...prev.meals.filter((m) => m.type !== regenerateMealType),
-            ...newMeals.filter((m) => m.type === regenerateMealType),
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            ...prev.meals.filter((m: any) => m.type !== regenerateMealType),
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            ...newMeals.filter((m: any) => m.type === regenerateMealType),
           ];
-          const totals = merged.reduce(
-            (acc, m) => ({
+          interface PlanTotals {
+            totalKcal?: number;
+            totalProtein_g?: number;
+            totalFat_g?: number;
+            totalCarbs_g?: number;
+          }
+          const totals = merged.reduce<PlanTotals>(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (acc, m: any) => ({
               totalKcal: (acc.totalKcal ?? 0) + (m.kcal ?? 0),
               totalProtein_g: (acc.totalProtein_g ?? 0) + (m.protein_g ?? 0),
               totalFat_g: (acc.totalFat_g ?? 0) + (m.fat_g ?? 0),
@@ -271,15 +345,24 @@ export function useNutritionRemoteActions({
   });
 
   const fetchDayPlan = useCallback(
-    (regenerateMealType) => dayPlanMutation.mutate(regenerateMealType),
+    (regenerateMealType?: string | null) =>
+      dayPlanMutation.mutate(regenerateMealType),
     [dayPlanMutation],
   );
 
   // ─── Add meal from plan (local-only; no network) ────────────────────────
+  interface PlanMealInput {
+    type?: string;
+    name?: string;
+    kcal?: number | null;
+    protein_g?: number | null;
+    fat_g?: number | null;
+    carbs_g?: number | null;
+  }
   const addMealFromPlan = useCallback(
-    (meal) => {
+    (meal: PlanMealInput) => {
       const id = `meal_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-      const typeLabels = {
+      const typeLabels: Record<string, string> = {
         breakfast: "Сніданок",
         lunch: "Обід",
         dinner: "Вечеря",
@@ -289,7 +372,7 @@ export function useNutritionRemoteActions({
         id,
         time: `${String(new Date().getHours()).padStart(2, "0")}:${String(new Date().getMinutes()).padStart(2, "0")}`,
         mealType: meal.type || "snack",
-        label: typeLabels[meal.type] || "Прийом їжі",
+        label: (meal.type ? typeLabels[meal.type] : undefined) || "Прийом їжі",
         name: meal.name || "Страва",
         macros: {
           kcal: meal.kcal ?? null,
@@ -306,8 +389,9 @@ export function useNutritionRemoteActions({
 
   // ─── Shopping list ──────────────────────────────────────────────────────
   const shoppingMutation = useMutation({
-    mutationFn: (source) => {
-      const body = {
+    mutationFn: (source: string) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const body: Record<string, any> = {
         pantryItems: pantry.effectiveItems.slice(0, 50),
         locale: "uk-UA",
       };
@@ -340,7 +424,7 @@ export function useNutritionRemoteActions({
   });
 
   const generateShoppingList = useCallback(
-    (source) => shoppingMutation.mutate(source),
+    (source: string) => shoppingMutation.mutate(source),
     [shoppingMutation],
   );
 

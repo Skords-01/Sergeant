@@ -1,24 +1,35 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type MutableRefObject,
+} from "react";
 
 async function startZxingScanner(
-  videoEl,
-  stream,
-  onDetected,
-  cancelRef,
-  zxingStopRef,
+  videoEl: HTMLVideoElement | null,
+  stream: MediaStream | null,
+  onDetected: (raw: string) => void,
+  cancelRef: MutableRefObject<boolean>,
+  zxingStopRef: MutableRefObject<(() => void) | null>,
 ) {
   const { BrowserMultiFormatReader } = await import("@zxing/browser");
   if (cancelRef.current) return;
 
   const reader = new BrowserMultiFormatReader();
 
-  const controls = await reader.decodeFromStream(stream, videoEl, (result) => {
-    if (cancelRef.current) return;
-    if (result) {
-      const raw = result.getText();
-      if (raw) onDetected(raw);
-    }
-  });
+  const controls = await reader.decodeFromStream(
+    stream!,
+    videoEl!,
+    (result) => {
+      if (cancelRef.current) return;
+      if (result) {
+        const raw = result.getText();
+        if (raw) onDetected(raw);
+      }
+    },
+  );
 
   zxingStopRef.current = () => {
     try {
@@ -27,18 +38,23 @@ async function startZxingScanner(
       /* ignore */
     }
     try {
-      reader.reset();
+      (reader as any).reset?.();
     } catch {
       /* ignore */
     }
   };
 }
 
-export function BarcodeScanner({ onDetected, onClose }) {
-  const videoRef = useRef(null);
-  const streamRef = useRef(null);
+interface BarcodeScannerProps {
+  onDetected: (raw: string) => void;
+  onClose: () => void;
+}
+
+export function BarcodeScanner({ onDetected, onClose }: BarcodeScannerProps) {
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const cancelRef = useRef(false);
-  const zxingStopRef = useRef(null);
+  const zxingStopRef = useRef<(() => void) | null>(null);
   const rafRef = useRef(0);
   const [status, setStatus] = useState("");
 
@@ -68,7 +84,7 @@ export function BarcodeScanner({ onDetected, onClose }) {
   }, [stopAll, onClose]);
 
   const handleDetected = useCallback(
-    (raw) => {
+    (raw: string) => {
       stopAll();
       onDetected(raw);
     },
@@ -84,7 +100,7 @@ export function BarcodeScanner({ onDetected, onClose }) {
         return;
       }
 
-      let stream;
+      let stream: MediaStream;
       try {
         stream = await navigator.mediaDevices.getUserMedia({
           video: {
@@ -117,9 +133,9 @@ export function BarcodeScanner({ onDetected, onClose }) {
         typeof window !== "undefined" && "BarcodeDetector" in window;
 
       if (usedBarcodeDetector) {
-        let detector;
+        let detector: any = null;
         try {
-          detector = new window.BarcodeDetector({
+          detector = new (window as any).BarcodeDetector({
             formats: ["ean_13", "ean_8", "upc_a", "upc_e", "code_128"],
           });
         } catch {

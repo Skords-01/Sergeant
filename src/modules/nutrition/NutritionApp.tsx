@@ -37,11 +37,17 @@ import { useToast } from "@shared/hooks/useToast";
 import { showUndoToast } from "@shared/lib/undoToast";
 import { fmtMacro, todayISODate } from "./lib/nutritionFormat.js";
 
+interface NutritionAppProps {
+  onBackToHub?: () => void;
+  pwaAction?: string | null;
+  onPwaActionConsumed?: () => void;
+}
+
 export default function NutritionApp({
   onBackToHub,
   pwaAction,
   onPwaActionConsumed,
-} = {}) {
+}: NutritionAppProps = {}) {
   const toast = useToast();
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
@@ -174,7 +180,8 @@ export default function NutritionApp({
     const c = readRecipeCache(recipeCacheKey);
     if (c?.recipes?.length) {
       setRecipes(
-        c.recipes.map((r) => ({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        c.recipes.map((r: any) => ({
           ...r,
           id: r?.id ? String(r.id) : stableRecipeId(r),
         })),

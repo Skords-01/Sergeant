@@ -2,20 +2,22 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import type { ReactNode } from "react";
 import { useNutritionLog } from "./useNutritionLog.js";
+import type { Meal } from "../lib/nutritionStorage.js";
 
 function makeWrapper() {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
-  return function Wrapper({ children }) {
+  return function Wrapper({ children }: { children: ReactNode }) {
     return (
       <QueryClientProvider client={client}>{children}</QueryClientProvider>
     );
   };
 }
 
-function meal(id) {
+function meal(id: string): Meal {
   return {
     id,
     name: "Яйце",
@@ -104,7 +106,7 @@ describe("useNutritionLog — delete + undo meal flow", () => {
     act(() => result.current.handleRestoreMeal(date, m));
 
     const after = result.current.nutritionLog[date]?.meals ?? [];
-    expect(after.filter((x) => x.id === "m3")).toHaveLength(1);
+    expect(after.filter((x: Meal) => x.id === "m3")).toHaveLength(1);
   });
 
   it("handleRemoveMeal ігнорує відсутній id без throw", () => {

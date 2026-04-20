@@ -27,9 +27,15 @@ export interface RestoreConfirmState {
   payload: unknown;
 }
 
+export interface EditingMealState {
+  id?: string;
+  date?: string;
+  [key: string]: unknown;
+}
+
 export interface UseNutritionUiStateResult {
-  editingMeal: unknown;
-  setEditingMeal: Dispatch<SetStateAction<unknown>>;
+  editingMeal: EditingMealState | null;
+  setEditingMeal: Dispatch<SetStateAction<EditingMealState | null>>;
 
   recipes: NutritionRecipe[];
   setRecipes: Dispatch<SetStateAction<NutritionRecipe[]>>;
@@ -74,7 +80,7 @@ export interface UseNutritionUiStateResult {
 }
 
 export function useNutritionUiState(): UseNutritionUiStateResult {
-  const [editingMeal, setEditingMeal] = useState<unknown>(null);
+  const [editingMeal, setEditingMeal] = useState<EditingMealState | null>(null);
 
   const [recipes, setRecipes] = useState<NutritionRecipe[]>([]);
   const [recipesTried, setRecipesTried] = useState(false);

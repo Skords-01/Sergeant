@@ -10,7 +10,7 @@ const INPUT_MODES = [
   { id: "list", label: "Список" },
 ];
 
-function ChevronIcon({ open }) {
+function ChevronIcon({ open }: { open: boolean }) {
   return (
     <Icon
       name="chevron-right"
@@ -20,7 +20,22 @@ function ChevronIcon({ open }) {
   );
 }
 
-function ItemRow({ item, idx, editItemAt, removeItemAtOrByName, busy }) {
+/* eslint-disable @typescript-eslint/no-explicit-any */
+interface ItemRowProps {
+  item: any;
+  idx: number;
+  editItemAt: (idx: number) => void;
+  removeItemAtOrByName: (idx: number, name?: string) => void;
+  busy: boolean;
+}
+
+function ItemRow({
+  item,
+  idx,
+  editItemAt,
+  removeItemAtOrByName,
+  busy,
+}: ItemRowProps) {
   return (
     <div className="flex items-center gap-2 py-2 first:pt-1 group">
       <button
@@ -57,6 +72,15 @@ function ItemRow({ item, idx, editItemAt, removeItemAtOrByName, busy }) {
   );
 }
 
+interface CategorySectionProps {
+  cat: { id: string; emoji: string; label: string };
+  items: Array<{ item: any; idx: number }>;
+  editItemAt: (idx: number) => void;
+  removeItemAtOrByName: (idx: number, name?: string) => void;
+  busy: boolean;
+  defaultOpen: boolean;
+}
+
 function CategorySection({
   cat,
   items,
@@ -64,7 +88,7 @@ function CategorySection({
   removeItemAtOrByName,
   busy,
   defaultOpen,
-}) {
+}: CategorySectionProps) {
   const [open, setOpen] = useState(defaultOpen);
   return (
     <div className="rounded-xl border border-line/40 bg-bg/30">
@@ -105,13 +129,21 @@ function CategorySection({
   );
 }
 
+interface InventoryCardProps {
+  effectiveItems: any[];
+  editItemAt: (idx: number) => void;
+  removeItemAtOrByName: (idx: number, name?: string) => void;
+  pantryItemsLength: number;
+  busy: boolean;
+}
+
 function InventoryCard({
   effectiveItems,
   editItemAt,
   removeItemAtOrByName,
   pantryItemsLength,
   busy,
-}) {
+}: InventoryCardProps) {
   const userToggledRef = useRef(false);
   const [mainOpen, setMainOpen] = useState(true);
 
@@ -169,6 +201,22 @@ function InventoryCard({
   );
 }
 
+interface PantryCardProps {
+  busy: boolean;
+  parsePantry: () => void;
+  newItemName: string;
+  setNewItemName: (v: string) => void;
+  upsertItem: (raw: any) => void;
+  pantryText: string;
+  setPantryText: (v: string) => void;
+  effectiveItems: any[];
+  editItemAt: (idx: number) => void;
+  removeItemAtOrByName: (idx: number, name?: string) => void;
+  pantryItemsLength: number;
+  pantrySummary?: any;
+  onScanBarcode?: () => void;
+}
+
 export function PantryCard({
   busy,
   parsePantry,
@@ -182,7 +230,7 @@ export function PantryCard({
   removeItemAtOrByName,
   pantryItemsLength,
   onScanBarcode,
-}) {
+}: PantryCardProps) {
   const [mode, setMode] = useState("single");
 
   return (

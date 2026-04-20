@@ -214,7 +214,12 @@ export function LogCard({
                 <li className="text-muted text-xs">Нічого не знайдено</li>
               )}
               {searchHits.map(({ date, meal }) => {
-                const mac = meal.macros || {};
+                const mac = meal.macros || {
+                  kcal: null,
+                  protein_g: null,
+                  fat_g: null,
+                  carbs_g: null,
+                };
                 return (
                   <li
                     key={`${date}-${meal.id}`}

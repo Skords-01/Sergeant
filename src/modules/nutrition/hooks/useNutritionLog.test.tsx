@@ -2,6 +2,8 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { renderHook, act, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import type { ReactNode } from "react";
+import type { MockInstance } from "vitest";
 import { useNutritionLog } from "./useNutritionLog.js";
 import { NUTRITION_LOG_KEY } from "../lib/nutritionStorage.js";
 
@@ -9,7 +11,7 @@ function makeWrapper() {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
-  return function Wrapper({ children }) {
+  return function Wrapper({ children }: { children: ReactNode }) {
     return (
       <QueryClientProvider client={client}>{children}</QueryClientProvider>
     );
@@ -17,7 +19,7 @@ function makeWrapper() {
 }
 
 describe("useNutritionLog – defensive imports", () => {
-  let errorSpy;
+  let errorSpy: MockInstance;
 
   beforeEach(() => {
     localStorage.clear();
@@ -32,7 +34,7 @@ describe("useNutritionLog – defensive imports", () => {
     const { result } = renderHook(() => useNutritionLog(), {
       wrapper: makeWrapper(),
     });
-    let ok;
+    let ok: boolean | undefined;
     act(() => {
       ok = result.current.replaceLogFromJsonText("{not: valid json");
     });
@@ -70,7 +72,7 @@ describe("useNutritionLog – defensive imports", () => {
       expect(result.current.nutritionLog["2025-01-01"]?.meals?.length).toBe(1),
     );
 
-    let ok;
+    let ok: boolean | undefined;
     act(() => {
       ok = result.current.mergeLogFromJsonText("not json at all");
     });
@@ -99,7 +101,7 @@ describe("useNutritionLog – defensive imports", () => {
         ],
       },
     };
-    let ok;
+    let ok: boolean | undefined;
     act(() => {
       ok = result.current.replaceLogFromJsonText(JSON.stringify(payload));
     });
@@ -113,14 +115,14 @@ describe("useNutritionLog – defensive imports", () => {
     const { result } = renderHook(() => useNutritionLog(), {
       wrapper: makeWrapper(),
     });
-    let ok1;
+    let ok1: boolean | undefined;
     act(() => {
       ok1 = result.current.replaceLogFromJsonText("null");
     });
     expect(ok1).toBe(true);
     expect(result.current.nutritionLog).toEqual({});
 
-    let ok2;
+    let ok2: boolean | undefined;
     act(() => {
       ok2 = result.current.replaceLogFromJsonText("[1,2,3]");
     });

@@ -2,9 +2,12 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { renderHook, act, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import type { ReactNode } from "react";
+import type { UseNutritionRemoteActionsParams } from "./useNutritionRemoteActions.js";
 
-vi.mock("@shared/api", async (importOriginal) => {
-  const actual = await importOriginal();
+vi.mock("@shared/api", async () => {
+  const actual =
+    await vi.importActual<typeof import("@shared/api")>("@shared/api");
   return {
     ...actual,
     nutritionApi: {
@@ -22,24 +25,25 @@ vi.mock("../lib/recipeCache.js", () => ({
 
 import { useNutritionRemoteActions } from "./useNutritionRemoteActions.js";
 import { nutritionApi } from "@shared/api";
-const apiRecommendRecipes = nutritionApi.recommendRecipes;
-const apiFetchWeekPlan = nutritionApi.weekPlan;
-const apiFetchDayHint = nutritionApi.dayHint;
-const apiFetchDayPlan = nutritionApi.dayPlan;
-const apiFetchShoppingList = nutritionApi.shoppingList;
+type MockFn = ReturnType<typeof vi.fn>;
+const apiRecommendRecipes = nutritionApi.recommendRecipes as unknown as MockFn;
+const apiFetchWeekPlan = nutritionApi.weekPlan as unknown as MockFn;
+const apiFetchDayHint = nutritionApi.dayHint as unknown as MockFn;
+const apiFetchDayPlan = nutritionApi.dayPlan as unknown as MockFn;
+const apiFetchShoppingList = nutritionApi.shoppingList as unknown as MockFn;
 
 function makeWrapper() {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
-  return function Wrapper({ children }) {
+  return function Wrapper({ children }: { children: ReactNode }) {
     return (
       <QueryClientProvider client={client}>{children}</QueryClientProvider>
     );
   };
 }
 
-function makeHarness(overrides = {}) {
+function makeHarness(overrides: Partial<UseNutritionRemoteActionsParams> = {}) {
   const setBusy = vi.fn();
   const setErr = vi.fn();
   const setStatusText = vi.fn();
@@ -94,10 +98,13 @@ function makeHarness(overrides = {}) {
     ...overrides,
   };
 
-  const { result, rerender } = renderHook((p) => useNutritionRemoteActions(p), {
-    wrapper: makeWrapper(),
-    initialProps: base,
-  });
+  const { result, rerender } = renderHook(
+    (p: UseNutritionRemoteActionsParams) => useNutritionRemoteActions(p),
+    {
+      wrapper: makeWrapper(),
+      initialProps: base,
+    },
+  );
   return {
     result,
     rerender,

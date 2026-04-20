@@ -3,6 +3,16 @@ import { Button } from "@shared/components/ui/Button";
 import { nutritionKeys } from "@shared/lib/queryKeys.js";
 import { upsertFood } from "../../lib/foodDb/foodDb.js";
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+interface SaveAsFoodProps {
+  form: any;
+  setForm: (updater: (s: any) => any) => void;
+  setPickedFood: (p: any) => void;
+  setPickedGrams: (g: string) => void;
+  setFoodQuery: (q: string) => void;
+  setFoodErr: (e: string) => void;
+}
+
 export function SaveAsFood({
   form,
   setForm,
@@ -10,7 +20,7 @@ export function SaveAsFood({
   setPickedGrams,
   setFoodQuery,
   setFoodErr,
-}) {
+}: SaveAsFoodProps) {
   const queryClient = useQueryClient();
   return (
     <div className="mt-3 mb-1">
@@ -48,7 +58,9 @@ export function SaveAsFood({
             defaultGrams: 100,
           });
           if (!res.ok) {
-            setFoodErr(res.error || "Не вдалося зберегти продукт.");
+            setFoodErr(
+              ("error" in res && res.error) || "Не вдалося зберегти продукт.",
+            );
             return;
           }
           // Bust the food-search cache so the next search (including the

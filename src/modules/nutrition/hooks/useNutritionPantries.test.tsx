@@ -2,9 +2,11 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { renderHook, act, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import type { ReactNode } from "react";
 
-vi.mock("@shared/api", async (importOriginal) => {
-  const actual = await importOriginal();
+vi.mock("@shared/api", async () => {
+  const actual =
+    await vi.importActual<typeof import("@shared/api")>("@shared/api");
   return {
     ...actual,
     nutritionApi: {
@@ -15,24 +17,28 @@ vi.mock("@shared/api", async (importOriginal) => {
 
 import { useNutritionPantries } from "./useNutritionPantries.js";
 import { nutritionApi } from "@shared/api";
-const apiParsePantry = nutritionApi.parsePantry;
+const apiParsePantry = nutritionApi.parsePantry as unknown as ReturnType<
+  typeof vi.fn
+>;
 import {
   NUTRITION_PANTRIES_KEY,
   NUTRITION_ACTIVE_PANTRY_KEY,
+  type Pantry,
 } from "../lib/nutritionStorage.js";
 
 function makeWrapper() {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
-  return function Wrapper({ children }) {
+  return function Wrapper({ children }: { children: ReactNode }) {
     return (
       <QueryClientProvider client={client}>{children}</QueryClientProvider>
     );
   };
 }
 
-function seedPantries(pantries, activeId) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function seedPantries(pantries: any[], activeId: string) {
   localStorage.setItem(NUTRITION_PANTRIES_KEY, JSON.stringify(pantries));
   localStorage.setItem(NUTRITION_ACTIVE_PANTRY_KEY, String(activeId));
 }
@@ -89,10 +95,10 @@ describe("useNutritionPantries", () => {
       await waitFor(() => {
         expect(result.current.pantryItems.length).toBe(2);
       });
-      expect(result.current.pantryItems.map((x) => x.name)).toEqual([
-        "молоко",
-        "яйця",
-      ]);
+      expect(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        result.current.pantryItems.map((x: any) => x.name),
+      ).toEqual(["молоко", "яйця"]);
       // text cleared after successful parse
       expect(result.current.pantryText).toBe("");
       expect(apiParsePantry).toHaveBeenCalledWith({
@@ -113,10 +119,12 @@ describe("useNutritionPantries", () => {
       );
 
       // Deferred promise — we resolve after the user switches pantries.
-      let resolveParse;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let resolveParse: (value: any) => void;
       apiParsePantry.mockImplementationOnce(
         () =>
-          new Promise((res) => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          new Promise<any>((res) => {
             resolveParse = res;
           }),
       );
@@ -139,18 +147,20 @@ describe("useNutritionPantries", () => {
 
       // Now resolve — items must still go to "home", not "work".
       await act(async () => {
-        resolveParse({ items: [{ name: "молоко", qty: 1, unit: "л" }] });
+        resolveParse!({ items: [{ name: "молоко", qty: 1, unit: "л" }] });
       });
 
       await waitFor(() => {
-        const home = result.current.pantries.find((p) => p.id === "home");
+        const home = result.current.pantries.find(
+          (p: Pantry) => p.id === "home",
+        );
         expect(home?.items?.length).toBe(1);
       });
 
-      const home = result.current.pantries.find((p) => p.id === "home");
-      const work = result.current.pantries.find((p) => p.id === "work");
-      expect(home.items[0].name).toBe("молоко");
-      expect(work.items).toEqual([]);
+      const home = result.current.pantries.find((p: Pantry) => p.id === "home");
+      const work = result.current.pantries.find((p: Pantry) => p.id === "work");
+      expect(home!.items[0].name).toBe("молоко");
+      expect(work!.items).toEqual([]);
       // Active remained "work" (user's choice).
       expect(result.current.activePantryId).toBe("work");
     });

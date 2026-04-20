@@ -2,9 +2,11 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { renderHook, act, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import type { ReactNode } from "react";
 
-vi.mock("@shared/api", async (importOriginal) => {
-  const actual = await importOriginal();
+vi.mock("@shared/api", async () => {
+  const actual =
+    await vi.importActual<typeof import("@shared/api")>("@shared/api");
   return {
     ...actual,
     nutritionApi: {
@@ -27,8 +29,12 @@ vi.mock("../lib/nutritionCloudBackup.js", () => ({
 
 import { useNutritionCloudBackup } from "./useNutritionCloudBackup.js";
 import { nutritionApi } from "@shared/api";
-const apiBackupUpload = nutritionApi.backupUpload;
-const apiBackupDownload = nutritionApi.backupDownload;
+const apiBackupUpload = nutritionApi.backupUpload as unknown as ReturnType<
+  typeof vi.fn
+>;
+const apiBackupDownload = nutritionApi.backupDownload as unknown as ReturnType<
+  typeof vi.fn
+>;
 import {
   encryptJsonToBlob,
   decryptBlobToJson,
@@ -38,14 +44,20 @@ function makeWrapper() {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
-  return function Wrapper({ children }) {
+  return function Wrapper({ children }: { children: ReactNode }) {
     return (
       <QueryClientProvider client={client}>{children}</QueryClientProvider>
     );
   };
 }
 
-function renderHarness(initial = {}) {
+interface HarnessInitial {
+  cloudBackupBusy?: boolean;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  backupPasswordDialog?: any;
+}
+
+function renderHarness(initial: HarnessInitial = {}) {
   const toast = { success: vi.fn(), error: vi.fn() };
   const setErr = vi.fn();
   const setCloudBackupBusy = vi.fn();

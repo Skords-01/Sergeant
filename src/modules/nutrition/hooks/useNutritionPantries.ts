@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type Dispatch,
+  type SetStateAction,
+} from "react";
 import { useMutation } from "@tanstack/react-query";
 import { nutritionApi } from "@shared/api";
 import { formatNutritionError } from "../lib/nutritionErrors.js";
@@ -15,9 +22,25 @@ import {
 import {
   normalizeFoodName,
   parseLoosePantryText,
+  type PantryItem,
 } from "../lib/pantryTextParser.js";
 
-export function useNutritionPantries({ setBusy, setErr, setStatusText }) {
+export interface UseNutritionPantriesParams {
+  setBusy: Dispatch<SetStateAction<boolean>>;
+  setErr: Dispatch<SetStateAction<string>>;
+  setStatusText: Dispatch<SetStateAction<string>>;
+}
+
+interface ParsePantryVariables {
+  pantryId: string;
+  text: string;
+}
+
+export function useNutritionPantries({
+  setBusy,
+  setErr,
+  setStatusText,
+}: UseNutritionPantriesParams) {
   const [pantries, setPantries] = useState(() =>
     loadPantries(NUTRITION_PANTRIES_KEY, NUTRITION_ACTIVE_PANTRY_KEY),
   );
@@ -87,7 +110,7 @@ export function useNutritionPantries({ setBusy, setErr, setStatusText }) {
     return parseLoosePantryText(raw);
   }, [pantryItems, pantryText]);
 
-  const upsertItem = (raw) => {
+  const upsertItem = (raw: string | PantryItem | PantryItem[]) => {
     const parsed = parseLoosePantryText(raw);
     if (!parsed.length) return;
     setPantries((cur) =>
@@ -98,7 +121,7 @@ export function useNutritionPantries({ setBusy, setErr, setStatusText }) {
     );
   };
 
-  const removeItem = (name) => {
+  const removeItem = (name: string) => {
     const n = normalizeFoodName(name);
     if (!n) return;
     setPantries((cur) =>
@@ -128,7 +151,7 @@ export function useNutritionPantries({ setBusy, setErr, setStatusText }) {
     return true;
   };
 
-  const editItemAt = (idx) => {
+  const editItemAt = (idx: number) => {
     if (!ensureStructuredItems()) return;
     const cur = (Array.isArray(activePantry?.items) ? activePantry.items : [])[
       idx
@@ -145,7 +168,7 @@ export function useNutritionPantries({ setBusy, setErr, setStatusText }) {
     });
   };
 
-  const removeItemAt = (idx) => {
+  const removeItemAt = (idx: number) => {
     if (!ensureStructuredItems()) return;
     setPantries((curPantries) =>
       updatePantry(curPantries, activePantryId, (p) => {
@@ -171,7 +194,7 @@ export function useNutritionPantries({ setBusy, setErr, setStatusText }) {
     setConfirmDeleteOpen(true);
   };
 
-  const onSavePantryForm = (name, mode) => {
+  const onSavePantryForm = (name: string, mode: "rename" | "create") => {
     if (mode === "rename") {
       setPantries((cur) =>
         updatePantry(cur, activePantryId, (p) => ({ ...p, name })),
@@ -197,20 +220,27 @@ export function useNutritionPantries({ setBusy, setErr, setStatusText }) {
     setPantryManagerOpen(false);
   };
 
-  const onSaveItemEdit = (idx, qty, unit) => {
+  const onSaveItemEdit = (
+    idx: number,
+    qty: number | string | null,
+    unit: string | null,
+  ) => {
     setPantries((curPantries) =>
       updatePantry(curPantries, activePantryId, (p) => {
         const items = Array.isArray(p.items) ? [...p.items] : [];
         const item = items[idx];
         if (!item) return p;
-        items[idx] = { ...item, qty, unit };
+        const qtyNum = qty == null || qty === "" ? null : Number(qty);
+        const normalizedQty =
+          qtyNum != null && Number.isFinite(qtyNum) ? qtyNum : null;
+        items[idx] = { ...item, qty: normalizedQty, unit };
         return { ...p, items };
       }),
     );
     setItemEdit((s) => ({ ...s, open: false }));
   };
 
-  const consumePantryItem = (name, gramsConsumed) => {
+  const consumePantryItem = (name: string, gramsConsumed: number) => {
     const norm = normalizeFoodName(name);
     if (!norm) return;
     setPantries((cur) =>
@@ -237,14 +267,14 @@ export function useNutritionPantries({ setBusy, setErr, setStatusText }) {
     );
   };
 
-  const setPantryText = (text) => {
+  const setPantryText = (text: string) => {
     setPantries((cur) =>
       updatePantry(cur, activePantryId, (p) => ({ ...p, text })),
     );
   };
 
   const parsePantryMutation = useMutation({
-    mutationFn: ({ pantryId, text }) => {
+    mutationFn: ({ pantryId, text }: ParsePantryVariables) => {
       if (!text) throw new Error("Надиктуй/впиши список продуктів.");
       return nutritionApi
         .parsePantry({ text, locale: "uk-UA" })

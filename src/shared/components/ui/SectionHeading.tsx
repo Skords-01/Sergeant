@@ -70,6 +70,10 @@ export interface SectionHeadingProps extends HTMLAttributes<HTMLElement> {
   /** Optional right-aligned slot for actions/links. */
   action?: ReactNode;
   children?: ReactNode;
+  /** When `as="button"`, allow specifying the button type. */
+  type?: "button" | "submit" | "reset";
+  /** When `as="button"`, allow disabling. */
+  disabled?: boolean;
 }
 
 export function SectionHeading({
