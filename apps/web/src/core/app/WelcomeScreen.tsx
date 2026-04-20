@@ -12,7 +12,7 @@ const PEEK_ROWS = [
   {
     id: "finyk",
     label: "Фінік",
-    accent: "text-finyk bg-finyk-soft",
+    accent: "text-finyk-strong dark:text-finyk bg-finyk-soft",
     icon: "credit-card",
     metric: "−320 грн",
     sub: "тиждень",
@@ -20,7 +20,7 @@ const PEEK_ROWS = [
   {
     id: "fizruk",
     label: "Фізрук",
-    accent: "text-fizruk bg-fizruk-soft",
+    accent: "text-fizruk-strong dark:text-fizruk bg-fizruk-soft",
     icon: "dumbbell",
     metric: "5 трен.",
     sub: "14 днів",
@@ -28,7 +28,7 @@ const PEEK_ROWS = [
   {
     id: "routine",
     label: "Рутина",
-    accent: "text-routine bg-routine-soft",
+    accent: "text-routine-strong dark:text-routine bg-routine-surface",
     icon: "check",
     metric: "7 днів",
     sub: "стрік «вода»",
@@ -36,7 +36,7 @@ const PEEK_ROWS = [
   {
     id: "nutrition",
     label: "Харчування",
-    accent: "text-nutrition bg-nutrition-soft",
+    accent: "text-nutrition-strong dark:text-nutrition bg-nutrition-soft",
     icon: "utensils",
     metric: "420 ккал",
     sub: "сніданок",

@@ -167,7 +167,7 @@ export function NutritionDashboard({
             onClick={onAddMeal}
             className={cn(
               "shrink-0 px-4 h-9 rounded-xl text-sm font-semibold",
-              "bg-nutrition text-white hover:bg-nutrition-hover transition-colors",
+              "bg-nutrition-strong text-white hover:bg-nutrition-hover transition-colors",
             )}
           >
             + Додати
@@ -234,7 +234,7 @@ export function NutritionDashboard({
           <button
             type="button"
             onClick={onGoToLog}
-            className="mt-3 w-full text-xs text-nutrition font-medium hover:underline text-center"
+            className="mt-3 w-full text-xs text-nutrition-strong dark:text-nutrition font-medium hover:underline text-center"
           >
             Налаштувати денні цілі КБЖВ →
           </button>
@@ -247,7 +247,7 @@ export function NutritionDashboard({
           <button
             type="button"
             onClick={onGoToLog}
-            className="text-xs text-nutrition font-medium hover:underline"
+            className="text-xs text-nutrition-strong dark:text-nutrition font-medium hover:underline"
           >
             Журнал →
           </button>
@@ -265,7 +265,7 @@ export function NutritionDashboard({
               type="button"
               onClick={onFetchDayHint}
               disabled={dayHintBusy}
-              className="shrink-0 px-3 h-8 rounded-xl text-xs font-semibold bg-nutrition/10 text-nutrition border border-nutrition/30 hover:bg-nutrition/20 transition-colors disabled:opacity-50"
+              className="shrink-0 px-3 h-8 rounded-xl text-xs font-semibold bg-nutrition/10 text-nutrition-strong dark:text-nutrition border border-nutrition/30 hover:bg-nutrition/20 transition-colors disabled:opacity-50"
             >
               {dayHintBusy ? "…" : "Отримати"}
             </button>

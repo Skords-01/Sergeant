@@ -98,7 +98,7 @@ export function ReminderPresets({
       {times.length < 5 && times.length > 0 && (
         <button
           type="button"
-          className="text-xs text-routine font-semibold hover:underline"
+          className="text-xs text-routine-strong dark:text-routine font-semibold hover:underline"
           onClick={() =>
             setHabitDraft((d) => ({
               ...d,

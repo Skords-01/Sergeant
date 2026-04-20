@@ -160,10 +160,10 @@ const QUICK_ADD_CHIPS: QuickAddChip[] = (
 });
 
 const MODULE_CHIP_CLASS: Record<HubModuleId, string> = {
-  finyk: "bg-finyk-soft text-finyk",
-  fizruk: "bg-fizruk-soft text-fizruk",
-  routine: "bg-routine-surface text-routine",
-  nutrition: "bg-nutrition-soft text-nutrition",
+  finyk: "bg-finyk-soft text-finyk-strong dark:text-finyk",
+  fizruk: "bg-fizruk-soft text-fizruk-strong dark:text-fizruk",
+  routine: "bg-routine-surface text-routine-strong dark:text-routine",
+  nutrition: "bg-nutrition-soft text-nutrition-strong dark:text-nutrition",
 };
 
 /**

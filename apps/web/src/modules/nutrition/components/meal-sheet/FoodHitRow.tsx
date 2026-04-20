@@ -30,7 +30,7 @@ export function FoodHitRow({ p, badge, onPick }: FoodHitRowProps) {
               <span className="ml-1 text-2xs text-subtle">{badge}</span>
             )}
           </div>
-          <div className="text-xs font-semibold text-nutrition shrink-0">
+          <div className="text-xs font-semibold text-nutrition-strong dark:text-nutrition shrink-0">
             {Math.round(p.per100?.kcal || 0)} ккал
           </div>
         </div>

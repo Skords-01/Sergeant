@@ -22,25 +22,25 @@ const ACTIONS = {
     icon: "check",
     title: "Створи першу звичку",
     desc: "~5 секунд. Стрік почнеться сьогодні.",
-    accent: "text-routine bg-routine-soft",
+    accent: "text-routine-strong dark:text-routine bg-routine-surface",
   },
   finyk: {
     icon: "credit-card",
     title: "Додай першу витрату",
     desc: "~5 секунд, будь-яка сума.",
-    accent: "text-finyk bg-finyk-soft",
+    accent: "text-finyk-strong dark:text-finyk bg-finyk-soft",
   },
   nutrition: {
     icon: "utensils",
     title: "Запиши перший прийом їжі",
     desc: "Калорії порахую я.",
-    accent: "text-nutrition bg-nutrition-soft",
+    accent: "text-nutrition-strong dark:text-nutrition bg-nutrition-soft",
   },
   fizruk: {
     icon: "dumbbell",
     title: "Увімкни розминку",
     desc: "10 хв, таймер сам.",
-    accent: "text-fizruk bg-fizruk-soft",
+    accent: "text-fizruk-strong dark:text-fizruk bg-fizruk-soft",
   },
 };
 

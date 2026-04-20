@@ -183,7 +183,7 @@ export function HabitDetailSheet({
         {tag.map((t) => (
           <span
             key={t}
-            className="text-2xs px-2 py-0.5 rounded-full bg-routine-surface dark:bg-routine/12 border border-routine-line/50 dark:border-routine/25 text-routine-kicker dark:text-routine font-medium"
+            className="text-2xs px-2 py-0.5 rounded-full bg-routine-surface dark:bg-routine/12 border border-routine-line/50 dark:border-routine/25 text-routine-strong dark:text-routine font-medium"
           >
             {t}
           </span>
@@ -321,7 +321,7 @@ export function HabitDetailSheet({
                 className={cn(
                   "aspect-square flex items-center justify-center rounded-lg text-xs font-medium transition-colors",
                   done
-                    ? "bg-routine-surface2 dark:bg-routine/15 text-routine-done dark:text-routine border border-routine-ring/40 dark:border-routine/30 font-bold"
+                    ? "bg-routine-surface2 dark:bg-routine/15 text-routine-strong dark:text-routine border border-routine-ring/40 dark:border-routine/30 font-bold"
                     : scheduled
                       ? "bg-panelHi/60 text-muted border border-line/30"
                       : "text-subtle/50",

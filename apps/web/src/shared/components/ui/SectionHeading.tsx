@@ -46,10 +46,10 @@ const tones: Record<SectionHeadingTone, string> = {
   accent: "text-accent",
   // Module-branded tints — normalised to /70 so callers don't drift
   // between /70, /80, /90.
-  finyk: "text-finyk/70",
-  fizruk: "text-fizruk/70",
-  routine: "text-routine/70",
-  nutrition: "text-nutrition/70",
+  finyk: "text-finyk-strong dark:text-finyk/70",
+  fizruk: "text-fizruk-strong dark:text-fizruk/70",
+  routine: "text-routine-strong dark:text-routine/70",
+  nutrition: "text-nutrition-strong dark:text-nutrition/70",
 };
 
 // Default tone per size — eyebrow sizes (xs/sm) are muted/subtle;

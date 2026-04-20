@@ -4,7 +4,7 @@ export function SaveAsTemplate({ form, setForm, setPrefs }) {
     <div className="mt-3">
       <button
         type="button"
-        className="text-xs text-nutrition font-semibold hover:underline"
+        className="text-xs text-nutrition-strong dark:text-nutrition font-semibold hover:underline"
         onClick={() => {
           const name = form.name.trim();
           if (!name) {

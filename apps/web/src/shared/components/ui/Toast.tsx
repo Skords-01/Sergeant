@@ -2,7 +2,7 @@ import { useToast, type ToastType } from "@shared/hooks/useToast";
 import { cn } from "@shared/lib/cn";
 
 const VARIANT: Record<ToastType, string> = {
-  success: "bg-success text-white",
+  success: "bg-brand-700 text-white",
   error: "bg-danger text-white",
   warning: "bg-warning text-white",
   info: "bg-primary text-white",

@@ -279,7 +279,7 @@ export function Dashboard({
             {primaryAction ? (
               <button
                 type="button"
-                className="w-full py-4 px-5 rounded-2xl bg-fizruk text-white transition-all active:scale-[0.98] flex items-center gap-3 text-left"
+                className="w-full py-4 px-5 rounded-2xl bg-fizruk-strong text-white transition-all active:scale-[0.98] flex items-center gap-3 text-left"
                 onClick={handleStartPrimary}
                 aria-label={`Почати: ${primaryAction.label}`}
               >
@@ -319,7 +319,7 @@ export function Dashboard({
             ) : (
               <button
                 type="button"
-                className="w-full py-4 rounded-full font-bold text-base bg-fizruk text-white transition-all active:scale-[0.98]"
+                className="w-full py-4 rounded-full font-bold text-base bg-fizruk-strong text-white transition-all active:scale-[0.98]"
                 onClick={() => {
                   try {
                     sessionStorage.setItem("fizruk_workouts_mode", "templates");

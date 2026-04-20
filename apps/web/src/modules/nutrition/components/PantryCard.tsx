@@ -248,7 +248,7 @@ export function PantryCard({
                 type="button"
                 onClick={onScanBarcode}
                 disabled={busy}
-                className="w-8 h-8 rounded-xl bg-nutrition/10 text-nutrition border border-nutrition/30 hover:bg-nutrition/20 transition-colors disabled:opacity-50 flex items-center justify-center text-base"
+                className="w-8 h-8 rounded-xl bg-nutrition/10 text-nutrition-strong dark:text-nutrition border border-nutrition/30 hover:bg-nutrition/20 transition-colors disabled:opacity-50 flex items-center justify-center text-base"
                 aria-label="Сканувати штрих-код"
                 title="Сканувати штрих-код"
               >
@@ -264,7 +264,7 @@ export function PantryCard({
                   className={cn(
                     "px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors",
                     mode === m.id
-                      ? "bg-nutrition text-white shadow-sm"
+                      ? "bg-nutrition-strong text-white shadow-sm"
                       : "text-subtle hover:text-text",
                   )}
                 >
@@ -298,7 +298,7 @@ export function PantryCard({
               disabled={busy || !newItemName.trim()}
               className={cn(
                 "px-4 h-11 rounded-2xl text-sm font-semibold shrink-0",
-                "bg-nutrition text-white hover:bg-nutrition-hover disabled:opacity-50 transition-colors",
+                "bg-nutrition-strong text-white hover:bg-nutrition-hover disabled:opacity-50 transition-colors",
               )}
             >
               Додати
@@ -319,7 +319,7 @@ export function PantryCard({
               disabled={busy || !pantryText.trim()}
               className={cn(
                 "shrink-0 px-4 h-11 rounded-2xl text-sm font-semibold mt-0.5",
-                "bg-nutrition text-white hover:bg-nutrition-hover disabled:opacity-50 transition-colors",
+                "bg-nutrition-strong text-white hover:bg-nutrition-hover disabled:opacity-50 transition-colors",
               )}
             >
               Розібрати

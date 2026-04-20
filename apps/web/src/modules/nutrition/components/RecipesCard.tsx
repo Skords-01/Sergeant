@@ -144,7 +144,7 @@ export function RecipesCard({
           <div className="flex items-center gap-2">
             <span className="text-sm font-semibold text-text">Мої рецепти</span>
             {!savedBusy && saved.length > 0 && (
-              <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-nutrition/15 text-nutrition">
+              <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-nutrition/15 text-nutrition-strong dark:text-nutrition">
                 {saved.length}
               </span>
             )}
@@ -309,7 +309,7 @@ export function RecipesCard({
           Рекомендації на базі продуктів зі складу. Можна вказати час, порції та
           &quot;не хочу&quot;.
           {recipeCacheEntry?.recipes?.length > 0 && (
-            <span className="ml-1 text-nutrition">
+            <span className="ml-1 text-nutrition-strong dark:text-nutrition">
               (є кеш сеансу — натисни «Запропонувати» для оновлення)
             </span>
           )}
@@ -379,7 +379,7 @@ export function RecipesCard({
               disabled={busy}
               className={cn(
                 "w-full h-11 rounded-2xl text-sm font-semibold",
-                "bg-nutrition text-white hover:bg-nutrition-hover disabled:opacity-50",
+                "bg-nutrition-strong text-white hover:bg-nutrition-hover disabled:opacity-50",
               )}
             >
               Запропонувати рецепти
@@ -390,7 +390,7 @@ export function RecipesCard({
               disabled={busy || weekPlanBusy}
               className={cn(
                 "w-full h-11 rounded-2xl text-sm font-semibold border border-nutrition/40",
-                "text-nutrition hover:bg-nutrition/10 disabled:opacity-50",
+                "text-nutrition-strong dark:text-nutrition hover:bg-nutrition/10 disabled:opacity-50",
               )}
             >
               {weekPlanBusy ? "…" : "План на тиждень + покупки"}
@@ -407,7 +407,9 @@ export function RecipesCard({
                   key={i}
                   className="text-sm border-b border-line/40 pb-2 last:border-0"
                 >
-                  <div className="font-semibold text-nutrition">{d.label}</div>
+                  <div className="font-semibold text-nutrition-strong dark:text-nutrition">
+                    {d.label}
+                  </div>
                   {d.note && (
                     <div className="text-xs text-subtle mt-0.5">{d.note}</div>
                   )}

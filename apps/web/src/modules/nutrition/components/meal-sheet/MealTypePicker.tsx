@@ -17,7 +17,7 @@ export function MealTypePicker({ mealType, setForm }) {
             className={cn(
               "px-3 py-1.5 rounded-xl text-sm font-semibold border transition-all",
               mealType === mt.id
-                ? "bg-nutrition text-white border-nutrition"
+                ? "bg-nutrition-strong text-white border-nutrition"
                 : "bg-panelHi text-muted border-line hover:border-nutrition/50",
             )}
           >

@@ -51,7 +51,7 @@ export function ItemEditSheet({ itemEdit, setItemEdit, onClose, onSave }) {
       <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
         <Button
           type="button"
-          className="h-12 min-h-[44px] bg-nutrition text-white hover:bg-nutrition-hover"
+          className="h-12 min-h-[44px] bg-nutrition-strong text-white hover:bg-nutrition-hover"
           onClick={() => {
             const qtyStr = String(itemEdit.qty || "").trim();
             const unitStr = String(itemEdit.unit || "").trim();

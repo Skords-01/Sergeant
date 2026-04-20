@@ -7,8 +7,8 @@
 
 export const ROUTINE_THEME = {
   // Text accents
-  eyebrow: "text-routine",
-  heroKicker: "text-routine/90 dark:text-routine",
+  eyebrow: "text-routine-strong dark:text-routine",
+  heroKicker: "text-routine-strong dark:text-routine",
 
   // Cards & surfaces
   statCard:
@@ -22,7 +22,7 @@ export const ROUTINE_THEME = {
 
   // Links & accents
   linkAccent:
-    "font-semibold text-routine hover:text-routine-hover underline decoration-routine-ring/60 dark:decoration-routine/50 transition-colors",
+    "font-semibold text-routine-strong dark:text-routine hover:text-routine-hover underline decoration-routine-ring/60 dark:decoration-routine/50 transition-colors",
 
   // Habit list items
   habitRowAccent: "border-l-routine",
@@ -30,15 +30,15 @@ export const ROUTINE_THEME = {
 
   // Icon containers
   iconBox:
-    "bg-routine-surface dark:bg-routine/12 border-coral-100 dark:border-routine/30 text-routine dark:text-routine",
+    "bg-routine-surface dark:bg-routine/12 border-coral-100 dark:border-routine/30 text-routine-strong dark:text-routine",
 
   // Navigation
-  navActive: "text-routine dark:text-routine",
+  navActive: "text-routine-strong dark:text-routine",
   navBar: "bg-routine",
 
   // Chips/pills
   chipOn:
-    "border-routine-ring dark:border-routine/40 bg-routine-surface dark:bg-routine/15 text-routine shadow-sm",
+    "border-routine-ring dark:border-routine/40 bg-routine-surface dark:bg-routine/15 text-routine-strong dark:text-routine shadow-sm",
   chipOff:
     "border-line bg-panel text-muted hover:text-text hover:bg-panelHi transition-colors",
 
@@ -51,14 +51,14 @@ export const ROUTINE_THEME = {
     "bg-routine-surface dark:bg-routine/15 border-routine-ring dark:border-routine/40 ring-1 ring-coral-100/50 dark:ring-routine/30",
 
   // Completion states
-  done: "border-routine/45 bg-routine-surface dark:bg-routine/12 text-routine dark:text-routine",
-  doneCheck: "text-routine",
+  done: "border-routine/45 bg-routine-surface dark:bg-routine/12 text-routine-strong dark:text-routine",
+  doneCheck: "text-routine-strong dark:text-routine",
 
   // Primary button
   primary:
     "bg-routine hover:bg-routine-hover text-white border-0 shadow-sm transition-all duration-200 active:scale-[0.98]",
   primarySoft:
-    "bg-routine-surface hover:bg-coral-100 text-routine border border-routine-ring/50 transition-all duration-200",
+    "bg-routine-surface hover:bg-coral-100 text-routine-strong dark:text-routine border border-routine-ring/50 transition-all duration-200",
 
   // Secondary/ghost
   secondary:
@@ -66,7 +66,7 @@ export const ROUTINE_THEME = {
 
   // Progress ring colors
   progressTrack: "text-coral-100 dark:text-coral-900/30",
-  progressFill: "text-routine",
+  progressFill: "text-routine-strong dark:text-routine",
 
   // Hero card gradient
   heroGradient: "bg-hero-coral",

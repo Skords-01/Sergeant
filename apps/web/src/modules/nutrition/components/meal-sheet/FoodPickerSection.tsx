@@ -206,7 +206,7 @@ export function FoodPickerSection({
                   className={cn(
                     "px-2 py-0.5 rounded-lg text-xs font-semibold border transition-all",
                     Number(pickedGrams) === g
-                      ? "bg-nutrition text-white border-nutrition"
+                      ? "bg-nutrition-strong text-white border-nutrition"
                       : "bg-panelHi text-subtle border-line hover:border-nutrition/40",
                   )}
                 >
@@ -222,7 +222,7 @@ export function FoodPickerSection({
               label="Ккал"
               value={form.kcal !== "" ? Number(form.kcal) : null}
               unit="ккал"
-              color="bg-nutrition/8 text-nutrition"
+              color="bg-nutrition/8 text-nutrition-strong dark:text-nutrition"
             />
             <MacroChip
               label="Білки"

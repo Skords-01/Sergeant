@@ -67,7 +67,7 @@ export function ShoppingListCard({
               className={cn(
                 "flex-1 py-2 px-3 rounded-xl text-xs font-semibold border transition-all",
                 source === "recipes"
-                  ? "bg-nutrition text-white border-nutrition"
+                  ? "bg-nutrition-strong text-white border-nutrition"
                   : "border-line text-text hover:border-nutrition/50",
               )}
             >
@@ -83,7 +83,7 @@ export function ShoppingListCard({
               className={cn(
                 "flex-1 py-2 px-3 rounded-xl text-xs font-semibold border transition-all",
                 source === "weekplan"
-                  ? "bg-nutrition text-white border-nutrition"
+                  ? "bg-nutrition-strong text-white border-nutrition"
                   : "border-line text-text hover:border-nutrition/50",
               )}
             >
@@ -109,7 +109,7 @@ export function ShoppingListCard({
           disabled={shoppingBusy || !canGenerate}
           className={cn(
             "w-full h-11 rounded-2xl text-sm font-semibold",
-            "bg-nutrition text-white hover:bg-nutrition-hover disabled:opacity-50 transition-colors",
+            "bg-nutrition-strong text-white hover:bg-nutrition-hover disabled:opacity-50 transition-colors",
           )}
         >
           {shoppingBusy ? "Генерую список…" : "Згенерувати список покупок"}
@@ -126,7 +126,7 @@ export function ShoppingListCard({
                   <Button
                     type="button"
                     variant="ghost"
-                    className="h-8 text-xs text-nutrition"
+                    className="h-8 text-xs text-nutrition-strong dark:text-nutrition"
                     onClick={onAddCheckedToPantry}
                   >
                     + До складу

@@ -44,7 +44,7 @@ export function PushupsWidget() {
               setInput("");
               setOpen(true);
             }}
-            className="shrink-0 w-14 h-14 rounded-2xl flex items-center justify-center transition-transform active:scale-95 bg-routine text-white shadow-md"
+            className="shrink-0 w-14 h-14 rounded-2xl flex items-center justify-center transition-transform active:scale-95 bg-routine-strong text-white shadow-md"
             aria-label="Додати відтискання"
           >
             <svg
@@ -115,7 +115,7 @@ export function PushupsWidget() {
                 addReps(n);
                 setOpen(false);
               }}
-              className="min-h-[44px] rounded-2xl border border-routine-line/80 dark:border-routine/30 bg-routine-surface dark:bg-routine/12 px-1 py-2.5 text-center text-xs font-bold text-routine-kicker dark:text-routine transition-colors active:opacity-90 sm:px-2 sm:text-sm"
+              className="min-h-[44px] rounded-2xl border border-routine-line/80 dark:border-routine/30 bg-routine-surface dark:bg-routine/12 px-1 py-2.5 text-center text-xs font-bold text-routine-strong dark:text-routine transition-colors active:opacity-90 sm:px-2 sm:text-sm"
             >
               +{n}
             </button>

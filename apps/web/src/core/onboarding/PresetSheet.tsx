@@ -52,7 +52,7 @@ const PRESETS = {
   finyk: {
     title: "На що витратив?",
     desc: "Тицяй — відкриється форма з назвою. Суму введеш сам.",
-    accent: "text-finyk bg-finyk-soft",
+    accent: "text-finyk-strong dark:text-finyk bg-finyk-soft",
     moduleIcon: "credit-card",
     fallback: { action: "add_expense", label: "Своя витрата", icon: "plus" },
     // Presets тут — лише заготовки назви/категорії. Реальну суму
@@ -86,7 +86,7 @@ const PRESETS = {
   nutrition: {
     title: "Що з'їв зараз?",
     desc: "Відкрию форму добавляння страви — калорії підтвердиш у модулі.",
-    accent: "text-nutrition bg-nutrition-soft",
+    accent: "text-nutrition-strong dark:text-nutrition bg-nutrition-soft",
     moduleIcon: "utensils",
     fallback: { action: "add_meal", label: "Додати страву", icon: "plus" },
     // Три плитки (Омлет / Салат / Яблуко) свого часу давали
@@ -101,7 +101,7 @@ const PRESETS = {
   fizruk: {
     title: "Швидкий старт",
     desc: "Відкрию старт тренування — тривалість вкажеш на фініші.",
-    accent: "text-fizruk bg-fizruk-soft",
+    accent: "text-fizruk-strong dark:text-fizruk bg-fizruk-soft",
     moduleIcon: "dumbbell",
     fallback: {
       action: "start_workout",

@@ -64,13 +64,13 @@ const variants: Record<ButtonVariant, string> = {
 
   // Soft module variants (for secondary actions within modules)
   "finyk-soft":
-    "bg-finyk-soft text-finyk border border-finyk-ring/50 hover:bg-brand-100 active:scale-[0.98]",
+    "bg-finyk-soft text-finyk-strong border border-finyk-ring/50 hover:bg-brand-100 active:scale-[0.98]",
   "fizruk-soft":
-    "bg-fizruk-soft text-fizruk border border-fizruk-ring/50 hover:bg-teal-100 active:scale-[0.98]",
+    "bg-fizruk-soft text-fizruk-strong border border-fizruk-ring/50 hover:bg-teal-100 active:scale-[0.98]",
   "routine-soft":
-    "bg-routine-surface text-routine border border-routine-ring/50 hover:bg-coral-100 active:scale-[0.98]",
+    "bg-routine-surface text-routine-strong border border-routine-ring/50 hover:bg-coral-100 active:scale-[0.98]",
   "nutrition-soft":
-    "bg-nutrition-soft text-nutrition border border-nutrition-ring/50 hover:bg-lime-100 active:scale-[0.98]",
+    "bg-nutrition-soft text-nutrition-strong border border-nutrition-ring/50 hover:bg-lime-100 active:scale-[0.98]",
 };
 
 const sizes: Record<ButtonSize, string> = {

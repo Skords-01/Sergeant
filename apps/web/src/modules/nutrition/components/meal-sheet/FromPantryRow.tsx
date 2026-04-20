@@ -14,7 +14,7 @@ export function FromPantryRow({
       <SectionHeading as="div" size="xs" className="mb-2">
         Зі складу
         {fromPantryItem && (
-          <span className="ml-2 text-nutrition font-semibold normal-case tracking-normal">
+          <span className="ml-2 text-nutrition-strong dark:text-nutrition font-semibold normal-case tracking-normal">
             · {fromPantryItem}
           </span>
         )}
@@ -42,7 +42,7 @@ export function FromPantryRow({
               className={cn(
                 "px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition-all",
                 isActive
-                  ? "bg-nutrition text-white border-nutrition"
+                  ? "bg-nutrition-strong text-white border-nutrition"
                   : "bg-panelHi text-text border-line hover:border-nutrition/50",
               )}
             >

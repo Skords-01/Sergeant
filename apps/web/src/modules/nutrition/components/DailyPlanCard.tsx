@@ -167,7 +167,7 @@ function MealRow({ meal, onAddToLog, onRegen, busy }) {
                 label="ккал"
                 value={meal.kcal}
                 unit=""
-                color="bg-nutrition/10 border border-nutrition/20 text-nutrition"
+                color="bg-nutrition/10 border border-nutrition/20 text-nutrition-strong dark:text-nutrition"
               />
             )}
             <MacroBadge label="Б" value={meal.protein_g} />
@@ -199,7 +199,7 @@ function MealRow({ meal, onAddToLog, onRegen, busy }) {
       {meal.ingredients?.length > 0 && (
         <button
           type="button"
-          className="mt-2 text-xs text-nutrition/70 hover:text-nutrition transition-colors"
+          className="mt-2 text-xs text-nutrition-strong/90 dark:text-nutrition/70 hover:text-nutrition-strong dark:text-nutrition transition-colors"
           onClick={() => setExpanded((v) => !v)}
         >
           {expanded ? "▲ Сховати інгредієнти" : "▼ Інгредієнти"}
@@ -277,7 +277,7 @@ export function DailyPlanCard({
                 className={cn(
                   "flex-1 min-w-[90px] py-2 px-3 rounded-xl text-xs font-semibold border transition-all",
                   activePreset?.id === preset.id
-                    ? "bg-nutrition text-white border-nutrition"
+                    ? "bg-nutrition-strong text-white border-nutrition"
                     : "border-line text-text hover:border-nutrition/50 hover:bg-nutrition/5",
                 )}
               >
@@ -388,7 +388,7 @@ export function DailyPlanCard({
           {hasTargets && (
             <div className="mt-2 flex flex-wrap gap-1 items-center">
               {prefs.dailyTargetKcal != null && (
-                <span className="text-xs bg-nutrition/10 text-nutrition border border-nutrition/20 rounded-lg px-2 py-0.5">
+                <span className="text-xs bg-nutrition/10 text-nutrition-strong dark:text-nutrition border border-nutrition/20 rounded-lg px-2 py-0.5">
                   {prefs.dailyTargetKcal} ккал
                 </span>
               )}
@@ -432,7 +432,7 @@ export function DailyPlanCard({
           disabled={busy || dayPlanBusy}
           className={cn(
             "w-full h-11 rounded-2xl text-sm font-semibold",
-            "bg-nutrition text-white hover:bg-nutrition-hover disabled:opacity-50 transition-colors",
+            "bg-nutrition-strong text-white hover:bg-nutrition-hover disabled:opacity-50 transition-colors",
           )}
         >
           {dayPlanBusy ? "Генерую план…" : "Згенерувати денний план"}

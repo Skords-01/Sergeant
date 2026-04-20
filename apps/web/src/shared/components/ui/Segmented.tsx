@@ -53,15 +53,15 @@ const ACCENT_SOLID: Record<SegmentedAccent, string> = {
 
 const ACCENT_SOFT: Record<SegmentedAccent, string> = {
   brand:
-    "border-brand-200 bg-brand-50 text-brand shadow-sm dark:border-brand/40 dark:bg-brand/15",
+    "border-brand-200 bg-brand-50 text-brand-700 shadow-sm dark:border-brand/40 dark:bg-brand/15 dark:text-brand",
   fizruk:
-    "border-fizruk-ring bg-fizruk-surface text-fizruk shadow-sm dark:border-fizruk/40 dark:bg-fizruk/15",
+    "border-fizruk-ring bg-fizruk-surface text-fizruk-strong shadow-sm dark:border-fizruk/40 dark:bg-fizruk/15 dark:text-fizruk",
   routine:
-    "border-routine-ring bg-routine-surface text-routine shadow-sm dark:border-routine/40 dark:bg-routine/15",
+    "border-routine-ring bg-routine-surface text-routine-strong shadow-sm dark:border-routine/40 dark:bg-routine/15 dark:text-routine",
   nutrition:
-    "border-nutrition-ring bg-nutrition-surface text-nutrition shadow-sm dark:border-nutrition/40 dark:bg-nutrition/15",
+    "border-nutrition-ring bg-nutrition-surface text-nutrition-strong shadow-sm dark:border-nutrition/40 dark:bg-nutrition/15 dark:text-nutrition",
   finyk:
-    "border-finyk-ring bg-finyk-surface text-finyk shadow-sm dark:border-finyk/40 dark:bg-finyk/15",
+    "border-finyk-ring bg-finyk-surface text-finyk-strong shadow-sm dark:border-finyk/40 dark:bg-finyk/15 dark:text-finyk",
 };
 
 const INACTIVE =

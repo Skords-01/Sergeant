@@ -46,7 +46,7 @@ export function PantryManagerSheet({
                   {p.name || "Склад"}
                 </div>
                 {active ? (
-                  <span className="text-2xs px-2 py-0.5 rounded-full bg-nutrition/15 text-nutrition border border-nutrition/25">
+                  <span className="text-2xs px-2 py-0.5 rounded-full bg-nutrition/15 text-nutrition-strong dark:text-nutrition border border-nutrition/25">
                     Активний
                   </span>
                 ) : null}
@@ -59,7 +59,7 @@ export function PantryManagerSheet({
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
         <Button
           type="button"
-          className="h-12 min-h-[44px] bg-nutrition text-white hover:bg-nutrition-hover"
+          className="h-12 min-h-[44px] bg-nutrition-strong text-white hover:bg-nutrition-hover"
           onClick={onBeginCreate}
         >
           + Новий склад
@@ -99,7 +99,7 @@ export function PantryManagerSheet({
         <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
           <Button
             type="button"
-            className="h-12 min-h-[44px] bg-nutrition text-white hover:bg-nutrition-hover"
+            className="h-12 min-h-[44px] bg-nutrition-strong text-white hover:bg-nutrition-hover"
             onClick={() => {
               const name = String(pantryForm.name || "").trim();
               if (!name) {

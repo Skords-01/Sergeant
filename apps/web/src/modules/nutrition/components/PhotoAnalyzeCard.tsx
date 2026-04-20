@@ -35,7 +35,7 @@ export function PhotoAnalyzeCard({
           disabled={busy}
           className={cn(
             "shrink-0 px-5 h-10 rounded-xl text-sm font-semibold",
-            "bg-nutrition text-white hover:bg-nutrition-hover disabled:opacity-50 transition-colors",
+            "bg-nutrition-strong text-white hover:bg-nutrition-hover disabled:opacity-50 transition-colors",
           )}
         >
           {busy ? "…" : "Аналізувати"}
@@ -151,7 +151,7 @@ export function PhotoAnalyzeCard({
               disabled={busy}
               className={cn(
                 "w-full h-11 rounded-2xl text-sm font-semibold border border-nutrition/40",
-                "text-nutrition hover:bg-nutrition/10 disabled:opacity-50 transition-colors",
+                "text-nutrition-strong dark:text-nutrition hover:bg-nutrition/10 disabled:opacity-50 transition-colors",
               )}
             >
               📓 Зберегти в журнал
@@ -196,7 +196,7 @@ export function PhotoAnalyzeCard({
                       disabled={busy}
                       className={cn(
                         "w-full h-11 rounded-2xl text-sm font-semibold",
-                        "bg-nutrition text-white hover:bg-nutrition-hover disabled:opacity-50 transition-colors",
+                        "bg-nutrition-strong text-white hover:bg-nutrition-hover disabled:opacity-50 transition-colors",
                       )}
                     >
                       Перерахувати

@@ -104,7 +104,7 @@ export function WaterTrackerCard({ goalMl = 2000 }) {
             onClick={() => add(ml)}
             className={cn(
               "h-9 rounded-xl text-xs font-semibold transition-colors",
-              "bg-sky-500/10 text-sky-400 border border-sky-500/20",
+              "bg-sky-500/10 text-sky-700 dark:text-sky-400 border border-sky-500/20",
               "hover:bg-sky-500/20 active:scale-95",
             )}
           >

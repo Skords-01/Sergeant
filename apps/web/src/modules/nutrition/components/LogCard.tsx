@@ -239,7 +239,7 @@ export function LogCard({
                       <div className="flex gap-1.5 mt-0.5 flex-wrap">
                         <span className="text-2xs text-subtle">{date}</span>
                         {mac.kcal != null && (
-                          <span className="text-2xs text-nutrition font-bold">
+                          <span className="text-2xs text-nutrition-strong dark:text-nutrition font-bold">
                             {Math.round(mac.kcal)} ккал
                           </span>
                         )}
@@ -252,7 +252,7 @@ export function LogCard({
                     </button>
                     <button
                       type="button"
-                      className="shrink-0 w-8 h-8 flex items-center justify-center rounded-lg bg-nutrition/10 text-nutrition hover:bg-nutrition/20 transition-colors"
+                      className="shrink-0 w-8 h-8 flex items-center justify-center rounded-lg bg-nutrition/10 text-nutrition-strong dark:text-nutrition hover:bg-nutrition/20 transition-colors"
                       onClick={() => {
                         onAddMealFromSearch?.({
                           name: meal.name,
@@ -353,7 +353,7 @@ export function LogCard({
                   className={cn(
                     "px-2 py-1 rounded-lg text-xs font-semibold border",
                     statsRange === d
-                      ? "border-nutrition/60 text-nutrition bg-nutrition/10"
+                      ? "border-nutrition/60 text-nutrition-strong dark:text-nutrition bg-nutrition/10"
                       : "border-line text-subtle bg-panelHi",
                   )}
                 >
@@ -500,7 +500,7 @@ export function LogCard({
         <button
           type="button"
           onClick={onAddMeal}
-          className="w-full h-12 min-h-[44px] rounded-2xl border-2 border-dashed border-line text-muted hover:border-nutrition/60 hover:text-nutrition font-semibold text-sm transition-all"
+          className="w-full h-12 min-h-[44px] rounded-2xl border-2 border-dashed border-line text-muted hover:border-nutrition/60 hover:text-nutrition-strong dark:text-nutrition font-semibold text-sm transition-all"
         >
           + Додати прийом їжі
         </button>
@@ -635,7 +635,7 @@ function MealRow({ meal, onRemove, onEdit }) {
         </div>
         <div className="flex gap-2 mt-0.5 flex-wrap">
           {mac.kcal != null && (
-            <span className="text-xs text-nutrition font-bold">
+            <span className="text-xs text-nutrition-strong dark:text-nutrition font-bold">
               {Math.round(mac.kcal)} ккал
             </span>
           )}
