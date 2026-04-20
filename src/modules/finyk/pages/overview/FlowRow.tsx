@@ -2,11 +2,28 @@ import { memo } from "react";
 import { cn } from "@shared/lib/cn";
 import { THEME_HEX } from "@shared/lib/themeHex.js";
 
+export interface FlowItem {
+  title: string;
+  hint?: string;
+  color?: string;
+  amount: number | null;
+  sign: string;
+  currency: string;
+}
+
+interface FlowRowProps {
+  flow: FlowItem;
+  showAmount?: boolean;
+}
+
 /**
  * Рядок запланованого грошового потоку. Пропси вже готові до рендеру —
  * memo знімає перерахунок і diff на кожному ре-рендері Overview.
  */
-export const FlowRow = memo(function FlowRow({ flow, showAmount = true }) {
+export const FlowRow = memo(function FlowRow({
+  flow,
+  showAmount = true,
+}: FlowRowProps) {
   const isGreen = flow.color === THEME_HEX.success;
   return (
     <div className="flex justify-between items-center py-3 border-b border-line last:border-0">

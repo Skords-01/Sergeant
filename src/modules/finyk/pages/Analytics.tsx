@@ -6,6 +6,7 @@ import {
   useMemo,
   useRef,
   Suspense,
+  type ReactNode,
 } from "react";
 import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { Skeleton } from "@shared/components/ui/Skeleton";
@@ -16,12 +17,48 @@ import { CategoryPieChart } from "../components/charts/lazy";
 import { ChartFallback } from "../components/charts/ChartFallback";
 import { MerchantList } from "../components/analytics/MerchantList";
 import { getTrendComparison } from "../domain/selectors";
+import type { TxSplitsMap } from "../domain/types";
 import { readJSON } from "../lib/finykStorage.js";
 import { trackEvent, ANALYTICS_EVENTS } from "../../../core/analytics";
 
+interface SectionProps {
+  title: string;
+  children: ReactNode;
+  className?: string;
+}
+
+interface MonthNavProps {
+  year: number;
+  month: number;
+  onChange: (year: number, month: number) => void;
+}
+
+interface ComparisonRowProps {
+  label: string;
+  current: number;
+  prev: number;
+  kind?: "expense" | "income";
+}
+
+export interface AnalyticsMonoAdapter {
+  realTx?: unknown[];
+  loadingTx?: boolean;
+  fetchMonth: (year: number, month0Based: number) => Promise<unknown>;
+}
+
+export interface AnalyticsStorageAdapter {
+  excludedTxIds: Set<string> | Iterable<string>;
+  txSplits: TxSplitsMap;
+}
+
+interface AnalyticsProps {
+  mono: AnalyticsMonoAdapter;
+  storage: AnalyticsStorageAdapter;
+}
+
 // `fetchMonth` приймає 0-based місяць (як у `new Date(y, m, 1)`).
 // Сторінка оперує 1-based (1..12), тож тут нормалізуємо.
-function readTxCache(year, month1Based) {
+function readTxCache(year: number, month1Based: number) {
   const m0 = month1Based - 1;
   const cache = readJSON(`finyk_tx_cache_${year}_${m0}`, null);
   if (!cache || typeof cache !== "object") return null;
@@ -30,7 +67,11 @@ function readTxCache(year, month1Based) {
 
 // Презентаційний контейнер-секція. memo, бо приймає лише `title/className/children`
 // і не має побічних ефектів — уникаємо рендеру при оновленнях, не пов'язаних з пропсами.
-const Section = memo(function Section({ title, children, className }) {
+const Section = memo(function Section({
+  title,
+  children,
+  className,
+}: SectionProps) {
   return (
     <div
       className={cn(
@@ -48,7 +89,11 @@ const Section = memo(function Section({ title, children, className }) {
 
 // Навігація між місяцями. memo — пропси (year/month/onChange) змінюються рідко,
 // а сторінка Analytics ре-рендериться при кожному завантаженні історії.
-const MonthNav = memo(function MonthNav({ year, month, onChange }) {
+const MonthNav = memo(function MonthNav({
+  year,
+  month,
+  onChange,
+}: MonthNavProps) {
   const now = new Date();
   const isCurrentMonth =
     year === now.getFullYear() && month === now.getMonth() + 1;
@@ -106,7 +151,7 @@ const ComparisonRow = memo(function ComparisonRow({
   current,
   prev,
   kind = "expense",
-}) {
+}: ComparisonRowProps) {
   const diff = current - prev;
   const pct = prev > 0 ? Math.round((diff / prev) * 100) : null;
   const up = diff > 0;
@@ -140,7 +185,7 @@ const ComparisonRow = memo(function ComparisonRow({
   );
 });
 
-export function Analytics({ mono, storage }) {
+export function Analytics({ mono, storage }: AnalyticsProps) {
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1);
@@ -342,7 +387,7 @@ export function Analytics({ mono, storage }) {
             />
           ) : (
             <Suspense fallback={<ChartFallback className="h-40" />}>
-              <CategoryPieChart data={distribution} />
+              <CategoryPieChart data={distribution} className="" />
             </Suspense>
           )}
         </Section>
@@ -362,7 +407,7 @@ export function Analytics({ mono, storage }) {
               description="Транзакцій ще немає"
             />
           ) : (
-            <MerchantList merchants={topMerchants} />
+            <MerchantList merchants={topMerchants} className="" />
           )}
         </Section>
       </div>
