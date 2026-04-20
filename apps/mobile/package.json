@@ -14,41 +14,6 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "jest --passWithNoTests"
   },
-  "jest": {
-    "testEnvironment": "node",
-    "setupFiles": [
-      "<rootDir>/jest.setup.js"
-    ],
-    "testMatch": [
-      "<rootDir>/src/**/*.test.ts",
-      "<rootDir>/src/**/*.test.tsx"
-    ],
-    "transform": {
-      "^.+\\.(ts|tsx)$": [
-        "ts-jest",
-        {
-          "tsconfig": "<rootDir>/tsconfig.jest.json",
-          "isolatedModules": true,
-          "diagnostics": false
-        }
-      ]
-    },
-    "moduleFileExtensions": [
-      "ts",
-      "tsx",
-      "js",
-      "jsx",
-      "json"
-    ],
-    "moduleNameMapper": {
-      "^@/(.*)$": "<rootDir>/src/$1",
-      "^@sergeant/shared$": "<rootDir>/../../packages/shared/src/index.ts",
-      "^@sergeant/shared/(.*)$": "<rootDir>/../../packages/shared/src/$1",
-      "^@sergeant/api-client/react$": "<rootDir>/../../packages/api-client/src/react/index.ts",
-      "^@sergeant/api-client$": "<rootDir>/../../packages/api-client/src/index.ts",
-      "^@sergeant/api-client/(.*)$": "<rootDir>/../../packages/api-client/src/$1"
-    }
-  },
   "dependencies": {
     "@better-auth/expo": "^1.6.5",
     "@expo/metro-runtime": "~4.0.1",
@@ -85,14 +50,13 @@
   },
   "devDependencies": {
     "@sergeant/config": "workspace:*",
-    "@types/jest": "^29.5.14",
+    "@testing-library/react-native": "^12",
+    "@types/jest": "^29",
     "@types/react": "~18.3.12",
-    "@types/react-test-renderer": "18.3.0",
-    "jest": "~29.7.0",
-    "jest-expo": "52.0.6",
+    "jest": "^29",
+    "jest-expo": "~52.0.0",
     "react-test-renderer": "18.3.1",
     "tailwindcss": "^3.4.17",
-    "ts-jest": "^29",
     "typescript": "~5.9.0"
   }
 }

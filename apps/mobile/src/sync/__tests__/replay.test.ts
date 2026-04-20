@@ -20,10 +20,10 @@ import type { ModulePayload } from "../types";
 
 // Mock the api seam so `replayOfflineQueue` doesn't try a real network
 // request. We capture every call's payload for assertions.
-const pushAllMock = jest.fn();
+const mockPushAll = jest.fn();
 jest.mock("../api", () => ({
   syncApi: {
-    pushAll: (...args: unknown[]) => pushAllMock(...args),
+    pushAll: (...args: unknown[]) => mockPushAll(...args),
     pullAll: jest.fn(),
   },
 }));
@@ -46,7 +46,7 @@ type NetInfoTestApi = typeof NetInfo & {
 };
 
 beforeEach(() => {
-  pushAllMock.mockReset();
+  mockPushAll.mockReset();
   _resetReplayGuardForTest();
   (NetInfo as NetInfoTestApi).__reset();
   // Wipe any queue state left from prior tests.
@@ -61,20 +61,20 @@ beforeEach(() => {
 
 describe("replayOfflineQueue", () => {
   it("no-ops when the queue is empty", async () => {
-    pushAllMock.mockResolvedValue({});
+    mockPushAll.mockResolvedValue({});
     await replayOfflineQueue();
-    expect(pushAllMock).not.toHaveBeenCalled();
+    expect(mockPushAll).not.toHaveBeenCalled();
   });
 
   it("flushes queued modules via syncApi.pushAll and clears on success", async () => {
-    pushAllMock.mockResolvedValue({ results: { finyk: { ok: true } } });
+    mockPushAll.mockResolvedValue({ results: { finyk: { ok: true } } });
     addToOfflineQueue({ type: "push", modules: modules("finyk", 1) });
     addToOfflineQueue({ type: "push", modules: modules("fizruk", 2) });
 
     await replayOfflineQueue();
 
-    expect(pushAllMock).toHaveBeenCalledTimes(1);
-    const payload = pushAllMock.mock.calls[0][0] as Record<
+    expect(mockPushAll).toHaveBeenCalledTimes(1);
+    const payload = mockPushAll.mock.calls[0][0] as Record<
       string,
       ModulePayload
     >;
@@ -83,7 +83,7 @@ describe("replayOfflineQueue", () => {
   });
 
   it("keeps the queue for later when push fails", async () => {
-    pushAllMock.mockRejectedValue(
+    mockPushAll.mockRejectedValue(
       Object.assign(new Error("Network down"), {
         name: "ApiError",
         kind: "network",
@@ -112,13 +112,13 @@ describe("replayOfflineQueue", () => {
       } as unknown as Record<string, ModulePayload>,
     });
     await replayOfflineQueue();
-    expect(pushAllMock).not.toHaveBeenCalled();
+    expect(mockPushAll).not.toHaveBeenCalled();
     expect(getOfflineQueue()).toEqual([]);
   });
 
   it("is re-entry-safe: concurrent callers share one in-flight replay", async () => {
     let resolvePush: ((v: unknown) => void) | undefined;
-    pushAllMock.mockImplementation(
+    mockPushAll.mockImplementation(
       () =>
         new Promise((resolve) => {
           resolvePush = resolve;
@@ -131,7 +131,7 @@ describe("replayOfflineQueue", () => {
 
     // Second call must return without triggering another pushAll.
     await Promise.resolve();
-    expect(pushAllMock).toHaveBeenCalledTimes(1);
+    expect(mockPushAll).toHaveBeenCalledTimes(1);
 
     resolvePush?.({});
     await Promise.all([a, b]);

@@ -7,15 +7,15 @@ import {
   calcFinykSpendingTotal,
   getMonoTotals,
 } from "../utils";
-import { getSubscriptionAmountMeta } from "../domain/subscriptionUtils.js";
-import { getMonthlySummary } from "../domain/selectors";
+import { getSubscriptionAmountMeta } from "@sergeant/finyk-domain/domain/subscriptionUtils";
+import { getMonthlySummary } from "@sergeant/finyk-domain/domain/selectors";
 import {
   getLimitBudgets,
   isBudgetAlert,
   getCurrentMonthContext,
-} from "../domain/budget";
-import { getCategorySpendList } from "../domain/categories";
-import { filterStatTransactions } from "../domain/transactions";
+} from "@sergeant/finyk-domain/domain/budget";
+import { getCategorySpendList } from "@sergeant/finyk-domain/domain/categories";
+import { filterStatTransactions } from "@sergeant/finyk-domain/domain/transactions";
 import { Skeleton } from "@shared/components/ui/Skeleton";
 import { THEME_HEX } from "@shared/lib/themeHex.js";
 import { SyncStatusBadge } from "../components/SyncStatusBadge";

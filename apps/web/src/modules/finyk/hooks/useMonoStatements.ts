@@ -7,8 +7,8 @@ import {
 import { finykKeys } from "@shared/lib/queryKeys";
 import { authAwareRetry } from "@shared/lib/queryClient";
 import { CURRENCY } from "../constants";
-import { normalizeTransaction } from "../domain/transactions";
-import type { Transaction } from "../domain/types";
+import { normalizeTransaction } from "@sergeant/finyk-domain/domain/transactions";
+import type { Transaction } from "@sergeant/finyk-domain/domain/types";
 
 /**
  * React Query–backed reader для `/personal/statement/{acc}/{from}/{to}`.

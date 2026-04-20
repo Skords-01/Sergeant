@@ -4,9 +4,10 @@
  */
 
 import { buildFinanceContext } from "./recommendations/financeContext";
-import { FINANCE_RULES } from "./recommendations/finance";
-import { runRules } from "./recommendations/registry";
-import type { Rec } from "./recommendations/types";
+import { Recommendations } from "@sergeant/insights";
+
+const { FINANCE_RULES, runRules } = Recommendations;
+type Rec = Recommendations.Rec;
 
 interface Transaction {
   id: string;

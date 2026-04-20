@@ -1,8 +1,8 @@
 // Rule: прогрес фінансових цілей — повідомляємо коли до фінішу лишилось
 // 20%. Працює з budget.type === "goal", порівнюючи savedAmount/targetAmount.
 
-import type { Rule } from "../types";
-import type { FinanceContext } from "../financeContext";
+import type { Rule } from "../types.js";
+import type { FinanceContext } from "../financeContext.js";
 
 interface Goal {
   id?: string;

@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { CANONICAL_TO_MANUAL_LABEL } from "../../domain/personalization";
+import { CANONICAL_TO_MANUAL_LABEL } from "@sergeant/finyk-domain/domain/personalization";
 import { Card } from "@shared/components/ui/Card";
 import { SectionHeading } from "@shared/components/ui/SectionHeading";
 

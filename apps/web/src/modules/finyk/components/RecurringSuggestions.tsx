@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { cn } from "@shared/lib/cn";
 import { Button } from "@shared/components/ui/Button";
-import { detectRecurring } from "../lib/recurringDetect";
+import { detectRecurring } from "@sergeant/finyk-domain/lib/recurringDetect";
 
 const CADENCE_LABEL = {
   weekly: "щотижня",

@@ -3,7 +3,7 @@
 // виняток — воно «пропадає», решта продовжує роботу (регресії одного правила
 // не ламають усі рекомендації).
 
-import type { Rec, Rule } from "./types";
+import type { Rec, Rule } from "./types.js";
 
 /** Запускає правила з одним контекстом і збирає рекомендації. */
 export function runRules<Ctx>(rules: readonly Rule<Ctx>[], ctx: Ctx): Rec[] {
