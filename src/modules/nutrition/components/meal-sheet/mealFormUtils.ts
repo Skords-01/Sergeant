@@ -1,11 +1,30 @@
-import { mealTypeByNow } from "../../lib/mealTypes.js";
+import { mealTypeByNow, type MealTypeId } from "../../lib/mealTypes.js";
+import type { NullableMacros } from "../../lib/macros.js";
 
-export function currentTime() {
+export function currentTime(): string {
   const now = new Date();
   return `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
 }
 
-export function emptyForm(photoResult) {
+export interface MealFormPhotoResult {
+  dishName?: string | null;
+  macros?: Partial<NullableMacros> | null;
+}
+
+export interface MealFormState {
+  name: string;
+  mealType: MealTypeId;
+  time: string;
+  kcal: string;
+  protein_g: string;
+  fat_g: string;
+  carbs_g: string;
+  err: string;
+}
+
+export function emptyForm(
+  photoResult?: MealFormPhotoResult | null,
+): MealFormState {
   const macros = photoResult?.macros || {};
   return {
     name: photoResult?.dishName || "",

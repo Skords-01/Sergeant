@@ -2,10 +2,19 @@ import { useEffect, useState } from "react";
 import {
   parseNutritionHash,
   setNutritionHash,
+  type NutritionPage,
 } from "../lib/nutritionRouter.js";
 
-export function useNutritionHashRoute() {
-  const [activePage, setActivePage] = useState(() => parseNutritionHash().page);
+export interface UseNutritionHashRouteResult {
+  activePage: NutritionPage;
+  setActivePage: (page: NutritionPage) => void;
+  setActivePageAndHash: (page: NutritionPage) => void;
+}
+
+export function useNutritionHashRoute(): UseNutritionHashRouteResult {
+  const [activePage, setActivePage] = useState<NutritionPage>(
+    () => parseNutritionHash().page,
+  );
 
   useEffect(() => {
     // One-time normalization on mount: handle legacy routes
@@ -24,7 +33,7 @@ export function useNutritionHashRoute() {
     return () => window.removeEventListener("hashchange", onHash);
   }, []);
 
-  const setActivePageAndHash = (page) => {
+  const setActivePageAndHash = (page: NutritionPage) => {
     setActivePage(page);
     setNutritionHash(page);
   };

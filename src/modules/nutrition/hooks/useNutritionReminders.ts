@@ -1,8 +1,13 @@
 import { useEffect, useRef } from "react";
 import { todayISODate } from "../lib/nutritionFormat.js";
 
-export function useNutritionReminders(prefs) {
-  const lastNotifyKeyRef = useRef("");
+export interface NutritionReminderPrefs {
+  reminderEnabled: boolean;
+  reminderHour?: number | null;
+}
+
+export function useNutritionReminders(prefs: NutritionReminderPrefs): void {
+  const lastNotifyKeyRef = useRef<string>("");
 
   useEffect(() => {
     try {
@@ -15,7 +20,9 @@ export function useNutritionReminders(prefs) {
           },
         });
       }
-    } catch {}
+    } catch {
+      /* ignore */
+    }
   }, [prefs.reminderEnabled, prefs.reminderHour]);
 
   useEffect(() => {
