@@ -6,6 +6,9 @@ import App from "./core/App";
 import "./index.css";
 import { storageManager } from "@shared/lib/storageManager.js";
 import { createAppQueryClient } from "@shared/lib/queryClient.js";
+// Registers the web `navigator.vibrate`-based adapter on the shared
+// haptic contract (`@sergeant/shared`). Import for side effects only.
+import "@shared/lib/haptic";
 import { ErrorBoundary } from "./core/ErrorBoundary.jsx";
 import { initSentry } from "./core/sentry.js";
 import { initWebVitals } from "./core/webVitals.js";
