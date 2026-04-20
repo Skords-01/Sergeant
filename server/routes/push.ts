@@ -3,10 +3,12 @@ import {
   asyncHandler,
   rateLimitExpress,
   requireApiSecret,
+  requireSession,
   requireSessionSoft,
   setModule,
 } from "../http/index.js";
 import {
+  register as pushRegister,
   sendPush,
   subscribe as pushSubscribe,
   unsubscribe as pushUnsubscribe,
@@ -43,6 +45,12 @@ export function createPushRouter(): Router {
     requireSessionSoft(),
     asyncHandler(pushUnsubscribe),
   );
+  // `/api/push/register` — уніфікований mobile+web endpoint. Свідомо йде
+  // через `requireSession()` (жорсткий 401), а не `requireSessionSoft`:
+  // mobile-клієнт має прозорий сигнал "токен протух, треба перелогінитись",
+  // а не silently 200 з пустою сесією. Доступний також як `/api/v1/push/register`
+  // через `apiVersionRewrite`.
+  r.post("/api/push/register", requireSession(), asyncHandler(pushRegister));
   r.post(
     "/api/push/send",
     requireApiSecret("API_SECRET"),

@@ -6,6 +6,7 @@ import { logger } from "../obs/logger.js";
 import { pushSendsTotal } from "../obs/metrics.js";
 import { validateBody } from "../http/validate.js";
 import {
+  PushRegisterSchema,
   PushSendSchema,
   PushSubscribeSchema,
   PushUnsubscribeSchema,
@@ -100,6 +101,53 @@ export async function subscribe(req: Request, res: Response): Promise<void> {
     [user.id, endpoint, keys.p256dh, keys.auth],
   );
   res.json({ ok: true });
+}
+
+/**
+ * POST /api/v1/push/register — уніфікована реєстрація push-пристрою.
+ *
+ * Доступний і на `/api/push/register` (той самий handler, через
+ * `apiVersionRewrite`). Для web-платформи — проксі на існуючий
+ * `push_subscriptions` flow (upsert + recover з soft-delete), щоб
+ * не дублювати state у двох таблицях. Для ios/android — upsert у
+ * нову `push_devices`. Реальна відправка для native поки не реалізована
+ * (див. docs/mobile.md).
+ */
+export async function register(req: Request, res: Response): Promise<void> {
+  const user = (req as WithSessionUser).user!;
+  const parsed = validateBody(PushRegisterSchema, req, res);
+  if (!parsed.ok) return;
+  const data = parsed.data;
+
+  if (data.platform === "web") {
+    if (!vapidReady) {
+      res.status(503).json({ error: "Push not configured" });
+      return;
+    }
+    // Single source of truth для web-push — `push_subscriptions`. Дублювати
+    // у push_devices не можна: sendPush читає з push_subscriptions і не
+    // знатиме про записи у іншій таблиці.
+    await pool.query(
+      `INSERT INTO push_subscriptions (user_id, endpoint, p256dh, auth)
+         VALUES ($1, $2, $3, $4)
+         ON CONFLICT (endpoint) DO UPDATE
+           SET p256dh = $3, auth = $4, user_id = $1, deleted_at = NULL`,
+      [user.id, data.token, data.keys.p256dh, data.keys.auth],
+    );
+    res.json({ ok: true, platform: "web" });
+    return;
+  }
+
+  // iOS / Android — opaque device token. Upsert по (platform, token),
+  // з воскресінням soft-deleted рядків (reinstall повертає той самий token).
+  await pool.query(
+    `INSERT INTO push_devices (user_id, platform, token)
+       VALUES ($1, $2, $3)
+       ON CONFLICT (platform, token) DO UPDATE
+         SET user_id = $1, updated_at = NOW(), deleted_at = NULL`,
+    [user.id, data.platform, data.token],
+  );
+  res.json({ ok: true, platform: data.platform });
 }
 
 /** DELETE /api/push/subscribe — soft-delete підписки. Session в `req.user`. */
