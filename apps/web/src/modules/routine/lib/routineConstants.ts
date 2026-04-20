@@ -122,22 +122,3 @@ export const WEEKDAY_LABELS: readonly string[] = [
   "Сб",
   "Нд",
 ];
-
-// Gamification streak thresholds
-export const STREAK_MILESTONES: readonly number[] = [
-  3, 7, 14, 21, 30, 60, 90, 180, 365,
-];
-
-// Get milestone message based on streak count
-export function getStreakMessage(streak: number): string | null {
-  if (streak >= 365) return "Неймовірно! Рік послідовності!";
-  if (streak >= 180) return "Півроку! Ти - легенда!";
-  if (streak >= 90) return "3 місяці! Це вже стиль життя!";
-  if (streak >= 60) return "2 місяці! Звичка закріплена!";
-  if (streak >= 30) return "Місяць! Чудовий результат!";
-  if (streak >= 21) return "21 день! Звичка формується!";
-  if (streak >= 14) return "2 тижні! Так тримати!";
-  if (streak >= 7) return "Тиждень! Гарний старт!";
-  if (streak >= 3) return "3 дні поспіль!";
-  return null;
-}

@@ -231,36 +231,6 @@ export async function upsertFood(product: unknown): Promise<UpsertFoodResult> {
   }
 }
 
-export async function deleteFood(id: string): Promise<boolean> {
-  const key = String(id || "").trim();
-  if (!key) return false;
-  try {
-    const db = await openDb();
-    const tx = db.transaction([STORE_PRODUCTS, STORE_BARCODES], "readwrite");
-    tx.objectStore(STORE_PRODUCTS).delete(key);
-    // best-effort: видалимо всі barcode→id
-    const barcodeStore = tx.objectStore(STORE_BARCODES);
-    const all = await new Promise<IDBValidKey[]>((resolve, reject) => {
-      const r = barcodeStore.getAllKeys();
-      r.onsuccess = () => resolve(Array.isArray(r.result) ? r.result : []);
-      r.onerror = () => reject(r.error);
-    });
-    for (const bc of all) {
-      const v = await new Promise<unknown>((resolve) => {
-        const r = barcodeStore.get(bc);
-        r.onsuccess = () => resolve(r.result || null);
-        r.onerror = () => resolve(null);
-      });
-      if (v === key) barcodeStore.delete(bc);
-    }
-    await txDone(tx);
-    db.close();
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 export function macrosForGrams(per100: unknown, grams: unknown): Macros {
   const g = clamp0(grams);
   const k = g / 100;
@@ -323,40 +293,6 @@ export async function lookupFoodByBarcode(
   }
 }
 
-export async function exportFoodDbJson(): Promise<FoodDbExport | null> {
-  try {
-    const foods = await listFoods(5000);
-    // barcodes
-    const db = await openDb();
-    const tx = db.transaction([STORE_BARCODES], "readonly");
-    const store = tx.objectStore(STORE_BARCODES);
-    const keys = await new Promise<IDBValidKey[]>((resolve, reject) => {
-      const r = store.getAllKeys();
-      r.onsuccess = () => resolve(Array.isArray(r.result) ? r.result : []);
-      r.onerror = () => reject(r.error);
-    });
-    const map: Record<string, string> = {};
-    for (const k of keys) {
-      const v = await new Promise<string>((resolve) => {
-        const r = store.get(k);
-        r.onsuccess = () => resolve(String(r.result || ""));
-        r.onerror = () => resolve("");
-      });
-      if (v) map[String(k)] = String(v);
-    }
-    await txDone(tx);
-    db.close();
-    return {
-      version: 1,
-      exportedAt: Date.now(),
-      foods,
-      barcodes: map,
-    };
-  } catch {
-    return null;
-  }
-}
-
 export async function replaceAllFoodsFromList(list: unknown): Promise<boolean> {
   try {
     const foods = Array.isArray(list)
@@ -373,65 +309,5 @@ export async function replaceAllFoodsFromList(list: unknown): Promise<boolean> {
     return true;
   } catch {
     return false;
-  }
-}
-
-export async function importFoodDbJson(
-  payload: unknown,
-  mode: ImportFoodDbMode = "merge",
-): Promise<ImportFoodDbResult> {
-  const p =
-    payload && typeof payload === "object"
-      ? (payload as { foods?: unknown; barcodes?: unknown })
-      : null;
-  if (!p) return { ok: false, error: "Некоректний файл" };
-  const incomingFoodsRaw = Array.isArray(p.foods) ? (p.foods as unknown[]) : [];
-  const incomingFoods = incomingFoodsRaw
-    .map((x) => makeFoodProduct(x))
-    .filter((x) => x.name);
-  const incomingBarcodes =
-    p.barcodes && typeof p.barcodes === "object"
-      ? (p.barcodes as Record<string, unknown>)
-      : {};
-
-  try {
-    if (mode === "replace") {
-      const ok = await replaceAllFoodsFromList(incomingFoods);
-      if (!ok) return { ok: false, error: "Не вдалося імпортувати" };
-      // barcodes
-      const db = await openDb();
-      const tx = db.transaction([STORE_BARCODES], "readwrite");
-      const s = tx.objectStore(STORE_BARCODES);
-      for (const [bc, id] of Object.entries(incomingBarcodes)) {
-        if (/^\d{8,14}$/.test(String(bc)) && id) s.put(String(id), String(bc));
-      }
-      await txDone(tx);
-      db.close();
-      return { ok: true, added: incomingFoods.length };
-    }
-
-    // merge
-    const existing = await listFoods(5000);
-    const byNorm = new Map(
-      existing.map((x) => [normText(x.norm || x.name), x]),
-    );
-    let added = 0;
-    for (const f of incomingFoods) {
-      const key = normText(f.norm || f.name);
-      if (byNorm.has(key)) continue;
-      const res = await upsertFood(f);
-      if (res.ok) {
-        byNorm.set(key, res.product);
-        added += 1;
-      }
-    }
-    for (const [bc, id] of Object.entries(incomingBarcodes)) {
-      if (!/^\d{8,14}$/.test(String(bc))) continue;
-      if (!id) continue;
-      void bindBarcodeToFood(String(bc), String(id));
-    }
-    return { ok: true, added };
-  } catch {
-    return { ok: false, error: "Помилка імпорту" };
   }
 }

@@ -1,5 +1,3 @@
-import { normalizeFoodName } from "./pantryTextParser.js";
-import { mergeItems } from "./mergeItems.js";
 import type { PantryItem } from "./pantryTextParser.js";
 import {
   macrosHasAnyValue,
@@ -267,34 +265,6 @@ export function updatePantry(
   const next = [...arr];
   next[idx] = fn(next[idx]);
   return next;
-}
-
-export function upsertPantryItem(pantry: Pantry, name: string): Pantry {
-  const n = normalizeFoodName(name);
-  if (!n) return pantry;
-  const arr = Array.isArray(pantry?.items) ? pantry.items : [];
-  if (arr.some((x) => normalizeFoodName(x?.name) === n)) return pantry;
-  return {
-    ...pantry,
-    items: [...arr, { name: n, qty: null, unit: null, notes: null }],
-  };
-}
-
-export function removePantryItem(pantry: Pantry, name: string): Pantry {
-  const n = normalizeFoodName(name);
-  if (!n) return pantry;
-  const arr = Array.isArray(pantry?.items) ? pantry.items : [];
-  return {
-    ...pantry,
-    items: arr.filter((x) => normalizeFoodName(x?.name) !== n),
-  };
-}
-
-export function mergePantryItems(
-  pantry: Pantry,
-  incomingItems: unknown,
-): Pantry {
-  return { ...pantry, items: mergeItems(pantry?.items, incomingItems) };
 }
 
 function normalizeMacros(mac: unknown): NullableMacros {

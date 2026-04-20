@@ -23,7 +23,7 @@
 //   store.set(budgets);
 //   const unsubscribe = store.subscribe((next) => { ... });
 
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useSyncExternalStore } from "react";
 import type { ZodType } from "zod";
 import { safeJsonSet } from "./storageQuota.js";
 
@@ -273,17 +273,4 @@ export function useTypedStore<T>(store: TypedStore<T>): T {
     () => store.get(),
     () => store.get(),
   );
-}
-
-/**
- * React-хук з локальним state-setter API — зручний drop-in для компонентів,
- * які раніше тримали стейт у `useState` + ручному writeJSON.
- */
-export function useTypedStoreState<T>(
-  store: TypedStore<T>,
-): [T, (next: T) => void] {
-  const value = useTypedStore(store);
-  const [, force] = useState(0);
-  useEffect(() => store.subscribe(() => force((n) => n + 1)), [store]);
-  return [value, (next) => store.set(next)];
 }

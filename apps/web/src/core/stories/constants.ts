@@ -2,11 +2,6 @@
 // we're showing denser numeric content, not photos.
 export const SLIDE_MS = 6500;
 
-// Tick cadence for the progress bar; 50ms keeps the bar smooth without
-// running the timer hot. Retained for CSS transition sync even though the
-// autoplay tick itself is now driven by requestAnimationFrame.
-export const TICK_MS = 50;
-
 // Minimum vertical drag (px) required to trigger close-on-swipe-down.
 export const SWIPE_CLOSE_THRESHOLD = 80;
 

@@ -7,8 +7,6 @@ import {
   computeWellbeingMultiplier,
 } from "@sergeant/fizruk-domain";
 
-export { loadPointsForItem } from "@sergeant/fizruk-domain";
-
 export function useRecovery() {
   const { musclesUk } = useExerciseCatalog();
   const { workouts } = useWorkouts();

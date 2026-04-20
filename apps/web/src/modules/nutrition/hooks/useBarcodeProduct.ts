@@ -25,11 +25,6 @@ import { nutritionKeys } from "@shared/lib/queryKeys";
 const STALE_TIME = 24 * 60 * 60_000;
 const GC_TIME = 7 * 24 * 60 * 60_000;
 
-export type BarcodeLookupResult =
-  | { kind: "found"; product: BarcodeProduct }
-  | { kind: "not-found" }
-  | { kind: "partial"; product: BarcodeProduct };
-
 async function lookupBarcode(code: string): Promise<BarcodeProduct | null> {
   try {
     const res = await barcodeApi.lookup(code);

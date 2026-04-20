@@ -12,7 +12,7 @@
  *
  * Usage:
  *
- *   import { chartAxis, chartGrid, chartTick, chartTooltip, chartSeries }
+ *   import { chartAxis, chartGrid, chartTick, chartSeries }
  *     from "@shared/charts/chartTheme";
  *
  *   <text {...chartTick} x={..} y={..}>{label}</text>
@@ -94,22 +94,6 @@ export const chartTick = {
 } as const;
 
 /**
- * Tooltip style tokens — Tailwind classes to apply to a floating
- * `<div role="tooltip">` above an interactive chart element.
- */
-export const chartTooltip = {
-  container:
-    "rounded-xl border border-line bg-panel shadow-float px-3 py-2 text-xs text-text",
-  label: "text-[10px] font-semibold text-subtle uppercase tracking-wider",
-  value: "text-sm font-semibold text-text tabular-nums",
-  delta: {
-    positive: "text-success",
-    negative: "text-danger",
-    neutral: "text-muted",
-  },
-} as const;
-
-/**
  * Heatmap cell tokens — four monotonic steps per module plus a neutral
  * "empty" and a disabled "future" shade. Values are Tailwind className
  * strings so dark mode resolves through the same CSS variables.
@@ -162,5 +146,3 @@ export const chartGradients = {
     },
   ],
 } as const;
-
-export type ChartModule = keyof typeof chartSeries;

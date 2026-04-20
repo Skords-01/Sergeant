@@ -7,5 +7,3 @@ export const THEME_HEX = {
   danger: "#dc2626",
   warning: "#b45309",
 } as const;
-
-export type ThemeHexKey = keyof typeof THEME_HEX;

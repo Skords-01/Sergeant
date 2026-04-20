@@ -2,7 +2,6 @@ import { toLocalISODate } from "@sergeant/shared";
 import { nutritionStorage } from "./nutritionStorageInstance.js";
 
 export const WATER_LOG_KEY = "nutrition_water_v1";
-export const DEFAULT_WATER_GOAL_ML = 2000;
 
 export type WaterLog = Record<string, number>;
 

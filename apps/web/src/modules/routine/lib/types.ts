@@ -129,10 +129,3 @@ export interface HubCalendarEvent {
   note?: string;
   timeOfDay?: string;
 }
-
-export interface RoutineBackupPayload {
-  kind: "hub-routine-backup";
-  schemaVersion: number;
-  exportedAt: string;
-  data: RoutineState;
-}

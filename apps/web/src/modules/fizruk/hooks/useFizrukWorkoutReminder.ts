@@ -93,10 +93,3 @@ export function useFizrukWorkoutReminder({
     return () => clearInterval(id);
   }, [enabled, reminderEnabled, reminderHour, reminderMinute]);
 }
-
-export function requestNotificationPermission() {
-  if (typeof Notification === "undefined")
-    return Promise.resolve("unsupported");
-  if (Notification.permission === "granted") return Promise.resolve("granted");
-  return Notification.requestPermission();
-}

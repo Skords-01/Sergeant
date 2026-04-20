@@ -78,23 +78,6 @@ export async function deleteMealThumbnail(
   }
 }
 
-export async function listMealThumbnailIds(): Promise<string[]> {
-  try {
-    const db = await openDb();
-    const ids = await new Promise<string[]>((resolve, reject) => {
-      const tx = db.transaction(STORE, "readonly");
-      const req = tx.objectStore(STORE).getAllKeys();
-      req.onsuccess = () =>
-        resolve(Array.isArray(req.result) ? req.result.map(String) : []);
-      req.onerror = () => reject(req.error);
-    });
-    db.close();
-    return Array.isArray(ids) ? ids : [];
-  } catch {
-    return [];
-  }
-}
-
 export interface GcMealThumbnailsOptions {
   maxDeletes?: number;
 }
