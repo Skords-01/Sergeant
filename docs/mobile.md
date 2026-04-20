@@ -74,7 +74,9 @@ Content-Type: application/json
 1. питає дозвіл через `expo-notifications`;
 2. бере native APNs/FCM токен (`getDevicePushTokenAsync()`); у Expo Go
    — fallback на `getExpoPushTokenAsync()` з попередженням у консолі;
-3. кладе його у `AsyncStorage` ключ `push:lastToken` і шле:
+3. кладе його у `AsyncStorage` під ключем `push:lastToken:<userId>`
+   (scoped на юзера — щоб після зміни акаунта на тому самому пристрої
+   знову відбулась реєстрація) і шле:
 
 ```ts
 import { useApiClient } from "@sergeant/api-client/react";

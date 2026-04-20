@@ -20,10 +20,18 @@ type NativePushPlatform = "ios" | "android";
  *    прод-пушів сервер має говорити з APNs/FCM напряму, див.
  *    `docs/mobile.md`).
  * 3. Шлемо `api.push.register({ platform, token })` — не прямий `fetch`.
- * 4. На успіх кладемо токен в `AsyncStorage` (`push:lastToken`), щоб не
- *    шарашити сервер повторно на кожен старт.
+ * 4. На успіх кладемо токен в `AsyncStorage` під ключем, що містить
+ *    `userId` (`push:lastToken:<userId>`), щоб не шарашити сервер
+ *    повторно на кожен старт — і водночас гарантовано перереєструвати
+ *    токен, якщо на тому самому пристрої залогінився інший користувач
+ *    (native push токени пер-девайс, а не пер-юзер — без userId-scope
+ *    сервер би так і залишив токен прив’язаним до попереднього акаунта).
  */
-const STORAGE_KEY = "push:lastToken";
+const STORAGE_KEY_PREFIX = "push:lastToken:";
+
+function storageKey(userId: string) {
+  return `${STORAGE_KEY_PREFIX}${userId}`;
+}
 
 export type RegisterPushResult =
   | { status: "registered"; platform: NativePushPlatform; token: string }
@@ -103,6 +111,7 @@ async function getNativeToken(): Promise<string | null> {
  */
 export async function registerPush(
   api: ApiClient,
+  userId: string,
   { force = false }: RegisterPushOptions = {},
 ): Promise<RegisterPushResult> {
   const platform = resolvePlatform();
@@ -114,21 +123,23 @@ export async function registerPush(
   const token = await getNativeToken();
   if (!token) return { status: "skipped", reason: "token-unavailable" };
 
+  const key = storageKey(userId);
   if (!force) {
-    const cached = await AsyncStorage.getItem(STORAGE_KEY);
+    const cached = await AsyncStorage.getItem(key);
     if (cached === token) {
       return { status: "skipped", reason: "already-synced" };
     }
   }
 
   await api.push.register({ platform, token });
-  await AsyncStorage.setItem(STORAGE_KEY, token);
+  await AsyncStorage.setItem(key, token);
 
   return { status: "registered", platform, token };
 }
 
 export const __testables = {
-  STORAGE_KEY,
+  STORAGE_KEY_PREFIX,
+  storageKey,
   extractSessionTokenReason: (result: RegisterPushResult) =>
     result.status === "skipped" ? result.reason : null,
 };

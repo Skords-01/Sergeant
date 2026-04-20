@@ -108,8 +108,10 @@ Push-флоу на mobile закриває `PushRegistrar`
    / standalone-білді;
 3. шле `api.push.register({ platform, token })` →
    `POST /api/v1/push/register`;
-4. зберігає токен у `AsyncStorage` (`push:lastToken`), щоб не
-   шарашити сервер повторно.
+4. зберігає токен у `AsyncStorage` під ключем
+   `push:lastToken:<userId>`, щоб не шарашити сервер повторно, і
+   водночас гарантовано перереєструвати пристрій на іншого юзера
+   (native push-токени пер-девайс, а не пер-акаунт).
 
 > **Expo Go не підтримує native APNs/FCM.** У Go ми падаємо на
 > `getExpoPushTokenAsync()` тільки для dev-дебагу — продакшн-пуші

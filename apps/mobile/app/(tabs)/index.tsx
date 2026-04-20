@@ -1,5 +1,6 @@
 import { StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useQueryClient } from "@tanstack/react-query";
 import { useUser } from "@sergeant/api-client/react";
 import { signOut } from "@/auth/authClient";
 import { Pressable } from "react-native";
@@ -8,6 +9,20 @@ import { colors, radius, spacing } from "@/theme";
 export default function HubScreen() {
   const { data } = useUser();
   const user = data?.user;
+  const queryClient = useQueryClient();
+
+  // useUser() під капотом — react-query, який не є реактивним до
+  // змін Better Auth SecureStore. Без явного скидання кешу auth-guard
+  // у `(tabs)/_layout.tsx` продовжить бачити старого `data.user` і не
+  // зредиректить на /(auth)/sign-in. Скидаємо весь кеш, бо на виході
+  // інвалідний не лише `/me`, а й усі юзер-скоуплені дані.
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+    } finally {
+      queryClient.clear();
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
@@ -27,7 +42,7 @@ export default function HubScreen() {
 
       <Pressable
         style={({ pressed }) => [styles.signOut, pressed && styles.pressed]}
-        onPress={() => signOut()}
+        onPress={handleSignOut}
       >
         <Text style={styles.signOutText}>Вийти</Text>
       </Pressable>

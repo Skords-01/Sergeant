@@ -22,25 +22,25 @@ import { registerPush } from "./registerPush";
 export function PushRegistrar() {
   const api = useApiClient();
   const { data } = useUser();
-  const hasUser = !!data?.user;
+  const userId = data?.user?.id ?? null;
 
   const inFlightRef = useRef(false);
-  const registeredRef = useRef(false);
+  const lastRegisteredUserRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!hasUser) {
-      registeredRef.current = false;
+    if (!userId) {
+      lastRegisteredUserRef.current = null;
       return;
     }
-    if (registeredRef.current || inFlightRef.current) return;
+    if (lastRegisteredUserRef.current === userId || inFlightRef.current) return;
     inFlightRef.current = true;
 
     let cancelled = false;
     void (async () => {
       try {
-        const result = await registerPush(api);
+        const result = await registerPush(api, userId);
         if (cancelled) return;
-        registeredRef.current = true;
+        lastRegisteredUserRef.current = userId;
         if (result.status === "registered") {
           console.info(
             `[PushRegistrar] registered ${result.platform} push token`,
@@ -60,7 +60,7 @@ export function PushRegistrar() {
     return () => {
       cancelled = true;
     };
-  }, [api, hasUser]);
+  }, [api, userId]);
 
   return null;
 }
