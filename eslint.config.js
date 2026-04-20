@@ -123,5 +123,31 @@ export default [
       "sergeant-design/no-ellipsis-dots": "off",
     },
   },
+  // AuthContext migration (Session 4B, PR after #390): "who am I" is
+  // single-sourced via `useUser()` from `@sergeant/api-client/react` → GET
+  // `/api/v1/me`. Better Auth stays only as the actions layer. Block
+  // reintroduction of `useSession` from `better-auth/react` anywhere in the
+  // web app except `authClient.ts`, which is the one legitimate adapter
+  // module — it owns the Better Auth client and intentionally does NOT
+  // re-export `useSession` (see the note in that file).
+  {
+    files: ["apps/web/src/**/*.{js,jsx,ts,tsx}"],
+    ignores: ["apps/web/src/core/authClient.ts"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            {
+              name: "better-auth/react",
+              importNames: ["useSession"],
+              message:
+                "Use `useAuth()` from `core/AuthContext` (backed by `useUser()` from `@sergeant/api-client/react` → GET /api/v1/me). `useSession` from Better Auth is only for the actions layer inside `core/authClient.ts`.",
+            },
+          ],
+        },
+      ],
+    },
+  },
   eslintConfigPrettier,
 ];

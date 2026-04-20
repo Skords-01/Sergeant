@@ -49,11 +49,17 @@ const typedAuthClient = authClient as typeof authClient & {
   }) => Promise<PasswordResetResult>;
 };
 
+// NOTE: `useSession` is intentionally NOT re-exported here. The single
+// source of truth for "who am I" lives in `AuthContext`, which drives off
+// `useUser()` from `@sergeant/api-client/react` (→ `GET /api/v1/me`). Better
+// Auth survives only as the actions layer (sign-in / sign-up / sign-out /
+// password reset). If you need a one-off session check outside React (e.g.
+// service worker, Playwright helper), import `getSession` below.
 export const {
-  useSession,
   signIn,
   signUp,
   signOut,
+  getSession,
   forgetPassword,
   resetPassword,
 } = typedAuthClient;

@@ -58,10 +58,13 @@ describe("createMeEndpoints", () => {
     });
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const url = fetchMock.mock.calls[0][0] as string;
-    // `createHttpClient()` за замовчуванням переписує `/api/...` → `/api/v1/...`
-    // (див. `DEFAULT_API_PREFIX` у httpClient.ts). Сервер віддає обидва
-    // префікси як дзеркало через `apiVersionRewrite`, тож фактичне попадання —
-    // у `/api/v1/me`. Перевіряємо семантичне «закінчується на /me».
+    // `createHttpClient()` defaults to `apiPrefix = "/api/v1"` (див.
+    // `DEFAULT_API_PREFIX` / PR #390), тож `/api/me` переписується у
+    // `/api/v1/me` ще до `fetch`. Сервер тримає `/api/me` і `/api/v1/me`
+    // як дзеркало (`apiVersionRewrite`), але клієнт-сайд URL, який ми
+    // тут ассертимо — це саме пост-rewrite-ний варіант. Додатковий
+    // `/me$` regex ловить хвіст, щоб випадковий query-suffix не дав
+    // false-positive на `toContain`.
     expect(url).toMatch(/\/me$/);
     expect(url).toContain("/api/v1/me");
   });
