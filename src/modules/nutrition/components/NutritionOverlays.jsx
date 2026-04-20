@@ -1,5 +1,4 @@
 import { PantryManagerSheet } from "./PantryManagerSheet.jsx";
-import { ConfirmDeleteSheet } from "./ConfirmDeleteSheet.jsx";
 import { ItemEditSheet } from "./ItemEditSheet.jsx";
 import { BarcodeScanner } from "./BarcodeScanner.jsx";
 import { AddMealSheet } from "./AddMealSheet.jsx";
@@ -43,12 +42,30 @@ export function NutritionOverlays({
         onBeginDelete={pantry.beginDeletePantry}
       />
 
-      <ConfirmDeleteSheet
+      <ConfirmDialog
         open={pantry.confirmDeleteOpen}
-        onClose={() => pantry.setConfirmDeleteOpen(false)}
-        pantries={pantry.pantries}
-        activePantryId={pantry.activePantryId}
-        onConfirm={pantry.onConfirmDeletePantry}
+        title="Видалити склад?"
+        description={
+          (Array.isArray(pantry.pantries) ? pantry.pantries.length : 0) <= 1
+            ? "Не можна видалити останній склад."
+            : "Це прибере всі продукти в ньому. Дію не можна відмінити."
+        }
+        confirmLabel="Видалити"
+        danger
+        onConfirm={() => {
+          // Mirror the original `ConfirmDeleteSheet` guard: if only one
+          // pantry remains we swallow the confirm so deletion is a no-op.
+          // The warning description above already communicates that state.
+          const count = Array.isArray(pantry.pantries)
+            ? pantry.pantries.length
+            : 0;
+          if (count <= 1) {
+            pantry.setConfirmDeleteOpen(false);
+            return;
+          }
+          pantry.onConfirmDeletePantry();
+        }}
+        onCancel={() => pantry.setConfirmDeleteOpen(false)}
       />
 
       <ItemEditSheet

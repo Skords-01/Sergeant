@@ -8,6 +8,8 @@ import { ActiveWorkoutPanel } from "../workouts/ActiveWorkoutPanel";
 import { SwipeToAction } from "@shared/components/ui/SwipeToAction";
 import { SectionErrorBoundary } from "@shared/components/ui/SectionErrorBoundary.jsx";
 import { Card } from "@shared/components/ui/Card";
+import { useToast } from "@shared/hooks/useToast";
+import { hapticSuccess } from "@shared/lib/haptic";
 
 function WorkoutRow({ w, activeWorkoutId, setActiveWorkoutId }) {
   // An ended workout is always "Завершене" — even if it happens to be the
@@ -89,6 +91,7 @@ export function WorkoutJournalSection({
   submitRetroWorkout,
   deleteWorkout,
 }) {
+  const toast = useToast();
   const workoutList = workouts || [];
   const listHeight = Math.min(
     workoutList.length * JOURNAL_ITEM_HEIGHT,
@@ -160,6 +163,12 @@ export function WorkoutJournalSection({
               const sum = summarizeWorkoutForFinish(activeWorkout);
               const wid = activeWorkout.id;
               endWorkout(wid);
+              // Confirm the action visually + with haptic so the user does
+              // not have to read the modal to know the session was saved.
+              // Mirrors success pattern used in Routine (habit save) and
+              // Nutrition (meal save).
+              hapticSuccess();
+              toast.success("Тренування збережено.");
               // Collapse the expanded active workout panel immediately —
               // a finished session should live on in the history list as a
               // "Завершене" entry, not keep occupying the "Активне" slot.

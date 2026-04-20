@@ -3,7 +3,10 @@ import { Button } from "@shared/components/ui/Button";
 import { subtleNavButtonClass } from "@shared/components/ui/buttonPresets";
 import { ConfirmDialog } from "@shared/components/ui/ConfirmDialog";
 import { Segmented } from "@shared/components/ui/Segmented";
+import { Skeleton } from "@shared/components/ui/Skeleton";
 import { useToast } from "@shared/hooks/useToast";
+import { showUndoToast } from "@shared/lib/undoToast";
+import { hapticPattern } from "@shared/lib/haptic";
 import { WorkoutTemplatesSection } from "../components/WorkoutTemplatesSection";
 import { RestTimerOverlay } from "../components/workouts/RestTimerOverlay";
 import { WorkoutFinishSheets } from "../components/workouts/WorkoutFinishSheets";
@@ -67,9 +70,9 @@ function playRestCompletionSound() {
 }
 
 function vibrateRestComplete() {
-  try {
-    if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
-  } catch {}
+  // Haptic helper respects prefers-reduced-motion and swallows browser
+  // throttling errors that raw `navigator.vibrate` does not.
+  hapticPattern([200, 100, 200]);
 }
 
 type WorkoutsMode = "catalog" | "log" | "templates";
@@ -98,6 +101,7 @@ export function Workouts() {
     createWorkoutWithTimes,
     updateWorkout,
     deleteWorkout,
+    restoreWorkout,
     endWorkout,
     addItem,
     updateItem,
@@ -444,7 +448,23 @@ export function Workouts() {
           </div>
         </div>
 
-        {mode === "log" && (
+        {mode === "log" && !workoutsLoaded && (
+          // First-paint placeholder while `useWorkouts` is still rehydrating
+          // from `localStorage` (one tick on mount). Prevents the "порожньо"
+          // empty-state from flashing before real data renders — matches the
+          // Skeleton pattern already used in Finyk.
+          <div
+            className="space-y-3"
+            role="status"
+            aria-live="polite"
+            aria-label="Завантажуємо тренування"
+          >
+            <Skeleton className="h-28 w-full" />
+            <Skeleton className="h-20 w-full" />
+            <Skeleton className="h-20 w-full" />
+          </div>
+        )}
+        {mode === "log" && workoutsLoaded && (
           <WorkoutJournalSection
             activeWorkout={activeWorkout}
             activeDuration={activeDuration}
@@ -545,14 +565,20 @@ export function Workouts() {
       <ConfirmDialog
         open={deleteWorkoutConfirm}
         title="Видалити тренування?"
-        description="Дані цього тренування будуть втрачені назавжди."
+        description="Можна повернути одразу після видалення."
         confirmLabel="Видалити"
         onConfirm={() => {
           if (activeWorkout) {
-            deleteWorkout(activeWorkout.id);
-            setActiveWorkoutId((prev) =>
-              prev === activeWorkout.id ? null : prev,
-            );
+            // Snapshot before delete so undo can re-insert with the
+            // original startedAt/items/groups intact (chronological
+            // order preserved by `restoreWorkout`).
+            const snapshot = activeWorkout;
+            deleteWorkout(snapshot.id);
+            setActiveWorkoutId((prev) => (prev === snapshot.id ? null : prev));
+            showUndoToast(toast, {
+              msg: "Тренування видалено",
+              onUndo: () => restoreWorkout(snapshot),
+            });
           }
           setDeleteWorkoutConfirm(false);
         }}
@@ -565,7 +591,16 @@ export function Workouts() {
         description="Вправу буде видалено з каталогу. Записи в тренуваннях залишаться."
         confirmLabel="Видалити"
         onConfirm={() => {
-          if (selected && removeExercise(selected.id)) setSelected(null);
+          if (selected) {
+            const snapshot = selected;
+            if (removeExercise(snapshot.id)) {
+              setSelected(null);
+              showUndoToast(toast, {
+                msg: `Вправу «${snapshot?.name?.uk || "без назви"}» видалено`,
+                onUndo: () => addExercise(snapshot),
+              });
+            }
+          }
           setDeleteExerciseConfirm(false);
         }}
         onCancel={() => setDeleteExerciseConfirm(false)}

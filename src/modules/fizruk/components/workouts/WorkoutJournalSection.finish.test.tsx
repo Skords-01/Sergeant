@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, cleanup } from "@testing-library/react";
 
@@ -25,7 +26,15 @@ vi.mock("react-virtuoso", () => ({
   ),
 }));
 
+import { ToastProvider } from "@shared/hooks/useToast";
 import { WorkoutJournalSection } from "./WorkoutJournalSection";
+
+// WorkoutJournalSection now calls `useToast()` to surface the
+// "Тренування збережено" confirmation on finish. Tests must render inside a
+// ToastProvider so the context is available.
+function renderWithToast(ui: React.ReactElement) {
+  return render(<ToastProvider>{ui}</ToastProvider>);
+}
 
 interface BaseWorkout {
   id: string;
@@ -97,7 +106,7 @@ describe("WorkoutJournalSection – Завершити finish flow", () => {
 
   it("clears the rest timer and opens the wellbeing sheet on Завершити", () => {
     const props = baseProps();
-    render(<WorkoutJournalSection {...props} />);
+    renderWithToast(<WorkoutJournalSection {...props} />);
 
     fireEvent.click(screen.getByTestId("finish-btn"));
 
@@ -116,7 +125,7 @@ describe("WorkoutJournalSection – Завершити finish flow", () => {
 
   it("is idempotent on rapid double-click — finish sheet opens only once", () => {
     const props = baseProps();
-    render(<WorkoutJournalSection {...props} />);
+    renderWithToast(<WorkoutJournalSection {...props} />);
 
     const btn = screen.getByTestId("finish-btn");
     fireEvent.click(btn);
@@ -145,7 +154,7 @@ describe("WorkoutJournalSection – Завершити finish flow", () => {
       activeWorkout: ended,
       activeWorkoutId: ended.id,
     });
-    render(<WorkoutJournalSection {...props} />);
+    renderWithToast(<WorkoutJournalSection {...props} />);
 
     fireEvent.click(screen.getByTestId("finish-btn"));
 

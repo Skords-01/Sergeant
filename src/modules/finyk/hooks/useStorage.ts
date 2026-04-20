@@ -52,8 +52,19 @@ function usePersist(key, defaultVal) {
 }
 
 export function useStorage({
-  onImportFeedback,
-}: { onImportFeedback?: (msg: string, type: string) => void } = {}) {
+  toast,
+}: {
+  /**
+   * Shared toast API used for import feedback. Using the full API (not a
+   * `(msg, type) => void` adapter) keeps `warning`/`info`/`action` variants
+   * available — Finyk's storage flow only needs `success`/`error` today,
+   * but other callers can adopt the same hook without a new signature.
+   */
+  toast?: {
+    success: (msg: string) => number;
+    error: (msg: string) => number;
+  };
+} = {}) {
   const defaultMonthlyPlan = { income: "", expense: "", savings: "" };
   const [hiddenAccounts, setHiddenAccounts] = usePersist("finyk_hidden", []);
   const [budgets, setBudgets] = usePersist("finyk_budgets", []);
@@ -408,19 +419,19 @@ export function useStorage({
           const parsed = JSON.parse(e.target!.result as string);
           const normalized = normalizeFinykBackup(parsed);
           applyData(normalized);
-          onImportFeedback?.("✅ Дані імпортовано", "success");
+          toast?.success("Дані імпортовано.");
           resolve(true);
         } catch (err) {
           reportSilentError("import data", err);
           const raw =
             err instanceof Error ? err.message : "невірний формат файлу";
           const msg = raw.startsWith("Помилка:") ? raw : `Помилка: ${raw}`;
-          onImportFeedback?.(msg, "error");
+          toast?.error(msg);
           resolve(false);
         }
       };
       reader.onerror = () => {
-        onImportFeedback?.("Помилка: не вдалось прочитати файл", "error");
+        toast?.error("Помилка: не вдалось прочитати файл");
         resolve(false);
       };
       reader.readAsText(file);

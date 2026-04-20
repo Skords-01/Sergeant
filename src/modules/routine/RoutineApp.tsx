@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { cn } from "@shared/lib/cn";
-import { useToast } from "@shared/hooks/useToast";
+import { Banner } from "@shared/components/ui/Banner";
 import { hapticTap } from "@shared/lib/haptic";
 import {
   loadRoutineState,
@@ -161,7 +161,6 @@ export default function RoutineApp({
   onPwaActionConsumed,
 }: RoutineAppProps = {}) {
   const [routine, setRoutine] = useRoutineState();
-  const toast = useToast();
   // Finyk calendar events depend on both the Finyk Monobank cache and the
   // subscription calendar. The former now flows through React Query
   // (`hubKeys.preview("finyk")`), the latter still uses a custom event
@@ -177,18 +176,19 @@ export default function RoutineApp({
   }, []);
   const finykCalendarTick = finykPreview.dataUpdatedAt + routineSyncBump;
 
+  // Persistent storage-error banner: quota failures won't go away until the
+  // user frees space, so a 7s toast is too transient. Matches the pattern
+  // already used in Nutrition (`storageBanner`) and Finyk.
+  const [storageErrorMsg, setStorageErrorMsg] = useState<string | null>(null);
   useEffect(() => {
     const onErr = (ev: Event) => {
       const detail = (ev as CustomEvent<{ message?: string }>).detail;
       const msg = detail?.message || "невідома помилка";
-      toast.error(
-        `Не вдалося зберегти дані Рутини (${msg}). Можливо, браузер переповнив сховище — звільни місце або експортуй резервну копію.`,
-        7000,
-      );
+      setStorageErrorMsg(msg);
     };
     window.addEventListener(ROUTINE_STORAGE_ERROR, onErr);
     return () => window.removeEventListener(ROUTINE_STORAGE_ERROR, onErr);
-  }, [toast]);
+  }, []);
 
   useRoutineReminders(routine);
 
@@ -584,6 +584,27 @@ export default function RoutineApp({
           className="flex-1 overflow-y-auto page-tabbar-pad routine-main-pad max-w-4xl mx-auto w-full pt-4 space-y-4"
           tabIndex={-1}
         >
+          {storageErrorMsg && (
+            <Banner
+              variant="danger"
+              role="alert"
+              className="flex items-start justify-between gap-3"
+            >
+              <span>
+                Не вдалося зберегти дані Рутини ({storageErrorMsg}). Можливо,
+                браузер переповнив сховище — звільни місце або експортуй
+                резервну копію.
+              </span>
+              <button
+                type="button"
+                onClick={() => setStorageErrorMsg(null)}
+                className="shrink-0 text-xs font-semibold text-danger/80 hover:text-danger"
+                aria-label="Закрити повідомлення"
+              >
+                Закрити
+              </button>
+            </Banner>
+          )}
           <RoutineCalendarProvider
             data={useMemo(
               () => ({

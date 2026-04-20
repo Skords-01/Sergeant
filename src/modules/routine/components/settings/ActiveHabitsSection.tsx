@@ -3,6 +3,7 @@ import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { Button } from "@shared/components/ui/Button";
 import { Card } from "@shared/components/ui/Card";
 import { Input } from "@shared/components/ui/Input";
+import { EmptyState } from "@shared/components/ui/EmptyState";
 import { sortHabitsByOrder } from "../../lib/habitOrder.js";
 import {
   moveHabitInOrder,
@@ -75,21 +76,23 @@ export function ActiveHabitsSection({
         Порядок у списку можна змінити перетягуванням або кнопками вгору вниз.
       </p>
       {!hasActive && (
-        <div className="rounded-xl border border-dashed border-line bg-panelHi/50 p-4 text-center">
-          <p className="text-sm text-muted">
-            Поки порожньо — додай першу звичку формою вище.
-          </p>
-          {typeof onOpenCalendar === "function" && (
-            <Button
-              type="button"
-              variant="ghost"
-              className="mt-3 border border-line"
-              onClick={onOpenCalendar}
-            >
-              Перейти до календаря
-            </Button>
-          )}
-        </div>
+        <EmptyState
+          compact
+          title="Поки порожньо"
+          description="Додай першу звичку формою вище."
+          action={
+            typeof onOpenCalendar === "function" ? (
+              <Button
+                type="button"
+                variant="ghost"
+                className="border border-line"
+                onClick={onOpenCalendar}
+              >
+                Перейти до календаря
+              </Button>
+            ) : undefined
+          }
+        />
       )}
       <ul className="space-y-2">
         {filteredActiveHabits.map((h) => (

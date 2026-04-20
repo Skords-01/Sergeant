@@ -6,6 +6,7 @@ import { Button } from "@shared/components/ui/Button";
 import { Card } from "@shared/components/ui/Card";
 import { Input } from "@shared/components/ui/Input";
 import { Segmented } from "@shared/components/ui/Segmented";
+import { EmptyState } from "@shared/components/ui/EmptyState";
 import { WeekDayStrip } from "./WeekDayStrip";
 import { HabitDetailSheet } from "./HabitDetailSheet";
 import { SwipeToAction } from "@shared/components/ui/SwipeToAction";
@@ -416,60 +417,62 @@ export function RoutineCalendarPanel({
 
       <section className="space-y-4 pb-2">
         {listIsEmpty && hasListFilter && (
-          <div className="rounded-2xl border border-line bg-panel p-6 text-center shadow-card">
-            <p className="text-sm text-muted">
-              Нічого не знайдено за фільтром
-              {hasNoHabits ? " (і звичок ще немає)" : ""}.
-            </p>
-            <Button
-              type="button"
-              variant="ghost"
-              className="mt-3 border border-line"
-              onClick={() => {
-                setTagFilter(null);
-                setListQuery("");
-              }}
-            >
-              Скинути фільтри
-            </Button>
-          </div>
+          <EmptyState
+            title="Нічого не знайдено"
+            description={`За цим фільтром подій немає${hasNoHabits ? " (і звичок ще немає)" : ""}.`}
+            action={
+              <Button
+                type="button"
+                variant="ghost"
+                className="border border-line"
+                onClick={() => {
+                  setTagFilter(null);
+                  setListQuery("");
+                }}
+              >
+                Скинути фільтри
+              </Button>
+            }
+          />
         )}
         {listIsEmpty && !hasListFilter && hasNoHabits && (
-          <div className={C.emptyStateWarm}>
-            <p className="text-base font-semibold text-text">
-              Почни з однієї звички
-            </p>
-            <p className="mt-2 text-sm text-muted leading-relaxed">
-              Потім вона зʼявиться тут і в календарі. Відтискання вже можна
-              лічити блоком вище.
-            </p>
-            <Button
-              type="button"
-              className={cn("mt-4 w-full max-w-xs font-bold", C.primary)}
-              onClick={() => setMainTab("settings")}
-            >
-              Додати звичку в «Рутина»
-            </Button>
-          </div>
+          <EmptyState
+            className={C.emptyStateWarm}
+            title="Почни з однієї звички"
+            description="Потім вона зʼявиться тут і в календарі. Відтискання вже можна лічити блоком вище."
+            action={
+              <Button
+                type="button"
+                className={cn("w-full max-w-xs font-bold", C.primary)}
+                onClick={() => setMainTab("settings")}
+              >
+                Додати звичку в «Рутина»
+              </Button>
+            }
+          />
         )}
         {listIsEmpty && !hasListFilter && !hasNoHabits && (
-          <div className="rounded-2xl border border-line bg-panel p-6 text-center shadow-card">
-            <p className="text-sm text-muted leading-relaxed">
-              У цьому періоді подій немає. Перевір регулярність звичок або{" "}
-              {typeof onOpenModule === "function" ? (
-                <button
-                  type="button"
-                  className={C.linkAccent}
-                  onClick={() => onOpenModule("fizruk", { hash: "plan" })}
-                >
-                  план Фізрука
-                </button>
-              ) : (
-                "план Фізрука"
-              )}
-              .
-            </p>
-          </div>
+          <EmptyState
+            compact
+            title="Порожній період"
+            description={
+              <>
+                У цьому періоді подій немає. Перевір регулярність звичок або{" "}
+                {typeof onOpenModule === "function" ? (
+                  <button
+                    type="button"
+                    className={C.linkAccent}
+                    onClick={() => onOpenModule("fizruk", { hash: "plan" })}
+                  >
+                    план Фізрука
+                  </button>
+                ) : (
+                  "план Фізрука"
+                )}
+                .
+              </>
+            }
+          />
         )}
         {flatGroupedItems.length > 0 && (
           <Virtuoso<GroupedListItem>

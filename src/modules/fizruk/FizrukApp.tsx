@@ -13,12 +13,16 @@ import { PlanCalendar } from "./pages/PlanCalendar";
 import { useMonthlyPlan } from "./hooks/useMonthlyPlan";
 import { useFizrukWorkoutReminder } from "./hooks/useFizrukWorkoutReminder";
 import { useTrainingProgram } from "./hooks/useTrainingProgram";
-import { useWorkouts } from "./hooks/useWorkouts";
+import {
+  FIZRUK_WORKOUTS_STORAGE_ERROR,
+  useWorkouts,
+} from "./hooks/useWorkouts";
 import { useExerciseCatalog } from "./hooks/useExerciseCatalog";
 import { ACTIVE_WORKOUT_KEY } from "./lib/workoutUi";
 import { cn } from "@shared/lib/cn";
 import { Icon } from "@shared/components/ui/Icon";
 import { ModuleBottomNav } from "@shared/components/ui/ModuleBottomNav";
+import { Banner } from "@shared/components/ui/Banner";
 
 const NAV = [
   {
@@ -173,6 +177,20 @@ export default function FizrukApp({
     const onHash = () => setRoute(parseHash());
     window.addEventListener("hashchange", onHash);
     return () => window.removeEventListener("hashchange", onHash);
+  }, []);
+
+  // Persistent storage-error banner for workout writes. Matches the pattern
+  // used in Nutrition/Finyk — a quota failure won't self-resolve, so a
+  // transient toast is wrong. The event is dispatched from `useWorkouts`.
+  const [storageErrorMsg, setStorageErrorMsg] = useState<string | null>(null);
+  useEffect(() => {
+    const onErr = (ev: Event) => {
+      const detail = (ev as CustomEvent<{ message?: string }>).detail;
+      setStorageErrorMsg(detail?.message || "невідома помилка");
+    };
+    window.addEventListener(FIZRUK_WORKOUTS_STORAGE_ERROR, onErr);
+    return () =>
+      window.removeEventListener(FIZRUK_WORKOUTS_STORAGE_ERROR, onErr);
   }, []);
 
   // Normalize URL on mount so an invalid/legacy hash (e.g. `#/foo`) that
@@ -421,6 +439,27 @@ export default function FizrukApp({
             </div>
           </div>
         </div>
+      )}
+
+      {storageErrorMsg && (
+        <Banner
+          variant="danger"
+          role="alert"
+          className="mx-4 mt-3 flex items-start justify-between gap-3"
+        >
+          <span>
+            Не вдалося зберегти тренування ({storageErrorMsg}). Можливо, браузер
+            переповнив сховище — експортуй бекап або звільни місце.
+          </span>
+          <button
+            type="button"
+            onClick={() => setStorageErrorMsg(null)}
+            className="shrink-0 text-xs font-semibold text-danger/80 hover:text-danger"
+            aria-label="Закрити повідомлення"
+          >
+            Закрити
+          </button>
+        </Banner>
       )}
 
       <div className="flex-1 overflow-hidden flex flex-col">

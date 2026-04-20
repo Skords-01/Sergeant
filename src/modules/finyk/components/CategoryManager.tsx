@@ -5,6 +5,8 @@ import { Input } from "@shared/components/ui/Input";
 import { ConfirmDialog } from "@shared/components/ui/ConfirmDialog";
 import { cn } from "@shared/lib/cn";
 import { Card } from "@shared/components/ui/Card";
+import { useToast } from "@shared/hooks/useToast";
+import { showUndoToast } from "@shared/lib/undoToast";
 
 const PRESET_COLORS = [
   "#10b981",
@@ -209,6 +211,7 @@ export function CategoryManager({
   onEdit,
   onRemove,
 }) {
+  const toast = useToast();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
@@ -359,10 +362,29 @@ export function CategoryManager({
       <ConfirmDialog
         open={!!deletingId}
         title="Видалити категорію?"
-        description="Всі транзакції цієї категорії будуть переведені в «Інше»."
+        description="Транзакції цієї категорії перейдуть в «Інше». Саму категорію можна повернути."
         confirmLabel="Видалити"
         onConfirm={() => {
+          // Snapshot the category before delete so `showUndoToast` can
+          // re-create it with the same label/color/icon/parentId.
+          // NB: `addCustomCategory` assigns a fresh id, so transactions that
+          // previously referenced the old id stay re-mapped to «Inshe»
+          // (by design — undoing the label is cheap, but we do not try to
+          // unwind the `txCategories` / `txSplits` re-mapping performed
+          // inside `removeCustomCategory`).
+          const snapshot = customCategories.find((c) => c.id === deletingId);
           onRemove(deletingId);
+          if (snapshot) {
+            showUndoToast(toast, {
+              msg: `Категорію «${snapshot.label}» видалено`,
+              onUndo: () =>
+                onAdd?.(snapshot.label, {
+                  color: snapshot.color,
+                  icon: snapshot.icon,
+                  parentId: snapshot.parentId,
+                }),
+            });
+          }
           setDeletingId(null);
         }}
         onCancel={() => setDeletingId(null)}

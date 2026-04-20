@@ -6,6 +6,15 @@ import {
 } from "../lib/fizrukStorage";
 
 /**
+ * Window event fired when persisting workouts to `localStorage` throws
+ * (quota exceeded, Safari private mode, etc.). `FizrukApp` listens for this
+ * and surfaces a persistent `<Banner variant="danger">` so the user can free
+ * space or export a backup — mirroring Nutrition's `storageBanner` pattern
+ * and Routine's `ROUTINE_STORAGE_ERROR` event.
+ */
+export const FIZRUK_WORKOUTS_STORAGE_ERROR = "fizruk-workouts-storage-error";
+
+/**
  * @typedef {{ id: string, done: boolean, label: string }} ChecklistItem
  */
 
@@ -97,6 +106,7 @@ export function makeDefaultCooldown() {
  *   createWorkoutWithTimes: (opts: { startedAt: string }) => Workout,
  *   updateWorkout: (id: string, patch: Partial<Workout>) => void,
  *   deleteWorkout: (id: string) => void,
+ *   restoreWorkout: (workout: Workout) => void,
  *   endWorkout: (id: string) => Workout|null,
  *   addItem: (workoutId: string, item: Partial<WorkoutItem>) => string,
  *   updateItem: (workoutId: string, itemId: string, patch: Partial<WorkoutItem>) => void,
@@ -132,7 +142,22 @@ export function useWorkouts() {
           WORKOUTS_STORAGE_KEY,
           serializeWorkoutsToStorage(next),
         );
-      } catch {}
+      } catch (err) {
+        // Surface quota/private-mode failures to the UI instead of silently
+        // losing data. We keep `next` in memory so the current session does
+        // not visibly reset — the banner prompts the user to act.
+        try {
+          const message =
+            err instanceof Error ? err.message : "невідома помилка";
+          window.dispatchEvent(
+            new CustomEvent(FIZRUK_WORKOUTS_STORAGE_ERROR, {
+              detail: { message },
+            }),
+          );
+        } catch {
+          /* dispatchEvent can throw in exotic embeddings — ignore */
+        }
+      }
       return next;
     });
   }, []);
@@ -231,6 +256,28 @@ export function useWorkouts() {
   );
 
   /**
+   * Re-insert a previously deleted workout, preserving chronological order by
+   * `startedAt`. Used by undo flows after `deleteWorkout`.
+   * @param {Workout} workout
+   */
+  const restoreWorkout = useCallback(
+    (workout) => {
+      if (!workout?.id) return;
+      persist((prev) => {
+        if (prev.some((w) => w.id === workout.id)) return prev;
+        const next = [...prev, workout];
+        next.sort((a, b) => {
+          const at = Date.parse(a?.startedAt || "") || 0;
+          const bt = Date.parse(b?.startedAt || "") || 0;
+          return at - bt;
+        });
+        return next;
+      });
+    },
+    [persist],
+  );
+
+  /**
    * Add an exercise item to a workout. Appends to the items list so that the
    * stored order matches the order in which the user (or a template) added
    * exercises — users read the workout log top-to-bottom chronologically.
@@ -320,6 +367,7 @@ export function useWorkouts() {
     createWorkoutWithTimes,
     updateWorkout,
     deleteWorkout,
+    restoreWorkout,
     endWorkout,
     addItem,
     updateItem,

@@ -170,14 +170,11 @@ export default function App({
   const mono = useMonobank();
   const privat = usePrivatbank(PRIVAT_ENABLED);
   const toast = useToast();
-  const showToast = useCallback(
-    (msg, type = "success") => {
-      if (type === "error") toast.error(msg);
-      else toast.success(msg);
-    },
-    [toast],
-  );
-  const storage = useStorage({ onImportFeedback: showToast });
+  // Pass the full toast API to storage so it can dispatch `success`/`error`
+  // variants directly — the old `showToast(msg, type)` wrapper silently
+  // collapsed everything except `error` to `success`, which blocked any
+  // `warning`/`info`/`action` usage from the shared Toast module.
+  const storage = useStorage({ toast });
   const [page, navigate] = useHashRouter();
   const [tokenInput, setTokenInput] = useState("");
   const [showToken, setShowToken] = useState(false);
@@ -211,11 +208,11 @@ export default function App({
   useEffect(() => {
     if (window.location.search.includes("sync=")) {
       const ok = storage.loadFromUrl();
-      if (ok) showToast("Налаштування синхронізовано!");
-      else showToast("Не вдалось завантажити синк-дані", "error");
+      if (ok) toast.success("Налаштування синхронізовано!");
+      else toast.error("Не вдалось завантажити синк-дані");
     }
     // Одноразово при монтуванні: ?sync= у URL
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- storage/showToast не повинні перезапускати імпорт з URL
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- storage/toast не повинні перезапускати імпорт з URL
   }, []);
 
   useEffect(() => {
@@ -377,7 +374,7 @@ export default function App({
                       (await navigator.clipboard.readText()).trim(),
                     );
                   } catch {
-                    showToast("Не вдалось прочитати буфер обміну", "error");
+                    toast.error("Не вдалось прочитати буфер обміну");
                   }
                 }}
               >
@@ -771,10 +768,10 @@ export default function App({
         onSave={(expense) => {
           if (expense?.id) {
             storage.editManualExpense?.(expense.id, expense);
-            showToast("Витрату оновлено");
+            toast.success("Витрату оновлено.");
           } else {
             storage.addManualExpense(expense);
-            showToast("Витрату додано");
+            toast.success("Витрату додано.");
           }
         }}
       />
