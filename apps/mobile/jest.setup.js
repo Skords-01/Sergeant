@@ -48,6 +48,41 @@ jest.mock("react-native-mmkv", () => {
   return { MMKV };
 });
 
+// expo-router pulls in `@react-native-navigation/native` whose ESM entry
+// is not transformed by jest-expo's default transform list. Tests that
+// import from `expo-router` only care about the imperative API, so a
+// minimal mock (`router.replace` / `router.push` / `router.back`) is
+// enough for render-tests. Add fields here as tests start needing them.
+jest.mock("expo-router", () => ({
+  __esModule: true,
+  router: {
+    push: jest.fn(),
+    replace: jest.fn(),
+    back: jest.fn(),
+    navigate: jest.fn(),
+    setParams: jest.fn(),
+  },
+  Link: "Link",
+  useRouter: () => ({
+    push: jest.fn(),
+    replace: jest.fn(),
+    back: jest.fn(),
+    navigate: jest.fn(),
+    setParams: jest.fn(),
+  }),
+  useLocalSearchParams: () => ({}),
+  useSearchParams: () => ({}),
+  usePathname: () => "/",
+  useSegments: () => [],
+  Redirect: () => null,
+  Stack: Object.assign(() => null, {
+    Screen: () => null,
+  }),
+  Tabs: Object.assign(() => null, {
+    Screen: () => null,
+  }),
+}));
+
 jest.mock("@react-native-community/netinfo", () => {
   const listeners = new Set();
   let current = {
