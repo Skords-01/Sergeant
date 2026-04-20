@@ -9,8 +9,8 @@
 // CTA: `pwaAction: "add_expense"` — відкриває manual-expense-sheet у
 // Фініку, не просто модуль.
 
-import type { Rule } from "../types";
-import { txTimestamp, type FinanceContext } from "../financeContext";
+import type { Rule } from "../types.js";
+import { txTimestamp, type FinanceContext } from "../financeContext.js";
 import { pluralDays } from "@sergeant/shared";
 
 const MIN_HISTORY = 5;

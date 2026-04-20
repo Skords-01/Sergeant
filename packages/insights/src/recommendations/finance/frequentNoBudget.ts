@@ -2,8 +2,8 @@
 // ліміту. Порог ≥5 використань, щоб не шуміти у новачків. Лейбл береться з
 // кастомних категорій, потім BUILTIN, потім raw id як останній fallback.
 
-import type { Rule } from "../types";
-import type { FinanceContext } from "../financeContext";
+import type { Rule } from "../types.js";
+import type { FinanceContext } from "../financeContext.js";
 
 const BUILTIN: Record<string, string> = {
   food: "Продукти",

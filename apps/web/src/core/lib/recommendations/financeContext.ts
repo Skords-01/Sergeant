@@ -1,61 +1,26 @@
-// Спільний контекст для правил модуля Finyk: читає localStorage один раз
-// і підготовлює похідні дані (canonical-id сумарні, множини transferIds тощо),
-// щоб окремі правила не дублювали парсинг / фільтрацію.
+// Web-обгортка над чистим фінансовим контекстом з `@sergeant/insights`.
+// Читає `localStorage` один раз і готує похідні дані (canonical-id сумарні,
+// множини transferIds тощо), щоб окремі правила не дублювали парсинг.
 //
 // Навмисно — тут не використовується typedStore: існуючі LS-ключі читаються
 // у старому форматі, а міграція — окрема фіча (див. `migrateFinykStorage`).
-// Це дає чіткий бордер: "правила читають те, що вже є у LS", і не створює
-// кросзалежність, яку складно юніт-тестувати.
+// Правила (у пакеті `@sergeant/insights`) платформо-незалежні; цей файл —
+// єдина точка, де контекст «запікається» з Web-LS.
 
 import { getCategory } from "../../../modules/finyk/utils";
 import { manualCategoryToCanonicalId } from "../../../modules/finyk/domain/personalization";
+import { Recommendations } from "@sergeant/insights";
 
-interface Transaction {
-  id: string;
-  amount: number;
-  time: number;
-  description?: string;
-  mcc?: number;
-}
+type FinanceContext = Recommendations.FinanceContext;
+type Transaction = Recommendations.Transaction;
+type ManualExpense = Recommendations.ManualExpense;
+type Budget = Recommendations.Budget;
+type CustomCategory = Recommendations.CustomCategory;
 
-interface ManualExpense {
-  id?: string;
-  amount: number;
-  date: string;
-  category?: string;
-}
-
-interface Budget {
-  id?: string;
-  type: string;
-  categoryId?: string;
-  limit?: number;
-}
-
-interface CustomCategory {
-  id: string;
-  label: string;
-}
-
-export interface FinanceContext {
-  now: Date;
-  monthStart: Date;
-  transactions: Transaction[];
-  manualExpenses: ManualExpense[];
-  budgets: Budget[];
-  limits: Budget[];
-  txCategories: Record<string, string>;
-  customCategories: CustomCategory[];
-  hiddenTxIds: Set<string>;
-  transferIds: Set<string>;
-  thisMonthTx: Transaction[];
-  /** Суми витрат за цей місяць, ключ — сирий override/label (legacy формат). */
-  categorySpend: Record<string, number>;
-  /** Суми за canonical id — для нових правил. */
-  canonicalMonthSpend: Map<string, number>;
-  /** Лічильник транзакцій за весь період, canonical id → count. */
-  canonicalTotalCount: Map<string, number>;
-}
+// Реекспортуємо тип для консумерів у web, щоб шлях імпорту лишався знайомим.
+export type { FinanceContext };
+// Реекспортуємо helper для консумерів у web (історично жив тут).
+export const txTimestamp = Recommendations.txTimestamp;
 
 function safeLS<T>(key: string, fallback: T): T {
   try {
@@ -73,10 +38,6 @@ function startOfCurrentMonth(): Date {
   d.setDate(1);
   d.setHours(0, 0, 0, 0);
   return d;
-}
-
-function txTimestamp(tx: Transaction): number {
-  return tx.time > 1e10 ? tx.time : tx.time * 1000;
 }
 
 export function buildFinanceContext(): FinanceContext {
@@ -183,6 +144,3 @@ export function buildFinanceContext(): FinanceContext {
     canonicalTotalCount,
   };
 }
-
-/** Таймстемп транзакції у ms — доступний правилам як хелпер. */
-export { txTimestamp };

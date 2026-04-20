@@ -3,8 +3,22 @@
 // Замінюють «довгі buildFooRecs() з десятком if'ів», даючи тестованість
 // per-rule і декларативний пріоритет. Натхненно json-rules-engine, але без
 // DSL — правило це звичайна функція `evaluate(ctx)`.
+//
+// Пакет `@sergeant/insights` — DOM-free: жодних `localStorage`, `window`,
+// `document`. Споживачі (apps/web, apps/mobile) будують `Ctx` локально
+// і передають у правила.
 
-import type { HubModuleAction } from "@shared/lib/hubNav";
+/**
+ * Імперативна CTA-дія для рекомендації. Повторює літерали
+ * `HubModuleAction` з `apps/web/src/shared/lib/hubNav.ts` — джерелом
+ * правди є цей пакет, `hubNav.ts` реекспортує звідси.
+ */
+export type HubModuleAction =
+  | "add_expense"
+  | "start_workout"
+  | "add_meal"
+  | "add_meal_photo"
+  | "add_habit";
 
 export type Module = "finyk" | "fizruk" | "routine" | "nutrition" | "hub";
 

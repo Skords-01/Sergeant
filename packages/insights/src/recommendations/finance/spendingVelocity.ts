@@ -2,8 +2,8 @@
 // тижня). Спрацьовує тільки з середи (dowIdx ≥ 2), щоб не блимати у пн/вт
 // з мінімумом даних.
 
-import type { Rule } from "../types";
-import { txTimestamp, type FinanceContext } from "../financeContext";
+import type { Rule } from "../types.js";
+import { txTimestamp, type FinanceContext } from "../financeContext.js";
 
 function startOfWeek(d: Date): Date {
   const x = new Date(d);

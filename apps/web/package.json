@@ -22,6 +22,7 @@
     "@sergeant/api-client": "workspace:*",
     "@sergeant/design-tokens": "workspace:*",
     "@sergeant/finyk-domain": "workspace:*",
+    "@sergeant/insights": "workspace:*",
     "@sergeant/shared": "workspace:*",
     "@tanstack/react-query": "^5.99.0",
     "@zxing/browser": "^0.1.5",

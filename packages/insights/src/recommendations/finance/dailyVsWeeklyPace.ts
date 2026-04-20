@@ -10,8 +10,8 @@
 //
 // CTA: `pwaAction: "add_expense"` — шлях до manual-sheet одним тапом.
 
-import type { Rule } from "../types";
-import { txTimestamp, type FinanceContext } from "../financeContext";
+import type { Rule } from "../types.js";
+import { txTimestamp, type FinanceContext } from "../financeContext.js";
 
 const MIN_PREV7_SUM = 700;
 const MIN_TODAY_SUM = 200;

@@ -2,8 +2,8 @@
 // Легасі: читає `categorySpend` (raw keys), оскільки ліміти у користувачів
 // вже збережені у тих же raw-id. Переведення на canonical — окрема міграція.
 
-import type { Rule } from "../types";
-import type { FinanceContext } from "../financeContext";
+import type { Rule } from "../types.js";
+import type { FinanceContext } from "../financeContext.js";
 
 const BUILTIN_LABELS: Record<string, string> = {
   food: "Продукти",
