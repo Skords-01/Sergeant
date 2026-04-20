@@ -4,7 +4,7 @@ import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { Skeleton } from "@shared/components/ui/Skeleton";
 import { EmptyState } from "@shared/components/ui/EmptyState";
 import { calcCategorySpent, resolveExpenseCategoryMeta } from "../utils";
-import { buildExpenseCategoryList } from "../domain/categories";
+import { buildExpenseCategoryList } from "@sergeant/finyk-domain/domain/categories";
 import {
   getLimitBudgets,
   getGoalBudgets,
@@ -20,9 +20,9 @@ import {
   validateGoalBudgetForm,
   type LimitFormInput,
   type GoalFormInput,
-} from "../domain/budget";
-import { filterStatTransactions } from "../domain/transactions";
-import { calcForecast } from "../lib/forecastEngine";
+} from "@sergeant/finyk-domain/domain/budget";
+import { filterStatTransactions } from "@sergeant/finyk-domain/domain/transactions";
+import { calcForecast } from "@sergeant/finyk-domain/lib/forecastEngine";
 import { chatApi } from "@shared/api";
 import { finykKeys } from "@shared/lib/queryKeys.js";
 import { LimitBudgetCard } from "../components/budgets/LimitBudgetCard.jsx";

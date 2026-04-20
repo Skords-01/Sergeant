@@ -7,7 +7,7 @@ import {
   computeCategorySpendIndex,
   selectTopCategoriesFromIndex,
   selectCategoryDistributionFromIndex,
-} from "../domain/selectors";
+} from "@sergeant/finyk-domain/domain/selectors";
 
 // Central analytics hook for Finyk. All derived views are memoized so a
 // re-render that does not change transactions or any filter leaves the

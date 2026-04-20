@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { privatApi, isApiError } from "@shared/api";
-import { normalizeTransaction } from "../domain/transactions";
+import { normalizeTransaction } from "@sergeant/finyk-domain/domain/transactions";
 import {
   readRaw,
   writeRaw,

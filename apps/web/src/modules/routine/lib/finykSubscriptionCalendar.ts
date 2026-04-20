@@ -1,7 +1,7 @@
 import { safeReadLS } from "@shared/lib/storage.js";
 import { STORAGE_KEYS } from "@sergeant/shared";
 import { DEFAULT_SUBSCRIPTIONS } from "../../finyk/constants.js";
-import { getSubscriptionAmountMeta } from "../../finyk/domain/subscriptionUtils.js";
+import { getSubscriptionAmountMeta } from "@sergeant/finyk-domain/domain/subscriptionUtils";
 import { enumerateDateKeys, parseDateKey } from "./hubCalendarAggregate.js";
 
 export const FINYK_SUB_GROUP_LABEL = "Фінік · підписки";

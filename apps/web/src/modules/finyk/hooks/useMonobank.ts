@@ -15,8 +15,8 @@ import {
   writeRaw,
   removeItem,
 } from "../lib/finykStorage.js";
-import { normalizeTransaction } from "../domain/transactions";
-import type { Transaction } from "../domain/types";
+import { normalizeTransaction } from "@sergeant/finyk-domain/domain/transactions";
+import type { Transaction } from "@sergeant/finyk-domain/domain/types";
 import { trackEvent, ANALYTICS_EVENTS } from "../../../core/analytics";
 import { useMonoStatements } from "./useMonoStatements";
 

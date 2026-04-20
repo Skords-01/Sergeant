@@ -425,8 +425,7 @@ Web використовує кастомні компоненти + canvas/SVG.
   DOM-free пакет `@sergeant/insights`; LS-обгортки (`buildFinanceContext`,
   recents для пошуку, orchestrator `generateRecommendations`) лишились у
   `apps/web` і тепер імпортують pure-ядро з пакета.
-- **R3.** `modules/finyk/lib/*`, `domain/*` — вже частково у
-  `@sergeant/finyk-domain`; довести до 100% реюзу.
+- **R3.** ✅ Done (PR [#415](https://github.com/Skords-01/Sergeant/pull/415)). `modules/finyk/lib/*`, `domain/*`, `constants.ts`, `utils.ts` повністю реюзаються з `@sergeant/finyk-domain`; web-шіми у `apps/web/src/modules/finyk/{domain,lib}/*.ts` видалено, імпорти у `apps/web` переведено на `@sergeant/finyk-domain/*`, pure-юніт-тести перенесені у пакет. У `apps/web` лишились тільки DOM/localStorage-залежні артефакти (`lib/{demoData,finykBackup,finykStorage,lsStats,storageManager}.ts`, `hubRoutineSync.ts`, `hooks/*`, `constants/chartPalette.js`).
 - **R4.** `modules/fizruk/data/*` (exercise library) — винести у
   доменний пакет `@sergeant/fizruk-domain` (новий).
 - **R5.** Централізувати Zod-schemas `shared/schemas` → уже у

@@ -16,8 +16,8 @@ import { useAnalytics } from "../hooks/useAnalytics";
 import { CategoryPieChart } from "../components/charts/lazy";
 import { ChartFallback } from "../components/charts/ChartFallback";
 import { MerchantList } from "../components/analytics/MerchantList";
-import { getTrendComparison } from "../domain/selectors";
-import type { TxSplitsMap } from "../domain/types";
+import { getTrendComparison } from "@sergeant/finyk-domain/domain/selectors";
+import type { TxSplitsMap } from "@sergeant/finyk-domain/domain/types";
 import { readJSON } from "../lib/finykStorage.js";
 import { trackEvent, ANALYTICS_EVENTS } from "../../../core/analytics";
 

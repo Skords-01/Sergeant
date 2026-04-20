@@ -8,7 +8,7 @@
 // єдина точка, де контекст «запікається» з Web-LS.
 
 import { getCategory } from "../../../modules/finyk/utils";
-import { manualCategoryToCanonicalId } from "../../../modules/finyk/domain/personalization";
+import { manualCategoryToCanonicalId } from "@sergeant/finyk-domain/domain/personalization";
 import { Recommendations } from "@sergeant/insights";
 
 type FinanceContext = Recommendations.FinanceContext;

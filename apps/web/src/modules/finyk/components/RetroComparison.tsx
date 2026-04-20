@@ -4,8 +4,11 @@ import { cn } from "@shared/lib/cn";
 import {
   formatComparisonSummary,
   getCurrentVsPreviousComparison,
-} from "../domain/selectors";
-import type { Transaction, TxSplitsMap } from "../domain/types";
+} from "@sergeant/finyk-domain/domain/selectors";
+import type {
+  Transaction,
+  TxSplitsMap,
+} from "@sergeant/finyk-domain/domain/types";
 
 const MONTH_LABELS_GENITIVE = [
   "січня",
