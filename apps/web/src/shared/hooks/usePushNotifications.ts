@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useApiClient } from "@sergeant/api-client/react";
+import type { PushRegisterRequest } from "@sergeant/api-client";
 import { isApiError, pushApi } from "@shared/api";
 import { pushKeys } from "@shared/lib/queryKeys";
 
@@ -52,6 +54,7 @@ export interface UsePushNotificationsResult {
 export function usePushNotifications(): UsePushNotificationsResult {
   const supported = isPushSupported();
   const queryClient = useQueryClient();
+  const api = useApiClient();
 
   const [permission, setPermission] = useState<NotificationPermission>(
     supported ? Notification.permission : "denied",
@@ -104,7 +107,23 @@ export function usePushNotifications(): UsePushNotificationsResult {
         applicationServerKey: urlBase64ToUint8Array(publicKey),
       });
 
-      await pushApi.subscribe(sub.toJSON());
+      // `PushSubscription.toJSON()` повертає `{ endpoint, keys: { p256dh, auth } }`
+      // (RFC 8030). Мапимо у web-варіант `PushRegisterRequest`, щоб
+      // zod-валідація у `createPushEndpoints.register` пройшла без
+      // модифікацій payload.
+      const json = sub.toJSON();
+      const endpoint = json.endpoint;
+      const p256dh = json.keys?.p256dh;
+      const auth = json.keys?.auth;
+      if (!endpoint || !p256dh || !auth) {
+        throw new Error("Push subscription is missing endpoint or keys");
+      }
+      const payload: PushRegisterRequest = {
+        platform: "web",
+        token: endpoint,
+        keys: { p256dh, auth },
+      };
+      await api.push.register(payload);
 
       localStorage.setItem(PUSH_SUB_KEY, "1");
       setSubscribed(true);
