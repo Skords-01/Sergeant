@@ -18,34 +18,38 @@ jobs:
       # actions/checkout v4.3.1 (SHA-pinned for supply-chain hardening)
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
 
+      # pnpm/action-setup v4.1.0 (SHA-pinned for supply-chain hardening)
+      # Version is read from packageManager in root package.json.
+      - uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2
+
       # actions/setup-node v4.4.0 (SHA-pinned for supply-chain hardening)
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: "20"
-          cache: npm
+          cache: pnpm
 
       - name: Install
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Audit (critical only)
-        run: npm audit --audit-level=critical --omit=dev
+        run: pnpm audit --audit-level=critical --prod
 
       - name: Audit (high, non-blocking)
-        run: npm audit --audit-level=high --omit=dev || true
+        run: pnpm audit --audit-level=high --prod || true
 
       - name: Audit full tree (non-blocking)
-        run: npm audit --audit-level=high || true
+        run: pnpm audit --audit-level=high || true
 
       - name: License policy check (production tree)
         run: >-
-          npx --yes license-checker-rseidelsohn@4.4.2
+          pnpm dlx license-checker-rseidelsohn@4.4.2
           --production
-          --excludePackages "sergeant@0.1.0"
+          --excludePackages "sergeant@0.1.0;@sergeant/web@0.1.0;@sergeant/server@0.1.0;@sergeant/shared@0.1.0;@sergeant/api-client@0.1.0;@sergeant/config@0.1.0;eslint-plugin-sergeant-design@0.0.1"
           --onlyAllow
           "MIT;ISC;Apache-2.0;BSD-2-Clause;BSD-3-Clause;MIT-0;0BSD;BlueOak-1.0.0;CC0-1.0;MPL-2.0;(Unlicense OR Apache-2.0)"
 
       - name: Format, lint, test, build
-        run: npm run check
+        run: pnpm check
 
   a11y:
     name: Accessibility (axe-core)
@@ -55,20 +59,23 @@ jobs:
       # actions/checkout v4.3.1 (SHA-pinned for supply-chain hardening)
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
 
+      # pnpm/action-setup v4.1.0 (SHA-pinned for supply-chain hardening)
+      - uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2
+
       # actions/setup-node v4.4.0 (SHA-pinned for supply-chain hardening)
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: "20"
-          cache: npm
+          cache: pnpm
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Install Playwright Chromium
-        run: npx playwright install --with-deps chromium
+        run: pnpm --filter @sergeant/web exec playwright install --with-deps chromium
 
       - name: Run axe accessibility checks
-        run: npm run test:a11y
+        run: pnpm test:a11y
         env:
           CI: "true"
 
@@ -78,6 +85,6 @@ jobs:
         uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882
         with:
           name: playwright-a11y-report
-          path: playwright-report
+          path: apps/web/playwright-report
           if-no-files-found: ignore
           retention-days: 7
