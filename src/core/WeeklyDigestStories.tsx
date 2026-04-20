@@ -600,6 +600,12 @@ export function WeeklyDigestStories({ digest, weekKey, weekRange, onClose }) {
   const touchStartRef = useRef(null);
   const dragYRef = useRef(0);
   const containerRef = useRef(null);
+  // Tracks the pointerId of the currently-active gesture. Cleared on
+  // pointerup/pointercancel. Duplicate pointerup events (iOS PWA + React's
+  // delegated pointer events re-dispatch through setPointerCapture) are
+  // ignored because activePointerIdRef is already null on the second fire,
+  // so each physical tap navigates exactly once.
+  const activePointerIdRef = useRef<number | null>(null);
   // Mirror of `index` and `progress` kept in refs so the navigation helpers
   // and the auto-advance timer can read/update them without stuffing side
   // effects into `setState` updaters (React requires updater fns to be pure).
@@ -675,6 +681,11 @@ export function WeeklyDigestStories({ digest, weekKey, weekRange, onClose }) {
   // Pointer events collapse all three input sources into one stream, so each
   // physical tap triggers exactly one press-start / press-end pair.
   const handlePressStart = (e) => {
+    // Only track one pointer at a time. A second finger mid-gesture must not
+    // spin up a parallel hold-timer / drag — it would desync the state and
+    // produce phantom taps when either finger lifts.
+    if (activePointerIdRef.current !== null) return;
+    activePointerIdRef.current = e.pointerId;
     // Capture the pointer so `pointermove`/`pointerup` keep arriving even if
     // the finger slides off the element — required for the swipe-to-close
     // gesture below. Try/catch because capture can throw in old WebKit.
@@ -694,6 +705,7 @@ export function WeeklyDigestStories({ digest, weekKey, weekRange, onClose }) {
   };
 
   const handlePointerMove = (e) => {
+    if (activePointerIdRef.current !== e.pointerId) return;
     if (!touchStartRef.current) return;
     const dy = e.clientY - touchStartRef.current.y;
     if (dy > 0) {
@@ -717,6 +729,15 @@ export function WeeklyDigestStories({ digest, weekKey, weekRange, onClose }) {
   };
 
   const handlePressEnd = (e) => {
+    // Duplicate pointerup dedupe. On iOS PWA / some Android WebViews, React's
+    // root-level pointer event delegation occasionally re-fires onPointerUp
+    // for the same physical release when setPointerCapture is in use (see
+    // https://github.com/facebook/react/issues/17685). Without this guard the
+    // tap handler ran twice and `next()` advanced indexRef by two, making the
+    // stories appear to skip every other slide. We latch on the pointerId we
+    // opened the gesture with and bail on any repeat.
+    if (activePointerIdRef.current !== e.pointerId) return;
+    activePointerIdRef.current = null;
     try {
       e.currentTarget.releasePointerCapture?.(e.pointerId);
     } catch {
@@ -754,7 +775,9 @@ export function WeeklyDigestStories({ digest, weekKey, weekRange, onClose }) {
     else next();
   };
 
-  const handlePointerCancel = () => {
+  const handlePointerCancel = (e) => {
+    if (activePointerIdRef.current !== e.pointerId) return;
+    activePointerIdRef.current = null;
     if (holdTimerRef.current) {
       clearTimeout(holdTimerRef.current);
       holdTimerRef.current = null;
