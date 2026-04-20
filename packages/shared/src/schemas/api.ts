@@ -476,4 +476,50 @@ export const BarcodeQuerySchema = z.object({
   barcode: z.string().trim().min(1, "Штрихкод не може бути порожнім").max(32),
 });
 
+// ────────────────────── Web Vitals (POST /api/metrics/web-vitals) ──────────────────────
+// Спільна схема для клієнта (sendBeacon payload) і сервера (request body
+// validator). Три метрики таймінгу в мс — LCP/INP/FCP/TTFB, плюс
+// безрозмірний CLS. `refine` накладає метрико-специфічний upper-bound:
+// CLS ≤ 10 (0.25 вже "poor"; >10 — точно битий клієнт), таймінги ≤ 120_000
+// (2 хв — будь-що більше = зламаний перфомансний таймер). Без цього обмеження
+// анонімний endpoint легко отруює Prometheus histogram.
+export const WEB_VITALS_METRIC_NAMES = [
+  "LCP",
+  "INP",
+  "FCP",
+  "TTFB",
+  "CLS",
+] as const;
+export type WebVitalsMetricName = (typeof WEB_VITALS_METRIC_NAMES)[number];
+
+/** Метрики таймінгу — мс. CLS живе окремо (безрозмірний). */
+export const WEB_VITALS_TIMING_METRIC_NAMES = [
+  "LCP",
+  "INP",
+  "FCP",
+  "TTFB",
+] as const;
+export type WebVitalsTimingMetricName =
+  (typeof WEB_VITALS_TIMING_METRIC_NAMES)[number];
+
+/** Максимум метрик у одному батчі (обмежено і на клієнті, і на сервері). */
+export const WEB_VITALS_MAX_BATCH = 10;
+
+export const WebVitalsMetricSchema = z
+  .object({
+    name: z.enum(WEB_VITALS_METRIC_NAMES),
+    value: z.number().finite().min(0),
+    rating: z.enum(["good", "needs-improvement", "poor"]),
+  })
+  .refine((m) => (m.name === "CLS" ? m.value <= 10 : m.value <= 120_000), {
+    message: "value out of range for metric",
+    path: ["value"],
+  });
+export type WebVitalsMetric = z.infer<typeof WebVitalsMetricSchema>;
+
+export const WebVitalsPayloadSchema = z.object({
+  metrics: z.array(WebVitalsMetricSchema).min(1).max(WEB_VITALS_MAX_BATCH),
+});
+export type WebVitalsPayload = z.infer<typeof WebVitalsPayloadSchema>;
+
 export { z };

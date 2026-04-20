@@ -1,3 +1,8 @@
+import {
+  WEB_VITALS_MAX_BATCH,
+  WebVitalsMetricSchema,
+  type WebVitalsMetric,
+} from "@sergeant/shared";
 import { apiUrl } from "@shared/lib/apiUrl";
 
 /**
@@ -13,13 +18,22 @@ import { apiUrl } from "@shared/lib/apiUrl";
  * - Динамічний `import("web-vitals")` після initSentry → не в критичному шляху.
  * - Єдиний ReadyState guard `sent` на метрику щоб не дублювати INP/CLS, які
  *   `web-vitals` шле кілька разів (finalValue on report callback).
+ * - Payload валідується через спільну `WebVitalsMetricSchema` із
+ *   `@sergeant/shared` — та сама схема, що й у server-handler-і. Клієнт
+ *   застосовує `safeParse` перед додаванням у буфер, щоб битий entry
+ *   від `web-vitals` не тротював валідний батч на сервері
+ *   (який на помилку просто мовчки дропає увесь payload).
  *
  * Без `VITE_WEB_VITALS_ENDPOINT=0` — no-op (flag для аварійного вимкнення без
  * re-deploy). Дефолт — увімкнено.
  */
 
 const ENDPOINT_PATH = "/api/metrics/web-vitals";
-export const MAX_BATCH = 10;
+/**
+ * Ре-експорт для сумісності з легасі-консьюмерами (тестами) цього модуля.
+ * Канонічне джерело — `WEB_VITALS_MAX_BATCH` у `@sergeant/shared`.
+ */
+export const MAX_BATCH = WEB_VITALS_MAX_BATCH;
 
 const buffer = [];
 let flushScheduled = false;
@@ -101,15 +115,8 @@ export function __resetForTests() {
 }
 
 export function enqueue(metric) {
-  if (
-    !metric ||
-    typeof metric.value !== "number" ||
-    !Number.isFinite(metric.value) ||
-    metric.value < 0
-  ) {
-    return;
-  }
-  buffer.push({
+  if (!metric || typeof metric.value !== "number") return;
+  const candidate = {
     name: metric.name,
     value:
       // CLS — безрозмірний, не округлюємо. Решта — ms, ціле число.
@@ -117,7 +124,14 @@ export function enqueue(metric) {
         ? Number(metric.value.toFixed(4))
         : Math.round(metric.value),
     rating: metric.rating,
-  });
+  };
+  // Той самий Zod-refine, що і на сервері: відкидаємо NaN/від'ємні, невідомі
+  // `name`, та значення поза межами (CLS > 10, таймінг > 120_000). Якщо
+  // пропустити це тут, сервер `safeParse`-не failedне і мовчки дропне
+  // увесь батч (див. `modules/web-vitals.ts`).
+  const parsed = WebVitalsMetricSchema.safeParse(candidate);
+  if (!parsed.success) return;
+  buffer.push(parsed.data satisfies WebVitalsMetric);
   if (buffer.length >= MAX_BATCH) {
     flush();
   } else {

@@ -58,7 +58,12 @@ describe("createMeEndpoints", () => {
     });
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const url = fetchMock.mock.calls[0][0] as string;
-    expect(url).toContain("/api/me");
+    // `createHttpClient()` за замовчуванням переписує `/api/...` → `/api/v1/...`
+    // (див. `DEFAULT_API_PREFIX` у httpClient.ts). Сервер віддає обидва
+    // префікси як дзеркало через `apiVersionRewrite`, тож фактичне попадання —
+    // у `/api/v1/me`. Перевіряємо семантичне «закінчується на /me».
+    expect(url).toMatch(/\/me$/);
+    expect(url).toContain("/api/v1/me");
   });
 
   it("кидає ZodError на відповіді без поля user", async () => {

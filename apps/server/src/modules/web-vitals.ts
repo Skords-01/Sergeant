@@ -1,5 +1,9 @@
 import type { Request, Response } from "express";
-import { z } from "zod";
+import {
+  WEB_VITALS_TIMING_METRIC_NAMES,
+  WebVitalsPayloadSchema,
+  type WebVitalsTimingMetricName,
+} from "@sergeant/shared";
 import { logger } from "../obs/logger.js";
 import { webVitalsCls, webVitalsDurationMs } from "../obs/metrics.js";
 
@@ -19,40 +23,21 @@ import { webVitalsCls, webVitalsDurationMs } from "../obs/metrics.js";
  *
  * Валідно відхилені записи логуються один раз із `sample=1%` щоб не засмічувати
  * Pino потоком з публічного endpoint.
+ *
+ * Схема `WebVitalsPayloadSchema` живе в `@sergeant/shared` — клієнт
+ * (`apps/web/src/core/webVitals.ts`) валідує той самий payload, тож будь-яка
+ * зміна shape рухається одночасно на обох сторонах.
  */
 
-const TIMING_METRICS = new Set<"LCP" | "INP" | "FCP" | "TTFB">([
-  "LCP",
-  "INP",
-  "FCP",
-  "TTFB",
-]);
-
-// CLS — безрозмірний, в реальних умовах 0..1+ (0.25 вже "poor"). Таймінги
-// (LCP/INP/FCP/TTFB) — мс, з приватним upper-bound 120_000 (2 хв — будь-що
-// більше означає зламаний client-side таймер). Окремий upper-bound для CLS
-// важливий: без нього анонімний endpoint приймає value=100000 і інфлейтить
-// `web_vitals_cls_sum` на порядки, роблячи `avg = _sum / _count` безглуздим.
-const MetricSchema = z
-  .object({
-    name: z.enum(["LCP", "INP", "FCP", "TTFB", "CLS"]),
-    value: z.number().finite().min(0),
-    rating: z.enum(["good", "needs-improvement", "poor"]),
-  })
-  .refine((m) => (m.name === "CLS" ? m.value <= 10 : m.value <= 120_000), {
-    message: "value out of range for metric",
-    path: ["value"],
-  });
-
-const PayloadSchema = z.object({
-  metrics: z.array(MetricSchema).min(1).max(10),
-});
+const TIMING_METRICS = new Set<WebVitalsTimingMetricName>(
+  WEB_VITALS_TIMING_METRIC_NAMES,
+);
 
 export default function webVitalsHandler(req: Request, res: Response): void {
   // sendBeacon з `type: "application/json"` приходить як Buffer/string залежно
   // від middleware-а — Express `express.json()` уже парсить у req.body, але
   // якщо клієнт помилиться з content-type, body може бути undefined.
-  const parsed = PayloadSchema.safeParse(req.body);
+  const parsed = WebVitalsPayloadSchema.safeParse(req.body);
   if (!parsed.success) {
     if (Math.random() < 0.01) {
       logger.warn({
@@ -68,7 +53,7 @@ export default function webVitalsHandler(req: Request, res: Response): void {
     try {
       if (m.name === "CLS") {
         webVitalsCls.observe({ rating: m.rating }, m.value);
-      } else if (TIMING_METRICS.has(m.name as "LCP" | "INP" | "FCP" | "TTFB")) {
+      } else if (TIMING_METRICS.has(m.name as WebVitalsTimingMetricName)) {
         webVitalsDurationMs.observe(
           { metric: m.name, rating: m.rating },
           m.value,
