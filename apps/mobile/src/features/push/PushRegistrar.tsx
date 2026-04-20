@@ -2,7 +2,34 @@ import { useEffect, useRef } from "react";
 
 import { useApiClient, useUser } from "@sergeant/api-client/react";
 
+import { createModuleStorage, safeReadStringLS } from "@/lib/storage";
+
 import { registerPush } from "./registerPush";
+
+// Dev-only smoke check that verifies the MMKV-backed storage adapter is
+// reachable from the RN runtime. Removed once real callers (Phase 3)
+// start using the adapter.
+const SMOKE_KEY = "sergeant.mobile.storage.smoke";
+const smokeStorage = createModuleStorage({ name: "storageSmoke" });
+
+function runStorageSmokeCheck(): void {
+  if (!__DEV__) return;
+  try {
+    const payload = { t: Date.now() };
+    smokeStorage.writeJSON(SMOKE_KEY, payload);
+    const roundTripped = smokeStorage.readJSON<typeof payload>(SMOKE_KEY);
+    const raw = safeReadStringLS(SMOKE_KEY);
+    console.info(
+      "[storage] MMKV round-trip ok:",
+      roundTripped?.t === payload.t,
+      "raw bytes:",
+      raw?.length ?? 0,
+    );
+    smokeStorage.removeItem(SMOKE_KEY);
+  } catch (error) {
+    console.warn("[storage] MMKV smoke check failed", error);
+  }
+}
 
 /**
  * No-UI компонент, що монтується у root-дереві (`app/_layout.tsx`) і
@@ -26,6 +53,10 @@ export function PushRegistrar() {
 
   const inFlightRef = useRef(false);
   const lastRegisteredUserRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    runStorageSmokeCheck();
+  }, []);
 
   useEffect(() => {
     if (!userId) {
