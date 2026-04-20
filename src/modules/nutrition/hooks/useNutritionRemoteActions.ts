@@ -297,11 +297,11 @@ export function useNutritionRemoteActions({
       setDayPlanBusy(true);
       setErr("");
     },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onSuccess: ({
       plan,
       regenerateMealType,
     }: {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       plan: any;
       regenerateMealType: string | null | undefined;
     }) => {
