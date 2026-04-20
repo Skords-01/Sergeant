@@ -5,6 +5,7 @@ import { useUser, usePushTest } from "@sergeant/api-client/react";
 import { signOut } from "@/auth/authClient";
 import { Pressable } from "react-native";
 import { colors, radius, spacing } from "@/theme";
+import { Button } from "@/components/ui/Button";
 
 export default function HubScreen() {
   const { data } = useUser();
@@ -56,6 +57,21 @@ export default function HubScreen() {
           таби для модулів. Далі — поступовий порт модулів (Finyk → Fizruk →
           Routine → Nutrition) з web-app в нативні екрани.
         </Text>
+      </View>
+
+      {/* Button primitive smoke-use (Phase 1). Remove once we have a proper
+          showcase screen or once Button is exercised by real flows. */}
+      <View className="mb-6 gap-3">
+        <Button onPress={() => Alert.alert("Primary pressed")}>Primary</Button>
+        <Button
+          variant="secondary"
+          onPress={() => Alert.alert("Secondary pressed")}
+        >
+          Secondary
+        </Button>
+        <Button variant="destructive" loading>
+          Loading…
+        </Button>
       </View>
 
       {__DEV__ ? (
