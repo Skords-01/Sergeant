@@ -1,6 +1,7 @@
 import { useQuery, type UseQueryResult } from "@tanstack/react-query";
-import { monoApi, type MonoClientInfo, isApiError } from "@shared/api";
+import { monoApi, type MonoClientInfo } from "@shared/api";
 import { finykKeys, hashToken } from "@shared/lib/queryKeys";
+import { authAwareRetry } from "@shared/lib/queryClient";
 
 /**
  * React Query–backed `monoApi.clientInfo` reader.
@@ -39,12 +40,6 @@ export function useMonoClientInfo(
     staleTime: STALE_TIME,
     gcTime: GC_TIME,
     refetchOnWindowFocus: true,
-    retry: (failureCount, error) => {
-      if (failureCount >= 1) return false;
-      if (isApiError(error) && error.kind === "http" && error.isAuth) {
-        return false;
-      }
-      return true;
-    },
+    retry: authAwareRetry(1),
   });
 }

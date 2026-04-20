@@ -1,12 +1,7 @@
 import { useCallback } from "react";
 import { useMutation } from "@tanstack/react-query";
-import {
-  recommendRecipes as apiRecommendRecipes,
-  fetchWeekPlan as apiFetchWeekPlan,
-  fetchDayHint as apiFetchDayHint,
-  fetchDayPlan as apiFetchDayPlan,
-  fetchShoppingList as apiFetchShoppingList,
-} from "../lib/nutritionApi.js";
+import { nutritionApi } from "@shared/api";
+import { formatNutritionError } from "../lib/nutritionErrors.js";
 import { writeRecipeCache } from "../lib/recipeCache.js";
 import { stableRecipeId } from "../lib/recipeIds.js";
 import { getDayMacros, getDaySummary } from "../lib/nutritionStorage.js";
@@ -40,7 +35,7 @@ function buildMutationHandlers({
       onSuccessSideEffects?.(data);
     },
     onError: (err) => {
-      setErr?.(err?.message || fallbackError);
+      setErr?.(formatNutritionError(err, fallbackError));
     },
     onSettled: () => {
       setBusy?.(false);
@@ -86,7 +81,7 @@ export function useNutritionRemoteActions({
       const items = pantry.effectiveItems;
       if (items.length === 0)
         throw new Error("Дай хоча б 2–3 продукти для рецептів.");
-      return apiRecommendRecipes({
+      return nutritionApi.recommendRecipes({
         items: items.slice(0, 40),
         preferences: {
           goal: prefs.goal,
@@ -135,7 +130,7 @@ export function useNutritionRemoteActions({
     mutationFn: () => {
       const items = pantry.effectiveItems;
       if (items.length === 0) throw new Error("Додай продукти на склад.");
-      return apiFetchWeekPlan({
+      return nutritionApi.weekPlan({
         items: items.slice(0, 50),
         preferences: { goal: prefs.goal },
         locale: "uk-UA",
@@ -152,7 +147,7 @@ export function useNutritionRemoteActions({
       setWeekPlanRaw(typeof data?.rawText === "string" ? data.rawText : "");
     },
     onError: (err) => {
-      setErr(err?.message || "Помилка плану");
+      setErr(formatNutritionError(err, "Помилка плану"));
     },
     onSettled: () => {
       setWeekPlanBusy(false);
@@ -187,7 +182,7 @@ export function useNutritionRemoteActions({
       const macros = summary.hasAnyMacros
         ? getDayMacros(log.nutritionLog, log.selectedDate)
         : { kcal: null, protein_g: null, fat_g: null, carbs_g: null };
-      return apiFetchDayHint({
+      return nutritionApi.dayHint({
         macros,
         hasMeals: summary.hasMeals,
         hasAnyMacros: summary.hasAnyMacros,
@@ -209,7 +204,7 @@ export function useNutritionRemoteActions({
       setDayHintText(typeof data?.hint === "string" ? data.hint : "");
     },
     onError: (err) => {
-      setErr(err?.message || "Помилка підказки");
+      setErr(formatNutritionError(err, "Помилка підказки"));
     },
     onSettled: () => {
       setDayHintBusy(false);
@@ -224,21 +219,23 @@ export function useNutritionRemoteActions({
   // ─── Day plan ───────────────────────────────────────────────────────────
   const dayPlanMutation = useMutation({
     mutationFn: (regenerateMealType) =>
-      apiFetchDayPlan({
-        items: pantry.effectiveItems.slice(0, 50),
-        targets: {
-          kcal: prefs.dailyTargetKcal,
-          protein_g: prefs.dailyTargetProtein_g,
-          fat_g: prefs.dailyTargetFat_g,
-          carbs_g: prefs.dailyTargetCarbs_g,
-        },
-        regenerateMealType: regenerateMealType || null,
-        locale: "uk-UA",
-      }).then((data) => {
-        const plan = data?.plan;
-        if (!plan) throw new Error("Не вдалося отримати план харчування");
-        return { plan, regenerateMealType };
-      }),
+      nutritionApi
+        .dayPlan({
+          items: pantry.effectiveItems.slice(0, 50),
+          targets: {
+            kcal: prefs.dailyTargetKcal,
+            protein_g: prefs.dailyTargetProtein_g,
+            fat_g: prefs.dailyTargetFat_g,
+            carbs_g: prefs.dailyTargetCarbs_g,
+          },
+          regenerateMealType: regenerateMealType || null,
+          locale: "uk-UA",
+        })
+        .then((data) => {
+          const plan = data?.plan;
+          if (!plan) throw new Error("Не вдалося отримати план харчування");
+          return { plan, regenerateMealType };
+        }),
     onMutate: () => {
       setDayPlanBusy(true);
       setErr("");
@@ -266,7 +263,7 @@ export function useNutritionRemoteActions({
       });
     },
     onError: (err) => {
-      setErr(err?.message || "Помилка генерації плану");
+      setErr(formatNutritionError(err, "Помилка генерації плану"));
     },
     onSettled: () => {
       setDayPlanBusy(false);
@@ -321,7 +318,7 @@ export function useNutritionRemoteActions({
       } else {
         throw new Error("Немає рецептів чи тижневого плану для генерації.");
       }
-      return apiFetchShoppingList(body).then((data) => {
+      return nutritionApi.shoppingList(body).then((data) => {
         if (!Array.isArray(data?.categories))
           throw new Error("Не вдалося згенерувати список покупок.");
         return data;
@@ -335,7 +332,7 @@ export function useNutritionRemoteActions({
       shopping.setGeneratedList(data.categories);
     },
     onError: (err) => {
-      setErr(err?.message || "Помилка генерації списку покупок");
+      setErr(formatNutritionError(err, "Помилка генерації списку покупок"));
     },
     onSettled: () => {
       setShoppingBusy(false);

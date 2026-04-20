@@ -1,4 +1,5 @@
 import { friendlyApiError as baseFriendlyApiError } from "@shared/lib/friendlyApiError";
+import { formatApiError } from "@shared/lib/apiErrorFormat";
 
 /**
  * Nutrition-специфічний варіант `friendlyApiError`. Додає дві речі,
@@ -21,4 +22,24 @@ export function friendlyApiError(
     return "Занадто велике фото. Стисни/обріж і спробуй ще раз.";
   }
   return baseFriendlyApiError(status, message);
+}
+
+/**
+ * Помічник для `useMutation.onError` у nutrition-хуках. Загортає
+ * `formatApiError` з nutrition-специфічним HTTP-маппером — щоб один
+ * і той самий 500 «ANTHROPIC key not set» і 413 «занадто велике фото»
+ * давав однаковий текст у photo/recipes/week-plan/тощо, без
+ * розсипаних `err?.message || "fallback"`-кейсів.
+ *
+ * Приклад:
+ *
+ * ```ts
+ * onError: (err) => setErr(formatNutritionError(err, "Помилка аналізу фото"))
+ * ```
+ */
+export function formatNutritionError(err: unknown, fallback: string): string {
+  return formatApiError(err, {
+    fallback,
+    httpStatusToMessage: friendlyApiError,
+  });
 }

@@ -3,19 +3,24 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { renderHook, act, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-vi.mock("../lib/nutritionApi.js", () => ({
-  analyzePhoto: vi.fn(),
-  refinePhoto: vi.fn(),
-}));
+vi.mock("@shared/api", async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    nutritionApi: {
+      analyzePhoto: vi.fn(),
+      refinePhoto: vi.fn(),
+    },
+  };
+});
 vi.mock("../lib/fileToBase64.js", () => ({
   fileToBase64: vi.fn(() => Promise.resolve("BASE64")),
 }));
 
 import { usePhotoAnalysis } from "./usePhotoAnalysis.js";
-import {
-  analyzePhoto as apiAnalyzePhoto,
-  refinePhoto as apiRefinePhoto,
-} from "../lib/nutritionApi.js";
+import { nutritionApi } from "@shared/api";
+const apiAnalyzePhoto = nutritionApi.analyzePhoto;
+const apiRefinePhoto = nutritionApi.refinePhoto;
 
 function makeWrapper() {
   const client = new QueryClient({

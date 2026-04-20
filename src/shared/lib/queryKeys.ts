@@ -74,6 +74,7 @@ export const finykKeys = {
 export const pushKeys = {
   all: ["push"] as const,
   status: ["push", "status"] as const,
+  vapid: ["push", "vapid"] as const,
 };
 
 // ─── Hub (dashboard previews, shared state) ───────────────────────────────

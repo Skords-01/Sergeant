@@ -54,6 +54,31 @@ export function isRetriableError(error: unknown): boolean {
   return true;
 }
 
+/**
+ * Фабрика `retry`-функції для `useQuery`, яка враховує auth-статуси.
+ *
+ * Конвенція для per-query retry (перекриває дефолт `createAppQueryClient`):
+ *  - 401/403 не ретраяться — новий токен без втручання користувача не з'явиться;
+ *  - `aborted` не ретраяться — користувач пішов;
+ *  - network/parse/5xx/408/429 ретраяться до `maxAttempts` спроб.
+ *
+ * Замінює розсіяний по finyk-хукам інлайн:
+ *   `retry: (n, e) => n < X && !(isApiError(e) && e.kind === "http" && e.isAuth)`
+ *
+ * @param maxAttempts — скільки спроб дозволяємо до того, як зупинитися.
+ *   Дефолт `2` збігається з глобальним дефолтом `createAppQueryClient`.
+ *   Для "важкого" ендпоінту, де 2 повтори = зависання UI, варто ставити `1`.
+ */
+export function authAwareRetry<TError = Error>(
+  maxAttempts = 2,
+): (failureCount: number, error: TError) => boolean {
+  return (failureCount, error) => {
+    if (failureCount >= maxAttempts) return false;
+    if (isApiError(error) && error.isAuth) return false;
+    return isRetriableError(error);
+  };
+}
+
 export function createAppQueryClient(): QueryClient {
   return new QueryClient({
     defaultOptions: {

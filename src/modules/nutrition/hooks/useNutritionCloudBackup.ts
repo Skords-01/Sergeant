@@ -1,9 +1,6 @@
 import { useCallback, type Dispatch, type SetStateAction } from "react";
 import { useMutation } from "@tanstack/react-query";
-import {
-  backupUpload as apiBackupUpload,
-  backupDownload as apiBackupDownload,
-} from "../lib/nutritionApi.js";
+import { nutritionApi } from "@shared/api";
 import {
   applyNutritionBackupPayload,
   buildNutritionBackupPayload,
@@ -12,6 +9,7 @@ import {
   decryptBlobToJson,
   encryptJsonToBlob,
 } from "../lib/nutritionCloudBackup.js";
+import { formatNutritionError } from "../lib/nutritionErrors.js";
 import type {
   BackupPasswordDialogState,
   RestoreConfirmState,
@@ -72,7 +70,7 @@ export function useNutritionCloudBackup({
     mutationFn: async ({ pass }: { pass: string }) => {
       const payload = buildNutritionBackupPayload();
       const blob = await encryptJsonToBlob(payload, pass);
-      return apiBackupUpload({ blob });
+      return nutritionApi.backupUpload({ blob });
     },
     onMutate: () => {
       setCloudBackupBusy(true);
@@ -81,10 +79,8 @@ export function useNutritionCloudBackup({
     onSuccess: () => {
       toast.success("Бекап завантажено.");
     },
-    onError: (err: unknown) => {
-      const message =
-        err instanceof Error ? err.message : "Не вдалося завантажити бекап";
-      setErr(message || "Не вдалося завантажити бекап");
+    onError: (err) => {
+      setErr(formatNutritionError(err, "Не вдалося завантажити бекап"));
     },
     onSettled: () => {
       setCloudBackupBusy(false);
@@ -93,7 +89,7 @@ export function useNutritionCloudBackup({
 
   const downloadMutation = useMutation({
     mutationFn: async ({ pass }: { pass: string }) => {
-      const data = await apiBackupDownload();
+      const data = await nutritionApi.backupDownload();
       const payload = await decryptBlobToJson(data?.blob, pass);
       return { payload };
     },
@@ -104,10 +100,8 @@ export function useNutritionCloudBackup({
     onSuccess: ({ payload }: { payload: unknown }) => {
       setRestoreConfirm({ payload });
     },
-    onError: (err: unknown) => {
-      const message =
-        err instanceof Error ? err.message : "Не вдалося відновити бекап";
-      setErr(message || "Не вдалося відновити бекап");
+    onError: (err) => {
+      setErr(formatNutritionError(err, "Не вдалося відновити бекап"));
     },
     onSettled: () => {
       setCloudBackupBusy(false);

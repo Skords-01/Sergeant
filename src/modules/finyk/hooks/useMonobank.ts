@@ -6,6 +6,7 @@ import {
 } from "@tanstack/react-query";
 import { monoApi, isApiError, type MonoClientInfo } from "@shared/api";
 import { finykKeys, hubKeys, hashToken } from "@shared/lib/queryKeys";
+import { authAwareRetry } from "@shared/lib/queryClient";
 import { CURRENCY } from "../constants";
 import {
   readJSON,
@@ -181,11 +182,7 @@ export function useMonobank() {
     staleTime: CLIENT_INFO_STALE_TIME,
     gcTime: CLIENT_INFO_GC_TIME,
     refetchOnWindowFocus: false,
-    retry: (failureCount, err) => {
-      if (failureCount >= 1) return false;
-      if (isApiError(err) && err.kind === "http" && err.isAuth) return false;
-      return true;
-    },
+    retry: authAwareRetry(1),
     retryDelay: (attempt) => 1000 * (attempt + 1),
   });
 
@@ -368,12 +365,7 @@ export function useMonobank() {
         queryKey: key,
         queryFn: ({ signal }) => monoApi.clientInfo(clean, { signal }),
         staleTime: CLIENT_INFO_STALE_TIME,
-        retry: (failureCount, err) => {
-          if (failureCount >= 1) return false;
-          if (isApiError(err) && err.kind === "http" && err.isAuth)
-            return false;
-          return true;
-        },
+        retry: authAwareRetry(1),
         retryDelay: (attempt) => 1000 * (attempt + 1),
       });
 
@@ -489,12 +481,7 @@ export function useMonobank() {
             queryFn: ({ signal }) =>
               monoApi.statement(token, acc.id, from, to, { signal }),
             staleTime: STATEMENT_STALE_TIME,
-            retry: (failureCount, err) => {
-              if (failureCount >= 2) return false;
-              if (isApiError(err) && err.kind === "http" && err.isAuth)
-                return false;
-              return true;
-            },
+            retry: authAwareRetry(2),
             retryDelay: (attempt) => 1000 * (attempt + 1),
           });
           results.push(
