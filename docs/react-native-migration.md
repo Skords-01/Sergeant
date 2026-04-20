@@ -107,6 +107,24 @@ ApiClientProvider`. `QueryProvider` дзеркалить `apps/web/src/main.tsx`
 - `apps/mobile/eas.json` з профайлами `development` / `preview` /
   `production` + `.easignore` (PR #408).
 
+### 2.5 Аудит міграційного плану (прохід по `apps/web/src`)
+
+Пройдено по всьому `apps/web/src` у пошуку web-специфіки, яку
+план не міг помітити. Повний аудит-матриця — секція 7.
+Підсумково знайдено **9 нових пунктів**, які додано у план:
+
+- **Секція 7** розширена рядками про `navigator.vibrate`,
+  `@dnd-kit/*`, `react-virtuoso`, `react-markdown`, Blob-експорти,
+  `<input type="file">`, `FileReader`, `window.visualViewport`,
+  `useDialogFocusTrap`, `document.visibilityState`, `useDarkMode`,
+  `useSWUpdate` / `useIosInstallBanner`.
+- **Секція 11** — додано **R7** (haptics-адаптер), **R8**
+  (export/backup-адаптер), **R9** (visual-keyboard hook-платформний).
+- **Секція 10** — доповнено конкретними iOS usage-descriptions
+  та Android runtime-permissions.
+- **Секція 12 (Ризики)** — додано нотатку про Hermes/`Intl.*`
+  та OTA-стратегію `expo-updates`.
+
 ## 3. Цільова архітектура
 
 ```
@@ -351,20 +369,35 @@ Web використовує кастомні компоненти + canvas/SVG.
 
 ## 7. Web-only API → RN заміни (чеклист)
 
-| web API                                   | зустрічається в                                        | RN-заміна                                                                   |
-| ----------------------------------------- | ------------------------------------------------------ | --------------------------------------------------------------------------- |
-| `localStorage` / `sessionStorage`         | всюди, через `shared/lib/storage.ts`                   | `AsyncStorage` / `expo-secure-store` / `react-native-mmkv` (через адаптер). |
-| `window.navigator.onLine`                 | `shared/hooks/useOnlineStatus.ts`                      | `@react-native-community/netinfo`.                                          |
-| `document.visibilityState`                | (треба відсканувати)                                   | `AppState` з `react-native`.                                                |
-| `Notification`, `navigator.serviceWorker` | `shared/hooks/usePushNotifications.ts`                 | `expo-notifications`.                                                       |
-| `SpeechRecognition`, `speechSynthesis`    | `core/hooks/useSpeech.ts`, `HubChat`, `VoiceMicButton` | Секція 6.5.                                                                 |
-| `getUserMedia`, `MediaStream`             | `nutrition/components/BarcodeScanner.tsx`              | `expo-camera`.                                                              |
-| `@zxing/browser` + `@zxing/library`       | `nutrition/components/BarcodeScanner.tsx`              | `expo-camera` barcode scanner.                                              |
-| `BarcodeDetector`                         | те саме                                                | те саме.                                                                    |
-| `vite-plugin-pwa` / Workbox               | `apps/web` build                                       | **не мігруємо**, залишається тільки на web.                                 |
-| `react-router-dom`                        | `apps/web/src/core/App.tsx`                            | `expo-router`.                                                              |
-| Tailwind class-names                      | скрізь                                                 | StyleSheet або NativeWind (питання **Q5**).                                 |
-| `body-highlighter`                        | `fizruk/components/BodyAtlas.tsx`                      | Секція 6.8.                                                                 |
+| web API                                                     | зустрічається в                                                                                                          | RN-заміна                                                                                                              |
+| ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| `localStorage` / `sessionStorage`                           | всюди, через `shared/lib/storage.ts`                                                                                     | `AsyncStorage` / `expo-secure-store` / `react-native-mmkv` (через адаптер).                                            |
+| `window.navigator.onLine`                                   | `shared/hooks/useOnlineStatus.ts`                                                                                        | `@react-native-community/netinfo`.                                                                                     |
+| `document.visibilityState`                                  | (треба відсканувати)                                                                                                     | `AppState` з `react-native`.                                                                                           |
+| `Notification`, `navigator.serviceWorker`                   | `shared/hooks/usePushNotifications.ts`                                                                                   | `expo-notifications`.                                                                                                  |
+| `SpeechRecognition`, `speechSynthesis`                      | `core/hooks/useSpeech.ts`, `HubChat`, `VoiceMicButton`                                                                   | Секція 6.5.                                                                                                            |
+| `getUserMedia`, `MediaStream`                               | `nutrition/components/BarcodeScanner.tsx`                                                                                | `expo-camera`.                                                                                                         |
+| `@zxing/browser` + `@zxing/library`                         | `nutrition/components/BarcodeScanner.tsx`                                                                                | `expo-camera` barcode scanner.                                                                                         |
+| `BarcodeDetector`                                           | те саме                                                                                                                  | те саме.                                                                                                               |
+| `vite-plugin-pwa` / Workbox                                 | `apps/web` build                                                                                                         | **не мігруємо**, залишається тільки на web.                                                                            |
+| `react-router-dom`                                          | `apps/web/src/core/App.tsx`                                                                                              | `expo-router`.                                                                                                         |
+| Tailwind class-names                                        | скрізь                                                                                                                   | NativeWind (Q5 ✅).                                                                                                    |
+| `body-highlighter`                                          | `fizruk/components/BodyAtlas.tsx`                                                                                        | Секція 6.8.                                                                                                            |
+| `navigator.vibrate`                                         | `shared/lib/haptic.ts`                                                                                                   | `expo-haptics` через адаптер з тією ж сигнатурою (**R7**).                                                             |
+| `@dnd-kit/*` drag-and-drop                                  | `core/HubDashboard.tsx` (reorder)                                                                                        | `react-native-gesture-handler` + `react-native-reanimated` → власна логіка або `react-native-draggable-flatlist`.      |
+| `react-virtuoso`                                            | довгі стрічки в фінік/фізрук                                                                                             | `@shopify/flash-list` (drop-in FlatList замінник).                                                                     |
+| `react-markdown`                                            | `core/components/AssistantMessageBody.tsx` (HubChat)                                                                     | `react-native-markdown-display` або `@react-native/markdown-display`.                                                  |
+| `Blob` + `URL.createObjectURL` + `a.download` (JSON backup) | `routine/components/RoutineBackupSection.tsx`, `fizruk/pages/Progress.tsx`, `nutrition/hooks/useNutritionCloudBackup.ts` | `expo-file-system` (запис у cache) + `expo-sharing` (share sheet). Обгорнути як `exportJson` (**R8**).                 |
+| `<input type="file">` для фото                              | `nutrition/NutritionApp.tsx`, `fizruk/components/PhotoProgress.tsx`                                                      | `expo-image-picker` + `expo-image-manipulator` (resize/compression).                                                   |
+| `FileReader` → base64                                       | `nutrition/lib/fileToBase64.ts`                                                                                          | `FileSystem.readAsStringAsync({ encoding: EncodingType.Base64 })`.                                                     |
+| `window.visualViewport` + resize inset                      | `shared/hooks/useVisualKeyboardInset.ts`, `routine/hooks/useVisualKeyboardInset.ts`                                      | RN `Keyboard` events + `KeyboardAvoidingView`, або `react-native-keyboard-controller` для shared-value inset (**R9**). |
+| `document.activeElement` + Tab/Escape trap                  | `shared/hooks/useDialogFocusTrap.ts`                                                                                     | Викидаємо на мобілці — RN `Modal` + `BackHandler` (Android) покривають UX. iOS свайп-back з `react-native-screens`.    |
+| `document.visibilityState` / `visibilitychange`             | `shared/lib/createModuleStorage.ts` (flush-on-hide), `core/webVitals.ts`, `core/stories/hooks/useStoriesAutoplay.ts`     | `AppState` з `react-native` (`change` event, `active`/`background`/`inactive`).                                        |
+| `useDarkMode` через `matchMedia` + `localStorage`           | `shared/hooks/useDarkMode.ts`                                                                                            | `useColorScheme()` з `react-native` + MMKV-override через спільний storage-адаптер.                                    |
+| SW-update / iOS install banner / PWA action                 | `core/app/useSWUpdate.ts`, `core/app/useIosInstallBanner.ts`, `shared/hooks/usePwaAction.ts`                             | **Викидаємо**. OTA-оновлення — `expo-updates`; "встановити додаток" — стор-сторінка замість banner-а.                  |
+| `@sentry/react`                                             | `core/sentry.ts`                                                                                                         | `@sentry/react-native` (Секція 5.1, Фаза 12).                                                                          |
+| `@axe-core/playwright`                                      | `apps/web/tests/a11y`                                                                                                    | **Не мігруємо**. На RN a11y тести через Detox + `accessibilityLabel`/`accessibilityRole` асерти.                       |
+| `Intl.DateTimeFormat` / `toLocaleString`                    | всюди для дат/валют                                                                                                      | Expo 52 тягне Hermes з повним Intl (since 0.73). Перевірити у Фазі 2 smoke-тестом.                                     |
 
 ## 8. Тестування
 
@@ -389,6 +422,33 @@ Web використовує кастомні компоненти + canvas/SVG.
 ## 10. App Store / Play Store
 
 Потрібно ще зробити:
+
+### 10.1 iOS `Info.plist` usage descriptions (прив’язані до модулів)
+
+- `NSCameraUsageDescription` — nutrition barcode + photo, fizruk PhotoProgress.
+- `NSPhotoLibraryUsageDescription` — nutrition photo-аналіз (галерея),
+  fizruk progress photos.
+- `NSPhotoLibraryAddUsageDescription` — якщо зберігаємо WeeklyDigest PDF.
+- `NSMicrophoneUsageDescription` — voice input (HubChat).
+- `NSSpeechRecognitionUsageDescription` — `expo-speech-recognition`.
+- `NSUserNotificationsUsageDescription` / `NSRemindersUsageDescription` —
+  routine reminders (опційно, якщо пишемо в Reminders.app).
+- `NSFaceIDUsageDescription` — якщо додаватимемо app-lock на фінансовий
+  модуль (потенційно, не MVP).
+- `NSLocalNetworkUsageDescription` — якщо буде само-детект-превью
+  (dev-only, віддалено).
+
+### 10.2 Android runtime permissions
+
+- `CAMERA` — nutrition barcode, photo capture.
+- `READ_MEDIA_IMAGES` (API 33+) / `READ_EXTERNAL_STORAGE` (<33) —
+  photo gallery pick.
+- `RECORD_AUDIO` — voice input.
+- `POST_NOTIFICATIONS` (API 33+) — reminders + sync-push.
+- `SCHEDULE_EXACT_ALARM` (API 33+) — routine reminders.
+- `USE_BIOMETRIC` — якщо додаватимемо app-lock.
+
+### 10.3 Store-асети
 
 - iOS: Apple Developer account, App Store Connect app record,
   privacy manifest (`PrivacyInfo.xcprivacy`), App Tracking Transparency
@@ -417,6 +477,21 @@ Web використовує кастомні компоненти + canvas/SVG.
   `@sergeant/shared/schemas`, перевірити, щоб `apps/mobile` тягнув
   звідти, а не дублював.
 - **R6.** ✅ Done (PR [#406](https://github.com/Skords-01/Sergeant/pull/406)). Tailwind preset + дизайн-токени у `@sergeant/design-tokens`; `apps/web/tailwind.config.js` і `apps/mobile/tailwind.config.js` обидва споживають один preset.
+- **R7.** Винести `shared/lib/haptic.ts` у двох-адаптерний вигляд:
+  PURE-контракт (`hapticTap/Success/Warning/Error/Cancel`) у
+  `@sergeant/shared`, web-імплементація на `navigator.vibrate`
+  залишається в `apps/web`, mobile-імплементація через `expo-haptics`
+  у `apps/mobile/src/lib/haptic.ts`. Консьюмери (`@sergeant/finyk-domain`,
+  UI-примітиви) імпортують з `@sergeant/shared`.
+- **R8.** Винести `downloadJson(filename, payload)` у адаптер:
+  web — `Blob` + `URL.createObjectURL` + `a.download`; mobile —
+  `expo-file-system.writeAsStringAsync` у `cacheDirectory` +
+  `expo-sharing.shareAsync`. Усуне дублікати у `routine/components/RoutineBackupSection`,
+  `fizruk/pages/Progress`, `nutrition/hooks/useNutritionCloudBackup`.
+- **R9.** Винести `useVisualKeyboardInset` у платформенний хук:
+  web — `window.visualViewport.resize/scroll`; mobile — `Keyboard.addListener`
+  або `useAnimatedKeyboard` з `react-native-keyboard-controller`. Усуне
+  дублікат у `routine/hooks/useVisualKeyboardInset.ts`.
 
 Кожен R-пункт робиться окремим PR перед відповідною Фазою (щоб
 mobile PR був маленький і тільки про UI).
@@ -437,6 +512,13 @@ mobile PR був маленький і тільки про UI).
 - **Apple App Review** — "personal finance" + AI чат = підвищена увага.
   Потрібен чіткий privacy policy і пояснення, що дані Monobank
   користувача ніколи не виходять за межі його сесії.
+- **Hermes `Intl.*` покриття.** Web активно використовує
+  `toLocaleDateString`, `Intl.NumberFormat` для дат/валют у finyk/nutrition.
+  RN 0.76 + Hermes має повний Intl по дефолту, але треба smoke-тест
+  української локалі в Фазі 2 (компонент зі всіма формат-варіантами).
+- **OTA-оновлення.** `expo-updates` дозволяє пушити JS-only фікси
+  без store-review. Потрібна стратегія каналів (dev / preview / prod),
+  щоб не зламати версіювання. Планується на Фазу 11.
 
 ## 13. Прийняті рішення (Q1–Q10)
 
