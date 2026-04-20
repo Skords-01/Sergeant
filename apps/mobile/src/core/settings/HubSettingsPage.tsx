@@ -6,12 +6,12 @@
  * Scope of this first cut (Phase 2 / Hub-core):
  *  - Shell with a screen title ("Налаштування") and a vertical stack of
  *    collapsible `SettingsGroup` cards, one per section.
- *  - Three sections ported: `GeneralSection`, `RoutineSection`,
- *    `ExperimentalSection`.
- *  - Four remaining sections (Notifications / Finyk / Fizruk /
- *    AIDigest) are rendered as `<PlaceholderSection>` cards with a
- *    "Скоро — буде портовано" label + the same `emoji + title` shape as
- *    `SettingsGroup` so the visual hierarchy is already final.
+ *  - Four sections ported: `GeneralSection`, `RoutineSection`,
+ *    `ExperimentalSection`, `NotificationsSection`.
+ *  - Three remaining sections (Finyk / Fizruk / AIDigest) are rendered
+ *    as `<PlaceholderSection>` cards with a "Скоро — буде портовано"
+ *    label + the same `emoji + title` shape as `SettingsGroup` so the
+ *    visual hierarchy is already final.
  *
  * Intentional differences from the web shell:
  *  - No `Tabs` group switcher and no fuzzy search input yet — both would
@@ -34,6 +34,7 @@ import { Card } from "@/components/ui/Card";
 
 import { ExperimentalSection } from "./ExperimentalSection";
 import { GeneralSection } from "./GeneralSection";
+import { NotificationsSection } from "./NotificationsSection";
 import { RoutineSection } from "./RoutineSection";
 
 interface PlaceholderSectionProps {
@@ -76,12 +77,12 @@ export function HubSettingsPage() {
         </Text>
 
         <GeneralSection />
+        <NotificationsSection />
         <RoutineSection />
         <ExperimentalSection />
 
         {/* TODO(mobile-migration): порт секцій іде окремими PR-ами.
             Див. docs/react-native-migration.md (Phase 2 / Hub-core). */}
-        <PlaceholderSection title="Нагадування" emoji="🔔" />
         <PlaceholderSection title="AI-дайджести" emoji="🤖" />
         <PlaceholderSection title="Фізрук" emoji="🏋️" />
         <PlaceholderSection title="Фінік" emoji="💰" />
