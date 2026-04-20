@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { STORAGE_KEYS } from "@shared/lib/storageKeys.js";
+import { STORAGE_KEYS } from "@sergeant/shared";
 import { hasLiveWeeklyDigest } from "./WeeklyDigestCard.jsx";
 import { getWeekKey } from "./useWeeklyDigest.js";
 

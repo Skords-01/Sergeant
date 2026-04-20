@@ -27,7 +27,7 @@ vi.mock("@shared/api", async () => {
 });
 
 import { syncApi } from "@shared/api";
-import { STORAGE_KEYS } from "@shared/lib/storageKeys";
+import { STORAGE_KEYS } from "@sergeant/shared";
 import { markMigrationDone } from "../state/migration";
 import { initialSync } from "./initialSync";
 

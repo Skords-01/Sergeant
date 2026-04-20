@@ -3,7 +3,7 @@ import { cn } from "@shared/lib/cn";
 import { Icon } from "@shared/components/ui/Icon";
 import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { safeReadLS, safeWriteLS, safeRemoveLS } from "@shared/lib/storage.js";
-import { STORAGE_KEYS } from "@shared/lib/storageKeys.js";
+import { STORAGE_KEYS } from "@sergeant/shared";
 import { openHubModuleWithAction } from "@shared/lib/hubNav";
 import { getModulePrimaryAction } from "@shared/lib/moduleQuickActions";
 import { TodayFocusCard, useDashboardFocus } from "./TodayFocusCard.jsx";

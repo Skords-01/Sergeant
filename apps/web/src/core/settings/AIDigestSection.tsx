@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@shared/components/ui/Button";
 import { useToast } from "@shared/hooks/useToast.jsx";
 import { safeReadLS, safeWriteLS } from "@shared/lib/storage.js";
-import { STORAGE_KEYS } from "@shared/lib/storageKeys.js";
+import { STORAGE_KEYS } from "@sergeant/shared";
 import { useWeeklyDigest } from "../useWeeklyDigest.js";
 import { SettingsGroup, ToggleRow } from "./SettingsPrimitives.jsx";
 

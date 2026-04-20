@@ -21,7 +21,7 @@ import {
   SYNC_EVENT,
   SYNC_STATUS_EVENT,
 } from "./useCloudSync.js";
-import { STORAGE_KEYS } from "@shared/lib/storageKeys.js";
+import { STORAGE_KEYS } from "@sergeant/shared";
 
 beforeEach(() => {
   // Clear all tracked state. Use the patched setItem/removeItem so behavior

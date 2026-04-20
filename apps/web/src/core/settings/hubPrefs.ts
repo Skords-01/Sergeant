@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { STORAGE_KEYS } from "@shared/lib/storageKeys.js";
+import { STORAGE_KEYS } from "@sergeant/shared";
 
 const HUB_PREFS_KEY = STORAGE_KEYS.HUB_PREFS;
 

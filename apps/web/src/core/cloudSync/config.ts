@@ -1,4 +1,4 @@
-import { STORAGE_KEYS } from "@shared/lib/storageKeys";
+import { STORAGE_KEYS } from "@sergeant/shared";
 
 /**
  * Registry of sync modules and the localStorage keys that belong to each.

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { safeReadLS, safeWriteLS } from "@shared/lib/storage.js";
-import { STORAGE_KEYS } from "@shared/lib/storageKeys.js";
+import { STORAGE_KEYS } from "@sergeant/shared";
 
 const KEY = STORAGE_KEYS.FIZRUK_TEMPLATES;
 
