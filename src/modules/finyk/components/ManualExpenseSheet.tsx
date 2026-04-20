@@ -134,7 +134,13 @@ export function ManualExpenseSheet({
   const catLabelId = `${formId}-cat-label`;
   const kbInsetPx = useVisualKeyboardInset(open);
   const isEditing = !!initialExpense?.id;
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<{
+    description: string;
+    amount: string;
+    category: string;
+    date: string;
+    showDateField?: boolean;
+  }>({
     description: "",
     amount: "",
     category: DEFAULT_CATEGORY,

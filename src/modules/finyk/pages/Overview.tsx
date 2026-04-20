@@ -1,11 +1,4 @@
-import {
-  useMemo,
-  useEffect,
-  useRef,
-  useState,
-  useCallback,
-  type ComponentType,
-} from "react";
+import { useMemo, useEffect, useRef, useState, useCallback } from "react";
 import { trackEvent, ANALYTICS_EVENTS } from "../../../core/analytics";
 import {
   calcDebtRemaining,
@@ -26,13 +19,7 @@ import { filterStatTransactions } from "../domain/transactions";
 import { Skeleton } from "@shared/components/ui/Skeleton";
 import { THEME_HEX } from "@shared/lib/themeHex.js";
 import { SyncStatusBadge } from "../components/SyncStatusBadge";
-import { RetroComparison as RetroComparisonRaw } from "../components/RetroComparison";
-
-// Untyped .jsx component — loosen while RetroComparison.jsx stays JS.
-// Tightens when finyk/components/* migrates to .tsx (next PR).
-const RetroComparison = RetroComparisonRaw as unknown as ComponentType<
-  Record<string, unknown>
->;
+import { RetroComparison } from "../components/RetroComparison";
 
 import { FirstInsightBanner } from "./overview/FirstInsightBanner.jsx";
 import { HeroCard } from "./overview/HeroCard.jsx";

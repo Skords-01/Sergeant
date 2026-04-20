@@ -1,26 +1,37 @@
 import { memo } from "react";
 import { cn } from "@shared/lib/cn";
 
-function formatDueDate(dueDate) {
+function formatDueDate(dueDate: string | null | undefined) {
   if (!dueDate) return null;
   const now = new Date();
   const [y, m, d] = dueDate.split("-").map(Number);
   const date = new Date(y, (m || 1) - 1, d || 1);
   if (Number.isNaN(date.getTime())) return null;
-  const days = Math.ceil(
-    (date - new Date(now.getFullYear(), now.getMonth(), now.getDate())) /
-      86400000,
-  );
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const days = Math.ceil((date.getTime() - today.getTime()) / 86400000);
   if (days < 0) return `Прострочено на ${Math.abs(days)} дн`;
   if (days === 0) return "Сьогодні";
   if (days === 1) return "Завтра";
   return `Через ${days} дн`;
 }
 
-function formatDueDateValue(dueDate) {
+function formatDueDateValue(dueDate: string | null | undefined) {
   if (!dueDate) return "";
   const [y, m, d] = dueDate.split("-").map(Number);
   return new Date(y, (m || 1) - 1, d || 1).toLocaleDateString("uk-UA");
+}
+
+interface DebtCardProps {
+  name: string;
+  emoji: string;
+  remaining: number;
+  paid: number;
+  total: number;
+  onDelete?: () => void;
+  onLink?: () => void;
+  linkedCount?: number;
+  isReceivable?: boolean;
+  dueDate?: string | null;
 }
 
 // Чиста картка боргу / заборгованості — рендер повністю керується пропсами,
@@ -36,7 +47,7 @@ function DebtCardComponent({
   linkedCount,
   isReceivable,
   dueDate,
-}) {
+}: DebtCardProps) {
   const pct = total > 0 ? Math.min(100, Math.round((paid / total) * 100)) : 0;
   const dueText = formatDueDate(dueDate);
   const isOverdue = dueText?.includes("Прострочено");

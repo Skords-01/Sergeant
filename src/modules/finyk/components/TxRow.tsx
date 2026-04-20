@@ -40,6 +40,25 @@ function getAccountShortName(acc) {
 // списку транзакцій. Обгортаємо у React.memo, щоб рядок перерендерювався
 // лише при зміні власних пропсів (категорія, приховання, спліти), а не
 // щоразу, коли батько оновлює стан (фільтри, скрол, вибір).
+// Legacy untyped shapes — pages/storage hand us heterogeneous records and
+// the categorisation / split / account code paths predate static typing.
+/* eslint-disable @typescript-eslint/no-explicit-any */
+interface TxRowProps {
+  tx: any;
+  onClick?: (() => void) | null;
+  highlighted?: boolean;
+  onHide?: ((id: string) => void) | null;
+  hidden?: boolean;
+  overrideCatId?: string | null;
+  onCatChange?: ((id: string, catId: string | null) => void) | null;
+  accounts?: any[];
+  hideAmount?: boolean;
+  txSplits?: Record<string, any>;
+  onSplitChange?: ((id: string, split: any) => void) | null;
+  customCategories?: any[];
+}
+/* eslint-enable @typescript-eslint/no-explicit-any */
+
 function TxRowImpl({
   tx,
   onClick,
@@ -53,7 +72,7 @@ function TxRowImpl({
   txSplits,
   onSplitChange,
   customCategories = [],
-}) {
+}: TxRowProps) {
   const [catPicker, setCatPicker] = useState(false);
   const [splitEditor, setSplitEditor] = useState(false);
   const [draftSplits, setDraftSplits] = useState([]);

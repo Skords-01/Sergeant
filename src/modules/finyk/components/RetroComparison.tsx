@@ -5,6 +5,7 @@ import {
   formatComparisonSummary,
   getCurrentVsPreviousComparison,
 } from "../domain/selectors";
+import type { Transaction, TxSplitsMap } from "../domain/types";
 
 const MONTH_LABELS_GENITIVE = [
   "січня",
@@ -23,7 +24,7 @@ const MONTH_LABELS_GENITIVE = [
 
 // "2025-02" → "лютого 2025". Робочий підпис у заголовку картки для
 // попереднього місяця — без часу доби, без локалей.
-function formatMonthKeyLabel(key) {
+function formatMonthKeyLabel(key: string | null | undefined) {
   if (!key) return "";
   const [ys, ms] = key.split("-");
   const year = Number(ys);
@@ -41,6 +42,15 @@ function formatMonthKeyLabel(key) {
  * Якщо порівнювати немає з чим (в обох місяцях нуль), повертає `null`,
  * щоб не захаращувати Overview порожніми блоками.
  */
+interface RetroComparisonProps {
+  transactions: readonly Transaction[] | null | undefined;
+  excludedTxIds: Set<string> | Iterable<string>;
+  txSplits: TxSplitsMap;
+  now: Date;
+  showBalance?: boolean;
+  className?: string;
+}
+
 export const RetroComparison = memo(function RetroComparison({
   transactions,
   excludedTxIds,
@@ -48,7 +58,7 @@ export const RetroComparison = memo(function RetroComparison({
   now,
   showBalance = true,
   className,
-}) {
+}: RetroComparisonProps) {
   const comparison = useMemo(
     () =>
       getCurrentVsPreviousComparison(transactions, {

@@ -84,7 +84,26 @@ function IconPicker({ value, onChange }) {
   );
 }
 
-function CategoryForm({ initial = {}, allCategories = [], onSave, onCancel }) {
+interface CategoryFormInitial {
+  label?: string;
+  color?: string;
+  icon?: string;
+  parentId?: string;
+}
+interface CategoryFormProps {
+  initial?: CategoryFormInitial;
+  allCategories?: Array<
+    { id: string; parentId?: string | null } & Record<string, unknown>
+  >;
+  onSave: (data: Record<string, unknown>) => void;
+  onCancel: () => void;
+}
+function CategoryForm({
+  initial = {},
+  allCategories = [],
+  onSave,
+  onCancel,
+}: CategoryFormProps) {
   const [label, setLabel] = useState(initial.label || "");
   const [color, setColor] = useState(initial.color || PRESET_COLORS[0]);
   const [icon, setIcon] = useState(initial.icon || "");
@@ -164,7 +183,7 @@ function CategoryForm({ initial = {}, allCategories = [], onSave, onCancel }) {
             <option value="">— Коренева категорія</option>
             {rootCategories.map((c) => (
               <option key={c.id} value={c.id}>
-                {c.label}
+                {String((c as { label?: string }).label ?? c.id)}
               </option>
             ))}
           </select>

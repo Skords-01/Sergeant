@@ -1,15 +1,8 @@
-import { useState, type ComponentType } from "react";
-import { DebtCard as DebtCardRaw } from "../components/DebtCard";
+import { useState } from "react";
+import { DebtCard } from "../components/DebtCard";
 import { SubCard } from "../components/SubCard";
 import { RecurringSuggestions } from "../components/RecurringSuggestions";
-import { TxRow as TxRowRaw } from "../components/TxRow";
-
-// Untyped .jsx components — loosen prop types while those files remain .jsx.
-// They'll be tightened when `finyk/components/*` migrates to .tsx (next PR).
-const TxRow = TxRowRaw as unknown as ComponentType<Record<string, unknown>>;
-const DebtCard = DebtCardRaw as unknown as ComponentType<
-  Record<string, unknown>
->;
+import { TxRow } from "../components/TxRow";
 import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { Button } from "@shared/components/ui/Button";
 import { Card } from "@shared/components/ui/Card";
