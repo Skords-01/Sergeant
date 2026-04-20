@@ -734,7 +734,7 @@ export function Assets({
                   }
                 />
                 <select
-                  className="w-full h-11 rounded-2xl border border-line bg-panelHi px-4 text-text outline-none focus:border-muted transition-colors"
+                  className="input-focus-finyk w-full h-11 rounded-2xl border border-line bg-panelHi px-4 text-text"
                   value={newAsset.currency}
                   onChange={(e) =>
                     setNewAsset((a) => ({ ...a, currency: e.target.value }))

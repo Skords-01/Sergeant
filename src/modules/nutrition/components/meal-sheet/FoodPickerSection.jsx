@@ -178,7 +178,7 @@ export function FoodPickerSection({
                   min={1}
                   onChange={(e) => setPickedGrams(e.target.value)}
                   aria-label="Грами"
-                  className="w-[76px] text-center bg-panel border border-line rounded-xl px-2 py-2 text-sm font-bold text-text outline-none focus:border-nutrition/60 transition-colors [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                  className="input-focus-nutrition w-[76px] text-center bg-panel border border-line rounded-xl px-2 py-2 text-sm font-bold text-text [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                 />
                 <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-subtle pointer-events-none">
                   г

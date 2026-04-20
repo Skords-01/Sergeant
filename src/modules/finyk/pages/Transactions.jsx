@@ -524,7 +524,7 @@ export function Transactions({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Пошук по транзакціях…"
-            className="w-full bg-panelHi border border-line rounded-2xl pl-9 pr-4 py-2.5 text-sm text-text placeholder:text-subtle focus:outline-none focus:border-primary/50 transition-colors"
+            className="input-focus-finyk w-full bg-panelHi border border-line rounded-2xl pl-9 pr-4 py-2.5 text-sm text-text placeholder:text-subtle"
           />
           {search && (
             <button

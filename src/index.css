@@ -198,6 +198,42 @@
   }
 
   /* ═══════════════════════════════════════════════════════════════════════
+     INPUT FOCUS — ring без offset (краще читається всередині заповненого
+     input-а), лишає existing border-transition інтактним. Варіанти беруть
+     module tone; базовий `.input-focus` — для загальних (brand) інпутів.
+     Завжди `focus-visible:` щоб не дратувати користувачів миші.
+     ═══════════════════════════════════════════════════════════════════════ */
+  .input-focus {
+    @apply outline-none transition-colors
+           focus-visible:border-brand-500/60
+           focus-visible:ring-2 focus-visible:ring-brand-500/30;
+  }
+
+  .input-focus-finyk {
+    @apply outline-none transition-colors
+           focus-visible:border-primary/60
+           focus-visible:ring-2 focus-visible:ring-primary/25;
+  }
+
+  .input-focus-fizruk {
+    @apply outline-none transition-colors
+           focus-visible:border-success/60
+           focus-visible:ring-2 focus-visible:ring-success/25;
+  }
+
+  .input-focus-nutrition {
+    @apply outline-none transition-colors
+           focus-visible:border-nutrition/60
+           focus-visible:ring-2 focus-visible:ring-nutrition/25;
+  }
+
+  .input-focus-routine {
+    @apply outline-none transition-colors
+           focus-visible:border-routine/60
+           focus-visible:ring-2 focus-visible:ring-routine/25;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════
      PANELS & CARDS — Core UI surfaces
      ═══════════════════════════════════════════════════════════════════════ */
   .panel {
@@ -275,7 +311,7 @@
     @apply min-h-[44px] w-full rounded-2xl border border-line bg-panelHi px-3 outline-none
            text-[16px] leading-normal md:text-sm
            transition-colors duration-150
-           focus:border-routine/60 focus:ring-2 focus:ring-routine/20;
+           focus-visible:border-routine/60 focus-visible:ring-2 focus-visible:ring-routine/20;
   }
 
   /* ═══════════════════════════════════════════════════════════════════════

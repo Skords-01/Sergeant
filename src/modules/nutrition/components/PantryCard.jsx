@@ -262,7 +262,7 @@ export function PantryCard({
               value={pantryText}
               onChange={(e) => setPantryText(e.target.value)}
               placeholder={'напр. "2 яйця, курка 500г, рис, огірки, сир"'}
-              className="flex-1 min-h-[96px] rounded-2xl bg-panel border border-line px-4 py-3 text-sm text-text outline-none focus:border-nutrition/60 placeholder:text-subtle transition-colors"
+              className="input-focus-nutrition flex-1 min-h-[96px] rounded-2xl bg-panel border border-line px-4 py-3 text-sm text-text placeholder:text-subtle"
               disabled={busy}
             />
             <button
