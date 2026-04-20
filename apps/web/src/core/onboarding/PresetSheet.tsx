@@ -22,7 +22,7 @@ const PRESETS = {
   routine: {
     title: "Яку звичку почнемо?",
     desc: "Одне натискання — і вона у твоєму списку сьогодні.",
-    accent: "text-routine bg-routine-soft",
+    accent: "text-routine-strong dark:text-routine bg-routine-surface",
     moduleIcon: "check",
     fallback: { action: "add_habit", label: "Своя звичка", icon: "plus" },
     items: [
