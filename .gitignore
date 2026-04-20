@@ -5,6 +5,9 @@ dist
 .vercel
 .vitest-localstorage.json*
 
+# Turbo
+.turbo/
+
 # Playwright (a11y tests)
 playwright-report/
 test-results/

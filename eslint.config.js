@@ -100,9 +100,9 @@ export default [
   // callers should import from.
   {
     files: [
-      "src/shared/components/ui/SectionHeading.tsx",
-      "src/shared/components/ui/FormField.tsx",
-      "src/shared/charts/chartTheme.ts",
+      "apps/web/src/shared/components/ui/SectionHeading.tsx",
+      "apps/web/src/shared/components/ui/FormField.tsx",
+      "apps/web/src/shared/charts/chartTheme.ts",
     ],
     rules: {
       "sergeant-design/no-eyebrow-drift": "off",
