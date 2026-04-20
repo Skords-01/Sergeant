@@ -3,4 +3,6 @@
 // будь-яких платформних залежностей (`localStorage`, `window`, `document`).
 export * from "./constants.js";
 export * from "./utils.js";
+export * from "./storageKeys.js";
+export * from "./backup.js";
 export * as FinykDomain from "./domain/index.js";

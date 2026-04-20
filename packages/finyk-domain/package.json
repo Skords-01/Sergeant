@@ -7,11 +7,13 @@
   "types": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
+    "./backup": "./src/backup.ts",
     "./constants": "./src/constants.ts",
     "./domain": "./src/domain/index.ts",
     "./domain/*": "./src/domain/*.ts",
     "./lib": "./src/lib/index.ts",
     "./lib/*": "./src/lib/*.ts",
+    "./storage-keys": "./src/storageKeys.ts",
     "./utils": "./src/utils.ts"
   },
   "scripts": {

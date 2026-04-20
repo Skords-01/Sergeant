@@ -18,17 +18,17 @@ import type {
   Category,
   Transaction,
 } from "@sergeant/finyk-domain/domain/types";
+import {
+  FINYK_STORAGE_KEYS,
+  type FinykStorageKey,
+} from "@sergeant/finyk-domain/storage-keys";
 import { BudgetsSchema } from "@sergeant/shared";
 
-/** Стандартні ключі доменних сутностей ФІНІК. Не змінювати без міграції. */
-export const FINYK_STORAGE_KEYS = Object.freeze({
-  transactions: "finyk_manual_expenses_v1",
-  categories: "finyk_custom_cats_v1",
-  budget: "finyk_budgets",
-} as const);
-
-export type FinykStorageKey =
-  (typeof FINYK_STORAGE_KEYS)[keyof typeof FINYK_STORAGE_KEYS];
+// Re-export the storage keys so existing web call sites keep working
+// without updating imports. New code (and mobile) should import from
+// `@sergeant/finyk-domain/storage-keys` directly.
+export { FINYK_STORAGE_KEYS };
+export type { FinykStorageKey };
 
 // Типи створюються локально, бо createModuleStorage.js — untyped JS.
 // Сигнатури повторюють публічний API фабрики.

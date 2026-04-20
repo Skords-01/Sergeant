@@ -222,6 +222,22 @@ isReduceMotionEnabled()` (WCAG 2.3.3 parity).
   `@gorhom/bottom-sheet` / `react-native-modal` / Reanimated.
 - `apps/mobile/eas.json` з профайлами `development` / `preview` /
   `production` + `.easignore` (PR #408).
+- `packages/finyk-domain/src/storageKeys.ts` і
+  `packages/finyk-domain/src/backup.ts` — PR2 Фази 4 (pure domain
+  extract). `FINYK_STORAGE_KEYS`, `FINYK_MANUAL_ONLY_KEY` та мапа
+  `FINYK_BACKUP_STORAGE_KEYS` переїхали з
+  `apps/web/src/modules/finyk/lib/*` у DOM-free пакет, щоб і
+  mobile-адаптер (MMKV), і web (localStorage) брали одні й ті самі
+  рядки. Paired із `FINYK_BACKUP_VERSION`, `DEFAULT_FINYK_MONTHLY_PLAN`,
+  `FinykBackup` типом та чистими `normalizeFinykBackup` /
+  `normalizeFinykSyncPayload` — усі тестуються `vitest`-ом у
+  `backup.test.ts` (23 нові тест-кейси на шляхи невалідного версіонінгу,
+  компактні/повні payload-и, malformed rows). Web-файли
+  `lib/finykStorage.ts`, `lib/finykBackup.ts`, `lib/demoData.ts`
+  тонко реекспортять ці символи під історичними іменами — жоден
+  call-site в `apps/web` не змінюється. Нові entry-points у
+  `package.json` exports: `@sergeant/finyk-domain/storage-keys` +
+  `@sergeant/finyk-domain/backup`.
 - `apps/mobile/app/(tabs)/finyk/` + `apps/mobile/src/modules/finyk/` —
   перший зріз Фази 4, PR1 (shell + stack-роутинг). `finyk.tsx`-стаб
   замінено на директорію-роут з `_layout.tsx` (native `Stack`

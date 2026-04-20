@@ -6,18 +6,21 @@
 // onboarding presets and by the "Далі без банку" escape hatch on the
 // Finyk login screen itself.
 //
+// The key name itself lives in `@sergeant/finyk-domain/storage-keys`
+// so the mobile twin can enable the same flag on its MMKV adapter.
+//
 // Kept at this path (rather than renamed) so the many call sites that
 // already import `FINYK_MANUAL_ONLY_KEY` / `enableFinykManualOnly` from
 // here don't need to be touched.
 
+import { FINYK_MANUAL_ONLY_KEY } from "@sergeant/finyk-domain/storage-keys";
 import { writeRaw } from "./finykStorage.js";
 
-/**
- * localStorage flag that lets Finyk render its full UI even without a
- * Monobank token. Set by either the onboarding first-action flow or
- * the "Далі без банку" button on the login screen.
- */
-export const FINYK_MANUAL_ONLY_KEY = "finyk_manual_only_v1";
+// Re-export under its existing name so `apps/web` call sites that
+// import `FINYK_MANUAL_ONLY_KEY` from `./lib/demoData` keep working.
+// New code (and mobile) should import directly from
+// `@sergeant/finyk-domain/storage-keys`.
+export { FINYK_MANUAL_ONLY_KEY };
 
 /**
  * Mark the account as "manual only" — Finyk will skip the Monobank
