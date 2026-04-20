@@ -42,11 +42,11 @@ export function getApiBaseURL(): string {
 
 export function apiUrl(path: string): string {
   const base = getApiBaseURL();
-  const versioned = applyVersion(path);
+  const rawPath = path.startsWith("/") ? path : `/${path}`;
+  const versioned = applyVersion(rawPath);
   if (!base) return versioned;
   if (versioned.startsWith("http://") || versioned.startsWith("https://")) {
     return versioned;
   }
-  if (!versioned.startsWith("/")) return `${base}/${versioned}`;
   return `${base}${versioned}`;
 }

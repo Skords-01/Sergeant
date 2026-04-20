@@ -88,7 +88,7 @@ export default function SignUpScreen() {
             (pressed || loading) && styles.buttonPressed,
           ]}
           onPress={onSubmit}
-          disabled={loading || !email || password.length < 10}
+          disabled={loading || !name || !email || password.length < 10}
         >
           {loading ? (
             <ActivityIndicator color={colors.text} />
