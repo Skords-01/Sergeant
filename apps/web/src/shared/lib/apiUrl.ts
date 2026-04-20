@@ -27,6 +27,21 @@ function getApiVersion(): string {
   return raw.replace(/^\/+|\/+$/g, "");
 }
 
+/**
+ * Значення, яке треба передати у `createApiClient({ apiPrefix })`, щоб
+ * поведінка `@sergeant/api-client` була консистентна з тим, що повертає
+ * `apiUrl()` для прямих `fetch`-викликів: або `/api/v1` (default), або
+ * `/api` у legacy-режимі `VITE_API_VERSION=none`.
+ *
+ * Завдяки цьому web-код, що досі ходить через `fetch(apiUrl(...))`, і
+ * код, що перейшов на api-client, завжди бʼють у один і той самий
+ * префікс — перемикнути обидва одразу можна через одну env-змінну.
+ */
+export function getApiPrefix(): string {
+  const version = getApiVersion();
+  return version ? `/api/${version}` : "/api";
+}
+
 function applyVersion(path: string): string {
   const version = getApiVersion();
   if (!version) return path;

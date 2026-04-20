@@ -18,6 +18,23 @@ export interface HttpClientConfig {
    */
   baseUrl?: string;
   /**
+   * API-префікс, під який переписуються шляхи виду `/api/...`. За
+   * замовчуванням — `/api/v1`, тож `http.post("/api/push/register", …)`
+   * фактично йде у `/api/v1/push/register`. Сервер тримає `/api/*` і
+   * `/api/v1/*` як дзеркало, тому переписування безпечне для існуючого
+   * вебу (див. `apiVersionRewrite` у `apps/server/src/app.ts`).
+   *
+   * Винятки, які НЕ чіпаються:
+   *   - `/api/auth/*` — Better Auth зашитий під фіксований `basePath`;
+   *   - шляхи, що вже починаються з `apiPrefix` (ідемпотентність —
+   *     сторонній код може давати `/api/v1/...` явно);
+   *   - шляхи, що не починаються з `/api/` — прокидаються як є.
+   *
+   * Щоб тимчасово повернути легасі-префікс (escape hatch під час rollout),
+   * передай `apiPrefix: "/api"` у `createApiClient`/`createHttpClient`.
+   */
+  apiPrefix?: string;
+  /**
    * Якщо надано — результат додається як `Authorization: Bearer <token>`
    * до кожного запиту. Повертає `null`/`undefined` коли токен не заданий,
    * тоді заголовок не ставимо.
@@ -36,6 +53,47 @@ export interface HttpClientConfig {
    * Дефолтні заголовки, що додаються до кожного запиту (після `getToken`).
    */
   defaultHeaders?: Record<string, string>;
+}
+
+/**
+ * Default API prefix. Mobile-клієнти і за замовчуванням web через
+ * `createApiClient()` ходять у `/api/v1/*`. `/api/auth/*` — виняток.
+ */
+export const DEFAULT_API_PREFIX = "/api/v1";
+const LEGACY_API_PREFIX = "/api";
+const AUTH_PATH_PREFIX = "/api/auth";
+
+function normalizeApiPrefix(prefix: string): string {
+  const trimmed = prefix.replace(/\/+$/, "");
+  if (!trimmed) return LEGACY_API_PREFIX;
+  return trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
+}
+
+/**
+ * Переписує шляхи виду `/api/<rest>` на `${prefix}/<rest>`.
+ *
+ * Правила (консистентно з `apps/web/src/shared/lib/apiUrl.ts`):
+ *   - не починається з `/api/` → повертаємо як є (fully-qualified URL, asset, ...);
+ *   - `/api/auth` або `/api/auth/...` → як є (Better Auth basePath);
+ *   - уже починається з `prefix/` або дорівнює `prefix` → як є (ідемпотентність);
+ *   - `prefix === "/api"` → як є (legacy mode, нічого не робимо);
+ *   - інакше: `/api<rest>` → `${prefix}<rest>`.
+ */
+export function applyApiPrefix(path: string, prefix: string): string {
+  const normalizedPrefix = normalizeApiPrefix(prefix);
+  if (normalizedPrefix === LEGACY_API_PREFIX) return path;
+  if (!path.startsWith(LEGACY_API_PREFIX)) return path;
+  // Точний сегментний збіг — щоб `/api-foo` / `/apiv2` (інший endpoint) не зачепило.
+  if (path !== LEGACY_API_PREFIX && !path.startsWith(`${LEGACY_API_PREFIX}/`)) {
+    return path;
+  }
+  if (path === AUTH_PATH_PREFIX || path.startsWith(`${AUTH_PATH_PREFIX}/`)) {
+    return path;
+  }
+  if (path === normalizedPrefix || path.startsWith(`${normalizedPrefix}/`)) {
+    return path;
+  }
+  return normalizedPrefix + path.slice(LEGACY_API_PREFIX.length);
 }
 
 export interface HttpClient {
@@ -167,6 +225,7 @@ function networkMessage(cause: unknown): string {
 export function createHttpClient(config: HttpClientConfig = {}): HttpClient {
   const {
     baseUrl,
+    apiPrefix = DEFAULT_API_PREFIX,
     getToken,
     fetchImpl,
     defaultCredentials = "include",
@@ -204,7 +263,8 @@ export function createHttpClient(config: HttpClientConfig = {}): HttpClient {
     path: string,
     opts: RequestOptions = {},
   ): Promise<T> {
-    const url = resolveUrl(baseUrl, path, opts.query);
+    const prefixed = applyApiPrefix(path, apiPrefix);
+    const url = resolveUrl(baseUrl, prefixed, opts.query);
     const fetchFn = fetchImpl ?? globalThis.fetch;
     const headers = await buildHeaders(opts);
     const { signal, cancel } = combineSignals(opts.signal, opts.timeoutMs);

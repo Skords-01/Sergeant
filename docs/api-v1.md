@@ -20,6 +20,24 @@
 - **Гнучкий rollout для фронта.** `VITE_API_VERSION=none` повертає
   старий `/api/*` префікс без редеплою сервера — корисно як escape hatch.
 
+## `@sergeant/api-client` — дефолтний префікс
+
+Пакет `@sergeant/api-client` (який імпортує і web, і мобілка) переписує
+шляхи вигляду `/api/<rest>` на `${apiPrefix}<rest>` у середині `httpClient`:
+
+- За замовчуванням `apiPrefix === "/api/v1"`, тож виклик
+  `apiClient.push.subscribe(...)` фактично йде у `/api/v1/push/subscribe`.
+- `/api/auth/*` виключено — Better Auth-плагіни зашиті під
+  `basePath: "/api/auth"`.
+- Шляхи, що вже починаються з `apiPrefix` (напр. явний `/api/v1/foo`), —
+  ідемпотентні, префікс двічі не додається.
+- Escape hatch — передати `apiPrefix: "/api"` у `createApiClient(...)`
+  повертає легасі-поведінку без змін в endpoint-обгортках.
+
+Web прокидає `apiPrefix` через `getApiPrefix()` (див. `apps/web/src/shared/lib/apiUrl.ts`),
+щоб і прямі `fetch(apiUrl(...))`, і виклики через api-client одночасно
+перемикалися однією змінною `VITE_API_VERSION`.
+
 ## Авторизація — не версіонується
 
 `/api/auth/*` свідомо **не** переписується у `/api/v1/auth/*`:

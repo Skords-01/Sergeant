@@ -3,7 +3,11 @@ export { createApiClient } from "./createApiClient";
 export type { ApiClient, ApiClientConfig } from "./createApiClient";
 
 // HTTP primitives
-export { createHttpClient } from "./httpClient";
+export {
+  createHttpClient,
+  applyApiPrefix,
+  DEFAULT_API_PREFIX,
+} from "./httpClient";
 export type { HttpClient, HttpClientConfig, TokenProvider } from "./httpClient";
 
 // Error types

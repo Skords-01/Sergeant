@@ -14,7 +14,7 @@
  */
 import { createApiClient } from "@sergeant/api-client";
 
-import { apiUrl } from "@shared/lib/apiUrl";
+import { apiUrl, getApiPrefix } from "@shared/lib/apiUrl";
 
 function readNutritionToken(): string {
   try {
@@ -31,6 +31,9 @@ function readNutritionToken(): string {
 
 export const apiClient = createApiClient({
   baseUrl: apiUrl(""),
+  // `apiPrefix` синхронізує api-client із `apiUrl()` прямих `fetch`-викликів:
+  // обидва канали шлють у `/api/v1/*` (default) або `/api/*` (VITE_API_VERSION=none).
+  apiPrefix: getApiPrefix(),
   getNutritionToken: () => readNutritionToken(),
 });
 

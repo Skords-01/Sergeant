@@ -176,6 +176,68 @@ describe("httpClient — помилки", () => {
   });
 });
 
+describe("httpClient — apiPrefix versioning", () => {
+  it("за замовчуванням /api/* → /api/v1/*", async () => {
+    const fn = mockFetchOnce(jsonResponse({ ok: true }));
+    await http.get("/api/sync/push-all");
+    const url = fn.mock.calls[0][0] as string;
+    expect(url).toBe("/api/v1/sync/push-all");
+  });
+
+  it("/api/auth/* НЕ версіонується (Better Auth basePath)", async () => {
+    const fn = mockFetchOnce(jsonResponse({ ok: true }));
+    await http.get("/api/auth/session");
+    expect(fn.mock.calls[0][0]).toBe("/api/auth/session");
+  });
+
+  it("уже версіонований /api/v1/foo → залишається як є", async () => {
+    const fn = mockFetchOnce(jsonResponse({ ok: true }));
+    await http.get("/api/v1/push/register");
+    expect(fn.mock.calls[0][0]).toBe("/api/v1/push/register");
+  });
+
+  it("не-/api/ шляхи прокидаються без змін", async () => {
+    const fn = mockFetchOnce(jsonResponse({ ok: true }));
+    await http.get("/healthz");
+    expect(fn.mock.calls[0][0]).toBe("/healthz");
+  });
+
+  it("apiPrefix: '/api' — legacy-режим, без версіонування (escape hatch)", async () => {
+    const legacy = createHttpClient({ apiPrefix: "/api" });
+    const fn = mockFetchOnce(jsonResponse({ ok: true }));
+    await legacy.get("/api/sync/push-all");
+    expect(fn.mock.calls[0][0]).toBe("/api/sync/push-all");
+  });
+
+  it("кастомний apiPrefix: /api/v2 → /api/v2/foo", async () => {
+    const v2 = createHttpClient({ apiPrefix: "/api/v2" });
+    const fn = mockFetchOnce(jsonResponse({ ok: true }));
+    await v2.get("/api/coach/memory");
+    expect(fn.mock.calls[0][0]).toBe("/api/v2/coach/memory");
+  });
+
+  it("не чіпає /api-шляхи без слеша після (напр. /api-foo) щоб не поламати сусідні префікси", async () => {
+    const fn = mockFetchOnce(jsonResponse({ ok: true }));
+    await http.get("/api-foo");
+    expect(fn.mock.calls[0][0]).toBe("/api-foo");
+  });
+
+  it("прокидає baseUrl + apiPrefix у правильному порядку", async () => {
+    const remote = createHttpClient({ baseUrl: "https://api.example.com" });
+    const fn = mockFetchOnce(jsonResponse({ ok: true }));
+    await remote.get("/api/me");
+    expect(fn.mock.calls[0][0]).toBe("https://api.example.com/api/v1/me");
+  });
+
+  it("query-параметри коректно додаються до переписаного шляху", async () => {
+    const fn = mockFetchOnce(jsonResponse({ ok: true }));
+    await http.get("/api/food-search", { query: { q: "банан" } });
+    const url = fn.mock.calls[0][0] as string;
+    expect(url.startsWith("/api/v1/food-search?")).toBe(true);
+    expect(url).toContain("q=%D0%B1%D0%B0%D0%BD%D0%B0%D0%BD");
+  });
+});
+
 describe("httpClient — AbortSignal", () => {
   it("прокидає signal у fetch", async () => {
     const fn = mockFetchOnce(jsonResponse({ ok: true }));
