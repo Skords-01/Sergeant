@@ -83,6 +83,18 @@ export const STORAGE_KEYS = {
   // Monday visit never triggers an unexpected AI call; the setting lives in
   // Hub → Settings → AI Звіт тижня.
   WEEKLY_DIGEST_MONDAY_AUTO: "hub_weekly_digest_monday_auto_v1",
+
+  // ─── Mobile: cloud sync metadata ──────────────────────────────────────
+  // Mobile-only sync-subsystem keys. Prefixed with `mobile:` to avoid
+  // colliding with web keys in shared tests / fixtures, and to make it
+  // obvious at a glance that these live in MMKV (not localStorage).
+  // See `docs/react-native-migration.md` § 6.1.
+  MOBILE_SYNC_VERSIONS: "mobile:sync_versions",
+  MOBILE_SYNC_DIRTY_MODULES: "mobile:sync_dirty_modules",
+  MOBILE_SYNC_MODULE_MODIFIED: "mobile:sync_module_modified",
+  MOBILE_SYNC_OFFLINE_QUEUE: "mobile:sync_offline_queue",
+  MOBILE_SYNC_MIGRATION_DONE: "mobile:sync_migrated_users",
+  MOBILE_QUERY_CACHE: "mobile:query_cache_v1",
 } as const;
 
 export type StorageKey = (typeof STORAGE_KEYS)[keyof typeof STORAGE_KEYS];

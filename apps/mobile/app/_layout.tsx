@@ -10,6 +10,7 @@ import { ApiClientProvider } from "@sergeant/api-client/react";
 import { apiClient } from "@/api/apiClient";
 import { PushRegistrar } from "@/features/push/PushRegistrar";
 import { QueryProvider } from "@/providers/QueryProvider";
+import { CloudSyncProvider } from "@/sync";
 
 export default function RootLayout() {
   return (
@@ -17,13 +18,18 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <QueryProvider>
           <ApiClientProvider client={apiClient}>
-            <StatusBar style="light" />
-            <Stack screenOptions={{ headerShown: false }}>
-              <Stack.Screen name="(tabs)" />
-              <Stack.Screen name="(auth)" options={{ presentation: "modal" }} />
-              <Stack.Screen name="+not-found" />
-            </Stack>
-            <PushRegistrar />
+            <CloudSyncProvider>
+              <StatusBar style="light" />
+              <Stack screenOptions={{ headerShown: false }}>
+                <Stack.Screen name="(tabs)" />
+                <Stack.Screen
+                  name="(auth)"
+                  options={{ presentation: "modal" }}
+                />
+                <Stack.Screen name="+not-found" />
+              </Stack>
+              <PushRegistrar />
+            </CloudSyncProvider>
           </ApiClientProvider>
         </QueryProvider>
       </SafeAreaProvider>

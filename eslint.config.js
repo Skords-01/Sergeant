@@ -123,6 +123,18 @@ export default [
       "sergeant-design/no-ellipsis-dots": "off",
     },
   },
+  // Jest setup / test files need jest globals.
+  {
+    files: [
+      "**/jest.setup.js",
+      "**/jest.setup.ts",
+      "**/*.test.{js,jsx,ts,tsx}",
+      "**/__tests__/**/*.{js,jsx,ts,tsx}",
+    ],
+    languageOptions: {
+      globals: { ...globals.jest, ...globals.node },
+    },
+  },
   // AuthContext migration (Session 4B, PR after #390): "who am I" is
   // single-sourced via `useUser()` from `@sergeant/api-client/react` → GET
   // `/api/v1/me`. Better Auth stays only as the actions layer. Block

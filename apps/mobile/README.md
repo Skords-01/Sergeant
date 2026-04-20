@@ -97,6 +97,38 @@ hot-reload JS just like Expo Go, but with our native modules available.
 simulator-friendly) and store submission (`production`, AAB for Android,
 App Store distribution for iOS). They are intentionally **not** Dev Clients.
 
+## CloudSync + офлайн-черга (Фаза 3)
+
+Весь mobile-sync живе у `src/sync/*` і є дзеркалом
+`apps/web/src/core/cloudSync/*` з RN-специфічними адаптерами. Нічого
+крім React Query-персистеру не треба конфігурувати — `<CloudSyncProvider>`
+вже замонтовано в `app/_layout.tsx` після `QueryProvider`, і як тільки
+`useUser()` повертає поточного юзера, включаються:
+
+- **Debounced push** (5 с після останньої зміни dirty-модуля) — через
+  custom pub-sub у `src/sync/events.ts` (без `window.addEventListener`);
+- **Offline queue** у MMKV (`STORAGE_KEYS.MOBILE_SYNC_OFFLINE_QUEUE`,
+  префікс `mobile:`) з автоматичним coalescing послідовних push-рядків;
+- **Replay на восстановлення мережі** через `@react-native-community/netinfo`
+  (замість `navigator.onLine`);
+- **Periodic retry** кожні 2 хв для pending-роботи, якщо пристрій застряг;
+- **React Query warm-start** — `PersistQueryClientProvider` зберігає cache
+  під ключ `STORAGE_KEYS.MOBILE_QUERY_CACHE` зі `maxAge = 7 днів`.
+
+Код модулів (Фінік/Фізрук/Рутина/Харчування, йдуть у Фазах 4–7) інтегрується
+в один рядок — після запису слайсу в MMKV викличи `enqueueChange(key)` з
+`@/sync`:
+
+```ts
+import { enqueueChange } from "@/sync";
+
+safeWriteLS(STORAGE_KEYS.FINYK_TRANSACTIONS, JSON.stringify(next));
+enqueueChange(STORAGE_KEYS.FINYK_TRANSACTIONS);
+```
+
+Юніт-тести sync-інфри: `pnpm --filter @sergeant/mobile test` (jest + ts-jest,
+`testEnvironment: "node"`, нативні модулі стабаються у `jest.setup.js`).
+
 ## Архітектура
 
 ```
@@ -121,7 +153,16 @@ apps/mobile
 │   ├── auth/authClient.ts        # Better Auth Expo actions (signIn/signUp/signOut)
 │   ├── components/ModuleStub.tsx
 │   ├── features/push/            # registerPush + PushRegistrar (no-UI)
-│   ├── providers/QueryProvider.tsx
+│   ├── providers/QueryProvider.tsx  # PersistQueryClientProvider (MMKV warm start)
+│   ├── sync/                     # CloudSync + офлайн-черга (Фаза 3)
+│   │   ├── CloudSyncProvider.tsx # монтує useCloudSync під auth-сесію
+│   │   ├── hook/useCloudSync.ts  # головний orchestrator (debounce + NetInfo)
+│   │   ├── hook/useSyncStatus.ts # {dirtyCount, queuedCount, isOnline}
+│   │   ├── engine/{push,pull,replay,retryAsync,buildPayload}.ts
+│   │   ├── persister/mmkvPersister.ts  # React Query warm-start
+│   │   ├── net/online.ts         # @react-native-community/netinfo міст
+│   │   ├── queue/offlineQueue.ts # MMKV-backed черга + coalescing
+│   │   └── state/{dirtyModules,versions,moduleData}.ts
 │   └── theme.ts
 ├── app.json                      # scheme=sergeant, plugins
 ├── babel.config.js               # babel-preset-expo + reanimated
