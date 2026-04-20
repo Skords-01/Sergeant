@@ -14,6 +14,8 @@ import { useOnlineStatus } from "@shared/hooks/useOnlineStatus";
 import { ToastProvider } from "@shared/hooks/useToast";
 import { ToastContainer } from "@shared/components/ui/Toast";
 import { HUB_OPEN_MODULE_EVENT } from "@shared/lib/hubNav";
+import { ApiClientProvider } from "@sergeant/api-client/react";
+import { apiClient } from "@shared/api";
 import { AuthProvider, useAuth } from "./AuthContext.jsx";
 import { useCloudSync } from "./useCloudSync.js";
 import { PageLoader } from "./app/PageLoader.jsx";
@@ -74,9 +76,11 @@ export default function App() {
   return (
     <ToastProvider>
       <ToastContainer />
-      <AuthProvider>
-        <AppInner />
-      </AuthProvider>
+      <ApiClientProvider client={apiClient}>
+        <AuthProvider>
+          <AppInner />
+        </AuthProvider>
+      </ApiClientProvider>
     </ToastProvider>
   );
 }
