@@ -1,0 +1,13 @@
+{
+  "extends": "@sergeant/config/tsconfig.node.json",
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": false,
+    "paths": {
+      "@sergeant/shared": ["../../packages/shared/src/index.ts"],
+      "@sergeant/shared/*": ["../../packages/shared/src/*"]
+    }
+  },
+  "include": ["src/**/*", "migrate.mjs"],
+  "exclude": ["node_modules", "dist"]
+}

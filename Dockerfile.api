@@ -3,14 +3,28 @@
 FROM node:20-alpine
 WORKDIR /app
 
-COPY package.json package-lock.json ./
-RUN npm ci --omit=dev --ignore-scripts
+RUN corepack enable && corepack prepare pnpm@9.15.1 --activate
 
-COPY server ./server
-# Потрібен для `npm run db:migrate` (release-stage міграції).
-COPY scripts ./scripts
+# --- Залежності (кеш-шар) ---
+COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
+COPY packages/shared/package.json ./packages/shared/package.json
+COPY packages/config/package.json ./packages/config/package.json
+COPY apps/server/package.json ./apps/server/package.json
+
+# --prod не використовуємо, бо apps/server виконується через tsx (devDep).
+RUN pnpm install --frozen-lockfile --ignore-scripts \
+      --filter @sergeant/server... \
+      --filter @sergeant/shared...
+
+# --- Джерела ---
+COPY packages/shared ./packages/shared
+COPY packages/config ./packages/config
+COPY apps/server ./apps/server
 
 ENV NODE_ENV=production
-# tsx loader потрібен тому, що server/lib/* тепер .ts (див. PR #311);
-# імпорти з .js-модулів виду `from "./foo.js"` tsx резолвить на .ts.
-CMD ["node", "--import", "tsx", "server/index.js"]
+WORKDIR /app/apps/server
+
+# tsx loader потрібен тому, що server/lib/* — .ts; імпорти з .js-модулів
+# виду `from "./foo.js"` tsx резолвить на .ts. @sergeant/shared линкується
+# через workspace-протокол pnpm, тож імпорт йде напряму з packages/shared/src.
+CMD ["node", "--import", "tsx", "src/index.ts"]

@@ -16,12 +16,18 @@ export default [
   {
     ignores: [
       "dist/**",
+      "**/dist/**",
+      "**/node_modules/**",
       "node_modules/**",
       ".agents/**",
       "artifacts/**",
       "mcps/**",
       "playwright-report/**",
+      "**/playwright-report/**",
       "test-results/**",
+      "**/test-results/**",
+      ".turbo/**",
+      "**/.turbo/**",
     ],
   },
   js.configs.recommended,
@@ -100,9 +106,9 @@ export default [
   // callers should import from.
   {
     files: [
-      "src/shared/components/ui/SectionHeading.tsx",
-      "src/shared/components/ui/FormField.tsx",
-      "src/shared/charts/chartTheme.ts",
+      "apps/web/src/shared/components/ui/SectionHeading.tsx",
+      "apps/web/src/shared/components/ui/FormField.tsx",
+      "apps/web/src/shared/charts/chartTheme.ts",
     ],
     rules: {
       "sergeant-design/no-eyebrow-drift": "off",
