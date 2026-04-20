@@ -20,6 +20,7 @@
     "@dnd-kit/utilities": "^3.2.2",
     "@sentry/react": "^8.55.1",
     "@sergeant/api-client": "workspace:*",
+    "@sergeant/finyk-domain": "workspace:*",
     "@sergeant/shared": "workspace:*",
     "@tanstack/react-query": "^5.99.0",
     "@zxing/browser": "^0.1.5",
