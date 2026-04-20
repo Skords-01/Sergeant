@@ -532,6 +532,38 @@ async function applyNativeOutcome(
   });
 }
 
+// ─────────────────────────── Fire-and-forget helper ────────────────
+/**
+ * Тонка обгортка над `sendToUser` для «side-effect»-ів у бізнес-флоу
+ * (coach nudges, reminders job, тощо). Логує summary у форматі
+ * `push: delivered ios=X android=Y web=Z` і **ковтає** помилки, щоб push
+ * ніколи не валив головний флоу. Використовуй з `void ...` на callsite-і,
+ * якщо caller не чекає на Promise.
+ */
+export async function sendToUserQuietly(
+  userId: string,
+  payload: PushPayload,
+  context: { module: string },
+): Promise<void> {
+  try {
+    const summary = await sendToUser(userId, payload);
+    logger.info({
+      msg: `push: delivered ios=${summary.delivered.ios} android=${summary.delivered.android} web=${summary.delivered.web}`,
+      module: context.module,
+      user_id: userId,
+      cleaned: summary.cleaned,
+      errors: summary.errors.length,
+    });
+  } catch (err) {
+    logger.warn({
+      msg: "push.sendToUser failed (swallowed)",
+      module: context.module,
+      user_id: userId,
+      err: { message: err instanceof Error ? err.message : String(err) },
+    });
+  }
+}
+
 // ─────────────────────────── Exports for tests ─────────────────────
 export const __TEST__ = {
   RETRY_DELAYS_MS,

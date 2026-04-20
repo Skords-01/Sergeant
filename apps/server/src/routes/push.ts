@@ -8,6 +8,7 @@ import {
   setModule,
 } from "../http/index.js";
 import {
+  pushTest,
   register as pushRegister,
   sendPush,
   subscribe as pushSubscribe,
@@ -64,6 +65,20 @@ export function createPushRouter(): Router {
     "/api/push/send",
     requireApiSecret("API_SECRET"),
     asyncHandler(sendPush),
+  );
+  // `/api/v1/push/test` — ручка «пульнути тестовий пуш на мої пристрої».
+  // Реєструємо на `/api/push/test`: `apiVersionRewrite` у `app.ts` переписує
+  // `/api/v1/*` → `/api/*` до роутингу, тож цей handler обслуговує обидва URL.
+  // Свій, вужчий rate-limit (1 req / 5 s / user) поверх загального push-бакета:
+  // `rateLimitSubject` після `requireSession` дасть `u:<userId>`, тож ліміт
+  // per-user, а не per-IP (мобільний LTE/CGN не має «скинути» стан).
+  // TODO: після сесії 5A замінити in-memory Map (див. `http/rateLimit.ts`) на
+  // redis-based limiter — зараз ріже лише per-process на Railway.
+  r.post(
+    "/api/push/test",
+    requireSession(),
+    rateLimitExpress({ key: "api:push:test", limit: 1, windowMs: 5_000 }),
+    asyncHandler(pushTest),
   );
   return r;
 }

@@ -1,7 +1,7 @@
-import { StyleSheet, Text, View } from "react-native";
+import { Alert, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useQueryClient } from "@tanstack/react-query";
-import { useUser } from "@sergeant/api-client/react";
+import { useUser, usePushTest } from "@sergeant/api-client/react";
 import { signOut } from "@/auth/authClient";
 import { Pressable } from "react-native";
 import { colors, radius, spacing } from "@/theme";
@@ -10,6 +10,22 @@ export default function HubScreen() {
   const { data } = useUser();
   const user = data?.user;
   const queryClient = useQueryClient();
+  // `__DEV__` — global, який Metro замінює на `false` у prod-bundle-і
+  // (через `global.__DEV__ = false` у `react-native/Libraries/Core/setUpDeveloperTools.js`).
+  // Тож UI-ланцюг і сам хук dead-code-eliminated-яться при prod-збірці —
+  // `usePushTest` навіть не викликається, якщо `__DEV__ = false`.
+  const pushTest = usePushTest({
+    onError: (err) => {
+      Alert.alert("Push test failed", err.message);
+    },
+    onSuccess: (summary) => {
+      Alert.alert(
+        "Push test sent",
+        `ios=${summary.delivered.ios} android=${summary.delivered.android} web=${summary.delivered.web}` +
+          (summary.errors.length ? `\nerrors: ${summary.errors.length}` : ""),
+      );
+    },
+  });
 
   // useUser() під капотом — react-query, який не є реактивним до
   // змін Better Auth SecureStore. Без явного скидання кешу auth-guard
@@ -39,6 +55,20 @@ export default function HubScreen() {
           Routine → Nutrition) з web-app в нативні екрани.
         </Text>
       </View>
+
+      {__DEV__ ? (
+        <Pressable
+          style={({ pressed }) => [styles.devButton, pressed && styles.pressed]}
+          onPress={() =>
+            pushTest.mutate({ title: "Sergeant", body: "It works" })
+          }
+          disabled={pushTest.isPending}
+        >
+          <Text style={styles.devButtonText}>
+            {pushTest.isPending ? "Надсилаю…" : "DEV: надіслати тестовий пуш"}
+          </Text>
+        </Pressable>
+      ) : null}
 
       <Pressable
         style={({ pressed }) => [styles.signOut, pressed && styles.pressed]}
@@ -91,5 +121,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   signOutText: { color: colors.danger, fontSize: 15, fontWeight: "500" },
+  devButton: {
+    marginBottom: spacing.md,
+    paddingVertical: spacing.md,
+    borderRadius: radius.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    alignItems: "center",
+  },
+  devButtonText: { color: colors.text, fontSize: 14, fontWeight: "500" },
   pressed: { opacity: 0.6 },
 });

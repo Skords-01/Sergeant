@@ -4,11 +4,13 @@ import pool from "../db.js";
 import { sendWebPush } from "../lib/webpushSend.js";
 import { logger } from "../obs/logger.js";
 import { pushSendsTotal } from "../obs/metrics.js";
+import { sendToUser } from "../push/send.js";
 import { validateBody } from "../http/validate.js";
 import {
   PushRegisterSchema,
   PushSendSchema,
   PushSubscribeSchema,
+  PushTestRequestSchema,
   PushUnregisterSchema,
   PushUnsubscribeSchema,
 } from "../http/schemas.js";
@@ -327,4 +329,32 @@ export async function sendPush(req: Request, res: Response): Promise<void> {
   }
 
   res.json({ sent, stale: stale.length });
+}
+
+/**
+ * POST /api/v1/push/test — відправити тестовий push на всі зареєстровані
+ * пристрої поточного користувача.
+ *
+ * Захист: `requireSession()` на рівні роутера (401 без auth) + rate-limit
+ * 1 req / 5 s / user (`api:push:test`). Handler викликає `sendToUser` з
+ * `apps/server/src/push/send.ts` і прокидає summary у response 1-в-1.
+ *
+ * Фейл `sendToUser` (throw) бульбашиться до `errorHandler` → 500 (див.
+ * acceptance: «failure-path → 500 з summary»). Інші помилки (per-device
+ * 4xx/5xx від APNs/FCM) лишаються всередині `summary.errors`, щоб клієнт
+ * бачив, на який саме пристрій не доставилось.
+ */
+export async function pushTest(req: Request, res: Response): Promise<void> {
+  const user = (req as WithSessionUser).user!;
+  const parsed = validateBody(PushTestRequestSchema, req, res);
+  if (!parsed.ok) return;
+  const payload = parsed.data;
+
+  const summary = await sendToUser(user.id, {
+    title: payload.title,
+    body: payload.body,
+    data: payload.data,
+  });
+
+  res.json(summary);
 }

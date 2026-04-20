@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import pool from "../db.js";
 import { anthropicMessages, extractAnthropicText } from "../lib/anthropic.js";
+import { sendToUserQuietly } from "../push/send.js";
 import { MAX_BLOB_SIZE } from "./sync.js";
 import { validateBody } from "../http/validate.js";
 import { CoachInsightSchema, CoachMemoryPostSchema } from "../http/schemas.js";
@@ -326,6 +327,20 @@ ${snapshotText}
   }
 
   const text = extractAnthropicText(aiData);
+
+  // Fire-and-forget push з AI-«нудж»-повідомленням дня. Якщо `text` порожній
+  // (Anthropic повернула структуру без текстових блоків) — нічого не шлемо,
+  // щоб не спамити юзеру порожній пуш. Side-effect non-fatal: `sendToUserQuietly`
+  // ковтає будь-яку помилку всередині і лише логує, тож response юзеру ми
+  // вже відправили і чекати на нього не треба.
+  const userId = (req as WithSessionUser).user?.id;
+  if (userId && text && text.trim()) {
+    void sendToUserQuietly(
+      userId,
+      { title: "Коуч", body: text.trim().slice(0, 200) },
+      { module: "coach" },
+    );
+  }
 
   res.json({ ok: true, insight: text });
 }

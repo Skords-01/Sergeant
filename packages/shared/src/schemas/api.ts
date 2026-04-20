@@ -475,6 +475,44 @@ export const PushSendSchema = z.object({
   tag: z.string().max(120).optional().nullable(),
 });
 
+/**
+ * `POST /api/v1/push/test` — ручка для відправки тестового пуша на всі
+ * зареєстровані пристрої поточного користувача. Auth обов'язкова; сервер
+ * пропускає body через `sendToUser` (див. `apps/server/src/push/send.ts`)
+ * і повертає агрегований summary.
+ *
+ * `data` — довільні key/value-рядки, що APNs/FCM передадуть у payload
+ * без інтерпретації (дозволяє debug-payload без зміни schema).
+ */
+export const PushTestRequestSchema = z.object({
+  title: z.string().min(1).max(200),
+  body: z.string().min(1).max(2000),
+  data: z.record(z.string().max(200), z.string().max(2000)).optional(),
+});
+
+/**
+ * Уніфікований summary-результат `sendToUser`. `delivered` — скільки
+ * пристроїв по кожній платформі отримали push; `cleaned` — скільки dead
+ * tokens сервер soft-deleted у цьому ж виклику; `errors` — список
+ * платформо-специфічних помилок (per-device, не per-виклик).
+ */
+export const PushSendPlatformSchema = z.enum(["ios", "android", "web"]);
+export const PushSendErrorSchema = z.object({
+  platform: PushSendPlatformSchema,
+  reason: z.string(),
+});
+export const PushSendSummarySchema = z.object({
+  delivered: z.object({
+    ios: z.number().int().nonnegative(),
+    android: z.number().int().nonnegative(),
+    web: z.number().int().nonnegative(),
+  }),
+  cleaned: z.number().int().nonnegative(),
+  errors: z.array(PushSendErrorSchema),
+});
+
+export const PushTestResponseSchema = PushSendSummarySchema;
+
 // ────────────────────── Pagination ──────────────────────
 // Переused у будь-якому endpoint-і, що повертає список. Query-params завжди
 // приходять рядками — `z.coerce.number()` конвертує "8" → 8 автоматично.

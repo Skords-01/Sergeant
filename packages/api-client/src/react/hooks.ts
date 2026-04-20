@@ -11,6 +11,8 @@ import type { ChatRequestPayload, ChatResponse } from "../endpoints/chat";
 import type {
   PushRegisterRequest,
   PushRegisterResponse,
+  PushTestRequest,
+  PushTestResponse,
   PushUnregisterRequest,
   PushUnregisterResponse,
 } from "../endpoints/push";
@@ -139,6 +141,23 @@ export function usePushRegister(
   return useMutation({
     mutationKey: apiMutationKeys.push.register(),
     mutationFn: (payload: PushRegisterRequest) => api.push.register(payload),
+    ...opts,
+  });
+}
+
+/**
+ * `POST /api/v1/push/test` — dev-hook для ручки «пульнути тестовий пуш».
+ * Міміка `usePushRegister`: той самий стиль mutationKey + фіксована
+ * сигнатура payload. Сервер rate-limit-ить per-user 1 req / 5 s, тож
+ * useMutation-and-forget — достатньо.
+ */
+export function usePushTest(
+  opts?: MutationOpts<PushTestResponse, PushTestRequest>,
+) {
+  const api = useApiClient();
+  return useMutation({
+    mutationKey: apiMutationKeys.push.test(),
+    mutationFn: (payload: PushTestRequest) => api.push.test(payload),
     ...opts,
   });
 }

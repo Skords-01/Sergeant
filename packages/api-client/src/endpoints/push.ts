@@ -1,4 +1,10 @@
-import { PushRegisterSchema, PushUnregisterSchema, z } from "@sergeant/shared";
+import {
+  PushRegisterSchema,
+  PushTestRequestSchema as SharedPushTestRequestSchema,
+  PushTestResponseSchema as SharedPushTestResponseSchema,
+  PushUnregisterSchema,
+  z,
+} from "@sergeant/shared";
 import type { HttpClient } from "../httpClient";
 import type { RequestOptions } from "../types";
 
@@ -31,6 +37,18 @@ export const PushRegisterResponseSchema = z.object({
 });
 
 export type PushRegisterResponse = z.infer<typeof PushRegisterResponseSchema>;
+
+/**
+ * Runtime-схема запиту `POST /api/v1/push/test` — дзеркало
+ * `PushTestRequestSchema` з `@sergeant/shared`. Експонуємо також у
+ * публічному API-client (`PushTestRequestSchema`) для callsite-ів, що
+ * хочуть попередньо провалідувати payload перед викликом.
+ */
+export const PushTestRequestSchema = SharedPushTestRequestSchema;
+export const PushTestResponseSchema = SharedPushTestResponseSchema;
+
+export type PushTestRequest = z.infer<typeof PushTestRequestSchema>;
+export type PushTestResponse = z.infer<typeof PushTestResponseSchema>;
 
 /**
  * Runtime-схема запиту `POST /api/v1/push/unregister`. Дзеркало
@@ -82,6 +100,17 @@ export interface PushEndpoints {
     opts?: Pick<RequestOptions, "signal">,
   ) => Promise<PushRegisterResponse>;
   /**
+   * `POST /api/v1/push/test` — відправити тестовий пуш на всі зареєстровані
+   * пристрої поточного користувача. Сервер відповідає сумаркою
+   * `{ delivered, cleaned, errors }`; ми парсимо її `PushTestResponseSchema`,
+   * щоб нетипічна відповідь (старий сервер / проксі) фейлила одразу на клієнті,
+   * а не глибше у UI.
+   */
+  test: (
+    body: PushTestRequest,
+    opts?: Pick<RequestOptions, "signal">,
+  ) => Promise<PushTestResponse>;
+  /**
    * `POST /api/push/unregister` — уніфікований анрег push-пристрою.
    * Шлях переписується на `/api/v1/push/unregister`. Web-клієнт шле
    * `{ platform: "web", endpoint }`; native — `{ platform, token }`.
@@ -105,6 +134,12 @@ export function createPushEndpoints(http: HttpClient): PushEndpoints {
         signal,
       });
       return PushRegisterResponseSchema.parse(raw);
+    },
+    test: async (body, { signal } = {}) => {
+      const raw = await http.post<unknown>("/api/push/test", body, {
+        signal,
+      });
+      return PushTestResponseSchema.parse(raw);
     },
     unregister: async (body, { signal } = {}) => {
       const raw = await http.post<unknown>("/api/push/unregister", body, {
