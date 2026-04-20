@@ -771,10 +771,10 @@ export default function App({
         onSave={(expense) => {
           if (expense?.id) {
             storage.editManualExpense?.(expense.id, expense);
-            showToast("✅ Витрату оновлено!");
+            showToast("Витрату оновлено");
           } else {
             storage.addManualExpense(expense);
-            showToast("✅ Витрату додано!");
+            showToast("Витрату додано");
           }
         }}
       />
