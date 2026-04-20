@@ -43,6 +43,50 @@ pnpm --filter @sergeant/mobile start
 > Фізичний пристрій не бачить `localhost` хост-машини — вкажи IP у
 > `.env` або прокинь тунель (ngrok / `expo start --tunnel`).
 
+## Dev Client (on-device development)
+
+We build a **custom Expo Dev Client** instead of using Expo Go, because we
+depend on native modules that Expo Go does not ship (currently
+`react-native-mmkv`; future voice / barcode packages will require the same).
+The `development` profile in `eas.json` has `developmentClient: true` and
+`distribution: "internal"` so EAS produces an installable Dev Client build
+for simulators/devices rather than an app-store binary.
+
+One-time setup (requires an Expo account with access to the `sergeant` slug):
+
+```sh
+pnpm dlx eas-cli@latest login
+pnpm dlx eas-cli@latest whoami   # sanity check
+
+# iOS simulator build (runs on Mac with Xcode installed):
+pnpm dlx eas-cli@latest build --profile development --platform ios
+
+# Android APK for a physical device / emulator:
+pnpm dlx eas-cli@latest build --profile development --platform android
+```
+
+Install the resulting artifact:
+
+- **iOS simulator**: download the `.tar.gz` from the EAS build page, extract,
+  drag the `.app` onto the running simulator.
+- **Android**: download the `.apk` and install on device
+  (`adb install <path>.apk`) or scan the QR code from the build page.
+- **iOS device**: use the ad-hoc `.ipa` from the build page; the device UDID
+  must be registered with `eas device:create` beforehand.
+
+Then run Metro against the installed Dev Client:
+
+```sh
+pnpm --filter @sergeant/mobile start --dev-client
+```
+
+Open the app on device/simulator — it will attach to the Metro bundler and
+hot-reload JS just like Expo Go, but with our native modules available.
+
+`preview` and `production` profiles are for internal QA (`preview`, APK /
+simulator-friendly) and store submission (`production`, AAB for Android,
+App Store distribution for iOS). They are intentionally **not** Dev Clients.
+
 ## Архітектура
 
 ```

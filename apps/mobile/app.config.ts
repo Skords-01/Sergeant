@@ -7,6 +7,8 @@ import type { ExpoConfig } from "expo/config";
  * EAS build (див. `apps/mobile/docs/mobile.md`). Усі поля що раніше
  * жили в `app.json` перенесені сюди один-в-один.
  */
+const updatesUrl = process.env.EXPO_PUBLIC_EAS_UPDATES_URL;
+
 const config = (): ExpoConfig => ({
   name: "Sergeant",
   slug: "sergeant",
@@ -16,6 +18,8 @@ const config = (): ExpoConfig => ({
   scheme: "sergeant",
   userInterfaceStyle: "automatic",
   newArchEnabled: true,
+  runtimeVersion: { policy: "sdkVersion" },
+  ...(updatesUrl ? { updates: { url: updatesUrl } } : {}),
   splash: {
     image: "./assets/splash.png",
     resizeMode: "contain",
