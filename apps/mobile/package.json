@@ -9,7 +9,7 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "prebuild": "expo prebuild",
-    "check-build-config": "tsx scripts/check-build-config.ts",
+    "check-build-config": "pnpm exec tsx scripts/check-build-config.ts",
     "lint": "eslint \"app/**/*.{ts,tsx}\" \"src/**/*.{ts,tsx}\" \"scripts/**/*.{ts,tsx}\"",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "echo 'no mobile tests yet'"

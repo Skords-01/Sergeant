@@ -64,10 +64,14 @@ Bundle identifier та Android applicationId — обидва `com.sergeant.app`
 
 ```ts
 extra: {
-  apiBaseUrl:   process.env.EXPO_PUBLIC_API_BASE_URL,
-  easProjectId: process.env.EAS_PROJECT_ID,
+  apiBaseUrl: process.env.EXPO_PUBLIC_API_BASE_URL,
+  eas: { projectId: process.env.EAS_PROJECT_ID },
 }
 ```
+
+EAS CLI читає id саме з `extra.eas.projectId` (це те, що `eas init --id`
+вписує), і `Notifications.getExpoPushTokenAsync()` на Expo SDK 52+ бере
+його звідти ж, тож **не** тримай плаский `easProjectId`.
 
 Увага: всі існуючі поля (icon, splash, scheme, web, plugins,
 `newArchEnabled`, `experiments.typedRoutes`) перенесено 1:1. Якщо
