@@ -546,9 +546,15 @@ Web використовує кастомні компоненти + canvas/SVG.
   `apps/web` і тепер імпортують pure-ядро з пакета.
 - **R3.** ✅Done (PR [#415](https://github.com/Skords-01/Sergeant/pull/415)). `modules/finyk/lib/*`, `domain/*`, `constants.ts`, `utils.ts` повністю реюзаються з `@sergeant/finyk-domain`; web-шіми у `apps/web/src/modules/finyk/{domain,lib}/*.ts` видалено, імпорти у `apps/web` переведено на `@sergeant/finyk-domain/*`, pure-юніт-тести перенесені у пакет. У `apps/web` лишились тільки DOM/localStorage-залежні артефакти (`lib/{demoData,finykBackup,finykStorage,lsStats,storageManager}.ts`, `hubRoutineSync.ts`, `hooks/*`, `constants/chartPalette.js`).
 - **R4.** ✅Done (PR [#418](https://github.com/Skords-01/Sergeant/pull/418)). `modules/fizruk/data/*` (exercise library) + pure `domain/*` і `lib/*` винесено у новий pure-пакет `@sergeant/fizruk-domain`. У `apps/web` залишилась лише тонка `localStorage`-обгортка (`lib/fizrukStorage.ts`), React-хуки і UI. Нуль DOM-залежностей у пакеті — готовий до `apps/mobile` (Фаза 6).
-- **R5.** Централізувати Zod-schemas `shared/schemas` → уже у
-  `@sergeant/shared/schemas`, перевірити, щоб `apps/mobile` тягнув
-  звідти, а не дублював.
+- **R5.** ✅ Done (by-construction — перевірено 2026-04-20). Усі domain- та
+  HTTP-schemas централізовано у `packages/shared/src/schemas/` (`api.ts`,
+  `finyk.ts` + re-export через `@sergeant/shared`). `apps/mobile/src` не
+  використовує `zod` взагалі (жодного `z.object` / `z.string` / `from "zod"`).
+  Єдині залишки `zod` у `apps/web/src` — інфраструктурні: `shared/lib/typedStore.ts`
+  (generic-обгортка, приймає будь-яку схему) + `core/lib/featureFlags.ts`
+  (`FlagValuesSchema = z.record(z.string(), z.boolean())`, web-only runtime-конфіг).
+  Жодного дублю business-схем між `@sergeant/shared`, `apps/web` і `apps/mobile`
+  немає — R5 закрито без окремого PR.
 - **R6.** ✅ Done (PR [#406](https://github.com/Skords-01/Sergeant/pull/406)). Tailwind preset + дизайн-токени у `@sergeant/design-tokens`; `apps/web/tailwind.config.js` і `apps/mobile/tailwind.config.js` обидва споживають один preset.
 - **R7.** ✅ Done (PR [#425](https://github.com/Skords-01/Sergeant/pull/425) + follow-up [#428](https://github.com/Skords-01/Sergeant/pull/428)).
   `shared/lib/haptic.ts` розібрано на два адаптери. PURE-контракт
@@ -564,19 +570,19 @@ Web використовує кастомні компоненти + canvas/SVG.
     `apps/mobile/app/_layout.tsx`. Консьюмери (`@sergeant/finyk-domain`,
     UI-примітиви, `apps/web/*`) імпортують хелпери з `@sergeant/shared` без
     знання про платформу.
-- **R8.** 🔵 In progress (PR [#432](https://github.com/Skords-01/Sergeant/pull/432)
-  - follow-up PR [#XXX](https://github.com/Skords-01/Sergeant/pull/XXX)
-    — web-адаптер + усі JSON-download-споживачі мігровано; mobile-адаптер
-    = TODO-заглушка до Фази 4+). Pure-контракт `FileDownloadAdapter` +
-    `downloadJson(filename, payload)` живе у `@sergeant/shared/lib/fileDownload`
-    із безпечним no-op-дефолтом (dev-warn, прод-тиша). Web-імплементація
-    `Blob` + `URL.createObjectURL` + `<a download>` у
-    `apps/web/src/shared/lib/fileDownload.ts`, реєструється у
-    `apps/web/src/main.jsx`. УСІ web-споживачі JSON-бекапу мігровано:
+- **R8.** ✅ Done (PR [#432](https://github.com/Skords-01/Sergeant/pull/432)
+  — pure-контракт + web-адаптер + перші 3 споживача; follow-up PR
+  [#437](https://github.com/Skords-01/Sergeant/pull/437) — решта JSON-backup
+  web-споживачів; mobile-адаптер = TODO-заглушка до Фази 4+).
+  Pure-контракт `FileDownloadAdapter` + `downloadJson(filename, payload)`
+  живе у `@sergeant/shared/lib/fileDownload` із безпечним no-op-дефолтом
+  (dev-warn, прод-тиша). Web-імплементація `Blob` + `URL.createObjectURL`
+  - `<a download>` у `apps/web/src/shared/lib/fileDownload.ts`, реєструється
+    у `apps/web/src/main.jsx`. УСІ web-споживачі JSON-бекапу мігровано:
     `core/HubBackupPanel.tsx`, `modules/routine/components/RoutineBackupSection.tsx`,
     `modules/fizruk/components/workouts/WorkoutBackupBar.tsx` (PR #432) +
     `modules/fizruk/pages/Progress.tsx`, `modules/finyk/hooks/useStorage.ts`
-    (цей PR #XXX). Nutrition-модуль (`mealPhotoStorage`, `usePhotoAnalysis`,
+    (PR #437). Nutrition-модуль (`mealPhotoStorage`, `usePhotoAnalysis`,
     `LogCard`) використовує `URL.createObjectURL` виключно для image-preview
     (мініатюри страв, попередній перегляд фото перед аналізом) — це окремий
     пайплайн `expo-image-picker`/`expo-image-manipulator` з §10 таблиці, не
@@ -584,7 +590,7 @@ Web використовує кастомні компоненти + canvas/SVG.
     `apps/mobile/src/lib/fileDownload.ts`; Фаза 4+ замінить його на
     `expo-file-system.writeAsStringAsync` (`cacheDirectory`) +
     `expo-sharing.shareAsync` без змін у споживачах.
-- **R9.** 🔵 In progress (PR [#433](https://github.com/Skords-01/Sergeant/pull/433) — shared hook + web/mobile адаптери + 5 споживачів
+- **R9.** ✅ Done (PR [#433](https://github.com/Skords-01/Sergeant/pull/433) — shared hook + web/mobile адаптери + 5 споживачів
   мігровано + видалено дублікат у `routine/hooks`). Pure-контракт
   `VisualKeyboardInsetAdapter` + `useVisualKeyboardInset(active)` живе у
   `@sergeant/shared/hooks/useVisualKeyboardInset` із безпечним no-op-дефолтом,
