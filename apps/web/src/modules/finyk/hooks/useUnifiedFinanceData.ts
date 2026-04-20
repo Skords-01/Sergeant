@@ -1,5 +1,5 @@
 import { useMemo, useCallback } from "react";
-import { dedupeAndSortTransactions } from "../domain/transactions";
+import { dedupeAndSortTransactions } from "@sergeant/finyk-domain/domain/transactions";
 
 export function useUnifiedFinanceData({ mono, privat }) {
   const mergedRefresh = useCallback(async () => {

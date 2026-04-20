@@ -13,7 +13,11 @@
 
 import { createModuleStorage } from "@shared/lib/createModuleStorage.js";
 import { finykStorageManager } from "./storageManager.js";
-import type { Budget, Category, Transaction } from "../domain/types";
+import type {
+  Budget,
+  Category,
+  Transaction,
+} from "@sergeant/finyk-domain/domain/types";
 import { BudgetsSchema } from "@sergeant/shared";
 
 /** Стандартні ключі доменних сутностей ФІНІК. Не змінювати без міграції. */

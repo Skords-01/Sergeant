@@ -9,7 +9,7 @@ import { parseExpenseSpeech } from "@sergeant/shared";
 import { useVisualKeyboardInset } from "@shared/hooks/useVisualKeyboardInset";
 import { toLocalISODate } from "@sergeant/shared";
 import { hapticSuccess } from "@shared/lib/haptic";
-import { CANONICAL_TO_MANUAL_LABEL } from "../domain/personalization";
+import { CANONICAL_TO_MANUAL_LABEL } from "@sergeant/finyk-domain/domain/personalization";
 
 // Manual-expense categories. Labels map to the MCC canonical ids used
 // across the rest of Finyk (see `MANUAL_CATEGORY_ID_MAP`), so manual

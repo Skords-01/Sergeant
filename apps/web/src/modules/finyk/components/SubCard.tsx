@@ -8,7 +8,7 @@ import { Select } from "@shared/components/ui/Select";
 import {
   getLastTxForSubscription,
   getSubscriptionAmountMeta,
-} from "../domain/subscriptionUtils.js";
+} from "@sergeant/finyk-domain/domain/subscriptionUtils";
 
 const EMOJI_OPTIONS = [
   "📱",

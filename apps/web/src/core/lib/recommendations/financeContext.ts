@@ -8,7 +8,7 @@
 // кросзалежність, яку складно юніт-тестувати.
 
 import { getCategory } from "../../../modules/finyk/utils";
-import { manualCategoryToCanonicalId } from "../../../modules/finyk/domain/personalization";
+import { manualCategoryToCanonicalId } from "@sergeant/finyk-domain/domain/personalization";
 
 interface Transaction {
   id: string;

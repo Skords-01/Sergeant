@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { GroupedVirtuoso } from "react-virtuoso";
 import { TxListItem } from "../components/TxListItem";
 import { getCategory, getIncomeCategory } from "../utils";
-import { manualExpenseToTransaction } from "../domain/transactions";
+import { manualExpenseToTransaction } from "@sergeant/finyk-domain/domain/transactions";
 import { mergeExpenseCategoryDefinitions } from "../constants";
 import { Skeleton } from "@shared/components/ui/Skeleton";
 import { EmptyState } from "@shared/components/ui/EmptyState";

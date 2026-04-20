@@ -19,7 +19,10 @@ import {
   getDebtEffectiveTotal,
   getReceivableEffectiveTotal,
 } from "../utils";
-import { getDebtTxRole, getReceivableTxRole } from "../domain/debtEngine";
+import {
+  getDebtTxRole,
+  getReceivableTxRole,
+} from "@sergeant/finyk-domain/domain/debtEngine";
 import { cn } from "@shared/lib/cn";
 import { openHubModule } from "@shared/lib/hubNav";
 import { notifyFinykRoutineCalendarSync } from "../hubRoutineSync.js";

@@ -4,8 +4,8 @@ import {
   getFrequentMerchants,
   type ManualExpense,
   type PersonalizationOptions as DomainPersonalizationOptions,
-} from "../domain/personalization";
-import type { Transaction } from "../domain/types";
+} from "@sergeant/finyk-domain/domain/personalization";
+import type { Transaction } from "@sergeant/finyk-domain/domain/types";
 
 // Memo-обгортка навколо чистих селекторів персоналізації. Повертає список
 // найчастіших категорій і мерчантів для поточного користувача — використовується
