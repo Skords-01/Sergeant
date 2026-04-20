@@ -3,10 +3,16 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { renderHook, act, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-vi.mock("../lib/nutritionApi.js", () => ({
-  backupUpload: vi.fn(),
-  backupDownload: vi.fn(),
-}));
+vi.mock("@shared/api", async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    nutritionApi: {
+      backupUpload: vi.fn(),
+      backupDownload: vi.fn(),
+    },
+  };
+});
 vi.mock("../domain/nutritionBackup.js", () => ({
   buildNutritionBackupPayload: vi.fn(() => ({
     version: 1,
@@ -20,10 +26,9 @@ vi.mock("../lib/nutritionCloudBackup.js", () => ({
 }));
 
 import { useNutritionCloudBackup } from "./useNutritionCloudBackup.js";
-import {
-  backupUpload as apiBackupUpload,
-  backupDownload as apiBackupDownload,
-} from "../lib/nutritionApi.js";
+import { nutritionApi } from "@shared/api";
+const apiBackupUpload = nutritionApi.backupUpload;
+const apiBackupDownload = nutritionApi.backupDownload;
 import {
   encryptJsonToBlob,
   decryptBlobToJson,

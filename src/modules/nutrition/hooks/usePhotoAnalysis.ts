@@ -7,12 +7,9 @@ import {
   type SetStateAction,
 } from "react";
 import { useMutation } from "@tanstack/react-query";
-import type { NutritionPhotoResult } from "@shared/api";
+import { nutritionApi, type NutritionPhotoResult } from "@shared/api";
 import { fileToBase64 } from "../lib/fileToBase64.js";
-import {
-  analyzePhoto as apiAnalyzePhoto,
-  refinePhoto as apiRefinePhoto,
-} from "../lib/nutritionApi.js";
+import { formatNutritionError } from "../lib/nutritionErrors.js";
 
 export interface PhotoAnalysisPayload {
   image_base64: string;
@@ -120,7 +117,7 @@ export function usePhotoAnalysis({
         locale: "uk-UA",
       };
       setLastPhotoPayload(payload);
-      return apiAnalyzePhoto(payload);
+      return nutritionApi.analyzePhoto(payload);
     },
     onMutate: () => {
       setBusy(true);
@@ -133,10 +130,8 @@ export function usePhotoAnalysis({
     onSuccess: (data) => {
       setPhotoResult(data?.result || null);
     },
-    onError: (err: unknown) => {
-      const message =
-        err instanceof Error ? err.message : "Помилка аналізу фото";
-      setErr(message || "Помилка аналізу фото");
+    onError: (err) => {
+      setErr(formatNutritionError(err, "Помилка аналізу фото"));
     },
     onSettled: () => {
       setStatusText("");
@@ -161,7 +156,7 @@ export function usePhotoAnalysis({
         .map((q) => ({ question: q, answer: String(answers[q] || "").trim() }))
         .filter((x) => x.answer);
       const grams = Number(String(portionGrams).replace(",", "."));
-      return apiRefinePhoto({
+      return nutritionApi.refinePhoto({
         ...lastPhotoPayload,
         prior_result: photoResult,
         portion_grams: Number.isFinite(grams) && grams > 0 ? grams : null,
@@ -177,9 +172,8 @@ export function usePhotoAnalysis({
     onSuccess: (data) => {
       setPhotoResult(data?.result || null);
     },
-    onError: (err: unknown) => {
-      const message = err instanceof Error ? err.message : "Помилка уточнення";
-      setErr(message || "Помилка уточнення");
+    onError: (err) => {
+      setErr(formatNutritionError(err, "Помилка уточнення"));
     },
     onSettled: () => {
       setStatusText("");

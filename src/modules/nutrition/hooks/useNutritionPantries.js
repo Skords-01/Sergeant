@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { parsePantry as apiParsePantry } from "../lib/nutritionApi.js";
+import { nutritionApi } from "@shared/api";
+import { formatNutritionError } from "../lib/nutritionErrors.js";
 import { mergeItems } from "../lib/mergeItems.js";
 import {
   loadActivePantryId,
@@ -245,10 +246,12 @@ export function useNutritionPantries({ setBusy, setErr, setStatusText }) {
   const parsePantryMutation = useMutation({
     mutationFn: ({ pantryId, text }) => {
       if (!text) throw new Error("Надиктуй/впиши список продуктів.");
-      return apiParsePantry({ text, locale: "uk-UA" }).then((data) => ({
-        data,
-        pantryId,
-      }));
+      return nutritionApi
+        .parsePantry({ text, locale: "uk-UA" })
+        .then((data) => ({
+          data,
+          pantryId,
+        }));
     },
     onMutate: () => {
       setBusy(true);
@@ -266,7 +269,7 @@ export function useNutritionPantries({ setBusy, setErr, setStatusText }) {
       );
     },
     onError: (err) => {
-      setErr(err?.message || "Помилка розбору списку");
+      setErr(formatNutritionError(err, "Помилка розбору списку"));
     },
     onSettled: () => {
       setStatusText("");

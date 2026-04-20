@@ -1,9 +1,10 @@
 import { useCallback } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { coachApi, weeklyDigestApi, isApiError } from "@shared/api";
+import { coachApi, weeklyDigestApi } from "@shared/api";
 import { STORAGE_KEYS } from "@shared/lib/storageKeys.js";
 import { safeReadLS } from "@shared/lib/storage.js";
 import { coachKeys, digestKeys } from "@shared/lib/queryKeys.js";
+import { formatApiError } from "@shared/lib/apiErrorFormat";
 import { MCC_CATEGORIES, INCOME_CATEGORIES } from "@finyk/constants.js";
 
 const DIGEST_PREFIX = STORAGE_KEYS.WEEKLY_DIGEST_PREFIX;
@@ -500,9 +501,7 @@ export function useWeeklyDigest(selectedWeekKey?: string) {
     digest: query.data ?? null,
     loading: mutation.isPending,
     error: mutation.error
-      ? isApiError(mutation.error) && mutation.error.kind === "http"
-        ? mutation.error.serverMessage || "Помилка генерації звіту"
-        : (mutation.error as Error).message || "Помилка мережі"
+      ? formatApiError(mutation.error, { fallback: "Помилка генерації звіту" })
       : null,
     weekKey,
     weekRange,

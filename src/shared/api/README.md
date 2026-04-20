@@ -214,6 +214,54 @@ mutations: { retry: false }, // AI-виклики дорогі
 
 Query keys тримаємо в `src/shared/lib/queryKeys.ts` і імпортуємо звідти. Не інлайни.
 
+### `authAwareRetry(maxAttempts?)` — retry, що поважає 401/403
+
+Коли для конкретної query треба трохи інший retry-бюджет, ніж глобальний дефолт, використовуй фабрику замість інлайн-предиката:
+
+```ts
+import { authAwareRetry } from "@shared/lib/queryClient";
+
+useQuery({
+  queryKey: monoKeys.statements(month),
+  queryFn: () => monoApi.getStatements(month),
+  retry: authAwareRetry(1), // важка RQ — максимум 1 повтор
+});
+```
+
+Правила всередині:
+
+- `failureCount >= maxAttempts` → стоп.
+- `isApiError(err) && err.isAuth` → стоп (401/403 не ретраяться, нового токена без юзера не буде).
+- Інакше делегує у `isRetriableError(err)`, тобто той самий список, що й у глобальному дефолті (5xx/408/429/network/parse/aborted).
+
+Не переписуй ці інваріанти інлайном у хуках — якщо треба варіація, ось єдина точка зміни.
+
+### `formatApiError(err, { fallback, httpStatusToMessage? })` — текст помилки для UI
+
+Замість розкиданого по мутаціях патерну `setErr(err?.message || "Fallback")` — який ігнорує `kind === "aborted"`, не розрізняє offline/parse, і показує в тості "HTTP 503" — використовуй:
+
+```ts
+import { formatApiError } from "@shared/lib/apiErrorFormat";
+
+useMutation({
+  mutationFn: () => weeklyDigestApi.generate(),
+  onError: (err) => {
+    setErr(formatApiError(err, { fallback: "Помилка генерації звіту" }));
+  },
+});
+```
+
+Поведінка:
+
+- `kind: "aborted"` → повертає `""` (нічого не показуємо, користувач скасував сам).
+- `kind: "network"` → `"Немає підключення до інтернету…"` якщо `navigator.onLine === false`, інакше `err.message` або дефолтний "Не вдалося зʼєднатися".
+- `kind: "parse"` → розпізнає HTML-rewrite від Vercel і повертає спеціальний текст; інакше `err.message`/`err.bodyText`/`fallback`.
+- `kind: "http"` → делегує в `httpStatusToMessage(status, serverMessage)`, дефолтно `friendlyApiError` з `@shared/lib`. Якщо сервер не дав свого тексту і мапер впав у загальний `"Помилка <status>"` — використовується caller-specific `fallback` (контекстний текст корисніший за голий код статусу).
+- `err instanceof Error` → `err.message`.
+- інакше → `fallback`.
+
+Для nutrition-хуків є готова обгортка `formatNutritionError(err, fallback)` у `modules/nutrition/lib/nutritionErrors.ts` — вона прокидує доменний `friendlyApiError` (з обробкою 413 «велике фото» і 500 «ANTHROPIC key»).
+
 Приклад хука:
 
 ```ts

@@ -3,25 +3,30 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { renderHook, act, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-vi.mock("../lib/nutritionApi.js", () => ({
-  recommendRecipes: vi.fn(),
-  fetchWeekPlan: vi.fn(),
-  fetchDayHint: vi.fn(),
-  fetchDayPlan: vi.fn(),
-  fetchShoppingList: vi.fn(),
-}));
+vi.mock("@shared/api", async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    nutritionApi: {
+      recommendRecipes: vi.fn(),
+      weekPlan: vi.fn(),
+      dayHint: vi.fn(),
+      dayPlan: vi.fn(),
+      shoppingList: vi.fn(),
+    },
+  };
+});
 vi.mock("../lib/recipeCache.js", () => ({
   writeRecipeCache: vi.fn(),
 }));
 
 import { useNutritionRemoteActions } from "./useNutritionRemoteActions.js";
-import {
-  recommendRecipes as apiRecommendRecipes,
-  fetchWeekPlan as apiFetchWeekPlan,
-  fetchDayHint as apiFetchDayHint,
-  fetchDayPlan as apiFetchDayPlan,
-  fetchShoppingList as apiFetchShoppingList,
-} from "../lib/nutritionApi.js";
+import { nutritionApi } from "@shared/api";
+const apiRecommendRecipes = nutritionApi.recommendRecipes;
+const apiFetchWeekPlan = nutritionApi.weekPlan;
+const apiFetchDayHint = nutritionApi.dayHint;
+const apiFetchDayPlan = nutritionApi.dayPlan;
+const apiFetchShoppingList = nutritionApi.shoppingList;
 
 function makeWrapper() {
   const client = new QueryClient({

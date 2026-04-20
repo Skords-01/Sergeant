@@ -32,11 +32,9 @@ export interface UsePushNotificationsResult {
   unsubscribe: () => Promise<void>;
 }
 
-// Ключ для VAPID public key.
-// Сервер не ротує його, тож кешуємо назавжди (Infinity/Infinity) —
-// зайвий мережевий похід перед кожним натисканням "увімкнути сповіщення"
-// був помітний на слабкому 3G.
-const vapidKey = ["push", "vapid"] as const;
+// Ключ `pushKeys.vapid` — сервер не ротує VAPID public key, тож кешуємо
+// назавжди (Infinity/Infinity). Зайвий мережевий похід перед кожним
+// натисканням "увімкнути сповіщення" був помітний на слабкому 3G.
 
 /**
  * Хук для управління Web Push підпискою.
@@ -74,7 +72,7 @@ export function usePushNotifications(): UsePushNotificationsResult {
   // Prefetch VAPID на маунт — коли користувач натисне "увімкнути",
   // ключ вже буде в кеші й ми одразу підемо у pushManager.subscribe.
   const vapidQuery = useQuery({
-    queryKey: vapidKey,
+    queryKey: pushKeys.vapid,
     queryFn: () => pushApi.getVapidPublic(),
     enabled: supported,
     staleTime: Infinity,
@@ -92,7 +90,7 @@ export function usePushNotifications(): UsePushNotificationsResult {
       const vapid =
         vapidQuery.data ??
         (await queryClient.fetchQuery({
-          queryKey: vapidKey,
+          queryKey: pushKeys.vapid,
           queryFn: () => pushApi.getVapidPublic(),
           staleTime: Infinity,
           gcTime: Infinity,

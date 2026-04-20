@@ -3,12 +3,19 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { renderHook, act, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-vi.mock("../lib/nutritionApi.js", () => ({
-  parsePantry: vi.fn(),
-}));
+vi.mock("@shared/api", async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    nutritionApi: {
+      parsePantry: vi.fn(),
+    },
+  };
+});
 
 import { useNutritionPantries } from "./useNutritionPantries.js";
-import { parsePantry as apiParsePantry } from "../lib/nutritionApi.js";
+import { nutritionApi } from "@shared/api";
+const apiParsePantry = nutritionApi.parsePantry;
 import {
   NUTRITION_PANTRIES_KEY,
   NUTRITION_ACTIVE_PANTRY_KEY,

@@ -3,9 +3,9 @@ import {
   monoApi,
   type MonoAccount,
   type MonoStatementEntry,
-  isApiError,
 } from "@shared/api";
 import { finykKeys } from "@shared/lib/queryKeys";
+import { authAwareRetry } from "@shared/lib/queryClient";
 import { CURRENCY } from "../constants";
 import { normalizeTransaction, type Transaction } from "../domain/transactions";
 
@@ -113,13 +113,7 @@ export function useMonoStatements(
       staleTime: STALE_TIME,
       gcTime: GC_TIME,
       refetchOnWindowFocus: true,
-      retry: (failureCount: number, error: unknown) => {
-        if (failureCount >= 2) return false;
-        if (isApiError(error) && error.kind === "http" && error.isAuth) {
-          return false;
-        }
-        return true;
-      },
+      retry: authAwareRetry(2),
       retryDelay: (attempt: number) => 1000 * (attempt + 1),
     })),
     combine: (results): UseMonoStatementsResult => {

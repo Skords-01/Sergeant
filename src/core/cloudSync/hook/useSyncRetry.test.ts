@@ -4,7 +4,7 @@ import { cleanup, renderHook } from "@testing-library/react";
 
 const mocks = vi.hoisted(() => ({
   replayOfflineQueueMock: vi.fn(() => Promise.resolve()),
-  getDirtyModulesMock: vi.fn<[], Record<string, unknown>>(() => ({})),
+  getDirtyModulesMock: vi.fn<() => Record<string, unknown>>(() => ({})),
 }));
 const { replayOfflineQueueMock, getDirtyModulesMock } = mocks;
 
