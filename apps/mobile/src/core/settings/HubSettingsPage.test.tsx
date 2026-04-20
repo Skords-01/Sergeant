@@ -1,13 +1,16 @@
 /**
  * Render smoke test for the Hub-core Settings shell.
  *
- * Keeps the scope tight: the shell renders the screen title, both
- * first-cut section headers (Routine / Experimental), and at least
- * one of the "буде портовано" placeholders. Section-level behaviour
- * is covered by the per-section suites.
+ * Keeps the scope tight: the shell renders the screen title, the three
+ * first-cut section headers (General / Routine / Experimental), and
+ * each of the "буде портовано" placeholders for sections that still
+ * need porting. Section-level behaviour is covered by the per-section
+ * suites.
  */
 
 import { render } from "@testing-library/react-native";
+
+import { _getMMKVInstance } from "@/lib/storage";
 
 import { HubSettingsPage } from "./HubSettingsPage";
 
@@ -19,11 +22,16 @@ jest.mock("react-native-safe-area-context", () => {
   };
 });
 
+beforeEach(() => {
+  _getMMKVInstance().clearAll();
+});
+
 describe("HubSettingsPage", () => {
-  it("renders the screen title and both first-cut section headers", () => {
+  it("renders the screen title and all first-cut section headers", () => {
     const { getByText } = render(<HubSettingsPage />);
 
     expect(getByText("Налаштування")).toBeTruthy();
+    expect(getByText("Загальні")).toBeTruthy();
     expect(getByText("Рутина")).toBeTruthy();
     expect(getByText("Експериментальне")).toBeTruthy();
   });
@@ -31,17 +39,12 @@ describe("HubSettingsPage", () => {
   it("renders placeholders for the not-yet-ported sections", () => {
     const { getByText, getAllByText } = render(<HubSettingsPage />);
 
-    for (const title of [
-      "Інтерфейс і синхронізація",
-      "Нагадування",
-      "AI-дайджести",
-      "Фізрук",
-      "Фінік",
-    ]) {
+    for (const title of ["Нагадування", "AI-дайджести", "Фізрук", "Фінік"]) {
       expect(getByText(title)).toBeTruthy();
     }
-    // All five placeholders share the same "Скоро" chip + caption.
-    expect(getAllByText("Скоро")).toHaveLength(5);
-    expect(getAllByText("Буде портовано у наступному PR.")).toHaveLength(5);
+    // Four placeholders share the same "Скоро" chip + caption after
+    // GeneralSection took over its spot.
+    expect(getAllByText("Скоро")).toHaveLength(4);
+    expect(getAllByText("Буде портовано у наступному PR.")).toHaveLength(4);
   });
 });

@@ -6,8 +6,9 @@
  * Scope of this first cut (Phase 2 / Hub-core):
  *  - Shell with a screen title ("Налаштування") and a vertical stack of
  *    collapsible `SettingsGroup` cards, one per section.
- *  - Two sections ported: `RoutineSection`, `ExperimentalSection`.
- *  - Five remaining sections (General / Notifications / Finyk / Fizruk /
+ *  - Three sections ported: `GeneralSection`, `RoutineSection`,
+ *    `ExperimentalSection`.
+ *  - Four remaining sections (Notifications / Finyk / Fizruk /
  *    AIDigest) are rendered as `<PlaceholderSection>` cards with a
  *    "Скоро — буде портовано" label + the same `emoji + title` shape as
  *    `SettingsGroup` so the visual hierarchy is already final.
@@ -18,9 +19,12 @@
  *    all sections are ported. For now the UX is "scroll through a
  *    single list of groups", which is the common mobile settings
  *    pattern (iOS/Android system settings, Linear, Things, etc).
- *  - No prop-drilled `dark` / `onToggleDark` / `syncing` / `onSync` /
- *    `onPull` / `user` yet — those are consumed by `GeneralSection`,
- *    which lands in a follow-up PR.
+ *  - `GeneralSection` on mobile is self-contained (reads prefs from MMKV
+ *    under the shared `hub_prefs_v1` slice); web wires `dark` /
+ *    `onToggleDark` / `syncing` / `onSync` / `onPull` / `user` via
+ *    prop-drilling from the App root. The mobile equivalent for the
+ *    cloud-sync buttons lands in a follow-up (see GeneralSection.tsx
+ *    header for the rationale).
  */
 
 import { ScrollView, Text, View } from "react-native";
@@ -29,6 +33,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Card } from "@/components/ui/Card";
 
 import { ExperimentalSection } from "./ExperimentalSection";
+import { GeneralSection } from "./GeneralSection";
 import { RoutineSection } from "./RoutineSection";
 
 interface PlaceholderSectionProps {
@@ -70,12 +75,12 @@ export function HubSettingsPage() {
           Налаштування
         </Text>
 
+        <GeneralSection />
         <RoutineSection />
         <ExperimentalSection />
 
         {/* TODO(mobile-migration): порт секцій іде окремими PR-ами.
             Див. docs/react-native-migration.md (Phase 2 / Hub-core). */}
-        <PlaceholderSection title="Інтерфейс і синхронізація" emoji="⚙️" />
         <PlaceholderSection title="Нагадування" emoji="🔔" />
         <PlaceholderSection title="AI-дайджести" emoji="🤖" />
         <PlaceholderSection title="Фізрук" emoji="🏋️" />

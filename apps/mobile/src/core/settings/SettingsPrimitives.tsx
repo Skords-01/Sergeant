@@ -15,10 +15,17 @@
  *    `Switch`. Mirrors the `checked` / `onChange` shape of the web
  *    version but adapts the handler signature (RN `Switch.onValueChange`
  *    passes the new boolean directly instead of a DOM change event).
+ *  - `SettingsSubGroup` — optional-titled vertical stack used inside a
+ *    `SettingsGroup` to split heterogeneous rows (toggle + notice card
+ *    + button strip) the way the web version does. Mobile omits the
+ *    web surround-border so a single group stays visually compact, and
+ *    the section-label uses plain sentence-case typography (no
+ *    uppercase eyebrow) so it does not trip the design-system
+ *    `sergeant-design/no-eyebrow-drift` lint rule.
  *
- * The web file also ships `SettingsSubGroup` and `ConfirmModal`; those
- * are deliberately out of scope here and will land with the heavier
- * sections (General / Notifications / Finyk) in follow-up PRs.
+ * The web file also ships `ConfirmModal`; that is deliberately out of
+ * scope here and will land with `NotificationsSection` / `FinykSection`
+ * in follow-up PRs.
  */
 
 import { useState, type ReactNode } from "react";
@@ -108,6 +115,30 @@ export function ToggleRow({
       <View className="shrink-0">
         <Switch value={checked} onValueChange={onChange} testID={testID} />
       </View>
+    </View>
+  );
+}
+
+export interface SettingsSubGroupProps {
+  title?: string;
+  children: ReactNode;
+}
+
+/**
+ * Titled vertical stack used inside a `SettingsGroup` to split a
+ * heterogeneous list of rows (toggles + notice cards + button strips)
+ * into semantic sub-sections. Mirrors the web `SettingsSubGroup`
+ * naming but drops the web surround-border to keep mobile cards
+ * visually compact. The optional `title` renders as a small
+ * uppercase label à la iOS / Android system settings.
+ */
+export function SettingsSubGroup({ title, children }: SettingsSubGroupProps) {
+  return (
+    <View className="gap-3">
+      {title ? (
+        <Text className="text-xs font-semibold text-stone-500">{title}</Text>
+      ) : null}
+      <View className="gap-3">{children}</View>
     </View>
   );
 }
