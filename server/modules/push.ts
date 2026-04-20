@@ -37,7 +37,7 @@ const VAPID_PRIVATE = process.env.VAPID_PRIVATE_KEY;
  * non-prod we keep the placeholder to avoid breaking local dev when only
  * the keys are configured.
  */
-function resolveVapidEmail(): string | null {
+export function resolveVapidEmail(): string | null {
   const raw = process.env.VAPID_EMAIL?.trim();
   if (raw) return raw.startsWith("mailto:") ? raw : `mailto:${raw}`;
   if (process.env.NODE_ENV === "production") {
@@ -52,13 +52,19 @@ function resolveVapidEmail(): string | null {
 
 const VAPID_EMAIL = resolveVapidEmail();
 
-if (VAPID_PUBLIC && VAPID_PRIVATE && VAPID_EMAIL) {
-  webpush.setVapidDetails(VAPID_EMAIL, VAPID_PUBLIC, VAPID_PRIVATE);
+// All three pieces must be present for webpush to work. Any handler that
+// would otherwise touch `webpush.*` must short-circuit on this flag,
+// otherwise `sendNotification` throws deep inside the library and push
+// sends silently fail with `outcome: "error"`.
+const vapidReady = Boolean(VAPID_PUBLIC && VAPID_PRIVATE && VAPID_EMAIL);
+
+if (vapidReady) {
+  webpush.setVapidDetails(VAPID_EMAIL!, VAPID_PUBLIC!, VAPID_PRIVATE!);
 }
 
 /** GET /api/push/vapid-public — повертає публічний VAPID ключ для підписки. */
 export async function vapidPublic(_req: Request, res: Response): Promise<void> {
-  if (!VAPID_PUBLIC) {
+  if (!vapidReady) {
     res.status(503).json({ error: "Push not configured" });
     return;
   }
@@ -67,7 +73,7 @@ export async function vapidPublic(_req: Request, res: Response): Promise<void> {
 
 /** POST /api/push/subscribe — зберегти підписку. Session в `req.user`. */
 export async function subscribe(req: Request, res: Response): Promise<void> {
-  if (!VAPID_PUBLIC) {
+  if (!vapidReady) {
     res.status(503).json({ error: "Push not configured" });
     return;
   }
@@ -134,7 +140,7 @@ interface PushSubscriptionRow {
  * рівні роутера; handler вже отримує запит з перевіреним секретом.
  */
 export async function sendPush(req: Request, res: Response): Promise<void> {
-  if (!VAPID_PUBLIC) {
+  if (!vapidReady) {
     res.status(503).json({ error: "Push not configured" });
     return;
   }
