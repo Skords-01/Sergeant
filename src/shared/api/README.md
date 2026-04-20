@@ -256,7 +256,7 @@ useMutation({
 - `kind: "aborted"` → повертає `""` (нічого не показуємо, користувач скасував сам).
 - `kind: "network"` → `"Немає підключення до інтернету…"` якщо `navigator.onLine === false`, інакше `err.message` або дефолтний "Не вдалося зʼєднатися".
 - `kind: "parse"` → розпізнає HTML-rewrite від Vercel і повертає спеціальний текст; інакше `err.message`/`err.bodyText`/`fallback`.
-- `kind: "http"` → делегує в `httpStatusToMessage(status, serverMessage)`, дефолтно `friendlyApiError` з `@shared/lib`.
+- `kind: "http"` → делегує в `httpStatusToMessage(status, serverMessage)`, дефолтно `friendlyApiError` з `@shared/lib`. Якщо сервер не дав свого тексту і мапер впав у загальний `"Помилка <status>"` — використовується caller-specific `fallback` (контекстний текст корисніший за голий код статусу).
 - `err instanceof Error` → `err.message`.
 - інакше → `fallback`.
 

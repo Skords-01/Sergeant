@@ -46,6 +46,28 @@ describe("formatApiError", () => {
     expect(out).toBe("Фото завелике");
   });
 
+  it("ApiError http без serverMessage і без спец-мапінгу → caller-fallback, а не 'Помилка N'", () => {
+    const err = new ApiError({
+      kind: "http",
+      message: "HTTP 502",
+      status: 502,
+      url: URL,
+    });
+    expect(formatApiError(err, { fallback: "Помилка генерації звіту" })).toBe(
+      "Помилка генерації звіту",
+    );
+  });
+
+  it("ApiError http без serverMessage і без caller-fallback → 'Помилка N' (як було)", () => {
+    const err = new ApiError({
+      kind: "http",
+      message: "HTTP 502",
+      status: 502,
+      url: URL,
+    });
+    expect(formatApiError(err)).toBe("Помилка 502");
+  });
+
   it("ApiError http + serverMessage → використовує server text при дефолтному мапері", () => {
     const err = new ApiError({
       kind: "http",

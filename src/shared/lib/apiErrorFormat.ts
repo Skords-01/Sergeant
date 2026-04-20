@@ -62,7 +62,20 @@ export function formatApiError(
       return err.message || err.bodyText || fallback;
     }
     // kind === "http"
-    return mapHttp(err.status, err.serverMessage) || fallback;
+    const httpMsg = mapHttp(err.status, err.serverMessage);
+    // Якщо сервер не дав свого тексту, а мапер впав у загальний
+    // «Помилка <status>» — віддаємо caller-специфічний fallback
+    // (контекстний текст типу «Помилка генерації звіту» корисніший
+    // за голий код статусу). Спеціальні мапери для 401/429/413
+    // тут не зачіпаються, бо вони повертають конкретні фрази.
+    if (
+      options.fallback !== undefined &&
+      !err.serverMessage &&
+      /^Помилка \d+$/.test(httpMsg)
+    ) {
+      return options.fallback;
+    }
+    return httpMsg || fallback;
   }
 
   if (err instanceof Error && err.message) return err.message;
