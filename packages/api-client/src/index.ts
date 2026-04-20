@@ -55,7 +55,15 @@ export {
   type ChatResponse,
 } from "./endpoints/chat";
 
-export { createPushEndpoints, type PushEndpoints } from "./endpoints/push";
+export {
+  createPushEndpoints,
+  PushRegisterRequestSchema,
+  PushRegisterResponseSchema,
+  type PushEndpoints,
+  type PushPlatform,
+  type PushRegisterRequest,
+  type PushRegisterResponse,
+} from "./endpoints/push";
 
 export {
   createNutritionEndpoints,

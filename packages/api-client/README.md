@@ -310,3 +310,73 @@ export function useDayPlan(date: string) {
 6. Не додавай `fetch(...)` або axios у модуль. Якщо `http.*` чогось не вміє — допиши це в `httpClient.ts`, а не обходь його.
 
 Якщо сумніваєшся — глянь, як зроблено `endpoints/sync.ts` або `endpoints/nutrition.ts`: це живі референси.
+
+---
+
+## Me endpoints
+
+Факторі: `createMeEndpoints(http)` у `endpoints/me.ts`. Експонує один метод для пошаренного «хто я» на всіх клієнтах (web cookie і mobile bearer).
+
+```ts
+import { createApiClient } from "@sergeant/api-client";
+
+const api = createApiClient();
+const { user } = await api.me.get();
+//        ^? MeResponse["user"] з `@sergeant/shared`
+```
+
+- `api.me.get({ signal? })` → `Promise<MeResponse>`, де `MeResponse` — `z.infer` з `MeResponseSchema` (`@sergeant/shared/schemas/api.ts`). Runtime-парсинг через `MeResponseSchema.parse(...)`, тож будь-яка розбіжність форми ловиться одразу як `ZodError`.
+- `apiPrefix` (default `/api/v1`) прикладається автоматично — метод звертається до `/api/me`, в http-клієнті шлях переписується у `/api/v1/me`.
+
+React-шар (`@sergeant/api-client/react`):
+
+```ts
+import { useUser } from "@sergeant/api-client/react";
+
+function Header() {
+  const { data, isPending } = useUser();
+  if (isPending) return <Skeleton />;
+  return <span>{data?.user.name ?? "Guest"}</span>;
+}
+```
+
+Ключ запиту — `apiQueryKeys.me.current()`; для ручної інвалідації всього піддомену — `queryClient.invalidateQueries({ queryKey: apiQueryKeys.me.all })`.
+
+---
+
+## Push endpoints
+
+Факторі: `createPushEndpoints(http)` у `endpoints/push.ts`. Окрім трьох легасі web-push ендпоінтів (`getVapidPublic`, `subscribe`, `unsubscribe`), експонує уніфіковану реєстрацію пристрою для web / iOS / Android (контракт задокументований у `docs/mobile.md` і `docs/api-v1.md`):
+
+```ts
+import { createApiClient } from "@sergeant/api-client";
+
+const api = createApiClient();
+
+// Web PWA (service-worker endpoint + keys):
+await api.push.register({
+  platform: "web",
+  token: "https://fcm.googleapis.com/wp/xxx",
+  keys: { p256dh: "…", auth: "…" },
+});
+
+// iOS (APNs device token):
+await api.push.register({ platform: "ios", token: "<64-hex>" });
+
+// Android (FCM registration token):
+await api.push.register({ platform: "android", token: "<fcm>" });
+```
+
+- `api.push.register(body, { signal? })` → `Promise<PushRegisterResponse>` (`{ ok: true, platform }`). Runtime-валідація request'а відповідає `PushRegisterRequestSchema` (реекспорт `PushRegisterSchema` з `@sergeant/shared` — один discriminated union на `platform`, тож web без `keys` або native з `keys` зловлене ще до мережі). Відповідь валідується `PushRegisterResponseSchema`.
+- Шлях `/api/push/register` автоматично перетворюється на `/api/v1/push/register` через `applyApiPrefix` (див. `httpClient.ts`). Не передавай `/api/v1/…` явно — ідемпотентно, але плутає ревью.
+
+React-шар:
+
+```ts
+import { usePushRegister } from "@sergeant/api-client/react";
+
+const register = usePushRegister();
+register.mutate({ platform: "ios", token: deviceToken });
+```
+
+Ключ мутації — `apiMutationKeys.push.register()`; придатний для `useIsMutating` у UI (блокувати кнопку «Увімкнути нотифікації», поки мутація in-flight).

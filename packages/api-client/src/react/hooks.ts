@@ -8,6 +8,10 @@ import {
 import type { MeResponse } from "../endpoints/me";
 import type { CoachInsightPayload } from "../endpoints/coach";
 import type { ChatRequestPayload, ChatResponse } from "../endpoints/chat";
+import type {
+  PushRegisterRequest,
+  PushRegisterResponse,
+} from "../endpoints/push";
 import type { BarcodeLookupResponse } from "../endpoints/barcode";
 import type { FoodSearchResponse } from "../endpoints/foodSearch";
 import type { MonoClientInfo, MonoStatementEntry } from "../endpoints/mono";
@@ -26,7 +30,7 @@ import type {
 } from "../endpoints/weeklyDigest";
 
 import { useApiClient } from "./context";
-import { apiQueryKeys } from "./queryKeys";
+import { apiMutationKeys, apiQueryKeys } from "./queryKeys";
 
 type QueryOpts<TData> = Omit<
   UseQueryOptions<TData, Error, TData>,
@@ -113,6 +117,26 @@ export function useUnsubscribePushMutation(
   const api = useApiClient();
   return useMutation({
     mutationFn: (endpoint: string) => api.push.unsubscribe(endpoint),
+    ...opts,
+  });
+}
+
+/**
+ * `POST /api/push/register` — уніфікована реєстрація push-пристрою
+ * (web / iOS / Android). Викликається з PWA service-worker flow
+ * (web-payload з `keys`) і з мобільного клієнта (native-payload без `keys`).
+ *
+ * Ключ мутації `apiMutationKeys.push.register()` — використовуй з
+ * `useIsMutating` / `queryClient.cancelMutations`, коли треба знати стан
+ * активної реєстрації (наприклад, блокувати повторний тап).
+ */
+export function usePushRegister(
+  opts?: MutationOpts<PushRegisterResponse, PushRegisterRequest>,
+) {
+  const api = useApiClient();
+  return useMutation({
+    mutationKey: apiMutationKeys.push.register(),
+    mutationFn: (payload: PushRegisterRequest) => api.push.register(payload),
     ...opts,
   });
 }
