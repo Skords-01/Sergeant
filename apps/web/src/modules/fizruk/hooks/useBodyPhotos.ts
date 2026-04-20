@@ -54,7 +54,7 @@ function uid() {
  * Hook for storing body progress photos in IndexedDB.
  * Each photo record: { id, date (YYYY-MM-DD), dataUrl, note, createdAt }
  */
-import type { BodyPhoto } from "../domain/types";
+import type { BodyPhoto } from "@sergeant/fizruk-domain";
 
 export function useBodyPhotos() {
   const [photos, setPhotos] = useState<BodyPhoto[]>([]);

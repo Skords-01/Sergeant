@@ -18,11 +18,11 @@ import { useExerciseCatalog } from "../hooks/useExerciseCatalog";
 import { useRecovery } from "../hooks/useRecovery";
 import { useWorkoutTemplates } from "../hooks/useWorkoutTemplates";
 import { useWorkouts } from "../hooks/useWorkouts";
-import { recoveryConflictsForExercise } from "../lib/recoveryConflict";
+import { recoveryConflictsForExercise } from "@sergeant/fizruk-domain";
 import {
   ACTIVE_WORKOUT_KEY,
   summarizeWorkoutForFinish,
-} from "../lib/workoutUi";
+} from "@sergeant/fizruk-domain";
 
 // Shared AudioContext reused across beeps. Creating/closing one per call
 // races with quick successive rest-timer completions and fights iOS' audio

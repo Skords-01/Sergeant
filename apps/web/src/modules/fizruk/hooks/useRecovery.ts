@@ -5,9 +5,9 @@ import { useDailyLog } from "./useDailyLog";
 import {
   computeRecoveryBy,
   computeWellbeingMultiplier,
-} from "../lib/recoveryCompute";
+} from "@sergeant/fizruk-domain";
 
-export { loadPointsForItem } from "../lib/recoveryCompute";
+export { loadPointsForItem } from "@sergeant/fizruk-domain";
 
 export function useRecovery() {
   const { musclesUk } = useExerciseCatalog();

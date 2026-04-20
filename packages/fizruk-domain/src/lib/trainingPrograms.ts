@@ -206,17 +206,6 @@ export function getTodaySession(program) {
   return getProgramSessionForDay(program, dayIndex);
 }
 
-/**
- * Exercise type classification for default rest durations.
- * Delegates to useRestSettings for the single source of truth.
- * Returns the static default rest time in seconds (not user-customized; use
- * useRestSettings.getDefaultForGroup for user-overridden values at runtime).
- */
-export {
-  getRestCategory,
-  REST_DEFAULTS as REST_CATEGORY_DEFAULTS,
-} from "../hooks/useRestSettings";
-
 export function getDefaultRestSec(primaryGroup) {
   if (!primaryGroup) return 90;
   const compound = ["chest", "back", "legs", "glutes", "full_body"];

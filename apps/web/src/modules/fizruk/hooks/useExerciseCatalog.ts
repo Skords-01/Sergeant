@@ -1,36 +1,27 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   CUSTOM_EXERCISES_KEY,
+  FizrukData,
   parseCustomExercisesFromStorage,
   serializeCustomExercisesToStorage,
-} from "../lib/fizrukStorage";
+} from "@sergeant/fizruk-domain";
 
 function norm(s) {
   return (s || "").toString().trim().toLowerCase();
 }
 
+/**
+ * Хук-обгортка над каталогом вправ із пакета `@sergeant/fizruk-domain`.
+ * Користувацькі вправи персистяться в localStorage, базові — беруться зі
+ * статично імпортованого JSON-каталогу пакета.
+ */
 export function useExerciseCatalog() {
-  const [catalogData, setCatalogData] = useState(null);
+  const catalogData = FizrukData.EXERCISE_CATALOG;
   const [customExercises, setCustomExercises] = useState([]);
 
-  useEffect(() => {
-    let cancelled = false;
-    import("../data/exercises.gymup.json")
-      .then((m) => {
-        if (!cancelled) setCatalogData(m.default || m);
-      })
-      .catch(() => {
-        if (!cancelled) setCatalogData({ exercises: [], labels: {} });
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const primaryGroupsUk = catalogData?.labels?.primaryGroupsUk || {};
-  const musclesUk = catalogData?.labels?.musclesUk || {};
-  const musclesByPrimaryGroup =
-    catalogData?.labels?.musclesByPrimaryGroup || {};
+  const primaryGroupsUk = FizrukData.PRIMARY_GROUPS_UK;
+  const musclesUk = FizrukData.MUSCLES_UK;
+  const musclesByPrimaryGroup = FizrukData.MUSCLES_BY_PRIMARY_GROUP;
 
   useEffect(() => {
     try {
@@ -50,17 +41,11 @@ export function useExerciseCatalog() {
     } catch {}
   }, []);
 
-  const exercises = useMemo(() => {
-    const baseExercises = catalogData?.exercises || [];
-    const merged = [...customExercises, ...baseExercises];
-    const seen = new Set();
-    return merged.filter((ex) => {
-      const id = ex?.id;
-      if (!id || seen.has(id)) return false;
-      seen.add(id);
-      return true;
-    });
-  }, [customExercises, catalogData]);
+  const exercises = useMemo(
+    () =>
+      FizrukData.mergeExerciseCatalog(customExercises, FizrukData.EXERCISES),
+    [customExercises],
+  );
 
   const search = useCallback(
     (query) => {
@@ -111,10 +96,8 @@ export function useExerciseCatalog() {
     [customExercises, persistCustom],
   );
 
-  const catalog = catalogData || { exercises: [], labels: {} };
-
   return {
-    catalog,
+    catalog: catalogData,
     exercises,
     search,
     primaryGroupsUk,
@@ -123,6 +106,6 @@ export function useExerciseCatalog() {
     addExercise,
     removeExercise,
     customExercises,
-    catalogLoading: !catalogData,
+    catalogLoading: false,
   };
 }

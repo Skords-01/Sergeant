@@ -3,7 +3,7 @@ import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { subtleNavButtonClass } from "@shared/components/ui/buttonPresets";
 import { cn } from "@shared/lib/cn";
 import { useExerciseCatalog } from "../hooks/useExerciseCatalog";
-import { BUILTIN_PROGRAMS } from "../lib/trainingPrograms";
+import { BUILTIN_PROGRAMS } from "@sergeant/fizruk-domain";
 
 const DAY_LABELS = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Нд"];
 

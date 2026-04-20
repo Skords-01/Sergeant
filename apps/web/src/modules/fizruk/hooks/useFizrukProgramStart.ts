@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { ACTIVE_WORKOUT_KEY } from "../lib/workoutUi";
+import { ACTIVE_WORKOUT_KEY } from "@sergeant/fizruk-domain";
 
 interface Exercise {
   id: string;

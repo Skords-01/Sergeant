@@ -1,7 +1,7 @@
 import {
   parseWorkoutsFromStorage,
   WORKOUTS_STORAGE_KEY,
-} from "../../modules/fizruk/lib/fizrukStorage";
+} from "@sergeant/fizruk-domain";
 import {
   mergeExpenseCategoryDefinitions,
   INTERNAL_TRANSFER_ID,
@@ -18,12 +18,12 @@ import {
   resolveExpenseCategoryMeta,
 } from "../../modules/finyk/utils";
 import {
+  ACTIVE_WORKOUT_KEY,
   completedWorkoutsCount,
   countCompletedInCurrentWeek,
   totalCompletedVolumeKg,
   weeklyVolumeSeriesNow,
-} from "../../modules/fizruk/lib/workoutStats";
-import { ACTIVE_WORKOUT_KEY } from "../../modules/fizruk/lib/workoutUi";
+} from "@sergeant/fizruk-domain";
 import { perfMark, perfEnd } from "@shared/lib/perf";
 import { ls, fmt } from "./hubChatUtils.js";
 import { generateRecommendations } from "./recommendationEngine.js";
@@ -406,7 +406,12 @@ function buildContext(): string {
   // ── Фізрук (тренування) ─────────────────────────────────────────
   try {
     const raw = localStorage.getItem(WORKOUTS_STORAGE_KEY);
-    const w = parseWorkoutsFromStorage(raw);
+    const w = parseWorkoutsFromStorage(raw) as Array<{
+      id?: string;
+      startedAt?: string;
+      endedAt?: string;
+      items?: Array<{ nameUk?: string; name?: string; exercise?: string }>;
+    }>;
     if (Array.isArray(w) && w.length > 0) {
       const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
       const withTs = w.map((x) => ({

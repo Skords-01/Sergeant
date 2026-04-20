@@ -1,6 +1,6 @@
 import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { Button } from "@shared/components/ui/Button";
-import { formatRestClock } from "../../lib/workoutUi";
+import { formatRestClock } from "@sergeant/fizruk-domain";
 
 export function RestTimerOverlay({ restTimer, onCancel }) {
   if (!restTimer) return null;

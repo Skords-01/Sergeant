@@ -8,9 +8,9 @@ import { useWorkoutTemplates } from "../hooks/useWorkoutTemplates";
 import { useWorkouts } from "../hooks/useWorkouts";
 import { useMonthlyPlan } from "../hooks/useMonthlyPlan";
 import { BodyAtlas } from "../components/BodyAtlas";
-import { recoveryConflictsForExercise } from "../lib/recoveryConflict";
-import { workoutDurationSec } from "../lib/workoutStats";
-import { ACTIVE_WORKOUT_KEY } from "../lib/workoutUi";
+import { recoveryConflictsForExercise } from "@sergeant/fizruk-domain";
+import { workoutDurationSec } from "@sergeant/fizruk-domain";
+import { ACTIVE_WORKOUT_KEY } from "@sergeant/fizruk-domain";
 import { Card } from "@shared/components/ui/Card";
 
 const SELECTED_TEMPLATE_KEY = "fizruk_selected_template_id_v1";

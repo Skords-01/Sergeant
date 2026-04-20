@@ -1,37 +1,15 @@
 import { useCallback, useState } from "react";
 import { safeReadLS, safeWriteLS } from "@shared/lib/storage.js";
 import { STORAGE_KEYS } from "@sergeant/shared";
+import {
+  REST_CATEGORY_LABELS,
+  REST_DEFAULTS,
+  getRestCategory,
+} from "@sergeant/fizruk-domain";
+
+export { REST_CATEGORY_LABELS, REST_DEFAULTS, getRestCategory };
 
 const KEY = STORAGE_KEYS.FIZRUK_REST_SETTINGS;
-
-/**
- * Default rest time in seconds per exercise category.
- * compound: chest/back/legs/glutes/full_body
- * isolation: shoulders/arms/core
- * cardio: cardio
- */
-export const REST_DEFAULTS = {
-  compound: 90,
-  isolation: 60,
-  cardio: 30,
-};
-
-export const REST_CATEGORY_LABELS = {
-  compound: "Базові (compound)",
-  isolation: "Ізолюючі",
-  cardio: "Кардіо",
-};
-
-const ISOLATION_GROUPS = ["shoulders", "arms", "core"];
-const CARDIO_GROUPS = ["cardio"];
-
-/** Classify a primaryGroup into compound/isolation/cardio. */
-export function getRestCategory(primaryGroup) {
-  if (!primaryGroup) return "compound";
-  if (CARDIO_GROUPS.includes(primaryGroup)) return "cardio";
-  if (ISOLATION_GROUPS.includes(primaryGroup)) return "isolation";
-  return "compound";
-}
 
 /**
  * Hook that provides user-configurable default rest durations per exercise type.

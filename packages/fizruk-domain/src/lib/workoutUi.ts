@@ -1,13 +1,24 @@
-/** UI helpers for workout logging (pure, no React). */
+/** UI-agnostic helpers for workout logging (pure, no React / no DOM). */
 
-export { ACTIVE_WORKOUT_KEY } from "./fizrukStorage";
+import type { Workout } from "../domain/types";
+
+export { ACTIVE_WORKOUT_KEY } from "../constants";
+
 /** @deprecated Використовуй клас `fizruk-sheet-pad` у index.css */
 export const SHEET_BOTTOM_PADDING =
   "calc(env(safe-area-inset-bottom, 16px) + 72px)";
 export const SHEET_Z = "z-[100]";
 export const FIZRUK_SHEET_PAD_CLASS = "fizruk-sheet-pad";
 
-export function summarizeWorkoutForFinish(w) {
+export interface WorkoutFinishSummary {
+  durationSec: number;
+  items: number;
+  tonnageKg: number;
+}
+
+export function summarizeWorkoutForFinish(
+  w: Partial<Workout> | null | undefined,
+): WorkoutFinishSummary | null {
   if (!w?.startedAt) return null;
   const start = Date.parse(w.startedAt);
   const end = w.endedAt ? Date.parse(w.endedAt) : Date.now();
@@ -26,17 +37,15 @@ export function summarizeWorkoutForFinish(w) {
   return { durationSec, items, tonnageKg };
 }
 
-export function formatDurShort(sec) {
+export function formatDurShort(sec: number): string {
   const m = Math.floor(sec / 60);
   const s = sec % 60;
   if (m <= 0) return `${s} с`;
   return `${m} хв ${s} с`;
 }
 
-export function formatRestClock(sec) {
+export function formatRestClock(sec: number): string {
   const m = Math.floor(sec / 60);
   const s = sec % 60;
   return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
-
-export { mondayStartMs } from "./workoutStats";

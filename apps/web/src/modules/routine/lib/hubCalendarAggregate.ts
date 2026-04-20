@@ -2,7 +2,7 @@ import { safeReadLS } from "@shared/lib/storage.js";
 import {
   MONTHLY_PLAN_STORAGE_KEY,
   TEMPLATES_STORAGE_KEY,
-} from "../../fizruk/lib/fizrukStorage";
+} from "@sergeant/fizruk-domain";
 import { sortHabitsByOrder } from "./habitOrder.js";
 import { completionNoteKey } from "./completionNoteKey.js";
 import { buildFinykSubscriptionEvents } from "./finykSubscriptionCalendar.js";

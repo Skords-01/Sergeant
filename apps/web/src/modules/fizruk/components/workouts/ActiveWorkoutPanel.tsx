@@ -1,7 +1,7 @@
 import { useCallback, useId, useMemo, useState } from "react";
 import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { Button } from "@shared/components/ui/Button";
-import { recoveryConflictsForWorkoutItem } from "../../lib/recoveryConflict";
+import { recoveryConflictsForWorkoutItem } from "@sergeant/fizruk-domain";
 import {
   useRestSettings,
   getRestCategory,

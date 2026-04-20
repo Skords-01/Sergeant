@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { BUILTIN_PROGRAMS, getTodaySession } from "../lib/trainingPrograms";
+import { BUILTIN_PROGRAMS, getTodaySession } from "@sergeant/fizruk-domain";
 
 const ACTIVE_PROGRAM_KEY = "fizruk_active_program_id_v1";
 

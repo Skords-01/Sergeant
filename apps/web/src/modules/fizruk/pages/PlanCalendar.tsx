@@ -9,7 +9,7 @@ import { useMonthlyPlan } from "../hooks/useMonthlyPlan";
 import { useRecovery } from "../hooks/useRecovery";
 import { useWorkouts } from "../hooks/useWorkouts";
 import { useWorkoutTemplates } from "../hooks/useWorkoutTemplates";
-import { forecastFullRecoveryByDate } from "../lib/recoveryForecast";
+import { forecastFullRecoveryByDate } from "@sergeant/fizruk-domain";
 
 const WEEKDAYS = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Нд"];
 

@@ -4,7 +4,7 @@ import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { EmptyState } from "@shared/components/ui/EmptyState";
 import { useExerciseCatalog } from "../hooks/useExerciseCatalog";
 import { useWorkouts } from "../hooks/useWorkouts";
-import { epley1rm, suggestNextSet } from "../lib/workoutStats";
+import { epley1rm, suggestNextSet } from "@sergeant/fizruk-domain";
 import { Card } from "@shared/components/ui/Card";
 
 function fmt(n, digits = 0) {
