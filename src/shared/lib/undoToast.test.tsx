@@ -23,8 +23,8 @@ function makeToast(): ToastApi & {
 
 describe("showUndoToast", () => {
   beforeEach(() => {
-    // @ts-expect-error jsdom не має navigator.vibrate — підклеюємо noop щоб
-    // хаптик не бив по undefined під час click.
+    // jsdom не має navigator.vibrate — підклеюємо noop щоб хаптик
+    // не бив по undefined під час click.
     navigator.vibrate = vi.fn();
   });
 
