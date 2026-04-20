@@ -1,6 +1,7 @@
-import { useState, type Dispatch, type SetStateAction } from "react";
+import { useEffect, useState, type Dispatch, type SetStateAction } from "react";
 import { ConfirmDialog } from "@shared/components/ui/ConfirmDialog";
 import { useToast } from "@shared/hooks/useToast";
+import { hapticSuccess } from "@shared/lib/haptic";
 import { showUndoToast } from "@shared/lib/undoToast";
 import {
   loadRoutineState,
@@ -21,7 +22,7 @@ import {
 } from "../lib/routineDraftUtils.js";
 import { HabitDetailSheet } from "./HabitDetailSheet";
 import { RoutineBackupSection } from "./RoutineBackupSection";
-import { HabitForm } from "./settings/HabitForm";
+import { HabitForm, type HabitFormErrors } from "./settings/HabitForm";
 import { TagsSection } from "./settings/TagsSection";
 import { CategoriesSection } from "./settings/CategoriesSection";
 import { ActiveHabitsSection } from "./settings/ActiveHabitsSection";
@@ -73,6 +74,26 @@ export function RoutineSettingsSection({
   const [importConfirm, setImportConfirm] = useState<ImportConfirmState | null>(
     null,
   );
+  const [habitErrors, setHabitErrors] = useState<HabitFormErrors>({});
+
+  // Clear field errors as soon as the user edits the relevant field so the
+  // red border doesn't linger once they start fixing the input. Parallels
+  // the behaviour in `HabitQuickCreateDialog` — keeps validation feedback
+  // consistent between the two hosts of `HabitForm`.
+  useEffect(() => {
+    if (habitErrors.name && habitDraft.name.trim()) {
+      setHabitErrors((e) => ({ ...e, name: undefined }));
+    }
+  }, [habitDraft.name, habitErrors.name]);
+  useEffect(() => {
+    if (
+      habitErrors.weekdays &&
+      Array.isArray(habitDraft.weekdays) &&
+      habitDraft.weekdays.length > 0
+    ) {
+      setHabitErrors((e) => ({ ...e, weekdays: undefined }));
+    }
+  }, [habitDraft.weekdays, habitErrors.weekdays]);
 
   const loadHabitIntoDraft = (h: Habit) => {
     const times = normalizeReminderTimes(h);
@@ -96,23 +117,38 @@ export function RoutineSettingsSection({
   const cancelEdit = () => {
     setEditingId(null);
     setHabitDraft(emptyHabitDraft());
+    setHabitErrors({});
   };
 
   const saveHabit = () => {
     const patch = habitDraftToPatch(habitDraft);
-    if (!patch.name) return;
+    // Inline validation — mirror `HabitQuickCreateDialog` so the user sees
+    // exactly which field to fix (red border + message) instead of a
+    // silent no-op for the name or a toast-only warning for the weekdays.
+    const nextErrors: HabitFormErrors = {};
+    if (!patch.name) {
+      nextErrors.name = "Додай назву звички.";
+    }
     if (
       patch.recurrence === "weekly" &&
       (!patch.weekdays || patch.weekdays.length === 0)
     ) {
-      toast.warning("Обери хоча б один день тижня.");
+      nextErrors.weekdays = "Обери хоча б один день тижня.";
+    }
+    if (nextErrors.name || nextErrors.weekdays) {
+      setHabitErrors(nextErrors);
       return;
     }
+    setHabitErrors({});
     if (editingId) {
       setRoutine((s) => updateHabit(s, editingId, patch));
+      hapticSuccess();
+      toast.success("Звичку оновлено.");
       cancelEdit();
     } else {
       setRoutine((s) => createHabit(s, patch));
+      hapticSuccess();
+      toast.success("Звичку створено.");
       setHabitDraft(emptyHabitDraft());
     }
   };
@@ -139,6 +175,7 @@ export function RoutineSettingsSection({
         onSave={saveHabit}
         onCancel={cancelEdit}
         focusTick={habitFormFocusTick}
+        errors={habitErrors}
       />
 
       <TagsSection

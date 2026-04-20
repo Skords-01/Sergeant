@@ -211,7 +211,7 @@ export function Body({ onOpenMeasurements }) {
                   step="0.1"
                   min="20"
                   max="300"
-                  className="w-full h-11 rounded-xl border border-line bg-panelHi px-3 text-sm text-text outline-none focus:border-success/60 transition-colors"
+                  className="input-focus-fizruk w-full h-11 rounded-xl border border-line bg-panelHi px-3 text-sm text-text"
                   placeholder="70.5"
                   value={form.weightKg}
                   onChange={(e) =>
@@ -228,7 +228,7 @@ export function Body({ onOpenMeasurements }) {
                   step="0.5"
                   min="0"
                   max="24"
-                  className="w-full h-11 rounded-xl border border-line bg-panelHi px-3 text-sm text-text outline-none focus:border-success/60 transition-colors"
+                  className="input-focus-fizruk w-full h-11 rounded-xl border border-line bg-panelHi px-3 text-sm text-text"
                   placeholder="8.0"
                   value={form.sleepHours}
                   onChange={(e) =>
@@ -293,7 +293,7 @@ export function Body({ onOpenMeasurements }) {
               <input
                 id="body-note"
                 type="text"
-                className="w-full h-11 rounded-xl border border-line bg-panelHi px-3 text-sm text-text outline-none focus:border-success/60 transition-colors"
+                className="input-focus-fizruk w-full h-11 rounded-xl border border-line bg-panelHi px-3 text-sm text-text"
                 placeholder="Як почуваєшся сьогодні…"
                 value={form.note}
                 onChange={(e) =>

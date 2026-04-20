@@ -225,7 +225,7 @@ export function WorkoutJournalSection({
                 </SectionHeading>
                 <input
                   type="date"
-                  className="w-full h-11 rounded-xl border border-line bg-panelHi px-3 text-sm text-text outline-none"
+                  className="input-focus-fizruk w-full h-11 rounded-xl border border-line bg-panelHi px-3 text-sm text-text"
                   value={retroDate}
                   onChange={(e) => setRetroDate(e.target.value)}
                 />
@@ -236,7 +236,7 @@ export function WorkoutJournalSection({
                 </SectionHeading>
                 <input
                   type="time"
-                  className="w-full h-11 rounded-xl border border-line bg-panelHi px-3 text-sm text-text outline-none"
+                  className="input-focus-fizruk w-full h-11 rounded-xl border border-line bg-panelHi px-3 text-sm text-text"
                   value={retroTime}
                   onChange={(e) => setRetroTime(e.target.value)}
                 />

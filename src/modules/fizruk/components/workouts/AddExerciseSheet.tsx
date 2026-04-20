@@ -75,7 +75,7 @@ export function AddExerciseSheet({
             Основна група
           </SectionHeading>
           <select
-            className="w-full min-h-[44px] bg-transparent text-sm text-text outline-none py-2"
+            className="input-focus-fizruk w-full min-h-[44px] bg-transparent text-sm text-text py-2 rounded-xl"
             value={form.primaryGroup}
             onChange={(e) =>
               setForm((f) => ({

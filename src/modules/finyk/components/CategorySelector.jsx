@@ -13,7 +13,7 @@ function CategorySelectorComponent({
   return (
     <select
       className={cn(
-        "w-full h-10 rounded-xl border border-line bg-bg px-3 text-sm text-text outline-none focus:border-primary",
+        "input-focus-finyk w-full h-10 rounded-xl border border-line bg-bg px-3 text-sm text-text",
         className,
       )}
       value={value || ""}

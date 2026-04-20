@@ -12,7 +12,7 @@ import { Button } from "@shared/components/ui/Button";
 import { Icon } from "@shared/components/ui/Icon";
 
 const splitInp =
-  "flex-1 text-xs h-9 rounded-xl border border-line bg-panelHi px-2 text-text outline-none focus:border-primary/50 transition-colors";
+  "input-focus-finyk flex-1 text-xs h-9 rounded-xl border border-line bg-panelHi px-2 text-text";
 
 const INCOME_ICONS = {
   in_salary: "💰",
@@ -344,7 +344,7 @@ function TxRowImpl({
                     ),
                   )
                 }
-                className="w-24 text-xs h-9 rounded-xl border border-line bg-panelHi px-2 text-right text-text outline-none focus:border-primary/50 transition-colors"
+                className="input-focus-finyk w-24 text-xs h-9 rounded-xl border border-line bg-panelHi px-2 text-right text-text"
                 placeholder="₴"
               />
               {draftSplits.length > 2 && (

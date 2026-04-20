@@ -137,7 +137,7 @@ export function PushupsWidget() {
               setInput(e.target.value)
             }
             placeholder="Скільки?"
-            className="routine-touch-field min-h-[48px] min-w-0 flex-1 rounded-2xl border border-line bg-panelHi px-4 text-text outline-none focus:border-routine [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+            className="input-focus-routine routine-touch-field min-h-[48px] min-w-0 flex-1 rounded-2xl border border-line bg-panelHi px-4 text-text [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
             onKeyDown={(e) => {
               if (e.key === "Enter" && input) {
                 addReps(Number(input));

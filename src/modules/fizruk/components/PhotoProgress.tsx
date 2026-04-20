@@ -302,7 +302,7 @@ export function PhotoProgress() {
                 id={compareBeforeId}
                 value={beforeId}
                 onChange={(e) => setBeforeId(e.target.value)}
-                className="w-full h-9 rounded-lg border border-line bg-panelHi px-2 text-xs text-text outline-none focus:border-success/60"
+                className="input-focus-fizruk w-full h-9 rounded-lg border border-line bg-panelHi px-2 text-xs text-text"
               >
                 <option value="">Обери фото</option>
                 {sortedPhotos.map((p) => (
@@ -319,7 +319,7 @@ export function PhotoProgress() {
                 id={compareAfterId}
                 value={afterId}
                 onChange={(e) => setAfterId(e.target.value)}
-                className="w-full h-9 rounded-lg border border-line bg-panelHi px-2 text-xs text-text outline-none focus:border-success/60"
+                className="input-focus-fizruk w-full h-9 rounded-lg border border-line bg-panelHi px-2 text-xs text-text"
               >
                 <option value="">Обери фото</option>
                 {sortedPhotos.map((p) => (
@@ -366,7 +366,7 @@ export function PhotoProgress() {
                 type="date"
                 value={dateStr}
                 onChange={(e) => setDateStr(e.target.value)}
-                className="w-full h-9 rounded-lg border border-line bg-panelHi px-2 text-xs text-text outline-none focus:border-success/60"
+                className="input-focus-fizruk w-full h-9 rounded-lg border border-line bg-panelHi px-2 text-xs text-text"
               />
             </div>
             <div>
@@ -378,7 +378,7 @@ export function PhotoProgress() {
                 onChange={(e) => setNote(e.target.value)}
                 maxLength={60}
                 placeholder={"Необов'язково"}
-                className="w-full h-9 rounded-lg border border-line bg-panelHi px-2 text-xs text-text outline-none focus:border-success/60"
+                className="input-focus-fizruk w-full h-9 rounded-lg border border-line bg-panelHi px-2 text-xs text-text"
               />
             </div>
           </div>

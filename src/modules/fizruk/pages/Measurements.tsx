@@ -7,7 +7,7 @@ import { Card } from "@shared/components/ui/Card";
 import { Stat } from "@shared/components/ui/Stat";
 
 const inp =
-  "w-full h-11 rounded-2xl border border-line bg-panelHi px-4 text-text outline-none focus:border-muted transition-colors";
+  "input-focus-fizruk w-full h-11 rounded-2xl border border-line bg-panelHi px-4 text-text";
 
 export function Measurements() {
   const { entries, addEntry, deleteEntry } = useMeasurements();

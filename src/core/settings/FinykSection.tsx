@@ -205,7 +205,7 @@ export function FinykSection() {
   };
 
   const catInputClass =
-    "flex-1 min-w-0 h-11 rounded-xl border border-line bg-panelHi px-3 text-sm text-text outline-none focus:border-primary/50 transition-colors";
+    "input-focus-finyk flex-1 min-w-0 h-11 rounded-xl border border-line bg-panelHi px-3 text-sm text-text";
 
   return (
     <SettingsGroup title="Фінік" emoji="💳">
@@ -435,7 +435,7 @@ export function FinykSection() {
                   onChange={(e) => setPrivatIdInput(e.target.value)}
                   placeholder="Ваш Merchant ID"
                   autoComplete="off"
-                  className="w-full h-11 rounded-xl border border-line bg-panelHi px-3 text-sm text-text outline-none focus:border-primary/50 transition-colors"
+                  className="input-focus-finyk w-full h-11 rounded-xl border border-line bg-panelHi px-3 text-sm text-text"
                 />
               </div>
               <div>
@@ -453,7 +453,7 @@ export function FinykSection() {
                     onChange={(e) => setPrivatTokenInput(e.target.value)}
                     placeholder="Merchant token"
                     autoComplete="off"
-                    className="w-full h-11 rounded-xl border border-line bg-panelHi px-3 pr-10 text-sm text-text outline-none focus:border-primary/50 transition-colors"
+                    className="input-focus-finyk w-full h-11 rounded-xl border border-line bg-panelHi px-3 pr-10 text-sm text-text"
                     onKeyDown={(e) => e.key === "Enter" && connectPrivat()}
                   />
                   <button

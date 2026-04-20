@@ -131,7 +131,7 @@ export function HubSettingsPage({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Пошук налаштувань"
-            className="w-full min-h-[44px] pl-9 pr-10 py-3 bg-panelHi border border-line rounded-2xl text-[16px] md:text-sm text-text placeholder:text-muted outline-none focus:border-brand-500/50 focus:ring-2 focus:ring-brand-500/30 transition-colors"
+            className="input-focus w-full min-h-[44px] pl-9 pr-10 py-3 bg-panelHi border border-line rounded-2xl text-[16px] md:text-sm text-text placeholder:text-muted"
           />
           {query && (
             <Button

@@ -26,7 +26,10 @@ interface USDASearchFood {
 // record has no stable code (OFF `code` / USDA `fdcId`). Avoids embedding
 // request-time `Date.now()` into search-result ids, which would cause React
 // to churn keys and break any client-side dedup/caching across searches.
-function stableId(prefix: string, parts: Array<string | null | undefined>) {
+export function stableId(
+  prefix: string,
+  parts: Array<string | null | undefined>,
+) {
   const canonical = parts
     .map((p) => (p ? String(p).trim().toLowerCase() : ""))
     .join("|");
@@ -163,7 +166,7 @@ function translateFirstToken(query: string): string | null {
   return null;
 }
 
-function normalizeOFFProduct(
+export function normalizeOFFProduct(
   product: OFFSearchProduct | null | undefined,
 ): NormalizedSearchProduct | null {
   const n = (product?.nutriments || {}) as Record<string, unknown>;
@@ -218,7 +221,7 @@ function normalizeOFFProduct(
 }
 
 // USDA nutrient IDs: 1008=Energy(kcal), 1003=Protein, 1004=Fat, 1005=Carbs
-function normalizeUSDAProduct(
+export function normalizeUSDAProduct(
   food: USDASearchFood | null | undefined,
 ): NormalizedSearchProduct | null {
   const name = food?.description;

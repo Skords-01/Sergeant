@@ -380,7 +380,7 @@ export function ActiveWorkoutPanel({
                 Тип
               </SectionHeading>
               <select
-                className="w-full h-10 bg-transparent text-sm text-text outline-none disabled:opacity-70"
+                className="input-focus-fizruk w-full h-10 bg-transparent text-sm text-text disabled:opacity-70 rounded-xl"
                 value={it.type || "strength"}
                 disabled={isReadOnly}
                 onChange={(e) => {
@@ -424,7 +424,7 @@ export function ActiveWorkoutPanel({
               {(it.sets || []).map((s, idx) => (
                 <div key={idx} className="grid grid-cols-3 gap-2">
                   <input
-                    className="h-10 rounded-xl border border-line bg-panelHi px-3 text-sm text-text outline-none read-only:opacity-70 read-only:cursor-not-allowed"
+                    className="input-focus-fizruk h-10 rounded-xl border border-line bg-panelHi px-3 text-sm text-text read-only:opacity-70 read-only:cursor-not-allowed"
                     type="number"
                     inputMode="decimal"
                     placeholder="кг"
@@ -443,7 +443,7 @@ export function ActiveWorkoutPanel({
                     }}
                   />
                   <input
-                    className="h-10 rounded-xl border border-line bg-panelHi px-3 text-sm text-text outline-none read-only:opacity-70 read-only:cursor-not-allowed"
+                    className="input-focus-fizruk h-10 rounded-xl border border-line bg-panelHi px-3 text-sm text-text read-only:opacity-70 read-only:cursor-not-allowed"
                     type="number"
                     inputMode="numeric"
                     placeholder="повт."
@@ -558,7 +558,7 @@ export function ActiveWorkoutPanel({
           {it.type === "time" && (
             <div className="mt-2 grid grid-cols-2 gap-2">
               <input
-                className="h-10 rounded-xl border border-line bg-panelHi px-3 text-sm text-text outline-none read-only:opacity-70 read-only:cursor-not-allowed"
+                className="input-focus-fizruk h-10 rounded-xl border border-line bg-panelHi px-3 text-sm text-text read-only:opacity-70 read-only:cursor-not-allowed"
                 type="number"
                 inputMode="numeric"
                 placeholder="сек"
@@ -583,7 +583,7 @@ export function ActiveWorkoutPanel({
             <div className="mt-2 space-y-2">
               <div className="grid grid-cols-2 gap-2">
                 <input
-                  className="h-10 rounded-xl border border-line bg-panelHi px-3 text-sm text-text outline-none read-only:opacity-70 read-only:cursor-not-allowed"
+                  className="input-focus-fizruk h-10 rounded-xl border border-line bg-panelHi px-3 text-sm text-text read-only:opacity-70 read-only:cursor-not-allowed"
                   type="number"
                   inputMode="numeric"
                   placeholder="метри"
@@ -599,7 +599,7 @@ export function ActiveWorkoutPanel({
                   }
                 />
                 <input
-                  className="h-10 rounded-xl border border-line bg-panelHi px-3 text-sm text-text outline-none read-only:opacity-70 read-only:cursor-not-allowed"
+                  className="input-focus-fizruk h-10 rounded-xl border border-line bg-panelHi px-3 text-sm text-text read-only:opacity-70 read-only:cursor-not-allowed"
                   type="number"
                   inputMode="numeric"
                   placeholder="сек"
@@ -831,7 +831,7 @@ export function ActiveWorkoutPanel({
           <input
             id={workoutStartId}
             type="datetime-local"
-            className="w-full h-11 rounded-xl border border-line bg-panelHi px-3 text-sm text-text outline-none"
+            className="input-focus-fizruk w-full h-11 rounded-xl border border-line bg-panelHi px-3 text-sm text-text"
             value={isoToDatetimeLocalValue(activeWorkout.startedAt)}
             onChange={(e) => {
               const iso = datetimeLocalValueToIso(e.target.value);
@@ -849,7 +849,7 @@ export function ActiveWorkoutPanel({
               <input
                 id={workoutEndId}
                 type="datetime-local"
-                className="w-full h-11 rounded-xl border border-line bg-panelHi px-3 text-sm text-text outline-none"
+                className="input-focus-fizruk w-full h-11 rounded-xl border border-line bg-panelHi px-3 text-sm text-text"
                 value={isoToDatetimeLocalValue(activeWorkout.endedAt)}
                 onChange={(e) => {
                   const iso = datetimeLocalValueToIso(e.target.value);
@@ -935,7 +935,7 @@ export function ActiveWorkoutPanel({
       {!activeWorkout.endedAt && (
         <div className="mt-3">
           <textarea
-            className="w-full min-h-[72px] rounded-2xl border border-line bg-bg px-3 py-2.5 text-sm text-text placeholder:text-subtle outline-none focus:border-muted transition-colors resize-none"
+            className="input-focus-fizruk w-full min-h-[72px] rounded-2xl border border-line bg-bg px-3 py-2.5 text-sm text-text placeholder:text-subtle resize-none"
             placeholder={`Нотатки до тренування (необов${"'"}язково)…`}
             value={activeWorkout.note || ""}
             onChange={(e) =>

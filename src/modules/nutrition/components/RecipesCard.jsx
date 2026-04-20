@@ -324,7 +324,7 @@ export function RecipesCard({
                 onChange={(e) =>
                   setPrefs((p) => ({ ...p, goal: e.target.value }))
                 }
-                className="w-full h-11 rounded-2xl bg-panel border border-line px-4 text-sm text-text outline-none focus:border-nutrition/60"
+                className="input-focus-nutrition w-full h-11 rounded-2xl bg-panel border border-line px-4 text-sm text-text"
                 disabled={busy}
               >
                 <option value="balanced">Збалансовано</option>

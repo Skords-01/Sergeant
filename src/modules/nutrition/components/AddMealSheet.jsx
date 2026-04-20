@@ -235,10 +235,27 @@ export function AddMealSheet({
       >
         {step === "source" ? (
           <>
-            <p className="text-xs text-muted mb-3">
-              Оберіть джерело — або заповніть вручну. Макроси, назву й час
-              відредагуєте на наступному кроці.
-            </p>
+            {/* Intro row doubles as a primary shortcut: the old paragraph
+                ended with «…або заповніть вручну» which described an
+                action hidden at the bottom of the sheet, making first-time
+                users scroll past templates/pantry/search/barcode/photo just
+                to find it. Pair the hint with an inline «Ввести вручну →»
+                link so the quickest manual log is one tap from the sheet
+                opening. The full button stays below for discoverability
+                when users scroll past the sources. */}
+            <div className="mb-3 flex items-start justify-between gap-3">
+              <p className="text-xs text-muted">
+                Оберіть джерело нижче. Макроси, назву й час відредагуєте на
+                наступному кроці.
+              </p>
+              <button
+                type="button"
+                onClick={() => setStep("fill")}
+                className="shrink-0 text-xs font-semibold text-nutrition hover:text-nutrition-hover underline decoration-dotted underline-offset-2 transition-colors min-h-[36px] px-1"
+              >
+                Ввести вручну →
+              </button>
+            </div>
 
             {/* Templates / pantry rows disappear when empty so a
                   first-time user sees search + barcode as the whole step

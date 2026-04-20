@@ -19,7 +19,7 @@ import { apiUrl } from "@shared/lib/apiUrl";
  */
 
 const ENDPOINT_PATH = "/api/metrics/web-vitals";
-const MAX_BATCH = 10;
+export const MAX_BATCH = 10;
 
 const buffer = [];
 let flushScheduled = false;
@@ -93,7 +93,14 @@ function scheduleFlush() {
   Promise.resolve().then(flush);
 }
 
-function enqueue(metric) {
+export function __resetForTests() {
+  buffer.length = 0;
+  flushScheduled = false;
+  wiredLifecycle = false;
+  initialized = false;
+}
+
+export function enqueue(metric) {
   if (
     !metric ||
     typeof metric.value !== "number" ||

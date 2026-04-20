@@ -157,7 +157,7 @@ function CategoryForm({ initial = {}, allCategories = [], onSave, onCancel }) {
           </label>
           <select
             id="cat-parent-select"
-            className="w-full h-10 rounded-xl border border-line bg-bg px-3 text-sm text-text outline-none focus:border-primary"
+            className="input-focus-finyk w-full h-10 rounded-xl border border-line bg-bg px-3 text-sm text-text"
             value={parentId}
             onChange={(e) => setParentId(e.target.value)}
           >

@@ -292,18 +292,24 @@ export default function NutritionApp({
 
   const wrappedSaveMeal = useCallback(
     async (meal) => {
-      if (editingMeal?.id) {
+      const isEdit = !!editingMeal?.id;
+      if (isEdit) {
         log.handleEditMeal(editingMeal.date, meal);
         setEditingMeal(null);
       } else {
         log.handleAddMeal(meal);
       }
+      // Сигналимо успіх як у Finyk (витрати) / Routine (звички) — тост із
+      // check-pop анімацією плюс haptic зроблено вже в `AddMealSheet`
+      // на `handleSave`. Без цього користувач бачив лише те, що модалка
+      // закрилась, — це не читалось як «збережено».
+      toast.success(isEdit ? "Страву оновлено." : "Страву додано.");
       if (meal.source === "photo" && photo.fileRef?.current?.files?.[0]) {
         const blob = await fileToThumbnailBlob(photo.fileRef.current.files[0]);
         if (blob) await saveMealThumbnail(meal.id, blob);
       }
     },
-    [editingMeal, log, photo.fileRef, setEditingMeal],
+    [editingMeal, log, photo.fileRef, setEditingMeal, toast],
   );
 
   const storageBanner = [

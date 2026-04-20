@@ -583,7 +583,7 @@ export function Dashboard({
               Мій шаблон
             </SectionHeading>
             <select
-              className="w-full min-h-[44px] bg-transparent text-sm text-text outline-none"
+              className="input-focus-fizruk w-full min-h-[44px] bg-transparent text-sm text-text rounded-xl"
               value={selectedTemplateId}
               onChange={(e) => {
                 const v = e.target.value;

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useDialogFocusTrap } from "@shared/hooks/useDialogFocusTrap";
 import { useToast } from "@shared/hooks/useToast";
+import { hapticSuccess } from "@shared/lib/haptic";
 import { cn } from "@shared/lib/cn";
 import { createHabit } from "../lib/routineStorage.js";
 import {
@@ -96,6 +97,7 @@ export function HabitQuickCreateDialog({
     }
     setErrors({});
     setRoutine((s) => createHabit(s, patch));
+    hapticSuccess();
     toast.success("Звичку створено.");
     onClose();
   };

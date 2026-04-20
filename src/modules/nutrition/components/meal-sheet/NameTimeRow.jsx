@@ -1,10 +1,20 @@
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { Input } from "@shared/components/ui/Input";
 import { VoiceMicButton } from "@shared/components/ui/VoiceMicButton.jsx";
 import { parseMealSpeech } from "../../../../core/lib/speechParsers.js";
+import { currentTime } from "./mealFormUtils.js";
 
 export function NameTimeRow({ form, field, setForm }) {
+  // 95%+ of the time the user logs a meal «right now». Showing the time
+  // input on every open forces an extra tap past the picker in the
+  // default case — parallels the «Не сьогодні? Змінити дату» collapse
+  // in `ManualExpenseSheet`. Reveal the field only when the time differs
+  // from «now» (editing an older meal) or the user explicitly expands it.
+  const [showTime, setShowTime] = useState(false);
+  const isNow = form.time === currentTime();
+  const timeVisible = showTime || !isNow;
+
   const handleVoiceMeal = useCallback(
     (transcript) => {
       const parsed = parseMealSpeech(transcript);
@@ -24,40 +34,59 @@ export function NameTimeRow({ form, field, setForm }) {
   );
 
   return (
-    <div className="grid grid-cols-[1fr_auto] gap-3 mb-4">
-      <div>
-        <SectionHeading
-          as="div"
-          size="xs"
-          className="mb-1 flex items-center gap-2"
-        >
-          Назва страви
-          <VoiceMicButton
-            size="sm"
-            onResult={handleVoiceMeal}
-            onError={(e) => setForm((s) => ({ ...s, err: e }))}
-            label="Голосовий ввід страви"
+    <div className="mb-4">
+      <div
+        className={
+          timeVisible
+            ? "grid grid-cols-[1fr_auto] gap-3"
+            : "grid grid-cols-1 gap-3"
+        }
+      >
+        <div>
+          <SectionHeading
+            as="div"
+            size="xs"
+            className="mb-1 flex items-center gap-2"
+          >
+            Назва страви
+            <VoiceMicButton
+              size="sm"
+              onResult={handleVoiceMeal}
+              onError={(e) => setForm((s) => ({ ...s, err: e }))}
+              label="Голосовий ввід страви"
+            />
+          </SectionHeading>
+          <Input
+            value={form.name}
+            onChange={(e) => field("name")(e.target.value)}
+            placeholder="Вівсянка з бананом"
+            aria-label="Назва страви"
           />
-        </SectionHeading>
-        <Input
-          value={form.name}
-          onChange={(e) => field("name")(e.target.value)}
-          placeholder="Вівсянка з бананом"
-          aria-label="Назва страви"
-        />
+        </div>
+        {timeVisible && (
+          <div>
+            <SectionHeading as="div" size="xs" className="mb-1">
+              Час
+            </SectionHeading>
+            <Input
+              type="time"
+              value={form.time}
+              onChange={(e) => field("time")(e.target.value)}
+              aria-label="Час"
+              className="w-[100px]"
+            />
+          </div>
+        )}
       </div>
-      <div>
-        <SectionHeading as="div" size="xs" className="mb-1">
-          Час
-        </SectionHeading>
-        <Input
-          type="time"
-          value={form.time}
-          onChange={(e) => field("time")(e.target.value)}
-          aria-label="Час"
-          className="w-[100px]"
-        />
-      </div>
+      {!timeVisible && (
+        <button
+          type="button"
+          onClick={() => setShowTime(true)}
+          className="mt-2 text-xs text-muted hover:text-text underline decoration-dotted underline-offset-2 transition-colors"
+        >
+          Не зараз? Змінити час ({form.time})
+        </button>
+      )}
     </div>
   );
 }

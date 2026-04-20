@@ -58,7 +58,7 @@ export function ChatInput({
     <div className="flex gap-2 px-4 pt-2 pb-4 shrink-0">
       <input
         ref={inputRef}
-        className="flex-1 bg-panel border border-line rounded-2xl px-4 py-3 text-sm text-text outline-none focus:border-primary/60 placeholder:text-subtle transition-colors disabled:opacity-50"
+        className="input-focus-finyk flex-1 bg-panel border border-line rounded-2xl px-4 py-3 text-sm text-text placeholder:text-subtle disabled:opacity-50"
         placeholder={
           online
             ? "Запитай або попроси змінити щось…"
