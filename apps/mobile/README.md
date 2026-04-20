@@ -50,7 +50,12 @@ depend on native modules that Expo Go does not ship (currently
 `react-native-mmkv`; future voice / barcode packages will require the same).
 The `development` profile in `eas.json` has `developmentClient: true` and
 `distribution: "internal"` so EAS produces an installable Dev Client build
-for simulators/devices rather than an app-store binary.
+rather than an app-store binary.
+
+The `development` profile has `ios.simulator: true`, meaning
+`--platform ios` builds produce a **simulator-only** `.app` (no ad-hoc
+`.ipa` for physical iOS devices). Android builds are regular device APKs
+that install on both emulators and physical devices.
 
 One-time setup (requires an Expo account with access to the `sergeant` slug):
 
@@ -71,8 +76,13 @@ Install the resulting artifact:
   drag the `.app` onto the running simulator.
 - **Android**: download the `.apk` and install on device
   (`adb install <path>.apk`) or scan the QR code from the build page.
-- **iOS device**: use the ad-hoc `.ipa` from the build page; the device UDID
-  must be registered with `eas device:create` beforehand.
+- **Physical iOS device**: the `development` profile is simulator-only and
+  will not produce an `.ipa`. To build a Dev Client for a physical iOS
+  device, register the device with `pnpm dlx eas-cli@latest device:create`,
+  then run a one-off build with the simulator flag disabled:
+  `pnpm dlx eas-cli@latest build --profile development --platform ios --simulator=false`
+  (or add a dedicated `development-device` profile without
+  `ios.simulator: true` if you do this regularly).
 
 Then run Metro against the installed Dev Client:
 
