@@ -16,12 +16,18 @@ export default [
   {
     ignores: [
       "dist/**",
+      "**/dist/**",
+      "**/node_modules/**",
       "node_modules/**",
       ".agents/**",
       "artifacts/**",
       "mcps/**",
       "playwright-report/**",
+      "**/playwright-report/**",
       "test-results/**",
+      "**/test-results/**",
+      ".turbo/**",
+      "**/.turbo/**",
     ],
   },
   js.configs.recommended,
