@@ -11,6 +11,7 @@ import {
   PushSendSchema,
   PushSubscribeSchema,
   PushTestRequestSchema,
+  PushUnregisterSchema,
   PushUnsubscribeSchema,
 } from "../http/schemas.js";
 
@@ -74,7 +75,19 @@ export async function vapidPublic(_req: Request, res: Response): Promise<void> {
   res.json({ publicKey: VAPID_PUBLIC });
 }
 
-/** POST /api/push/subscribe — зберегти підписку. Session в `req.user`. */
+/**
+ * POST /api/push/subscribe — legacy proxy на уніфікований `register`.
+ *
+ * Історичний web-only endpoint; після переходу web-клієнта на
+ * `POST /api/v1/push/register` цей шлях лишається лише для старих
+ * вкладок, які ще не завантажили оновлений JS. Handler нормалізує
+ * `{ endpoint, keys }` у web-гілку `PushRegisterSchema` і викликає
+ * той самий register-flow, що й `/api/push/register`, щоб не було
+ * двох шляхів запису у БД.
+ *
+ * Deprecation: видалити цей роут і handler через 1-2 сесії після
+ * deploy-у session-4c (коли метрика legacy-виклику спаде до 0).
+ */
 export async function subscribe(req: Request, res: Response): Promise<void> {
   if (!vapidReady) {
     res.status(503).json({ error: "Push not configured" });
@@ -86,9 +99,17 @@ export async function subscribe(req: Request, res: Response): Promise<void> {
   if (!parsed.ok) return;
   const { endpoint, keys } = parsed.data;
 
+  logger.warn({
+    msg: "push_deprecation",
+    deprecation: "/api/push/subscribe called, route to /api/v1/push/register",
+    userId: user.id,
+  });
+
   // Re-subscribe одного й того ж endpoint-а має «воскресити» soft-deleted
   // рядок (deleted_at = NULL), інакше браузер, який повернувся з 410 → 200
-  // через N годин, лишався б вимкненим у нас.
+  // через N годин, лишався б вимкненим у нас. Той самий upsert живе у
+  // `register()` web-гілці — тримаємо тут ідентичний SQL, щоб один legacy
+  // запит не створював розбіжність стану.
   //
   // EXPLAIN ANALYZE (типовий plan):
   //   Insert on push_subscriptions  (cost=0..12 rows=1)
@@ -152,12 +173,25 @@ export async function register(req: Request, res: Response): Promise<void> {
   res.json({ ok: true, platform: data.platform });
 }
 
-/** DELETE /api/push/subscribe — soft-delete підписки. Session в `req.user`. */
+/**
+ * DELETE /api/push/subscribe — legacy анрег web-підписки за endpoint.
+ *
+ * Deprecated на користь `POST /api/v1/push/unregister`. Залишено для
+ * старих web-вкладок, які ще не перезавантажили JS. Поведінка ідентична
+ * web-гілці `unregister()` — той самий soft-delete у `push_subscriptions`.
+ */
 export async function unsubscribe(req: Request, res: Response): Promise<void> {
   const user = (req as WithSessionUser).user!;
   const parsed = validateBody(PushUnsubscribeSchema, req, res);
   if (!parsed.ok) return;
   const { endpoint } = parsed.data;
+
+  logger.warn({
+    msg: "push_deprecation",
+    deprecation:
+      "DELETE /api/push/subscribe called, route to /api/v1/push/unregister",
+    userId: user.id,
+  });
 
   // Soft-delete: виставляємо deleted_at замість DELETE. Причини:
   //   1. Збережемо audit history (коли, скільки раз юзер відписувався).
@@ -174,6 +208,42 @@ export async function unsubscribe(req: Request, res: Response): Promise<void> {
     [user.id, endpoint],
   );
   res.json({ ok: true });
+}
+
+/**
+ * POST /api/v1/push/unregister — уніфікований анрег push-пристрою.
+ *
+ * Симетричний до `register()`. Для web — soft-delete у `push_subscriptions`
+ * за `endpoint`; для ios/android — soft-delete у `push_devices` за
+ * `(platform, token)`. Доступний і на `/api/push/unregister` через
+ * `apiVersionRewrite`. Ідемпотентний: повторний виклик не чіпає вже
+ * deleted-рядки завдяки `WHERE deleted_at IS NULL`.
+ */
+export async function unregister(req: Request, res: Response): Promise<void> {
+  const user = (req as WithSessionUser).user!;
+  const parsed = validateBody(PushUnregisterSchema, req, res);
+  if (!parsed.ok) return;
+  const data = parsed.data;
+
+  if (data.platform === "web") {
+    await pool.query(
+      `UPDATE push_subscriptions
+          SET deleted_at = NOW()
+        WHERE user_id = $1 AND endpoint = $2 AND deleted_at IS NULL`,
+      [user.id, data.endpoint],
+    );
+    res.json({ ok: true, platform: "web" });
+    return;
+  }
+
+  await pool.query(
+    `UPDATE push_devices
+        SET deleted_at = NOW(), updated_at = NOW()
+      WHERE user_id = $1 AND platform = $2 AND token = $3
+        AND deleted_at IS NULL`,
+    [user.id, data.platform, data.token],
+  );
+  res.json({ ok: true, platform: data.platform });
 }
 
 interface PushSubscriptionRow {

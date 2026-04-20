@@ -100,3 +100,60 @@ describe("createPushEndpoints.register", () => {
     expect(url).not.toContain("/api/push/register");
   });
 });
+
+describe("createPushEndpoints.unregister", () => {
+  it("web-payload `{ platform, endpoint }` → 200 { ok, platform: 'web' }", async () => {
+    const fetchMock = mockFetchOnce({ ok: true, platform: "web" });
+
+    const push = createPushEndpoints(createHttpClient());
+    const res = await push.unregister({
+      platform: "web",
+      endpoint: "https://fcm.googleapis.com/wp/xxx",
+    });
+
+    expect(res).toEqual({ ok: true, platform: "web" });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const init = fetchMock.mock.calls[0][1] as RequestInit;
+    const parsed = JSON.parse(init.body as string) as {
+      platform: string;
+      endpoint: string;
+    };
+    expect(parsed.platform).toBe("web");
+    expect(parsed.endpoint).toBe("https://fcm.googleapis.com/wp/xxx");
+  });
+
+  it("native payload `{ platform, token }` — без keys — повертає platform: 'ios'", async () => {
+    mockFetchOnce({ ok: true, platform: "ios" });
+
+    const push = createPushEndpoints(createHttpClient());
+    const res = await push.unregister({
+      platform: "ios",
+      token: "a".repeat(64),
+    });
+
+    expect(res).toEqual({ ok: true, platform: "ios" });
+  });
+
+  it("`/api/push/unregister` переписується на `/api/v1/push/unregister`", async () => {
+    const fetchMock = mockFetchOnce({ ok: true, platform: "web" });
+
+    const push = createPushEndpoints(createHttpClient());
+    await push.unregister({
+      platform: "web",
+      endpoint: "https://fcm.googleapis.com/wp/xxx",
+    });
+
+    const url = fetchMock.mock.calls[0][0] as string;
+    expect(url).toContain("/api/v1/push/unregister");
+    expect(url).not.toContain("/api/push/unregister");
+  });
+
+  it("невалідна platform у відповіді → ZodError з PushUnregisterResponseSchema", async () => {
+    mockFetchOnce({ ok: true, platform: "desktop" });
+
+    const push = createPushEndpoints(createHttpClient());
+    await expect(
+      push.unregister({ platform: "android", token: "fcm-token" }),
+    ).rejects.toThrow();
+  });
+});

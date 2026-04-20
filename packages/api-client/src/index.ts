@@ -61,12 +61,16 @@ export {
   PushRegisterResponseSchema,
   PushTestRequestSchema,
   PushTestResponseSchema,
+  PushUnregisterRequestSchema,
+  PushUnregisterResponseSchema,
   type PushEndpoints,
   type PushPlatform,
   type PushRegisterRequest,
   type PushRegisterResponse,
   type PushTestRequest,
   type PushTestResponse,
+  type PushUnregisterRequest,
+  type PushUnregisterResponse,
 } from "./endpoints/push";
 
 export {

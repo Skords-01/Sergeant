@@ -14,10 +14,12 @@
   },
   "dependencies": {
     "@better-auth/expo": "^1.6.5",
+    "@parse/node-apn": "^8.1.0",
     "@sentry/node": "^8.55.1",
     "@sergeant/shared": "workspace:*",
     "better-auth": "^1.6.4",
     "express": "^4.22.1",
+    "google-auth-library": "^10.6.2",
     "helmet": "^8.1.0",
     "pg": "^8.20.0",
     "pino": "^10.3.1",

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useApiClient } from "@sergeant/api-client/react";
+import { usePushRegister, usePushUnregister } from "@sergeant/api-client/react";
 import type { PushRegisterRequest } from "@sergeant/api-client";
 import { isApiError, pushApi } from "@shared/api";
 import { pushKeys } from "@shared/lib/queryKeys";
@@ -54,7 +54,12 @@ export interface UsePushNotificationsResult {
 export function usePushNotifications(): UsePushNotificationsResult {
   const supported = isPushSupported();
   const queryClient = useQueryClient();
-  const api = useApiClient();
+  // `usePushRegister`/`usePushUnregister` — канонічні хуки уніфікованого
+  // push-API (`@sergeant/api-client`). Вони задають `mutationKey`
+  // (`apiMutationKeys.push.register/unregister`), тож сторонні компоненти
+  // можуть через `useIsMutating` спостерігати стан без дублікату `useState`.
+  const pushRegister = usePushRegister();
+  const pushUnregister = usePushUnregister();
 
   const [permission, setPermission] = useState<NotificationPermission>(
     supported ? Notification.permission : "denied",
@@ -123,7 +128,7 @@ export function usePushNotifications(): UsePushNotificationsResult {
         token: endpoint,
         keys: { p256dh, auth },
       };
-      await api.push.register(payload);
+      await pushRegister.mutateAsync(payload);
 
       localStorage.setItem(PUSH_SUB_KEY, "1");
       setSubscribed(true);
@@ -146,10 +151,14 @@ export function usePushNotifications(): UsePushNotificationsResult {
       if (sub) {
         const endpoint = sub.endpoint;
         await sub.unsubscribe();
-        // Серверний DELETE є best-effort: якщо сервер недоступний, локально
-        // ми все одно розписалися — запис у БД зачистить cron або наступна
-        // вдала підписка.
-        await pushApi.unsubscribe(endpoint).catch(() => {});
+        // Серверний анрег — best-effort: якщо сервер недоступний, локально
+        // ми все одно розписалися (запис у БД зачистить cron або наступна
+        // вдала підписка). Використовуємо уніфікований
+        // `api.push.unregister` — через `apiMutationKeys.push.unregister`
+        // трекається як окрема мутація в devtools.
+        await pushUnregister
+          .mutateAsync({ platform: "web", endpoint })
+          .catch(() => {});
       }
       localStorage.removeItem(PUSH_SUB_KEY);
       setSubscribed(false);

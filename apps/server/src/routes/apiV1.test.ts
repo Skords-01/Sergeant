@@ -261,3 +261,77 @@ describe("POST /api/v1/push/register", () => {
     expect(queryMock).not.toHaveBeenCalled();
   });
 });
+
+describe("POST /api/v1/push/unregister", () => {
+  const user = { id: "user_abc" };
+
+  it("без сесії → 401", async () => {
+    const app = createApp();
+    const res = await request(app)
+      .post("/api/v1/push/unregister")
+      .send({ platform: "ios", token: "t".repeat(64) });
+    expect(res.status).toBe(401);
+  });
+
+  it("web-гілка soft-delete-ить у push_subscriptions за endpoint", async () => {
+    getSessionUserMock.mockResolvedValue(user);
+    queryMock.mockResolvedValue({ rowCount: 1, rows: [] });
+    const app = createApp();
+    const res = await request(app)
+      .post("/api/v1/push/unregister")
+      .set("Authorization", "Bearer x")
+      .send({
+        platform: "web",
+        endpoint: "https://fcm.googleapis.com/wp/xxx",
+      });
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ ok: true, platform: "web" });
+    expect(queryMock).toHaveBeenCalledTimes(1);
+    const [sql, params] = queryMock.mock.calls[0];
+    expect(String(sql)).toMatch(/UPDATE push_subscriptions/);
+    expect(String(sql)).toMatch(/deleted_at = NOW/);
+    expect(String(sql)).toMatch(/deleted_at IS NULL/);
+    expect(params).toEqual([user.id, "https://fcm.googleapis.com/wp/xxx"]);
+  });
+
+  it("native-гілка soft-delete-ить у push_devices за (platform, token)", async () => {
+    getSessionUserMock.mockResolvedValue(user);
+    queryMock.mockResolvedValue({ rowCount: 1, rows: [] });
+    const app = createApp();
+    const res = await request(app)
+      .post("/api/v1/push/unregister")
+      .set("Authorization", "Bearer x")
+      .send({ platform: "android", token: "fcm-reg-tok" });
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ ok: true, platform: "android" });
+    const [sql, params] = queryMock.mock.calls[0];
+    expect(String(sql)).toMatch(/UPDATE push_devices/);
+    expect(params).toEqual([user.id, "android", "fcm-reg-tok"]);
+  });
+
+  it("доступний і на legacy-префіксі /api/push/unregister", async () => {
+    getSessionUserMock.mockResolvedValue(user);
+    queryMock.mockResolvedValue({ rowCount: 1, rows: [] });
+    const app = createApp();
+    const res = await request(app)
+      .post("/api/push/unregister")
+      .set("Authorization", "Bearer x")
+      .send({
+        platform: "web",
+        endpoint: "https://fcm.googleapis.com/wp/xxx",
+      });
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ ok: true, platform: "web" });
+  });
+
+  it("невалідний web-payload без endpoint → 400", async () => {
+    getSessionUserMock.mockResolvedValue(user);
+    const app = createApp();
+    const res = await request(app)
+      .post("/api/v1/push/unregister")
+      .set("Authorization", "Bearer x")
+      .send({ platform: "web", token: "not-a-url" });
+    expect(res.status).toBe(400);
+    expect(queryMock).not.toHaveBeenCalled();
+  });
+});

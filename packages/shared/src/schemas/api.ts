@@ -444,6 +444,27 @@ export const PushRegisterSchema = z.discriminatedUnion("platform", [
   }),
 ]);
 
+/**
+ * `/api/v1/push/unregister` — уніфіковане видалення push-пристрою.
+ *
+ * Web — знімаємо підписку за `endpoint` (запис у `push_subscriptions`
+ * soft-delete-иться). Для native (ios/android) — soft-delete у
+ * `push_devices` за opaque `token`. Форма поля — дзеркало
+ * `PushRegisterSchema`, але для web ідентифікатор іменується `endpoint`
+ * (як у `PushSubscription.endpoint`), а не `token`, щоб бек/фронт
+ * не плутали payload реєстрації та анрегу при читанні логів.
+ */
+export const PushUnregisterSchema = z.discriminatedUnion("platform", [
+  z.object({
+    platform: z.literal("web"),
+    endpoint: z.string().url().max(2048),
+  }),
+  z.object({
+    platform: z.enum(["ios", "android"]),
+    token: z.string().min(1).max(4096),
+  }),
+]);
+
 // `.nullable()` на необов'язкових полях — для back-compat із воркерами, які
 // історично слали `null` замість відсутнього поля.
 export const PushSendSchema = z.object({

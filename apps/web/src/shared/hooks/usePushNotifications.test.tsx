@@ -5,16 +5,20 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import {
   PushRegisterRequestSchema,
+  PushUnregisterRequestSchema,
   type PushRegisterRequest,
   type PushRegisterResponse,
+  type PushUnregisterRequest,
+  type PushUnregisterResponse,
 } from "@sergeant/api-client";
 import { ApiClientProvider } from "@sergeant/api-client/react";
 import type { ApiClient } from "@sergeant/api-client";
 
 // Mock `@shared/api` — уся web-сторона шарить один `createApiClient(...)`
 // інстанс, але у юніт-тестах не хочемо проганяти HTTP-шар: мокаємо
-// `pushApi.getVapidPublic` / `pushApi.unsubscribe`, а `register`
-// перевіряємо через підставлений у провайдер fake-`ApiClient`.
+// `pushApi.getVapidPublic` (інші методи pushApi після session-4c не
+// використовуються напряму — все йде через уніфіковані `api.push.register`
+// / `api.push.unregister` з `@sergeant/api-client/react`-хуків).
 vi.mock("@shared/api", async () => {
   const actual =
     await vi.importActual<typeof import("@shared/api")>("@shared/api");
@@ -34,7 +38,7 @@ import { pushApi } from "@shared/api";
 const getVapidPublicMock = pushApi.getVapidPublic as unknown as ReturnType<
   typeof vi.fn
 >;
-const unsubscribeMock = pushApi.unsubscribe as unknown as ReturnType<
+const legacyUnsubscribeMock = pushApi.unsubscribe as unknown as ReturnType<
   typeof vi.fn
 >;
 
@@ -75,12 +79,15 @@ function stubNotification(permission: NotificationPermission) {
   return requestPermission;
 }
 
-function stubServiceWorker(subscription: PushSubscription) {
+function stubServiceWorker(
+  subscription: PushSubscription,
+  existing: PushSubscription | null = null,
+) {
   const subscribeMock = vi.fn(async () => subscription);
   const registration = {
     pushManager: {
       subscribe: subscribeMock,
-      getSubscription: vi.fn(async () => null),
+      getSubscription: vi.fn(async () => existing),
     },
   };
   Object.defineProperty(globalThis.navigator, "serviceWorker", {
@@ -111,6 +118,11 @@ function makeWrapper(apiClient: ApiClient) {
 type RegisterMock = ReturnType<
   typeof vi.fn<(payload: PushRegisterRequest) => Promise<PushRegisterResponse>>
 >;
+type UnregisterMock = ReturnType<
+  typeof vi.fn<
+    (payload: PushUnregisterRequest) => Promise<PushUnregisterResponse>
+  >
+>;
 
 function makeRegisterMock(response: PushRegisterResponse): RegisterMock {
   return vi.fn<(payload: PushRegisterRequest) => Promise<PushRegisterResponse>>(
@@ -118,10 +130,23 @@ function makeRegisterMock(response: PushRegisterResponse): RegisterMock {
   );
 }
 
-function makeApiClientWithRegisterMock(registerMock: RegisterMock) {
+function makeUnregisterMock(response: PushUnregisterResponse): UnregisterMock {
+  return vi.fn<
+    (payload: PushUnregisterRequest) => Promise<PushUnregisterResponse>
+  >(async () => response);
+}
+
+function makeApiClientWithMocks(
+  registerMock: RegisterMock,
+  unregisterMock: UnregisterMock = makeUnregisterMock({
+    ok: true,
+    platform: "web",
+  }),
+) {
   return {
     push: {
       register: registerMock,
+      unregister: unregisterMock,
       getVapidPublic: vi.fn(),
       subscribe: vi.fn(),
       unsubscribe: vi.fn(),
@@ -134,7 +159,7 @@ describe("usePushNotifications — subscribe via api.push.register", () => {
     localStorage.clear();
     vi.clearAllMocks();
     getVapidPublicMock.mockResolvedValue({ publicKey: "AAAA" });
-    unsubscribeMock.mockResolvedValue({ ok: true });
+    legacyUnsubscribeMock.mockResolvedValue({ ok: true });
   });
 
   afterEach(() => {
@@ -151,7 +176,7 @@ describe("usePushNotifications — subscribe via api.push.register", () => {
     stubServiceWorker(subscription);
 
     const registerMock = makeRegisterMock({ ok: true, platform: "web" });
-    const apiClient = makeApiClientWithRegisterMock(registerMock);
+    const apiClient = makeApiClientWithMocks(registerMock);
 
     const { result } = renderHook(() => usePushNotifications(), {
       wrapper: makeWrapper(apiClient),
@@ -189,7 +214,7 @@ describe("usePushNotifications — subscribe via api.push.register", () => {
     stubServiceWorker(subscription);
 
     const registerMock = makeRegisterMock({ ok: true, platform: "web" });
-    const apiClient = makeApiClientWithRegisterMock(registerMock);
+    const apiClient = makeApiClientWithMocks(registerMock);
 
     const { result } = renderHook(() => usePushNotifications(), {
       wrapper: makeWrapper(apiClient),
@@ -201,5 +226,89 @@ describe("usePushNotifications — subscribe via api.push.register", () => {
 
     expect(registerMock).not.toHaveBeenCalled();
     expect(localStorage.getItem("hub_push_subscribed")).toBeNull();
+  });
+});
+
+describe("usePushNotifications — unsubscribe via api.push.unregister", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    vi.clearAllMocks();
+    getVapidPublicMock.mockResolvedValue({ publicKey: "AAAA" });
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("викликає api.push.unregister з `{ platform: 'web', endpoint }` і не чіпає legacy pushApi.unsubscribe", async () => {
+    // При `unsubscribe()` хук має піти в уніфікований `/api/v1/push/unregister`
+    // через `api.push.unregister`, а не у legacy DELETE `/api/push/subscribe`.
+    const existing = makeMockPushSubscription({
+      endpoint: "https://fcm.googleapis.com/wp/abc123",
+      p256dh: "p256dh-key",
+      auth: "auth-key",
+    });
+    stubServiceWorker(existing, existing);
+
+    const registerMock = makeRegisterMock({ ok: true, platform: "web" });
+    const unregisterMock = makeUnregisterMock({ ok: true, platform: "web" });
+    const apiClient = makeApiClientWithMocks(registerMock, unregisterMock);
+
+    localStorage.setItem("hub_push_subscribed", "1");
+
+    const { result } = renderHook(() => usePushNotifications(), {
+      wrapper: makeWrapper(apiClient),
+    });
+
+    await act(async () => {
+      await result.current.unsubscribe();
+    });
+
+    await waitFor(() => {
+      expect(unregisterMock).toHaveBeenCalledTimes(1);
+    });
+
+    const payload = unregisterMock.mock.calls[0][0];
+    expect(payload).toEqual({
+      platform: "web",
+      endpoint: "https://fcm.googleapis.com/wp/abc123",
+    });
+    // Payload — валідний web-варіант discriminated union з shared.
+    expect(() => PushUnregisterRequestSchema.parse(payload)).not.toThrow();
+    // Legacy шлях (`pushApi.unsubscribe` → DELETE `/api/push/subscribe`)
+    // не має смикатись: session-4c забороняє direct-виклики legacy у web.
+    expect(legacyUnsubscribeMock).not.toHaveBeenCalled();
+    expect(localStorage.getItem("hub_push_subscribed")).toBeNull();
+    expect(result.current.subscribed).toBe(false);
+  });
+
+  it("без активної підписки у браузері — не викликає api.push.unregister", async () => {
+    // `pushManager.getSubscription()` повертає null (юзер ще не підписувався).
+    // У такому випадку немає `endpoint`, тож і серверу нічого чистити.
+    const placeholder = makeMockPushSubscription({
+      endpoint: "https://example/e",
+      p256dh: "p",
+      auth: "a",
+    });
+    stubServiceWorker(placeholder, null);
+
+    const registerMock = makeRegisterMock({ ok: true, platform: "web" });
+    const unregisterMock = makeUnregisterMock({ ok: true, platform: "web" });
+    const apiClient = makeApiClientWithMocks(registerMock, unregisterMock);
+
+    localStorage.setItem("hub_push_subscribed", "1");
+
+    const { result } = renderHook(() => usePushNotifications(), {
+      wrapper: makeWrapper(apiClient),
+    });
+
+    await act(async () => {
+      await result.current.unsubscribe();
+    });
+
+    expect(unregisterMock).not.toHaveBeenCalled();
+    // Локальний стан все одно чиститься, щоб UI не лишився «увімкненим».
+    expect(localStorage.getItem("hub_push_subscribed")).toBeNull();
+    expect(result.current.subscribed).toBe(false);
   });
 });
