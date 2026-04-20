@@ -411,7 +411,7 @@ Web використовує кастомні компоненти + canvas/SVG.
 у пакети. План рефакторингів-супутників:
 
 - **R1.** ✅ Done (PR [#405](https://github.com/Skords-01/Sergeant/pull/405)). `storageKeys.ts` → `@sergeant/shared`.
-- **R2.** ✅ Done (PR [#415](https://github.com/Skords-01/Sergeant/pull/415)). `hubSearchEngine.ts` (pure-скорінг) +
+- **R2.** ✅ Done (PR [#414](https://github.com/Skords-01/Sergeant/pull/414)). `hubSearchEngine.ts` (pure-скорінг) +
   типи/реєстр рекомендацій + усі finance-правила вийняті у новий
   DOM-free пакет `@sergeant/insights`; LS-обгортки (`buildFinanceContext`,
   recents для пошуку, orchestrator `generateRecommendations`) лишились у
