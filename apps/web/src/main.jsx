@@ -12,6 +12,10 @@ import "@shared/lib/haptic";
 // Registers the web Blob + <a download>-based adapter on the shared
 // file-download contract (`@sergeant/shared`). Import for side effects only.
 import "@shared/lib/fileDownload";
+// Registers the web `window.visualViewport`-based adapter on the shared
+// visual-keyboard-inset contract (`@sergeant/shared`). Import for side
+// effects only.
+import "@shared/hooks/useVisualKeyboardInset";
 import { ErrorBoundary } from "./core/ErrorBoundary.jsx";
 import { initSentry } from "./core/sentry.js";
 import { initWebVitals } from "./core/webVitals.js";

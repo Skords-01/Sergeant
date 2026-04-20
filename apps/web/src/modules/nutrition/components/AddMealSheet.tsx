@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "@shared/components/ui/Button";
 import { Sheet } from "@shared/components/ui/Sheet";
-import { useVisualKeyboardInset } from "@shared/hooks/useVisualKeyboardInset";
+import { useVisualKeyboardInset } from "@sergeant/shared";
 import { hapticSuccess } from "@shared/lib/haptic";
 import { MEAL_TYPES } from "../lib/mealTypes.js";
 import { ensureSeedFoods } from "../lib/foodDb/foodDb.js";

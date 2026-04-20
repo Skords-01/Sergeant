@@ -6,7 +6,7 @@ import { Icon } from "@shared/components/ui/Icon";
 import { perfMark, perfEnd } from "@shared/lib/perf";
 import { useOnlineStatus } from "@shared/hooks/useOnlineStatus";
 import { useDialogFocusTrap } from "@shared/hooks/useDialogFocusTrap";
-import { useVisualKeyboardInset } from "@shared/hooks/useVisualKeyboardInset";
+import { useVisualKeyboardInset } from "@sergeant/shared";
 import { hubKeys } from "@shared/lib/queryKeys";
 import { useFinykHubPreview } from "./hub/useFinykHubPreview";
 

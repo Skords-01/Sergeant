@@ -5,9 +5,11 @@ import { Label } from "@shared/components/ui/FormField";
 import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { Sheet } from "@shared/components/ui/Sheet";
 import { VoiceMicButton } from "@shared/components/ui/VoiceMicButton.jsx";
-import { parseExpenseSpeech } from "@sergeant/shared";
-import { useVisualKeyboardInset } from "@shared/hooks/useVisualKeyboardInset";
-import { toLocalISODate } from "@sergeant/shared";
+import {
+  parseExpenseSpeech,
+  toLocalISODate,
+  useVisualKeyboardInset,
+} from "@sergeant/shared";
 import { hapticSuccess } from "@shared/lib/haptic";
 import { CANONICAL_TO_MANUAL_LABEL } from "@sergeant/finyk-domain/domain/personalization";
 

@@ -561,10 +561,21 @@ Web використовує кастомні компоненти + canvas/SVG.
     зараз — warn-stub у `apps/mobile/src/lib/fileDownload.ts`; Фаза 4+
     замінить його на `expo-file-system.writeAsStringAsync`
     (`cacheDirectory`) + `expo-sharing.shareAsync` без змін у споживачах.
-- **R9.** Винести `useVisualKeyboardInset` у платформенний хук:
-  web — `window.visualViewport.resize/scroll`; mobile — `Keyboard.addListener`
-  або `useAnimatedKeyboard` з `react-native-keyboard-controller`. Усуне
-  дублікат у `routine/hooks/useVisualKeyboardInset.ts`.
+- **R9.** 🔵 In progress (PR #XXX — shared hook + web/mobile адаптери + 5 споживачів
+  мігровано + видалено дублікат у `routine/hooks`). Pure-контракт
+  `VisualKeyboardInsetAdapter` + `useVisualKeyboardInset(active)` живе у
+  `@sergeant/shared/hooks/useVisualKeyboardInset` із безпечним no-op-дефолтом,
+  що повертає `0` (SSR / тест / unconfigured). Web-імплементація на
+  `window.visualViewport` (`resize` + `scroll`, 56 px-поріг проти chrome-resize)
+  у `apps/web/src/shared/hooks/useVisualKeyboardInset.ts`, реєструється у
+  `apps/web/src/main.jsx`. Mobile-імплементація на `Keyboard.addListener`
+  (`keyboardDidShow` / `keyboardDidHide`) у `apps/mobile/src/hooks/useVisualKeyboardInset.ts`,
+  реєструється у `apps/mobile/app/_layout.tsx` — БЕЗ
+  `react-native-keyboard-controller` / `react-native-reanimated` deps. Мігровано
+  5 споживачів: `finyk/ManualExpenseSheet`, `routine/PushupsWidget`,
+  `nutrition/AddMealSheet`, `fizruk/workouts/AddExerciseSheet`, `core/HubChat` —
+  усі тепер імпортують `useVisualKeyboardInset` з `@sergeant/shared`. Видалено
+  дублікат `apps/web/src/modules/routine/hooks/useVisualKeyboardInset.ts`.
 
 Кожен R-пункт робиться окремим PR перед відповідною Фазою (щоб
 mobile PR був маленький і тільки про UI).

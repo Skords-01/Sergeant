@@ -3,8 +3,8 @@ import { cn } from "@shared/lib/cn";
 import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { Sheet } from "@shared/components/ui/Sheet";
 import { Card } from "@shared/components/ui/Card";
+import { useVisualKeyboardInset } from "@sergeant/shared";
 import { useRoutinePushups } from "../hooks/useRoutinePushups.js";
-import { useVisualKeyboardInset } from "../hooks/useVisualKeyboardInset.js";
 import { dateKeyFromDate } from "../lib/hubCalendarAggregate.js";
 
 const C = {

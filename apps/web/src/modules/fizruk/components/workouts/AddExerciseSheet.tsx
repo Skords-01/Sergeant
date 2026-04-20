@@ -4,7 +4,7 @@ import { Input } from "@shared/components/ui/Input";
 import { Button } from "@shared/components/ui/Button";
 import { Sheet } from "@shared/components/ui/Sheet";
 import { cn } from "@shared/lib/cn";
-import { useVisualKeyboardInset } from "@shared/hooks/useVisualKeyboardInset";
+import { useVisualKeyboardInset } from "@sergeant/shared";
 
 const EQUIPMENT_OPTIONS = [
   { id: "bodyweight", label: "Власна вага" },

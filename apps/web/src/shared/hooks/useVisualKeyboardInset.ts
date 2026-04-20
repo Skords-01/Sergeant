@@ -1,7 +1,32 @@
+/**
+ * Web adapter for the shared visual-keyboard-inset contract.
+ *
+ * Binds the `@sergeant/shared` contract to `window.visualViewport`:
+ * the hook subscribes to `resize` + `scroll` and reports the gap
+ * between the layout viewport height and the visual viewport bottom,
+ * which is how both iOS Safari and Android Chrome surface the
+ * on-screen keyboard to web content. The 56 px threshold filters out
+ * browser chrome resizes (URL bar auto-hide, pinned toolbars) so we
+ * only lift bottom sheets when an actual keyboard is present.
+ *
+ * Importing this module has the side-effect of registering the web
+ * adapter on the shared contract, so the side-effect import in
+ * `apps/web/src/main.jsx` is all the app shell needs. Existing call
+ * sites import the hook from `@sergeant/shared` — not from this file
+ * — to stay platform-agnostic.
+ */
+
 import { useEffect, useState } from "react";
 
+import {
+  setVisualKeyboardInsetAdapter,
+  type VisualKeyboardInsetAdapter,
+} from "@sergeant/shared";
+
 /** Піднімає bottom sheet над віртуальною клавіатурою (iOS/Android Chrome). */
-export function useVisualKeyboardInset(active: boolean): number {
+export const useWebVisualKeyboardInset: VisualKeyboardInsetAdapter = (
+  active: boolean,
+): number => {
   const [insetPx, setInsetPx] = useState<number>(0);
 
   useEffect(() => {
@@ -26,4 +51,6 @@ export function useVisualKeyboardInset(active: boolean): number {
   }, [active]);
 
   return insetPx;
-}
+};
+
+setVisualKeyboardInsetAdapter(useWebVisualKeyboardInset);
