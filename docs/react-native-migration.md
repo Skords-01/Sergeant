@@ -515,12 +515,20 @@ Web використовує кастомні компоненти + canvas/SVG.
   `@sergeant/shared/schemas`, перевірити, щоб `apps/mobile` тягнув
   звідти, а не дублював.
 - **R6.** ✅ Done (PR [#406](https://github.com/Skords-01/Sergeant/pull/406)). Tailwind preset + дизайн-токени у `@sergeant/design-tokens`; `apps/web/tailwind.config.js` і `apps/mobile/tailwind.config.js` обидва споживають один preset.
-- **R7.** Винести `shared/lib/haptic.ts` у двох-адаптерний вигляд:
-  PURE-контракт (`hapticTap/Success/Warning/Error/Cancel`) у
-  `@sergeant/shared`, web-імплементація на `navigator.vibrate`
-  залишається в `apps/web`, mobile-імплементація через `expo-haptics`
-  у `apps/mobile/src/lib/haptic.ts`. Консьюмери (`@sergeant/finyk-domain`,
-  UI-примітиви) імпортують з `@sergeant/shared`.
+- **R7.** ✅ Done (PR [#424](https://github.com/Skords-01/Sergeant/pull/424)).
+  `shared/lib/haptic.ts` розібрано на два адаптери. PURE-контракт
+  (`HapticAdapter` + `setHapticAdapter` + `hapticTap/Success/Warning/Error/Cancel/Pattern`)
+  живе у `@sergeant/shared/lib/haptic` із безпечним no-op-адаптером за
+  замовчуванням. Web-імплементація на `navigator.vibrate` (з reduced-motion
+  - feature-detect + try/catch) залишається у
+    `apps/web/src/shared/lib/haptic.ts` і реєструється один раз у
+    `apps/web/src/main.jsx` через side-effect-імпорт. Mobile-імплементація
+    через `expo-haptics` (`selectionAsync`, `notificationAsync(Success/Warning/Error)`,
+    `impactAsync(Light)` для cancel; `pattern` — no-op з TODO) живе у
+    `apps/mobile/src/lib/haptic.ts` і реєструється у
+    `apps/mobile/app/_layout.tsx`. Консьюмери (`@sergeant/finyk-domain`,
+    UI-примітиви, `apps/web/*`) імпортують хелпери з `@sergeant/shared` без
+    знання про платформу.
 - **R8.** Винести `downloadJson(filename, payload)` у адаптер:
   web — `Blob` + `URL.createObjectURL` + `a.download`; mobile —
   `expo-file-system.writeAsStringAsync` у `cacheDirectory` +

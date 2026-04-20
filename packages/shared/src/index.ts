@@ -9,3 +9,6 @@ export * from "./types";
 
 // Shared, DOM-free constants (storage keys, etc.)
 export * from "./lib/storageKeys";
+
+// DOM-free haptic contract (platform adapters register at app bootstrap).
+export * from "./lib/haptic";

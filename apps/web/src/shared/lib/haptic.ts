@@ -1,20 +1,31 @@
 /**
- * Тонкий шар над `navigator.vibrate`, який:
- *  1) вимикається, коли користувач ввімкнув `prefers-reduced-motion`;
- *  2) тихо робить no-op на платформах без підтримки (iOS Safari, настільні);
- *  3) ловить винятки, бо деякі мобільні Chrome кидають `NotAllowedError`,
- *     якщо викликати `vibrate` поза user-gesture.
+ * Web adapter for the shared haptic contract.
  *
- * Патерни вибрані так, щоб співпасти з фізичним очікуванням від дії:
- *  - `tap`      — легкий тап (10 мс), primary CTA, toggle, tab change;
- *  - `success`  — подвійний короткий (12/40/18), успішне збереження;
- *  - `warning`  — 30 мс, destructive confirm;
- *  - `error`    — 60/60/60, помилка мережі / валідації.
+ * Binds the `@sergeant/shared` haptic contract to `navigator.vibrate`
+ * with the same guards the web app has always relied on:
+ *  1) no-op when the user has `prefers-reduced-motion: reduce`;
+ *  2) no-op on platforms without `navigator.vibrate` (iOS Safari,
+ *     desktop);
+ *  3) swallows exceptions — some mobile Chrome builds throw
+ *     `NotAllowedError` when `vibrate` is called outside a user
+ *     gesture, or throttle the call silently.
  *
- * Використовуй `hapticPattern` напряму для особливих сценаріїв (наприклад,
- * фінішер тренування вже вібрує [200, 100, 200] у Fizruk — цей модуль
- * не знижує його "силу").
+ * Importing this module has the side-effect of registering the web
+ * adapter on the shared contract, so existing
+ * `import { hapticTap } from "@shared/lib/haptic"` call sites keep
+ * working unchanged.
  */
+
+import {
+  hapticCancel,
+  hapticError,
+  hapticPattern,
+  hapticSuccess,
+  hapticTap,
+  hapticWarning,
+  setHapticAdapter,
+  type HapticAdapter,
+} from "@sergeant/shared";
 
 function prefersReducedMotion(): boolean {
   if (typeof window === "undefined" || !window.matchMedia) return false;
@@ -30,7 +41,7 @@ function canVibrate(): boolean {
   return typeof navigator.vibrate === "function";
 }
 
-export function hapticPattern(pattern: number | number[]): void {
+function vibrate(pattern: number | number[]): void {
   if (!canVibrate() || prefersReducedMotion()) return;
   try {
     navigator.vibrate(pattern);
@@ -39,32 +50,32 @@ export function hapticPattern(pattern: number | number[]): void {
   }
 }
 
-/** Легкий tap — головні CTAs, toggles, tab switch. */
-export function hapticTap(): void {
-  hapticPattern(10);
-}
+export const webHapticAdapter: HapticAdapter = {
+  tap: () => vibrate(10),
+  success: () => vibrate([12, 40, 18]),
+  warning: () => vibrate(30),
+  error: () => vibrate([60, 60, 60]),
+  cancel: () => {
+    // Intentionally bypasses the reduced-motion guard — cancelling an
+    // in-flight vibration should always succeed regardless of the
+    // user's motion preference.
+    if (!canVibrate()) return;
+    try {
+      navigator.vibrate(0);
+    } catch {
+      /* noop */
+    }
+  },
+  pattern: vibrate,
+};
 
-/** Успішне збереження / завершення дії. */
-export function hapticSuccess(): void {
-  hapticPattern([12, 40, 18]);
-}
+setHapticAdapter(webHapticAdapter);
 
-/** Попередження / destructive confirm. */
-export function hapticWarning(): void {
-  hapticPattern(30);
-}
-
-/** Помилка (мережа, валідація, немає доступу). */
-export function hapticError(): void {
-  hapticPattern([60, 60, 60]);
-}
-
-/** Скасовує поточну вібрацію (наприклад, під час довгого натискання). */
-export function hapticCancel(): void {
-  if (!canVibrate()) return;
-  try {
-    navigator.vibrate(0);
-  } catch {
-    /* noop */
-  }
-}
+export {
+  hapticCancel,
+  hapticError,
+  hapticPattern,
+  hapticSuccess,
+  hapticTap,
+  hapticWarning,
+};

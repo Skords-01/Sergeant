@@ -9,6 +9,9 @@ import { ApiClientProvider } from "@sergeant/api-client/react";
 
 import { apiClient } from "@/api/apiClient";
 import { PushRegistrar } from "@/features/push/PushRegistrar";
+// Registers the mobile `expo-haptics`-based adapter on the shared
+// haptic contract (`@sergeant/shared`). Import for side effects only.
+import "@/lib/haptic";
 import { QueryProvider } from "@/providers/QueryProvider";
 import { CloudSyncProvider } from "@/sync";
 
