@@ -39,3 +39,16 @@ export const apiQueryKeys = {
       ["privat", "balance-final", merchantId] as const,
   },
 } as const;
+
+/**
+ * Централізовані mutation-keys для React Query хуків
+ * `@sergeant/api-client/react`. Живуть поруч з `apiQueryKeys`, щоб кожна
+ * мутація мала стабільний ключ (для `useIsMutating`, `queryClient.cancelMutations`
+ * та консистентного інспектування у Devtools).
+ */
+export const apiMutationKeys = {
+  push: {
+    all: ["push"] as const,
+    register: () => ["push", "register"] as const,
+  },
+} as const;
