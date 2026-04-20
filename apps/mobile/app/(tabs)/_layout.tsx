@@ -54,7 +54,14 @@ export default function TabsLayout() {
       />
       <Tabs.Screen
         name="fizruk"
-        options={{ title: "ФІЗРУК", tabBarIcon: TabIcon({ emoji: "🏋" }) }}
+        options={{
+          title: "ФІЗРУК",
+          tabBarIcon: TabIcon({ emoji: "🏋" }),
+          // The Fizruk tab hosts a nested Expo Router `Stack` (see
+          // `app/(tabs)/fizruk/_layout.tsx`) that draws its own headers
+          // per screen. Hiding the Tabs header prevents a double bar.
+          headerShown: false,
+        }}
       />
       <Tabs.Screen
         name="routine"

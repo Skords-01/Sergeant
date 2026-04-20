@@ -73,6 +73,9 @@ importers:
       "@sergeant/design-tokens":
         specifier: workspace:*
         version: link:../../packages/design-tokens
+      "@sergeant/fizruk-domain":
+        specifier: workspace:*
+        version: link:../../packages/fizruk-domain
       "@sergeant/shared":
         specifier: workspace:*
         version: link:../../packages/shared
