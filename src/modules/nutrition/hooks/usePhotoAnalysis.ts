@@ -1,17 +1,58 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type Dispatch,
+  type SetStateAction,
+} from "react";
 import { useMutation } from "@tanstack/react-query";
+import type { NutritionPhotoResult } from "@shared/api";
 import { fileToBase64 } from "../lib/fileToBase64.js";
 import {
   analyzePhoto as apiAnalyzePhoto,
   refinePhoto as apiRefinePhoto,
 } from "../lib/nutritionApi.js";
 
-export function usePhotoAnalysis({ setBusy, setErr, setStatusText }) {
-  const fileRef = useRef(null);
+export interface PhotoAnalysisPayload {
+  image_base64: string;
+  mime_type: string;
+  locale: string;
+}
+
+export interface UsePhotoAnalysisParams {
+  setBusy: Dispatch<SetStateAction<boolean>>;
+  setErr: Dispatch<SetStateAction<string>>;
+  setStatusText: Dispatch<SetStateAction<string>>;
+}
+
+export interface UsePhotoAnalysisResult {
+  fileRef: React.RefObject<HTMLInputElement | null>;
+  photoPreviewUrl: string;
+  photoResult: NutritionPhotoResult | null;
+  lastPhotoPayload: PhotoAnalysisPayload | null;
+  answers: Record<string, string>;
+  setAnswers: Dispatch<SetStateAction<Record<string, string>>>;
+  portionGrams: string;
+  setPortionGrams: Dispatch<SetStateAction<string>>;
+  onPickPhoto: (file: File | null | undefined) => Promise<void>;
+  analyzePhoto: () => void;
+  refinePhoto: () => void;
+}
+
+export function usePhotoAnalysis({
+  setBusy,
+  setErr,
+  setStatusText,
+}: UsePhotoAnalysisParams): UsePhotoAnalysisResult {
+  const fileRef = useRef<HTMLInputElement | null>(null);
   const [photoPreviewUrl, setPhotoPreviewUrl] = useState("");
-  const [photoResult, setPhotoResult] = useState(null);
-  const [lastPhotoPayload, setLastPhotoPayload] = useState(null);
-  const [answers, setAnswers] = useState({});
+  const [photoResult, setPhotoResult] = useState<NutritionPhotoResult | null>(
+    null,
+  );
+  const [lastPhotoPayload, setLastPhotoPayload] =
+    useState<PhotoAnalysisPayload | null>(null);
+  const [answers, setAnswers] = useState<Record<string, string>>({});
   const [portionGrams, setPortionGrams] = useState("");
 
   useEffect(() => {
@@ -38,7 +79,7 @@ export function usePhotoAnalysis({ setBusy, setErr, setStatusText }) {
     }
   }, [photoResult]);
 
-  const onPickPhoto = async (file) => {
+  const onPickPhoto = async (file: File | null | undefined) => {
     setErr("");
     setPhotoResult(null);
     if (!file) return;
@@ -73,7 +114,7 @@ export function usePhotoAnalysis({ setBusy, setErr, setStatusText }) {
       const file = fileRef.current?.files?.[0];
       if (!file) throw new Error("Спочатку обери фото.");
       const b64 = await fileToBase64(file);
-      const payload = {
+      const payload: PhotoAnalysisPayload = {
         image_base64: b64,
         mime_type: file.type || "image/jpeg",
         locale: "uk-UA",
@@ -92,8 +133,10 @@ export function usePhotoAnalysis({ setBusy, setErr, setStatusText }) {
     onSuccess: (data) => {
       setPhotoResult(data?.result || null);
     },
-    onError: (err) => {
-      setErr(err?.message || "Помилка аналізу фото");
+    onError: (err: unknown) => {
+      const message =
+        err instanceof Error ? err.message : "Помилка аналізу фото";
+      setErr(message || "Помилка аналізу фото");
     },
     onSettled: () => {
       setStatusText("");
@@ -134,8 +177,9 @@ export function usePhotoAnalysis({ setBusy, setErr, setStatusText }) {
     onSuccess: (data) => {
       setPhotoResult(data?.result || null);
     },
-    onError: (err) => {
-      setErr(err?.message || "Помилка уточнення");
+    onError: (err: unknown) => {
+      const message = err instanceof Error ? err.message : "Помилка уточнення";
+      setErr(message || "Помилка уточнення");
     },
     onSettled: () => {
       setStatusText("");

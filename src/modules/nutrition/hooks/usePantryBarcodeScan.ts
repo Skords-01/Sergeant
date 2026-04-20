@@ -1,16 +1,26 @@
-import { useCallback } from "react";
+import { useCallback, type Dispatch, type SetStateAction } from "react";
 import { isApiError } from "@shared/api";
 import { useBarcodeProductLookup } from "./useBarcodeProduct.js";
+
+export interface PantryBarcodeScanApi {
+  upsertItem: (label: string) => void;
+}
+
+export interface UsePantryBarcodeScanParams {
+  pantry: PantryBarcodeScanApi;
+  setPantryScannerOpen: Dispatch<SetStateAction<boolean>>;
+  setPantryScanStatus: Dispatch<SetStateAction<string>>;
+}
 
 export function usePantryBarcodeScan({
   pantry,
   setPantryScannerOpen,
   setPantryScanStatus,
-}) {
+}: UsePantryBarcodeScanParams): (raw: string) => Promise<void> {
   const lookupProduct = useBarcodeProductLookup();
 
   return useCallback(
-    async (raw) => {
+    async (raw: string) => {
       setPantryScannerOpen(false);
       setPantryScanStatus("Шукаю продукт\u2026");
       const code = String(raw || "")

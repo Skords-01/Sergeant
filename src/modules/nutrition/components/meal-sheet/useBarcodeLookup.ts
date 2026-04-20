@@ -1,24 +1,49 @@
-import { useCallback, useState } from "react";
+import {
+  useCallback,
+  useState,
+  type Dispatch,
+  type SetStateAction,
+} from "react";
 import { isApiError } from "@shared/api";
 import {
   bindBarcodeToFood,
   lookupFoodByBarcode,
+  type FoodProduct,
 } from "../../lib/foodDb/foodDb.js";
 import { useBarcodeProductLookup } from "../../hooks/useBarcodeProduct.js";
+import type { MealFormState } from "./mealFormUtils.js";
+
+export interface UseBarcodeLookupParams {
+  pickedFood: FoodProduct | null;
+  setPickedFood: Dispatch<SetStateAction<FoodProduct | null>>;
+  setPickedGrams: Dispatch<SetStateAction<string>>;
+  setForm: Dispatch<SetStateAction<MealFormState>>;
+}
+
+export interface UseBarcodeLookupResult {
+  barcode: string;
+  setBarcode: Dispatch<SetStateAction<string>>;
+  barcodeStatus: string;
+  setBarcodeStatus: Dispatch<SetStateAction<string>>;
+  scannerOpen: boolean;
+  setScannerOpen: Dispatch<SetStateAction<boolean>>;
+  handleBarcodeLookup: (code: string) => Promise<void>;
+  handleBarcodeBind: (code: string) => Promise<void>;
+}
 
 export function useBarcodeLookup({
   pickedFood,
   setPickedFood,
   setPickedGrams,
   setForm,
-}) {
+}: UseBarcodeLookupParams): UseBarcodeLookupResult {
   const [barcode, setBarcode] = useState("");
   const [barcodeStatus, setBarcodeStatus] = useState("");
   const [scannerOpen, setScannerOpen] = useState(false);
   const lookupProduct = useBarcodeProductLookup();
 
   const handleBarcodeLookup = useCallback(
-    async (codeRaw) => {
+    async (codeRaw: string) => {
       const code = String(codeRaw || "").trim();
       if (!code) return;
       setBarcodeStatus("Шукаю…");
@@ -65,10 +90,11 @@ export function useBarcodeLookup({
       const grams = p.servingGrams || 100;
       const gramsStr = String(Math.round(grams));
       const factor = grams / 100;
-      const fakeFood = {
+      const fakeFood: FoodProduct = {
         id: `barcode_${code}`,
         name: p.name,
         brand: p.brand || "",
+        norm: "",
         defaultGrams: grams,
         per100: {
           kcal: p.kcal_100g || 0,
@@ -76,27 +102,27 @@ export function useBarcodeLookup({
           fat_g: p.fat_100g || 0,
           carbs_g: p.carbs_100g || 0,
         },
-        source: "barcode",
+        updatedAt: Date.now(),
       };
       setPickedFood(fakeFood);
       setPickedGrams(gramsStr);
       setForm((s) => ({
         ...s,
-        name: [p.name, p.brand].filter(Boolean).join(" ").trim() || s.name,
+        name: [p?.name, p?.brand].filter(Boolean).join(" ").trim() || s.name,
         kcal:
-          p.kcal_100g != null
+          p?.kcal_100g != null
             ? String(Math.round(p.kcal_100g * factor))
             : s.kcal,
         protein_g:
-          p.protein_100g != null
+          p?.protein_100g != null
             ? String(Math.round(p.protein_100g * factor))
             : s.protein_g,
         fat_g:
-          p.fat_100g != null
+          p?.fat_100g != null
             ? String(Math.round(p.fat_100g * factor))
             : s.fat_g,
         carbs_g:
-          p.carbs_100g != null
+          p?.carbs_100g != null
             ? String(Math.round(p.carbs_100g * factor))
             : s.carbs_g,
         err: "",
@@ -116,7 +142,7 @@ export function useBarcodeLookup({
   );
 
   const handleBarcodeBind = useCallback(
-    async (codeRaw) => {
+    async (codeRaw: string) => {
       const code = String(codeRaw || "").trim();
       if (!/^\d{8,14}$/.test(code)) {
         setBarcodeStatus("Некоректний штрихкод (очікую 8–14 цифр).");

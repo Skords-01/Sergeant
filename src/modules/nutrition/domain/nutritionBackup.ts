@@ -7,12 +7,43 @@ import {
   loadNutritionPrefs,
   loadNutritionLog,
   normalizeNutritionLog,
+  type NutritionLog,
+  type NutritionPrefs,
 } from "../lib/nutritionStorage.js";
 
 export const NUTRITION_BACKUP_KIND = "hub-nutrition-backup";
 export const NUTRITION_BACKUP_SCHEMA_VERSION = 1;
 
-function readJsonFromLocalStorage(key, fallback) {
+export interface NutritionBackupPantryItem {
+  name: string;
+  qty: number | null;
+  unit: string | null;
+  notes: string | null;
+}
+
+export interface NutritionBackupPantry {
+  id: string;
+  name: string;
+  text: string;
+  items: NutritionBackupPantryItem[];
+}
+
+export interface NutritionBackupData {
+  stateSchemaVersion: 1;
+  pantries: NutritionBackupPantry[];
+  activePantryId: string;
+  prefs: NutritionPrefs;
+  log: NutritionLog | Record<string, unknown>;
+}
+
+export interface NutritionBackupPayload {
+  kind: typeof NUTRITION_BACKUP_KIND;
+  schemaVersion: number;
+  exportedAt: string;
+  data: NutritionBackupData;
+}
+
+function readJsonFromLocalStorage<T>(key: string, fallback: T): T | unknown {
   if (typeof localStorage === "undefined") return fallback;
   try {
     const s = localStorage.getItem(key);
@@ -23,48 +54,57 @@ function readJsonFromLocalStorage(key, fallback) {
   }
 }
 
-function safeString(x, fallback = "") {
+function safeString(x: unknown, fallback = ""): string {
   return x == null ? fallback : String(x);
 }
 
-function safeNumber(x, fallback = null) {
+function safeNumber(x: unknown, fallback: number | null = null): number | null {
   const n = Number(x);
   return Number.isFinite(n) ? n : fallback;
 }
 
-function optionalPositiveNumber(v) {
+function optionalPositiveNumber(v: unknown): number | null {
   if (v == null || v === "") return null;
   const n = Number(v);
   return Number.isFinite(n) && n > 0 ? n : null;
 }
 
-function normalizePantryItem(x) {
+function normalizePantryItem(x: unknown): NutritionBackupPantryItem | null {
   if (!x || typeof x !== "object") return null;
-  const name = safeString(x.name, "").trim();
+  const rec = x as Record<string, unknown>;
+  const name = safeString(rec.name, "").trim();
   if (!name) return null;
-  const qty = x.qty == null || x.qty === "" ? null : safeNumber(x.qty, null);
+  const qty =
+    rec.qty == null || rec.qty === "" ? null : safeNumber(rec.qty, null);
   const unit =
-    x.unit == null || x.unit === "" ? null : safeString(x.unit, "").trim();
+    rec.unit == null || rec.unit === ""
+      ? null
+      : safeString(rec.unit, "").trim();
   const notes =
-    x.notes == null || x.notes === "" ? null : safeString(x.notes, "").trim();
+    rec.notes == null || rec.notes === ""
+      ? null
+      : safeString(rec.notes, "").trim();
   return { name, qty, unit, notes };
 }
 
-function normalizePantry(x) {
+function normalizePantry(x: unknown): NutritionBackupPantry | null {
   if (!x || typeof x !== "object") return null;
-  const id = safeString(x.id, "").trim();
-  const name = safeString(x.name, "").trim() || "Склад";
-  const text = safeString(x.text, "");
-  const items = Array.isArray(x.items)
-    ? x.items.map(normalizePantryItem).filter(Boolean)
+  const rec = x as Record<string, unknown>;
+  const id = safeString(rec.id, "").trim();
+  const name = safeString(rec.name, "").trim() || "Склад";
+  const text = safeString(rec.text, "");
+  const items = Array.isArray(rec.items)
+    ? rec.items
+        .map(normalizePantryItem)
+        .filter((v): v is NutritionBackupPantryItem => v != null)
     : [];
   return { id: id || `p_${Date.now()}`, name, text, items };
 }
 
-function normalizePrefs(x) {
+function normalizePrefs(x: unknown): NutritionPrefs {
   if (!x || typeof x !== "object" || Array.isArray(x))
     return defaultNutritionPrefs();
-  const p = { ...defaultNutritionPrefs(), ...x };
+  const p = { ...defaultNutritionPrefs(), ...(x as Partial<NutritionPrefs>) };
   return {
     goal: p.goal ? String(p.goal) : "balanced",
     servings: safeNumber(p.servings, 1) || 1,
@@ -82,10 +122,14 @@ function normalizePrefs(x) {
       p.reminderHour != null && Number.isFinite(Number(p.reminderHour))
         ? Math.min(23, Math.max(0, Math.floor(Number(p.reminderHour))))
         : 12,
+    waterGoalMl:
+      p.waterGoalMl != null && Number.isFinite(Number(p.waterGoalMl))
+        ? Math.max(0, Math.floor(Number(p.waterGoalMl)))
+        : 2000,
   };
 }
 
-export function buildNutritionBackupPayload() {
+export function buildNutritionBackupPayload(): NutritionBackupPayload {
   const pantries = readJsonFromLocalStorage(NUTRITION_PANTRIES_KEY, []);
   const activePantryId = safeString(
     typeof localStorage !== "undefined"
@@ -106,7 +150,9 @@ export function buildNutritionBackupPayload() {
     data: {
       stateSchemaVersion: 1,
       pantries: Array.isArray(pantries)
-        ? pantries.map(normalizePantry).filter(Boolean)
+        ? pantries
+            .map(normalizePantry)
+            .filter((v): v is NutritionBackupPantry => v != null)
         : [],
       activePantryId: activePantryId || "home",
       prefs: normalizePrefs(prefs),
@@ -115,42 +161,53 @@ export function buildNutritionBackupPayload() {
   };
 }
 
-export function applyNutritionBackupPayload(payload) {
+export function applyNutritionBackupPayload(payload: unknown): void {
   if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
     throw new Error("Некоректний бекап харчування.");
   }
-  if (payload.kind !== NUTRITION_BACKUP_KIND) {
+  const p = payload as Record<string, unknown>;
+  if (p.kind !== NUTRITION_BACKUP_KIND) {
     throw new Error("Некоректний тип бекапу харчування.");
   }
-  if (typeof payload.schemaVersion !== "number") {
+  if (typeof p.schemaVersion !== "number") {
     throw new Error("Некоректна версія схеми бекапу харчування.");
   }
-  const data = payload.data;
+  const data = p.data as Record<string, unknown> | undefined;
   if (!data || typeof data !== "object" || Array.isArray(data)) {
     throw new Error("Некоректні дані бекапу харчування.");
   }
 
   const pantries = Array.isArray(data.pantries)
-    ? data.pantries.map(normalizePantry).filter(Boolean)
+    ? data.pantries
+        .map(normalizePantry)
+        .filter((v): v is NutritionBackupPantry => v != null)
     : [];
   const activePantryId = safeString(data.activePantryId, "home") || "home";
   const prefs = normalizePrefs(data.prefs);
 
   try {
     localStorage.setItem(NUTRITION_PANTRIES_KEY, JSON.stringify(pantries));
-  } catch {}
+  } catch {
+    /* ignore */
+  }
   try {
     localStorage.setItem(NUTRITION_ACTIVE_PANTRY_KEY, activePantryId);
-  } catch {}
+  } catch {
+    /* ignore */
+  }
   try {
     localStorage.setItem(NUTRITION_PREFS_KEY, JSON.stringify(prefs));
-  } catch {}
+  } catch {
+    /* ignore */
+  }
   if (data.log && typeof data.log === "object" && !Array.isArray(data.log)) {
     try {
       localStorage.setItem(
         NUTRITION_LOG_KEY,
         JSON.stringify(normalizeNutritionLog(data.log)),
       );
-    } catch {}
+    } catch {
+      /* ignore */
+    }
   }
 }

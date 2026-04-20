@@ -1,8 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type Dispatch, type SetStateAction } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { foodSearchApi } from "@shared/api";
+import type { FoodSearchProduct } from "@shared/api/endpoints/foodSearch";
 import { nutritionKeys } from "@shared/lib/queryKeys.js";
 import { searchFoods } from "../../lib/foodDb/foodDb.js";
+import type { FoodProduct } from "../../lib/foodDb/foodDb.js";
 
 const LOCAL_DEBOUNCE_MS = 180;
 const OFF_DEBOUNCE_MS = 600;
@@ -18,7 +20,10 @@ const OFF_MIN_LEN = 2;
 // так що `isRetriableError` у `queryClient` сам вирішить, чи варто ретраїти.
 // Раніше тут була конверсія у plain `Error` — лишали лише `.status` і
 // втрачали `kind`/`serverMessage`/`isOffline`. React Query таке не любить.
-async function fetchOpenFoodFacts(query, signal) {
+async function fetchOpenFoodFacts(
+  query: string,
+  signal?: AbortSignal,
+): Promise<FoodSearchProduct[]> {
   const data = await foodSearchApi.search(query, { signal });
   return Array.isArray(data?.products) ? data.products : [];
 }
@@ -26,7 +31,7 @@ async function fetchOpenFoodFacts(query, signal) {
 // Debounce user input separately from the queries themselves. We don't want
 // react-query to see every keystroke — otherwise it would spin up (and
 // cancel) one request per character.
-function useDebouncedValue(value, delay) {
+function useDebouncedValue<T>(value: T, delay: number): T {
   const [debounced, setDebounced] = useState(value);
   useEffect(() => {
     const id = window.setTimeout(() => setDebounced(value), delay);
@@ -35,19 +40,28 @@ function useDebouncedValue(value, delay) {
   return debounced;
 }
 
-export function useFoodSearch(foodQuery) {
+export interface UseFoodSearchResult {
+  foodHits: FoodProduct[];
+  offHits: FoodSearchProduct[];
+  foodBusy: boolean;
+  offBusy: boolean;
+  foodErr: string;
+  setFoodErr: Dispatch<SetStateAction<string>>;
+}
+
+export function useFoodSearch(foodQuery: string): UseFoodSearchResult {
   const trimmed = foodQuery.trim();
   const localQuery = useDebouncedValue(trimmed, LOCAL_DEBOUNCE_MS);
   const offQuery = useDebouncedValue(trimmed, OFF_DEBOUNCE_MS);
 
-  const local = useQuery({
+  const local = useQuery<FoodProduct[]>({
     queryKey: nutritionKeys.foodSearchLocal(localQuery),
     queryFn: () => searchFoods(localQuery, 8),
     enabled: localQuery.length > 0,
     staleTime: 5 * 60_000,
   });
 
-  const off = useQuery({
+  const off = useQuery<FoodSearchProduct[]>({
     queryKey: nutritionKeys.foodSearchOff(offQuery),
     queryFn: ({ signal }) => fetchOpenFoodFacts(offQuery, signal),
     enabled: offQuery.length >= OFF_MIN_LEN,

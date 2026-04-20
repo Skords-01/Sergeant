@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, type Dispatch, type SetStateAction } from "react";
 import { useMutation } from "@tanstack/react-query";
 import {
   backupUpload as apiBackupUpload,
@@ -12,6 +12,34 @@ import {
   decryptBlobToJson,
   encryptJsonToBlob,
 } from "../lib/nutritionCloudBackup.js";
+import type {
+  BackupPasswordDialogState,
+  RestoreConfirmState,
+} from "./useNutritionUiState.js";
+
+export interface NutritionToast {
+  success: (message: string) => void;
+  error?: (message: string) => void;
+}
+
+export interface UseNutritionCloudBackupParams {
+  toast: NutritionToast;
+  setErr: Dispatch<SetStateAction<string>>;
+  cloudBackupBusy: boolean;
+  setCloudBackupBusy: Dispatch<SetStateAction<boolean>>;
+  backupPasswordDialog: BackupPasswordDialogState | null;
+  setBackupPasswordDialog: Dispatch<
+    SetStateAction<BackupPasswordDialogState | null>
+  >;
+  setRestoreConfirm: Dispatch<SetStateAction<RestoreConfirmState | null>>;
+}
+
+export interface UseNutritionCloudBackupResult {
+  uploadCloudBackup: () => void;
+  downloadCloudBackup: () => void;
+  handleBackupPasswordConfirm: (pass: string) => void;
+  applyRestorePayload: (payload: unknown) => void;
+}
 
 export function useNutritionCloudBackup({
   toast,
@@ -21,7 +49,7 @@ export function useNutritionCloudBackup({
   backupPasswordDialog,
   setBackupPasswordDialog,
   setRestoreConfirm,
-}) {
+}: UseNutritionCloudBackupParams): UseNutritionCloudBackupResult {
   const uploadCloudBackup = useCallback(() => {
     if (cloudBackupBusy) return;
     setBackupPasswordDialog({
@@ -41,7 +69,7 @@ export function useNutritionCloudBackup({
   }, [cloudBackupBusy, setBackupPasswordDialog]);
 
   const uploadMutation = useMutation({
-    mutationFn: async ({ pass }) => {
+    mutationFn: async ({ pass }: { pass: string }) => {
       const payload = buildNutritionBackupPayload();
       const blob = await encryptJsonToBlob(payload, pass);
       return apiBackupUpload({ blob });
@@ -53,8 +81,10 @@ export function useNutritionCloudBackup({
     onSuccess: () => {
       toast.success("Бекап завантажено.");
     },
-    onError: (err) => {
-      setErr(err?.message || "Не вдалося завантажити бекап");
+    onError: (err: unknown) => {
+      const message =
+        err instanceof Error ? err.message : "Не вдалося завантажити бекап";
+      setErr(message || "Не вдалося завантажити бекап");
     },
     onSettled: () => {
       setCloudBackupBusy(false);
@@ -62,7 +92,7 @@ export function useNutritionCloudBackup({
   });
 
   const downloadMutation = useMutation({
-    mutationFn: async ({ pass }) => {
+    mutationFn: async ({ pass }: { pass: string }) => {
       const data = await apiBackupDownload();
       const payload = await decryptBlobToJson(data?.blob, pass);
       return { payload };
@@ -71,11 +101,13 @@ export function useNutritionCloudBackup({
       setCloudBackupBusy(true);
       setErr("");
     },
-    onSuccess: ({ payload }) => {
+    onSuccess: ({ payload }: { payload: unknown }) => {
       setRestoreConfirm({ payload });
     },
-    onError: (err) => {
-      setErr(err?.message || "Не вдалося відновити бекап");
+    onError: (err: unknown) => {
+      const message =
+        err instanceof Error ? err.message : "Не вдалося відновити бекап";
+      setErr(message || "Не вдалося відновити бекап");
     },
     onSettled: () => {
       setCloudBackupBusy(false);
@@ -83,7 +115,7 @@ export function useNutritionCloudBackup({
   });
 
   const handleBackupPasswordConfirm = useCallback(
-    (pass) => {
+    (pass: string) => {
       const mode = backupPasswordDialog?.mode;
       setBackupPasswordDialog(null);
       if (!pass) return;
@@ -101,7 +133,7 @@ export function useNutritionCloudBackup({
     ],
   );
 
-  const applyRestorePayload = useCallback((payload) => {
+  const applyRestorePayload = useCallback((payload: unknown) => {
     if (!payload) return;
     applyNutritionBackupPayload(payload);
     window.location.reload();

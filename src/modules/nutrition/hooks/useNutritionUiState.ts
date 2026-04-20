@@ -18,13 +18,13 @@ export type NutritionDayPlan = {
 };
 
 export interface BackupPasswordDialogState {
-  mode: "encrypt" | "decrypt";
-  [key: string]: unknown;
+  mode: "upload" | "download";
+  title?: string;
+  description?: string;
 }
 
 export interface RestoreConfirmState {
-  source: string;
-  [key: string]: unknown;
+  payload: unknown;
 }
 
 export interface UseNutritionUiStateResult {
