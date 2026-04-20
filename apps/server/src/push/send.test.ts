@@ -338,7 +338,11 @@ describe("sendFCM", () => {
     expect(r.error).toBe("UNREGISTERED");
   });
 
-  it("returns dead=true on INVALID_ARGUMENT via details.errorCode", async () => {
+  it("does NOT mark token dead on INVALID_ARGUMENT (ambiguous between token and payload)", async () => {
+    // FCM v1 повертає INVALID_ARGUMENT як для malformed token, так і для
+    // malformed payload. Payload однаковий для всього fan-out-у, тож якщо
+    // позначити токен як dead у відповідь на payload-error — знесемо всі
+    // Android-токени юзера разом. Лишаємо у `errors[]`, без cleanup.
     fetchMock.mockResolvedValueOnce(
       resp(400, {
         error: {
@@ -354,7 +358,26 @@ describe("sendFCM", () => {
       }),
     );
     const r = await sendFCM("u1", "tok", { title: "hi" });
+    expect(r.delivered).toBe(false);
+    expect(r.dead).toBe(false);
+    expect(r.error).toBe("INVALID_ARGUMENT");
+  });
+
+  it("returns dead=true on SENDER_ID_MISMATCH", async () => {
+    // Токен зареєстровано під іншим Firebase project — нашим projectId він
+    // ніколи не стане валідним, безпечно DELETE.
+    fetchMock.mockResolvedValueOnce(
+      resp(403, {
+        error: {
+          code: 403,
+          status: "SENDER_ID_MISMATCH",
+          message: "SenderId mismatch",
+        },
+      }),
+    );
+    const r = await sendFCM("u1", "tok", { title: "hi" });
     expect(r.dead).toBe(true);
+    expect(r.error).toBe("SENDER_ID_MISMATCH");
   });
 
   it("retries on 503 and succeeds", async () => {

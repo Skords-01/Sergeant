@@ -236,10 +236,23 @@ export async function sendAPNs(
 /**
  * FCM error status codes that mean the token is permanently invalid. See
  * https://firebase.google.com/docs/reference/fcm/rest/v1/ErrorCode.
+ *
+ * `INVALID_ARGUMENT` навмисно НЕ у цьому сеті: FCM v1 повертає його як для
+ * зламаного токена, так і для malformed-payload (наприклад, data зі значенням
+ * не-string — див. `stringifyDataMap`). Payload однаковий для всього fan-out-у,
+ * тож класифікація INVALID_ARGUMENT як dead означала б, що один багнутий
+ * payload знесе ВСІ Android-токени юзера разом. Краще лишити їх й дати мережі
+ * діагностувати, ніж проактивно видаляти валідні.
+ *
+ * `SENDER_ID_MISMATCH` — токен зареєстровано під іншим Firebase project, нашим
+ * проектом він ніколи не стане валідним → видаляємо.
+ *
+ * `NOT_FOUND` — не канонічний v1-код, але історично зустрічається у v1 wrappers
+ * і legacy HTTP API; лишаємо на випадок, якщо хтось прокинеться з старого SDK.
  */
 const FCM_DEAD_STATUSES = new Set([
   "UNREGISTERED",
-  "INVALID_ARGUMENT",
+  "SENDER_ID_MISMATCH",
   "NOT_FOUND",
 ]);
 
