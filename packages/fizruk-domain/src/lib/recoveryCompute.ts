@@ -12,25 +12,14 @@ import type {
 
 export type { MuscleState, RecoveryStatus };
 
-/**
- * Number of whole days between two millisecond timestamps (a - b).
- * @param {number} aMs
- * @param {number} bMs
- * @returns {number}
- */
-function daysBetween(aMs, bMs) {
+/** Number of whole days between two millisecond timestamps (`a - b`). */
+function daysBetween(aMs: number, bMs: number): number {
   const DAY = 24 * 60 * 60 * 1000;
   return Math.floor((aMs - bMs) / DAY);
 }
 
-/**
- * Clamp `n` to the range [a, b].
- * @param {number} n
- * @param {number} a
- * @param {number} b
- * @returns {number}
- */
-function clamp(n, a, b) {
+/** Clamp `n` to the inclusive range `[a, b]`. */
+function clamp(n: number, a: number, b: number): number {
   return Math.max(a, Math.min(b, n));
 }
 
@@ -170,7 +159,7 @@ export function computeRecoveryBy(
       const ageDays = Math.max(0, (nowMs - t) / DAY);
       const decay = Math.exp(-ageDays / 2.2);
 
-      const apply = (m, wgt) => {
+      const apply = (m: string | undefined, wgt: number) => {
         if (!m) return;
         if (!by[m]) {
           by[m] = {

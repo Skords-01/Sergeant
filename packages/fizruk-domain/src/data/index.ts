@@ -8,7 +8,13 @@
  */
 
 import type { ExerciseDef } from "../domain/types.js";
-import exercisesCatalog from "./exercises.gymup.json" with { type: "json" };
+// `resolveJsonModule: true` is set across every tsconfig that imports
+// this module, so the redundant `with { type: "json" }` attribute is
+// omitted — it would otherwise require `module: nodenext`/`esnext`
+// which the mobile config (`moduleResolution: bundler`) does not opt
+// into by default, and the import attribute proposal is a runtime-only
+// hint that the bundled JSON emitters already honour.
+import exercisesCatalog from "./exercises.gymup.json";
 
 /** JSON-каталог «як є» (з `labels` + `exercises`). */
 export interface ExerciseCatalog {

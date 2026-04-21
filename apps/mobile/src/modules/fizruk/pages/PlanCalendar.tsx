@@ -49,16 +49,28 @@ import {
 } from "@sergeant/fizruk-domain/constants";
 import {
   aggregatePlannedByDate,
+  computeRecoveryForecast,
   dateKeyFromYMD,
+  describeDayRecovery,
   monthCursorFromDate,
   monthGrid,
   monthIsEmpty,
   shiftMonthCursor,
   todayDateKey,
+  type DayRecoveryForecast,
+  type DayRecoveryStatus,
   type MonthCursor,
   type PlannedWorkoutLike,
 } from "@sergeant/fizruk-domain/domain/plan/index";
-import type { WorkoutTemplate } from "@sergeant/fizruk-domain/domain/types";
+import { MUSCLES_UK } from "@sergeant/fizruk-domain/data/index";
+import type {
+  DailyLogEntry,
+  Workout,
+  WorkoutTemplate,
+} from "@sergeant/fizruk-domain/domain/types";
+
+import { STORAGE_KEYS } from "@sergeant/shared";
+import type { WellbeingEntry } from "../hooks/useWellbeing";
 
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -108,6 +120,32 @@ function readWorkouts(): PlannedWorkoutLike[] {
   );
 }
 
+/**
+ * Narrow the raw MMKV payload for `STORAGE_KEYS.FIZRUK_WELLBEING` into
+ * the `DailyLogEntry` shape expected by `computeRecoveryForecast`. The
+ * wellbeing hook persists `{ date, energy, sleepHours }` whereas the
+ * recovery math reads `{ at, energyLevel, sleepHours }` — we bridge the
+ * two here rather than changing either schema.
+ */
+function readDailyLog(): DailyLogEntry[] {
+  const raw = safeReadLS<unknown>(STORAGE_KEYS.FIZRUK_WELLBEING, []);
+  if (!Array.isArray(raw)) return [];
+  const out: DailyLogEntry[] = [];
+  for (const entry of raw) {
+    if (!entry || typeof entry !== "object") continue;
+    const rec = entry as Partial<WellbeingEntry>;
+    const date = typeof rec.date === "string" ? rec.date : null;
+    if (!date) continue;
+    out.push({
+      id: date,
+      at: date,
+      energyLevel: typeof rec.energy === "number" ? rec.energy : null,
+      sleepHours: typeof rec.sleepHours === "number" ? rec.sleepHours : null,
+    });
+  }
+  return out;
+}
+
 interface OpenSheet {
   dateKey: string;
   day: number;
@@ -138,6 +176,27 @@ function formatSheetTitle(key: string): string {
   }
 }
 
+/**
+ * Tailwind background colour for a day's recovery dot. Gray for
+ * `fresh` (no recent load), green for `ready`, red for `overworked`.
+ * `unknown` falls back to transparent so cells outside the forecast
+ * render without a dot at all.
+ */
+function recoveryDotClass(
+  status: DayRecoveryStatus | null | undefined,
+): string {
+  switch (status) {
+    case "overworked":
+      return "bg-red-500";
+    case "ready":
+      return "bg-emerald-500";
+    case "fresh":
+      return "bg-stone-300";
+    default:
+      return "";
+  }
+}
+
 function formatTime(startedAt: string | null | undefined): string | null {
   if (!startedAt) return null;
   try {
@@ -160,12 +219,19 @@ export interface PlanCalendarProps {
    */
   templates?: readonly WorkoutTemplate[];
   workouts?: readonly PlannedWorkoutLike[];
+  /**
+   * Optional daily-log seam mirroring the shape emitted by
+   * `useWellbeing`. Injected by jest fixtures; production reads from
+   * MMKV via `readDailyLog`.
+   */
+  dailyLog?: ReadonlyArray<Partial<DailyLogEntry>>;
 }
 
 export function PlanCalendar({
   now: nowOverride,
   templates: injectedTemplates,
   workouts: injectedWorkouts,
+  dailyLog: injectedDailyLog,
 }: PlanCalendarProps = {}) {
   const now = useMemo(() => nowOverride ?? new Date(), [nowOverride]);
   const [cursor, setCursor] = useState<MonthCursor>(() =>
@@ -184,16 +250,24 @@ export function PlanCalendar({
   const [workouts, setWorkouts] = useState<PlannedWorkoutLike[]>(() =>
     injectedWorkouts ? [...injectedWorkouts] : readWorkouts(),
   );
+  const [dailyLog, setDailyLog] = useState<
+    ReadonlyArray<Partial<DailyLogEntry>>
+  >(() => (injectedDailyLog ? [...injectedDailyLog] : readDailyLog()));
 
   useEffect(() => {
-    if (injectedTemplates || injectedWorkouts) return;
+    if (injectedTemplates && injectedWorkouts && injectedDailyLog) return;
     const mmkv = _getMMKVInstance();
     const sub = mmkv.addOnValueChangedListener((key) => {
-      if (key === TEMPLATES_STORAGE_KEY) setTemplates(readTemplates());
-      else if (key === WORKOUTS_STORAGE_KEY) setWorkouts(readWorkouts());
+      if (!injectedTemplates && key === TEMPLATES_STORAGE_KEY) {
+        setTemplates(readTemplates());
+      } else if (!injectedWorkouts && key === WORKOUTS_STORAGE_KEY) {
+        setWorkouts(readWorkouts());
+      } else if (!injectedDailyLog && key === STORAGE_KEYS.FIZRUK_WELLBEING) {
+        setDailyLog(readDailyLog());
+      }
     });
     return () => sub.remove();
-  }, [injectedTemplates, injectedWorkouts]);
+  }, [injectedTemplates, injectedWorkouts, injectedDailyLog]);
 
   const plannedByDate = useMemo(
     () => aggregatePlannedByDate(workouts),
@@ -204,6 +278,24 @@ export function PlanCalendar({
     () => monthGrid(cursor.y, cursor.m),
     [cursor.y, cursor.m],
   );
+
+  // Recovery forecast keyed by date for every numbered cell in the
+  // current month grid. Treats workouts as `Partial<Workout>[]` — the
+  // MMKV payload only overlaps partially with the strict type, which
+  // is exactly what `computeRecoveryForecast` accepts.
+  const recoveryForecast = useMemo<Record<string, DayRecoveryForecast>>(() => {
+    const keys: string[] = [];
+    for (const day of cells) {
+      if (day == null) continue;
+      keys.push(dateKeyFromYMD(cursor.y, cursor.m, day));
+    }
+    return computeRecoveryForecast(
+      keys,
+      workouts as ReadonlyArray<Partial<Workout>>,
+      MUSCLES_UK,
+      { nowMs: now.getTime(), dailyLogEntries: dailyLog },
+    );
+  }, [cells, cursor.y, cursor.m, workouts, dailyLog, now]);
 
   const monthTitle = useMemo(
     () => formatMonthTitle(cursor.y, cursor.m),
@@ -244,6 +336,8 @@ export function PlanCalendar({
     },
     [cursor.y, cursor.m, getTemplateForDate, plannedByDate],
   );
+
+  const sheetForecast = sheet ? recoveryForecast[sheet.dateKey] : null;
 
   const applySheet = useCallback(
     (templateId: string | null) => {
@@ -346,17 +440,33 @@ export function PlanCalendar({
                   ? "border-emerald-400/60 bg-emerald-50/60"
                   : "border-stone-200 bg-stone-100/40";
 
+              const forecast = recoveryForecast[key] ?? null;
+              const dotClass = recoveryDotClass(forecast?.status);
+              const recoveryLabel = forecast
+                ? `. ${describeDayRecovery(forecast)}`
+                : "";
+              const a11yLabel = `День ${day}${recoveryLabel}`;
+
               return (
                 <View key={key} className="w-[14.2857%] p-0.5">
                   <Pressable
                     accessibilityRole="button"
-                    accessibilityLabel={`День ${day}`}
+                    accessibilityLabel={a11yLabel}
+                    testID={`plan-day-${key}`}
                     onPress={() => openDay(day)}
                     className={`min-h-[52px] rounded-xl border ${borderClass} p-1 items-center active:opacity-70`}
                   >
-                    <Text className="text-xs font-bold text-stone-900">
-                      {day}
-                    </Text>
+                    <View className="flex-row items-center gap-1">
+                      <Text className="text-xs font-bold text-stone-900">
+                        {day}
+                      </Text>
+                      {forecast ? (
+                        <View
+                          testID={`plan-day-${key}-recovery-${forecast.status}`}
+                          className={`w-1.5 h-1.5 rounded-full ${dotClass}`}
+                        />
+                      ) : null}
+                    </View>
                     {tpl ? (
                       <Text
                         numberOfLines={1}
@@ -421,6 +531,51 @@ export function PlanCalendar({
       >
         {sheet ? (
           <View className="gap-3">
+            {sheetForecast ? (
+              <View
+                testID={`plan-recovery-summary-${sheetForecast.status}`}
+                accessibilityLabel={describeDayRecovery(sheetForecast)}
+                className={`rounded-xl border px-3 py-2 ${
+                  sheetForecast.status === "overworked"
+                    ? "border-red-200 bg-red-50"
+                    : sheetForecast.status === "ready"
+                      ? "border-emerald-200 bg-emerald-50"
+                      : "border-stone-200 bg-stone-50"
+                }`}
+              >
+                <View className="flex-row items-center gap-2 mb-1">
+                  <View
+                    className={`w-2 h-2 rounded-full ${recoveryDotClass(
+                      sheetForecast.status,
+                    )}`}
+                  />
+                  <Text className="text-xs font-bold text-stone-900">
+                    {sheetForecast.status === "overworked"
+                      ? "Відновлення: перевантаження"
+                      : sheetForecast.status === "ready"
+                        ? "Відновлення: готовий"
+                        : "Відновлення: без недавніх тренувань"}
+                  </Text>
+                </View>
+                {sheetForecast.overworkedMuscles.length > 0 ? (
+                  <Text className="text-xs text-stone-600 leading-snug">
+                    Перевантажені:{" "}
+                    {sheetForecast.overworkedMuscles
+                      .map((m) => m.label)
+                      .join(", ")}
+                  </Text>
+                ) : null}
+                {sheetForecast.recoveredMuscles.length > 0 ? (
+                  <Text className="text-xs text-stone-600 leading-snug">
+                    Відновлені:{" "}
+                    {sheetForecast.recoveredMuscles
+                      .map((m) => m.label)
+                      .join(", ")}
+                  </Text>
+                ) : null}
+              </View>
+            ) : null}
+
             {sheet.planned.length > 0 ? (
               <View>
                 <Text className="text-xs font-bold text-emerald-700 mb-2">

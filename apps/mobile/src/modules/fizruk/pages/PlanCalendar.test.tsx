@@ -125,7 +125,7 @@ describe("PlanCalendar (mobile)", () => {
       />,
     );
 
-    fireEvent.press(getByLabelText("День 15"));
+    fireEvent.press(getByLabelText(/^День 15/));
     // Template list is visible — both sample template names render.
     expect(getByText("Груди + трицепс")).toBeTruthy();
     expect(getByText("Спина + біцепс")).toBeTruthy();
@@ -179,6 +179,86 @@ describe("PlanCalendar (mobile)", () => {
     // Hermes it falls back to "March 2025". Both start with the month
     // name, so we just assert the year is back.
     expect(getByText(/2025/)).toBeTruthy();
+  });
+
+  describe("recovery forecast", () => {
+    // Heavy chest session on March 10 → chest muscles are red on
+    // March 11–13 and amber/green by March 18. We keep one eval date
+    // inside the red window and another outside to exercise both
+    // branches.
+    const HEAVY_CHEST = {
+      id: "wheavy",
+      planned: false,
+      startedAt: "2025-03-10T08:00:00.000Z",
+      items: [
+        {
+          id: "bench",
+          type: "strength" as const,
+          nameUk: "Жим лежачи",
+          musclesPrimary: ["chest"],
+          musclesSecondary: [],
+          sets: Array.from({ length: 5 }, () => ({
+            weightKg: 100,
+            reps: 5,
+          })),
+        },
+      ],
+    } satisfies PlannedWorkoutLike;
+
+    it("marks the day after a heavy session as overworked (red dot)", () => {
+      const { getAllByTestId } = render(
+        <PlanCalendar
+          now={NOW}
+          templates={[]}
+          workouts={[HEAVY_CHEST]}
+          dailyLog={[]}
+        />,
+      );
+      // March 11 falls inside the red window for chest. NativeWind
+      // wraps views in an extra host node on RN, so `getAllByTestId`
+      // tolerates that at-least-one match semantic.
+      expect(
+        getAllByTestId("plan-day-2025-03-11-recovery-overworked").length,
+      ).toBeGreaterThan(0);
+    });
+
+    it("renders a gray dot for calendar days with no recent training history", () => {
+      const { getAllByTestId } = render(
+        <PlanCalendar now={NOW} templates={[]} workouts={[]} dailyLog={[]} />,
+      );
+      // No workouts → every cell is fresh/gray.
+      expect(
+        getAllByTestId("plan-day-2025-03-15-recovery-fresh").length,
+      ).toBeGreaterThan(0);
+    });
+
+    it("exposes the recovery status in the accessibility label", () => {
+      const { getByLabelText } = render(
+        <PlanCalendar
+          now={NOW}
+          templates={[]}
+          workouts={[HEAVY_CHEST]}
+          dailyLog={[]}
+        />,
+      );
+      // The label for March 11 mentions "перевантаження" (overworked, nominal).
+      expect(getByLabelText(/^День 11.*перевантаження/)).toBeTruthy();
+    });
+
+    it("opens a recovery summary in the bottom sheet when a day is tapped", () => {
+      const { getByLabelText, getAllByTestId } = render(
+        <PlanCalendar
+          now={NOW}
+          templates={[]}
+          workouts={[HEAVY_CHEST]}
+          dailyLog={[]}
+        />,
+      );
+      fireEvent.press(getByLabelText(/^День 11/));
+      expect(
+        getAllByTestId("plan-recovery-summary-overworked").length,
+      ).toBeGreaterThan(0);
+    });
   });
 
   it("preserves state loaded from MMKV on mount", () => {
