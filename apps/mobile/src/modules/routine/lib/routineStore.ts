@@ -37,6 +37,7 @@ import {
   type RoutineState,
 } from "@sergeant/routine-domain";
 import { _getMMKVInstance, safeReadLS, safeWriteLS } from "@/lib/storage";
+import { enqueueChange } from "@/sync/enqueue";
 
 /** Читає й нормалізує повний стан Рутини з MMKV. */
 export function loadRoutineState(): RoutineState {
@@ -106,6 +107,7 @@ export function useRoutineStore(): UseRoutineStoreReturn {
   const setRoutine = useCallback((next: RoutineState) => {
     setRoutineState(next);
     saveRoutineState(next);
+    enqueueChange(ROUTINE_STORAGE_KEY);
   }, []);
 
   const toggleHabit = useCallback((habitId: string, dateKey: string) => {
@@ -113,6 +115,7 @@ export function useRoutineStore(): UseRoutineStoreReturn {
       const next = applyToggleHabitCompletion(prev, habitId, dateKey);
       if (next === prev) return prev;
       saveRoutineState(next);
+      enqueueChange(ROUTINE_STORAGE_KEY);
       return next;
     });
   }, []);
@@ -122,6 +125,7 @@ export function useRoutineStore(): UseRoutineStoreReturn {
       const next = applyMarkAllScheduledHabitsComplete(prev, dateKey);
       if (next === prev) return prev;
       saveRoutineState(next);
+      enqueueChange(ROUTINE_STORAGE_KEY);
       return next;
     });
   }, []);
@@ -132,6 +136,7 @@ export function useRoutineStore(): UseRoutineStoreReturn {
         const next = applySetCompletionNote(prev, habitId, dateKey, text);
         if (next === prev) return prev;
         saveRoutineState(next);
+        enqueueChange(ROUTINE_STORAGE_KEY);
         return next;
       });
     },
@@ -143,6 +148,7 @@ export function useRoutineStore(): UseRoutineStoreReturn {
       const next = applyCreateHabit(prev, patch);
       if (next === prev) return prev;
       saveRoutineState(next);
+      enqueueChange(ROUTINE_STORAGE_KEY);
       return next;
     });
   }, []);
@@ -153,6 +159,7 @@ export function useRoutineStore(): UseRoutineStoreReturn {
         const next = applyUpdateHabit(prev, id, patch);
         if (next === prev) return prev;
         saveRoutineState(next);
+        enqueueChange(ROUTINE_STORAGE_KEY);
         return next;
       });
     },
@@ -164,6 +171,7 @@ export function useRoutineStore(): UseRoutineStoreReturn {
       const next = applySetHabitArchived(prev, id, archived);
       if (next === prev) return prev;
       saveRoutineState(next);
+      enqueueChange(ROUTINE_STORAGE_KEY);
       return next;
     });
   }, []);
@@ -173,6 +181,7 @@ export function useRoutineStore(): UseRoutineStoreReturn {
       const next = applyDeleteHabit(prev, id);
       if (next === prev) return prev;
       saveRoutineState(next);
+      enqueueChange(ROUTINE_STORAGE_KEY);
       return next;
     });
   }, []);
@@ -182,6 +191,7 @@ export function useRoutineStore(): UseRoutineStoreReturn {
       const next = applyMoveHabitInOrder(prev, id, delta);
       if (next === prev) return prev;
       saveRoutineState(next);
+      enqueueChange(ROUTINE_STORAGE_KEY);
       return next;
     });
   }, []);
@@ -191,6 +201,7 @@ export function useRoutineStore(): UseRoutineStoreReturn {
       const next = applySetHabitOrder(prev, orderedActiveIds);
       if (next === prev) return prev;
       saveRoutineState(next);
+      enqueueChange(ROUTINE_STORAGE_KEY);
       return next;
     });
   }, []);

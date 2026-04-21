@@ -11,10 +11,11 @@ export { getOfflineQueue } from "./queue/offlineQueue";
 export { enqueueChange, notifySyncDirty } from "./enqueue";
 
 export { useCloudSync } from "./hook/useCloudSync";
+export type { UseCloudSyncReturn } from "./hook/useCloudSync";
 export { useSyncStatus } from "./hook/useSyncStatus";
 export type { SyncStatusState } from "./hook/useSyncStatus";
 
-export { CloudSyncProvider } from "./CloudSyncProvider";
+export { CloudSyncProvider, useCloudSyncContext } from "./CloudSyncProvider";
 
 export type {
   CurrentUser,

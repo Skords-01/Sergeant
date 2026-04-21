@@ -16,11 +16,19 @@
  * The React Query persister itself lives in `QueryProvider` so queries
  * warm-start before any user auth resolves; this component is purely
  * about kicking off background sync once we know who the user is.
+ *
+ * In addition to the side-effects, the provider exposes the
+ * `useCloudSync` return value via React context so layout-level UI
+ * (e.g. `SyncStatusIndicator`) can read `syncError` / `pullAll`
+ * without re-invoking the hook (which would double-attach the
+ * scheduler, NetInfo listeners and periodic retry timer).
  */
-import type { PropsWithChildren } from "react";
+import { createContext, useContext, type PropsWithChildren } from "react";
 import { useUser } from "@sergeant/api-client/react";
 
-import { useCloudSync } from "./hook/useCloudSync";
+import { useCloudSync, type UseCloudSyncReturn } from "./hook/useCloudSync";
+
+const CloudSyncContext = createContext<UseCloudSyncReturn | null>(null);
 
 export function CloudSyncProvider({ children }: PropsWithChildren) {
   const { data: user } = useUser({
@@ -33,6 +41,20 @@ export function CloudSyncProvider({ children }: PropsWithChildren) {
   });
   // `useUser` returns `MeResponse = { user: { id, ... } }`; the sync
   // engine only needs the id, so unwrap and forward that.
-  useCloudSync(user?.user ? { id: user.user.id } : null);
-  return <>{children}</>;
+  const sync = useCloudSync(user?.user ? { id: user.user.id } : null);
+  return (
+    <CloudSyncContext.Provider value={sync}>
+      {children}
+    </CloudSyncContext.Provider>
+  );
+}
+
+/**
+ * Read the cloud-sync state owned by the surrounding `CloudSyncProvider`.
+ * Returns `null` when called outside the provider — callers (e.g. the
+ * root-layout sync indicator) should treat that as "sync not yet
+ * initialised" and render a no-op.
+ */
+export function useCloudSyncContext(): UseCloudSyncReturn | null {
+  return useContext(CloudSyncContext);
 }
