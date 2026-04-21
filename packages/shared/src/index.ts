@@ -20,6 +20,9 @@ export * from "./lib/kvStore";
 // Onboarding "vibe picks" state + FTUX time-to-value helpers.
 export * from "./lib/vibePicks";
 
+// Onboarding gate helpers (first-launch detection, done flag, splash taxonomy).
+export * from "./lib/onboarding";
+
 // First-real-entry detection shared between web and mobile.
 export * from "./lib/firstRealEntry";
 

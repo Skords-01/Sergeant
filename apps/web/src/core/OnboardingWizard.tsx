@@ -9,60 +9,18 @@ import {
   markFirstActionStartedAt,
   saveVibePicks,
 } from "./onboarding/vibePicks.js";
+import {
+  markOnboardingDone,
+  shouldShowOnboarding as sharedShouldShowOnboarding,
+} from "./onboarding/onboardingGate.js";
 import { MODULE_LABELS } from "@shared/lib/moduleLabels";
 
-const ONBOARDING_DONE_KEY = "hub_onboarding_done_v1";
-
-function hasExistingData() {
-  try {
-    const finyk = localStorage.getItem("finyk_tx_cache");
-    if (finyk) return true;
-    const manual = localStorage.getItem("finyk_manual_expenses_v1");
-    if (manual) {
-      const p = JSON.parse(manual);
-      if (Array.isArray(p) && p.length > 0) return true;
-    }
-    const fizruk = localStorage.getItem("fizruk_workouts_v1");
-    if (fizruk) {
-      const p = JSON.parse(fizruk);
-      const arr = Array.isArray(p) ? p : p?.workouts;
-      if (Array.isArray(arr) && arr.length > 0) return true;
-    }
-    const nutrition = localStorage.getItem("nutrition_log_v1");
-    if (nutrition) {
-      const p = JSON.parse(nutrition);
-      if (p && Object.keys(p).length > 0) return true;
-    }
-    const routine = localStorage.getItem("hub_routine_v1");
-    if (routine) {
-      const p = JSON.parse(routine);
-      if (Array.isArray(p?.habits) && p.habits.length > 0) return true;
-    }
-  } catch {
-    /* ignore */
-  }
-  return false;
-}
-
+// Re-exported so `App.tsx` and any legacy call-site keep importing
+// `shouldShowOnboarding` straight from this file — the thin web
+// adapter in `./onboarding/onboardingGate.ts` holds the real
+// implementation on top of the shared helper.
 export function shouldShowOnboarding() {
-  try {
-    if (localStorage.getItem(ONBOARDING_DONE_KEY)) return false;
-    if (hasExistingData()) {
-      localStorage.setItem(ONBOARDING_DONE_KEY, "1");
-      return false;
-    }
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-function markOnboardingDone() {
-  try {
-    localStorage.setItem(ONBOARDING_DONE_KEY, "1");
-  } catch {
-    /* ignore */
-  }
+  return sharedShouldShowOnboarding();
 }
 
 // Module chips shown inline on the splash — the single source of truth
