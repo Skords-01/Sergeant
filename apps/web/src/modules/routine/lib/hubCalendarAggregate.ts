@@ -4,12 +4,17 @@ import {
   TEMPLATES_STORAGE_KEY,
 } from "@sergeant/fizruk-domain";
 import {
-  completionNoteKey,
   dateKeyFromDate,
   enumerateDateKeys,
   habitScheduledOnDate,
   parseDateKey,
-  sortHabitsByOrder,
+  buildHubCalendarEvents as buildHubCalendarEventsPure,
+  countEventsByDate,
+  FIZRUK_GROUP_LABEL,
+  type BuildHubCalendarEventsOptions,
+  type CalendarRange,
+  type HubCalendarEvent,
+  type RoutineState,
 } from "@sergeant/routine-domain";
 import { buildFinykSubscriptionEvents } from "./finykSubscriptionCalendar.js";
 
@@ -21,9 +26,9 @@ export {
   parseDateKey,
   enumerateDateKeys,
   habitScheduledOnDate,
+  countEventsByDate,
+  FIZRUK_GROUP_LABEL,
 };
-
-export const FIZRUK_GROUP_LABEL = "Фізрук";
 
 export function loadMonthlyPlanDays() {
   const p = safeReadLS<{ days?: Record<string, { templateId?: string }> }>(
@@ -47,98 +52,30 @@ export function loadTemplateNameById() {
   return map;
 }
 
-function tagLabelsForHabit(state, habit) {
-  const ids = habit.tagIds || [];
-  const labels = ids
-    .map((id) => state.tags.find((t) => t.id === id)?.name)
-    .filter(Boolean);
-  if (habit.categoryId) {
-    const c = state.categories.find((x) => x.id === habit.categoryId);
-    if (c?.name) labels.push(c.name);
-  }
-  return labels.length ? labels : ["Без тегу"];
-}
-
+/**
+ * Тонкий web-адаптер над pure `buildHubCalendarEvents` з
+ * `@sergeant/routine-domain`: підтягує з localStorage Fizruk-план,
+ * імена шаблонів тренувань і події підписок Фініка, решту роботи
+ * робить pure-builder.
+ */
 export function buildHubCalendarEvents(
-  state,
-  range,
-  { showFizruk = true, showFinykSubs = true } = {},
-) {
-  const events = [];
-  const { startKey, endKey } = range;
-  const days = enumerateDateKeys(startKey, endKey);
-  const planDays = loadMonthlyPlanDays();
-  const tplNames = loadTemplateNameById();
-
-  if (showFizruk) {
-    for (const date of days) {
-      const tid = planDays[date]?.templateId;
-      if (!tid) continue;
-      const title = tplNames.get(tid) || "Тренування за планом";
-      events.push({
-        id: `fizruk_${date}_${tid}`,
-        source: "fizruk_plan",
-        date,
-        title,
-        subtitle: "План Фізрука",
-        tagLabels: [FIZRUK_GROUP_LABEL],
-        sortKey: `${date} 0 fizruk`,
-        fizruk: true,
-        sourceKind: "fizruk",
-      });
-    }
-  }
-
-  const notes =
-    state.completionNotes && typeof state.completionNotes === "object"
-      ? state.completionNotes
-      : {};
-  const activeHabits = sortHabitsByOrder(
-    state.habits.filter((h) => !h.archived),
-    state.habitOrder || [],
+  state: RoutineState,
+  range: CalendarRange,
+  {
+    showFizruk = true,
+    showFinykSubs = true,
+  }: BuildHubCalendarEventsOptions = {},
+): HubCalendarEvent[] {
+  const fizrukPlanDays = showFizruk ? loadMonthlyPlanDays() : undefined;
+  const fizrukTemplateNames = showFizruk ? loadTemplateNameById() : undefined;
+  const finykSubscriptionEvents =
+    showFinykSubs && state.prefs?.showFinykSubscriptionsInCalendar !== false
+      ? buildFinykSubscriptionEvents(range)
+      : undefined;
+  return buildHubCalendarEventsPure(
+    state,
+    range,
+    { showFizruk, showFinykSubs },
+    { fizrukPlanDays, fizrukTemplateNames, finykSubscriptionEvents },
   );
-  for (const date of days) {
-    for (const h of activeHabits) {
-      if (!habitScheduledOnDate(h, date)) continue;
-      const completions = state.completions[h.id] || [];
-      const completed = completions.includes(date);
-      const tagLabels = tagLabelsForHabit(state, h);
-      const t = h.timeOfDay ? String(h.timeOfDay).trim() : "";
-      const timePart = t ? ` · ${t}` : "";
-      const nk = completionNoteKey(h.id, date);
-      const note = notes[nk] ? String(notes[nk]) : "";
-      events.push({
-        id: `habit_${h.id}_${date}`,
-        source: "routine_habit",
-        date,
-        title: `${h.emoji} ${h.name}`,
-        subtitle: completed ? `Зроблено${timePart}` : `Звичка${timePart}`,
-        tagLabels,
-        sortKey: `${date} 1 ${h.name}`,
-        habitId: h.id,
-        completed,
-        note,
-        sourceKind: "habit",
-        timeOfDay: t,
-      });
-    }
-  }
-
-  if (
-    showFinykSubs &&
-    state.prefs?.showFinykSubscriptionsInCalendar !== false
-  ) {
-    events.push(...buildFinykSubscriptionEvents(range));
-  }
-
-  events.sort((a, b) => a.sortKey.localeCompare(b.sortKey, "uk"));
-  return events;
-}
-
-export function countEventsByDate(events) {
-  const map = new Map();
-  for (const e of events) {
-    map.set(e.date, (map.get(e.date) || 0) + 1);
-  }
-  return map;
 }

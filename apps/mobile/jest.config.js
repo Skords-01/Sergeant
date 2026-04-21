@@ -10,6 +10,15 @@ module.exports = {
   preset: "jest-expo",
   testMatch: ["<rootDir>/src/**/*.test.{ts,tsx}"],
   setupFiles: ["<rootDir>/jest.setup.js"],
+  // `@sergeant/*-domain` packages use NodeNext `.js`-extension imports
+  // inside their TS source (required so they compile cleanly under the
+  // workspace `"module": "NodeNext"` toolchain). Jest resolves them
+  // straight from `src/index.ts` (see each package's `exports` map),
+  // so we need to strip the trailing `.js` at resolve-time otherwise
+  // jest-resolve reports "Cannot find module './types.js'".
+  moduleNameMapper: {
+    "^(\\.{1,2}/.*)\\.js$": "$1",
+  },
   transformIgnorePatterns: [
     // Keep the default `node_modules/` ignore but punch holes for the RN
     // / Expo / NativeWind ecosystem, whose published artefacts still

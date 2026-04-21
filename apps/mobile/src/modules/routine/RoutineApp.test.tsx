@@ -19,8 +19,10 @@ import { _getMMKVInstance } from "@/lib/storage";
 
 import { RoutineApp } from "./RoutineApp";
 
-const CALENDAR_DESCRIPTION =
-  "Хаб-календар рутини: звички, день, тиждень, місяць. Скоро — з підсвіткою планових тренувань Фізрука та платежів Фініка.";
+// Unique copy inside the mounted Calendar screen (the bottom-nav item
+// label is just "Календар", so we pin to the eyebrow kicker inside
+// `pages/Calendar.tsx` which only exists when that page is mounted).
+const CALENDAR_EYEBROW = "Hub календар";
 const STATS_DESCRIPTION =
   "Хітмеп виконання, стріки та топ-звички. Порт у наступних PR-ах Фази 5.";
 const SETTINGS_DESCRIPTION =
@@ -31,9 +33,9 @@ beforeEach(() => {
 });
 
 describe("RoutineApp shell", () => {
-  it("renders the Calendar placeholder by default", () => {
+  it("renders the Calendar screen by default", () => {
     const { getByText } = render(<RoutineApp />);
-    expect(getByText(CALENDAR_DESCRIPTION)).toBeTruthy();
+    expect(getByText(CALENDAR_EYEBROW)).toBeTruthy();
   });
 
   it("switches to the Stats placeholder when the Stats tab is pressed", () => {
@@ -43,7 +45,7 @@ describe("RoutineApp shell", () => {
 
     expect(getByText(STATS_DESCRIPTION)).toBeTruthy();
     // Calendar screen body is no longer mounted.
-    expect(queryByText(CALENDAR_DESCRIPTION)).toBeNull();
+    expect(queryByText(CALENDAR_EYEBROW)).toBeNull();
   });
 
   it("switches to the Settings placeholder when the Settings tab is pressed", () => {
@@ -78,6 +80,6 @@ describe("RoutineApp shell", () => {
 
     const { getByText } = render(<RoutineApp />);
 
-    expect(getByText(CALENDAR_DESCRIPTION)).toBeTruthy();
+    expect(getByText(CALENDAR_EYEBROW)).toBeTruthy();
   });
 });

@@ -56,6 +56,7 @@ import {
   type RoutineMainTab,
 } from "./components/RoutineBottomNav";
 import { RoutineTabPlaceholder } from "./components/RoutineTabPlaceholder";
+import { Calendar } from "./pages/Calendar";
 
 const TAB_PERSIST_KEY = STORAGE_KEYS.ROUTINE_MAIN_TAB;
 
@@ -90,19 +91,7 @@ function RoutineShell() {
   return (
     <View className="flex-1 bg-cream-50">
       <View className="flex-1">
-        {mainTab === "calendar" ? (
-          <RoutineTabPlaceholder
-            title="Календар"
-            emoji="📅"
-            description="Хаб-календар рутини: звички, день, тиждень, місяць. Скоро — з підсвіткою планових тренувань Фізрука та платежів Фініка."
-            plannedFeatures={[
-              "Місячна сітка з бейджами подій по дню",
-              "Тижнева стрічка з прогрес-рингом",
-              "Список звичок на обраний день з тап-відміткою",
-              "Перегляд деталей дня у bottom-sheet",
-            ]}
-          />
-        ) : null}
+        {mainTab === "calendar" ? <Calendar /> : null}
         {mainTab === "stats" ? (
           <RoutineTabPlaceholder
             title="Статистика"

@@ -2,9 +2,15 @@ import { safeReadLS } from "@shared/lib/storage.js";
 import { STORAGE_KEYS } from "@sergeant/shared";
 import { DEFAULT_SUBSCRIPTIONS } from "../../finyk/constants.js";
 import { getSubscriptionAmountMeta } from "@sergeant/finyk-domain/domain/subscriptionUtils";
-import { enumerateDateKeys, parseDateKey } from "./hubCalendarAggregate.js";
+import {
+  buildFinykSubscriptionEvents as buildFinykSubscriptionEventsPure,
+  FINYK_SUB_GROUP_LABEL,
+  type CalendarRange,
+  type FinykSubscriptionLike,
+  type HubCalendarEvent,
+} from "@sergeant/routine-domain";
 
-export const FINYK_SUB_GROUP_LABEL = "Фінік · підписки";
+export { FINYK_SUB_GROUP_LABEL };
 
 const SUBS_KEY = STORAGE_KEYS.FINYK_SUBS;
 const TX_CACHE_KEY = STORAGE_KEYS.FINYK_TX_CACHE;
@@ -18,59 +24,34 @@ export function loadFinykSubscriptionsFromStorage() {
 
 /** Транзакції з кешу Monobank (для сум і прив’язок). */
 export function loadFinykTransactionsFromStorage() {
-  const primary = safeReadLS(TX_CACHE_KEY, null);
+  const primary = safeReadLS<{ txs?: unknown[] } | null>(TX_CACHE_KEY, null);
   if (primary?.txs?.length) return primary.txs;
-  const fallback = safeReadLS(TX_LAST_GOOD_KEY, null);
+  const fallback = safeReadLS<{ txs?: unknown[] } | null>(
+    TX_LAST_GOOD_KEY,
+    null,
+  );
   if (fallback?.txs?.length) return fallback.txs;
   return [];
 }
 
-function scheduledBillingDom(year, monthIndex, billingDay) {
-  const dim = new Date(year, monthIndex + 1, 0).getDate();
-  return Math.min(Number(billingDay) || 1, dim);
-}
-
-function isBillingDateKey(dateKey, billingDay) {
-  const d = parseDateKey(dateKey);
-  const dom = scheduledBillingDom(d.getFullYear(), d.getMonth(), billingDay);
-  return d.getDate() === dom;
-}
-
 /**
  * Події календаря для підписок Фініка (планове списання раз на місяць).
+ * Тонкий адаптер над `buildFinykSubscriptionEvents` з
+ * `@sergeant/routine-domain`: тягне підписки + транзакції з localStorage
+ * і передає lookup-функцію у pure-builder.
  */
-export function buildFinykSubscriptionEvents(range) {
-  const { startKey, endKey } = range;
+export function buildFinykSubscriptionEvents(
+  range: CalendarRange,
+): HubCalendarEvent[] {
   const subs = loadFinykSubscriptionsFromStorage();
   const txs = loadFinykTransactionsFromStorage();
-  const days = enumerateDateKeys(startKey, endKey);
-  const out = [];
-
-  for (const sub of subs) {
-    const bd = Number(sub.billingDay);
-    if (!Number.isFinite(bd) || bd < 1 || bd > 31) continue;
-    const { amount, currency } = getSubscriptionAmountMeta(sub, txs);
-    const subTitle = `${sub.emoji || "📱"} ${sub.name || "Підписка"}`;
-    for (const date of days) {
-      if (!isBillingDateKey(date, bd)) continue;
-      const amtStr =
-        amount != null
-          ? `~${amount.toLocaleString("uk-UA", { maximumFractionDigits: 2 })} ${currency}`
-          : "сума з транзакції або вручну у Фініку";
-      out.push({
-        id: `finyk_sub_${sub.id}_${date}`,
-        source: "finyk_subscription",
-        date,
-        title: subTitle,
-        subtitle: `Планове списання · ${amtStr}`,
-        tagLabels: [FINYK_SUB_GROUP_LABEL],
-        sortKey: `${date} 0b finyk_${sub.id}`,
-        fizruk: false,
-        finykSub: true,
-        sourceKind: "finyk_sub",
-      });
-    }
-  }
-
-  return out;
+  return buildFinykSubscriptionEventsPure(
+    range,
+    subs as FinykSubscriptionLike[],
+    (sub) =>
+      getSubscriptionAmountMeta(
+        sub,
+        txs as Parameters<typeof getSubscriptionAmountMeta>[1],
+      ),
+  );
 }
