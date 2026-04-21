@@ -34,11 +34,16 @@ import Animated, {
 
 import {
   type DashboardModuleId,
+  type ModulePreview,
   hapticSuccess,
   hapticTap,
 } from "@sergeant/shared";
 
 import { StatusRow } from "./StatusRow";
+
+export type DashboardModulePreviews = Partial<
+  Record<DashboardModuleId, ModulePreview | null>
+>;
 
 /** Fallback row height (px) used until `onLayout` fires for a row. */
 const FALLBACK_ROW_HEIGHT = 72;
@@ -97,6 +102,13 @@ export interface DraggableDashboardProps {
   onReorder: (fromIndex: number, toIndex: number) => void;
   /** Tap handler — fires only for a short tap (drag short-circuits it). */
   onOpenModule: (id: DashboardModuleId) => void;
+  /**
+   * Optional per-module preview map. Missing entries / `null` values
+   * render the row without a preview section — callers can omit this
+   * prop entirely while the quick-stats writers roll out module by
+   * module.
+   */
+  previews?: DashboardModulePreviews;
   testID?: string;
 }
 
@@ -108,6 +120,7 @@ interface DraggableRowProps {
   onDragEnd: (index: number, translationY: number) => void;
   onLayoutHeight: (index: number, height: number) => void;
   reduceMotionRef: React.MutableRefObject<boolean>;
+  preview?: ModulePreview | null;
   testID?: string;
 }
 
@@ -119,6 +132,7 @@ const DraggableRow = memo(function DraggableRow({
   onDragEnd,
   onLayoutHeight,
   reduceMotionRef,
+  preview,
   testID,
 }: DraggableRowProps) {
   const translationY = useSharedValue(0);
@@ -186,6 +200,7 @@ const DraggableRow = memo(function DraggableRow({
         <StatusRow
           id={id}
           onPress={onOpenModule}
+          preview={preview}
           testID={testID ? `${testID}-${id}` : undefined}
         />
       </Animated.View>
@@ -197,6 +212,7 @@ export function DraggableDashboard({
   modules,
   onReorder,
   onOpenModule,
+  previews,
   testID,
 }: DraggableDashboardProps) {
   const orderRef = useRef<DashboardModuleId[]>([...modules]);
@@ -272,6 +288,7 @@ export function DraggableDashboard({
           onDragEnd={handleDragEnd}
           onLayoutHeight={handleLayoutHeight}
           reduceMotionRef={reduceMotionRef}
+          preview={previews?.[id] ?? null}
           testID={testID ?? "dashboard-module-row"}
         />
       ))}

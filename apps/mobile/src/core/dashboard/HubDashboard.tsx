@@ -1,26 +1,19 @@
 /**
  * Sergeant Hub — top-level dashboard screen (mobile).
  *
- * This PR lands the hero layer on top of the structural skeleton that
- * PR-1 shipped:
- *
- *   - FTUX priority (`one-hero rule`): show exactly one of
- *     `FirstActionHeroCard` > `SoftAuthPromptCard` > `TodayFocusCard`,
- *     mirroring `apps/web/src/core/HubDashboard.tsx`.
- *   - `useDashboardFocus` (shared contract) drives the focus/rest
- *     split. The mobile recommendation generator is still a stub —
- *     see `./useDashboardFocus.ts` — so the card renders its empty
- *     state until Phase 3 wires up per-module stats readers.
- *
- * Follow-up PRs layer on the bits deliberately deferred here:
- *
- *   - Quick-stats previews inside each row → gated on the per-module
- *     MMKV writers (Phase 3 — quick-stats writers).
- *   - `HubInsightsPanel`, `WeeklyDigestFooter` → PR-3 of the
- *     dashboard breakdown.
- *   - PresetSheet / full onboarding modal flow — currently the
- *     FirstAction CTA routes into the target module instead of
- *     opening a preset sheet inline.
+ * Structure today (top → bottom):
+ *   1. Greeting + today label + settings button (always visible).
+ *   2. Hero slot with one-hero rule: `FirstActionHeroCard` >
+ *      `SoftAuthPromptCard` > `TodayFocusCard`, mirroring
+ *      `apps/web/src/core/HubDashboard.tsx`.
+ *   3. Status row stack (`DraggableDashboard`) with per-module
+ *      quick-stats preview wired via `useModulePreviews`.
+ *   4. `HubInsightsPanel` — collapsible secondary-recs block. Fed
+ *      from `useDashboardFocus().rest` so dismissals share the
+ *      same `hub_recs_dismissed_v1` map as the hero focus card.
+ *   5. `WeeklyDigestFooter` — thin link to the weekly digest card,
+ *      with a fresh-dot when the shared digest helper says the
+ *      current digest is live.
  *
  * Scope notes:
  *   - Nutrition is hidden until Phase 7 (Food & Water). The persisted
@@ -31,6 +24,10 @@
  *     Auth native sheet lands in mobile nav. TODO: replace the alert
  *     with the actual sheet trigger once `packages/auth-client/expo`
  *     is wired.
+ *   - Mobile `useWeeklyDigest` mutation hook is not ported yet, so
+ *     `useMondayAutoDigest` is fed a no-op `generate`. The Monday-auto
+ *     hook is harmless with a no-op — it still guards on the
+ *     preference flag + absence of a current digest.
  */
 
 import { router, type Href } from "expo-router";
@@ -50,10 +47,14 @@ import {
 import { DraggableDashboard } from "./DraggableDashboard";
 import { DASHBOARD_MODULE_ROUTES } from "./dashboardModuleConfig";
 import { FirstActionHeroCard } from "./FirstActionHeroCard";
+import { HubInsightsPanel, type InsightItem } from "./HubInsightsPanel";
 import { SoftAuthPromptCard } from "./SoftAuthPromptCard";
 import { TodayFocusCard } from "./TodayFocusCard";
 import { useDashboardFocus } from "./useDashboardFocus";
 import { useDashboardOrder } from "./useDashboardOrder";
+import { useModulePreviews } from "./useModulePreviews";
+import { useMondayAutoDigest } from "./useMondayAutoDigest";
+import { WeeklyDigestFooter } from "./WeeklyDigestFooter";
 import {
   safeReadLS as mmkvGet,
   safeRemoveLS as mmkvRemove,
@@ -86,6 +87,14 @@ const mmkvStore: KVStore = {
   },
 };
 
+// TODO(weekly-digest): swap with the `generate` handle returned by the
+// ported mobile `useWeeklyDigest` hook once that lands. The Monday-auto
+// hook is harmless with a no-op `generate` — it still guards on the
+// preference flag + absence of a current digest.
+const NOOP_GENERATE = () => {
+  /* weekly-digest mutation hook is not on mobile yet */
+};
+
 function formatToday(now: Date): string {
   try {
     return now.toLocaleDateString("uk-UA", {
@@ -113,7 +122,10 @@ export function HubDashboard() {
   const todayLabel = useMemo(() => formatToday(new Date()), []);
 
   const { visibleOrder, reorderVisible } = useDashboardOrder();
-  const { focus, dismiss: dismissFocus } = useDashboardFocus();
+  const { focus, rest, dismiss: dismissFocus } = useDashboardFocus();
+  const previews = useModulePreviews();
+
+  useMondayAutoDigest({ generate: NOOP_GENERATE });
 
   // Hero-layer visibility gates. Read synchronously on every render
   // (MMKV is sync + cheap) so CTAs that flip these flags trigger a
@@ -158,6 +170,38 @@ export function HubDashboard() {
       "Sign-in screen на mobile ще в розробці. Поки синхронізація запуститься автоматично, коли акаунт буде готовий.",
     );
   }, []);
+
+  // Insights panel is fed the `rest` slice from the shared focus
+  // selector. Dismissing a panel item goes through the same
+  // `dismiss()` as the hero card, so both share the
+  // `hub_recs_dismissed_v1` dismissal map.
+  const insightItems = useMemo<readonly InsightItem[]>(
+    () =>
+      rest.map((rec): InsightItem => {
+        // `rec.module` is the shared `RecModule` (includes "hub");
+        // `InsightItem.action` only accepts real module ids, so the
+        // "hub" bucket surfaces without an inline open affordance.
+        const isDashboardModule = rec.module !== "hub";
+        return {
+          id: rec.id,
+          title: rec.title,
+          body: rec.body,
+          icon: rec.icon,
+          module: rec.module,
+          ...(isDashboardModule
+            ? { action: rec.module as DashboardModuleId }
+            : {}),
+        };
+      }),
+    [rest],
+  );
+
+  const handleInsightDismiss = useCallback(
+    (id: string) => {
+      dismissFocus(id);
+    },
+    [dismissFocus],
+  );
 
   // One-hero rule: exactly one hero renders per frame, in priority
   // order. `firstActionVisible` tracks the FTUX flag; `showSoftAuth`
@@ -229,12 +273,21 @@ export function HubDashboard() {
             modules={visibleOrder}
             onReorder={reorderVisible}
             onOpenModule={openModule}
+            previews={previews}
           />
           <Text className="mt-1 text-[11px] leading-snug text-stone-400">
             Утримай і потягни, щоб змінити порядок модулів. Порядок
             синхронізується з вебом.
           </Text>
         </View>
+
+        <HubInsightsPanel
+          items={insightItems}
+          onOpenModule={openModule}
+          onDismiss={handleInsightDismiss}
+        />
+
+        <WeeklyDigestFooter />
       </ScrollView>
     </SafeAreaView>
   );

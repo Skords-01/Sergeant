@@ -2,10 +2,18 @@
  * Sergeant Hub — StatusRow (mobile)
  *
  * Single row in the mobile dashboard's module list. Visual layout
- * mirrors the web `StatusRow` inside `apps/web/src/core/HubDashboard.tsx`
- * (accent bar → icon tile → label + description → chevron) but drops
- * the preview-stats block until the quick-stats writers land in a
- * follow-up PR (Phase 3 in the migration plan).
+ * mirrors the web `StatusRow` inside `apps/web/src/core/HubDashboard.tsx`:
+ * accent bar → icon tile → label + description → **quick-stats preview**
+ * → chevron. The preview section renders:
+ *   - `main` — a primary figure rendered bold-right of the label/body,
+ *   - `sub`  — a secondary caption rendered under `main`,
+ *   - optional `progress` (0–100) — a thin bar below the text pair,
+ *     only shown for goal-bearing modules (`routine`, `nutrition`).
+ *
+ * The preview object itself is computed upstream (see
+ * `HubDashboard.useModulePreviews`) by the pure `selectModulePreview`
+ * helper from `@sergeant/shared`, so this component stays presentational
+ * and testable with plain prop fixtures.
  *
  * Rendering is memoised because the dashboard re-renders on every
  * MMKV-backed write to the order key and each row's render cost
@@ -15,7 +23,7 @@
 import { memo } from "react";
 import { Pressable, Text, View } from "react-native";
 
-import type { DashboardModuleId } from "@sergeant/shared";
+import type { DashboardModuleId, ModulePreview } from "@sergeant/shared";
 
 import { DASHBOARD_MODULE_RENDER } from "./dashboardModuleConfig";
 
@@ -24,6 +32,28 @@ export interface StatusRowProps {
   onPress?: (id: DashboardModuleId) => void;
   disabled?: boolean;
   testID?: string;
+  /**
+   * Preview stats for this row (or `null` if none available / writers
+   * haven't landed yet). The component gracefully renders only the
+   * non-null parts so a half-populated payload doesn't leave visual
+   * gaps.
+   */
+  preview?: ModulePreview | null;
+}
+
+/** Clamp a loose percentage to the [0, 100] bounds used by the bar. */
+function clampProgress(value: number): number {
+  if (!Number.isFinite(value)) return 0;
+  if (value < 0) return 0;
+  if (value > 100) return 100;
+  return value;
+}
+
+function hasPreviewContent(preview: ModulePreview | null | undefined): boolean {
+  if (!preview) return false;
+  if (preview.main || preview.sub) return true;
+  if (typeof preview.progress === "number" && preview.progress > 0) return true;
+  return false;
 }
 
 export const StatusRow = memo(function StatusRow({
@@ -31,8 +61,11 @@ export const StatusRow = memo(function StatusRow({
   onPress,
   disabled,
   testID,
+  preview,
 }: StatusRowProps) {
   const config = DASHBOARD_MODULE_RENDER[id];
+  const showPreview = hasPreviewContent(preview);
+  const showProgress = showPreview && typeof preview?.progress === "number";
 
   return (
     <Pressable
@@ -62,7 +95,44 @@ export const StatusRow = memo(function StatusRow({
           <Text className="text-xs text-stone-500" numberOfLines={1}>
             {config.description}
           </Text>
+          {showProgress ? (
+            <View
+              accessibilityRole="progressbar"
+              accessibilityValue={{
+                now: clampProgress(preview!.progress ?? 0),
+              }}
+              testID={`dashboard-row-${id}-progress`}
+              className="mt-1 h-1 overflow-hidden rounded-full bg-cream-200"
+            >
+              <View
+                style={{
+                  width: `${clampProgress(preview!.progress ?? 0)}%`,
+                }}
+                className={`h-full ${config.accentClass}`}
+              />
+            </View>
+          ) : null}
         </View>
+        {showPreview ? (
+          <View
+            className="ml-1 max-w-[44%] items-end"
+            testID={`dashboard-row-${id}-preview`}
+          >
+            {preview?.main ? (
+              <Text
+                className="text-sm font-semibold text-stone-900"
+                numberOfLines={1}
+              >
+                {preview.main}
+              </Text>
+            ) : null}
+            {preview?.sub ? (
+              <Text className="text-[11px] text-stone-500" numberOfLines={1}>
+                {preview.sub}
+              </Text>
+            ) : null}
+          </View>
+        ) : null}
         <Text className="text-stone-400 text-lg">›</Text>
       </View>
     </Pressable>

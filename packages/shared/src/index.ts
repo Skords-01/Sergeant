@@ -29,6 +29,12 @@ export * from "./lib/recommendations";
 // `useDashboardFocus` pure core — dismissal map, visible filter, focus+rest.
 export * from "./lib/dashboardFocus";
 
+// Hub dashboard quick-stats preview selector (pure; callers own storage I/O).
+export * from "./lib/quickStats";
+
+// Hub weekly-digest helpers — week key / storage key / digest freshness.
+export * from "./lib/weeklyDigest";
+
 // DOM-free haptic contract (platform adapters register at app bootstrap).
 export * from "./lib/haptic";
 
