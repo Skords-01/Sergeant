@@ -22,5 +22,25 @@
 import { Stack } from "expo-router";
 
 export default function FizrukStackLayout() {
-  return <Stack screenOptions={{ headerShown: false }} />;
+  return (
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="index" />
+      <Stack.Screen name="workouts" />
+      <Stack.Screen name="exercise" />
+      <Stack.Screen name="programs" />
+      <Stack.Screen name="progress" />
+      <Stack.Screen name="measurements" />
+      <Stack.Screen name="body" />
+      <Stack.Screen name="atlas" />
+      <Stack.Screen name="plan" />
+      <Stack.Screen
+        name="workout/new"
+        options={{ headerShown: true, title: "Нове тренування" }}
+      />
+      <Stack.Screen
+        name="workout/[id]"
+        options={{ headerShown: true, title: "Тренування" }}
+      />
+    </Stack>
+  );
 }

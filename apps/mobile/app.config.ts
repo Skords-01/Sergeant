@@ -39,6 +39,26 @@ const config = (): ExpoConfig => ({
       backgroundColor: "#0b0d10",
     },
     package: "com.sergeant.app",
+    // Registers `sergeant://…` as an app link. Expo Router's
+    // file-based routes handle the specific deep-link targets; this
+    // manifest entry is what tells Android that our app is the default
+    // handler for URLs with this scheme. See `src/lib/useDeepLinks.ts`
+    // for the runtime side of the contract.
+    //
+    // TODO (Phase 10 follow-up): once `https://sergeant.2dmanager.com.ua`
+    // publishes `.well-known/assetlinks.json`, add a second intent
+    // filter with `autoVerify: true` + `data.scheme: "https"` so that
+    // web→native universal links work without a picker. iOS universal
+    // links (`associatedDomains: ["applinks:sergeant.2dmanager.com.ua"]`)
+    // are gated on the same prerequisite and intentionally deferred.
+    intentFilters: [
+      {
+        action: "VIEW",
+        autoVerify: false,
+        data: [{ scheme: "sergeant" }],
+        category: ["BROWSABLE", "DEFAULT"],
+      },
+    ],
   },
   web: {
     bundler: "metro",

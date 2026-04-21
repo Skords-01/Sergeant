@@ -23,8 +23,31 @@ import "@/lib/fileDownload";
 // effects only.
 import "@/hooks/useVisualKeyboardInset";
 import { initObservability } from "@/lib/observability";
+import { useDeepLinks } from "@/lib/useDeepLinks";
 import { QueryProvider } from "@/providers/QueryProvider";
 import { CloudSyncProvider } from "@/sync";
+
+/**
+ * Inner shell — mounted below the providers so `useDeepLinks` runs
+ * inside `<Stack>`'s navigation context. See `src/lib/useDeepLinks.ts`
+ * for why the hook must not fire before Expo Router boots.
+ */
+function RootShell() {
+  useDeepLinks();
+
+  return (
+    <View style={{ flex: 1 }}>
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="(auth)" options={{ presentation: "modal" }} />
+        <Stack.Screen name="settings" options={{ presentation: "modal" }} />
+        <Stack.Screen name="auth/callback" options={{ headerShown: false }} />
+        <Stack.Screen name="+not-found" />
+      </Stack>
+      <SyncStatusOverlay />
+    </View>
+  );
+}
 
 export default function RootLayout() {
   useEffect(() => {
@@ -38,21 +61,7 @@ export default function RootLayout() {
           <ApiClientProvider client={apiClient}>
             <CloudSyncProvider>
               <StatusBar style="light" />
-              <View style={{ flex: 1 }}>
-                <Stack screenOptions={{ headerShown: false }}>
-                  <Stack.Screen name="(tabs)" />
-                  <Stack.Screen
-                    name="(auth)"
-                    options={{ presentation: "modal" }}
-                  />
-                  <Stack.Screen
-                    name="settings"
-                    options={{ presentation: "modal" }}
-                  />
-                  <Stack.Screen name="+not-found" />
-                </Stack>
-                <SyncStatusOverlay />
-              </View>
+              <RootShell />
               <PushRegistrar />
             </CloudSyncProvider>
           </ApiClientProvider>
