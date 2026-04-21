@@ -1,0 +1,156 @@
+import { describe, expect, it } from "vitest";
+
+import {
+  buildExerciseCatalogGroups,
+  exerciseDisplayName,
+  filterExercisesByPrimaryGroup,
+  filterExercisesBySearch,
+  groupExercisesByPrimary,
+  PRIMARY_GROUP_ORDER,
+} from "./catalog.js";
+import type { WorkoutExerciseCatalogEntry } from "./types.js";
+
+const POOL: WorkoutExerciseCatalogEntry[] = [
+  {
+    id: "bench",
+    name: { uk: "Жим штанги лежачи", en: "Bench Press" },
+    primaryGroup: "chest",
+    primaryGroupUk: "Груди",
+    muscles: { primary: ["pectoralis_major"], secondary: ["triceps"] },
+    aliases: ["bench", "жим лежачи"],
+  },
+  {
+    id: "pushup",
+    name: { uk: "Віджимання", en: "Push-up" },
+    primaryGroup: "chest",
+    muscles: { primary: ["pectoralis_major"] },
+  },
+  {
+    id: "squat",
+    name: { uk: "Присідання зі штангою", en: "Back Squat" },
+    primaryGroup: "legs",
+    muscles: { primary: ["quadriceps"] },
+  },
+  {
+    id: "deadlift",
+    name: { uk: "Тяга", en: "Deadlift" },
+    primaryGroup: "back",
+    muscles: { primary: ["erector_spinae"] },
+  },
+  {
+    id: "mystery",
+    name: { uk: "Невідома" },
+    primaryGroup: "mystery_group",
+  },
+];
+
+describe("filterExercisesBySearch", () => {
+  it("matches on uk / en name and aliases (case-insensitive)", () => {
+    expect(filterExercisesBySearch(POOL, "BENCH").map((x) => x.id)).toEqual([
+      "bench",
+    ]);
+    expect(filterExercisesBySearch(POOL, "лежачи").map((x) => x.id)).toEqual([
+      "bench",
+    ]);
+    expect(filterExercisesBySearch(POOL, "squat").map((x) => x.id)).toEqual([
+      "squat",
+    ]);
+  });
+
+  it("matches on primary group id / uk label", () => {
+    expect(
+      filterExercisesBySearch(POOL, "chest")
+        .map((x) => x.id)
+        .sort(),
+    ).toEqual(["bench", "pushup"]);
+    expect(
+      filterExercisesBySearch(POOL, "груди")
+        .map((x) => x.id)
+        .sort(),
+    ).toEqual(["bench"]);
+  });
+
+  it("returns a copy when the query is empty", () => {
+    const result = filterExercisesBySearch(POOL, "");
+    expect(result).not.toBe(POOL);
+    expect(result).toHaveLength(POOL.length);
+  });
+});
+
+describe("filterExercisesByPrimaryGroup", () => {
+  it("keeps matches only", () => {
+    expect(
+      filterExercisesByPrimaryGroup(POOL, "chest").map((x) => x.id),
+    ).toEqual(["bench", "pushup"]);
+  });
+
+  it("returns everything when the group is null or empty", () => {
+    expect(filterExercisesByPrimaryGroup(POOL, null)).toHaveLength(POOL.length);
+    expect(filterExercisesByPrimaryGroup(POOL, "")).toHaveLength(POOL.length);
+  });
+});
+
+describe("groupExercisesByPrimary", () => {
+  it("sorts buckets in the canonical order", () => {
+    const groups = groupExercisesByPrimary(POOL, {
+      primaryGroupsUk: { chest: "Груди", legs: "Ноги", back: "Спина" },
+    });
+    const orderIndex = (id: string) => PRIMARY_GROUP_ORDER.indexOf(id);
+    const orderedKnown = groups
+      .filter((g) => orderIndex(g.id) >= 0)
+      .map((g) => g.id);
+    expect(orderedKnown).toEqual(
+      [...orderedKnown].sort((a, b) => orderIndex(a) - orderIndex(b)),
+    );
+  });
+
+  it("places unknown primary groups after the canonical ones", () => {
+    const groups = groupExercisesByPrimary(POOL);
+    const last = groups[groups.length - 1]!;
+    expect(last.id).toBe("mystery_group");
+  });
+
+  it("uses the uk label when provided and falls back to the id", () => {
+    const groups = groupExercisesByPrimary(POOL, {
+      primaryGroupsUk: { chest: "Груди" },
+    });
+    const chest = groups.find((g) => g.id === "chest")!;
+    const back = groups.find((g) => g.id === "back")!;
+    expect(chest.label).toBe("Груди");
+    expect(back.label).toBe("back");
+  });
+});
+
+describe("buildExerciseCatalogGroups", () => {
+  it("applies both search and primary-group filters", () => {
+    const groups = buildExerciseCatalogGroups(POOL, {
+      query: "лежачи",
+      primaryGroup: "chest",
+      primaryGroupsUk: { chest: "Груди" },
+    });
+    expect(groups).toHaveLength(1);
+    expect(groups[0]!.id).toBe("chest");
+    expect(groups[0]!.items.map((x) => x.id)).toEqual(["bench"]);
+    // Header total is unfiltered per-group (2 chest exercises in POOL).
+    expect(groups[0]!.total).toBe(2);
+  });
+
+  it("returns an empty list when nothing matches", () => {
+    expect(buildExerciseCatalogGroups(POOL, { query: "zzz" })).toEqual([]);
+  });
+
+  it("copes with an empty pool", () => {
+    expect(buildExerciseCatalogGroups([])).toEqual([]);
+  });
+});
+
+describe("exerciseDisplayName", () => {
+  it("prefers uk > en > id", () => {
+    expect(exerciseDisplayName({ id: "x", name: { uk: "Ук", en: "En" } })).toBe(
+      "Ук",
+    );
+    expect(exerciseDisplayName({ id: "x", name: { en: "En" } })).toBe("En");
+    expect(exerciseDisplayName({ id: "x" })).toBe("x");
+    expect(exerciseDisplayName(null)).toBe("");
+  });
+});

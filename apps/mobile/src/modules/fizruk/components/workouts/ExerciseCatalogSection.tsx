@@ -1,0 +1,273 @@
+/**
+ * `ExerciseCatalogSection` — searchable, grouped-by-primary-group
+ * exercise library for the mobile Фізрук / Workouts page.
+ *
+ * Filtering / sorting / grouping all run through the pure helpers in
+ * `@sergeant/fizruk-domain/domain/workouts` so the web and mobile
+ * pages stay in lock-step on the selector contract.
+ */
+import {
+  buildExerciseCatalogGroups,
+  exerciseDisplayName,
+  PRIMARY_GROUP_ORDER,
+  type WorkoutExerciseCatalogEntry,
+} from "@sergeant/fizruk-domain/domain";
+import { memo, useCallback, useMemo, useState } from "react";
+import { Pressable, ScrollView, Text, View } from "react-native";
+
+import { Card } from "@/components/ui/Card";
+import { Input } from "@/components/ui/Input";
+
+export interface ExerciseCatalogSectionProps {
+  exercises: readonly WorkoutExerciseCatalogEntry[];
+  primaryGroupsUk?: Record<string, string>;
+  onPickExercise?(ex: WorkoutExerciseCatalogEntry): void;
+  /**
+   * Controlled filter (optional). When omitted the section owns its
+   * own search + primary-group state.
+   */
+  query?: string;
+  onQueryChange?(next: string): void;
+  primaryGroup?: string | null;
+  onPrimaryGroupChange?(next: string | null): void;
+  /** Optional root testID — sub-ids derive from it. */
+  testID?: string;
+}
+
+function PrimaryGroupChips({
+  groupsUk,
+  selected,
+  onChange,
+  testID,
+}: {
+  groupsUk: Record<string, string>;
+  selected: string | null;
+  onChange(next: string | null): void;
+  testID: string;
+}) {
+  // Canonical ordering — fall back to alphabetical for groups that
+  // aren't in the canonical list (e.g. user-imported data).
+  const knownOrder = [...PRIMARY_GROUP_ORDER];
+  const allKeys = Object.keys(groupsUk);
+  const extras = allKeys.filter((k) => !knownOrder.includes(k)).sort();
+  const ids = [...knownOrder.filter((k) => groupsUk[k]), ...extras];
+
+  return (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      keyboardShouldPersistTaps="handled"
+      contentContainerStyle={{ gap: 8, paddingVertical: 2 }}
+      testID={testID}
+    >
+      <Chip
+        label="Усі"
+        active={selected === null}
+        onPress={() => onChange(null)}
+        testID={`${testID}-all`}
+      />
+      {ids.map((id) => (
+        <Chip
+          key={id}
+          label={groupsUk[id] ?? id}
+          active={selected === id}
+          onPress={() => onChange(selected === id ? null : id)}
+          testID={`${testID}-${id}`}
+        />
+      ))}
+    </ScrollView>
+  );
+}
+
+function Chip({
+  label,
+  active,
+  onPress,
+  testID,
+}: {
+  label: string;
+  active: boolean;
+  onPress(): void;
+  testID: string;
+}) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityState={{ selected: active }}
+      accessibilityLabel={label}
+      onPress={onPress}
+      testID={testID}
+      className={
+        active
+          ? "px-3 h-8 rounded-full bg-teal-600 flex-row items-center justify-center"
+          : "px-3 h-8 rounded-full bg-cream-100 border border-cream-300 flex-row items-center justify-center"
+      }
+    >
+      <Text
+        className={
+          active
+            ? "text-xs font-semibold text-white"
+            : "text-xs font-semibold text-stone-700"
+        }
+      >
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
+function ExerciseRow({
+  exercise,
+  onPress,
+  testID,
+}: {
+  exercise: WorkoutExerciseCatalogEntry;
+  onPress?: () => void;
+  testID: string;
+}) {
+  const title = exerciseDisplayName(exercise);
+  const groupLabel = exercise.primaryGroupUk ?? exercise.primaryGroup ?? "";
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`Додати ${title}`}
+      onPress={onPress}
+      testID={testID}
+      className="px-3 py-3 rounded-xl border border-cream-300 bg-cream-50 flex-row items-center justify-between"
+    >
+      <View className="flex-1 pr-2">
+        <Text
+          className="text-sm font-semibold text-stone-900"
+          numberOfLines={2}
+        >
+          {title}
+        </Text>
+        {groupLabel ? (
+          <Text className="text-xs text-stone-500 mt-0.5" numberOfLines={1}>
+            {groupLabel}
+          </Text>
+        ) : null}
+      </View>
+      {onPress ? (
+        <Text className="text-teal-700 text-base font-bold">+</Text>
+      ) : null}
+    </Pressable>
+  );
+}
+
+export const ExerciseCatalogSection = memo(function ExerciseCatalogSection({
+  exercises,
+  primaryGroupsUk = {},
+  onPickExercise,
+  query: controlledQuery,
+  onQueryChange,
+  primaryGroup: controlledPrimaryGroup,
+  onPrimaryGroupChange,
+  testID = "fizruk-workouts-catalog",
+}: ExerciseCatalogSectionProps) {
+  const [uncontrolledQuery, setUncontrolledQuery] = useState("");
+  const [uncontrolledGroup, setUncontrolledGroup] = useState<string | null>(
+    null,
+  );
+
+  const query = controlledQuery ?? uncontrolledQuery;
+  const primaryGroup =
+    controlledPrimaryGroup === undefined
+      ? uncontrolledGroup
+      : controlledPrimaryGroup;
+
+  const handleQueryChange = useCallback(
+    (next: string) => {
+      if (onQueryChange) onQueryChange(next);
+      else setUncontrolledQuery(next);
+    },
+    [onQueryChange],
+  );
+
+  const handlePrimaryGroupChange = useCallback(
+    (next: string | null) => {
+      if (onPrimaryGroupChange) onPrimaryGroupChange(next);
+      else setUncontrolledGroup(next);
+    },
+    [onPrimaryGroupChange],
+  );
+
+  const groups = useMemo(
+    () =>
+      buildExerciseCatalogGroups(exercises, {
+        query,
+        primaryGroup,
+        primaryGroupsUk,
+      }),
+    [exercises, query, primaryGroup, primaryGroupsUk],
+  );
+
+  return (
+    <View className="gap-3" testID={testID}>
+      <Input
+        value={query}
+        onChangeText={handleQueryChange}
+        placeholder="Шукати вправу"
+        type="search"
+        accessibilityLabel="Пошук вправи"
+        testID={`${testID}-search`}
+      />
+      <PrimaryGroupChips
+        groupsUk={primaryGroupsUk}
+        selected={primaryGroup ?? null}
+        onChange={handlePrimaryGroupChange}
+        testID={`${testID}-chips`}
+      />
+
+      {groups.length === 0 ? (
+        <Card
+          variant="flat"
+          radius="lg"
+          padding="lg"
+          testID={`${testID}-empty`}
+        >
+          <Text className="text-sm font-semibold text-stone-900">
+            Нічого не знайдено
+          </Text>
+          <Text className="text-xs text-stone-500 mt-1">
+            Спробуй інший пошук або очисти фільтр по групі.
+          </Text>
+        </Card>
+      ) : (
+        <View className="gap-4">
+          {groups.map((group) => (
+            <View
+              key={group.id}
+              className="gap-2"
+              testID={`${testID}-group-${group.id}`}
+            >
+              <View className="flex-row items-center justify-between px-1">
+                <Text className="text-xs font-semibold uppercase text-stone-500">
+                  {group.label}
+                </Text>
+                <Text className="text-xs text-stone-500">
+                  {group.items.length}/{group.total}
+                </Text>
+              </View>
+              <View className="gap-2">
+                {group.items.map((exercise) => (
+                  <ExerciseRow
+                    key={exercise.id}
+                    exercise={exercise}
+                    onPress={
+                      onPickExercise
+                        ? () => onPickExercise(exercise)
+                        : undefined
+                    }
+                    testID={`${testID}-row-${exercise.id}`}
+                  />
+                ))}
+              </View>
+            </View>
+          ))}
+        </View>
+      )}
+    </View>
+  );
+});
