@@ -1,11 +1,53 @@
 import { INTERNAL_TRANSFER_ID } from "../constants";
 import { getCategory } from "./categories.js";
 
+/**
+ * Мінімальна форма транзакції, достатня для spend-селекторів.
+ * Реальний `Transaction` з `domain/types.ts` її розширює — тут
+ * лишаємо вузький контракт, щоб функції працювали і з legacy-обʼєктами.
+ */
+export interface SpendingTxLike {
+  id: string;
+  amount: number;
+  description?: string;
+  mcc?: number;
+}
+
+/**
+ * Split однієї транзакції у спліт-мапі. Поля опціональні, щоб прийняти
+ * і strict-типізовані (мобільні) payload-и, і легасі `unknown[]` каст з
+ * `apps/web` без змін у web-коді.
+ */
+export interface SpendingSplitLike {
+  categoryId?: string;
+  amount?: number;
+}
+
+export type TxCategoriesLike = Record<string, string | undefined>;
+/**
+ * Спліт-мапа транзакцій. Значення — довільне `unknown`; функції, що
+ * читають сплити, звужують до `SpendingSplitLike[]` у місці використання,
+ * щоб і web (`Record<string, unknown>`, `Record<string, unknown[]>`), і
+ * mobile (`Record<string, TxSplit[]>`) могли викликати їх без змін.
+ */
+export type TxSplitsLike = Record<string, unknown>;
+
 // Ефективна сума транзакції для статистики витрат (враховує спліт).
 // Якщо є спліт — сумує лише частини що НЕ є внутрішнім переказом.
-export function getTxStatAmount(tx, txSplits = {}) {
-  const splits = txSplits[tx.id];
-  if (!splits || splits.length === 0) return Math.abs(tx.amount / 100);
+function readSplits(
+  txSplits: TxSplitsLike,
+  id: string,
+): readonly SpendingSplitLike[] {
+  const v = txSplits[id];
+  return Array.isArray(v) ? (v as readonly SpendingSplitLike[]) : [];
+}
+
+export function getTxStatAmount(
+  tx: SpendingTxLike,
+  txSplits: TxSplitsLike = {},
+): number {
+  const splits = readSplits(txSplits, tx.id);
+  if (splits.length === 0) return Math.abs(tx.amount / 100);
   return splits
     .filter((s) => s.categoryId !== INTERNAL_TRANSFER_ID)
     .reduce((s, p) => s + (p.amount || 0), 0);
@@ -13,18 +55,18 @@ export function getTxStatAmount(tx, txSplits = {}) {
 
 // Сума витрат по категорії. txSplits дозволяє розбити одну транзакцію на декілька категорій.
 export function calcCategorySpent(
-  txs,
-  categoryId,
-  txCategories = {},
-  txSplits = {},
-  customCategories = [],
-) {
+  txs: readonly SpendingTxLike[],
+  categoryId: string,
+  txCategories: TxCategoriesLike = {},
+  txSplits: TxSplitsLike = {},
+  customCategories: readonly unknown[] = [],
+): number {
   return Math.round(
     txs
       .filter((t) => t.amount < 0)
-      .reduce((sum, t) => {
-        const splits = txSplits[t.id];
-        if (splits && splits.length > 0) {
+      .reduce((sum: number, t) => {
+        const splits = readSplits(txSplits, t.id);
+        if (splits.length > 0) {
           return (
             sum +
             splits
@@ -34,9 +76,9 @@ export function calcCategorySpent(
         }
         if (
           getCategory(
-            t.description,
-            t.mcc,
-            txCategories[t.id],
+            t.description ?? "",
+            t.mcc ?? 0,
+            txCategories[t.id] ?? null,
             customCategories,
           ).id === categoryId
         ) {

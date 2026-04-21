@@ -1,14 +1,16 @@
-import { getTxStatAmount } from "./transactions.js";
+import {
+  getTxStatAmount,
+  type TxSplitsLike,
+  type SpendingTxLike,
+} from "./transactions.js";
 
-interface Tx {
-  id: string;
-  amount: number;
+interface Tx extends SpendingTxLike {
   time?: number;
 }
 
 interface SpendingOptions {
   excludedTxIds?: Set<string> | string[];
-  txSplits?: Record<string, unknown[]>;
+  txSplits?: TxSplitsLike;
 }
 
 interface SpendingByDateOptions extends SpendingOptions {

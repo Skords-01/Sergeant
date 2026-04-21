@@ -309,7 +309,7 @@ export interface CurrentVsPreviousOptions extends Pick<
 // Parse a MonthFilter into `{year, month}` (1-based). Returns null when the
 // filter cannot be interpreted — callers fall back to derived months.
 function parseMonthFilter(
-  month: MonthFilter,
+  month: MonthFilter | undefined,
 ): { year: number; month: number } | null {
   if (!month) return null;
   if (typeof month === "string") {

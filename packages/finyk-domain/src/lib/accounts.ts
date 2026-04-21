@@ -1,22 +1,23 @@
 import { CURRENCY } from "../constants";
 
-interface MonoAccount {
+export interface MonoAccount {
   id?: string;
   balance: number;
-  creditLimit: number;
+  creditLimit?: number;
   currencyCode?: number;
   type?: string;
 }
 
 export function getMonoDebt(acc: MonoAccount): number {
-  if (acc.creditLimit > 0)
-    return Math.max(0, (acc.creditLimit - acc.balance) / 100);
+  const creditLimit = acc.creditLimit ?? 0;
+  if (creditLimit > 0) return Math.max(0, (creditLimit - acc.balance) / 100);
   if (acc.balance < 0) return Math.abs(acc.balance) / 100;
   return 0;
 }
 
 export function isMonoDebt(acc: MonoAccount): boolean {
-  return acc.creditLimit > 0 && acc.creditLimit - acc.balance > 0;
+  const creditLimit = acc.creditLimit ?? 0;
+  return creditLimit > 0 && creditLimit - acc.balance > 0;
 }
 
 export function daysUntil(day: number): number {
@@ -35,7 +36,9 @@ export function getMonoTotals(
   accounts: MonoAccount[],
   hiddenAccountIds: string[] = [],
 ): { balance: number; debt: number } {
-  const visible = accounts.filter((a) => !hiddenAccountIds.includes(a.id));
+  const visible = accounts.filter(
+    (a) => !(a.id !== undefined && hiddenAccountIds.includes(a.id)),
+  );
   const balance = visible
     .filter(
       (a) =>

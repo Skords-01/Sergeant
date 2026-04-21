@@ -12,6 +12,7 @@ import {
   getIncomeCategory,
   resolveExpenseCategoryMeta,
 } from "../utils";
+import type { SpendingTxLike } from "../lib/transactions.js";
 
 export {
   calcCategorySpent,
@@ -96,16 +97,25 @@ interface CategorySpend extends Category {
   spent: number;
 }
 
+export interface GetCategorySpendListOptions {
+  txCategories?: Record<string, string | undefined>;
+  txSplits?: Record<
+    string,
+    readonly { categoryId: string; amount?: number }[] | undefined
+  >;
+  customCategories?: CustomCategory[];
+}
+
 // Сумарні витрати по кожній категорії для заданого списку транзакцій.
 // Повертає відсортований масив лише з категоріями, де spent > 0 —
 // готовий для рендеру карток/графіків.
 export function getCategorySpendList(
-  transactions: unknown[],
+  transactions: readonly SpendingTxLike[],
   {
-    txCategories = {} as Record<string, string>,
-    txSplits = {} as Record<string, unknown[]>,
-    customCategories = [] as CustomCategory[],
-  } = {},
+    txCategories = {},
+    txSplits = {},
+    customCategories = [],
+  }: GetCategorySpendListOptions = {},
 ): CategorySpend[] {
   return buildExpenseCategoryList(customCategories)
     .map((cat) => ({

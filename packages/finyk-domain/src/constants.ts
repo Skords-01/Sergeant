@@ -174,14 +174,33 @@ export const MCC_CATEGORIES = [
   },
 ];
 
+/**
+ * Мінімальна форма кастомної категорії, потрібна `mergeExpenseCategoryDefinitions`.
+ * Keep loose — runtime payload може мати додаткові поля (emoji, color).
+ */
+export interface CustomCategoryInput {
+  id: string;
+  label?: string;
+}
+
+function isCustomCategoryInput(v: unknown): v is CustomCategoryInput {
+  return (
+    typeof v === "object" &&
+    v !== null &&
+    typeof (v as { id?: unknown }).id === "string"
+  );
+}
+
 /** Базові категорії витрат + користувацькі (селекти, графіки). */
-export function mergeExpenseCategoryDefinitions(customCategories = []) {
+export function mergeExpenseCategoryDefinitions(
+  customCategories: readonly unknown[] = [],
+) {
   const base = MCC_CATEGORIES.filter((c) => c.id !== INTERNAL_TRANSFER_ID);
-  const extra = (customCategories || []).map((c) => ({
+  const extra = customCategories.filter(isCustomCategoryInput).map((c) => ({
     id: c.id,
-    label: c.label,
-    mccs: [],
-    keywords: [],
+    label: c.label ?? "",
+    mccs: [] as number[],
+    keywords: [] as string[],
   }));
   return [...base, ...extra];
 }

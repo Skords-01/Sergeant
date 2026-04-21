@@ -1,30 +1,38 @@
 /**
  * Smoke test for the Finyk mobile module shell.
  *
- * Confirms the Overview shell renders its core surfaces — hero copy
- * and the four drill-down nav cards — so subsequent Phase 4 PRs have
- * a regression fence before they start swapping in real content.
+ * After Phase 4 / "Overview page" PR, `FinykApp` is a thin wrapper that
+ * renders the full Overview screen. We assert on a few stable Overview
+ * surfaces (hero + planning copy, nav buttons) so this test is a
+ * regression fence for the composition itself, not for individual card
+ * internals (those have their own tests).
  */
 import { render, screen } from "@testing-library/react-native";
 
 import { FinykApp } from "./FinykApp";
 
 jest.mock("expo-router", () => ({
-  useRouter: () => ({ push: jest.fn() }),
+  __esModule: true,
+  useRouter: () => ({ push: jest.fn(), replace: jest.fn() }),
 }));
 
 describe("FinykApp shell", () => {
-  it("renders module title and hero copy", () => {
+  it("renders the Overview hero card", () => {
     render(<FinykApp />);
-    expect(screen.getByText("ФІНІК")).toBeTruthy();
-    expect(screen.getByText("Особисті фінанси та бюджети")).toBeTruthy();
+    expect(screen.getByTestId("finyk-overview-hero")).toBeTruthy();
+    expect(screen.getByText("Загальний нетворс")).toBeTruthy();
   });
 
-  it("renders all four drill-down nav cards", () => {
+  it("renders the in-module navigation buttons", () => {
     render(<FinykApp />);
-    expect(screen.getByText("Операції")).toBeTruthy();
-    expect(screen.getByText("Планування")).toBeTruthy();
-    expect(screen.getByText("Аналітика")).toBeTruthy();
-    expect(screen.getByText("Активи")).toBeTruthy();
+    expect(screen.getByText("Операції →")).toBeTruthy();
+    expect(screen.getByText("Бюджети →")).toBeTruthy();
+  });
+
+  it("renders the networth empty-state on first-run data", () => {
+    render(<FinykApp />);
+    // Networth history starts empty in the `useFinykOverviewData` stub
+    // — we expect the "too few snapshots" placeholder, not the chart.
+    expect(screen.getByTestId("finyk-overview-networth-empty")).toBeTruthy();
   });
 });

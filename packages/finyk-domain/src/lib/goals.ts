@@ -2,7 +2,16 @@
  * Розраховує скільки потрібно відкладати щомісяця для досягнення цілі.
  * @returns {{ monthlyNeeded: number|null, monthsLeft: number, isAchieved: boolean, isOverdue: boolean }}
  */
-export function calcMonthlyNeeded(targetAmount, savedAmount, targetDate) {
+export function calcMonthlyNeeded(
+  targetAmount: number | string | null | undefined,
+  savedAmount: number | string | null | undefined,
+  targetDate: string | Date | null | undefined,
+): {
+  monthlyNeeded: number | null;
+  monthsLeft: number | null;
+  isAchieved: boolean;
+  isOverdue: boolean;
+} {
   const tgt = Number(targetAmount) || 0;
   const saved = Number(savedAmount) || 0;
 

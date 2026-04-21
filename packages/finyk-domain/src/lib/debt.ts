@@ -5,6 +5,9 @@ import {
   calcReceivableRemaining,
   getDebtEffectiveTotal,
   getReceivableEffectiveTotal,
+  type Debt,
+  type Receivable,
+  type Tx as DebtTx,
 } from "../domain/debtEngine";
 
 export {
@@ -16,12 +19,15 @@ export {
 
 // Скільки сплачено по боргу (я винен):
 // тільки від'ємні транзакції (витрати) = погашення боргу
-export function getDebtPaid(debt, transactions) {
+export function getDebtPaid(debt: Debt, transactions: DebtTx[] = []): number {
   return debtEngineGetDebtPaid(debt, transactions);
 }
 
 // Скільки повернено по дебіторці (мені винні):
 // тільки позитивні транзакції (надходження) = погашення боргу
-export function getRecvPaid(recv, transactions) {
+export function getRecvPaid(
+  recv: Receivable,
+  transactions: DebtTx[] = [],
+): number {
   return getReceivablePaid(recv, transactions);
 }

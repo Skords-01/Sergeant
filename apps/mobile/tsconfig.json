@@ -17,7 +17,11 @@
       "@sergeant/api-client": ["../../packages/api-client/src/index.ts"],
       "@sergeant/api-client/*": ["../../packages/api-client/src/*"],
       "@sergeant/fizruk-domain": ["../../packages/fizruk-domain/src/index.ts"],
-      "@sergeant/fizruk-domain/*": ["../../packages/fizruk-domain/src/*"]
+      "@sergeant/fizruk-domain/*": ["../../packages/fizruk-domain/src/*"],
+      "@sergeant/finyk-domain": ["../../packages/finyk-domain/src/index.ts"],
+      "@sergeant/finyk-domain/*": ["../../packages/finyk-domain/src/*"],
+      "@sergeant/design-tokens": ["../../packages/design-tokens/tokens.js"],
+      "@sergeant/design-tokens/*": ["../../packages/design-tokens/*"]
     }
   },
   "include": [

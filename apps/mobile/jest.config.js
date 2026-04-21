@@ -25,6 +25,6 @@ module.exports = {
     // contain Flow / TSX / ESM syntax that Jest needs to transpile. The
     // extra `.pnpm/(?:.*\\+)?` segment accommodates pnpm's nested
     // `node_modules/.pnpm/<scope>+<pkg>@<ver>/node_modules/…` layout.
-    "node_modules/(?!(\\.pnpm/(?:.*\\+)?)?((jest-)?react-native(-.*)?|@react-native(-community)?(/.*)?|expo(nent)?|@expo(nent)?(/.*)?|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@sentry/react-native|native-base|react-native-svg|nativewind|react-native-css-interop))",
+    "node_modules/(?!(\\.pnpm/(?:.*\\+)?)?((jest-)?react-native(-.*)?|@react-native(-community)?(/.*)?|expo(nent)?|@expo(nent)?(/.*)?|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@sentry/react-native|native-base|react-native-svg|nativewind|react-native-css-interop|victory(-.*)?))",
   ],
 };
