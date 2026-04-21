@@ -7,21 +7,36 @@
 
 ## Швидкий старт (Android)
 
-```bash
-# 1. Перший раз — згенерувати нативний Android-проєкт
-pnpm --filter @sergeant/mobile-shell add:android
+### Варіант А — скачати готовий APK з CI (без Android SDK локально)
 
-# 2. Зібрати веб-бандл (йде в apps/server/dist — див. vite.config.js)
+> **TODO (окремо)**: GitHub Actions workflow для автоматичної збірки APK
+> готовий, але його треба додати вручну — Devin OAuth app не має
+> `workflow` scope, тож файл `.github/workflows/mobile-shell-android.yml`
+> має закомітити мейнтейнер. Текст воркфлоу прикріплений у PR-описі.
+> Після додавання кожен push у PR, що чіпає `apps/mobile-shell/**` або
+> `apps/web/**`, буде білдити debug-APK і виливати як GitHub Actions
+> artifact.
+
+### Варіант Б — локальна збірка
+
+Потрібен Android SDK (через Android Studio або `sdkmanager`).
+
+```bash
+# 1. Зібрати веб-бандл (йде в apps/server/dist — див. vite.config.js)
 pnpm build:web
 
-# 3. Скопіювати бандл у нативний проєкт
+# 2. Скопіювати бандл у нативний проєкт
 pnpm --filter @sergeant/mobile-shell copy
 
-# 4. Відкрити Android Studio для збірки APK/AAB
+# 3. Відкрити Android Studio для збірки APK/AAB
 pnpm --filter @sergeant/mobile-shell open:android
 ```
 
-`pnpm --filter @sergeant/mobile-shell build:android` робить кроки 2+3 разом.
+`pnpm --filter @sergeant/mobile-shell build:android` робить кроки 1+2 разом.
+
+`android/` вже закомічено (згенеровано `cap add android`). Якщо знадобиться
+перегенерувати з нуля — спочатку видалити директорію, потім
+`pnpm --filter @sergeant/mobile-shell add:android`.
 
 ## iOS
 
