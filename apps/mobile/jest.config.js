@@ -8,7 +8,10 @@
  */
 module.exports = {
   preset: "jest-expo",
-  testMatch: ["<rootDir>/src/**/*.test.{ts,tsx}"],
+  testMatch: [
+    "<rootDir>/src/**/*.test.{ts,tsx}",
+    "<rootDir>/plugins/**/*.test.{ts,tsx}",
+  ],
   setupFiles: ["<rootDir>/jest.setup.js"],
   // `@sergeant/*-domain` packages use NodeNext `.js`-extension imports
   // inside their TS source (required so they compile cleanly under the
