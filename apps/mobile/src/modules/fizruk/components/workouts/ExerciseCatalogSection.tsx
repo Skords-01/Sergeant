@@ -22,6 +22,8 @@ export interface ExerciseCatalogSectionProps {
   exercises: readonly WorkoutExerciseCatalogEntry[];
   primaryGroupsUk?: Record<string, string>;
   onPickExercise?(ex: WorkoutExerciseCatalogEntry): void;
+  /** Long-press handler — typically navigates to the exercise detail page. */
+  onInspectExercise?(ex: WorkoutExerciseCatalogEntry): void;
   /**
    * Controlled filter (optional). When omitted the section owns its
    * own search + primary-group state.
@@ -119,10 +121,12 @@ function Chip({
 function ExerciseRow({
   exercise,
   onPress,
+  onLongPress,
   testID,
 }: {
   exercise: WorkoutExerciseCatalogEntry;
   onPress?: () => void;
+  onLongPress?: () => void;
   testID: string;
 }) {
   const title = exerciseDisplayName(exercise);
@@ -132,7 +136,11 @@ function ExerciseRow({
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={`Додати ${title}`}
+      accessibilityHint={
+        onLongPress ? "Утримайте, щоб відкрити деталі вправи" : undefined
+      }
       onPress={onPress}
+      onLongPress={onLongPress}
       testID={testID}
       className="px-3 py-3 rounded-xl border border-cream-300 bg-cream-50 flex-row items-center justify-between"
     >
@@ -160,6 +168,7 @@ export const ExerciseCatalogSection = memo(function ExerciseCatalogSection({
   exercises,
   primaryGroupsUk = {},
   onPickExercise,
+  onInspectExercise,
   query: controlledQuery,
   onQueryChange,
   primaryGroup: controlledPrimaryGroup,
@@ -258,6 +267,11 @@ export const ExerciseCatalogSection = memo(function ExerciseCatalogSection({
                     onPress={
                       onPickExercise
                         ? () => onPickExercise(exercise)
+                        : undefined
+                    }
+                    onLongPress={
+                      onInspectExercise
+                        ? () => onInspectExercise(exercise)
                         : undefined
                     }
                     testID={`${testID}-row-${exercise.id}`}

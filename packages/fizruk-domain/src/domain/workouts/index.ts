@@ -13,3 +13,4 @@ export * from "./types.js";
 export * from "./journal.js";
 export * from "./catalog.js";
 export * from "./activeSet.js";
+export * from "./exerciseDetail.js";

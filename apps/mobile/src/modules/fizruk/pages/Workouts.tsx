@@ -38,6 +38,8 @@ import { useCallback, useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { router } from "expo-router";
+
 import { hapticSuccess, hapticTap, hapticWarning } from "@sergeant/shared";
 
 import { Button } from "@/components/ui/Button";
@@ -195,6 +197,17 @@ export function Workouts({ testID = "fizruk-workouts" }: WorkoutsProps) {
     [activeWorkoutId, addItem, createWorkout, setActiveWorkoutId],
   );
 
+  const handleInspectExercise = useCallback(
+    (ex: WorkoutExerciseCatalogEntry) => {
+      hapticTap();
+      router.push({
+        pathname: "/fizruk/exercise",
+        params: { id: ex.id },
+      });
+    },
+    [],
+  );
+
   const openNewSetEditor = useCallback(
     (item: FizrukWorkoutItem) => {
       if (!activeWorkoutId) return;
@@ -331,6 +344,7 @@ export function Workouts({ testID = "fizruk-workouts" }: WorkoutsProps) {
 
         {mode === "catalog" ? (
           <ExerciseCatalogSection
+            onInspectExercise={handleInspectExercise}
             exercises={catalog}
             primaryGroupsUk={PRIMARY_GROUPS_UK}
             onPickExercise={handlePickExercise}
