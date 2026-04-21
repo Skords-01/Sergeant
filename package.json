@@ -7,13 +7,12 @@
     "node": "20.x",
     "pnpm": ">=9"
   },
-  "packageManager": "pnpm@9.15.1",
   "scripts": {
     "dev": "turbo run dev --parallel",
     "dev:web": "pnpm --filter @sergeant/web dev",
     "dev:server": "pnpm --filter @sergeant/server dev",
     "start": "pnpm --filter @sergeant/server start",
-    "start:replit": "pnpm build:web && pnpm --filter @sergeant/server start:replit",
+    "start:replit": "pnpm install && pnpm build:web && pnpm db:migrate && pnpm --filter @sergeant/server start:replit",
     "build": "turbo run build",
     "build:web": "pnpm --filter @sergeant/web build",
     "build:analyze": "pnpm --filter @sergeant/web build:analyze",
