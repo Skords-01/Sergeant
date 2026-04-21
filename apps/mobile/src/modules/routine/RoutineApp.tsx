@@ -52,6 +52,8 @@ import {
   RoutineBottomNav,
   type RoutineMainTab,
 } from "./components/RoutineBottomNav";
+import { useRoutineReminders } from "./hooks/useRoutineReminders";
+import { useRoutineStore } from "./lib/routineStore";
 import { Calendar } from "./pages/Calendar";
 import { HabitsPage } from "./pages/Habits/HabitsPage";
 import { HeatmapPage } from "./pages/Heatmap/HeatmapPage";
@@ -78,6 +80,15 @@ function readPersistedTab(): RoutineMainTab {
 
 function RoutineShell() {
   const [mainTab, setMainTab] = useState<RoutineMainTab>(readPersistedTab);
+
+  // Subscribe to the routine store so the reminder scheduler sees
+  // live habit edits without us re-reading MMKV on every change.
+  // The hook itself only fires schedule/cancel work when permission
+  // is `granted` — on first mount it only calls
+  // `Notifications.getPermissionsAsync()`, never the permission
+  // prompt (see `useRoutineReminders.ts`).
+  const { routine } = useRoutineStore();
+  useRoutineReminders(routine);
 
   const handleSelectTab = useCallback((next: RoutineMainTab) => {
     setMainTab(next);

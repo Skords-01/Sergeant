@@ -30,3 +30,4 @@ export * from "./calendarEvents.js";
 export * from "./calendarGrid.js";
 export * from "./reminders.js";
 export * from "./domain/heatmap/index.js";
+export * from "./domain/reminders/index.js";
