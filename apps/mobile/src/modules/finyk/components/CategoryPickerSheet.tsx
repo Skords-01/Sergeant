@@ -52,14 +52,28 @@ export function CategoryPickerSheet({
     if (direction === "income") {
       return INCOME_CATEGORIES.map((c) => ({ id: c.id, label: c.label }));
     }
-    const merged = mergeExpenseCategoryDefinitions(
-      (customCategories ?? []) as { id: string; label?: string }[],
-    ) as { id: string; label: string }[];
-    // `mergeExpenseCategoryDefinitions` may not be available in some
-    // versions of finyk-domain — fall back to MCC_CATEGORIES alone.
-    const list = merged?.length
-      ? merged
-      : MCC_CATEGORIES.map((c) => ({ id: c.id, label: c.label }));
+    // `mergeExpenseCategoryDefinitions` is the canonical merger, but some
+    // older finyk-domain versions don't ship it — guard at runtime and fall
+    // back to MCC_CATEGORIES + the user's custom list rather than crashing.
+    const baseFallback: { id: string; label: string }[] = [
+      ...MCC_CATEGORIES.map((c) => ({ id: c.id, label: c.label })),
+      ...(customCategories ?? []).map((c) => ({
+        id: c.id,
+        label: c.label ?? c.id,
+      })),
+    ];
+    if (typeof mergeExpenseCategoryDefinitions !== "function") {
+      return baseFallback;
+    }
+    let merged: { id: string; label: string }[] | null = null;
+    try {
+      merged = mergeExpenseCategoryDefinitions(
+        (customCategories ?? []) as { id: string; label?: string }[],
+      ) as { id: string; label: string }[];
+    } catch {
+      merged = null;
+    }
+    const list = merged && merged.length > 0 ? merged : baseFallback;
     return list.map((c) => ({ id: c.id, label: c.label }));
   }, [direction, customCategories]);
 

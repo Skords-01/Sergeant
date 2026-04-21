@@ -424,6 +424,38 @@ describe("TransactionsPage — swipe actions", () => {
     });
   });
 
+  it("hydrates bank transactions from the FINYK_TX_CACHE MMKV snapshot when no seed is provided", () => {
+    const realTx = makeRealTx({
+      id: "tx-cached-bank",
+      time: Math.floor(new Date("2026-04-12T10:00:00.000Z").getTime() / 1000),
+      amount: -54321,
+      description: "Сільпо",
+      mcc: 5411,
+    });
+    safeWriteLS(STORAGE_KEYS.FINYK_TX_CACHE, {
+      txs: [realTx],
+      timestamp: Date.now(),
+    });
+    render(<TransactionsPage now={FIXED_NOW} />);
+    expect(screen.getByText("Сільпо")).toBeTruthy();
+  });
+
+  it("falls back to FINYK_TX_CACHE_LAST_GOOD when the primary cache is empty", () => {
+    const realTx = makeRealTx({
+      id: "tx-last-good",
+      time: Math.floor(new Date("2026-04-08T10:00:00.000Z").getTime() / 1000),
+      amount: -10000,
+      description: "Аврора",
+      mcc: 5411,
+    });
+    safeWriteLS(STORAGE_KEYS.FINYK_TX_CACHE_LAST_GOOD, {
+      txs: [realTx],
+      timestamp: Date.now(),
+    });
+    render(<TransactionsPage now={FIXED_NOW} />);
+    expect(screen.getByText("Аврора")).toBeTruthy();
+  });
+
   it("removes a manual expense when the user taps Delete in the edit sheet", async () => {
     render(
       <TransactionsPage

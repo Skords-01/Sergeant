@@ -11,10 +11,12 @@
  * `enqueueChange(KEY)` so the cloud-sync scheduler picks the change
  * up — same pattern as `assetsStore.ts`.
  *
- * Real Monobank-sourced transactions (`realTx`) are not persisted here;
- * they come from the network layer (still seed-only on mobile until the
- * Monobank client port lands). The store accepts a `seed` so storybooks
- * and jest tests can render the page deterministically.
+ * Real Monobank-sourced transactions (`realTx`) are written to MMKV by
+ * the network layer (web `useMonobank` snapshot, mirrored across devices
+ * by cloud sync) under `FINYK_TX_CACHE` (current snapshot) and
+ * `FINYK_TX_CACHE_LAST_GOOD` (last non-empty fallback). We hydrate
+ * `realTx` from those keys on mount and on `refresh()`. Tests / storybook
+ * can still pass a `seed.realTx` to bypass MMKV entirely.
  */
 import { useCallback, useEffect, useState } from "react";
 
@@ -38,6 +40,38 @@ const KEY_TX_CATS = FINYK_BACKUP_STORAGE_KEYS.txCategories;
 const KEY_TX_SPLITS = FINYK_BACKUP_STORAGE_KEYS.txSplits;
 const KEY_HIDDEN_TXS = FINYK_BACKUP_STORAGE_KEYS.hiddenTxIds;
 const KEY_FILTERS = STORAGE_KEYS.FINYK_TX_FILTERS;
+const KEY_TX_CACHE = STORAGE_KEYS.FINYK_TX_CACHE;
+const KEY_TX_CACHE_LAST_GOOD = STORAGE_KEYS.FINYK_TX_CACHE_LAST_GOOD;
+
+/**
+ * Snapshot shape mirrored from the web `useMonobank` hook
+ * (`apps/web/src/modules/finyk/hooks/useMonobank.ts`). Cloud-sync mirrors
+ * these blobs across devices so the mobile screen can render the latest
+ * imported bank statement without a live network round-trip.
+ */
+interface TxCacheSnapshot {
+  txs: Transaction[];
+  timestamp: number;
+}
+
+/**
+ * Read the cached bank-statement snapshot, falling back to the
+ * `last_good` blob when the primary cache is empty (matches web parity).
+ */
+function readBankTxCache(): Transaction[] {
+  const primary = safeReadLS<TxCacheSnapshot | null>(KEY_TX_CACHE, null);
+  if (primary && Array.isArray(primary.txs) && primary.txs.length > 0) {
+    return primary.txs;
+  }
+  const fallback = safeReadLS<TxCacheSnapshot | null>(
+    KEY_TX_CACHE_LAST_GOOD,
+    null,
+  );
+  if (fallback && Array.isArray(fallback.txs) && fallback.txs.length > 0) {
+    return fallback.txs;
+  }
+  return [];
+}
 
 /**
  * Persisted shape of a manual expense entry — matches the web file
@@ -195,6 +229,9 @@ export function useFinykTransactionsStore(
   const [hiddenTxIds, setHiddenState] = useState<string[]>(
     () => seed?.hiddenTxIds ?? read<string[]>(KEY_HIDDEN_TXS, []),
   );
+  const [realTx, setRealTxState] = useState<Transaction[]>(
+    () => seed?.realTx ?? readBankTxCache(),
+  );
 
   // Flush seed values through MMKV on first mount so re-renders read
   // through the same code path as production.
@@ -204,6 +241,13 @@ export function useFinykTransactionsStore(
     if (seed.txCategories) safeWriteLS(KEY_TX_CATS, seed.txCategories);
     if (seed.txSplits) safeWriteLS(KEY_TX_SPLITS, seed.txSplits);
     if (seed.hiddenTxIds) safeWriteLS(KEY_HIDDEN_TXS, seed.hiddenTxIds);
+    if (seed.realTx) {
+      const snapshot: TxCacheSnapshot = {
+        txs: seed.realTx,
+        timestamp: Date.now(),
+      };
+      safeWriteLS(KEY_TX_CACHE, snapshot);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -226,6 +270,10 @@ export function useFinykTransactionsStore(
           break;
         case KEY_HIDDEN_TXS:
           setHiddenState(read<string[]>(KEY_HIDDEN_TXS, []));
+          break;
+        case KEY_TX_CACHE:
+        case KEY_TX_CACHE_LAST_GOOD:
+          setRealTxState(readBankTxCache());
           break;
         default:
           break;
@@ -341,6 +389,7 @@ export function useFinykTransactionsStore(
     setTxCatsState(read<Record<string, string>>(KEY_TX_CATS, {}));
     setTxSplitsState(read<Record<string, TxSplitEntry[]>>(KEY_TX_SPLITS, {}));
     setHiddenState(read<string[]>(KEY_HIDDEN_TXS, []));
+    setRealTxState(readBankTxCache());
   }, []);
 
   return {
@@ -348,7 +397,7 @@ export function useFinykTransactionsStore(
     txCategories,
     txSplits,
     hiddenTxIds,
-    realTx: seed?.realTx ?? [],
+    realTx,
     accounts: seed?.accounts ?? [],
     customCategories: seed?.customCategories ?? [],
 
