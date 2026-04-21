@@ -26,6 +26,7 @@ import type {
   MonoAccount,
   Transaction,
 } from "@sergeant/finyk-domain/domain";
+import { STORAGE_KEYS } from "@sergeant/shared";
 
 import { _getMMKVInstance, safeReadLS, safeWriteLS } from "@/lib/storage";
 import { enqueueChange } from "@/sync/enqueue";
@@ -36,6 +37,7 @@ const KEY_MANUAL = FINYK_STORAGE_KEYS.transactions;
 const KEY_TX_CATS = FINYK_BACKUP_STORAGE_KEYS.txCategories;
 const KEY_TX_SPLITS = FINYK_BACKUP_STORAGE_KEYS.txSplits;
 const KEY_HIDDEN_TXS = FINYK_BACKUP_STORAGE_KEYS.hiddenTxIds;
+const KEY_FILTERS = STORAGE_KEYS.FINYK_TX_FILTERS;
 
 /**
  * Persisted shape of a manual expense entry — matches the web file
@@ -89,6 +91,80 @@ export interface UseFinykTransactionsStoreReturn {
   unhideTx: (id: string) => void;
   overrideCategory: (txId: string, categoryId: string | null) => void;
   setSplitTx: (txId: string, splits: TxSplitEntry[]) => void;
+  /** Re-read every persisted slice from MMKV. Used by pull-to-refresh. */
+  refresh: () => void;
+}
+
+/**
+ * Persisted filter state — survives navigation away from the screen,
+ * re-mounting, and app cold-starts. Wired to its own MMKV key so it
+ * round-trips through CloudSync when the user opts in.
+ */
+export interface FinykTxFilterState {
+  /** Quick filter id (`all` / `expense` / `income` / `credit` / category id). */
+  filter: string;
+  /** Optional account id whitelist. Empty = no account filter. */
+  accountIds: string[];
+  /** Optional millis-since-epoch range. `null` = month nav defines the window. */
+  range: { startMs: number | null; endMs: number | null };
+}
+
+const DEFAULT_FILTERS: FinykTxFilterState = {
+  filter: "all",
+  accountIds: [],
+  range: { startMs: null, endMs: null },
+};
+
+export function useFinykTxFilters(seed?: Partial<FinykTxFilterState>): {
+  filters: FinykTxFilterState;
+  setFilter: (filter: string) => void;
+  setAccountIds: (ids: string[]) => void;
+  setRange: (range: FinykTxFilterState["range"]) => void;
+  clearAll: () => void;
+} {
+  const [filters, setFiltersState] = useState<FinykTxFilterState>(() => {
+    const stored = read<FinykTxFilterState>(KEY_FILTERS, DEFAULT_FILTERS);
+    return { ...DEFAULT_FILTERS, ...stored, ...(seed ?? {}) };
+  });
+
+  const persist = useCallback((next: FinykTxFilterState) => {
+    setFiltersState(next);
+    safeWriteLS(KEY_FILTERS, next);
+    enqueueChange(KEY_FILTERS);
+  }, []);
+
+  const setFilter = useCallback(
+    (filter: string) => {
+      persist({ ...read<FinykTxFilterState>(KEY_FILTERS, DEFAULT_FILTERS), filter });
+    },
+    [persist],
+  );
+
+  const setAccountIds = useCallback(
+    (accountIds: string[]) => {
+      persist({
+        ...read<FinykTxFilterState>(KEY_FILTERS, DEFAULT_FILTERS),
+        accountIds,
+      });
+    },
+    [persist],
+  );
+
+  const setRange = useCallback(
+    (range: FinykTxFilterState["range"]) => {
+      persist({
+        ...read<FinykTxFilterState>(KEY_FILTERS, DEFAULT_FILTERS),
+        range,
+      });
+    },
+    [persist],
+  );
+
+  const clearAll = useCallback(() => {
+    persist(DEFAULT_FILTERS);
+  }, [persist]);
+
+  return { filters, setFilter, setAccountIds, setRange, clearAll };
 }
 
 function genId(): string {
@@ -260,6 +336,13 @@ export function useFinykTransactionsStore(
     [],
   );
 
+  const refresh = useCallback(() => {
+    setManualState(read<ManualExpenseRecord[]>(KEY_MANUAL, []));
+    setTxCatsState(read<Record<string, string>>(KEY_TX_CATS, {}));
+    setTxSplitsState(read<Record<string, TxSplitEntry[]>>(KEY_TX_SPLITS, {}));
+    setHiddenState(read<string[]>(KEY_HIDDEN_TXS, []));
+  }, []);
+
   return {
     manualExpenses,
     txCategories,
@@ -276,5 +359,6 @@ export function useFinykTransactionsStore(
     unhideTx,
     overrideCategory,
     setSplitTx,
+    refresh,
   };
 }
