@@ -99,24 +99,28 @@ function Harness({ state, onApi }: HarnessProps) {
  * the 250ms debounce and drains the reschedule's async work.
  */
 async function flushScheduler(): Promise<void> {
-  // Multiple passes: microtasks need to settle before the debounce
-  // timer is queued, and again after it fires (each `reschedule` awaits
-  // an async chain of cancel→schedule calls).
+  // Several passes of `advanceTimersByTimeAsync` + microtask drain.
+  // The hook's state machine has two "settling" stages per externally
+  // observable change:
+  //   (a) `getPermissionsAsync` / `requestPermissionsAsync` resolves
+  //       → `setPermissionState` → React re-render;
+  //   (b) the debounce effect sees the new deps and queues a fresh
+  //       `setTimeout(250)`;
+  // so each observable change costs one timer advance plus a batch of
+  // microtask drains. Three passes are plenty for our test cases.
   for (let round = 0; round < 3; round++) {
     await act(async () => {
-      for (let i = 0; i < 8; i++) {
-        await Promise.resolve();
-      }
-      jest.advanceTimersByTime(260);
-      for (let i = 0; i < 8; i++) {
-        await Promise.resolve();
-      }
+      await jest.advanceTimersByTimeAsync(300);
     });
   }
 }
 
+// CI runners are noticeably slower than local machines — give every
+// test a generous budget for mounting react-native + expo mocks.
+jest.setTimeout(20_000);
+
 beforeEach(() => {
-  jest.useFakeTimers();
+  jest.useFakeTimers({ doNotFake: ["nextTick"] });
   _getMMKVInstance().clearAll();
   mockedGetPerms.mockReset();
   mockedRequestPerms.mockReset();
