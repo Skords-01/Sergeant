@@ -1,17 +1,5 @@
-import { FinykPageStub } from "@/modules/finyk/pages/PageStub";
+import { AssetsPage } from "@/modules/finyk/pages/Assets/AssetsPage";
 
 export default function FinykAssetsScreen() {
-  return (
-    <FinykPageStub
-      title="Активи"
-      description="Рахунки, підписки, борги та крива NetWorth."
-      plannedFeatures={[
-        "Картки банківських рахунків",
-        "NetworthChart (Victory Native XL)",
-        "Керування підписками (DEFAULT_SUBSCRIPTIONS)",
-        "Борги та погашення",
-        "Moto експорт JSON (expo-file-system + expo-sharing)",
-      ]}
-    />
-  );
+  return <AssetsPage testID="finyk-assets" />;
 }
