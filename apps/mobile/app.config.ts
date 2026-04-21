@@ -56,6 +56,13 @@ const config = (): ExpoConfig => ({
         imageWidth: 200,
       },
     ],
+    // Sentry native plugin — required by `@sentry/react-native` for
+    // the iOS/Android native build to link the RNSentry module. Source
+    // maps are only uploaded at EAS build time when `SENTRY_AUTH_TOKEN`
+    // + `SENTRY_ORG` + `SENTRY_PROJECT` are set; otherwise the plugin
+    // no-ops and JS Sentry still initialises via `EXPO_PUBLIC_SENTRY_DSN`
+    // (see `src/lib/observability.ts`).
+    "@sentry/react-native/expo",
   ],
   experiments: {
     typedRoutes: true,

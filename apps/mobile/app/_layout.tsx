@@ -1,5 +1,6 @@
 import "../global.css";
 
+import { useEffect } from "react";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -19,10 +20,15 @@ import "@/lib/fileDownload";
 // visual-keyboard-inset contract (`@sergeant/shared`). Import for side
 // effects only.
 import "@/hooks/useVisualKeyboardInset";
+import { initObservability } from "@/lib/observability";
 import { QueryProvider } from "@/providers/QueryProvider";
 import { CloudSyncProvider } from "@/sync";
 
 export default function RootLayout() {
+  useEffect(() => {
+    initObservability();
+  }, []);
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>

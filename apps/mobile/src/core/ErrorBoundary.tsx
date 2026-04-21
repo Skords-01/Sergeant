@@ -40,6 +40,7 @@ import { router } from "expo-router";
 
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { captureError } from "@/lib/observability";
 
 interface FallbackProps {
   error: Error;
@@ -104,10 +105,14 @@ export class ErrorBoundary extends Component<
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
-    // TODO(phase-10): forward via `@sentry/react-native` once mobile
-    // observability is wired up (see `apps/web/src/core/sentry.ts` and
-    // `docs/react-native-migration.md` §2.4). For now we just log —
-    // the boundary itself must never throw because of telemetry.
+    // Forward to Sentry when a DSN is configured; `captureError`
+    // falls back to `console.error` in no-op mode so the diagnostic
+    // is never silently dropped. The boundary itself must never
+    // throw because of telemetry — `captureError` is wrapped in
+    // try/catch internally, and this outer guard is belt-and-braces
+    // for the `console.error` call itself (RN's console is backed
+    // by a LogBox bridge that has been known to throw on very large
+    // payloads).
     try {
       console.error("[ErrorBoundary] caught error", error, {
         componentStack: info?.componentStack,
@@ -115,6 +120,7 @@ export class ErrorBoundary extends Component<
     } catch {
       /* noop */
     }
+    captureError(error, { componentStack: info?.componentStack });
   }
 
   render() {
