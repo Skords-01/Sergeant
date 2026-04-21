@@ -1,0 +1,15 @@
+# Native build artefacts — генеруються локально / у CI, коммітимо тільки
+# каркас (`android/app/src/main`, `android/build.gradle` тощо).
+android/app/build/
+android/build/
+android/.gradle/
+android/local.properties
+android/capacitor-cordova-android-plugins/
+ios/App/build/
+ios/App/Pods/
+ios/App/App/public/
+ios/DerivedData/
+
+# Capacitor runtime output
+www/
+dist/
