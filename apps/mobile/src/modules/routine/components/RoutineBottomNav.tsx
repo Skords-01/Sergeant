@@ -43,16 +43,20 @@ const NAV: readonly NavItem[] = [
 export interface RoutineBottomNavProps {
   mainTab: RoutineMainTab;
   onSelectTab: (tab: RoutineMainTab) => void;
+  /** Optional root `testID` — children derive stable sub-ids. */
+  testID?: string;
 }
 
 export function RoutineBottomNav({
   mainTab,
   onSelectTab,
+  testID,
 }: RoutineBottomNavProps) {
   return (
     <View
       accessibilityRole="tablist"
       accessibilityLabel="Розділи Рутини"
+      testID={testID}
       className="flex-row items-stretch border-t border-cream-300 bg-cream-50"
     >
       {NAV.map((item) => {
@@ -63,6 +67,7 @@ export function RoutineBottomNav({
             accessibilityRole="tab"
             accessibilityState={{ selected }}
             accessibilityLabel={item.label}
+            testID={testID ? `${testID}-${item.id}` : undefined}
             onPress={() => {
               if (selected) return;
               hapticTap();

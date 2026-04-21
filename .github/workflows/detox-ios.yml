@@ -1,0 +1,98 @@
+name: Detox (iOS)
+
+# Mobile E2E lane for the iOS Detox suites in `apps/mobile/e2e/*`.
+# Kept separate from the main `CI` workflow in `.github/workflows/ci.yml`
+# because:
+#   - It runs on `macos-14` (≈3× the cost of `ubuntu-latest`).
+#   - The iOS simulator boot + `expo prebuild` + `xcodebuild` pipeline
+#     takes >10 min, so we only want it on `main` / mobile-scoped PRs.
+#   - A failing Detox run should not block an unrelated web-only PR.
+#
+# Android CI lives in `.github/workflows/detox-android.yml` — they share
+# the same suite set (`apps/mobile/e2e/*.e2e.ts`) and the same
+# `pnpm e2e:*` entry points.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/mobile/**"
+      - "packages/finyk-domain/**"
+      - "packages/routine-domain/**"
+      - "packages/api-client/**"
+      - "packages/shared/**"
+      - "pnpm-lock.yaml"
+      - ".github/workflows/detox-ios.yml"
+  pull_request:
+    paths:
+      - "apps/mobile/**"
+      - "packages/finyk-domain/**"
+      - "packages/routine-domain/**"
+      - "packages/api-client/**"
+      - "packages/shared/**"
+      - "pnpm-lock.yaml"
+      - ".github/workflows/detox-ios.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: detox-ios-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  detox-ios:
+    runs-on: macos-14
+    timeout-minutes: 60
+    env:
+      EXPO_PUBLIC_E2E: "1"
+      E2E_BUILD: "1"
+    steps:
+      # actions/checkout v4.3.1 (SHA-pinned for supply-chain hardening)
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+
+      # pnpm/action-setup v4.1.0 (SHA-pinned for supply-chain hardening)
+      - uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2
+
+      # actions/setup-node v4.4.0 (SHA-pinned for supply-chain hardening)
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "20"
+          cache: pnpm
+
+      - name: Install JS deps
+        run: pnpm install --frozen-lockfile
+
+      - name: Setup Detox CLI + simulator utils
+        run: |
+          brew tap wix/brew
+          brew install applesimutils
+
+      # Detox drives the binary produced by `expo prebuild` + `xcodebuild`.
+      # `--platform ios` so we don't waste macOS minutes on Android projects
+      # that the matching Android workflow will regenerate anyway.
+      - name: Prebuild iOS project
+        working-directory: apps/mobile
+        run: pnpm exec expo prebuild --platform ios --clean --non-interactive
+
+      - name: Pod install
+        working-directory: apps/mobile/ios
+        run: pod install --repo-update
+
+      - name: Build Detox iOS app
+        working-directory: apps/mobile
+        run: pnpm e2e:build:ios
+
+      - name: Run Detox iOS suite
+        working-directory: apps/mobile
+        run: pnpm e2e:test:ios -- --headless --record-logs all
+
+      - name: Upload Detox artefacts on failure
+        if: always()
+        # actions/upload-artifact v4.4.3 (SHA-pinned for supply-chain hardening)
+        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882
+        with:
+          name: detox-ios-artifacts
+          path: apps/mobile/.detox-artifacts
+          if-no-files-found: ignore
