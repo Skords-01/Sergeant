@@ -1,3 +1,19 @@
+// Register a TypeScript `require` hook so `./plugins/*.ts` files that
+// this config imports can be resolved at Expo config-load time. Expo
+// transpiles `app.config.ts` itself via Babel, but follow-on
+// `require()` calls fall through to Node's default resolver — without
+// this register step, `./plugins/withAndroidShortcuts` fails with
+// `Cannot find module` during `expo prebuild` / `expo config` (see
+// `.github/workflows/detox-{ios,android}.yml`).
+//
+// `sucrase/register/ts` is a lightweight TS-only loader (no .tsx /
+// JSX handling) with essentially zero startup cost. Listed as an
+// explicit `devDependency` in `apps/mobile/package.json` so we do
+// not rely on Expo's transitive dependency graph.
+//
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+require("sucrase/register/ts");
+
 import type { ExpoConfig } from "expo/config";
 import {
   withAndroidShortcuts,
