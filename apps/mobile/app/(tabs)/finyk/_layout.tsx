@@ -46,6 +46,7 @@ export default function FinykStackLayout() {
         <Stack.Screen name="budgets" options={{ title: "Планування" }} />
         <Stack.Screen name="analytics" options={{ title: "Аналітика" }} />
         <Stack.Screen name="assets" options={{ title: "Активи" }} />
+        <Stack.Screen name="tx/[id]" options={{ title: "Транзакція" }} />
       </Stack>
     </ModuleErrorBoundary>
   );
