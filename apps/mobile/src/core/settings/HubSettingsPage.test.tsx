@@ -1,11 +1,10 @@
 /**
  * Render smoke test for the Hub-core Settings shell.
  *
- * Keeps the scope tight: the shell renders the screen title, the four
- * first-cut section headers (General / Notifications / Routine /
- * Experimental), and each of the "буде портовано" placeholders for
- * sections that still need porting. Section-level behaviour is
- * covered by the per-section suites.
+ * Keeps the scope tight: the shell renders the screen title and all
+ * seven Hub-core section headers (General / Notifications / Routine /
+ * Finyk / Fizruk / AIDigest / Experimental). Section-level behaviour
+ * is covered by the per-section suites.
  */
 
 import { render } from "@testing-library/react-native";
@@ -38,25 +37,16 @@ beforeEach(() => {
 });
 
 describe("HubSettingsPage", () => {
-  it("renders the screen title and all first-cut section headers", () => {
+  it("renders the screen title and all seven section headers", () => {
     const { getByText } = render(<HubSettingsPage />);
 
     expect(getByText("Налаштування")).toBeTruthy();
     expect(getByText("Загальні")).toBeTruthy();
     expect(getByText("Сповіщення")).toBeTruthy();
     expect(getByText("Рутина")).toBeTruthy();
+    expect(getByText("Фінік")).toBeTruthy();
+    expect(getByText("Фізрук")).toBeTruthy();
+    expect(getByText("AI Звіт тижня")).toBeTruthy();
     expect(getByText("Експериментальне")).toBeTruthy();
-  });
-
-  it("renders placeholders for the not-yet-ported sections", () => {
-    const { getByText, getAllByText } = render(<HubSettingsPage />);
-
-    for (const title of ["AI-дайджести", "Фізрук", "Фінік"]) {
-      expect(getByText(title)).toBeTruthy();
-    }
-    // Three placeholders share the same "Скоро" chip + caption after
-    // GeneralSection and NotificationsSection took over their spots.
-    expect(getAllByText("Скоро")).toHaveLength(3);
-    expect(getAllByText("Буде портовано у наступному PR.")).toHaveLength(3);
   });
 });
