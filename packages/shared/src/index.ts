@@ -13,6 +13,22 @@ export * from "./lib/storageKeys";
 // Hub dashboard module ordering (pure helpers; storage I/O is per-platform).
 export * from "./lib/dashboard";
 
+// Platform-agnostic key/value store contract consumed by shared helpers
+// below (web → localStorage adapter, mobile → MMKV adapter).
+export * from "./lib/kvStore";
+
+// Onboarding "vibe picks" state + FTUX time-to-value helpers.
+export * from "./lib/vibePicks";
+
+// First-real-entry detection shared between web and mobile.
+export * from "./lib/firstRealEntry";
+
+// Dashboard recommendation types + helpers.
+export * from "./lib/recommendations";
+
+// `useDashboardFocus` pure core — dismissal map, visible filter, focus+rest.
+export * from "./lib/dashboardFocus";
+
 // DOM-free haptic contract (platform adapters register at app bootstrap).
 export * from "./lib/haptic";
 
