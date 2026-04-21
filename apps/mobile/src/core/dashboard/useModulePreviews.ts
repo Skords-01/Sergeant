@@ -43,6 +43,33 @@ const QUICK_STATS_KEYS: ReadonlyArray<{
   key: `${moduleId}_quick_stats`,
 }));
 
+type QuickStatsSnapshot = Readonly<Record<string, string | null>>;
+
+// Module-scoped cache of the last snapshot returned to React.
+// `useSyncExternalStore` requires getSnapshot() to return the same
+// reference unless the underlying data actually changed — otherwise
+// it treats every call as a state change and re-renders forever.
+let cachedSnapshot: QuickStatsSnapshot | null = null;
+
+function readCurrentSnapshot(): QuickStatsSnapshot {
+  const next: Record<string, string | null> = {};
+  for (const { key } of QUICK_STATS_KEYS) {
+    next[key] = safeReadStringLS(key);
+  }
+  if (cachedSnapshot) {
+    let equal = true;
+    for (const { key } of QUICK_STATS_KEYS) {
+      if (cachedSnapshot[key] !== next[key]) {
+        equal = false;
+        break;
+      }
+    }
+    if (equal) return cachedSnapshot;
+  }
+  cachedSnapshot = next;
+  return cachedSnapshot;
+}
+
 /**
  * Build a live snapshot of MMKV reads across every quick-stats key.
  * `useSyncExternalStore` treats referentially-equal snapshots as
@@ -50,26 +77,21 @@ const QUICK_STATS_KEYS: ReadonlyArray<{
  * strings per key and only rebuild the map when at least one of
  * them actually differs.
  */
-function useQuickStatsSnapshot(): Record<string, string | null> {
+function useQuickStatsSnapshot(): QuickStatsSnapshot {
   return useSyncExternalStore(
     (onStoreChange) => {
       const mmkv = _getMMKVInstance();
       const sub = mmkv.addOnValueChangedListener((changedKey) => {
         if (QUICK_STATS_KEYS.some(({ key }) => key === changedKey)) {
+          cachedSnapshot = null;
           onStoreChange();
         }
       });
       return () => sub.remove();
     },
-    () => {
-      const snapshot: Record<string, string | null> = {};
-      for (const { key } of QUICK_STATS_KEYS) {
-        snapshot[key] = safeReadStringLS(key);
-      }
-      return snapshot;
-    },
+    readCurrentSnapshot,
     // SSR snapshot is meaningless on native; keep symmetry with web.
-    () => ({}),
+    readCurrentSnapshot,
   );
 }
 

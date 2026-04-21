@@ -1,228 +1,119 @@
-// Stores which Hub modules the user picked during onboarding ("vibes").
-// Everything here is synchronous localStorage access — the wizard runs
-// before React Query / cloud sync, so we keep it dependency-free.
-
-const VIBE_PICKS_KEY = "hub_onboarding_vibes_v1";
-const FIRST_ACTION_PENDING_KEY = "hub_first_action_pending_v1";
-const FIRST_REAL_ENTRY_KEY = "hub_first_real_entry_done_v1";
-const SOFT_AUTH_DISMISSED_KEY = "hub_soft_auth_dismissed_v1";
-// Rolling count of distinct calendar days the user has opened the hub.
-// Used by the proactive soft-auth nudge so users who never make a
-// "real entry" (e.g. they open the app, browse, close) still get
-// offered cloud sync after a few days instead of being silently locked
-// out of their data if they switch devices.
-const SESSION_DAYS_KEY = "hub_session_days_v1";
-const LAST_SESSION_DAY_KEY = "hub_last_session_day_v1";
-// Millisecond epoch stamp captured the moment the user taps «Заповни
-// мій хаб» on the splash. Used by `firstRealEntry.js` to compute the
-// `ftux_time_to_value` duration — the single headline metric for the
-// 30-second promise.
-const FIRST_ACTION_STARTED_AT_KEY = "hub_first_action_started_at_v1";
-const TTV_MS_KEY = "hub_ftux_ttv_ms_v1";
-
-/** @typedef {"finyk" | "fizruk" | "routine" | "nutrition"} HubModuleId */
-
-/** @type {HubModuleId[]} */
-export const ALL_MODULES = ["finyk", "fizruk", "routine", "nutrition"];
-
 /**
- * @param {unknown} raw
- * @returns {HubModuleId[]}
+ * Thin web adapter over `@sergeant/shared/lib/vibePicks`. The shared
+ * module owns key constants, sanitization and normalization rules;
+ * this file just binds them to a `window.localStorage`-backed
+ * `KVStore` so existing call-sites (OnboardingWizard, HubDashboard,
+ * FirstActionSheet, analytics, …) keep the exact same API they had
+ * before the mobile port.
  */
-function sanitizePicks(raw) {
-  if (!Array.isArray(raw)) return [];
-  const seen = new Set();
-  const out = [];
-  for (const v of raw) {
-    if (typeof v !== "string") continue;
-    if (!ALL_MODULES.includes(/** @type {HubModuleId} */ v)) continue;
-    if (seen.has(v)) continue;
-    seen.add(v);
-    out.push(/** @type {HubModuleId} */ v);
-  }
-  return out;
+
+import {
+  type DashboardModuleId,
+  type KVStore,
+  ALL_MODULES as SHARED_ALL_MODULES,
+  dismissSoftAuth as sharedDismissSoftAuth,
+  clearFirstActionPending as sharedClearFirstActionPending,
+  getFirstActionStartedAt as sharedGetFirstActionStartedAt,
+  getSessionDays as sharedGetSessionDays,
+  getTimeToValueMs as sharedGetTimeToValueMs,
+  getVibePicks as sharedGetVibePicks,
+  isFirstActionPending as sharedIsFirstActionPending,
+  isFirstRealEntryDone as sharedIsFirstRealEntryDone,
+  isSoftAuthDismissed as sharedIsSoftAuthDismissed,
+  markFirstActionPending as sharedMarkFirstActionPending,
+  markFirstActionStartedAt as sharedMarkFirstActionStartedAt,
+  markFirstRealEntryDone as sharedMarkFirstRealEntryDone,
+  recordSessionDay as sharedRecordSessionDay,
+  saveTimeToValueMs as sharedSaveTimeToValueMs,
+  saveVibePicks as sharedSaveVibePicks,
+} from "@sergeant/shared";
+
+export type HubModuleId = DashboardModuleId;
+
+export const ALL_MODULES: HubModuleId[] = [...SHARED_ALL_MODULES];
+
+const localStorageStore: KVStore = {
+  getString(key) {
+    try {
+      return typeof localStorage !== "undefined"
+        ? localStorage.getItem(key)
+        : null;
+    } catch {
+      return null;
+    }
+  },
+  setString(key, value) {
+    try {
+      localStorage.setItem(key, value);
+    } catch {
+      /* noop */
+    }
+  },
+  remove(key) {
+    try {
+      localStorage.removeItem(key);
+    } catch {
+      /* noop */
+    }
+  },
+};
+
+export function getVibePicks(): HubModuleId[] {
+  return sharedGetVibePicks(localStorageStore);
 }
 
-/** @returns {HubModuleId[]} */
-export function getVibePicks() {
-  try {
-    const raw = localStorage.getItem(VIBE_PICKS_KEY);
-    if (!raw) return [];
-    return sanitizePicks(JSON.parse(raw));
-  } catch {
-    return [];
-  }
+export function saveVibePicks(picks: HubModuleId[]): void {
+  sharedSaveVibePicks(localStorageStore, picks);
 }
 
-/**
- * @param {HubModuleId[]} picks
- */
-export function saveVibePicks(picks) {
-  try {
-    const clean = sanitizePicks(picks);
-    localStorage.setItem(VIBE_PICKS_KEY, JSON.stringify(clean));
-  } catch {
-    /* noop */
-  }
+export function markFirstActionPending(): void {
+  sharedMarkFirstActionPending(localStorageStore);
 }
 
-export function markFirstActionPending() {
-  try {
-    localStorage.setItem(FIRST_ACTION_PENDING_KEY, "1");
-  } catch {
-    /* noop */
-  }
+export function clearFirstActionPending(): void {
+  sharedClearFirstActionPending(localStorageStore);
 }
 
-export function clearFirstActionPending() {
-  try {
-    localStorage.removeItem(FIRST_ACTION_PENDING_KEY);
-  } catch {
-    /* noop */
-  }
+export function isFirstActionPending(): boolean {
+  return sharedIsFirstActionPending(localStorageStore);
 }
 
-export function isFirstActionPending() {
-  try {
-    return localStorage.getItem(FIRST_ACTION_PENDING_KEY) === "1";
-  } catch {
-    return false;
-  }
+export function markFirstRealEntryDone(): void {
+  sharedMarkFirstRealEntryDone(localStorageStore);
 }
 
-export function markFirstRealEntryDone() {
-  try {
-    localStorage.setItem(FIRST_REAL_ENTRY_KEY, "1");
-  } catch {
-    /* noop */
-  }
+export function isFirstRealEntryDone(): boolean {
+  return sharedIsFirstRealEntryDone(localStorageStore);
 }
 
-export function isFirstRealEntryDone() {
-  try {
-    return localStorage.getItem(FIRST_REAL_ENTRY_KEY) === "1";
-  } catch {
-    return false;
-  }
+export function isSoftAuthDismissed(): boolean {
+  return sharedIsSoftAuthDismissed(localStorageStore);
 }
 
-export function isSoftAuthDismissed() {
-  try {
-    return localStorage.getItem(SOFT_AUTH_DISMISSED_KEY) === "1";
-  } catch {
-    return false;
-  }
+export function dismissSoftAuth(): void {
+  sharedDismissSoftAuth(localStorageStore);
 }
 
-export function dismissSoftAuth() {
-  try {
-    localStorage.setItem(SOFT_AUTH_DISMISSED_KEY, "1");
-  } catch {
-    /* noop */
-  }
+export function markFirstActionStartedAt(): void {
+  sharedMarkFirstActionStartedAt(localStorageStore);
 }
 
-/**
- * Start the 30-second FTUX clock. Called the moment the splash CTA is
- * tapped so `getTimeToValueMs()` (computed on first real entry) has a
- * deterministic origin regardless of routing/navigation timing.
- *
- * Idempotent: does nothing if a timestamp is already recorded — a user
- * who bounces in and out of /welcome shouldn't reset the clock.
- */
-export function markFirstActionStartedAt() {
-  try {
-    if (localStorage.getItem(FIRST_ACTION_STARTED_AT_KEY)) return;
-    localStorage.setItem(FIRST_ACTION_STARTED_AT_KEY, String(Date.now()));
-  } catch {
-    /* noop */
-  }
+export function getFirstActionStartedAt(): number | null {
+  return sharedGetFirstActionStartedAt(localStorageStore);
 }
 
-/**
- * @returns {number | null} epoch ms, or `null` if the stamp is missing
- *   (returning users / anyone who completed onboarding before this ship).
- */
-export function getFirstActionStartedAt() {
-  try {
-    const v = localStorage.getItem(FIRST_ACTION_STARTED_AT_KEY);
-    if (!v) return null;
-    const n = Number(v);
-    return Number.isFinite(n) && n > 0 ? n : null;
-  } catch {
-    return null;
-  }
+export function saveTimeToValueMs(ms: number): void {
+  sharedSaveTimeToValueMs(localStorageStore, ms);
 }
 
-/**
- * Persist the final time-to-value (ms from splash CTA tap to first
- * real entry). The celebration toast reads this so the number is
- * stable across re-renders even though the source timestamp is cleared.
- *
- * @param {number} ms
- */
-export function saveTimeToValueMs(ms) {
-  try {
-    if (!Number.isFinite(ms) || ms < 0) return;
-    localStorage.setItem(TTV_MS_KEY, String(Math.round(ms)));
-  } catch {
-    /* noop */
-  }
+export function getTimeToValueMs(): number | null {
+  return sharedGetTimeToValueMs(localStorageStore);
 }
 
-/**
- * @returns {number | null} ms, or `null` if not yet measured.
- */
-export function getTimeToValueMs() {
-  try {
-    const v = localStorage.getItem(TTV_MS_KEY);
-    if (!v) return null;
-    const n = Number(v);
-    return Number.isFinite(n) && n >= 0 ? n : null;
-  } catch {
-    return null;
-  }
-}
-
-function todayKey(): string {
-  const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
-
-/**
- * Record a hub session for today. If the current calendar day has
- * already been counted, this is a no-op, so repeat navigations within
- * the same day don't inflate the counter. Returns the (possibly
- * incremented) session-day count so callers can render conditional UI
- * without a second read.
- */
 export function recordSessionDay(): number {
-  try {
-    const key = todayKey();
-    const last = localStorage.getItem(LAST_SESSION_DAY_KEY);
-    const current = Number(localStorage.getItem(SESSION_DAYS_KEY) || "0") || 0;
-    if (last === key) return current;
-    const next = current + 1;
-    localStorage.setItem(LAST_SESSION_DAY_KEY, key);
-    localStorage.setItem(SESSION_DAYS_KEY, String(next));
-    return next;
-  } catch {
-    return 0;
-  }
+  return sharedRecordSessionDay(localStorageStore);
 }
 
-/**
- * @returns Total number of distinct calendar days the user has opened
- *   the hub (0 if never recorded / localStorage disabled).
- */
 export function getSessionDays(): number {
-  try {
-    const n = Number(localStorage.getItem(SESSION_DAYS_KEY) || "0");
-    return Number.isFinite(n) && n > 0 ? n : 0;
-  } catch {
-    return 0;
-  }
+  return sharedGetSessionDays(localStorageStore);
 }
