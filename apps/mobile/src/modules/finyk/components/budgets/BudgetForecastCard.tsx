@@ -3,10 +3,7 @@ import { Text, View } from "react-native";
 
 import { Card } from "@/components/ui/Card";
 
-import {
-  BudgetTrendChart,
-  type ForecastDailyPoint,
-} from "./BudgetTrendChart";
+import { BudgetTrendChart, type ForecastDailyPoint } from "./BudgetTrendChart";
 
 export interface BudgetForecastCardProps {
   categoryLabel: string;

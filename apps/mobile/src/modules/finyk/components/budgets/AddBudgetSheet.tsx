@@ -212,9 +212,7 @@ export function AddBudgetSheet({
                       }
                       accessibilityRole="button"
                       accessibilityState={{ selected }}
-                      testID={
-                        testID ? `${testID}-cat-${c.id}` : undefined
-                      }
+                      testID={testID ? `${testID}-cat-${c.id}` : undefined}
                       className={
                         selected
                           ? "bg-brand-500 border border-brand-500 rounded-full px-3 h-9 mr-2 justify-center"
@@ -285,9 +283,7 @@ export function AddBudgetSheet({
             </Text>
             <Input
               value={form.targetAmount}
-              onChangeText={(v) =>
-                setForm((f) => ({ ...f, targetAmount: v }))
-              }
+              onChangeText={(v) => setForm((f) => ({ ...f, targetAmount: v }))}
               type="number"
               placeholder="0"
               testID={testID ? `${testID}-target` : undefined}
@@ -298,9 +294,7 @@ export function AddBudgetSheet({
             </Text>
             <Input
               value={form.savedAmount}
-              onChangeText={(v) =>
-                setForm((f) => ({ ...f, savedAmount: v }))
-              }
+              onChangeText={(v) => setForm((f) => ({ ...f, savedAmount: v }))}
               type="number"
               placeholder="0"
             />
@@ -310,9 +304,7 @@ export function AddBudgetSheet({
             </Text>
             <Input
               value={form.targetDate}
-              onChangeText={(v) =>
-                setForm((f) => ({ ...f, targetDate: v }))
-              }
+              onChangeText={(v) => setForm((f) => ({ ...f, targetDate: v }))}
               placeholder="2026-12-31"
             />
           </>

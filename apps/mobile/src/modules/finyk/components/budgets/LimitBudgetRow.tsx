@@ -47,7 +47,10 @@ function LimitBudgetRowImpl({
       className="rounded-2xl border border-cream-300 bg-white px-4 py-3"
     >
       <View className="flex-row items-center justify-between mb-2">
-        <Text className="text-sm font-semibold text-stone-900 flex-1" numberOfLines={1}>
+        <Text
+          className="text-sm font-semibold text-stone-900 flex-1"
+          numberOfLines={1}
+        >
           {categoryLabel || "—"}
         </Text>
         <Text
@@ -64,7 +67,10 @@ function LimitBudgetRowImpl({
         </Text>
       </View>
       {trend && trend.length > 0 ? (
-        <View className="mb-2" testID={testID ? `${testID}-sparkline` : undefined}>
+        <View
+          className="mb-2"
+          testID={testID ? `${testID}-sparkline` : undefined}
+        >
           <Sparkline
             values={trend}
             tone={overLimit ? "danger" : warnLimit ? "warn" : "positive"}

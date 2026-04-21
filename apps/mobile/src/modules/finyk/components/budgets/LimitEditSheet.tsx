@@ -89,9 +89,7 @@ export function LimitEditSheet({
       }
     >
       <View testID={testID}>
-        <Text className="text-sm font-medium text-stone-700 mb-1">
-          Ліміт ₴
-        </Text>
+        <Text className="text-sm font-medium text-stone-700 mb-1">Ліміт ₴</Text>
         <Input
           value={limit}
           onChangeText={(v) => {

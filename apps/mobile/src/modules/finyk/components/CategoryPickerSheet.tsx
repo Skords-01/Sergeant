@@ -13,7 +13,7 @@
  * expand the row inline without breaking FlashList recycling.
  */
 import { useMemo } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { Pressable, ScrollView, Text } from "react-native";
 
 import { Sheet } from "@/components/ui/Sheet";
 import {
@@ -104,9 +104,7 @@ export function CategoryPickerSheet({
               >
                 {opt.label}
               </Text>
-              {selected && (
-                <Text className="text-brand-500 text-base">✓</Text>
-              )}
+              {selected && <Text className="text-brand-500 text-base">✓</Text>}
             </Pressable>
           );
         })}

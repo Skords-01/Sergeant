@@ -32,6 +32,7 @@ jest.mock("@/sync/hook/useSyncStatus", () => ({
 }));
 
 jest.mock("react-native-safe-area-context", () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { View } = require("react-native");
   return {
     SafeAreaView: View,
@@ -334,7 +335,11 @@ describe("SyncStatusOverlay — CloudSyncContext provider wiring", () => {
       const pullAll = jest.fn().mockResolvedValue(true);
 
       // Step 1: syncing (queued work, no error)
-      useSyncStatus.mockReturnValue({ isOnline: true, queuedCount: 2, dirtyCount: 0 });
+      useSyncStatus.mockReturnValue({
+        isOnline: true,
+        queuedCount: 2,
+        dirtyCount: 0,
+      });
       const { getByText, queryByText, rerender } = render(
         <CloudSyncContext.Provider value={makeSync(null, pullAll)}>
           <SyncStatusOverlay />
@@ -343,7 +348,11 @@ describe("SyncStatusOverlay — CloudSyncContext provider wiring", () => {
       expect(getByText("Синхронізація…")).toBeTruthy();
 
       // Step 2: error (provider pushes a syncError)
-      useSyncStatus.mockReturnValue({ isOnline: true, queuedCount: 0, dirtyCount: 0 });
+      useSyncStatus.mockReturnValue({
+        isOnline: true,
+        queuedCount: 0,
+        dirtyCount: 0,
+      });
       rerender(
         <CloudSyncContext.Provider value={makeSync("Server 500", pullAll)}>
           <SyncStatusOverlay />
