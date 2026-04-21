@@ -16,7 +16,7 @@
  *     existing habit calls cancel + schedule for the new times.
  */
 
-import { act, render, waitFor } from "@testing-library/react-native";
+import { act, render } from "@testing-library/react-native";
 import { useEffect } from "react";
 import { Text } from "react-native";
 
@@ -144,12 +144,14 @@ describe("useRoutineReminders", () => {
 
     const { getByTestId } = render(<Harness state={state} />);
 
-    await waitFor(() => {
-      expect(getByTestId("permission").props.children).toBe("undetermined");
-    });
+    // Flush initial `getPermissionsAsync` microtasks + debounce window.
+    // Using `waitFor` here would burn the 5s Jest timeout on CI since
+    // fake timers + polling don't advance each other automatically.
+    await flushScheduler();
+
+    expect(getByTestId("permission").props.children).toBe("undetermined");
 
     // No schedule call fires until permission is explicitly granted.
-    await flushScheduler();
     expect(mockedSchedule).not.toHaveBeenCalled();
     // Nothing persisted either.
     expect(_getMMKVInstance().getString(SCHEDULED_MAP_KEY)).toBeUndefined();
