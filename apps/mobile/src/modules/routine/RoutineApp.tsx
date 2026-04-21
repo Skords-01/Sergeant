@@ -10,16 +10,13 @@
  *    under the shared `STORAGE_KEYS.ROUTINE_MAIN_TAB` slot so state
  *    survives hot-reload / tab switches (parity with web's
  *    `localStorage.getItem(STORAGE_KEYS.ROUTINE_MAIN_TAB)`).
- *  - Three sub-tabs render `<RoutineTabPlaceholder>` cards with a
- *    "Скоро — буде портовано" label and the same `emoji + title` shape
- *    as the final screens will have. This mirrors the Phase 2
- *    `HubSettingsPage` shell pattern (see PR #443) — the visual
- *    hierarchy is final; content is filled in by subsequent Phase 5 PRs:
- *    - PR 3 → `Календар` (react-native-calendars / custom FlashList grid);
- *    - PR 4 → `Habits list` (swipe-dismiss + reorder);
- *    - PR 5 → `Heatmap` (react-native-svg + FlashList);
- *    - PR 6 → `Reminders` (expo-notifications scheduled);
- *    - PR 7 → `Storage + CloudSync` wiring.
+ *  - Three sub-tabs now host real screens:
+ *    - `calendar` → `pages/Calendar.tsx` (live, PR #455);
+ *    - `stats`    → `pages/Heatmap/HeatmapPage.tsx` (live, Heatmap PR);
+ *    - `settings` → `pages/Habits/HabitsPage.tsx` (live, PR #463).
+ *    Remaining Phase 5 follow-ups (reminders via expo-notifications,
+ *    storage + CloudSync wiring) land in later PRs and do not touch
+ *    this shell.
  *
  * Intentional differences from the web shell (see PR body):
  *  - No auth-guard at this level — the guard already lives in
@@ -55,9 +52,9 @@ import {
   RoutineBottomNav,
   type RoutineMainTab,
 } from "./components/RoutineBottomNav";
-import { RoutineTabPlaceholder } from "./components/RoutineTabPlaceholder";
 import { Calendar } from "./pages/Calendar";
 import { HabitsPage } from "./pages/Habits/HabitsPage";
+import { HeatmapPage } from "./pages/Heatmap/HeatmapPage";
 
 const TAB_PERSIST_KEY = STORAGE_KEYS.ROUTINE_MAIN_TAB;
 
@@ -93,19 +90,7 @@ function RoutineShell() {
     <View className="flex-1 bg-cream-50">
       <View className="flex-1">
         {mainTab === "calendar" ? <Calendar /> : null}
-        {mainTab === "stats" ? (
-          <RoutineTabPlaceholder
-            title="Статистика"
-            emoji="📊"
-            description="Хітмеп виконання, стріки та топ-звички. Порт у наступних PR-ах Фази 5."
-            plannedFeatures={[
-              "Heatmap виконання звичок (react-native-svg)",
-              "Лідери і аутсайдери серед активних звичок",
-              "Відсоток виконаних по діапазонах (тиждень / місяць / рік)",
-              "Детальний лист звички (історія, стрік, нотатки)",
-            ]}
-          />
-        ) : null}
+        {mainTab === "stats" ? <HeatmapPage /> : null}
         {mainTab === "settings" ? <HabitsPage /> : null}
       </View>
 

@@ -23,8 +23,10 @@ import { RoutineApp } from "./RoutineApp";
 // label is just "Календар", so we pin to the eyebrow kicker inside
 // `pages/Calendar.tsx` which only exists when that page is mounted).
 const CALENDAR_EYEBROW = "Hub календар";
-const STATS_DESCRIPTION =
-  "Хітмеп виконання, стріки та топ-звички. Порт у наступних PR-ах Фази 5.";
+// The Stats tab now hosts the live `HeatmapPage` (Phase 5 — Heatmap
+// PR) instead of the placeholder card. Anchor the render check on
+// the unique headline copy inside that page.
+const STATS_HEADLINE = "Хітмеп";
 // The Settings tab hosts the live `HabitsPage` (Phase 5 PR 3) instead
 // of the placeholder card; the unique headline copy inside that page
 // anchors the render check.
@@ -40,12 +42,12 @@ describe("RoutineApp shell", () => {
     expect(getByText(CALENDAR_EYEBROW)).toBeTruthy();
   });
 
-  it("switches to the Stats placeholder when the Stats tab is pressed", () => {
+  it("switches to the Heatmap page when the Stats tab is pressed", () => {
     const { getAllByText, getByText, queryByText } = render(<RoutineApp />);
 
     fireEvent.press(getAllByText("Статистика")[0]);
 
-    expect(getByText(STATS_DESCRIPTION)).toBeTruthy();
+    expect(getByText(STATS_HEADLINE)).toBeTruthy();
     // Calendar screen body is no longer mounted.
     expect(queryByText(CALENDAR_EYEBROW)).toBeNull();
   });
