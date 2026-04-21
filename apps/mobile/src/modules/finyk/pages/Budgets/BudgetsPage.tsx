@@ -248,8 +248,22 @@ export function BudgetsPage({ seed, now, testID }: BudgetsPageProps) {
   }
   function daysToBilling(billingDay: number): number {
     const next = nextBillingDate(billingDay);
-    const ms = next.getTime() - today.getTime();
-    return Math.round(ms / (24 * 60 * 60 * 1000));
+    // Compare day-boundaries so same-day charges always read as 0,
+    // never -1 due to time-of-day offsets.
+    const todayMidnight = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate(),
+    ).getTime();
+    const nextMidnight = new Date(
+      next.getFullYear(),
+      next.getMonth(),
+      next.getDate(),
+    ).getTime();
+    return Math.max(
+      0,
+      Math.round((nextMidnight - todayMidnight) / (24 * 60 * 60 * 1000)),
+    );
   }
 
   const planMonthlyValue = budgetsStore.monthlyPlan;

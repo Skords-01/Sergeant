@@ -228,6 +228,33 @@ describe("BudgetsPage — subscriptions", () => {
   });
 });
 
+describe("BudgetsPage — same-day billing", () => {
+  it("shows 'сьогодні' badge when billing day equals today", () => {
+    // FIXED_NOW = 2026-04-21 → billingDay 21 should read as today
+    render(
+      <BudgetsPage
+        now={FIXED_NOW}
+        seed={{
+          budgets: [],
+          monthlyPlan: {},
+          subscriptions: [
+            {
+              id: "s-today",
+              name: "Today Sub",
+              emoji: "📅",
+              keyword: "today",
+              billingDay: 21,
+              currency: "UAH",
+              monthlyCost: 100,
+            },
+          ],
+        }}
+      />,
+    );
+    expect(screen.getByText("сьогодні")).toBeTruthy();
+  });
+});
+
 describe("BudgetsPage — limit sparkline", () => {
   it("renders a per-row sparkline for limit budgets", () => {
     render(

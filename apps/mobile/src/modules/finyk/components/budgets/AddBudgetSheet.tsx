@@ -100,12 +100,19 @@ export function AddBudgetSheet({
         setError(res.error);
         return;
       }
-      onAdd({
-        ...(res.normalized as unknown as Budget),
+      // Budget union requires `limit: number`; goals don't use it
+      // semantically — store 0 as a structural placeholder.
+      const goalBudget: Budget = {
         id: makeId(),
-        emoji: form.emoji,
+        type: "goal",
+        limit: 0,
+        name: res.normalized.name,
+        targetAmount: res.normalized.targetAmount,
+        savedAmount: res.normalized.savedAmount,
+        ...(form.emoji ? { emoji: form.emoji } : {}),
         ...(form.targetDate ? { targetDate: form.targetDate } : {}),
-      } as Budget);
+      };
+      onAdd(goalBudget);
     }
     onClose();
   };
