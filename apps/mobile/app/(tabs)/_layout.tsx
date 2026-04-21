@@ -98,7 +98,11 @@ export default function TabsLayout() {
         />
         <Tabs.Screen
           name="routine"
-          options={{ title: "Рутина", tabBarIcon: TabIcon({ emoji: "✅" }) }}
+          options={{
+            title: "Рутина",
+            tabBarIcon: TabIcon({ emoji: "✅" }),
+            tabBarButtonTestID: "tab-routine",
+          }}
         />
         <Tabs.Screen
           name="nutrition"

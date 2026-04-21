@@ -1,7 +1,22 @@
 # `@sergeant/mobile` — Detox E2E
 
-First-wave Detox E2E harness for the mobile app, paired with the Фінік
-module port (Phase 4 of `docs/react-native-migration.md`, §8 + §13 Q8).
+Detox E2E harness for the mobile app (Phase 4 of
+`docs/react-native-migration.md`, §8 + §13 Q8).
+
+## Suites
+
+| Suite                         | Scope                                                                      |
+| ----------------------------- | -------------------------------------------------------------------------- |
+| `finyk-manual-expense.e2e.ts` | Фінік Overview → Transactions → add manual expense → row visible.          |
+| `finyk-transactions.e2e.ts`   | Фінік Transactions period filter (prev-month / next-month chevrons).       |
+| `routine-smoke.e2e.ts`        | Рутина → Settings → add daily habit → Calendar → toggle today → ✓ visible. |
+
+All three rely on the shared `helpers.ts` primitives
+(`tapWhenVisible`, `waitForVisibleById`, `byId`) and the same
+`EXPO_PUBLIC_E2E=1` auth-bypass launch flag. Suites run sequentially
+with `maxWorkers: 1` so MMKV state is deterministic across `it()`
+blocks — each suite seeds its own row rather than relying on another
+suite's leftovers.
 
 ## Running locally
 
@@ -41,6 +56,18 @@ does not set them.
 
 ## CI
 
-The iOS lane runs in `.github/workflows/detox-ios.yml` on macOS runners.
-Android CI is intentionally deferred — see the migration plan §9 for
-rationale and next steps.
+Two parallel workflows share the same suite set:
+
+- **iOS** — `.github/workflows/detox-ios.yml`, `macos-14` runner,
+  iPhone 15 simulator. Runs on `pull_request` + `push` to `main` when
+  mobile-scoped paths change; `workflow_dispatch` also supported.
+- **Android** — `.github/workflows/detox-android.yml`, `ubuntu-latest`
+  with KVM acceleration and the `reactivecircus/android-emulator-runner`
+  action driving a Pixel_5_API_34 AVD (matches the `emulator` device
+  in `.detoxrc.js`). Caches the pnpm store, Gradle dependency graph,
+  and AVD snapshot to keep cold-start time under control.
+
+Both workflows upload `apps/mobile/.detox-artifacts` on failure (logs
+
+- screenshots, enabled in `.detoxrc.js > artifacts`) so the run can be
+  diagnosed without retrying.

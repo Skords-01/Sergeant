@@ -313,9 +313,10 @@ function StatChip({ label, value }: { label: string; value: string }) {
 interface EventRowProps {
   event: HubCalendarEvent;
   onToggle: () => void;
+  testID?: string;
 }
 
-function EventRow({ event, onToggle }: EventRowProps) {
+function EventRow({ event, onToggle, testID }: EventRowProps) {
   const isHabit = event.sourceKind === "habit";
   const completed = !!event.completed;
   return (
@@ -323,6 +324,7 @@ function EventRow({ event, onToggle }: EventRowProps) {
       accessibilityRole={isHabit ? "checkbox" : "text"}
       accessibilityLabel={event.title}
       accessibilityState={isHabit ? { checked: completed } : undefined}
+      testID={testID}
       onPress={isHabit ? onToggle : undefined}
       className={
         "flex-row items-center gap-3 rounded-xl border px-3 py-2 " +
@@ -330,6 +332,7 @@ function EventRow({ event, onToggle }: EventRowProps) {
       }
     >
       <View
+        testID={testID ? `${testID}-indicator` : undefined}
         className={
           "h-6 w-6 rounded-full border-2 items-center justify-center " +
           (completed
@@ -338,7 +341,12 @@ function EventRow({ event, onToggle }: EventRowProps) {
         }
       >
         {completed ? (
-          <Text className="text-xs font-bold text-cream-50">✓</Text>
+          <Text
+            testID={testID ? `${testID}-check` : undefined}
+            className="text-xs font-bold text-cream-50"
+          >
+            ✓
+          </Text>
         ) : null}
       </View>
       <View className="flex-1 min-w-0">
@@ -364,12 +372,20 @@ function EventRow({ event, onToggle }: EventRowProps) {
 interface GroupedListProps {
   grouped: Array<[string, HubCalendarEvent[]]>;
   onToggleHabit: (habitId: string, dateKey: string) => void;
+  testID?: string;
 }
 
-function GroupedEventList({ grouped, onToggleHabit }: GroupedListProps) {
+function GroupedEventList({
+  grouped,
+  onToggleHabit,
+  testID,
+}: GroupedListProps) {
   if (grouped.length === 0) {
     return (
-      <View className="rounded-2xl border border-line bg-panel p-4 items-center">
+      <View
+        testID={testID ? `${testID}-empty` : undefined}
+        className="rounded-2xl border border-line bg-panel p-4 items-center"
+      >
         <Text className="text-sm text-ink-500">
           Немає подій для цього діапазону.
         </Text>
@@ -377,7 +393,7 @@ function GroupedEventList({ grouped, onToggleHabit }: GroupedListProps) {
     );
   }
   return (
-    <View className="gap-3">
+    <View className="gap-3" testID={testID}>
       {grouped.map(([head, rows]) => (
         <View key={head} className="gap-2">
           <Text className="text-3xs font-bold uppercase text-ink-500">
@@ -388,6 +404,13 @@ function GroupedEventList({ grouped, onToggleHabit }: GroupedListProps) {
               <EventRow
                 key={e.id}
                 event={e}
+                testID={
+                  testID && e.habitId
+                    ? `${testID}-habit-${e.habitId}`
+                    : testID
+                      ? `${testID}-event-${e.id}`
+                      : undefined
+                }
                 onToggle={() =>
                   e.habitId ? onToggleHabit(e.habitId, e.date) : undefined
                 }
@@ -400,13 +423,18 @@ function GroupedEventList({ grouped, onToggleHabit }: GroupedListProps) {
   );
 }
 
+export interface CalendarProps {
+  /** Optional root `testID` — children derive stable sub-ids. */
+  testID?: string;
+}
+
 /**
  * Mobile Calendar page — index route of the Routine tab.
  *
  * Renders: stats pill, mode segmented, month navigation + grid, day
  * headline, habit list grouped by time-of-day, bulk-mark CTA.
  */
-export function Calendar() {
+export function Calendar({ testID }: CalendarProps = {}) {
   const { routine, toggleHabit, bulkMarkDay } = useRoutineStore();
 
   const today = useMemo(() => todayDate(), []);
@@ -526,7 +554,7 @@ export function Calendar() {
 
   return (
     <ScrollView
-      testID="routine-calendar-scroll"
+      testID={testID ? `${testID}-scroll` : "routine-calendar-scroll"}
       className="flex-1 bg-cream-50"
       contentContainerClassName="gap-4 px-4 pt-4 pb-8"
     >
@@ -588,7 +616,11 @@ export function Calendar() {
         </Pressable>
       ) : null}
 
-      <GroupedEventList grouped={grouped} onToggleHabit={toggleHabit} />
+      <GroupedEventList
+        grouped={grouped}
+        onToggleHabit={toggleHabit}
+        testID={testID ? `${testID}-events` : undefined}
+      />
     </ScrollView>
   );
 }

@@ -98,14 +98,18 @@ function RoutineShell() {
   }, []);
 
   return (
-    <View className="flex-1 bg-cream-50">
+    <View className="flex-1 bg-cream-50" testID="routine-shell">
       <View className="flex-1">
-        {mainTab === "calendar" ? <Calendar /> : null}
+        {mainTab === "calendar" ? <Calendar testID="routine-calendar" /> : null}
         {mainTab === "stats" ? <HeatmapPage /> : null}
-        {mainTab === "settings" ? <HabitsPage /> : null}
+        {mainTab === "settings" ? <HabitsPage testID="routine-habits" /> : null}
       </View>
 
-      <RoutineBottomNav mainTab={mainTab} onSelectTab={handleSelectTab} />
+      <RoutineBottomNav
+        mainTab={mainTab}
+        onSelectTab={handleSelectTab}
+        testID="routine-bottom-nav"
+      />
     </View>
   );
 }
