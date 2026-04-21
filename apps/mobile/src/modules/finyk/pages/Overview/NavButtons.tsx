@@ -19,6 +19,7 @@ const NavButtonsImpl = function NavButtons({ onNavigate }: NavButtonsProps) {
       <Pressable
         accessibilityRole="button"
         accessibilityLabel="Операції"
+        testID="finyk-overview-nav-transactions"
         onPress={() => onNavigate?.("transactions")}
         className="flex-1 rounded-2xl border border-cream-300 bg-cream-50 px-4 py-3 active:opacity-80"
       >
@@ -27,6 +28,7 @@ const NavButtonsImpl = function NavButtons({ onNavigate }: NavButtonsProps) {
       <Pressable
         accessibilityRole="button"
         accessibilityLabel="Бюджети"
+        testID="finyk-overview-nav-budgets"
         onPress={() => onNavigate?.("budgets")}
         className="flex-1 rounded-2xl border border-cream-300 bg-cream-50 px-4 py-3 active:opacity-80"
       >

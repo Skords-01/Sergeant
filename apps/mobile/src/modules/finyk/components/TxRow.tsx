@@ -60,6 +60,12 @@ export interface TxRowProps {
   hideAmount?: boolean;
   txSplits?: Record<string, any[]>;
   customCategories?: any[];
+  /**
+   * Propagated to the row's outer `Pressable` / `View` so Detox E2E
+   * can match a specific transaction by id (see the first suite in
+   * `apps/mobile/e2e/finyk-manual-expense.e2e.ts`). No-op on web twin.
+   */
+  testID?: string;
 }
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
@@ -108,6 +114,7 @@ function TxRowImpl({
   hideAmount = false,
   txSplits,
   customCategories = [],
+  testID,
 }: TxRowProps) {
   const isIncome = tx.amount > 0;
 
@@ -140,6 +147,7 @@ function TxRowImpl({
         highlighted && "bg-brand-50 rounded-xl border-0 my-0.5 px-2",
         hidden && "opacity-40",
       )}
+      testID={onPress ? undefined : testID}
     >
       <View className="flex-row items-center flex-1 min-w-0 pr-3">
         <Text className="text-xl mr-3" accessibilityElementsHidden>
@@ -232,6 +240,7 @@ function TxRowImpl({
         accessibilityLabel={
           tx.description ? `Транзакція: ${tx.description}` : "Транзакція"
         }
+        testID={testID}
       >
         {body}
       </Pressable>

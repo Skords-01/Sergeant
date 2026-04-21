@@ -525,6 +525,7 @@ export function TransactionsPage({
             onPress={
               isManual ? () => openEditSheet(tx) : () => setBankEditTx(tx)
             }
+            testID={`finyk-tx-row-${tx.id}`}
           />
         </SwipeToAction>
       );

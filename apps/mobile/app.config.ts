@@ -13,6 +13,22 @@ import {
  */
 const updatesUrl = process.env.EXPO_PUBLIC_EAS_UPDATES_URL;
 
+/**
+ * Detox patches the generated iOS / Android projects (see
+ * `apps/mobile/.detoxrc.js` + `apps/mobile/e2e/*`). We register the
+ * plugin conditionally so production EAS builds do NOT ship the
+ * `DetoxActivity` / test-target scaffolding.
+ *
+ * Gate:
+ *   - `EXPO_PUBLIC_E2E=1` — contributor / CI Detox build.
+ *   - `E2E_BUILD=1`        — explicit override for prebuild pipelines
+ *     that don't want to leak `EXPO_PUBLIC_*` into the bundled JS.
+ *
+ * Docs: `docs/react-native-migration.md` §8 / §13 Q8.
+ */
+const isDetoxBuild =
+  process.env.EXPO_PUBLIC_E2E === "1" || process.env.E2E_BUILD === "1";
+
 const ANDROID_PACKAGE = "com.sergeant.app";
 
 /**
@@ -180,6 +196,10 @@ const buildConfig = (): ExpoConfig => ({
     // no-ops and JS Sentry still initialises via `EXPO_PUBLIC_SENTRY_DSN`
     // (see `src/lib/observability.ts`).
     "@sentry/react-native/expo",
+    // Detox config plugin patches the generated native projects with
+    // the Detox instrumentation target. Only registered for dedicated
+    // E2E builds so production IPAs / AABs are unaffected.
+    ...(isDetoxBuild ? ["@config-plugins/detox"] : []),
   ],
   experiments: {
     typedRoutes: true,

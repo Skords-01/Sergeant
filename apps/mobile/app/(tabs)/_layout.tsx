@@ -24,10 +24,23 @@ function TabIcon({ emoji }: { emoji: string }) {
   };
 }
 
+/**
+ * Dev-only auth bypass for Detox E2E runs.
+ *
+ * Controlled by `EXPO_PUBLIC_E2E=1`; the flag is set on the Detox build
+ * (see `apps/mobile/.detoxrc.js`) and surfaces the tabs to the runner
+ * without requiring a Better Auth session. Production / staging builds
+ * never set this variable — the check compiles away in release binaries
+ * because `process.env.EXPO_PUBLIC_*` is statically inlined by Metro.
+ *
+ * Docs: `docs/react-native-migration.md` §8 / §13 Q8.
+ */
+const E2E_AUTH_BYPASS = process.env.EXPO_PUBLIC_E2E === "1";
+
 export default function TabsLayout() {
   const { data, isLoading } = useUser();
 
-  if (!isLoading && !data?.user) {
+  if (!E2E_AUTH_BYPASS && !isLoading && !data?.user) {
     return <Redirect href="/(auth)/sign-in" />;
   }
 
@@ -50,7 +63,11 @@ export default function TabsLayout() {
       />
       <Tabs.Screen
         name="finyk"
-        options={{ title: "ФІНІК", tabBarIcon: TabIcon({ emoji: "💰" }) }}
+        options={{
+          title: "ФІНІК",
+          tabBarIcon: TabIcon({ emoji: "💰" }),
+          tabBarButtonTestID: "tab-finyk",
+        }}
       />
       <Tabs.Screen
         name="fizruk"
