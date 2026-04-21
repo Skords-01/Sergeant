@@ -1,0 +1,27 @@
+{
+  "name": "@sergeant/mobile-shell",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Capacitor shell that wraps @sergeant/web into a native Android/iOS app.",
+  "scripts": {
+    "sync": "cap sync",
+    "copy": "cap copy",
+    "open:android": "cap open android",
+    "open:ios": "cap open ios",
+    "add:android": "cap add android",
+    "add:ios": "cap add ios",
+    "build:web": "pnpm --filter @sergeant/web build",
+    "build:android": "pnpm build:web && pnpm sync android",
+    "build:ios": "pnpm build:web && pnpm sync ios",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@capacitor/android": "^7.4.3",
+    "@capacitor/core": "^7.4.3",
+    "@capacitor/ios": "^7.4.3"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^7.4.3",
+    "typescript": "^6.0.3"
+  }
+}
