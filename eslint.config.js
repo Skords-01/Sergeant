@@ -135,6 +135,22 @@ export default [
       globals: { ...globals.jest, ...globals.node },
     },
   },
+  // Mobile cloud-sync guardrail — `useLocalStorage` must not be called
+  // with a key tracked in `apps/mobile/src/sync/config.ts → SYNC_MODULES`,
+  // because MMKV writes bypass JS and would silently break cloud sync.
+  // The fix is to call `useSyncedStorage` from `@/sync/useSyncedStorage`
+  // instead, which mirrors the write into the sync queue.
+  {
+    files: ["apps/mobile/**/*.{js,jsx,ts,tsx}"],
+    ignores: [
+      "apps/mobile/src/sync/useSyncedStorage.ts",
+      "apps/mobile/**/__tests__/**",
+      "apps/mobile/**/*.test.{js,jsx,ts,tsx}",
+    ],
+    rules: {
+      "sergeant-design/no-raw-tracked-storage": "error",
+    },
+  },
   // AuthContext migration (Session 4B, PR after #390): "who am I" is
   // single-sourced via `useUser()` from `@sergeant/api-client/react` → GET
   // `/api/v1/me`. Better Auth stays only as the actions layer. Block
