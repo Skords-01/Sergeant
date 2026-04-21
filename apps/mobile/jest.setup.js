@@ -8,6 +8,13 @@
 //   - @react-native-community/netinfo: replaced by a stub whose
 //     subscription callback can be driven from tests that need to
 //     simulate offline → online transitions.
+//   - react-native-gesture-handler: pulls in the RNGH-provided jest
+//     setup so that tests relying on `Gesture.*().withTestId()` +
+//     `fireGestureHandler` (see `DraggableHabitList.test.tsx`) can run
+//     without a real TurboModule. Harmless for tests that don't use
+//     gestures — the setup only swaps RNGH's native module for a mock.
+
+require("react-native-gesture-handler/jestSetup");
 
 jest.mock("react-native-mmkv", () => {
   class MMKV {

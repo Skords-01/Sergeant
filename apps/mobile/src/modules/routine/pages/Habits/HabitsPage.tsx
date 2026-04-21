@@ -17,16 +17,18 @@
  *    confirmation — a second press within ~5s commits the delete).
  *  - Floating «+ Add» button in the bottom-right that opens the
  *    `HabitForm` sheet in new-habit mode.
+ *  - Long-press + drag reorder for the active habits list, via
+ *    `DraggableHabitList` (`react-native-gesture-handler` +
+ *    Reanimated). The ↑ / ↓ buttons stay in place as the keyboard /
+ *    screen-reader accessibility fallback, so the two reorder paths
+ *    share `useRoutineStore` under the hood (`setHabitOrder` on drop,
+ *    `moveHabitInOrder` on button tap).
  *
  * ALL mutations go through `useRoutineStore` (the same MMKV-backed
  * hook that `Calendar.tsx` uses), so persistence is unified — no
  * second storage layer.
  *
  * Deferred to follow-up PRs (flagged in the PR body):
- *  - Long-press + drag reorder via `react-native-gesture-handler` +
- *    Reanimated worklets. Scope-guarded to keep this PR manageable;
- *    ↑ / ↓ buttons cover the keyboard / screen-reader accessible
- *    path web users already have today.
  *  - Habit detail sheet / completion history.
  *  - Category & tag CRUD from this page (web has `TagsSection` and
  *    `CategoriesSection` cards; those screens land in a dedicated
@@ -44,6 +46,7 @@ import {
 } from "@sergeant/routine-domain";
 
 import { useRoutineStore } from "../../lib/routineStore";
+import { DraggableHabitList } from "./DraggableHabitList";
 import { HabitForm } from "./HabitForm";
 import { HabitListItem } from "./HabitListItem";
 
@@ -68,6 +71,7 @@ export function HabitsPage({ testID }: HabitsPageProps) {
     setHabitArchived,
     deleteHabit,
     moveHabitInOrder,
+    setHabitOrder,
   } = useRoutineStore();
 
   const [formState, setFormState] = useState<FormState>({ mode: "closed" });
@@ -174,28 +178,18 @@ export function HabitsPage({ testID }: HabitsPageProps) {
               </Text>
             </View>
           ) : (
-            <View>
-              {activeHabits.map((h) => {
-                const pending = pendingDeleteId === h.id;
-                return (
-                  <HabitListItem
-                    key={h.id}
-                    habit={h}
-                    editing={editingId === h.id}
-                    onMoveUp={() => moveHabitInOrder(h.id, -1)}
-                    onMoveDown={() => moveHabitInOrder(h.id, 1)}
-                    onStartEdit={() => openEdit(h)}
-                    onArchive={() => setHabitArchived(h.id, true)}
-                    onRequestDelete={() => handleRequestDelete(h.id)}
-                    testID={
-                      testID
-                        ? `${testID}-row-${h.id}${pending ? "-pending" : ""}`
-                        : undefined
-                    }
-                  />
-                );
-              })}
-            </View>
+            <DraggableHabitList
+              habits={activeHabits}
+              onReorder={setHabitOrder}
+              onMoveUp={(id) => moveHabitInOrder(id, -1)}
+              onMoveDown={(id) => moveHabitInOrder(id, 1)}
+              onStartEdit={openEdit}
+              onArchive={(id) => setHabitArchived(id, true)}
+              onRequestDelete={handleRequestDelete}
+              editingId={editingId}
+              pendingDeleteId={pendingDeleteId}
+              testID={testID ? `${testID}-list` : undefined}
+            />
           )}
         </View>
 

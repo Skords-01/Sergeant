@@ -25,6 +25,7 @@ import {
   applyMoveHabitInOrder,
   applySetCompletionNote,
   applySetHabitArchived,
+  applySetHabitOrder,
   applyToggleHabitCompletion,
   applyUpdateHabit,
   defaultRoutineState,
@@ -75,6 +76,12 @@ export interface UseRoutineStoreReturn {
   deleteHabit: (id: string) => void;
   /** Перемістити звичку в списку на `delta` позицій (-1 = вгору). */
   moveHabitInOrder: (id: string, delta: number) => void;
+  /**
+   * Повністю переписати порядок активних звичок (наприклад після
+   * drag-and-drop). Архівні id та id неіснуючих звичок ігноруються —
+   * нормалізація делегується `applySetHabitOrder` з domain-пакета.
+   */
+  setHabitOrder: (orderedActiveIds: string[]) => void;
 }
 
 /**
@@ -179,6 +186,15 @@ export function useRoutineStore(): UseRoutineStoreReturn {
     });
   }, []);
 
+  const setHabitOrder = useCallback((orderedActiveIds: string[]) => {
+    setRoutineState((prev) => {
+      const next = applySetHabitOrder(prev, orderedActiveIds);
+      if (next === prev) return prev;
+      saveRoutineState(next);
+      return next;
+    });
+  }, []);
+
   return {
     routine,
     refresh,
@@ -191,6 +207,7 @@ export function useRoutineStore(): UseRoutineStoreReturn {
     setHabitArchived,
     deleteHabit,
     moveHabitInOrder,
+    setHabitOrder,
   };
 }
 
