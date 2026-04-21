@@ -83,6 +83,7 @@ describe("BudgetsPage — monthly plan", () => {
               accountId: "acc-1",
               manual: false,
               categoryId: "",
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
             } as any,
           ],
         }}
@@ -91,9 +92,9 @@ describe("BudgetsPage — monthly plan", () => {
     // Fact = 500, remaining = 19500
     expect(screen.getByTestId("finyk-budgets-plan-fact")).toBeTruthy();
     const remaining = screen.getByTestId("finyk-budgets-plan-remaining");
-    const remText = (Array.isArray(remaining.props.children)
+    const remText = Array.isArray(remaining.props.children)
       ? remaining.props.children.flat(Infinity).join("")
-      : String(remaining.props.children));
+      : String(remaining.props.children);
     expect(remText.replace(/\s/g, "")).toMatch(/19.?500/);
   });
 
@@ -141,9 +142,9 @@ describe("BudgetsPage — limits", () => {
     const row = screen.getByTestId("finyk-budgets-limit-b-1");
     expect(row).toBeTruthy();
     const amount = screen.getByTestId("finyk-budgets-limit-b-1-amount");
-    const amtText = (Array.isArray(amount.props.children)
+    const amtText = Array.isArray(amount.props.children)
       ? amount.props.children.flat(Infinity).join("")
-      : String(amount.props.children));
+      : String(amount.props.children);
     expect(amtText.replace(/\s/g, "")).toMatch(/0\/2.?000/);
   });
 

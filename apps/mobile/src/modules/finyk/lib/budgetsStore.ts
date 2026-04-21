@@ -98,7 +98,9 @@ export function useFinykBudgetsStore(
       read<MonthlyPlanInput>(KEY_MONTHLY_PLAN, DEFAULT_PLAN),
   );
   const [subscriptions, setSubscriptionsState] = useState<Subscription[]>(
-    () => seed?.subscriptions ?? read<Subscription[]>(KEY_SUBS, DEFAULT_SUBSCRIPTIONS as Subscription[]),
+    () =>
+      seed?.subscriptions ??
+      read<Subscription[]>(KEY_SUBS, DEFAULT_SUBSCRIPTIONS as Subscription[]),
   );
 
   // Flush seed values through MMKV on first mount so re-renders read
@@ -126,7 +128,10 @@ export function useFinykBudgetsStore(
           break;
         case KEY_SUBS:
           setSubscriptionsState(
-            read<Subscription[]>(KEY_SUBS, DEFAULT_SUBSCRIPTIONS as Subscription[]),
+            read<Subscription[]>(
+              KEY_SUBS,
+              DEFAULT_SUBSCRIPTIONS as Subscription[],
+            ),
           );
           break;
         default:

@@ -313,9 +313,7 @@ export function BudgetsPage({ seed, now, testID }: BudgetsPageProps) {
               testID="finyk-budgets-add"
               className="px-3 py-1.5 rounded-full bg-brand-500"
             >
-              <Text className="text-xs font-semibold text-white">
-                + Додати
-              </Text>
+              <Text className="text-xs font-semibold text-white">+ Додати</Text>
             </Pressable>
           </View>
           {limitBudgets.length === 0 ? (
@@ -433,9 +431,7 @@ export function BudgetsPage({ seed, now, testID }: BudgetsPageProps) {
               testID="finyk-budgets-sub-add"
               className="px-3 py-1.5 rounded-full bg-brand-500"
             >
-              <Text className="text-xs font-semibold text-white">
-                + Додати
-              </Text>
+              <Text className="text-xs font-semibold text-white">+ Додати</Text>
             </Pressable>
           </View>
           <View className="rounded-2xl border border-cream-300 bg-white">
@@ -522,9 +518,7 @@ export function BudgetsPage({ seed, now, testID }: BudgetsPageProps) {
       <SubscriptionEditSheet
         open={sheet.kind === "subscription"}
         onClose={closeSheet}
-        subscription={
-          sheet.kind === "subscription" ? sheet.subscription : null
-        }
+        subscription={sheet.kind === "subscription" ? sheet.subscription : null}
         onSubmit={upsertSubscription}
         onDelete={deleteSubscription}
         testID="finyk-budgets-sub-sheet"

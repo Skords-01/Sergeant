@@ -26,7 +26,7 @@ jest.mock("@/sync/enqueue", () => ({
 // `renderItem`, so swap it for a plain ScrollView that walks the data
 // array and renders each row directly.
 jest.mock("@shopify/flash-list", () => {
-  const React = require("react");
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { ScrollView, View } = require("react-native");
   return {
     FlashList: ({
@@ -35,8 +35,10 @@ jest.mock("@shopify/flash-list", () => {
       keyExtractor,
       testID,
       refreshControl,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     }: any) => (
       <ScrollView testID={testID} refreshControl={refreshControl}>
+        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
         {(data ?? []).map((item: any, index: number) => (
           <View key={keyExtractor ? keyExtractor(item, index) : index}>
             {renderItem({ item, index })}
@@ -51,10 +53,13 @@ jest.mock("@shopify/flash-list", () => {
 // jest can simulate "swipe left" / "swipe right" deterministically
 // without spinning up Reanimated worklets.
 jest.mock("@/components/ui/SwipeToAction", () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const React = require("react");
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { View, Pressable, Text } = require("react-native");
   let counter = 0;
   return {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     SwipeToAction: ({ children, onSwipeLeft, onSwipeRight }: any) => {
       const idx = React.useMemo(() => ++counter, []);
       return (
@@ -188,9 +193,11 @@ describe("TransactionsPage — render", () => {
         }}
       />,
     );
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     function flatText(node: any): string {
       if (node == null) return "";
-      if (typeof node === "string" || typeof node === "number") return String(node);
+      if (typeof node === "string" || typeof node === "number")
+        return String(node);
       if (Array.isArray(node)) return node.map(flatText).join("");
       if (node.props?.children) return flatText(node.props.children);
       return "";
@@ -314,9 +321,7 @@ describe("TransactionsPage — filters", () => {
       expect(screen.queryByText("проїзд")).toBeNull();
     });
     // The chip switches to its "active" label.
-    expect(
-      screen.getByTestId("finyk-transactions-filter-range"),
-    ).toBeTruthy();
+    expect(screen.getByTestId("finyk-transactions-filter-range")).toBeTruthy();
   });
 
   it("filters by MCC-derived category for non-overridden bank transactions", async () => {
@@ -405,9 +410,7 @@ describe("TransactionsPage — swipe actions", () => {
     const swipeRight = screen.getAllByTestId(/swipe-right-/i)[0]!;
     fireEvent.press(swipeRight);
     await waitFor(() => {
-      expect(
-        screen.getByTestId("finyk-transactions-cat-picker"),
-      ).toBeTruthy();
+      expect(screen.getByTestId("finyk-transactions-cat-picker")).toBeTruthy();
     });
   });
 
@@ -537,9 +540,7 @@ describe("TransactionsPage — swipe actions", () => {
     );
     expect(sheet).toBeTruthy();
 
-    fireEvent.press(
-      screen.getByTestId("finyk-transactions-bank-edit-hide"),
-    );
+    fireEvent.press(screen.getByTestId("finyk-transactions-bank-edit-hide"));
     await waitFor(() => {
       expect(screen.queryByText("ATB")).toBeNull();
     });

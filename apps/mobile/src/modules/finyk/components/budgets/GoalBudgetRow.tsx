@@ -54,7 +54,10 @@ function GoalBudgetRowImpl({
       className="rounded-2xl border border-cream-300 bg-white px-4 py-3"
     >
       <View className="flex-row items-center justify-between mb-2">
-        <Text className="text-sm font-semibold text-stone-900 flex-1" numberOfLines={1}>
+        <Text
+          className="text-sm font-semibold text-stone-900 flex-1"
+          numberOfLines={1}
+        >
           {budget.emoji ? `${budget.emoji} ` : ""}
           {budget.name || "—"}
         </Text>
@@ -65,14 +68,14 @@ function GoalBudgetRowImpl({
           {fmt(saved)} / {fmt(target)} ₴
         </Text>
       </View>
-      <View className="mb-2" testID={testID ? `${testID}-sparkline` : undefined}>
+      <View
+        className="mb-2"
+        testID={testID ? `${testID}-sparkline` : undefined}
+      >
         <Sparkline values={progressTrend(pct)} tone="positive" height={14} />
       </View>
       <View className="h-2 bg-cream-200 rounded-full overflow-hidden">
-        <View
-          style={{ width: barWidth }}
-          className="h-full bg-emerald-500"
-        />
+        <View style={{ width: barWidth }} className="h-full bg-emerald-500" />
       </View>
       {monthlyLabel ? (
         <Text className="text-xs text-stone-500 mt-1.5">{monthlyLabel}</Text>

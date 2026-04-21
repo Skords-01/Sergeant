@@ -173,8 +173,7 @@ export function TransactionsPage({
   const [search, setSearch] = useState("");
   const [refreshing, setRefreshing] = useState(false);
   const [sheetState, setSheetState] = useState<
-    | { open: false }
-    | { open: true; editing: ManualExpenseRecord | null }
+    { open: false } | { open: true; editing: ManualExpenseRecord | null }
   >({ open: false });
   const [catPicker, setCatPicker] = useState<{ tx: Transaction } | null>(null);
   const [filterCatSheet, setFilterCatSheet] = useState(false);
@@ -234,7 +233,10 @@ export function TransactionsPage({
 
   const hiddenTxIdSet = useMemo(() => new Set(hiddenTxIds), [hiddenTxIds]);
   const creditAccIds = useMemo(
-    () => new Set(accounts.filter((a) => (a.creditLimit ?? 0) > 0).map((a) => a.id)),
+    () =>
+      new Set(
+        accounts.filter((a) => (a.creditLimit ?? 0) > 0).map((a) => a.id),
+      ),
     [accounts],
   );
 
@@ -271,14 +273,18 @@ export function TransactionsPage({
   }, [customCategories]);
 
   const allIncomeCategories = useMemo<{ id: string; label: string }[]>(
-    () =>
-      INCOME_CATEGORIES.map((c) => ({ id: c.id, label: c.label })),
+    () => INCOME_CATEGORIES.map((c) => ({ id: c.id, label: c.label })),
     [],
   );
 
   const activeCategoryLabel = useMemo<string | null>(() => {
     const id = filters.filter;
-    if (id === "all" || id === "expense" || id === "income" || id === "credit") {
+    if (
+      id === "all" ||
+      id === "expense" ||
+      id === "income" ||
+      id === "credit"
+    ) {
       return null;
     }
     const hit =
@@ -472,14 +478,13 @@ export function TransactionsPage({
       if (item.kind === "header") {
         const sign = item.total >= 0 ? "+" : "";
         const totalText =
-          item.count === 0
-            ? ""
-            : `${sign}${fmtAmt(item.total, CURRENCY.UAH)}`;
+          item.count === 0 ? "" : `${sign}${fmtAmt(item.total, CURRENCY.UAH)}`;
         return (
           <View
             className="flex-row items-center justify-between bg-cream-100/80 px-4 py-2 border-b border-cream-300"
             testID={`finyk-tx-day-${item.key}`}
           >
+            {/* eslint-disable-next-line sergeant-design/no-eyebrow-drift */}
             <Text className="text-xs font-semibold uppercase tracking-wide text-stone-500">
               {item.label}
             </Text>
@@ -842,9 +847,7 @@ export function TransactionsPage({
         onSave={handleSave}
         onDelete={removeManualExpense}
         initialExpense={
-          sheetState.open && sheetState.editing
-            ? sheetState.editing
-            : null
+          sheetState.open && sheetState.editing ? sheetState.editing : null
         }
         testID={`${testID}-sheet`}
       />
@@ -891,7 +894,9 @@ export function TransactionsPage({
                   <Text className="text-sm text-stone-900 flex-1">
                     {a.type ?? aid ?? "Рахунок"}
                   </Text>
-                  <Text className={checked ? "text-brand-500" : "text-stone-300"}>
+                  <Text
+                    className={checked ? "text-brand-500" : "text-stone-300"}
+                  >
                     {checked ? "☑" : "☐"}
                   </Text>
                 </Pressable>
@@ -1022,6 +1027,7 @@ export function TransactionsPage({
           contentContainerStyle={{ paddingBottom: 16, gap: 4 }}
           testID={`${testID}-filter-cat-sheet`}
         >
+          {/* eslint-disable-next-line sergeant-design/no-eyebrow-drift */}
           <Text className="text-[11px] uppercase tracking-wide text-stone-400 px-3 pt-2 pb-1">
             Витрати
           </Text>
@@ -1039,17 +1045,14 @@ export function TransactionsPage({
                 testID={`${testID}-filter-cat-opt-${c.id}`}
                 className="flex-row items-center px-3 py-3 rounded-xl active:opacity-70"
               >
-                <Text className="text-sm text-stone-900 flex-1">
-                  {c.label}
-                </Text>
-                <Text
-                  className={checked ? "text-brand-500" : "text-stone-300"}
-                >
+                <Text className="text-sm text-stone-900 flex-1">{c.label}</Text>
+                <Text className={checked ? "text-brand-500" : "text-stone-300"}>
                   {checked ? "☑" : "☐"}
                 </Text>
               </Pressable>
             );
           })}
+          {/* eslint-disable-next-line sergeant-design/no-eyebrow-drift */}
           <Text className="text-[11px] uppercase tracking-wide text-stone-400 px-3 pt-3 pb-1">
             Доходи
           </Text>
@@ -1067,12 +1070,8 @@ export function TransactionsPage({
                 testID={`${testID}-filter-cat-opt-${c.id}`}
                 className="flex-row items-center px-3 py-3 rounded-xl active:opacity-70"
               >
-                <Text className="text-sm text-stone-900 flex-1">
-                  {c.label}
-                </Text>
-                <Text
-                  className={checked ? "text-brand-500" : "text-stone-300"}
-                >
+                <Text className="text-sm text-stone-900 flex-1">{c.label}</Text>
+                <Text className={checked ? "text-brand-500" : "text-stone-300"}>
                   {checked ? "☑" : "☐"}
                 </Text>
               </Pressable>

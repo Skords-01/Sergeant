@@ -119,7 +119,11 @@ export function GoalEditSheet({
           <Text className="text-sm font-medium text-stone-700 mb-1">
             Назва цілі
           </Text>
-          <Input value={name} onChangeText={setName} placeholder="Накопичити на…" />
+          <Input
+            value={name}
+            onChangeText={setName}
+            placeholder="Накопичити на…"
+          />
         </View>
         <View className="mb-3">
           <Text className="text-sm font-medium text-stone-700 mb-1">

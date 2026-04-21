@@ -328,10 +328,7 @@ export function applySetHabitOrder(
     if (!seen.has(id)) order.push(id);
   }
   const prev = state.habitOrder || [];
-  if (
-    order.length === prev.length &&
-    order.every((id, i) => id === prev[i])
-  ) {
+  if (order.length === prev.length && order.every((id, i) => id === prev[i])) {
     return state;
   }
   return { ...state, habitOrder: order };

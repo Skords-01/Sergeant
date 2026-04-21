@@ -24,10 +24,7 @@ import {
   FINYK_BACKUP_STORAGE_KEYS,
   FINYK_STORAGE_KEYS,
 } from "@sergeant/finyk-domain";
-import type {
-  MonoAccount,
-  Transaction,
-} from "@sergeant/finyk-domain/domain";
+import type { MonoAccount, Transaction } from "@sergeant/finyk-domain/domain";
 import { STORAGE_KEYS } from "@sergeant/shared";
 
 import { _getMMKVInstance, safeReadLS, safeWriteLS } from "@/lib/storage";
@@ -169,7 +166,10 @@ export function useFinykTxFilters(seed?: Partial<FinykTxFilterState>): {
 
   const setFilter = useCallback(
     (filter: string) => {
-      persist({ ...read<FinykTxFilterState>(KEY_FILTERS, DEFAULT_FILTERS), filter });
+      persist({
+        ...read<FinykTxFilterState>(KEY_FILTERS, DEFAULT_FILTERS),
+        filter,
+      });
     },
     [persist],
   );
@@ -217,14 +217,11 @@ export function useFinykTransactionsStore(
     () => seed?.manualExpenses ?? read<ManualExpenseRecord[]>(KEY_MANUAL, []),
   );
   const [txCategories, setTxCatsState] = useState<Record<string, string>>(
-    () =>
-      seed?.txCategories ??
-      read<Record<string, string>>(KEY_TX_CATS, {}),
+    () => seed?.txCategories ?? read<Record<string, string>>(KEY_TX_CATS, {}),
   );
   const [txSplits, setTxSplitsState] = useState<Record<string, TxSplitEntry[]>>(
     () =>
-      seed?.txSplits ??
-      read<Record<string, TxSplitEntry[]>>(KEY_TX_SPLITS, {}),
+      seed?.txSplits ?? read<Record<string, TxSplitEntry[]>>(KEY_TX_SPLITS, {}),
   );
   const [hiddenTxIds, setHiddenState] = useState<string[]>(
     () => seed?.hiddenTxIds ?? read<string[]>(KEY_HIDDEN_TXS, []),
@@ -368,21 +365,18 @@ export function useFinykTransactionsStore(
     [],
   );
 
-  const setSplitTx = useCallback(
-    (txId: string, splits: TxSplitEntry[]) => {
-      const current = read<Record<string, TxSplitEntry[]>>(KEY_TX_SPLITS, {});
-      const next = { ...current };
-      if (!splits || splits.length === 0) {
-        delete next[txId];
-      } else {
-        next[txId] = splits;
-      }
-      setTxSplitsState(next);
-      safeWriteLS(KEY_TX_SPLITS, next);
-      enqueueChange(KEY_TX_SPLITS);
-    },
-    [],
-  );
+  const setSplitTx = useCallback((txId: string, splits: TxSplitEntry[]) => {
+    const current = read<Record<string, TxSplitEntry[]>>(KEY_TX_SPLITS, {});
+    const next = { ...current };
+    if (!splits || splits.length === 0) {
+      delete next[txId];
+    } else {
+      next[txId] = splits;
+    }
+    setTxSplitsState(next);
+    safeWriteLS(KEY_TX_SPLITS, next);
+    enqueueChange(KEY_TX_SPLITS);
+  }, []);
 
   const refresh = useCallback(() => {
     setManualState(read<ManualExpenseRecord[]>(KEY_MANUAL, []));

@@ -146,7 +146,8 @@ export function useWellbeing(): UseWellbeingResult {
   }, [persist]);
 
   const sorted = useMemo(
-    () => [...entries].sort((a, b) => (b.date || "").localeCompare(a.date || "")),
+    () =>
+      [...entries].sort((a, b) => (b.date || "").localeCompare(a.date || "")),
     [entries],
   );
 
