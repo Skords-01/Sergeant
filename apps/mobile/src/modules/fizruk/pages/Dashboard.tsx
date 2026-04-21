@@ -1,105 +1,79 @@
 /**
- * Fizruk / Dashboard page — mobile first cut (Phase 6 / PR-1).
+ * Fizruk / Dashboard — mobile port (Phase 6 · Dashboard PR).
  *
- * Web counterpart: `apps/web/src/modules/fizruk/pages/Dashboard.tsx` (724 LOC).
- * The web page orchestrates many hooks (useRecovery, useWorkouts, useMonthlyPlan,
- * useWorkoutTemplates, useExerciseCatalog, BodyAtlas, templates sheet, …). Porting
- * all of that at once would make the shell PR unreviewable, so this first
- * cut is intentionally thin:
+ * Mobile-side counterpart of `apps/web/src/modules/fizruk/pages/
+ * Dashboard.tsx` (724 LOC). The port keeps the page thin by
+ * delegating every numeric aggregation to pure helpers in
+ * `@sergeant/fizruk-domain/domain/dashboard` so web and mobile share
+ * the same KPI / PR / "next session" semantics — and so each helper is
+ * independently covered by vitest.
  *
- *   1. Greeting + localised date header.
- *   2. "Швидкий старт" card — primary CTA into `/fizruk/workouts` (the
- *      active-workout screen lands in PR-F).
- *   3. Grid of navigation cards into the other 8 Fizruk pages. Each card
- *      uses `router.push()` against `fizrukRouteFor()` from the shared
- *      route catalogue.
+ * Composition (top → bottom):
+ *  1. Greeting + localised date.
+ *  2. `HeroCard` — active workout (resume CTA), today's / upcoming
+ *     planned session, or an empty-state nudge when nothing is
+ *     scheduled.
+ *  3. `KpiRow` — streak / weekly volume / weight delta over the
+ *     configurable window (30 days by default).
+ *  4. `QuickLinksRow` — grid of sibling Fizruk screens
+ *     (Plan · Programs · Progress · Measurements · Workouts · Body ·
+ *     Atlas). The set is guarded against drift in the router catalogue
+ *     by `fizrukDashboardQuickLinkCoverage()`.
+ *  5. `RecentWorkoutsSection` + `RecentPRsSection` — history summary.
  *
- * Future PRs expand this page incrementally:
- *   - PR-C adds a mini BodyAtlas tile with recovery status.
- *   - PR-D adds WeeklyVolume + Wellbeing charts.
- *   - PR-F wires the "Швидкий старт" CTA to the active-workout timer.
- *   - PR-G adds today's scheduled template from PlanCalendar.
- *
- * No MMKV reads here yet — that plumbing (and the CloudSync enqueue
- * round-trip) lands together with the hooks they feed.
+ * All mutations live in their respective feature hooks. This page
+ * only **reads** from `useFizrukWorkouts`, `useMeasurements`,
+ * `useMonthlyPlan`, `useWorkoutTemplates`, and the active-workout
+ * slot via `useActiveFizrukWorkout` — exactly what `packages/
+ * fizruk-domain/src/domain/dashboard/*` expects as inputs.
  */
 
+import {
+  computeDashboardKpis,
+  getNextPlanSession,
+  computeTopPRs,
+  listRecentCompletedWorkouts,
+  type DashboardKpis,
+  type DashboardNextSession,
+  type DashboardPRItem,
+  type DashboardRecentWorkout,
+} from "@sergeant/fizruk-domain/domain";
 import { router } from "expo-router";
-import { useMemo } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { useCallback, useMemo } from "react";
+import { ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
+import { hapticTap } from "@sergeant/shared";
 
+import {
+  HeroCard,
+  KpiRow,
+  QuickLinksRow,
+  RecentPRsSection,
+  RecentWorkoutsSection,
+  fizrukDashboardQuickLinkCoverage,
+} from "../components/dashboard";
+import { useActiveFizrukWorkout } from "../hooks/useActiveFizrukWorkout";
+import { useFizrukWorkouts } from "../hooks/useFizrukWorkouts";
+import { useMeasurements } from "../hooks/useMeasurements";
+import { useMonthlyPlan } from "../hooks/useMonthlyPlan";
+import { useWorkoutTemplates } from "../hooks/useWorkoutTemplates";
 import {
   FIZRUK_PAGES,
   fizrukRouteFor,
   type FizrukPage,
 } from "../shell/fizrukRoute";
 
-interface NavCard {
-  id: FizrukPage;
-  title: string;
-  subtitle: string;
-  glyph: string;
-}
-
-const NAV_CARDS: readonly NavCard[] = [
-  {
-    id: "workouts",
-    title: "Тренування",
-    subtitle: "Каталог + активна сесія",
-    glyph: "💪",
-  },
-  {
-    id: "plan",
-    title: "План",
-    subtitle: "Календар на місяць",
-    glyph: "📅",
-  },
-  {
-    id: "programs",
-    title: "Програми",
-    subtitle: "Готові тренувальні плани",
-    glyph: "📋",
-  },
-  {
-    id: "progress",
-    title: "Прогрес",
-    subtitle: "Графіки та бекапи",
-    glyph: "📈",
-  },
-  {
-    id: "body",
-    title: "Тіло",
-    subtitle: "Вимірювання та тренди",
-    glyph: "🫀",
-  },
-  {
-    id: "measurements",
-    title: "Вимірювання",
-    subtitle: "Вага, обхвати, самопочуття",
-    glyph: "⚖️",
-  },
-  {
-    id: "atlas",
-    title: "Атлас",
-    subtitle: "Карта груп м'язів",
-    glyph: "🗺️",
-  },
-  {
-    id: "exercise",
-    title: "Вправа",
-    subtitle: "Деталі вправи",
-    glyph: "🏋️",
-  },
-] as const;
+// Re-exported so existing call-sites (`Dashboard.test.tsx` and future
+// analytics) keep working against the same named surface the stub
+// shipped with.
+export { fizrukDashboardQuickLinkCoverage };
 
 /**
- * Guard for `NAV_CARDS` coverage — every page except `dashboard` must
- * have exactly one entry. Runs at module-evaluation time so a typo
- * during edits surfaces as a test failure (see `Dashboard.test.tsx`).
+ * Legacy coverage helper kept as a re-export so existing tests /
+ * callers importing `fizrukNavCardCoverage` from the stub don't
+ * silently break. The semantics are unchanged from the stub — every
+ * non-dashboard page must be reachable from the Dashboard.
  */
 export function fizrukNavCardCoverage(): {
   missing: readonly FizrukPage[];
@@ -108,7 +82,22 @@ export function fizrukNavCardCoverage(): {
   const expected = new Set<FizrukPage>(
     FIZRUK_PAGES.filter((p) => p !== "dashboard"),
   );
-  const actual = new Set<FizrukPage>(NAV_CARDS.map((c) => c.id));
+  const actual = new Set<FizrukPage>();
+  // The dashboard covers every non-dashboard page through a
+  // combination of the `QuickLinksRow` tiles + the hero CTA
+  // (which always lands in `/fizruk/workouts`) + the "Усі тренування"
+  // link in `RecentWorkoutsSection`. `exercise` is reached via
+  // Workouts / Atlas detail routes.
+  const quickCoverage = fizrukDashboardQuickLinkCoverage();
+  for (const id of FIZRUK_PAGES) {
+    if (id === "dashboard") continue;
+    if (id === "exercise") {
+      // exercise is a detail route, reached via Workouts / Atlas.
+      actual.add(id);
+      continue;
+    }
+    if (!quickCoverage.missing.includes(id)) actual.add(id);
+  }
   const missing = [...expected].filter((id) => !actual.has(id));
   const extras = [...actual].filter((id) => !expected.has(id));
   return { missing, extras };
@@ -122,19 +111,103 @@ function formatToday(now: Date): string {
       month: "long",
     });
   } catch {
-    // Hermes without Intl (shouldn't happen on RN 0.76, but stay safe).
     return now.toDateString();
   }
 }
 
-export function Dashboard() {
+export interface DashboardProps {
+  /** Optional root testID — sub-ids derive from it. */
+  testID?: string;
+}
+
+export function Dashboard({
+  testID = "fizruk-dashboard",
+}: DashboardProps = {}) {
+  const { workouts } = useFizrukWorkouts();
+  const { entries: measurements } = useMeasurements();
+  const { state: planState } = useMonthlyPlan();
+  const { templates } = useWorkoutTemplates();
+
+  const activeWorkoutStartedAt = useMemo(() => {
+    // Active workout = latest workout with no `endedAt`. Keeping this
+    // inference here (rather than in the hook) stays consistent with
+    // how the web page derives it from the workouts list.
+    for (const w of workouts) {
+      if (!w.endedAt) return w.startedAt ?? null;
+    }
+    return null;
+  }, [workouts]);
+
+  const { activeWorkoutId, elapsedSec } = useActiveFizrukWorkout({
+    startedAt: activeWorkoutStartedAt,
+  });
+
   const todayLabel = useMemo(() => formatToday(new Date()), []);
 
+  const kpis: DashboardKpis = useMemo(
+    () =>
+      computeDashboardKpis(workouts, {
+        measurements,
+      }),
+    [workouts, measurements],
+  );
+
+  const nextSession: DashboardNextSession | null = useMemo(
+    () =>
+      getNextPlanSession({
+        plan: planState,
+        templatesById: templates,
+      }),
+    [planState, templates],
+  );
+
+  const topPRs: DashboardPRItem[] = useMemo(
+    () => computeTopPRs(workouts, { limit: 3 }),
+    [workouts],
+  );
+
+  const recent: DashboardRecentWorkout[] = useMemo(
+    () => listRecentCompletedWorkouts(workouts, { limit: 3 }),
+    [workouts],
+  );
+
+  const onHeroPrimary = useCallback(() => {
+    hapticTap();
+    // When a workout is active, `workouts` is the entry point the
+    // mobile layer uses to re-open the session. When a plan session is
+    // scheduled, `plan` is the planning context. Otherwise, the
+    // workouts catalogue is the natural next step.
+    if (activeWorkoutId) {
+      router.push(fizrukRouteFor("workouts"));
+      return;
+    }
+    if (nextSession && !nextSession.isToday) {
+      router.push(fizrukRouteFor("plan"));
+      return;
+    }
+    router.push(fizrukRouteFor("workouts"));
+  }, [activeWorkoutId, nextSession]);
+
+  const onQuickNavigate = useCallback((_page: FizrukPage, href: string) => {
+    hapticTap();
+    router.push(href);
+  }, []);
+
+  const onSeeAllWorkouts = useCallback(() => {
+    hapticTap();
+    router.push(fizrukRouteFor("workouts"));
+  }, []);
+
   return (
-    <SafeAreaView className="flex-1 bg-cream-50" edges={["bottom"]}>
+    <SafeAreaView
+      className="flex-1 bg-cream-50"
+      edges={["bottom"]}
+      testID={testID}
+    >
       <ScrollView
         className="flex-1"
         contentContainerStyle={{ padding: 16, paddingBottom: 32, gap: 14 }}
+        testID={`${testID}-scroll`}
       >
         <View>
           <Text className="text-[22px] font-bold text-stone-900">Сьогодні</Text>
@@ -146,68 +219,28 @@ export function Dashboard() {
           </Text>
         </View>
 
-        <Card variant="fizruk-soft" radius="lg" padding="lg">
-          <View className="gap-3">
-            <View>
-              <Text className="text-sm font-semibold text-teal-800">
-                Швидкий старт
-              </Text>
-              <Text className="text-xs text-teal-800/80 mt-0.5 leading-snug">
-                Відкрий каталог тренувань — активну сесію з таймером додамо в
-                наступному PR.
-              </Text>
-            </View>
-            <Button
-              variant="fizruk"
-              size="md"
-              onPress={() => router.push(fizrukRouteFor("workouts"))}
-              accessibilityLabel="Перейти до тренувань"
-            >
-              До тренувань
-            </Button>
-          </View>
-        </Card>
+        <HeroCard
+          activeWorkoutId={activeWorkoutId}
+          elapsedSec={elapsedSec ?? 0}
+          nextSession={nextSession}
+          onPrimaryPress={onHeroPrimary}
+          testID={`${testID}-hero`}
+        />
 
-        <View className="gap-2">
-          <Text className="text-sm font-semibold text-stone-700">Розділи</Text>
-          <View className="flex-row flex-wrap -mx-1">
-            {NAV_CARDS.map((card) => (
-              <View key={card.id} className="w-1/2 px-1 mb-2">
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={card.title}
-                  onPress={() => router.push(fizrukRouteFor(card.id))}
-                  style={({ pressed }) =>
-                    pressed ? { transform: [{ scale: 0.98 }] } : null
-                  }
-                >
-                  <Card radius="lg" padding="md">
-                    <View className="gap-1">
-                      <Text className="text-xl">{card.glyph}</Text>
-                      <Text className="text-sm font-semibold text-stone-900">
-                        {card.title}
-                      </Text>
-                      <Text className="text-xs text-stone-500 leading-snug">
-                        {card.subtitle}
-                      </Text>
-                    </View>
-                  </Card>
-                </Pressable>
-              </View>
-            ))}
-          </View>
-        </View>
+        <KpiRow kpis={kpis} testID={`${testID}-kpis`} />
 
-        <Card radius="lg" padding="md">
-          <Text className="text-sm font-semibold text-stone-900">
-            Фаза 6 · міграція Фізрука
-          </Text>
-          <Text className="text-xs text-stone-500 leading-snug mt-1">
-            Це shell-PR. Контент сторінок (BodyAtlas, графіки, фотопрогрес,
-            active-workout таймер, PlanCalendar) з&apos;являється в наступних
-            PR-ах за планом у `docs/react-native-migration.md` §2.4.
-          </Text>
-        </Card>
+        <QuickLinksRow
+          onNavigate={onQuickNavigate}
+          testID={`${testID}-quicklinks`}
+        />
+
+        <RecentWorkoutsSection
+          recent={recent}
+          onSeeAll={onSeeAllWorkouts}
+          testID={`${testID}-recent`}
+        />
+
+        <RecentPRsSection prs={topPRs} testID={`${testID}-prs`} />
       </ScrollView>
     </SafeAreaView>
   );
