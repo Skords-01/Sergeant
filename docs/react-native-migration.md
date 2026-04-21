@@ -666,7 +666,7 @@ Mobile: `expo-router` v4 (file-based, зверху React Navigation).
 вже піднятий (auth-модалка + tabs). Всередині кожного табу —
 Stack-навігатор, файли під `app/(tabs)/<module>/*`.
 
-**Phase 10 (deep links) — PR-A, 🔵 In progress.** Pure-хелпер
+**Phase 10 (deep links) — PR-A ✅ + PR-B 🔵, In progress.** Pure-хелпер
 `apps/mobile/src/lib/deepLinks.ts` парсить/будує всі `sergeant://…`
 схеми з таблиці у `docs/mobile.md` і повертає `Href` для
 expo-router через discriminated-union `SergeantDeepLink`. Runtime-шар —
@@ -686,8 +686,28 @@ universal links (`https://sergeant.2dmanager.com.ua` +
 `auth/callback`) рендерять спільний `DeepLinkPlaceholder`
 («Скоро» + primary-CTA + повернення на хаб), доки відповідні фази
 (Phase 6 Fizruk, Phase 7 Nutrition) не підтягнуть реальні екрани.
-Android shortcuts + iOS quick actions — окремий PR-B; smoke-test
-скрипт для deep links — PR-C.
+
+**PR-B — Android app shortcuts + iOS quick actions.** Додає три
+статичних шорткати: «Витрата» → `sergeant://finance/tx/new`,
+«Сьогодні» → `sergeant://routine`, «Тренування» →
+`sergeant://workout/new`. На Android локальний config-плагін
+`apps/mobile/plugins/withAndroidShortcuts.ts` генерує
+`android/app/src/main/res/xml/shortcuts.xml`, зливає localizable
+лейбли у `res/values/strings.xml` через
+`AndroidConfig.Strings.setStringItem`, і реєструє
+`<meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts"/>`
+у `MainActivity` через `withAndroidManifest`. На iOS плагін не
+потрібен — Expo зливає `ios.infoPlist.UIApplicationShortcutItems`
+прямо у згенерований `Info.plist`. Лейбли та порядок однакові на
+обох платформах; іконки беремо дефолтні (`@mipmap/ic_launcher` на
+Android, `UIApplicationShortcutIconTypeAdd/Date/Play` на iOS), щоб
+PR-B не тягнув нових асетів. Тап шортката фаєрить `sergeant://…`
+intent, який іде через уже протестований `useDeepLinks` pipeline —
+жодного нового runtime-коду не додано. Pure `buildShortcutsXml` /
+`shortcutStringKeys` мають unit-тести, решта плагіна — декларативні
+моди, що виконуються під час `expo prebuild`.
+
+Smoke-test скрипт для deep links — окремий PR-C (опційно).
 
 ### 6.4 Push-нотифікації
 

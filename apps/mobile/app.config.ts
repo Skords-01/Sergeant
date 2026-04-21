@@ -1,4 +1,8 @@
 import type { ExpoConfig } from "expo/config";
+import {
+  withAndroidShortcuts,
+  type AndroidShortcutItem,
+} from "./plugins/withAndroidShortcuts";
 
 /**
  * Dynamic Expo config.
@@ -9,7 +13,99 @@ import type { ExpoConfig } from "expo/config";
  */
 const updatesUrl = process.env.EXPO_PUBLIC_EAS_UPDATES_URL;
 
-const config = (): ExpoConfig => ({
+const ANDROID_PACKAGE = "com.sergeant.app";
+
+/**
+ * Static Android app shortcuts (long-press on the launcher icon).
+ *
+ * Each shortcut fires a `sergeant://…` deep link which is consumed by
+ * the existing `useDeepLinks` runtime shim. No UI code here: the
+ * shortcut → intent → `Linking.getInitialURL()` chain is pure config.
+ *
+ * Labels are kept in Ukrainian to match the app's primary locale.
+ * Phase 10 PR-B does not yet ship dedicated monochrome shortcut
+ * icons; we fall back to the launcher mipmap until a follow-up PR
+ * adds `@drawable/ic_shortcut_*` assets.
+ */
+const ANDROID_APP_SHORTCUTS: AndroidShortcutItem[] = [
+  {
+    id: "add_expense",
+    shortLabel: "Витрата",
+    longLabel: "Додати витрату",
+    intent: {
+      action: "android.intent.action.VIEW",
+      data: "sergeant://finance/tx/new",
+      targetPackage: ANDROID_PACKAGE,
+    },
+  },
+  {
+    id: "open_today",
+    shortLabel: "Сьогодні",
+    longLabel: "Рутина на сьогодні",
+    intent: {
+      action: "android.intent.action.VIEW",
+      data: "sergeant://routine",
+      targetPackage: ANDROID_PACKAGE,
+    },
+  },
+  {
+    id: "start_workout",
+    shortLabel: "Тренування",
+    longLabel: "Почати тренування",
+    intent: {
+      action: "android.intent.action.VIEW",
+      data: "sergeant://workout/new",
+      targetPackage: ANDROID_PACKAGE,
+    },
+  },
+];
+
+/**
+ * iOS quick actions (3D-Touch / long-press home icon).
+ *
+ * Expo merges `ios.infoPlist.UIApplicationShortcutItems` straight into
+ * the generated Info.plist, so this needs no plugin. The URL is sent
+ * through `Linking` when the user taps a quick action, and then
+ * consumed by `useDeepLinks`.
+ *
+ * Ordering matches the Android set above so the two platforms stay
+ * in sync.
+ *
+ * `UIApplicationShortcutItemIconType` uses built-in system icons so
+ * PR-B does not pull in any new art assets. A follow-up can swap
+ * `UIApplicationShortcutItemIconFile` in once monochrome icons exist.
+ */
+const IOS_SHORTCUT_ITEMS = [
+  {
+    UIApplicationShortcutItemType: `${ANDROID_PACKAGE}.add_expense`,
+    UIApplicationShortcutItemTitle: "Витрата",
+    UIApplicationShortcutItemSubtitle: "Додати витрату",
+    UIApplicationShortcutItemIconType: "UIApplicationShortcutIconTypeAdd",
+    UIApplicationShortcutItemUserInfo: {
+      url: "sergeant://finance/tx/new",
+    },
+  },
+  {
+    UIApplicationShortcutItemType: `${ANDROID_PACKAGE}.open_today`,
+    UIApplicationShortcutItemTitle: "Сьогодні",
+    UIApplicationShortcutItemSubtitle: "Рутина на сьогодні",
+    UIApplicationShortcutItemIconType: "UIApplicationShortcutIconTypeDate",
+    UIApplicationShortcutItemUserInfo: {
+      url: "sergeant://routine",
+    },
+  },
+  {
+    UIApplicationShortcutItemType: `${ANDROID_PACKAGE}.start_workout`,
+    UIApplicationShortcutItemTitle: "Тренування",
+    UIApplicationShortcutItemSubtitle: "Почати тренування",
+    UIApplicationShortcutItemIconType: "UIApplicationShortcutIconTypePlay",
+    UIApplicationShortcutItemUserInfo: {
+      url: "sergeant://workout/new",
+    },
+  },
+];
+
+const buildConfig = (): ExpoConfig => ({
   name: "Sergeant",
   slug: "sergeant",
   version: "0.1.0",
@@ -28,9 +124,10 @@ const config = (): ExpoConfig => ({
   assetBundlePatterns: ["**/*"],
   ios: {
     supportsTablet: true,
-    bundleIdentifier: "com.sergeant.app",
+    bundleIdentifier: ANDROID_PACKAGE,
     infoPlist: {
       UIBackgroundModes: ["remote-notification"],
+      UIApplicationShortcutItems: IOS_SHORTCUT_ITEMS,
     },
   },
   android: {
@@ -38,7 +135,7 @@ const config = (): ExpoConfig => ({
       foregroundImage: "./assets/adaptive-icon.png",
       backgroundColor: "#0b0d10",
     },
-    package: "com.sergeant.app",
+    package: ANDROID_PACKAGE,
     // Registers `sergeant://…` as an app link. Expo Router's
     // file-based routes handle the specific deep-link targets; this
     // manifest entry is what tells Android that our app is the default
@@ -94,5 +191,15 @@ const config = (): ExpoConfig => ({
     },
   },
 });
+
+/**
+ * Apply inline config plugins. The `plugins` array above only accepts
+ * published plugin module paths (`string | [string, ...]`) per Expo's
+ * TypeScript type, whereas our local `withAndroidShortcuts` plugin is
+ * a function reference. Applying it here wraps the base config with
+ * the mod registrations so Expo's prebuild pipeline picks them up.
+ */
+const config = (): ExpoConfig =>
+  withAndroidShortcuts(buildConfig(), ANDROID_APP_SHORTCUTS) as ExpoConfig;
 
 export default config;
