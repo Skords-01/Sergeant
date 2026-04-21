@@ -9,6 +9,7 @@ export { getDirtyModules } from "./state/dirtyModules";
 export { getOfflineQueue } from "./queue/offlineQueue";
 
 export { enqueueChange, notifySyncDirty } from "./enqueue";
+export { useSyncedStorage } from "./useSyncedStorage";
 
 export { useCloudSync } from "./hook/useCloudSync";
 export type { UseCloudSyncReturn } from "./hook/useCloudSync";

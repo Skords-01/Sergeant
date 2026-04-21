@@ -36,8 +36,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Input } from "@/components/ui/Input";
-import { useLocalStorage } from "@/lib/storage";
-import { enqueueChange } from "@/sync/enqueue";
+import { useSyncedStorage } from "@/sync/useSyncedStorage";
 
 import { SettingsGroup, SettingsSubGroup } from "./SettingsPrimitives";
 
@@ -68,7 +67,7 @@ function DeferredNotice({ children }: { children: string }) {
 }
 
 export function FinykSection() {
-  const [customCategories, setCustomCategories] = useLocalStorage<
+  const [customCategories, setCustomCategories] = useSyncedStorage<
     CustomCategory[]
   >(CUSTOM_CATS_KEY, []);
   const [newCategoryLabel, setNewCategoryLabel] = useState("");
@@ -84,7 +83,6 @@ export function FinykSection() {
       const list = Array.isArray(prev) ? prev : [];
       return [...list, { id: makeCategoryId(), label }];
     });
-    enqueueChange(CUSTOM_CATS_KEY);
     setNewCategoryLabel("");
   };
 
@@ -95,7 +93,6 @@ export function FinykSection() {
       const list = Array.isArray(prev) ? prev : [];
       return list.filter((c) => c.id !== id);
     });
-    enqueueChange(CUSTOM_CATS_KEY);
     setPendingDeleteId(null);
   };
 

@@ -132,6 +132,19 @@ export function safeRemoveLS(key: string): boolean {
 // direct analog (single process), but MMKV exposes
 // `addOnValueChangedListener` so the hook can still react to writes from
 // other consumers of the same key within the app.
+//
+// Cloud-sync caveat
+// -----------------
+// Unlike web (which patches `localStorage.setItem` to auto-mark modules
+// dirty — see `apps/web/src/core/cloudSync/storagePatch.ts`), MMKV
+// writes go straight to native and bypass any JS interception. This
+// means raw `useLocalStorage` does NOT trigger a cloud-sync push on its
+// own. If the storage key you are writing is registered in
+// `apps/mobile/src/sync/config.ts → SYNC_MODULES`, prefer
+// `useSyncedStorage` from `@/sync/useSyncedStorage` — it wraps this
+// hook and calls `enqueueChange(key)` after every write, eliminating
+// the easy-to-forget manual call. Use raw `useLocalStorage` only for
+// untracked, UI-only state (e.g. selected tab, experimental flags).
 
 export type UseLocalStorageSetter<T> = (next: T | ((prev: T) => T)) => void;
 export type UseLocalStorageRemove = () => void;
