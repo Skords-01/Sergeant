@@ -1,8 +1,9 @@
 import { useCallback } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { coachApi, weeklyDigestApi } from "@shared/api";
-import { STORAGE_KEYS } from "@sergeant/shared";
+import { STORAGE_KEYS, getWeekKey as sharedGetWeekKey } from "@sergeant/shared";
 import { safeReadLS } from "@shared/lib/storage.js";
+import { loadDigest as sharedLoadDigest } from "@shared/lib/weeklyDigestStorage";
 import { coachKeys, digestKeys } from "@shared/lib/queryKeys.js";
 import { formatApiError } from "@shared/lib/apiErrorFormat";
 import { MCC_CATEGORIES, INCOME_CATEGORIES } from "@finyk/constants.js";
@@ -47,11 +48,11 @@ function localDateKey(d = new Date()): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-export function getWeekKey(d = new Date()): string {
-  const monday = new Date(d);
-  monday.setDate(d.getDate() - ((d.getDay() + 6) % 7));
-  return localDateKey(monday);
-}
+// `getWeekKey` lives in `@sergeant/shared` now (DOM-free, reused by
+// mobile); re-exported here so existing call-sites keep their import
+// path. `localDateKey` above is still used by the per-day loops
+// further down in this file.
+export const getWeekKey = sharedGetWeekKey;
 
 function getWeekRange(d = new Date()): string {
   const monday = new Date(d);
@@ -71,7 +72,9 @@ export interface WeeklyDigest {
 }
 
 export function loadDigest(weekKey: string): WeeklyDigest | null {
-  return safeReadLS<WeeklyDigest | null>(`${DIGEST_PREFIX}${weekKey}`, null);
+  // Thin adapter: shared helper owns parsing / error-swallowing, web
+  // pins the `localStorage`-backed reader via `weeklyDigestStorage`.
+  return sharedLoadDigest(weekKey) as WeeklyDigest | null;
 }
 
 interface DigestHistoryEntry {

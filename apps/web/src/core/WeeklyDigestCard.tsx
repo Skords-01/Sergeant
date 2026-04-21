@@ -5,32 +5,15 @@ import {
   useWeeklyDigest,
   useDigestHistory,
   getWeekKey,
-  loadDigest,
 } from "./useWeeklyDigest.js";
 import { WeeklyDigestStories } from "./WeeklyDigestStories.jsx";
 
-/**
- * Returns true when the weekly digest is "live" enough to warrant full-card
- * prominence on the dashboard:
- *  - it is Monday (ready-to-generate day), OR
- *  - a digest exists for the current week, OR
- *  - a digest was generated in the last 48 hours.
- * Otherwise the dashboard collapses it into a small footer link.
- */
-export function hasLiveWeeklyDigest(now = new Date()) {
-  if (now.getDay() === 1) return true;
-  const wk = getWeekKey(now);
-  const cur = loadDigest(wk);
-  if (cur) return true;
-  const prev = new Date(now);
-  prev.setDate(now.getDate() - 7);
-  const prevDigest = loadDigest(getWeekKey(prev));
-  if (prevDigest?.generatedAt) {
-    const ageMs = now.getTime() - new Date(prevDigest.generatedAt).getTime();
-    if (ageMs <= 48 * 60 * 60 * 1000) return true;
-  }
-  return false;
-}
+// `hasLiveWeeklyDigest` now lives in `@sergeant/shared` (DOM-free, reused by
+// mobile). The web-side adapter in `@shared/lib/weeklyDigestStorage` binds
+// the shared helper to `localStorage`. We re-export it from here so that
+// existing call-sites (`HubDashboard`, tests) keep their historical import
+// path without touching either module.
+export { hasLiveWeeklyDigest } from "@shared/lib/weeklyDigestStorage";
 
 const MODULE_CONFIG = {
   finyk: {

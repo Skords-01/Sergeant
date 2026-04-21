@@ -1,28 +1,25 @@
 /**
  * Sergeant Hub — top-level dashboard screen (mobile).
  *
- * First cut of the web `HubDashboard` port. This PR lands the
- * structural skeleton (greeting → status row list) so the hub tab
- * finally looks like a product screen instead of the welcome
- * scaffold. Follow-up PRs layer on the bits that were deliberately
- * deferred here:
+ * Structure today (top → bottom):
+ *   1. Greeting + today label + settings button (always visible).
+ *   2. Status row stack (`DraggableDashboard`) with per-module
+ *      quick-stats preview wired via `useModulePreviews`.
+ *   3. `HubInsightsPanel` — collapsible secondary-recs block. Fed
+ *      from `useDashboardFocus().rest` once PR-2 (hero-card layer)
+ *      lands; until then we pass an empty array so the panel
+ *      self-hides.
+ *   4. `WeeklyDigestFooter` — thin link to the weekly digest card,
+ *      with a fresh-dot when the shared digest helper says the
+ *      current digest is live.
  *
- *   - `TodayFocusCard` + `useDashboardFocus` → once the domain helpers
- *     are extracted to `@sergeant/shared`, both platforms will share
- *     the same coach-focus picker.
- *   - Quick-stats previews inside each row → gated on the per-module
- *     MMKV writers (Phase 3 — quick-stats writers).
- *   - `HubInsightsPanel`, `WeeklyDigestFooter`, FTUX cards → staged
- *     into PR-3 of the dashboard breakdown.
- *
- * Scope notes:
- *   - Nutrition is hidden until Phase 7 (Food & Water). The persisted
- *     order still contains all four ids so a web session opening the
- *     same account keeps Nutrition in its slot — see
- *     `reorderWithHidden` in `@sergeant/shared`.
- *   - Auth / dev tools that used to live on the welcome scaffold
- *     (sign-out, dev push test) are not reintroduced here; they
- *     belong on the Settings screen in a follow-up.
+ * Not in scope for this PR (deliberately deferred — see
+ * `docs/react-native-migration.md` §2.2):
+ *   - `TodayFocusCard` + `useDashboardFocus` (hero slot) → PR-2.
+ *   - Full `WeeklyDigestCard` port (currently a placeholder modal
+ *     inside `WeeklyDigestFooter`).
+ *   - Mobile `useWeeklyDigest` mutation hook: `useMondayAutoDigest`
+ *     reads the pure signals but the `generate` side stays stubbed.
  */
 
 import { router, type Href } from "expo-router";
@@ -35,7 +32,24 @@ import type { DashboardModuleId } from "@sergeant/shared";
 
 import { DraggableDashboard } from "./DraggableDashboard";
 import { DASHBOARD_MODULE_ROUTES } from "./dashboardModuleConfig";
+import { HubInsightsPanel, type InsightItem } from "./HubInsightsPanel";
 import { useDashboardOrder } from "./useDashboardOrder";
+import { useModulePreviews } from "./useModulePreviews";
+import { useMondayAutoDigest } from "./useMondayAutoDigest";
+import { WeeklyDigestFooter } from "./WeeklyDigestFooter";
+
+// TODO(hub-dashboard-pr-2): wire to `useDashboardFocus().rest` once the
+// PR-2 (hero / TodayFocusCard) branch merges. Until then the insights
+// panel stays self-hiding because `items.length === 0`.
+const INSIGHTS_REST_STUB: readonly InsightItem[] = [];
+
+// TODO(weekly-digest): swap with the `generate` handle returned by the
+// ported mobile `useWeeklyDigest` hook once that lands. The Monday-auto
+// hook is harmless with a no-op `generate` — it still guards on the
+// preference flag + absence of a current digest.
+const NOOP_GENERATE = () => {
+  /* weekly-digest mutation hook is not on mobile yet */
+};
 
 function formatToday(now: Date): string {
   try {
@@ -64,6 +78,9 @@ export function HubDashboard() {
   const todayLabel = useMemo(() => formatToday(new Date()), []);
 
   const { visibleOrder, reorderVisible } = useDashboardOrder();
+  const previews = useModulePreviews();
+
+  useMondayAutoDigest({ generate: NOOP_GENERATE });
 
   const openModule = useCallback((id: DashboardModuleId) => {
     // `DASHBOARD_MODULE_ROUTES` holds validated Expo-Router hrefs. We
@@ -74,6 +91,12 @@ export function HubDashboard() {
 
   const openSettings = useCallback(() => {
     router.push("/settings" as Href);
+  }, []);
+
+  const handleInsightDismiss = useCallback((_id: string) => {
+    // TODO(hub-dashboard-pr-2): forward to `useDashboardFocus().dismiss`
+    // once available. For now this is a no-op because the panel is fed
+    // an empty array.
   }, []);
 
   return (
@@ -111,12 +134,21 @@ export function HubDashboard() {
             modules={visibleOrder}
             onReorder={reorderVisible}
             onOpenModule={openModule}
+            previews={previews}
           />
           <Text className="mt-1 text-[11px] leading-snug text-stone-400">
             Утримай і потягни, щоб змінити порядок модулів. Порядок
             синхронізується з вебом.
           </Text>
         </View>
+
+        <HubInsightsPanel
+          items={INSIGHTS_REST_STUB}
+          onOpenModule={openModule}
+          onDismiss={handleInsightDismiss}
+        />
+
+        <WeeklyDigestFooter />
       </ScrollView>
     </SafeAreaView>
   );

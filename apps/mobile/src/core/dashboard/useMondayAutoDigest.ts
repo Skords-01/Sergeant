@@ -1,0 +1,84 @@
+/**
+ * Mobile port of `useMondayAutoDigest` (see
+ * `apps/web/src/core/HubDashboard.tsx`).
+ *
+ * The web hook auto-fires the weekly-digest generate mutation the
+ * first time the hub mounts on a Monday when the user has opted in
+ * via the `WEEKLY_DIGEST_MONDAY_AUTO` preference and no digest
+ * exists yet for the current week. It waits 3 seconds so the user
+ * can cancel / navigate away if the hub is loaded in passing.
+ *
+ * Mobile shape:
+ *   - Inputs + signal (pref flag, week key, existing-digest check)
+ *     are implemented here — all pure storage reads through the
+ *     MMKV-backed adapter.
+ *   - The `generate()` side of the mutation is not wired up yet:
+ *     mobile does not have a ported `useWeeklyDigest` hook with a
+ *     `generateMutation`. Callers pass a `generate` function in so
+ *     this hook stays testable in isolation and HubDashboard can
+ *     provide a TODO-stub until the full mutation hook lands in a
+ *     later PR.
+ *
+ * TODO(weekly-digest): replace the caller-supplied `generate` with
+ * the ported mobile `useWeeklyDigest().generate` once that hook
+ * exists (tracked in the HubDashboard breakdown plan §2.2).
+ */
+
+import { useEffect, useRef } from "react";
+
+import { STORAGE_KEYS, getWeekKey } from "@sergeant/shared";
+
+import { safeReadLS } from "@/lib/storage";
+
+import { loadDigest } from "./weeklyDigestStorage";
+
+const AUTO_DIGEST_DELAY_MS = 3000;
+
+export interface UseMondayAutoDigestOptions {
+  /**
+   * Fires once when the Monday-auto rule passes. Supplied by the
+   * caller so the hook stays independent of the mutation layer.
+   */
+  generate: () => void;
+  /** Clock injection for tests. Defaults to `new Date()` per tick. */
+  now?: Date;
+  /**
+   * Disables the effect entirely (useful in tests or when the hook
+   * is mounted on a non-hub screen).
+   */
+  enabled?: boolean;
+}
+
+export function useMondayAutoDigest({
+  generate,
+  now,
+  enabled = true,
+}: UseMondayAutoDigestOptions): void {
+  const firedRef = useRef(false);
+
+  useEffect(() => {
+    if (!enabled) return;
+    if (firedRef.current) return;
+
+    const current = now ?? new Date();
+    // Rule 1: must be Monday.
+    if (current.getDay() !== 1) return;
+
+    // Rule 2: user has the preference opted in.
+    const autoEnabled = safeReadLS<boolean>(
+      STORAGE_KEYS.WEEKLY_DIGEST_MONDAY_AUTO,
+      false,
+    );
+    if (!autoEnabled) return;
+
+    // Rule 3: no digest already present for this week.
+    const weekKey = getWeekKey(current);
+    if (loadDigest(weekKey)) return;
+
+    firedRef.current = true;
+    const timer = setTimeout(() => {
+      generate();
+    }, AUTO_DIGEST_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [enabled, generate, now]);
+}
