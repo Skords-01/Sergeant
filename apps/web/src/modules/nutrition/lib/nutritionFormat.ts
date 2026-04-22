@@ -1,10 +1,9 @@
-import { toLocalISODate } from "./nutritionStorage.js";
-
-export function fmtMacro(n: unknown): number | "—" {
-  if (n == null || Number.isNaN(Number(n))) return "—";
-  return Math.round(Number(n));
-}
-
-export function todayISODate(): string {
-  return toLocalISODate(new Date());
-}
+/**
+ * Легасі-реекспорт nutrition-format з `@sergeant/nutrition-domain`.
+ * Файл залишено, щоб існуючі імпорти `../lib/nutritionFormat.js` не
+ * довелось переписувати всі одразу.
+ *
+ * Для нового коду:
+ * `import { fmtMacro, todayISODate } from "@sergeant/nutrition-domain";`
+ */
+export { fmtMacro, todayISODate } from "@sergeant/nutrition-domain";

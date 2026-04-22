@@ -376,6 +376,9 @@ importers:
       "@sergeant/mobile-shell":
         specifier: workspace:*
         version: link:../mobile-shell
+      "@sergeant/nutrition-domain":
+        specifier: workspace:*
+        version: link:../../packages/nutrition-domain
       "@sergeant/routine-domain":
         specifier: workspace:*
         version: link:../../packages/routine-domain
@@ -578,6 +581,25 @@ importers:
         version: 3.2.4(@types/debug@4.1.13)(@types/node@25.6.0)(jiti@1.21.7)(jsdom@29.0.2(@noble/hashes@2.2.0))(lightningcss@1.27.0)(terser@5.46.1)(tsx@4.21.0)(yaml@2.8.3)
 
   packages/insights:
+    dependencies:
+      "@sergeant/shared":
+        specifier: workspace:*
+        version: link:../shared
+    devDependencies:
+      "@sergeant/config":
+        specifier: workspace:*
+        version: link:../config
+      "@types/node":
+        specifier: ^25.6.0
+        version: 25.6.0
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
+      vitest:
+        specifier: ^3.0.0
+        version: 3.2.4(@types/debug@4.1.13)(@types/node@25.6.0)(jiti@1.21.7)(jsdom@29.0.2(@noble/hashes@2.2.0))(lightningcss@1.27.0)(terser@5.46.1)(tsx@4.21.0)(yaml@2.8.3)
+
+  packages/nutrition-domain:
     dependencies:
       "@sergeant/shared":
         specifier: workspace:*
