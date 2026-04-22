@@ -167,7 +167,13 @@ Android-частина (`android/`) закомічена, `applicationId`
   `window.__sergeantShellNavigate` (встановлюється
   `<ShellDeepLinkBridge/>` у `apps/web/src/core/App.tsx` після маунту
   роутера) з буфером `window.__sergeantShellDeepLinkQueue` для cold-start
-  сценарію (native-подія прилетіла ДО готовності React-шару).
+  сценарію (native-подія прилетіла ДО готовності React-шару). HTTPS
+  Universal Links / App Links теж підтримуються — `parseDeepLink()`
+  приймає дозволені hosts (`DEEP_LINK_HTTPS_HOSTS` в
+  `apps/mobile-shell/src/index.ts`), `AndroidManifest.xml` має
+  `autoVerify="true"` intent-filter, у `apps/web/public/.well-known/`
+  лежать шаблони `assetlinks.json` та `apple-app-site-association`.
+  Повний setup-гайд — `docs/capacitor-deep-links.md`.
 - **Safe-area / keyboard avoidance** на iOS усе ще покладаються на
   CSS `env(safe-area-inset-*)` — працює, але не 100% якщо splash
   тримається довше за `hide()`.

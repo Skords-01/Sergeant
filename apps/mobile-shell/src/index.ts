@@ -31,8 +31,29 @@ const STATUS_BAR_COLOR_LIGHT = "#fdf9f3";
 /** Колір status bar-а у dark-темі — збігається з `.dark --c-bg` (#171412). */
 const STATUS_BAR_COLOR_DARK = "#171412";
 
-/** Deep-link scheme, оголошений в `AndroidManifest.xml` і `iOS Info.plist`. */
+/** Custom deep-link scheme, оголошений в `AndroidManifest.xml` і `iOS Info.plist`. */
 const DEEP_LINK_SCHEME = "com.sergeant.shell://";
+
+/**
+ * HTTPS-хости, які shell приймає як Universal Links (iOS) / App Links
+ * (Android). Має збігатись з:
+ *   - `<data android:host="..." />` у `AndroidManifest.xml`;
+ *   - `applinks:<host>` в iOS entitlements `com.apple.developer.associated-domains`;
+ *   - `applinks.details[].appIDs` у `/.well-known/apple-app-site-association` цього хоста;
+ *   - `target.package_name` у `/.well-known/assetlinks.json` цього хоста.
+ *
+ * Список синхронізований з `docs/mobile.md` (секція CORS — «prod»-хости):
+ *   - `sergeant.vercel.app` — Vercel-preview і прод-дефолт;
+ *   - `sergeant.2dmanager.com.ua` — кастомний prod-домен.
+ *
+ * Кожен хост валідується строго (case-insensitive host match), без
+ * suffix-wildcard, щоби `sergeant.vercel.app.evil.com` не проходив як
+ * наш deep link.
+ */
+export const DEEP_LINK_HTTPS_HOSTS: readonly string[] = Object.freeze([
+  "sergeant.vercel.app",
+  "sergeant.2dmanager.com.ua",
+]);
 
 export interface InitNativeShellOptions {
   /**
@@ -125,17 +146,62 @@ function isDarkTheme(): boolean {
 }
 
 /**
- * Витягує шлях з `com.sergeant.shell://<path>?q=1#frag` у вигляді, придатному
- * для React Router (`/path?q=1#frag`). Повертає `null`, якщо URL не відповідає
- * нашій схемі — щоби випадково не навігувати на чужий intent.
+ * Витягує шлях з deep-link URL для React Router (`/path?q=1#frag`). Приймає
+ * дві форми:
+ *
+ *   1. **Custom scheme** — `com.sergeant.shell://<path>?q=1#frag`. Історично
+ *      перший спосіб, працює без assetlinks/AASA та без chooser-діалогу
+ *      тільки коли інша апка не зареєструвалась на ту саму схему
+ *      (`com.sergeant.shell` достатньо унікальна).
+ *   2. **HTTPS Universal / App Links** — `https://<host>/<path>?q=1#frag`
+ *      для хостів з `DEEP_LINK_HTTPS_HOSTS`. Потребує валідних
+ *      `.well-known/assetlinks.json` (Android) та
+ *      `.well-known/apple-app-site-association` (iOS) — див.
+ *      `docs/capacitor-deep-links.md`.
+ *
+ * Обидві форми повертають ту саму канонічну React-Router path, щоби
+ * user-facing навігаційна логіка (роутер, analytics, A/B) була єдина.
+ *
+ * Повертає `null` для будь-чого, що не вписується у ці дві форми —
+ * захист від intent-ів чужих апок (`android.intent.action.VIEW` на
+ * невідому схему не повинен навігувати у нашому роутері).
+ *
+ * Host comparison case-insensitive (RFC 3986 §3.2.2), path/query/fragment
+ * зберігаємо «як є» — не URL-decode-имо, щоби параметри з `%20`/`+`
+ * дійшли до web-шару у первинній формі.
  */
 export function parseDeepLink(url: string): string | null {
-  if (!url.startsWith(DEEP_LINK_SCHEME)) return null;
-  const rest = url.slice(DEEP_LINK_SCHEME.length);
-  // `com.sergeant.shell://home` і `com.sergeant.shell:///home` трактуємо
-  // однаково — перша форма частіше генерується Android `am start`.
-  const normalized = rest.startsWith("/") ? rest : `/${rest}`;
-  return normalized;
+  if (typeof url !== "string" || url.length === 0) return null;
+
+  if (url.startsWith(DEEP_LINK_SCHEME)) {
+    const rest = url.slice(DEEP_LINK_SCHEME.length);
+    // `com.sergeant.shell://home` і `com.sergeant.shell:///home` трактуємо
+    // однаково — перша форма частіше генерується Android `am start`.
+    return rest.startsWith("/") ? rest : `/${rest}`;
+  }
+
+  // HTTPS-варіант. Навмисно не приймаємо http:// — App Links / Universal
+  // Links апрувляться тільки на https, і ми не хочемо стрільнути cleartext
+  // deep link навіть у тесті.
+  if (url.startsWith("https://")) {
+    let parsed: URL;
+    try {
+      parsed = new URL(url);
+    } catch {
+      return null;
+    }
+    const hostLower = parsed.host.toLowerCase();
+    const matchesHost = DEEP_LINK_HTTPS_HOSTS.some(
+      (allowed) => allowed.toLowerCase() === hostLower,
+    );
+    if (!matchesHost) return null;
+    // `parsed.pathname` завжди починається з `/` (у т.ч. для кореня);
+    // `parsed.search` і `parsed.hash` вже з лідируючим `?` / `#` або
+    // порожні рядки — об'єднуємо напряму без re-encoding.
+    return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+  }
+
+  return null;
 }
 
 /**
