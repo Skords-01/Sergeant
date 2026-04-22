@@ -24,10 +24,8 @@ import { FINYK_SUB_GROUP_LABEL } from "./lib/finykSubscriptionCalendar.js";
 import { HUB_FINYK_ROUTINE_SYNC_EVENT } from "../finyk/hubRoutineSync.js";
 import { useFinykHubPreview } from "../../core/hub/useFinykHubPreview";
 import { ROUTINE_THEME as C } from "./lib/routineConstants.js";
-import { emptyHabitDraft } from "./lib/routineDraftUtils.js";
 import { RoutineBottomNav } from "./components/RoutineBottomNav";
 import { RoutineCalendarPanel } from "./components/RoutineCalendarPanel";
-import { RoutineSettingsSection } from "./components/RoutineSettingsSection";
 import { RoutineStatsPanel } from "./components/RoutineStatsPanel";
 import { HabitQuickCreateDialog } from "./components/HabitQuickCreateDialog";
 import { RoutineCalendarProvider } from "./context/RoutineCalendarContext";
@@ -37,12 +35,7 @@ import type {
 } from "./context/RoutineCalendarContext";
 import { STORAGE_KEYS } from "@sergeant/shared";
 import type { Dispatch, SetStateAction } from "react";
-import type {
-  CategoryDraft,
-  HabitDraft,
-  HubCalendarEvent,
-  RoutineState,
-} from "./lib/types";
+import type { HubCalendarEvent, RoutineState } from "./lib/types";
 
 interface MonthCursor {
   y: number;
@@ -195,7 +188,7 @@ export default function RoutineApp({
   const [mainTab, setMainTab] = useState<RoutineMainTab>(() => {
     try {
       const v = localStorage.getItem(STORAGE_KEYS.ROUTINE_MAIN_TAB);
-      if (v === "calendar" || v === "stats" || v === "settings") return v;
+      if (v === "calendar" || v === "stats") return v;
     } catch {}
     return "calendar";
   });
@@ -215,25 +208,11 @@ export default function RoutineApp({
   );
   const [tagFilter, setTagFilter] = useState<string | null>(null);
   const [listQuery, setListQuery] = useState<string>("");
-  const [habitDraft, setHabitDraft] = useState<HabitDraft>(emptyHabitDraft);
-  const [tagDraft, setTagDraft] = useState<string>("");
-  const [catDraft, setCatDraft] = useState<CategoryDraft>({
-    name: "",
-    emoji: "",
-  });
-  // Monotonic tick bumped whenever something asks us to focus the habit
-  // form (e.g. the FTUX first-action sheet inside Settings). A tick —
-  // not a bool — so repeated triggers always fire. The setter is
-  // currently unused because the `add_habit` PWA action now opens
-  // `HabitQuickCreateDialog` instead of bouncing into Settings, but the
-  // prop is kept in the Settings HabitForm contract for future callers.
-  const [habitFormFocusTick] = useState<number>(0);
 
-  // Quick-create dialog state. The `add_habit` PWA action used to
-  // shove the user into the Settings tab; now it opens a bottom-sheet
-  // modal overlaid on whatever tab they're already on (#S0.2). The
-  // tick is bumped each time so the dialog re-focuses its name input
-  // when reopened after a previous close.
+  // Quick-create dialog state. The `add_habit` PWA action opens a
+  // bottom-sheet modal overlaid on whatever tab the user is already on
+  // (#S0.2). The tick is bumped each time so the dialog re-focuses its
+  // name input when reopened after a previous close.
   const [quickAddHabitOpen, setQuickAddHabitOpen] = useState<boolean>(false);
   const [quickAddFocusTick, setQuickAddFocusTick] = useState<number>(0);
 
@@ -678,6 +657,10 @@ export default function RoutineApp({
                 setMainTab,
                 onOpenModule,
                 onBulkMarkDay,
+                onOpenQuickAddHabit: () => {
+                  setQuickAddHabitOpen(true);
+                  setQuickAddFocusTick((t) => t + 1);
+                },
               }),
               [
                 applyTimeMode,
@@ -696,20 +679,6 @@ export default function RoutineApp({
             routine={routine}
             currentStreak={streakMax}
             hidden={mainTab !== "stats"}
-          />
-
-          <RoutineSettingsSection
-            routine={routine}
-            setRoutine={setRoutine}
-            habitDraft={habitDraft}
-            setHabitDraft={setHabitDraft}
-            tagDraft={tagDraft}
-            setTagDraft={setTagDraft}
-            catDraft={catDraft}
-            setCatDraft={setCatDraft}
-            onOpenCalendar={() => setMainTab("calendar")}
-            habitFormFocusTick={habitFormFocusTick}
-            hidden={mainTab !== "settings"}
           />
         </main>
       </div>

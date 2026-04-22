@@ -25,7 +25,7 @@ export interface RoutineMonthCursor {
 
 export type RoutineTimeMode = "today" | "tomorrow" | "day" | "week" | "month";
 
-export type RoutineMainTab = "calendar" | "stats" | "settings";
+export type RoutineMainTab = "calendar" | "stats";
 
 export interface RoutineCalendarData {
   rangeLabel: string;
@@ -66,6 +66,7 @@ export interface RoutineCalendarActions {
   setMainTab: Dispatch<SetStateAction<RoutineMainTab>>;
   onOpenModule?: (moduleId: string, opts?: { hash?: string }) => void;
   onBulkMarkDay: () => void;
+  onOpenQuickAddHabit: () => void;
 }
 
 const RoutineCalendarDataContext = createContext<RoutineCalendarData | null>(
