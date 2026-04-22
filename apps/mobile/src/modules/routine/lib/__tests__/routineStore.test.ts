@@ -10,7 +10,7 @@
  * we only assert on the sync wiring, never on real MMKV writes.
  */
 import { act, renderHook } from "@testing-library/react-native";
-import { ROUTINE_STORAGE_KEY } from "@sergeant/routine-domain";
+import { ROUTINE_STORAGE_KEY, dateKeyFromDate } from "@sergeant/routine-domain";
 
 const mockEnqueueChange = jest.fn();
 const mockSafeReadLS = jest.fn();
@@ -56,8 +56,14 @@ function firstHabitId(routine: ReturnType<typeof defaultRoutineState>): string {
  * habit created inside `act()` always has `createdAt = today`. A
  * hard-coded key would silently break on whichever calendar day the
  * CI host happens to run on.
+ *
+ * Must go through `dateKeyFromDate` (the same helper `applyCreateHabit`
+ * uses internally) rather than `toISOString().slice(0, 10)`. The latter
+ * yields the UTC date, which drifts one day ahead of the habit's
+ * local-tz `startDate` in positive-UTC offsets after local midnight but
+ * before UTC midnight (e.g. Europe/Kyiv = UTC+2/+3).
  */
-const TODAY_KEY = new Date().toISOString().slice(0, 10);
+const TODAY_KEY = dateKeyFromDate(new Date());
 
 describe("routineStore — enqueueChange wiring", () => {
   it("setRoutine fires enqueueChange with the routine key", () => {
