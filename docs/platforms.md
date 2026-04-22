@@ -136,10 +136,26 @@ Android-частина (`android/`) закомічена, `applicationId`
 
 **Не зроблено:**
 
-- **GitHub Actions workflow для debug-APK.** `apps/mobile-shell/README.md`
+- ~~**GitHub Actions workflow для debug-APK.** `apps/mobile-shell/README.md`
   має TODO: `.github/workflows/mobile-shell-android.yml` треба
   закомітити мейнтейнеру вручну (Devin OAuth app не має `workflow`
-  scope). Без нього — локальний Android SDK обовʼязковий.
+  scope). Без нього — локальний Android SDK обовʼязковий.~~ Зроблено:
+  [`mobile-shell-android.yml`](../.github/workflows/mobile-shell-android.yml)
+  збирає debug-APK на PR, а release-сторона
+  ([`mobile-shell-android-release.yml`](../.github/workflows/mobile-shell-android-release.yml))
+  продукує два артефакти — `sergeant-shell-release-aab` (Play Store)
+  та `sergeant-shell-release-apk` (direct sideload via `adb install`).
+  Підпис читається з `SERGEANT_RELEASE_*` env/`gradle.properties` у
+  `android/app/build.gradle`; якщо секрети відсутні — release-лейн
+  усе одно крутить `:app:bundleRelease :app:assembleRelease` (unsigned)
+  як smoke-test ProGuard/R8 + Capacitor sync на PR-ах. ProGuard/R8
+  keep-rules для всіх `@capacitor/*` плагінів — у
+  `android/app/proguard-rules.pro`. Setup-інструкція (keytool → base64
+  → GitHub Secrets) — у [`MOBILE.md#release--android`](../MOBILE.md#release--android).
+- **Play Store upload workflow (internal track).** Release-signing pipeline
+  уже стоїть; автоматичний upload через `google-github-actions/upload-google-play`
+  - service-account JSON (новий secret `ANDROID_PLAY_SERVICE_ACCOUNT_JSON`)
+    — окрема задача.
 - **iOS.** `ios/` НЕ закомічено — потрібен Mac + Xcode + CocoaPods для
   `pnpm --filter @sergeant/mobile-shell add:ios`. Release pipeline на iOS
   зараз немає.
@@ -208,9 +224,9 @@ Android-частина (`android/`) закомічена, `applicationId`
   Жити обидві на одному акаунті Google Play дозволяє (`applicationId`
   різні), але Apple одне й те саме bundle-prefix обмежує.
 
-**Blocking для релізу:** GitHub Actions workflow для APK (інакше без
-Android SDK локально білд неможливий), native push, iOS `cap add ios` з
-Mac.
+**Blocking для релізу:** Play Store upload workflow (internal track
+через service account — release-signing + AAB/APK pipeline вже
+готовий), iOS `cap add ios` з Mac.
 
 ---
 

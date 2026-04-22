@@ -23,13 +23,13 @@ shell reads it from there via `webDir: "../server/dist"` in
 
 ## Prerequisites
 
-| Tool              | Version           | Notes                                                         |
-| ----------------- | ----------------- | ------------------------------------------------------------- |
-| Node.js           | 20.x (see .nvmrc) | `nvm install 20 && nvm use 20`                                |
-| pnpm              | 9.15.1            | `corepack enable && corepack prepare pnpm@9.15.1 --activate`  |
-| JDK               | 17 (Temurin)      | required by Capacitor 7 / AGP 8                               |
-| Android SDK       | API 35            | `compileSdk=35`, `minSdk=23` (Android Studio or `sdkmanager`) |
-| Xcode + CocoaPods | latest stable     | macOS only, iOS only                                          |
+| Tool              | Version           | Notes                                                                                                                                            |
+| ----------------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Node.js           | 20.x (see .nvmrc) | `nvm install 20 && nvm use 20`                                                                                                                   |
+| pnpm              | 9.15.1            | `corepack enable && corepack prepare pnpm@9.15.1 --activate`                                                                                     |
+| JDK               | 21 (Temurin)      | matches `sourceCompatibility`/`targetCompatibility` VERSION_21 emitted into `apps/mobile-shell/android/app/capacitor.build.gradle` by `cap sync` |
+| Android SDK       | API 35            | `compileSdk=35`, `minSdk=23` (Android Studio or `sdkmanager`)                                                                                    |
+| Xcode + CocoaPods | latest stable     | macOS only, iOS only                                                                                                                             |
 
 ## Android — debug APK
 
@@ -109,11 +109,119 @@ Two dedicated workflows build the shell on every PR that touches
 | [`mobile-shell-android.yml`](.github/workflows/mobile-shell-android.yml) | `ubuntu-latest` | Debug APK uploaded as `sergeant-shell-debug-apk` artifact |
 | [`mobile-shell-ios.yml`](.github/workflows/mobile-shell-ios.yml)         | `macos-latest`  | Simulator `.app` (build-only, no artifact)                |
 
-Both jobs run `pnpm build:web` → `cap sync <platform>` → native build
-with no signing. Signed / release builds are out of scope for these
-workflows and will be added in a separate PR alongside the corresponding
-secrets.
+Both debug jobs run `pnpm build:web` → `cap sync <platform>` → native
+build with no signing. The signed / release Android lane lives in a
+dedicated workflow — see [§ Release — Android](#release--android).
 
 The separate Detox suites (`detox-android.yml`, `detox-ios.yml`) cover
 the Expo / React Native app in `apps/mobile/` — they are unrelated to
 the Capacitor shell.
+
+## Release — Android
+
+The release lane produces **two** artefacts from one workflow run:
+
+| Artefact                     | Gradle task            | When to use                                                                                                                                                                                        |
+| ---------------------------- | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `sergeant-shell-release-aab` | `:app:bundleRelease`   | Play Store uploads (`google-github-actions/upload-google-play`, internal track). An `.aab` is **not** installable directly — Play re-splits it into per-device APKs server-side.                   |
+| `sergeant-shell-release-apk` | `:app:assembleRelease` | Direct sideload outside Play: `adb install app-release.apk`, file-manager install, QA device farms, ad-hoc demos. A signed `.apk` is what Android's PackageInstaller actually consumes on a phone. |
+
+> Rule of thumb: if the build is going anywhere near Play Store, grab
+> the `.aab`. If a human is going to drop it onto a phone via USB or a
+> download link, grab the `.apk`. Both come from the same run, share
+> the same `versionCode` / `versionName`, and are signed with the same
+> key — so you never need to re-run the workflow just to get the other
+> format.
+
+Workflow: [`mobile-shell-android-release.yml`](.github/workflows/mobile-shell-android-release.yml).
+Triggers:
+
+- `workflow_dispatch` — manual run from the Actions UI (select the
+  branch; tags are also supported).
+- `push` of a tag matching `v*` (e.g. `v0.1.0-shell.1`) — cut a release
+  tag locally with `git tag v0.1.0-shell.1 && git push origin --tags`.
+
+Without the four signing secrets (listed below) the workflow still
+runs `:app:bundleRelease :app:assembleRelease` — but the artefacts are
+unsigned. That's useful as a CI smoke-test of the release graph
+(ProGuard/R8 keep-rules, Capacitor sync, resource shrinking) on PRs
+that don't have access to production signing material. Unsigned
+artefacts cannot be installed on a real device and cannot be uploaded
+to Play — they exist only to validate the Gradle configuration.
+
+### One-time setup — generate a signing keystore
+
+This is a local, one-off step for a maintainer with write access to
+GitHub Secrets. The keystore file itself stays OFF the repo — only the
+base64 blob and passwords go into GitHub Secrets.
+
+```bash
+# 1. Generate a PKCS12 keystore valid for ~27 years (Play recommends
+#    ≥2033 expiry for new uploads).
+keytool -genkeypair -v \
+  -keystore sergeant-shell-release.keystore \
+  -alias sergeant-shell \
+  -keyalg RSA -keysize 2048 \
+  -validity 10000 \
+  -storetype PKCS12
+
+# 2. Encode for transport via GitHub Secrets (pasting raw binary into
+#    the UI does not survive newline normalization).
+base64 -w0 sergeant-shell-release.keystore > sergeant-shell-release.keystore.base64
+
+# 3. Back up the .keystore file + passwords into the team password
+#    manager. Losing the keystore means you can never ship an update
+#    to the same Play Store listing — Play verifies the signing key
+#    matches the first upload forever.
+```
+
+### GitHub Secrets — four entries
+
+Add these in **Repo → Settings → Secrets and variables → Actions**:
+
+| Secret                              | Value                                                              |
+| ----------------------------------- | ------------------------------------------------------------------ |
+| `ANDROID_RELEASE_KEYSTORE_BASE64`   | Contents of `sergeant-shell-release.keystore.base64` (one line).   |
+| `ANDROID_RELEASE_KEYSTORE_PASSWORD` | The `-storepass` you picked during `keytool -genkeypair`.          |
+| `ANDROID_RELEASE_KEY_ALIAS`         | `sergeant-shell` (or whatever `-alias` you passed to `keytool`).   |
+| `ANDROID_RELEASE_KEY_PASSWORD`      | The `-keypass` for the alias (usually same as the store password). |
+
+The workflow decodes the base64 blob into a file on the runner,
+exports the four `SERGEANT_RELEASE_*` env vars that
+`apps/mobile-shell/android/app/build.gradle` reads, then deletes the
+decoded keystore on `post` — the raw keystore never persists on the
+runner beyond the single Gradle invocation.
+
+### Triggering a release build
+
+```bash
+# Option A — manual, any branch:
+#   GitHub → Actions → "Mobile Shell (Android, Release AAB + APK)"
+#   → "Run workflow" → pick branch → Run.
+
+# Option B — tag-driven, reproducible:
+git tag v0.1.0-shell.1
+git push origin v0.1.0-shell.1
+# The tag push triggers the same workflow; the artefact pair carries
+# the tag's commit SHA in its filename via Gradle's default output
+# naming.
+```
+
+### Fetching the AAB / APK
+
+After the run completes:
+
+1. GitHub → Actions → "Mobile Shell (Android, Release AAB + APK)" →
+   click the run → scroll to **Artifacts**.
+2. Download either `sergeant-shell-release-aab.zip` (Play) or
+   `sergeant-shell-release-apk.zip` (sideload). Both zips contain a
+   single file at the expected Gradle output path.
+3. For sideload: `adb install app-release.apk` (device must be
+   connected + USB debugging on; uninstall any `com.sergeant.shell`
+   debug build first — Android refuses installs when the signing key
+   changes).
+
+Play Store upload (`upload-google-play` + service account JSON) is
+**not** part of this workflow — it will land in a follow-up PR that
+sets up an internal-track workflow + a separate
+`ANDROID_PLAY_SERVICE_ACCOUNT_JSON` secret.
