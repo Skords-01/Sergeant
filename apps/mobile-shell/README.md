@@ -43,12 +43,13 @@ Web-side інтеграції:
 
 ### Варіант А — скачати готовий APK з CI
 
-> **TODO (окремо):** GitHub Actions workflow для автоматичної збірки
-> debug-APK ще треба додати. Devin OAuth app не має `workflow` scope,
-> тож файл `.github/workflows/mobile-shell-android.yml` має закомітити
-> мейнтейнер вручну (або людський акаунт з репо-admin). Після цього
-> кожен push у PR, що чіпає `apps/mobile-shell/**` або `apps/web/**`,
-> буде білдити debug-APK і виливати як GitHub Actions artifact.
+`.github/workflows/mobile-shell-android.yml` збирає debug-APK на кожен
+PR, що чіпає `apps/mobile-shell/**`, `apps/web/**`, `apps/server/**`
+або `packages/**`, і вивантажує його як артефакт
+`sergeant-shell-debug-apk` (14 днів retention). iOS-сторона живе в
+сибілінгу `mobile-shell-ios.yml` (macOS runner, build-only без
+підпису). Огляд кроків і локальних команд — у
+[`MOBILE.md`](../../MOBILE.md).
 
 ### Варіант Б — локальна збірка
 
@@ -77,13 +78,18 @@ pnpm --filter @sergeant/mobile-shell open:android
 `ios/` **не** закомічено — потрібен Mac з Xcode + CocoaPods для
 першого `pnpm --filter @sergeant/mobile-shell add:ios`. Після цього —
 `build:web` → `pnpm --filter @sergeant/mobile-shell sync ios` →
-`open:ios`. Release pipeline на iOS (TestFlight) ще не
-налаштований — блокує відсутність macOS runner-а у CI.
+`open:ios`. Той самий флоу крутиться на `macos-latest` у
+`.github/workflows/mobile-shell-ios.yml` (build-only,
+`CODE_SIGNING_ALLOWED=NO`). Release pipeline на iOS (TestFlight) ще
+не налаштований — потрібні підпис-секрети, які поза скоупом цього
+build-only workflow-а.
 
 ## Що НЕ зроблено
 
-- **GitHub Actions APK workflow** (див. TODO вище).
-- **iOS native project** — `cap add ios` чекає на Mac.
+- **iOS native project, закомічений у repo** — `cap add ios` все ще
+  чекає на Mac; зараз iOS-проект генерується при кожному запуску CI
+  у `mobile-shell-ios.yml`. Для TestFlight pipeline треба або
+  закомітити `ios/`, або додати macOS-крок з кешем Pods.
 - **Native push notifications.** `usePushNotifications` у web тримає
   Web Push через Service Worker + VAPID. На iOS у WebView воно
   працює лише з 16.4+ і тільки якщо web уже установлено як PWA на

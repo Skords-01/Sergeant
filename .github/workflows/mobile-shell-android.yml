@@ -1,0 +1,114 @@
+name: Mobile Shell (Android)
+
+# Debug-APK lane for the Capacitor shell in `apps/mobile-shell/**`.
+# Runs the full mobile build pipeline end-to-end on PRs so regressions
+# in the shell's native wiring (web bundle path, Capacitor plugin
+# manifest, Gradle graph) are caught before merge.
+#
+# Pipeline:
+#   1. `pnpm build:web`                — Vite bundle into `apps/server/dist`
+#   2. `cap sync android`              — copy assets + refresh plugin graph
+#   3. `./gradlew assembleDebug`       — unsigned debug APK
+#
+# Deliberately out of scope for this job:
+#   - signing / release builds (tracked separately)
+#   - Detox E2E (`.github/workflows/detox-android.yml` already owns that)
+#   - iOS (`.github/workflows/mobile-shell-ios.yml` owns the mac runner)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/mobile-shell/**"
+      - "apps/web/**"
+      - "apps/server/**"
+      - "packages/**"
+      - "pnpm-lock.yaml"
+      - "package.json"
+      - ".github/workflows/mobile-shell-android.yml"
+  pull_request:
+    paths:
+      - "apps/mobile-shell/**"
+      - "apps/web/**"
+      - "apps/server/**"
+      - "packages/**"
+      - "pnpm-lock.yaml"
+      - "package.json"
+      - ".github/workflows/mobile-shell-android.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mobile-shell-android-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-android-debug:
+    name: Build debug APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.jvmargs=-Xmx4g"
+    steps:
+      # actions/checkout v4.3.1 (SHA-pinned for supply-chain hardening)
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+
+      # pnpm/action-setup v4.1.0 (SHA-pinned)
+      # Version is read from `packageManager` in root package.json.
+      - uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2
+
+      # actions/setup-node v4.4.0 (SHA-pinned)
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "20"
+          cache: pnpm
+
+      # actions/setup-java v4.7.1 — Capacitor 7 / AGP 8 require JDK 17.
+      - uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Install JS deps
+        run: pnpm install --frozen-lockfile
+
+      - name: Build web bundle
+        # Emits to apps/server/dist (see apps/web/vite.config.js).
+        # capacitor.config.ts points `webDir` at this path.
+        run: pnpm build:web
+
+      - name: Capacitor sync (android)
+        working-directory: apps/mobile-shell
+        run: pnpm exec cap sync android
+
+      # Cache the Gradle dependency graph so follow-up runs skip the
+      # Android dependency resolution pass (~2–3 min).
+      - name: Cache Gradle
+        # actions/cache v4.2.0 (SHA-pinned)
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            apps/mobile-shell/android/.gradle
+          key: ${{ runner.os }}-mobile-shell-gradle-${{ hashFiles('apps/mobile-shell/android/**/*.gradle*', 'apps/mobile-shell/android/gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-mobile-shell-gradle-
+
+      - name: Gradle assembleDebug
+        working-directory: apps/mobile-shell/android
+        # ubuntu-latest runners ship Android SDK + `ANDROID_HOME`
+        # preconfigured. No signing is needed for assembleDebug — AGP
+        # auto-generates a debug keystore on first run.
+        run: ./gradlew --no-daemon assembleDebug
+
+      - name: Upload debug APK
+        # actions/upload-artifact v4.4.3 (SHA-pinned)
+        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882
+        with:
+          name: sergeant-shell-debug-apk
+          path: apps/mobile-shell/android/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          retention-days: 14
