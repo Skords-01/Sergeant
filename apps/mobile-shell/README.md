@@ -97,13 +97,22 @@ build-only workflow-а.
   чекає на Mac; зараз iOS-проект генерується при кожному запуску CI
   у `mobile-shell-ios.yml`. Для TestFlight pipeline треба або
   закомітити `ios/`, або додати macOS-крок з кешем Pods.
-- **Native push notifications.** `usePushNotifications` у web тримає
+- ~~**Native push notifications.** `usePushNotifications` у web тримає
   Web Push через Service Worker + VAPID. На iOS у WebView воно
   працює лише з 16.4+ і тільки якщо web уже установлено як PWA на
   home-screen; на Android працює, але «крихко». Power-move —
   окремий PR з `@capacitor/push-notifications` (FCM + APNs) і
   розширенням `createPushEndpoints.register` на нові
-  `platform: "android" | "ios"`.
+  `platform: "android" | "ios"`.~~ **Зроблено** у
+  [#512](https://github.com/Skords-01/Sergeant/pull/512):
+  `@capacitor/push-notifications` закомічено, `subscribeNativePush()`
+  у `src/pushNative.ts` тягне APNs/FCM токен і резолвить
+  `{ platform, token }`, а `createPushEndpoints.register`
+  (`packages/api-client/src/endpoints/push.ts`) — discriminated union
+  на `platform: "web" | "ios" | "android"`, серверний handler
+  (`apps/server/src/modules/push.ts → register`) маршрутизує у
+  `push_devices` для native-токенів. Залишається лише реальний
+  APNs/FCM **send**-pipeline — див. `docs/mobile.md#push-notifications`.
 - **Deep-link навігація у React Router.** `parseDeepLink()` у
   `src/index.ts` готовий і `App.addListener('appUrlOpen', ...)`
   викликає callback, але коннект з `useNavigate()` з
