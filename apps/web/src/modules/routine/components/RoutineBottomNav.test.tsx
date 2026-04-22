@@ -11,8 +11,15 @@ describe("RoutineBottomNav", () => {
     expect(
       screen.getByRole("navigation", { name: "Розділи Рутини" }),
     ).toBeInTheDocument();
-    const settingsTab = screen.getByRole("tab", { name: /Налаштування/i });
-    fireEvent.click(settingsTab);
-    expect(onSelectTab).toHaveBeenCalledWith("settings");
+    const statsTab = screen.getByRole("tab", { name: /Статистика/i });
+    fireEvent.click(statsTab);
+    expect(onSelectTab).toHaveBeenCalledWith("stats");
+  });
+
+  it("does not render a Settings tab (settings moved to Hub Settings)", () => {
+    render(<RoutineBottomNav mainTab="calendar" onSelectTab={() => {}} />);
+    expect(
+      screen.queryByRole("tab", { name: /Налаштування/i }),
+    ).not.toBeInTheDocument();
   });
 });

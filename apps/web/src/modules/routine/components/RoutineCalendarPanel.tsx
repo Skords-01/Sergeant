@@ -82,9 +82,9 @@ export function RoutineCalendarPanel({
     applyTimeMode,
     onToggleHabit,
     setRoutine,
-    setMainTab,
     onOpenModule,
     onBulkMarkDay,
+    onOpenQuickAddHabit,
   } = useRoutineCalendarActions();
   const [listQueryDraft, setListQueryDraft] = useState(listQuery || "");
   useEffect(() => {
@@ -444,7 +444,7 @@ export function RoutineCalendarPanel({
               <Button
                 type="button"
                 className={cn("w-full max-w-xs font-bold", C.primary)}
-                onClick={() => setMainTab("settings")}
+                onClick={() => onOpenQuickAddHabit()}
               >
                 Додати звичку в «Рутина»
               </Button>
