@@ -29,7 +29,6 @@ import { MonthPulseCard } from "./overview/MonthPulseCard.jsx";
 import { NetworthSection } from "./overview/NetworthSection.jsx";
 import { BudgetAlertsList } from "./overview/BudgetAlertsList.jsx";
 import { PlanFactCard } from "./overview/PlanFactCard.jsx";
-import { QuickAddCard } from "./overview/QuickAddCard.jsx";
 import { PlannedFlowsCard } from "./overview/PlannedFlowsCard.jsx";
 import { CategoryChartSection } from "./overview/CategoryChartSection.jsx";
 
@@ -62,9 +61,6 @@ export function Overview({
   onNavigate,
   onCategoryClick,
   showBalance = true,
-  frequentCategories = [],
-  frequentMerchants = [],
-  onQuickAdd,
 }) {
   const {
     realTx,
@@ -490,12 +486,6 @@ export function Overview({
           income={income}
           spent={spent}
           factSavings={factSavings}
-        />
-
-        <QuickAddCard
-          onQuickAdd={onQuickAdd}
-          frequentCategories={frequentCategories}
-          frequentMerchants={frequentMerchants}
         />
 
         <PlannedFlowsCard
