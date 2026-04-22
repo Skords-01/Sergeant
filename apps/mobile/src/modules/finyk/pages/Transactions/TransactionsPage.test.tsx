@@ -108,8 +108,27 @@ function makeRealTx(overrides: Partial<Transaction>): Transaction {
   };
 }
 
+/**
+ * Pre-expand every day in a given year-month so tests authored before
+ * the per-day collapse toggle landed continue to see their seeded rows.
+ * The page's default is "only today is expanded" — seeded dates that
+ * aren't today would otherwise be hidden behind a collapsed header.
+ */
+function expandAllDaysIn(year: number, month: number) {
+  const overrides: Record<string, boolean> = {};
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  for (let d = 1; d <= daysInMonth; d++) {
+    const key = `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+    overrides[key] = true;
+  }
+  safeWriteLS(STORAGE_KEYS.FINYK_TX_DAY_COLLAPSE, overrides);
+}
+
 beforeEach(() => {
   _getMMKVInstance().clearAll();
+  // Legacy tests seed dates other than FIXED_NOW; pre-expand the whole
+  // month so the day-collapse default doesn't hide their rows.
+  expandAllDaysIn(FIXED_NOW.getFullYear(), FIXED_NOW.getMonth());
 });
 
 describe("TransactionsPage — render", () => {
@@ -568,5 +587,112 @@ describe("TransactionsPage — swipe actions", () => {
     await waitFor(() => {
       expect(screen.getByTestId("finyk-transactions-sheet")).toBeTruthy();
     });
+  });
+});
+
+describe("TransactionsPage — day collapse", () => {
+  // Seed includes today + yesterday so we can assert the default rule
+  // ("today is expanded, yesterday is collapsed") without relying on
+  // the month-wide pre-expansion installed by the global beforeEach.
+  const COLLAPSE_SEED = {
+    manualExpenses: [
+      {
+        id: "me-today",
+        description: "сьогодні-tx",
+        amount: 100,
+        category: "🍴 їжа",
+        date: "2026-04-21T09:00:00.000Z",
+      },
+      {
+        id: "me-yesterday",
+        description: "вчора-tx",
+        amount: 200,
+        category: "🍴 їжа",
+        date: "2026-04-20T09:00:00.000Z",
+      },
+    ],
+  };
+
+  it("expands only today by default; prior days start collapsed", () => {
+    // Reset the month-wide expansion from the global beforeEach so we
+    // can assert the real first-run default.
+    _getMMKVInstance().clearAll();
+    render(<TransactionsPage now={FIXED_NOW} seed={COLLAPSE_SEED} />);
+
+    // Both day headers render regardless of collapse state.
+    expect(screen.getByTestId("finyk-tx-day-h-2026-04-21")).toBeTruthy();
+    expect(screen.getByTestId("finyk-tx-day-h-2026-04-20")).toBeTruthy();
+
+    // Today's row is visible; yesterday's row is hidden behind the
+    // collapsed header.
+    expect(screen.queryByText("сьогодні-tx")).toBeTruthy();
+    expect(screen.queryByText("вчора-tx")).toBeNull();
+  });
+
+  it("toggles a day expanded when the header is pressed, and persists the choice to MMKV", () => {
+    _getMMKVInstance().clearAll();
+    render(<TransactionsPage now={FIXED_NOW} seed={COLLAPSE_SEED} />);
+
+    // Precondition: yesterday starts collapsed.
+    expect(screen.queryByText("вчора-tx")).toBeNull();
+
+    fireEvent.press(screen.getByTestId("finyk-tx-day-h-2026-04-20"));
+    expect(screen.getByText("вчора-tx")).toBeTruthy();
+
+    // The override is persisted — MMKV now carries an explicit `true`
+    // for 2026-04-20 that will survive cold starts.
+    const stored = _getMMKVInstance().getString(
+      STORAGE_KEYS.FINYK_TX_DAY_COLLAPSE,
+    );
+    expect(stored).toBeDefined();
+    const parsed = JSON.parse(stored!);
+    expect(parsed["2026-04-20"]).toBe(true);
+  });
+
+  it("collapses today when the user explicitly toggles its header", () => {
+    _getMMKVInstance().clearAll();
+    render(<TransactionsPage now={FIXED_NOW} seed={COLLAPSE_SEED} />);
+
+    // Precondition: today starts expanded.
+    expect(screen.getByText("сьогодні-tx")).toBeTruthy();
+
+    fireEvent.press(screen.getByTestId("finyk-tx-day-h-2026-04-21"));
+    expect(screen.queryByText("сьогодні-tx")).toBeNull();
+
+    const stored = _getMMKVInstance().getString(
+      STORAGE_KEYS.FINYK_TX_DAY_COLLAPSE,
+    );
+    const parsed = JSON.parse(stored!);
+    expect(parsed["2026-04-21"]).toBe(false);
+  });
+
+  it("temporarily ignores the collapsed state when the user types a search query", () => {
+    _getMMKVInstance().clearAll();
+    render(<TransactionsPage now={FIXED_NOW} seed={COLLAPSE_SEED} />);
+
+    // Precondition: yesterday is hidden (default-collapsed).
+    expect(screen.queryByText("вчора-tx")).toBeNull();
+
+    fireEvent.changeText(
+      screen.getByTestId("finyk-transactions-search"),
+      "вчора",
+    );
+
+    // Match surfaces because searching forces every matching day
+    // expanded (default rule + no explicit override override).
+    expect(screen.getByText("вчора-tx")).toBeTruthy();
+  });
+
+  it("hydrates persisted overrides on mount so prior choices survive a cold start", () => {
+    _getMMKVInstance().clearAll();
+    // Simulate a prior session that explicitly expanded yesterday.
+    safeWriteLS(STORAGE_KEYS.FINYK_TX_DAY_COLLAPSE, {
+      "2026-04-20": true,
+    });
+
+    render(<TransactionsPage now={FIXED_NOW} seed={COLLAPSE_SEED} />);
+
+    expect(screen.getByText("вчора-tx")).toBeTruthy();
+    expect(screen.getByText("сьогодні-tx")).toBeTruthy();
   });
 });

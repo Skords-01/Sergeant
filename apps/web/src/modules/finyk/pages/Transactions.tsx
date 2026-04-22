@@ -1,9 +1,9 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { GroupedVirtuoso } from "react-virtuoso";
 import { TxListItem } from "../components/TxListItem";
-import { getCategory, getIncomeCategory } from "../utils";
+import { getCategory, getIncomeCategory, fmtAmt } from "../utils";
 import { manualExpenseToTransaction } from "@sergeant/finyk-domain/domain/transactions";
-import { mergeExpenseCategoryDefinitions } from "../constants";
+import { mergeExpenseCategoryDefinitions, CURRENCY } from "../constants";
 import { Skeleton } from "@shared/components/ui/Skeleton";
 import { EmptyState } from "@shared/components/ui/EmptyState";
 import { Icon } from "@shared/components/ui/Icon";
@@ -12,12 +12,41 @@ import { cn } from "@shared/lib/cn";
 import { perfMark, perfEnd } from "@shared/lib/perf";
 import { useToast } from "@shared/hooks/useToast";
 import { showUndoToast } from "@shared/lib/undoToast";
+import { STORAGE_KEYS } from "@sergeant/shared";
 
 const now = new Date();
+const DAY_COLLAPSE_KEY = STORAGE_KEYS.FINYK_TX_DAY_COLLAPSE;
 
 function dayKeyFromTx(ts) {
   const d = new Date(ts * 1000);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function readDayCollapse() {
+  try {
+    const raw = localStorage.getItem(DAY_COLLAPSE_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+      return parsed;
+    }
+    return {};
+  } catch {
+    return {};
+  }
+}
+
+function writeDayCollapse(v) {
+  try {
+    localStorage.setItem(DAY_COLLAPSE_KEY, JSON.stringify(v));
+  } catch {
+    /* quota / private-mode — drop silently */
+  }
+}
+
+function isDayExpanded(overrides, key, todayKey) {
+  const o = overrides[key];
+  return o === undefined ? key === todayKey : !!o;
 }
 
 function formatStickyDayLabel(key) {
@@ -338,15 +367,78 @@ export function Transactions({
     return groups;
   }, [filtered]);
 
+  // Per-day totals (signed amount in cents, item count). Cheap enough to
+  // compute during grouping, but kept separate so the collapsed-header
+  // summary doesn't force us to touch the hot grouping loop.
+  const daySummaries = useMemo(() => {
+    const map = {};
+    for (const g of groupedByDate) {
+      let total = 0;
+      for (const t of g.items) total += Number(t.amount || 0);
+      map[g.key] = { total, count: g.items.length };
+    }
+    return map;
+  }, [groupedByDate]);
+
+  // Day collapse/expand state. Persisted as a sparse override map:
+  // absence → default rule (only "today" is expanded). Explicit boolean
+  // overrides the default and survives across sessions.
+  const todayDayKey = useMemo(
+    () => dayKeyFromTx(Math.floor(Date.now() / 1000)),
+    [],
+  );
+  const [dayOverrides, setDayOverrides] = useState(() => readDayCollapse());
+
+  // Sync with other tabs: another Finyk tab toggling the same day should
+  // immediately reflect here, matching how the rest of the module treats
+  // localStorage as the single source of truth.
+  useEffect(() => {
+    function onStorage(e) {
+      if (e.key !== DAY_COLLAPSE_KEY) return;
+      setDayOverrides(readDayCollapse());
+    }
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
+
+  const toggleDay = useCallback(
+    (key) => {
+      setDayOverrides((prev) => {
+        const expanded = isDayExpanded(prev, key, todayDayKey);
+        const next = { ...prev, [key]: !expanded };
+        writeDayCollapse(next);
+        return next;
+      });
+    },
+    [todayDayKey],
+  );
+
+  // When the user has narrowed down by a filter chip, collapsing days
+  // would hide matches — temporarily render every day fully expanded so
+  // nothing looks "missing". The persisted override is untouched;
+  // clearing the filter restores the prior state.
+  const ignoreCollapse = filter !== "all";
+
+  const collapsedKeys = useMemo(() => {
+    const s = new Set();
+    if (ignoreCollapse) return s;
+    for (const g of groupedByDate) {
+      if (!isDayExpanded(dayOverrides, g.key, todayDayKey)) s.add(g.key);
+    }
+    return s;
+  }, [groupedByDate, dayOverrides, todayDayKey, ignoreCollapse]);
+
   const groupCounts = useMemo(
-    () => groupedByDate.map((g) => g.items.length),
-    [groupedByDate],
+    () =>
+      groupedByDate.map((g) => (collapsedKeys.has(g.key) ? 0 : g.items.length)),
+    [groupedByDate, collapsedKeys],
   );
 
   // GroupedVirtuoso передає глобальний (плоский) індекс — будуємо плоский масив
   const flatItems = useMemo(
-    () => groupedByDate.flatMap((g) => g.items),
-    [groupedByDate],
+    () =>
+      groupedByDate.flatMap((g) => (collapsedKeys.has(g.key) ? [] : g.items)),
+    [groupedByDate, collapsedKeys],
   );
 
   const syncColor =
@@ -569,14 +661,62 @@ export function Transactions({
               customScrollParent={scrollParent}
               groupCounts={groupCounts}
               increaseViewportBy={{ top: 400, bottom: 400 }}
-              groupContent={(groupIndex) => (
-                <div
-                  className="px-3 py-2 bg-bg/95 backdrop-blur-sm border-b border-line text-xs font-semibold text-subtle tracking-wide"
-                  role="presentation"
-                >
-                  {formatStickyDayLabel(groupedByDate[groupIndex].key)}
-                </div>
-              )}
+              groupContent={(groupIndex) => {
+                const group = groupedByDate[groupIndex];
+                if (!group) return null;
+                const key = group.key;
+                const collapsed = collapsedKeys.has(key);
+                const summary = daySummaries[key] ?? { total: 0, count: 0 };
+                const showTotal = showBalance && summary.count > 0;
+                const sign = summary.total > 0 ? "+" : "";
+                const label = formatStickyDayLabel(key);
+                return (
+                  <button
+                    type="button"
+                    onClick={() => toggleDay(key)}
+                    aria-expanded={!collapsed}
+                    aria-label={`${collapsed ? "Розгорнути" : "Згорнути"} ${label}`}
+                    className="w-full flex items-center justify-between gap-2 px-3 py-2 bg-bg/95 backdrop-blur-sm border-b border-line text-xs font-semibold text-subtle tracking-wide hover:text-text hover:bg-panelHi transition-colors"
+                  >
+                    <span className="flex items-center gap-2 min-w-0">
+                      <svg
+                        width="12"
+                        height="12"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.4"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        aria-hidden
+                        className="shrink-0 motion-safe:transition-transform motion-safe:duration-150"
+                        style={{
+                          transform: collapsed
+                            ? "rotate(-90deg)"
+                            : "rotate(0deg)",
+                        }}
+                      >
+                        <polyline points="6 9 12 15 18 9" />
+                      </svg>
+                      <span className="truncate">{label}</span>
+                      <span className="shrink-0 text-[10px] font-normal text-subtle/70 normal-case tabular-nums">
+                        · {summary.count}
+                      </span>
+                    </span>
+                    {showTotal && (
+                      <span
+                        className={cn(
+                          "shrink-0 tabular-nums",
+                          summary.total > 0 ? "text-success" : "text-text",
+                        )}
+                      >
+                        {sign}
+                        {fmtAmt(summary.total, CURRENCY.UAH)}
+                      </span>
+                    )}
+                  </button>
+                );
+              }}
               itemContent={(index) => {
                 const t = flatItems[index];
                 if (!t) return null;

@@ -29,7 +29,7 @@
  *  - Date-range bottom-sheet picker beyond the month nav (covered by
  *    `setRange` on the filter hook — UI can be added later).
  */
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Pressable,
   RefreshControl,
@@ -69,6 +69,8 @@ import {
   type FinykTxFilterState,
   type ManualExpenseRecord,
 } from "@/modules/finyk/lib/transactionsStore";
+import { STORAGE_KEYS } from "@sergeant/shared";
+import { _getMMKVInstance, safeReadLS, safeWriteLS } from "@/lib/storage";
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -84,8 +86,38 @@ const BASE_FILTERS: FilterChip[] = [
 ];
 
 type FeedItem =
-  | { kind: "header"; key: string; label: string; total: number; count: number }
+  | {
+      kind: "header";
+      key: string;
+      dayKey: string;
+      label: string;
+      total: number;
+      count: number;
+      collapsed: boolean;
+    }
   | { kind: "tx"; key: string; tx: Transaction };
+
+/** Sparse per-day override map. Missing entries fall back to the
+ *  default rule ("today is expanded, rest collapsed"); explicit
+ *  booleans survive across cold starts. */
+type DayCollapseMap = Record<string, boolean>;
+
+const DAY_COLLAPSE_KEY = STORAGE_KEYS.FINYK_TX_DAY_COLLAPSE;
+
+function readDayCollapse(): DayCollapseMap {
+  const v = safeReadLS<DayCollapseMap | null>(DAY_COLLAPSE_KEY, null);
+  if (v && typeof v === "object" && !Array.isArray(v)) return v;
+  return {};
+}
+
+function isDayExpanded(
+  overrides: DayCollapseMap,
+  key: string,
+  todayKey: string,
+): boolean {
+  const o = overrides[key];
+  return o === undefined ? key === todayKey : !!o;
+}
 
 // ── Helpers ────────────────────────────────────────────────────────────
 
@@ -107,6 +139,10 @@ function getMonthBounds(
 
 function dayKeyFromTime(timeSec: number): string {
   const d = new Date(timeSec * 1000);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function dayKeyFromDate(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
@@ -261,6 +297,46 @@ export function TransactionsPage({
 
   const searchLower = search.trim().toLowerCase();
 
+  // Per-day collapse/expand state. Persisted as a sparse override map;
+  // missing entries fall back to the default "only today is expanded"
+  // rule. Live-syncs with other MMKV writers (e.g. another screen that
+  // flips the same flag) via the MMKV value listener.
+  const todayDayKey = useMemo(() => dayKeyFromDate(now), [now]);
+  const [dayOverrides, setDayOverrides] = useState<DayCollapseMap>(() =>
+    readDayCollapse(),
+  );
+  useEffect(() => {
+    const mmkv = _getMMKVInstance();
+    const sub = mmkv.addOnValueChangedListener((changedKey) => {
+      if (changedKey === DAY_COLLAPSE_KEY) {
+        setDayOverrides(readDayCollapse());
+      }
+    });
+    return () => sub.remove();
+  }, []);
+
+  const toggleDay = useCallback(
+    (dayKey: string) => {
+      setDayOverrides((prev) => {
+        const expanded = isDayExpanded(prev, dayKey, todayDayKey);
+        const next: DayCollapseMap = { ...prev, [dayKey]: !expanded };
+        safeWriteLS(DAY_COLLAPSE_KEY, next);
+        return next;
+      });
+    },
+    [todayDayKey],
+  );
+
+  // When any filter / search is active, collapsed days would hide
+  // matches — force every day expanded so nothing looks "missing". The
+  // persisted override is untouched; clearing filters restores it.
+  const filtersActive =
+    filters.filter !== "all" ||
+    filters.accountIds.length > 0 ||
+    filters.range.startMs != null ||
+    filters.range.endMs != null ||
+    !!searchLower;
+
   // Full list of expense categories (built-ins + user customs) used by
   // the category-filter picker. Mirrors the same merger the web feed
   // uses, so the chip set on mobile and the filter the user picks below
@@ -354,56 +430,54 @@ export function TransactionsPage({
   ]);
 
   // Build the day-grouped flat array consumed by FlashList: each day
-  // contributes a `header` row (label + signed total) followed by its
-  // tx rows.
+  // contributes a `header` row (label + signed total), optionally
+  // followed by its tx rows. When a day is collapsed the header is
+  // still emitted — only the tx rows are suppressed so the user can tap
+  // the header to expand.
   const feed = useMemo<FeedItem[]>(() => {
+    // First pass: compute per-day totals across the full filtered set so
+    // the collapsed-header summary stays accurate regardless of whether
+    // the rows are actually emitted below.
+    const totals = new Map<string, { total: number; count: number }>();
+    for (const t of filtered) {
+      const k = dayKeyFromTime(t.time || 0);
+      const acc = totals.get(k);
+      if (acc) {
+        acc.total += Number(t.amount || 0);
+        acc.count += 1;
+      } else {
+        totals.set(k, { total: Number(t.amount || 0), count: 1 });
+      }
+    }
+
     const out: FeedItem[] = [];
     let currentKey = "";
-    let groupStart = -1;
+    let currentCollapsed = false;
     for (let i = 0; i < filtered.length; i++) {
       const t = filtered[i]!;
       const k = dayKeyFromTime(t.time || 0);
       if (k !== currentKey) {
-        if (groupStart >= 0) {
-          // Patch the just-finished header with totals. The right bound
-          // is `out.length` (everything pushed so far for the previous
-          // day), NOT `i` — `i` indexes into `filtered`, while
-          // `finishGroup` walks `out` which also contains header rows.
-          finishGroup(out, groupStart, out.length);
-        }
-        groupStart = out.length;
+        const expanded =
+          filtersActive || isDayExpanded(dayOverrides, k, todayDayKey);
+        currentCollapsed = !expanded;
+        const summary = totals.get(k) ?? { total: 0, count: 0 };
         out.push({
           kind: "header",
           key: `h-${k}`,
+          dayKey: k,
           label: formatDayLabel(k, now),
-          total: 0,
-          count: 0,
+          total: summary.total,
+          count: summary.count,
+          collapsed: currentCollapsed,
         });
         currentKey = k;
       }
-      out.push({ kind: "tx", key: `t-${t.id}`, tx: t });
-    }
-    if (groupStart >= 0) {
-      finishGroup(out, groupStart, out.length);
-    }
-    return out;
-  }, [filtered, now]);
-
-  function finishGroup(out: FeedItem[], headerIdx: number, end: number) {
-    const header = out[headerIdx];
-    if (!header || header.kind !== "header") return;
-    let sum = 0;
-    let count = 0;
-    for (let j = headerIdx + 1; j < end; j++) {
-      const item = out[j];
-      if (item?.kind === "tx") {
-        sum += Number(item.tx.amount || 0);
-        count += 1;
+      if (!currentCollapsed) {
+        out.push({ kind: "tx", key: `t-${t.id}`, tx: t });
       }
     }
-    header.total = sum;
-    header.count = count;
-  }
+    return out;
+  }, [filtered, now, dayOverrides, todayDayKey, filtersActive]);
 
   // ── Handlers ────────────────────────────────────────────────────────
   const openAddSheet = useCallback(() => {
@@ -480,14 +554,33 @@ export function TransactionsPage({
         const totalText =
           item.count === 0 ? "" : `${sign}${fmtAmt(item.total, CURRENCY.UAH)}`;
         return (
-          <View
-            className="flex-row items-center justify-between bg-cream-100/80 px-4 py-2 border-b border-cream-300"
+          <Pressable
+            onPress={() => toggleDay(item.dayKey)}
+            accessibilityRole="button"
+            accessibilityState={{ expanded: !item.collapsed }}
+            accessibilityLabel={`${item.collapsed ? "Розгорнути" : "Згорнути"} ${item.label}`}
+            className="flex-row items-center justify-between bg-cream-100/80 px-4 py-2 border-b border-cream-300 active:opacity-70"
             testID={`finyk-tx-day-${item.key}`}
           >
-            {/* eslint-disable-next-line sergeant-design/no-eyebrow-drift */}
-            <Text className="text-xs font-semibold uppercase tracking-wide text-stone-500">
-              {item.label}
-            </Text>
+            <View className="flex-row items-center flex-1 min-w-0">
+              <Text
+                className="text-stone-500 mr-2 text-xs"
+                style={{ width: 10 }}
+                accessibilityElementsHidden
+                importantForAccessibility="no"
+              >
+                {item.collapsed ? "▸" : "▾"}
+              </Text>
+              {/* eslint-disable-next-line sergeant-design/no-eyebrow-drift */}
+              <Text className="text-xs font-semibold uppercase tracking-wide text-stone-500 flex-shrink">
+                {item.label}
+              </Text>
+              {item.count > 0 ? (
+                <Text className="text-[10px] font-normal text-stone-400 ml-2">
+                  · {item.count}
+                </Text>
+              ) : null}
+            </View>
             {totalText ? (
               <Text
                 className={
@@ -500,7 +593,7 @@ export function TransactionsPage({
                 {totalText}
               </Text>
             ) : null}
-          </View>
+          </Pressable>
         );
       }
       const tx = item.tx;
@@ -537,6 +630,7 @@ export function TransactionsPage({
       handleSwipeRight,
       hiddenTxIdSet,
       openEditSheet,
+      toggleDay,
       txCategories,
       txSplits,
     ],
