@@ -29,6 +29,8 @@ const FINYK_MANUAL_ONLY_KEY = "finyk_manual_only_v1";
 const FINYK_MANUAL_EXPENSES_KEY = "finyk_manual_expenses_v1";
 const FINYK_CUSTOM_CATS_KEY = "finyk_custom_cats_v1";
 const FINYK_MONTHLY_PLAN_KEY = "finyk_monthly_plan";
+const FINYK_TX_CACHE_KEY = "finyk_tx_cache";
+const FINYK_TX_CACHE_LAST_GOOD_KEY = "finyk_tx_cache_last_good";
 const FIZRUK_WORKOUTS_KEY = "fizruk_workouts_v1";
 const FIZRUK_MEASUREMENTS_KEY = "fizruk_measurements_v1";
 const ROUTINE_STATE_KEY = "hub_routine_v1";
@@ -98,78 +100,307 @@ interface ManualExpense {
   category: string;
 }
 
+// Monobank transaction shape mirrors the canonical `Transaction` type
+// from `@sergeant/finyk-domain`: amount is signed minor units (kopecks),
+// `time` is unix seconds, `date` is ISO. Keeping both the canonical and
+// the legacy compatibility fields populated so every Finyk selector
+// recognises the row regardless of which field it reads.
+interface MonoTx {
+  id: string;
+  amount: number;
+  date: string;
+  time: number;
+  description: string;
+  merchant: string;
+  mcc: number;
+  categoryId: string;
+  type: "expense" | "income";
+  source: "mono";
+  accountId: string | null;
+  manual: boolean;
+  note?: string;
+  _source: string;
+  _accountId: string | null;
+  _manual: boolean;
+}
+
+// Build a Monobank-shaped transaction from a compact spec entry. Amount
+// is in UAH (floating point) and gets converted to signed kopecks so
+// `getTxStatAmount` / `getMonthlySummary` compute spent/income correctly.
+function buildMonoTx(
+  seed: number,
+  at: Date,
+  uah: number,
+  description: string,
+  mcc: number,
+  kind: "expense" | "income",
+): MonoTx {
+  const amountKopecks =
+    kind === "expense" ? -Math.round(uah * 100) : Math.round(uah * 100);
+  return {
+    id: shortId("demo_mtx", seed),
+    amount: amountKopecks,
+    date: toISO(at),
+    time: Math.floor(at.getTime() / 1000),
+    description,
+    merchant: description,
+    mcc,
+    categoryId: "",
+    type: kind,
+    source: "mono",
+    accountId: "demo_acc_main",
+    manual: false,
+    _source: "monobank",
+    _accountId: "demo_acc_main",
+    _manual: false,
+  };
+}
+
 function seedFinyk(): void {
-  // Manual expenses — mix of categories spread over the last 14 days.
-  // Shape matches `addManualExpense` in `useStorage.ts`:
-  //   { id, date, description, amount, category }
-  const spec: Array<
-    Omit<ManualExpense, "id" | "date"> & { d: number; h: number }
-  > = [
-    { d: 0, h: 9, amount: 145, category: "food", description: "Сільпо" },
+  // Current-month transactions presented as Monobank statement rows.
+  // Populates `finyk_tx_cache` so Overview's spent/income totals, the
+  // Analytics page, and the Transactions list all render with real
+  // numbers — `useMonobank` hydrates `realTx` from this snapshot when
+  // no token is connected (manual-only mode).
+  //
+  // `d` is days-ago, `h` is hour of day. MCCs are realistic so the
+  // auto-categoriser routes each tx to the expected bucket without us
+  // having to pre-assign `finyk_tx_cats`.
+  const monoSpec: Array<{
+    d: number;
+    h: number;
+    amount: number;
+    description: string;
+    mcc: number;
+    kind: "expense" | "income";
+  }> = [
+    {
+      d: 0,
+      h: 9,
+      amount: 145,
+      mcc: 5411,
+      description: "Сільпо",
+      kind: "expense",
+    },
     {
       d: 0,
       h: 13,
       amount: 220,
-      category: "restaurant",
+      mcc: 5812,
       description: "Піца Celentano",
+      kind: "expense",
     },
-    { d: 0, h: 18, amount: 85, category: "transport", description: "Bolt" },
-    { d: 1, h: 10, amount: 390, category: "food", description: "АТБ" },
+    {
+      d: 0,
+      h: 18,
+      amount: 85,
+      mcc: 4121,
+      description: "Bolt",
+      kind: "expense",
+    },
+    {
+      d: 1,
+      h: 10,
+      amount: 390,
+      mcc: 5411,
+      description: "АТБ",
+      kind: "expense",
+    },
     {
       d: 1,
       h: 20,
       amount: 199,
-      category: "subscriptions",
+      mcc: 4899,
       description: "Netflix",
+      kind: "expense",
     },
-    { d: 2, h: 12, amount: 60, category: "transport", description: "Метро" },
+    {
+      d: 2,
+      h: 12,
+      amount: 60,
+      mcc: 4111,
+      description: "Київський метрополітен",
+      kind: "expense",
+    },
     {
       d: 2,
       h: 19,
       amount: 450,
-      category: "restaurant",
+      mcc: 5812,
       description: "Вечеря з друзями",
+      kind: "expense",
     },
-    { d: 3, h: 11, amount: 1200, category: "shopping", description: "Rozetka" },
-    { d: 4, h: 8, amount: 35, category: "food", description: "Кава" },
-    { d: 4, h: 17, amount: 980, category: "health", description: "Аптека" },
-    { d: 5, h: 14, amount: 550, category: "food", description: "Сільпо" },
-    { d: 6, h: 13, amount: 320, category: "restaurant", description: "Суші" },
+    {
+      d: 3,
+      h: 11,
+      amount: 1200,
+      mcc: 5732,
+      description: "Rozetka",
+      kind: "expense",
+    },
+    {
+      d: 4,
+      h: 8,
+      amount: 35,
+      mcc: 5814,
+      description: "Aroma Kava",
+      kind: "expense",
+    },
+    {
+      d: 4,
+      h: 17,
+      amount: 980,
+      mcc: 5912,
+      description: "Аптека АНЦ",
+      kind: "expense",
+    },
+    {
+      d: 5,
+      h: 14,
+      amount: 550,
+      mcc: 5411,
+      description: "Сільпо",
+      kind: "expense",
+    },
+    {
+      d: 5,
+      h: 9,
+      amount: 45000,
+      mcc: 0,
+      description: "ФОП надходження",
+      kind: "income",
+    },
+    {
+      d: 6,
+      h: 13,
+      amount: 320,
+      mcc: 5812,
+      description: "Суші Woк",
+      kind: "expense",
+    },
     {
       d: 7,
       h: 10,
-      amount: 180,
-      category: "transport",
-      description: "Заправка WOG",
+      amount: 1800,
+      mcc: 5541,
+      description: "WOG",
+      kind: "expense",
     },
     {
       d: 7,
       h: 21,
       amount: 129,
-      category: "subscriptions",
+      mcc: 4899,
       description: "Spotify",
+      kind: "expense",
     },
-    { d: 8, h: 15, amount: 720, category: "shopping", description: "Zara" },
-    { d: 9, h: 9, amount: 95, category: "food", description: "Ранок, випічка" },
+    {
+      d: 8,
+      h: 15,
+      amount: 720,
+      mcc: 5651,
+      description: "Zara",
+      kind: "expense",
+    },
+    {
+      d: 9,
+      h: 9,
+      amount: 95,
+      mcc: 5814,
+      description: "Львівська пекарня",
+      kind: "expense",
+    },
     {
       d: 10,
       h: 18,
       amount: 410,
-      category: "entertainment",
-      description: "Кіно",
+      mcc: 7832,
+      description: "Планета Кіно",
+      kind: "expense",
     },
-    { d: 11, h: 12, amount: 260, category: "food", description: "Новус" },
+    {
+      d: 11,
+      h: 12,
+      amount: 260,
+      mcc: 5411,
+      description: "Новус",
+      kind: "expense",
+    },
     {
       d: 12,
       h: 19,
       amount: 150,
-      category: "restaurant",
-      description: "Кав'ярня",
+      mcc: 5814,
+      description: "Lviv Croissants",
+      kind: "expense",
     },
-    { d: 13, h: 16, amount: 85, category: "transport", description: "Uber" },
+    {
+      d: 13,
+      h: 16,
+      amount: 85,
+      mcc: 4121,
+      description: "Uber",
+      kind: "expense",
+    },
+    {
+      d: 14,
+      h: 11,
+      amount: 620,
+      mcc: 5411,
+      description: "Сільпо",
+      kind: "expense",
+    },
+    {
+      d: 15,
+      h: 20,
+      amount: 280,
+      mcc: 5812,
+      description: "Puzata Hata",
+      kind: "expense",
+    },
   ];
 
-  const transactions: ManualExpense[] = spec.map((s, i) => ({
+  const monoTxs = monoSpec.map((s, i) =>
+    buildMonoTx(
+      1800 + i,
+      daysAgo(s.d, s.h, 0),
+      s.amount,
+      s.description,
+      s.mcc,
+      s.kind,
+    ),
+  );
+
+  // Snapshot format expected by `useMonobank.loadCacheSnapshot`.
+  const snapshot = { txs: monoTxs, timestamp: Date.now() };
+  writeJSON(FINYK_TX_CACHE_KEY, snapshot);
+  writeJSON(FINYK_TX_CACHE_LAST_GOOD_KEY, snapshot);
+
+  // A handful of manual expenses alongside the bank stream, so the
+  // «Ручні витрати» section has content and the Transactions page
+  // shows the manual-entry chip in its list.
+  const manualSpec: Array<
+    Omit<ManualExpense, "id" | "date"> & { d: number; h: number }
+  > = [
+    { d: 0, h: 8, amount: 45, category: "food", description: "Кава на винос" },
+    {
+      d: 1,
+      h: 14,
+      amount: 120,
+      category: "transport",
+      description: "Таксі додому",
+    },
+    {
+      d: 2,
+      h: 20,
+      amount: 260,
+      category: "entertainment",
+      description: "Квиток на концерт",
+    },
+    { d: 4, h: 11, amount: 75, category: "food", description: "Бізнес-ланч" },
+  ];
+
+  const transactions: ManualExpense[] = manualSpec.map((s, i) => ({
     id: shortId("demo_fx", 1700 + i),
     date: toISO(daysAgo(s.d, s.h, 0)),
     description: s.description,
@@ -550,6 +781,8 @@ const SEEDED_KEYS = [
   FINYK_CUSTOM_CATS_KEY,
   FINYK_MONTHLY_PLAN_KEY,
   FINYK_MANUAL_ONLY_KEY,
+  FINYK_TX_CACHE_KEY,
+  FINYK_TX_CACHE_LAST_GOOD_KEY,
   FIZRUK_WORKOUTS_KEY,
   FIZRUK_MEASUREMENTS_KEY,
   ROUTINE_STATE_KEY,
