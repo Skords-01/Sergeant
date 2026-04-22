@@ -30,6 +30,7 @@
     "db:up": "docker compose up -d",
     "db:down": "docker compose down",
     "db:migrate": "pnpm --filter @sergeant/server db:migrate",
+    "licenses:gen": "node scripts/generate-licenses.mjs",
     "prepare": "husky"
   },
   "devDependencies": {

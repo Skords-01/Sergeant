@@ -34,17 +34,28 @@ Preview-деплої на Vercel тепер працюють коректно п
 
 **Що варто покращити:**
 
-- Два pre-existing flake-и у `src/modules/routine/lib/__tests__/routineStore.test.ts`
-  (`mockEnqueueChange` не отримує `"hub_routine_v1"`). Падають і на main
-  без нових змін — треба окремий PR з фіксом очікувань або заміною
-  stub-а `enqueueChange`.
-- Bundle hygiene: `vendor-zxing` (411kB) і `vendor` (345kB) лишаються
-  великими. У WebView (shell) вони підвантажуються eager — кандидати на
-  lazy-chunk за feature flag.
+- Ранні routine-store flake-и у `apps/mobile/src/modules/routine/lib/__tests__/routineStore.test.ts`
+  пофіксено у [#513](https://github.com/Skords-01/Sergeant/pull/513) (hard-coded date-key
+  → динамічний `dateKeyFromDate(new Date())`, щоб `habitScheduledOnDate`
+  не no-op-ив reducer після 2026-04-22). `check` job зеленіший.
+- Bundle artefact: `vendor-zxing` (411kB) і `vendor` (345kB). **ZXing
+  вже lazy** — `NutritionApp` загорнутий у `React.lazy` у
+  `src/core/App.tsx:64`, а всередині `useBarcodeScanner.ts:94` йде
+  `await import("@zxing/browser")`. У `apps/server/dist/index.html`
+  chunk не preload-иться. На Chrome/Edge/Android Chrome спрацьовує
+  нативний `BarcodeDetector` (`useBarcodeScanner.ts:219-282`), zxing-chunk
+  не завантажується взагалі. 411 kB платять тільки Safari/Firefox
+  користувачі і тільки якщо реально відкривають сканер штрихкоду.
+  `vendor` (345kB) — react-runtime + основні бібліотеки, preload-иться
+  навмисно.
 - Web push тримає VAPID-keys і `webpush.sendNotification`; APNs/FCM для
   RN/shell — окремо (див. native секцію).
-- `THIRD_PARTY_LICENSES.md` треба регенерувати при наступному upgrad-і
-  залежностей (не автоматизовано).
+- `THIRD_PARTY_LICENSES.md` регенерується через `pnpm licenses:gen`
+  (`scripts/generate-licenses.mjs`). Сканує prod-дерева `@sergeant/web`
+  і `@sergeant/server`, фільтрує build/test-тулінг (babel, metro,
+  react-native, jest, vitest, eslint тощо), що pnpm матеріалізує
+  через peer-deps `@better-auth/expo → expo-constants → expo`, але
+  які не ship-аться у Vercel-бандл і не викликаються на Railway.
 
 **Blocking для релізу:** немає. Запускається як є.
 
