@@ -22,7 +22,48 @@ const config: CapacitorConfig = {
   appName: "Sergeant Shell",
   webDir: "../server/dist",
   server: {
+    // Native WebView звертається до `apps/server` через HTTPS; ніяких
+    // dev-only `server.url` / `cleartext: true` у production-config-у
+    // тримати не можна — вони б ефективно робили cleartext-режим і
+    // ламали б `android:usesCleartextTraffic="false"` у маніфесті.
     androidScheme: "https",
+  },
+  android: {
+    // Паралельно до `android:usesCleartextTraffic="false"` та
+    // `@xml/network_security_config` — захист від ситуації, коли
+    // WebView завантажить https-сторінку, яка мікс-контент тягне http-
+    // ресурс. Тримаємо явний `false`, хоча це і default у Capacitor 7.
+    allowMixedContent: false,
+  },
+  plugins: {
+    SplashScreen: {
+      // `launchAutoHide: false` віддає керування хайдом splash-а коду у
+      // `initNativeShell()` (`SplashScreen.hide({ fadeOutDuration })`)
+      // — інакше дефолтний auto-hide після 500 ms створює flash між
+      // OS-splash і першим React-рендером. `launchShowDuration` — це
+      // failsafe на випадок, якщо runtime-код ніколи не дійде до
+      // `hide()` (bootstrap-помилка ще до маунту React).
+      launchAutoHide: false,
+      launchShowDuration: 3000,
+      // Збігається з web `--c-bg` (light-тема, #fdf9f3). Покриває
+      // області, де `splash.png` не розтягується до країв (wide /
+      // short екрани), щоб не було білої смуги.
+      backgroundColor: "#fdf9f3",
+      androidSplashResourceName: "splash",
+      androidScaleType: "CENTER_CROP",
+      showSpinner: false,
+      splashFullScreen: true,
+      splashImmersive: true,
+    },
+    StatusBar: {
+      // Не дозволяємо WebView-контенту рендеритись під status-bar-ом —
+      // BottomNav / safe-area плиток web-сайду на iOS рахується без
+      // offset-а під notch. Runtime-код у `initNativeShell()` дальше
+      // перевизначає стиль/колір у залежності від dark/light-теми.
+      overlaysWebView: false,
+      style: "DEFAULT",
+      backgroundColor: "#fdf9f3",
+    },
   },
 };
 
