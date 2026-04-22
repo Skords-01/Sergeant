@@ -1,3 +1,5 @@
+import { getPlatform, isCapacitor } from "@sergeant/shared";
+
 let initialized = false;
 let sentryModule = null;
 
@@ -53,6 +55,11 @@ export async function initSentry() {
       return event;
     },
   });
+
+  // Теги для тріажу: відрізнити події з нативного Capacitor WebView від
+  // браузерних (native-specific баги: inset, кукі, keyboard resize тощо).
+  mod.setTag("platform", getPlatform());
+  mod.setTag("is_capacitor", String(isCapacitor()));
 
   initialized = true;
 }

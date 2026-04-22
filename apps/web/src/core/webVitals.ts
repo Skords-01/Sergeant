@@ -1,4 +1,5 @@
 import { apiUrl } from "@shared/lib/apiUrl";
+import { isCapacitor } from "@sergeant/shared";
 
 /**
  * Збір Core Web Vitals (LCP / INP / CLS / FCP / TTFB) і відправка батчем
@@ -130,6 +131,11 @@ export function enqueue(metric) {
  * web-vitals chunk не потрапив у критичний шлях.
  */
 export async function initWebVitals() {
+  // Core Web Vitals у нативному Capacitor WebView — це шум: cold-start WebView,
+  // відсутність SSR і інший JS engine перекручують LCP/FCP/CLS/INP, отруюючи
+  // RUM-дашборди 'web-like' метриками з мобільного шелла. Тому тут — ранній
+  // return, щоб взагалі не тягнути `web-vitals` chunk у native-бандл.
+  if (isCapacitor()) return;
   // Guard проти подвійної ініціалізації (Vite HMR, повторний виклик з іншої
   // entry-точки тощо). Без нього `onLCP(enqueue)` реєструється двічі і кожне
   // `web_vitals_*` спостереження дублюється — отруює baseline, який цей

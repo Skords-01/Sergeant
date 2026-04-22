@@ -130,3 +130,57 @@ describe("webVitals.flush", () => {
     expect(payload.metrics[1]).toMatchObject({ name: "CLS", value: 0.1235 });
   });
 });
+
+describe("initWebVitals under Capacitor", () => {
+  afterEach(() => {
+    vi.doUnmock("@sergeant/shared");
+    vi.doUnmock("web-vitals");
+    vi.restoreAllMocks();
+    vi.resetModules();
+  });
+
+  it("skips init: does not load web-vitals nor wire lifecycle", async () => {
+    vi.resetModules();
+
+    vi.doMock("@sergeant/shared", async () => {
+      const actual =
+        await vi.importActual<typeof import("@sergeant/shared")>(
+          "@sergeant/shared",
+        );
+      return { ...actual, isCapacitor: () => true };
+    });
+
+    const onLCP = vi.fn();
+    const onINP = vi.fn();
+    const onCLS = vi.fn();
+    const onFCP = vi.fn();
+    const onTTFB = vi.fn();
+    vi.doMock("web-vitals", () => ({ onLCP, onINP, onCLS, onFCP, onTTFB }));
+
+    const docAdd = vi.spyOn(document, "addEventListener");
+    const winAdd = vi.spyOn(window, "addEventListener");
+
+    const mod = await import("./webVitals");
+    mod.__resetForTests();
+    await mod.initWebVitals();
+
+    // None of the `web-vitals` collectors must be registered.
+    expect(onLCP).not.toHaveBeenCalled();
+    expect(onINP).not.toHaveBeenCalled();
+    expect(onCLS).not.toHaveBeenCalled();
+    expect(onFCP).not.toHaveBeenCalled();
+    expect(onTTFB).not.toHaveBeenCalled();
+
+    // No lifecycle listeners should be wired either.
+    expect(docAdd).not.toHaveBeenCalledWith(
+      "visibilitychange",
+      expect.anything(),
+      expect.anything(),
+    );
+    expect(winAdd).not.toHaveBeenCalledWith(
+      "pagehide",
+      expect.anything(),
+      expect.anything(),
+    );
+  });
+});
