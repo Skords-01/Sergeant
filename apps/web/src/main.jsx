@@ -20,6 +20,7 @@ import { ErrorBoundary } from "./core/ErrorBoundary.jsx";
 import { initSentry } from "./core/sentry.js";
 import { initWebVitals } from "./core/webVitals.js";
 import { runDemoCleanupOnce } from "./core/onboarding/cleanupDemoData.js";
+import { runDemoSeedFromUrl } from "./core/onboarding/seedDemoData.js";
 import { isCapacitor } from "@sergeant/shared";
 
 const queryClient = createAppQueryClient();
@@ -35,6 +36,12 @@ const ReactQueryDevtools = import.meta.env.DEV
     )
   : null;
 
+// Demo-mode URL trigger: `?demo=1` (alias `?demo=seed`) populates the
+// local store with a realistic sample payload across all modules and
+// reloads onto `/`. `?demo=reset` wipes it. Called BEFORE storage
+// migrations / the legacy demo-cleanup pass so the seeded payload is
+// visible to both and survives the boot.
+runDemoSeedFromUrl();
 storageManager.runAll();
 runDemoCleanupOnce();
 
