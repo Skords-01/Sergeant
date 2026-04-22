@@ -62,6 +62,12 @@ jobs:
       # between the `assembleDebug` and `assembleAndroidTest` passes
       # that Detox triggers via `pnpm e2e:build:android`.
       GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.jvmargs=-Xmx4g"
+      # `@sentry/react-native` registers a Gradle task that runs
+      # `sentry-cli` to upload source maps. Without SENTRY_ORG /
+      # SENTRY_PROJECT / SENTRY_AUTH_TOKEN (only set on EAS release
+      # lanes) the task aborts the build. Mirror the iOS workflow's
+      # no-op flag so Detox Android builds succeed on CI.
+      SENTRY_DISABLE_AUTO_UPLOAD: "true"
     # Pixel_5_API_34 mirrors the Detox `devices.emulator` avdName in
     # `apps/mobile/.detoxrc.js`, so contributors who run Detox locally
     # against the same AVD see identical behaviour.
