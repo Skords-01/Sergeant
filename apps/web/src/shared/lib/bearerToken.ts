@@ -19,7 +19,7 @@
  *
  * Реальний модуль лежить у `apps/mobile-shell/src/auth-storage.ts`.
  */
-import { isCapacitor } from "@shared/lib/platform";
+import { isCapacitor } from "@sergeant/shared";
 
 type AuthStorageModule = {
   getBearerToken: () => Promise<string | null>;

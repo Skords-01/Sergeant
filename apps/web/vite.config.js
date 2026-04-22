@@ -123,6 +123,24 @@ export default defineConfig(({ mode }) => {
               if (id.includes("react-virtuoso")) return "vendor-virtuoso";
               if (id.includes("@zxing")) return "vendor-zxing";
               if (id.includes("react-markdown")) return "vendor-markdown";
+              // Capacitor runtime + native плагіни (ML Kit / community
+              // barcode scanner, @capacitor/preferences для bearer-storage)
+              // свідомо НЕ мапляться на жоден manual chunk: це дозволяє
+              // Rollup злити їх у ті самі async chunk-и, з яких вони
+              // єдино імпортуються через dynamic `import()` —
+              // `@sergeant/mobile-shell/barcodeNative` (→
+              // `useBarcodeScanner`) та
+              // `@sergeant/mobile-shell/auth-storage` (→
+              // `apps/web/src/shared/lib/bearerToken.ts`). Без цього
+              // catch-all нижче загнав би Capacitor-код у загальний
+              // `vendor`, який жадібно підвантажується браузерами.
+              if (
+                id.includes("/node_modules/@capacitor/") ||
+                id.includes("/node_modules/@capacitor-mlkit/") ||
+                id.includes("/node_modules/@capacitor-community/")
+              ) {
+                return undefined;
+              }
               // Ізольований chunk для Sentry, щоб SDK (~30–40 KB gzip) не
               // потрапляв у загальний `vendor`, який шериться між eager-
               // імпортами main bundle. Див. правило 2.3 у
@@ -133,16 +151,6 @@ export default defineConfig(({ mode }) => {
               // `requestIdleCallback`, тож не повинен тягнутись у main.
               if (id.includes("/node_modules/web-vitals/"))
                 return "vendor-web-vitals";
-              // `@capacitor/*` потрібен лише у shell-середовищі і
-              // підтягується через `await import(...)` (див.
-              // `apps/web/src/shared/lib/bearerToken.ts` → `@sergeant/mobile-shell/auth-storage`).
-              // Якщо дати йому впасти у спільний `vendor`, rollup
-              // витягне весь vendor chunk у eager-граф AuthPage/FinykApp
-              // і браузерні юзери завантажать Capacitor-рантайм
-              // дарма. Повертаємо `undefined`, щоб rollup лишив
-              // Capacitor-модулі тільки в async-chunk-у поруч з
-              // `auth-storage`.
-              if (id.includes("/node_modules/@capacitor/")) return;
               return "vendor";
             }
           },

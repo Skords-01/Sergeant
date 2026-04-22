@@ -1,216 +1,83 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+import { useEffect, useRef, useState } from "react";
+import { useToast } from "@shared/hooks/useToast";
 import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  type MutableRefObject,
-} from "react";
-
-async function startZxingScanner(
-  videoEl: HTMLVideoElement | null,
-  stream: MediaStream | null,
-  onDetected: (raw: string) => void,
-  cancelRef: MutableRefObject<boolean>,
-  zxingStopRef: MutableRefObject<(() => void) | null>,
-) {
-  const { BrowserMultiFormatReader } = await import("@zxing/browser");
-  if (cancelRef.current) return;
-
-  const reader = new BrowserMultiFormatReader();
-
-  const controls = await reader.decodeFromStream(
-    stream!,
-    videoEl!,
-    (result) => {
-      if (cancelRef.current) return;
-      if (result) {
-        const raw = result.getText();
-        if (raw) onDetected(raw);
-      }
-    },
-  );
-
-  zxingStopRef.current = () => {
-    try {
-      controls?.stop?.();
-    } catch {
-      /* ignore */
-    }
-    try {
-      (reader as any).reset?.();
-    } catch {
-      /* ignore */
-    }
-  };
-}
+  scanBarcodeNative,
+  useBarcodeScanner,
+  useWebScanner,
+  type BarcodeResult,
+} from "../hooks/useBarcodeScanner.js";
 
 interface BarcodeScannerProps {
+  /**
+   * Fires with the raw barcode string (digits for EAN/UPC etc.). The
+   * existing nutrition flows only care about the code — format and raw
+   * bytes are available on the internal `BarcodeResult` but not exposed
+   * here to keep the component's public surface backwards compatible.
+   */
   onDetected: (raw: string) => void;
   onClose: () => void;
 }
 
-export function BarcodeScanner({ onDetected, onClose }: BarcodeScannerProps) {
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const cancelRef = useRef(false);
-  const zxingStopRef = useRef<(() => void) | null>(null);
-  const rafRef = useRef(0);
-  const [status, setStatus] = useState("");
-
-  const stopAll = useCallback(() => {
-    cancelRef.current = true;
-    if (rafRef.current) {
-      cancelAnimationFrame(rafRef.current);
-      rafRef.current = 0;
-    }
-    if (typeof zxingStopRef.current === "function") {
-      zxingStopRef.current();
-      zxingStopRef.current = null;
-    }
-    try {
-      const s = streamRef.current;
-      if (s) for (const t of s.getTracks()) t.stop();
-    } catch {
-      /* ignore */
-    }
-    streamRef.current = null;
-    if (videoRef.current) videoRef.current.srcObject = null;
-  }, []);
-
-  const handleClose = useCallback(() => {
-    stopAll();
-    onClose();
-  }, [stopAll, onClose]);
-
-  const handleDetected = useCallback(
-    (raw: string) => {
-      stopAll();
-      onDetected(raw);
-    },
-    [stopAll, onDetected],
-  );
+function NativeBarcodeScanner({ onDetected, onClose }: BarcodeScannerProps) {
+  const toast = useToast();
+  const firedRef = useRef(false);
 
   useEffect(() => {
-    cancelRef.current = false;
-
-    const run = async () => {
-      if (!navigator?.mediaDevices?.getUserMedia) {
-        setStatus("Камера недоступна в цьому браузері.");
-        return;
-      }
-
-      let stream: MediaStream;
+    if (firedRef.current) return;
+    firedRef.current = true;
+    let cancelled = false;
+    (async () => {
       try {
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: "environment",
-            width: { ideal: 1920 },
-            height: { ideal: 1080 },
-          },
-          audio: false,
-        });
-      } catch {
-        setStatus("Не вдалося відкрити камеру. Перевір дозволи.");
-        return;
-      }
-
-      if (cancelRef.current) {
-        for (const t of stream.getTracks()) t.stop();
-        return;
-      }
-
-      streamRef.current = stream;
-      const video = videoRef.current;
-      if (video) {
-        video.srcObject = stream;
-        await video.play().catch(() => {});
-      }
-
-      if (cancelRef.current) return;
-
-      const usedBarcodeDetector =
-        typeof window !== "undefined" && "BarcodeDetector" in window;
-
-      if (usedBarcodeDetector) {
-        let detector: any = null;
-        try {
-          detector = new (window as any).BarcodeDetector({
-            formats: ["ean_13", "ean_8", "upc_a", "upc_e", "code_128"],
-          });
-        } catch {
-          detector = null;
+        const result: BarcodeResult | null = await scanBarcodeNative();
+        if (cancelled) return;
+        if (result?.code) {
+          onDetected(result.code);
+        } else {
+          onClose();
         }
-
-        if (detector) {
-          let consecutiveErrors = 0;
-          let lastTickTime = 0;
-          const tick = async () => {
-            if (cancelRef.current) return;
-            const now = performance.now();
-            if (now - lastTickTime < 150) {
-              rafRef.current = requestAnimationFrame(tick);
-              return;
-            }
-            lastTickTime = now;
-            try {
-              const v = videoRef.current;
-              if (v && v.readyState >= 2 && v.videoWidth > 0) {
-                const codes = await detector.detect(v);
-                consecutiveErrors = 0;
-                const raw = codes?.[0]?.rawValue;
-                if (raw) {
-                  handleDetected(raw);
-                  return;
-                }
-              }
-            } catch {
-              consecutiveErrors++;
-              if (consecutiveErrors >= 5) {
-                if (!cancelRef.current) {
-                  startZxingScanner(
-                    videoRef.current,
-                    streamRef.current,
-                    handleDetected,
-                    cancelRef,
-                    zxingStopRef,
-                  ).catch(() =>
-                    setStatus("Сканер не підтримується. Введи код вручну."),
-                  );
-                }
-                return;
-              }
-            }
-            if (!cancelRef.current) {
-              rafRef.current = requestAnimationFrame(tick);
-            }
-          };
-          rafRef.current = requestAnimationFrame(tick);
-          return;
+      } catch (err) {
+        if (cancelled) return;
+        const msg = (err as Error)?.message ?? "";
+        if (msg === "camera-permission-denied") {
+          toast.error(
+            "Потрібен дозвіл на камеру. Увімкни його в налаштуваннях додатку.",
+          );
+        } else {
+          toast.error("Сканер недоступний. Введи код вручну.");
         }
+        onClose();
       }
-
-      try {
-        await startZxingScanner(
-          videoRef.current,
-          streamRef.current,
-          handleDetected,
-          cancelRef,
-          zxingStopRef,
-        );
-      } catch {
-        setStatus(
-          "Сканер не підтримується в цьому браузері. Введи код вручну.",
-        );
-      }
-    };
-
-    void run();
-
+    })();
     return () => {
-      stopAll();
+      cancelled = true;
     };
-  }, [handleDetected, stopAll]);
+  }, [onDetected, onClose, toast]);
+
+  // ML Kit presents its own full-screen scanner UI; no DOM is required,
+  // but we keep an accessible live region so screen-reader users know
+  // what is happening while the modal loads.
+  return (
+    <div role="status" aria-live="polite" className="sr-only">
+      Відкриваю нативний сканер штрих-коду…
+    </div>
+  );
+}
+
+function WebBarcodeScanner({ onDetected, onClose }: BarcodeScannerProps) {
+  const [active, setActive] = useState(true);
+
+  const { videoRef, status } = useWebScanner({
+    active,
+    onDetected: (result) => {
+      setActive(false);
+      onDetected(result.code);
+    },
+  });
+
+  const handleClose = () => {
+    setActive(false);
+    onClose();
+  };
 
   return (
     <div className="fixed inset-0 z-[130] flex items-end">
@@ -260,5 +127,23 @@ export function BarcodeScanner({ onDetected, onClose }: BarcodeScannerProps) {
         </div>
       </div>
     </div>
+  );
+}
+
+/**
+ * Barcode scanner overlay.
+ *
+ * Inside a Capacitor WebView this delegates to the native ML Kit plugin
+ * (loaded via a code-split dynamic import from `@sergeant/mobile-shell`)
+ * and renders no UI of its own — ML Kit shows a full-screen modal. In a
+ * browser it falls back to the existing `getUserMedia` + BarcodeDetector
+ * / zxing flow, which is unchanged from before.
+ */
+export function BarcodeScanner(props: BarcodeScannerProps) {
+  const { isNative } = useBarcodeScanner();
+  return isNative ? (
+    <NativeBarcodeScanner {...props} />
+  ) : (
+    <WebBarcodeScanner {...props} />
   );
 }

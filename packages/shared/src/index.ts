@@ -41,6 +41,11 @@ export * from "./lib/weeklyDigest";
 // DOM-free haptic contract (platform adapters register at app bootstrap).
 export * from "./lib/haptic";
 
+// Platform feature-detect (Capacitor WebView vs browser). DOM-free; reads
+// the `Capacitor` global injected by the native runtime, so `@sergeant/web`
+// can import it without pulling `@capacitor/*` into the browser bundle.
+export * from "./lib/platform";
+
 // DOM-free file-download contract (platform adapters register at app bootstrap).
 export * from "./lib/fileDownload";
 

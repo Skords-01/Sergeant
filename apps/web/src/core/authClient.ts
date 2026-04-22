@@ -5,7 +5,7 @@ import {
   getBearerToken,
   setBearerToken,
 } from "@shared/lib/bearerToken.js";
-import { isCapacitor } from "@shared/lib/platform.js";
+import { isCapacitor } from "@sergeant/shared";
 
 function getAuthBaseURL(): string {
   const configured = apiUrl("");
