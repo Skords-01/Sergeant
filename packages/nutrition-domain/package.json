@@ -11,8 +11,14 @@
     "./meal-types": "./src/mealTypes.ts",
     "./merge-items": "./src/mergeItems.ts",
     "./nutrition-format": "./src/nutritionFormat.ts",
+    "./nutrition-log": "./src/nutritionLog.ts",
+    "./nutrition-pantries": "./src/nutritionPantries.ts",
+    "./nutrition-prefs": "./src/nutritionPrefs.ts",
+    "./nutrition-types": "./src/nutritionTypes.ts",
     "./pantry-text-parser": "./src/pantryTextParser.ts",
-    "./recipe-ids": "./src/recipeIds.ts"
+    "./recipe-ids": "./src/recipeIds.ts",
+    "./shopping-list": "./src/shoppingList.ts",
+    "./water-log": "./src/waterLog.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json --noEmit",
