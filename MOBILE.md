@@ -136,23 +136,23 @@ via `apple-actions/upload-testflight-build@v1`.
 
 ### Required repo secrets
 
-| Secret                                | Source                                                                                                                                                                                                                                                    |
-| ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `APPLE_BUILD_CERTIFICATE_BASE64`      | Apple Developer Portal → Certificates, Identifiers & Profiles → **Certificates** → create an **Apple Distribution** cert → download `.cer` → import into Keychain Access → export as `.p12` → `base64 -i ios_distribution.p12 \| pbcopy`.                 |
-| `APPLE_P12_PASSWORD`                  | The password you set when exporting the `.p12` above.                                                                                                                                                                                                     |
-| `APPLE_PROVISIONING_PROFILE_BASE64`   | *(Optional — only needed if you do not use the ASC API to auto-download.)* Apple Developer Portal → **Profiles** → create an **App Store** profile for `com.sergeant.shell` → download `.mobileprovision` → `base64 -i sergeant-shell.mobileprovision`.   |
-| `APPLE_KEYCHAIN_PASSWORD`             | Any strong random string. Generated per-run keychain password (`openssl rand -hex 32`).                                                                                                                                                                   |
-| `APP_STORE_CONNECT_API_KEY_ID`        | App Store Connect → **Users and Access** → **Integrations** → **App Store Connect API** → create a key with **App Manager** role → copy the 10-char **Key ID**.                                                                                           |
-| `APP_STORE_CONNECT_API_ISSUER_ID`     | Same screen → the **Issuer ID** shown at the top (a UUID). Shared across all keys in the team.                                                                                                                                                            |
-| `APP_STORE_CONNECT_API_KEY_BASE64`    | Same screen → download the `.p8` (one-shot, cannot be re-downloaded) → `base64 -i AuthKey_<KEY_ID>.p8`.                                                                                                                                                   |
-| `IOS_TEAM_ID`                         | Apple Developer Portal → **Membership** → the 10-character **Team ID**.                                                                                                                                                                                   |
+| Secret                              | Source                                                                                                                                                                                                                                                  |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `APPLE_BUILD_CERTIFICATE_BASE64`    | Apple Developer Portal → Certificates, Identifiers & Profiles → **Certificates** → create an **Apple Distribution** cert → download `.cer` → import into Keychain Access → export as `.p12` → `base64 -i ios_distribution.p12 \| pbcopy`.               |
+| `APPLE_P12_PASSWORD`                | The password you set when exporting the `.p12` above.                                                                                                                                                                                                   |
+| `APPLE_PROVISIONING_PROFILE_BASE64` | _(Optional — only needed if you do not use the ASC API to auto-download.)_ Apple Developer Portal → **Profiles** → create an **App Store** profile for `com.sergeant.shell` → download `.mobileprovision` → `base64 -i sergeant-shell.mobileprovision`. |
+| `APPLE_KEYCHAIN_PASSWORD`           | Any strong random string. Generated per-run keychain password (`openssl rand -hex 32`).                                                                                                                                                                 |
+| `APP_STORE_CONNECT_API_KEY_ID`      | App Store Connect → **Users and Access** → **Integrations** → **App Store Connect API** → create a key with **App Manager** role → copy the 10-char **Key ID**.                                                                                         |
+| `APP_STORE_CONNECT_API_ISSUER_ID`   | Same screen → the **Issuer ID** shown at the top (a UUID). Shared across all keys in the team.                                                                                                                                                          |
+| `APP_STORE_CONNECT_API_KEY_BASE64`  | Same screen → download the `.p8` (one-shot, cannot be re-downloaded) → `base64 -i AuthKey_<KEY_ID>.p8`.                                                                                                                                                 |
+| `IOS_TEAM_ID`                       | Apple Developer Portal → **Membership** → the 10-character **Team ID**.                                                                                                                                                                                 |
 
 ### Optional repo variables (`vars.*`, not secrets)
 
-| Var                              | Default                      | Purpose                                                                                                                                                                                                                                       |
-| -------------------------------- | ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `IOS_BUNDLE_ID`                  | `com.sergeant.shell`         | Must match `appId` in `apps/mobile-shell/capacitor.config.ts`.                                                                                                                                                                                |
-| `IOS_PROVISIONING_PROFILE_NAME`  | `Sergeant Shell App Store`   | Human-readable name of the App Store profile in the Apple portal. Used as the value of `provisioningProfiles[IOS_BUNDLE_ID]` in `ExportOptions.plist`. NOT the profile UUID.                                                                   |
+| Var                             | Default                    | Purpose                                                                                                                                                                      |
+| ------------------------------- | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `IOS_BUNDLE_ID`                 | `com.sergeant.shell`       | Must match `appId` in `apps/mobile-shell/capacitor.config.ts`.                                                                                                               |
+| `IOS_PROVISIONING_PROFILE_NAME` | `Sergeant Shell App Store` | Human-readable name of the App Store profile in the Apple portal. Used as the value of `provisioningProfiles[IOS_BUNDLE_ID]` in `ExportOptions.plist`. NOT the profile UUID. |
 
 ### Running the workflow
 
@@ -184,4 +184,4 @@ After a successful run:
 - The fallback Simulator build has no signing requirements, so this
   PR is safe to merge before secrets land in the repo — the release
   job will just log `::warning::iOS release secrets not configured,
-  skipping signed build` and build the unsigned `.app` instead.
+skipping signed build` and build the unsigned `.app` instead.
