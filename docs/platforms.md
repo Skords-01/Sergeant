@@ -184,7 +184,15 @@ Android-частина (`android/`) закомічена, `applicationId`
   тож `sw.js`, `manifest.webmanifest` і `virtual:pwa-register` chunk
   не потрапляють у `apps/server/dist` при shell-білді. `main.jsx`
   додатково обгорнутий у `!isCapacitor()` runtime guard як defensive
-  net. PWA для веб-деплою (Vercel) — без змін.
+  net. PWA для веб-деплою (Vercel) — без змін. Далі у #526 той же
+  flag використано, щоб виключити і web-push (VAPID +
+  `PushManager.subscribe`) з shell-бандла: web-push helpers винесені
+  в окремий модуль `usePushNotifications.webpush.ts`, який
+  підтягується динамічним `import()` лише на веб-білді; у capacitor
+  native push йде через `@capacitor/push-notifications` і web-гілка
+  DCE-виноситься повністю (`urlBase64ToUint8Array`,
+  `applicationServerKey`, `pushManager.subscribe` у shell-dist
+  відсутні — `grep` перевіряє).
 - `vite.config.js#manualChunks` вже виключає `/node_modules/@capacitor/`
   з `vendor` (див. коментар у конфігу) — це навмисно, бо інакше
   Capacitor-plugin-код їхав би до кожного web-юзера. Підʼєднувати нові
