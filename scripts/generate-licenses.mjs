@@ -1,9 +1,16 @@
 #!/usr/bin/env node
 /**
- * Regenerates `THIRD_PARTY_LICENSES.md` from the current production
- * dependency tree of `@sergeant/web` and `@sergeant/server` — the two
- * workspaces that actually ship to end users (Vercel build artefacts +
- * Railway-served Express runtime).
+ * Generates / validates `THIRD_PARTY_LICENSES.md` from the current
+ * production dependency tree of `@sergeant/web` and `@sergeant/server`
+ * — the two workspaces that actually ship to end users (Vercel build
+ * artefacts + Railway-served Express runtime).
+ *
+ * Modes:
+ *   pnpm licenses:gen           # default; writes the file
+ *   pnpm licenses:check         # CI mode; fails if the committed file
+ *                               # is out-of-date **or** any shipped
+ *                               # package declares a license outside
+ *                               # ALLOWED_LICENSES
  *
  * How it works:
  *   1. Invokes `pnpm --filter @sergeant/web --filter @sergeant/server
@@ -17,17 +24,17 @@
  *      Vite-built browser bundle or the Node-side Express runtime.
  *      Keeping them would triple the file with false positives that
  *      are never shipped.
- *   3. Writes a sorted, de-duplicated Markdown list to the repo root
- *      matching the historical format:
+ *   3. In `--check` mode, validates each remaining package's license
+ *      against `ALLOWED_LICENSES` and exits non-zero on any violation
+ *      (this replaces the pre-pnpm root-level license-checker step
+ *      that became a silent no-op after the workspace migration — see
+ *      #516 for background).
+ *   4. Writes (or compares) a sorted, de-duplicated Markdown list to
+ *      the repo root, matching the historical format:
  *          - [<pkg>@<version>](<homepage>) - <license>
- *
- * Run from the repo root:
- *   pnpm licenses:gen
- *
- * The resulting diff should be committed verbatim.
  */
 import { spawnSync } from "node:child_process";
-import { writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -128,6 +135,42 @@ const DEV_EXACT = new Set([
   "react-native-worklets",
 ]);
 
+// Same allowlist the previous root-level `license-checker-rseidelsohn`
+// invocation used in `.github/workflows/ci.yml` — kept verbatim so a
+// policy change can be audited against the pre-pnpm baseline. MPL-2.0
+// is in the list solely because of `web-push`, our one copyleft dep;
+// THIRD_PARTY_LICENSES.md is the attribution file that satisfies its
+// reciprocity clause.
+const ALLOWED_LICENSES = new Set([
+  "MIT",
+  "MIT*",
+  "ISC",
+  "Apache-2.0",
+  "BSD-2-Clause",
+  "BSD-3-Clause",
+  "BSD", // generic BSD (e.g. readline@1.3.0); permissive parent of the
+  // Clause variants, safe to accept when upstream didn't pin a specific
+  // clause count.
+  "MIT-0",
+  "0BSD",
+  "BlueOak-1.0.0",
+  "CC0-1.0",
+  "MPL-2.0",
+  "Unlicense", // public-domain dedication (stream-buffers@2.2.0).
+  "Apache 2.0", // formatting variant of "Apache-2.0" (qrcode-terminal).
+  "(Unlicense OR Apache-2.0)",
+  "(MIT OR CC0-1.0)", // dual-license (type-fest); both halves already
+  // appear individually in this allowlist.
+  "(BSD-3-Clause OR GPL-2.0)", // dual (node-forge); we pick the
+  // BSD-3-Clause half, so the dep is MIT-compatible for our purposes.
+  "(BSD-2-Clause OR MIT OR Apache-2.0)", // triple-dual (rc); all halves
+  // are already allowed individually.
+  "Python-2.0", // permissive PSF licence (argparse); MIT-compatible.
+  "CC-BY-4.0", // attribution-only (caniuse-lite data file, used by
+  // browserslist). Attribution requirement is satisfied by listing the
+  // package in THIRD_PARTY_LICENSES.md, which is this file.
+]);
+
 function isDev(name) {
   if (WORKSPACE_EXACT.has(name) || DEV_EXACT.has(name)) return true;
   for (const p of DEV_PREFIXES) if (name.startsWith(p)) return true;
@@ -156,7 +199,7 @@ function run() {
   return JSON.parse(result.stdout);
 }
 
-function main() {
+function buildEntries() {
   const data = run();
   const rows = [];
   for (const [license, pkgs] of Object.entries(data)) {
@@ -181,15 +224,78 @@ function main() {
       a.name.localeCompare(b.name) || a.version.localeCompare(b.version),
   );
   const seen = new Set();
-  const lines = [];
+  const entries = [];
   for (const r of rows) {
     const key = `${r.name}@${r.version}`;
     if (seen.has(key)) continue;
     seen.add(key);
-    lines.push(`- [${r.name}@${r.version}](${r.homepage}) - ${r.license}`);
+    entries.push(r);
   }
-  writeFileSync(outPath, lines.join("\n") + "\n", "utf8");
-  process.stdout.write(`Wrote ${lines.length} entries to ${outPath}\n`);
+  return entries;
 }
 
-main();
+function render(entries) {
+  return (
+    entries
+      .map((e) => `- [${e.name}@${e.version}](${e.homepage}) - ${e.license}`)
+      .join("\n") + "\n"
+  );
+}
+
+function cmdGenerate() {
+  const entries = buildEntries();
+  writeFileSync(outPath, render(entries), "utf8");
+  process.stdout.write(`Wrote ${entries.length} entries to ${outPath}\n`);
+}
+
+function cmdCheck() {
+  const entries = buildEntries();
+  const errors = [];
+
+  for (const e of entries) {
+    if (!ALLOWED_LICENSES.has(e.license)) {
+      errors.push(
+        `  disallowed license: ${e.name}@${e.version} — "${e.license}"`,
+      );
+    }
+  }
+
+  const expected = render(entries);
+  let actual = "";
+  try {
+    actual = readFileSync(outPath, "utf8");
+  } catch {
+    errors.push(
+      `  ${outPath} is missing; run \`pnpm licenses:gen\` and commit the result`,
+    );
+  }
+  if (actual && actual !== expected) {
+    errors.push(
+      `  ${outPath} is out-of-date; run \`pnpm licenses:gen\` and commit the diff`,
+    );
+  }
+
+  if (errors.length > 0) {
+    process.stderr.write(
+      `License policy check failed (${entries.length} shipped packages):\n` +
+        errors.join("\n") +
+        "\n",
+    );
+    process.exit(1);
+  }
+  process.stdout.write(
+    `License policy check OK: ${entries.length} shipped packages, all under allowed licenses, SBOM up-to-date.\n`,
+  );
+}
+
+const mode = process.argv[2] || "generate";
+if (mode === "--check" || mode === "check") {
+  cmdCheck();
+} else if (mode === "--generate" || mode === "generate") {
+  cmdGenerate();
+} else {
+  process.stderr.write(
+    `usage: node scripts/generate-licenses.mjs [generate|check]\n`,
+  );
+  process.exit(2);
+}

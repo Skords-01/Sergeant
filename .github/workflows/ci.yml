@@ -41,12 +41,15 @@ jobs:
         run: pnpm audit --audit-level=high || true
 
       - name: License policy check (production tree)
-        run: >-
-          pnpm dlx license-checker-rseidelsohn@4.4.2
-          --production
-          --excludePackages "sergeant@0.1.0;@sergeant/web@0.1.0;@sergeant/server@0.1.0;@sergeant/shared@0.1.0;@sergeant/api-client@0.1.0;@sergeant/config@0.1.0;eslint-plugin-sergeant-design@0.0.1"
-          --onlyAllow
-          "MIT;ISC;Apache-2.0;BSD-2-Clause;BSD-3-Clause;MIT-0;0BSD;BlueOak-1.0.0;CC0-1.0;MPL-2.0;(Unlicense OR Apache-2.0)"
+        # Validates that every package in the production dependency
+        # tree of @sergeant/web + @sergeant/server carries an allowed
+        # licence AND that THIRD_PARTY_LICENSES.md reflects the current
+        # lockfile. The previous root-level license-checker invocation
+        # became a silent no-op after the pnpm-workspace migration —
+        # see #516 and scripts/generate-licenses.mjs for the new
+        # pipeline (licence allowlist lives in that script so policy
+        # changes sit next to the generator they govern).
+        run: pnpm licenses:check
 
       - name: Format, lint, test, build
         run: pnpm check
