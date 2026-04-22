@@ -2,7 +2,14 @@
   "name": "@sergeant/mobile-shell",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "description": "Capacitor shell that wraps @sergeant/web into a native Android/iOS app.",
+  "main": "./src/platform.ts",
+  "types": "./src/platform.ts",
+  "exports": {
+    "./platform": "./src/platform.ts",
+    "./barcodeNative": "./src/barcodeNative.ts"
+  },
   "scripts": {
     "sync": "cap sync",
     "copy": "cap copy",
@@ -16,6 +23,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
+    "@capacitor-mlkit/barcode-scanning": "^7.5.0",
     "@capacitor/android": "^7.4.3",
     "@capacitor/core": "^7.4.3",
     "@capacitor/ios": "^7.4.3"

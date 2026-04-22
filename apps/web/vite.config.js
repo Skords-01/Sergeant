@@ -123,6 +123,21 @@ export default defineConfig(({ mode }) => {
               if (id.includes("react-virtuoso")) return "vendor-virtuoso";
               if (id.includes("@zxing")) return "vendor-zxing";
               if (id.includes("react-markdown")) return "vendor-markdown";
+              // Capacitor runtime + native плагіни (ML Kit / community
+              // barcode scanner) свідомо НЕ мапляться на жоден manual
+              // chunk: це дозволяє Rollup злити їх у той самий async
+              // chunk, що й `@sergeant/mobile-shell/barcodeNative`, з
+              // якого вони єдино імпортуються (через dynamic `import()`
+              // у `useBarcodeScanner`). Без цього catch-all нижче загнав
+              // би ML Kit у загальний `vendor`, який жадібно
+              // підвантажується браузерами.
+              if (
+                id.includes("/node_modules/@capacitor/") ||
+                id.includes("/node_modules/@capacitor-mlkit/") ||
+                id.includes("/node_modules/@capacitor-community/")
+              ) {
+                return undefined;
+              }
               // Ізольований chunk для Sentry, щоб SDK (~30–40 KB gzip) не
               // потрапляв у загальний `vendor`, який шериться між eager-
               // імпортами main bundle. Див. правило 2.3 у

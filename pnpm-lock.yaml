@@ -227,6 +227,9 @@ importers:
 
   apps/mobile-shell:
     dependencies:
+      "@capacitor-mlkit/barcode-scanning":
+        specifier: ^7.5.0
+        version: 7.5.0(@capacitor/core@7.6.2)
       "@capacitor/android":
         specifier: ^7.4.3
         version: 7.6.2(@capacitor/core@7.6.2)
@@ -349,6 +352,9 @@ importers:
       "@sergeant/insights":
         specifier: workspace:*
         version: link:../../packages/insights
+      "@sergeant/mobile-shell":
+        specifier: workspace:*
+        version: link:../mobile-shell
       "@sergeant/routine-domain":
         specifier: workspace:*
         version: link:../../packages/routine-domain
@@ -1925,6 +1931,14 @@ packages:
         integrity: sha512-ctxtJ/eA+t+6q2++vj5j7FYX3nRu311q1wfYH3xjlLOsczhlhxAg2FWNUXhpGvAw3BWo1xBcvOV6/YLc2r5FJw==,
       }
     hasBin: true
+
+  "@capacitor-mlkit/barcode-scanning@7.5.0":
+    resolution:
+      {
+        integrity: sha512-DBWRykYYLW0YMj/UzlQ0sVGn83mwGAJsbZVxFsd44pppEEy88OO04lxy9Esv5QpnNBIKPjSIqLWmSLuhoFGPaQ==,
+      }
+    peerDependencies:
+      "@capacitor/core": ">=7.0.0"
 
   "@capacitor/android@7.6.2":
     resolution:
@@ -16692,6 +16706,10 @@ snapshots:
   "@bramus/specificity@2.4.2":
     dependencies:
       css-tree: 3.2.1
+
+  "@capacitor-mlkit/barcode-scanning@7.5.0(@capacitor/core@7.6.2)":
+    dependencies:
+      "@capacitor/core": 7.6.2
 
   "@capacitor/android@7.6.2(@capacitor/core@7.6.2)":
     dependencies:
