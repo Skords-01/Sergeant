@@ -7,6 +7,7 @@ import {
   getCategory,
   resolveExpenseCategoryMeta,
 } from "../utils";
+import { INTERNAL_TRANSFER_ID } from "../constants";
 import type {
   AnalyticsResult,
   Category,
@@ -138,6 +139,10 @@ export function computeCategorySpendIndex(
     if (splits && splits.length > 0) {
       for (const s of splits) {
         if (!s.categoryId || !s.amount) continue;
+        // Внутрішні перекази не є витратою — пропускаємо частку спліту,
+        // узгоджено з `getTxStatAmount`, щоб пай "Категорії" збігався з
+        // "Підсумком місяця".
+        if (s.categoryId === INTERNAL_TRANSFER_ID) continue;
         catSpend[s.categoryId] = (catSpend[s.categoryId] || 0) + s.amount;
         totalSpent += s.amount;
       }

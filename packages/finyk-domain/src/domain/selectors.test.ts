@@ -1,9 +1,13 @@
 import { describe, it, expect } from "vitest";
 import {
+  computeCategorySpendIndex,
   formatComparisonSummary,
+  getCategoryDistribution,
   getCurrentVsPreviousComparison,
+  getMonthlySummary,
 } from "./selectors";
 import type { Transaction } from "./types";
+import { INTERNAL_TRANSFER_ID } from "../constants";
 
 // Minimal tx factory — fills only the fields our aggregation actually reads
 // (`time`, `amount`, `id`) so tests stay readable and focused.
@@ -178,5 +182,51 @@ describe("formatComparisonSummary", () => {
   it("returns no_prev when comparison itself is null", () => {
     const summary = formatComparisonSummary(null);
     expect(summary.direction).toBe("no_prev");
+  });
+});
+
+describe("computeCategorySpendIndex — internal transfers", () => {
+  it("виключає tx, що повністю позначений внутрішнім переказом (через excludedTxIds)", () => {
+    const txs = [
+      tx("t1", "2025-03-05T10:00:00Z", -50000),
+      tx("t2", "2025-03-10T10:00:00Z", -20000),
+    ];
+    const index = computeCategorySpendIndex(txs, {
+      excludedTxIds: new Set(["t2"]),
+      txCategories: { t2: INTERNAL_TRANSFER_ID },
+    });
+    expect(index.totalSpent).toBe(500);
+    expect(index.catSpend[INTERNAL_TRANSFER_ID]).toBeUndefined();
+  });
+
+  it("ігнорує спліт-частку з internal_transfer, узгоджено з getTxStatAmount", () => {
+    const txs = [tx("t1", "2025-03-05T10:00:00Z", -50000)];
+    const splits = {
+      t1: [
+        { amount: 300, categoryId: "food" },
+        { amount: 200, categoryId: INTERNAL_TRANSFER_ID },
+      ],
+    };
+    const index = computeCategorySpendIndex(txs, { txSplits: splits });
+    expect(index.catSpend.food).toBe(300);
+    expect(index.catSpend[INTERNAL_TRANSFER_ID]).toBeUndefined();
+    expect(index.totalSpent).toBe(300);
+  });
+
+  it("пай 'Категорії' збігається з витратами з 'Підсумку місяця' для сплітів з переказом", () => {
+    const txs = [tx("t1", "2025-03-05T10:00:00Z", -50000)];
+    const splits = {
+      t1: [
+        { amount: 300, categoryId: "food" },
+        { amount: 200, categoryId: INTERNAL_TRANSFER_ID },
+      ],
+    };
+    const summary = getMonthlySummary(txs, { txSplits: splits });
+    const distribution = getCategoryDistribution(txs, { txSplits: splits });
+    const distTotal = distribution.reduce((s, c) => s + c.spent, 0);
+    expect(distTotal).toBe(summary.spent);
+    expect(
+      distribution.some((c) => c.categoryId === INTERNAL_TRANSFER_ID),
+    ).toBe(false);
   });
 });
