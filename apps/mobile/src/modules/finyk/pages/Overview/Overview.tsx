@@ -50,7 +50,6 @@ import { NavButtons } from "./NavButtons";
 import { NetworthSection } from "./NetworthSection";
 import { PlanFactCard } from "./PlanFactCard";
 import { PlannedFlowsCard } from "./PlannedFlowsCard";
-import { QuickAddCard } from "./QuickAddCard";
 import { useFinykOverviewData } from "./useFinykOverviewData";
 import type { FinykOverviewData } from "./types";
 
@@ -70,7 +69,6 @@ export interface OverviewProps {
   data?: FinykOverviewData;
   onNavigate?: (route: OverviewNavRoute) => void;
   onCategoryClick?: (catId: string) => void;
-  onQuickAdd?: (categoryLabel?: string | null) => void;
   /** `Date.now()` seam for deterministic jest tests. */
   now?: Date;
 }
@@ -83,7 +81,6 @@ export function Overview({
   data: injected,
   onNavigate,
   onCategoryClick,
-  onQuickAdd,
   now: nowOverride,
 }: OverviewProps) {
   const hookData = useFinykOverviewData();
@@ -108,8 +105,6 @@ export function Overview({
     manualAssets,
     customCategories,
     manualExpenses,
-    frequentCategories,
-    frequentMerchants,
     showBalance,
   } = data;
 
@@ -370,12 +365,6 @@ export function Overview({
         income={income}
         spent={spent}
         factSavings={factSavings}
-      />
-
-      <QuickAddCard
-        onQuickAdd={onQuickAdd}
-        frequentCategories={frequentCategories}
-        frequentMerchants={frequentMerchants}
       />
 
       <PlannedFlowsCard

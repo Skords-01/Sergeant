@@ -643,13 +643,6 @@ export default function App({
                   navigate("transactions");
                 }}
                 showBalance={showBalance}
-                frequentCategories={frequentCategories}
-                frequentMerchants={frequentMerchants}
-                onQuickAdd={(manualLabel) => {
-                  setEditingManualExpenseId(null);
-                  setQuickAddCategory(manualLabel || null);
-                  setShowExpenseSheet(true);
-                }}
               />
             </SectionErrorBoundary>
           )}
