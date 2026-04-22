@@ -19,7 +19,6 @@ import { filterStatTransactions } from "@sergeant/finyk-domain/domain/transactio
 import { Skeleton } from "@shared/components/ui/Skeleton";
 import { THEME_HEX } from "@shared/lib/themeHex.js";
 import { SyncStatusBadge } from "../components/SyncStatusBadge";
-import { RetroComparison } from "../components/RetroComparison";
 
 import { FirstInsightBanner } from "./overview/FirstInsightBanner.jsx";
 import { HeroCard } from "./overview/HeroCard.jsx";
@@ -434,14 +433,6 @@ export function Overview({
         <IncomeExpensePills
           income={income}
           spent={spent}
-          showBalance={showBalance}
-        />
-
-        <RetroComparison
-          transactions={realTx}
-          excludedTxIds={excludedTxIds}
-          txSplits={txSplits}
-          now={now}
           showBalance={showBalance}
         />
 
