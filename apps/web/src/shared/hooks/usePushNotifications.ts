@@ -13,13 +13,21 @@ import {
 
 const PUSH_SUB_KEY = "hub_push_subscribed";
 
-function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer> {
-  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
-  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
-  const rawData = atob(base64);
-  const out = new Uint8Array(new ArrayBuffer(rawData.length));
-  for (let i = 0; i < rawData.length; i++) out[i] = rawData.charCodeAt(i);
-  return out;
+// Весь web-push флоу (`urlBase64ToUint8Array` + `pushManager.subscribe/
+// getSubscription`) ізольований у `./usePushNotifications.webpush.ts`
+// і підтягується динамічним `import()` нижче. У capacitor-білді
+// `import.meta.env.VITE_TARGET === "capacitor"` (інлайниться через
+// `define` у `apps/web/vite.config.js`) => ранній `return` робить увесь
+// web-branch + `import()` мертвим, Rollup DCE викидає цей chunk з
+// shell-бандла повністю. У web-білді chunk емітиться окремо і
+// вантажиться лише коли користувач реально клацне "увімкнути push".
+type WebPushModule = typeof import("./usePushNotifications.webpush");
+let webPushModulePromise: Promise<WebPushModule> | null = null;
+function loadWebPushModule(): Promise<WebPushModule> {
+  if (!webPushModulePromise) {
+    webPushModulePromise = import("./usePushNotifications.webpush");
+  }
+  return webPushModulePromise;
 }
 
 function isWebPushSupported(): boolean {
@@ -144,6 +152,13 @@ export function usePushNotifications(): UsePushNotificationsResult {
         return;
       }
 
+      // Build-time guard: у capacitor-білді `VITE_TARGET` інлайниться у
+      // `"capacitor"` і Rollup викидає все, що нижче, як unreachable —
+      // включно з `import("./usePushNotifications.webpush")`. Runtime
+      // `native`-гілку вище вже обробили, тож сюди у shell не
+      // дістанемось, але явний `return` потрібен саме для DCE.
+      if (import.meta.env.VITE_TARGET === "capacitor") return;
+
       const perm = await Notification.requestPermission();
       setPermission(perm);
       if (perm !== "granted") return;
@@ -159,23 +174,8 @@ export function usePushNotifications(): UsePushNotificationsResult {
       const publicKey = vapid?.publicKey;
       if (!publicKey) throw new Error("VAPID not configured");
 
-      const reg = await navigator.serviceWorker.ready;
-      const sub = await reg.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(publicKey),
-      });
-
-      // `PushSubscription.toJSON()` повертає `{ endpoint, keys: { p256dh, auth } }`
-      // (RFC 8030). Мапимо у web-варіант `PushRegisterRequest`, щоб
-      // zod-валідація у `createPushEndpoints.register` пройшла без
-      // модифікацій payload.
-      const json = sub.toJSON();
-      const endpoint = json.endpoint;
-      const p256dh = json.keys?.p256dh;
-      const auth = json.keys?.auth;
-      if (!endpoint || !p256dh || !auth) {
-        throw new Error("Push subscription is missing endpoint or keys");
-      }
+      const { subscribeToWebPush } = await loadWebPushModule();
+      const { endpoint, p256dh, auth } = await subscribeToWebPush(publicKey);
       const payload: PushRegisterRequest = {
         platform: "web",
         token: endpoint,
@@ -222,11 +222,18 @@ export function usePushNotifications(): UsePushNotificationsResult {
         return;
       }
 
-      const reg = await navigator.serviceWorker.ready;
-      const sub = await reg.pushManager.getSubscription();
-      if (sub) {
-        const endpoint = sub.endpoint;
-        await sub.unsubscribe();
+      // Аналогічний build-time guard — у capacitor-білді web-гілка мертва
+      // і `loadWebPushModule()` разом з нею DCE-виноситься.
+      if (import.meta.env.VITE_TARGET === "capacitor") {
+        localStorage.removeItem(PUSH_SUB_KEY);
+        setSubscribed(false);
+        queryClient.invalidateQueries({ queryKey: pushKeys.status });
+        return;
+      }
+
+      const { unsubscribeFromWebPush } = await loadWebPushModule();
+      const endpoint = await unsubscribeFromWebPush();
+      if (endpoint) {
         // Серверний анрег — best-effort: якщо сервер недоступний, локально
         // ми все одно розписалися (запис у БД зачистить cron або наступна
         // вдала підписка). Використовуємо уніфікований
