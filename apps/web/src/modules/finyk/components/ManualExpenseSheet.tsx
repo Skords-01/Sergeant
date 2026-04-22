@@ -191,6 +191,12 @@ export function ManualExpenseSheet({
         });
       }
       setError("");
+      // UI-only state (категорії розгорнуті / фокус у полі Назва) зберігається
+      // між відкриттями, бо компонент змонтований постійно (FinykApp тримає
+      // його як always-rendered). Скидаємо до дефолтів, щоб новий «Додати
+      // витрату» не успадковував стан попереднього відкриття.
+      setCategoriesExpanded(false);
+      setDescFocused(false);
     }
     // frequentCategories/initialCategory/initialDescription лише задають
     // стартовий стан при відкритті — навмисно не реагуємо на їхні
