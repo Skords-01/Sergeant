@@ -6,17 +6,40 @@
 
 ## Статус
 
-**Фаза 0 (цей PR) — скафолд.** Піднятий Expo-проєкт з:
+**Internal dev-client** — готово до `eas build --profile development` і
+установки на фізичний пристрій / симулятор, але ще не для store.
 
-- Expo Router (tabs + (auth) модалка);
-- Better Auth Expo-клієнт (bearer токен у `expo-secure-store`, див.
-  `docs/mobile.md`);
-- спільні пакети підключені через `metro.config.js` (monorepo-resolver);
-- заглушкові екрани для 4 модулів: Фінік, Фізрук, Рутина, Харчування.
+Портовано з `apps/web` у `src/modules/`:
 
-**Далі:** окремими PR-ами порт модулів з `apps/web` на нативні екрани
-(View/Text/FlashList, AsyncStorage/SecureStore, expo-speech замість Web
-Speech, expo-barcode-scanner замість ZXing тощо).
+- **ФІНІК** — pages (Overview, Transactions, Analytics, Budgets,
+  Assets), components, hooks, lib + `__tests__`.
+- **ФІЗРУК** — pages, components (workouts, programs, body, progress,
+  measurements, exercise, dashboard), hooks + `__tests__`.
+- **Рутина** — pages (Habits, Heatmap), components, hooks, lib + `__tests__`.
+
+Інфраструктура готова:
+
+- Expo Router (tabs + (auth) модалка), `app.config.ts` з
+  `bundleIdentifier` / `androidPackage` = `com.sergeant.app`;
+- Better Auth Expo-клієнт (bearer у `expo-secure-store`, `docs/mobile.md`);
+- `PushRegistrar` шле native APNs/FCM токен у `POST /api/v1/push/register`
+  з ідемпотентним кешем у `AsyncStorage`;
+- CloudSync + MMKV-офлайн-черга + React Query warm-start (фаза 3);
+- Detox e2e конфіги для iOS і Android у CI (поки smoke-build, реальні
+  сценарії треба дописати).
+
+**Не зроблено:**
+
+- **Харчування (Phase 7)** — лише `ModuleStub` + `DeepLinkPlaceholder`
+  на `scan.tsx` / `recipe/[id].tsx`. Потрібно портувати ~30 компонентів
+  з `apps/web/src/modules/nutrition`, замінити ZXing на `expo-camera` і
+  localStorage на MMKV для комори/списку покупок.
+- **Native push-send pipeline** (APNs через `node-apn`, FCM HTTP v1) —
+  сервер зараз тільки реєструє токени; відправка — окрема задача.
+- **Voice / Speech** — `expo-speech` + STT ще не підключено.
+- **Store-listing** (іконки, privacy manifest iOS, data safety Android).
+
+Повний статус-репорт по всіх трьох поверхнях — `docs/platforms.md`.
 
 ## Запуск
 
