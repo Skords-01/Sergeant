@@ -375,37 +375,6 @@ function AppInner() {
           requirement: switching modules mid-set must not bury the
           workout. */}
       {activeModule !== "fizruk" && <ActiveWorkoutBanner />}
-      {/* Finyk has no in-module header of its own, so we provide a
-          floating back-to-hub pill here. Fizruk, Routine and Nutrition
-          render their own inline "← Хаб" button inside the module header
-          for consistency — see #S0.5. */}
-      {activeModule === "finyk" && (
-        <div className="shrink-0 absolute top-0 left-0 z-50 p-2 safe-area-pt-8">
-          <button
-            type="button"
-            onClick={goToHub}
-            className="h-11 min-h-[44px] pl-2 pr-3 flex items-center gap-1.5 rounded-2xl bg-panel/90 backdrop-blur-md border border-line text-muted hover:text-text shadow-card transition-colors"
-            title="До хабу"
-            aria-label="До хабу"
-          >
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden
-            >
-              <path d="M15 18l-6-6 6-6" />
-            </svg>
-            <span className="text-sm font-semibold">Хаб</span>
-          </button>
-        </div>
-      )}
-
       <Suspense fallback={<PageLoader />}>
         {/* Skip-link target. We render `<main>` by default so every screen
             exposes a `main` landmark for AT users. One exception: the
