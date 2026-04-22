@@ -228,35 +228,35 @@ importers:
         specifier: ^7.5.0
         version: 7.5.0(@capacitor/core@7.6.2)
       "@capacitor/android":
-        specifier: ^7.4.3
+        specifier: ^7.6.2
         version: 7.6.2(@capacitor/core@7.6.2)
       "@capacitor/app":
-        specifier: ^7.1.0
+        specifier: ^7.1.2
         version: 7.1.2(@capacitor/core@7.6.2)
       "@capacitor/core":
-        specifier: ^7.4.3
+        specifier: ^7.6.2
         version: 7.6.2
       "@capacitor/ios":
-        specifier: ^7.4.3
+        specifier: ^7.6.2
         version: 7.6.2(@capacitor/core@7.6.2)
       "@capacitor/keyboard":
-        specifier: ^7.0.3
+        specifier: ^7.0.6
         version: 7.0.6(@capacitor/core@7.6.2)
       "@capacitor/preferences":
         specifier: ^7.0.4
         version: 7.0.4(@capacitor/core@7.6.2)
       "@capacitor/push-notifications":
-        specifier: ^7.0.3
+        specifier: ^7.0.6
         version: 7.0.6(@capacitor/core@7.6.2)
       "@capacitor/splash-screen":
-        specifier: ^7.0.3
+        specifier: ^7.0.5
         version: 7.0.5(@capacitor/core@7.6.2)
       "@capacitor/status-bar":
-        specifier: ^7.0.3
+        specifier: ^7.0.6
         version: 7.0.6(@capacitor/core@7.6.2)
     devDependencies:
       "@capacitor/cli":
-        specifier: ^7.4.3
+        specifier: ^7.6.2
         version: 7.6.2
       jsdom:
         specifier: ^29.0.2
@@ -13861,10 +13861,10 @@ packages:
     engines: { node: ">=14.0.0" }
     hasBin: true
 
-  tapable@2.3.2:
+  tapable@2.3.3:
     resolution:
       {
-        integrity: sha512-1MOpMXuhGzGL5TTCZFItxCc0AARf1EZFQkGqMm7ERKj8+Hgr5oLvJOVFcC+lRmR8hCe2S3jC4T5D7Vg/d7/fhA==,
+        integrity: sha512-uxc/zpqFg6x7C8vOE7lh6Lbda8eEL9zmVm/PLeTPBRhh1xCgdWaQ+J1CUieGpIfm2HdtsUpRv+HshiasBMcc6A==,
       }
     engines: { node: ">=6" }
 
@@ -20350,7 +20350,7 @@ snapshots:
   enhanced-resolve@5.20.1:
     dependencies:
       graceful-fs: 4.2.11
-      tapable: 2.3.2
+      tapable: 2.3.3
 
   entities@4.5.0: {}
 
@@ -24953,7 +24953,7 @@ snapshots:
       - tsx
       - yaml
 
-  tapable@2.3.2: {}
+  tapable@2.3.3: {}
 
   tar@6.2.1:
     dependencies:
@@ -25805,7 +25805,7 @@ snapshots:
       mime-db: 1.54.0
       neo-async: 2.6.2
       schema-utils: 4.3.3
-      tapable: 2.3.2
+      tapable: 2.3.3
       terser-webpack-plugin: 5.4.0(webpack@5.106.2)
       watchpack: 2.5.1
       webpack-sources: 3.3.4

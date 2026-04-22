@@ -29,18 +29,18 @@
   },
   "dependencies": {
     "@capacitor-mlkit/barcode-scanning": "^7.5.0",
-    "@capacitor/android": "^7.4.3",
-    "@capacitor/app": "^7.1.0",
-    "@capacitor/core": "^7.4.3",
-    "@capacitor/ios": "^7.4.3",
-    "@capacitor/keyboard": "^7.0.3",
+    "@capacitor/android": "^7.6.2",
+    "@capacitor/app": "^7.1.2",
+    "@capacitor/core": "^7.6.2",
+    "@capacitor/ios": "^7.6.2",
+    "@capacitor/keyboard": "^7.0.6",
     "@capacitor/preferences": "^7.0.4",
-    "@capacitor/push-notifications": "^7.0.3",
-    "@capacitor/splash-screen": "^7.0.3",
-    "@capacitor/status-bar": "^7.0.3"
+    "@capacitor/push-notifications": "^7.0.6",
+    "@capacitor/splash-screen": "^7.0.5",
+    "@capacitor/status-bar": "^7.0.6"
   },
   "devDependencies": {
-    "@capacitor/cli": "^7.4.3",
+    "@capacitor/cli": "^7.6.2",
     "jsdom": "^29.0.2",
     "typescript": "^6.0.3",
     "vitest": "^3.0.0"
