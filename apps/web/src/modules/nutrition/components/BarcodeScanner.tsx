@@ -20,38 +20,51 @@ interface BarcodeScannerProps {
 
 function NativeBarcodeScanner({ onDetected, onClose }: BarcodeScannerProps) {
   const toast = useToast();
-  const firedRef = useRef(false);
+
+  // Stash the latest callbacks + toast API in refs so the native-scan
+  // effect can read them without listing any of them in its dependency
+  // array. The ML Kit modal is asynchronous; if we depended on
+  // `onClose` / `onDetected` / `toast`, a transient re-render (for
+  // example when an unrelated toast auto-dismisses and the `ToastContext`
+  // value changes identity, or when the parent passes inline arrow
+  // callbacks — `NutritionOverlays.tsx` does exactly that) would run the
+  // effect's cleanup and flip `cancelled = true`, silently dropping the
+  // scan result when `scanBarcodeNative()` later resolves.
+  const onDetectedRef = useRef(onDetected);
+  const onCloseRef = useRef(onClose);
+  const toastRef = useRef(toast);
+  onDetectedRef.current = onDetected;
+  onCloseRef.current = onClose;
+  toastRef.current = toast;
 
   useEffect(() => {
-    if (firedRef.current) return;
-    firedRef.current = true;
     let cancelled = false;
     (async () => {
       try {
         const result: BarcodeResult | null = await scanBarcodeNative();
         if (cancelled) return;
         if (result?.code) {
-          onDetected(result.code);
+          onDetectedRef.current(result.code);
         } else {
-          onClose();
+          onCloseRef.current();
         }
       } catch (err) {
         if (cancelled) return;
         const msg = (err as Error)?.message ?? "";
         if (msg === "camera-permission-denied") {
-          toast.error(
+          toastRef.current.error(
             "Потрібен дозвіл на камеру. Увімкни його в налаштуваннях додатку.",
           );
         } else {
-          toast.error("Сканер недоступний. Введи код вручну.");
+          toastRef.current.error("Сканер недоступний. Введи код вручну.");
         }
-        onClose();
+        onCloseRef.current();
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [onDetected, onClose, toast]);
+  }, []);
 
   // ML Kit presents its own full-screen scanner UI; no DOM is required,
   // but we keep an accessible live region so screen-reader users know
