@@ -1,5 +1,6 @@
-import { memo, Suspense } from "react";
+import { memo, Suspense, useState } from "react";
 import { cn } from "@shared/lib/cn";
+import { Icon } from "@shared/components/ui/Icon";
 import { BudgetTrendChart } from "../charts/lazy";
 import { ChartFallback } from "../charts/ChartFallback";
 
@@ -13,6 +14,8 @@ function BudgetForecastCardComponent({
   loading,
   onExplain,
 }) {
+  const [explanationOpen, setExplanationOpen] = useState(true);
+
   return (
     <div
       className={cn(
@@ -65,8 +68,31 @@ function BudgetForecastCardComponent({
       </div>
 
       {explanation && (
-        <div className="text-xs text-text bg-bg rounded-xl px-3 py-2 mb-2 leading-relaxed">
-          {explanation}
+        <div className="bg-bg rounded-xl overflow-hidden mb-2">
+          <button
+            type="button"
+            onClick={() => setExplanationOpen((v) => !v)}
+            aria-expanded={explanationOpen}
+            className="w-full flex items-center justify-between gap-2 px-3 py-2 text-left hover:bg-panelHi transition-colors"
+          >
+            <span className="flex items-center gap-2 text-xs font-semibold text-text">
+              <span className="text-base leading-none">✨</span>
+              AI-пояснення
+            </span>
+            <Icon
+              name="chevron-down"
+              size={14}
+              className={cn(
+                "transition-transform text-muted",
+                explanationOpen ? "rotate-180" : "",
+              )}
+            />
+          </button>
+          {explanationOpen && (
+            <p className="px-3 pb-2 text-xs text-text leading-relaxed">
+              {explanation}
+            </p>
+          )}
         </div>
       )}
 

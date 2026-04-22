@@ -30,7 +30,6 @@ import { GoalBudgetCard } from "../components/budgets/GoalBudgetCard.jsx";
 import { MonthlyPlanCard } from "../components/budgets/MonthlyPlanCard.jsx";
 import { BudgetForecastCard } from "../components/budgets/BudgetForecastCard.jsx";
 import { AddBudgetForm } from "../components/budgets/AddBudgetForm.jsx";
-import { CategoryManagerSection } from "../components/budgets/CategoryManagerSection.jsx";
 import { readJSON, writeJSON } from "../lib/finykStorage.js";
 import { trackEvent, ANALYTICS_EVENTS } from "../../../core/analytics";
 
@@ -137,9 +136,6 @@ export function Budgets({ mono, storage }) {
     txCategories,
     txSplits,
     customCategories,
-    addCustomCategory,
-    editCustomCategory,
-    removeCustomCategory,
   } = storage;
   const statTx = useMemo(
     () => filterStatTransactions(realTx, excludedTxIds),
@@ -147,7 +143,6 @@ export function Budgets({ mono, storage }) {
   );
   const [editIdx, setEditIdx] = useState(null);
   const [showForm, setShowForm] = useState(false);
-  const [showCategories, setShowCategories] = useState(false);
   const [formType, setFormType] = useState("limit");
   const [newB, setNewB] = useState({
     type: "limit",
@@ -591,16 +586,6 @@ export function Budgets({ mono, storage }) {
             + Додати бюджет або ціль
           </button>
         )}
-
-        <CategoryManagerSection
-          open={showCategories}
-          onToggle={() => setShowCategories((v) => !v)}
-          customCategories={customCategories}
-          allCategories={expenseCategoryList}
-          onAdd={addCustomCategory}
-          onEdit={editCustomCategory}
-          onRemove={removeCustomCategory}
-        />
       </div>
     </div>
   );

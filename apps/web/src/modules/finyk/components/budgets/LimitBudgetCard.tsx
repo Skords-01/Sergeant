@@ -1,6 +1,7 @@
-import { memo } from "react";
+import { memo, useState } from "react";
 import { Button } from "@shared/components/ui/Button";
 import { Skeleton } from "@shared/components/ui/Skeleton";
+import { Icon } from "@shared/components/ui/Icon";
 import { cn } from "@shared/lib/cn";
 import { Card } from "@shared/components/ui/Card";
 import { Input } from "@shared/components/ui/Input";
@@ -26,6 +27,7 @@ function LimitBudgetCardComponent({
 }) {
   const overLimit = pctRaw >= 100;
   const warnLimit = pctRaw >= 80 && !overLimit;
+  const [adviceOpen, setAdviceOpen] = useState(true);
 
   return (
     <Card radius="lg" padding="lg">
@@ -111,18 +113,39 @@ function LimitBudgetCardComponent({
 
           {showProactiveAdvice &&
             (proactiveText || proactiveLoading !== false) && (
-              <div className="mt-3 bg-bg rounded-xl px-3 py-2.5 min-h-[3.5rem]">
+              <div className="mt-3 bg-bg rounded-xl overflow-hidden">
                 {proactiveText ? (
-                  <div className="flex gap-2 items-start">
-                    <span className="text-base leading-none mt-0.5 shrink-0">
-                      ✨
-                    </span>
-                    <p className="text-xs text-text leading-relaxed">
-                      {proactiveText}
-                    </p>
-                  </div>
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setAdviceOpen((v) => !v)}
+                      aria-expanded={adviceOpen}
+                      className="w-full flex items-center justify-between gap-2 px-3 py-2 text-left hover:bg-panelHi transition-colors"
+                    >
+                      <span className="flex items-center gap-2 text-xs font-semibold text-text">
+                        <span className="text-base leading-none">✨</span>
+                        AI-порада
+                      </span>
+                      <Icon
+                        name="chevron-down"
+                        size={14}
+                        className={cn(
+                          "transition-transform text-muted",
+                          adviceOpen ? "rotate-180" : "",
+                        )}
+                      />
+                    </button>
+                    {adviceOpen && (
+                      <p className="px-3 pb-2.5 text-xs text-text leading-relaxed">
+                        {proactiveText}
+                      </p>
+                    )}
+                  </>
                 ) : (
-                  <div className="space-y-1.5" aria-busy="true">
+                  <div
+                    className="px-3 py-2.5 space-y-1.5 min-h-[3.5rem]"
+                    aria-busy="true"
+                  >
                     <Skeleton className="h-3 w-full rounded" />
                     <Skeleton className="h-3 w-4/5 rounded" />
                   </div>
