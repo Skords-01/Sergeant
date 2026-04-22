@@ -273,7 +273,32 @@ export default function App({
   const touchStartX = useRef(null);
   const touchStartY = useRef(null);
 
+  // Ascend from the touch target and bail out if any ancestor is marked as
+  // a horizontal scroller (e.g. the category filter strip on Operations) or
+  // is itself horizontally scrollable — otherwise scrolling such a list
+  // would also be interpreted as a tab swipe.
+  const isInsideHorizontalScroller = (target) => {
+    let node = target instanceof HTMLElement ? target : null;
+    while (node && node !== document.body) {
+      if (node.dataset.finykNoSwipe !== undefined) return true;
+      const style = window.getComputedStyle(node);
+      const overflowX = style.overflowX;
+      if (
+        (overflowX === "auto" || overflowX === "scroll") &&
+        node.scrollWidth > node.clientWidth
+      )
+        return true;
+      node = node.parentElement;
+    }
+    return false;
+  };
+
   const handleTouchStart = (e) => {
+    if (isInsideHorizontalScroller(e.target)) {
+      touchStartX.current = null;
+      touchStartY.current = null;
+      return;
+    }
     touchStartX.current = e.touches[0].clientX;
     touchStartY.current = e.touches[0].clientY;
   };

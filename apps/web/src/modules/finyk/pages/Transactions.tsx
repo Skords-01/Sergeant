@@ -12,10 +12,8 @@ import { cn } from "@shared/lib/cn";
 import { perfMark, perfEnd } from "@shared/lib/perf";
 import { useToast } from "@shared/hooks/useToast";
 import { showUndoToast } from "@shared/lib/undoToast";
-import { useDebounce } from "@shared/hooks/useDebounce";
 
 const now = new Date();
-const SEARCH_DEBOUNCE_MS = 300;
 
 function dayKeyFromTx(ts) {
   const d = new Date(ts * 1000);
@@ -105,8 +103,6 @@ export function Transactions({
     }
   }, [categoryFilter, onClearCategoryFilter]);
   const [showHidden, setShowHidden] = useState(false);
-  const [search, setSearch] = useState("");
-  const debouncedSearch = useDebounce(search, SEARCH_DEBOUNCE_MS);
   // Batch selection
   const [selectMode, setSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState(new Set());
@@ -316,32 +312,18 @@ export function Transactions({
     return next;
   }, [txsToShow]);
 
-  const searchLower = useMemo(() => {
-    const s = (debouncedSearch || "").trim();
-    return s ? s.toLowerCase() : "";
-  }, [debouncedSearch]);
-
   const filtered = useMemo(() => {
     const m = perfMark("finyk:tx:filter");
     const res = sortedTxs.filter((t) => {
-      const matchFilter =
-        filter === "all"
-          ? true
-          : filter === "income"
-            ? t.amount > 0
-            : filter === "expense"
-              ? t.amount < 0
-              : filter === "credit"
-                ? creditAccIds.has(t._accountId)
-                : getEffectiveCat(t).id === filter;
-      const matchSearch =
-        !searchLower ||
-        (t.description || "").toLowerCase().includes(searchLower);
-      return matchFilter && matchSearch;
+      if (filter === "all") return true;
+      if (filter === "income") return t.amount > 0;
+      if (filter === "expense") return t.amount < 0;
+      if (filter === "credit") return creditAccIds.has(t._accountId);
+      return getEffectiveCat(t).id === filter;
     });
     perfEnd(m, { n: res.length });
     return res;
-  }, [sortedTxs, filter, searchLower, creditAccIds, getEffectiveCat]);
+  }, [sortedTxs, filter, creditAccIds, getEffectiveCat]);
 
   const groupedByDate = useMemo(() => {
     const m = perfMark("finyk:tx:groupByDate");
@@ -514,30 +496,11 @@ export function Transactions({
           </div>
         )}
 
-        {/* Search */}
-        <div className="relative mb-3">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-subtle text-sm">
-            🔍
-          </span>
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Пошук по транзакціях…"
-            className="input-focus-finyk w-full bg-panelHi border border-line rounded-2xl pl-9 pr-4 py-2.5 text-sm text-text placeholder:text-subtle"
-          />
-          {search && (
-            <button
-              onClick={() => setSearch("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-subtle hover:text-text"
-            >
-              ✕
-            </button>
-          )}
-        </div>
-
         {/* Filters */}
-        <div className="mb-4 -mx-4 px-4 overflow-x-auto no-scrollbar">
+        <div
+          data-finyk-no-swipe
+          className="mb-4 -mx-4 px-4 overflow-x-auto no-scrollbar"
+        >
           <div className="flex gap-1.5 whitespace-nowrap">
             {[
               { id: "all", label: "Всі" },
@@ -592,28 +555,9 @@ export function Transactions({
         {filtered.length === 0 && !activeLoading && (
           <div className="rounded-2xl border border-dashed border-line bg-panelHi/40">
             <EmptyState
-              icon={<Icon name="search" size={20} strokeWidth={1.6} />}
-              title={
-                search.trim()
-                  ? `Нічого не знайдено за «${search}»`
-                  : "Немає транзакцій"
-              }
-              description={
-                search.trim()
-                  ? "Спробуй інший запит або очисть пошук."
-                  : "Зміни місяць, фільтр або переключи «приховані», якщо вони є."
-              }
-              action={
-                search.trim() ? (
-                  <button
-                    type="button"
-                    onClick={() => setSearch("")}
-                    className="text-sm font-semibold text-primary hover:underline"
-                  >
-                    Очистити пошук
-                  </button>
-                ) : null
-              }
+              icon={<Icon name="credit-card" size={20} strokeWidth={1.6} />}
+              title="Немає транзакцій"
+              description="Зміни місяць, фільтр або переключи «приховані», якщо вони є."
             />
           </div>
         )}
