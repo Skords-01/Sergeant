@@ -262,14 +262,20 @@ function cmdCheck() {
 
   const expected = render(entries);
   let actual = "";
+  let fileRead = false;
   try {
     actual = readFileSync(outPath, "utf8");
+    fileRead = true;
   } catch {
     errors.push(
       `  ${outPath} is missing; run \`pnpm licenses:gen\` and commit the result`,
     );
   }
-  if (actual && actual !== expected) {
+  // `fileRead` (not `actual`) is the guard: an existing-but-empty SBOM
+  // file (e.g. truncated to 0 bytes) must still be flagged as stale —
+  // Devin Review caught the earlier `if (actual && …)` version silently
+  // passing in that case.
+  if (fileRead && actual !== expected) {
     errors.push(
       `  ${outPath} is out-of-date; run \`pnpm licenses:gen\` and commit the diff`,
     );
