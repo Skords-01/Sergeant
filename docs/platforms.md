@@ -148,9 +148,14 @@ Android-частина (`android/`) закомічена, `applicationId`
   Android — лише якщо PWA установлено). Повний fix — окремий PR з
   `@capacitor/push-notifications` (FCM + APNs) і розширенням
   `createPushEndpoints.register` на `platform: "android" | "ios"`.
-- **Deep links.** `parseDeepLink()` в `src/index.ts` є, але
+- ~~**Deep links.** `parseDeepLink()` в `src/index.ts` є, але
   `App.addListener('appUrlOpen', ...)` ще не звʼязаний з React Router
-  всередині `apps/web` — треба exported `navigate()` прокинути.
+  всередині `apps/web` — треба exported `navigate()` прокинути.~~ Готово:
+  shell диспатчить parsed path через namespaced
+  `window.__sergeantShellNavigate` (встановлюється
+  `<ShellDeepLinkBridge/>` у `apps/web/src/core/App.tsx` після маунту
+  роутера) з буфером `window.__sergeantShellDeepLinkQueue` для cold-start
+  сценарію (native-подія прилетіла ДО готовності React-шару).
 - **Safe-area / keyboard avoidance** на iOS усе ще покладаються на
   CSS `env(safe-area-inset-*)` — працює, але не 100% якщо splash
   тримається довше за `hide()`.

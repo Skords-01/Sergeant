@@ -4,14 +4,21 @@
  * Цей модуль — єдине місце, де **compile-time** імпортуються рантайм-плагіни
  * `@capacitor/status-bar`, `@capacitor/splash-screen`, `@capacitor/keyboard`,
  * `@capacitor/app`. Браузерні користувачі це дерево ніколи не тягнуть — веб
- * (`apps/web`) імпортує цей файл **динамічно** і лише якщо
- * `isCapacitor()` (див. `apps/web/src/shared/lib/platform.ts`). Vite через
- * це виносить плагіни в окремий chunk, і точка входу бандлу лишається
- * вільною від Capacitor-runtime.
+ * (`apps/web`) імпортує цей файл **динамічно** і лише якщо `isCapacitor()`
+ * (див. `packages/shared/src/lib/platform.ts`). Vite через це виносить
+ * плагіни в окремий chunk, і точка входу бандлу лишається вільною від
+ * Capacitor-runtime.
  *
  * `initNativeShell()` ідемпотентний — друге-трете викликання мовчки
  * ігнорується, щоби HMR у Capacitor LiveReload не дублював listener-и
  * (`App.addListener('appUrlOpen', ...)` інакше зростає на кожному ре-імпорті).
+ *
+ * Deep-link bridge: `appUrlOpen` парситься через `parseDeepLink()` і
+ * диспатчиться у web-шар БЕЗ compile-time залежності — через namespaced
+ * `window.__sergeantShellNavigate` (виставляється React-компонентом після
+ * маунту роутера) з буфером `window.__sergeantShellDeepLinkQueue` для
+ * cold-start сценарію, коли native-подія прилетіла ДО того, як веб встиг
+ * зареєструвати bridge. Web-сторона програє буфер при install-і.
  */
 
 import { App, type URLOpenListenerEvent } from "@capacitor/app";
@@ -31,10 +38,71 @@ export interface InitNativeShellOptions {
   /**
    * Хук навігації з web-side (зазвичай обгортка над React Router
    * `navigate()`). Викликається з відносним шляхом, витягнутим з
-   * `com.sergeant.shell://<path>`. Якщо не передано — використовується
-   * повний `window.location.assign(...)` як fallback.
+   * `com.sergeant.shell://<path>`. Якщо не передано — deep-link
+   * диспатчиться через window-bridge (`__sergeantShellNavigate`) з
+   * буферизацією у `__sergeantShellDeepLinkQueue` для cold-start.
    */
   navigate?: (path: string) => void;
+}
+
+/**
+ * Ключ на `window`, який виставляє React-компонент веб-шару (`useNavigate()`
+ * обгортка) після маунту роутера. Shell викликає його, щоби програмно
+ * навігувати по React Router без full-reload.
+ */
+const SHELL_NAVIGATE_KEY = "__sergeantShellNavigate" as const;
+
+/**
+ * Буфер deep-link шляхів, що прилетіли ДО того, як web-шар встиг виставити
+ * `__sergeantShellNavigate` (cold start через deep link). Веб при install-і
+ * drain-ить цей масив і програє накопичені шляхи через React Router.
+ */
+const SHELL_QUEUE_KEY = "__sergeantShellDeepLinkQueue" as const;
+
+type DeepLinkBridgeWindow = Window & {
+  [SHELL_NAVIGATE_KEY]?: (path: string) => void;
+  [SHELL_QUEUE_KEY]?: string[];
+};
+
+/**
+ * Диспатчер deep-link шляху у web-сторону. Порядок preference:
+ *   1. `options.navigate(path)` — явно переданий callback (тестова ін'єкція
+ *      або legacy-caller, що сам тримає навігаційний хук).
+ *   2. `window.__sergeantShellNavigate(path)` — bridge, який виставляє
+ *      React-layout після маунту роутера.
+ *   3. Буферизація у `window.__sergeantShellDeepLinkQueue`, якщо bridge ще
+ *      не встановлений (cold-start) — веб drain-ить чергу при install-і.
+ *
+ * Помилки виклику navigate не шкодять shell — залоговане попередження, але
+ * подія все одно проковтнута (не падає з listener-у `appUrlOpen`).
+ */
+function dispatchDeepLink(path: string, options: InitNativeShellOptions): void {
+  if (options.navigate) {
+    try {
+      options.navigate(path);
+    } catch (err) {
+      console.warn("[mobile-shell] options.navigate failed", err);
+    }
+    return;
+  }
+
+  if (typeof window === "undefined") return;
+  const w = window as DeepLinkBridgeWindow;
+
+  const bridgeNavigate = w[SHELL_NAVIGATE_KEY];
+  if (typeof bridgeNavigate === "function") {
+    try {
+      bridgeNavigate(path);
+    } catch (err) {
+      console.warn("[mobile-shell] window.__sergeantShellNavigate failed", err);
+    }
+    return;
+  }
+
+  if (!Array.isArray(w[SHELL_QUEUE_KEY])) {
+    w[SHELL_QUEUE_KEY] = [];
+  }
+  w[SHELL_QUEUE_KEY]!.push(path);
 }
 
 let initialized = false;
@@ -121,11 +189,7 @@ export async function initNativeShell(
     await App.addListener("appUrlOpen", (event: URLOpenListenerEvent) => {
       const path = parseDeepLink(event.url);
       if (path == null) return;
-      if (options.navigate) {
-        options.navigate(path);
-      } else if (typeof window !== "undefined") {
-        window.location.assign(path);
-      }
+      dispatchDeepLink(path, options);
     });
   } catch (err) {
     console.warn("[mobile-shell] App.addListener('appUrlOpen') failed", err);

@@ -234,28 +234,27 @@ describe("initNativeShell — deep-link listener", () => {
     expect(navigate).not.toHaveBeenCalled();
   });
 
-  it("без options.navigate — fallback на window.location.assign", async () => {
+  it("без options.navigate і без `window.__sergeantShellNavigate` — буферизує у `window.__sergeantShellDeepLinkQueue`", async () => {
+    // Нова семантика: замість `window.location.assign(path)` (повний
+    // reload, втрата state) shell акуратно штовхає path у чергу і чекає,
+    // поки React-шар виставить bridge. Веб при маунті роутера drain-ить
+    // чергу — див. `apps/web/src/core/app/ShellDeepLinkBridge.tsx`.
     const mocks = installCapacitorMocks();
-    const assign = vi.fn();
-    // `window.location.assign` у jsdom не конфігурується точково, тому
-    // підміняємо весь `window.location` — цього достатньо для тесту.
-    const originalLocation = window.location;
-    Object.defineProperty(window, "location", {
-      configurable: true,
-      value: { ...originalLocation, assign },
-    });
+    const w = window as Window & {
+      __sergeantShellNavigate?: (path: string) => void;
+      __sergeantShellDeepLinkQueue?: string[];
+    };
+    delete w.__sergeantShellNavigate;
+    delete w.__sergeantShellDeepLinkQueue;
 
     try {
       const cb = await captureUrlOpenCallback(mocks);
       cb({ url: "com.sergeant.shell://home" });
 
-      expect(assign).toHaveBeenCalledTimes(1);
-      expect(assign).toHaveBeenCalledWith("/home");
+      expect(w.__sergeantShellDeepLinkQueue).toEqual(["/home"]);
     } finally {
-      Object.defineProperty(window, "location", {
-        configurable: true,
-        value: originalLocation,
-      });
+      delete w.__sergeantShellNavigate;
+      delete w.__sergeantShellDeepLinkQueue;
     }
   });
 });

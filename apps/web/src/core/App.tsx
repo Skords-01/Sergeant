@@ -38,6 +38,7 @@ import { hasAnyRealEntry } from "./onboarding/firstRealEntry.js";
 import { useHubNavigation } from "./hooks/useHubNavigation.js";
 import { useHubUIState } from "./hooks/useHubUIState.js";
 import { usePwaActions, type PwaAction } from "./hooks/usePwaActions.js";
+import { ShellDeepLinkBridge } from "./app/ShellDeepLinkBridge";
 
 const AuthPage = lazy(() =>
   import("./AuthPage.jsx").then((m) => ({ default: m.AuthPage })),
@@ -76,6 +77,12 @@ export default function App() {
   return (
     <ToastProvider>
       <ToastContainer />
+      {/* Capacitor deep-link bridge: монтуємо ВСЕРЕДИНІ роутера (App
+          рендериться під <BrowserRouter>), але поза AppInner, щоб
+          bridge переживав ранні return-и в AppInner (/sign-in,
+          /reset-password, /design тощо) — deep link може прилетіти у
+          будь-який із цих станів. */}
+      <ShellDeepLinkBridge />
       <ApiClientProvider client={apiClient}>
         <AuthProvider>
           <AppInner />

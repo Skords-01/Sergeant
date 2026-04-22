@@ -105,18 +105,17 @@ if (typeof window !== "undefined") {
 // Native-shell bootstrap: лише в Capacitor WebView, ніколи у браузері.
 // Dynamic import ⇒ Vite кладе `@sergeant/mobile-shell` та всі `@capacitor/*`
 // плагіни в окремий chunk, тож browser-бандл не тягне їх зовсім.
+//
+// Deep-link bridge підʼєднується НЕ через `options.navigate` (який викликає
+// `history.pushState` out-of-component і плутає React Router з «перший render
+// уже завершився» сценарієм), а через namespaced `window.__sergeantShellNavigate`,
+// який виставляє `<ShellDeepLinkBridge/>` у `core/App.tsx` після маунту
+// роутера. Якщо `appUrlOpen` прилітає ДО маунту (cold start через deep link),
+// shell буферизує path у `window.__sergeantShellDeepLinkQueue` і bridge
+// drain-ить його при install-і.
 if (isCapacitor()) {
   import("@sergeant/mobile-shell")
-    .then(({ initNativeShell }) =>
-      initNativeShell({
-        navigate: (path) => {
-          // React Router слухає `popstate` для оновлення шляху — це канонічний
-          // спосіб програмно навігувати без useNavigate() out-of-component.
-          window.history.pushState(null, "", path);
-          window.dispatchEvent(new PopStateEvent("popstate"));
-        },
-      }),
-    )
+    .then(({ initNativeShell }) => initNativeShell())
     .catch((err) => {
       console.warn("[main] native-shell init failed", err);
     });
