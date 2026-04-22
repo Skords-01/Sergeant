@@ -2,7 +2,6 @@ import { useState, useEffect, useId, useMemo } from "react";
 import { Button } from "@shared/components/ui/Button";
 import { Input } from "@shared/components/ui/Input";
 import { Label } from "@shared/components/ui/FormField";
-import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { Sheet } from "@shared/components/ui/Sheet";
 import { VoiceMicButton } from "@shared/components/ui/VoiceMicButton.jsx";
 import {
@@ -68,26 +67,27 @@ function stripEmoji(label) {
 }
 
 // Amount suggestion pills. Defaults give a first-run user sane round
-// values; once the user has spending history we show personalised
-// «Часте» amounts (from top merchants’ average spend) separately
-// from the «Швидко» round-number defaults, so the user can tell
-// which suggestion is based on their own history and which is a
-// generic shortcut.
+// values; personalised «часті» amounts (from top merchants’ average
+// spend) are merged into the same row and rendered first, marked with
+// a small dot so the user can still tell which suggestion is based on
+// their own history. One row instead of two separately-labelled rows
+// cuts visual chrome without hiding the personalised shortcuts.
 const DEFAULT_AMOUNTS = [50, 100, 200, 500];
+const MAX_AMOUNT_CHIPS = 6;
 
 function buildAmountSuggestions(frequentMerchants) {
-  const frequent = [];
+  const frequentRaw = [];
   for (const m of frequentMerchants || []) {
     if (!m || typeof m.total !== "number" || !m.count) continue;
     const avg = Math.round(m.total / m.count);
-    if (avg > 0 && !frequent.includes(avg)) frequent.push(avg);
-    if (frequent.length >= 3) break;
+    if (avg > 0 && !frequentRaw.includes(avg)) frequentRaw.push(avg);
+    if (frequentRaw.length >= 3) break;
   }
-  const quick = DEFAULT_AMOUNTS.filter((v) => !frequent.includes(v)).slice(
-    0,
-    4,
+  const frequent = frequentRaw.map((v) => ({ value: v, personal: true }));
+  const quick = DEFAULT_AMOUNTS.filter((v) => !frequentRaw.includes(v)).map(
+    (v) => ({ value: v, personal: false }),
   );
-  return { frequent, quick };
+  return [...frequent, ...quick].slice(0, MAX_AMOUNT_CHIPS);
 }
 
 // Сортує доступні підписи категорій за персональною частотою, зберігаючи
@@ -203,11 +203,32 @@ export function ManualExpenseSheet({
     [frequentCategories],
   );
 
-  const { frequent: frequentAmounts, quick: quickAmounts } = useMemo(
+  // Top-N категорії для згорнутого стану. Якщо обрана категорія випадає
+  // за межі top-N — підтягуємо її у видимий ряд, щоб активний чип завжди
+  // залишався видимим і не плутав користувача при відкритті аркуша.
+  const CATEGORY_COLLAPSED_COUNT = 6;
+  const [categoriesExpanded, setCategoriesExpanded] = useState(false);
+  const visibleCategories = useMemo(() => {
+    if (categoriesExpanded) return sortedCategories;
+    const base = sortedCategories.slice(0, CATEGORY_COLLAPSED_COUNT);
+    if (form.category && !base.includes(form.category)) {
+      return [form.category, ...base].slice(0, CATEGORY_COLLAPSED_COUNT);
+    }
+    return base;
+  }, [sortedCategories, categoriesExpanded, form.category]);
+  const hasHiddenCategories =
+    sortedCategories.length > CATEGORY_COLLAPSED_COUNT;
+
+  const amountSuggestions = useMemo(
     () => buildAmountSuggestions(frequentMerchants),
     [frequentMerchants],
   );
-  // Ховаємо зі списку пропозицій мерчанта, якого вже введено у полі description.
+
+  // Список мерчант-пропозицій, що рендериться інлайн під полем «Назва»
+  // замість окремої секції «Нещодавнє». Ховаємо мерчанта, якого вже
+  // введено як опис. Видимість регулюється через `showMerchantHints`
+  // нижче — показуємо лише поки поле порожнє або у фокусі, щоб не
+  // перевантажувати аркуш, коли користувач уже обрав назву.
   const merchantSuggestions = useMemo(() => {
     if (!frequentMerchants.length) return [];
     const currentKey = (form.description || "")
@@ -217,6 +238,10 @@ export function ManualExpenseSheet({
       .filter((m) => m.name && m.name.toLocaleLowerCase("uk-UA") !== currentKey)
       .slice(0, 5);
   }, [frequentMerchants, form.description]);
+  const [descFocused, setDescFocused] = useState(false);
+  const showMerchantHints =
+    merchantSuggestions.length > 0 &&
+    (descFocused || form.description.trim() === "");
 
   if (!open) return null;
 
@@ -276,54 +301,39 @@ export function ManualExpenseSheet({
         <div className="flex gap-2 items-end">
           <div className="flex-1">
             <Label htmlFor={amountId}>Сума ₴</Label>
-            {(frequentAmounts.length > 0 || quickAmounts.length > 0) && (
-              <div className="space-y-1.5 mb-2">
-                {frequentAmounts.length > 0 && (
-                  <div
-                    className="flex flex-wrap items-center gap-1.5"
-                    role="group"
-                    aria-label="Часті суми"
+            {amountSuggestions.length > 0 && (
+              <div
+                className="flex flex-wrap items-center gap-1.5 mb-2"
+                role="group"
+                aria-label="Швидкі суми"
+              >
+                {amountSuggestions.map(({ value, personal }) => (
+                  <button
+                    key={`${personal ? "f" : "q"}-${value}`}
+                    type="button"
+                    onClick={() =>
+                      setForm((f) => ({ ...f, amount: String(value) }))
+                    }
+                    className={
+                      personal
+                        ? "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-600 border border-emerald-500/30 hover:bg-emerald-500/15 transition-colors tabular-nums"
+                        : "px-2.5 py-1 rounded-full text-xs font-medium bg-panelHi text-muted border border-line hover:border-muted/50 transition-colors tabular-nums"
+                    }
+                    aria-label={
+                      personal
+                        ? `${value.toLocaleString("uk-UA")} ₴ — часта сума`
+                        : `${value.toLocaleString("uk-UA")} ₴`
+                    }
                   >
-                    <SectionHeading as="span" size="xs" tone="subtle">
-                      Часте
-                    </SectionHeading>
-                    {frequentAmounts.map((v) => (
-                      <button
-                        key={`f-${v}`}
-                        type="button"
-                        onClick={() =>
-                          setForm((f) => ({ ...f, amount: String(v) }))
-                        }
-                        className="px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-600 border border-emerald-500/30 hover:bg-emerald-500/15 transition-colors tabular-nums"
-                      >
-                        {v.toLocaleString("uk-UA")} ₴
-                      </button>
-                    ))}
-                  </div>
-                )}
-                {quickAmounts.length > 0 && (
-                  <div
-                    className="flex flex-wrap items-center gap-1.5"
-                    role="group"
-                    aria-label="Швидкі суми"
-                  >
-                    <SectionHeading as="span" size="xs" tone="subtle">
-                      Швидко
-                    </SectionHeading>
-                    {quickAmounts.map((v) => (
-                      <button
-                        key={`q-${v}`}
-                        type="button"
-                        onClick={() =>
-                          setForm((f) => ({ ...f, amount: String(v) }))
-                        }
-                        className="px-2.5 py-1 rounded-full text-xs font-medium bg-panelHi text-muted border border-line hover:border-muted/50 transition-colors tabular-nums"
-                      >
-                        {v.toLocaleString("uk-UA")} ₴
-                      </button>
-                    ))}
-                  </div>
-                )}
+                    {personal ? (
+                      <span
+                        aria-hidden
+                        className="w-1.5 h-1.5 rounded-full bg-emerald-500"
+                      />
+                    ) : null}
+                    {value.toLocaleString("uk-UA")} ₴
+                  </button>
+                ))}
               </div>
             )}
             <Input
@@ -381,7 +391,47 @@ export function ManualExpenseSheet({
             onChange={(e) =>
               setForm((f) => ({ ...f, description: e.target.value }))
             }
+            onFocus={() => setDescFocused(true)}
+            onBlur={() => setDescFocused(false)}
+            aria-controls={
+              showMerchantHints ? `${formId}-merchants` : undefined
+            }
+            aria-autocomplete="list"
           />
+          {showMerchantHints && (
+            <div
+              id={`${formId}-merchants`}
+              className="flex flex-wrap gap-1.5 mt-2"
+              role="group"
+              aria-label="Нещодавні мерчанти"
+            >
+              {merchantSuggestions.map((m) => (
+                <button
+                  key={m.key}
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() =>
+                    setForm((f) => {
+                      const next = { ...f, description: m.name };
+                      // Якщо є впевнений підпис manual-категорії для цього
+                      // мерчанта — підставляємо його, щоб економити тапи.
+                      const suggested =
+                        m.suggestedManualCategory &&
+                        CATEGORIES.includes(m.suggestedManualCategory)
+                          ? m.suggestedManualCategory
+                          : null;
+                      if (suggested) next.category = suggested;
+                      return next;
+                    })
+                  }
+                  className="px-2.5 py-1 rounded-full text-xs font-medium bg-panelHi text-muted border border-line hover:border-muted/50 transition-colors"
+                  title={`${m.count} разів · ${m.total.toLocaleString("uk-UA")} ₴`}
+                >
+                  {m.name}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Date is "today" 95%+ of the time — the always-visible picker
@@ -409,47 +459,6 @@ export function ManualExpenseSheet({
           </button>
         )}
 
-        {merchantSuggestions.length > 0 && (
-          <div
-            className="flex flex-wrap gap-1.5 -mt-1"
-            role="group"
-            aria-label="Нещодавні мерчанти"
-          >
-            <SectionHeading
-              as="span"
-              size="xs"
-              tone="subtle"
-              className="w-full"
-            >
-              Нещодавнє
-            </SectionHeading>
-            {merchantSuggestions.map((m) => (
-              <button
-                key={m.key}
-                type="button"
-                onClick={() =>
-                  setForm((f) => {
-                    const next = { ...f, description: m.name };
-                    // Якщо є впевнений підпис manual-категорії для цього
-                    // мерчанта — підставляємо його, щоб економити тапи.
-                    const suggested =
-                      m.suggestedManualCategory &&
-                      CATEGORIES.includes(m.suggestedManualCategory)
-                        ? m.suggestedManualCategory
-                        : null;
-                    if (suggested) next.category = suggested;
-                    return next;
-                  })
-                }
-                className="px-2.5 py-1 rounded-full text-xs font-medium bg-panelHi text-muted border border-line hover:border-muted/50 transition-colors"
-                title={`${m.count} разів · ${m.total.toLocaleString("uk-UA")} ₴`}
-              >
-                {m.name}
-              </button>
-            ))}
-          </div>
-        )}
-
         <div>
           <div
             id={catLabelId}
@@ -463,9 +472,10 @@ export function ManualExpenseSheet({
             role="group"
             aria-labelledby={catLabelId}
           >
-            {sortedCategories.map((cat) => (
+            {visibleCategories.map((cat) => (
               <button
                 key={cat}
+                type="button"
                 onClick={() => setForm((f) => ({ ...f, category: cat }))}
                 className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all duration-150 ease-smooth active:scale-95 ${
                   form.category === cat
@@ -476,6 +486,16 @@ export function ManualExpenseSheet({
                 {cat}
               </button>
             ))}
+            {hasHiddenCategories && (
+              <button
+                type="button"
+                onClick={() => setCategoriesExpanded((v) => !v)}
+                aria-expanded={categoriesExpanded}
+                className="px-3 py-1.5 rounded-full text-xs font-medium border border-line bg-panel text-muted hover:text-text hover:border-muted/50 hover:bg-panelHi transition-all duration-150 ease-smooth active:scale-95"
+              >
+                {categoriesExpanded ? "Менше ▴" : "Більше ▾"}
+              </button>
+            )}
           </div>
         </div>
 
