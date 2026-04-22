@@ -143,11 +143,23 @@ Android-частина (`android/`) закомічена, `applicationId`
 - **iOS.** `ios/` НЕ закомічено — потрібен Mac + Xcode + CocoaPods для
   `pnpm --filter @sergeant/mobile-shell add:ios`. Release pipeline на iOS
   зараз немає.
-- **Native push.** `usePushNotifications` у web користується Service
+- ~~**Native push.** `usePushNotifications` у web користується Service
   Worker-ом + VAPID — у WebView це працює кульгаво (iOS тільки 16.4+,
   Android — лише якщо PWA установлено). Повний fix — окремий PR з
   `@capacitor/push-notifications` (FCM + APNs) і розширенням
-  `createPushEndpoints.register` на `platform: "android" | "ios"`.
+  `createPushEndpoints.register` на `platform: "android" | "ios"`.~~
+  **Зроблено** у [#512](https://github.com/Skords-01/Sergeant/pull/512):
+  `@capacitor/push-notifications` реєструє APNs/FCM-токен через
+  `subscribeNativePush()` (див. `apps/mobile-shell/src/pushNative.ts`),
+  а `POST /api/v1/push/register` (і його зодівський валідатор
+  `PushRegisterSchema` у `packages/shared/src/schemas/api.ts`) —
+  discriminated union на `platform: "web" | "ios" | "android"`,
+  native-гілка робить upsert у `push_devices (platform, token)` з
+  CHECK-constraint-ом на enum (`apps/server/src/migrations/006_push_devices.sql`).
+  Web-клієнт (`usePushNotifications`) і RN-клієнт (`registerPush`)
+  шлють `platform` явно. Актуальне «не зроблено» — лише реальна
+  APNs/FCM **send**-гілка (див. RN-секцію, пункт про
+  «iOS/Android native push-send path»).
 - ~~**Deep links.** `parseDeepLink()` в `src/index.ts` є, але
   `App.addListener('appUrlOpen', ...)` ще не звʼязаний з React Router
   всередині `apps/web` — треба exported `navigate()` прокинути.~~ Готово:
