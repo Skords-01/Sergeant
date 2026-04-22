@@ -49,6 +49,16 @@ function firstHabitId(routine: ReturnType<typeof defaultRoutineState>): string {
   return id;
 }
 
+/**
+ * Today's date-key (`YYYY-MM-DD` in local tz). Use this for any
+ * "toggle a fresh habit for date X" assertion — `habitScheduledOnDate`
+ * rejects dates before `habit.startDate || habit.createdAt`, and a
+ * habit created inside `act()` always has `createdAt = today`. A
+ * hard-coded key would silently break on whichever calendar day the
+ * CI host happens to run on.
+ */
+const TODAY_KEY = new Date().toISOString().slice(0, 10);
+
 describe("routineStore — enqueueChange wiring", () => {
   it("setRoutine fires enqueueChange with the routine key", () => {
     const { result } = renderHook(() => useRoutineStore());
@@ -92,7 +102,7 @@ describe("routineStore — enqueueChange wiring", () => {
     mockEnqueueChange.mockClear();
 
     act(() => {
-      result.current.toggleHabit(habitId, "2026-04-21");
+      result.current.toggleHabit(habitId, TODAY_KEY);
     });
 
     expect(mockEnqueueChange).toHaveBeenCalledWith(ROUTINE_STORAGE_KEY);
@@ -104,7 +114,7 @@ describe("routineStore — enqueueChange wiring", () => {
     mockEnqueueChange.mockClear();
 
     act(() => {
-      result.current.toggleHabit("non-existent-habit", "2026-04-21");
+      result.current.toggleHabit("non-existent-habit", TODAY_KEY);
     });
 
     expect(mockEnqueueChange).not.toHaveBeenCalled();
@@ -115,7 +125,7 @@ describe("routineStore — enqueueChange wiring", () => {
     mockEnqueueChange.mockClear();
 
     act(() => {
-      result.current.bulkMarkDay("2026-04-21");
+      result.current.bulkMarkDay(TODAY_KEY);
     });
 
     expect(mockEnqueueChange).not.toHaveBeenCalled();
@@ -129,7 +139,7 @@ describe("routineStore — enqueueChange wiring", () => {
     mockEnqueueChange.mockClear();
 
     act(() => {
-      result.current.bulkMarkDay("2026-04-21");
+      result.current.bulkMarkDay(TODAY_KEY);
     });
 
     expect(mockEnqueueChange).toHaveBeenCalledWith(ROUTINE_STORAGE_KEY);
@@ -140,7 +150,7 @@ describe("routineStore — enqueueChange wiring", () => {
     mockEnqueueChange.mockClear();
 
     act(() => {
-      result.current.setCompletionNote("missing", "2026-04-21", "note");
+      result.current.setCompletionNote("missing", TODAY_KEY, "note");
     });
 
     expect(mockEnqueueChange).not.toHaveBeenCalled();
@@ -155,7 +165,7 @@ describe("routineStore — enqueueChange wiring", () => {
     mockEnqueueChange.mockClear();
 
     act(() => {
-      result.current.setCompletionNote(id, "2026-04-21", "felt great");
+      result.current.setCompletionNote(id, TODAY_KEY, "felt great");
     });
 
     expect(mockEnqueueChange).toHaveBeenCalledWith(ROUTINE_STORAGE_KEY);
