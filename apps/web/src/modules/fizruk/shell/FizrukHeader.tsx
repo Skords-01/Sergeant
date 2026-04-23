@@ -2,7 +2,6 @@ import {
   ModuleHeader,
   ModuleHeaderBackButton,
   ModuleHeaderChevronButton,
-  ModuleHeaderIconButton,
 } from "@shared/components/layout";
 import { cn } from "@shared/lib/cn";
 import type { FizrukPage } from "./fizrukRoute";
@@ -16,7 +15,6 @@ export interface FizrukHeaderProps {
   activeProgram?: ActiveProgramHeaderView | null;
   onBackToHub?: () => void;
   onBackToDashboard: () => void;
-  onOpenSettings: () => void;
 }
 
 function titleFor(page: FizrukPage): string {
@@ -83,36 +81,20 @@ function DumbbellBadge() {
   );
 }
 
-function SettingsIcon() {
-  return (
-    <svg
-      width="22"
-      height="22"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.65"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden
-    >
-      <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
-      <circle cx="12" cy="12" r="3" />
-    </svg>
-  );
-}
-
 export function FizrukHeader({
   page,
   activeProgram,
   onBackToHub,
   onBackToDashboard,
-  onOpenSettings,
 }: FizrukHeaderProps) {
   const isAtlas = page === "atlas";
   const isExercise = page === "exercise";
   const showChevronBack = isAtlas || isExercise;
 
+  // Module-level settings drawer was dropped per user request — all
+  // Fizruk settings (backup, reminders, data reset) now live in the
+  // Hub-wide Settings screen. The header no longer owns a gear icon,
+  // so the right slot is left empty.
   let left = null;
   if (showChevronBack) {
     left = <ModuleHeaderChevronButton onClick={onBackToDashboard} />;
@@ -122,19 +104,9 @@ export function FizrukHeader({
     left = <DumbbellBadge />;
   }
 
-  const right = (
-    <ModuleHeaderIconButton
-      onClick={onOpenSettings}
-      ariaLabel="Налаштування даних"
-    >
-      <SettingsIcon />
-    </ModuleHeaderIconButton>
-  );
-
   return (
     <ModuleHeader
       left={left}
-      right={right}
       title={titleFor(page)}
       eyebrow={showChevronBack ? undefined : "ОСОБИСТИЙ ЖУРНАЛ"}
       subtitle={showChevronBack ? undefined : subtitleFor(page, activeProgram)}

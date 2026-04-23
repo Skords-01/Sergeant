@@ -1,13 +1,7 @@
-import { useState } from "react";
-import {
-  ModuleShell,
-  ModuleSettingsDrawer,
-  StorageErrorBanner,
-} from "@shared/components/layout";
+import { ModuleShell, StorageErrorBanner } from "@shared/components/layout";
 import { ModuleBottomNav } from "@shared/components/ui/ModuleBottomNav";
 import { useHashRoute } from "@shared/hooks/useHashRoute";
 import { usePwaAction } from "@shared/hooks/usePwaAction";
-import { WorkoutBackupBar } from "./components/workouts/WorkoutBackupBar";
 import { useExerciseCatalog } from "./hooks/useExerciseCatalog";
 import { useFizrukProgramStart } from "./hooks/useFizrukProgramStart";
 import { useFizrukWorkoutReminder } from "./hooks/useFizrukWorkoutReminder";
@@ -39,7 +33,6 @@ export default function FizrukApp({
   });
   const exerciseId =
     page === "exercise" && segments[0] ? segments[0] : undefined;
-  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const monthlyPlan = useMonthlyPlan();
   const {
@@ -82,17 +75,7 @@ export default function FizrukApp({
           activeProgram={activeProgram}
           onBackToHub={onBackToHub}
           onBackToDashboard={() => navigate("dashboard")}
-          onOpenSettings={() => setSettingsOpen(true)}
         />
-      }
-      overlays={
-        <ModuleSettingsDrawer
-          open={settingsOpen}
-          onClose={() => setSettingsOpen(false)}
-          title="Дані й резервні копії"
-        >
-          <WorkoutBackupBar className="border-0 bg-transparent p-0" />
-        </ModuleSettingsDrawer>
       }
       banner={
         <StorageErrorBanner
