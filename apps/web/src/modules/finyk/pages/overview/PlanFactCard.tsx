@@ -22,7 +22,7 @@ const PlanFactCardImpl = function PlanFactCard({
       <div className="text-xs font-medium text-subtle mb-3">План / Факт</div>
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1.5">
-          <div className="text-xs text-subtle/60 mb-1">План</div>
+          <div className="text-xs text-muted mb-1">План</div>
           <div className="text-sm text-muted tabular-nums">
             +{planIncome.toLocaleString("uk-UA")} ₴
           </div>
@@ -34,7 +34,7 @@ const PlanFactCardImpl = function PlanFactCard({
           </div>
         </div>
         <div className="space-y-1.5">
-          <div className="text-xs text-subtle/60 mb-1">Факт</div>
+          <div className="text-xs text-muted mb-1">Факт</div>
           <div className="text-sm text-success tabular-nums">
             +{income.toLocaleString("uk-UA", { maximumFractionDigits: 0 })} ₴
           </div>
