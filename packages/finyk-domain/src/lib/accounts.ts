@@ -17,7 +17,12 @@ export function getMonoDebt(acc: MonoAccount): number {
 
 export function isMonoDebt(acc: MonoAccount): boolean {
   const creditLimit = acc.creditLimit ?? 0;
-  return creditLimit > 0 && creditLimit - acc.balance > 0;
+  if (creditLimit > 0) return creditLimit - acc.balance > 0;
+  // Дебетова картка у мінусі (овердрафт / реверс комісії) — теж борг.
+  // До фіксу ця гілка `getMonoDebt` була недосяжна з `getMonoTotals`,
+  // бо `isMonoDebt` вимагав `creditLimit > 0`, і від'ємні дебетові
+  // баланси мовчки не йшли у networth.
+  return acc.balance < 0;
 }
 
 export function daysUntil(day: number): number {
@@ -47,7 +52,10 @@ export function getMonoTotals(
         a.currencyCode === (CURRENCY.UAH as number),
     )
     .reduce((sum, a) => sum + a.balance / 100, 0);
-  const debt = accounts
+  // Приховані рахунки виключаємо і з balance, і з debt —
+  // інакше при схованій кредитці `networth = balance - debt` займає
+  // її борг, а сама кредитка не видна у списку.
+  const debt = visible
     .filter((a) => isMonoDebt(a))
     .reduce((sum, a) => sum + getMonoDebt(a), 0);
   return { balance, debt };

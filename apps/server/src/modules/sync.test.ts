@@ -445,6 +445,22 @@ describe("syncPush (singular) — contract tests", () => {
     expect(pool.query).not.toHaveBeenCalled();
   });
 
+  it("missing clientUpdatedAt → 400 (раніше мовчки перезаписував чужі push-и)", async () => {
+    const res = makeRes();
+    await syncPush(makeReq({ module: "finyk", data: { balance: 100 } }), res);
+    expect(res.statusCode).toBe(400);
+    expect(res.body).toMatchObject({ error: "Некоректні дані запиту" });
+    expect(res.body.details).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ path: "clientUpdatedAt" }),
+      ]),
+    );
+    expect(pool.query).not.toHaveBeenCalled();
+    expect(syncOperationsTotal.inc.mock.calls.map(([l]) => l)).toContainEqual(
+      expect.objectContaining({ op: "push", outcome: "invalid" }),
+    );
+  });
+
   it("blob > MAX_BLOB_SIZE → 413 + outcome='too_large'", async () => {
     const huge = "x".repeat(MAX_BLOB_SIZE);
     const res = makeRes();

@@ -157,7 +157,10 @@ export async function syncPush(req: Request, res: Response): Promise<void> {
     return;
   }
 
-  const clientTs = clientUpdatedAt ? new Date(clientUpdatedAt) : new Date();
+  // `clientUpdatedAt` — required у `SyncPushSchema`, тому fallback на
+  // `new Date()` прибрано: раніше він мовчки переписував свіжіший серверний
+  // запис, бо `client_updated_at <= NOW()` завжди true.
+  const clientTs = new Date(clientUpdatedAt);
 
   try {
     // EXPLAIN ANALYZE (типовий plan):
@@ -378,7 +381,9 @@ export async function syncPushAll(req: Request, res: Response): Promise<void> {
         results[mod] = { ok: false, error: "Too large" };
         continue;
       }
-      const clientTs = clientUpdatedAt ? new Date(clientUpdatedAt) : new Date();
+      // `clientUpdatedAt` — required у `SyncPushAllSchema`; fallback на
+      // `new Date()` прибрано з тієї ж причини, що й у `syncPush` вище.
+      const clientTs = new Date(clientUpdatedAt);
       const r = await client.query<ModuleDataUpsertRow>(
         `INSERT INTO module_data (user_id, module, data, client_updated_at, version)
          VALUES ($1, $2, $3, $4, 1)

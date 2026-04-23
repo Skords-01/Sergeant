@@ -174,8 +174,12 @@ describe("isMonoDebt", () => {
   it("true коли є заборгованість по кредитці", () => {
     expect(isMonoDebt({ creditLimit: 500000, balance: 200000 })).toBe(true);
   });
-  it("false коли ліміт=0", () => {
-    expect(isMonoDebt({ creditLimit: 0, balance: -100000 })).toBe(false);
+  it("true коли дебетова картка у мінусі (овердрафт/реверс)", () => {
+    expect(isMonoDebt({ creditLimit: 0, balance: -100000 })).toBe(true);
+  });
+  it("false коли дебетова картка у плюсі", () => {
+    expect(isMonoDebt({ creditLimit: 0, balance: 100000 })).toBe(false);
+    expect(isMonoDebt({ creditLimit: 0, balance: 0 })).toBe(false);
   });
   it("false коли ліміт вичерпано/погашено", () => {
     expect(isMonoDebt({ creditLimit: 500000, balance: 500000 })).toBe(false);
@@ -350,9 +354,10 @@ describe("getMonoTotals", () => {
     expect(res).toHaveProperty("balance");
     expect(res).toHaveProperty("debt");
     expect(res.balance).toBe(1000);
-    expect(res.debt).toBe(3000);
+    // a2 — дебетова картка у мінусі (-500 UAH), a3 — кредитка (-3000 UAH).
+    expect(res.debt).toBe(3500);
   });
-  it("пропускає приховані рахунки", () => {
+  it("пропускає приховані рахунки (і з balance, і з debt)", () => {
     const accounts = [
       {
         id: "a1",
@@ -368,9 +373,21 @@ describe("getMonoTotals", () => {
         creditLimit: 0,
         currencyCode: CURRENCY.UAH,
       },
+      {
+        id: "a3",
+        type: "black",
+        balance: 0,
+        creditLimit: 500000,
+        currencyCode: CURRENCY.UAH,
+      },
     ];
     const visible = getMonoTotals(accounts, []);
-    const hidden = getMonoTotals(accounts, ["a2"]);
-    expect(hidden.balance).toBeLessThan(visible.balance);
+    const hiddenBalance = getMonoTotals(accounts, ["a2"]);
+    expect(hiddenBalance.balance).toBeLessThan(visible.balance);
+    // Regression: схована кредитка має випадати і з debt —
+    // раніше `debt` рахувався по всіх рахунках, ігноруючи `hiddenAccountIds`.
+    const hiddenDebt = getMonoTotals(accounts, ["a3"]);
+    expect(hiddenDebt.debt).toBe(0);
+    expect(visible.debt).toBe(5000);
   });
 });

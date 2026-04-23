@@ -225,6 +225,55 @@ describe("assets — computeAssetsSummary", () => {
     expect(summary.totalAssets).toBe(400);
   });
 
+  it("виключає сховану кредитку і з debt, не лише з balance (regression)", () => {
+    // Раніше `getMonoTotals` фільтрував `visible` для balance, але debt
+    // рахував по всіх accounts → сховану кредитку виводило з UI, а її
+    // борг усе одно тягнувся у networth. Тут — кредитка з боргом 700₴,
+    // прихована → totalLiabilities має бути 0.
+    const accounts: MonoAccount[] = [
+      { id: "cash", balance: 500_00, currencyCode: 980 },
+      {
+        id: "hidden-credit",
+        balance: 300_00,
+        creditLimit: 1000_00,
+        currencyCode: 980,
+      },
+    ];
+    const summary = computeAssetsSummary({
+      accounts,
+      hiddenAccounts: ["hidden-credit"],
+      manualAssets: [],
+      manualDebts: [],
+      receivables: [],
+      transactions: [],
+    });
+    expect(summary.monoBalance).toBe(500);
+    expect(summary.monoDebt).toBe(0);
+    expect(summary.totalLiabilities).toBe(0);
+    expect(summary.networth).toBe(500);
+  });
+
+  it("дебетова картка у мінусі рахується як debt (regression)", () => {
+    // Раніше `isMonoDebt` повертав false для `creditLimit=0`, тож
+    // овердрафтна дебетка (balance<0) мовчки не йшла у networth.
+    const accounts: MonoAccount[] = [
+      { id: "cash", balance: 300_00, currencyCode: 980 },
+      { id: "overdraft", balance: -150_00, currencyCode: 980 },
+    ];
+    const summary = computeAssetsSummary({
+      accounts,
+      hiddenAccounts: [],
+      manualAssets: [],
+      manualDebts: [],
+      receivables: [],
+      transactions: [],
+    });
+    expect(summary.monoBalance).toBe(300);
+    expect(summary.monoDebt).toBe(150);
+    expect(summary.totalLiabilities).toBe(150);
+    expect(summary.networth).toBe(150);
+  });
+
   it("враховує лінковані платежі при підсумку боргів", () => {
     const manualDebts: AssetsDebt[] = [
       { id: "d1", amount: 0, totalAmount: 500, linkedTxIds: ["p1"] },

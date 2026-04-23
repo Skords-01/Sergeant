@@ -357,6 +357,14 @@ export const CoachMemoryPostSchema = z.object({
 // єдина SSOT — той Set; тут лише back-compat перелік для 400 з деталями поля.
 const SyncModuleEnum = z.enum(["finyk", "fizruk", "routine", "nutrition"]);
 
+// `clientUpdatedAt` — обов'язковий last-write-wins guard. Без нього
+// `module_data.client_updated_at <= $4` зі сторожовою умовою у
+// `syncPush`/`syncPushAll` завжди матчить (handler підставляв `new Date()`),
+// тому push старого клієнта мовчки перезаписував свіжіший запис з іншого
+// пристрою. Тепер клієнт, що не надсилає поле, отримує 400 замість
+// тихої втрати даних.
+const ClientUpdatedAtSchema = z.union([z.string(), z.number(), z.date()]);
+
 export const SyncPushSchema = z.object({
   module: SyncModuleEnum,
   // Клієнт може слати будь-який JSON всередині `data` (зашифрований blob),
@@ -364,7 +372,7 @@ export const SyncPushSchema = z.object({
   data: z.unknown().refine((v) => v !== undefined && v !== null, {
     message: "Missing data",
   }),
-  clientUpdatedAt: z.union([z.string(), z.number(), z.date()]).optional(),
+  clientUpdatedAt: ClientUpdatedAtSchema,
 });
 
 export const SyncPullSchema = z.object({
@@ -376,7 +384,7 @@ export const SyncPushAllSchema = z.object({
     z.string(),
     z.object({
       data: z.unknown(),
-      clientUpdatedAt: z.union([z.string(), z.number(), z.date()]).optional(),
+      clientUpdatedAt: ClientUpdatedAtSchema,
     }),
   ),
 });
