@@ -4,9 +4,7 @@ import { useToast } from "@shared/hooks/useToast";
 import { showUndoToast } from "@shared/lib/undoToast";
 import { useRoutineState } from "../../modules/routine/hooks/useRoutineState.js";
 import {
-  applyRoutineBackupPayload,
   deleteHabit,
-  loadRoutineState,
   restoreHabit,
   snapshotHabit,
 } from "../../modules/routine/lib/routineStorage.js";
@@ -28,10 +26,6 @@ import {
   ToggleRow,
 } from "./SettingsPrimitives.jsx";
 
-interface ImportConfirmState {
-  parsed: unknown;
-}
-
 export function RoutineSection() {
   const toast = useToast();
   const { routine, setRoutine, updatePref } = useRoutineState();
@@ -47,9 +41,6 @@ export function RoutineSection() {
   const [detailHabitId, setDetailHabitId] = useState<string | null>(null);
   const [deleteHabitPending, setDeleteHabitPending] =
     useState<PendingHabitDeletion | null>(null);
-  const [importConfirm, setImportConfirm] = useState<ImportConfirmState | null>(
-    null,
-  );
 
   const closeEditDialog = () => setEditingId(null);
 
@@ -118,11 +109,7 @@ export function RoutineSection() {
       </SettingsSubGroup>
 
       <SettingsSubGroup title="Резервна копія">
-        <RoutineBackupSection
-          theme={C}
-          toast={toast}
-          onImportParsed={(parsed) => setImportConfirm({ parsed })}
-        />
+        <RoutineBackupSection theme={C} />
       </SettingsSubGroup>
 
       <HabitQuickCreateDialog
@@ -168,27 +155,6 @@ export function RoutineSection() {
           setDeleteHabitPending(null);
         }}
         onCancel={() => setDeleteHabitPending(null)}
-      />
-
-      <ConfirmDialog
-        open={!!importConfirm}
-        title="Імпорт резервної копії"
-        description="Імпорт замінить усі поточні дані Рутини (звички, відмітки, відтискання) даними з файлу. Продовжити?"
-        confirmLabel="Імпортувати"
-        danger={false}
-        onConfirm={() => {
-          if (importConfirm?.parsed) {
-            try {
-              applyRoutineBackupPayload(importConfirm.parsed);
-              setRoutine(loadRoutineState());
-              toast.success("Резервну копію імпортовано.");
-            } catch (err) {
-              toast.error(err?.message || "Не вдалося імпортувати файл.");
-            }
-          }
-          setImportConfirm(null);
-        }}
-        onCancel={() => setImportConfirm(null)}
       />
 
       {detailHabitId && (

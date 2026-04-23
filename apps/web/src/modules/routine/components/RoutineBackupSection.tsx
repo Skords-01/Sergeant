@@ -1,4 +1,3 @@
-import { useRef, type ChangeEvent } from "react";
 import { downloadJson } from "@sergeant/shared";
 import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { Button } from "@shared/components/ui/Button";
@@ -10,30 +9,19 @@ export interface RoutineBackupTheme {
   primary?: string;
 }
 
-export interface RoutineBackupToast {
-  warning?: (message: string) => void;
-}
-
 export interface RoutineBackupSectionProps {
   theme?: RoutineBackupTheme;
-  toast?: RoutineBackupToast;
-  onImportParsed?: (parsed: unknown) => void;
 }
 
-export function RoutineBackupSection({
-  theme,
-  toast,
-  onImportParsed,
-}: RoutineBackupSectionProps) {
-  const backupRef = useRef<HTMLInputElement | null>(null);
-
+export function RoutineBackupSection({ theme }: RoutineBackupSectionProps) {
   return (
     <Card as="section" radius="lg" padding="md" className="space-y-3">
       <SectionHeading as="h2" size="sm">
         Резервна копія
       </SectionHeading>
       <p className="text-xs text-subtle">
-        Експорт/імпорт JSON для переносу даних між пристроями.
+        Експорт лише даних Рутини у JSON. Для відновлення або перенесення між
+        пристроями використовуй загальний імпорт у «Загальні → Резервна копія».
       </p>
       <div className="flex flex-wrap gap-2">
         <Button
@@ -48,36 +36,6 @@ export function RoutineBackupSection({
         >
           Експорт JSON
         </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          className="border border-line"
-          onClick={() => backupRef.current?.click()}
-        >
-          Імпорт
-        </Button>
-        <input
-          ref={backupRef}
-          type="file"
-          accept="application/json,.json"
-          className="hidden"
-          onChange={async (e: ChangeEvent<HTMLInputElement>) => {
-            const f = e.target.files?.[0];
-            if (!f) return;
-            try {
-              const text = await f.text();
-              const parsed: unknown = JSON.parse(text);
-              onImportParsed?.(parsed);
-            } catch (err) {
-              const msg =
-                err instanceof Error
-                  ? err.message
-                  : "Не вдалося імпортувати файл.";
-              toast?.warning?.(msg);
-            }
-            e.target.value = "";
-          }}
-        />
       </div>
     </Card>
   );
