@@ -3,16 +3,23 @@ import { Button } from "@shared/components/ui/Button";
 import { Sheet } from "@shared/components/ui/Sheet";
 import { useEffect, useMemo, useState } from "react";
 import { useExerciseCatalog } from "../hooks/useExerciseCatalog";
+import { useMeasurements } from "../hooks/useMeasurements";
 import { useRecovery } from "../hooks/useRecovery";
 import { useWorkoutTemplates } from "../hooks/useWorkoutTemplates";
 import { useWorkouts } from "../hooks/useWorkouts";
 import { useMonthlyPlan } from "../hooks/useMonthlyPlan";
 import { BodyAtlas } from "../components/BodyAtlas";
 import { HeroCard, type HeroCardState } from "../components/dashboard/HeroCard";
+import { KpiRow } from "../components/dashboard/KpiRow";
+import { RecentWorkoutsSection } from "../components/dashboard/RecentWorkoutsSection";
 import { recoveryConflictsForExercise } from "@sergeant/fizruk-domain";
 import { workoutDurationSec } from "@sergeant/fizruk-domain";
 import { ACTIVE_WORKOUT_KEY } from "@sergeant/fizruk-domain";
-import { getNextPlanSession } from "@sergeant/fizruk-domain/domain";
+import {
+  computeDashboardKpis,
+  getNextPlanSession,
+  listRecentCompletedWorkouts,
+} from "@sergeant/fizruk-domain/domain";
 import { Card } from "@shared/components/ui/Card";
 import { useActiveFizrukWorkout } from "@shared/hooks/useActiveFizrukWorkout";
 import { useLocalStorageState } from "@shared/hooks/useLocalStorageState.js";
@@ -36,6 +43,7 @@ export function Dashboard({
   const { exercises, primaryGroupsUk, musclesUk } = useExerciseCatalog();
   const { templates, recentlyUsed, markTemplateUsed } = useWorkoutTemplates();
   const monthlyPlan = useMonthlyPlan();
+  const { entries: measurements } = useMeasurements();
 
   const [recoveryOpen, setRecoveryOpen] = useState(false);
 
@@ -281,6 +289,19 @@ export function Dashboard({
     }
   }, [monthlyPlan, templates]);
 
+  const dashboardKpis = useMemo(
+    () =>
+      computeDashboardKpis(workouts || [], {
+        measurements: measurements || [],
+      }),
+    [workouts, measurements],
+  );
+
+  const recentWorkouts = useMemo(
+    () => listRecentCompletedWorkouts(workouts || [], { limit: 3 }),
+    [workouts],
+  );
+
   const heroState: HeroCardState = useMemo(() => {
     if (activeWorkout?.startedAt) {
       return {
@@ -353,6 +374,8 @@ export function Dashboard({
           onOpenTemplates={openTemplates}
           onOpenPrograms={() => onOpenPrograms?.()}
         />
+
+        <KpiRow kpis={dashboardKpis} />
 
         {templates.length > 0 &&
           (() => {
@@ -690,6 +713,11 @@ export function Dashboard({
             </Button>
           </div>
         </Card>
+
+        <RecentWorkoutsSection
+          recent={recentWorkouts}
+          onSeeAll={openWorkoutsTab}
+        />
       </div>
 
       <Sheet
