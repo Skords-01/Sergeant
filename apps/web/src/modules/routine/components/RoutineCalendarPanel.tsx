@@ -1,4 +1,11 @@
-import { useEffect, useMemo, useState, type ChangeEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ChangeEvent,
+} from "react";
 import { Virtuoso } from "react-virtuoso";
 import { cn } from "@shared/lib/cn";
 import { SectionHeading } from "@shared/components/ui/SectionHeading";
@@ -96,6 +103,80 @@ export function RoutineCalendarPanel({
   }, [listQueryDraft, setListQuery]);
   const [dayReportOpen, setDayReportOpen] = useState(false);
   const [detailHabitId, setDetailHabitId] = useState<string | null>(null);
+
+  // Completion-note drafts. Typing into the "Нотатка до відмітки" input used
+  // to call `setRoutine` → `saveRoutineState` → `localStorage.setItem`
+  // (serialising the entire routine) on every keystroke, which also
+  // triggered a `postMessage` to the service worker and a re-read of the
+  // full routine state via `ROUTINE_EVENT`. On larger states (many habits /
+  // many completions) that produced visible input lag, especially on
+  // mobile. Now keystrokes only touch local state; a debounced flush
+  // persists the final value.
+  type NoteDraft = { habitId: string; dateKey: string; value: string };
+  const [noteDrafts, setNoteDrafts] = useState<Record<string, NoteDraft>>({});
+  const noteDraftsRef = useRef(noteDrafts);
+  useEffect(() => {
+    noteDraftsRef.current = noteDrafts;
+  }, [noteDrafts]);
+  const noteTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(
+    new Map(),
+  );
+  const flushNoteDraft = useCallback(
+    (habitId: string, dateKey: string) => {
+      const key = completionNoteKey(habitId, dateKey);
+      const draft = noteDraftsRef.current[key];
+      if (!draft) return;
+      setRoutine((s) =>
+        setCompletionNote(s, draft.habitId, draft.dateKey, draft.value),
+      );
+      setNoteDrafts((prev) => {
+        if (!(key in prev)) return prev;
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      });
+    },
+    [setRoutine],
+  );
+  const scheduleNoteFlush = useCallback(
+    (habitId: string, dateKey: string, value: string) => {
+      const key = completionNoteKey(habitId, dateKey);
+      setNoteDrafts((prev) => ({
+        ...prev,
+        [key]: { habitId, dateKey, value },
+      }));
+      const timers = noteTimersRef.current;
+      const prior = timers.get(key);
+      if (prior) clearTimeout(prior);
+      timers.set(
+        key,
+        setTimeout(() => {
+          timers.delete(key);
+          flushNoteDraft(habitId, dateKey);
+        }, 300),
+      );
+    },
+    [flushNoteDraft],
+  );
+  useEffect(() => {
+    const timers = noteTimersRef.current;
+    return () => {
+      // Flush any outstanding drafts synchronously on unmount so nothing is
+      // silently dropped when the user navigates away mid-typing.
+      const drafts = Object.values(noteDraftsRef.current);
+      if (drafts.length > 0) {
+        setRoutine((s) => {
+          let next = s;
+          for (const d of drafts) {
+            next = setCompletionNote(next, d.habitId, d.dateKey, d.value);
+          }
+          return next;
+        });
+      }
+      for (const timer of timers.values()) clearTimeout(timer);
+      timers.clear();
+    };
+  }, [setRoutine]);
 
   const flatGroupedItems = useMemo<GroupedListItem[]>(() => {
     const items: GroupedListItem[] = [];
@@ -603,27 +684,31 @@ export function RoutineCalendarPanel({
                           )}
                         </div>
                       </div>
-                      {e.habitId && e.completed && (
-                        <Input
-                          className="routine-touch-field w-full min-w-0"
-                          placeholder="Нотатка до відмітки"
-                          value={
-                            routine.completionNotes?.[
-                              completionNoteKey(e.habitId, e.date)
-                            ] || ""
-                          }
-                          onChange={(ev) =>
-                            setRoutine((s) =>
-                              setCompletionNote(
-                                s,
-                                e.habitId,
-                                e.date,
-                                ev.target.value,
-                              ),
-                            )
-                          }
-                        />
-                      )}
+                      {e.habitId &&
+                        e.completed &&
+                        (() => {
+                          const noteKey = completionNoteKey(e.habitId, e.date);
+                          const draft = noteDrafts[noteKey];
+                          const value =
+                            draft !== undefined
+                              ? draft.value
+                              : routine.completionNotes?.[noteKey] || "";
+                          return (
+                            <Input
+                              className="routine-touch-field w-full min-w-0"
+                              placeholder="Нотатка до відмітки"
+                              value={value}
+                              onChange={(ev) =>
+                                scheduleNoteFlush(
+                                  e.habitId!,
+                                  e.date,
+                                  ev.target.value,
+                                )
+                              }
+                              onBlur={() => flushNoteDraft(e.habitId!, e.date)}
+                            />
+                          );
+                        })()}
                     </div>
                   </SwipeToAction>
                 </div>
