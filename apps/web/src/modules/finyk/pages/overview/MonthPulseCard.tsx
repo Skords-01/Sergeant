@@ -45,11 +45,9 @@ const MonthPulseCardImpl = function MonthPulseCard({
       <div className="flex items-start justify-between gap-3 mb-4">
         <div>
           <div className="text-xs font-medium text-subtle">Місяць</div>
-          <p className="text-xs text-subtle/80 mt-0.5 capitalize">
-            {dateLabel}
-          </p>
+          <p className="text-xs text-muted mt-0.5 capitalize">{dateLabel}</p>
         </div>
-        <span className="text-xs text-subtle/60 shrink-0 text-right tabular-nums">
+        <span className="text-xs text-muted shrink-0 text-right tabular-nums">
           {Math.max(0, daysInMonth - daysPassed)} дн. залишилось
         </span>
       </div>
@@ -87,7 +85,7 @@ const MonthPulseCardImpl = function MonthPulseCard({
       </div>
 
       <div className="mt-4 space-y-1.5">
-        <div className="flex justify-between text-xs text-subtle/70">
+        <div className="flex justify-between text-xs text-muted">
           <span>Витрати від доходу</span>
           <span>{showBalance ? `${Math.round(spendPct)}%` : "—"}</span>
         </div>
@@ -100,7 +98,7 @@ const MonthPulseCardImpl = function MonthPulseCard({
             style={{ width: showBalance ? `${spendPct}%` : "0%" }}
           />
         </div>
-        <div className="flex justify-between text-xs text-subtle/70">
+        <div className="flex justify-between text-xs text-muted">
           <span>
             {showBalance
               ? `Залишок: ${monthBalance >= 0 ? "+" : "−"}${Math.abs(monthBalance).toLocaleString("uk-UA", { maximumFractionDigits: 0 })} ₴`
@@ -121,7 +119,7 @@ const MonthPulseCardImpl = function MonthPulseCard({
           <div className="text-xs font-medium text-subtle">
             Факт і прогноз витрат
           </div>
-          <p className="text-xs text-subtle/80 leading-snug">
+          <p className="text-xs text-muted leading-snug">
             За {daysPassed}{" "}
             {daysPassed === 1 ? "день" : daysPassed < 5 ? "дні" : "дн."} · факт{" "}
             <span className="font-semibold text-text tabular-nums">
@@ -144,7 +142,7 @@ const MonthPulseCardImpl = function MonthPulseCard({
               style={{ width: `${forecastTrendPct}%` }}
             />
           </div>
-          <div className="flex justify-between text-xs text-subtle/70">
+          <div className="flex justify-between text-xs text-muted">
             <span>{forecastTrendPct}% від прогнозу за темпом</span>
           </div>
         </div>
@@ -153,9 +151,7 @@ const MonthPulseCardImpl = function MonthPulseCard({
       <div className="mt-4 pt-4 border-t border-line">
         <div className="flex items-center justify-between gap-2">
           <span className="text-xs font-medium text-subtle">Фінпульс</span>
-          <span className="text-xs text-subtle/60">
-            цільова витрата на день
-          </span>
+          <span className="text-xs text-muted">цільова витрата на день</span>
         </div>
         <div
           className={cn(
@@ -180,7 +176,7 @@ const MonthPulseCardImpl = function MonthPulseCard({
         <div className={cn("text-sm mt-0.5", color)}>{statusText}</div>
         {(recurringOutThisMonth > 0 || recurringInThisMonth > 0) &&
           showBalance && (
-            <div className="text-xs text-subtle/70 mt-2 leading-relaxed">
+            <div className="text-xs text-muted mt-2 leading-relaxed">
               Враховано планових: −
               {recurringOutThisMonth.toLocaleString("uk-UA", {
                 maximumFractionDigits: 0,

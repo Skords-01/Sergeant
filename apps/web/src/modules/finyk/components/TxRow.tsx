@@ -230,7 +230,7 @@ function TxRowImpl({
               {hideAmount ? "••••" : fmtAmt(tx.amount, CURRENCY.UAH)}
             </div>
             {tx.currencyCode !== CURRENCY.UAH && tx.operationAmount && (
-              <div className="text-2xs text-subtle/70 tabular-nums">
+              <div className="text-2xs text-muted tabular-nums">
                 {hideAmount
                   ? "••••"
                   : fmtAmt(tx.operationAmount, tx.currencyCode)}

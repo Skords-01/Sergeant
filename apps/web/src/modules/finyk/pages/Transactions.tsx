@@ -679,7 +679,7 @@ export function Transactions({
                     onClick={() => toggleDay(key)}
                     aria-expanded={!collapsed}
                     aria-label={`${collapsed ? "Розгорнути" : "Згорнути"} ${label}`}
-                    className="w-full flex items-center justify-between gap-2 px-3 py-2 bg-bg/95 backdrop-blur-sm border-b border-line text-xs font-semibold text-subtle tracking-wide hover:text-text hover:bg-panelHi transition-colors"
+                    className="w-full flex items-center justify-between gap-2 px-3 py-2 bg-bg/95 backdrop-blur-sm border-b border-line text-xs font-semibold text-text tracking-wide hover:bg-panelHi transition-colors"
                   >
                     <span className="flex items-center gap-2 min-w-0">
                       <svg
@@ -702,7 +702,7 @@ export function Transactions({
                         <polyline points="6 9 12 15 18 9" />
                       </svg>
                       <span className="truncate">{label}</span>
-                      <span className="shrink-0 text-[10px] font-normal text-subtle/70 normal-case tabular-nums">
+                      <span className="shrink-0 text-[10px] font-semibold text-muted normal-case tabular-nums">
                         · {summary.count}
                       </span>
                     </span>

@@ -484,7 +484,7 @@ export function Overview({
         {realTx.length > 0 && (
           <button
             onClick={() => onNavigate("transactions")}
-            className="w-full py-4 text-sm font-medium text-subtle/70 border border-line/40 border-dashed rounded-2xl hover:border-muted/50 hover:text-muted transition-colors min-h-[52px]"
+            className="w-full py-4 text-sm font-medium text-muted border border-line/60 border-dashed rounded-2xl hover:border-muted hover:text-text transition-colors min-h-[52px]"
           >
             Усі операції ({realTx.length}) →
           </button>
