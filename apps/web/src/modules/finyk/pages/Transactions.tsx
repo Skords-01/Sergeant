@@ -44,9 +44,13 @@ function writeDayCollapse(v) {
   }
 }
 
-function isDayExpanded(overrides, key, todayKey) {
-  const o = overrides[key];
-  return o === undefined ? key === todayKey : !!o;
+// Усі дні згорнуті за замовчуванням; ручне розгортання зберігається
+// в `overrides` і переживає перезавантаження (та міжтабову синхронізацію).
+// `todayKey` лишається в сигнатурі на випадок, якщо колись захочемо
+// повернути логіку "сьогодні завжди відкрите" через feature-toggle,
+// але зараз користувач свідомо попросив згорнуто-за-замовчуванням.
+function isDayExpanded(overrides, key, _todayKey) {
+  return !!overrides[key];
 }
 
 function formatStickyDayLabel(key) {
@@ -413,20 +417,19 @@ export function Transactions({
     [todayDayKey],
   );
 
-  // When the user has narrowed down by a filter chip, collapsing days
-  // would hide matches — temporarily render every day fully expanded so
-  // nothing looks "missing". The persisted override is untouched;
-  // clearing the filter restores the prior state.
-  const ignoreCollapse = filter !== "all";
-
+  // Фільтр-чіпи (Витрати/Доходи/Кредитна/Борг) більше не форсять
+  // розгортання — користувач явно хотів, щоб згортання працювало
+  // навіть під активним фільтром (inbox-style). `groupedByDate` уже
+  // обчислено з відфільтрованого `filtered`, тож у згорнутій групі
+  // лічильник під датою показує кількість саме *відфільтрованих*
+  // транзакцій — нічого не зникає, все одно тап розгортає.
   const collapsedKeys = useMemo(() => {
     const s = new Set();
-    if (ignoreCollapse) return s;
     for (const g of groupedByDate) {
       if (!isDayExpanded(dayOverrides, g.key, todayDayKey)) s.add(g.key);
     }
     return s;
-  }, [groupedByDate, dayOverrides, todayDayKey, ignoreCollapse]);
+  }, [groupedByDate, dayOverrides, todayDayKey]);
 
   const groupCounts = useMemo(
     () =>

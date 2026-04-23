@@ -172,7 +172,7 @@ function TxRowImpl({
             </span>
           )}
           {!isCreditCard && account && (
-            <span className="text-3xs text-subtle/50 px-1 py-0.5">
+            <span className="text-3xs bg-panelHi text-muted border border-line px-1.5 py-0.5 rounded-full font-medium">
               {accountName}
             </span>
           )}
