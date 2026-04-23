@@ -449,7 +449,7 @@ function TxRowImpl({
               className={cn(
                 "text-xs px-3 py-2 rounded-xl border transition-colors min-h-[34px]",
                 c.id === cat.id
-                  ? "bg-text text-white border-text"
+                  ? "bg-text text-bg border-text"
                   : "border-line text-subtle hover:border-muted hover:text-text",
               )}
             >

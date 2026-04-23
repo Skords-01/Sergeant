@@ -129,7 +129,7 @@ export function InputDialog({
         <div className="flex flex-col gap-2">
           <Button
             type="submit"
-            className="w-full h-12 !bg-primary !text-white border-0"
+            className="w-full h-12 !bg-primary !text-bg border-0"
           >
             {confirmLabel}
           </Button>

@@ -69,7 +69,7 @@ export function BodyAtlas({ statusByMuscle, height = 320, showLegend = true }) {
             className={cn(
               "text-xs px-3 py-2 rounded-full border transition-colors",
               view === "anterior"
-                ? "bg-text text-white border-text"
+                ? "bg-text text-bg border-text"
                 : "border-line text-subtle hover:text-text",
             )}
             onClick={() => setView("anterior")}
@@ -80,7 +80,7 @@ export function BodyAtlas({ statusByMuscle, height = 320, showLegend = true }) {
             className={cn(
               "text-xs px-3 py-2 rounded-full border transition-colors",
               view === "posterior"
-                ? "bg-text text-white border-text"
+                ? "bg-text text-bg border-text"
                 : "border-line text-subtle hover:text-text",
             )}
             onClick={() => setView("posterior")}

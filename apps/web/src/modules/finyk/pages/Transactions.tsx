@@ -615,8 +615,8 @@ export function Transactions({
                 className={cn(
                   "text-xs px-4 py-2 rounded-full border transition-colors min-h-[36px] font-medium",
                   filter === f.id
-                    ? "bg-primary border-primary text-white shadow-sm"
-                    : "bg-panelHi border-line/60 text-muted hover:text-text hover:border-line",
+                    ? "bg-primary border-primary text-bg shadow-sm"
+                    : "bg-panelHi border-line text-text hover:border-muted",
                 )}
               >
                 {f.label}

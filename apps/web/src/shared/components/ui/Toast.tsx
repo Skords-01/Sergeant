@@ -5,7 +5,7 @@ const VARIANT: Record<ToastType, string> = {
   success: "bg-brand-700 text-white",
   error: "bg-danger text-white",
   warning: "bg-warning text-white",
-  info: "bg-primary text-white",
+  info: "bg-primary text-bg",
 };
 
 const ICON_WRAP: Record<ToastType, string> = {

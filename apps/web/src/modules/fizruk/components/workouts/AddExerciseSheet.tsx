@@ -115,7 +115,7 @@ export function AddExerciseSheet({
                   className={cn(
                     "text-xs px-3 py-2.5 min-h-[44px] rounded-full border transition-colors",
                     active
-                      ? "bg-text text-white border-text"
+                      ? "bg-text text-bg border-text"
                       : "border-line bg-bg text-muted hover:border-muted hover:text-text",
                   )}
                   aria-pressed={active}
@@ -139,7 +139,7 @@ export function AddExerciseSheet({
                 className={cn(
                   "text-xs px-3 py-2 min-h-[44px] rounded-full border transition-colors",
                   (form.musclesPrimary || []).includes(id)
-                    ? "bg-primary border-primary text-white"
+                    ? "bg-primary border-primary text-bg"
                     : "border-line bg-bg text-muted hover:border-muted hover:text-text",
                 )}
                 onClick={() =>

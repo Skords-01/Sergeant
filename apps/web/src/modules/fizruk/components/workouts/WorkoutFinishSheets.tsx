@@ -55,7 +55,7 @@ export function WorkoutFinishSheets({
                     className={cn(
                       "min-w-[44px] min-h-[44px] rounded-xl border text-sm font-semibold transition-colors",
                       finishFlash.energy === n
-                        ? "bg-text text-white border-text"
+                        ? "bg-text text-bg border-text"
                         : "border-line bg-bg text-muted hover:border-muted",
                     )}
                     onClick={() =>
@@ -80,7 +80,7 @@ export function WorkoutFinishSheets({
                     className={cn(
                       "min-w-[44px] min-h-[44px] rounded-xl border text-sm font-semibold transition-colors",
                       finishFlash.mood === n
-                        ? "bg-text text-white border-text"
+                        ? "bg-text text-bg border-text"
                         : "border-line bg-bg text-muted hover:border-muted",
                     )}
                     onClick={() =>
