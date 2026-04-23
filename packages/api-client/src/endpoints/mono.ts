@@ -80,7 +80,34 @@ export interface MonoEndpoints {
   ) => Promise<MonoStatementEntry[]>;
 }
 
+/**
+ * Monobank Personal API обмежує `/personal/statement/{acc}/{from}/{to}` 500
+ * транзакціями за запит — повертає останні 500 у діапазоні у зворотному
+ * хронологічному порядку. Активні користувачі з >500 tx/міс мовчки отримували
+ * обрізану виписку. Пагінуємо тут: запит за сторінкою (from, prevTo), далі
+ * зсуваємо `prevTo := min(time) - 1` і повторюємо, поки сторінка повна.
+ *
+ * Safety cap — 20 сторінок (~10 000 tx) — практично неосяжно навіть для
+ * бізнес-акаунтів, і стримує rate-limit (1 req/60 s/per token) від
+ * нескінченного циклу при зламаному API.
+ */
+const MONO_STATEMENT_PAGE_SIZE = 500;
+const MONO_STATEMENT_MAX_PAGES = 20;
+
 export function createMonoEndpoints(http: HttpClient): MonoEndpoints {
+  const fetchStatementPage = (
+    token: string,
+    accId: string,
+    from: number,
+    to: number,
+    signal?: AbortSignal,
+  ) =>
+    http.get<MonoStatementEntry[]>("/api/mono", {
+      query: { path: `/personal/statement/${accId}/${from}/${to}` },
+      headers: { "X-Token": token },
+      signal,
+    });
+
   return {
     clientInfo: (token, opts) =>
       http.get<MonoClientInfo>("/api/mono", {
@@ -88,11 +115,37 @@ export function createMonoEndpoints(http: HttpClient): MonoEndpoints {
         headers: { "X-Token": token },
         signal: opts?.signal,
       }),
-    statement: (token, accId, from, to, opts) =>
-      http.get<MonoStatementEntry[]>("/api/mono", {
-        query: { path: `/personal/statement/${accId}/${from}/${to}` },
-        headers: { "X-Token": token },
-        signal: opts?.signal,
-      }),
+    statement: async (token, accId, from, to, opts) => {
+      const all: MonoStatementEntry[] = [];
+      const seen = new Set<string>();
+      let pageTo = to;
+      for (let page = 0; page < MONO_STATEMENT_MAX_PAGES; page++) {
+        const rows = await fetchStatementPage(
+          token,
+          accId,
+          from,
+          pageTo,
+          opts?.signal,
+        );
+        if (!Array.isArray(rows) || rows.length === 0) break;
+        let oldest = Number.POSITIVE_INFINITY;
+        for (const r of rows) {
+          if (r?.id && !seen.has(r.id)) {
+            seen.add(r.id);
+            all.push(r);
+          }
+          if (typeof r?.time === "number" && r.time < oldest) oldest = r.time;
+        }
+        if (rows.length < MONO_STATEMENT_PAGE_SIZE) break;
+        if (!Number.isFinite(oldest)) break;
+        // Зсуваємо `to` на секунду раніше за найстарішу tx поточної сторінки,
+        // щоб Mono повернуло наступну «порцію» без перекриття (seen-Set усе одно
+        // страхує, якщо кілька tx поділяють ту саму секунду).
+        const nextTo = oldest - 1;
+        if (nextTo <= from) break;
+        pageTo = nextTo;
+      }
+      return all;
+    },
   };
 }

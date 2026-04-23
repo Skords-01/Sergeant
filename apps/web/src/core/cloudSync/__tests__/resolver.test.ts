@@ -118,6 +118,32 @@ describe("resolveInitialSync", () => {
     expect(plan.kind).toBe("merge");
     if (plan.kind === "merge") {
       expect(plan.dirtyMods.sort()).toEqual(["nutrition", "routine"]);
+      expect(plan.skippedDirty).toEqual([]);
+    }
+  });
+
+  it("does NOT apply cloud data for dirty modules (protects unpushed local changes)", () => {
+    const plan = resolveInitialSync({
+      cloud: {
+        // cloud-version новіша, але локально є непушнуті зміни → skip, не apply
+        finyk: { data: { cloud: 1 }, version: 9 },
+        // не dirty → має накотитись з хмари як зазвичай
+        routine: { data: { cloud: 2 }, version: 3 },
+      },
+      hasAnyLocalData: true,
+      migrated: true,
+      userId: "u1",
+      modifiedTimes: { finyk: "2024-01-01T00:00:00.000Z" },
+      getLocalVersion: () => 0,
+      dirtyModules: { finyk: true },
+    });
+    expect(plan.kind).toBe("merge");
+    if (plan.kind === "merge") {
+      expect(plan.applyModules).toEqual([
+        { mod: "routine", data: { cloud: 2 } },
+      ]);
+      expect(plan.skippedDirty).toEqual(["finyk"]);
+      expect(plan.dirtyMods).toEqual(["finyk"]);
     }
   });
 
