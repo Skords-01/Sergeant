@@ -205,6 +205,32 @@ function safeParseJson(
   }
 }
 
+/**
+ * HTTP `Retry-After` → мілісекунди. RFC 9110 §10.2.3 дозволяє дві форми:
+ *   - `delta-seconds` (ціле ≥0)
+ *   - `HTTP-date` (абсолютний час)
+ * Повертаємо `undefined` для відсутніх, порожніх, мінусових, NaN.
+ */
+export function parseRetryAfterMs(
+  value: string | null,
+  nowMs: number = Date.now(),
+): number | undefined {
+  if (!value) return undefined;
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+  // Спочатку пробуємо delta-seconds — численний формат трапляється найчастіше
+  // (429-и від Monobank, Cloudflare тощо).
+  if (/^\d+$/.test(trimmed)) {
+    const sec = Number(trimmed);
+    if (!Number.isFinite(sec) || sec <= 0) return undefined;
+    return sec * 1000;
+  }
+  const absMs = Date.parse(trimmed);
+  if (!Number.isFinite(absMs)) return undefined;
+  const delta = absMs - nowMs;
+  return delta > 0 ? delta : undefined;
+}
+
 function networkMessage(cause: unknown): string {
   // typeof navigator — defensive: у RN `navigator` є але без `onLine`, у Node — undefined.
   if (
@@ -329,6 +355,13 @@ export function createHttpClient(config: HttpClientConfig = {}): HttpClient {
         body && typeof body === "object"
           ? (body as { error?: unknown }).error
           : undefined;
+      // Пропагаємо `Retry-After` у поле ApiError, щоб викликачі (напр., Monobank
+      // pagination) могли зробити targeted backoff без повторного парсингу
+      // хедерів. Парсимо лише для статусів, де заголовок має сенс — 429/503.
+      const retryAfterMs =
+        res.status === 429 || res.status === 503
+          ? parseRetryAfterMs(res.headers.get("retry-after"))
+          : undefined;
       throw new ApiError({
         kind: "http",
         message:
@@ -339,6 +372,7 @@ export function createHttpClient(config: HttpClientConfig = {}): HttpClient {
         body,
         bodyText,
         url,
+        retryAfterMs,
       });
     }
 

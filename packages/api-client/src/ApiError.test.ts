@@ -90,4 +90,31 @@ describe("ApiError", () => {
     expect(isApiError(null)).toBe(false);
     expect(isApiError({ kind: "http" })).toBe(false);
   });
+
+  it("retryAfterMs зберігається, якщо > 0", () => {
+    // Потрібно, щоб Monobank-pagination міг `if (err.retryAfterMs)` без
+    // додаткових null-чеків — нормалізація на рівні конструктора.
+    const err = new ApiError({
+      kind: "http",
+      message: "rate",
+      status: 429,
+      url: "/api/mono",
+      retryAfterMs: 45_000,
+    });
+    expect(err.retryAfterMs).toBe(45_000);
+  });
+
+  it("retryAfterMs=0/негативне/нечислове → undefined", () => {
+    const cases: Array<number | undefined> = [0, -1, Number.NaN, undefined];
+    for (const v of cases) {
+      const err = new ApiError({
+        kind: "http",
+        message: "x",
+        status: 429,
+        url: "/",
+        retryAfterMs: v,
+      });
+      expect(err.retryAfterMs).toBeUndefined();
+    }
+  });
 });

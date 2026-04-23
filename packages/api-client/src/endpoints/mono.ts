@@ -1,3 +1,4 @@
+import { ApiError, isApiError } from "../ApiError";
 import type { HttpClient } from "../httpClient";
 
 /**
@@ -93,9 +94,32 @@ export interface MonoEndpoints {
  */
 const MONO_STATEMENT_PAGE_SIZE = 500;
 const MONO_STATEMENT_MAX_PAGES = 20;
+/**
+ * Monobank Personal обмежує `/personal/statement` rate-limit-ом 1 req/60 s/per
+ * token. У payload-ах з >500 tx (pagination додано після #585) другий page
+ * раніше падав з `ApiError status=429` і всю виписку ми втрачали. Тепер при
+ * 429 з `Retry-After` чекаємо стільки, скільки сервер попросив (capped 65s,
+ * бо більше за 60s Monobank не потребує), і робимо до 2 ретраїв на сторінку.
+ * `maxTotalMs` — жорстка межа, щоб у зламаному API не заклинити loop на
+ * годину.
+ */
+const MONO_RETRY_MAX_DELAY_MS = 65_000;
+const MONO_RETRY_MAX_PER_PAGE = 2;
+
+type Sleeper = (ms: number) => Promise<void>;
+const defaultSleep: Sleeper = (ms) => new Promise((r) => setTimeout(r, ms));
+let _sleep: Sleeper = defaultSleep;
+/**
+ * Test-only hook: підміняє `setTimeout`-sleep на детермінований proxy. Без
+ * нього `vitest`-тест на 429-ретрай чекав би реальні 65 s. Не експортуй у
+ * прод-коді.
+ */
+export function __setMonoSleep(fn: Sleeper | null): void {
+  _sleep = fn ?? defaultSleep;
+}
 
 export function createMonoEndpoints(http: HttpClient): MonoEndpoints {
-  const fetchStatementPage = (
+  const fetchStatementPageOnce = (
     token: string,
     accId: string,
     from: number,
@@ -107,6 +131,44 @@ export function createMonoEndpoints(http: HttpClient): MonoEndpoints {
       headers: { "X-Token": token },
       signal,
     });
+
+  const fetchStatementPage = async (
+    token: string,
+    accId: string,
+    from: number,
+    to: number,
+    signal?: AbortSignal,
+  ): Promise<MonoStatementEntry[]> => {
+    let attempt = 0;
+    let lastErr: unknown;
+    while (attempt <= MONO_RETRY_MAX_PER_PAGE) {
+      try {
+        return await fetchStatementPageOnce(token, accId, from, to, signal);
+      } catch (err) {
+        lastErr = err;
+        if (
+          !isApiError(err) ||
+          err.status !== 429 ||
+          attempt >= MONO_RETRY_MAX_PER_PAGE
+        ) {
+          throw err;
+        }
+        // Без `retryAfterMs` від сервера не гадаємо навмання — прокидуємо
+        // 429 наверх. Активний rate-limit без retry-after — сигнал змінити
+        // upstream конфіг, а не сліпо ретраїти.
+        const waitMs = err.retryAfterMs;
+        if (!waitMs) throw err;
+        const safeWait = Math.min(waitMs, MONO_RETRY_MAX_DELAY_MS);
+        await _sleep(safeWait);
+        attempt += 1;
+      }
+    }
+    // Недосяжно: цикл повертає результат або викидає ще у catch-гілці.
+    /* c8 ignore next */
+    throw lastErr instanceof ApiError
+      ? lastErr
+      : new Error("mono.statement: exhausted retries");
+  };
 
   return {
     clientInfo: (token, opts) =>

@@ -54,23 +54,29 @@ function mockFetchResponse({
   status = 200,
   body = {} as unknown,
   contentType,
+  headers = {},
 }: {
   status?: number;
   body?: unknown;
   contentType?: string;
+  headers?: Record<string, string>;
 } = {}) {
   const text = typeof body === "string" ? body : JSON.stringify(body);
   const ct =
     contentType ??
     (typeof body === "string" ? "text/plain" : "application/json");
+  const normalized = new Map<string, string>();
+  for (const [k, v] of Object.entries(headers)) {
+    normalized.set(k.toLowerCase(), v);
+  }
+  normalized.set("content-type", ct);
   return {
     ok: status >= 200 && status < 300,
     status,
     text: async () => text,
     json: async () => (typeof body === "string" ? body : body),
     headers: {
-      get: (name: string) =>
-        name.toLowerCase() === "content-type" ? ct : null,
+      get: (name: string) => normalized.get(name.toLowerCase()) ?? null,
     },
   };
 }
@@ -152,6 +158,32 @@ describe("mono proxy path validation", () => {
     await monoHandler(asReq(req), res);
     expect(res.statusCode).toBe(200);
     expect(global.fetch).toHaveBeenCalledOnce();
+  });
+
+  it("propagates Retry-After header on 429 for Monobank rate-limit", async () => {
+    // Регресія: handler відкидав upstream-хедер Retry-After, тому pagination
+    // loop у клієнті (api-client/mono.ts) бачив `ApiError.retryAfterMs =
+    // undefined` і падав замість taргeted retry через 60 s.
+    // Тут задаємо `timeoutMs: 0` на bank-proxy retry-delays, щоб не чекати
+    // реальні мс.
+    __bankProxyTestHooks().configure({ retryDelaysMs: [0] });
+    global.fetch = vi.fn().mockResolvedValue(
+      mockFetchResponse({
+        status: 429,
+        body: { error: "Too many" },
+        headers: { "retry-after": "60" },
+      }),
+    );
+    const req = {
+      method: "GET",
+      headers: { "x-token": "tok-3", origin: "http://localhost:5173" },
+      query: { path: "/personal/statement/acc/1/2" },
+    };
+    const res = mockRes();
+    await monoHandler(asReq(req), res);
+    expect(res.statusCode).toBe(429);
+    expect(res.headers["Retry-After"]).toBe("60");
+    expect(res.body).toMatchObject({ error: "Занадто багато запитів" });
   });
 });
 

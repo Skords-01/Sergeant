@@ -15,6 +15,14 @@ export interface ApiErrorInit {
   bodyText?: string;
   url: string;
   cause?: unknown;
+  /**
+   * Мілісекунди до найраніше безпечної повторної спроби, коли сервер повернув
+   * `429`/`503` разом із заголовком `Retry-After`. Парсимо обидві форми:
+   * `<seconds>` → `seconds * 1000`, `<HTTP-date>` → `date - now`.
+   * Значення `0` і негативні нормалізуємо у `undefined`, щоб `instanceof`-чек
+   * викликача міг робити просте `if (err.retryAfterMs)`.
+   */
+  retryAfterMs?: number;
 }
 
 export class ApiError extends Error {
@@ -29,6 +37,9 @@ export class ApiError extends Error {
   readonly url: string;
   /** `body?.error`, якщо сервер повернув стандартну форму помилки. */
   readonly serverMessage?: string;
+  /** Мс до безпечного retry, якщо upstream віддав `Retry-After`. `undefined`
+   *  якщо заголовок не було або він не парситься у додатну величину. */
+  readonly retryAfterMs?: number;
 
   constructor(init: ApiErrorInit) {
     super(init.message, init.cause !== undefined ? { cause: init.cause } : {});
@@ -44,6 +55,10 @@ export class ApiError extends Error {
         : undefined;
     this.serverMessage =
       typeof maybeServerMessage === "string" ? maybeServerMessage : undefined;
+    this.retryAfterMs =
+      typeof init.retryAfterMs === "number" && init.retryAfterMs > 0
+        ? init.retryAfterMs
+        : undefined;
   }
 
   /** Сервер відповів 401/403 — повторний запит без нових credentials безглуздий. */
