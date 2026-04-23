@@ -108,7 +108,6 @@ export function FizrukHeader({
     <ModuleHeader
       left={left}
       title={titleFor(page)}
-      eyebrow={showChevronBack ? undefined : "ОСОБИСТИЙ ЖУРНАЛ"}
       subtitle={showChevronBack ? undefined : subtitleFor(page, activeProgram)}
     />
   );

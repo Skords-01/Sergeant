@@ -11,6 +11,10 @@ import { PAGES } from "./constants";
 import { Button } from "@shared/components/ui/Button";
 import { Input } from "@shared/components/ui/Input";
 import { ModuleBottomNav } from "@shared/components/ui/ModuleBottomNav";
+import {
+  ModuleHeader,
+  ModuleHeaderBackButton,
+} from "@shared/components/layout";
 import { SectionErrorBoundary } from "@shared/components/ui/SectionErrorBoundary.jsx";
 import { cn } from "@shared/lib/cn";
 import { useToast } from "@shared/hooks/useToast";
@@ -575,42 +579,13 @@ export default function App({
   // ── Main app ──────────────────────────────────────────────────────────
   return (
     <div className="h-dvh flex flex-col bg-bg text-text overflow-hidden">
-      {/* Header */}
-      <div className="shrink-0 bg-panel/95 backdrop-blur-md border-b border-line z-40 relative safe-area-pt">
-        <div className="flex h-14 items-center justify-between px-4 sm:px-5 gap-3">
-          <div className="flex items-center gap-2 min-w-0">
-            {typeof onBackToHub === "function" ? (
-              <button
-                type="button"
-                onClick={onBackToHub}
-                className={cn(
-                  "shrink-0 h-10 min-h-[40px] -ml-1 pl-2 pr-3 gap-1.5",
-                  "flex items-center justify-center rounded-xl",
-                  "text-muted hover:text-text transition-all duration-200",
-                  "border border-line bg-panel/80 hover:bg-panelHi",
-                  "active:scale-95",
-                )}
-                aria-label="До хабу"
-                title="До хабу"
-              >
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden
-                >
-                  <path d="M15 18l-6-6 6-6" />
-                </svg>
-                <span className="text-sm font-semibold">Хаб</span>
-              </button>
-            ) : null}
+      <ModuleHeader
+        left={
+          typeof onBackToHub === "function" ? (
+            <ModuleHeaderBackButton onClick={onBackToHub} />
+          ) : (
             <div
-              className="shrink-0 w-9 h-9 rounded-xl bg-emerald-500/12 flex items-center justify-center text-emerald-600 dark:text-emerald-400 border border-emerald-500/15"
+              className="shrink-0 w-10 h-10 rounded-xl bg-emerald-500/12 flex items-center justify-center text-emerald-600 dark:text-emerald-400 border border-emerald-500/15"
               aria-hidden
             >
               <svg
@@ -627,17 +602,16 @@ export default function App({
                 <line x1="2" y1="10" x2="22" y2="10" />
               </svg>
             </div>
-            <div className="min-w-0">
-              <span className="text-[16px] font-semibold tracking-wide text-text block leading-tight">
-                ФІНІК
-              </span>
-              <span className="text-2xs text-subtle font-medium hidden sm:block truncate">
-                Monobank · бюджети
-              </span>
-            </div>
-          </div>
+          )
+        }
+        title="ФІНІК"
+        subtitle="Monobank · бюджети"
+        right={
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-2 text-xs text-subtle select-none">
+            <div
+              className="flex items-center gap-2 text-xs text-subtle select-none"
+              aria-label={`Стан синхронізації: ${syncTone.text}`}
+            >
               <span className={cn("w-2 h-2 rounded-full", syncTone.dot)} />
               <span className="hidden sm:inline">{syncTone.text}</span>
             </div>
@@ -681,8 +655,8 @@ export default function App({
               )}
             </button>
           </div>
-        </div>
-      </div>
+        }
+      />
 
       {/* Page content */}
       <div

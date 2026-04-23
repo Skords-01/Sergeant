@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { cn } from "@shared/lib/cn";
 import { Banner } from "@shared/components/ui/Banner";
+import {
+  ModuleHeader,
+  ModuleHeaderBackButton,
+} from "@shared/components/layout";
 import { hapticTap } from "@shared/lib/haptic";
 import {
   loadRoutineState,
@@ -475,31 +479,10 @@ export default function RoutineApp({
 
   return (
     <div className="h-dvh flex flex-col bg-bg text-text overflow-hidden">
-      <div className="shrink-0 bg-panel/95 backdrop-blur-md border-b border-line z-40 relative safe-area-pt">
-        <div className="flex min-h-[68px] items-center px-4 py-2 sm:px-5 gap-3">
-          {typeof onBackToHub === "function" ? (
-            <button
-              type="button"
-              onClick={onBackToHub}
-              className="shrink-0 h-10 min-h-[40px] -ml-1 pl-2 pr-3 gap-1.5 flex items-center justify-center rounded-xl text-muted hover:text-text hover:bg-panelHi transition-colors border border-line bg-panel/80"
-              aria-label="До хабу"
-              title="До хабу"
-            >
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden
-              >
-                <path d="M15 18l-6-6 6-6" />
-              </svg>
-              <span className="text-sm font-semibold">Хаб</span>
-            </button>
+      <ModuleHeader
+        left={
+          typeof onBackToHub === "function" ? (
+            <ModuleHeaderBackButton onClick={onBackToHub} />
           ) : (
             <div
               className={cn(
@@ -521,24 +504,11 @@ export default function RoutineApp({
                 <path d="M8 14h.01M12 14h.01M16 14h.01" />
               </svg>
             </div>
-          )}
-          <div className="min-w-0 flex-1">
-            <span
-              className={cn(
-                // eslint-disable-next-line sergeant-design/no-eyebrow-drift -- Module hero kicker composed via cn(..., C.eyebrow) with dynamic routine-branded class; SectionHeading can't express the conditional tint.
-                "text-3xs font-bold tracking-widest uppercase block leading-none mb-0.5",
-                C.eyebrow,
-              )}
-            >
-              Hub календар
-            </span>
-            <span className="text-[16px] font-semibold tracking-wide text-text block leading-tight">
-              РУТИНА
-            </span>
-            <span className="text-2xs text-subtle font-medium truncate">
-              Звички · план Фізрука · один розклад
-            </span>
-          </div>
+          )
+        }
+        title="РУТИНА"
+        subtitle="Звички · план Фізрука · один розклад"
+        right={
           <button
             type="button"
             onClick={() => applyTimeMode("today")}
@@ -551,8 +521,8 @@ export default function RoutineApp({
           >
             Сьогодні
           </button>
-        </div>
-      </div>
+        }
+      />
 
       <div className="flex-1 overflow-hidden flex flex-col min-h-0">
         <main
