@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { cn } from "@shared/lib/cn";
+import { useLocalStorageState } from "@shared/hooks/useLocalStorageState.js";
 import { generateInsights } from "./lib/insightsEngine";
 import {
   calcFinykSpendingByDate,
@@ -259,34 +260,97 @@ function Delta({ cur, prev, higherIsBetter = true }) {
   );
 }
 
-function StatCard({ title, icon, current, prev, unit, higherIsBetter, chart }) {
+function StatCard({
+  title,
+  icon,
+  current,
+  prev,
+  unit,
+  higherIsBetter,
+  chart,
+  storageKey,
+}) {
+  const [collapsed, setCollapsed] = useLocalStorageState<boolean>(
+    storageKey,
+    false,
+    { validate: (v): v is boolean => typeof v === "boolean" },
+  );
+  const formattedCurrent =
+    typeof current === "number" ? current.toLocaleString("uk-UA") : current;
+  const formattedPrev =
+    typeof prev === "number" ? prev.toLocaleString("uk-UA") : prev;
+
   return (
-    <div className="bg-panel border border-line rounded-2xl p-4 space-y-3">
-      <SectionHeading
-        as="div"
-        size="xs"
-        className="flex items-center gap-2 text-muted"
-      >
-        <span className="text-lg">{icon}</span>
-        <span>{title}</span>
-      </SectionHeading>
-      <div className="flex items-baseline gap-2">
-        <span className="text-2xl font-bold text-text">
-          {typeof current === "number"
-            ? current.toLocaleString("uk-UA")
-            : current}
-          {unit}
-        </span>
-        <Delta cur={current} prev={prev} higherIsBetter={higherIsBetter} />
-      </div>
-      {prev !== undefined && (
-        <p className="text-xs text-muted">
-          Минулий:{" "}
-          {typeof prev === "number" ? prev.toLocaleString("uk-UA") : prev}
-          {unit}
-        </p>
+    <div
+      className={cn(
+        "bg-panel border border-line rounded-2xl",
+        collapsed ? "p-3" : "p-4 space-y-3",
       )}
-      {chart}
+    >
+      <button
+        type="button"
+        onClick={() => setCollapsed((c) => !c)}
+        aria-expanded={!collapsed}
+        className={cn(
+          "w-full flex items-center gap-2 text-left rounded-lg",
+          "-m-1 p-1 hover:bg-panelHi transition-colors",
+        )}
+      >
+        <span className="text-lg shrink-0" aria-hidden>
+          {icon}
+        </span>
+        <SectionHeading
+          as="span"
+          size="xs"
+          className="flex-1 min-w-0 text-muted truncate"
+        >
+          {title}
+        </SectionHeading>
+        {collapsed && (
+          <span className="flex items-baseline gap-2 shrink-0">
+            <span className="text-base font-bold text-text">
+              {formattedCurrent}
+              {unit}
+            </span>
+            <Delta cur={current} prev={prev} higherIsBetter={higherIsBetter} />
+          </span>
+        )}
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden
+          className={cn(
+            "shrink-0 text-muted transition-transform",
+            collapsed ? "-rotate-90" : "rotate-0",
+          )}
+        >
+          <path d="M6 9l6 6 6-6" />
+        </svg>
+      </button>
+      {!collapsed && (
+        <>
+          <div className="flex items-baseline gap-2">
+            <span className="text-2xl font-bold text-text">
+              {formattedCurrent}
+              {unit}
+            </span>
+            <Delta cur={current} prev={prev} higherIsBetter={higherIsBetter} />
+          </div>
+          {prev !== undefined && (
+            <p className="text-xs text-muted">
+              Минулий: {formattedPrev}
+              {unit}
+            </p>
+          )}
+          {chart}
+        </>
+      )}
     </div>
   );
 }
@@ -397,6 +461,7 @@ export function HubReports() {
         <StatCard
           title="Тренування (Фізрук)"
           icon="🏋️"
+          storageKey="hub_reports_collapsed_v1:workouts"
           current={data.workouts.cur.count}
           prev={data.workouts.prev.count}
           unit=" трен."
@@ -414,6 +479,7 @@ export function HubReports() {
         <StatCard
           title="Витрати (Фінік)"
           icon="💳"
+          storageKey="hub_reports_collapsed_v1:spending"
           current={data.spending.cur.total}
           prev={data.spending.prev.total}
           unit=" ₴"
@@ -431,6 +497,7 @@ export function HubReports() {
         <StatCard
           title="Виконання звичок (Рутина)"
           icon="✅"
+          storageKey="hub_reports_collapsed_v1:habits"
           current={data.habits.cur.pct}
           prev={data.habits.prev.pct}
           unit="%"
@@ -449,6 +516,7 @@ export function HubReports() {
         <StatCard
           title="Середньо ккал/день (Харчування)"
           icon="🥗"
+          storageKey="hub_reports_collapsed_v1:kcal"
           current={data.kcal.cur.avg}
           prev={data.kcal.prev.avg}
           unit=" ккал"
