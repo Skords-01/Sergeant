@@ -1,9 +1,8 @@
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { downloadJson } from "@sergeant/shared";
 import { Button } from "@shared/components/ui/Button";
 import { ConfirmDialog } from "@shared/components/ui/ConfirmDialog";
 import { EmptyState } from "@shared/components/ui/EmptyState";
-import { useToast } from "@shared/hooks/useToast";
 import { cn } from "@shared/lib/cn";
 import { useExerciseCatalog } from "../hooks/useExerciseCatalog";
 import { useMeasurements } from "../hooks/useMeasurements";
@@ -13,7 +12,6 @@ import { MiniLineChart } from "../components/MiniLineChart";
 import { WellbeingChart } from "../components/WellbeingChart";
 import { WeeklyVolumeChart } from "../components/WeeklyVolumeChart";
 import {
-  applyFizrukFullBackupPayload,
   buildFizrukFullBackupPayload,
   FIZRUK_RESET_KEYS,
 } from "../lib/fizrukStorage";
@@ -31,12 +29,10 @@ function weekStartMs(d) {
 }
 
 export function Progress() {
-  const toast = useToast();
   const { workouts } = useWorkouts();
   const { entries } = useMeasurements();
   const { exercises, musclesUk } = useExerciseCatalog();
   const { stats: pushupStats, hasData: hasPushupData } = usePushupActivity();
-  const fileRef = useRef(null);
 
   const meas = useMemo(() => {
     const latest = entries?.[0] || null;
@@ -224,25 +220,6 @@ export function Progress() {
       `fizruk-backup-${new Date().toISOString().slice(0, 10)}.json`,
       payload,
     );
-  };
-
-  const importJson = async (file) => {
-    let text;
-    try {
-      text = await file.text();
-    } catch (err) {
-      console.error("[fizruk] importJson: failed to read file", err);
-      throw err;
-    }
-    let parsed;
-    try {
-      parsed = JSON.parse(text);
-    } catch (err) {
-      console.error("[fizruk] importJson: invalid JSON", err);
-      throw new Error("Невірний формат файлу");
-    }
-    applyFizrukFullBackupPayload(parsed);
-    window.location.reload();
   };
 
   const [resetConfirm, setResetConfirm] = useState(false);
@@ -677,35 +654,13 @@ export function Progress() {
           >
             Експорт (backup)
           </button>
-          <div className="grid grid-cols-2 gap-2">
-            <Button
-              className="h-12 min-h-[44px] rounded-full"
-              variant="ghost"
-              onClick={() => fileRef.current?.click()}
-            >
-              Імпорт
-            </Button>
-            <Button
-              className="h-12 min-h-[44px] rounded-full"
-              variant="ghost"
-              onClick={exportCsv}
-            >
-              CSV
-            </Button>
-          </div>
-          <input
-            ref={fileRef}
-            type="file"
-            accept="application/json"
-            className="hidden"
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (!f) return;
-              importJson(f).catch(() =>
-                toast.error("Не вдалося імпортувати файл"),
-              );
-            }}
-          />
+          <Button
+            className="w-full h-12 min-h-[44px] rounded-full"
+            variant="ghost"
+            onClick={exportCsv}
+          >
+            CSV
+          </Button>
           <div className="mt-3">
             <Button
               variant="danger"
