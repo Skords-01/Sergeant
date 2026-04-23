@@ -28,7 +28,6 @@
     "@sergeant/nutrition-domain": "workspace:*",
     "@sergeant/routine-domain": "workspace:*",
     "@sergeant/insights": "workspace:*",
-    "@sergeant/mobile-shell": "workspace:*",
     "@sergeant/shared": "workspace:*",
     "@tanstack/react-query": "^5.99.0",
     "@zxing/browser": "^0.1.5",
