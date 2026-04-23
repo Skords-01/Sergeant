@@ -144,18 +144,32 @@ const QUICK_ADD_CHIPS: QuickAddChip[] = (
   return { module: mod, label: a.shortLabel, action: a.action };
 });
 
-// Chip surfaces use saturated-accent-at-low-opacity in dark mode so they
-// blend with the warm dark panel instead of glowing as acidic pastel
-// (matches the `Badge`/`Tabs`/`Segmented` pattern already used across the
-// app). Light-mode surfaces stay on the soft pastel tokens.
-const MODULE_CHIP_CLASS: Record<HubModuleId, string> = {
-  finyk: "bg-finyk-soft text-finyk-strong dark:bg-finyk/15 dark:text-finyk",
-  fizruk:
-    "bg-fizruk-soft text-fizruk-strong dark:bg-fizruk/15 dark:text-fizruk",
-  routine:
-    "bg-routine-surface text-routine-strong dark:bg-routine/15 dark:text-routine",
-  nutrition:
-    "bg-nutrition-soft text-nutrition-strong dark:bg-nutrition/15 dark:text-nutrition",
+// Refined chip language: neutral panel base (matches the cream module rows
+// below) + a tinted «bubble» with a module-coloured plus, so the chips
+// visually echo the module list's icon-square pattern instead of looking
+// like loose candy pastels.
+const MODULE_CHIP_ACCENT: Record<
+  HubModuleId,
+  { bubble: string; hoverBorder: string }
+> = {
+  finyk: {
+    bubble: "bg-finyk-soft text-finyk dark:bg-finyk/20 dark:text-finyk",
+    hoverBorder: "hover:border-finyk/40 hover:bg-finyk-soft/40",
+  },
+  fizruk: {
+    bubble: "bg-fizruk-soft text-fizruk dark:bg-fizruk/20 dark:text-fizruk",
+    hoverBorder: "hover:border-fizruk/40 hover:bg-fizruk-soft/40",
+  },
+  routine: {
+    bubble:
+      "bg-routine-surface text-routine dark:bg-routine/20 dark:text-routine",
+    hoverBorder: "hover:border-routine/40 hover:bg-routine-surface/40",
+  },
+  nutrition: {
+    bubble:
+      "bg-nutrition-soft text-nutrition dark:bg-nutrition/20 dark:text-nutrition",
+    hoverBorder: "hover:border-nutrition/40 hover:bg-nutrition-soft/40",
+  },
 };
 
 /**
@@ -202,21 +216,34 @@ function EmptyFocus() {
       </p>
 
       <div className="mt-3 flex flex-wrap gap-2">
-        {QUICK_ADD_CHIPS.map((chip) => (
-          <button
-            key={chip.module}
-            type="button"
-            onClick={() => openHubModuleWithAction(chip.module, chip.action)}
-            className={cn(
-              "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full",
-              "text-xs font-semibold",
-              "hover:brightness-110 active:scale-[0.98] transition-all",
-              MODULE_CHIP_CLASS[chip.module],
-            )}
-          >
-            {chip.label}
-          </button>
-        ))}
+        {QUICK_ADD_CHIPS.map((chip) => {
+          const accent = MODULE_CHIP_ACCENT[chip.module];
+          const name = chip.label.replace(/^\+\s*/, "");
+          return (
+            <button
+              key={chip.module}
+              type="button"
+              onClick={() => openHubModuleWithAction(chip.module, chip.action)}
+              className={cn(
+                "group inline-flex items-center gap-1.5 pl-1 pr-3 py-1 rounded-full",
+                "bg-panel border border-line text-xs font-semibold text-text",
+                "shadow-sm transition-all active:scale-[0.98]",
+                accent.hoverBorder,
+              )}
+            >
+              <span
+                aria-hidden
+                className={cn(
+                  "inline-flex items-center justify-center w-5 h-5 rounded-full",
+                  accent.bubble,
+                )}
+              >
+                <Icon name="plus" size={12} strokeWidth={2.5} />
+              </span>
+              {name}
+            </button>
+          );
+        })}
       </div>
     </div>
   );
