@@ -470,6 +470,10 @@ export function Workouts() {
             onOpenCatalog={() => setView("catalog")}
             onOpenTemplates={() => setView("templates")}
             onOpenJournal={() => setView("log")}
+            onOpenRetro={() => {
+              setRetroOpen(true);
+              setView("log");
+            }}
           />
         ) : null}
 
@@ -677,6 +681,7 @@ interface WorkoutsHomeProps {
   onOpenCatalog: () => void;
   onOpenTemplates: () => void;
   onOpenJournal: () => void;
+  onOpenRetro: () => void;
 }
 
 function WorkoutsHome({
@@ -689,6 +694,7 @@ function WorkoutsHome({
   onOpenCatalog,
   onOpenTemplates,
   onOpenJournal,
+  onOpenRetro,
 }: WorkoutsHomeProps) {
   const hasActive = !!activeWorkout && !activeWorkout.endedAt;
 
@@ -740,6 +746,14 @@ function WorkoutsHome({
           </div>
         </div>
       )}
+
+      <Button
+        variant="ghost"
+        className="h-11 w-full text-sm"
+        onClick={onOpenRetro}
+      >
+        ✏️ Внести проведене заняття
+      </Button>
 
       <div>
         <div className="flex items-center justify-between px-1 mb-2">

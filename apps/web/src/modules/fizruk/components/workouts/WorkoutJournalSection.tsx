@@ -207,22 +207,24 @@ export function WorkoutJournalSection({
           <SectionHeading as="div" size="sm">
             Останні тренування
           </SectionHeading>
-          <button
-            type="button"
-            onClick={() => setRetroOpen((o) => !o)}
-            className={compactToolbarButtonClass}
-            aria-expanded={retroOpen}
-            title="Записати заднім числом"
-          >
-            •••
-          </button>
         </div>
 
         {retroOpen && (
           <div className="px-4 py-3 border-b border-line bg-bg space-y-3">
-            <p className="text-xs font-semibold text-text">
-              Записати тренування заднім числом
-            </p>
+            <div className="flex items-start justify-between gap-2">
+              <p className="text-xs font-semibold text-text">
+                Записати тренування заднім числом
+              </p>
+              <button
+                type="button"
+                onClick={() => setRetroOpen(false)}
+                className={compactToolbarButtonClass}
+                aria-label="Закрити"
+                title="Закрити"
+              >
+                ×
+              </button>
+            </div>
             <p className="text-xs text-subtle leading-relaxed">
               Вкажи, коли було тренування, потім додай вправи та заповни
               кг/повтори.
