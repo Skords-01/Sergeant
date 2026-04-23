@@ -24,7 +24,7 @@ import {
   getDebtTxRole,
   getReceivableTxRole,
 } from "@sergeant/finyk-domain/domain/debtEngine";
-import { filterVisibleAccounts } from "@sergeant/finyk-domain/domain/assets";
+import { filterVisibleAccounts } from "@sergeant/finyk-domain/domain/assets/aggregates";
 import { cn } from "@shared/lib/cn";
 import { openHubModule } from "@shared/lib/hubNav";
 import { notifyFinykRoutineCalendarSync } from "../hubRoutineSync.js";
