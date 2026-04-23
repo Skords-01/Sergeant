@@ -585,7 +585,7 @@ export function Budgets({ mono, storage, showBalance = true }) {
             onClick={() => setShowForm(true)}
             className="w-full py-3 text-sm text-muted border border-dashed border-line rounded-xl hover:border-primary hover:text-primary transition-colors"
           >
-            + Додати бюджет або ціль
+            + Додати ліміт або ціль
           </button>
         )}
       </div>
