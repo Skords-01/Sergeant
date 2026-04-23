@@ -461,6 +461,38 @@ describe("syncPush (singular) — contract tests", () => {
     );
   });
 
+  // Зона «проскакують zod, але крешать хендлер»: `""` / `"garbage"` / `NaN`
+  // раніше проходили union `string|number|date` і ставали `Invalid Date` →
+  // `pg` при серіалізації кидав `RangeError`, і відповідь була 500 замість
+  // чистого 400.
+  it.each<[string, unknown]>([
+    ["empty string", ""],
+    ["non-parseable string", "not a date"],
+    ["NaN", Number.NaN],
+    ["Infinity", Number.POSITIVE_INFINITY],
+  ])(
+    "invalid clientUpdatedAt (%s) → 400 before reaching DB",
+    async (_label, value) => {
+      const res = makeRes();
+      await syncPush(
+        makeReq({
+          module: "finyk",
+          data: { balance: 100 },
+          clientUpdatedAt: value,
+        }),
+        res,
+      );
+      expect(res.statusCode).toBe(400);
+      expect(res.body).toMatchObject({ error: "Некоректні дані запиту" });
+      expect(res.body.details).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ path: "clientUpdatedAt" }),
+        ]),
+      );
+      expect(pool.query).not.toHaveBeenCalled();
+    },
+  );
+
   it("blob > MAX_BLOB_SIZE → 413 + outcome='too_large'", async () => {
     const huge = "x".repeat(MAX_BLOB_SIZE);
     const res = makeRes();

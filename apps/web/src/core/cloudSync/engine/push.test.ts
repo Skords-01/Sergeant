@@ -204,4 +204,29 @@ describe("pushAll", () => {
     expect(onError).not.toHaveBeenCalled();
     expect(getDirtyModules()).toEqual({});
   });
+
+  it("keeps conflict modules dirty (LWW loser) instead of silently dropping local changes", async () => {
+    // Регресія: `clearAllDirty()` стирав dirty і для `{ ok: true, conflict: true }`,
+    // після чого pull накатував cloud → локальні зміни гинули.
+    markModuleDirty("finyk");
+    markModuleDirty("routine");
+    mockedBuild.mockReturnValueOnce({
+      finyk: { data: { a: 1 }, clientUpdatedAt: "2025-01-01T00:00:00.000Z" },
+      routine: { data: { b: 2 }, clientUpdatedAt: "2025-01-01T00:00:00.000Z" },
+    });
+    mockedPushAllApi.mockResolvedValueOnce({
+      results: {
+        finyk: { ok: true, version: 42 },
+        routine: { ok: true, conflict: true, version: 7 },
+      },
+    });
+
+    const { args, onSuccess, onError } = makeArgs();
+    await pushAll(args);
+
+    expect(onSuccess).toHaveBeenCalledTimes(1);
+    expect(onError).not.toHaveBeenCalled();
+    // finyk — очищений, routine — лишився dirty до наступного push-у.
+    expect(getDirtyModules()).toEqual({ routine: true });
+  });
 });

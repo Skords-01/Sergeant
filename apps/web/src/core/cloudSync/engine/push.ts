@@ -112,7 +112,26 @@ export async function pushAll(args: PushArgs): Promise<void> {
         if (r?.version) setModuleVersion(user.id, mod, r.version);
       }
     }
-    clearAllDirty();
+    // Per-module clear замість `clearAllDirty()`: інакше при LWW-conflict-і
+    // (`{ ok: true, conflict: true }`) dirty-флаг стирався мовчки, і
+    // наступний pull накатував cloud → локальні зміни гинули. Лишаємо
+    // conflict-модулі dirty для наступної ітерації push-у.
+    const results = result?.results ?? {};
+    const conflicted: string[] = [];
+    for (const mod of Object.keys(modules)) {
+      const r = results[mod];
+      if (isModulePushSuccess(r)) {
+        clearDirtyModule(mod);
+      } else {
+        conflicted.push(mod);
+      }
+    }
+    if (conflicted.length > 0) {
+      console.warn(
+        "[cloudSync] pushAll: server rejected push for modules (kept dirty)",
+        conflicted,
+      );
+    }
     onSuccess(new Date());
   } catch (err) {
     args.onErrorRaw?.(err);

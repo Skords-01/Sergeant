@@ -363,7 +363,16 @@ const SyncModuleEnum = z.enum(["finyk", "fizruk", "routine", "nutrition"]);
 // тому push старого клієнта мовчки перезаписував свіжіший запис з іншого
 // пристрою. Тепер клієнт, що не надсилає поле, отримує 400 замість
 // тихої втрати даних.
-const ClientUpdatedAtSchema = z.union([z.string(), z.number(), z.date()]);
+//
+// `.min(1)` / `.finite()` + refine на валідність `new Date(v)` — потрібні,
+// бо інакше `""`, `NaN`, `"garbage"` проходили zod і ставали `Invalid Date`
+// у хендлері: `pg` при серіалізації викидав `RangeError: Invalid time
+// value`, і замість чистого 400 клієнт отримував 500 з внутрішнім стектрейсом.
+const ClientUpdatedAtSchema = z
+  .union([z.string().min(1), z.number().finite(), z.date()])
+  .refine((v) => !Number.isNaN(new Date(v).getTime()), {
+    message: "Invalid date",
+  });
 
 export const SyncPushSchema = z.object({
   module: SyncModuleEnum,

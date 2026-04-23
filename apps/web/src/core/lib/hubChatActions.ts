@@ -1379,7 +1379,11 @@ export function executeAction(action: ChatAction): string {
                 : null,
           },
         };
-        void saveRecipeToBook(payload).catch(() => {});
+        void saveRecipeToBook(payload).catch((err: unknown) => {
+          // fire-and-forget, але повний silent не хочемо — збої збереження
+          // рецепту у книгу з чату були невидимі для UX/саппорту.
+          console.warn("[hubChat] saveRecipeToBook failed", err);
+        });
         return `Рецепт "${t}" збережено в книгу рецептів.`;
       }
       case "add_to_shopping_list": {

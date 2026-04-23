@@ -214,7 +214,16 @@ export function usePushNotifications(): UsePushNotificationsResult {
         const detected = getPlatform();
         const platform = detected === "ios" ? "ios" : "android";
         if (token) {
-          await pushUnregister.mutateAsync({ platform, token }).catch(() => {});
+          await pushUnregister
+            .mutateAsync({ platform, token })
+            .catch((err: unknown) => {
+              // best-effort — локально вже розписалися, але хочемо бачити
+              // серверні збої у Sentry/DevTools замість глухого silent fail.
+              console.warn(
+                "[push] native unregister failed (best-effort)",
+                err,
+              );
+            });
         }
         localStorage.removeItem(PUSH_SUB_KEY);
         setSubscribed(false);
@@ -241,7 +250,9 @@ export function usePushNotifications(): UsePushNotificationsResult {
         // трекається як окрема мутація в devtools.
         await pushUnregister
           .mutateAsync({ platform: "web", endpoint })
-          .catch(() => {});
+          .catch((err: unknown) => {
+            console.warn("[push] web unregister failed (best-effort)", err);
+          });
       }
       localStorage.removeItem(PUSH_SUB_KEY);
       setSubscribed(false);

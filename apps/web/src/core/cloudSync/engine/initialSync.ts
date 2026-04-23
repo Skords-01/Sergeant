@@ -1,15 +1,21 @@
 import { syncApi } from "@shared/api";
 import { SYNC_MODULES } from "../config";
+import { isModulePushSuccess } from "../conflict/pushSuccess";
 import { resolveInitialSync } from "../conflict/resolver";
 import {
-  clearAllDirty,
+  clearDirtyModule,
   getDirtyModules,
   getModuleModifiedTimes,
 } from "../state/dirtyModules";
 import { isMigrationDone, markMigrationDone } from "../state/migration";
 import { applyModuleData, hasLocalData } from "../state/moduleData";
 import { getModuleVersion, setModuleVersion } from "../state/versions";
-import type { EngineArgs, PullAllModuleBody, PullAllResponse } from "../types";
+import type {
+  EngineArgs,
+  PullAllModuleBody,
+  PullAllResponse,
+  PushAllResponse,
+} from "../types";
 import { buildModulesPayload } from "./buildPayload";
 import { replayOfflineQueue } from "./replay";
 import { retryAsync } from "./retryAsync";
@@ -72,10 +78,31 @@ async function applyMerge(
   // markMigrationDone is skipped — matches pre-refactor behavior where
   // `if (pushRes.ok) clearAllDirty()` combined with the syncApi-throwing
   // transport meant a push failure aborted the whole initialSync.
-  await retryAsync(() => syncApi.pushAll(modules), {
+  const pushResult = (await retryAsync(() => syncApi.pushAll(modules), {
     label: "initialSync.merge",
-  });
-  clearAllDirty();
+  })) as PushAllResponse;
+  // Per-module clear: якщо сервер повернув `{ conflict: true }` (LWW loser),
+  // `clearAllDirty()` мовчки дропав локальний dirty-флаг → наступний pull
+  // накатував cloud, і локальні зміни зникали без попередження. Тепер
+  // очищаємо лише не-conflict модулі, а conflict-модулі лишаються dirty і
+  // будуть перевідправлені разом із наступним push-у (або користувач
+  // побачить попередження через telemetry).
+  const results = pushResult?.results ?? {};
+  const conflicted: string[] = [];
+  for (const mod of Object.keys(modules)) {
+    const r = results[mod];
+    if (isModulePushSuccess(r)) {
+      clearDirtyModule(mod);
+    } else {
+      conflicted.push(mod);
+    }
+  }
+  if (conflicted.length > 0) {
+    console.warn(
+      "[cloudSync] initialSync.merge: server rejected push for modules (kept dirty for retry)",
+      conflicted,
+    );
+  }
 }
 
 /**

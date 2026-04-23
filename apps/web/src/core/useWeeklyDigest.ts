@@ -476,7 +476,12 @@ export function useWeeklyDigest(selectedWeekKey?: string) {
               ...(report as object),
             },
           })
-          .catch(() => {});
+          .catch((err: unknown) => {
+            // non-fatal, але без логу не було видно серверних збоїв у
+            // персоналізованому coach-контексті — digest генерувався, а
+            // пам'ять мовчки не оновлювалася.
+            console.warn("[weeklyDigest] coachApi.postMemory failed", err);
+          });
       } catch {
         /* non-fatal */
       }

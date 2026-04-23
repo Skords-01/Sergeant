@@ -112,6 +112,71 @@ describe("initialSync return value", () => {
     expect(onSettled).toHaveBeenCalledTimes(1);
   });
 
+  it("keeps conflict modules dirty after a successful merge push", async () => {
+    // Регресія: `applyMerge` викликав `clearAllDirty()` після `syncApi.pushAll`,
+    // ігноруючи per-module `{ ok: true, conflict: true }` → dirty стирався,
+    // наступний pull накатував cloud, і локальні зміни зникали.
+    mockedPullAll.mockResolvedValueOnce({
+      modules: {
+        finyk: {
+          data: { a: 1 },
+          clientUpdatedAt: new Date(Date.now() - 1000).toISOString(),
+          version: 5,
+        },
+      },
+    });
+    // LWW loser: server відкинув push як conflict.
+    mockedPushAll.mockResolvedValueOnce({
+      results: { finyk: { ok: true, conflict: true, version: 5 } },
+    });
+    localStorage.setItem(STORAGE_KEYS.FINYK_BUDGETS, JSON.stringify({ x: 1 }));
+    localStorage.setItem(
+      STORAGE_KEYS.SYNC_DIRTY_MODULES,
+      JSON.stringify({ finyk: true }),
+    );
+    markMigrationDone("u1");
+    const { args, onSuccess, onError } = makeArgs();
+
+    const result = await initialSync(args);
+
+    expect(result).toBe(true);
+    expect(onSuccess).toHaveBeenCalledTimes(1);
+    expect(onError).not.toHaveBeenCalled();
+    // dirty має лишитись — до наступної ітерації push-у.
+    expect(
+      JSON.parse(localStorage.getItem(STORAGE_KEYS.SYNC_DIRTY_MODULES) || "{}"),
+    ).toEqual({ finyk: true });
+  });
+
+  it("clears dirty for non-conflict modules on a successful merge push", async () => {
+    mockedPullAll.mockResolvedValueOnce({
+      modules: {
+        finyk: {
+          data: { a: 1 },
+          clientUpdatedAt: new Date(Date.now() - 1000).toISOString(),
+          version: 5,
+        },
+      },
+    });
+    mockedPushAll.mockResolvedValueOnce({
+      results: { finyk: { ok: true, version: 6 } },
+    });
+    localStorage.setItem(STORAGE_KEYS.FINYK_BUDGETS, JSON.stringify({ x: 1 }));
+    localStorage.setItem(
+      STORAGE_KEYS.SYNC_DIRTY_MODULES,
+      JSON.stringify({ finyk: true }),
+    );
+    markMigrationDone("u1");
+    const { args, onSuccess } = makeArgs();
+
+    await initialSync(args);
+
+    expect(onSuccess).toHaveBeenCalledTimes(1);
+    expect(
+      JSON.parse(localStorage.getItem(STORAGE_KEYS.SYNC_DIRTY_MODULES) || "{}"),
+    ).toEqual({});
+  });
+
   it("returns false when a merge push fails mid-reconciliation", async () => {
     // Arrange: cloud has some data, local has some dirty data → merge
     // branch. pushAll inside initialSync throws.
