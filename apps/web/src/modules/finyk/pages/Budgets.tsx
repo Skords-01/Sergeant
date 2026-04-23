@@ -4,6 +4,8 @@ import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { Skeleton } from "@shared/components/ui/Skeleton";
 import { EmptyState } from "@shared/components/ui/EmptyState";
 import { calcCategorySpent, resolveExpenseCategoryMeta } from "../utils";
+import { computeFinykSchedule, startOfToday } from "../lib/upcomingSchedule";
+import { FinykStatsStrip } from "../components/FinykStatsStrip";
 import { buildExpenseCategoryList } from "@sergeant/finyk-domain/domain/categories";
 import {
   getLimitBudgets,
@@ -124,8 +126,8 @@ async function fetchCategoryExplanation({
   return data.text || "Не вдалося отримати пояснення.";
 }
 
-export function Budgets({ mono, storage }) {
-  const { realTx, loadingTx } = mono;
+export function Budgets({ mono, storage, showBalance = true }) {
+  const { realTx, loadingTx, transactions } = mono;
   const {
     budgets,
     setBudgets,
@@ -135,6 +137,9 @@ export function Budgets({ mono, storage }) {
     txCategories,
     txSplits,
     customCategories,
+    subscriptions = [],
+    manualDebts = [],
+    receivables = [],
   } = storage;
   const statTx = useMemo(
     () => filterStatTransactions(realTx, excludedTxIds),
@@ -184,6 +189,39 @@ export function Budgets({ mono, storage }) {
   const [formError, setFormError] = useState("");
 
   const [aiExplanations, setAiExplanations] = useState({});
+
+  // Upcoming-schedule feed for the stats strip (reuses the same
+  // computation as the Активи page so Сума підписок + Наступний платіж
+  // stay consistent across tabs).
+  const [todayStart] = useState<Date>(startOfToday);
+  const schedule = useMemo(
+    () =>
+      computeFinykSchedule({
+        subscriptions,
+        manualDebts,
+        receivables,
+        transactions: transactions ?? [],
+        todayStart,
+      }),
+    [subscriptions, manualDebts, receivables, transactions, todayStart],
+  );
+
+  // Per-(month, category) dismissed-advice registry. Persisted under a
+  // dedicated localStorage namespace so it survives reloads but doesn't
+  // collide with the 24h proactive-advice cache. Value is the dismissed
+  // text itself — when React Query returns a *different* text (next
+  // month, manual refetch), the card shows the advice again automatically.
+  const [dismissedAdvice, setDismissedAdvice] = useState<
+    Record<string, string>
+  >(() => readJSON("finyk_proactive_dismissed_v1", {}));
+  const dismissAdvice = useCallback((categoryId, monthKey, text) => {
+    if (!text) return;
+    setDismissedAdvice((prev) => {
+      const next = { ...prev, [`${monthKey}_${categoryId}`]: text };
+      writeJSON("finyk_proactive_dismissed_v1", next);
+      return next;
+    });
+  }, []);
 
   const forecasts = useMemo(() => {
     if (limitBudgets.length === 0) return [];
@@ -381,6 +419,18 @@ export function Budgets({ mono, storage }) {
   return (
     <div className="flex-1 overflow-y-auto">
       <div className="max-w-4xl mx-auto px-4 pt-4 page-tabbar-pad space-y-4">
+        {/* Сума підписок + Наступний платіж з тих самих даних, що й на
+            сторінці Активи — без пасив-з-дедлайном тайлу (у Плануванні
+            це не релевантно). Зникає цілком, якщо обидва слоти пусті. */}
+        <FinykStatsStrip
+          subsMonthly={schedule.subsMonthly}
+          subsCount={schedule.subsCount}
+          nextCharge={schedule.nextCharge}
+          urgentLiability={null}
+          todayStart={todayStart}
+          showBalance={showBalance}
+        />
+
         <MonthlyPlanCard
           monthlyPlan={monthlyPlan}
           onChangeMonthlyPlan={setMonthlyPlan}
@@ -447,7 +497,6 @@ export function Budgets({ mono, storage }) {
               remaining={usage.remaining}
               isEditing={isEditing}
               showProactiveAdvice={showAdvice}
-              proactiveText={proactiveAdvice[b.categoryId]}
               proactiveLoading={proactiveLoading[b.categoryId]}
               forecast={forecastForCat}
               explanation={aiExplanations[b.categoryId]}
@@ -462,6 +511,31 @@ export function Budgets({ mono, storage }) {
                         forecastForCat.forecast,
                         forecastForCat.limit,
                       )
+                  : undefined
+              }
+              proactiveText={
+                proactiveAdvice[b.categoryId] &&
+                dismissedAdvice[
+                  `${proactiveItems.find((it) => it.categoryId === b.categoryId)?.monthKey ?? ""}_${b.categoryId}`
+                ] === proactiveAdvice[b.categoryId]
+                  ? null
+                  : proactiveAdvice[b.categoryId]
+              }
+              onDismissAdvice={
+                proactiveAdvice[b.categoryId]
+                  ? () => {
+                      const mk =
+                        proactiveItems.find(
+                          (it) => it.categoryId === b.categoryId,
+                        )?.monthKey ?? "";
+                      if (mk) {
+                        dismissAdvice(
+                          b.categoryId,
+                          mk,
+                          proactiveAdvice[b.categoryId],
+                        );
+                      }
+                    }
                   : undefined
               }
               onBeginEdit={() => setEditIdx(globalIdx)}

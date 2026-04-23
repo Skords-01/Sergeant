@@ -33,6 +33,7 @@ function LimitBudgetCardComponent({
   explanation,
   explanationLoading,
   onExplain,
+  onDismissAdvice,
   onBeginEdit,
   onChangeLimit,
   onSave,
@@ -153,25 +154,37 @@ function LimitBudgetCardComponent({
               <div className="mt-3 bg-bg rounded-xl overflow-hidden">
                 {proactiveText ? (
                   <>
-                    <button
-                      type="button"
-                      onClick={() => setAdviceOpen((v) => !v)}
-                      aria-expanded={adviceOpen}
-                      className="w-full flex items-center justify-between gap-2 px-3 py-2 text-left hover:bg-panelHi transition-colors"
-                    >
-                      <span className="flex items-center gap-2 text-xs font-semibold text-text">
-                        <span className="text-base leading-none">✨</span>
-                        AI-порада
-                      </span>
-                      <Icon
-                        name="chevron-down"
-                        size={14}
-                        className={cn(
-                          "transition-transform text-muted",
-                          adviceOpen ? "rotate-180" : "",
-                        )}
-                      />
-                    </button>
+                    <div className="flex items-stretch">
+                      <button
+                        type="button"
+                        onClick={() => setAdviceOpen((v) => !v)}
+                        aria-expanded={adviceOpen}
+                        className="flex-1 flex items-center justify-between gap-2 px-3 py-2 text-left hover:bg-panelHi transition-colors"
+                      >
+                        <span className="flex items-center gap-2 text-xs font-semibold text-text">
+                          <span className="text-base leading-none">✨</span>
+                          AI-порада
+                        </span>
+                        <Icon
+                          name="chevron-down"
+                          size={14}
+                          className={cn(
+                            "transition-transform text-muted",
+                            adviceOpen ? "rotate-180" : "",
+                          )}
+                        />
+                      </button>
+                      {onDismissAdvice && (
+                        <button
+                          type="button"
+                          onClick={onDismissAdvice}
+                          className="px-3 text-xs text-muted hover:text-text border-l border-line transition-colors"
+                          title="Прибрати пораду до наступної генерації"
+                        >
+                          Зрозуміло
+                        </button>
+                      )}
+                    </div>
                     {adviceOpen && (
                       <p className="px-3 pb-2.5 text-xs text-text leading-relaxed">
                         {proactiveText}

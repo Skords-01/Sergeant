@@ -24,34 +24,13 @@ import {
   getDebtTxRole,
   getReceivableTxRole,
 } from "@sergeant/finyk-domain/domain/debtEngine";
-import { getSubscriptionAmountMeta } from "@sergeant/finyk-domain/domain/subscriptionUtils";
 import { cn } from "@shared/lib/cn";
 import { openHubModule } from "@shared/lib/hubNav";
 import { notifyFinykRoutineCalendarSync } from "../hubRoutineSync.js";
 import { VoiceMicButton } from "@shared/components/ui/VoiceMicButton.jsx";
 import { parseExpenseSpeech as parseExpenseVoice } from "@sergeant/shared";
-
-// Local date + billing helpers mirrored from Overview.tsx. Kept inline so the
-// Assets page doesn't need to import non-exported private helpers.
-const parseLocalDate = (isoDate: string | undefined | null) => {
-  const [y, m, d] = (isoDate || "").split("-").map(Number);
-  return new Date(y, (m || 1) - 1, d || 1);
-};
-const getNextBillingDate = (billingDay: number, now: Date) => {
-  const y = now.getFullYear();
-  const m = now.getMonth();
-  let d = new Date(y, m, Math.min(billingDay, new Date(y, m + 1, 0).getDate()));
-  if (d < new Date(y, m, now.getDate())) {
-    d = new Date(
-      y,
-      m + 1,
-      Math.min(billingDay, new Date(y, m + 2, 0).getDate()),
-    );
-  }
-  return d;
-};
-const formatShortDate = (d: Date) =>
-  d.toLocaleDateString("uk-UA", { day: "numeric", month: "short" });
+import { computeFinykSchedule, startOfToday } from "../lib/upcomingSchedule";
+import { FinykStatsStrip } from "../components/FinykStatsStrip";
 
 type SectionBarProps = {
   title: string;
@@ -61,21 +40,6 @@ type SectionBarProps = {
   open: boolean;
   onToggle: () => void;
 };
-
-type UpcomingCharge = {
-  label: string;
-  amount: number;
-  sign: "-" | "+";
-  dueDate: Date;
-};
-
-function formatRelativeDue(dueDate: Date, todayStart: Date) {
-  const days = Math.ceil((dueDate.getTime() - todayStart.getTime()) / 86400000);
-  if (days <= 0) return "сьогодні";
-  if (days === 1) return "завтра";
-  if (days <= 7) return `через ${days} дн`;
-  return formatShortDate(dueDate);
-}
 
 function AssetsLiabilitiesBar({
   assets,
@@ -105,140 +69,6 @@ function AssetsLiabilitiesBar({
         <span>Активи {assetsPct}%</span>
         <span>Пасиви {liabilitiesPct}%</span>
       </div>
-    </div>
-  );
-}
-
-type StatTileProps = {
-  iconName: IconName;
-  iconTone: "success" | "danger" | "muted";
-  label: string;
-  value: string;
-  hint?: string;
-  onClick?: () => void;
-};
-
-function StatTile({
-  iconName,
-  iconTone,
-  label,
-  value,
-  hint,
-  onClick,
-}: StatTileProps) {
-  const toneClass =
-    iconTone === "success"
-      ? "text-success"
-      : iconTone === "danger"
-        ? "text-danger"
-        : "text-muted";
-  const Wrapper = onClick ? "button" : "div";
-  return (
-    <Wrapper
-      {...(onClick ? { onClick, type: "button" as const } : {})}
-      className={cn(
-        "flex-1 min-w-[9.5rem] shrink-0 text-left px-3 py-2.5",
-        "bg-panelHi border border-line rounded-2xl",
-        "transition-colors",
-        onClick && "hover:border-muted/50 active:scale-[0.99]",
-      )}
-    >
-      <div className="flex items-center gap-2 text-[11px] text-muted">
-        <span className={cn("inline-flex", toneClass)} aria-hidden>
-          <Icon name={iconName} size={14} />
-        </span>
-        <span className="truncate">{label}</span>
-      </div>
-      <div className="text-sm font-bold text-text mt-1 truncate">{value}</div>
-      {hint && (
-        <div className="text-[11px] text-subtle mt-0.5 truncate">{hint}</div>
-      )}
-    </Wrapper>
-  );
-}
-
-function AssetsStatsStrip({
-  subsMonthly,
-  subsCount,
-  nextCharge,
-  urgentLiability,
-  todayStart,
-  showBalance,
-  onOpenSubs,
-  onOpenLiabilities,
-}: {
-  subsMonthly: number;
-  subsCount: number;
-  nextCharge: UpcomingCharge | null;
-  urgentLiability: { name: string; remaining: number; dueDate: Date } | null;
-  todayStart: Date;
-  showBalance: boolean;
-  onOpenSubs: () => void;
-  onOpenLiabilities: () => void;
-}) {
-  const showSubsTile = subsCount > 0;
-  const showNextTile = Boolean(nextCharge);
-  const showUrgentTile = Boolean(urgentLiability);
-  if (!showSubsTile && !showNextTile && !showUrgentTile) return null;
-  const hideNumbers = !showBalance;
-  return (
-    <div
-      className="flex gap-2 overflow-x-auto pb-1 mb-3 -mx-1 px-1 scrollbar-hidden"
-      role="list"
-    >
-      {showSubsTile && (
-        <StatTile
-          iconName="refresh-cw"
-          iconTone="muted"
-          label="Підписки · міс"
-          value={
-            hideNumbers
-              ? "••••"
-              : `${subsMonthly.toLocaleString("uk-UA", {
-                  maximumFractionDigits: 0,
-                })} ₴`
-          }
-          hint={`${subsCount} активн${subsCount === 1 ? "а" : "их"}`}
-          onClick={onOpenSubs}
-        />
-      )}
-      {showNextTile && nextCharge && (
-        <StatTile
-          iconName="calendar"
-          iconTone={nextCharge.sign === "-" ? "danger" : "success"}
-          label="Наступний платіж"
-          value={
-            hideNumbers
-              ? "••••"
-              : `${nextCharge.sign}${nextCharge.amount.toLocaleString("uk-UA", {
-                  maximumFractionDigits: 0,
-                })} ₴`
-          }
-          hint={`${nextCharge.label} · ${formatRelativeDue(
-            nextCharge.dueDate,
-            todayStart,
-          )}`}
-        />
-      )}
-      {showUrgentTile && urgentLiability && (
-        <StatTile
-          iconName="alert"
-          iconTone="danger"
-          label="Пасив з дедлайном"
-          value={
-            hideNumbers
-              ? "••••"
-              : `−${urgentLiability.remaining.toLocaleString("uk-UA", {
-                  maximumFractionDigits: 0,
-                })} ₴`
-          }
-          hint={`${urgentLiability.name} · ${formatRelativeDue(
-            urgentLiability.dueDate,
-            todayStart,
-          )}`}
-          onClick={onOpenLiabilities}
-        />
-      )}
     </div>
   );
 }
@@ -398,91 +228,25 @@ export function Assets({
   const networth = monoTotal + manualAssetTotal + totalReceivable - totalDebt;
   const totalAssets = monoTotal + manualAssetTotal + totalReceivable;
 
-  // Stats strip + upcoming-charge feed. `todayStart` is pinned to the
-  // mount-time midnight via lazy initialiser so `useMemo` deps below stay
-  // referentially stable for the session — date only matters for day-level
-  // comparisons ("next billing date", "days until due"), so a frozen
-  // reference is safer than `new Date()` each render.
-  const [todayStart] = useState<Date>(() => {
-    const n = new Date();
-    return new Date(n.getFullYear(), n.getMonth(), n.getDate());
-  });
+  // Stats strip + upcoming-charge feed. `todayStart` is pinned to a
+  // mount-time midnight via lazy initialiser so `useMemo` deps stay
+  // referentially stable for the session — date only matters for
+  // day-level comparisons, so a frozen snapshot is safer than a fresh
+  // `new Date()` each render.
+  const [todayStart] = useState<Date>(startOfToday);
 
-  const subsMonthlyTotal = useMemo(
+  const schedule = useMemo(
     () =>
-      subscriptions.reduce((sum, sub) => {
-        const { amount, currency } = getSubscriptionAmountMeta(
-          sub,
-          transactions,
-        );
-        if (!amount || currency !== "₴") return sum;
-        return sum + amount;
-      }, 0),
-    [subscriptions, transactions],
+      computeFinykSchedule({
+        subscriptions,
+        manualDebts,
+        receivables,
+        transactions,
+        todayStart,
+      }),
+    [subscriptions, manualDebts, receivables, transactions, todayStart],
   );
-
-  // Combined upcoming feed: next subscription billing + manual debts/
-  // receivables with a concrete dueDate. Sorted by soonest, takes earliest.
-  const nextCharge = useMemo(() => {
-    const items: Array<{
-      label: string;
-      amount: number;
-      sign: "-" | "+";
-      dueDate: Date;
-    }> = [];
-    for (const sub of subscriptions) {
-      const { amount, currency } = getSubscriptionAmountMeta(sub, transactions);
-      if (!amount || currency !== "₴") continue;
-      items.push({
-        label: sub.name,
-        amount,
-        sign: "-",
-        dueDate: getNextBillingDate(Number(sub.billingDay), todayStart),
-      });
-    }
-    for (const d of manualDebts) {
-      if (!d.dueDate) continue;
-      const remaining = calcDebtRemaining(d, transactions);
-      if (remaining <= 0) continue;
-      items.push({
-        label: d.name,
-        amount: remaining,
-        sign: "-",
-        dueDate: parseLocalDate(d.dueDate),
-      });
-    }
-    for (const r of receivables) {
-      if (!r.dueDate) continue;
-      const remaining = calcReceivableRemaining(r, transactions);
-      if (remaining <= 0) continue;
-      items.push({
-        label: r.name,
-        amount: remaining,
-        sign: "+",
-        dueDate: parseLocalDate(r.dueDate),
-      });
-    }
-    items.sort((a, b) => a.dueDate.getTime() - b.dueDate.getTime());
-    const soonest = items.find(
-      (it) => it.dueDate.getTime() >= todayStart.getTime(),
-    );
-    return soonest ?? null;
-  }, [subscriptions, manualDebts, receivables, transactions, todayStart]);
-
-  // Largest manual debt that still has a dueDate — surfaces the biggest
-  // time-sensitive obligation without forcing users to expand the section.
-  const urgentLiability = useMemo(() => {
-    const withDue = manualDebts
-      .filter((d) => d.dueDate)
-      .map((d) => ({
-        name: d.name,
-        remaining: calcDebtRemaining(d, transactions),
-        dueDate: parseLocalDate(d.dueDate),
-      }))
-      .filter((d) => d.remaining > 0);
-    if (withDue.length === 0) return null;
-    return withDue.reduce((a, b) => (a.remaining >= b.remaining ? a : b));
-  }, [manualDebts, transactions]);
+  const { subsMonthly, nextCharge, urgentLiability } = schedule;
 
   // Quick-action helpers: open the relevant section + reveal its form in a
   // single tap, so the user doesn't expand → scroll → tap "+ Додати".
@@ -801,8 +565,8 @@ export function Assets({
             charge, biggest liability with a deadline. Horizontal scroll on
             mobile, grid on wider screens. Only tiles with data render, so
             the strip disappears entirely for empty accounts. */}
-        <AssetsStatsStrip
-          subsMonthly={subsMonthlyTotal}
+        <FinykStatsStrip
+          subsMonthly={subsMonthly}
           subsCount={subscriptions.length}
           nextCharge={nextCharge}
           urgentLiability={urgentLiability}
@@ -812,6 +576,7 @@ export function Assets({
           onOpenLiabilities={() =>
             setOpen((v) => ({ ...v, liabilities: true }))
           }
+          className="mb-3"
         />
 
         {/* E — quick-action CTAs. Each opens the respective section and its
