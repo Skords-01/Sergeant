@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { DebtCard } from "../components/DebtCard";
 import { SubCard } from "../components/SubCard";
 import { RecurringSuggestions } from "../components/RecurringSuggestions";
@@ -7,6 +7,7 @@ import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { Button } from "@shared/components/ui/Button";
 import { Card } from "@shared/components/ui/Card";
 import { Input } from "@shared/components/ui/Input";
+import { Icon, type IconName } from "@shared/components/ui/Icon";
 import {
   getAccountLabel,
   getMonoDebt,
@@ -23,21 +24,281 @@ import {
   getDebtTxRole,
   getReceivableTxRole,
 } from "@sergeant/finyk-domain/domain/debtEngine";
+import { getSubscriptionAmountMeta } from "@sergeant/finyk-domain/domain/subscriptionUtils";
 import { cn } from "@shared/lib/cn";
 import { openHubModule } from "@shared/lib/hubNav";
 import { notifyFinykRoutineCalendarSync } from "../hubRoutineSync.js";
 import { VoiceMicButton } from "@shared/components/ui/VoiceMicButton.jsx";
 import { parseExpenseSpeech as parseExpenseVoice } from "@sergeant/shared";
 
-function SectionBar({ title, summary, open, onToggle }) {
+// Local date + billing helpers mirrored from Overview.tsx. Kept inline so the
+// Assets page doesn't need to import non-exported private helpers.
+const parseLocalDate = (isoDate: string | undefined | null) => {
+  const [y, m, d] = (isoDate || "").split("-").map(Number);
+  return new Date(y, (m || 1) - 1, d || 1);
+};
+const getNextBillingDate = (billingDay: number, now: Date) => {
+  const y = now.getFullYear();
+  const m = now.getMonth();
+  let d = new Date(y, m, Math.min(billingDay, new Date(y, m + 1, 0).getDate()));
+  if (d < new Date(y, m, now.getDate())) {
+    d = new Date(
+      y,
+      m + 1,
+      Math.min(billingDay, new Date(y, m + 2, 0).getDate()),
+    );
+  }
+  return d;
+};
+const formatShortDate = (d: Date) =>
+  d.toLocaleDateString("uk-UA", { day: "numeric", month: "short" });
+
+type SectionBarProps = {
+  title: string;
+  iconName: IconName;
+  iconTone?: "success" | "danger" | "muted";
+  summary?: string | null;
+  open: boolean;
+  onToggle: () => void;
+};
+
+type UpcomingCharge = {
+  label: string;
+  amount: number;
+  sign: "-" | "+";
+  dueDate: Date;
+};
+
+function formatRelativeDue(dueDate: Date, todayStart: Date) {
+  const days = Math.ceil((dueDate.getTime() - todayStart.getTime()) / 86400000);
+  if (days <= 0) return "сьогодні";
+  if (days === 1) return "завтра";
+  if (days <= 7) return `через ${days} дн`;
+  return formatShortDate(dueDate);
+}
+
+function AssetsLiabilitiesBar({
+  assets,
+  liabilities,
+}: {
+  assets: number;
+  liabilities: number;
+}) {
+  const total = assets + liabilities;
+  if (total <= 0) return null;
+  const assetsPct = Math.round((assets / total) * 100);
+  const liabilitiesPct = 100 - assetsPct;
+  return (
+    <div className="mt-3">
+      <div
+        className="flex h-1.5 w-full overflow-hidden rounded-full bg-white/10"
+        role="img"
+        aria-label={`Активи ${assetsPct}% · Пасиви ${liabilitiesPct}%`}
+      >
+        <div className="bg-emerald-300/90" style={{ width: `${assetsPct}%` }} />
+        <div
+          className="bg-rose-400/80"
+          style={{ width: `${liabilitiesPct}%` }}
+        />
+      </div>
+      <div className="flex justify-between text-[11px] text-emerald-100/80 mt-1.5">
+        <span>Активи {assetsPct}%</span>
+        <span>Пасиви {liabilitiesPct}%</span>
+      </div>
+    </div>
+  );
+}
+
+type StatTileProps = {
+  iconName: IconName;
+  iconTone: "success" | "danger" | "muted";
+  label: string;
+  value: string;
+  hint?: string;
+  onClick?: () => void;
+};
+
+function StatTile({
+  iconName,
+  iconTone,
+  label,
+  value,
+  hint,
+  onClick,
+}: StatTileProps) {
+  const toneClass =
+    iconTone === "success"
+      ? "text-success"
+      : iconTone === "danger"
+        ? "text-danger"
+        : "text-muted";
+  const Wrapper = onClick ? "button" : "div";
+  return (
+    <Wrapper
+      {...(onClick ? { onClick, type: "button" as const } : {})}
+      className={cn(
+        "flex-1 min-w-[9.5rem] shrink-0 text-left px-3 py-2.5",
+        "bg-panelHi border border-line rounded-2xl",
+        "transition-colors",
+        onClick && "hover:border-muted/50 active:scale-[0.99]",
+      )}
+    >
+      <div className="flex items-center gap-2 text-[11px] text-muted">
+        <span className={cn("inline-flex", toneClass)} aria-hidden>
+          <Icon name={iconName} size={14} />
+        </span>
+        <span className="truncate">{label}</span>
+      </div>
+      <div className="text-sm font-bold text-text mt-1 truncate">{value}</div>
+      {hint && (
+        <div className="text-[11px] text-subtle mt-0.5 truncate">{hint}</div>
+      )}
+    </Wrapper>
+  );
+}
+
+function AssetsStatsStrip({
+  subsMonthly,
+  subsCount,
+  nextCharge,
+  urgentLiability,
+  todayStart,
+  showBalance,
+  onOpenSubs,
+  onOpenLiabilities,
+}: {
+  subsMonthly: number;
+  subsCount: number;
+  nextCharge: UpcomingCharge | null;
+  urgentLiability: { name: string; remaining: number; dueDate: Date } | null;
+  todayStart: Date;
+  showBalance: boolean;
+  onOpenSubs: () => void;
+  onOpenLiabilities: () => void;
+}) {
+  const showSubsTile = subsCount > 0;
+  const showNextTile = Boolean(nextCharge);
+  const showUrgentTile = Boolean(urgentLiability);
+  if (!showSubsTile && !showNextTile && !showUrgentTile) return null;
+  const hideNumbers = !showBalance;
+  return (
+    <div
+      className="flex gap-2 overflow-x-auto pb-1 mb-3 -mx-1 px-1 scrollbar-hidden"
+      role="list"
+    >
+      {showSubsTile && (
+        <StatTile
+          iconName="refresh-cw"
+          iconTone="muted"
+          label="Підписки · міс"
+          value={
+            hideNumbers
+              ? "••••"
+              : `${subsMonthly.toLocaleString("uk-UA", {
+                  maximumFractionDigits: 0,
+                })} ₴`
+          }
+          hint={`${subsCount} активн${subsCount === 1 ? "а" : "их"}`}
+          onClick={onOpenSubs}
+        />
+      )}
+      {showNextTile && nextCharge && (
+        <StatTile
+          iconName="calendar"
+          iconTone={nextCharge.sign === "-" ? "danger" : "success"}
+          label="Наступний платіж"
+          value={
+            hideNumbers
+              ? "••••"
+              : `${nextCharge.sign}${nextCharge.amount.toLocaleString("uk-UA", {
+                  maximumFractionDigits: 0,
+                })} ₴`
+          }
+          hint={`${nextCharge.label} · ${formatRelativeDue(
+            nextCharge.dueDate,
+            todayStart,
+          )}`}
+        />
+      )}
+      {showUrgentTile && urgentLiability && (
+        <StatTile
+          iconName="alert"
+          iconTone="danger"
+          label="Пасив з дедлайном"
+          value={
+            hideNumbers
+              ? "••••"
+              : `−${urgentLiability.remaining.toLocaleString("uk-UA", {
+                  maximumFractionDigits: 0,
+                })} ₴`
+          }
+          hint={`${urgentLiability.name} · ${formatRelativeDue(
+            urgentLiability.dueDate,
+            todayStart,
+          )}`}
+          onClick={onOpenLiabilities}
+        />
+      )}
+    </div>
+  );
+}
+
+function QuickActionButton({
+  iconName,
+  label,
+  onClick,
+}: {
+  iconName: IconName;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex flex-col items-center justify-center gap-1 py-2.5 text-xs text-muted border border-dashed border-line rounded-2xl hover:border-primary hover:text-primary transition-colors"
+    >
+      <Icon name={iconName} size={18} />
+      <span className="font-medium">+ {label}</span>
+    </button>
+  );
+}
+
+function SectionBar({
+  title,
+  iconName,
+  iconTone = "muted",
+  summary,
+  open,
+  onToggle,
+}: SectionBarProps) {
+  const toneClass =
+    iconTone === "success"
+      ? "text-success"
+      : iconTone === "danger"
+        ? "text-danger"
+        : "text-muted";
   return (
     <button
       onClick={onToggle}
       className="w-full flex items-center justify-between px-4 py-3 bg-panelHi border border-line rounded-2xl mb-2 text-left transition-colors hover:border-muted/50"
     >
-      <div>
-        <div className="text-sm font-bold text-text">{title}</div>
-        {summary && <div className="text-xs text-muted mt-0.5">{summary}</div>}
+      <div className="flex items-center gap-3 min-w-0">
+        <span
+          className={cn(
+            "inline-flex items-center justify-center shrink-0",
+            toneClass,
+          )}
+          aria-hidden
+        >
+          <Icon name={iconName} size={18} />
+        </span>
+        <div className="min-w-0">
+          <div className="text-sm font-bold text-text truncate">{title}</div>
+          {summary && (
+            <div className="text-xs text-muted mt-0.5 truncate">{summary}</div>
+          )}
+        </div>
       </div>
       <span className="text-xs text-muted shrink-0 ml-2">
         {open ? "Згорнути ↑" : "Розкласти ↓"}
@@ -135,6 +396,108 @@ export function Assets({
     .filter((a) => a.currency === "UAH")
     .reduce((s, a) => s + Number(a.amount), 0);
   const networth = monoTotal + manualAssetTotal + totalReceivable - totalDebt;
+  const totalAssets = monoTotal + manualAssetTotal + totalReceivable;
+
+  // Stats strip + upcoming-charge feed. `todayStart` is pinned to the
+  // mount-time midnight via lazy initialiser so `useMemo` deps below stay
+  // referentially stable for the session — date only matters for day-level
+  // comparisons ("next billing date", "days until due"), so a frozen
+  // reference is safer than `new Date()` each render.
+  const [todayStart] = useState<Date>(() => {
+    const n = new Date();
+    return new Date(n.getFullYear(), n.getMonth(), n.getDate());
+  });
+
+  const subsMonthlyTotal = useMemo(
+    () =>
+      subscriptions.reduce((sum, sub) => {
+        const { amount, currency } = getSubscriptionAmountMeta(
+          sub,
+          transactions,
+        );
+        if (!amount || currency !== "₴") return sum;
+        return sum + amount;
+      }, 0),
+    [subscriptions, transactions],
+  );
+
+  // Combined upcoming feed: next subscription billing + manual debts/
+  // receivables with a concrete dueDate. Sorted by soonest, takes earliest.
+  const nextCharge = useMemo(() => {
+    const items: Array<{
+      label: string;
+      amount: number;
+      sign: "-" | "+";
+      dueDate: Date;
+    }> = [];
+    for (const sub of subscriptions) {
+      const { amount, currency } = getSubscriptionAmountMeta(sub, transactions);
+      if (!amount || currency !== "₴") continue;
+      items.push({
+        label: sub.name,
+        amount,
+        sign: "-",
+        dueDate: getNextBillingDate(Number(sub.billingDay), todayStart),
+      });
+    }
+    for (const d of manualDebts) {
+      if (!d.dueDate) continue;
+      const remaining = calcDebtRemaining(d, transactions);
+      if (remaining <= 0) continue;
+      items.push({
+        label: d.name,
+        amount: remaining,
+        sign: "-",
+        dueDate: parseLocalDate(d.dueDate),
+      });
+    }
+    for (const r of receivables) {
+      if (!r.dueDate) continue;
+      const remaining = calcReceivableRemaining(r, transactions);
+      if (remaining <= 0) continue;
+      items.push({
+        label: r.name,
+        amount: remaining,
+        sign: "+",
+        dueDate: parseLocalDate(r.dueDate),
+      });
+    }
+    items.sort((a, b) => a.dueDate.getTime() - b.dueDate.getTime());
+    const soonest = items.find(
+      (it) => it.dueDate.getTime() >= todayStart.getTime(),
+    );
+    return soonest ?? null;
+  }, [subscriptions, manualDebts, receivables, transactions, todayStart]);
+
+  // Largest manual debt that still has a dueDate — surfaces the biggest
+  // time-sensitive obligation without forcing users to expand the section.
+  const urgentLiability = useMemo(() => {
+    const withDue = manualDebts
+      .filter((d) => d.dueDate)
+      .map((d) => ({
+        name: d.name,
+        remaining: calcDebtRemaining(d, transactions),
+        dueDate: parseLocalDate(d.dueDate),
+      }))
+      .filter((d) => d.remaining > 0);
+    if (withDue.length === 0) return null;
+    return withDue.reduce((a, b) => (a.remaining >= b.remaining ? a : b));
+  }, [manualDebts, transactions]);
+
+  // Quick-action helpers: open the relevant section + reveal its form in a
+  // single tap, so the user doesn't expand → scroll → tap "+ Додати".
+  const openSubscriptionForm = () => {
+    setOpen((v) => ({ ...v, subscriptions: true }));
+    setShowSubForm(true);
+  };
+  const openAssetForm = () => {
+    setOpen((v) => ({ ...v, assets: true }));
+    setShowAssetForm(true);
+  };
+  const openDebtForm = () => {
+    setOpen((v) => ({ ...v, liabilities: true }));
+    setShowDebtForm(true);
+  };
 
   if (txPicker) {
     // --- Mono credit card repayment linking ---
@@ -409,11 +772,9 @@ export function Assets({
             {showBalance ? (
               <>
                 Активи:{" "}
-                {(
-                  monoTotal +
-                  manualAssetTotal +
-                  totalReceivable
-                ).toLocaleString("uk-UA", { maximumFractionDigits: 0 })}{" "}
+                {totalAssets.toLocaleString("uk-UA", {
+                  maximumFractionDigits: 0,
+                })}{" "}
                 ₴ · Пасиви: −
                 {totalDebt.toLocaleString("uk-UA", {
                   maximumFractionDigits: 0,
@@ -424,6 +785,54 @@ export function Assets({
               "Суми приховано"
             )}
           </div>
+          {/* D — proportional assets/liabilities bar. Only rendered when the
+              user has data in both buckets, so a fresh account isn't greeted
+              with an empty sliver. */}
+          {showBalance && totalAssets + totalDebt > 0 && (
+            <AssetsLiabilitiesBar
+              assets={totalAssets}
+              liabilities={totalDebt}
+            />
+          )}
+        </div>
+
+        {/* C — compact stats strip. Surfaces numbers that would otherwise be
+            hidden inside collapsed sections: subs monthly total, next due
+            charge, biggest liability with a deadline. Horizontal scroll on
+            mobile, grid on wider screens. Only tiles with data render, so
+            the strip disappears entirely for empty accounts. */}
+        <AssetsStatsStrip
+          subsMonthly={subsMonthlyTotal}
+          subsCount={subscriptions.length}
+          nextCharge={nextCharge}
+          urgentLiability={urgentLiability}
+          todayStart={todayStart}
+          showBalance={showBalance}
+          onOpenSubs={() => setOpen((v) => ({ ...v, subscriptions: true }))}
+          onOpenLiabilities={() =>
+            setOpen((v) => ({ ...v, liabilities: true }))
+          }
+        />
+
+        {/* E — quick-action CTAs. Each opens the respective section and its
+            inline form in one tap, collapsing the "expand → scroll → tap +"
+            flow into a single gesture. */}
+        <div className="grid grid-cols-3 gap-2 mb-3">
+          <QuickActionButton
+            iconName="refresh-cw"
+            label="Підписка"
+            onClick={openSubscriptionForm}
+          />
+          <QuickActionButton
+            iconName="trending-up"
+            label="Актив"
+            onClick={openAssetForm}
+          />
+          <QuickActionButton
+            iconName="trending-down"
+            label="Пасив"
+            onClick={openDebtForm}
+          />
         </div>
 
         {/* Auto-detected recurring suggestions (renders nothing if empty) */}
@@ -438,8 +847,11 @@ export function Assets({
 
         {/* Subscriptions section */}
         <SectionBar
-          title="🔄 Підписки"
-          summary={`${subscriptions.length} активних`}
+          title="Підписки"
+          iconName="refresh-cw"
+          summary={`${subscriptions.length} активн${
+            subscriptions.length === 1 ? "а" : "их"
+          }`}
           open={open.subscriptions}
           onToggle={() =>
             setOpen((v) => ({ ...v, subscriptions: !v.subscriptions }))
@@ -453,9 +865,9 @@ export function Assets({
                 onClick={() => openHubModule("routine", "")}
                 className="w-full text-xs text-muted hover:text-text transition-colors pb-2 flex items-center justify-center gap-1.5"
               >
-                <span aria-hidden>📅</span>
+                <Icon name="calendar" size={14} aria-hidden />
                 <span>Побачити у календарі Рутини</span>
-                <span aria-hidden>→</span>
+                <Icon name="chevron-right" size={14} aria-hidden />
               </button>
             )}
             {subscriptions.map((sub, i) => (
@@ -554,15 +966,22 @@ export function Assets({
 
         {/* Assets section */}
         <SectionBar
-          title="🟢 Активи"
-          summary={`+${(monoTotal + manualAssetTotal + totalReceivable).toLocaleString("uk-UA", { maximumFractionDigits: 0 })} ₴`}
+          title="Активи"
+          iconName="trending-up"
+          iconTone="success"
+          summary={`+${totalAssets.toLocaleString("uk-UA", {
+            maximumFractionDigits: 0,
+          })} ₴`}
           open={open.assets}
           onToggle={() => setOpen((v) => ({ ...v, assets: !v.assets }))}
         />
         {open.assets && (
           <div className="mb-3 space-y-2">
             <SectionHeading as="div" size="sm" className="pt-1">
-              💳 Картки Monobank
+              <span className="inline-flex items-center gap-1.5">
+                <Icon name="credit-card" size={14} className="text-muted" />
+                Картки Monobank
+              </span>
             </SectionHeading>
             {accounts
               .filter((a) => !hiddenAccounts.includes(a.id))
@@ -572,7 +991,12 @@ export function Assets({
                   className="flex items-center justify-between py-2.5 px-1 border-b border-line last:border-0"
                 >
                   <div className="flex items-center gap-3">
-                    <span className="text-xl leading-none">💳</span>
+                    <span
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-white/5 text-muted"
+                      aria-hidden
+                    >
+                      <Icon name="credit-card" size={16} />
+                    </span>
                     <div>
                       <div className="text-sm font-medium">
                         {getAccountLabel(a)}
@@ -593,7 +1017,10 @@ export function Assets({
               ))}
 
             <SectionHeading as="div" size="sm" className="pt-2">
-              💰 Мені винні
+              <span className="inline-flex items-center gap-1.5">
+                <Icon name="hand-coins" size={14} className="text-success" />
+                Мені винні
+              </span>
             </SectionHeading>
             {receivables.map((r) => (
               <DebtCard
@@ -691,7 +1118,10 @@ export function Assets({
             )}
 
             <SectionHeading as="div" size="sm" className="pt-2">
-              🏦 Інші активи
+              <span className="inline-flex items-center gap-1.5">
+                <Icon name="piggy-bank" size={14} className="text-muted" />
+                Інші активи
+              </span>
             </SectionHeading>
             {manualAssets.map((a, i) => (
               <div
@@ -796,8 +1226,12 @@ export function Assets({
 
         {/* Liabilities section */}
         <SectionBar
-          title="🔴 Пасиви"
-          summary={`−${totalDebt.toLocaleString("uk-UA", { maximumFractionDigits: 0 })} ₴`}
+          title="Пасиви"
+          iconName="trending-down"
+          iconTone="danger"
+          summary={`−${totalDebt.toLocaleString("uk-UA", {
+            maximumFractionDigits: 0,
+          })} ₴`}
           open={open.liabilities}
           onToggle={() =>
             setOpen((v) => ({ ...v, liabilities: !v.liabilities }))

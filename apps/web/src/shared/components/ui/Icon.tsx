@@ -189,6 +189,26 @@ const PATHS: Record<string, ReactNode> = {
       <circle cx="12" cy="12" r="2" />
     </>
   ),
+  "trending-up": (
+    <>
+      <polyline points="3 17 9 11 13 15 21 7" />
+      <polyline points="14 7 21 7 21 14" />
+    </>
+  ),
+  "trending-down": (
+    <>
+      <polyline points="3 7 9 13 13 9 21 17" />
+      <polyline points="14 17 21 17 21 10" />
+    </>
+  ),
+  "hand-coins": (
+    <>
+      <circle cx="8" cy="7" r="4" />
+      <path d="M3 21v-1a5 5 0 0 1 10 0v1" />
+      <circle cx="17" cy="9" r="3" />
+      <circle cx="17" cy="15" r="3" />
+    </>
+  ),
 };
 
 export type IconName = keyof typeof PATHS;
