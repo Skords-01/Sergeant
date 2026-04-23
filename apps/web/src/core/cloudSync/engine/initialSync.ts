@@ -43,14 +43,27 @@ async function applyMerge(
     applyModules: Array<{ mod: string; data: Record<string, unknown> }>;
     setVersions: Array<{ mod: string; version: number }>;
     dirtyMods: string[];
+    skippedDirty: string[];
   },
   userId: UserId,
 ): Promise<void> {
   for (const { mod, data } of plan.applyModules) applyModuleData(mod, data);
   if (userId) {
     for (const { mod, version } of plan.setVersions) {
+      // Не підтягуємо cloud-version для модулів, чиї cloud-дані ми зараз
+      // свідомо пропустили через локальні непушнуті зміни (`skippedDirty`).
+      // Інакше наступний push не побачить різниці й проковтне conflict.
+      if (plan.skippedDirty.includes(mod)) continue;
       setModuleVersion(userId, mod, version);
     }
+  }
+  if (plan.skippedDirty.length > 0) {
+    // Мʼяке логування для тріажу — щоб було видно, що initialSync НЕ накотив
+    // cloud на ці модулі. Pushу нижче уже обробить їх як звичайні dirty-мод-и.
+    console.warn(
+      "[cloudSync] initialSync: skipped cloud apply for dirty modules",
+      plan.skippedDirty,
+    );
   }
   if (plan.dirtyMods.length === 0) return;
   const modules = buildModulesPayload(plan.dirtyMods, getModuleModifiedTimes());

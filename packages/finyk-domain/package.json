@@ -10,6 +10,7 @@
     "./backup": "./src/backup.ts",
     "./constants": "./src/constants.ts",
     "./domain": "./src/domain/index.ts",
+    "./domain/assets": "./src/domain/assets/index.ts",
     "./domain/*": "./src/domain/*.ts",
     "./lib": "./src/lib/index.ts",
     "./lib/*": "./src/lib/*.ts",
