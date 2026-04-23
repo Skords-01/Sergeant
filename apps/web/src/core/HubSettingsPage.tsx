@@ -8,6 +8,7 @@ import { FinykSection } from "./settings/FinykSection.jsx";
 import { FizrukSection } from "./settings/FizrukSection.jsx";
 import { GeneralSection } from "./settings/GeneralSection.jsx";
 import { NotificationsSection } from "./settings/NotificationsSection.jsx";
+import { NutritionSection } from "./settings/NutritionSection.jsx";
 import { RoutineSection } from "./settings/RoutineSection.jsx";
 
 // Group definitions: each tab collects related sections. Search terms are
@@ -22,7 +23,7 @@ const GROUPS = [
   {
     id: "modules",
     label: "Модулі",
-    sections: ["routine", "fizruk", "finyk"],
+    sections: ["routine", "fizruk", "finyk", "nutrition"],
   },
   {
     id: "advanced",
@@ -95,6 +96,13 @@ export function HubSettingsPage({
         keywords:
           "фінанси фінік finyk monobank privatbank token api transactions budget",
         render: () => <FinykSection />,
+      },
+      {
+        id: "nutrition",
+        title: "Харчування",
+        keywords:
+          "харчування їжа nutrition meals food kбжу калорії kcal білки жири вуглеводи вода комора pantry скан штрихкод barcode",
+        render: () => <NutritionSection />,
       },
       {
         id: "experimental",
