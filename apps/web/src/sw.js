@@ -114,6 +114,106 @@ let fizrukData = null;
 let nutritionData = null;
 let scheduledTimerId = null;
 
+// Persist `notifiedKeys` in IndexedDB so the dedup Set survives the SW
+// lifecycle. Browsers typically terminate an idle SW after ~30 s; the
+// next reminder tick starts a fresh worker and, without persistence,
+// we would re-fire the same-minute notification because the in-memory
+// Set is empty again. All IDB operations are best-effort — if IDB
+// isn't available we silently fall back to in-memory-only dedup.
+const IDB_NAME = "sergeant-sw";
+const IDB_STORE = "notified-keys";
+
+function openNotifiedDb() {
+  return new Promise((resolve, reject) => {
+    let req;
+    try {
+      req = indexedDB.open(IDB_NAME, 1);
+    } catch (err) {
+      reject(err);
+      return;
+    }
+    req.onupgradeneeded = () => {
+      if (!req.result.objectStoreNames.contains(IDB_STORE)) {
+        req.result.createObjectStore(IDB_STORE);
+      }
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+    req.onblocked = () => reject(new Error("idb blocked"));
+  });
+}
+
+async function idbLoadAllKeys() {
+  const db = await openNotifiedDb();
+  try {
+    return await new Promise((resolve, reject) => {
+      const tx = db.transaction(IDB_STORE, "readonly");
+      const req = tx.objectStore(IDB_STORE).getAllKeys();
+      req.onsuccess = () => resolve(req.result || []);
+      req.onerror = () => reject(req.error);
+    });
+  } finally {
+    db.close();
+  }
+}
+
+async function idbPutKey(key) {
+  const db = await openNotifiedDb();
+  try {
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction(IDB_STORE, "readwrite");
+      tx.objectStore(IDB_STORE).put(1, key);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error);
+    });
+  } finally {
+    db.close();
+  }
+}
+
+async function idbDeleteKeys(keys) {
+  if (!keys.length) return;
+  const db = await openNotifiedDb();
+  try {
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction(IDB_STORE, "readwrite");
+      const store = tx.objectStore(IDB_STORE);
+      for (const k of keys) store.delete(k);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error);
+    });
+  } finally {
+    db.close();
+  }
+}
+
+let notifiedKeysLoadPromise = null;
+function loadNotifiedKeys() {
+  if (notifiedKeysLoadPromise) return notifiedKeysLoadPromise;
+  notifiedKeysLoadPromise = (async () => {
+    try {
+      const keys = await idbLoadAllKeys();
+      for (const k of keys) {
+        if (typeof k === "string") notifiedKeys.add(k);
+      }
+    } catch {
+      /* IDB unavailable — in-memory dedup still works for the
+         current SW lifetime. */
+    }
+  })();
+  return notifiedKeysLoadPromise;
+}
+
+function recordNotified(key) {
+  if (!key) return;
+  notifiedKeys.add(key);
+  idbPutKey(key).catch(() => {
+    /* best-effort persistence */
+  });
+}
+
 /**
  * Drop dedupe keys tied to past days so the Set does not grow without bound
  * across the SW lifetime. All keys end with a `YYYY-MM-DD` suffix (see the
@@ -124,8 +224,17 @@ function pruneOldNotifiedKeys(currentDk) {
   if (lastPrunedDk === currentDk) return;
   lastPrunedDk = currentDk;
   const suffix = `_${currentDk}`;
+  const toDelete = [];
   for (const k of notifiedKeys) {
-    if (!k.endsWith(suffix)) notifiedKeys.delete(k);
+    if (!k.endsWith(suffix)) {
+      notifiedKeys.delete(k);
+      toDelete.push(k);
+    }
+  }
+  if (toDelete.length) {
+    idbDeleteKeys(toDelete).catch(() => {
+      /* best-effort */
+    });
   }
 }
 
@@ -160,7 +269,7 @@ function checkRoutineReminders() {
 
     const storageKey = `${ROUTINE_NOTIFY_PREFIX}${h.id}_${hm}_${dk}`;
     if (notifiedKeys.has(storageKey)) continue;
-    notifiedKeys.add(storageKey);
+    recordNotified(storageKey);
 
     const title = `${h.emoji || "✓"} ${h.name}`;
     self.registration
@@ -196,7 +305,7 @@ function checkFizrukReminders() {
 
   const storageKey = `fizruk_notify_${dk}`;
   if (notifiedKeys.has(storageKey)) return;
-  notifiedKeys.add(storageKey);
+  recordNotified(storageKey);
 
   self.registration
     .showNotification("🏋️ Фізрук — тренування", {
@@ -224,7 +333,7 @@ function checkNutritionReminders() {
 
   const storageKey = `nutrition_notify_${dk}`;
   if (notifiedKeys.has(storageKey)) return;
-  notifiedKeys.add(storageKey);
+  recordNotified(storageKey);
 
   self.registration
     .showNotification("🥗 Харчування", {
@@ -257,8 +366,18 @@ function scheduleNextCheck() {
 }
 
 function startReminderLoop() {
-  checkReminders();
-  scheduleNextCheck();
+  // Make sure we have replayed any persisted dedup keys from a previous
+  // SW generation before the first check runs, so we don't re-fire the
+  // current-minute notification on cold start.
+  loadNotifiedKeys()
+    .then(() => {
+      checkReminders();
+      scheduleNextCheck();
+    })
+    .catch(() => {
+      checkReminders();
+      scheduleNextCheck();
+    });
 }
 
 self.addEventListener("message", (event) => {
@@ -288,7 +407,7 @@ self.addEventListener("message", (event) => {
   }
 
   if (type === "ROUTINE_NOTIFICATION_SENT") {
-    if (data?.storageKey) notifiedKeys.add(data.storageKey);
+    if (data?.storageKey) recordNotified(data.storageKey);
   }
 });
 
@@ -316,7 +435,7 @@ self.addEventListener("notificationclick", (event) => {
 
 self.addEventListener("notificationclose", (event) => {
   const tag = event.notification.tag;
-  if (tag) notifiedKeys.add(tag);
+  if (tag) recordNotified(tag);
 });
 
 self.addEventListener("activate", (event) => {
