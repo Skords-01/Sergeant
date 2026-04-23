@@ -724,7 +724,11 @@ export default function App({
               key="page-budgets"
               title="Не вдалось показати «Планування»"
             >
-              <Budgets mono={mergedMono} storage={storage} />
+              <Budgets
+                mono={mergedMono}
+                storage={storage}
+                showBalance={showBalance}
+              />
             </SectionErrorBoundary>
           )}
           {page === "analytics" && (

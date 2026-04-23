@@ -235,7 +235,10 @@ export function Assets({
   // `new Date()` each render.
   const [todayStart] = useState<Date>(startOfToday);
 
-  const schedule = useMemo(
+  // На Активи з усього schedule потрібен тільки `urgentLiability` —
+  // інші тайли (`subsMonthly` / `nextCharge`) переїхали на Планування,
+  // щоб не дублювати ту саму інформацію на двох сторінках.
+  const { urgentLiability } = useMemo(
     () =>
       computeFinykSchedule({
         subscriptions,
@@ -246,7 +249,6 @@ export function Assets({
       }),
     [subscriptions, manualDebts, receivables, transactions, todayStart],
   );
-  const { subsMonthly, nextCharge, urgentLiability } = schedule;
 
   // Quick-action helpers: open the relevant section + reveal its form in a
   // single tap, so the user doesn't expand → scroll → tap "+ Додати".
@@ -565,14 +567,16 @@ export function Assets({
             charge, biggest liability with a deadline. Horizontal scroll on
             mobile, grid on wider screens. Only tiles with data render, so
             the strip disappears entirely for empty accounts. */}
+        {/* На сторінці Активи залишаємо тільки «Пасив з дедлайном» —
+            «Сума підписок» + «Наступний платіж» переїхали на Планування
+            (PR #560), тут дублювати не треба. */}
         <FinykStatsStrip
-          subsMonthly={subsMonthly}
-          subsCount={subscriptions.length}
-          nextCharge={nextCharge}
+          subsMonthly={0}
+          subsCount={0}
+          nextCharge={null}
           urgentLiability={urgentLiability}
           todayStart={todayStart}
           showBalance={showBalance}
-          onOpenSubs={() => setOpen((v) => ({ ...v, subscriptions: true }))}
           onOpenLiabilities={() =>
             setOpen((v) => ({ ...v, liabilities: true }))
           }
