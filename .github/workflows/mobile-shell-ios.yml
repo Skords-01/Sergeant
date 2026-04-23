@@ -74,12 +74,31 @@ jobs:
       - name: Scaffold iOS project (cap add ios)
         # `ios/` is intentionally uncommitted in the repo — see the
         # "iOS" section of apps/mobile-shell/README.md. `cap add ios`
-        # generates the Xcode project + runs `pod install`.
+        # first scaffolds the Xcode project and _then_ runs `pod install`.
+        # The pod install step fails on the default template because
+        # @capacitor-mlkit/barcode-scanning 7.5 → GoogleMLKit 7.0 needs
+        # iOS ≥ 15.5 while the template ships `platform :ios, '14.0'`.
+        # The Xcode project + Podfile are already on disk at that point
+        # though, so we swallow the exit code, patch the Podfile, and
+        # run `pod install` ourselves in the next step via `cap sync ios`.
         working-directory: apps/mobile-shell
-        run: pnpm exec cap add ios
+        run: pnpm exec cap add ios || true
+
+      - name: Raise iOS deployment target in Podfile
+        working-directory: apps/mobile-shell/ios/App
+        # Bump `platform :ios, 'X'` from the Capacitor template default to
+        # 15.5 so `pod install` can resolve GoogleMLKit/BarcodeScanning
+        # 7.0.0 (the transitive dep of @capacitor-mlkit/barcode-scanning).
+        run: |
+          test -f Podfile || { echo "Podfile missing — cap add ios did not scaffold"; exit 1; }
+          sed -i.bak "s/^platform :ios, '[0-9.]*'/platform :ios, '15.5'/" Podfile
+          diff -u Podfile.bak Podfile || true
+          rm Podfile.bak
 
       - name: Capacitor sync (ios)
         working-directory: apps/mobile-shell
+        # `cap sync ios` now runs `pod install` against the patched
+        # Podfile and refreshes the plugin graph / web assets.
         run: pnpm exec cap sync ios
 
       - name: Build App scheme for iOS Simulator (no signing)
