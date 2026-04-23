@@ -8,9 +8,8 @@ import { cn } from "@shared/lib/cn";
  * covers every module's quick-add path and made the previous
  * add-speed-dial FAB a pure duplicate.
  *
- * The header also exposes an AI chat sparkle icon (`HubHeader`
- * `onOpenChat`); having both is intentional — same action, two
- * reach zones (top-right on desktop, bottom-right thumb zone on mobile).
+ * This is the only chat entry point in the hub chrome; the header no
+ * longer duplicates the action next to search/dark-mode.
  *
  * @param {object} props
  * @param {boolean} [props.hidden=false] - When true the FAB is not
@@ -18,9 +17,8 @@ import { cn } from "@shared/lib/cn";
  *   interactive surface in view is `FirstActionHeroCard` → `PresetSheet`
  *   (the one-tap "real entry" path). A chat FAB would otherwise pull
  *   users into a conversational flow before they've logged anything.
- * @param {() => void} props.onOpenChat - Opens the hub AI chat panel.
- *   Shared with `HubHeader` so both entry points resolve to the same
- *   `ui.openChat()`.
+ * @param {() => void} props.onOpenChat - Opens the hub AI chat panel
+ *   (resolves to `ui.openChat()`).
  */
 export function HubFloatingActions({ hidden = false, onOpenChat }) {
   if (hidden || !onOpenChat) return null;
@@ -32,7 +30,7 @@ export function HubFloatingActions({ hidden = false, onOpenChat }) {
     >
       <button
         type="button"
-        onClick={onOpenChat}
+        onClick={() => onOpenChat()}
         aria-label="Відкрити AI-асистента"
         title="Асистент"
         className={cn(

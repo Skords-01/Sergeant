@@ -294,7 +294,6 @@ function AppInner() {
 
         <HubHeader
           onOpenSearch={() => ui.setSearchOpen(true)}
-          onOpenChat={() => ui.openChat()}
           user={user}
           syncing={sync.syncing}
           lastSync={sync.lastSync}
