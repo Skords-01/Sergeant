@@ -1,5 +1,5 @@
 import { useMemo, useState, useCallback } from "react";
-import { useMutation, useQueries } from "@tanstack/react-query";
+import { useQueries } from "@tanstack/react-query";
 import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { Skeleton } from "@shared/components/ui/Skeleton";
 import { EmptyState } from "@shared/components/ui/EmptyState";
@@ -14,7 +14,6 @@ import {
   calculateGoalProgress,
   getGoalMonthlyLabel,
   shouldShowProactiveAdvice,
-  buildAtRiskKey,
   getCurrentMonthContext,
   getMonthlyPlanUsage,
   calculateTotalExpenseFact,
@@ -24,12 +23,13 @@ import {
   type GoalFormInput,
 } from "@sergeant/finyk-domain/domain/budget";
 import { filterStatTransactions } from "@sergeant/finyk-domain/domain/transactions";
-import { calcForecast } from "@sergeant/finyk-domain/lib/forecastEngine";
+import { getMonthlySummary } from "@sergeant/finyk-domain/domain/selectors";
 import { chatApi } from "@shared/api";
 import { finykKeys } from "@shared/lib/queryKeys.js";
 import { LimitBudgetCard } from "../components/budgets/LimitBudgetCard.jsx";
 import { GoalBudgetCard } from "../components/budgets/GoalBudgetCard.jsx";
 import { MonthlyPlanCard } from "../components/budgets/MonthlyPlanCard.jsx";
+import { PlanFactCard } from "../components/budgets/PlanFactCard.jsx";
 import { AddBudgetForm } from "../components/budgets/AddBudgetForm.jsx";
 import { readJSON, writeJSON } from "../lib/finykStorage.js";
 import { trackEvent, ANALYTICS_EVENTS } from "../../../core/analytics";
@@ -80,8 +80,6 @@ async function fetchProactiveAdvice({
   limit,
   remaining,
   pct,
-  forecast,
-  forecastNote,
   daysRemaining,
 }) {
   const prompt = `Категорія бюджету: ${catLabel}. Витрачено: ${spent.toLocaleString(
@@ -90,40 +88,14 @@ async function fetchProactiveAdvice({
     "uk-UA",
   )} ₴). Залишок: ${remaining.toLocaleString(
     "uk-UA",
-  )} ₴. До кінця місяця ${daysRemaining} днів.${forecastNote} Дай конкретну коротку пораду (1-2 речення) що зробити, щоб не перевищити ліміт. Відповідь виключно українською.`;
+  )} ₴. До кінця місяця ${daysRemaining} днів. Дай конкретну коротку пораду (1-2 речення) що зробити, щоб не перевищити ліміт. Відповідь виключно українською.`;
   const data = await chatApi.send({
-    context: `[Проактивна AI-порада] Категорія: ${catLabel}, витрачено: ${spent} ₴, ліміт: ${limit} ₴, залишок: ${remaining} ₴, прогноз: ${
-      forecast ?? "—"
-    } ₴, днів до кінця місяця: ${daysRemaining}`,
+    context: `[Проактивна AI-порада] Категорія: ${catLabel}, витрачено: ${spent} ₴, ліміт: ${limit} ₴, залишок: ${remaining} ₴, днів до кінця місяця: ${daysRemaining}`,
     messages: [{ role: "user", content: prompt }],
   });
   const text = data.text || null;
   if (text) saveProactiveAdviceToLS(categoryId, monthKey, text);
   return text;
-}
-
-interface ExplainVars {
-  categoryId: string;
-  catLabel: string;
-  spent: number;
-  forecast: number;
-  limit: number;
-}
-
-async function fetchCategoryExplanation({
-  catLabel,
-  spent,
-  forecast,
-  limit,
-}: Omit<ExplainVars, "categoryId">) {
-  const prompt = `Категорія: ${catLabel}. Витрачено за місяць: ${spent} ₴. Прогноз на кінець місяця: ${forecast} ₴. Ліміт: ${limit} ₴. Чому витрати можуть бути ${
-    forecast > limit ? "вищими за ліміт" : "нижчими за план"
-  } і що варто зробити? Дай коротку відповідь (2-3 речення) українською.`;
-  const data = await chatApi.send({
-    context: `[Бюджетний прогноз] Категорія: ${catLabel}, витрачено: ${spent} ₴, прогноз: ${forecast} ₴, ліміт: ${limit} ₴`,
-    messages: [{ role: "user", content: prompt }],
-  });
-  return data.text || "Не вдалося отримати пояснення.";
 }
 
 export function Budgets({ mono, storage, showBalance = true }) {
@@ -145,6 +117,11 @@ export function Budgets({ mono, storage, showBalance = true }) {
     () => filterStatTransactions(realTx, excludedTxIds),
     [realTx, excludedTxIds],
   );
+  const monthlySummary = useMemo(
+    () => getMonthlySummary(realTx, { excludedTxIds, txSplits }),
+    [realTx, excludedTxIds, txSplits],
+  );
+  const factIncome = monthlySummary.income;
   const [editIdx, setEditIdx] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [formType, setFormType] = useState("limit");
@@ -180,15 +157,15 @@ export function Budgets({ mono, storage, showBalance = true }) {
   const goalBudgets = useMemo(() => getGoalBudgets(budgets), [budgets]);
   const planIncome = Number(monthlyPlan?.income || 0);
   const planExpense = Number(monthlyPlan?.expense || 0);
+  const planSavings = Number(monthlyPlan?.savings || 0);
 
   const totalExpenseFact = useMemo(
     () => calculateTotalExpenseFact(statTx, txSplits),
     [statTx, txSplits],
   );
+  const factSavings = factIncome - totalExpenseFact;
 
   const [formError, setFormError] = useState("");
-
-  const [aiExplanations, setAiExplanations] = useState({});
 
   // Upcoming-schedule feed for the stats strip (reuses the same
   // computation as the Активи page so Сума підписок + Наступний платіж
@@ -223,64 +200,36 @@ export function Budgets({ mono, storage, showBalance = true }) {
     });
   }, []);
 
-  const forecasts = useMemo(() => {
-    if (limitBudgets.length === 0) return [];
-    return calcForecast(
-      statTx,
-      limitBudgets,
-      now,
-      txCategories,
-      txSplits,
-      customCategories,
-    );
-  }, [statTx, limitBudgets, now, txCategories, txSplits, customCategories]);
-
-  const atRiskKey = useMemo(
-    () => buildAtRiskKey(forecasts, now),
-    [forecasts, now],
-  );
-
-  // Derive the exact set of (monthKey, categoryId) pairs that need proactive
-  // advice, along with the prompt context for each. The resulting array drives
-  // `useQueries` below, so a category entering/leaving the at-risk set just
-  // adds/removes an observer — no manual fetch orchestration needed.
+  // At-risk advice fires for any limit where current usage ≥ 80% of limit
+  // (see `shouldShowProactiveAdvice`). We key items by `(monthKey,
+  // categoryId)` so cached advice rolls over naturally at month boundaries.
   const proactiveItems = useMemo(() => {
-    if (!atRiskKey) return [];
-    const [monthKey, idsStr] = atRiskKey.split("|");
-    if (!monthKey) return [];
-    const atRiskIds = idsStr ? idsStr.split(",").filter(Boolean) : [];
-    if (atRiskIds.length === 0) return [];
-    const forecastByCategory = {};
-    for (const fc of forecasts) forecastByCategory[fc.categoryId] = fc;
-    const { daysLeft: daysRemaining } = getCurrentMonthContext(now);
+    if (limitBudgets.length === 0) return [];
+    const { daysLeft: daysRemaining, monthStart: ms } =
+      getCurrentMonthContext(now);
+    const monthKey = `${ms.getFullYear()}-${String(ms.getMonth() + 1).padStart(2, "0")}`;
     const items = [];
-    for (const categoryId of atRiskIds) {
-      const b = limitBudgets.find((x) => x.categoryId === categoryId);
-      if (!b) continue;
-      const cat = resolveExpenseCategoryMeta(categoryId, customCategories);
-      const catLabel = cat?.label || categoryId;
+    for (const b of limitBudgets) {
       const spent = calcSpent(b);
+      const pctRaw = b.limit > 0 ? (spent / b.limit) * 100 : 0;
+      if (!shouldShowProactiveAdvice({ pctRaw }, null)) continue;
+      const cat = resolveExpenseCategoryMeta(b.categoryId, customCategories);
+      const catLabel = cat?.label || b.categoryId;
       const remaining = Math.max(0, b.limit - spent);
       const pct = b.limit > 0 ? Math.round((spent / b.limit) * 100) : 0;
-      const fc = forecastByCategory[categoryId];
-      const forecastNote = fc
-        ? ` Прогноз на кінець місяця: ${fc.forecast.toLocaleString("uk-UA")} ₴ (${fc.overLimit ? `перевищення на ${fc.overPercent}%` : "в межах ліміту"}).`
-        : "";
       items.push({
-        categoryId,
+        categoryId: b.categoryId,
         monthKey,
         catLabel,
         spent,
         limit: b.limit,
         remaining,
         pct,
-        forecast: fc?.forecast,
-        forecastNote,
         daysRemaining,
       });
     }
     return items;
-  }, [atRiskKey, limitBudgets, forecasts, customCategories, calcSpent, now]);
+  }, [limitBudgets, customCategories, calcSpent, now]);
 
   // One query per at-risk category. Seeded synchronously from localStorage so
   // the UI paints cached advice with no spinner. `staleTime` is set to the
@@ -318,46 +267,6 @@ export function Budgets({ mono, storage, showBalance = true }) {
     proactiveAdvice[item.categoryId] = q?.data ?? null;
     proactiveLoading[item.categoryId] = Boolean(q?.isFetching);
   });
-
-  // On-demand explanation: single shared mutation, per-category result stored
-  // in local state so each forecast card renders independently. `variables`
-  // carries the categoryId so we can derive per-card loading state from
-  // `mutation.isPending && mutation.variables?.categoryId === fc.categoryId`.
-  const explainMutation = useMutation<string | null, Error, ExplainVars>({
-    mutationFn: ({ catLabel, spent, forecast, limit }) =>
-      fetchCategoryExplanation({ catLabel, spent, forecast, limit }),
-    onSuccess: (text, { categoryId }) => {
-      setAiExplanations((prev) => ({ ...prev, [categoryId]: text }));
-    },
-    onError: (_err, { categoryId }) => {
-      setAiExplanations((prev) => ({
-        ...prev,
-        [categoryId]: "Помилка з'єднання з AI.",
-      }));
-    },
-  });
-
-  const isExplaining = useCallback(
-    (categoryId) =>
-      explainMutation.isPending &&
-      explainMutation.variables?.categoryId === categoryId,
-    [explainMutation.isPending, explainMutation.variables],
-  );
-
-  const explainCategory = useCallback(
-    (categoryId, catLabel, spent, forecast, limit) => {
-      if (isExplaining(categoryId)) return;
-      setAiExplanations((prev) => ({ ...prev, [categoryId]: null }));
-      explainMutation.mutate({
-        categoryId,
-        catLabel,
-        spent,
-        forecast,
-        limit,
-      });
-    },
-    [explainMutation, isExplaining],
-  );
 
   const resetForm = () => {
     setNewB({
@@ -444,6 +353,15 @@ export function Budgets({ mono, storage, showBalance = true }) {
           daysLeft={daysLeft2}
         />
 
+        <PlanFactCard
+          planIncome={planIncome}
+          planExpense={planExpense}
+          planSavings={planSavings}
+          income={factIncome}
+          spent={totalExpenseFact}
+          factSavings={factSavings}
+        />
+
         {/* Limits */}
         <SectionHeading as="div" size="sm">
           Ліміти · {monthStart.toLocaleDateString("uk-UA", { month: "long" })}
@@ -480,10 +398,7 @@ export function Budgets({ mono, storage, showBalance = true }) {
           const bspent = calcSpent(b);
           const usage = calculateLimitUsage(b, bspent);
           const globalIdx = budgets.indexOf(b);
-          const forecastForCat = forecasts.find(
-            (fc) => fc.categoryId === b.categoryId,
-          );
-          const showAdvice = shouldShowProactiveAdvice(usage, forecastForCat);
+          const showAdvice = shouldShowProactiveAdvice(usage, null);
           const isEditing = editIdx === globalIdx;
           const catLabel = cat?.label || "—";
           return (
@@ -498,21 +413,6 @@ export function Budgets({ mono, storage, showBalance = true }) {
               isEditing={isEditing}
               showProactiveAdvice={showAdvice}
               proactiveLoading={proactiveLoading[b.categoryId]}
-              forecast={forecastForCat}
-              explanation={aiExplanations[b.categoryId]}
-              explanationLoading={isExplaining(b.categoryId)}
-              onExplain={
-                forecastForCat
-                  ? () =>
-                      explainCategory(
-                        b.categoryId,
-                        catLabel,
-                        forecastForCat.spent,
-                        forecastForCat.forecast,
-                        forecastForCat.limit,
-                      )
-                  : undefined
-              }
               proactiveText={
                 proactiveAdvice[b.categoryId] &&
                 dismissedAdvice[

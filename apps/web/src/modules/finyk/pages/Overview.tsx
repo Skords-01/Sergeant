@@ -7,6 +7,7 @@ import {
   calcFinykSpendingTotal,
   getMonoTotals,
 } from "../utils";
+
 import { getSubscriptionAmountMeta } from "@sergeant/finyk-domain/domain/subscriptionUtils";
 import { getMonthlySummary } from "@sergeant/finyk-domain/domain/selectors";
 import {
@@ -14,7 +15,6 @@ import {
   isBudgetAlert,
   getCurrentMonthContext,
 } from "@sergeant/finyk-domain/domain/budget";
-import { getCategorySpendList } from "@sergeant/finyk-domain/domain/categories";
 import { filterStatTransactions } from "@sergeant/finyk-domain/domain/transactions";
 import { Skeleton } from "@shared/components/ui/Skeleton";
 import { THEME_HEX } from "@shared/lib/themeHex.js";
@@ -25,9 +25,7 @@ import { HeroCard } from "./overview/HeroCard.jsx";
 import { MonthPulseCard } from "./overview/MonthPulseCard.jsx";
 import { NetworthSection } from "./overview/NetworthSection.jsx";
 import { BudgetAlertsList } from "./overview/BudgetAlertsList.jsx";
-import { PlanFactCard } from "./overview/PlanFactCard.jsx";
 import { PlannedFlowsCard } from "./overview/PlannedFlowsCard.jsx";
-import { CategoryChartSection } from "./overview/CategoryChartSection.jsx";
 
 const parseLocalDate = (isoDate) => {
   const [y, m, d] = (isoDate || "").split("-").map(Number);
@@ -52,13 +50,7 @@ const getNextBillingDate = (billingDay, now) => {
   return d;
 };
 
-export function Overview({
-  mono,
-  storage,
-  onNavigate,
-  onCategoryClick,
-  showBalance = true,
-}) {
+export function Overview({ mono, storage, onNavigate, showBalance = true }) {
   const {
     realTx,
     loadingTx,
@@ -141,15 +133,6 @@ export function Overview({
   // budgetAlerts/inline-рендер списку не перезапускались, поки
   // сам `budgets` не змінився.
   const limitBudgets = useMemo(() => getLimitBudgets(budgets), [budgets]);
-  const catSpends = useMemo(
-    () =>
-      getCategorySpendList(statTx, {
-        txCategories,
-        txSplits,
-        customCategories,
-      }),
-    [statTx, txCategories, txSplits, customCategories],
-  );
 
   useEffect(() => {
     if (loadingTx && realTx.length === 0) return;
@@ -315,10 +298,7 @@ export function Overview({
     [subscriptionFlows, debtOutFlows, debtInFlows],
   );
 
-  const planIncome = Number(monthlyPlan?.income || 0);
   const planExpense = Number(monthlyPlan?.expense || 0);
-  const planSavings = Number(monthlyPlan?.savings || 0);
-  const factSavings = income - spent;
   const remainingDays = Math.max(1, daysInMonth - daysPassed + 1);
   const expenseTarget = planExpense > 0 ? planExpense : projectedSpend;
   // useMemo — `monthFlows` проходить по всіх flow-массивах і створює нову
@@ -460,35 +440,12 @@ export function Overview({
           customCategories={customCategories}
         />
 
-        <PlanFactCard
-          planIncome={planIncome}
-          planExpense={planExpense}
-          planSavings={planSavings}
-          income={income}
-          spent={spent}
-          factSavings={factSavings}
-        />
-
         <PlannedFlowsCard
           plannedFlows={plannedFlows}
           onNavigate={onNavigate}
           showBalance={showBalance}
         />
 
-        <CategoryChartSection
-          catSpends={catSpends}
-          onNavigate={onNavigate}
-          onCategoryClick={onCategoryClick}
-        />
-
-        {realTx.length > 0 && (
-          <button
-            onClick={() => onNavigate("transactions")}
-            className="w-full py-4 text-sm font-medium text-muted border border-line/60 border-dashed rounded-2xl hover:border-muted hover:text-text transition-colors min-h-[52px]"
-          >
-            Усі операції ({realTx.length}) →
-          </button>
-        )}
         {loadingTx && (
           <p className="text-center text-xs text-subtle py-4">Оновлення…</p>
         )}

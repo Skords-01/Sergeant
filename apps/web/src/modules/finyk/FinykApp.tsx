@@ -703,10 +703,6 @@ export default function App({
                 mono={mergedMono}
                 storage={storage}
                 onNavigate={navigate}
-                onCategoryClick={(catId) => {
-                  setCategoryFilter(catId);
-                  navigate("transactions");
-                }}
                 showBalance={showBalance}
               />
             </SectionErrorBoundary>
