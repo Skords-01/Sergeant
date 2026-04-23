@@ -11,6 +11,7 @@ import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { Button } from "@shared/components/ui/Button";
 import { Card } from "@shared/components/ui/Card";
 import { Input } from "@shared/components/ui/Input";
+import type { ReactNode } from "react";
 import { VoiceMicButton } from "@shared/components/ui/VoiceMicButton.jsx";
 import {
   ROUTINE_THEME as C,
@@ -149,8 +150,24 @@ export function HabitForm({
     }
   }, [focusTick]);
 
+  // When embedded in a dialog (HabitQuickCreateDialog) we skip the outer
+  // Card chrome — the dialog already provides the bordered, rounded
+  // container. Nesting another Card here visually duplicates the "flash
+  // card" around the form (noticed on mobile Safari where it looked like
+  // two stacked panels) and eats ~32px of horizontal padding.
+  const Wrapper = ({ children }: { children: ReactNode }) =>
+    hideHeading ? (
+      <section ref={sectionRef} className="space-y-4">
+        {children}
+      </section>
+    ) : (
+      <Card as="section" ref={sectionRef} radius="lg" className="space-y-3">
+        {children}
+      </Card>
+    );
+
   return (
-    <Card as="section" ref={sectionRef} radius="lg" className="space-y-3">
+    <Wrapper>
       {!hideHeading && (
         <SectionHeading as="h2" size="sm">
           {editingId ? "Редагувати звичку" : "Нова звичка"}
@@ -158,17 +175,17 @@ export function HabitForm({
       )}
 
       <div>
-        <div className="flex gap-2 items-stretch">
-          <div className="relative" ref={emojiWrapRef}>
+        <div className="flex gap-2 items-center">
+          <div className="relative shrink-0" ref={emojiWrapRef}>
             <button
               type="button"
               onClick={() => setShowEmojiPicker((v) => !v)}
               aria-label="Обрати емодзі"
               aria-expanded={showEmojiPicker}
               className={cn(
-                "routine-touch-field w-16 h-full shrink-0 flex items-center justify-center",
-                "rounded-2xl border border-line bg-panel text-xl",
-                "hover:bg-panelHi transition-colors",
+                "routine-touch-field w-12 shrink-0 flex items-center justify-center",
+                "rounded-2xl border border-line bg-panelHi text-xl",
+                "hover:bg-panel transition-colors",
               )}
             >
               <span aria-hidden>{habitDraft.emoji || "✓"}</span>
@@ -414,25 +431,33 @@ export function HabitForm({
         </div>
       )}
 
-      <div className="flex flex-col gap-2">
-        <Button
-          type="button"
-          className={cn("w-full font-bold", C.primary)}
-          onClick={onSave}
-        >
-          {editingId ? "Зберегти зміни" : "Додати звичку"}
-        </Button>
+      <div
+        className={cn(
+          "flex gap-2",
+          // Inside the quick-create dialog the sheet already has an "X"
+          // close in the top-right, so the Cancel button would be
+          // redundant. Stretch the primary save button to fill the row.
+          editingId ? "flex-row" : "flex-col",
+        )}
+      >
         {editingId && (
           <Button
             type="button"
             variant="ghost"
-            className="w-full border border-line"
+            className="flex-1 border border-line"
             onClick={onCancel}
           >
             Скасувати
           </Button>
         )}
+        <Button
+          type="button"
+          className={cn("flex-1", C.primary)}
+          onClick={onSave}
+        >
+          {editingId ? "Зберегти зміни" : "Додати звичку"}
+        </Button>
       </div>
-    </Card>
+    </Wrapper>
   );
 }
