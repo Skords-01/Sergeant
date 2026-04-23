@@ -4,6 +4,18 @@ import { Input } from "@shared/components/ui/Input";
 import { Icon } from "@shared/components/ui/Icon";
 import { cn } from "@shared/lib/cn";
 import { groupItemsByCategory } from "../lib/foodCategories.js";
+import type { FoodCategory } from "../lib/foodCategories.js";
+import type { PantryItem } from "../lib/pantryTextParser.js";
+
+/**
+ * Мінімальний "view-shape" елемента комори для `ItemRow`. Runtime-потік
+ * приносить сюди і канонічний `PantryItem`, і сирі результати парсера
+ * (`parseLoosePantryText`), у яких `qty`/`unit` можуть бути `null`. Тому
+ * поля свідомо optional — шлях до рендеру не повинен падати на відсутніх
+ * значеннях, але типізуючий контракт відсікає "тихі" перейменування
+ * полів (`name` → `title`), які раніше провалювались у `: any`.
+ */
+type PantryItemView = Partial<PantryItem> & { name?: string };
 
 const INPUT_MODES = [
   { id: "single", label: "Продукт" },
@@ -20,9 +32,8 @@ function ChevronIcon({ open }: { open: boolean }) {
   );
 }
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 interface ItemRowProps {
-  item: any;
+  item: PantryItemView;
   idx: number;
   editItemAt: (idx: number) => void;
   removeItemAtOrByName: (idx: number, name?: string) => void;
@@ -73,8 +84,8 @@ function ItemRow({
 }
 
 interface CategorySectionProps {
-  cat: { id: string; emoji: string; label: string };
-  items: Array<{ item: any; idx: number }>;
+  cat: Pick<FoodCategory, "id" | "emoji" | "label">;
+  items: Array<{ item: PantryItemView; idx: number }>;
   editItemAt: (idx: number) => void;
   removeItemAtOrByName: (idx: number, name?: string) => void;
   busy: boolean;
@@ -130,7 +141,7 @@ function CategorySection({
 }
 
 interface InventoryCardProps {
-  effectiveItems: any[];
+  effectiveItems: PantryItemView[];
   editItemAt: (idx: number) => void;
   removeItemAtOrByName: (idx: number, name?: string) => void;
   pantryItemsLength: number;
@@ -148,7 +159,7 @@ function InventoryCard({
   const [mainOpen, setMainOpen] = useState(true);
 
   const groups = useMemo(
-    () => groupItemsByCategory(effectiveItems),
+    () => groupItemsByCategory<PantryItemView>(effectiveItems),
     [effectiveItems],
   );
 
@@ -206,14 +217,18 @@ interface PantryCardProps {
   parsePantry: () => void;
   newItemName: string;
   setNewItemName: (v: string) => void;
-  upsertItem: (raw: any) => void;
+  upsertItem: (raw: string | PantryItem | PantryItem[]) => void;
   pantryText: string;
   setPantryText: (v: string) => void;
-  effectiveItems: any[];
+  effectiveItems: PantryItemView[];
   editItemAt: (idx: number) => void;
   removeItemAtOrByName: (idx: number, name?: string) => void;
   pantryItemsLength: number;
-  pantrySummary?: any;
+  /**
+   * Опційний agregated-summary комори (total, warnings). Shape-free —
+   * не рендериться всередині цього файлу, лише пробрасується вгору.
+   */
+  pantrySummary?: unknown;
   onScanBarcode?: () => void;
 }
 

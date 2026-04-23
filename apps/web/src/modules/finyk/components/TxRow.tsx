@@ -7,6 +7,9 @@ import {
   CURRENCY,
   mergeExpenseCategoryDefinitions,
 } from "../constants";
+import type { CustomCategoryInput } from "@sergeant/finyk-domain/constants";
+import type { MonoAccount } from "@sergeant/finyk-domain/lib/accounts";
+import type { TxSplit, TxSplitsMap } from "@sergeant/finyk-domain/domain/types";
 import { cn } from "@shared/lib/cn";
 import { Button } from "@shared/components/ui/Button";
 import { Icon } from "@shared/components/ui/Icon";
@@ -14,7 +17,7 @@ import { Icon } from "@shared/components/ui/Icon";
 const splitInp =
   "input-focus-finyk flex-1 text-xs h-9 rounded-xl border border-line bg-panelHi px-2 text-text";
 
-const INCOME_ICONS = {
+const INCOME_ICONS: Record<string, string> = {
   in_salary: "💰",
   in_freelance: "💻",
   [INTERNAL_TRANSFER_ID]: "↔️",
@@ -23,9 +26,9 @@ const INCOME_ICONS = {
   in_other: "📥",
 };
 
-function getAccountShortName(acc) {
+function getAccountShortName(acc: MonoAccount | undefined): string | null {
   if (!acc) return null;
-  const typeMap = {
+  const typeMap: Record<string, string> = {
     black: "Чорна",
     white: "Біла",
     platinum: "Platinum",
@@ -33,31 +36,48 @@ function getAccountShortName(acc) {
     fop: "ФОП",
     yellow: "Жовта",
   };
-  return typeMap[acc.type] || acc.type || "Рахунок";
+  const key = acc.type ?? "";
+  return typeMap[key] || acc.type || "Рахунок";
 }
 
-// TxRow — головна "гаряча" точка: рендериться сотнями в віртуалізованому
-// списку транзакцій. Обгортаємо у React.memo, щоб рядок перерендерювався
-// лише при зміні власних пропсів (категорія, приховання, спліти), а не
-// щоразу, коли батько оновлює стан (фільтри, скрол, вибір).
-// Legacy untyped shapes — pages/storage hand us heterogeneous records and
-// the categorisation / split / account code paths predate static typing.
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/**
+ * Мінімальна форма транзакції, яку рендерить рядок. Свідомо НЕ імпортуємо
+ * повний `Transaction` з finyk-domain — рядок бачить і нормалізовані, і
+ * сирі monobank-записи (різні точки виклику persist різні shape-и: Mono
+ * statement entries, manual-expenses, merged splits), тому лишаємо тільки
+ * реально читані поля. Typing-guard тут важливий не для uniqueness схеми,
+ * а щоб запобігти "silent-new-field" регресіям — як тоді, коли
+ * `tx._accountId` раптом перейменували у `.accountId` і рядок тихо
+ * втрачав прив'язку до рахунку.
+ */
+export interface TxRowTx {
+  id: string;
+  amount: number;
+  description?: string;
+  mcc?: number;
+  time?: number;
+  currencyCode?: number;
+  operationAmount?: number;
+  _accountId?: string | null;
+  _source?: string;
+  _manual?: boolean;
+  _manualId?: string;
+}
+
 interface TxRowProps {
-  tx: any;
+  tx: TxRowTx;
   onClick?: (() => void) | null;
   highlighted?: boolean;
   onHide?: ((id: string) => void) | null;
   hidden?: boolean;
   overrideCatId?: string | null;
   onCatChange?: ((id: string, catId: string | null) => void) | null;
-  accounts?: any[];
+  accounts?: readonly MonoAccount[];
   hideAmount?: boolean;
-  txSplits?: Record<string, any>;
-  onSplitChange?: ((id: string, split: any) => void) | null;
-  customCategories?: any[];
+  txSplits?: TxSplitsMap;
+  onSplitChange?: ((id: string, split: TxSplit[] | null) => void) | null;
+  customCategories?: readonly CustomCategoryInput[];
 }
-/* eslint-enable @typescript-eslint/no-explicit-any */
 
 function TxRowImpl({
   tx,
@@ -75,16 +95,26 @@ function TxRowImpl({
 }: TxRowProps) {
   const [catPicker, setCatPicker] = useState(false);
   const [splitEditor, setSplitEditor] = useState(false);
-  const [draftSplits, setDraftSplits] = useState([]);
+  // Драфт-стан редактора сплітів. Типізуємо явно — раніше `useState([])`
+  // звужувався до `never[]` під `noImplicitAny: false`, і будь-яка помилка
+  // у shape-і елемента ловилась лише рантаймом.
+  const [draftSplits, setDraftSplits] = useState<TxSplit[]>([]);
   const splitCategoryOptions = useMemo(() => {
-    const merged = mergeExpenseCategoryDefinitions(customCategories);
+    const merged = mergeExpenseCategoryDefinitions(
+      customCategories as readonly unknown[],
+    );
     const internal = MCC_CATEGORIES.find((c) => c.id === INTERNAL_TRANSFER_ID);
     return internal ? [...merged, internal] : merged;
   }, [customCategories]);
   const isIncome = tx.amount > 0;
   const cat = isIncome
-    ? getIncomeCategory(tx.description, overrideCatId)
-    : getCategory(tx.description, tx.mcc, overrideCatId, customCategories);
+    ? getIncomeCategory(tx.description ?? "", overrideCatId)
+    : getCategory(
+        tx.description ?? "",
+        tx.mcc ?? 0,
+        overrideCatId,
+        customCategories as readonly unknown[],
+      );
   const catIcon = isIncome
     ? INCOME_ICONS[cat.id] || "📥"
     : cat.label.split(" ")[0];
@@ -92,14 +122,16 @@ function TxRowImpl({
     ? cat.label
     : cat.label.slice(cat.label.indexOf(" ") + 1);
 
-  const account = accounts?.find((a) => a.id === tx._accountId);
-  const isCreditCard = account?.creditLimit > 0;
+  const account: MonoAccount | undefined = accounts?.find(
+    (a) => a.id === tx._accountId,
+  );
+  const isCreditCard = (account?.creditLimit ?? 0) > 0;
   const accountName = getAccountShortName(account);
 
   // useMemo — стабілізуємо масив сплітів, щоб `openSplitEditor` (useCallback
   // нижче) не перестворювався, коли `txSplits` — той самий об'єкт.
-  const existingSplits = useMemo(
-    () => txSplits?.[tx.id] || [],
+  const existingSplits = useMemo<TxSplit[]>(
+    () => txSplits?.[tx.id] ?? [],
     [txSplits, tx.id],
   );
   const totalAmt = Math.abs(tx.amount / 100);
@@ -120,7 +152,7 @@ function TxRowImpl({
   }, [existingSplits, cat.id, totalAmt]);
 
   const splitsTotal = draftSplits.reduce(
-    (s, p) => s + (parseFloat(p.amount) || 0),
+    (s, p) => s + (Number(p.amount) || 0),
     0,
   );
   const remaining = Math.round((totalAmt - splitsTotal) * 100) / 100;
@@ -129,7 +161,7 @@ function TxRowImpl({
   // функції на кожен символ у полі редагування суми.
   const saveSplits = useCallback(() => {
     const valid = draftSplits.filter(
-      (s) => s.categoryId && (parseFloat(s.amount) || 0) > 0,
+      (s) => s.categoryId && (Number(s.amount) || 0) > 0,
     );
     onSplitChange?.(tx.id, valid.length >= 2 ? valid : null);
     setSplitEditor(false);
@@ -440,7 +472,7 @@ function TxRowImpl({
             <button
               key={c.id}
               onClick={() => {
-                onCatChange(
+                onCatChange?.(
                   tx.id,
                   c.id === cat.id && overrideCatId ? null : c.id,
                 );
@@ -461,7 +493,7 @@ function TxRowImpl({
           {overrideCatId && (
             <button
               onClick={() => {
-                onCatChange(tx.id, null);
+                onCatChange?.(tx.id, null);
                 setCatPicker(false);
               }}
               className="text-xs px-3 py-2 rounded-xl border border-dashed border-danger/40 text-danger/60 hover:text-danger transition-colors"

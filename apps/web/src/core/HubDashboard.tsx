@@ -1,4 +1,12 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { cn } from "@shared/lib/cn";
 import { Icon } from "@shared/components/ui/Icon";
 import { SectionHeading } from "@shared/components/ui/SectionHeading";
@@ -67,7 +75,33 @@ const saveOrder = saveDashboardOrder;
 // ═══════════════════════════════════════════════════════════════════════════
 // MODULE CONFIGURATIONS — calm accent-only styling
 // ═══════════════════════════════════════════════════════════════════════════
-const MODULE_CONFIGS = {
+/**
+ * Preview — легка read-model картки модуля для `StatusRow`. Поля опційні:
+ * окремі модулі (напр. finyk) не показують progress, а нутрішн показує.
+ * Раніше `StatusRow`-props були `any`; будь-яка зміна shape-у preview чи
+ * конфігу проходила без помилки TS.
+ */
+interface ModulePreview {
+  main?: string | null;
+  sub?: string | null;
+  /** 0..100. Рендериться тільки коли `hasGoal && progress > 0`. */
+  progress?: number;
+}
+
+interface ModuleConfig {
+  icon: ReactNode;
+  label: string;
+  module: string;
+  iconClass: string;
+  accentClass: string;
+  description: string;
+  hasGoal: boolean;
+  getPreview: () => ModulePreview;
+}
+
+type ModuleId = "finyk" | "fizruk" | "routine" | "nutrition";
+
+const MODULE_CONFIGS: Record<ModuleId, ModuleConfig> = {
   finyk: {
     icon: (
       <svg
@@ -244,9 +278,26 @@ const MODULE_CONFIGS = {
 // (FTUX-герой, м'яка авторизація, digest-експанд) перераховувала всі
 // чотири модульні рядки, включно з `preview = config.getPreview()`,
 // що читає localStorage.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const StatusRow = memo(function StatusRow(props: any) {
-  const { config, onClick, onQuickAdd, dragProps, isDragging } = props;
+interface QuickAddDescriptor {
+  label: string;
+  run: () => void;
+}
+
+interface StatusRowProps {
+  config: ModuleConfig;
+  onClick: () => void;
+  onQuickAdd?: QuickAddDescriptor | null;
+  dragProps?: Record<string, unknown>;
+  isDragging?: boolean;
+}
+
+const StatusRow = memo(function StatusRow({
+  config,
+  onClick,
+  onQuickAdd,
+  dragProps,
+  isDragging,
+}: StatusRowProps) {
   const preview = config.getPreview();
   const showProgress =
     config.hasGoal && preview.progress !== undefined && preview.progress > 0;
@@ -344,9 +395,17 @@ const StatusRow = memo(function StatusRow(props: any) {
 // `memo` + локальний `useCallback` для onClick — коли `onOpenModule` і
 // `quickAdd` стабільні (див. `HubDashboard`), перерендер всього списку
 // стає no-op для рядків, які не тягнуть у dnd-kit.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const SortableCard = memo(function SortableCard(props: any) {
-  const { id, onOpenModule, quickAdd } = props;
+interface SortableCardProps {
+  id: ModuleId;
+  onOpenModule: (id: ModuleId) => void;
+  quickAdd?: QuickAddDescriptor | null;
+}
+
+const SortableCard = memo(function SortableCard({
+  id,
+  onOpenModule,
+  quickAdd,
+}: SortableCardProps) {
   const {
     attributes,
     listeners,
