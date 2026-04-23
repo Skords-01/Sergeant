@@ -552,6 +552,10 @@ export default function NutritionApp({
                     fetchDayPlan={() => fetchDayPlan(null)}
                     regenMeal={(mealType) => fetchDayPlan(mealType)}
                     addMealToLog={addMealFromPlan}
+                    weekPlan={weekPlan}
+                    weekPlanRaw={weekPlanRaw}
+                    weekPlanBusy={weekPlanBusy}
+                    fetchWeekPlan={fetchWeekPlan}
                   />
                 ) : (
                   <RecipesCard
@@ -566,10 +570,6 @@ export default function NutritionApp({
                     err={err}
                     fmtMacro={fmtMacro}
                     recipeCacheEntry={recipeCacheEntry}
-                    weekPlan={weekPlan}
-                    weekPlanRaw={weekPlanRaw}
-                    weekPlanBusy={weekPlanBusy}
-                    fetchWeekPlan={fetchWeekPlan}
                     addMealToLog={wrappedSaveMeal}
                   />
                 )}

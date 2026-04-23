@@ -47,10 +47,6 @@ export function RecipesCard({
   err,
   fmtMacro,
   recipeCacheEntry,
-  weekPlan,
-  weekPlanRaw,
-  weekPlanBusy,
-  fetchWeekPlan,
   addMealToLog,
 }) {
   const [saved, setSaved] = useState([]);
@@ -372,79 +368,17 @@ export function RecipesCard({
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={recommendRecipes}
-              disabled={busy}
-              className={cn(
-                "w-full h-11 rounded-2xl text-sm font-semibold",
-                "bg-nutrition-strong text-white hover:bg-nutrition-hover disabled:opacity-50",
-              )}
-            >
-              Запропонувати рецепти
-            </button>
-            <button
-              type="button"
-              onClick={fetchWeekPlan}
-              disabled={busy || weekPlanBusy}
-              className={cn(
-                "w-full h-11 rounded-2xl text-sm font-semibold border border-nutrition/40",
-                "text-nutrition-strong dark:text-nutrition hover:bg-nutrition/10 disabled:opacity-50",
-              )}
-            >
-              {weekPlanBusy ? "…" : "План на тиждень + покупки"}
-            </button>
-          </div>
-
-          {weekPlan?.days?.length > 0 && (
-            <div className="rounded-2xl border border-line bg-panel p-4 space-y-3">
-              <div className="text-sm font-semibold text-text">
-                Тижневий план
-              </div>
-              {weekPlan.days.map((d, i) => (
-                <div
-                  key={i}
-                  className="text-sm border-b border-line/40 pb-2 last:border-0"
-                >
-                  <div className="font-semibold text-nutrition-strong dark:text-nutrition">
-                    {d.label}
-                  </div>
-                  {d.note && (
-                    <div className="text-xs text-subtle mt-0.5">{d.note}</div>
-                  )}
-                  {Array.isArray(d.meals) && d.meals.length > 0 && (
-                    <ul className="list-disc pl-4 mt-1 text-xs text-text space-y-0.5">
-                      {d.meals.map((line, j) => (
-                        <li key={j}>{line}</li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              ))}
-              {weekPlan.shoppingList?.length > 0 && (
-                <div>
-                  <div className="text-xs text-subtle mb-1">Список покупок</div>
-                  <ul className="list-disc pl-4 text-sm text-text space-y-0.5">
-                    {weekPlan.shoppingList.map((s, i) => (
-                      <li key={i}>{s}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-          )}
-
-          {weekPlanRaw && (!weekPlan?.days || weekPlan.days.length === 0) && (
-            <details className="rounded-2xl border border-line bg-bg p-3">
-              <summary className="cursor-pointer text-xs text-muted">
-                Діагностика плану (raw)
-              </summary>
-              <pre className="mt-2 whitespace-pre-wrap text-xs text-subtle max-h-48 overflow-auto">
-                {weekPlanRaw}
-              </pre>
-            </details>
-          )}
+          <button
+            type="button"
+            onClick={recommendRecipes}
+            disabled={busy}
+            className={cn(
+              "w-full h-11 rounded-2xl text-sm font-semibold",
+              "bg-nutrition-strong text-white hover:bg-nutrition-hover disabled:opacity-50",
+            )}
+          >
+            Запропонувати рецепти
+          </button>
 
           {recipes.length > 0 && (
             <div className="grid gap-3">
