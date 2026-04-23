@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { Label } from "@shared/components/ui/FormField";
 import { subtleNavButtonClass } from "@shared/components/ui/buttonPresets";
@@ -63,6 +63,18 @@ export function Body({ onOpenMeasurements }) {
     note: "",
   });
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const submitSuccessTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+
+  useEffect(() => {
+    return () => {
+      if (submitSuccessTimerRef.current) {
+        clearTimeout(submitSuccessTimerRef.current);
+        submitSuccessTimerRef.current = null;
+      }
+    };
+  }, []);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -82,7 +94,13 @@ export function Body({ onOpenMeasurements }) {
       note: "",
     });
     setSubmitSuccess(true);
-    setTimeout(() => setSubmitSuccess(false), 2000);
+    if (submitSuccessTimerRef.current) {
+      clearTimeout(submitSuccessTimerRef.current);
+    }
+    submitSuccessTimerRef.current = setTimeout(() => {
+      setSubmitSuccess(false);
+      submitSuccessTimerRef.current = null;
+    }, 2000);
   };
 
   const weightData = useMemo(() => {

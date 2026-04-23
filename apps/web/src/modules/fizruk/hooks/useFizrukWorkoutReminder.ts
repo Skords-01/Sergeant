@@ -2,6 +2,14 @@ import { useEffect, useRef } from "react";
 
 const LAST_KEY = "fizruk_last_reminder_notif_day";
 
+function readLastFiredDay(): string | null {
+  try {
+    return localStorage.getItem(LAST_KEY);
+  } catch {
+    return null;
+  }
+}
+
 export function sendFizrukStateToSW(state) {
   try {
     if (!("serviceWorker" in navigator) || !navigator.serviceWorker.controller)
@@ -24,7 +32,10 @@ export function useFizrukWorkoutReminder({
   reminderEnabled,
   days,
 }) {
-  const firedRef = useRef(null);
+  // Seed from localStorage so that remount within the same day (e.g. after
+  // HMR, route change, or the user navigating away and back) does not
+  // re-fire today's notification.
+  const firedRef = useRef<string | null>(readLastFiredDay());
 
   useEffect(() => {
     sendFizrukStateToSW({
