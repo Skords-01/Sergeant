@@ -3,18 +3,25 @@ import {
   useCallback,
   useEffect,
   useMemo,
-  useRef,
   useState,
   type ReactNode,
 } from "react";
 import { cn } from "@shared/lib/cn";
 import { Icon } from "@shared/components/ui/Icon";
 import { SectionHeading } from "@shared/components/ui/SectionHeading";
-import { safeReadLS, safeWriteLS, safeRemoveLS } from "@shared/lib/storage.js";
+import {
+  safeReadLS,
+  safeReadStringLS,
+  safeWriteLS,
+  safeRemoveLS,
+} from "@shared/lib/storage.js";
 import {
   DASHBOARD_MODULE_LABELS as SHARED_DASHBOARD_MODULE_LABELS,
   STORAGE_KEYS,
   normalizeDashboardOrder,
+  selectModulePreview,
+  type ModulePreview,
+  type User,
 } from "@sergeant/shared";
 import { openHubModuleWithAction } from "@shared/lib/hubNav";
 import { getModulePrimaryAction } from "@shared/lib/moduleQuickActions";
@@ -75,19 +82,6 @@ const saveOrder = saveDashboardOrder;
 // ═══════════════════════════════════════════════════════════════════════════
 // MODULE CONFIGURATIONS — calm accent-only styling
 // ═══════════════════════════════════════════════════════════════════════════
-/**
- * Preview — легка read-model картки модуля для `StatusRow`. Поля опційні:
- * окремі модулі (напр. finyk) не показують progress, а нутрішн показує.
- * Раніше `StatusRow`-props були `any`; будь-яка зміна shape-у preview чи
- * конфігу проходила без помилки TS.
- */
-interface ModulePreview {
-  main?: string | null;
-  sub?: string | null;
-  /** 0..100. Рендериться тільки коли `hasGoal && progress > 0`. */
-  progress?: number;
-}
-
 interface ModuleConfig {
   icon: ReactNode;
   label: string;
@@ -124,23 +118,11 @@ const MODULE_CONFIGS: Record<ModuleId, ModuleConfig> = {
     accentClass: "bg-finyk",
     description: "Транзакції та бюджети",
     hasGoal: false,
-    getPreview: () => {
-      try {
-        const data = localStorage.getItem("finyk_quick_stats");
-        if (data) {
-          const stats = JSON.parse(data);
-          return {
-            main: stats.todaySpent
-              ? `${stats.todaySpent.toLocaleString()} грн`
-              : null,
-            sub: stats.budgetLeft
-              ? `Залишок: ${stats.budgetLeft.toLocaleString()}`
-              : null,
-          };
-        }
-      } catch {}
-      return { main: null, sub: null };
-    },
+    getPreview: () =>
+      selectModulePreview(
+        "finyk",
+        safeReadStringLS(STORAGE_KEYS.FINYK_QUICK_STATS),
+      ),
   },
   fizruk: {
     icon: (
@@ -165,19 +147,11 @@ const MODULE_CONFIGS: Record<ModuleId, ModuleConfig> = {
     accentClass: "bg-fizruk",
     description: "Тренування та прогрес",
     hasGoal: false,
-    getPreview: () => {
-      try {
-        const data = localStorage.getItem("fizruk_quick_stats");
-        if (data) {
-          const stats = JSON.parse(data);
-          return {
-            main: stats.weekWorkouts ? `${stats.weekWorkouts} трен.` : null,
-            sub: stats.streak ? `Серія: ${stats.streak} днів` : null,
-          };
-        }
-      } catch {}
-      return { main: null, sub: null };
-    },
+    getPreview: () =>
+      selectModulePreview(
+        "fizruk",
+        safeReadStringLS(STORAGE_KEYS.FIZRUK_QUICK_STATS),
+      ),
   },
   routine: {
     icon: (
@@ -201,25 +175,11 @@ const MODULE_CONFIGS: Record<ModuleId, ModuleConfig> = {
     accentClass: "bg-routine",
     description: "Звички та щоденні цілі",
     hasGoal: true,
-    getPreview: () => {
-      try {
-        const data = localStorage.getItem("routine_quick_stats");
-        if (data) {
-          const stats = JSON.parse(data);
-          return {
-            main:
-              stats.todayDone !== undefined
-                ? `${stats.todayDone}/${stats.todayTotal}`
-                : null,
-            sub: stats.streak ? `Серія: ${stats.streak} днів` : null,
-            progress: stats.todayTotal
-              ? (stats.todayDone / stats.todayTotal) * 100
-              : 0,
-          };
-        }
-      } catch {}
-      return { main: null, sub: null, progress: 0 };
-    },
+    getPreview: () =>
+      selectModulePreview(
+        "routine",
+        safeReadStringLS(STORAGE_KEYS.ROUTINE_QUICK_STATS),
+      ),
   },
   nutrition: {
     icon: (
@@ -244,22 +204,11 @@ const MODULE_CONFIGS: Record<ModuleId, ModuleConfig> = {
     accentClass: "bg-nutrition",
     description: "КБЖВ та раціон",
     hasGoal: true,
-    getPreview: () => {
-      try {
-        const data = localStorage.getItem("nutrition_quick_stats");
-        if (data) {
-          const stats = JSON.parse(data);
-          return {
-            main: stats.todayCal ? `${stats.todayCal} ккал` : null,
-            sub: stats.calGoal ? `Ціль: ${stats.calGoal} ккал` : null,
-            progress: stats.calGoal
-              ? (stats.todayCal / stats.calGoal) * 100
-              : 0,
-          };
-        }
-      } catch {}
-      return { main: null, sub: null, progress: 0 };
-    },
+    getPreview: () =>
+      selectModulePreview(
+        "nutrition",
+        safeReadStringLS(STORAGE_KEYS.NUTRITION_QUICK_STATS),
+      ),
   },
 };
 
@@ -479,7 +428,13 @@ function useMondayAutoDigest() {
 // WEEKLY DIGEST FOOTER — тихий лінк у нижньому ряду. Fresh-dot показується,
 // коли live-digest за цей тиждень існує.
 // ═══════════════════════════════════════════════════════════════════════════
-function WeeklyDigestFooter({ onExpand, fresh }) {
+function WeeklyDigestFooter({
+  onExpand,
+  fresh,
+}: {
+  onExpand: () => void;
+  fresh: boolean;
+}) {
   return (
     <button
       type="button"
@@ -507,12 +462,19 @@ function WeeklyDigestFooter({ onExpand, fresh }) {
 // ═══════════════════════════════════════════════════════════════════════════
 // MAIN HUB DASHBOARD
 // ═══════════════════════════════════════════════════════════════════════════
+interface HubDashboardProps {
+  onOpenModule: (module: string) => void;
+  onOpenChat?: () => void;
+  user: User | null;
+  onShowAuth: () => void;
+}
+
 export function HubDashboard({
   onOpenModule,
   onOpenChat: _onOpenChat,
   user,
   onShowAuth,
-}) {
+}: HubDashboardProps) {
   const [order, setOrder] = useState(loadOrder);
   useMondayAutoDigest();
 
@@ -532,15 +494,13 @@ export function HubDashboard({
   const hasRealEntry = detectFirstRealEntry();
   useFirstEntryCelebration(hasRealEntry);
   // Record today's session on mount so the proactive nudge actually
-  // accumulates days; scoped to once-per-mount via ref to avoid
-  // double-counting if the component re-renders. `-1` is used as the
-  // "uninitialized" marker because `recordSessionDay()` / `getSessionDays()`
-  // return `0` from their localStorage-unavailable catch path, which would
-  // otherwise re-fire the guard on every render.
-  const sessionDaysRef = useRef<number>(-1);
-  if (sessionDaysRef.current === -1) {
-    sessionDaysRef.current = recordSessionDay() || getSessionDays();
-  }
+  // accumulates days. Using state + effect instead of a ref guard in the
+  // render body — the ref pattern caused a localStorage write during the
+  // render phase, which React Strict Mode can double-invoke.
+  const [sessionDays, setSessionDays] = useState(-1);
+  useEffect(() => {
+    setSessionDays(recordSessionDay() || getSessionDays());
+  }, []);
   const SOFT_AUTH_SESSION_DAYS_THRESHOLD = 3;
   const [softAuthDismissed, setSoftAuthDismissed] = useState(() =>
     isSoftAuthDismissed(),
@@ -549,8 +509,7 @@ export function HubDashboard({
     !user &&
     !softAuthDismissed &&
     typeof onShowAuth === "function" &&
-    (hasRealEntry ||
-      sessionDaysRef.current >= SOFT_AUTH_SESSION_DAYS_THRESHOLD);
+    (hasRealEntry || sessionDays >= SOFT_AUTH_SESSION_DAYS_THRESHOLD);
 
   const { focus, rest, dismiss } = useDashboardFocus();
 

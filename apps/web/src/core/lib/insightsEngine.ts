@@ -8,6 +8,8 @@
  *   - Specific per-insight gates are documented below.
  */
 
+import { STORAGE_KEYS } from "@sergeant/shared";
+
 export interface Insight {
   id: string;
   emoji: string;
@@ -57,7 +59,7 @@ function localDateKey(d: Date = new Date()): string {
 }
 
 function parseFizrukWorkouts(): Workout[] {
-  const raw = localStorage.getItem("fizruk_workouts_v1");
+  const raw = localStorage.getItem(STORAGE_KEYS.FIZRUK_WORKOUTS);
   if (!raw) return [];
   try {
     const p = JSON.parse(raw) as Workout[] | { workouts?: Workout[] } | null;
@@ -128,12 +130,17 @@ function workoutDayInsight(): Insight | null {
 function activeWeeksSpendingInsight(): Insight | null {
   const workouts = parseFizrukWorkouts().filter((w) => w.endedAt);
   const raw = safeLS<Transaction[] | { txs?: Transaction[] }>(
-    "finyk_tx_cache",
+    STORAGE_KEYS.FINYK_TX_CACHE,
     [],
   );
   const txs: Transaction[] = Array.isArray(raw) ? raw : (raw?.txs ?? []);
-  const hiddenSet = new Set<string>(safeLS<string[]>("finyk_hidden_txs", []));
-  const txCategories = safeLS<Record<string, string>>("finyk_tx_cats", {});
+  const hiddenSet = new Set<string>(
+    safeLS<string[]>(STORAGE_KEYS.FINYK_HIDDEN_TXS, []),
+  );
+  const txCategories = safeLS<Record<string, string>>(
+    STORAGE_KEYS.FINYK_TX_CATS,
+    {},
+  );
   const transferIds = new Set<string>(
     Object.entries(txCategories)
       .filter(([, v]) => v === "internal_transfer")
@@ -214,7 +221,7 @@ function activeWeeksSpendingInsight(): Insight | null {
  * AND ≥ 4 distinct ISO weeks with any completion.
  */
 function bestHabitMonthInsight(): Insight | null {
-  const state = safeLS<RoutineState | null>("hub_routine_v1", null);
+  const state = safeLS<RoutineState | null>(STORAGE_KEYS.ROUTINE, null);
   if (!state) return null;
 
   const habits = (state.habits || []).filter((h) => !h.archived);
@@ -278,7 +285,7 @@ function bestHabitMonthInsight(): Insight | null {
  */
 function workoutKcalInsight(): Insight | null {
   const workouts = parseFizrukWorkouts().filter((w) => w.endedAt);
-  const log = safeLS<NutritionLog>("nutrition_log_v1", {});
+  const log = safeLS<NutritionLog>(STORAGE_KEYS.NUTRITION_LOG, {});
 
   const workoutDays = new Set<string>(
     workouts.map((w) => localDateKey(new Date(w.startedAt))),
@@ -330,8 +337,8 @@ function workoutKcalInsight(): Insight | null {
  * Requires ≥ 4 weeks with both habit and nutrition data.
  */
 function habitWeeksKcalInsight(): Insight | null {
-  const state = safeLS<RoutineState | null>("hub_routine_v1", null);
-  const log = safeLS<NutritionLog>("nutrition_log_v1", {});
+  const state = safeLS<RoutineState | null>(STORAGE_KEYS.ROUTINE, null);
+  const log = safeLS<NutritionLog>(STORAGE_KEYS.NUTRITION_LOG, {});
 
   if (!state) return null;
   const habits = (state.habits || []).filter((h) => !h.archived);

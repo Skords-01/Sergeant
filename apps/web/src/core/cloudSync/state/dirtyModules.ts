@@ -2,6 +2,19 @@ import { safeReadLS, safeWriteLS } from "@shared/lib/storage";
 import { DIRTY_MODULES_KEY, MODULE_MODIFIED_KEY } from "../config";
 import { emitStatusEvent } from "./events";
 
+// Cross-tab awareness: when another tab marks a module dirty or clears it,
+// emit a status event so this tab's sync hook re-evaluates. The write race
+// (two tabs simultaneously doing read→modify→write) is inherent to
+// localStorage, but its impact is limited — at worst one dirty mark is lost
+// for one sync cycle, and it will be re-marked on the next mutation.
+if (typeof window !== "undefined") {
+  window.addEventListener("storage", (event) => {
+    if (event.key === DIRTY_MODULES_KEY || event.key === MODULE_MODIFIED_KEY) {
+      emitStatusEvent();
+    }
+  });
+}
+
 export function getDirtyModules(): Record<string, true> {
   return safeReadLS<Record<string, true>>(DIRTY_MODULES_KEY, {}) || {};
 }

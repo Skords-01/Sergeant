@@ -111,7 +111,7 @@ const RESET_PASSWORD_PATH = "/reset-password";
 // Tiny effect-only component so the redirect is a declarative render,
 // not a `navigate()` call in the middle of AppInner — keeps the render
 // phase free of side effects and avoids the React warning.
-function RedirectTo({ to }) {
+function RedirectTo({ to }: { to: string }) {
   const navigate = useNavigate();
   useEffect(() => {
     navigate(to, { replace: true });
