@@ -49,6 +49,35 @@ describe("setCorsHeaders", () => {
     setCorsHeaders(res as never, req as never);
     expect(headers["Access-Control-Allow-Origin"]).toBeUndefined();
   });
+
+  it("sets Access-Control-Expose-Headers when exposeHeaders is provided", () => {
+    // Потрібно для Retry-After на 429 з /api/mono. Без expose-headers браузер
+    // приховує заголовок у cross-origin fetch, і client pagination loop не
+    // отримує retry-after → targeted backoff не працює.
+    const headers: Record<string, string> = {};
+    const res = {
+      setHeader(name: string, value: string) {
+        headers[name] = value;
+      },
+    };
+    const req = { headers: { origin: "http://localhost:5173" } };
+    setCorsHeaders(res as never, req as never, {
+      exposeHeaders: "Retry-After",
+    });
+    expect(headers["Access-Control-Expose-Headers"]).toBe("Retry-After");
+  });
+
+  it("omits Access-Control-Expose-Headers by default", () => {
+    const headers: Record<string, string> = {};
+    const res = {
+      setHeader(name: string, value: string) {
+        headers[name] = value;
+      },
+    };
+    const req = { headers: { origin: "http://localhost:5173" } };
+    setCorsHeaders(res as never, req as never);
+    expect(headers["Access-Control-Expose-Headers"]).toBeUndefined();
+  });
 });
 
 describe("isOriginAllowed (ALLOWED_ORIGIN_REGEX)", () => {

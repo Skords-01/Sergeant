@@ -45,6 +45,7 @@ interface CacheEntry {
   status: number;
   body: string;
   contentType: string | null;
+  retryAfter: string | null;
 }
 
 interface BankProxyMutableState extends BankProxyConfig {
@@ -150,6 +151,12 @@ export interface BankProxyResult {
   /** Сирий текст відповіді upstream-а. */
   body: string;
   contentType: string | null;
+  /**
+   * Сирий `Retry-After` з upstream-а — без парсингу, щоб хендлер сам вирішив,
+   * пропагувати клієнту чи транслювати у затримку. Потрібен для 429, який
+   * Monobank ставить на `/personal/statement` (1 req/60s/token).
+   */
+  retryAfter: string | null;
   fromCache: boolean;
   /** Скільки HTTP-спроб було зроблено (1..3); 0 — cache hit. */
   attempts: number;
@@ -203,6 +210,7 @@ export async function bankProxyFetch(
         status: hit.status,
         body: hit.body,
         contentType: hit.contentType,
+        retryAfter: hit.retryAfter,
         fromCache: true,
         attempts: 0,
       };
@@ -258,12 +266,14 @@ export async function bankProxyFetch(
       }
 
       const contentType = response.headers.get("content-type");
+      const retryAfter = response.headers.get("retry-after");
       if (cacheKey && response.ok) {
         cacheSet(cacheKey, {
           expires: Date.now() + state.cacheTtlMs,
           status: response.status,
           body,
           contentType,
+          retryAfter,
         });
       }
 
@@ -271,6 +281,7 @@ export async function bankProxyFetch(
         status: response.status,
         body,
         contentType,
+        retryAfter,
         fromCache: false,
         attempts: attempt + 1,
       };

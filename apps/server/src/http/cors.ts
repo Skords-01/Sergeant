@@ -85,6 +85,13 @@ export function isOriginAllowed(origin) {
 export interface CorsHeaderOptions {
   allowHeaders?: string;
   methods?: string;
+  /**
+   * Заголовки, які сервер хоче зробити видимими для JS у браузері через
+   * `Access-Control-Expose-Headers`. Без цього `fetch().headers.get("...")` у
+   * cross-origin запитах повертає `null` навіть якщо сервер заголовок
+   * встановив. Потрібен, щоб клієнт побачив `Retry-After` на 429.
+   */
+  exposeHeaders?: string;
 }
 
 export function setCorsHeaders(
@@ -92,8 +99,11 @@ export function setCorsHeaders(
   req: IncomingMessage,
   opts: CorsHeaderOptions = {},
 ): void {
-  const { allowHeaders = "Content-Type", methods = "GET, POST, OPTIONS" } =
-    opts;
+  const {
+    allowHeaders = "Content-Type",
+    methods = "GET, POST, OPTIONS",
+    exposeHeaders,
+  } = opts;
   const origin = req.headers.origin;
   if (origin && isOriginAllowed(origin)) {
     res.setHeader("Access-Control-Allow-Origin", origin);
@@ -102,4 +112,7 @@ export function setCorsHeaders(
   }
   res.setHeader("Access-Control-Allow-Headers", allowHeaders);
   res.setHeader("Access-Control-Allow-Methods", methods);
+  if (exposeHeaders) {
+    res.setHeader("Access-Control-Expose-Headers", exposeHeaders);
+  }
 }

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { createHttpClient } from "./httpClient";
+import { createHttpClient, parseRetryAfterMs } from "./httpClient";
 import { ApiError } from "./ApiError";
 
 // Test fixture — minimal client that uses default fetch and relative URLs,
@@ -245,6 +245,61 @@ describe("httpClient — AbortSignal", () => {
     await http.get("/api/x", { signal: ac.signal });
     const init = fn.mock.calls[0][1] as RequestInit;
     expect(init.signal).toBeDefined();
+  });
+
+  it("пропагує Retry-After у ApiError для 429 (delta-seconds)", async () => {
+    // Потрібно для Monobank `/personal/statement` 429 — клієнтський loop
+    // повинен побачити `err.retryAfterMs`, щоб зробити targeted backoff.
+    mockFetchOnce(
+      new Response(JSON.stringify({ error: "rate" }), {
+        status: 429,
+        headers: {
+          "content-type": "application/json",
+          "retry-after": "42",
+        },
+      }),
+    );
+    const err = await http.get("/api/x").catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(ApiError);
+    expect((err as ApiError).status).toBe(429);
+    expect((err as ApiError).retryAfterMs).toBe(42_000);
+  });
+
+  it("не парсить Retry-After для статусів != 429/503", async () => {
+    // Для 500/400 заголовок не має семантичного сенсу, щоб не збивати
+    // викликачів, що скролять за `.retryAfterMs`.
+    mockFetchOnce(
+      new Response(JSON.stringify({ error: "boom" }), {
+        status: 500,
+        headers: {
+          "content-type": "application/json",
+          "retry-after": "5",
+        },
+      }),
+    );
+    const err = await http.get("/api/x").catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(ApiError);
+    expect((err as ApiError).retryAfterMs).toBeUndefined();
+  });
+
+  it("parseRetryAfterMs: числа, HTTP-date, edge cases", () => {
+    // Явний unit-тест хелпера — потрібен, бо httpClient його ще й експортує
+    // через index.ts (для внутрішніх skill-hook-ів у мобілці).
+    expect(parseRetryAfterMs(null)).toBeUndefined();
+    expect(parseRetryAfterMs("")).toBeUndefined();
+    expect(parseRetryAfterMs("   ")).toBeUndefined();
+    expect(parseRetryAfterMs("0")).toBeUndefined();
+    expect(parseRetryAfterMs("not-a-date")).toBeUndefined();
+    expect(parseRetryAfterMs("45")).toBe(45_000);
+    // HTTP-date: 60 s у майбутньому
+    const now = Date.now();
+    const futureDate = new Date(now + 60_000).toUTCString();
+    const parsed = parseRetryAfterMs(futureDate, now);
+    expect(parsed).toBeGreaterThan(59_000);
+    expect(parsed).toBeLessThanOrEqual(60_000);
+    // HTTP-date у минулому → undefined
+    const pastDate = new Date(now - 1_000).toUTCString();
+    expect(parseRetryAfterMs(pastDate, now)).toBeUndefined();
   });
 
   it("timeoutMs кидає aborted-помилку", async () => {

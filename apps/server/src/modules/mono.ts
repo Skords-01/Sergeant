@@ -34,7 +34,7 @@ export default async function handler(
     return;
   }
 
-  const { status, body, contentType } = await bankProxyFetch({
+  const { status, body, contentType, retryAfter } = await bankProxyFetch({
     upstream: "monobank",
     baseUrl: "https://api.monobank.ua",
     path,
@@ -43,6 +43,13 @@ export default async function handler(
   });
 
   if (status < 200 || status >= 300) {
+    // Monobank на `/personal/statement` ставить 1 req/60 s/token і повертає
+    // 429 + `Retry-After`. Без пропагації заголовка клієнт (pagination loop у
+    // `api-client/src/endpoints/mono.ts`) не міг дочекатися безпечного retry —
+    // `ApiError.retryAfterMs` був `undefined`, і вся виписка падала.
+    if (status === 429 && retryAfter) {
+      res.setHeader("Retry-After", retryAfter);
+    }
     res.status(status).json({
       error: status === 429 ? "Занадто багато запитів" : body,
     });

@@ -7,6 +7,7 @@ export {
   createHttpClient,
   applyApiPrefix,
   DEFAULT_API_PREFIX,
+  parseRetryAfterMs,
 } from "./httpClient";
 export type { HttpClient, HttpClientConfig, TokenProvider } from "./httpClient";
 
