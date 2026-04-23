@@ -1,19 +1,15 @@
 /**
- * Jest render + behaviour tests for the Fizruk Workouts page (Phase 6).
+ * Jest render + behaviour tests for the Fizruk Workouts page.
  *
  * Coverage:
- *  - Empty state renders when there is no active workout and no journal.
- *  - Pressing "Почати тренування" starts an active workout and shows
- *    the elapsed timer widget.
- *  - Switching to the journal tab renders one row per persisted workout.
+ *  - Home view renders the active-workout hero, catalog quick-link,
+ *    and the empty recent-workouts placeholder.
+ *  - Pressing "Почати тренування" starts an active workout and routes
+ *    to the catalog subview (elapsed timer visible in the hero).
+ *  - Tapping "Всі →" from home opens the full journal subview.
  *  - Tapping a catalogue exercise adds it to the active workout.
  *  - Opening the set editor, filling in weight+reps and saving appends
  *    a set to the active item and persists it to MMKV.
- *
- * All persistence flows through the real `useFizrukWorkouts` /
- * `useActiveFizrukWorkout` hooks, so the in-memory MMKV shim
- * registered in `jest.setup.js` exercises the hook-reducer-storage
- * contract end-to-end.
  */
 
 import { AccessibilityInfo } from "react-native";
@@ -49,18 +45,18 @@ afterEach(() => {
 });
 
 describe("Fizruk Workouts page (mobile)", () => {
-  it("renders the no-active-workout empty state by default", () => {
+  it("renders the home view with start CTA and catalog tile by default", () => {
     render(<Workouts />);
 
     expect(screen.getByText("Тренування")).toBeTruthy();
     expect(screen.getByTestId("fizruk-workouts-active")).toBeTruthy();
     expect(screen.getByTestId("fizruk-workouts-active-start")).toBeTruthy();
-    // Segmented tabs visible.
-    expect(screen.getByTestId("fizruk-workouts-mode-catalog")).toBeTruthy();
-    expect(screen.getByTestId("fizruk-workouts-mode-log")).toBeTruthy();
+    expect(screen.getByTestId("fizruk-workouts-open-catalog")).toBeTruthy();
+    // Recent-workouts empty-state hint is visible on first load.
+    expect(screen.getByTestId("fizruk-workouts-recent")).toBeTruthy();
   });
 
-  it("starts a new workout when the primary CTA is pressed", () => {
+  it("starts a new workout when the primary CTA is pressed and jumps to the catalog", () => {
     render(<Workouts />);
 
     fireEvent.press(screen.getByTestId("fizruk-workouts-active-start"));
@@ -68,6 +64,8 @@ describe("Fizruk Workouts page (mobile)", () => {
     // Elapsed timer takes over the panel.
     expect(screen.getByTestId("fizruk-workouts-active-elapsed")).toBeTruthy();
     expect(screen.getByTestId("fizruk-workouts-active-finish")).toBeTruthy();
+    // The catalog subview is now active (search input visible).
+    expect(screen.getByTestId("fizruk-workouts-catalog-search")).toBeTruthy();
 
     const rawActive = _getMMKVInstance().getString(
       STORAGE_KEYS.FIZRUK_ACTIVE_WORKOUT,
@@ -81,7 +79,7 @@ describe("Fizruk Workouts page (mobile)", () => {
     expect(parsed).toHaveLength(1);
   });
 
-  it("renders journal rows when switched to the log tab", () => {
+  it("opens the journal subview from the 'Всі →' shortcut", () => {
     safeWriteLS(STORAGE_KEYS.FIZRUK_WORKOUTS, [
       {
         id: "w_older",
@@ -107,7 +105,7 @@ describe("Fizruk Workouts page (mobile)", () => {
 
     render(<Workouts />);
 
-    fireEvent.press(screen.getByTestId("fizruk-workouts-mode-log"));
+    fireEvent.press(screen.getByTestId("fizruk-workouts-open-journal"));
 
     expect(
       screen.getByTestId("fizruk-workouts-journal-row-w_older"),
@@ -120,11 +118,9 @@ describe("Fizruk Workouts page (mobile)", () => {
   it("adds the tapped catalogue exercise to the active workout", () => {
     render(<Workouts />);
 
-    // Start a workout so tapping the catalogue doesn't bootstrap one.
     fireEvent.press(screen.getByTestId("fizruk-workouts-active-start"));
 
-    // Filter down to a single exercise via the search field so the
-    // test doesn't depend on the bundled catalog's ordering.
+    // Home → catalog jump happens automatically via handleStart.
     fireEvent.changeText(
       screen.getByTestId("fizruk-workouts-catalog-search"),
       "Жим штанги лежачи",
@@ -167,14 +163,16 @@ describe("Fizruk Workouts page (mobile)", () => {
       fireEvent.press(rows[0]!);
     });
 
-    // Find the first active-item card and its "+ Додати сет" button.
+    // Navigate back to home to access the active-item cards (they
+    // live alongside the hero, not inside the catalog subview).
+    fireEvent.press(screen.getByTestId("fizruk-workouts-back"));
+
     const addSetButtons = screen.getAllByTestId(/-add-set$/);
     expect(addSetButtons.length).toBeGreaterThan(0);
     act(() => {
       fireEvent.press(addSetButtons[0]!);
     });
 
-    // Fill the weight + reps and save.
     fireEvent.changeText(
       screen.getByTestId("fizruk-workouts-set-editor-weight-input"),
       "60",

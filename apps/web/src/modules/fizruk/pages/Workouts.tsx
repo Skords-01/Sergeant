@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@shared/components/ui/Button";
-import { subtleNavButtonClass } from "@shared/components/ui/buttonPresets";
 import { ConfirmDialog } from "@shared/components/ui/ConfirmDialog";
-import { Segmented } from "@shared/components/ui/Segmented";
 import { Skeleton } from "@shared/components/ui/Skeleton";
 import { useToast } from "@shared/hooks/useToast";
 import { showUndoToast } from "@shared/lib/undoToast";
@@ -23,6 +21,7 @@ import {
   ACTIVE_WORKOUT_KEY,
   summarizeWorkoutForFinish,
 } from "@sergeant/fizruk-domain";
+import { computeWorkoutSummary } from "@sergeant/fizruk-domain/domain";
 
 // Shared AudioContext reused across beeps. Creating/closing one per call
 // races with quick successive rest-timer completions and fights iOS' audio
@@ -75,12 +74,7 @@ function vibrateRestComplete() {
   hapticPattern([200, 100, 200]);
 }
 
-type WorkoutsMode = "catalog" | "log" | "templates";
-const WORKOUTS_MODE_ITEMS = [
-  { value: "catalog", label: "Каталог" },
-  { value: "log", label: "Журнал" },
-  { value: "templates", label: "Шаблони" },
-] as const satisfies ReadonlyArray<{ value: WorkoutsMode; label: string }>;
+type WorkoutsView = "home" | "catalog" | "log" | "templates";
 
 export function Workouts() {
   const toast = useToast();
@@ -112,7 +106,19 @@ export function Workouts() {
   const [selected, setSelected] = useState(null);
   const [open, setOpen] = useState(() => ({}));
   const [addOpen, setAddOpen] = useState(false);
-  const [mode, setMode] = useState("catalog"); // catalog | log | templates
+  // `view` drives the page chrome:
+  //   "home"      — new landing layout with active/start hero, recent 3
+  //                 journal rows and quick-link tiles. Replaces the old
+  //                 default that dropped users straight into the catalog.
+  //   "log"       — active-workout panel + exercise catalog below (this is
+  //                 where you actually run a session and add exercises).
+  //   "catalog"   — browse-only catalog (no active-workout wiring).
+  //   "templates" — workout templates list.
+  const [view, setView] = useState<WorkoutsView>("home");
+  // `mode` is still exposed to legacy subcomponents that branch on
+  // "catalog" vs "log" (exercise-in-list click handler, `ExerciseDetailSheet`,
+  // `WorkoutCatalogSection`). Kept in sync with `view` for those subviews.
+  const mode = view === "templates" || view === "home" ? "catalog" : view;
   const [restTimer, setRestTimer] = useState(null);
   const [activeWorkoutId, setActiveWorkoutId] = useState(() => {
     try {
@@ -175,10 +181,10 @@ export function Workouts() {
     try {
       const m = sessionStorage.getItem("fizruk_workouts_mode");
       if (m === "templates") {
-        setMode("templates");
+        setView("templates");
         sessionStorage.removeItem("fizruk_workouts_mode");
       } else if (m === "log") {
-        setMode("log");
+        setView("log");
         sessionStorage.removeItem("fizruk_workouts_mode");
       }
     } catch {}
@@ -298,7 +304,7 @@ export function Workouts() {
       }
       if (tpl?.id) templateApi.markTemplateUsed(tpl.id);
       setActiveWorkoutId(w.id);
-      setMode("log");
+      setView("log");
     },
     [exercises, createWorkout, addItem, updateWorkout, templateApi],
   );
@@ -394,61 +400,80 @@ export function Workouts() {
     [workouts],
   );
 
+  const recentWorkouts = useMemo(
+    () =>
+      [...(workouts || [])]
+        .sort(
+          (a, b) =>
+            new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime(),
+        )
+        .slice(0, 3),
+    [workouts],
+  );
+
   return (
     <div className="flex-1 overflow-y-auto">
       <div className="max-w-4xl mx-auto px-4 pt-4 page-tabbar-pad">
-        <div className="flex items-center justify-between gap-3 mb-3">
-          <div>
-            <h1 className="text-xl font-bold text-text">Тренування</h1>
-            <p className="text-xs text-subtle mt-0.5">
-              {activeWorkout && !activeWorkout.endedAt
-                ? `Активне · ${(activeWorkout.items || []).length} вправ`
-                : `Завершено: ${finishedCount}`}
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3 mb-3">
+          {view !== "home" ? (
             <button
               type="button"
-              className={subtleNavButtonClass}
-              onClick={() => (window.location.hash = "#progress")}
+              className="w-9 h-9 -ml-1 rounded-lg flex items-center justify-center text-text/80 hover:bg-surface-2"
+              onClick={() => setView("home")}
+              aria-label="Повернутись до тренувань"
             >
-              Прогрес →
+              ‹
             </button>
-            <button
-              type="button"
-              className={subtleNavButtonClass}
-              onClick={() => (window.location.hash = "#programs")}
-            >
-              Програми →
-            </button>
+          ) : null}
+          <div className="flex-1">
+            <h1 className="text-xl font-bold text-text">
+              {view === "catalog"
+                ? "Каталог вправ"
+                : view === "templates"
+                  ? "Шаблони"
+                  : view === "log"
+                    ? activeWorkout && !activeWorkout.endedAt
+                      ? "Активне тренування"
+                      : "Журнал"
+                    : "Тренування"}
+            </h1>
+            {view === "home" ? (
+              <p className="text-xs text-subtle mt-0.5">
+                {activeWorkout && !activeWorkout.endedAt
+                  ? `Активне · ${(activeWorkout.items || []).length} вправ`
+                  : finishedCount > 0
+                    ? `Завершено: ${finishedCount}`
+                    : "Перше тренування — попереду"}
+              </p>
+            ) : null}
           </div>
+          {view === "catalog" ? (
+            <Button
+              size="sm"
+              className="h-9 min-h-[44px] px-4"
+              onClick={() => setAddOpen(true)}
+              aria-label="Додати вправу в каталог"
+            >
+              + Додати
+            </Button>
+          ) : null}
         </div>
 
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <Segmented
-              tone="solid"
-              size="md"
-              accent="fizruk"
-              ariaLabel="Режим екрану тренувань"
-              items={WORKOUTS_MODE_ITEMS}
-              value={mode}
-              onChange={setMode}
-            />
-            {mode === "catalog" && (
-              <Button
-                size="sm"
-                className="h-9 min-h-[44px] px-4"
-                onClick={() => setAddOpen(true)}
-                aria-label="Додати вправу в каталог"
-              >
-                + Додати
-              </Button>
-            )}
-          </div>
-        </div>
+        {view === "home" ? (
+          <WorkoutsHome
+            activeWorkout={activeWorkout}
+            activeDuration={activeDuration}
+            recentWorkouts={recentWorkouts}
+            createWorkout={createWorkout}
+            setActiveWorkoutId={setActiveWorkoutId}
+            onOpenSession={() => setView("log")}
+            onOpenCatalog={() => setView("catalog")}
+            onOpenTemplates={() => setView("templates")}
+            onOpenJournal={() => setView("log")}
+          />
+        ) : null}
 
-        {mode === "log" && !workoutsLoaded && (
+        {view === "log" && !workoutsLoaded && (
           // First-paint placeholder while `useWorkouts` is still rehydrating
           // from `localStorage` (one tick on mount). Prevents the "порожньо"
           // empty-state from flashing before real data renders — matches the
@@ -464,7 +489,7 @@ export function Workouts() {
             <Skeleton className="h-20 w-full" />
           </div>
         )}
-        {mode === "log" && workoutsLoaded && (
+        {view === "log" && workoutsLoaded && (
           <WorkoutJournalSection
             activeWorkout={activeWorkout}
             activeDuration={activeDuration}
@@ -478,7 +503,7 @@ export function Workouts() {
             retroTime={retroTime}
             setRetroTime={setRetroTime}
             createWorkout={createWorkout}
-            setMode={setMode}
+            setMode={setView}
             musclesUk={musclesUk}
             recBy={rec.by}
             lastByExerciseId={lastByExerciseId}
@@ -495,7 +520,7 @@ export function Workouts() {
           />
         )}
 
-        {mode === "templates" && (
+        {view === "templates" && (
           <WorkoutTemplatesSection
             exercises={exercises}
             search={search}
@@ -508,7 +533,7 @@ export function Workouts() {
           />
         )}
 
-        {(mode === "catalog" || mode === "log") && (
+        {(view === "catalog" || view === "log") && (
           <WorkoutCatalogSection
             mode={mode}
             q={q}
@@ -621,6 +646,223 @@ export function Workouts() {
         }}
         onCancel={() => setRiskyTemplateConfirm(null)}
       />
+    </div>
+  );
+}
+
+/**
+ * Landing view for the Workouts page.
+ *
+ * Shows one dominant path ("Почати тренування" → active session) plus two
+ * supporting shortcuts (recent sessions preview and quick-link tiles to
+ * the catalog / templates / full journal).
+ */
+interface WorkoutsHomeProps {
+  activeWorkout: {
+    id: string;
+    startedAt: string;
+    endedAt?: string | null;
+    items?: ReadonlyArray<unknown>;
+  } | null;
+  activeDuration: string | null;
+  recentWorkouts: ReadonlyArray<{
+    id: string;
+    startedAt: string;
+    endedAt?: string | null;
+    items?: ReadonlyArray<unknown>;
+  }>;
+  createWorkout: () => { id: string };
+  setActiveWorkoutId: (id: string | null) => void;
+  onOpenSession: () => void;
+  onOpenCatalog: () => void;
+  onOpenTemplates: () => void;
+  onOpenJournal: () => void;
+}
+
+function WorkoutsHome({
+  activeWorkout,
+  activeDuration,
+  recentWorkouts,
+  createWorkout,
+  setActiveWorkoutId,
+  onOpenSession,
+  onOpenCatalog,
+  onOpenTemplates,
+  onOpenJournal,
+}: WorkoutsHomeProps) {
+  const hasActive = !!activeWorkout && !activeWorkout.endedAt;
+
+  const handleStart = () => {
+    const w = createWorkout();
+    setActiveWorkoutId(w.id);
+    onOpenSession();
+  };
+
+  return (
+    <div className="space-y-4">
+      {hasActive ? (
+        <div className="rounded-xl border border-teal-500/40 bg-teal-500/10 p-4">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <div className="text-xs font-semibold text-teal-700">
+                Активне тренування
+              </div>
+              <div className="mt-1 text-sm text-text">
+                <span className="font-bold">{activeDuration ?? "00:00"}</span>
+                {" · "}
+                {(activeWorkout?.items || []).length} вправ
+              </div>
+            </div>
+            <Button className="h-11 px-4" onClick={onOpenSession}>
+              Відкрити →
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div className="rounded-xl border border-border bg-surface p-4 text-center">
+          <div className="text-sm font-semibold text-text">
+            Немає активного тренування
+          </div>
+          <div className="text-xs text-subtle mt-1">
+            Почни нове або обери один із збережених шаблонів.
+          </div>
+          <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <Button className="h-12 text-base" onClick={handleStart}>
+              ▶︎ Почати тренування
+            </Button>
+            <Button
+              variant="ghost"
+              className="h-12 text-base"
+              onClick={onOpenTemplates}
+            >
+              📋 Почати з шаблону →
+            </Button>
+          </div>
+        </div>
+      )}
+
+      <div>
+        <div className="flex items-center justify-between px-1 mb-2">
+          <h2 className="text-sm font-semibold text-text/80">
+            Останні тренування
+          </h2>
+          {recentWorkouts.length > 0 ? (
+            <button
+              type="button"
+              className="text-xs font-semibold text-teal-700 hover:underline"
+              onClick={onOpenJournal}
+            >
+              Всі →
+            </button>
+          ) : null}
+        </div>
+        {recentWorkouts.length > 0 ? (
+          <ul className="space-y-2">
+            {recentWorkouts.map((w) => (
+              <li key={w.id}>
+                <button
+                  type="button"
+                  className="w-full text-left rounded-xl border border-border bg-surface-2 px-3 py-3 flex items-center justify-between hover:bg-surface-3"
+                  onClick={onOpenJournal}
+                >
+                  <RecentWorkoutSummary workout={w} />
+                  <span className="text-subtle">›</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <div className="rounded-xl border border-border bg-surface-2 p-4 text-xs text-subtle">
+            Після першого завершеного тренування тут з&apos;являться останні
+            сесії.
+          </div>
+        )}
+      </div>
+
+      <div>
+        <h2 className="text-sm font-semibold text-text/80 px-1 mb-2">
+          Довідники
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <button
+            type="button"
+            className="rounded-xl border border-border bg-surface-2 p-4 text-left hover:bg-surface-3"
+            onClick={onOpenCatalog}
+          >
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">📚</span>
+              <div className="flex-1">
+                <div className="text-sm font-semibold text-text">
+                  Каталог вправ
+                </div>
+                <div className="text-xs text-subtle mt-0.5">
+                  Пошук · групи м&apos;язів · своя вправа
+                </div>
+              </div>
+              <span className="text-subtle">›</span>
+            </div>
+          </button>
+          <button
+            type="button"
+            className="rounded-xl border border-border bg-surface-2 p-4 text-left hover:bg-surface-3"
+            onClick={onOpenTemplates}
+          >
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">📋</span>
+              <div className="flex-1">
+                <div className="text-sm font-semibold text-text">Шаблони</div>
+                <div className="text-xs text-subtle mt-0.5">
+                  Збережені набори вправ на швидкий старт
+                </div>
+              </div>
+              <span className="text-subtle">›</span>
+            </div>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+interface RecentWorkoutSummaryProps {
+  workout: {
+    id: string;
+    startedAt: string;
+    endedAt?: string | null;
+    items?: ReadonlyArray<unknown>;
+  };
+}
+
+function RecentWorkoutSummary({ workout }: RecentWorkoutSummaryProps) {
+  const summary = useMemo(
+    () => computeWorkoutSummary(workout as never),
+    [workout],
+  );
+  const started = new Date(workout.startedAt);
+  const dateLabel = started.toLocaleDateString("uk-UA", {
+    day: "numeric",
+    month: "short",
+  });
+  const parts: string[] = [];
+  if (summary.itemCount > 0) parts.push(`${summary.itemCount} вправ`);
+  if (summary.setCount > 0) parts.push(`${summary.setCount} сетів`);
+  const durMin = summary.durationSec
+    ? Math.max(1, Math.round(summary.durationSec / 60))
+    : null;
+  if (durMin !== null) parts.push(`${durMin} хв`);
+  const subtitle = parts.length ? parts.join(" · ") : "порожнє тренування";
+
+  return (
+    <div className="flex-1 pr-2">
+      <div className="flex items-center gap-2">
+        <span className="text-sm font-semibold text-text">{dateLabel}</span>
+        {!summary.isFinished ? (
+          <span className="text-[10px] uppercase font-bold text-amber-700 bg-amber-500/15 px-2 py-0.5 rounded-full">
+            Чернетка
+          </span>
+        ) : null}
+      </div>
+      <div className="text-xs text-subtle mt-0.5 truncate">{subtitle}</div>
     </div>
   );
 }

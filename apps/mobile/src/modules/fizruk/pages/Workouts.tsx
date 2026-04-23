@@ -1,34 +1,26 @@
 /**
- * Fizruk / Workouts page — mobile port (Phase 6).
+ * Fizruk / Workouts page — home + subview layout.
  *
- * Web counterpart: `apps/web/src/modules/fizruk/pages/Workouts.tsx` (626 LOC).
+ * Replaces the older 3-tab layout (Каталог / Журнал / Шаблони + scattered
+ * top-right nav) with a single home screen fronted by the active-workout
+ * panel. Recent sessions surface inline and the catalog opens as a
+ * dedicated subview (back chevron → home), which gives the page one clear
+ * primary action ("Почати тренування") instead of five competing ones.
  *
- * Full port of the three core surfaces of the web page:
- *   1. Active-workout status strip (start / elapsed / finish + quick rest buttons).
- *   2. Searchable, primary-group-filtered exercise catalogue (built-in +
- *      custom), routed through `@sergeant/fizruk-domain/domain/workouts`
- *      pure helpers.
- *   3. Journal — newest-first list of sessions grouped by local date,
- *      with per-row aggregate summaries.
+ * Internal state machine:
+ *   `view = 'home'    ` — active/start hero + recent 3 journal rows +
+ *                         quick-link tile to the catalog.
+ *   `view = 'catalog' ` — full-screen exercise catalog (search +
+ *                         grouped list + detail tap).
+ *   `view = 'journal' ` — full journal list grouped by day.
  *
- * The catalogue tap → adds an exercise to the active workout; the
- * active-workout strip then reveals each item with an "add set" CTA
- * that opens the `ActiveSetEditor` sheet (weight / reps / optional
- * RPE, validated through the domain helpers, with haptics).
- *
- * Explicitly **excluded** from this port (covered by follow-up PRs):
- *   - Templates (WorkoutTemplates UI — PR #477 scoped it out).
- *   - Exercise detail sheet + recovery overlays (lands with the Exercise
- *     detail page PR).
- *   - Photo progress (ruled out by PR #468).
- *
- * Store integration: reuses `useActiveFizrukWorkout`, `useFizrukWorkouts`
- * and `useCustomExercises` — no new persisted slot. Both hooks already
- * route through `enqueueChange` (Task #7 pattern) so CloudSync picks
- * up changes automatically.
+ * All CRUD (start/finish workout, add exercise to active workout, log
+ * sets) still flows through `useActiveFizrukWorkout` / `useFizrukWorkouts`
+ * just like before. Only the chrome changed.
  */
 
 import {
+  computeWorkoutSummary,
   exerciseDisplayName,
   type WorkoutExerciseCatalogEntry,
   type WorkoutSet,
@@ -42,7 +34,6 @@ import { router } from "expo-router";
 
 import { hapticSuccess, hapticTap, hapticWarning } from "@sergeant/shared";
 
-import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 
 import { RestTimerOverlay } from "../components/RestTimerOverlay";
@@ -63,12 +54,7 @@ import {
   type FizrukWorkoutItem,
 } from "../hooks/useFizrukWorkouts";
 
-type WorkoutsMode = "catalog" | "log";
-
-const MODE_ITEMS: ReadonlyArray<{ value: WorkoutsMode; label: string }> = [
-  { value: "catalog", label: "Каталог" },
-  { value: "log", label: "Журнал" },
-];
+type WorkoutsView = "home" | "catalog" | "journal";
 
 interface SetEditorState {
   workoutId: string;
@@ -97,14 +83,9 @@ export function Workouts({ testID = "fizruk-workouts" }: WorkoutsProps) {
     cancelRestTimer,
   } = useActiveFizrukWorkout();
 
-  const [mode, setMode] = useState<WorkoutsMode>("catalog");
+  const [view, setView] = useState<WorkoutsView>("home");
   const [setEditor, setSetEditor] = useState<SetEditorState | null>(null);
 
-  // Merged list: custom first, built-in after (deduped by id). We
-  // don't route through `mergeExerciseCatalog` because that helper
-  // insists on the stricter `RawExerciseDef` shape (required
-  // `name.uk`); the mobile catalog entry type is deliberately more
-  // permissive so legacy custom-exercise records never get dropped.
   const catalog = useMemo<WorkoutExerciseCatalogEntry[]>(() => {
     const custom: WorkoutExerciseCatalogEntry[] = customExercises.map((ex) => ({
       id: ex.id,
@@ -139,11 +120,19 @@ export function Workouts({ testID = "fizruk-workouts" }: WorkoutsProps) {
     activeWorkout?.endedAt ? null : (activeWorkout?.startedAt ?? null),
   );
 
+  const finishedCount = useMemo(
+    () => workouts.filter((w) => w.endedAt).length,
+    [workouts],
+  );
+
   const handleStart = useCallback(() => {
     hapticSuccess();
     const created = createWorkout();
     setActiveWorkoutId(created.id);
-    setMode("catalog");
+    // Jump straight into the catalog so the next tap can add an
+    // exercise — matches the mental model of "I pressed Start, now
+    // what do I do first".
+    setView("catalog");
   }, [createWorkout, setActiveWorkoutId]);
 
   const handleFinish = useCallback(() => {
@@ -152,6 +141,7 @@ export function Workouts({ testID = "fizruk-workouts" }: WorkoutsProps) {
     endWorkout(activeWorkoutId);
     clearActiveWorkout();
     cancelRestTimer();
+    setView("home");
   }, [activeWorkoutId, cancelRestTimer, clearActiveWorkout, endWorkout]);
 
   const handleStartRest = useCallback(
@@ -166,7 +156,6 @@ export function Workouts({ testID = "fizruk-workouts" }: WorkoutsProps) {
     (ex: WorkoutExerciseCatalogEntry) => {
       if (!activeWorkoutId) {
         hapticWarning();
-        // Auto-start a workout for convenience.
         const created = createWorkout();
         setActiveWorkoutId(created.id);
         const isCardio = ex.primaryGroup === "cardio";
@@ -262,6 +251,23 @@ export function Workouts({ testID = "fizruk-workouts" }: WorkoutsProps) {
 
   const activeItems = activeWorkout?.items ?? [];
 
+  const recentWorkouts = useMemo(
+    () =>
+      [...workouts]
+        .sort(
+          (a, b) =>
+            new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime(),
+        )
+        .slice(0, 3),
+    [workouts],
+  );
+
+  const subtitle = activeWorkout
+    ? `Активне · ${activeItems.length} вправ`
+    : finishedCount > 0
+      ? `Завершено: ${finishedCount}`
+      : "Перше тренування — попереду";
+
   return (
     <SafeAreaView
       className="flex-1 bg-cream-50"
@@ -269,20 +275,42 @@ export function Workouts({ testID = "fizruk-workouts" }: WorkoutsProps) {
       testID={testID}
     >
       <View className="flex-row items-center gap-2 px-4 pt-4 pb-1">
-        <Text className="text-[22px]">🏋️</Text>
-        <Text className="text-[22px] font-bold text-stone-900 flex-1">
-          Тренування
-        </Text>
+        {view !== "home" ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Назад"
+            onPress={() => setView("home")}
+            testID={`${testID}-back`}
+            className="w-10 h-10 items-center justify-center -ml-2"
+            hitSlop={8}
+          >
+            <Text className="text-2xl text-stone-800">‹</Text>
+          </Pressable>
+        ) : (
+          <Text className="text-[22px]">🏋️</Text>
+        )}
+        <View className="flex-1">
+          <Text className="text-[22px] font-bold text-stone-900">
+            {view === "catalog"
+              ? "Каталог вправ"
+              : view === "journal"
+                ? "Журнал"
+                : "Тренування"}
+          </Text>
+          {view === "home" ? (
+            <Text className="text-xs text-stone-500 mt-0.5">{subtitle}</Text>
+          ) : null}
+        </View>
       </View>
-      <Text className="px-4 text-sm text-stone-600 leading-snug mb-3">
-        Каталог вправ, активне тренування і журнал — все в одному місці.
-      </Text>
 
       <ScrollView
         className="flex-1"
         contentContainerStyle={{ padding: 16, paddingBottom: 140, gap: 16 }}
         testID={`${testID}-scroll`}
       >
+        {/* Active-workout strip stays visible across all subviews so the
+            elapsed timer + "Завершити" button are always reachable
+            while browsing the catalog or journal. */}
         <WorkoutActivePanel
           activeWorkoutId={activeWorkoutId}
           elapsedSec={elapsedSec}
@@ -292,57 +320,112 @@ export function Workouts({ testID = "fizruk-workouts" }: WorkoutsProps) {
           testID={`${testID}-active`}
         />
 
-        {activeWorkout && activeItems.length > 0 ? (
-          <View className="gap-3" testID={`${testID}-items`}>
-            <Text className="text-sm font-semibold text-stone-900 px-1">
-              Вправи тренування
-            </Text>
-            <View className="gap-3">
-              {activeItems.map((item) => (
-                <ActiveItemCard
-                  key={item.id}
-                  item={item}
-                  onAddSet={() => openNewSetEditor(item)}
-                  onEditSet={(setIndex) => openEditSetEditor(item, setIndex)}
-                  testID={`${testID}-item-${item.id}`}
-                />
-              ))}
+        {view === "home" ? (
+          <>
+            {activeWorkout && activeItems.length > 0 ? (
+              <View className="gap-3" testID={`${testID}-items`}>
+                <Text className="text-sm font-semibold text-stone-900 px-1">
+                  Вправи тренування
+                </Text>
+                <View className="gap-3">
+                  {activeItems.map((item) => (
+                    <ActiveItemCard
+                      key={item.id}
+                      item={item}
+                      onAddSet={() => openNewSetEditor(item)}
+                      onEditSet={(setIndex) =>
+                        openEditSetEditor(item, setIndex)
+                      }
+                      testID={`${testID}-item-${item.id}`}
+                    />
+                  ))}
+                </View>
+              </View>
+            ) : null}
+
+            <View className="gap-3" testID={`${testID}-quicklinks`}>
+              <Text className="text-sm font-semibold text-stone-700 px-1">
+                Довідники
+              </Text>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Каталог вправ"
+                onPress={() => {
+                  hapticTap();
+                  setView("catalog");
+                }}
+                testID={`${testID}-open-catalog`}
+              >
+                {({ pressed }) => (
+                  <Card
+                    variant="default"
+                    radius="lg"
+                    padding="md"
+                    className={pressed ? "opacity-80" : ""}
+                  >
+                    <View className="flex-row items-center gap-3">
+                      <Text className="text-2xl">📚</Text>
+                      <View className="flex-1">
+                        <Text className="text-sm font-semibold text-stone-900">
+                          Каталог вправ
+                        </Text>
+                        <Text className="text-[11px] text-stone-500 mt-0.5">
+                          Пошук · групи м&apos;язів · своя вправа
+                        </Text>
+                      </View>
+                      <Text className="text-stone-400 text-lg">›</Text>
+                    </View>
+                  </Card>
+                )}
+              </Pressable>
             </View>
-          </View>
+
+            <View className="gap-3" testID={`${testID}-recent`}>
+              <View className="flex-row items-center justify-between px-1">
+                <Text className="text-sm font-semibold text-stone-700">
+                  Останні тренування
+                </Text>
+                {workouts.length > 0 ? (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Всі тренування"
+                    onPress={() => {
+                      hapticTap();
+                      setView("journal");
+                    }}
+                    testID={`${testID}-open-journal`}
+                    hitSlop={8}
+                  >
+                    <Text className="text-xs font-semibold text-teal-700">
+                      Всі →
+                    </Text>
+                  </Pressable>
+                ) : null}
+              </View>
+              {recentWorkouts.length > 0 ? (
+                <View className="gap-2">
+                  {recentWorkouts.map((w) => (
+                    <RecentWorkoutRow
+                      key={w.id}
+                      workout={w}
+                      isActive={w.id === activeWorkoutId}
+                      testID={`${testID}-recent-${w.id}`}
+                    />
+                  ))}
+                </View>
+              ) : (
+                <Card variant="flat" radius="lg" padding="lg">
+                  <Text className="text-sm text-stone-600">
+                    Після першого завершеного тренування тут з&apos;являться
+                    останні сесії.
+                  </Text>
+                </Card>
+              )}
+            </View>
+          </>
         ) : null}
 
-        <View className="flex-row gap-2 px-0" testID={`${testID}-segmented`}>
-          {MODE_ITEMS.map((entry) => {
-            const active = mode === entry.value;
-            return (
-              <Pressable
-                key={entry.value}
-                accessibilityRole="button"
-                accessibilityState={{ selected: active }}
-                accessibilityLabel={entry.label}
-                onPress={() => setMode(entry.value)}
-                testID={`${testID}-mode-${entry.value}`}
-                className={
-                  active
-                    ? "flex-1 h-10 rounded-2xl bg-teal-600 items-center justify-center"
-                    : "flex-1 h-10 rounded-2xl bg-cream-100 border border-cream-300 items-center justify-center"
-                }
-              >
-                <Text
-                  className={
-                    active
-                      ? "text-sm font-semibold text-white"
-                      : "text-sm font-semibold text-stone-700"
-                  }
-                >
-                  {entry.label}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
-
-        {mode === "catalog" ? (
+        {view === "catalog" ? (
           <ExerciseCatalogSection
             onInspectExercise={handleInspectExercise}
             exercises={catalog}
@@ -350,13 +433,15 @@ export function Workouts({ testID = "fizruk-workouts" }: WorkoutsProps) {
             onPickExercise={handlePickExercise}
             testID={`${testID}-catalog`}
           />
-        ) : (
+        ) : null}
+
+        {view === "journal" ? (
           <WorkoutJournalSection
             workouts={workouts}
             activeWorkoutId={activeWorkoutId}
             testID={`${testID}-journal`}
           />
-        )}
+        ) : null}
       </ScrollView>
 
       {restTimer ? (
@@ -384,7 +469,7 @@ interface ActiveItemCardProps {
   item: FizrukWorkoutItem;
   onAddSet(): void;
   onEditSet(setIndex: number): void;
-  testID: string;
+  testID?: string;
 }
 
 function ActiveItemCard({
@@ -393,65 +478,97 @@ function ActiveItemCard({
   onEditSet,
   testID,
 }: ActiveItemCardProps) {
-  const sets = Array.isArray(item.sets) ? item.sets : [];
+  const sets = item.sets ?? [];
   return (
     <Card variant="default" radius="lg" padding="md" testID={testID}>
-      <View className="gap-2">
-        <View className="flex-row items-baseline justify-between">
-          <Text
-            className="text-sm font-semibold text-stone-900 flex-1 pr-2"
-            numberOfLines={2}
-          >
-            {item.nameUk || "Вправа"}
+      <Text className="text-sm font-semibold text-stone-900">
+        {item.nameUk || "Вправа"}
+      </Text>
+      {sets.length > 0 ? (
+        <View className="mt-2 gap-1">
+          {sets.map((set, idx) => (
+            <Pressable
+              key={idx}
+              accessibilityRole="button"
+              accessibilityLabel={`Сет ${idx + 1}: ${set.weightKg} кг × ${set.reps}`}
+              onPress={() => onEditSet(idx)}
+              testID={`${testID}-set-${idx}`}
+              className="flex-row items-center justify-between py-1.5 px-2 rounded-lg bg-cream-100"
+            >
+              <Text className="text-xs text-stone-500">Сет {idx + 1}</Text>
+              <Text className="text-sm font-semibold text-stone-900">
+                {set.weightKg} кг × {set.reps}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+      ) : null}
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Додати сет"
+        onPress={onAddSet}
+        testID={`${testID}-add-set`}
+        className="mt-3 h-10 rounded-xl bg-teal-600 items-center justify-center"
+      >
+        <Text className="text-sm font-semibold text-white">+ Додати сет</Text>
+      </Pressable>
+    </Card>
+  );
+}
+
+interface RecentWorkoutRowProps {
+  workout: FizrukWorkout;
+  isActive: boolean;
+  testID?: string;
+}
+
+function RecentWorkoutRow({
+  workout,
+  isActive,
+  testID,
+}: RecentWorkoutRowProps) {
+  const summary = useMemo(
+    () => computeWorkoutSummary(workout as never),
+    [workout],
+  );
+  const started = new Date(workout.startedAt);
+  const dateLabel = started.toLocaleDateString("uk-UA", {
+    day: "numeric",
+    month: "short",
+  });
+  const parts: string[] = [];
+  if (summary.itemCount > 0) parts.push(`${summary.itemCount} вправ`);
+  if (summary.setCount > 0) parts.push(`${summary.setCount} сетів`);
+  const durMin = summary.durationSec
+    ? Math.max(1, Math.round(summary.durationSec / 60))
+    : null;
+  if (durMin !== null) parts.push(`${durMin} хв`);
+  const subtitle = parts.length ? parts.join(" · ") : "порожнє тренування";
+
+  return (
+    <View
+      className="px-3 py-3 rounded-xl border border-cream-300 bg-cream-50 flex-row items-center justify-between"
+      testID={testID}
+    >
+      <View className="flex-1 pr-2">
+        <View className="flex-row items-center gap-2">
+          <Text className="text-sm font-semibold text-stone-900">
+            {dateLabel}
           </Text>
-          {item.primaryGroup ? (
-            <Text className="text-[10px] uppercase font-bold text-stone-500">
-              {item.primaryGroup}
+          {isActive ? (
+            <Text className="text-[10px] uppercase font-bold text-teal-700 bg-teal-100 px-2 py-0.5 rounded-full">
+              Активне
+            </Text>
+          ) : !summary.isFinished ? (
+            <Text className="text-[10px] uppercase font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">
+              Чернетка
             </Text>
           ) : null}
         </View>
-
-        {sets.length > 0 ? (
-          <View className="gap-1" testID={`${testID}-sets`}>
-            {sets.map((set, idx) => {
-              const hasData = (set?.weightKg ?? 0) > 0 || (set?.reps ?? 0) > 0;
-              return (
-                <Pressable
-                  key={idx}
-                  accessibilityRole="button"
-                  accessibilityLabel={
-                    hasData
-                      ? `Редагувати сет ${idx + 1}: ${set?.weightKg ?? 0} на ${set?.reps ?? 0}`
-                      : `Заповнити сет ${idx + 1}`
-                  }
-                  onPress={() => onEditSet(idx)}
-                  testID={`${testID}-set-${idx}`}
-                  className="flex-row items-center justify-between px-2 py-1.5 rounded-lg bg-cream-100"
-                >
-                  <Text className="text-xs font-semibold text-stone-600">
-                    #{idx + 1}
-                  </Text>
-                  <Text className="text-sm text-stone-900">
-                    {hasData
-                      ? `${set?.weightKg ?? 0} кг × ${set?.reps ?? 0}`
-                      : "—"}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
-        ) : null}
-
-        <Button
-          variant="fizruk-soft"
-          size="sm"
-          onPress={onAddSet}
-          accessibilityLabel="Додати сет"
-          testID={`${testID}-add-set`}
-        >
-          + Додати сет
-        </Button>
+        <Text className="text-xs text-stone-500 mt-0.5" numberOfLines={1}>
+          {subtitle}
+        </Text>
       </View>
-    </Card>
+    </View>
   );
 }
