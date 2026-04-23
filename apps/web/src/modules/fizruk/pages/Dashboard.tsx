@@ -317,6 +317,17 @@ export function Dashboard({
   ]);
 
   const openWorkoutsTab = () => {
+    // `Workouts` defaults to the `home` view and only switches to the
+    // journal/log when the `fizruk_workouts_mode` hint is primed in
+    // sessionStorage (see `apps/web/src/modules/fizruk/pages/Workouts.tsx`).
+    // When the hero CTA resumes an active session we want the user to
+    // land directly on the log — one extra tap is a real UX regression
+    // otherwise.
+    try {
+      sessionStorage.setItem("fizruk_workouts_mode", "log");
+    } catch {
+      /* non-fatal: default view is still reachable */
+    }
     window.location.hash = "#workouts";
   };
   const openTemplates = () => {
