@@ -3,19 +3,21 @@ import { cn } from "@shared/lib/cn";
 import { Icon } from "@shared/components/ui/Icon";
 import { Input } from "@shared/components/ui/Input";
 
-// Merged monthly-plan block: income/expense/savings inputs + fact summary +
-// progress + safe-to-spend hint. Collapsible — defaults closed so the
-// Планування page opens with stats-strip + limit cards in view, mirroring
-// the "Прогноз" / "AI-порада" sections inside `LimitBudgetCard`. When
-// collapsed the header still surfaces plan/fact/pct at a glance; the
-// inputs + trend only appear when the user opens it. Pure presentational,
-// parent owns `monthlyPlan` + computed fact/usage values.
+// Unified monthly-plan block: Plan/Fact/Δ table for income, expense and
+// savings, progress bar + safe-to-spend hint and an inline edit mode for
+// the three inputs. Replaces the separate `PlanFactCard` that previously
+// duplicated the same plan/fact numbers below this card. Collapsible —
+// default closed so the Планування page opens with stats-strip + limit
+// cards in view; header surfaces pct + remaining at a glance.
 function MonthlyPlanCardComponent({
   monthlyPlan,
   onChangeMonthlyPlan,
   planIncome,
   planExpense,
+  planSavings,
   totalExpenseFact,
+  factIncome,
+  factSavings,
   remaining,
   safePerDay,
   pctExpense,
@@ -23,7 +25,15 @@ function MonthlyPlanCardComponent({
   daysLeft,
 }) {
   const [open, setOpen] = useState(false);
-  const hasPlan = planIncome > 0 || planExpense > 0;
+  const [editing, setEditing] = useState(false);
+  const hasPlan = planIncome > 0 || planExpense > 0 || planSavings > 0;
+
+  const incomeDelta = factIncome - planIncome;
+  const expenseDelta = totalExpenseFact - planExpense;
+  const savingsDelta = factSavings - planSavings;
+
+  const fmt = (n) => n.toLocaleString("uk-UA", { maximumFractionDigits: 0 });
+  const fmtSigned = (n) => `${n >= 0 ? "+" : "−"}${fmt(Math.abs(n))} ₴`;
 
   return (
     <div
@@ -76,127 +86,171 @@ function MonthlyPlanCardComponent({
       </button>
 
       {open && (
-        <div className="px-5 pb-5 pt-1">
-          <div className="space-y-2">
-            <Input
-              type="number"
-              placeholder="План доходу ₴"
-              value={monthlyPlan?.income ?? ""}
-              onChange={(e) =>
-                onChangeMonthlyPlan((p) => ({
-                  ...(p || {}),
-                  income: e.target.value,
-                }))
-              }
-            />
-            <Input
-              type="number"
-              placeholder="План витрат ₴"
-              value={monthlyPlan?.expense ?? ""}
-              onChange={(e) =>
-                onChangeMonthlyPlan((p) => ({
-                  ...(p || {}),
-                  expense: e.target.value,
-                }))
-              }
-            />
-            <Input
-              type="number"
-              placeholder="План накопичень ₴"
-              value={monthlyPlan?.savings ?? ""}
-              onChange={(e) =>
-                onChangeMonthlyPlan((p) => ({
-                  ...(p || {}),
-                  savings: e.target.value,
-                }))
-              }
-            />
-          </div>
+        <div className="px-5 pb-5 pt-1 space-y-3">
+          {hasPlan ? (
+            <div className="grid grid-cols-[auto_1fr_1fr_1fr] gap-x-3 gap-y-1.5 text-sm tabular-nums items-baseline">
+              <div />
+              <div className="text-2xs text-subtle text-right">План</div>
+              <div className="text-2xs text-subtle text-right">Факт</div>
+              <div className="text-2xs text-subtle text-right">Δ</div>
 
-          {hasPlan && (
-            <div className="mt-4 pt-4 border-t border-line space-y-3">
-              <div className="grid grid-cols-3 gap-2 text-center">
-                <div>
-                  <div className="text-2xs text-subtle mb-0.5">
-                    Дохід (план)
-                  </div>
-                  <div className="text-sm font-semibold tabular-nums">
-                    {planIncome > 0
-                      ? `${planIncome.toLocaleString("uk-UA")} ₴`
-                      : "—"}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-2xs text-subtle mb-0.5">
-                    Витрати (факт)
-                  </div>
-                  <div
-                    className={cn(
-                      "text-sm font-semibold tabular-nums",
-                      isOver ? "text-danger" : "",
-                    )}
-                  >
-                    {totalExpenseFact.toLocaleString("uk-UA")} ₴
-                  </div>
-                </div>
-                <div>
-                  <div className="text-2xs text-subtle mb-0.5">Залишок</div>
-                  <div
-                    className={cn(
-                      "text-sm font-semibold tabular-nums",
-                      isOver
-                        ? "text-danger"
-                        : "text-emerald-600 dark:text-emerald-400",
-                    )}
-                  >
-                    {isOver
-                      ? `−${(totalExpenseFact - planExpense).toLocaleString("uk-UA")} ₴`
-                      : `${remaining.toLocaleString("uk-UA")} ₴`}
-                  </div>
-                </div>
+              <div className="text-xs text-muted">Дохід</div>
+              <div className="text-right text-muted">
+                {planIncome > 0 ? `${fmt(planIncome)} ₴` : "—"}
+              </div>
+              <div className="text-right text-success">
+                {factIncome > 0 ? `+${fmt(factIncome)} ₴` : "—"}
+              </div>
+              <div
+                className={cn(
+                  "text-right text-2xs",
+                  planIncome === 0
+                    ? "text-subtle"
+                    : incomeDelta >= 0
+                      ? "text-success"
+                      : "text-warning",
+                )}
+              >
+                {planIncome > 0 ? fmtSigned(incomeDelta) : "—"}
               </div>
 
-              {planExpense > 0 && (
-                <>
-                  <div className="flex justify-between text-xs text-subtle">
-                    <span>{pctExpense}% від плану</span>
-                    <span>план {planExpense.toLocaleString("uk-UA")} ₴</span>
-                  </div>
-                  <div className="h-2 bg-bg rounded-full overflow-hidden">
-                    <div
-                      className={cn(
-                        "h-full rounded-full transition-all",
-                        isOver
-                          ? "bg-danger"
-                          : pctExpense >= 85
-                            ? "bg-warning"
-                            : "bg-emerald-500",
-                      )}
-                      style={{ width: `${pctExpense}%` }}
-                    />
-                  </div>
-                </>
-              )}
+              <div className="text-xs text-muted">Витрати</div>
+              <div className="text-right text-muted">
+                {planExpense > 0 ? `${fmt(planExpense)} ₴` : "—"}
+              </div>
+              <div
+                className={cn(
+                  "text-right",
+                  isOver ? "text-danger font-semibold" : "text-danger/80",
+                )}
+              >
+                −{fmt(totalExpenseFact)} ₴
+              </div>
+              <div
+                className={cn(
+                  "text-right text-2xs",
+                  planExpense === 0
+                    ? "text-subtle"
+                    : expenseDelta > 0
+                      ? "text-danger"
+                      : "text-success",
+                )}
+              >
+                {planExpense > 0 ? fmtSigned(expenseDelta) : "—"}
+              </div>
 
-              {safePerDay > 0 && daysLeft > 0 && planExpense > 0 && (
+              <div className="text-xs text-muted">Накопич.</div>
+              <div className="text-right text-muted">
+                {planSavings > 0 ? `${fmt(planSavings)} ₴` : "—"}
+              </div>
+              <div
+                className={cn(
+                  "text-right",
+                  factSavings >= 0 ? "text-success" : "text-danger",
+                )}
+              >
+                {fmtSigned(factSavings)}
+              </div>
+              <div
+                className={cn(
+                  "text-right text-2xs",
+                  planSavings === 0 && factSavings === 0
+                    ? "text-subtle"
+                    : savingsDelta >= 0
+                      ? "text-success"
+                      : "text-danger",
+                )}
+              >
+                {planSavings > 0 || factSavings !== 0
+                  ? fmtSigned(savingsDelta)
+                  : "—"}
+              </div>
+            </div>
+          ) : (
+            <div className="text-sm text-subtle">
+              Постав план — і побачиш скільки безпечно витрачати на день.
+            </div>
+          )}
+
+          {hasPlan && planExpense > 0 && (
+            <div className="space-y-1">
+              <div className="flex justify-between text-xs text-subtle">
+                <span>{pctExpense}% витрачено</span>
+                {safePerDay > 0 && daysLeft > 0 && !isOver && (
+                  <span className="tabular-nums">
+                    {safePerDay.toLocaleString("uk-UA")} ₴/день · {daysLeft} дн.
+                  </span>
+                )}
+                {isOver && (
+                  <span className="text-danger font-semibold tabular-nums">
+                    −{(totalExpenseFact - planExpense).toLocaleString("uk-UA")}{" "}
+                    ₴
+                  </span>
+                )}
+              </div>
+              <div className="h-2 bg-bg rounded-full overflow-hidden">
                 <div
                   className={cn(
-                    "rounded-xl px-3 py-2 text-sm",
+                    "h-full rounded-full transition-all",
                     isOver
-                      ? "bg-danger/10 text-danger"
+                      ? "bg-danger"
                       : pctExpense >= 85
-                        ? "bg-warning/10 text-warning"
-                        : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
+                        ? "bg-warning"
+                        : "bg-emerald-500",
                   )}
-                >
-                  <span className="font-semibold">
-                    {safePerDay.toLocaleString("uk-UA")} ₴/день
-                  </span>
-                  <span className="text-xs ml-1 opacity-75">
-                    · безпечно витрачати ({daysLeft} дн.)
-                  </span>
-                </div>
-              )}
+                  style={{ width: `${Math.min(100, pctExpense)}%` }}
+                />
+              </div>
+            </div>
+          )}
+
+          <div className="flex items-center justify-end pt-1">
+            <button
+              type="button"
+              onClick={() => setEditing((v) => !v)}
+              aria-expanded={editing}
+              className="text-xs text-muted hover:text-text inline-flex items-center gap-1 px-2 py-1 rounded-md hover:bg-panelHi transition-colors"
+            >
+              <Icon name="edit" size={12} />
+              {editing ? "Згорнути" : hasPlan ? "Редагувати" : "Задати план"}
+            </button>
+          </div>
+
+          {editing && (
+            <div className="space-y-2 border-t border-line pt-3">
+              <Input
+                type="number"
+                placeholder="План доходу ₴"
+                value={monthlyPlan?.income ?? ""}
+                onChange={(e) =>
+                  onChangeMonthlyPlan((p) => ({
+                    ...(p || {}),
+                    income: e.target.value,
+                  }))
+                }
+              />
+              <Input
+                type="number"
+                placeholder="План витрат ₴"
+                value={monthlyPlan?.expense ?? ""}
+                onChange={(e) =>
+                  onChangeMonthlyPlan((p) => ({
+                    ...(p || {}),
+                    expense: e.target.value,
+                  }))
+                }
+              />
+              <Input
+                type="number"
+                placeholder="План накопичень ₴"
+                value={monthlyPlan?.savings ?? ""}
+                onChange={(e) =>
+                  onChangeMonthlyPlan((p) => ({
+                    ...(p || {}),
+                    savings: e.target.value,
+                  }))
+                }
+              />
             </div>
           )}
         </div>

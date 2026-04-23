@@ -31,7 +31,6 @@ import { finykKeys } from "@shared/lib/queryKeys.js";
 import { LimitBudgetCard } from "../components/budgets/LimitBudgetCard.jsx";
 import { GoalBudgetCard } from "../components/budgets/GoalBudgetCard.jsx";
 import { MonthlyPlanCard } from "../components/budgets/MonthlyPlanCard.jsx";
-import { PlanFactCard } from "../components/budgets/PlanFactCard.jsx";
 import { AddBudgetForm } from "../components/budgets/AddBudgetForm.jsx";
 import { readJSON, writeJSON } from "../lib/finykStorage.js";
 import { useLocalStorageState } from "@shared/hooks/useLocalStorageState.js";
@@ -370,21 +369,15 @@ export function Budgets({ mono, storage, showBalance = true }) {
           onChangeMonthlyPlan={setMonthlyPlan}
           planIncome={planIncome}
           planExpense={planExpense}
+          planSavings={planSavings}
           totalExpenseFact={totalExpenseFact}
+          factIncome={factIncome}
+          factSavings={factSavings}
           remaining={remaining2}
           safePerDay={safePerDay}
           pctExpense={pctExpense}
           isOver={isOver}
           daysLeft={daysLeft2}
-        />
-
-        <PlanFactCard
-          planIncome={planIncome}
-          planExpense={planExpense}
-          planSavings={planSavings}
-          income={factIncome}
-          spent={totalExpenseFact}
-          factSavings={factSavings}
         />
 
         {/* Limits */}

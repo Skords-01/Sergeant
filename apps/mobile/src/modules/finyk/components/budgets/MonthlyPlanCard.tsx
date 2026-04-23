@@ -6,6 +6,8 @@ import type { MonthlyPlanInput } from "@/modules/finyk/lib/budgetsStore";
 export interface MonthlyPlanCardProps {
   monthlyPlan: MonthlyPlanInput;
   totalExpenseFact: number;
+  factIncome: number;
+  factSavings: number;
   remaining: number;
   pctExpense: number;
   isOver: boolean;
@@ -19,9 +21,15 @@ function fmt(uah: number): string {
   return uah.toLocaleString("uk-UA", { maximumFractionDigits: 0 });
 }
 
+function fmtSigned(uah: number): string {
+  return `${uah >= 0 ? "+" : "−"}${fmt(Math.abs(uah))} ₴`;
+}
+
 function MonthlyPlanCardImpl({
   monthlyPlan,
   totalExpenseFact,
+  factIncome,
+  factSavings,
   remaining,
   pctExpense,
   isOver,
@@ -32,7 +40,12 @@ function MonthlyPlanCardImpl({
 }: MonthlyPlanCardProps) {
   const planIncome = Number(monthlyPlan?.income || 0);
   const planExpense = Number(monthlyPlan?.expense || 0);
-  const hasPlan = planIncome > 0 || planExpense > 0;
+  const planSavings = Number(monthlyPlan?.savings || 0);
+  const hasPlan = planIncome > 0 || planExpense > 0 || planSavings > 0;
+
+  const incomeDelta = factIncome - planIncome;
+  const expenseDelta = totalExpenseFact - planExpense;
+  const savingsDelta = factSavings - planSavings;
   const overBy = totalExpenseFact - planExpense;
 
   return (
@@ -56,62 +69,127 @@ function MonthlyPlanCardImpl({
 
       {hasPlan ? (
         <>
-          <View className="flex-row gap-2 mb-3">
-            <View className="flex-1 items-center">
-              <Text className="text-[11px] text-stone-500 mb-0.5">
-                Дохід (план)
-              </Text>
-              <Text
-                className="text-sm font-semibold text-stone-900"
-                testID={testID ? `${testID}-income` : undefined}
-              >
-                {planIncome > 0 ? `${fmt(planIncome)} ₴` : "—"}
-              </Text>
-            </View>
-            <View className="flex-1 items-center">
-              <Text className="text-[11px] text-stone-500 mb-0.5">
-                Витрати (факт)
-              </Text>
-              <Text
-                className={
-                  isOver
-                    ? "text-sm font-semibold text-danger"
-                    : "text-sm font-semibold text-stone-900"
-                }
-                testID={testID ? `${testID}-fact` : undefined}
-              >
-                {fmt(totalExpenseFact)} ₴
-              </Text>
-            </View>
-            <View className="flex-1 items-center">
-              <Text className="text-[11px] text-stone-500 mb-0.5">Залишок</Text>
-              <Text
-                className={
-                  isOver
-                    ? "text-sm font-semibold text-danger"
-                    : "text-sm font-semibold text-emerald-600"
-                }
-                testID={testID ? `${testID}-remaining` : undefined}
-              >
-                {isOver ? `−${fmt(overBy)} ₴` : `${fmt(remaining)} ₴`}
-              </Text>
-            </View>
+          {/* Header row: (empty) | План | Факт | Δ */}
+          <View className="flex-row items-center mb-1.5 px-1">
+            <View className="w-16" />
+            <Text className="flex-1 text-[10px] text-stone-500 text-right">
+              План
+            </Text>
+            <Text className="flex-1 text-[10px] text-stone-500 text-right">
+              Факт
+            </Text>
+            <Text className="flex-1 text-[10px] text-stone-500 text-right">
+              Δ
+            </Text>
+          </View>
+
+          {/* Дохід */}
+          <View className="flex-row items-center mb-1 px-1">
+            <Text className="w-16 text-xs text-stone-500">Дохід</Text>
+            <Text
+              className="flex-1 text-right text-sm text-stone-700"
+              testID={testID ? `${testID}-income` : undefined}
+            >
+              {planIncome > 0 ? `${fmt(planIncome)} ₴` : "—"}
+            </Text>
+            <Text className="flex-1 text-right text-sm text-emerald-600">
+              {factIncome > 0 ? `+${fmt(factIncome)} ₴` : "—"}
+            </Text>
+            <Text
+              className={
+                planIncome === 0
+                  ? "flex-1 text-right text-[11px] text-stone-400"
+                  : incomeDelta >= 0
+                    ? "flex-1 text-right text-[11px] text-emerald-600"
+                    : "flex-1 text-right text-[11px] text-amber-600"
+              }
+            >
+              {planIncome > 0 ? fmtSigned(incomeDelta) : "—"}
+            </Text>
+          </View>
+
+          {/* Витрати */}
+          <View className="flex-row items-center mb-1 px-1">
+            <Text className="w-16 text-xs text-stone-500">Витрати</Text>
+            <Text className="flex-1 text-right text-sm text-stone-700">
+              {planExpense > 0 ? `${fmt(planExpense)} ₴` : "—"}
+            </Text>
+            <Text
+              className={
+                isOver
+                  ? "flex-1 text-right text-sm font-semibold text-danger"
+                  : "flex-1 text-right text-sm text-rose-600"
+              }
+              testID={testID ? `${testID}-fact` : undefined}
+            >
+              −{fmt(totalExpenseFact)} ₴
+            </Text>
+            <Text
+              className={
+                planExpense === 0
+                  ? "flex-1 text-right text-[11px] text-stone-400"
+                  : expenseDelta > 0
+                    ? "flex-1 text-right text-[11px] text-danger"
+                    : "flex-1 text-right text-[11px] text-emerald-600"
+              }
+            >
+              {planExpense > 0 ? fmtSigned(expenseDelta) : "—"}
+            </Text>
+          </View>
+
+          {/* Накопичення */}
+          <View className="flex-row items-center mb-2 px-1">
+            <Text className="w-16 text-xs text-stone-500">Накопич.</Text>
+            <Text className="flex-1 text-right text-sm text-stone-700">
+              {planSavings > 0 ? `${fmt(planSavings)} ₴` : "—"}
+            </Text>
+            <Text
+              className={
+                factSavings >= 0
+                  ? "flex-1 text-right text-sm text-emerald-600"
+                  : "flex-1 text-right text-sm text-rose-600"
+              }
+            >
+              {fmtSigned(factSavings)}
+            </Text>
+            <Text
+              className={
+                planSavings === 0 && factSavings === 0
+                  ? "flex-1 text-right text-[11px] text-stone-400"
+                  : savingsDelta >= 0
+                    ? "flex-1 text-right text-[11px] text-emerald-600"
+                    : "flex-1 text-right text-[11px] text-danger"
+              }
+            >
+              {planSavings > 0 || factSavings !== 0
+                ? fmtSigned(savingsDelta)
+                : "—"}
+            </Text>
           </View>
 
           {planExpense > 0 ? (
             <>
               <View className="flex-row justify-between mb-1">
                 <Text className="text-[11px] text-stone-500">
-                  {pctExpense}% від плану
+                  {pctExpense}% витрачено
                 </Text>
-                <Text className="text-[11px] text-stone-500">
-                  план {fmt(planExpense)} ₴
+                <Text
+                  className={
+                    isOver
+                      ? "text-[11px] text-danger font-semibold"
+                      : "text-[11px] text-stone-500"
+                  }
+                  testID={testID ? `${testID}-remaining` : undefined}
+                >
+                  {isOver
+                    ? `−${fmt(overBy)} ₴ понад план`
+                    : `Залишок ${fmt(remaining)} ₴`}
                 </Text>
               </View>
               <View className="h-2 bg-cream-200 rounded-full overflow-hidden">
                 <View
                   testID={testID ? `${testID}-progress` : undefined}
-                  style={{ width: `${pctExpense}%` }}
+                  style={{ width: `${Math.min(100, pctExpense)}%` }}
                   className={
                     isOver
                       ? "h-full bg-danger"

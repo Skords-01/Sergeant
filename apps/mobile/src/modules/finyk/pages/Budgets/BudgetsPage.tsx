@@ -37,6 +37,7 @@ import {
   getGoalMonthlyLabel,
   getLimitBudgets,
   getMonthlyPlanUsage,
+  getMonthlySummary,
   getSubscriptionAmountMeta,
 } from "@sergeant/finyk-domain/domain";
 import { calcForecast } from "@sergeant/finyk-domain/lib";
@@ -110,6 +111,20 @@ export function BudgetsPage({ seed, now, testID }: BudgetsPageProps) {
     () => calculateTotalExpenseFact(statTx, txStore.txSplits),
     [statTx, txStore.txSplits],
   );
+
+  // Actual income + derived factual savings for the unified Plan/Fact
+  // table inside `MonthlyPlanCard`. Uses the same `getMonthlySummary`
+  // selector as the Overview page so numbers stay consistent between
+  // tabs.
+  const factIncome = useMemo(
+    () =>
+      getMonthlySummary(txStore.realTx, {
+        excludedTxIds: txStore.hiddenTxIds,
+        txSplits: txStore.txSplits,
+      }).income,
+    [txStore.realTx, txStore.hiddenTxIds, txStore.txSplits],
+  );
+  const factSavings = factIncome - totalExpenseFact;
 
   const planUsage = useMemo(
     () =>
@@ -291,6 +306,8 @@ export function BudgetsPage({ seed, now, testID }: BudgetsPageProps) {
         <MonthlyPlanCard
           monthlyPlan={planMonthlyValue}
           totalExpenseFact={planUsage.totalFact}
+          factIncome={factIncome}
+          factSavings={factSavings}
           remaining={planUsage.remaining}
           pctExpense={planUsage.pctExpense}
           isOver={planUsage.isOver}

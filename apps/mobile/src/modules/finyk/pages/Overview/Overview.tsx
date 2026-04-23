@@ -358,6 +358,7 @@ export function Overview({
         income={income}
         spent={spent}
         factSavings={factSavings}
+        onNavigate={() => handleOverviewNavigate("budgets")}
       />
 
       <PlannedFlowsCard
