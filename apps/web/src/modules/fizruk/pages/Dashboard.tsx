@@ -12,6 +12,7 @@ import { recoveryConflictsForExercise } from "@sergeant/fizruk-domain";
 import { workoutDurationSec } from "@sergeant/fizruk-domain";
 import { ACTIVE_WORKOUT_KEY } from "@sergeant/fizruk-domain";
 import { Card } from "@shared/components/ui/Card";
+import { useLocalStorageState } from "@shared/hooks/useLocalStorageState.js";
 
 const SELECTED_TEMPLATE_KEY = "fizruk_selected_template_id_v1";
 
@@ -35,13 +36,11 @@ export function Dashboard({
 
   const [recoveryOpen, setRecoveryOpen] = useState(false);
 
-  const [selectedTemplateId, setSelectedTemplateId] = useState(() => {
-    try {
-      return localStorage.getItem(SELECTED_TEMPLATE_KEY) || "";
-    } catch {
-      return "";
-    }
-  });
+  const [selectedTemplateId, setSelectedTemplateId] = useLocalStorageState(
+    SELECTED_TEMPLATE_KEY,
+    "",
+    { raw: true },
+  );
   const [planConfirmOpen, setPlanConfirmOpen] = useState(false);
   const [pendingPicks, setPendingPicks] = useState(null);
 
@@ -53,13 +52,8 @@ export function Dashboard({
   useEffect(() => {
     if (selectedTemplateId) return;
     const first = templates[0]?.id;
-    if (first) {
-      setSelectedTemplateId(first);
-      try {
-        localStorage.setItem(SELECTED_TEMPLATE_KEY, first);
-      } catch {}
-    }
-  }, [templates, selectedTemplateId]);
+    if (first) setSelectedTemplateId(first);
+  }, [templates, selectedTemplateId, setSelectedTemplateId]);
 
   const statusByMuscle = (() => {
     const map = (id) => {

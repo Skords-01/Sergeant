@@ -12,6 +12,7 @@ import {
   getModulePrimaryAction,
 } from "@shared/lib/moduleQuickActions";
 import { generateRecommendations } from "./lib/recommendationEngine.js";
+import { useLocalStorageState } from "@shared/hooks/useLocalStorageState.js";
 
 // Reuse the same dismissed-map key HubRecommendations used so user
 // dismissals remain stable across the redesign.
@@ -64,30 +65,15 @@ function readJSON(key: string) {
   }
 }
 
-function loadDismissed(): Record<string, number> {
-  try {
-    const raw = localStorage.getItem(DISMISSED_KEY);
-    return raw ? JSON.parse(raw) : {};
-  } catch {
-    return {};
-  }
-}
-
-function saveDismissed(map: Record<string, number>) {
-  try {
-    localStorage.setItem(DISMISSED_KEY, JSON.stringify(map));
-  } catch {
-    /* noop */
-  }
-}
-
 /**
  * Hook that exposes the current dashboard focus (= top recommendation) plus
  * the rest of the visible recommendations, sharing dismiss state with the
  * unified insights panel.
  */
 export function useDashboardFocus() {
-  const [dismissed, setDismissed] = useState(loadDismissed);
+  const [dismissed, setDismissed] = useLocalStorageState<
+    Record<string, number>
+  >(DISMISSED_KEY, {});
   const [, setTick] = useState(0);
 
   useEffect(() => {
@@ -102,13 +88,12 @@ export function useDashboardFocus() {
     [recs, dismissed],
   );
 
-  const dismiss = useCallback((id: string) => {
-    setDismissed((prev) => {
-      const next = { ...prev, [id]: Date.now() };
-      saveDismissed(next);
-      return next;
-    });
-  }, []);
+  const dismiss = useCallback(
+    (id: string) => {
+      setDismissed((prev) => ({ ...prev, [id]: Date.now() }));
+    },
+    [setDismissed],
+  );
 
   return {
     focus: visible[0] || null,

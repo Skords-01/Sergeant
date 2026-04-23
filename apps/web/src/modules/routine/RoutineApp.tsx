@@ -12,6 +12,7 @@ import {
 import { addDays, startOfIsoWeek } from "./lib/weekUtils.js";
 import { maxActiveStreak, completionRateForRange } from "./lib/streaks.js";
 import { useRoutineReminders } from "./hooks/useRoutineReminders";
+import { useLocalStorageState } from "@shared/hooks/useLocalStorageState.js";
 import {
   buildHubCalendarEvents,
   countEventsByDate,
@@ -185,18 +186,14 @@ export default function RoutineApp({
 
   useRoutineReminders(routine);
 
-  const [mainTab, setMainTab] = useState<RoutineMainTab>(() => {
-    try {
-      const v = localStorage.getItem(STORAGE_KEYS.ROUTINE_MAIN_TAB);
-      if (v === "calendar" || v === "stats") return v;
-    } catch {}
-    return "calendar";
-  });
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEYS.ROUTINE_MAIN_TAB, mainTab);
-    } catch {}
-  }, [mainTab]);
+  const [mainTab, setMainTab] = useLocalStorageState<RoutineMainTab>(
+    STORAGE_KEYS.ROUTINE_MAIN_TAB,
+    "calendar",
+    {
+      raw: true,
+      validate: (v): v is RoutineMainTab => v === "calendar" || v === "stats",
+    },
+  );
   const [timeMode, setTimeMode] = useState<RoutineTimeMode>("today");
   const now = todayDate();
   const [monthCursor, setMonthCursor] = useState<MonthCursor>(() => ({

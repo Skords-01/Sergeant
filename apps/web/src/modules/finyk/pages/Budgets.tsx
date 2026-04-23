@@ -34,6 +34,7 @@ import { MonthlyPlanCard } from "../components/budgets/MonthlyPlanCard.jsx";
 import { PlanFactCard } from "../components/budgets/PlanFactCard.jsx";
 import { AddBudgetForm } from "../components/budgets/AddBudgetForm.jsx";
 import { readJSON, writeJSON } from "../lib/finykStorage.js";
+import { useLocalStorageState } from "@shared/hooks/useLocalStorageState.js";
 import { trackEvent, ANALYTICS_EVENTS } from "../../../core/analytics";
 
 // ─── React Query integration for AI chat lookups ──────────────────────────
@@ -190,41 +191,39 @@ export function Budgets({ mono, storage, showBalance = true }) {
   // collide with the 24h proactive-advice cache. Value is the dismissed
   // text itself — when React Query returns a *different* text (next
   // month, manual refetch), the card shows the advice again automatically.
-  const [dismissedAdvice, setDismissedAdvice] = useState<
+  const [dismissedAdvice, setDismissedAdvice] = useLocalStorageState<
     Record<string, string>
-  >(() => readJSON("finyk_proactive_dismissed_v1", {}));
+  >("finyk_proactive_dismissed_v1", {});
 
   // Collapsible state for Limits / Goals sections. Default closed per
   // product feedback (списком із можливістю згорнути, згорнуто за замовчуванням).
   // Persist last choice to localStorage so the user's open/closed pref
   // survives reloads and tab switches; still resets to closed only on
   // first ever visit.
-  const [limitsOpen, setLimitsOpen] = useState<boolean>(() =>
-    readJSON("finyk_budgets_limits_open_v1", false),
+  const [limitsOpen, setLimitsOpen] = useLocalStorageState<boolean>(
+    "finyk_budgets_limits_open_v1",
+    false,
   );
-  const [goalsOpen, setGoalsOpen] = useState<boolean>(() =>
-    readJSON("finyk_budgets_goals_open_v1", false),
+  const [goalsOpen, setGoalsOpen] = useLocalStorageState<boolean>(
+    "finyk_budgets_goals_open_v1",
+    false,
   );
   const toggleLimits = useCallback(() => {
-    setLimitsOpen((v) => {
-      writeJSON("finyk_budgets_limits_open_v1", !v);
-      return !v;
-    });
-  }, []);
+    setLimitsOpen((v) => !v);
+  }, [setLimitsOpen]);
   const toggleGoals = useCallback(() => {
-    setGoalsOpen((v) => {
-      writeJSON("finyk_budgets_goals_open_v1", !v);
-      return !v;
-    });
-  }, []);
-  const dismissAdvice = useCallback((categoryId, monthKey, text) => {
-    if (!text) return;
-    setDismissedAdvice((prev) => {
-      const next = { ...prev, [`${monthKey}_${categoryId}`]: text };
-      writeJSON("finyk_proactive_dismissed_v1", next);
-      return next;
-    });
-  }, []);
+    setGoalsOpen((v) => !v);
+  }, [setGoalsOpen]);
+  const dismissAdvice = useCallback(
+    (categoryId, monthKey, text) => {
+      if (!text) return;
+      setDismissedAdvice((prev) => ({
+        ...prev,
+        [`${monthKey}_${categoryId}`]: text,
+      }));
+    },
+    [setDismissedAdvice],
+  );
 
   // At-risk advice fires for any limit where current usage ≥ 80% of limit
   // (see `shouldShowProactiveAdvice`). We key items by `(monthKey,
