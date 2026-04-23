@@ -24,6 +24,7 @@ import {
   getDebtTxRole,
   getReceivableTxRole,
 } from "@sergeant/finyk-domain/domain/debtEngine";
+import { filterVisibleAccounts } from "@sergeant/finyk-domain/domain/assets";
 import { cn } from "@shared/lib/cn";
 import { openHubModule } from "@shared/lib/hubNav";
 import { notifyFinykRoutineCalendarSync } from "../hubRoutineSync.js";
@@ -212,7 +213,13 @@ export function Assets({
     accounts,
     hiddenAccounts,
   );
-  const monoDebtAccounts = accounts.filter((a) => isMonoDebt(a));
+  // Список debt-карток у UI мусить бити узгоджений із `monoTotalDebt`
+  // — інакше схована кредитка не контрибує у борг, але все одно
+  // показується у Liabilities-секції з власним remaining-сумамою.
+  const monoDebtAccounts = filterVisibleAccounts(
+    accounts,
+    hiddenAccounts,
+  ).filter((a) => isMonoDebt(a));
   const manualDebtTotal = manualDebts.reduce(
     (s, d) => s + calcDebtRemaining(d, transactions),
     0,
