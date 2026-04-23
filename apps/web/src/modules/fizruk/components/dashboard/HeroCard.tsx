@@ -393,13 +393,20 @@ function EmptyState({
           : "У тебе ще немає шаблонів. Створи свій перший або обери програму."}
       </p>
       <div className="mt-6 flex flex-col gap-3">
-        <Button
-          variant="fizruk"
-          className="w-full h-12 min-h-[44px]"
+        {/*
+          Primary CTA uses the raw `bg-fizruk-strong` surface (teal-600,
+          #0d9488) rather than the `variant="fizruk"` default (teal-500,
+          #14b8a6). The latter ships contrast 2.48:1 against white text —
+          below WCAG AA — and so the axe-core check flags it. teal-600 +
+          white clears 4.5:1 comfortably.
+        */}
+        <button
+          type="button"
+          className="w-full py-4 rounded-full font-bold text-base bg-fizruk-strong text-white transition-all active:scale-[0.98]"
           onClick={onOpenTemplates}
         >
           {primaryLabel}
-        </Button>
+        </button>
         <Button
           variant="fizruk-soft"
           className="w-full h-12 min-h-[44px]"
