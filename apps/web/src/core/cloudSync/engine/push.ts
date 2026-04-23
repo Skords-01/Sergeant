@@ -89,11 +89,13 @@ export async function pushDirty(args: PushArgs): Promise<void> {
 export async function pushAll(args: PushArgs): Promise<void> {
   const { user, onStart, onSuccess, onError, onSettled } = args;
   onStart();
+  // Build payload before try so it's accessible in the catch for re-queuing,
+  // matching the same pattern as pushDirty.
+  const modules = buildModulesPayload(
+    Object.keys(SYNC_MODULES),
+    getModuleModifiedTimes(),
+  );
   try {
-    const modules = buildModulesPayload(
-      Object.keys(SYNC_MODULES),
-      getModuleModifiedTimes(),
-    );
     if (Object.keys(modules).length === 0) {
       onSuccess(new Date());
       return;
@@ -134,6 +136,11 @@ export async function pushAll(args: PushArgs): Promise<void> {
     }
     onSuccess(new Date());
   } catch (err) {
+    // Re-queue so a failed manual "sync now" isn't silently lost,
+    // consistent with pushDirty's error path.
+    if (Object.keys(modules).length > 0) {
+      addToOfflineQueue({ type: "push", modules });
+    }
     args.onErrorRaw?.(err);
     onError(err instanceof Error ? err.message : String(err));
   } finally {

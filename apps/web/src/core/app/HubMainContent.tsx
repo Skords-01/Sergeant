@@ -36,7 +36,7 @@ export function HubMainContent({
   iosVisible,
   onDismissIos,
   hubView,
-  onOpenChat,
+  onOpenChat: _onOpenChat,
   dark,
   onToggleDark,
   syncing,
@@ -161,7 +161,6 @@ export function HubMainContent({
             <div className="flex flex-col gap-5 pt-2">
               <HubDashboard
                 onOpenModule={onOpenModule}
-                onOpenChat={onOpenChat}
                 user={user}
                 onShowAuth={onShowAuth}
               />

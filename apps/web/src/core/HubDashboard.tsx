@@ -43,6 +43,7 @@ import { useFirstEntryCelebration } from "./onboarding/useFirstEntryCelebration.
 import {
   DndContext,
   closestCenter,
+  KeyboardSensor,
   PointerSensor,
   TouchSensor,
   useSensor,
@@ -52,6 +53,7 @@ import {
   SortableContext,
   useSortable,
   arrayMove,
+  sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -464,14 +466,12 @@ function WeeklyDigestFooter({
 // ═══════════════════════════════════════════════════════════════════════════
 interface HubDashboardProps {
   onOpenModule: (module: string) => void;
-  onOpenChat?: () => void;
   user: User | null;
   onShowAuth: () => void;
 }
 
 export function HubDashboard({
   onOpenModule,
-  onOpenChat: _onOpenChat,
   user,
   onShowAuth,
 }: HubDashboardProps) {
@@ -537,6 +537,9 @@ export function HubDashboard({
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
     useSensor(TouchSensor, {
       activationConstraint: { delay: 250, tolerance: 5 },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
     }),
   );
 

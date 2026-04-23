@@ -9,6 +9,7 @@
  */
 
 import { STORAGE_KEYS } from "@sergeant/shared";
+import { safeReadLS } from "@shared/lib/storage";
 
 export interface Insight {
   id: string;
@@ -46,12 +47,7 @@ interface NutritionDay {
 type NutritionLog = Record<string, NutritionDay | undefined>;
 
 function safeLS<T>(key: string, fallback: T): T {
-  try {
-    const raw = localStorage.getItem(key);
-    return raw ? (JSON.parse(raw) as T) : fallback;
-  } catch {
-    return fallback;
-  }
+  return safeReadLS<T>(key, fallback) ?? fallback;
 }
 
 function localDateKey(d: Date = new Date()): string {

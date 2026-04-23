@@ -365,6 +365,7 @@ function AppInner() {
     );
   }
 
+  const Tag: "div" | "main" = activeModule === "routine" ? "div" : "main";
   return (
     <div className="h-dvh flex flex-col bg-bg text-text overflow-hidden">
       <SkipLink />
@@ -385,52 +386,44 @@ function AppInner() {
             `<main>` elements (HTML spec violation, confuses AT landmark
             navigation). Either way, the SkipLink's target contract
             (`id="main"` + focusability) is preserved. */}
-        {(() => {
-          const Tag = activeModule === "routine" ? "div" : "main";
-          return (
-            <Tag
-              key={activeModule}
-              id="main"
-              tabIndex={-1}
-              className={cn(
-                moduleAnimClass,
-                "h-full flex flex-col outline-none",
-              )}
-            >
-              <ModuleErrorBoundary onBackToHub={goToHub}>
-                {activeModule === "finyk" && (
-                  <FinykApp
-                    onBackToHub={goToHub}
-                    pwaAction={pwaAction}
-                    onPwaActionConsumed={clearPwaAction}
-                  />
-                )}
-                {activeModule === "fizruk" && (
-                  <FizrukApp
-                    onBackToHub={goToHub}
-                    pwaAction={pwaAction}
-                    onPwaActionConsumed={clearPwaAction}
-                  />
-                )}
-                {activeModule === "routine" && (
-                  <RoutineApp
-                    onBackToHub={goToHub}
-                    onOpenModule={openModule}
-                    pwaAction={pwaAction}
-                    onPwaActionConsumed={clearPwaAction}
-                  />
-                )}
-                {activeModule === "nutrition" && (
-                  <NutritionApp
-                    onBackToHub={goToHub}
-                    pwaAction={pwaAction}
-                    onPwaActionConsumed={clearPwaAction}
-                  />
-                )}
-              </ModuleErrorBoundary>
-            </Tag>
-          );
-        })()}
+        <Tag
+          key={activeModule}
+          id="main"
+          tabIndex={-1}
+          className={cn(moduleAnimClass, "h-full flex flex-col outline-none")}
+        >
+          <ModuleErrorBoundary onBackToHub={goToHub}>
+            {activeModule === "finyk" && (
+              <FinykApp
+                onBackToHub={goToHub}
+                pwaAction={pwaAction}
+                onPwaActionConsumed={clearPwaAction}
+              />
+            )}
+            {activeModule === "fizruk" && (
+              <FizrukApp
+                onBackToHub={goToHub}
+                pwaAction={pwaAction}
+                onPwaActionConsumed={clearPwaAction}
+              />
+            )}
+            {activeModule === "routine" && (
+              <RoutineApp
+                onBackToHub={goToHub}
+                onOpenModule={openModule}
+                pwaAction={pwaAction}
+                onPwaActionConsumed={clearPwaAction}
+              />
+            )}
+            {activeModule === "nutrition" && (
+              <NutritionApp
+                onBackToHub={goToHub}
+                pwaAction={pwaAction}
+                onPwaActionConsumed={clearPwaAction}
+              />
+            )}
+          </ModuleErrorBoundary>
+        </Tag>
       </Suspense>
     </div>
   );
