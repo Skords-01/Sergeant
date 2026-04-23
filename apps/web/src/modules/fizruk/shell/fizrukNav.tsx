@@ -13,7 +13,10 @@ const NAV_SVG_PROPS = {
 };
 
 export interface FizrukNavItem extends ModuleBottomNavItem {
-  id: Extract<FizrukPage, "dashboard" | "workouts" | "plan" | "body">;
+  id: Extract<
+    FizrukPage,
+    "dashboard" | "workouts" | "plan" | "progress" | "body"
+  >;
 }
 
 export const FIZRUK_NAV: readonly FizrukNavItem[] = [
@@ -45,6 +48,16 @@ export const FIZRUK_NAV: readonly FizrukNavItem[] = [
         <line x1="16" y1="2" x2="16" y2="6" />
         <line x1="8" y1="2" x2="8" y2="6" />
         <line x1="3" y1="10" x2="21" y2="10" />
+      </svg>
+    ),
+  },
+  {
+    id: "progress",
+    label: "Прогрес",
+    icon: (
+      <svg {...NAV_SVG_PROPS}>
+        <polyline points="3 17 9 11 13 15 21 7" />
+        <polyline points="15 7 21 7 21 13" />
       </svg>
     ),
   },
