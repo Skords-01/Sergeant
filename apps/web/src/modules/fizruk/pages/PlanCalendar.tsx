@@ -10,6 +10,8 @@ import { useRecovery } from "../hooks/useRecovery";
 import { useWorkouts } from "../hooks/useWorkouts";
 import { useWorkoutTemplates } from "../hooks/useWorkoutTemplates";
 import { forecastFullRecoveryByDate } from "@sergeant/fizruk-domain";
+import { RecoveryFocusCard } from "../components/RecoveryFocusCard";
+import { TodayPlanCard } from "../components/TodayPlanCard";
 
 const WEEKDAYS = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Нд"];
 
@@ -118,6 +120,14 @@ export function PlanCalendar() {
   return (
     <div className="flex-1 overflow-y-auto">
       <div className="max-w-4xl mx-auto px-4 pt-4 page-tabbar-pad space-y-4">
+        <TodayPlanCard />
+
+        <RecoveryFocusCard
+          onOpenAtlas={() => {
+            window.location.hash = "#atlas";
+          }}
+        />
+
         <Card as="section" radius="lg" padding="md">
           <div className="flex items-center justify-between gap-2 mb-4">
             <button

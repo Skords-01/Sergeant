@@ -41,7 +41,6 @@ export function FizrukRouter({
     case "dashboard":
       return (
         <Dashboard
-          onOpenAtlas={() => onNavigate("atlas")}
           onOpenPrograms={() => onNavigate("programs")}
           activeProgram={activeProgram}
           todaySession={todaySession}
