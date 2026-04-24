@@ -5,19 +5,26 @@ import { MemoryRouter } from "react-router-dom";
 
 // ── Mocks ────────────────────────────────────────────────────
 
-const updateUserMock = vi.fn(async () => ({ error: null }));
-const changePasswordMock = vi.fn(async () => ({ error: null }));
-const listSessionsMock = vi.fn(async () => ({ data: [] }));
-const revokeSessionMock = vi.fn(async () => ({ error: null }));
-const deleteUserMock = vi.fn(async () => ({ error: null }));
-const signOutMock = vi.fn(async () => undefined);
+const updateUserMock = vi.fn<(d: unknown) => Promise<{ error: null }>>();
+const changePasswordMock = vi.fn<(d: unknown) => Promise<{ error: null }>>();
+const listSessionsMock = vi.fn<() => Promise<{ data: unknown[] }>>();
+const revokeSessionMock = vi.fn<(d: unknown) => Promise<{ error: null }>>();
+const deleteUserMock = vi.fn<(d: unknown) => Promise<{ error: null }>>();
+const signOutMock = vi.fn<() => Promise<void>>();
+
+updateUserMock.mockResolvedValue({ error: null });
+changePasswordMock.mockResolvedValue({ error: null });
+listSessionsMock.mockResolvedValue({ data: [] });
+revokeSessionMock.mockResolvedValue({ error: null });
+deleteUserMock.mockResolvedValue({ error: null });
+signOutMock.mockResolvedValue(undefined);
 
 vi.mock("./authClient.js", () => ({
-  updateUser: (...args: unknown[]) => updateUserMock(...args),
-  changePassword: (...args: unknown[]) => changePasswordMock(...args),
+  updateUser: (data: unknown) => updateUserMock(data),
+  changePassword: (data: unknown) => changePasswordMock(data),
   listSessions: () => listSessionsMock(),
-  revokeSession: (...args: unknown[]) => revokeSessionMock(...args),
-  deleteUser: (...args: unknown[]) => deleteUserMock(...args),
+  revokeSession: (data: unknown) => revokeSessionMock(data),
+  deleteUser: (data: unknown) => deleteUserMock(data),
   signOut: () => signOutMock(),
 }));
 
