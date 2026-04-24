@@ -192,7 +192,11 @@ function HeroKicker({
  */
 function HeroStateLabel({ children }: { readonly children: ReactNode }) {
   return (
-    <SectionHeading as="p" size="sm" className="mt-3 text-white/80">
+    <SectionHeading
+      as="p"
+      size="sm"
+      className="mt-3 text-teal-800 dark:text-white/80"
+    >
       {children}
     </SectionHeading>
   );
@@ -238,13 +242,13 @@ function ActiveState({
       <HeroKicker greeting={greeting} today={today} />
       <HeroStateLabel>Тренування триває</HeroStateLabel>
       <p
-        className="mt-1 text-hero font-black text-white leading-none tabular-nums"
+        className="mt-1 text-hero font-black text-teal-900 dark:text-white leading-none tabular-nums"
         aria-live="polite"
         aria-label={`Час тренування ${formatElapsed(elapsedSec)}`}
       >
         {formatElapsed(elapsedSec)}
       </p>
-      <p className="mt-2 text-sm text-white/75">{meta}</p>
+      <p className="mt-2 text-sm text-teal-700 dark:text-white/75">{meta}</p>
       <div className="mt-6">
         <button
           type="button"
@@ -253,7 +257,7 @@ function ActiveState({
           aria-label="Повернутись до активного тренування"
         >
           <span
-            className="shrink-0 w-11 h-11 rounded-full bg-white/15 flex items-center justify-center"
+            className="shrink-0 w-11 h-11 rounded-full bg-white/20 flex items-center justify-center"
             aria-hidden
           >
             <PlayIcon />
@@ -290,10 +294,10 @@ function TodayState({
     <section className={HERO_CARD_CLASS} aria-label="Сьогоднішнє тренування">
       <HeroKicker greeting={greeting} today={today} />
       <HeroStateLabel>Сьогоднішнє тренування</HeroStateLabel>
-      <h1 className="text-hero font-black text-white mt-1 leading-tight truncate">
+      <h1 className="text-hero font-black text-teal-900 dark:text-white mt-1 leading-tight truncate">
         {state.label}
       </h1>
-      <p className="mt-2 text-sm text-white/75 truncate">
+      <p className="mt-2 text-sm text-teal-700 dark:text-white/75 truncate">
         {metaParts.join(" · ")}
       </p>
       <div className="mt-6">
@@ -345,10 +349,10 @@ function UpcomingState({
     <section className={HERO_CARD_CLASS} aria-label="Наступне тренування">
       <HeroKicker greeting={greeting} today={today} />
       <HeroStateLabel>Наступне тренування</HeroStateLabel>
-      <h1 className="text-hero font-black text-white mt-1 leading-tight truncate">
+      <h1 className="text-hero font-black text-teal-900 dark:text-white mt-1 leading-tight truncate">
         {state.label}
       </h1>
-      <p className="mt-2 text-sm text-white/75 truncate">
+      <p className="mt-2 text-sm text-teal-700 dark:text-white/75 truncate">
         {metaParts.join(" · ")}
       </p>
       <div className="mt-6">
@@ -383,11 +387,11 @@ function EmptyState({
     <section className={HERO_CARD_CLASS} aria-label="План на сьогодні порожній">
       <HeroKicker greeting={greeting} today={today} />
       <HeroStateLabel>План порожній</HeroStateLabel>
-      <h1 className="text-hero font-black text-white mt-1 leading-tight">
+      <h1 className="text-hero font-black text-teal-900 dark:text-white mt-1 leading-tight">
         Обери шаблон або <br />
         заплануй день
       </h1>
-      <p className="mt-2 text-sm text-white/75">
+      <p className="mt-2 text-sm text-teal-700 dark:text-white/75">
         {state.hasTemplates
           ? "Нічого не заплановано — запусти готовий шаблон або відкрий програми."
           : "У тебе ще немає шаблонів. Створи свій перший або обери програму."}
