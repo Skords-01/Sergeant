@@ -39,6 +39,7 @@ import { useHubNavigation } from "./hooks/useHubNavigation.js";
 import { useHubUIState } from "./hooks/useHubUIState.js";
 import { usePwaActions, type PwaAction } from "./hooks/usePwaActions.js";
 import { ShellDeepLinkBridge } from "./app/ShellDeepLinkBridge";
+import { HintsOrchestrator } from "./hints/HintsOrchestrator";
 
 const AuthPage = lazy(() =>
   import("./AuthPage.jsx").then((m) => ({ default: m.AuthPage })),
@@ -189,6 +190,17 @@ function AppInner() {
     return () => window.removeEventListener("hub:openChat", handler);
   }, [openChatStable, navigate]);
 
+  // Global event to open HubSearch from any surface (used by hint toasts).
+  // Mirrors the existing `hub:openChat` event contract.
+  useEffect(() => {
+    const handler = () => {
+      ui.setSearchOpen(true);
+    };
+    window.addEventListener("hub:openSearch", handler as EventListener);
+    return () =>
+      window.removeEventListener("hub:openSearch", handler as EventListener);
+  }, [ui]);
+
   useEffect(() => {
     const onHubOpen = (ev) => {
       const { module, hash, action } = ev.detail || {};
@@ -326,6 +338,10 @@ function AppInner() {
     return (
       <div className="min-h-dvh bg-bg flex flex-col safe-area-pt-pb page-enter">
         <SkipLink />
+        <HintsOrchestrator
+          inFtuxSession={inFtuxSession}
+          hasFirstRealEntry={hasAnyRealEntry()}
+        />
         {!online && <OfflineBanner />}
 
         <HubHeader

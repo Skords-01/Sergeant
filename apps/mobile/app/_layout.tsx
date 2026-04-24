@@ -26,6 +26,7 @@ import { initObservability } from "@/lib/observability";
 import { useDeepLinks } from "@/lib/useDeepLinks";
 import { QueryProvider } from "@/providers/QueryProvider";
 import { CloudSyncProvider } from "@/sync";
+import { ToastContainer, ToastProvider } from "@/components/ui/Toast";
 
 /**
  * Inner shell — mounted below the providers so `useDeepLinks` runs
@@ -60,9 +61,12 @@ export default function RootLayout() {
         <QueryProvider>
           <ApiClientProvider client={apiClient}>
             <CloudSyncProvider>
-              <StatusBar style="light" />
-              <RootShell />
-              <PushRegistrar />
+              <ToastProvider>
+                <StatusBar style="light" />
+                <RootShell />
+                <ToastContainer />
+                <PushRegistrar />
+              </ToastProvider>
             </CloudSyncProvider>
           </ApiClientProvider>
         </QueryProvider>

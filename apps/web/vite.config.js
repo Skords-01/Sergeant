@@ -27,6 +27,13 @@ export default defineConfig(({ mode }) => {
   const isCapacitorBuild =
     env.VITE_TARGET === "capacitor" || process.env.VITE_TARGET === "capacitor";
 
+  const buildId =
+    env.VITE_BUILD_ID ||
+    process.env.VERCEL_GIT_COMMIT_SHA ||
+    process.env.GITHUB_SHA ||
+    process.env.BUILD_ID ||
+    String(Date.now());
+
   return {
     define: {
       // Пробрасуємо значення у клієнтський бандл як статичний літерал,
@@ -34,6 +41,7 @@ export default defineConfig(({ mode }) => {
       "import.meta.env.VITE_TARGET": JSON.stringify(
         isCapacitorBuild ? "capacitor" : "web",
       ),
+      __SW_BUILD_ID__: JSON.stringify(buildId),
     },
     plugins: [
       react(),
