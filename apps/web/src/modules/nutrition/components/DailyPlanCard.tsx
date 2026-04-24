@@ -279,7 +279,7 @@ export function DailyPlanCard({
                 onClick={() => applyPreset(preset)}
                 disabled={busy || dayPlanBusy}
                 className={cn(
-                  "flex-1 min-w-[90px] py-2 px-3 rounded-xl text-xs font-semibold border transition-all",
+                  "flex-1 min-w-[90px] py-2 px-3 rounded-xl text-xs font-semibold border transition-[background-color,border-color,color,opacity]",
                   activePreset?.id === preset.id
                     ? "bg-nutrition-strong text-white border-nutrition"
                     : "border-line text-text hover:border-nutrition/50 hover:bg-nutrition/5",
@@ -296,7 +296,7 @@ export function DailyPlanCard({
               onClick={() => setShowManual((v) => !v)}
               disabled={busy || dayPlanBusy}
               className={cn(
-                "flex-1 min-w-[90px] py-2 px-3 rounded-xl text-xs font-semibold border transition-all",
+                "flex-1 min-w-[90px] py-2 px-3 rounded-xl text-xs font-semibold border transition-[background-color,border-color,color,opacity]",
                 showManual && !activePreset
                   ? "bg-panel border-nutrition text-text"
                   : "border-line text-subtle hover:border-nutrition/50 hover:text-text",
@@ -535,7 +535,7 @@ export function DailyPlanCard({
                 <div className="h-1.5 rounded-full bg-line overflow-hidden">
                   <div
                     className={cn(
-                      "h-full rounded-full transition-all",
+                      "h-full rounded-full transition-[width,background-color]",
                       dayPlan.totalKcal > prefs.dailyTargetKcal * 1.1
                         ? "bg-danger"
                         : "bg-nutrition",

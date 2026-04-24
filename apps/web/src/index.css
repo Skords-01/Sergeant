@@ -260,7 +260,7 @@
 
   .panel-interactive {
     @apply bg-panel border border-line rounded-3xl shadow-card
-           transition-all duration-200 ease-smooth
+           transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-smooth
            hover:shadow-float hover:-translate-y-0.5
            active:scale-[0.98] active:shadow-card;
   }
@@ -277,7 +277,7 @@
 
   .fizruk-cta-accent {
     @apply bg-teal-500 text-white font-semibold rounded-2xl
-           transition-all duration-200 ease-smooth
+           transition-[background-color,box-shadow,opacity,transform] duration-200 ease-smooth
            hover:bg-teal-600 hover:shadow-glow-teal
            active:scale-[0.98];
   }
@@ -371,7 +371,7 @@
      ═══════════════════════════════════════════════════════════════════════ */
   .metric-card {
     @apply bg-panel border border-line rounded-2xl p-4 shadow-card
-           transition-all duration-200
+           transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200
            hover:shadow-float hover:-translate-y-0.5;
   }
 
@@ -713,7 +713,7 @@ textarea {
 }
 
 .hover-lift {
-  @apply transition-all duration-200 ease-smooth;
+  @apply transition-[transform,box-shadow] duration-200 ease-smooth;
 }
 
 .hover-lift:hover {
@@ -722,7 +722,7 @@ textarea {
 }
 
 .hover-glow {
-  @apply transition-all duration-200;
+  @apply transition-shadow duration-200;
 }
 
 .hover-glow:hover {
@@ -823,7 +823,7 @@ textarea {
    ═══════════════════════════════════════════════════════════════════════ */
 .module-card {
   @apply relative rounded-3xl p-5 border overflow-hidden
-         transition-all duration-300 ease-smooth;
+         transition-[background-color,border-color,box-shadow,opacity,transform] duration-300 ease-smooth;
 }
 
 .module-card::before {
@@ -938,7 +938,7 @@ textarea {
          w-14 h-14 rounded-full
          bg-brand-500 text-white
          shadow-float
-         transition-all duration-200 ease-smooth;
+         transition-[background-color,box-shadow,opacity,transform] duration-200 ease-smooth;
   right: max(1rem, env(safe-area-inset-right, 0px));
 }
 
@@ -975,7 +975,7 @@ textarea {
 
 .pill-nav-item {
   @apply px-4 py-2 rounded-full text-sm font-medium text-muted
-         transition-all duration-200 ease-smooth;
+         transition-[background-color,color,box-shadow,opacity] duration-200 ease-smooth;
 }
 
 .pill-nav-item:hover {
@@ -994,7 +994,7 @@ textarea {
          bg-text text-bg rounded-xl
          shadow-float
          opacity-0 invisible
-         transition-all duration-200;
+         transition-[opacity,visibility,transform] duration-200;
   transform: translateY(4px);
 }
 

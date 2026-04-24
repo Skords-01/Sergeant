@@ -394,7 +394,7 @@ export function PhotoProgress() {
               type="button"
               onClick={handleSave}
               disabled={saving}
-              className="flex-1 py-2.5 rounded-xl bg-success text-white text-sm font-semibold active:scale-[0.98] transition-all disabled:opacity-60"
+              className="flex-1 py-2.5 rounded-xl bg-success text-white text-sm font-semibold active:scale-[0.98] transition-[background-color,opacity,transform] disabled:opacity-60"
             >
               {saving ? "Зберігаємо…" : "Зберегти"}
             </button>

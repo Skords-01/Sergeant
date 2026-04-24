@@ -191,7 +191,7 @@ function MonthlyPlanCardComponent({
               <div className="h-2 bg-bg rounded-full overflow-hidden">
                 <div
                   className={cn(
-                    "h-full rounded-full transition-all",
+                    "h-full rounded-full transition-[width,background-color]",
                     isOver
                       ? "bg-danger"
                       : pctExpense >= 85

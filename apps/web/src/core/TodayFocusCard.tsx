@@ -227,7 +227,7 @@ function EmptyFocus() {
               className={cn(
                 "group inline-flex items-center gap-1.5 pl-1 pr-3 py-1 rounded-full",
                 "bg-panel border border-line text-xs font-semibold text-text",
-                "shadow-sm transition-all active:scale-[0.98]",
+                "shadow-sm transition-[box-shadow,opacity,transform] active:scale-[0.98]",
                 accent.hoverBorder,
               )}
             >
@@ -364,7 +364,7 @@ export function TodayFocusCard({
             className={cn(
               "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg",
               "bg-primary text-bg text-xs font-semibold",
-              "hover:brightness-110 active:scale-[0.98] transition-all",
+              "hover:brightness-110 active:scale-[0.98] transition-[filter,opacity,transform]",
             )}
           >
             {primary.label}

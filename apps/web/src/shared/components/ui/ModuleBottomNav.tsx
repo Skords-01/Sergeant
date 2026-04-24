@@ -123,7 +123,7 @@ export function ModuleBottomNav({
               onClick={() => onChange(item.id)}
               className={cn(
                 "relative flex-1 flex flex-col items-center justify-center gap-1",
-                "transition-all duration-200 min-h-[48px] active:scale-95",
+                "transition-[background-color,color,box-shadow,opacity,transform] duration-200 min-h-[48px] active:scale-95",
                 "focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/45 focus-visible:ring-offset-2 focus-visible:ring-offset-panel",
                 active ? "text-text" : "text-muted hover:text-text/70",
               )}
@@ -140,7 +140,7 @@ export function ModuleBottomNav({
               )}
               <span
                 className={cn(
-                  "relative transition-all duration-200",
+                  "relative transition-[background-color,color,opacity,transform] duration-200",
                   active && tokens.text,
                   active && tokens.glow,
                 )}

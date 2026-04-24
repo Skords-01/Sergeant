@@ -63,7 +63,7 @@ const radii: Record<CardRadius, string> = {
 const variants: Record<CardVariant, string> = {
   default: "bg-panel border border-line shadow-card",
   interactive:
-    "bg-panel border border-line shadow-card transition-all duration-200 ease-smooth hover:shadow-float hover:-translate-y-0.5 active:scale-[0.99] cursor-pointer",
+    "bg-panel border border-line shadow-card transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-smooth hover:shadow-float hover:-translate-y-0.5 active:scale-[0.99] cursor-pointer",
   flat: "bg-panel border border-line",
   elevated: "bg-panel border border-line shadow-float",
   ghost: "bg-transparent border border-transparent",

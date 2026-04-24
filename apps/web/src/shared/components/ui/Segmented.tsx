@@ -103,7 +103,7 @@ export function Segmented<V extends string = string>({
             title={item.title}
             onClick={() => onChange(item.value)}
             className={cn(
-              "rounded-full border font-semibold transition-all",
+              "rounded-full border font-semibold transition-[background-color,border-color,color,box-shadow,opacity]",
               SIZE[size],
               isActive ? activeClass : INACTIVE,
             )}

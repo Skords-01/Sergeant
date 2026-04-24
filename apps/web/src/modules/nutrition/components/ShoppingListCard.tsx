@@ -65,7 +65,7 @@ export function ShoppingListCard({
               onClick={() => setSource("recipes")}
               disabled={shoppingBusy}
               className={cn(
-                "flex-1 py-2 px-3 rounded-xl text-xs font-semibold border transition-all",
+                "flex-1 py-2 px-3 rounded-xl text-xs font-semibold border transition-[background-color,border-color,color,opacity]",
                 source === "recipes"
                   ? "bg-nutrition-strong text-white border-nutrition"
                   : "border-line text-text hover:border-nutrition/50",
@@ -81,7 +81,7 @@ export function ShoppingListCard({
               onClick={() => setSource("weekplan")}
               disabled={shoppingBusy}
               className={cn(
-                "flex-1 py-2 px-3 rounded-xl text-xs font-semibold border transition-all",
+                "flex-1 py-2 px-3 rounded-xl text-xs font-semibold border transition-[background-color,border-color,color,opacity]",
                 source === "weekplan"
                   ? "bg-nutrition-strong text-white border-nutrition"
                   : "border-line text-text hover:border-nutrition/50",
@@ -156,7 +156,7 @@ export function ShoppingListCard({
             {total > 0 && (
               <div className="h-1.5 rounded-full bg-line overflow-hidden">
                 <div
-                  className="h-full rounded-full bg-nutrition transition-all"
+                  className="h-full rounded-full bg-nutrition transition-[width,background-color]"
                   style={{ width: `${Math.round((checked / total) * 100)}%` }}
                 />
               </div>

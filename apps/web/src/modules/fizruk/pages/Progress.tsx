@@ -649,7 +649,7 @@ export function Progress() {
           </SectionHeading>
           <button
             type="button"
-            className="w-full py-4 rounded-full font-bold text-base bg-fizruk text-white mb-2 transition-all active:scale-[0.98]"
+            className="w-full py-4 rounded-full font-bold text-base bg-fizruk text-white mb-2 transition-[background-color,box-shadow,opacity,transform] active:scale-[0.98]"
             onClick={exportJson}
           >
             Експорт (backup)

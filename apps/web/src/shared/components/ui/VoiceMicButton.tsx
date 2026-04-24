@@ -185,7 +185,7 @@ export function VoiceMicButton({
       aria-label={listening ? "Зупинити запис" : label || "Голосовий ввід"}
       title={listening ? "Зупинити запис" : label || "Голосовий ввід"}
       className={cn(
-        "relative flex items-center justify-center rounded-2xl shrink-0 transition-all",
+        "relative flex items-center justify-center rounded-2xl shrink-0 transition-[background-color,border-color,color,box-shadow,opacity,transform]",
         sizeMap[size] || sizeMap.md,
         listening
           ? "bg-error/15 text-error border border-error/30 motion-safe:animate-pulse"

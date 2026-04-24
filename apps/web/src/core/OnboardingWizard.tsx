@@ -76,7 +76,7 @@ function VibeChipRow({ picks, togglePick }) {
               onClick={() => togglePick(chip.id)}
               aria-pressed={active}
               className={cn(
-                "flex items-center gap-2.5 px-3 py-2.5 rounded-xl border text-left transition-all",
+                "flex items-center gap-2.5 px-3 py-2.5 rounded-xl border text-left transition-[background-color,border-color,color,opacity]",
                 "focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/45",
                 active
                   ? "border-brand-500/60 bg-brand-500/10 text-text shadow-card"

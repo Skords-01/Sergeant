@@ -54,7 +54,7 @@ export function Programs({
               <div
                 key={prog.id}
                 className={cn(
-                  "bg-panel border rounded-2xl shadow-card overflow-hidden transition-all",
+                  "bg-panel border rounded-2xl shadow-card overflow-hidden transition-[background-color,border-color,box-shadow,opacity]",
                   isActive ? "border-success/60" : "border-line",
                 )}
               >
@@ -108,7 +108,7 @@ export function Programs({
                     {!isActive ? (
                       <button
                         type="button"
-                        className="flex-1 py-2.5 rounded-xl bg-success text-white text-sm font-semibold transition-all active:scale-[0.98]"
+                        className="flex-1 py-2.5 rounded-xl bg-success text-white text-sm font-semibold transition-[background-color,opacity,transform] active:scale-[0.98]"
                         onClick={() => activateProgram(prog.id)}
                       >
                         Активувати
@@ -118,7 +118,7 @@ export function Programs({
                         {todaySession && onStartWorkout && (
                           <button
                             type="button"
-                            className="flex-1 py-2.5 rounded-xl bg-fizruk text-white text-sm font-semibold transition-all active:scale-[0.98]"
+                            className="flex-1 py-2.5 rounded-xl bg-fizruk text-white text-sm font-semibold transition-[background-color,opacity,transform] active:scale-[0.98]"
                             onClick={() => {
                               const session =
                                 prog.sessions[todaySession.sessionKey];

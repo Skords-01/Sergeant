@@ -194,7 +194,7 @@ function DigestContent({
             <button
               type="button"
               onClick={onGenerate}
-              className="w-full h-10 rounded-xl bg-primary text-bg text-sm font-semibold hover:brightness-110 transition-all active:scale-[0.98]"
+              className="w-full h-10 rounded-xl bg-primary text-bg text-sm font-semibold hover:brightness-110 transition-[filter,opacity,transform] active:scale-[0.98]"
             >
               Згенерувати звіт
             </button>
@@ -218,7 +218,7 @@ function DigestContent({
             "w-full h-11 rounded-xl text-sm font-bold text-white",
             "bg-gradient-to-r from-brand-500 via-brand-400 to-teal-400",
             "dark:from-brand-600 dark:via-brand-500 dark:to-teal-500",
-            "shadow-card hover:brightness-110 active:scale-[0.98] transition-all",
+            "shadow-card hover:brightness-110 active:scale-[0.98] transition-[box-shadow,filter,opacity,transform]",
             "flex items-center justify-center gap-2",
           )}
         >
@@ -327,7 +327,7 @@ export function WeeklyDigestCard() {
       className={cn(
         "rounded-2xl border bg-panel shadow-card overflow-hidden",
         "border-line dark:border-line",
-        "transition-all duration-200 hover:shadow-float",
+        "transition-[box-shadow,filter,opacity,transform] duration-200 hover:shadow-float",
       )}
     >
       <div className="px-4 py-3.5 flex items-center gap-3 bg-gradient-to-r from-transparent via-brand-50/30 to-teal-50/20 dark:from-transparent dark:via-brand-900/10 dark:to-teal-900/5">

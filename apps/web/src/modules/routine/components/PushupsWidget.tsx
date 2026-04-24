@@ -76,7 +76,7 @@ export function PushupsWidget() {
                   >
                     <div
                       className={cn(
-                        "w-full rounded-t-sm transition-all",
+                        "w-full rounded-t-sm transition-[height,background-color,opacity]",
                         isToday ? C.barToday : C.barOther,
                       )}
                       style={{

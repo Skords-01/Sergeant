@@ -252,7 +252,7 @@ function ActiveState({
       <div className="mt-6">
         <button
           type="button"
-          className="w-full py-4 px-5 rounded-2xl bg-fizruk-strong text-white transition-all active:scale-[0.98] flex items-center gap-3 text-left"
+          className="w-full py-4 px-5 rounded-2xl bg-fizruk-strong text-white transition-[background-color,box-shadow,opacity,transform] active:scale-[0.98] flex items-center gap-3 text-left"
           onClick={onResume}
           aria-label="Повернутись до активного тренування"
         >
@@ -303,7 +303,7 @@ function TodayState({
       <div className="mt-6">
         <button
           type="button"
-          className="w-full py-4 px-5 rounded-2xl bg-fizruk-strong text-white transition-all active:scale-[0.98] flex items-center gap-3 text-left"
+          className="w-full py-4 px-5 rounded-2xl bg-fizruk-strong text-white transition-[background-color,box-shadow,opacity,transform] active:scale-[0.98] flex items-center gap-3 text-left"
           onClick={onStartToday}
           aria-label={`Почати тренування: ${state.label}`}
         >
@@ -406,7 +406,7 @@ function EmptyState({
         */}
         <button
           type="button"
-          className="w-full py-4 rounded-full font-bold text-base bg-fizruk-strong text-white transition-all active:scale-[0.98]"
+          className="w-full py-4 rounded-full font-bold text-base bg-fizruk-strong text-white transition-[background-color,box-shadow,opacity,transform] active:scale-[0.98]"
           onClick={onOpenTemplates}
         >
           {primaryLabel}

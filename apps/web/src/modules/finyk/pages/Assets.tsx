@@ -317,7 +317,7 @@ export function Assets({
                 </div>
                 <div className="h-1.5 bg-line rounded-full overflow-hidden mt-3">
                   <div
-                    className="h-full bg-danger rounded-full transition-all duration-500"
+                    className="h-full bg-danger rounded-full transition-[width,background-color] duration-500"
                     style={{
                       width: `${total > 0 ? Math.min(100, Math.round((paid / total) * 100)) : 0}%`,
                     }}

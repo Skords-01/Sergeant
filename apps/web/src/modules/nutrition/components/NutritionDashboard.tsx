@@ -43,7 +43,7 @@ function ring(percent, color, size = 56, stroke = 5) {
         strokeWidth={stroke}
         strokeDasharray={`${dash} ${circ}`}
         strokeLinecap="round"
-        className="transition-all duration-500"
+        className="transition-[stroke-dasharray,stroke-dashoffset] duration-500"
       />
     </svg>
   );
@@ -101,7 +101,7 @@ function MiniBar({ rows, targetKcal }) {
             >
               <div
                 className={cn(
-                  "w-full max-w-[18px] rounded-t-md transition-all duration-300",
+                  "w-full max-w-[18px] rounded-t-md transition-[height,background-color] duration-300",
                   isToday ? "bg-nutrition" : "bg-nutrition/30",
                 )}
                 style={{ height: `${h}%`, minHeight: "3px" }}

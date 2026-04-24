@@ -483,7 +483,7 @@ export function ManualExpenseSheet({
                 key={cat}
                 type="button"
                 onClick={() => setForm((f) => ({ ...f, category: cat }))}
-                className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all duration-150 ease-smooth active:scale-95 ${
+                className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-[background-color,border-color,color,opacity,transform] duration-150 ease-smooth active:scale-95 ${
                   form.category === cat
                     ? "bg-emerald-500 text-white border-emerald-500 shadow-sm"
                     : "bg-panelHi text-muted border-line hover:border-muted/50 hover:bg-panelHi/80"
@@ -497,7 +497,7 @@ export function ManualExpenseSheet({
                 type="button"
                 onClick={() => setCategoriesExpanded((v) => !v)}
                 aria-expanded={categoriesExpanded}
-                className="px-3 py-1.5 rounded-full text-xs font-medium border border-line bg-panel text-muted hover:text-text hover:border-muted/50 hover:bg-panelHi transition-all duration-150 ease-smooth active:scale-95"
+                className="px-3 py-1.5 rounded-full text-xs font-medium border border-line bg-panel text-muted hover:text-text hover:border-muted/50 hover:bg-panelHi transition-[background-color,border-color,color,opacity,transform] duration-150 ease-smooth active:scale-95"
               >
                 {categoriesExpanded ? "Менше ▴" : "Більше ▾"}
               </button>

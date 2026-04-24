@@ -500,7 +500,7 @@ export function LogCard({
         <button
           type="button"
           onClick={onAddMeal}
-          className="w-full h-12 min-h-[44px] rounded-2xl border-2 border-dashed border-line text-muted hover:border-nutrition/60 hover:text-nutrition-strong dark:text-nutrition font-semibold text-sm transition-all"
+          className="w-full h-12 min-h-[44px] rounded-2xl border-2 border-dashed border-line text-muted hover:border-nutrition/60 hover:text-nutrition-strong dark:text-nutrition font-semibold text-sm transition-[border-color,color,background-color]"
         >
           + Додати прийом їжі
         </button>

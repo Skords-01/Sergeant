@@ -37,8 +37,15 @@ export function ChatInput({
 }: ChatInputProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
 
+  // Автофокус лише на пристроях з «точним» вказівником — без спливаючої
+  // клавіатури на телефонах (Web Interface Guidelines).
   useEffect(() => {
-    setTimeout(() => inputRef.current?.focus(), 100);
+    if (typeof window === "undefined") return;
+    if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
+      return;
+    }
+    const id = window.setTimeout(() => inputRef.current?.focus(), 100);
+    return () => clearTimeout(id);
   }, []);
 
   const {
@@ -61,7 +68,7 @@ export function ChatInput({
       <button
         type="button"
         onClick={onHelp}
-        className="w-11 h-11 rounded-full flex items-center justify-center shrink-0 transition-all border bg-panel border-line text-muted hover:text-text hover:border-muted"
+        className="w-11 h-11 rounded-full flex items-center justify-center shrink-0 transition-[background-color,border-color,color,opacity] border bg-panel border-line text-muted hover:text-text hover:border-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/45 focus-visible:ring-offset-2 focus-visible:ring-offset-panel"
         title="Список команд (/help)"
         aria-label="Показати список команд"
       >
@@ -74,6 +81,8 @@ export function ChatInput({
           strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
+          aria-hidden
+          focusable="false"
         >
           <circle cx="12" cy="12" r="10" />
           <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
@@ -103,7 +112,7 @@ export function ChatInput({
             stopSpeaking();
             setSpeaking(false);
           }}
-          className="w-11 h-11 rounded-full flex items-center justify-center shrink-0 transition-all border bg-warning/15 border-warning text-warning motion-safe:animate-pulse"
+          className="w-11 h-11 rounded-full flex items-center justify-center shrink-0 transition-[background-color,border-color,color,opacity] border bg-warning/15 border-warning text-warning motion-safe:animate-pulse focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/45 focus-visible:ring-offset-2 focus-visible:ring-offset-panel"
           title="Зупинити озвучення"
           aria-label="Зупинити озвучення"
         >
@@ -113,6 +122,8 @@ export function ChatInput({
             viewBox="0 0 24 24"
             fill="currentColor"
             stroke="none"
+            aria-hidden
+            focusable="false"
           >
             <rect x="6" y="6" width="12" height="12" rx="2" />
           </svg>
@@ -122,7 +133,7 @@ export function ChatInput({
           type="button"
           onClick={toggleMic}
           className={cn(
-            "w-11 h-11 rounded-full flex items-center justify-center shrink-0 transition-all border",
+            "w-11 h-11 rounded-full flex items-center justify-center shrink-0 transition-[background-color,border-color,color,opacity] border focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/45 focus-visible:ring-offset-2 focus-visible:ring-offset-panel",
             listening
               ? "bg-danger text-white border-danger motion-safe:animate-pulse"
               : "bg-panel border-line text-muted hover:text-text hover:border-muted",
@@ -139,6 +150,8 @@ export function ChatInput({
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
+            aria-hidden
+            focusable="false"
           >
             <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
             <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
@@ -151,7 +164,7 @@ export function ChatInput({
         type="button"
         onClick={onSend}
         disabled={loading || !input.trim() || !online}
-        className="w-11 h-11 rounded-full bg-primary text-bg flex items-center justify-center shrink-0 hover:brightness-110 transition-all disabled:opacity-40"
+        className="w-11 h-11 rounded-full bg-primary text-bg flex items-center justify-center shrink-0 hover:brightness-110 transition-[filter,opacity] disabled:opacity-40 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/45 focus-visible:ring-offset-2 focus-visible:ring-offset-panel"
         aria-label={online ? "Надіслати" : "Надсилання недоступне офлайн"}
         title={online ? "Надіслати" : "Немає інтернету — асистент офлайн"}
       >
@@ -164,6 +177,8 @@ export function ChatInput({
           strokeWidth="2.5"
           strokeLinecap="round"
           strokeLinejoin="round"
+          aria-hidden
+          focusable="false"
         >
           <line x1="12" y1="19" x2="12" y2="5" />
           <polyline points="5 12 12 5 19 12" />

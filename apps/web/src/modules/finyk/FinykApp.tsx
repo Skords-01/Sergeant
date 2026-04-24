@@ -511,7 +511,7 @@ export default function App({
                 "hover:from-brand-700 hover:to-brand-800",
                 "text-white font-semibold",
                 "shadow-md hover:shadow-glow",
-                "transition-all duration-200",
+                "transition-[background-color,box-shadow,opacity,transform] duration-200",
                 "active:scale-[0.98]",
               )}
               onClick={() => {
@@ -742,7 +742,7 @@ export default function App({
             setEditingManualExpenseId(null);
             setShowExpenseSheet(true);
           }}
-          className="fixed bottom-[calc(60px+env(safe-area-inset-bottom,0px)+16px)] right-4 w-12 h-12 rounded-full bg-finyk text-white shadow-float flex items-center justify-center text-2xl hover:bg-finyk-hover hover:shadow-glow hover:scale-105 active:scale-95 transition-all duration-200 ease-smooth z-20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-finyk/45 focus-visible:ring-offset-2 focus-visible:ring-offset-panel"
+          className="fixed bottom-[calc(60px+env(safe-area-inset-bottom,0px)+16px)] right-4 w-12 h-12 rounded-full bg-finyk text-white shadow-float flex items-center justify-center text-2xl hover:bg-finyk-hover hover:shadow-glow hover:scale-105 active:scale-95 transition-[background-color,box-shadow,opacity,transform] duration-200 ease-smooth z-20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-finyk/45 focus-visible:ring-offset-2 focus-visible:ring-offset-panel"
           aria-label="Додати витрату"
         >
           +

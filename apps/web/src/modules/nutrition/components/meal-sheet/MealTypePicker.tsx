@@ -15,7 +15,7 @@ export function MealTypePicker({ mealType, setForm }) {
             type="button"
             onClick={() => setForm((s) => ({ ...s, mealType: mt.id }))}
             className={cn(
-              "px-3 py-1.5 rounded-xl text-sm font-semibold border transition-all",
+              "px-3 py-1.5 rounded-xl text-sm font-semibold border transition-[background-color,border-color,color,opacity]",
               mealType === mt.id
                 ? "bg-nutrition-strong text-white border-nutrition"
                 : "bg-panelHi text-muted border-line hover:border-nutrition/50",

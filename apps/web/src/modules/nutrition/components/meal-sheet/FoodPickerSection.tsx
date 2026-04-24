@@ -204,7 +204,7 @@ export function FoodPickerSection({
                   type="button"
                   onClick={() => setPickedGrams(String(g))}
                   className={cn(
-                    "px-2 py-0.5 rounded-lg text-xs font-semibold border transition-all",
+                    "px-2 py-0.5 rounded-lg text-xs font-semibold border transition-[background-color,border-color,color,opacity]",
                     Number(pickedGrams) === g
                       ? "bg-nutrition-strong text-white border-nutrition"
                       : "bg-panelHi text-subtle border-line hover:border-nutrition/40",

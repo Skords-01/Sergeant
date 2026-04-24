@@ -226,7 +226,7 @@ function BarChart({
           >
             <div
               className={cn(
-                "w-full rounded-t-sm transition-all",
+                "w-full rounded-t-sm transition-[height,background-color,opacity]",
                 colorClass,
                 isToday && "opacity-100",
                 !isToday && "opacity-60",

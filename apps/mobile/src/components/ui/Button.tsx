@@ -12,6 +12,8 @@
  *   plus module-specific `finyk`/`fizruk`/`routine`/`nutrition` and their
  *   `-soft` variants).
  * - Same size enum (xs / sm / md / lg / xl) and `iconOnly` flag.
+ *   With `iconOnly`, pass `accessibilityLabel` (Web Interface Guidelines /
+ *   parity with web `aria-label` on icon-only controls).
  * - `loading` swaps the label for an `ActivityIndicator` while preserving
  *   button width (label is still laid out invisibly underneath).
  * - Icons are supplied via `children` (matches web). Caller is responsible

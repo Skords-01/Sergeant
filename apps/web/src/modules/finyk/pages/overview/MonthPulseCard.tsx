@@ -92,7 +92,7 @@ const MonthPulseCardImpl = function MonthPulseCard({
         <div className="h-1.5 bg-bg rounded-full overflow-hidden">
           <div
             className={cn(
-              "h-full rounded-full transition-all duration-700",
+              "h-full rounded-full transition-[width,background-color] duration-700",
               expenseFromIncomeBarClass,
             )}
             style={{ width: showBalance ? `${spendPct}%` : "0%" }}
@@ -136,7 +136,7 @@ const MonthPulseCardImpl = function MonthPulseCard({
           <div className="h-2.5 bg-bg rounded-full overflow-hidden">
             <div
               className={cn(
-                "h-full rounded-full transition-all duration-500",
+                "h-full rounded-full transition-[width,background-color] duration-500",
                 forecastBarClass,
               )}
               style={{ width: `${forecastTrendPct}%` }}

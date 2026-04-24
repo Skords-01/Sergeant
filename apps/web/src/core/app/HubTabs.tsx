@@ -25,7 +25,7 @@ function TabButton({
       role="tab"
       aria-selected={active}
       className={cn(
-        "flex-1 flex items-center justify-center gap-1.5 min-h-[44px] py-2 rounded-xl text-sm font-medium transition-all",
+        "flex-1 flex items-center justify-center gap-1.5 min-h-[44px] py-2 rounded-xl text-sm font-medium transition-[background-color,color,opacity]",
         "focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/45",
         active
           ? "bg-panel text-text shadow-card"

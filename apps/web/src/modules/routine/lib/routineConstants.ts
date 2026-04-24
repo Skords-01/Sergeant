@@ -56,13 +56,13 @@ export const ROUTINE_THEME = {
 
   // Primary button
   primary:
-    "bg-routine hover:bg-routine-hover text-white border-0 shadow-sm transition-all duration-200 active:scale-[0.98]",
+    "bg-routine hover:bg-routine-hover text-white border-0 shadow-sm transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 active:scale-[0.98]",
   primarySoft:
-    "bg-routine-surface hover:bg-coral-100 text-routine-strong dark:text-routine border border-routine-ring/50 transition-all duration-200",
+    "bg-routine-surface hover:bg-coral-100 text-routine-strong dark:text-routine border border-routine-ring/50 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200",
 
   // Secondary/ghost
   secondary:
-    "bg-panel hover:bg-panelHi text-text border border-line transition-all duration-200",
+    "bg-panel hover:bg-panelHi text-text border border-line transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200",
 
   // Progress ring colors
   progressTrack: "text-coral-100 dark:text-coral-900/30",

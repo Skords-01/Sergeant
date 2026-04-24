@@ -298,7 +298,7 @@ const StatusRow = memo(function StatusRow({
             >
               <div
                 className={cn(
-                  "h-full rounded-full transition-all duration-700 ease-out",
+                  "h-full rounded-full transition-[width,background-color] duration-700 ease-out",
                   config.accentClass,
                 )}
                 style={{ width: `${Math.min(preview.progress, 100)}%` }}

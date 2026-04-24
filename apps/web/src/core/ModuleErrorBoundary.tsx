@@ -76,7 +76,7 @@ export default class ModuleErrorBoundary extends Component<
             <button
               type="button"
               onClick={this.handleRetry}
-              className="flex-1 px-5 py-2.5 rounded-2xl bg-primary text-bg text-sm font-semibold shadow-card hover:brightness-110 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+              className="flex-1 px-5 py-2.5 rounded-2xl bg-primary text-bg text-sm font-semibold shadow-card hover:brightness-110 transition-[filter,box-shadow,opacity] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
               aria-label="Спробувати ще раз"
             >
               Спробувати ще

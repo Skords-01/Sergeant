@@ -65,7 +65,7 @@ function GoalBudgetCardComponent({
           </div>
           <div className="h-2 bg-bg rounded-full overflow-hidden">
             <div
-              className="h-full rounded-full bg-success transition-all duration-500"
+              className="h-full rounded-full bg-success transition-[width,background-color] duration-500"
               style={{ width: `${pct}%` }}
             />
           </div>

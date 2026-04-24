@@ -18,7 +18,7 @@ function HubSectionFallback({ resetError }) {
       <button
         type="button"
         onClick={resetError}
-        className="px-4 py-2 rounded-xl bg-panel border border-line text-text text-sm font-medium hover:bg-panelHi transition-colors"
+        className="px-4 py-2 rounded-xl bg-panel border border-line text-text text-sm font-medium hover:bg-panelHi transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/45 focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
       >
         Спробувати ще раз
       </button>
@@ -154,7 +154,7 @@ export function HubMainContent({
       <main
         id="main"
         tabIndex={-1}
-        className="flex-1 px-5 pb-28 max-w-lg mx-auto w-full overflow-y-auto outline-none"
+        className="flex-1 px-5 pb-28 max-w-lg mx-auto w-full overflow-y-auto rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/45 focus-visible:ring-inset"
       >
         {hubView === "dashboard" && (
           <ErrorBoundary key="dashboard" fallback={HubSectionFallback}>

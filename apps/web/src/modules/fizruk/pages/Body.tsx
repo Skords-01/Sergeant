@@ -172,7 +172,7 @@ function ScoreButton({ value, selected, onClick, label }) {
       type="button"
       onClick={() => onClick(value)}
       className={cn(
-        "flex-1 flex flex-col items-center gap-1 py-2.5 rounded-xl border text-xs font-semibold transition-all",
+        "flex-1 flex flex-col items-center gap-1 py-2.5 rounded-xl border text-xs font-semibold transition-[background-color,border-color,color,opacity]",
         selected
           ? "bg-success text-white border-success"
           : "border-line text-subtle hover:border-success/50 hover:text-text",
@@ -465,7 +465,7 @@ export function Body({ onOpenMeasurements }) {
             <button
               type="submit"
               className={cn(
-                "w-full py-3 rounded-xl font-semibold text-sm transition-all",
+                "w-full py-3 rounded-xl font-semibold text-sm transition-[background-color,box-shadow,opacity,transform]",
                 submitSuccess
                   ? "bg-success text-white"
                   : "bg-success text-white active:scale-[0.98]",

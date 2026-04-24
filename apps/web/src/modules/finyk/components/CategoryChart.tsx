@@ -21,7 +21,7 @@ function CategoryChartComponent({ data, onBarClick }) {
             </div>
             <div className="h-1.5 bg-line rounded-full overflow-hidden">
               <div
-                className="h-full rounded-full transition-all duration-500"
+                className="h-full rounded-full transition-[width,background-color] duration-500"
                 style={{
                   width: `${(cat.spent / maxVal) * 100}%`,
                   background: COLORS[i % COLORS.length],
