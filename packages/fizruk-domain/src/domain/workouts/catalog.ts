@@ -21,9 +21,13 @@ export const PRIMARY_GROUP_ORDER: readonly string[] = [
   "chest",
   "back",
   "shoulders",
-  "arms",
+  "biceps",
+  "triceps",
+  "forearms",
   "core",
-  "legs",
+  "quadriceps",
+  "hamstrings",
+  "calves",
   "glutes",
   "full_body",
   "cardio",
@@ -138,20 +142,42 @@ export function groupExercisesByPrimary(
 }
 
 /**
- * Composite helper — apply search + primary-group filter, then
- * bucket the result. Matches the single memo the web page builds.
+ * Narrow the pool to exercises that include at least one of the given
+ * equipment tags. Empty / null `equipmentIds` disables the filter.
+ */
+export function filterExercisesByEquipment(
+  exercises: readonly WorkoutExerciseCatalogEntry[],
+  equipmentIds: readonly string[] | null | undefined,
+): WorkoutExerciseCatalogEntry[] {
+  if (!equipmentIds || equipmentIds.length === 0) return exercises.slice();
+  const set = new Set(equipmentIds);
+  return exercises.filter((ex) =>
+    (ex?.equipment ?? []).some((e) => set.has(e)),
+  );
+}
+
+/**
+ * Composite helper — apply search + primary-group + equipment filter,
+ * then bucket the result. Matches the single memo the web page builds.
  */
 export function buildExerciseCatalogGroups(
   exercises: readonly WorkoutExerciseCatalogEntry[],
   options: {
     query?: string;
     primaryGroup?: string | null;
+    equipment?: readonly string[] | null;
     primaryGroupsUk?: Record<string, string>;
   } = {},
 ): WorkoutCatalogGroup[] {
-  const { query = "", primaryGroup = null, primaryGroupsUk = {} } = options;
+  const {
+    query = "",
+    primaryGroup = null,
+    equipment = null,
+    primaryGroupsUk = {},
+  } = options;
   const bySearch = filterExercisesBySearch(exercises, query);
-  const filtered = filterExercisesByPrimaryGroup(bySearch, primaryGroup);
+  const byGroup = filterExercisesByPrimaryGroup(bySearch, primaryGroup);
+  const filtered = filterExercisesByEquipment(byGroup, equipment);
   return groupExercisesByPrimary(filtered, {
     primaryGroupsUk,
     totalsBy: exercises,

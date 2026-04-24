@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildExerciseCatalogGroups,
   exerciseDisplayName,
+  filterExercisesByEquipment,
   filterExercisesByPrimaryGroup,
   filterExercisesBySearch,
   groupExercisesByPrimary,
@@ -18,24 +19,28 @@ const POOL: WorkoutExerciseCatalogEntry[] = [
     primaryGroupUk: "Груди",
     muscles: { primary: ["pectoralis_major"], secondary: ["triceps"] },
     aliases: ["bench", "жим лежачи"],
+    equipment: ["barbell", "bench"],
   },
   {
     id: "pushup",
     name: { uk: "Віджимання", en: "Push-up" },
     primaryGroup: "chest",
     muscles: { primary: ["pectoralis_major"] },
+    equipment: ["bodyweight"],
   },
   {
     id: "squat",
     name: { uk: "Присідання зі штангою", en: "Back Squat" },
-    primaryGroup: "legs",
+    primaryGroup: "quadriceps",
     muscles: { primary: ["quadriceps"] },
+    equipment: ["barbell"],
   },
   {
     id: "deadlift",
     name: { uk: "Тяга", en: "Deadlift" },
     primaryGroup: "back",
     muscles: { primary: ["erector_spinae"] },
+    equipment: ["barbell"],
   },
   {
     id: "mystery",
@@ -93,7 +98,11 @@ describe("filterExercisesByPrimaryGroup", () => {
 describe("groupExercisesByPrimary", () => {
   it("sorts buckets in the canonical order", () => {
     const groups = groupExercisesByPrimary(POOL, {
-      primaryGroupsUk: { chest: "Груди", legs: "Ноги", back: "Спина" },
+      primaryGroupsUk: {
+        chest: "Груди",
+        quadriceps: "Квадрицепс",
+        back: "Спина",
+      },
     });
     const orderIndex = (id: string) => PRIMARY_GROUP_ORDER.indexOf(id);
     const orderedKnown = groups
@@ -141,6 +150,25 @@ describe("buildExerciseCatalogGroups", () => {
 
   it("copes with an empty pool", () => {
     expect(buildExerciseCatalogGroups([])).toEqual([]);
+  });
+});
+
+describe("filterExercisesByEquipment", () => {
+  it("filters by one equipment tag", () => {
+    expect(
+      filterExercisesByEquipment(POOL, ["barbell"]).map((x) => x.id),
+    ).toEqual(["bench", "squat", "deadlift"]);
+  });
+
+  it("filters by multiple equipment tags (OR logic)", () => {
+    expect(
+      filterExercisesByEquipment(POOL, ["bodyweight"]).map((x) => x.id),
+    ).toEqual(["pushup"]);
+  });
+
+  it("returns all when equipmentIds is null or empty", () => {
+    expect(filterExercisesByEquipment(POOL, null)).toHaveLength(POOL.length);
+    expect(filterExercisesByEquipment(POOL, [])).toHaveLength(POOL.length);
   });
 });
 

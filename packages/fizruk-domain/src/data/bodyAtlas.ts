@@ -127,6 +127,7 @@ export function mapDomainMuscleToAtlas(
     case "trapezius":
       return "trapezius";
     case "biceps":
+    case "brachialis":
       return "biceps";
     case "triceps":
       return "triceps";

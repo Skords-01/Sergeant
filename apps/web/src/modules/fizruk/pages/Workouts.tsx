@@ -82,6 +82,7 @@ export function Workouts() {
     exercises,
     search,
     primaryGroupsUk,
+    equipmentUk,
     musclesUk,
     musclesByPrimaryGroup,
     addExercise,
@@ -103,6 +104,7 @@ export function Workouts() {
   } = useWorkouts();
   const templateApi = useWorkoutTemplates();
   const [q, setQ] = useState("");
+  const [equipmentFilter, setEquipmentFilter] = useState<string[]>([]);
   const [selected, setSelected] = useState(null);
   const [open, setOpen] = useState(() => ({}));
   const [addOpen, setAddOpen] = useState(false);
@@ -361,20 +363,27 @@ export function Workouts() {
   }, [workouts, activeWorkoutId]);
 
   const grouped = useMemo(() => {
+    const eqSet = equipmentFilter.length > 0 ? new Set(equipmentFilter) : null;
+    const pool = eqSet
+      ? list.filter((ex) => (ex.equipment ?? []).some((e) => eqSet.has(e)))
+      : list;
     const m = new Map();
-    for (const ex of list) {
+    for (const ex of pool) {
       const gid = ex.primaryGroup || "full_body";
       if (!m.has(gid)) m.set(gid, []);
       m.get(gid).push(ex);
     }
-    // stable group order (common first)
     const order = [
       "chest",
       "back",
       "shoulders",
-      "arms",
+      "biceps",
+      "triceps",
+      "forearms",
       "core",
-      "legs",
+      "quadriceps",
+      "hamstrings",
+      "calves",
       "glutes",
       "full_body",
       "cardio",
@@ -393,7 +402,7 @@ export function Workouts() {
       items: items.slice(0, 80),
       total: items.length,
     }));
-  }, [list, primaryGroupsUk]);
+  }, [list, equipmentFilter, primaryGroupsUk]);
 
   const finishedCount = useMemo(
     () => (workouts || []).filter((w) => w.endedAt).length,
@@ -542,6 +551,9 @@ export function Workouts() {
             mode={mode}
             q={q}
             setQ={setQ}
+            equipmentFilter={equipmentFilter}
+            setEquipmentFilter={setEquipmentFilter}
+            equipmentUk={equipmentUk}
             grouped={grouped}
             open={open}
             setOpen={setOpen}

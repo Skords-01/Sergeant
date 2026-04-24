@@ -51,8 +51,22 @@ export function getDefaultRestSec(
   primaryGroup: string | null | undefined,
 ): number {
   if (!primaryGroup) return 90;
-  const compound = ["chest", "back", "legs", "glutes", "full_body"];
-  const isolation = ["shoulders", "arms", "core"];
+  const compound = [
+    "chest",
+    "back",
+    "quadriceps",
+    "hamstrings",
+    "glutes",
+    "full_body",
+  ];
+  const isolation = [
+    "shoulders",
+    "biceps",
+    "triceps",
+    "forearms",
+    "core",
+    "calves",
+  ];
   if (compound.includes(primaryGroup)) return 90;
   if (isolation.includes(primaryGroup)) return 60;
   return 30;

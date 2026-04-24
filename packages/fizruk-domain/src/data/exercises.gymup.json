@@ -9,12 +9,27 @@
       "chest": "Груди",
       "back": "Спина",
       "shoulders": "Плечі",
-      "arms": "Руки",
+      "biceps": "Біцепс",
+      "triceps": "Трицепс",
+      "forearms": "Передпліччя",
       "core": "Прес",
-      "legs": "Ноги",
+      "quadriceps": "Квадрицепс",
+      "hamstrings": "Задня поверхня стегна",
+      "calves": "Ікри",
       "glutes": "Сідниці",
       "cardio": "Кардіо",
       "full_body": "Все тіло"
+    },
+    "equipmentUk": {
+      "barbell": "Штанга",
+      "dumbbell": "Гантелі",
+      "kettlebell": "Гиря",
+      "cable": "Блок/трос",
+      "machine": "Тренажер",
+      "bodyweight": "Власна вага",
+      "band": "Еспандер/резинка",
+      "bench": "Лава",
+      "other": "Інше"
     },
     "musclesUk": {
       "pectoralis_major": "Великий грудний",
@@ -31,6 +46,7 @@
       "biceps": "Біцепс",
       "triceps": "Трицепс",
       "forearms": "Передпліччя",
+      "brachialis": "Плечовий м'яз",
       "rectus_abdominis": "Прямий м'яз живота",
       "obliques": "Косі м'язи живота",
       "quadriceps": "Квадрицепс",
@@ -67,9 +83,13 @@
         "trapezius",
         "triceps"
       ],
-      "arms": ["biceps", "triceps", "forearms"],
-      "core": ["rectus_abdominis", "obliques"],
-      "legs": ["quadriceps", "hamstrings", "calves", "adductors", "abductors"],
+      "biceps": ["biceps", "brachialis", "forearms"],
+      "triceps": ["triceps", "forearms"],
+      "forearms": ["forearms", "biceps"],
+      "core": ["rectus_abdominis", "obliques", "erector_spinae"],
+      "quadriceps": ["quadriceps", "adductors", "abductors"],
+      "hamstrings": ["hamstrings", "gluteus_maximus"],
+      "calves": ["calves"],
       "glutes": ["gluteus_maximus", "gluteus_medius", "hamstrings"],
       "cardio": [],
       "full_body": [
@@ -117,11 +137,50 @@
       "equipment": ["barbell", "bench"]
     },
     {
+      "id": "incline_dumbbell_press",
+      "name": {
+        "uk": "Жим гантелей на похилій лаві",
+        "en": "Incline Dumbbell Press"
+      },
+      "primaryGroup": "chest",
+      "muscles": {
+        "primary": ["pectoralis_major", "front_deltoid"],
+        "secondary": ["triceps"]
+      },
+      "equipment": ["dumbbell", "bench"]
+    },
+    {
+      "id": "decline_bench_press",
+      "name": {
+        "uk": "Жим штанги на лаві з від'ємним нахилом",
+        "en": "Decline Bench Press"
+      },
+      "primaryGroup": "chest",
+      "muscles": {
+        "primary": ["pectoralis_major", "pectoralis_minor"],
+        "secondary": ["triceps", "front_deltoid"]
+      },
+      "equipment": ["barbell", "bench"]
+    },
+    {
       "id": "dumbbell_flyes",
       "name": { "uk": "Розводка гантелей лежачи", "en": "Dumbbell Flyes" },
       "primaryGroup": "chest",
       "muscles": {
         "primary": ["pectoralis_major", "pectoralis_minor"],
+        "secondary": ["front_deltoid", "serratus_anterior"]
+      },
+      "equipment": ["dumbbell", "bench"]
+    },
+    {
+      "id": "incline_dumbbell_flyes",
+      "name": {
+        "uk": "Розводка гантелей на похилій лаві",
+        "en": "Incline Dumbbell Flyes"
+      },
+      "primaryGroup": "chest",
+      "muscles": {
+        "primary": ["pectoralis_major"],
         "secondary": ["front_deltoid", "serratus_anterior"]
       },
       "equipment": ["dumbbell", "bench"]
@@ -147,6 +206,19 @@
       "equipment": ["bodyweight"]
     },
     {
+      "id": "diamond_pushup",
+      "name": {
+        "uk": "Віджимання з вузькою постановкою рук",
+        "en": "Diamond Push-up"
+      },
+      "primaryGroup": "chest",
+      "muscles": {
+        "primary": ["pectoralis_major", "triceps"],
+        "secondary": ["front_deltoid"]
+      },
+      "equipment": ["bodyweight"]
+    },
+    {
       "id": "dips_chest",
       "name": {
         "uk": "Віджимання на брусах (акцент груди)",
@@ -159,6 +231,37 @@
       },
       "equipment": ["bodyweight"]
     },
+    {
+      "id": "cable_crossover",
+      "name": { "uk": "Зведення рук на блоці", "en": "Cable Crossover" },
+      "primaryGroup": "chest",
+      "muscles": {
+        "primary": ["pectoralis_major", "pectoralis_minor"],
+        "secondary": ["front_deltoid", "serratus_anterior"]
+      },
+      "equipment": ["cable"]
+    },
+    {
+      "id": "machine_chest_press",
+      "name": { "uk": "Жим у тренажері (груди)", "en": "Machine Chest Press" },
+      "primaryGroup": "chest",
+      "muscles": {
+        "primary": ["pectoralis_major"],
+        "secondary": ["triceps", "front_deltoid"]
+      },
+      "equipment": ["machine"]
+    },
+    {
+      "id": "pec_deck",
+      "name": { "uk": "Зведення рук у тренажері (пек-дек)", "en": "Pec Deck" },
+      "primaryGroup": "chest",
+      "muscles": {
+        "primary": ["pectoralis_major", "pectoralis_minor"],
+        "secondary": ["front_deltoid"]
+      },
+      "equipment": ["machine"]
+    },
+
     {
       "id": "pullup",
       "name": {
@@ -229,6 +332,19 @@
       "equipment": ["cable", "machine"]
     },
     {
+      "id": "close_grip_lat_pulldown",
+      "name": {
+        "uk": "Тяга верхнього блоку вузьким хватом",
+        "en": "Close-grip Lat Pulldown"
+      },
+      "primaryGroup": "back",
+      "muscles": {
+        "primary": ["latissimus_dorsi", "biceps"],
+        "secondary": ["rhomboids", "rear_deltoid"]
+      },
+      "equipment": ["cable", "machine"]
+    },
+    {
       "id": "cable_seated_row",
       "name": { "uk": "Тяга нижнього блоку сидячи", "en": "Seated Cable Row" },
       "primaryGroup": "back",
@@ -237,6 +353,16 @@
         "secondary": ["biceps", "rear_deltoid", "forearms"]
       },
       "equipment": ["cable", "machine"]
+    },
+    {
+      "id": "t_bar_row",
+      "name": { "uk": "Тяга T-грифа", "en": "T-bar Row" },
+      "primaryGroup": "back",
+      "muscles": {
+        "primary": ["latissimus_dorsi", "rhomboids"],
+        "secondary": ["biceps", "rear_deltoid", "trapezius"]
+      },
+      "equipment": ["barbell", "machine"]
     },
     {
       "id": "hyperextension",
@@ -248,6 +374,40 @@
       },
       "equipment": ["machine", "bodyweight"]
     },
+    {
+      "id": "inverted_row",
+      "name": { "uk": "Горизонтальні підтягування", "en": "Inverted Row" },
+      "primaryGroup": "back",
+      "muscles": {
+        "primary": ["latissimus_dorsi", "rhomboids", "upper_back"],
+        "secondary": ["biceps", "rear_deltoid"]
+      },
+      "equipment": ["bodyweight"]
+    },
+    {
+      "id": "straight_arm_pulldown",
+      "name": {
+        "uk": "Тяга прямими руками (блок)",
+        "en": "Straight-arm Pulldown"
+      },
+      "primaryGroup": "back",
+      "muscles": {
+        "primary": ["latissimus_dorsi"],
+        "secondary": ["rear_deltoid", "triceps"]
+      },
+      "equipment": ["cable"]
+    },
+    {
+      "id": "machine_row",
+      "name": { "uk": "Тяга в тренажері (горизонт.)", "en": "Machine Row" },
+      "primaryGroup": "back",
+      "muscles": {
+        "primary": ["latissimus_dorsi", "rhomboids"],
+        "secondary": ["biceps", "rear_deltoid"]
+      },
+      "equipment": ["machine"]
+    },
+
     {
       "id": "overhead_press_barbell",
       "name": { "uk": "Жим штанги стоячи", "en": "Barbell Overhead Press" },
@@ -269,6 +429,19 @@
       "equipment": ["dumbbell"]
     },
     {
+      "id": "seated_dumbbell_press",
+      "name": {
+        "uk": "Жим гантелей сидячи",
+        "en": "Seated Dumbbell Press"
+      },
+      "primaryGroup": "shoulders",
+      "muscles": {
+        "primary": ["front_deltoid", "lateral_deltoid"],
+        "secondary": ["triceps", "trapezius"]
+      },
+      "equipment": ["dumbbell", "bench"]
+    },
+    {
       "id": "arnold_press",
       "name": { "uk": "Жим Арнольда", "en": "Arnold Press" },
       "primaryGroup": "shoulders",
@@ -287,6 +460,19 @@
         "secondary": ["front_deltoid", "trapezius"]
       },
       "equipment": ["dumbbell"]
+    },
+    {
+      "id": "cable_lateral_raise",
+      "name": {
+        "uk": "Підйом через сторони на блоці",
+        "en": "Cable Lateral Raise"
+      },
+      "primaryGroup": "shoulders",
+      "muscles": {
+        "primary": ["lateral_deltoid"],
+        "secondary": ["front_deltoid", "trapezius"]
+      },
+      "equipment": ["cable"]
     },
     {
       "id": "front_raise",
@@ -322,19 +508,66 @@
       "equipment": ["barbell", "dumbbell"]
     },
     {
+      "id": "cable_face_pull",
+      "name": { "uk": "Тяга на обличчя (блок)", "en": "Face Pull" },
+      "primaryGroup": "shoulders",
+      "muscles": {
+        "primary": ["rear_deltoid"],
+        "secondary": ["rhomboids", "trapezius", "upper_back"]
+      },
+      "equipment": ["cable", "machine"]
+    },
+    {
+      "id": "shrugs",
+      "name": { "uk": "Шраги зі штангою", "en": "Barbell Shrugs" },
+      "primaryGroup": "shoulders",
+      "muscles": {
+        "primary": ["trapezius"],
+        "secondary": ["neck", "forearms"]
+      },
+      "equipment": ["barbell", "dumbbell"]
+    },
+    {
+      "id": "machine_shoulder_press",
+      "name": {
+        "uk": "Жим у тренажері (плечі)",
+        "en": "Machine Shoulder Press"
+      },
+      "primaryGroup": "shoulders",
+      "muscles": {
+        "primary": ["front_deltoid", "lateral_deltoid"],
+        "secondary": ["triceps"]
+      },
+      "equipment": ["machine"]
+    },
+    {
+      "id": "band_pull_apart",
+      "name": { "uk": "Розведення рук із резинкою", "en": "Band Pull-apart" },
+      "primaryGroup": "shoulders",
+      "muscles": {
+        "primary": ["rear_deltoid"],
+        "secondary": ["rhomboids", "upper_back"]
+      },
+      "equipment": ["band"]
+    },
+
+    {
       "id": "bicep_curl_barbell",
       "name": { "uk": "Згинання рук зі штангою", "en": "Barbell Bicep Curl" },
-      "primaryGroup": "arms",
+      "primaryGroup": "biceps",
       "muscles": {
         "primary": ["biceps"],
-        "secondary": ["forearms", "front_deltoid"]
+        "secondary": ["forearms", "brachialis"]
       },
       "equipment": ["barbell"]
     },
     {
       "id": "bicep_curl_dumbbell",
-      "name": { "uk": "Згинання рук з гантелями", "en": "Dumbbell Bicep Curl" },
-      "primaryGroup": "arms",
+      "name": {
+        "uk": "Згинання рук з гантелями",
+        "en": "Dumbbell Bicep Curl"
+      },
+      "primaryGroup": "biceps",
       "muscles": {
         "primary": ["biceps"],
         "secondary": ["forearms"]
@@ -344,17 +577,91 @@
     {
       "id": "hammer_curl",
       "name": { "uk": "Молоткоподібні згинання", "en": "Hammer Curl" },
-      "primaryGroup": "arms",
+      "primaryGroup": "biceps",
       "muscles": {
-        "primary": ["biceps", "forearms"],
-        "secondary": ["front_deltoid"]
+        "primary": ["biceps", "brachialis"],
+        "secondary": ["forearms"]
       },
       "equipment": ["dumbbell"]
     },
     {
+      "id": "concentration_curl",
+      "name": { "uk": "Концентроване згинання", "en": "Concentration Curl" },
+      "primaryGroup": "biceps",
+      "muscles": {
+        "primary": ["biceps"],
+        "secondary": ["forearms"]
+      },
+      "equipment": ["dumbbell"]
+    },
+    {
+      "id": "preacher_curl",
+      "name": { "uk": "Згинання на лаві Скотта", "en": "Preacher Curl" },
+      "primaryGroup": "biceps",
+      "muscles": {
+        "primary": ["biceps", "brachialis"],
+        "secondary": ["forearms"]
+      },
+      "equipment": ["barbell", "dumbbell", "bench"]
+    },
+    {
+      "id": "cable_curl",
+      "name": { "uk": "Згинання рук на блоці", "en": "Cable Curl" },
+      "primaryGroup": "biceps",
+      "muscles": {
+        "primary": ["biceps"],
+        "secondary": ["forearms"]
+      },
+      "equipment": ["cable"]
+    },
+    {
+      "id": "incline_dumbbell_curl",
+      "name": {
+        "uk": "Згинання рук з гантелями на похилій лаві",
+        "en": "Incline Dumbbell Curl"
+      },
+      "primaryGroup": "biceps",
+      "muscles": {
+        "primary": ["biceps"],
+        "secondary": ["forearms"]
+      },
+      "equipment": ["dumbbell", "bench"]
+    },
+    {
+      "id": "spider_curl",
+      "name": { "uk": "Спайдер-згинання", "en": "Spider Curl" },
+      "primaryGroup": "biceps",
+      "muscles": {
+        "primary": ["biceps"],
+        "secondary": ["brachialis"]
+      },
+      "equipment": ["barbell", "dumbbell", "bench"]
+    },
+    {
+      "id": "ez_bar_curl",
+      "name": { "uk": "Згинання рук із EZ-грифом", "en": "EZ-bar Curl" },
+      "primaryGroup": "biceps",
+      "muscles": {
+        "primary": ["biceps", "brachialis"],
+        "secondary": ["forearms"]
+      },
+      "equipment": ["barbell"]
+    },
+    {
+      "id": "band_bicep_curl",
+      "name": { "uk": "Згинання рук з резинкою", "en": "Band Bicep Curl" },
+      "primaryGroup": "biceps",
+      "muscles": {
+        "primary": ["biceps"],
+        "secondary": ["forearms"]
+      },
+      "equipment": ["band"]
+    },
+
+    {
       "id": "tricep_pushdown",
       "name": { "uk": "Розгинання рук на блоці", "en": "Tricep Pushdown" },
-      "primaryGroup": "arms",
+      "primaryGroup": "triceps",
       "muscles": {
         "primary": ["triceps"],
         "secondary": []
@@ -364,7 +671,7 @@
     {
       "id": "skull_crusher",
       "name": { "uk": "Французький жим лежачи", "en": "Skull Crusher" },
-      "primaryGroup": "arms",
+      "primaryGroup": "triceps",
       "muscles": {
         "primary": ["triceps"],
         "secondary": []
@@ -377,13 +684,129 @@
         "uk": "Віджимання на брусах (акцент трицепс)",
         "en": "Tricep Dips"
       },
-      "primaryGroup": "arms",
+      "primaryGroup": "triceps",
       "muscles": {
         "primary": ["triceps"],
         "secondary": ["pectoralis_major", "front_deltoid"]
       },
       "equipment": ["bodyweight"]
     },
+    {
+      "id": "overhead_tricep_extension",
+      "name": {
+        "uk": "Розгинання рук з гантеллю над головою",
+        "en": "Overhead Tricep Extension"
+      },
+      "primaryGroup": "triceps",
+      "muscles": {
+        "primary": ["triceps"],
+        "secondary": []
+      },
+      "equipment": ["dumbbell", "cable"]
+    },
+    {
+      "id": "close_grip_bench_press",
+      "name": {
+        "uk": "Жим штанги вузьким хватом",
+        "en": "Close-grip Bench Press"
+      },
+      "primaryGroup": "triceps",
+      "muscles": {
+        "primary": ["triceps"],
+        "secondary": ["pectoralis_major", "front_deltoid"]
+      },
+      "equipment": ["barbell", "bench"]
+    },
+    {
+      "id": "tricep_kickback",
+      "name": {
+        "uk": "Відведення руки з гантеллю назад",
+        "en": "Tricep Kickback"
+      },
+      "primaryGroup": "triceps",
+      "muscles": {
+        "primary": ["triceps"],
+        "secondary": []
+      },
+      "equipment": ["dumbbell"]
+    },
+    {
+      "id": "rope_pushdown",
+      "name": {
+        "uk": "Розгинання рук на блоці з канатом",
+        "en": "Rope Pushdown"
+      },
+      "primaryGroup": "triceps",
+      "muscles": {
+        "primary": ["triceps"],
+        "secondary": []
+      },
+      "equipment": ["cable"]
+    },
+    {
+      "id": "bench_dips",
+      "name": {
+        "uk": "Зворотні віджимання від лави",
+        "en": "Bench Dips"
+      },
+      "primaryGroup": "triceps",
+      "muscles": {
+        "primary": ["triceps"],
+        "secondary": ["front_deltoid", "pectoralis_major"]
+      },
+      "equipment": ["bench", "bodyweight"]
+    },
+    {
+      "id": "band_tricep_pushdown",
+      "name": {
+        "uk": "Розгинання рук із резинкою",
+        "en": "Band Tricep Pushdown"
+      },
+      "primaryGroup": "triceps",
+      "muscles": {
+        "primary": ["triceps"],
+        "secondary": []
+      },
+      "equipment": ["band"]
+    },
+
+    {
+      "id": "wrist_curl",
+      "name": { "uk": "Згинання зап'ястя", "en": "Wrist Curl" },
+      "primaryGroup": "forearms",
+      "muscles": {
+        "primary": ["forearms"],
+        "secondary": []
+      },
+      "equipment": ["barbell", "dumbbell"]
+    },
+    {
+      "id": "reverse_wrist_curl",
+      "name": {
+        "uk": "Розгинання зап'ястя",
+        "en": "Reverse Wrist Curl"
+      },
+      "primaryGroup": "forearms",
+      "muscles": {
+        "primary": ["forearms"],
+        "secondary": []
+      },
+      "equipment": ["barbell", "dumbbell"]
+    },
+    {
+      "id": "reverse_curl",
+      "name": {
+        "uk": "Згинання рук зворотнім хватом",
+        "en": "Reverse Curl"
+      },
+      "primaryGroup": "forearms",
+      "muscles": {
+        "primary": ["forearms", "brachialis"],
+        "secondary": ["biceps"]
+      },
+      "equipment": ["barbell", "dumbbell"]
+    },
+
     {
       "id": "crunch",
       "name": { "uk": "Скручування", "en": "Crunch" },
@@ -445,9 +868,40 @@
       "equipment": ["bodyweight"]
     },
     {
+      "id": "side_plank",
+      "name": { "uk": "Бокова планка", "en": "Side Plank" },
+      "primaryGroup": "core",
+      "muscles": {
+        "primary": ["obliques"],
+        "secondary": ["rectus_abdominis", "gluteus_medius"]
+      },
+      "equipment": ["bodyweight"]
+    },
+    {
+      "id": "ab_wheel_rollout",
+      "name": { "uk": "Розкатка з роликом", "en": "Ab Wheel Rollout" },
+      "primaryGroup": "core",
+      "muscles": {
+        "primary": ["rectus_abdominis"],
+        "secondary": ["obliques", "erector_spinae", "latissimus_dorsi"]
+      },
+      "equipment": ["other"]
+    },
+    {
+      "id": "cable_woodchop",
+      "name": { "uk": "Дроворуб (блок)", "en": "Cable Woodchop" },
+      "primaryGroup": "core",
+      "muscles": {
+        "primary": ["obliques"],
+        "secondary": ["rectus_abdominis"]
+      },
+      "equipment": ["cable"]
+    },
+
+    {
       "id": "squat_barbell",
       "name": { "uk": "Присідання зі штангою", "en": "Barbell Back Squat" },
-      "primaryGroup": "legs",
+      "primaryGroup": "quadriceps",
       "muscles": {
         "primary": ["quadriceps", "gluteus_maximus"],
         "secondary": ["hamstrings", "erector_spinae", "adductors", "calves"]
@@ -455,9 +909,22 @@
       "equipment": ["barbell"]
     },
     {
+      "id": "front_squat",
+      "name": {
+        "uk": "Фронтальне присідання",
+        "en": "Front Squat"
+      },
+      "primaryGroup": "quadriceps",
+      "muscles": {
+        "primary": ["quadriceps"],
+        "secondary": ["gluteus_maximus", "erector_spinae"]
+      },
+      "equipment": ["barbell"]
+    },
+    {
       "id": "squat_goblet",
       "name": { "uk": "Присідання з гирею (goblet)", "en": "Goblet Squat" },
-      "primaryGroup": "legs",
+      "primaryGroup": "quadriceps",
       "muscles": {
         "primary": ["quadriceps", "gluteus_maximus"],
         "secondary": ["hamstrings", "adductors", "erector_spinae"]
@@ -467,7 +934,7 @@
     {
       "id": "squat_bodyweight",
       "name": { "uk": "Присідання (власна вага)", "en": "Bodyweight Squat" },
-      "primaryGroup": "legs",
+      "primaryGroup": "quadriceps",
       "muscles": {
         "primary": ["quadriceps", "gluteus_maximus"],
         "secondary": ["hamstrings", "calves"]
@@ -477,7 +944,7 @@
     {
       "id": "leg_press",
       "name": { "uk": "Жим ногами в тренажері", "en": "Leg Press" },
-      "primaryGroup": "legs",
+      "primaryGroup": "quadriceps",
       "muscles": {
         "primary": ["quadriceps", "gluteus_maximus"],
         "secondary": ["hamstrings", "calves"]
@@ -487,7 +954,7 @@
     {
       "id": "leg_extension",
       "name": { "uk": "Розгинання ніг у тренажері", "en": "Leg Extension" },
-      "primaryGroup": "legs",
+      "primaryGroup": "quadriceps",
       "muscles": {
         "primary": ["quadriceps"],
         "secondary": []
@@ -495,19 +962,9 @@
       "equipment": ["machine"]
     },
     {
-      "id": "leg_curl",
-      "name": { "uk": "Згинання ніг у тренажері", "en": "Leg Curl" },
-      "primaryGroup": "legs",
-      "muscles": {
-        "primary": ["hamstrings"],
-        "secondary": ["calves"]
-      },
-      "equipment": ["machine"]
-    },
-    {
       "id": "lunge",
       "name": { "uk": "Випади з гантелями", "en": "Dumbbell Lunge" },
-      "primaryGroup": "legs",
+      "primaryGroup": "quadriceps",
       "muscles": {
         "primary": ["quadriceps", "gluteus_maximus"],
         "secondary": ["hamstrings", "calves", "adductors"]
@@ -517,7 +974,7 @@
     {
       "id": "reverse_lunge",
       "name": { "uk": "Зворотні випади", "en": "Reverse Lunge" },
-      "primaryGroup": "legs",
+      "primaryGroup": "quadriceps",
       "muscles": {
         "primary": ["gluteus_maximus", "quadriceps"],
         "secondary": ["hamstrings", "calves"]
@@ -525,9 +982,156 @@
       "equipment": ["bodyweight", "dumbbell"]
     },
     {
+      "id": "walking_lunge",
+      "name": { "uk": "Випади у ходьбі", "en": "Walking Lunge" },
+      "primaryGroup": "quadriceps",
+      "muscles": {
+        "primary": ["quadriceps", "gluteus_maximus"],
+        "secondary": ["hamstrings", "calves"]
+      },
+      "equipment": ["bodyweight", "dumbbell"]
+    },
+    {
+      "id": "bulgarian_split_squat",
+      "name": {
+        "uk": "Болгарські випади",
+        "en": "Bulgarian Split Squat"
+      },
+      "primaryGroup": "quadriceps",
+      "muscles": {
+        "primary": ["quadriceps", "gluteus_maximus"],
+        "secondary": ["hamstrings", "adductors"]
+      },
+      "equipment": ["dumbbell", "bench"]
+    },
+    {
+      "id": "hack_squat",
+      "name": { "uk": "Гак-присідання", "en": "Hack Squat" },
+      "primaryGroup": "quadriceps",
+      "muscles": {
+        "primary": ["quadriceps"],
+        "secondary": ["gluteus_maximus", "calves"]
+      },
+      "equipment": ["machine"]
+    },
+    {
+      "id": "sissy_squat",
+      "name": { "uk": "Сіссі-присідання", "en": "Sissy Squat" },
+      "primaryGroup": "quadriceps",
+      "muscles": {
+        "primary": ["quadriceps"],
+        "secondary": []
+      },
+      "equipment": ["bodyweight"]
+    },
+    {
+      "id": "step_up",
+      "name": { "uk": "Зашагування на платформу", "en": "Step-up" },
+      "primaryGroup": "quadriceps",
+      "muscles": {
+        "primary": ["quadriceps", "gluteus_maximus"],
+        "secondary": ["hamstrings", "calves"]
+      },
+      "equipment": ["bodyweight", "dumbbell"]
+    },
+
+    {
+      "id": "leg_curl",
+      "name": { "uk": "Згинання ніг у тренажері", "en": "Leg Curl" },
+      "primaryGroup": "hamstrings",
+      "muscles": {
+        "primary": ["hamstrings"],
+        "secondary": ["calves"]
+      },
+      "equipment": ["machine"]
+    },
+    {
+      "id": "romanian_deadlift",
+      "name": { "uk": "Румунська тяга", "en": "Romanian Deadlift" },
+      "primaryGroup": "hamstrings",
+      "muscles": {
+        "primary": ["hamstrings", "gluteus_maximus"],
+        "secondary": ["erector_spinae", "calves"]
+      },
+      "equipment": ["barbell", "dumbbell"]
+    },
+    {
+      "id": "stiff_leg_deadlift",
+      "name": {
+        "uk": "Тяга на прямих ногах",
+        "en": "Stiff-leg Deadlift"
+      },
+      "primaryGroup": "hamstrings",
+      "muscles": {
+        "primary": ["hamstrings", "erector_spinae"],
+        "secondary": ["gluteus_maximus"]
+      },
+      "equipment": ["barbell", "dumbbell"]
+    },
+    {
+      "id": "good_morning",
+      "name": { "uk": "Доброго ранку (Good Morning)", "en": "Good Morning" },
+      "primaryGroup": "hamstrings",
+      "muscles": {
+        "primary": ["hamstrings", "erector_spinae"],
+        "secondary": ["gluteus_maximus"]
+      },
+      "equipment": ["barbell"]
+    },
+    {
+      "id": "nordic_curl",
+      "name": { "uk": "Нордичне згинання", "en": "Nordic Hamstring Curl" },
+      "primaryGroup": "hamstrings",
+      "muscles": {
+        "primary": ["hamstrings"],
+        "secondary": ["calves"]
+      },
+      "equipment": ["bodyweight"]
+    },
+    {
+      "id": "single_leg_deadlift",
+      "name": {
+        "uk": "Румунська тяга на одній нозі",
+        "en": "Single-leg Deadlift"
+      },
+      "primaryGroup": "hamstrings",
+      "muscles": {
+        "primary": ["hamstrings", "gluteus_maximus"],
+        "secondary": ["erector_spinae"]
+      },
+      "equipment": ["dumbbell", "kettlebell"]
+    },
+    {
+      "id": "kettlebell_swing",
+      "name": { "uk": "Свінг з гирею", "en": "Kettlebell Swing" },
+      "primaryGroup": "hamstrings",
+      "muscles": {
+        "primary": ["hamstrings", "gluteus_maximus"],
+        "secondary": ["erector_spinae", "quadriceps"]
+      },
+      "equipment": ["kettlebell"]
+    },
+    {
+      "id": "band_leg_curl",
+      "name": {
+        "uk": "Згинання ніг із резинкою",
+        "en": "Band Leg Curl"
+      },
+      "primaryGroup": "hamstrings",
+      "muscles": {
+        "primary": ["hamstrings"],
+        "secondary": ["calves"]
+      },
+      "equipment": ["band"]
+    },
+
+    {
       "id": "calf_raise_standing",
-      "name": { "uk": "Підйоми на носки стоячи", "en": "Standing Calf Raise" },
-      "primaryGroup": "legs",
+      "name": {
+        "uk": "Підйоми на носки стоячи",
+        "en": "Standing Calf Raise"
+      },
+      "primaryGroup": "calves",
       "muscles": {
         "primary": ["calves"],
         "secondary": []
@@ -537,13 +1141,40 @@
     {
       "id": "calf_raise_seated",
       "name": { "uk": "Підйоми на носки сидячи", "en": "Seated Calf Raise" },
-      "primaryGroup": "legs",
+      "primaryGroup": "calves",
       "muscles": {
         "primary": ["calves"],
         "secondary": []
       },
       "equipment": ["machine"]
     },
+    {
+      "id": "donkey_calf_raise",
+      "name": {
+        "uk": "Підйоми на носки «ослик»",
+        "en": "Donkey Calf Raise"
+      },
+      "primaryGroup": "calves",
+      "muscles": {
+        "primary": ["calves"],
+        "secondary": []
+      },
+      "equipment": ["machine", "bodyweight"]
+    },
+    {
+      "id": "single_leg_calf_raise",
+      "name": {
+        "uk": "Підйом на носок однією ногою",
+        "en": "Single-leg Calf Raise"
+      },
+      "primaryGroup": "calves",
+      "muscles": {
+        "primary": ["calves"],
+        "secondary": []
+      },
+      "equipment": ["bodyweight", "dumbbell"]
+    },
+
     {
       "id": "hip_thrust",
       "name": { "uk": "Ягідний місток зі штангою", "en": "Barbell Hip Thrust" },
@@ -597,6 +1228,46 @@
       },
       "equipment": ["machine"]
     },
+    {
+      "id": "adductor_machine",
+      "name": {
+        "uk": "Зведення стегна в тренажері",
+        "en": "Hip Adduction Machine"
+      },
+      "primaryGroup": "glutes",
+      "muscles": {
+        "primary": ["adductors"],
+        "secondary": ["gluteus_medius"]
+      },
+      "equipment": ["machine"]
+    },
+    {
+      "id": "banded_clamshell",
+      "name": {
+        "uk": "Розведення ніг лежачи з резинкою",
+        "en": "Banded Clamshell"
+      },
+      "primaryGroup": "glutes",
+      "muscles": {
+        "primary": ["gluteus_medius"],
+        "secondary": ["gluteus_maximus"]
+      },
+      "equipment": ["band"]
+    },
+    {
+      "id": "single_leg_hip_thrust",
+      "name": {
+        "uk": "Ягідний місток на одній нозі",
+        "en": "Single-leg Hip Thrust"
+      },
+      "primaryGroup": "glutes",
+      "muscles": {
+        "primary": ["gluteus_maximus"],
+        "secondary": ["hamstrings"]
+      },
+      "equipment": ["bench", "bodyweight"]
+    },
+
     {
       "id": "running",
       "name": { "uk": "Біг", "en": "Running" },
@@ -653,6 +1324,37 @@
       "equipment": ["other"]
     },
     {
+      "id": "rowing_machine",
+      "name": { "uk": "Веслувальний тренажер", "en": "Rowing Machine" },
+      "primaryGroup": "cardio",
+      "muscles": {
+        "primary": ["latissimus_dorsi", "quadriceps"],
+        "secondary": ["biceps", "hamstrings", "erector_spinae"]
+      },
+      "equipment": ["machine"]
+    },
+    {
+      "id": "stairclimber",
+      "name": { "uk": "Сходовий тренажер", "en": "Stair Climber" },
+      "primaryGroup": "cardio",
+      "muscles": {
+        "primary": ["quadriceps", "gluteus_maximus"],
+        "secondary": ["calves", "hamstrings"]
+      },
+      "equipment": ["machine"]
+    },
+    {
+      "id": "battle_ropes",
+      "name": { "uk": "Канатні хвилі (Battle Ropes)", "en": "Battle Ropes" },
+      "primaryGroup": "cardio",
+      "muscles": {
+        "primary": ["front_deltoid", "forearms"],
+        "secondary": ["rectus_abdominis", "quadriceps"]
+      },
+      "equipment": ["other"]
+    },
+
+    {
       "id": "deadlift",
       "name": { "uk": "Становая тяга", "en": "Deadlift" },
       "primaryGroup": "full_body",
@@ -708,77 +1410,39 @@
       "equipment": ["barbell", "dumbbell"]
     },
     {
-      "id": "cable_face_pull",
-      "name": { "uk": "Тяга на обличчя (блок)", "en": "Face Pull" },
-      "primaryGroup": "shoulders",
+      "id": "snatch",
+      "name": { "uk": "Ривок штанги", "en": "Snatch" },
+      "primaryGroup": "full_body",
       "muscles": {
-        "primary": ["rear_deltoid"],
-        "secondary": ["rhomboids", "trapezius", "upper_back"]
+        "primary": [
+          "quadriceps",
+          "gluteus_maximus",
+          "front_deltoid",
+          "trapezius"
+        ],
+        "secondary": ["hamstrings", "erector_spinae", "triceps"]
       },
-      "equipment": ["cable", "machine"]
+      "equipment": ["barbell"]
     },
     {
-      "id": "shrugs",
-      "name": { "uk": "Шраги зі штангою", "en": "Barbell Shrugs" },
-      "primaryGroup": "shoulders",
+      "id": "man_maker",
+      "name": { "uk": "Мен-мейкер", "en": "Man Maker" },
+      "primaryGroup": "full_body",
       "muscles": {
-        "primary": ["trapezius"],
-        "secondary": ["neck", "forearms"]
-      },
-      "equipment": ["barbell", "dumbbell"]
-    },
-    {
-      "id": "cable_crossover",
-      "name": { "uk": "Зведення рук на блоці", "en": "Cable Crossover" },
-      "primaryGroup": "chest",
-      "muscles": {
-        "primary": ["pectoralis_major", "pectoralis_minor"],
-        "secondary": ["front_deltoid", "serratus_anterior"]
-      },
-      "equipment": ["cable"]
-    },
-    {
-      "id": "concentration_curl",
-      "name": { "uk": "Концентроване згинання", "en": "Concentration Curl" },
-      "primaryGroup": "arms",
-      "muscles": {
-        "primary": ["biceps"],
-        "secondary": ["forearms"]
+        "primary": [
+          "pectoralis_major",
+          "quadriceps",
+          "front_deltoid",
+          "latissimus_dorsi"
+        ],
+        "secondary": [
+          "triceps",
+          "gluteus_maximus",
+          "rectus_abdominis",
+          "biceps"
+        ]
       },
       "equipment": ["dumbbell"]
-    },
-    {
-      "id": "overhead_tricep_extension",
-      "name": {
-        "uk": "Розгинання рук з гантеллю над головою",
-        "en": "Overhead Tricep Extension"
-      },
-      "primaryGroup": "arms",
-      "muscles": {
-        "primary": ["triceps"],
-        "secondary": []
-      },
-      "equipment": ["dumbbell", "cable"]
-    },
-    {
-      "id": "t_bar_row",
-      "name": { "uk": "Тяга T-грифа", "en": "T-bar Row" },
-      "primaryGroup": "back",
-      "muscles": {
-        "primary": ["latissimus_dorsi", "rhomboids"],
-        "secondary": ["biceps", "rear_deltoid", "trapezius"]
-      },
-      "equipment": ["barbell", "machine"]
-    },
-    {
-      "id": "romanian_deadlift",
-      "name": { "uk": "Румунська тяга", "en": "Romanian Deadlift" },
-      "primaryGroup": "legs",
-      "muscles": {
-        "primary": ["hamstrings", "gluteus_maximus"],
-        "secondary": ["erector_spinae", "calves"]
-      },
-      "equipment": ["barbell", "dumbbell"]
     }
   ]
 }
