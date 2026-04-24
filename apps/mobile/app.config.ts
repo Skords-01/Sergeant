@@ -198,6 +198,14 @@ const buildConfig = (): ExpoConfig => ({
     "expo-secure-store",
     "expo-notifications",
     [
+      "expo-camera",
+      {
+        cameraPermission:
+          "Sergeant потрібен доступ до камери, щоб зчитувати штрихкоди продуктів.",
+        recordAudioAndroid: false,
+      },
+    ],
+    [
       "expo-splash-screen",
       {
         backgroundColor: "#0b0d10",

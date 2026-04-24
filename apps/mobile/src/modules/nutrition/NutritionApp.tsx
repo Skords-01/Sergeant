@@ -1,34 +1,16 @@
 /**
- * Sergeant Nutrition — NutritionApp shell (React Native, first cut)
+ * Sergeant Nutrition — NutritionApp shell (React Native)
  *
- * Mobile port of `apps/web/src/modules/nutrition/NutritionApp.tsx` (581 LOC).
+ * Mobile port of `apps/web/src/modules/nutrition/NutritionApp.tsx`.
  *
- * Scope of PR-4:
- *  - Замінює `ModuleStub` на реальну shell-обгортку з
- *    `ModuleErrorBoundary` (моdule-name = "Харчування") + bottom-nav з
- *    трьома вкладками (`dashboard` / `log` / `water`).
- *  - Вкладка "Сьогодні" (`dashboard`) → `pages/Dashboard.tsx` (macros +
- *    week-bar + water).
- *  - Вкладка "Журнал" (`log`) → `pages/Log.tsx` — read-only список
- *    прийомів за вибрану дату з date-switcher.
- *  - Вкладка "Вода" (`water`) → `pages/Water.tsx` — дубль водного картка
- *    для швидкого доступу.
+ * Зараз:
+ *  - `ModuleErrorBoundary` + bottom-nav: `dashboard` / `log` / `water`.
+ *  - `Dashboard` / `Log` / `Water` — див. `pages/`.
+ *  - `AddMealSheet` — ручний ввід + перехід на
+ *    `app/(tabs)/nutrition/scan` (expo-camera + `/api/barcode`, PR-6).
+ * Далі: pantry / shopping, рецепти, deep link `recipe/[id]`, photo-AI (PR-7+).
  *
- * Що навмисно відсутнє у PR-4 (чекає наступні PR-и):
- *  - AddMealSheet / ItemEditSheet — PR-5. Дотик на "Сьогодні → +Додати" та
- *    длинне натискання в журналі в цьому PR залишаються без дії; простір
- *    під них зарезервовано у Dashboard/Log коментарями.
- *  - Barcode scanner — PR-6 (`apps/mobile/app/(tabs)/nutrition/scan.tsx`
- *    ще рендерить stub-деф-скрін; він перехопить контроль коли в
- *    sheet-і з'явиться кнопка "Сканер").
- *  - Pantry / ShoppingList — PR-7. Вкладки в bottom-nav додадуться коли
- *    логіка приземлиться.
- *  - AI-фічі (photo analyze / day plan / recipes) — PR-8.
- *  - Reminders / cloud backup — PR-9.
- *
- * Persistence:
- *  - Активна вкладка зберігається у MMKV за ключем
- *    `STORAGE_KEYS.NUTRITION_MAIN_TAB` (raw string, as зроблено у Routine).
+ * Persistence: активна вкладка — `STORAGE_KEYS.NUTRITION_MAIN_TAB` (MMKV).
  */
 import { useCallback, useState } from "react";
 import { View } from "react-native";

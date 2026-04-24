@@ -16,6 +16,10 @@
 - **ФІЗРУК** — pages, components (workouts, programs, body, progress,
   measurements, exercise, dashboard), hooks + `__tests__`.
 - **Рутина** — pages (Habits, Heatmap), components, hooks, lib + `__tests__`.
+- **Харчування** — `NutritionApp` (Сьогодні / Журнал / Вода), `AddMealSheet`
+  (ручний ввід + **сканер штрихкодів** через `expo-camera` + `/api/barcode`),
+  MMKV + `useNutritionLog` / `useNutritionPrefs` + `__tests__`. Pantry / рецепти
+  / photo-AI — у дорожній карті (PR-7+).
 
 Інфраструктура готова:
 
@@ -28,16 +32,15 @@
 - Detox e2e конфіги для iOS і Android у CI (поки smoke-build, реальні
   сценарії треба дописати).
 
-**Не зроблено:**
+**Ще не зроблено / в роботі:**
 
-- **Харчування (Phase 7)** — лише `ModuleStub` + `DeepLinkPlaceholder`
-  на `scan.tsx` / `recipe/[id].tsx`. Потрібно портувати ~30 компонентів
-  з `apps/web/src/modules/nutrition`, замінити ZXing на `expo-camera` і
-  localStorage на MMKV для комори/списку покупок.
-- **Native push-send pipeline** (APNs через `node-apn`, FCM HTTP v1) —
-  сервер зараз тільки реєструє токени; відправка — окрема задача.
+- **Харчування (решта Phase 7+)** — комора, список покупок, рецепти, deep link
+  `recipe/[id].tsx` все ще заглушка; photo-AI.
 - **Voice / Speech** — `expo-speech` + STT ще не підключено.
 - **Store-listing** (іконки, privacy manifest iOS, data safety Android).
+
+**Серверний push (APNs/FCM/web):** fan-out у `apps/server/src/push/send.ts`;
+у проді ще потрібні credentials — `docs/backend-tech-debt.md#push-credentials`.
 
 Повний статус-репорт по всіх трьох поверхнях — `docs/platforms.md`.
 

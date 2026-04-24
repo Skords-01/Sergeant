@@ -1,14 +1,7 @@
 /**
  * Nutrition tab — nested Stack layout.
- *
- * Provides parent routes for deep-link targets:
- *   - `sergeant://food/log`           → `index`   (current `ModuleStub`)
- *   - `sergeant://food/scan`          → `scan`
- *   - `sergeant://food/recipe/{id}`   → `recipe/[id]`
- *
- * Real screens land in Phase 7 of the migration; today every leaf
- * renders `DeepLinkPlaceholder` so shortcuts and push-deep-links
- * never dead-end.
+ * `index` — `NutritionApp`; `scan` — сканер штрихкодів (expo-camera);
+ * `recipe/[id]` — поки заглушка.
  */
 import { Stack, useRouter } from "expo-router";
 

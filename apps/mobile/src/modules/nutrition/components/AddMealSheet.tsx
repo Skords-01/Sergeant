@@ -2,18 +2,14 @@
  * AddMealSheet — RN port of web's AddMealSheet.
  *
  * Two-step bottom sheet:
- *  Step "source" — quick-entry: "Ввести вручну" CTA.
- *    (Food search / barcode / pantry / photo arrive in later PRs)
+ *  Step "source" — «Вручну» + «Сканер штрихкоду» (PR-6) →
+ *    `/(tabs)/nutrition/scan?returnTo=addMeal` + prefill через bridge.
  *  Step "fill"   — MealTypePicker + NameTimeRow + MacrosEditor + Save.
- *
- * Phase 7 / PR-5 scope:
- *  - Manual-entry only (no food search, no barcode, no photo import).
- *  - Edit existing meal (pre-fill form from `initialMeal`).
- *  - Save / Cancel actions.
- * Food search, barcode, pantry → PR-6/7. Photo → PR-8.
+ * Pantry / food search / photo — PR-7+.
  */
 import { useCallback, useEffect, useState } from "react";
 import { Pressable, Text, View } from "react-native";
+import { router } from "expo-router";
 
 import {
   MEAL_TYPES,
@@ -25,6 +21,7 @@ import { hapticSuccess } from "@sergeant/shared";
 
 import { Button } from "@/components/ui/Button";
 import { Sheet } from "@/components/ui/Sheet";
+import { setNutritionScanPrefillHandler } from "../lib/nutritionScanBridge";
 
 import { MacrosEditor } from "./meal-sheet/MacrosEditor";
 import { MealTypePicker } from "./meal-sheet/MealTypePicker";
@@ -79,6 +76,7 @@ export function AddMealSheet({
 }: AddMealSheetProps) {
   const [form, setForm] = useState<MealFormState>(() => emptyForm(null));
   const [step, setStep] = useState<"source" | "fill">("source");
+  const [macroSource, setMacroSource] = useState<MealMacroSource>("manual");
 
   useEffect(() => {
     if (!open) return;
@@ -95,12 +93,37 @@ export function AddMealSheet({
         carbs_g: mac.carbs_g != null ? String(Math.round(mac.carbs_g)) : "",
         err: "",
       });
+      setMacroSource("manual");
       setStep("fill");
     } else {
       setForm(emptyForm(null));
+      setMacroSource("manual");
       setStep("source");
     }
   }, [open, initialMeal]);
+
+  useEffect(() => {
+    if (!open) {
+      setNutritionScanPrefillHandler(null);
+      return;
+    }
+    setNutritionScanPrefillHandler((payload) => {
+      setForm((s) => ({
+        ...s,
+        name: payload.name,
+        kcal: payload.kcal,
+        protein_g: payload.protein_g,
+        fat_g: payload.fat_g,
+        carbs_g: payload.carbs_g,
+        err: payload.partial
+          ? "Перевір макроси: часткові дані з каталогу."
+          : "",
+      }));
+      setMacroSource("productDb");
+      setStep("fill");
+    });
+    return () => setNutritionScanPrefillHandler(null);
+  }, [open]);
 
   const field = useCallback(
     (key: keyof MealFormState) => (v: string) =>
@@ -138,8 +161,8 @@ export function AddMealSheet({
       label: mealLabel,
       name,
       macros: { kcal, protein_g, fat_g, carbs_g },
-      source: "manual",
-      macroSource: "manual",
+      source: "manual" as MealSource,
+      macroSource,
     });
   }
 
@@ -155,7 +178,19 @@ export function AddMealSheet({
             наступному кроці.
           </Text>
 
-          {/* Food search / barcode / pantry / photo — PR-6/7/8 */}
+          <Button
+            variant="secondary"
+            onPress={() => {
+              router.push({
+                pathname: "/(tabs)/nutrition/scan",
+                params: { returnTo: "addMeal" },
+              });
+            }}
+            accessibilityLabel="Сканер штрихкоду"
+            testID="add-meal-open-barcode-scan"
+          >
+            Сканер штрихкоду
+          </Button>
 
           <View className="items-center my-3">
             <View className="flex-row items-center gap-3">
@@ -170,7 +205,10 @@ export function AddMealSheet({
 
           <Button
             variant="secondary"
-            onPress={() => setStep("fill")}
+            onPress={() => {
+              setMacroSource("manual");
+              setStep("fill");
+            }}
             accessibilityLabel="Ввести вручну"
           >
             Ввести вручну

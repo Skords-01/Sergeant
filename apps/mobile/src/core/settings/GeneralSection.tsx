@@ -12,8 +12,8 @@
  *    `prefs.showCoach !== false`).
  *
  * Dashboard reorder list:
- *  - Renders the visible subset of Hub modules (Nutrition is hidden
- *    until Phase 7) with ↑/↓ buttons as the accessibility fallback
+ *  - Рендерить **видимий** підмножину модулей (без `nutrition` у
+ *    `VISIBLE_DASHBOARD_MODULES`, поки Phase 7 Hub-gate) з ↑/↓ — a11y fallback
  *    for the long-press drag on the dashboard itself. State is shared
  *    with the dashboard via `useDashboardOrder` and persisted through
  *    the same `STORAGE_KEYS.DASHBOARD_ORDER` slice used by web.
