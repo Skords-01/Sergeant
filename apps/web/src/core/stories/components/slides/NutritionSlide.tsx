@@ -1,9 +1,9 @@
 /* eslint-disable sergeant-design/no-eyebrow-drift */
 import { StoryShell } from "./StoryShell";
 import { fmtNum } from "../../formatters";
-import type { Slide } from "../../types";
+import type { NutritionSlideData } from "../../types";
 
-export function NutritionSlide({ slide }: { slide: Slide }) {
+export function NutritionSlide({ slide }: { slide: NutritionSlideData }) {
   const { agg, ai } = slide;
   const kcalPct =
     agg?.targetKcal && agg.targetKcal > 0

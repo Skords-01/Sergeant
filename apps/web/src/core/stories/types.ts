@@ -1,3 +1,10 @@
+import type {
+  FinykAggregate,
+  FizrukAggregate,
+  NutritionAggregate,
+  RoutineAggregate,
+} from "../useWeeklyDigest";
+
 export type SlideKind =
   | "intro"
   | "finyk"
@@ -6,21 +13,46 @@ export type SlideKind =
   | "routine"
   | "overall";
 
+export interface AISlidePayload {
+  summary?: string;
+  comment?: string;
+}
+
+export type SlideAggregate =
+  | FinykAggregate
+  | FizrukAggregate
+  | NutritionAggregate
+  | RoutineAggregate;
+
 export interface Slide {
   id: string;
   kind: SlideKind;
   label: string;
   bg: string;
-  // The aggregates come from `useWeeklyDigest.js` which is still untyped
-  // JavaScript; pinning them here would mean typing that module first.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  agg?: any;
-  // AI summaries have the shape { summary?: string; comment?: string }
-  // but are delivered by an untyped API payload.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ai?: any;
+  agg?: SlideAggregate | null;
+  ai?: AISlidePayload | null;
   recommendations?: string[];
   weekRange?: string;
+}
+
+export interface FinykSlideData extends Slide {
+  kind: "finyk";
+  agg?: FinykAggregate | null;
+}
+
+export interface FizrukSlideData extends Slide {
+  kind: "fizruk";
+  agg?: FizrukAggregate | null;
+}
+
+export interface NutritionSlideData extends Slide {
+  kind: "nutrition";
+  agg?: NutritionAggregate | null;
+}
+
+export interface RoutineSlideData extends Slide {
+  kind: "routine";
+  agg?: RoutineAggregate | null;
 }
 
 export type TapZone = "prev" | "next";

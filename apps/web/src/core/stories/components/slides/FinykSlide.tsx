@@ -2,9 +2,9 @@
 import { StoryShell } from "./StoryShell";
 import { StatRow } from "./StatRow";
 import { fmtUah } from "../../formatters";
-import type { Slide } from "../../types";
+import type { FinykSlideData } from "../../types";
 
-export function FinykSlide({ slide }: { slide: Slide }) {
+export function FinykSlide({ slide }: { slide: FinykSlideData }) {
   const { agg, ai } = slide;
   const net = (agg?.totalIncome ?? 0) - (agg?.totalSpent ?? 0);
   const topCats = Array.isArray(agg?.topCategories)

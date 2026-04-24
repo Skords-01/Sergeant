@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   useCallback,
   useEffect,
@@ -133,7 +132,7 @@ async function startZxingScanner(
       /* ignore */
     }
     try {
-      (reader as any).reset?.();
+      (reader as { reset?: () => void }).reset?.();
     } catch {
       /* ignore */
     }
@@ -235,18 +234,31 @@ export function useWebScanner({
       // and the user would stare at a "scanning" UI forever. Verify
       // format support up front and fall through to zxing when the
       // native detector can't actually help us.
-      let detector: any = null;
-      if (usedBarcodeDetector) {
+      interface NativeBarcodeDetector {
+        detect(
+          source: HTMLVideoElement,
+        ): Promise<Array<{ rawValue?: string; format?: string }>>;
+      }
+      interface NativeBarcodeDetectorCtor {
+        new (opts: { formats: string[] }): NativeBarcodeDetector;
+        getSupportedFormats?: () => Promise<string[]>;
+      }
+      const BarcodeDetectorCtor = (
+        window as unknown as { BarcodeDetector?: NativeBarcodeDetectorCtor }
+      ).BarcodeDetector;
+
+      let detector: NativeBarcodeDetector | null = null;
+      if (usedBarcodeDetector && BarcodeDetectorCtor) {
         try {
-          const supported: string[] = await ((
-            window as any
-          ).BarcodeDetector.getSupportedFormats?.() ?? Promise.resolve([]));
+          const supported: string[] =
+            await (BarcodeDetectorCtor.getSupportedFormats?.() ??
+              Promise.resolve([]));
           const hasAny =
             !Array.isArray(supported) ||
             supported.length === 0 ||
             WANTED_FORMATS.some((f) => supported.includes(f));
           if (hasAny) {
-            detector = new (window as any).BarcodeDetector({
+            detector = new BarcodeDetectorCtor({
               formats: WANTED_FORMATS,
             });
           }

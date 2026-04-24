@@ -1,15 +1,9 @@
 /* eslint-disable sergeant-design/no-eyebrow-drift */
 import { StoryShell } from "./StoryShell";
-import type { Slide } from "../../types";
+import type { RoutineSlideData } from "../../types";
+import type { HabitStat } from "../../../useWeeklyDigest";
 
-interface HabitStat {
-  name: string;
-  done: number;
-  total: number;
-  completionRate: number;
-}
-
-export function RoutineSlide({ slide }: { slide: Slide }) {
+export function RoutineSlide({ slide }: { slide: RoutineSlideData }) {
   const { agg, ai } = slide;
   const sorted: HabitStat[] = Array.isArray(agg?.habits)
     ? [...agg.habits].sort(
