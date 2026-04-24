@@ -16,6 +16,7 @@ import {
 
 import { HubDashboard } from "./HubDashboard";
 import { _getMMKVInstance } from "@/lib/storage";
+import { ToastProvider } from "@/components/ui/Toast";
 
 jest.mock("expo-router", () => ({
   router: { push: jest.fn() },
@@ -43,6 +44,14 @@ function resetStore() {
   _getMMKVInstance().clearAll();
 }
 
+function renderDashboard() {
+  return render(
+    <ToastProvider>
+      <HubDashboard />
+    </ToastProvider>,
+  );
+}
+
 describe("HubDashboard one-hero rule", () => {
   beforeEach(() => {
     resetStore();
@@ -52,7 +61,7 @@ describe("HubDashboard one-hero rule", () => {
   it("shows only FirstActionHeroCard when the FTUX flag is pending", () => {
     _getMMKVInstance().set(FIRST_ACTION_PENDING_KEY, "1");
 
-    const { getByTestId, queryByTestId } = render(<HubDashboard />);
+    const { getByTestId, queryByTestId } = renderDashboard();
 
     expect(getByTestId("first-action-hero")).toBeTruthy();
     expect(queryByTestId("soft-auth-prompt")).toBeNull();
@@ -64,7 +73,7 @@ describe("HubDashboard one-hero rule", () => {
     const mmkv = _getMMKVInstance();
     mmkv.set(FIRST_REAL_ENTRY_KEY, "1");
 
-    const { getByTestId, queryByTestId } = render(<HubDashboard />);
+    const { getByTestId, queryByTestId } = renderDashboard();
 
     expect(getByTestId("soft-auth-prompt")).toBeTruthy();
     expect(queryByTestId("first-action-hero")).toBeNull();
@@ -75,14 +84,14 @@ describe("HubDashboard one-hero rule", () => {
     _getMMKVInstance().set(FIRST_REAL_ENTRY_KEY, "1");
     mockUserData.data = { user: { name: "Test" } };
 
-    const { getByTestId, queryByTestId } = render(<HubDashboard />);
+    const { getByTestId, queryByTestId } = renderDashboard();
 
     expect(queryByTestId("soft-auth-prompt")).toBeNull();
     expect(getByTestId("today-focus-empty")).toBeTruthy();
   });
 
   it("falls back to the TodayFocusCard empty state when no other hero is eligible", () => {
-    const { getByTestId, queryByTestId } = render(<HubDashboard />);
+    const { getByTestId, queryByTestId } = renderDashboard();
 
     expect(getByTestId("today-focus-empty")).toBeTruthy();
     expect(queryByTestId("first-action-hero")).toBeNull();
@@ -94,14 +103,14 @@ describe("HubDashboard one-hero rule", () => {
     mmkv.set(FIRST_REAL_ENTRY_KEY, "1");
     mmkv.set(SOFT_AUTH_DISMISSED_KEY, "1");
 
-    const { getByTestId, queryByTestId } = render(<HubDashboard />);
+    const { getByTestId, queryByTestId } = renderDashboard();
 
     expect(queryByTestId("soft-auth-prompt")).toBeNull();
     expect(getByTestId("today-focus-empty")).toBeTruthy();
   });
 
   it("fires a quick-add route when an empty-state chip is tapped", () => {
-    const { getByTestId } = render(<HubDashboard />);
+    const { getByTestId } = renderDashboard();
 
     fireEvent.press(getByTestId("today-focus-chip-routine"));
 

@@ -5,7 +5,11 @@ type SwRequest =
 
 type SwResponse =
   | { type: "SW_DEBUG_RESULT"; requestId?: string | null; snapshot?: unknown }
-  | { type: "CLEAR_SW_CACHES_RESULT"; requestId?: string | null; result?: unknown };
+  | {
+      type: "CLEAR_SW_CACHES_RESULT";
+      requestId?: string | null;
+      result?: unknown;
+    };
 
 function makeRequestId(prefix: string) {
   return `${prefix}_${Date.now()}_${Math.random().toString(16).slice(2)}`;

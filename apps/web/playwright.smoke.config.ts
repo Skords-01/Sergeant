@@ -29,10 +29,10 @@ export default defineConfig({
   webServer: process.env.PW_SKIP_WEBSERVER
     ? undefined
     : {
-        // Keep `pnpm --filter @sergeant/server dev` in background and
+        // Keep `@sergeant/server dev` in background and
         // leave `web preview` in foreground for Playwright to manage.
         command:
-          "sh -lc 'pnpm db:up && pnpm db:migrate && (pnpm --filter @sergeant/server dev &) && pnpm --filter @sergeant/web build && pnpm --filter @sergeant/web preview -- --port 4173 --host 127.0.0.1'",
+          "sh -lc 'pnpm --dir ../.. db:up && pnpm --dir ../.. --filter @sergeant/server db:migrate:dev && (pnpm --dir ../.. --filter @sergeant/server dev &) && pnpm --dir ../.. --filter @sergeant/web build && pnpm --dir ../.. --filter @sergeant/web preview -- --port 4173 --host 127.0.0.1'",
         url: "http://127.0.0.1:4173",
         reuseExistingServer: !process.env.CI,
         timeout: 240_000,
@@ -50,7 +50,8 @@ export default defineConfig({
           AI_QUOTA_DISABLED: process.env.AI_QUOTA_DISABLED || "1",
           VITE_API_BASE_URL:
             process.env.VITE_API_BASE_URL || "http://127.0.0.1:3000",
+          ALLOWED_ORIGINS:
+            process.env.ALLOWED_ORIGINS || "http://127.0.0.1:4173",
         },
       },
 });
-

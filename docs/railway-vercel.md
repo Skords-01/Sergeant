@@ -62,7 +62,7 @@ BETTER_AUTH_URL=http://localhost:3000
 ALLOWED_ORIGINS=http://localhost:5173
 ```
 
-Потім `npm run start` (API) і `npm run dev` (Vite).
+Потім `pnpm start` (API) і `pnpm dev` (Vite).
 
 ## 5. Перевірка
 

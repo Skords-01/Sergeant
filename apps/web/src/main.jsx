@@ -154,7 +154,10 @@ if (
         navigator.serviceWorker.ready
           .then((reg) => {
             const ctl = navigator.serviceWorker.controller || reg.active;
-            ctl?.postMessage?.({ type: "SW_SET_DEBUG", data: { enabled: true } });
+            ctl?.postMessage?.({
+              type: "SW_SET_DEBUG",
+              data: { enabled: true },
+            });
           })
           .catch(() => {});
       }

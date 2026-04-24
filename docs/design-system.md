@@ -402,7 +402,7 @@ Dark-override потрібен тільки коли ефект несиметр
 
 ## 10. Coding rules
 
-- `npm run check-imports` блокує імпорт `./components/ui/*` всередині
+- `pnpm lint:imports` блокує імпорт `./components/ui/*` всередині
   модулів — використовуй `@shared/components/ui`.
 - `eslint no-restricted-syntax` блокує retired-палітри `forest-*` і
   `accent-NNN` (табличні варіанти). Використовуй `accent`, `brand-500`,

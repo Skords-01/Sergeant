@@ -144,7 +144,7 @@ src/
 └── main.jsx                      # Точка входу, реєстрація SW
 
 server/
-├── index.js                      # Єдиний entrypoint (npm start; SERVER_MODE=replit для Replit-режиму)
+├── index.js                      # Єдиний entrypoint (pnpm start; SERVER_MODE=replit для Replit-режиму)
 ├── app.js                        # createApp({ servesFrontend, distPath, trustProxy }) — Express factory
 ├── config.js                     # Конфіг рантайм-режиму (порт, SPA-static, trust proxy)
 ├── auth.js                       # Better Auth (спільний pg pool з db.js)
@@ -179,7 +179,7 @@ server/
 
 Дорожня карта та ТЗ по модулях: [docs/hub-modules-roadmap.md](docs/hub-modules-roadmap.md). Огляд стеку фронтенду (монорепо): [docs/frontend-overview.md](docs/frontend-overview.md).
 
-**Деплой:** фронт Vercel + API/PostgreSQL на Railway — покроково [docs/railway-vercel.md](docs/railway-vercel.md). Локальна БД: `npm run db:up` (Docker Compose).
+**Деплой:** фронт Vercel + API/PostgreSQL на Railway — покроково [docs/railway-vercel.md](docs/railway-vercel.md). Локальна БД: `pnpm db:up` (Docker Compose).
 
 ## HubChat (AI-чат)
 
@@ -235,12 +235,12 @@ Hub — повноцінний Progressive Web App:
 Локально потрібні **два окремі процеси** у різних терміналах:
 
 ```bash
-npm install
-npm run start      # 1) Express API (server/index.js, порт 3000)
-npm run dev        # 2) Vite dev server (фронт, порт 5173) — проксує /api → 3000
+pnpm install --frozen-lockfile
+pnpm start      # 1) Express API (server/index.js, порт 3000)
+pnpm dev        # 2) Vite dev server (фронт, порт 5173) — проксує /api → 3000
 ```
 
-На Replit: `npm run start:replit` — єдиний unified-процес (фронт + API, порт 5000).
+На Replit: `pnpm start:replit` — єдиний unified-процес (фронт + API, порт 5000).
 
 ## Змінні середовища
 
@@ -287,7 +287,7 @@ npm run dev        # 2) Vite dev server (фронт, порт 5173) — прок
 4. **Не використовуй `VITE_API_BASE_URL` у проді на Vercel**: веб має ходити на `/api/*` (same-origin), а Edge Middleware у [`middleware.ts`](middleware.ts) проксіює запити на `BACKEND_URL` — це критично для Safari (ITP) та cookie-сесій.
 5. Каталог API — у [`apps/server/src/`](apps/server/src/), у корені репо немає `api/`, тож Vercel Hobby не створює десятки serverless-функцій.
 
-Локально: `npm start` (Express, порт 3000). Фронт `npm run dev`: запити йдуть на `/api/*` і проксуються на `VITE_API_PROXY_TARGET`.
+Локально: `pnpm start` (Express, порт 3000). Фронт `pnpm dev`: запити йдуть на `/api/*` і проксуються на `VITE_API_PROXY_TARGET`.
 
 ## Деплой
 

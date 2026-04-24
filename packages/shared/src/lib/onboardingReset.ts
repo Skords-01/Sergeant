@@ -27,4 +27,3 @@ export function resetOnboardingState(store: KVStore): void {
   store.remove(SOFT_AUTH_DISMISSED_KEY);
   clearAllHintsState(store);
 }
-

@@ -334,7 +334,8 @@ function AppInner() {
     // Important: after the onboarding route is finished, the hub must still
     // allow the user to sign in. Otherwise they can land on the dashboard
     // (no entries yet) with no discoverable auth entry point.
-    const inFtuxSession = shouldShowOnboarding() && !user && !isFirstRealEntryDone();
+    const inFtuxSession =
+      shouldShowOnboarding() && !user && !isFirstRealEntryDone();
     return (
       <div className="min-h-dvh bg-bg flex flex-col safe-area-pt-pb page-enter">
         <SkipLink />

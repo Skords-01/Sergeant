@@ -6,7 +6,7 @@
 
 | Поверхня                       | Де живе             | Технології                 | Реліз-готовність                                                             |
 | ------------------------------ | ------------------- | -------------------------- | ---------------------------------------------------------------------------- |
-| **Web / PWA** (канонічна апка) | `apps/web`          | React 19 + Vite + PWA      | **Production** (live)                                                        |
+| **Web / PWA** (канонічна апка) | `apps/web`          | React 18 + Vite + PWA      | **Production** (live)                                                        |
 | **Native RN** (iOS / Android)  | `apps/mobile`       | Expo SDK 52 + Expo Router  | **Internal dev-client**                                                      |
 | **Capacitor shell** (WebView)  | `apps/mobile-shell` | Capacitor 7 + Android Java | **MVP** (Android closer; iOS release scaffold landed, pending Apple secrets) |
 

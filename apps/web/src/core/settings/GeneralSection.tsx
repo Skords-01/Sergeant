@@ -5,7 +5,11 @@ import { Button } from "@shared/components/ui/Button";
 import { useToast } from "@shared/hooks/useToast";
 import { resetOnboardingState, type KVStore } from "@sergeant/shared";
 import { HubBackupPanel } from "../HubBackupPanel.jsx";
-import { swClearCaches, swGetDebugSnapshot, swSetDebug } from "../app/swControl";
+import {
+  swClearCaches,
+  swGetDebugSnapshot,
+  swSetDebug,
+} from "../app/swControl";
 import {
   DASHBOARD_MODULE_LABELS,
   loadDashboardOrder,
@@ -198,12 +202,10 @@ export function GeneralSection({
               try {
                 await swSetDebug(true);
                 const snap = await swGetDebugSnapshot();
-                // eslint-disable-next-line no-console
                 console.log("[sw] snapshot", snap);
                 toast.success("SW-діагностика виведена в консоль");
               } catch (err) {
                 toast.error("Не вдалося отримати діагностику SW");
-                // eslint-disable-next-line no-console
                 console.warn("[sw] debug failed", err);
               } finally {
                 setSwBusy(false);
@@ -222,13 +224,11 @@ export function GeneralSection({
               setSwBusy(true);
               try {
                 const res = await swClearCaches();
-                // eslint-disable-next-line no-console
                 console.log("[sw] caches cleared", res);
                 toast.success("Кеш PWA скинуто. Перезавантажуємо…", 4000);
                 setTimeout(() => window.location.reload(), 300);
               } catch (err) {
                 toast.error("Не вдалося скинути кеш PWA");
-                // eslint-disable-next-line no-console
                 console.warn("[sw] clear caches failed", err);
               } finally {
                 setSwBusy(false);

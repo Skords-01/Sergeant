@@ -467,7 +467,7 @@
 
 ### Принцип
 
-- `tsconfig.server.json` вже існує (використовується у `npm run typecheck`).
+- `tsconfig.server.json` вже існує (використовується у `pnpm typecheck`).
 - `allowJs: true` + поступове перейменування `.js → .ts` по файлах.
 - Жодного великого рефактору в одному PR. Один thematic group = один PR з міграцією.
 
@@ -667,5 +667,5 @@ env-набір не підхопився; переглянь Railway logs на `
 
 - **Жодних mass-rewrite**. Кожен PR — тематичний, reviewable за один присід (≤ 600 рядків diff там, де це можливо).
 - **Жодних breaking змін у публічному API** без нотатки `BREAKING:` у title/body PR.
-- CI має пройти (`npm run lint && npm run typecheck && npm run test`).
+- CI має пройти (`pnpm lint && pnpm typecheck && pnpm test`).
 - Тести обов'язкові для кожного PR з логікою (не для PR-документу).

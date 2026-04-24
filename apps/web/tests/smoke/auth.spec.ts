@@ -47,6 +47,5 @@ test("auth: sign-up leads to authenticated hub surface", async ({ page }) => {
   // After successful sign-up, AuthContext invalidates `/api/v1/me` and the app
   // should land on the hub shell (not the /sign-in form).
   await expect(page).not.toHaveURL(/\/sign-in/);
-  await expect(page.locator("main, #root")).toBeVisible();
+  await expect(page.locator("main")).toBeVisible();
 });
-

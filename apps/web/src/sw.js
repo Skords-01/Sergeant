@@ -1,3 +1,5 @@
+/* global __SW_BUILD_ID__ */
+
 import { precacheAndRoute, cleanupOutdatedCaches } from "workbox-precaching";
 import { registerRoute, NavigationRoute } from "workbox-routing";
 import { NetworkFirst, CacheFirst } from "workbox-strategies";
@@ -486,7 +488,6 @@ self.addEventListener("message", (event) => {
   if (type === "SW_SET_DEBUG") {
     debugEnabled = data?.enabled === true;
     if (debugEnabled) {
-      // eslint-disable-next-line no-console
       console.log("[sw] debug enabled", { version: SW_VERSION });
     }
     return;

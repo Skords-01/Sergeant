@@ -1,6 +1,8 @@
 import { test, expect } from "@playwright/test";
 
-test("sw: debug snapshot + clear caches work (best-effort)", async ({ page }) => {
+test("sw: debug snapshot + clear caches work (best-effort)", async ({
+  page,
+}) => {
   // Keep it robust: no backend is attached in this Playwright lane.
   await page.goto("/?sw=debug", { waitUntil: "domcontentloaded" });
 
@@ -9,7 +11,8 @@ test("sw: debug snapshot + clear caches work (best-effort)", async ({ page }) =>
       return { ok: false, reason: "no_service_worker" as const };
     }
     const reg = await navigator.serviceWorker.ready;
-    const ctl: ServiceWorker | null = navigator.serviceWorker.controller || reg.active;
+    const ctl: ServiceWorker | null =
+      navigator.serviceWorker.controller || reg.active;
     if (!ctl) return { ok: false, reason: "no_controller" as const };
 
     const requestId = `pw_${Date.now()}_${Math.random().toString(16).slice(2)}`;
@@ -65,4 +68,3 @@ test("sw: debug snapshot + clear caches work (best-effort)", async ({ page }) =>
 
   expect(result.ok).toBe(true);
 });
-

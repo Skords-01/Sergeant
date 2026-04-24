@@ -58,9 +58,9 @@ export function trackEvent(eventName, payload = {}) {
     console.log("[analytics]", event);
     const current = safeReadLog();
     safeWriteLog([...current, event]);
-    // eslint-disable-next-line no-underscore-dangle
-    (window as any).__hubAnalytics = [...(current as any[]), event].slice(
-      -MAX_LOG,
-    );
+    const analyticsWindow = window as Window & {
+      __hubAnalytics?: unknown[];
+    };
+    analyticsWindow.__hubAnalytics = [...current, event].slice(-MAX_LOG);
   } catch {}
 }

@@ -203,7 +203,11 @@ export function getHintState(store: KVStore, id: HintId): HintState {
   };
 }
 
-export function setHintState(store: KVStore, id: HintId, patch: HintState): void {
+export function setHintState(
+  store: KVStore,
+  id: HintId,
+  patch: HintState,
+): void {
   const map = readHintsState(store);
   map[id] = patch;
   writeHintsState(store, map);
@@ -245,7 +249,8 @@ export function canShowHint(
   const t = safeNow(now);
   const s = getHintState(store, id);
   if (s.completedAt) return { ok: false, reason: "completed" };
-  if (s.snoozedUntil && s.snoozedUntil > t) return { ok: false, reason: "snoozed" };
+  if (s.snoozedUntil && s.snoozedUntil > t)
+    return { ok: false, reason: "snoozed" };
   if (s.shownCount >= def.maxShowsTotal)
     return { ok: false, reason: "max_shows_reached" };
 
@@ -332,4 +337,3 @@ export function pickNextHint(
   }
   return null;
 }
-
