@@ -55,6 +55,7 @@ import { useDashboardOrder } from "./useDashboardOrder";
 import { useModulePreviews } from "./useModulePreviews";
 import { useMondayAutoDigest } from "./useMondayAutoDigest";
 import { WeeklyDigestFooter } from "./WeeklyDigestFooter";
+import { useHints } from "../hints/useHints";
 import {
   safeReadLS as mmkvGet,
   safeRemoveLS as mmkvRemove,
@@ -139,6 +140,11 @@ export function HubDashboard() {
   const firstActionPending = isFirstActionPending(mmkvStore);
   const softAuthDismissed = isSoftAuthDismissed(mmkvStore);
   const hasFirstRealEntry = isFirstRealEntryDone(mmkvStore);
+  useHints({
+    store: mmkvStore,
+    inFtuxSession: firstActionPending && !hasFirstRealEntry,
+    hasFirstRealEntry,
+  });
 
   const openModule = useCallback((id: DashboardModuleId) => {
     // `DASHBOARD_MODULE_ROUTES` holds validated Expo-Router hrefs. We
