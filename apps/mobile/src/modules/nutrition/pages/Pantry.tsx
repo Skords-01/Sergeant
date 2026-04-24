@@ -1,6 +1,15 @@
 import { useCallback, useMemo, useState } from "react";
-import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 import { useRouter } from "expo-router";
+import { isApiError } from "@sergeant/api-client";
+import { useApiClient } from "@sergeant/api-client/react";
 
 import {
   groupItemsByCategory,
@@ -13,19 +22,32 @@ import { Card } from "@/components/ui/Card";
 
 import { useNutritionPantries } from "../hooks/useNutritionPantries";
 
+function formatPantryApiError(e: unknown): string {
+  if (isApiError(e)) {
+    return e.message || `Помилка ${e.status}`;
+  }
+  if (e instanceof Error) return e.message;
+  return "Помилка запиту";
+}
+
 export function PantryPage({ testID }: { testID?: string }) {
   const router = useRouter();
+  const api = useApiClient();
   const {
     pantries,
     activePantryId,
     activePantry,
     setActivePantryId,
     addLine,
+    applyParsedItems,
     removeItemAt,
     addPantry,
   } = useNutritionPantries();
   const [draft, setDraft] = useState("");
   const [newPantryName, setNewPantryName] = useState("");
+  const [bulkText, setBulkText] = useState("");
+  const [aiBusy, setAiBusy] = useState(false);
+  const [aiErr, setAiErr] = useState("");
 
   const grouped = useMemo(() => {
     const items: readonly PantryItem[] = activePantry?.items || [];
@@ -41,6 +63,29 @@ export function PantryPage({ testID }: { testID?: string }) {
     hapticTap();
     router.back();
   }, [router]);
+
+  const onParseWithAi = useCallback(async () => {
+    const text = bulkText.trim();
+    if (!text) {
+      setAiErr("Впиши список продуктів (або встав кілька рядків).");
+      return;
+    }
+    setAiErr("");
+    setAiBusy(true);
+    try {
+      const data = await api.nutrition.parsePantry({ text, locale: "uk-UA" });
+      const items = Array.isArray(data?.items)
+        ? (data.items as PantryItem[])
+        : [];
+      applyParsedItems(items);
+      setBulkText("");
+      hapticTap();
+    } catch (e) {
+      setAiErr(formatPantryApiError(e));
+    } finally {
+      setAiBusy(false);
+    }
+  }, [api, bulkText, applyParsedItems]);
 
   return (
     <View className="flex-1 bg-cream-50" testID={testID}>
@@ -97,6 +142,48 @@ export function PantryPage({ testID }: { testID?: string }) {
           Додавай рядок як на веб: «2 л молока», «яйця 10 шт» — парсер
           `parseLoosePantryText` зведе в структуровані позиції.
         </Text>
+
+        <Card>
+          <Text className="text-sm font-medium text-stone-800 mb-1">
+            AI-розбір списку
+          </Text>
+          <Text className="text-xs text-stone-500 mb-2">
+            Великий список мовою природи — на сервері Claude розкладе в позиції
+            й додасть у цей склад (злиття, як на web). Потрібен Anthropic key на
+            бекенді; за `NUTRITION_API_TOKEN` — те саме в
+            `EXPO_PUBLIC_NUTRITION_API_TOKEN` у .env.
+          </Text>
+          <TextInput
+            value={bulkText}
+            onChangeText={setBulkText}
+            placeholder="молоко, яйця, борошно… (кілька рядків)"
+            className="border border-cream-300 rounded-xl px-3 py-2 text-stone-800 bg-white min-h-[88px] text-sm"
+            multiline
+            textAlignVertical="top"
+            placeholderTextColor="#a8a29e"
+            testID="pantry-ai-bulk"
+            editable={!aiBusy}
+          />
+          {aiErr ? (
+            <Text className="text-sm text-red-600 mt-1" testID="pantry-ai-err">
+              {aiErr}
+            </Text>
+          ) : null}
+          <View className="mt-2">
+            {aiBusy ? (
+              <ActivityIndicator />
+            ) : (
+              <Button
+                variant="secondary"
+                onPress={() => void onParseWithAi()}
+                testID="pantry-ai-btn"
+                disabled={!bulkText.trim()}
+              >
+                Розібрати AI
+              </Button>
+            )}
+          </View>
+        </Card>
 
         <View className="flex-row gap-2">
           <TextInput
