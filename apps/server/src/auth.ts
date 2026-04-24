@@ -4,6 +4,7 @@ import { bearer } from "better-auth/plugins";
 import { expo } from "@better-auth/expo";
 import type { Request } from "express";
 import pool from "./db.js";
+import { queueAuthTransactionalEmail } from "./email/authTransactionalMail.js";
 import {
   authAttemptsTotal,
   authSessionLookupDurationMs,
@@ -15,6 +16,10 @@ interface AdvancedCookieOptions {
     sameSite: "none";
     secure: true;
   };
+}
+
+function escapeHtmlAttr(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
 }
 
 function getBaseURL(): string {
@@ -68,6 +73,28 @@ export const auth = betterAuth({
     // maxPasswordLength захищає від DoS через надто довгі bcrypt-пейлоади.
     minPasswordLength: Number(process.env.MIN_PASSWORD_LENGTH) || 10,
     maxPasswordLength: Number(process.env.MAX_PASSWORD_LENGTH) || 128,
+    // Не await-имо відправку — зменшує ризик timing enumeration (див. Better Auth docs).
+    sendResetPassword: async ({ user, url }) => {
+      queueAuthTransactionalEmail({
+        kind: "password_reset",
+        to: user.email,
+        subject: "Скидання пароля — Sergeant",
+        text: `Перейдіть за посиланням, щоб задати новий пароль (діє обмежений час):\n\n${url}\n\nЯкщо ви не запитували скидання — проігноруйте цей лист.`,
+        html: `<p>Перейдіть за посиланням, щоб задати новий пароль:</p><p><a href="${escapeHtmlAttr(url)}">Скинути пароль</a></p><p>Якщо ви не запитували скидання — проігноруйте цей лист.</p>`,
+      });
+    },
+  },
+  emailVerification: {
+    sendOnSignUp: false,
+    sendVerificationEmail: async ({ user, url }) => {
+      queueAuthTransactionalEmail({
+        kind: "email_verification",
+        to: user.email,
+        subject: "Підтвердження email — Sergeant",
+        text: `Підтвердіть адресу електронної пошти:\n\n${url}\n\nЯкщо ви не реєструвались — проігноруйте цей лист.`,
+        html: `<p>Підтвердіть email:</p><p><a href="${escapeHtmlAttr(url)}">Підтвердити</a></p><p>Якщо ви не реєструвались — проігноруйте цей лист.</p>`,
+      });
+    },
   },
   session: {
     expiresIn: 60 * 60 * 24 * 30,
