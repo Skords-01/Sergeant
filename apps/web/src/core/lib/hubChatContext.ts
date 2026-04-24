@@ -644,6 +644,35 @@ function buildContext(): string {
     }
   } catch {}
 
+  // ── Профіль користувача (пам'ять) ───────────────────────────
+  try {
+    const profile = ls<Array<{ fact: string; category: string }>>(
+      "hub_user_profile_v1",
+      [],
+    );
+    if (profile.length > 0) {
+      const categoryLabels: Record<string, string> = {
+        allergy: "Алергії",
+        diet: "Дієта",
+        goal: "Цілі",
+        training: "Тренування",
+        health: "Здоров'я",
+        preference: "Уподобання",
+        other: "Інше",
+      };
+      lines.push("[Профіль користувача]");
+      const grouped: Record<string, string[]> = {};
+      for (const entry of profile) {
+        const cat = entry.category || "other";
+        if (!grouped[cat]) grouped[cat] = [];
+        grouped[cat].push(entry.fact);
+      }
+      for (const [cat, facts] of Object.entries(grouped)) {
+        lines.push(`  ${categoryLabels[cat] || cat}: ${facts.join("; ")}`);
+      }
+    }
+  } catch {}
+
   return lines.length > 1
     ? lines.join("\n")
     : "Даних немає. Monobank не підключено.";

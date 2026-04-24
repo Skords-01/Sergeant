@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@shared/lib/cn";
 import { Button } from "@shared/components/ui/Button";
@@ -610,6 +610,150 @@ function DangerZoneSection({
   );
 }
 
+// ────────────────────── Memory bank ──────────────────────
+
+interface MemoryEntry {
+  id: string;
+  fact: string;
+  category: string;
+  createdAt: string;
+}
+
+const PROFILE_KEY = "hub_user_profile_v1";
+
+const CATEGORY_META: Record<string, { label: string; emoji: string }> = {
+  allergy: { label: "Алергії", emoji: "🚫" },
+  diet: { label: "Дієта", emoji: "🍎" },
+  goal: { label: "Цілі", emoji: "🎯" },
+  training: { label: "Тренування", emoji: "🏋️" },
+  health: { label: "Здоров'я", emoji: "💊" },
+  preference: { label: "Уподобання", emoji: "⭐" },
+  other: { label: "Інше", emoji: "📝" },
+};
+
+const MEMORY_ONBOARDING_PROMPT =
+  "Привіт! Давай заповнимо мій профіль. Задай мені по черзі кілька запитань: 1) Чи є в мене алергії або обмеження в їжі? 2) Яка моя дієта чи стиль харчування? 3) Яка моя основна ціль (схуднути, набрати масу, підтримка)? 4) Скільки разів на тиждень я тренуюсь і де? 5) Чи є щось ще важливе про моє здоров'я? Запам'ятай кожну відповідь через remember.";
+
+function MemoryBankSection() {
+  const [entries, setEntries] = useState<MemoryEntry[]>(() => {
+    try {
+      const raw = localStorage.getItem(PROFILE_KEY);
+      return raw ? (JSON.parse(raw) as MemoryEntry[]) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const handleDelete = useCallback(
+    (id: string) => {
+      const next = entries.filter((e) => e.id !== id);
+      setEntries(next);
+      try {
+        localStorage.setItem(PROFILE_KEY, JSON.stringify(next));
+      } catch {}
+    },
+    [entries],
+  );
+
+  const openMemoryChat = useCallback(() => {
+    const prompt =
+      entries.length === 0
+        ? MEMORY_ONBOARDING_PROMPT
+        : "Хочу додати інформацію про себе. Запитай мене що важливого я хочу щоб ти запам'ятав.";
+    window.dispatchEvent(new CustomEvent("hub:openChat", { detail: prompt }));
+  }, [entries.length]);
+
+  const grouped = useMemo(() => {
+    const map: Record<string, MemoryEntry[]> = {};
+    for (const e of entries) {
+      const cat = e.category || "other";
+      if (!map[cat]) map[cat] = [];
+      map[cat].push(e);
+    }
+    return map;
+  }, [entries]);
+
+  const isEmpty = entries.length === 0;
+
+  return (
+    <Card radius="lg" padding="none" className="overflow-hidden">
+      <div className="px-4 py-3.5 flex items-center gap-2 border-b border-line">
+        <Icon name="sparkle" size={18} className="text-muted" />
+        <span className="text-sm font-semibold text-text">Пам&apos;ять ШІ</span>
+        <span className="ml-auto text-xs text-muted">
+          {entries.length}{" "}
+          {entries.length === 1
+            ? "запис"
+            : entries.length < 5
+              ? "записи"
+              : "записів"}
+        </span>
+      </div>
+
+      <div className="p-4">
+        {isEmpty ? (
+          <div className="text-center py-6">
+            <div className="text-3xl mb-3">🧠</div>
+            <p className="text-sm text-muted mb-1">
+              Банк пам&apos;яті порожній
+            </p>
+            <p className="text-xs text-muted/70 mb-4">
+              ШІ задасть кілька запитань щоб дізнатися про ваші алергії, цілі,
+              уподобання та рівень активності
+            </p>
+            <Button variant="primary" size="sm" onClick={openMemoryChat}>
+              <Icon name="sparkle" size={14} className="mr-1.5" />
+              Заповнити профіль
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {Object.entries(grouped).map(([cat, items]) => {
+              const meta = CATEGORY_META[cat] || { label: cat, emoji: "📝" };
+              return (
+                <div key={cat}>
+                  <div className="text-xs font-semibold text-muted mb-1.5">
+                    {meta.emoji} {meta.label}
+                  </div>
+                  <div className="space-y-1">
+                    {items.map((entry) => (
+                      <div
+                        key={entry.id}
+                        className="flex items-center gap-2 group"
+                      >
+                        <span className="text-sm text-text flex-1 min-w-0 truncate">
+                          {entry.fact}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(entry.id)}
+                          className="opacity-0 group-hover:opacity-100 shrink-0 w-6 h-6 rounded-md flex items-center justify-center text-muted hover:text-danger hover:bg-danger/10 transition-all"
+                          aria-label={`Видалити: ${entry.fact}`}
+                        >
+                          <Icon name="x" size={14} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+
+            <button
+              type="button"
+              onClick={openMemoryChat}
+              className="w-full mt-2 py-2.5 rounded-xl border border-dashed border-line text-sm text-muted hover:text-text hover:border-muted transition-colors flex items-center justify-center gap-1.5"
+            >
+              <Icon name="plus" size={14} />
+              Додати інфо
+            </button>
+          </div>
+        )}
+      </div>
+    </Card>
+  );
+}
+
 // ────────────────────── Profile page shell ──────────────────────
 
 export function ProfilePage() {
@@ -654,6 +798,7 @@ export function ProfilePage() {
         )}
 
         <PersonalInfoSection user={user} online={online} onRefresh={refresh} />
+        <MemoryBankSection />
         <ChangePasswordSection online={online} />
         <SessionsSection online={online} />
         <DangerZoneSection online={online} onLogout={logout} />

@@ -365,6 +365,78 @@ interface SetGoalAction {
   };
 }
 
+interface SpendingTrendAction {
+  name: "spending_trend";
+  input: { period_days?: number | string };
+}
+
+interface WeightChartAction {
+  name: "weight_chart";
+  input: { period_days?: number | string };
+}
+
+interface CategoryBreakdownAction {
+  name: "category_breakdown";
+  input: { period_days?: number | string };
+}
+
+interface DetectAnomaliesAction {
+  name: "detect_anomalies";
+  input: {
+    period_days?: number | string;
+    threshold_multiplier?: number | string;
+  };
+}
+
+interface HabitTrendAction {
+  name: "habit_trend";
+  input: { habit_id?: string; period_days?: number | string };
+}
+
+interface Calculate1rmAction {
+  name: "calculate_1rm";
+  input: {
+    weight_kg: number | string;
+    reps: number | string;
+    exercise_name?: string;
+  };
+}
+
+interface ConvertUnitsAction {
+  name: "convert_units";
+  input: { value: number | string; from: string; to: string };
+}
+
+interface SaveNoteAction {
+  name: "save_note";
+  input: { text: string; tag?: string };
+}
+
+interface ListNotesAction {
+  name: "list_notes";
+  input: { tag?: string; limit?: number | string };
+}
+
+interface ExportModuleDataAction {
+  name: "export_module_data";
+  input: { module: string; format?: string };
+}
+
+interface RememberAction {
+  name: "remember";
+  input: { fact: string; category?: string };
+}
+
+interface ForgetAction {
+  name: "forget";
+  input: { fact_id: string };
+}
+
+interface MyProfileAction {
+  name: "my_profile";
+  input: { category?: string };
+}
+
 export type ChatAction =
   | ChangeCategoryAction
   | CreateDebtAction
@@ -413,6 +485,19 @@ export type ChatAction =
   | MorningBriefingAction
   | WeeklySummaryAction
   | SetGoalAction
+  | SpendingTrendAction
+  | WeightChartAction
+  | CategoryBreakdownAction
+  | DetectAnomaliesAction
+  | HabitTrendAction
+  | Calculate1rmAction
+  | ConvertUnitsAction
+  | SaveNoteAction
+  | ListNotesAction
+  | ExportModuleDataAction
+  | RememberAction
+  | ForgetAction
+  | MyProfileAction
   | { name: string; input: Record<string, unknown> };
 
 interface BudgetLimit {
@@ -2400,6 +2485,512 @@ export function executeAction(action: ChatAction): string {
         goals.push(goal);
         lsSet("hub_goals_v1", goals);
         return parts.join(", ") + ` (id:${goal.id})`;
+      }
+      // ── Аналітика ──────────────────────────────────────────────
+      case "spending_trend": {
+        const { period_days } = (action as SpendingTrendAction).input || {};
+        const days = Number(period_days) || 30;
+        const now = Date.now();
+        const currentStart = now - days * 86400000;
+        const prevStart = currentStart - days * 86400000;
+        const txCache = ls<{
+          txs?: Array<{ amount: number; time?: number; description?: string }>;
+        } | null>("finyk_tx_cache", null);
+        const allTxs = txCache?.txs || [];
+        const hiddenTxIds = ls<string[]>("finyk_hidden_txs", []);
+        const txs = allTxs.filter(
+          (t) => !hiddenTxIds.includes((t as { id?: string }).id || ""),
+        );
+        const currentPeriod = txs.filter((t) => {
+          const ts = (t.time || 0) * 1000;
+          return ts >= currentStart && ts <= now;
+        });
+        const prevPeriod = txs.filter((t) => {
+          const ts = (t.time || 0) * 1000;
+          return ts >= prevStart && ts < currentStart;
+        });
+        const sumExpenses = (arr: typeof txs) =>
+          arr
+            .filter((t) => t.amount < 0)
+            .reduce((s, t) => s + Math.abs(t.amount / 100), 0);
+        const sumIncome = (arr: typeof txs) =>
+          arr
+            .filter((t) => t.amount > 0)
+            .reduce((s, t) => s + t.amount / 100, 0);
+        const curExp = sumExpenses(currentPeriod);
+        const prevExp = sumExpenses(prevPeriod);
+        const curInc = sumIncome(currentPeriod);
+        const change =
+          prevExp > 0 ? Math.round(((curExp - prevExp) / prevExp) * 100) : 0;
+        const avgPerDay = days > 0 ? Math.round(curExp / days) : 0;
+        const parts: string[] = [
+          `Тренд витрат за ${days} днів:`,
+          `Витрати: ${Math.round(curExp)} грн (${avgPerDay} грн/день)`,
+          `Дохід: ${Math.round(curInc)} грн`,
+          `Попередній період: ${Math.round(prevExp)} грн`,
+          `Зміна: ${change >= 0 ? "+" : ""}${change}%`,
+          `Транзакцій: ${currentPeriod.length}`,
+        ];
+        return parts.join("\n");
+      }
+      case "weight_chart": {
+        const { period_days } = (action as WeightChartAction).input || {};
+        const days = Number(period_days) || 30;
+        const log = ls<Array<{ at?: string; weightKg?: number | null }>>(
+          "fizruk_daily_log_v1",
+          [],
+        );
+        const cutoff = Date.now() - days * 86400000;
+        const entries = log
+          .filter(
+            (e) =>
+              e.weightKg != null && e.at && new Date(e.at).getTime() >= cutoff,
+          )
+          .sort(
+            (a, b) => new Date(a.at!).getTime() - new Date(b.at!).getTime(),
+          );
+        if (entries.length === 0)
+          return `Немає записів ваги за останні ${days} днів.`;
+        const weights = entries.map((e) => e.weightKg as number);
+        const min = Math.min(...weights);
+        const max = Math.max(...weights);
+        const first = weights[0];
+        const last = weights[weights.length - 1];
+        const diff = last - first;
+        const parts: string[] = [
+          `Вага за ${days} днів (${entries.length} записів):`,
+          `Перша: ${first} кг → Остання: ${last} кг (${diff >= 0 ? "+" : ""}${diff.toFixed(1)} кг)`,
+          `Мін: ${min} кг | Макс: ${max} кг`,
+        ];
+        const recent = entries.slice(-7);
+        if (recent.length > 1) {
+          parts.push("Останні записи:");
+          for (const e of recent) {
+            const d = new Date(e.at!).toLocaleDateString("uk-UA", {
+              day: "numeric",
+              month: "short",
+            });
+            parts.push(`  ${d}: ${e.weightKg} кг`);
+          }
+        }
+        return parts.join("\n");
+      }
+      case "category_breakdown": {
+        const { period_days } = (action as CategoryBreakdownAction).input || {};
+        const days = Number(period_days) || 30;
+        const cutoff = Date.now() - days * 86400000;
+        const txCache = ls<{
+          txs?: Array<{
+            id?: string;
+            amount: number;
+            time?: number;
+            categoryId?: string;
+          }>;
+        } | null>("finyk_tx_cache", null);
+        const hiddenTxIds = ls<string[]>("finyk_hidden_txs", []);
+        const customC = ls<unknown[]>("finyk_custom_cats_v1", []);
+        const catMap = ls<Record<string, string>>("finyk_cat_overrides", {});
+        const expenses = (txCache?.txs || []).filter((t) => {
+          if (hiddenTxIds.includes(t.id || "")) return false;
+          const ts = (t.time || 0) * 1000;
+          return t.amount < 0 && ts >= cutoff;
+        });
+        const byCategory: Record<string, number> = {};
+        for (const tx of expenses) {
+          const catId = catMap[tx.id || ""] || tx.categoryId || "other";
+          byCategory[catId] =
+            (byCategory[catId] || 0) + Math.abs(tx.amount / 100);
+        }
+        const total = Object.values(byCategory).reduce((a, b) => a + b, 0);
+        const sorted = Object.entries(byCategory)
+          .map(([id, amount]) => {
+            const meta = resolveExpenseCategoryMeta(id, customC);
+            return {
+              label: meta?.label || id,
+              amount,
+              pct: total > 0 ? Math.round((amount / total) * 100) : 0,
+            };
+          })
+          .sort((a, b) => b.amount - a.amount);
+        const parts: string[] = [
+          `Витрати по категоріях за ${days} днів (${Math.round(total)} грн):`,
+        ];
+        for (const c of sorted.slice(0, 15)) {
+          parts.push(`  ${c.label}: ${Math.round(c.amount)} грн (${c.pct}%)`);
+        }
+        return parts.join("\n");
+      }
+      case "detect_anomalies": {
+        const { period_days, threshold_multiplier } =
+          (action as DetectAnomaliesAction).input || {};
+        const days = Number(period_days) || 30;
+        const threshold = Number(threshold_multiplier) || 3;
+        const cutoff = Date.now() - days * 86400000;
+        const txCache = ls<{
+          txs?: Array<{
+            id?: string;
+            amount: number;
+            time?: number;
+            description?: string;
+          }>;
+        } | null>("finyk_tx_cache", null);
+        const hiddenTxIds = ls<string[]>("finyk_hidden_txs", []);
+        const expenses = (txCache?.txs || []).filter((t) => {
+          if (hiddenTxIds.includes(t.id || "")) return false;
+          const ts = (t.time || 0) * 1000;
+          return t.amount < 0 && ts >= cutoff;
+        });
+        if (expenses.length < 3)
+          return "Недостатньо транзакцій для аналізу аномалій.";
+        const amounts = expenses.map((t) => Math.abs(t.amount / 100));
+        const avg = amounts.reduce((a, b) => a + b, 0) / amounts.length;
+        const anomalies = expenses
+          .filter((t) => Math.abs(t.amount / 100) > avg * threshold)
+          .sort((a, b) => Math.abs(b.amount) - Math.abs(a.amount))
+          .slice(0, 5);
+        if (anomalies.length === 0) {
+          return `За ${days} днів аномалій не виявлено (середня витрата: ${Math.round(avg)} грн, поріг: ${Math.round(avg * threshold)} грн).`;
+        }
+        const parts: string[] = [
+          `Аномальні витрати за ${days} днів (середня: ${Math.round(avg)} грн, поріг ×${threshold}):`,
+        ];
+        for (const tx of anomalies) {
+          const d = tx.time
+            ? new Date(tx.time * 1000).toLocaleDateString("uk-UA")
+            : "?";
+          parts.push(
+            `  ${d}: ${Math.round(Math.abs(tx.amount / 100))} грн — ${tx.description || "(без опису)"}`,
+          );
+        }
+        return parts.join("\n");
+      }
+      case "habit_trend": {
+        const { habit_id, period_days } =
+          (action as HabitTrendAction).input || {};
+        const days = Number(period_days) || 30;
+        const state = ls<HabitState | null>("hub_routine_v1", null);
+        if (!state?.habits || state.habits.length === 0) return "Немає звичок.";
+        const habits = habit_id
+          ? state.habits.filter((h) => h.id === habit_id)
+          : state.habits.filter(
+              (h) => !(h as Record<string, unknown>).archived,
+            );
+        if (habits.length === 0) return `Звичку ${habit_id} не знайдено.`;
+        const completions = state.completions || {};
+        const now = new Date();
+        const weeks = Math.ceil(days / 7);
+        const weeklyData: number[] = [];
+        for (let w = 0; w < weeks; w++) {
+          let done = 0;
+          let possible = 0;
+          for (let d = 0; d < 7; d++) {
+            const dayOffset = w * 7 + d;
+            if (dayOffset >= days) break;
+            const dt = new Date(now);
+            dt.setDate(dt.getDate() - dayOffset);
+            const dk = [
+              dt.getFullYear(),
+              String(dt.getMonth() + 1).padStart(2, "0"),
+              String(dt.getDate()).padStart(2, "0"),
+            ].join("-");
+            for (const h of habits) {
+              possible++;
+              if (
+                Array.isArray(completions[h.id]) &&
+                completions[h.id].includes(dk)
+              )
+                done++;
+            }
+          }
+          weeklyData.push(
+            possible > 0 ? Math.round((done / possible) * 100) : 0,
+          );
+        }
+        const parts: string[] = [
+          `Тренд звичок за ${days} днів (${habits.length} звичок):`,
+        ];
+        weeklyData.reverse();
+        for (let i = 0; i < weeklyData.length; i++) {
+          parts.push(`  Тиждень ${i + 1}: ${weeklyData[i]}%`);
+        }
+        const first = weeklyData[0];
+        const last = weeklyData[weeklyData.length - 1];
+        if (weeklyData.length >= 2) {
+          const trend =
+            last > first
+              ? "покращується"
+              : last < first
+                ? "погіршується"
+                : "стабільно";
+          parts.push(`Тренд: ${trend} (${first}% → ${last}%)`);
+        }
+        return parts.join("\n");
+      }
+      // ── Утиліти ────────────────────────────────────────────────
+      case "calculate_1rm": {
+        const { weight_kg, reps, exercise_name } = (
+          action as Calculate1rmAction
+        ).input;
+        const w = Number(weight_kg);
+        const r = Number(reps);
+        if (!Number.isFinite(w) || w <= 0)
+          return "Вага має бути додатним числом.";
+        if (!Number.isInteger(r) || r < 1)
+          return "Повторення мають бути цілим числом >= 1.";
+        if (r === 1) {
+          return `1RM${exercise_name ? ` (${exercise_name})` : ""}: ${w} кг (1 повторення = вже максимум)`;
+        }
+        const epley = Math.round(w * (1 + r / 30) * 10) / 10;
+        const brzycki = Math.round(((w * 36) / (37 - r)) * 10) / 10;
+        const avg1rm = Math.round(((epley + brzycki) / 2) * 10) / 10;
+        const percentages = [
+          { pct: 100, reps: 1 },
+          { pct: 95, reps: 2 },
+          { pct: 90, reps: 4 },
+          { pct: 85, reps: 6 },
+          { pct: 80, reps: 8 },
+          { pct: 75, reps: 10 },
+          { pct: 70, reps: 12 },
+          { pct: 65, reps: 15 },
+        ];
+        const parts: string[] = [
+          `1RM${exercise_name ? ` (${exercise_name})` : ""}: ~${avg1rm} кг`,
+          `Епллі: ${epley} кг | Бжицкі: ${brzycki} кг`,
+          `Базується на: ${w} кг × ${r} повт`,
+          "",
+          "Таблиця відсотків:",
+        ];
+        for (const p of percentages) {
+          parts.push(
+            `  ${p.pct}% = ${Math.round((avg1rm * p.pct) / 100)} кг (~${p.reps} повт)`,
+          );
+        }
+        return parts.join("\n");
+      }
+      case "convert_units": {
+        const { value, from, to } = (action as ConvertUnitsAction).input;
+        const v = Number(value);
+        if (!Number.isFinite(v)) return "Значення має бути числом.";
+        const f = (from || "").toLowerCase().trim();
+        const t = (to || "").toLowerCase().trim();
+        const conversions: Record<
+          string,
+          Record<string, (n: number) => number>
+        > = {
+          kg: { lb: (n) => n * 2.20462 },
+          lb: { kg: (n) => n / 2.20462 },
+          cm: { in: (n) => n / 2.54 },
+          in: { cm: (n) => n * 2.54 },
+          km: { mi: (n) => n * 0.621371 },
+          mi: { km: (n) => n / 0.621371 },
+          c: { f: (n) => (n * 9) / 5 + 32 },
+          f: { c: (n) => ((n - 32) * 5) / 9 },
+          kcal: { kj: (n) => n * 4.184 },
+          kj: { kcal: (n) => n / 4.184 },
+          m: { ft: (n) => n * 3.28084 },
+          ft: { m: (n) => n / 3.28084 },
+          g: { oz: (n) => n / 28.3495 },
+          oz: { g: (n) => n * 28.3495 },
+        };
+        const fn = conversions[f]?.[t];
+        if (!fn)
+          return `Невідома конвертація: ${f} → ${t}. Підтримуються: kg↔lb, cm↔in, km↔mi, c↔f, kcal↔kj, m↔ft, g↔oz`;
+        const result = Math.round(fn(v) * 100) / 100;
+        return `${v} ${f} = ${result} ${t}`;
+      }
+      case "save_note": {
+        const { text, tag } = (action as SaveNoteAction).input;
+        const trimmed = (text || "").trim();
+        if (!trimmed) return "Потрібен текст нотатки.";
+        const notes = ls<
+          Array<{ id: string; text: string; tag: string; createdAt: string }>
+        >("hub_notes_v1", []);
+        const note = {
+          id: `note_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`,
+          text: trimmed.slice(0, 1000),
+          tag: (tag || "other").trim().toLowerCase(),
+          createdAt: new Date().toISOString(),
+        };
+        notes.unshift(note);
+        lsSet("hub_notes_v1", notes);
+        return `Нотатку збережено: "${trimmed.slice(0, 50)}${trimmed.length > 50 ? "\u2026" : ""}" [${note.tag}] (id:${note.id})`;
+      }
+      case "list_notes": {
+        const { tag, limit } = (action as ListNotesAction).input || {};
+        const max = Number(limit) || 10;
+        const notes = ls<
+          Array<{ id: string; text: string; tag: string; createdAt: string }>
+        >("hub_notes_v1", []);
+        if (notes.length === 0) return "Нотаток немає.";
+        const filtered = tag
+          ? notes.filter((n) => n.tag === tag.toLowerCase().trim())
+          : notes;
+        if (filtered.length === 0) return `Нотаток з тегом "${tag}" немає.`;
+        const shown = filtered.slice(0, max);
+        const parts: string[] = [`Нотатки (${filtered.length} всього):`];
+        for (const n of shown) {
+          const d = new Date(n.createdAt).toLocaleDateString("uk-UA");
+          parts.push(
+            `  [${n.tag}] ${n.text.slice(0, 80)}${n.text.length > 80 ? "\u2026" : ""} (${d})`,
+          );
+        }
+        if (filtered.length > max) {
+          parts.push(`  \u2026і ще ${filtered.length - max}`);
+        }
+        return parts.join("\n");
+      }
+      case "export_module_data": {
+        const { module, format } = (action as ExportModuleDataAction).input;
+        const mod = (module || "").toLowerCase().trim();
+        const fmt = (format || "text").toLowerCase().trim();
+        const exportData = (key: string, label: string) => {
+          const raw = localStorage.getItem(key);
+          if (!raw) return `${label}: немає даних.`;
+          if (fmt === "json")
+            return `${label} (JSON):\n${raw.slice(0, 3000)}${raw.length > 3000 ? "\n\u2026(обрізано)" : ""}`;
+          try {
+            const parsed = JSON.parse(raw);
+            return `${label}: ${JSON.stringify(parsed, null, 2).slice(0, 3000)}${raw.length > 3000 ? "\n\u2026(обрізано)" : ""}`;
+          } catch {
+            return `${label}: ${raw.slice(0, 3000)}`;
+          }
+        };
+        switch (mod) {
+          case "finyk": {
+            const parts: string[] = ["Експорт Фінік:"];
+            parts.push(exportData("finyk_tx_cache", "Транзакції"));
+            return parts.join("\n");
+          }
+          case "fizruk": {
+            const parts: string[] = ["Експорт Фізрук:"];
+            parts.push(exportData("fizruk_workouts_v1", "Тренування"));
+            parts.push(exportData("fizruk_daily_log_v1", "Щоденний журнал"));
+            return parts.join("\n");
+          }
+          case "routine": {
+            const parts: string[] = ["Експорт Рутина:"];
+            parts.push(exportData("hub_routine_v1", "Звички та виконання"));
+            return parts.join("\n");
+          }
+          case "nutrition": {
+            const parts: string[] = ["Експорт Харчування:"];
+            parts.push(exportData("nutrition_log_v1", "Журнал їжі"));
+            parts.push(exportData("nutrition_prefs_v1", "Налаштування"));
+            return parts.join("\n");
+          }
+          default:
+            return `Невідомий модуль: ${mod}. Доступні: finyk, fizruk, routine, nutrition.`;
+        }
+      }
+      // ── Пам'ять / Профіль ──────────────────────────────────────
+      case "remember": {
+        const { fact, category } = (action as RememberAction).input;
+        const trimmed = (fact || "").trim();
+        if (!trimmed) return "Потрібен факт для запам'ятовування.";
+        const PROFILE_KEY = "hub_user_profile_v1";
+        const profile = ls<
+          Array<{
+            id: string;
+            fact: string;
+            category: string;
+            createdAt: string;
+          }>
+        >(PROFILE_KEY, []);
+        const duplicate = profile.find(
+          (p) => p.fact.toLowerCase() === trimmed.toLowerCase(),
+        );
+        if (duplicate)
+          return `Вже запам'ятовано: "${duplicate.fact}" [${duplicate.category}]`;
+        const entry = {
+          id: `mem_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`,
+          fact: trimmed.slice(0, 500),
+          category: (category || "other").trim().toLowerCase(),
+          createdAt: new Date().toISOString(),
+        };
+        profile.push(entry);
+        lsSet(PROFILE_KEY, profile);
+        const categoryLabels: Record<string, string> = {
+          allergy: "алергія",
+          diet: "дієта",
+          goal: "ціль",
+          training: "тренування",
+          health: "здоров'я",
+          preference: "уподобання",
+          other: "інше",
+        };
+        return `Запам'ятав: "${trimmed}" [${categoryLabels[entry.category] || entry.category}]`;
+      }
+      case "forget": {
+        const { fact_id } = (action as ForgetAction).input;
+        if (!fact_id) return "Потрібен ID або текст факту.";
+        const PROFILE_KEY = "hub_user_profile_v1";
+        const profile = ls<
+          Array<{
+            id: string;
+            fact: string;
+            category: string;
+            createdAt: string;
+          }>
+        >(PROFILE_KEY, []);
+        if (profile.length === 0)
+          return "Профіль порожній — немає що забувати.";
+        const byId = profile.findIndex((p) => p.id === fact_id);
+        if (byId >= 0) {
+          const removed = profile.splice(byId, 1)[0];
+          lsSet(PROFILE_KEY, profile);
+          return `Забув: "${removed.fact}"`;
+        }
+        const byText = profile.findIndex((p) =>
+          p.fact.toLowerCase().includes(fact_id.toLowerCase()),
+        );
+        if (byText >= 0) {
+          const removed = profile.splice(byText, 1)[0];
+          lsSet(PROFILE_KEY, profile);
+          return `Забув: "${removed.fact}"`;
+        }
+        return `Не знайшов факт "${fact_id}" у профілі.`;
+      }
+      case "my_profile": {
+        const { category } = (action as MyProfileAction).input || {};
+        const PROFILE_KEY = "hub_user_profile_v1";
+        const profile = ls<
+          Array<{
+            id: string;
+            fact: string;
+            category: string;
+            createdAt: string;
+          }>
+        >(PROFILE_KEY, []);
+        if (profile.length === 0)
+          return "Профіль порожній. Скажи мені щось про себе — і я запам'ятаю!";
+        const filtered = category
+          ? profile.filter((p) => p.category === category.toLowerCase().trim())
+          : profile;
+        if (filtered.length === 0)
+          return `Немає записів у категорії "${category}".`;
+        const categoryLabels: Record<string, string> = {
+          allergy: "🚫 Алергії",
+          diet: "🍎 Дієта",
+          goal: "🎯 Цілі",
+          training: "🏋️ Тренування",
+          health: "💊 Здоров'я",
+          preference: "⭐ Уподобання",
+          other: "📝 Інше",
+        };
+        const grouped: Record<string, typeof filtered> = {};
+        for (const entry of filtered) {
+          const cat = entry.category || "other";
+          if (!grouped[cat]) grouped[cat] = [];
+          grouped[cat].push(entry);
+        }
+        const parts: string[] = [`Профіль (${filtered.length} записів):`];
+        for (const [cat, entries] of Object.entries(grouped)) {
+          parts.push(`\n${categoryLabels[cat] || cat}:`);
+          for (const e of entries) {
+            parts.push(`  • ${e.fact} (id:${e.id})`);
+          }
+        }
+        return parts.join("\n");
       }
       default:
         return `Невідома дія: ${action.name}`;

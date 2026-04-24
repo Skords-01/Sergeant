@@ -177,6 +177,18 @@ function AppInner() {
     }
   }, [openModule]);
 
+  // Global event to open chat from any page (e.g. ProfilePage memory bank)
+  const openChatStable = ui.openChat;
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const msg = (e as CustomEvent<string | null>).detail;
+      navigate("/", { replace: true });
+      requestAnimationFrame(() => openChatStable(msg));
+    };
+    window.addEventListener("hub:openChat", handler);
+    return () => window.removeEventListener("hub:openChat", handler);
+  }, [openChatStable, navigate]);
+
   useEffect(() => {
     const onHubOpen = (ev) => {
       const { module, hash, action } = ev.detail || {};
