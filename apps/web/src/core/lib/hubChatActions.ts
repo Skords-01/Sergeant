@@ -262,6 +262,109 @@ interface LogWeightAction {
   input: { weight_kg: number | string; note?: string };
 }
 
+interface SuggestWorkoutAction {
+  name: "suggest_workout";
+  input: { focus?: string };
+}
+
+interface CopyWorkoutAction {
+  name: "copy_workout";
+  input: { source_workout_id?: string; date?: string };
+}
+
+interface CompareProgressAction {
+  name: "compare_progress";
+  input: {
+    exercise_name?: string;
+    muscle_group?: string;
+    period_days?: number | string;
+  };
+}
+
+interface SplitTransactionAction {
+  name: "split_transaction";
+  input: {
+    tx_id: string;
+    parts: Array<{ category_id: string; amount: number | string }>;
+  };
+}
+
+interface RecurringExpenseAction {
+  name: "recurring_expense";
+  input: {
+    name: string;
+    amount: number | string;
+    day_of_month?: number | string;
+    category?: string;
+  };
+}
+
+interface ExportReportAction {
+  name: "export_report";
+  input: { period?: string; from?: string; to?: string };
+}
+
+interface EditHabitAction {
+  name: "edit_habit";
+  input: {
+    habit_id: string;
+    name?: string;
+    emoji?: string;
+    recurrence?: string;
+    weekdays?: number[];
+  };
+}
+
+interface ReorderHabitsAction {
+  name: "reorder_habits";
+  input: { habit_ids: string[] };
+}
+
+interface HabitStatsAction {
+  name: "habit_stats";
+  input: { habit_id: string; period_days?: number | string };
+}
+
+interface SuggestMealAction {
+  name: "suggest_meal";
+  input: { focus?: string; meal_type?: string };
+}
+
+interface CopyMealFromDateAction {
+  name: "copy_meal_from_date";
+  input: { source_date: string; meal_index?: number | string };
+}
+
+interface PlanMealsForDayAction {
+  name: "plan_meals_for_day";
+  input: {
+    target_kcal?: number | string;
+    meals_count?: number | string;
+    preferences?: string;
+  };
+}
+
+interface MorningBriefingAction {
+  name: "morning_briefing";
+  input: Record<string, never>;
+}
+
+interface WeeklySummaryAction {
+  name: "weekly_summary";
+  input: { include_recommendations?: boolean };
+}
+
+interface SetGoalAction {
+  name: "set_goal";
+  input: {
+    description: string;
+    target_weight_kg?: number | string;
+    target_date?: string;
+    daily_kcal?: number | string;
+    workouts_per_week?: number | string;
+  };
+}
+
 export type ChatAction =
   | ChangeCategoryAction
   | CreateDebtAction
@@ -295,6 +398,21 @@ export type ChatAction =
   | ConsumeFromPantryAction
   | SetDailyPlanAction
   | LogWeightAction
+  | SuggestWorkoutAction
+  | CopyWorkoutAction
+  | CompareProgressAction
+  | SplitTransactionAction
+  | RecurringExpenseAction
+  | ExportReportAction
+  | EditHabitAction
+  | ReorderHabitsAction
+  | HabitStatsAction
+  | SuggestMealAction
+  | CopyMealFromDateAction
+  | PlanMealsForDayAction
+  | MorningBriefingAction
+  | WeeklySummaryAction
+  | SetGoalAction
   | { name: string; input: Record<string, unknown> };
 
 interface BudgetLimit {
@@ -1525,6 +1643,763 @@ export function executeAction(action: ChatAction): string {
         );
         lsSet("fizruk_daily_log_v1", [entry, ...existing]);
         return `Вагу записано: ${n} кг`;
+      }
+      // ── Фізрук v2 ──────────────────────────────────────────────
+      case "suggest_workout": {
+        const { focus } = (action as SuggestWorkoutAction).input || {};
+        const wRaw = localStorage.getItem("fizruk_workouts_v1");
+        let workouts: Workout[] = [];
+        try {
+          const parsed = wRaw ? JSON.parse(wRaw) : null;
+          if (Array.isArray(parsed)) workouts = parsed as Workout[];
+          else if (parsed && Array.isArray(parsed.workouts))
+            workouts = parsed.workouts as Workout[];
+        } catch {}
+        const completed = workouts.filter((w) => w.endedAt);
+        if (completed.length === 0) {
+          return `Немає історії тренувань. Рекомендую почати з full-body тренування: присідання, жим лежачи, тяга, підтягування.${focus ? ` (фокус: ${focus})` : ""}`;
+        }
+        const muscleLastTrained: Record<string, number> = {};
+        for (const w of completed) {
+          const ts = new Date(w.startedAt).getTime();
+          for (const item of w.items) {
+            for (const mg of [
+              ...item.musclesPrimary,
+              ...item.musclesSecondary,
+            ]) {
+              if (!muscleLastTrained[mg] || muscleLastTrained[mg] < ts) {
+                muscleLastTrained[mg] = ts;
+              }
+            }
+          }
+        }
+        const now = Date.now();
+        const sorted = Object.entries(muscleLastTrained)
+          .map(([m, ts]) => ({
+            muscle: m,
+            daysAgo: Math.round((now - ts) / 86400000),
+          }))
+          .sort((a, b) => b.daysAgo - a.daysAgo);
+        const neglected = sorted.filter((s) => s.daysAgo >= 3).slice(0, 5);
+        const lastW = completed.sort(
+          (a, b) =>
+            new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime(),
+        )[0];
+        const lastExercises = lastW
+          ? lastW.items.map((i) => i.nameUk).join(", ")
+          : "";
+        const parts: string[] = [];
+        if (neglected.length > 0) {
+          parts.push(
+            `М'язи, які найдовше не тренували: ${neglected.map((n) => `${n.muscle} (${n.daysAgo}д)`).join(", ")}`,
+          );
+        }
+        if (lastExercises) {
+          parts.push(`Останнє тренування: ${lastExercises}`);
+        }
+        parts.push(`Всього завершених: ${completed.length}`);
+        if (focus) parts.push(`Бажаний фокус: ${focus}`);
+        return (
+          parts.join(". ") + ". Рекомендацію сформовано на основі цих даних."
+        );
+      }
+      case "copy_workout": {
+        const { source_workout_id, date } =
+          (action as CopyWorkoutAction).input || {};
+        const wRaw = localStorage.getItem("fizruk_workouts_v1");
+        let workouts: Workout[] = [];
+        try {
+          const parsed = wRaw ? JSON.parse(wRaw) : null;
+          if (Array.isArray(parsed)) workouts = parsed as Workout[];
+          else if (parsed && Array.isArray(parsed.workouts))
+            workouts = parsed.workouts as Workout[];
+        } catch {}
+        let source: Workout | undefined;
+        if (source_workout_id) {
+          source = workouts.find((w) => w.id === source_workout_id);
+          if (!source) return `Тренування ${source_workout_id} не знайдено.`;
+        } else {
+          source = workouts
+            .filter((w) => w.endedAt)
+            .sort(
+              (a, b) =>
+                new Date(b.startedAt).getTime() -
+                new Date(a.startedAt).getTime(),
+            )[0];
+          if (!source) return "Немає завершених тренувань для копіювання.";
+        }
+        const now = new Date();
+        const today = [
+          now.getFullYear(),
+          String(now.getMonth() + 1).padStart(2, "0"),
+          String(now.getDate()).padStart(2, "0"),
+        ].join("-");
+        const targetDate =
+          date && /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : today;
+        const wid = `w_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+        const copiedItems: WorkoutItem[] = source.items.map((item, i) => ({
+          ...item,
+          id: `i_${Date.now().toString(36)}_${i}_${Math.random().toString(36).slice(2, 6)}`,
+          sets: item.sets.map((s) => ({ ...s })),
+        }));
+        const newW: Workout = {
+          id: wid,
+          startedAt: new Date(
+            `${targetDate}T${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}:00`,
+          ).toISOString(),
+          endedAt: null,
+          items: copiedItems,
+          groups: [],
+          warmup: null,
+          cooldown: null,
+          note: source.note ? `Копія: ${source.note}` : "",
+          planned: true,
+        };
+        lsSet("fizruk_workouts_v1", {
+          schemaVersion: 1,
+          workouts: [newW, ...workouts],
+        });
+        return `Тренування скопійовано (${source.items.length} вправ) на ${targetDate} (id:${wid})`;
+      }
+      case "compare_progress": {
+        const { exercise_name, muscle_group, period_days } =
+          (action as CompareProgressAction).input || {};
+        const days = Number(period_days) || 30;
+        const wRaw = localStorage.getItem("fizruk_workouts_v1");
+        let workouts: Workout[] = [];
+        try {
+          const parsed = wRaw ? JSON.parse(wRaw) : null;
+          if (Array.isArray(parsed)) workouts = parsed as Workout[];
+          else if (parsed && Array.isArray(parsed.workouts))
+            workouts = parsed.workouts as Workout[];
+        } catch {}
+        const completed = workouts.filter((w) => w.endedAt);
+        if (completed.length === 0)
+          return "Немає завершених тренувань для аналізу.";
+        const now = Date.now();
+        const cutoff = now - days * 86400000;
+        const midpoint = now - (days / 2) * 86400000;
+        const firstHalf = completed.filter((w) => {
+          const ts = new Date(w.startedAt).getTime();
+          return ts >= cutoff && ts < midpoint;
+        });
+        const secondHalf = completed.filter((w) => {
+          const ts = new Date(w.startedAt).getTime();
+          return ts >= midpoint;
+        });
+        const matchItem = (item: WorkoutItem): boolean => {
+          if (
+            exercise_name &&
+            item.nameUk.toLowerCase().includes(exercise_name.toLowerCase())
+          )
+            return true;
+          if (
+            muscle_group &&
+            item.musclesPrimary.some((m) =>
+              m.toLowerCase().includes(muscle_group.toLowerCase()),
+            )
+          )
+            return true;
+          if (!exercise_name && !muscle_group) return true;
+          return false;
+        };
+        const calcVolume = (ws: Workout[]): number =>
+          ws.reduce(
+            (total, w) =>
+              total +
+              w.items
+                .filter(matchItem)
+                .reduce(
+                  (s, item) =>
+                    s +
+                    item.sets.reduce(
+                      (ss, set) => ss + set.weightKg * set.reps,
+                      0,
+                    ),
+                  0,
+                ),
+            0,
+          );
+        const calcMaxWeight = (ws: Workout[]): number =>
+          ws.reduce(
+            (max, w) =>
+              Math.max(
+                max,
+                ...w.items
+                  .filter(matchItem)
+                  .flatMap((item) => item.sets.map((s) => s.weightKg)),
+              ),
+            0,
+          );
+        const vol1 = calcVolume(firstHalf);
+        const vol2 = calcVolume(secondHalf);
+        const max1 = calcMaxWeight(firstHalf);
+        const max2 = calcMaxWeight(secondHalf);
+        const label = exercise_name || muscle_group || "загалом";
+        const volChange =
+          vol1 > 0 ? Math.round(((vol2 - vol1) / vol1) * 100) : 0;
+        const parts: string[] = [
+          `Прогрес (${label}) за ${days} днів:`,
+          `Об'єм (кг×повт): ${Math.round(vol1)} → ${Math.round(vol2)} (${volChange >= 0 ? "+" : ""}${volChange}%)`,
+          `Макс. вага: ${max1} → ${max2} кг`,
+          `Тренувань: ${firstHalf.length} → ${secondHalf.length}`,
+        ];
+        return parts.join("\n");
+      }
+      // ── Фінік v2 ───────────────────────────────────────────────
+      case "split_transaction": {
+        const { tx_id, parts: splitParts } = (action as SplitTransactionAction)
+          .input;
+        const id = String(tx_id || "").trim();
+        if (!id) return "Потрібен tx_id.";
+        if (!Array.isArray(splitParts) || splitParts.length < 2)
+          return "Потрібно мінімум 2 частини для розділення.";
+        const splits = ls<
+          Record<string, Array<{ categoryId: string; amount: number }>>
+        >("finyk_tx_splits", {});
+        const customC = ls<unknown[]>("finyk_custom_cats_v1", []);
+        const newSplits = splitParts.map((p) => ({
+          categoryId: String(p.category_id || "").trim(),
+          amount: Math.abs(Number(p.amount) || 0),
+        }));
+        splits[id] = newSplits;
+        lsSet("finyk_tx_splits", splits);
+        const desc = newSplits
+          .map((s) => {
+            const cat = resolveExpenseCategoryMeta(s.categoryId, customC);
+            return `${cat?.label || s.categoryId}: ${s.amount} грн`;
+          })
+          .join(", ");
+        return `Транзакцію ${id} розділено на ${newSplits.length} частин: ${desc}`;
+      }
+      case "recurring_expense": {
+        const { name, amount, day_of_month, category } = (
+          action as RecurringExpenseAction
+        ).input;
+        const trimmed = (name || "").trim();
+        if (!trimmed) return "Потрібна назва платежу.";
+        const amt = Number(amount);
+        if (!Number.isFinite(amt) || amt <= 0) return "Сума має бути додатною.";
+        const day = Number(day_of_month);
+        const dayN = Number.isInteger(day) && day >= 1 && day <= 31 ? day : 1;
+        const subs = ls<
+          Array<{
+            id: string;
+            name: string;
+            amount?: number;
+            dayOfMonth?: number;
+            category?: string;
+          }>
+        >("finyk_subs", []);
+        const newSub = {
+          id: `sub_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`,
+          name: trimmed,
+          amount: amt,
+          dayOfMonth: dayN,
+          category: category?.trim() || "",
+        };
+        subs.push(newSub);
+        lsSet("finyk_subs", subs);
+        return `Підписку "${trimmed}" створено: ${amt} грн, ${dayN}-го числа (id:${newSub.id})`;
+      }
+      case "export_report": {
+        const { period, from, to } = (action as ExportReportAction).input || {};
+        const now = new Date();
+        let fromDate: Date;
+        let toDate = now;
+        if (period === "week") {
+          fromDate = new Date(now);
+          fromDate.setDate(fromDate.getDate() - 7);
+        } else if (period === "custom" && from && to) {
+          fromDate = new Date(`${from}T00:00:00`);
+          toDate = new Date(`${to}T23:59:59`);
+        } else {
+          fromDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        }
+        const fromTs = fromDate.getTime();
+        const toTs = toDate.getTime();
+        const txCache = ls<{
+          txs?: Array<{
+            id: string;
+            amount: number;
+            description?: string;
+            time?: number;
+          }>;
+        } | null>("finyk_tx_cache", null);
+        const txs = (txCache?.txs || []).filter((t) => {
+          const ts = (t.time || 0) * 1000;
+          return ts >= fromTs && ts <= toTs;
+        });
+        const hiddenTxIds = ls<string[]>("finyk_hidden_txs", []);
+        const filtered = txs.filter((t) => !hiddenTxIds.includes(t.id));
+        const expenses = filtered.filter((t) => t.amount < 0);
+        const income = filtered.filter((t) => t.amount > 0);
+        const totalExpense = expenses.reduce(
+          (s, t) => s + Math.abs(t.amount / 100),
+          0,
+        );
+        const totalIncome = income.reduce((s, t) => s + t.amount / 100, 0);
+        const fromStr = fromDate.toLocaleDateString("uk-UA");
+        const toStr = toDate.toLocaleDateString("uk-UA");
+        return [
+          `Звіт за ${fromStr} — ${toStr}:`,
+          `Дохід: ${Math.round(totalIncome)} грн`,
+          `Витрати: ${Math.round(totalExpense)} грн`,
+          `Баланс: ${Math.round(totalIncome - totalExpense)} грн`,
+          `Транзакцій: ${filtered.length} (витрат: ${expenses.length}, доходів: ${income.length})`,
+        ].join("\n");
+      }
+      // ── Рутина v2 ──────────────────────────────────────────────
+      case "edit_habit": {
+        const { habit_id, name, emoji, recurrence, weekdays } = (
+          action as EditHabitAction
+        ).input;
+        const id = String(habit_id || "").trim();
+        if (!id) return "Потрібен habit_id.";
+        const state = ls<{
+          habits?: Array<{
+            id: string;
+            name?: string;
+            emoji?: string;
+            recurrence?: string;
+            weekdays?: number[];
+          }>;
+          completions?: Record<string, string[]>;
+        }>("hub_routine_v1", {});
+        const habits = Array.isArray(state.habits) ? state.habits.slice() : [];
+        const hIdx = habits.findIndex((h) => h.id === id);
+        if (hIdx < 0) return `Звичку ${id} не знайдено.`;
+        const updated = { ...habits[hIdx] };
+        const changes: string[] = [];
+        if (name && name.trim()) {
+          updated.name = name.trim();
+          changes.push(`назва → "${name.trim()}"`);
+        }
+        if (emoji) {
+          updated.emoji = emoji;
+          changes.push(`емодзі → ${emoji}`);
+        }
+        if (recurrence) {
+          const allowedRec = new Set([
+            "daily",
+            "weekdays",
+            "weekly",
+            "monthly",
+          ]);
+          if (allowedRec.has(recurrence)) {
+            updated.recurrence = recurrence;
+            changes.push(`розклад → ${recurrence}`);
+          }
+        }
+        if (Array.isArray(weekdays) && weekdays.length > 0) {
+          updated.weekdays = weekdays.filter(
+            (d) => Number.isInteger(d) && d >= 0 && d <= 6,
+          );
+          changes.push(`дні → [${updated.weekdays.join(",")}]`);
+        }
+        if (changes.length === 0) return "Немає змін для оновлення.";
+        habits[hIdx] = updated;
+        lsSet("hub_routine_v1", { ...state, habits });
+        return `Звичку "${updated.name || id}" оновлено: ${changes.join(", ")}`;
+      }
+      case "reorder_habits": {
+        const { habit_ids } = (action as ReorderHabitsAction).input;
+        if (!Array.isArray(habit_ids) || habit_ids.length === 0)
+          return "Потрібен масив habit_ids.";
+        const state = ls<{
+          habits?: Array<{ id: string; name?: string }>;
+          completions?: Record<string, string[]>;
+        }>("hub_routine_v1", {});
+        const habits = Array.isArray(state.habits) ? state.habits.slice() : [];
+        const habitMap = new Map(habits.map((h) => [h.id, h]));
+        const reordered = habit_ids
+          .map((id) => habitMap.get(id))
+          .filter((h): h is (typeof habits)[0] => h != null);
+        const remaining = habits.filter((h) => !habit_ids.includes(h.id));
+        lsSet("hub_routine_v1", {
+          ...state,
+          habits: [...reordered, ...remaining],
+        });
+        return `Порядок звичок оновлено (${reordered.length} переміщено)`;
+      }
+      case "habit_stats": {
+        const { habit_id, period_days } = (action as HabitStatsAction).input;
+        const id = String(habit_id || "").trim();
+        if (!id) return "Потрібен habit_id.";
+        const days = Number(period_days) || 30;
+        const state = ls<{
+          habits?: Array<{ id: string; name?: string; emoji?: string }>;
+          completions?: Record<string, string[]>;
+        }>("hub_routine_v1", {});
+        const habit = (state.habits || []).find((h) => h.id === id);
+        if (!habit) return `Звичку ${id} не знайдено.`;
+        const completions = state.completions || {};
+        const habitCompletions = Array.isArray(completions[id])
+          ? completions[id]
+          : [];
+        const now = new Date();
+        let doneCount = 0;
+        let streak = 0;
+        let maxStreak = 0;
+        let currentStreak = 0;
+        const missedDates: string[] = [];
+        for (let i = 0; i < days; i++) {
+          const d = new Date(now);
+          d.setDate(d.getDate() - i);
+          const dk = [
+            d.getFullYear(),
+            String(d.getMonth() + 1).padStart(2, "0"),
+            String(d.getDate()).padStart(2, "0"),
+          ].join("-");
+          if (habitCompletions.includes(dk)) {
+            doneCount++;
+            currentStreak++;
+            if (i === 0 || i === streak) streak = currentStreak;
+            if (currentStreak > maxStreak) maxStreak = currentStreak;
+          } else {
+            currentStreak = 0;
+            if (missedDates.length < 5) missedDates.push(dk);
+          }
+        }
+        const pct = days > 0 ? Math.round((doneCount / days) * 100) : 0;
+        const parts: string[] = [
+          `Статистика "${habit.emoji || ""} ${habit.name || id}" за ${days} днів:`,
+          `Виконано: ${doneCount}/${days} (${pct}%)`,
+          `Поточна серія: ${streak} днів`,
+          `Макс. серія: ${maxStreak} днів`,
+        ];
+        if (missedDates.length > 0) {
+          parts.push(`Останні пропуски: ${missedDates.join(", ")}`);
+        }
+        return parts.join("\n");
+      }
+      // ── Харчування v2 ──────────────────────────────────────────
+      case "suggest_meal": {
+        const { focus, meal_type } = (action as SuggestMealAction).input || {};
+        const nutritionLog = ls<Record<string, NutritionDay>>(
+          "nutrition_log_v1",
+          {},
+        );
+        const nutritionPrefs = ls<Record<string, number> | null>(
+          "nutrition_prefs_v1",
+          null,
+        );
+        const now = new Date();
+        const todayKey = [
+          now.getFullYear(),
+          String(now.getMonth() + 1).padStart(2, "0"),
+          String(now.getDate()).padStart(2, "0"),
+        ].join("-");
+        const todayData = nutritionLog[todayKey];
+        const meals = Array.isArray(todayData?.meals) ? todayData.meals : [];
+        const eaten = {
+          kcal: meals.reduce((s, m) => s + (m?.macros?.kcal ?? 0), 0),
+          protein: meals.reduce((s, m) => s + (m?.macros?.protein_g ?? 0), 0),
+          fat: meals.reduce((s, m) => s + (m?.macros?.fat_g ?? 0), 0),
+          carbs: meals.reduce((s, m) => s + (m?.macros?.carbs_g ?? 0), 0),
+        };
+        const target = {
+          kcal: nutritionPrefs?.dailyTargetKcal || 2000,
+          protein: nutritionPrefs?.dailyTargetProtein_g || 120,
+        };
+        const remaining = {
+          kcal: Math.max(0, target.kcal - eaten.kcal),
+          protein: Math.max(0, target.protein - eaten.protein),
+        };
+        const parts: string[] = [
+          `З'їдено сьогодні: ${Math.round(eaten.kcal)} ккал, ${Math.round(eaten.protein)}г білка`,
+          `Залишилось: ${Math.round(remaining.kcal)} ккал, ${Math.round(remaining.protein)}г білка`,
+        ];
+        if (focus) parts.push(`Фокус: ${focus}`);
+        if (meal_type) parts.push(`Тип прийому: ${meal_type}`);
+        return (
+          parts.join(". ") + ". Рекомендацію сформовано на основі цих даних."
+        );
+      }
+      case "copy_meal_from_date": {
+        const { source_date, meal_index } = (action as CopyMealFromDateAction)
+          .input;
+        if (!source_date || !/^\d{4}-\d{2}-\d{2}$/.test(source_date))
+          return "Потрібна дата-джерело у форматі YYYY-MM-DD.";
+        const nutritionLog = ls<Record<string, NutritionDay>>(
+          "nutrition_log_v1",
+          {},
+        );
+        const sourceDay = nutritionLog[source_date];
+        if (
+          !sourceDay ||
+          !Array.isArray(sourceDay.meals) ||
+          sourceDay.meals.length === 0
+        )
+          return `За ${source_date} немає записів їжі.`;
+        const now = new Date();
+        const todayKey = [
+          now.getFullYear(),
+          String(now.getMonth() + 1).padStart(2, "0"),
+          String(now.getDate()).padStart(2, "0"),
+        ].join("-");
+        const dayData: NutritionDay = {
+          ...(nutritionLog[todayKey] || { meals: [] }),
+        };
+        const meals: NutritionMeal[] = Array.isArray(dayData.meals)
+          ? dayData.meals.slice()
+          : [];
+        let copied: NutritionMeal[];
+        if (meal_index != null && meal_index !== "") {
+          const idx = Number(meal_index);
+          if (idx < 0 || idx >= sourceDay.meals.length)
+            return `Індекс ${idx} поза межами (є ${sourceDay.meals.length} записів).`;
+          copied = [sourceDay.meals[idx]];
+        } else {
+          copied = sourceDay.meals;
+        }
+        for (const m of copied) {
+          meals.push({
+            ...m,
+            id: `m_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+            addedAt: new Date().toISOString(),
+          });
+        }
+        nutritionLog[todayKey] = { ...dayData, meals };
+        lsSet("nutrition_log_v1", nutritionLog);
+        const totalKcal = copied.reduce(
+          (s, m) => s + (m?.macros?.kcal ?? 0),
+          0,
+        );
+        return `Скопійовано ${copied.length} прийом(ів) з ${source_date} (${Math.round(totalKcal)} ккал)`;
+      }
+      case "plan_meals_for_day": {
+        const { target_kcal, meals_count, preferences } =
+          (action as PlanMealsForDayAction).input || {};
+        const nutritionPrefs = ls<Record<string, number> | null>(
+          "nutrition_prefs_v1",
+          null,
+        );
+        const targetKcal =
+          Number(target_kcal) || nutritionPrefs?.dailyTargetKcal || 2000;
+        const count = Number(meals_count) || 3;
+        const parts: string[] = [
+          `Планую ${count} прийомів на ${targetKcal} ккал/день`,
+          `Приблизно ${Math.round(targetKcal / count)} ккал на прийом`,
+        ];
+        if (preferences) parts.push(`Побажання: ${preferences}`);
+        if (nutritionPrefs?.dailyTargetProtein_g) {
+          parts.push(
+            `Ціль білка: ${nutritionPrefs.dailyTargetProtein_g}г/день`,
+          );
+        }
+        return (
+          parts.join(". ") + ". Рекомендацію сформовано на основі цих даних."
+        );
+      }
+      // ── Кросмодульні ───────────────────────────────────────────
+      case "morning_briefing": {
+        const now = new Date();
+        const todayKey = [
+          now.getFullYear(),
+          String(now.getMonth() + 1).padStart(2, "0"),
+          String(now.getDate()).padStart(2, "0"),
+        ].join("-");
+        const parts: string[] = [
+          `Доброго ранку! Сьогодні ${now.toLocaleDateString("uk-UA", { weekday: "long", day: "numeric", month: "long" })}`,
+        ];
+        const routineState = ls<HabitState | null>("hub_routine_v1", null);
+        if (routineState?.habits) {
+          const activeHabits = routineState.habits.filter(
+            (h) => !(h as Record<string, unknown>).archived,
+          );
+          const completions = routineState.completions || {};
+          const done = activeHabits.filter(
+            (h) =>
+              Array.isArray(completions[h.id]) &&
+              completions[h.id].includes(todayKey),
+          );
+          parts.push(`Звички: ${done.length}/${activeHabits.length} виконано`);
+        }
+        const wRaw = localStorage.getItem("fizruk_workouts_v1");
+        let workouts: Workout[] = [];
+        try {
+          const parsed = wRaw ? JSON.parse(wRaw) : null;
+          if (Array.isArray(parsed)) workouts = parsed as Workout[];
+          else if (parsed && Array.isArray(parsed.workouts))
+            workouts = parsed.workouts as Workout[];
+        } catch {}
+        const todayWorkouts = workouts.filter(
+          (w) => w.startedAt.startsWith(todayKey) && w.planned && !w.endedAt,
+        );
+        if (todayWorkouts.length > 0) {
+          parts.push(`Заплановано тренувань: ${todayWorkouts.length}`);
+        }
+        const nutritionLog = ls<Record<string, NutritionDay>>(
+          "nutrition_log_v1",
+          {},
+        );
+        const todayMeals = nutritionLog[todayKey]?.meals || [];
+        const todayKcal = todayMeals.reduce(
+          (s, m) => s + (m?.macros?.kcal ?? 0),
+          0,
+        );
+        if (todayKcal > 0) {
+          parts.push(`Калорії: ${Math.round(todayKcal)} ккал`);
+        }
+        return parts.join("\n");
+      }
+      case "weekly_summary": {
+        const now = new Date();
+        const weekAgo = new Date(now);
+        weekAgo.setDate(weekAgo.getDate() - 7);
+        const parts: string[] = ["Тижневий підсумок:"];
+        const wRaw = localStorage.getItem("fizruk_workouts_v1");
+        let workouts: Workout[] = [];
+        try {
+          const parsed = wRaw ? JSON.parse(wRaw) : null;
+          if (Array.isArray(parsed)) workouts = parsed as Workout[];
+          else if (parsed && Array.isArray(parsed.workouts))
+            workouts = parsed.workouts as Workout[];
+        } catch {}
+        const weekWorkouts = workouts.filter(
+          (w) =>
+            w.endedAt && new Date(w.startedAt).getTime() > weekAgo.getTime(),
+        );
+        parts.push(`Тренувань: ${weekWorkouts.length}`);
+        const totalVolume = weekWorkouts.reduce(
+          (total, w) =>
+            total +
+            w.items.reduce(
+              (s, item) =>
+                s +
+                item.sets.reduce((ss, set) => ss + set.weightKg * set.reps, 0),
+              0,
+            ),
+          0,
+        );
+        if (totalVolume > 0)
+          parts.push(`Об'єм: ${Math.round(totalVolume)} кг×повт`);
+        const routineState = ls<HabitState | null>("hub_routine_v1", null);
+        if (routineState?.habits) {
+          const activeHabits = routineState.habits.filter(
+            (h) => !(h as Record<string, unknown>).archived,
+          );
+          const completions = routineState.completions || {};
+          let totalDone = 0;
+          let totalPossible = 0;
+          for (let i = 0; i < 7; i++) {
+            const d = new Date(now);
+            d.setDate(d.getDate() - i);
+            const dk = [
+              d.getFullYear(),
+              String(d.getMonth() + 1).padStart(2, "0"),
+              String(d.getDate()).padStart(2, "0"),
+            ].join("-");
+            totalPossible += activeHabits.length;
+            for (const h of activeHabits) {
+              if (
+                Array.isArray(completions[h.id]) &&
+                completions[h.id].includes(dk)
+              )
+                totalDone++;
+            }
+          }
+          const pct =
+            totalPossible > 0
+              ? Math.round((totalDone / totalPossible) * 100)
+              : 0;
+          parts.push(`Звички: ${pct}% (${totalDone}/${totalPossible})`);
+        }
+        const nutritionLog = ls<Record<string, NutritionDay>>(
+          "nutrition_log_v1",
+          {},
+        );
+        const weekKcal: number[] = [];
+        for (let i = 0; i < 7; i++) {
+          const d = new Date(now);
+          d.setDate(d.getDate() - i);
+          const dk = [
+            d.getFullYear(),
+            String(d.getMonth() + 1).padStart(2, "0"),
+            String(d.getDate()).padStart(2, "0"),
+          ].join("-");
+          const dayMeals = nutritionLog[dk]?.meals || [];
+          const k = dayMeals.reduce((s, m) => s + (m?.macros?.kcal ?? 0), 0);
+          if (k > 0) weekKcal.push(k);
+        }
+        if (weekKcal.length > 0) {
+          const avg = Math.round(
+            weekKcal.reduce((a, b) => a + b, 0) / weekKcal.length,
+          );
+          parts.push(`Калорії: ~${avg} ккал/день (${weekKcal.length} днів)`);
+        }
+        const txCache = ls<{
+          txs?: Array<{ amount: number; time?: number }>;
+        } | null>("finyk_tx_cache", null);
+        if (txCache?.txs) {
+          const weekTs = weekAgo.getTime() / 1000;
+          const weekTxs = txCache.txs.filter((t) => (t.time || 0) > weekTs);
+          const spent = weekTxs
+            .filter((t) => t.amount < 0)
+            .reduce((s, t) => s + Math.abs(t.amount / 100), 0);
+          parts.push(`Витрати: ${Math.round(spent)} грн`);
+        }
+        return parts.join("\n");
+      }
+      case "set_goal": {
+        const {
+          description,
+          target_weight_kg,
+          target_date,
+          daily_kcal,
+          workouts_per_week,
+        } = (action as SetGoalAction).input;
+        const desc = (description || "").trim();
+        if (!desc) return "Потрібен опис цілі.";
+        const goals = ls<
+          Array<{
+            id: string;
+            description: string;
+            targetWeightKg?: number;
+            targetDate?: string;
+            dailyKcal?: number;
+            workoutsPerWeek?: number;
+            createdAt: string;
+          }>
+        >("hub_goals_v1", []);
+        const goal: (typeof goals)[0] = {
+          id: `goal_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`,
+          description: desc,
+          createdAt: new Date().toISOString(),
+        };
+        const parts: string[] = [`Ціль "${desc}" створено`];
+        if (target_weight_kg != null) {
+          const tw = Number(target_weight_kg);
+          if (Number.isFinite(tw) && tw > 0) {
+            goal.targetWeightKg = tw;
+            parts.push(`цільова вага: ${tw} кг`);
+          }
+        }
+        if (target_date && /^\d{4}-\d{2}-\d{2}$/.test(target_date)) {
+          goal.targetDate = target_date;
+          parts.push(`дедлайн: ${target_date}`);
+        }
+        if (daily_kcal != null) {
+          const dk = Number(daily_kcal);
+          if (Number.isFinite(dk) && dk > 0) {
+            goal.dailyKcal = dk;
+            parts.push(`калорії: ${dk} ккал/день`);
+            const prefs = ls<Record<string, unknown>>("nutrition_prefs_v1", {});
+            prefs.dailyTargetKcal = dk;
+            lsSet("nutrition_prefs_v1", prefs);
+          }
+        }
+        if (workouts_per_week != null) {
+          const wpw = Number(workouts_per_week);
+          if (Number.isFinite(wpw) && wpw > 0) {
+            goal.workoutsPerWeek = wpw;
+            parts.push(`тренувань/тиждень: ${wpw}`);
+          }
+        }
+        goals.push(goal);
+        lsSet("hub_goals_v1", goals);
+        return parts.join(", ") + ` (id:${goal.id})`;
       }
       default:
         return `Невідома дія: ${action.name}`;

@@ -18,6 +18,7 @@ interface ChatInputProps {
   speaking: boolean;
   setSpeaking: Dispatch<SetStateAction<boolean>>;
   onSend: () => void;
+  onHelp: () => void;
   sendRef: MutableRefObject<
     ((text?: string, fromVoice?: boolean) => void) | null
   >;
@@ -31,6 +32,7 @@ export function ChatInput({
   speaking,
   setSpeaking,
   onSend,
+  onHelp,
   sendRef,
 }: ChatInputProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -56,6 +58,28 @@ export function ChatInput({
 
   return (
     <div className="flex gap-2 px-4 pt-2 pb-4 shrink-0">
+      <button
+        type="button"
+        onClick={onHelp}
+        className="w-11 h-11 rounded-full flex items-center justify-center shrink-0 transition-all border bg-panel border-line text-muted hover:text-text hover:border-muted"
+        title="Список команд (/help)"
+        aria-label="Показати список команд"
+      >
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <circle cx="12" cy="12" r="10" />
+          <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+          <line x1="12" y1="17" x2="12.01" y2="17" />
+        </svg>
+      </button>
       <input
         ref={inputRef}
         className="input-focus-finyk flex-1 bg-panel border border-line rounded-2xl px-4 py-3 text-sm text-text placeholder:text-subtle disabled:opacity-50"

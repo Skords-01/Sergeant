@@ -22,6 +22,8 @@ import {
   normalizeStoredMessages,
   requestIdle,
   cancelIdle,
+  isHelpCommand,
+  HELP_TEXT,
 } from "./lib/hubChatUtils.js";
 import { buildContextMeasured } from "./lib/hubChatContext.js";
 import { executeAction } from "./lib/hubChatActions.js";
@@ -253,6 +255,13 @@ function HubChat({ onClose, initialMessage }) {
   const send = async (text?: string, fromVoice = false) => {
     const msg = (text || input).trim();
     if (!msg || loading) return;
+
+    if (isHelpCommand(msg)) {
+      setMessages((m) => [...m, makeUserMsg(msg), makeAssistantMsg(HELP_TEXT)]);
+      setInput("");
+      return;
+    }
+
     if (!online) {
       setMessages((m) => [
         ...m,
@@ -635,6 +644,7 @@ function HubChat({ onClose, initialMessage }) {
           speaking={speaking}
           setSpeaking={setSpeaking}
           onSend={() => send()}
+          onHelp={() => send("/help")}
           sendRef={sendRef}
         />
       </div>
