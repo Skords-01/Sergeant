@@ -1,0 +1,36 @@
+import { mapPhotoResultToMealForm } from "../photoResultToMealForm";
+
+describe("mapPhotoResultToMealForm", () => {
+  it("мапить макроси та назву", () => {
+    const f = mapPhotoResultToMealForm({
+      dishName: "Борщ",
+      confidence: 0.9,
+      portion: null,
+      ingredients: [],
+      macros: {
+        kcal: 220,
+        protein_g: 10.2,
+        fat_g: 5,
+        carbs_g: 30.7,
+      },
+      questions: [],
+    });
+    expect(f.name).toBe("Борщ");
+    expect(f.kcal).toBe("220");
+    expect(f.protein_g).toBe("10");
+    expect(f.fat_g).toBe("5");
+    expect(f.carbs_g).toBe("31");
+  });
+
+  it("додає застереження при низькій confidence", () => {
+    const f = mapPhotoResultToMealForm({
+      dishName: "X",
+      confidence: 0.2,
+      portion: null,
+      ingredients: [],
+      macros: { kcal: null, protein_g: null, fat_g: null, carbs_g: null },
+      questions: [],
+    });
+    expect(f.err).toMatch(/AI оцінив/);
+  });
+});

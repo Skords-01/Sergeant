@@ -206,6 +206,15 @@ const buildConfig = (): ExpoConfig => ({
       },
     ],
     [
+      "expo-image-picker",
+      {
+        photosPermission:
+          "Sergeant читає фото страви, щоб оцінити приблизні КБЖВ (локально стискається перед відправкою).",
+        cameraPermission:
+          "Sergeant може зняти страву камерою для оцінки КБЖВ (якщо обереш зйомку замість галереї).",
+      },
+    ],
+    [
       "expo-splash-screen",
       {
         backgroundColor: "#0b0d10",

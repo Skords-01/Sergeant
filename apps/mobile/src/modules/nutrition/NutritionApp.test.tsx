@@ -11,12 +11,22 @@
  */
 
 import { fireEvent, render } from "@testing-library/react-native";
+import { ApiClientProvider } from "@sergeant/api-client/react";
 
 import { STORAGE_KEYS } from "@sergeant/shared";
 
+import { apiClient } from "@/api/apiClient";
 import { _getMMKVInstance } from "@/lib/storage";
 
 import { NutritionApp } from "./NutritionApp";
+
+function renderNutrition() {
+  return render(
+    <ApiClientProvider client={apiClient}>
+      <NutritionApp />
+    </ApiClientProvider>,
+  );
+}
 
 // Унікальний рядок в Dashboard card ("Сьогодні").
 const DASHBOARD_MARKER = "Сьогодні";
@@ -32,13 +42,13 @@ beforeEach(() => {
 
 describe("NutritionApp shell", () => {
   it("renders the Dashboard screen by default", () => {
-    const { getAllByText } = render(<NutritionApp />);
+    const { getAllByText } = renderNutrition();
     // 1 — у Dashboard Card title, 1 — у bottom-nav label "Сьогодні".
     expect(getAllByText(DASHBOARD_MARKER).length).toBeGreaterThanOrEqual(1);
   });
 
   it("switches to the Log screen when the Journal tab is pressed", () => {
-    const { getByTestId, getByText } = render(<NutritionApp />);
+    const { getByTestId, getByText } = renderNutrition();
 
     fireEvent.press(getByTestId("nutrition-bottom-nav-log"));
 
@@ -46,7 +56,7 @@ describe("NutritionApp shell", () => {
   });
 
   it("switches to the Water screen when the Water tab is pressed", () => {
-    const { getByTestId, getByText } = render(<NutritionApp />);
+    const { getByTestId, getByText } = renderNutrition();
 
     fireEvent.press(getByTestId("nutrition-bottom-nav-water"));
 
@@ -54,7 +64,7 @@ describe("NutritionApp shell", () => {
   });
 
   it("switches to the Shopping screen when the Shopping tab is pressed", () => {
-    const { getByTestId, getByText } = render(<NutritionApp />);
+    const { getByTestId, getByText } = renderNutrition();
 
     fireEvent.press(getByTestId("nutrition-bottom-nav-shopping"));
 
@@ -62,7 +72,7 @@ describe("NutritionApp shell", () => {
   });
 
   it("writes the selected tab to MMKV under NUTRITION_MAIN_TAB", () => {
-    const { getByTestId } = render(<NutritionApp />);
+    const { getByTestId } = renderNutrition();
 
     fireEvent.press(getByTestId("nutrition-bottom-nav-log"));
 
@@ -71,7 +81,7 @@ describe("NutritionApp shell", () => {
   });
 
   it("persists the shopping tab", () => {
-    const { getByTestId } = render(<NutritionApp />);
+    const { getByTestId } = renderNutrition();
 
     fireEvent.press(getByTestId("nutrition-bottom-nav-shopping"));
 
@@ -82,7 +92,7 @@ describe("NutritionApp shell", () => {
   it("picks up a persisted tab from MMKV on first mount", () => {
     _getMMKVInstance().set(STORAGE_KEYS.NUTRITION_MAIN_TAB, "water");
 
-    const { getByText } = render(<NutritionApp />);
+    const { getByText } = renderNutrition();
 
     expect(getByText(WATER_MARKER)).toBeTruthy();
   });
@@ -90,7 +100,7 @@ describe("NutritionApp shell", () => {
   it("falls back to dashboard when the persisted value is malformed", () => {
     _getMMKVInstance().set(STORAGE_KEYS.NUTRITION_MAIN_TAB, "garbage");
 
-    const { getAllByText } = render(<NutritionApp />);
+    const { getAllByText } = renderNutrition();
 
     expect(getAllByText(DASHBOARD_MARKER).length).toBeGreaterThanOrEqual(1);
   });
