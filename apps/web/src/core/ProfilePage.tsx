@@ -396,7 +396,10 @@ function SessionsSection({ online }: { online: boolean }) {
   const [revoking, setRevoking] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    if (!online) return;
+    if (!online) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     const res = await listSessions();
     setLoading(false);
