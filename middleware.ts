@@ -16,7 +16,9 @@ export const config = {
   matcher: "/api/:path*",
 };
 
-export default function middleware(request: Request): Response | undefined {
+export default async function middleware(
+  request: Request,
+): Promise<Response | undefined> {
   const backend = process.env.BACKEND_URL;
   if (!backend) return undefined;
 
@@ -27,11 +29,12 @@ export default function middleware(request: Request): Response | undefined {
   headers.set("x-forwarded-host", url.host);
   headers.set("x-forwarded-proto", url.protocol.replace(":", ""));
 
-  return fetch(target, {
+  const hasBody = request.method !== "GET" && request.method !== "HEAD";
+  const body = hasBody ? await request.arrayBuffer() : undefined;
+
+  return fetch(target.toString(), {
     method: request.method,
     headers,
-    body: request.body,
-    // @ts-expect-error — Node fetch supports duplex for streaming bodies
-    duplex: "half",
+    body,
   });
 }
