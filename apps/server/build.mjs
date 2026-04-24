@@ -14,6 +14,14 @@ const base = {
   // the bundle self-contained avoids Node ESM ".js extension" pitfalls in
   // internal workspace packages (e.g. @sergeant/shared).
   packages: "bundle",
+  // `pg` (and other native deps) use CJS `require()` for Node built-ins
+  // like `events`, `net`, `tls`, etc. When esbuild emits ESM, the
+  // generated `__require` shim throws "Dynamic require of … is not
+  // supported" for built-ins. Injecting `createRequire` restores a real
+  // `require` function that Node can resolve.
+  banner: {
+    js: 'import{createRequire}from"module";const require=createRequire(import.meta.url);',
+  },
 };
 
 await build({
