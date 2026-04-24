@@ -8,8 +8,7 @@ import { BG_GRADIENTS } from "./constants";
 import type { Slide } from "./types";
 
 export function buildSlides(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  digest: any,
+  digest: Record<string, unknown> | null,
   weekKey: string,
   weekRange: string | undefined,
 ): Slide[] {

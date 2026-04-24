@@ -2,9 +2,9 @@
 import { StoryShell } from "./StoryShell";
 import { StatRow } from "./StatRow";
 import { fmtNum } from "../../formatters";
-import type { Slide } from "../../types";
+import type { FizrukSlideData } from "../../types";
 
-export function FizrukSlide({ slide }: { slide: Slide }) {
+export function FizrukSlide({ slide }: { slide: FizrukSlideData }) {
   const { agg, ai } = slide;
   const topEx = Array.isArray(agg?.topExercises)
     ? agg.topExercises.slice(0, 3)

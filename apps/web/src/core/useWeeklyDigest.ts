@@ -111,7 +111,7 @@ function saveDigest(weekKey: string, data: unknown): void {
   }
 }
 
-interface FinykAggregate {
+export interface FinykAggregate {
   totalSpent: number;
   totalIncome: number;
   txCount: number;
@@ -184,7 +184,7 @@ export function aggregateFinyk(weekKey: string): FinykAggregate {
   };
 }
 
-interface FizrukAggregate {
+export interface FizrukAggregate {
   workoutsCount: number;
   totalVolume: number;
   recoveryLabel: string;
@@ -263,7 +263,7 @@ export function aggregateFizruk(weekKey: string): FizrukAggregate | null {
   };
 }
 
-interface NutritionAggregate {
+export interface NutritionAggregate {
   avgKcal: number;
   avgProtein: number;
   avgFat: number;
@@ -330,14 +330,14 @@ export function aggregateNutrition(weekKey: string): NutritionAggregate | null {
   };
 }
 
-interface HabitStat {
+export interface HabitStat {
   name: string;
   done: number;
   total: number;
   completionRate: number;
 }
 
-interface RoutineAggregate {
+export interface RoutineAggregate {
   habitCount: number;
   overallRate: number;
   habits: HabitStat[];

@@ -1,13 +1,13 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@shared/components/ui/Button";
 import { nutritionKeys } from "@shared/lib/queryKeys.js";
-import { upsertFood } from "../../lib/foodDb/foodDb.js";
+import { upsertFood, type FoodProduct } from "../../lib/foodDb/foodDb.js";
+import type { MealFormState } from "./mealFormUtils.js";
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 interface SaveAsFoodProps {
-  form: any;
-  setForm: (updater: (s: any) => any) => void;
-  setPickedFood: (p: any) => void;
+  form: MealFormState;
+  setForm: (updater: (s: MealFormState) => MealFormState) => void;
+  setPickedFood: (p: FoodProduct | null) => void;
   setPickedGrams: (g: string) => void;
   setFoodQuery: (q: string) => void;
   setFoodErr: (e: string) => void;
