@@ -172,11 +172,9 @@ function PersonalInfoSection({
               )}
             >
               {uploadingAvatar ? (
-                <Icon
-                  name="refresh-cw"
-                  size={18}
-                  className="text-white animate-spin"
-                />
+                <span className="inline-block animate-spin">
+                  <Icon name="refresh-cw" size={18} className="text-white" />
+                </span>
               ) : (
                 <Icon name="upload" size={18} className="text-white" />
               )}
@@ -431,7 +429,12 @@ function SessionsSection({ online }: { online: boolean }) {
           <Icon name="refresh-cw" size={18} className="text-muted" />
           <span className="text-sm font-semibold text-text">Активні сесії</span>
         </div>
-        <Button variant="ghost" size="xs" onClick={load} disabled={loading}>
+        <Button
+          variant="ghost"
+          size="xs"
+          onClick={load}
+          disabled={loading || !online}
+        >
           Оновити
         </Button>
       </div>
