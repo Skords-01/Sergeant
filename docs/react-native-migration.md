@@ -63,8 +63,7 @@
 - Динамічний `app.config.ts` (читає `EXPO_PUBLIC_API_BASE_URL`,
   `EAS_PROJECT_ID`). `eas.json` з дефолтним build-profile.
 - Провайдери в `app/_layout.tsx`:
-  `GestureHandlerRootView → SafeAreaProvider → QueryProvider →
-ApiClientProvider`. `QueryProvider` дзеркалить `apps/web/src/main.tsx`.
+  `GestureHandlerRootView → SafeAreaProvider → QueryProvider → ApiClientProvider`. `QueryProvider` дзеркалить `apps/web/src/main.tsx`.
 - 4 заглушки модулів (`ModuleStub`) — `finyk`, `fizruk`, `routine`,
   `nutrition`. Hub-екран показує ім'я юзера, sign-out,
   dev-only `usePushTest` для перевірки push-ланцюга.
@@ -139,8 +138,7 @@ ApiClientProvider`. `QueryProvider` дзеркалить `apps/web/src/main.tsx`
   Reanimated (overkill для top-slide/fade) — див. PR body.
 - `apps/mobile/src/components/ui/Skeleton.tsx` — `Skeleton` +
   `SkeletonText` (PR `<PR-SKELETON>`). Пульс через RN `Animated`
-  opacity loop з повагою до `AccessibilityInfo.
-isReduceMotionEnabled()` (WCAG 2.3.3 parity).
+  opacity loop з повагою до `AccessibilityInfo. isReduceMotionEnabled()` (WCAG 2.3.3 parity).
 - `apps/mobile/src/core/SyncStatusIndicator.tsx` — Hub-core
   індикатор стану синхронізації (PR
   [#441](https://github.com/Skords-01/Sergeant/pull/441)). Тонкий
@@ -221,8 +219,7 @@ isReduceMotionEnabled()` (WCAG 2.3.3 parity).
   (PR [#427](https://github.com/Skords-01/Sergeant/pull/427)). Bottom-sheet-style підтвердження на
   RN `Modal` (transparent, `animationType="fade"`) + scrim `Pressable`
   для dismiss + `Button` primary/destructive + ghost cancel. Android
-  hardware back через `Modal.onRequestClose`; `accessibilityRole=
-"alertdialog"` + `accessibilityViewIsModal`;
+  hardware back через `Modal.onRequestClose`; `accessibilityRole= "alertdialog"` + `accessibilityViewIsModal`;
   `AccessibilityInfo.isReduceMotionEnabled()` перемикає анімацію
   на `"none"`. Без `@gorhom/bottom-sheet` та `react-native-modal`.
 - `apps/mobile/src/components/ui/Sheet.tsx` — `Sheet` bottom-sheet
@@ -458,7 +455,7 @@ isReduceMotionEnabled()` (WCAG 2.3.3 parity).
 Підсумково знайдено **9 нових пунктів**, які додано у план:
 
 - **Секція 7** розширена рядками про `navigator.vibrate`,
-  `@dnd-kit/*`, `react-virtuoso`, `react-markdown`, Blob-експорти,
+  `@dnd-kit/`\*, `react-virtuoso`, `react-markdown`, Blob-експорти,
   `<input type="file">`, `FileReader`, `window.visualViewport`,
   `useDialogFocusTrap`, `document.visibilityState`, `useDarkMode`,
   `useSWUpdate` / `useIosInstallBanner`.
@@ -466,7 +463,7 @@ isReduceMotionEnabled()` (WCAG 2.3.3 parity).
   (export/backup-адаптер), **R9** (visual-keyboard hook-платформний).
 - **Секція 10** — доповнено конкретними iOS usage-descriptions
   та Android runtime-permissions.
-- **Секція 12 (Ризики)** — додано нотатку про Hermes/`Intl.*`
+- **Секція 12 (Ризики)** — додано нотатку про Hermes/`Intl.`\*
   та OTA-стратегію `expo-updates`.
 
 ## 3. Цільова архітектура
@@ -974,7 +971,7 @@ CRUD, foodDb export/import, UI). Жодних змін у публічному A
 - **Реюз `apps/web` компонентів через `react-native-web`** — можливо,
   але не ціль: PWA і native мають різні UX. Розглядаємо лише як
   запасний сценарій для Hub-чату або DesignShowcase.
-- **Розмір бандла** — усі `@sergeant/*` тягнуться сирим TS у
+- **Розмір бандла** — усі `@sergeant/`\* тягнуться сирим TS у
   Metro; треба стежити за tree-shake-ом, особливо `@sergeant/finyk-domain`.
 - **iOS background quota** — scheduled notifications + offline queue
   можуть впертись в iOS-обмеження фонових тасків. MVP — через
@@ -982,7 +979,7 @@ CRUD, foodDb export/import, UI). Жодних змін у публічному A
 - **Apple App Review** — "personal finance" + AI чат = підвищена увага.
   Потрібен чіткий privacy policy і пояснення, що дані Monobank
   користувача ніколи не виходять за межі його сесії.
-- **Hermes `Intl.*` покриття.** Web активно використовує
+- **Hermes `Intl.`\* покриття.** Web активно використовує
   `toLocaleDateString`, `Intl.NumberFormat` для дат/валют у finyk/nutrition.
   RN 0.76 + Hermes має повний Intl по дефолту, але треба smoke-тест
   української локалі в Фазі 2 (компонент зі всіма формат-варіантами).
@@ -998,7 +995,6 @@ CRUD, foodDb export/import, UI). Жодних змін у публічному A
 - **Q1. Доля `apps/web` після міграції.** ✅ **(a) — залишаємо PWA + mobile паралельно.**
   Сайт продовжує розвиватись як окремий продуктивний клієнт для
   desktop-юзкейсу. Mobile — додатковий канал, не заміна.
-
 - **Q2. Публікація в магазинах як MVP-ціль.** ✅ **Internal Testing після Фази 4 (Фінік).**
   Уточнення від юзера: **у юзера ще немає Apple Developer Program і
   Google Play Developer підписок.** Тож фактичний старт Internal
@@ -1006,48 +1002,40 @@ CRUD, foodDb export/import, UI). Жодних змін у публічному A
   До того часу тестуємо на фізичному пристрої через Expo Dev Client
   (див. Q4). Задача "оформити Developer-акаунти" додається у Фазу 11
   як blocker.
-
-- **Q3. Sync-стек на мобілці.** ✅ **`react-native-mmkv`** з самого початку.
+- **Q3. Sync-стек на мобілці.** ✅ `**react-native-mmkv`\*\* з самого початку.
   Пропустили проміжний етап AsyncStorage — одразу йдемо в швидкий
   sync-стор. Адаптер сховища (`@sergeant/shared/storage` або локальний
   у `apps/mobile/src/lib/storage.ts`) має той самий shape, що й
   web `shared/lib/storage.ts`, щоб хуки/утиліти були платформо-агностичні.
-
 - **Q4. Dev Client vs Expo Go.** ✅ **Expo Dev Client з Фази 1.**
   Одразу налаштовуємо EAS-збірку dev-профайлу. Плюси: свобода вибору
   нативних бібліотек (voice, MMKV на new arch без обмежень).
   Мінуси: перший раз треба 1-2 год на EAS setup.
-
 - **Q5. Стильова система.** ✅ **NativeWind.**
   Класова Tailwind-like API. Дозволяє копіювати `className=...` з web
   компонентів із мінімальними правками. `tailwind.config` розшарити
   між web і mobile, щоб токени (кольори, spacing, font scale) жили в
   одному місці — див. **R6** (новий техборг).
-
-- **Q6. Speech-to-text на мобілці.** ✅ **`expo-speech-recognition` як
-  primary, сервер-сайд Whisper як fallback.**
+- **Q6. Speech-to-text на мобілці.** ✅ `**expo-speech-recognition` як
+  primary, сервер-сайд Whisper як fallback.\*\*
   MVP — `expo-speech-recognition` (працює з Dev Client). Паралельно
   додаємо фолбек-ендпоінт `POST /api/v1/speech/transcribe` (Whisper)
   для пристроїв без on-device STT або для невдалих фолбеків.
-
-- **Q7. Бібліотека графіків.** ✅ **`victory-native`.**
+- **Q7. Бібліотека графіків.** ✅ `**victory-native`.\*_
   Використовуємо в Фазі 4 (Фінік: `BudgetTrendChart`, `CategoryChart`,
-  `NetworthChart`). Обгортка-адаптер у `apps/mobile/src/components/charts/*`
+  `NetworthChart`). Обгортка-адаптер у `apps/mobile/src/components/charts/`_
   щоб пізніше можна було безболісно замінити.
-
 - **Q8. E2E тестування.** ✅ **Detox.**
   Відступили від рекомендації maestro — беремо Detox через ширші
   можливості. Setup додає сесійних витрат, але в довгостроковій
   перспективі окупиться. Перший E2E-сьют пишемо паралельно з Фазою 4
   (щоб не писати тести пост-фактум).
-
 - **Q9. Brand / design consistency.** ✅ **Оновлено BRANDBOOK.md**
   ([PR #409](https://github.com/Skords-01/Sergeant/pull/409)). Додано
   секцію "Native Patterns (iOS / Android)": haptics (Light/Medium/Heavy),
   safe-area правила, native-gesture-паттерни (swipe-back,
   pull-to-refresh), тип-скейл адаптації під iOS HIG / Material, dark-mode
   через `useColorScheme()`, motion + reduce-motion. Web-look не змінено.
-
 - **Q10. Monobank OAuth на мобілці.** Технічна перевірка в рамках
   Фази 4 — без блокування. Очікуємо, що токен-флоу через
   `apps/server` працює без змін (клієнт лише вставляє токен).
