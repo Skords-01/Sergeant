@@ -53,6 +53,9 @@ export * from "./lib/hints";
 // Daily nudges & re-engagement (Phase 3 — retention).
 export * from "./lib/nudges";
 
+// A/B testing infrastructure (deterministic variant assignment).
+export * from "./lib/abTest";
+
 // Canonical analytics event names shared across platforms.
 export * from "./lib/analyticsEvents";
 

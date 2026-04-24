@@ -154,7 +154,14 @@ export function countRealEntries(store: KVStore): number {
   if (nutrition && typeof nutrition === "object" && !Array.isArray(nutrition)) {
     for (const day of Object.values(nutrition)) {
       const meals = day?.meals;
-      if (Array.isArray(meals)) count += meals.length;
+      if (Array.isArray(meals)) {
+        count += meals.filter(
+          (item) =>
+            item &&
+            typeof item === "object" &&
+            !(item as { demo?: unknown }).demo,
+        ).length;
+      }
     }
   }
 

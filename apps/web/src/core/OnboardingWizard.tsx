@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useMemo, useReducer } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useReducer,
+  useRef,
+  useState,
+} from "react";
 import { cn } from "@shared/lib/cn";
 import { Button } from "@shared/components/ui/Button";
 import { Icon } from "@shared/components/ui/Icon";
@@ -246,13 +253,18 @@ function ModulesStep({
         </p>
       </div>
       <div className="w-full space-y-2">
-        {MODULE_CARDS.map((card) => (
-          <ModuleCard
+        {MODULE_CARDS.map((card, idx) => (
+          <div
             key={card.id}
-            card={card}
-            active={picks.includes(card.id)}
-            onToggle={() => togglePick(card.id)}
-          />
+            className="animate-module-card"
+            style={{ animationDelay: `${idx * 60}ms` }}
+          >
+            <ModuleCard
+              card={card}
+              active={picks.includes(card.id)}
+              onToggle={() => togglePick(card.id)}
+            />
+          </div>
         ))}
       </div>
       <div className="w-full flex gap-2">
@@ -601,27 +613,53 @@ export function OnboardingWizard({
 
   const stepIdx = ONBOARDING_STEPS.indexOf(state.step);
 
+  // Track transition direction for animation
+  const [direction, setDirection] = useState<"forward" | "backward">("forward");
+  const stepKeyRef = useRef(0);
+
+  const animatedNext = useCallback(() => {
+    setDirection("forward");
+    stepKeyRef.current += 1;
+    handleNext();
+  }, [handleNext]);
+
+  const animatedBack = useCallback(() => {
+    setDirection("backward");
+    stepKeyRef.current += 1;
+    handleBack();
+  }, [handleBack]);
+
+  const animatedFinish = useCallback(() => {
+    setDirection("forward");
+    finish();
+  }, [finish]);
+
+  const transitionClass =
+    direction === "forward" ? "animate-step-forward" : "animate-step-backward";
+
   const content = (
     <div className="space-y-4">
       <StepIndicator current={stepIdx} total={ONBOARDING_STEPS.length} />
-      {state.step === "welcome" && <WelcomeStep onContinue={handleNext} />}
-      {state.step === "modules" && (
-        <ModulesStep
-          picks={state.picks}
-          togglePick={togglePick}
-          onContinue={handleNext}
-          onBack={handleBack}
-        />
-      )}
-      {state.step === "goals" && (
-        <GoalsStep
-          picks={state.picks}
-          goals={state.goals}
-          onSetGoal={setGoal}
-          onFinish={finish}
-          onBack={handleBack}
-        />
-      )}
+      <div key={stepKeyRef.current} className={transitionClass}>
+        {state.step === "welcome" && <WelcomeStep onContinue={animatedNext} />}
+        {state.step === "modules" && (
+          <ModulesStep
+            picks={state.picks}
+            togglePick={togglePick}
+            onContinue={animatedNext}
+            onBack={animatedBack}
+          />
+        )}
+        {state.step === "goals" && (
+          <GoalsStep
+            picks={state.picks}
+            goals={state.goals}
+            onSetGoal={setGoal}
+            onFinish={animatedFinish}
+            onBack={animatedBack}
+          />
+        )}
+      </div>
     </div>
   );
 

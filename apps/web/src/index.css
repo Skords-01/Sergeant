@@ -549,6 +549,49 @@
   animation: onboarding-enter 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
+/* Onboarding wizard step transitions */
+@keyframes step-slide-left {
+  from {
+    opacity: 0;
+    transform: translateX(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+@keyframes step-slide-right {
+  from {
+    opacity: 0;
+    transform: translateX(-40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+.animate-step-forward {
+  animation: step-slide-left 0.28s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+}
+.animate-step-backward {
+  animation: step-slide-right 0.28s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+}
+
+/* Module card stagger animation */
+@keyframes module-card-enter {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+.animate-module-card {
+  animation: module-card-enter 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
 /* Staggered entry for lists */
 @keyframes stagger-in {
   from {
