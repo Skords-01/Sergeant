@@ -49,7 +49,11 @@ export function AuthPage({ onContinueWithoutAccount }) {
       if (ok) toast.success("Вхід виконано");
     } else {
       const ok = await register(email, password, name || email.split("@")[0]);
-      if (ok) toast.success("Акаунт створено");
+      if (ok) {
+        toast.success("Акаунт створено");
+      } else if (authError && /вже зареєстровано/i.test(authError)) {
+        setMode("login");
+      }
     }
     setLoading(false);
   };

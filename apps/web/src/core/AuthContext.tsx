@@ -24,6 +24,17 @@ import { signIn, signUp, signOut, forgetPassword } from "./authClient.js";
 
 export type AuthStatus = "loading" | "authenticated" | "unauthenticated";
 
+/** Translate Better Auth server errors to Ukrainian. */
+function translateAuthError(raw: string): string {
+  if (/user already exists/i.test(raw))
+    return "Цей email вже зареєстровано. Спробуйте увійти.";
+  if (/password too short/i.test(raw)) return "Пароль занадто короткий.";
+  if (/password too long/i.test(raw)) return "Пароль занадто довгий.";
+  if (/invalid email/i.test(raw)) return "Невірний формат email.";
+  if (/invalid password/i.test(raw)) return "Невірний пароль.";
+  return raw;
+}
+
 interface AuthContextValue {
   user: User | null;
   isLoading: boolean;
@@ -78,7 +89,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
       try {
         const result = await signIn.email({ email, password });
         if (result?.error) {
-          setAuthError(result.error.message || "Помилка входу");
+          setAuthError(
+            translateAuthError(result.error.message || "Помилка входу"),
+          );
           return false;
         }
         await invalidateMe();
@@ -98,7 +111,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
       try {
         const result = await signUp.email({ email, password, name });
         if (result?.error) {
-          setAuthError(result.error.message || "Помилка реєстрації");
+          setAuthError(
+            translateAuthError(result.error.message || "Помилка реєстрації"),
+          );
           return false;
         }
         await invalidateMe();

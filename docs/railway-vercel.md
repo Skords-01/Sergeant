@@ -32,9 +32,16 @@
 
 У **Project** → **Settings** → **Environment Variables** (Production / Preview):
 
-| Змінна              | Значення                                                                     |
-| ------------------- | ---------------------------------------------------------------------------- |
-| `VITE_API_BASE_URL` | Той самий публічний URL API, що й `BETTER_AUTH_URL` (HTTPS, без `/` в кінці) |
+| Змінна        | Значення                                                                        |
+| ------------- | ------------------------------------------------------------------------------- |
+| `BACKEND_URL` | Публічний URL API (Railway), напр. `https://sergeant-production.up.railway.app` |
+
+> **Чому `BACKEND_URL`, а не `VITE_API_BASE_URL`?**
+>
+> Safari (ITP) блокує third-party cookie, коли фронт і API на різних доменах.
+> Edge Middleware (`middleware.ts` у корені) проксіює `/api/*` на `BACKEND_URL`,
+> роблячи cookie same-origin. Фронтенд використовує відносні шляхи — `VITE_API_BASE_URL`
+> **видали** (або залиш порожнім), щоб запити йшли через проксі, а не напряму на Railway.
 
 Перезбери фронт після зміни змінних.
 
@@ -59,7 +66,7 @@ ALLOWED_ORIGINS=http://localhost:5173
 ## 5. Перевірка
 
 - `GET https://<твій-api>.up.railway.app/health` → тіло `ok`, якщо PostgreSQL доступний; інакше **503** і `unhealthy`. У відповідях API є заголовок `X-Request-Id` (або передай свій `X-Request-Id` з клієнта).
-- Реєстрація в застосунку з прод-фронту: куки й CORS мають відповідати `ALLOWED_ORIGINS` і домену API. Якщо сесія «не тримається» у Chrome/Safari — перевір **HTTPS** на обох сторонах і що фронтовий URL точно в `ALLOWED_ORIGINS`. Повністю різні домени без спільного батьківського (не піддомени) у Safari можуть блокувати сторонні кукі — тоді варіанти: спільний домен (піддомени + `crossSubDomainCookies` у better-auth) або **проксі** `/api` через Vercel на той самий origin.
+- Реєстрація в застосунку з прод-фронту: куки й CORS мають відповідати `ALLOWED_ORIGINS` і домену API. Safari (ITP) блокує third-party cookie — Edge Middleware у `middleware.ts` проксіює `/api/*` через Vercel, роблячи cookie same-origin. Якщо сесія «не тримається» — перевір, що `BACKEND_URL` задано на Vercel і `VITE_API_BASE_URL` **видалено**.
 
 ## 6. Моніторинг і логи
 
