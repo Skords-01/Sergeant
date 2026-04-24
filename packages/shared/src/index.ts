@@ -29,6 +29,9 @@ export * from "./lib/onboardingGoals";
 // Reset helpers for Settings ("Restart onboarding").
 export * from "./lib/onboardingReset";
 
+// Module onboarding checklists (Phase 2 — activation).
+export * from "./lib/moduleChecklist";
+
 // First-real-entry detection shared between web and mobile.
 export * from "./lib/firstRealEntry";
 

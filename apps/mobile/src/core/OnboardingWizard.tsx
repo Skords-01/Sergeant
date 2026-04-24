@@ -426,6 +426,46 @@ function GoalsStep({
                 </View>
               );
             }
+            if (q.type === "slider" && q.slider) {
+              const currentNum = (goals[goalKey] as number | null) ?? null;
+              const s = q.slider;
+              const presets = [
+                s.min,
+                Math.round((s.min + s.max) / 3),
+                Math.round(((s.min + s.max) * 2) / 3),
+                s.max,
+              ];
+              return (
+                <View key={q.id} className="gap-1.5">
+                  <Text className="text-sm font-semibold text-stone-900">
+                    {q.title}
+                  </Text>
+                  <View className="flex-row flex-wrap gap-2">
+                    {presets.map((preset) => (
+                      <Pressable
+                        key={preset}
+                        onPress={() => {
+                          hapticTap();
+                          onSetGoal(goalKey, preset);
+                        }}
+                        className={cx(
+                          "rounded-xl border px-3.5 py-2",
+                          "active:opacity-70",
+                          currentNum === preset
+                            ? "border-brand-500/60 bg-brand-500/10"
+                            : "border-cream-300 bg-cream-50",
+                        )}
+                      >
+                        <Text className="text-sm font-medium text-stone-900">
+                          {preset.toLocaleString("uk-UA")}
+                          {s.unit ? ` ${s.unit}` : ""}
+                        </Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                </View>
+              );
+            }
             return null;
           })}
         </View>

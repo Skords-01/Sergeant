@@ -17,6 +17,7 @@ import {
   SOFT_AUTH_DISMISSED_KEY,
 } from "./vibePicks";
 import { clearAllHintsState } from "./hints";
+import { resetAllChecklists } from "./moduleChecklist";
 
 export function resetOnboardingState(store: KVStore): void {
   clearOnboardingDone(store);
@@ -28,4 +29,5 @@ export function resetOnboardingState(store: KVStore): void {
   store.remove(TTV_MS_KEY);
   store.remove(SOFT_AUTH_DISMISSED_KEY);
   clearAllHintsState(store);
+  resetAllChecklists(store);
 }

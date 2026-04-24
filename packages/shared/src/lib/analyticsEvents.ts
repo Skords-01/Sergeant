@@ -39,6 +39,19 @@ export const ANALYTICS_EVENTS = Object.freeze({
   AUTH_PROMPT_DISMISSED: "auth_prompt_dismissed",
   AUTH_AFTER_VALUE: "auth_after_value",
 
+  // Module checklists (Phase 2 — activation)
+  MODULE_CHECKLIST_SHOWN: "module_checklist_shown",
+  MODULE_CHECKLIST_STEP_DONE: "module_checklist_step_done",
+  MODULE_CHECKLIST_DISMISSED: "module_checklist_dismissed",
+
+  // Permissions (Phase 2 — contextual prompts)
+  PERMISSION_REQUESTED: "permission_requested",
+  PERMISSION_GRANTED: "permission_granted",
+  PERMISSION_DENIED: "permission_denied",
+
+  // Celebrations (Phase 2 — enriched feedback)
+  CELEBRATION_SHOWN: "celebration_shown",
+
   // Hints / tips system
   HINT_SHOWN: "hint_shown",
   HINT_CLICKED: "hint_clicked",

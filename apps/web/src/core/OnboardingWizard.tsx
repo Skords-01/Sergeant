@@ -418,10 +418,7 @@ function GoalsStep({
                   question={q}
                   value={(goals[goalKey] as string | null) ?? null}
                   onChange={(v) => {
-                    onSetGoal(
-                      goalKey,
-                      q.id === "fizruk_weekly" ? Number(v) : v,
-                    );
+                    onSetGoal(goalKey, v);
                     trackEvent(ANALYTICS_EVENTS.ONBOARDING_GOAL_SET, {
                       module: q.module,
                       goalType: q.id,
@@ -572,7 +569,12 @@ export function OnboardingWizard({
           }
         },
       },
-      state.goals,
+      {
+        ...state.goals,
+        fizrukWeeklyGoal: state.goals.fizrukWeeklyGoal
+          ? Number(state.goals.fizrukWeeklyGoal)
+          : null,
+      },
     );
 
     // Track completion
