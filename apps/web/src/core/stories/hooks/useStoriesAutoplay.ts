@@ -13,10 +13,13 @@ interface Options {
  * while `paused` is true, and calls `onAdvance` at 100%.
  *
  * Uses requestAnimationFrame with wall-clock deltas so the progress bar
- * stays in sync with real time across frame drops. When the tab is
- * hidden the browser stops calling rAF entirely, so we rebase the start
- * time on `visibilitychange` — preventing the progress bar from jumping
- * on resume.
+ * stays in sync with real time across frame drops. A secondary
+ * `setInterval` guard advances progress on platforms where the browser
+ * throttles or pauses rAF callbacks (iOS Safari standalone-PWA, low
+ * power mode, WKWebView in Capacitor). When the tab is hidden the
+ * browser stops calling rAF entirely, so we rebase the start time on
+ * `visibilitychange` and re-schedule a rAF — preventing the progress
+ * bar from jumping or stalling on resume.
  */
 export function useStoriesAutoplay({
   key,
@@ -41,28 +44,55 @@ export function useStoriesAutoplay({
 
     let rafId: number | null = null;
     let cancelled = false;
+    let advanced = false;
     // Mutable so visibilitychange can rebase without restarting the loop.
     const state = { startTs: performance.now(), lastProgress: 0 };
 
-    const tick = (now: number) => {
-      if (cancelled) return;
+    const doAdvance = () => {
+      if (advanced || cancelled) return;
+      advanced = true;
+      setProgress(100);
+      onAdvanceRef.current();
+    };
+
+    const update = (now: number) => {
+      if (cancelled || advanced) return;
       const pct = Math.min(100, ((now - state.startTs) / durationMs) * 100);
       state.lastProgress = pct;
       setProgress(pct);
       if (pct >= 100) {
-        onAdvanceRef.current();
-        return;
+        doAdvance();
       }
-      rafId = window.requestAnimationFrame(tick);
+    };
+
+    const tick = (now: number) => {
+      if (cancelled || advanced) return;
+      update(now);
+      if (!cancelled && !advanced) {
+        rafId = window.requestAnimationFrame(tick);
+      }
     };
     rafId = window.requestAnimationFrame(tick);
 
+    // Fallback: setInterval catches platforms where rAF silently stops
+    // (iOS Safari PWA, WKWebView, low-power mode). Runs at ~250ms — not
+    // visually smooth, but enough to keep the progress bar moving and
+    // guarantee the slide advances on time.
+    const intervalId = window.setInterval(() => {
+      if (document.visibilityState === "hidden") return;
+      update(performance.now());
+    }, 250);
+
     const onVisibility = () => {
-      if (document.visibilityState === "visible") {
+      if (document.visibilityState === "visible" && !cancelled && !advanced) {
         // Rebase startTs so we resume from the last observed progress
         // rather than crediting hidden-tab time to the current slide.
         state.startTs =
           performance.now() - (state.lastProgress / 100) * durationMs;
+        // Re-kick rAF — some browsers drop the pending callback when the
+        // page was hidden; the interval guard covers the gap in between.
+        if (rafId !== null) window.cancelAnimationFrame(rafId);
+        rafId = window.requestAnimationFrame(tick);
       }
     };
     document.addEventListener("visibilitychange", onVisibility);
@@ -70,6 +100,7 @@ export function useStoriesAutoplay({
     return () => {
       cancelled = true;
       if (rafId !== null) window.cancelAnimationFrame(rafId);
+      window.clearInterval(intervalId);
       document.removeEventListener("visibilitychange", onVisibility);
     };
   }, [key, durationMs, paused]);

@@ -257,7 +257,7 @@ function ActiveState({
           aria-label="Повернутись до активного тренування"
         >
           <span
-            className="shrink-0 w-11 h-11 rounded-full bg-white/20 flex items-center justify-center"
+            className="shrink-0 w-11 h-11 rounded-full bg-white/15 flex items-center justify-center"
             aria-hidden
           >
             <PlayIcon />

@@ -130,4 +130,45 @@ describe("useStoriesAutoplay", () => {
     expect(result.current).toBe(0);
     raf.restore();
   });
+
+  it("interval fallback advances even when rAF stops firing", () => {
+    // Install fake rAF but never flush it — simulates iOS dropping rAF.
+    const raf = installFakeRaf();
+    const onAdvance = vi.fn();
+    renderHook(() =>
+      useStoriesAutoplay({
+        key: 0,
+        durationMs: 1000,
+        paused: false,
+        onAdvance,
+      }),
+    );
+    // Only advance timers (fires setInterval callbacks via fake timers)
+    // but do NOT flush rAF — simulates rAF being suspended.
+    act(() => {
+      vi.advanceTimersByTime(1300);
+    });
+    expect(onAdvance).toHaveBeenCalledTimes(1);
+    raf.restore();
+  });
+
+  it("onAdvance is called only once even with both rAF and interval", () => {
+    const raf = installFakeRaf();
+    const onAdvance = vi.fn();
+    renderHook(() =>
+      useStoriesAutoplay({
+        key: 0,
+        durationMs: 1000,
+        paused: false,
+        onAdvance,
+      }),
+    );
+    act(() => {
+      vi.advanceTimersByTime(1100);
+      raf.flush();
+    });
+    // Both rAF and interval had a chance to fire — only one advance.
+    expect(onAdvance).toHaveBeenCalledTimes(1);
+    raf.restore();
+  });
 });
