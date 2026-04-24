@@ -57,4 +57,19 @@ describe("auth config — bearer plugin інтегрований у Better Auth"
     ).options;
     expect(options.emailAndPassword?.enabled).toBe(true);
   });
+
+  it("налаштовані sendResetPassword та emailVerification (Resend у рантаймі)", () => {
+    const options = (
+      auth as unknown as {
+        options: {
+          emailAndPassword?: { sendResetPassword?: unknown };
+          emailVerification?: { sendVerificationEmail?: unknown };
+        };
+      }
+    ).options;
+    expect(typeof options.emailAndPassword?.sendResetPassword).toBe("function");
+    expect(typeof options.emailVerification?.sendVerificationEmail).toBe(
+      "function",
+    );
+  });
 });
