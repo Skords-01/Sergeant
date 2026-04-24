@@ -67,6 +67,9 @@ function asReq(v: unknown): Request {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  // `coachInsight` викликає `sendToUserQuietly` → `sendToUser` → `pool.query`.
+  // Без дефолту `vi.fn()` дає `undefined` і падає деструктуризація `rows` (шум у логах).
+  pool.query.mockResolvedValue({ rows: [] });
 });
 
 describe("coachMemoryPost blob-size guard", () => {

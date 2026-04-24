@@ -23,6 +23,7 @@
 | `ANTHROPIC_API_KEY`              | Ключ Claude                                                                                                                                                                                                |
 | `PORT`                           | Зазвичай Railway підставляє сам; якщо треба — `3000`                                                                                                                                                       |
 | `ALLOWED_ORIGINS`                | URL фронту на Vercel, напр. `https://твій-проєкт.vercel.app` (через кому, якщо кілька)                                                                                                                     |
+| `RESEND_API_KEY`                 | Опційно, але для листів скидання пароля / верифікації email — ключ [Resend](https://resend.com). Без нього бекенд стартує з warn у логах. Опційно `RESEND_FROM` (відправник з верифікованого домену).      |
 | `BETTER_AUTH_CROSS_SITE_COOKIES` | Опційно: `0` — не форсити `SameSite=None` (рідко: один домен через reverse proxy). Якщо не задано, при `BETTER_AUTH_URL` на **https://** кукі налаштовуються для крос-сайтового фронта (Vercel → Railway). |
 
 4. У **Networking** увімкни **Public networking**, скопіюй домен — це і є база для `BETTER_AUTH_URL`.
