@@ -41,22 +41,3 @@ export function mealFormStateFromBarcodeProduct(
     err: "",
   };
 }
-
-export function mealFormStateFromProductOrNull(
-  p: BarcodeProduct | null,
-  barcode: string,
-): Pick<
-  MealFormState,
-  "name" | "kcal" | "protein_g" | "fat_g" | "carbs_g" | "err"
-> | null {
-  if (!p || !p.name?.trim()) return null;
-  const full = mealFormStateFromBarcodeProduct(p, barcode);
-  return {
-    name: full.name,
-    kcal: full.kcal,
-    protein_g: full.protein_g,
-    fat_g: full.fat_g,
-    carbs_g: full.carbs_g,
-    err: full.err,
-  };
-}
