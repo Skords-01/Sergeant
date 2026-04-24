@@ -71,7 +71,15 @@ export function UserMenuButton({
           syncing && "motion-safe:animate-pulse",
         )}
       >
-        {initial}
+        {user.image ? (
+          <img
+            src={user.image}
+            alt=""
+            className="w-full h-full rounded-2xl object-cover"
+          />
+        ) : (
+          initial
+        )}
         <SyncBadge user={user} syncing={syncing} />
       </button>
       {open && (
