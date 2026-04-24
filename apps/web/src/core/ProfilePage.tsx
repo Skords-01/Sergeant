@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@shared/lib/cn";
 import { Button } from "@shared/components/ui/Button";
@@ -6,6 +6,7 @@ import { Card } from "@shared/components/ui/Card";
 import { Icon } from "@shared/components/ui/Icon";
 import { Input } from "@shared/components/ui/Input";
 import { useToast } from "@shared/hooks/useToast";
+import { useOnlineStatus } from "@shared/hooks/useOnlineStatus";
 import { useAuth } from "./AuthContext.jsx";
 import {
   updateUser,
@@ -17,23 +18,63 @@ import {
   type SessionItem,
 } from "./authClient.js";
 
+// ────────────────────── Avatar helpers ──────────────────────
+
+const MAX_AVATAR_SIZE = 128;
+const AVATAR_QUALITY = 0.8;
+
+function compressAvatar(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const canvas = document.createElement("canvas");
+      const scale = Math.min(
+        MAX_AVATAR_SIZE / img.width,
+        MAX_AVATAR_SIZE / img.height,
+        1,
+      );
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        reject(new Error("Canvas context unavailable"));
+        return;
+      }
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      resolve(canvas.toDataURL("image/webp", AVATAR_QUALITY));
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("Не вдалося прочитати зображення"));
+    };
+    img.src = url;
+  });
+}
+
 // ────────────────────── Personal info ──────────────────────
 
 function PersonalInfoSection({
   user,
+  online,
   onRefresh,
 }: {
   user: {
     id: string;
     name?: string | null;
     email?: string | null;
+    image?: string | null;
     emailVerified: boolean;
   };
+  online: boolean;
   onRefresh: () => Promise<void>;
 }) {
   const toast = useToast();
+  const fileRef = useRef<HTMLInputElement>(null);
   const [name, setName] = useState(user.name ?? "");
   const [saving, setSaving] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const dirty = name.trim() !== (user.name ?? "");
 
   useEffect(() => {
@@ -54,6 +95,38 @@ function PersonalInfoSection({
     }
   };
 
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (fileRef.current) fileRef.current.value = "";
+    setUploadingAvatar(true);
+    try {
+      const dataUrl = await compressAvatar(file);
+      const res = await updateUser({ image: dataUrl });
+      if (res.error) {
+        toast.error(res.error.message ?? "Не вдалося оновити аватар");
+      } else {
+        toast.success("Аватар оновлено");
+        await onRefresh();
+      }
+    } catch {
+      toast.error("Не вдалося обробити зображення");
+    }
+    setUploadingAvatar(false);
+  };
+
+  const handleRemoveAvatar = async () => {
+    setUploadingAvatar(true);
+    const res = await updateUser({ image: null });
+    setUploadingAvatar(false);
+    if (res.error) {
+      toast.error(res.error.message ?? "Не вдалося видалити аватар");
+    } else {
+      toast.success("Аватар видалено");
+      await onRefresh();
+    }
+  };
+
   const initial = (user.name || user.email || "?")[0].toUpperCase();
 
   return (
@@ -68,14 +141,54 @@ function PersonalInfoSection({
       <div className="p-4 space-y-5">
         {/* Avatar */}
         <div className="flex items-center gap-4">
-          <div
-            className={cn(
-              "w-16 h-16 rounded-2xl flex items-center justify-center text-xl font-bold shrink-0",
-              "bg-brand-500/15 text-brand-600 dark:text-brand-400",
-            )}
+          <button
+            type="button"
+            className="relative group shrink-0"
+            disabled={!online || uploadingAvatar}
+            onClick={() => fileRef.current?.click()}
+            aria-label="Змінити аватар"
           >
-            {initial}
-          </div>
+            {user.image ? (
+              <img
+                src={user.image}
+                alt=""
+                className="w-16 h-16 rounded-2xl object-cover"
+              />
+            ) : (
+              <div
+                className={cn(
+                  "w-16 h-16 rounded-2xl flex items-center justify-center text-xl font-bold",
+                  "bg-brand-500/15 text-brand-600 dark:text-brand-400",
+                )}
+              >
+                {initial}
+              </div>
+            )}
+            <div
+              className={cn(
+                "absolute inset-0 rounded-2xl flex items-center justify-center",
+                "bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity",
+                uploadingAvatar && "opacity-100",
+              )}
+            >
+              {uploadingAvatar ? (
+                <Icon
+                  name="refresh-cw"
+                  size={18}
+                  className="text-white animate-spin"
+                />
+              ) : (
+                <Icon name="upload" size={18} className="text-white" />
+              )}
+            </div>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleAvatarChange}
+            />
+          </button>
           <div className="min-w-0 flex-1">
             <p className="text-base font-semibold text-text truncate">
               {user.name || "Без імені"}
@@ -89,6 +202,16 @@ function PersonalInfoSection({
                 </span>
               )}
             </div>
+            {user.image && (
+              <button
+                type="button"
+                className="text-xs text-muted hover:text-danger transition-colors mt-1"
+                disabled={!online || uploadingAvatar}
+                onClick={handleRemoveAvatar}
+              >
+                Видалити фото
+              </button>
+            )}
           </div>
         </div>
 
@@ -113,7 +236,7 @@ function PersonalInfoSection({
             <Button
               variant="primary"
               size="sm"
-              disabled={!dirty || saving}
+              disabled={!dirty || saving || !online}
               loading={saving}
               onClick={handleSave}
             >
@@ -128,14 +251,15 @@ function PersonalInfoSection({
 
 // ────────────────────── Change password ──────────────────────
 
-function ChangePasswordSection() {
+function ChangePasswordSection({ online }: { online: boolean }) {
   const toast = useToast();
   const [current, setCurrent] = useState("");
   const [next, setNext] = useState("");
   const [confirm, setConfirm] = useState("");
   const [saving, setSaving] = useState(false);
 
-  const valid = current.length > 0 && next.length >= 10 && next === confirm;
+  const valid =
+    online && current.length > 0 && next.length >= 10 && next === confirm;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -265,20 +389,21 @@ function parseUA(ua: string | null | undefined): string {
   return parts.length > 0 ? parts.join(" / ") : "Невідомий пристрій";
 }
 
-function SessionsSection() {
+function SessionsSection({ online }: { online: boolean }) {
   const toast = useToast();
   const [sessions, setSessions] = useState<SessionItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [revoking, setRevoking] = useState<string | null>(null);
 
   const load = useCallback(async () => {
+    if (!online) return;
     setLoading(true);
     const res = await listSessions();
     setLoading(false);
     if (res.data) {
       setSessions(res.data);
     }
-  }, []);
+  }, [online]);
 
   useEffect(() => {
     load();
@@ -358,7 +483,13 @@ function SessionsSection() {
 
 // ────────────────────── Danger zone ──────────────────────
 
-function DangerZoneSection({ onLogout }: { onLogout: () => Promise<void> }) {
+function DangerZoneSection({
+  online,
+  onLogout,
+}: {
+  online: boolean;
+  onLogout: () => Promise<void>;
+}) {
   const toast = useToast();
   const navigate = useNavigate();
   const [showConfirm, setShowConfirm] = useState(false);
@@ -407,6 +538,7 @@ function DangerZoneSection({ onLogout }: { onLogout: () => Promise<void> }) {
             variant="destructive"
             size="sm"
             className="w-full"
+            disabled={!online}
             onClick={() => setShowConfirm(true)}
           >
             Видалити акаунт
@@ -477,6 +609,7 @@ function DangerZoneSection({ onLogout }: { onLogout: () => Promise<void> }) {
 export function ProfilePage() {
   const navigate = useNavigate();
   const { user, logout, refresh } = useAuth();
+  const online = useOnlineStatus();
 
   if (!user) {
     return null;
@@ -505,10 +638,19 @@ export function ProfilePage() {
           <h1 className="text-xl font-bold text-text">Профіль</h1>
         </div>
 
-        <PersonalInfoSection user={user} onRefresh={refresh} />
-        <ChangePasswordSection />
-        <SessionsSection />
-        <DangerZoneSection onLogout={logout} />
+        {!online && (
+          <div className="flex items-center gap-2 rounded-xl bg-warning/10 border border-warning/30 px-4 py-3">
+            <Icon name="wifi-off" size={16} className="text-warning shrink-0" />
+            <p className="text-sm text-warning font-medium">
+              Ви офлайн — редагування профілю тимчасово недоступне
+            </p>
+          </div>
+        )}
+
+        <PersonalInfoSection user={user} online={online} onRefresh={refresh} />
+        <ChangePasswordSection online={online} />
+        <SessionsSection online={online} />
+        <DangerZoneSection online={online} onLogout={logout} />
       </div>
     </div>
   );
