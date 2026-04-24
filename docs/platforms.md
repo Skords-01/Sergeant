@@ -75,15 +75,17 @@ dashboard (див. `apps/mobile/src/core/dashboard/dashboardModuleConfig.ts`).
   progress, measurements, exercise, dashboard), hooks + `__tests__`.
 - `src/modules/routine/*` — pages (Habits, Heatmap), components,
   hooks, lib + `__tests__`.
-- `src/modules/nutrition/*` — `NutritionApp` (Сьогодні / Журнал / Вода),
-  `AddMealSheet` (ручний ввід + сканер), `expo-camera` + `/api/barcode` на
-  `app/(tabs)/nutrition/scan.tsx`, unit-тести на нормалізацію/мапінг; **не**
-  портовані комора, shopping list, рецепти, photo-AI (як на web).
+- `src/modules/nutrition/*` — `NutritionApp` (Сьогодні / Журнал / Вода /
+  **Покупки**), `AddMealSheet` (ручний ввід + сканер), `expo-camera` +
+  `/api/barcode` на `scan.tsx`, `useShoppingList` + `pages/Shopping`, комора
+  `useNutritionPantries` + `pages/Pantry` + stack `pantry` (вхід з Dashboard);
+  **не** портовані AI-генерація shopping з рецептів, `parsePantry` API, повні
+  рецепти, photo-AI.
 
 **Не зроблено / частково:**
 
-- **Nutrition (решта parity з web)** — `recipe/[id].tsx` — заглушка; pantry,
-  shopping, photo / day plan / recipes — Phase 7+.
+- **Nutrition (решта parity з web)** — `recipe/[id].tsx` — заглушка; shopping
+  generate з рецептів/плану, photo / day plan / recipes — Phase 7+.
 - **Voice / Speech** — web використовує Web Speech API; для RN треба
   `expo-speech` + платформний STT (iOS Speech framework / Android
   `SpeechRecognizer`). Не початок.
@@ -107,10 +109,10 @@ dashboard (див. `apps/mobile/src/core/dashboard/dashboardModuleConfig.ts`).
   без `ios.simulator: true` — зараз є тільки simulator-build у
   `development`.
 
-**Blocking для релізу:** Nutrition-порт (фундамент value prop),
-store-listing. До цього — тільки internal dev-client. Push-send
-pipeline (APNs + FCM HTTP v1) — уже працює, потребує лише провізії
-credentials (див. `docs/backend-tech-debt.md#push-credentials`).
+**Blocking для релізу:** глибша parity Харчування з web (pantry, рецепти,
+AI), store-listing. До store — здебільшого internal dev-client. Push-send
+pipeline (APNs + FCM HTTP v1) — уже в коді; у проді потрібні credentials
+(див. `docs/backend-tech-debt.md#push-credentials`).
 
 ---
 

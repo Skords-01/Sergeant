@@ -16,10 +16,10 @@
 - **ФІЗРУК** — pages, components (workouts, programs, body, progress,
   measurements, exercise, dashboard), hooks + `__tests__`.
 - **Рутина** — pages (Habits, Heatmap), components, hooks, lib + `__tests__`.
-- **Харчування** — `NutritionApp` (Сьогодні / Журнал / Вода), `AddMealSheet`
-  (ручний ввід + **сканер штрихкодів** через `expo-camera` + `/api/barcode`),
-  MMKV + `useNutritionLog` / `useNutritionPrefs` + `__tests__`. Pantry / рецепти
-  / photo-AI — у дорожній карті (PR-7+).
+- **Харчування** — `NutritionApp` (4 вкладки) + **Комора** (`/nutrition/pantry`),
+  `AddMealSheet` (ручний ввід + сканер), `useShoppingList` / `useNutritionPantries`,
+  MMKV + `useNutritionLog` / `useNutritionPrefs` + `__tests__`. AI-parse pantry
+  / повні рецепти / photo-AI — у дорожній карті.
 
 Інфраструктура готова:
 

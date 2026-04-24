@@ -32,6 +32,7 @@
     "db:migrate": "pnpm --filter @sergeant/server db:migrate",
     "licenses:gen": "node scripts/generate-licenses.mjs",
     "licenses:check": "node scripts/generate-licenses.mjs check",
+    "dead-code:packages": "node scripts/ts-prune-packages.mjs",
     "prepare": "husky"
   },
   "devDependencies": {
@@ -45,6 +46,7 @@
     "husky": "^9.1.7",
     "lint-staged": "^15.5.2",
     "prettier": "^3.8.2",
+    "ts-prune": "^0.10.3",
     "tsx": "^4.21.0",
     "turbo": "^2.3.3",
     "typescript": "^6.0.3",
