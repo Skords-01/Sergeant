@@ -158,7 +158,7 @@ describe("useNutritionRemoteActions", () => {
       expect(spies.setRecipesTried).toHaveBeenCalledWith(true);
       expect(apiRecommendRecipes).toHaveBeenCalledWith(
         expect.objectContaining({
-          items: expect.any(Array),
+          pantry: expect.any(Array),
           preferences: expect.objectContaining({
             goal: "balanced",
             locale: "uk-UA",
@@ -287,6 +287,43 @@ describe("useNutritionRemoteActions", () => {
         expect(spies.setErr).toHaveBeenCalledWith(
           "Не вдалося отримати план харчування",
         ),
+      );
+    });
+
+    it("posts `pantry` (not `items`) and omits regenerateMealType when no regen target", async () => {
+      // Matches server DayPlanSchema: expects `pantry: [...]` and
+      // `regenerateMealType` as a valid enum value or absent — not `null`.
+      apiFetchDayPlan.mockResolvedValueOnce({ plan: { meals: [] } });
+      const { result } = makeHarness();
+      act(() => {
+        result.current.fetchDayPlan();
+      });
+      await waitFor(() => expect(apiFetchDayPlan).toHaveBeenCalled());
+      const body = apiFetchDayPlan.mock.calls.at(-1)?.[0];
+      expect(body).toEqual(
+        expect.objectContaining({
+          pantry: expect.any(Array),
+          targets: expect.any(Object),
+          locale: "uk-UA",
+        }),
+      );
+      expect(body).not.toHaveProperty("items");
+      expect(body).not.toHaveProperty("regenerateMealType");
+    });
+
+    it("includes regenerateMealType when regenerating a specific meal", async () => {
+      apiFetchDayPlan.mockResolvedValueOnce({ plan: { meals: [] } });
+      const { result } = makeHarness();
+      act(() => {
+        result.current.fetchDayPlan("lunch");
+      });
+      await waitFor(() => expect(apiFetchDayPlan).toHaveBeenCalled());
+      const body = apiFetchDayPlan.mock.calls.at(-1)?.[0];
+      expect(body).toEqual(
+        expect.objectContaining({
+          pantry: expect.any(Array),
+          regenerateMealType: "lunch",
+        }),
       );
     });
   });

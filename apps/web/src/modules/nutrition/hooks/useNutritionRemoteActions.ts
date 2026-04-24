@@ -223,7 +223,7 @@ export function useNutritionRemoteActions({
       if (items.length === 0)
         throw new Error("Дай хоча б 2–3 продукти для рецептів.");
       return nutritionApi.recommendRecipes({
-        items: items.slice(0, 40),
+        pantry: items.slice(0, 40),
         preferences: {
           goal: prefs.goal,
           servings: toNumber(prefs.servings, 1),
@@ -274,7 +274,7 @@ export function useNutritionRemoteActions({
       const items = pantry.effectiveItems;
       if (items.length === 0) throw new Error("Додай продукти на склад.");
       return nutritionApi.weekPlan({
-        items: items.slice(0, 50),
+        pantry: items.slice(0, 50),
         preferences: { goal: prefs.goal },
         locale: "uk-UA",
       });
@@ -368,14 +368,14 @@ export function useNutritionRemoteActions({
     mutationFn: (regenerateMealType: string | null | undefined) =>
       nutritionApi
         .dayPlan({
-          items: pantry.effectiveItems.slice(0, 50),
+          pantry: pantry.effectiveItems.slice(0, 50),
           targets: {
             kcal: prefs.dailyTargetKcal,
             protein_g: prefs.dailyTargetProtein_g,
             fat_g: prefs.dailyTargetFat_g,
             carbs_g: prefs.dailyTargetCarbs_g,
           },
-          regenerateMealType: regenerateMealType || null,
+          ...(regenerateMealType ? { regenerateMealType } : {}),
           locale: "uk-UA",
         })
         .then((data) => {
