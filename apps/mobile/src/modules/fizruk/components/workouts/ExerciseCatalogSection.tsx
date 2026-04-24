@@ -18,6 +18,8 @@ import { Pressable, ScrollView, Text, View } from "react-native";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 
+const EMPTY_RECORD: Record<string, string> = {};
+
 export interface ExerciseCatalogSectionProps {
   exercises: readonly WorkoutExerciseCatalogEntry[];
   primaryGroupsUk?: Record<string, string>;
@@ -223,8 +225,8 @@ function ExerciseRow({
 
 export const ExerciseCatalogSection = memo(function ExerciseCatalogSection({
   exercises,
-  primaryGroupsUk = {},
-  equipmentUk = {},
+  primaryGroupsUk = EMPTY_RECORD,
+  equipmentUk = EMPTY_RECORD,
   onPickExercise,
   onInspectExercise,
   query: controlledQuery,

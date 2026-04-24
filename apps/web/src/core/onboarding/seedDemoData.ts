@@ -454,8 +454,8 @@ function seedFizruk(): void {
           exerciseId: "squat",
           nameUk: "Присідання зі штангою",
           primaryGroup: "quadriceps",
-          musclesPrimary: ["quads"],
-          musclesSecondary: ["glutes", "core"],
+          musclesPrimary: ["quadriceps"],
+          musclesSecondary: ["gluteus_maximus", "rectus_abdominis"],
           type: "strength",
           sets: [
             { weightKg: 60, reps: 10 },
