@@ -11,7 +11,18 @@ vi.mock("../obs/metrics.js", async () => {
   };
 });
 
-import { getIp, checkRateLimit } from "./rateLimit.js";
+const redisEvalMock = vi.fn();
+vi.mock("../lib/redis.js", () => ({
+  getRedis: vi.fn(() => null),
+}));
+
+import {
+  getIp,
+  checkRateLimit,
+  checkRateLimitRedis,
+  rateLimitExpress,
+} from "./rateLimit.js";
+import { getRedis } from "../lib/redis.js";
 
 function asReq(partial: Partial<Request> & Record<string, unknown>): Request {
   return partial as unknown as Request;
@@ -197,5 +208,127 @@ describe("checkRateLimit", () => {
     const blocked = checkRateLimit(req, { key, limit: 1, windowMs: 100 });
     expect(blocked.ok).toBe(false);
     expect(blocked.retryAfterSec).toBeGreaterThanOrEqual(1);
+  });
+});
+
+describe("checkRateLimitRedis", () => {
+  function makeReq(ip: string): Request {
+    return { ip, headers: {} } as unknown as Request;
+  }
+
+  it("returns ok=true when count is within limit", async () => {
+    const fakRedis = { eval: vi.fn().mockResolvedValue([1, 4800]) } as never;
+    const result = await checkRateLimitRedis(fakRedis, makeReq("1.2.3.4"), {
+      key: "test:redis",
+      limit: 5,
+      windowMs: 5_000,
+    });
+    expect(result.ok).toBe(true);
+    expect(result.remaining).toBe(4);
+    expect(result.resetMs).toBe(4800);
+    expect(result.retryAfterSec).toBeGreaterThanOrEqual(1);
+  });
+
+  it("returns ok=false when count exceeds limit", async () => {
+    const fakRedis = { eval: vi.fn().mockResolvedValue([6, 3000]) } as never;
+    const result = await checkRateLimitRedis(fakRedis, makeReq("1.2.3.4"), {
+      key: "test:redis:block",
+      limit: 5,
+      windowMs: 5_000,
+    });
+    expect(result.ok).toBe(false);
+    expect(result.remaining).toBe(0);
+    expect(result.resetMs).toBe(3000);
+  });
+
+  it("retryAfterSec is at least 1 second when pttl is very small", async () => {
+    const fakRedis = { eval: vi.fn().mockResolvedValue([2, 50]) } as never;
+    const result = await checkRateLimitRedis(fakRedis, makeReq("1.2.3.4"), {
+      key: "test:redis:retry",
+      limit: 1,
+      windowMs: 100,
+    });
+    expect(result.retryAfterSec).toBeGreaterThanOrEqual(1);
+  });
+});
+
+describe("rateLimitExpress — Redis path", () => {
+  function makeReq(ip: string): Request {
+    return { ip, headers: {} } as unknown as Request;
+  }
+
+  beforeEach(() => {
+    vi.mocked(getRedis).mockReturnValue(null);
+    redisEvalMock.mockReset();
+  });
+
+  it("uses Redis when getRedis() returns a client", async () => {
+    const fakeRedis = { eval: redisEvalMock.mockResolvedValue([1, 4900]) };
+    vi.mocked(getRedis).mockReturnValue(fakeRedis as never);
+
+    const middleware = rateLimitExpress({
+      key: "mw:redis",
+      limit: 5,
+      windowMs: 5_000,
+    });
+    const req = makeReq("10.0.0.1");
+    const res = {
+      setHeader: vi.fn(),
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn(),
+    } as never;
+    const next = vi.fn();
+
+    await middleware(req, res, next);
+
+    expect(redisEvalMock).toHaveBeenCalledOnce();
+    expect(next).toHaveBeenCalledOnce();
+  });
+
+  it("falls back to in-memory when Redis eval throws", async () => {
+    const fakeRedis = {
+      eval: redisEvalMock.mockRejectedValue(new Error("ECONNREFUSED")),
+    };
+    vi.mocked(getRedis).mockReturnValue(fakeRedis as never);
+
+    const middleware = rateLimitExpress({
+      key: "mw:fallback",
+      limit: 5,
+      windowMs: 5_000,
+    });
+    const req = makeReq("10.0.0.2");
+    const res = {
+      setHeader: vi.fn(),
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn(),
+    } as never;
+    const next = vi.fn();
+
+    await middleware(req, res, next);
+
+    // fallback to in-memory: next() must still be called despite Redis failure
+    expect(next).toHaveBeenCalledOnce();
+  });
+
+  it("uses in-memory when getRedis() returns null", async () => {
+    vi.mocked(getRedis).mockReturnValue(null);
+
+    const middleware = rateLimitExpress({
+      key: "mw:nuls",
+      limit: 5,
+      windowMs: 5_000,
+    });
+    const req = makeReq("10.0.0.3");
+    const res = {
+      setHeader: vi.fn(),
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn(),
+    } as never;
+    const next = vi.fn();
+
+    await middleware(req, res, next);
+
+    expect(redisEvalMock).not.toHaveBeenCalled();
+    expect(next).toHaveBeenCalledOnce();
   });
 });

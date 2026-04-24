@@ -72,8 +72,8 @@ export function createPushRouter(): Router {
   // Свій, вужчий rate-limit (1 req / 5 s / user) поверх загального push-бакета:
   // `rateLimitSubject` після `requireSession` дасть `u:<userId>`, тож ліміт
   // per-user, а не per-IP (мобільний LTE/CGN не має «скинути» стан).
-  // TODO: після сесії 5A замінити in-memory Map (див. `http/rateLimit.ts`) на
-  // redis-based limiter — зараз ріже лише per-process на Railway.
+  // `rateLimitExpress` використовує Redis коли REDIS_URL встановлений,
+  // інакше — in-memory fallback per-process.
   r.post(
     "/api/push/test",
     requireSession(),

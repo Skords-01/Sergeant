@@ -20,6 +20,7 @@ import type { Server } from "http";
 import { createApp } from "./app.js";
 import { config } from "./config.js";
 import { pool } from "./db.js";
+import { connectRedis, disconnectRedis } from "./lib/redis.js";
 import { logger, serializeError } from "./obs/logger.js";
 import {
   startPoolSampler,
@@ -35,6 +36,7 @@ const app = createApp({
 });
 
 startPoolSampler(pool);
+connectRedis();
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Graceful shutdown
@@ -124,6 +126,13 @@ async function shutdown(reason: string, exitCode: number): Promise<void> {
         msg: "pg_pool_end_error",
         err: serializeError(err, { includeStack: false }),
       });
+    }
+
+    try {
+      await disconnectRedis();
+      logger.info({ msg: "redis_disconnected" });
+    } catch {
+      /* ignore on shutdown */
     }
 
     try {
