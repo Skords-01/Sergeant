@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { STORAGE_KEYS } from "@sergeant/shared";
 import { ApiError, chatApi, isApiError } from "@shared/api";
 import { cn } from "@shared/lib/cn";
 import { Icon } from "@shared/components/ui/Icon";
@@ -76,7 +77,7 @@ const QUICK_BY_CONTEXT: Record<string, string[]> = {
 function HubChat({ onClose, initialMessage }) {
   const [messages, setMessages] = useState(() => {
     try {
-      const saved = localStorage.getItem("hub_chat_history");
+      const saved = localStorage.getItem(STORAGE_KEYS.HUB_CHAT_HISTORY);
       if (saved) {
         const p = JSON.parse(saved);
         if (Array.isArray(p) && p.length) return normalizeStoredMessages(p);
@@ -97,7 +98,7 @@ function HubChat({ onClose, initialMessage }) {
       const mm = perfMark("hubchat:historyWrite");
       try {
         localStorage.setItem(
-          "hub_chat_history",
+          STORAGE_KEYS.HUB_CHAT_HISTORY,
           JSON.stringify(lastMessagesRef.current.slice(-30)),
         );
       } catch {}
@@ -112,7 +113,7 @@ function HubChat({ onClose, initialMessage }) {
     const flush = () => {
       try {
         localStorage.setItem(
-          "hub_chat_history",
+          STORAGE_KEYS.HUB_CHAT_HISTORY,
           JSON.stringify(lastMessagesRef.current.slice(-30)),
         );
       } catch {}
@@ -454,7 +455,7 @@ function HubChat({ onClose, initialMessage }) {
     setSpeaking(false);
     setMessages([makeAssistantMsg("Чат очищено.")]);
     try {
-      localStorage.removeItem("hub_chat_history");
+      localStorage.removeItem(STORAGE_KEYS.HUB_CHAT_HISTORY);
     } catch {}
   };
 

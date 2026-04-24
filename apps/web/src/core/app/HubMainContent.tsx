@@ -1,17 +1,38 @@
 import { Button } from "@shared/components/ui/Button";
 import { Card } from "@shared/components/ui/Card";
 import { Icon } from "@shared/components/ui/Icon";
+import type { User } from "@sergeant/shared";
 import { ErrorBoundary } from "../ErrorBoundary";
 import { HubDashboard } from "../HubDashboard.jsx";
 import { HubReports } from "../HubReports.jsx";
 import { HubSettingsPage } from "../HubSettingsPage.jsx";
 import { IOSInstallBanner } from "./IOSInstallBanner.jsx";
 
+interface HubMainContentProps {
+  updateAvailable: boolean | null | undefined;
+  onApplyUpdate: () => void;
+  canInstall: boolean | null | undefined;
+  onInstall: () => void;
+  onDismissInstall: () => void;
+  onOpenModule: (module: string) => void;
+  iosVisible: boolean;
+  onDismissIos: () => void;
+  hubView: "dashboard" | "reports" | "settings";
+  dark: boolean;
+  onToggleDark: () => void;
+  syncing: boolean;
+  onSync: () => void;
+  onPull: () => void;
+  user: User | null;
+  onShowAuth: () => void;
+  inFtuxSession?: boolean;
+}
+
 // Дешевий inline-fallback для секцій хаба: повідомляємо про збій і
 // даємо кнопку `reset`, щоб спробувати перемонтувати секцію без
 // перезавантаження вкладки. Шапка/таби лишаються робочими, бо
 // ErrorBoundary стоїть навколо окремого view, а не навколо `<main>`.
-function HubSectionFallback({ resetError }) {
+function HubSectionFallback({ resetError }: { resetError: () => void }) {
   return (
     <div className="px-1 py-6 text-center">
       <p className="text-sm text-muted mb-3">Щось пішло не так у цій секції.</p>
@@ -36,7 +57,6 @@ export function HubMainContent({
   iosVisible,
   onDismissIos,
   hubView,
-  onOpenChat: _onOpenChat,
   dark,
   onToggleDark,
   syncing,
@@ -45,7 +65,7 @@ export function HubMainContent({
   user,
   onShowAuth,
   inFtuxSession = false,
-}) {
+}: HubMainContentProps) {
   // Banner budget: at most one chrome banner above the hub content.
   // Priority: update > install (PWA) > iOS install.
   //

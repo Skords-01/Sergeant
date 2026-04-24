@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from "react";
+import { STORAGE_KEYS } from "@sergeant/shared";
 import { cn } from "@shared/lib/cn";
 import { Icon } from "@shared/components/ui/Icon";
 import { EmptyState } from "@shared/components/ui/EmptyState";
@@ -72,7 +73,7 @@ type LooseRecord = Record<string, any>;
 
 function parseFizrukWorkouts(raw: string | null): LooseRecord[] {
   return cachedParse<LooseRecord[]>(
-    "fizruk_workouts_v1",
+    STORAGE_KEYS.FIZRUK_WORKOUTS,
     "fizrukWorkouts",
     raw,
     (r) => {
@@ -87,7 +88,7 @@ function parseFizrukWorkouts(raw: string | null): LooseRecord[] {
 
 function parseFizrukCustomExercises(raw: string | null): LooseRecord[] {
   return cachedParse<LooseRecord[]>(
-    "fizruk_custom_exercises_v1",
+    STORAGE_KEYS.FIZRUK_CUSTOM_EXERCISES,
     "fizrukExercises",
     raw,
     (r) => {
@@ -129,7 +130,7 @@ function pushScored(
 function searchFinyk(tokens: string[]): Hit[] {
   const results: Hit[] = [];
 
-  const txList = safeParseLS("finyk_tx_cache", []);
+  const txList = safeParseLS(STORAGE_KEYS.FINYK_TX_CACHE, []);
   if (Array.isArray(txList)) {
     for (const tx of txList) {
       if (!tx || typeof tx !== "object") continue;
@@ -153,7 +154,7 @@ function searchFinyk(tokens: string[]): Hit[] {
     }
   }
 
-  const subs = safeParseLS("finyk_subs", []);
+  const subs = safeParseLS(STORAGE_KEYS.FINYK_SUBS, []);
   if (Array.isArray(subs)) {
     for (const s of subs) {
       if (!s || typeof s !== "object") continue;
@@ -182,7 +183,7 @@ function searchFizruk(tokens: string[]): Hit[] {
   const results: Hit[] = [];
 
   const workouts = parseFizrukWorkouts(
-    localStorage.getItem("fizruk_workouts_v1"),
+    localStorage.getItem(STORAGE_KEYS.FIZRUK_WORKOUTS),
   );
   for (const w of workouts) {
     if (!w || typeof w !== "object") continue;
@@ -220,7 +221,7 @@ function searchFizruk(tokens: string[]): Hit[] {
   }
 
   const exercises = parseFizrukCustomExercises(
-    localStorage.getItem("fizruk_custom_exercises_v1"),
+    localStorage.getItem(STORAGE_KEYS.FIZRUK_CUSTOM_EXERCISES),
   );
   for (const e of exercises) {
     if (!e || typeof e !== "object") continue;
@@ -247,7 +248,7 @@ function searchFizruk(tokens: string[]): Hit[] {
 
 function searchRoutine(tokens: string[]): Hit[] {
   const results: Hit[] = [];
-  const state = safeParseLS("hub_routine_v1", null);
+  const state = safeParseLS(STORAGE_KEYS.ROUTINE, null);
   if (!state) return results;
 
   const habits = Array.isArray(state.habits) ? state.habits : [];
@@ -275,7 +276,7 @@ function searchRoutine(tokens: string[]): Hit[] {
 function searchNutrition(tokens: string[]): Hit[] {
   const results: Hit[] = [];
   const seen = new Set<string>();
-  const log = safeParseLS("nutrition_log_v1", {});
+  const log = safeParseLS(STORAGE_KEYS.NUTRITION_LOG, {});
   const dates = Object.keys(log).sort().reverse();
 
   for (const date of dates) {

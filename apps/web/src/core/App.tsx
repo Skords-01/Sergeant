@@ -327,7 +327,6 @@ function AppInner() {
           iosVisible={iosVisible}
           onDismissIos={iosDismiss}
           hubView={ui.hubView}
-          onOpenChat={ui.openChat}
           dark={dark}
           onToggleDark={toggleDark}
           syncing={sync.syncing}

@@ -1,5 +1,6 @@
 import { useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { STORAGE_KEYS } from "@sergeant/shared";
 import { coachApi, isApiError } from "@shared/api";
 import { coachKeys } from "@shared/lib/queryKeys.js";
 
@@ -58,7 +59,7 @@ interface CoachSnapshot {
 
 function aggregateCurrentSnapshot(): CoachSnapshot {
   const txRaw = safeParseLS<{ txs?: unknown[]; length?: number } | null>(
-    "finyk_tx_cache",
+    STORAGE_KEYS.FINYK_TX_CACHE,
     null,
   );
   const txList: unknown[] = (txRaw as { txs?: unknown[] })?.txs
@@ -66,8 +67,13 @@ function aggregateCurrentSnapshot(): CoachSnapshot {
     : Array.isArray(txRaw)
       ? (txRaw as unknown[])
       : [];
-  const txCategories = safeParseLS<Record<string, string>>("finyk_tx_cats", {});
-  const hiddenIds = new Set(safeParseLS<string[]>("finyk_hidden_txs", []));
+  const txCategories = safeParseLS<Record<string, string>>(
+    STORAGE_KEYS.FINYK_TX_CATS,
+    {},
+  );
+  const hiddenIds = new Set(
+    safeParseLS<string[]>(STORAGE_KEYS.FINYK_HIDDEN_TXS, []),
+  );
   const transferIds = new Set(
     Object.entries(txCategories)
       .filter(([, v]) => v === "internal_transfer")
@@ -123,7 +129,7 @@ function aggregateCurrentSnapshot(): CoachSnapshot {
 
   let fizruk: FizrukSnapshot | null = null;
   try {
-    const raw = localStorage.getItem("fizruk_workouts_v1");
+    const raw = localStorage.getItem(STORAGE_KEYS.FIZRUK_WORKOUTS);
     if (raw) {
       const p = JSON.parse(raw) as unknown;
       const allWorkouts: Array<{
@@ -180,9 +186,9 @@ function aggregateCurrentSnapshot(): CoachSnapshot {
         string,
         { meals?: Array<{ macros?: { kcal?: number; protein_g?: number } }> }
       >
-    >("nutrition_log_v1", {});
+    >(STORAGE_KEYS.NUTRITION_LOG, {});
     const prefs = safeParseLS<{ dailyTargetKcal?: number } | null>(
-      "nutrition_prefs_v1",
+      STORAGE_KEYS.NUTRITION_PREFS,
       null,
     );
     let totalKcal = 0,

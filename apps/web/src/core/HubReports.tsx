@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { STORAGE_KEYS } from "@sergeant/shared";
 import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { cn } from "@shared/lib/cn";
 import { generateInsights } from "./lib/insightsEngine";
@@ -76,9 +77,12 @@ function useReportData(period, offset) {
 
     function collectWorkouts(dates) {
       const workouts = parseFizrukWorkouts(
-        localStorage.getItem("fizruk_workouts_v1"),
+        localStorage.getItem(STORAGE_KEYS.FIZRUK_WORKOUTS),
       );
-      if (!workouts.length && !localStorage.getItem("fizruk_workouts_v1"))
+      if (
+        !workouts.length &&
+        !localStorage.getItem(STORAGE_KEYS.FIZRUK_WORKOUTS)
+      )
         return { count: 0, daily: {} };
       const dateSet = new Set(dates);
       const daily = {};
@@ -94,7 +98,7 @@ function useReportData(period, offset) {
     }
 
     function collectSpending(dates) {
-      const txRaw = safeParseLS("finyk_tx_cache", null);
+      const txRaw = safeParseLS(STORAGE_KEYS.FINYK_TX_CACHE, null);
       const txList = txRaw?.txs ?? txRaw ?? [];
       const excludedTxIds = getFinykExcludedTxIdsFromStorage();
       const txSplits = getFinykTxSplitsFromStorage();
@@ -107,7 +111,7 @@ function useReportData(period, offset) {
     }
 
     function collectHabits(dates) {
-      const state = safeParseLS("hub_routine_v1", null);
+      const state = safeParseLS(STORAGE_KEYS.ROUTINE, null);
       if (!state) return { pct: 0, daily: {} };
       const habits = Array.isArray(state.habits)
         ? state.habits.filter((h) => !h.archived)
@@ -136,7 +140,7 @@ function useReportData(period, offset) {
     }
 
     function collectKcal(dates) {
-      const log = safeParseLS("nutrition_log_v1", {});
+      const log = safeParseLS(STORAGE_KEYS.NUTRITION_LOG, {});
       const dateSet = new Set(dates);
       const daily = {};
       let total = 0;

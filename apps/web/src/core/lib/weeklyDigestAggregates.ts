@@ -6,6 +6,7 @@
  * React Query plumbing and the aggregates are independently testable.
  */
 
+import { STORAGE_KEYS } from "@sergeant/shared";
 import { safeReadLS } from "@shared/lib/storage.js";
 import { MCC_CATEGORIES, INCOME_CATEGORIES } from "@finyk/constants.js";
 
@@ -58,11 +59,22 @@ export interface FinykAggregate {
 }
 
 export function aggregateFinyk(weekKey: string): FinykAggregate {
-  const txRaw = safeReadLS<{ txs?: unknown[] } | null>("finyk_tx_cache", null);
+  const txRaw = safeReadLS<{ txs?: unknown[] } | null>(
+    STORAGE_KEYS.FINYK_TX_CACHE,
+    null,
+  );
   const txList: unknown[] = txRaw?.txs ?? (Array.isArray(txRaw) ? txRaw : []);
-  const txCategories = safeReadLS<Record<string, string>>("finyk_tx_cats", {});
-  const hiddenIds = new Set(safeReadLS<string[]>("finyk_hidden_txs", []));
-  const customCategories = safeReadLS<Category[]>("finyk_custom_cats_v1", []);
+  const txCategories = safeReadLS<Record<string, string>>(
+    STORAGE_KEYS.FINYK_TX_CATS,
+    {},
+  );
+  const hiddenIds = new Set(
+    safeReadLS<string[]>(STORAGE_KEYS.FINYK_HIDDEN_TXS, []),
+  );
+  const customCategories = safeReadLS<Category[]>(
+    STORAGE_KEYS.FINYK_CUSTOM_CATS,
+    [],
+  );
   const transferIds = new Set(
     Object.entries(txCategories)
       .filter(([, v]) => v === "internal_transfer")
@@ -110,7 +122,7 @@ export function aggregateFinyk(weekKey: string): FinykAggregate {
 
   const finykStorage = safeReadLS<{
     monthlyPlan?: { expense?: number };
-  } | null>("finyk_storage_v2", null);
+  } | null>(STORAGE_KEYS.FINYK_STORAGE, null);
   const monthlyBudget = finykStorage?.monthlyPlan?.expense ?? null;
 
   return {
@@ -132,7 +144,7 @@ export interface FizrukAggregate {
 }
 
 export function aggregateFizruk(weekKey: string): FizrukAggregate | null {
-  const parsed = safeReadLS<unknown>("fizruk_workouts_v1", null);
+  const parsed = safeReadLS<unknown>(STORAGE_KEYS.FIZRUK_WORKOUTS, null);
   if (!parsed) return null;
   const workouts: Array<{
     endedAt?: string;
@@ -229,9 +241,9 @@ export function aggregateNutrition(weekKey: string): NutritionAggregate | null {
         }>;
       }
     >
-  >("nutrition_log_v1", {});
+  >(STORAGE_KEYS.NUTRITION_LOG, {});
   const prefs = safeReadLS<{ dailyTargetKcal?: number } | null>(
-    "nutrition_prefs_v1",
+    STORAGE_KEYS.NUTRITION_PREFS,
     null,
   );
   const targetKcal = prefs?.dailyTargetKcal ?? 2000;
@@ -296,7 +308,7 @@ export function aggregateRoutine(weekKey: string): RoutineAggregate | null {
       archived?: boolean;
     }>;
     completions?: Record<string, string[]>;
-  } | null>("hub_routine_v1", null);
+  } | null>(STORAGE_KEYS.ROUTINE, null);
   if (!state) return null;
 
   const habits = Array.isArray(state.habits)

@@ -22,6 +22,8 @@ export const STORAGE_KEYS = {
   ROUTINE_QUICK_STATS: "routine_quick_stats",
   NUTRITION_QUICK_STATS: "nutrition_quick_stats",
 
+  HUB_CHAT_HISTORY: "hub_chat_history",
+
   // PWA / install prompts
   PWA_SESSION_COUNT: "pwa_session_count",
   PWA_INSTALL_DISMISSED: "pwa_install_dismissed",
