@@ -479,11 +479,7 @@ export function ProfilePage() {
   const { user, logout, refresh } = useAuth();
 
   if (!user) {
-    return (
-      <div className="min-h-dvh bg-bg flex items-center justify-center">
-        <p className="text-muted">Увійдіть, щоб переглянути профіль.</p>
-      </div>
-    );
+    return null;
   }
 
   return (

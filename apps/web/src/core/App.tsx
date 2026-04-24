@@ -260,7 +260,10 @@ function AppInner() {
   }
 
   if (onProfileRoute) {
-    if (!authLoading && !user) {
+    if (authLoading) {
+      return <PageLoader />;
+    }
+    if (!user) {
       return <RedirectTo to={SIGN_IN_PATH} />;
     }
     return (
