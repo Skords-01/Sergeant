@@ -3,8 +3,8 @@
  *
  * Covers:
  *  - collapsed-by-default header with the "AI Звіт тижня" title;
- *  - expanding reveals the week-range preview card, the deferred
- *    generator placeholder, and the Monday-auto toggle;
+ *  - expanding reveals the week-range, кнопка «Згенерувати дайджест
+ *    зараз», і тумблер понеділка;
  *  - toggling "Автогенерація щопонеділка" persists `"1"` under
  *    `STORAGE_KEYS.WEEKLY_DIGEST_MONDAY_AUTO` (same key + value web
  *    writes, so the CloudSync envelope stays identical);
@@ -19,6 +19,14 @@ import { _getMMKVInstance } from "@/lib/storage";
 
 import { AIDigestSection, getWeekRange } from "./AIDigestSection";
 
+jest.mock("../dashboard/useWeeklyDigest", () => ({
+  useWeeklyDigest: () => ({
+    generate: jest.fn(),
+    loading: false,
+    error: null,
+  }),
+}));
+
 beforeEach(() => {
   _getMMKVInstance().clearAll();
 });
@@ -30,18 +38,14 @@ describe("AIDigestSection", () => {
     expect(queryByText("Поточний тиждень")).toBeNull();
   });
 
-  it("expands to reveal the week-range card, deferred notice and toggle", () => {
+  it("expands to reveal the week-range card, generate CTA, and monday toggle", () => {
     const { getByText, getByTestId } = render(<AIDigestSection />);
 
     fireEvent.press(getByText("AI Звіт тижня"));
 
     expect(getByText("Поточний тиждень")).toBeTruthy();
     expect(getByTestId("aidigest-week-range")).toBeTruthy();
-    expect(
-      getByText(
-        /Генерація звіту тижня підключиться з портом модуля AI-дайджести/,
-      ),
-    ).toBeTruthy();
+    expect(getByTestId("aidigest-generate-now")).toBeTruthy();
     expect(getByText("Автогенерація щопонеділка")).toBeTruthy();
   });
 

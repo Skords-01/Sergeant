@@ -8,20 +8,7 @@
  * exists yet for the current week. It waits 3 seconds so the user
  * can cancel / navigate away if the hub is loaded in passing.
  *
- * Mobile shape:
- *   - Inputs + signal (pref flag, week key, existing-digest check)
- *     are implemented here — all pure storage reads through the
- *     MMKV-backed adapter.
- *   - The `generate()` side of the mutation is not wired up yet:
- *     mobile does not have a ported `useWeeklyDigest` hook with a
- *     `generateMutation`. Callers pass a `generate` function in so
- *     this hook stays testable in isolation and HubDashboard can
- *     provide a TODO-stub until the full mutation hook lands in a
- *     later PR.
- *
- * TODO(weekly-digest): replace the caller-supplied `generate` with
- * the ported mobile `useWeeklyDigest().generate` once that hook
- * exists (tracked in the HubDashboard breakdown plan §2.2).
+ * `generate` надає `useWeeklyDigest().generate` з `HubDashboard`.
  */
 
 import { useEffect, useRef } from "react";

@@ -5,9 +5,8 @@
  * current `focus` rec (primary CTA + optional dismiss) or an
  * empty-state prompt with module-tinted quick-add chips.
  *
- * Web-only bits skipped here on purpose:
- *   - `coachInsight` italic subtitle — the mobile recommendation
- *     engine isn't ported yet, so there's no source for coach copy.
+ * Optional `coachInsight` — короткий AI-підзаголовок (як на web), якщо
+ * `useCoachInsight` вже зібрав копію.
  *   - `focus.pwaAction` → `openHubModuleWithAction` wiring. Web's
  *     `hubNav` dispatches a custom DOM event caught by each module
  *     screen; mobile uses expo-router intent params (Phase 3) so for
@@ -127,6 +126,8 @@ export interface TodayFocusCardProps {
   onAction: (module: string, focus: Rec) => void;
   onDismiss?: (id: string) => void;
   onQuickAdd?: (module: QuickAddChip["module"]) => void;
+  /** Короткий AI-інсайт під рекомендацією (опційно). */
+  coachInsight?: string | null;
 }
 
 /**
@@ -139,6 +140,7 @@ export function TodayFocusCard({
   onAction,
   onDismiss,
   onQuickAdd,
+  coachInsight,
 }: TodayFocusCardProps) {
   if (!focus) {
     return <EmptyFocus onQuickAdd={onQuickAdd} />;
@@ -175,6 +177,12 @@ export function TodayFocusCard({
         {focus.body ? (
           <Text className="mt-1 text-xs leading-relaxed text-stone-500">
             {focus.body}
+          </Text>
+        ) : null}
+
+        {coachInsight ? (
+          <Text className="mt-2 border-l-2 border-brand-500/40 pl-2 text-xs italic leading-relaxed text-stone-800">
+            {coachInsight}
           </Text>
         ) : null}
 

@@ -1,34 +1,37 @@
 /**
- * Sergeant Hub — WeeklyDigestCard (mobile placeholder).
- *
- * Minimal stub that stands in for the full web `WeeklyDigestCard`
- * while the mobile port is carved out across follow-up PRs. Today
- * this renders a modal-style sheet with the week label, the
- * digest's `generatedAt` timestamp (if any), and a close button.
- *
- * The full port will land in a later PR alongside the mobile
- * `useWeeklyDigest` mutation hook and the story viewer; keeping the
- * structural entry point in place here means `HubDashboard` +
- * `WeeklyDigestFooter` can wire their open / close flow without
- * blocking on that larger port.
+ * Модалка тижневого дайджеста — `useWeeklyDigest` + рендер модульних
+ * `summary` (як на web, без story viewer).
  */
-
-import { memo } from "react";
-import { Modal, Pressable, ScrollView, Text, View } from "react-native";
+import { memo, useCallback } from "react";
+import {
+  ActivityIndicator,
+  Modal,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+} from "react-native";
 
 import { getWeekKey } from "@sergeant/shared";
 
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 
-import { loadDigest } from "./weeklyDigestStorage";
+import { useWeeklyDigest } from "./useWeeklyDigest";
+
+const MODULE_ORDER = ["finyk", "fizruk", "nutrition", "routine"] as const;
+const MODULE_LABEL: Record<(typeof MODULE_ORDER)[number], string> = {
+  finyk: "Фінанси",
+  fizruk: "Тренування",
+  nutrition: "Харчування",
+  routine: "Звички",
+};
+
+function isRecord(v: unknown): v is Record<string, unknown> {
+  return typeof v === "object" && v !== null && !Array.isArray(v);
+}
 
 export interface WeeklyDigestCardProps {
-  /**
-   * Explicit week key (`YYYY-MM-DD` of that week's Monday). Defaults
-   * to the current week so most callers can just pass `open` + the
-   * close handler.
-   */
   weekKey?: string;
   open: boolean;
   onClose: () => void;
@@ -42,8 +45,28 @@ export const WeeklyDigestCard = memo(function WeeklyDigestCard({
   testID,
 }: WeeklyDigestCardProps) {
   const resolvedWeekKey = weekKey ?? getWeekKey();
-  const digest = open ? loadDigest(resolvedWeekKey) : null;
-  const generatedAt = digest?.generatedAt ? new Date(digest.generatedAt) : null;
+  const { digest, loading, error, generate, isCurrentWeek } =
+    useWeeklyDigest(weekKey);
+
+  const onGenerate = useCallback(() => {
+    void generate();
+  }, [generate]);
+
+  const generatedAt = digest?.generatedAt
+    ? new Date(
+        typeof digest.generatedAt === "string" ||
+          typeof digest.generatedAt === "number"
+          ? digest.generatedAt
+          : String(digest.generatedAt),
+      )
+    : null;
+
+  const hasData = Boolean(
+    digest &&
+    MODULE_ORDER.some((k) => isRecord((digest as Record<string, unknown>)[k])),
+  );
+
+  const showBody = open;
 
   return (
     <Modal
@@ -60,7 +83,7 @@ export const WeeklyDigestCard = memo(function WeeklyDigestCard({
           onPress={onClose}
           className="absolute inset-0"
         />
-        <Card className="mb-6 rounded-3xl bg-cream-50 p-5">
+        <Card className="mb-6 max-h-[85%] rounded-3xl bg-cream-50 p-5">
           <ScrollView>
             <View className="gap-2">
               <Text className="text-sm font-semibold uppercase text-stone-500">
@@ -77,13 +100,119 @@ export const WeeklyDigestCard = memo(function WeeklyDigestCard({
                     month: "long",
                   })}
                 </Text>
-              ) : (
+              ) : null}
+
+              {showBody && loading ? (
+                <View className="flex-row items-center gap-2 py-4">
+                  <ActivityIndicator size="small" color="#0d9488" />
+                  <Text className="text-xs text-stone-500">Генерую звіт…</Text>
+                </View>
+              ) : null}
+
+              {showBody && error && !loading ? (
+                <View className="gap-2">
+                  <Text className="rounded-lg bg-red-100 px-2 py-1.5 text-xs text-red-800">
+                    {error}
+                  </Text>
+                  {isCurrentWeek ? (
+                    <Button variant="secondary" onPress={onGenerate}>
+                      <Text className="text-sm font-semibold text-stone-900">
+                        Спробувати знову
+                      </Text>
+                    </Button>
+                  ) : null}
+                </View>
+              ) : null}
+
+              {showBody && !hasData && !loading && !error && isCurrentWeek ? (
+                <View className="gap-2 py-1">
+                  <Text className="text-xs leading-relaxed text-stone-500">
+                    AI-звіт підсумовує прогрес по всіх модулях і дає
+                    рекомендації на тиждень.
+                  </Text>
+                  <Button variant="primary" onPress={onGenerate}>
+                    <Text className="text-center text-sm font-semibold text-white">
+                      Згенерувати звіт
+                    </Text>
+                  </Button>
+                </View>
+              ) : null}
+
+              {showBody && hasData && !loading
+                ? MODULE_ORDER.map((key) => {
+                    const mod = (digest as Record<string, unknown>)[key];
+                    if (!isRecord(mod)) return null;
+                    const summary = mod.summary;
+                    const comment = mod.comment;
+                    return (
+                      <View
+                        key={key}
+                        className="mt-1 rounded-xl border border-stone-200 bg-white/80 p-2.5"
+                      >
+                        <Text className="text-xs font-semibold text-stone-800">
+                          {MODULE_LABEL[key]}
+                        </Text>
+                        {typeof summary === "string" && summary ? (
+                          <Text className="text-xs text-stone-600">
+                            {summary}
+                          </Text>
+                        ) : null}
+                        {typeof comment === "string" && comment ? (
+                          <Text className="mt-0.5 text-xs leading-relaxed text-stone-500">
+                            {comment}
+                          </Text>
+                        ) : null}
+                        {Array.isArray(mod.recommendations) &&
+                        mod.recommendations.length > 0 ? (
+                          <View className="mt-1">
+                            {(mod.recommendations as unknown[]).map((rec, i) =>
+                              typeof rec === "string" ? (
+                                <Text
+                                  key={i}
+                                  className="text-xs leading-snug text-stone-700"
+                                >
+                                  → {rec}
+                                </Text>
+                              ) : null,
+                            )}
+                          </View>
+                        ) : null}
+                      </View>
+                    );
+                  })
+                : null}
+
+              {showBody &&
+              digest &&
+              Array.isArray(
+                (digest as Record<string, unknown>).overallRecommendations,
+              ) &&
+              (
+                (digest as Record<string, unknown>)
+                  .overallRecommendations as unknown[]
+              ).length > 0 ? (
+                <View className="mt-1 rounded-xl border border-brand-200/60 bg-brand-50/80 p-2.5">
+                  {/* eslint-disable-next-line sergeant-design/no-eyebrow-drift -- card subheading */}
+                  <Text className="text-[10px] font-bold uppercase tracking-wide text-brand-700">
+                    Загальні рекомендації
+                  </Text>
+                  {(
+                    (digest as Record<string, unknown>)
+                      .overallRecommendations as string[]
+                  ).map((rec, i) => (
+                    <Text key={i} className="text-xs text-stone-800">
+                      ★ {rec}
+                    </Text>
+                  ))}
+                </View>
+              ) : null}
+
+              {showBody && !hasData && !isCurrentWeek && !loading && !error ? (
                 <Text className="text-xs text-stone-500">
-                  Дайджест за цей тиждень ще не згенеровано. Увесь UI з’явиться
-                  в наступному PR — зараз доступний лише тонкий футер із
-                  статусом свіжості.
+                  За цей тиждень звіт у кеші не знайдено.
                 </Text>
-              )}
+              ) : null}
+
               <Button
                 variant="secondary"
                 onPress={onClose}

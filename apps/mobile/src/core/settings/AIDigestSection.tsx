@@ -13,25 +13,17 @@
  *    значення дзеркальні до web `AIDigestSection`, отож payload
  *    їде під тим самим cloud-sync-конвертом без міграцій.
  *
- * Deferred (див. `docs/react-native-migration.md` Phase 2 /
- * Hub-core, §2.4) — рендериться як `DeferredNotice`-карточка
- * всередині групи:
- *  - **Генерація звіту тижня.** Web викликає `useWeeklyDigest.generate`,
- *    який тягне `coachApi`/`weeklyDigestApi` через React Query та
- *    агрегує дані з локальних кешів фінансів/тренувань/харчування.
- *    Жоден із цих доменних модулів не портований на mobile,
- *    тому на mobile цей PR лише вмикає прапорець автогенерації —
- *    саме AI-генерація підключиться разом із портом модуля
- *    AI-дайджести.
  */
 
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { Text, View } from "react-native";
 import { STORAGE_KEYS } from "@sergeant/shared";
 
+import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { useLocalStorage } from "@/lib/storage";
 
+import { useWeeklyDigest } from "../dashboard/useWeeklyDigest";
 import { SettingsGroup, ToggleRow } from "./SettingsPrimitives";
 
 /**
@@ -55,14 +47,6 @@ export function getWeekRange(date: Date = new Date()): string {
   return `${fmt(monday)} — ${fmt(sunday)}`;
 }
 
-function DeferredNotice({ children }: { children: string }) {
-  return (
-    <Card variant="flat" radius="md" padding="md" className="border-dashed">
-      <Text className="text-xs text-stone-500 leading-snug">{children}</Text>
-    </Card>
-  );
-}
-
 export function AIDigestSection() {
   const [mondayAutoRaw, setMondayAutoRaw] = useLocalStorage<string>(
     STORAGE_KEYS.WEEKLY_DIGEST_MONDAY_AUTO,
@@ -70,7 +54,13 @@ export function AIDigestSection() {
   );
   const mondayAuto = mondayAutoRaw === "1";
 
+  const { generate, loading, error: genError } = useWeeklyDigest();
+
   const weekRange = useMemo(() => getWeekRange(), []);
+
+  const onGenerate = useCallback(() => {
+    void generate();
+  }, [generate]);
 
   return (
     <SettingsGroup title="AI Звіт тижня" emoji="📋">
@@ -91,11 +81,21 @@ export function AIDigestSection() {
         </Text>
       </Card>
 
-      <DeferredNotice>
-        Генерація звіту тижня підключиться з портом модуля AI-дайджести — зараз
-        налаштування автогенерації лише зберігається, сам виклик коуча ще не
-        портований на mobile.
-      </DeferredNotice>
+      <Card variant="flat" radius="md" padding="md" className="gap-2">
+        {genError ? (
+          <Text className="text-xs text-red-800">{genError}</Text>
+        ) : null}
+        <Button
+          variant="secondary"
+          loading={loading}
+          onPress={onGenerate}
+          testID="aidigest-generate-now"
+        >
+          <Text className="text-sm font-semibold text-stone-900">
+            Згенерувати дайджест зараз
+          </Text>
+        </Button>
+      </Card>
 
       <View className="pt-1">
         <ToggleRow

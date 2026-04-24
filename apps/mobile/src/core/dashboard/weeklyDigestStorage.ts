@@ -12,13 +12,14 @@
  */
 
 import {
+  digestStorageKey,
   loadDigest as sharedLoadDigest,
   hasLiveWeeklyDigest as sharedHasLiveWeeklyDigest,
   type StorageReader,
   type WeeklyDigestRecord,
 } from "@sergeant/shared";
 
-import { safeReadStringLS } from "@/lib/storage";
+import { safeReadStringLS, safeWriteLS } from "@/lib/storage";
 
 /**
  * `StorageReader` shim over MMKV. The shared helper expects raw
@@ -45,6 +46,10 @@ export function loadDigest(weekKey: string): WeeklyDigestRecord | null {
  */
 export function hasLiveWeeklyDigest(now: Date = new Date()): boolean {
   return sharedHasLiveWeeklyDigest(mobileStorageReader, now);
+}
+
+export function saveDigest(weekKey: string, data: unknown): void {
+  safeWriteLS(digestStorageKey(weekKey), data);
 }
 
 export type { WeeklyDigestRecord };

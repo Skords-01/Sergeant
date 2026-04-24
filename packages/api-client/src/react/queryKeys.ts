@@ -14,6 +14,14 @@ export const apiQueryKeys = {
   coach: {
     all: ["coach"] as const,
     memory: () => ["coach", "memory"] as const,
+    /** Денний кеш `useCoachInsight` (web + mobile). */
+    insight: (dateKey: string) => ["coach", "insight", dateKey] as const,
+  },
+  /** Кеш тижневого дайджеста після генерації. */
+  weeklyDigest: {
+    all: ["weekly-digest"] as const,
+    byWeek: (weekKey: string) => ["weekly-digest", weekKey] as const,
+    history: ["weekly-digest", "history"] as const,
   },
   push: {
     all: ["push"] as const,

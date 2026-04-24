@@ -40,6 +40,27 @@ jest.mock("@sergeant/api-client/react", () => ({
   useUser: () => mockUserData,
 }));
 
+jest.mock("./useWeeklyDigest", () => ({
+  useWeeklyDigest: () => ({
+    digest: null,
+    loading: false,
+    error: null,
+    weekKey: "2026-01-01",
+    weekRange: "",
+    generate: jest.fn(),
+    isCurrentWeek: true,
+  }),
+}));
+
+jest.mock("./useCoachInsight", () => ({
+  useCoachInsight: () => ({
+    insight: null,
+    loading: false,
+    error: null,
+    refresh: jest.fn(),
+  }),
+}));
+
 function resetStore() {
   _getMMKVInstance().clearAll();
 }

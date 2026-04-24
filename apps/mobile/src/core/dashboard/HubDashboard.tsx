@@ -24,10 +24,9 @@
  *     Auth native sheet lands in mobile nav. TODO: replace the alert
  *     with the actual sheet trigger once `packages/auth-client/expo`
  *     is wired.
- *   - Mobile `useWeeklyDigest` mutation hook is not ported yet, so
- *     `useMondayAutoDigest` is fed a no-op `generate`. The Monday-auto
- *     hook is harmless with a no-op — it still guards on the
- *     preference flag + absence of a current digest.
+ *   - `useWeeklyDigest` + `useCoachInsight` (фаза 8) — після входу
+ *     підтягують дайджест/інсайт; понеділкова автоген — лише для
+ *     залогінених.
  */
 
 import { router, type Href } from "expo-router";
@@ -53,7 +52,9 @@ import { TodayFocusCard } from "./TodayFocusCard";
 import { useDashboardFocus } from "./useDashboardFocus";
 import { useDashboardOrder } from "./useDashboardOrder";
 import { useModulePreviews } from "./useModulePreviews";
+import { useCoachInsight } from "./useCoachInsight";
 import { useMondayAutoDigest } from "./useMondayAutoDigest";
+import { useWeeklyDigest } from "./useWeeklyDigest";
 import { WeeklyDigestFooter } from "./WeeklyDigestFooter";
 import { useHints } from "../hints/useHints";
 import {
@@ -88,14 +89,6 @@ const mmkvStore: KVStore = {
   },
 };
 
-// TODO(weekly-digest): swap with the `generate` handle returned by the
-// ported mobile `useWeeklyDigest` hook once that lands. The Monday-auto
-// hook is harmless with a no-op `generate` — it still guards on the
-// preference flag + absence of a current digest.
-const NOOP_GENERATE = () => {
-  /* weekly-digest mutation hook is not on mobile yet */
-};
-
 function formatToday(now: Date): string {
   try {
     return now.toLocaleDateString("uk-UA", {
@@ -119,14 +112,24 @@ function firstName(name: string | null | undefined): string {
 
 export function HubDashboard() {
   const { data } = useUser();
+  const signedIn = Boolean(data?.user);
   const greetingName = firstName(data?.user?.name);
   const todayLabel = useMemo(() => formatToday(new Date()), []);
+
+  const { generate } = useWeeklyDigest();
+  const { insight: coachInsightText } = useCoachInsight({
+    enabled: signedIn,
+  });
 
   const { visibleOrder, reorderVisible } = useDashboardOrder();
   const { focus, rest, dismiss: dismissFocus } = useDashboardFocus();
   const previews = useModulePreviews();
 
-  useMondayAutoDigest({ generate: NOOP_GENERATE });
+  const runDigest = useCallback(() => {
+    void generate();
+  }, [generate]);
+
+  useMondayAutoDigest({ generate: runDigest, enabled: signedIn });
 
   // Hero-layer visibility gates. Read synchronously on every render
   // (MMKV is sync + cheap) so CTAs that flip these flags trigger a
@@ -206,7 +209,6 @@ export function HubDashboard() {
   // gates on the post-FTUX window (real entry exists, not dismissed,
   // user not signed in); everything else falls back to the focus
   // card (which itself renders an empty state when no rec is live).
-  const signedIn = Boolean(data?.user);
   const firstActionVisible = firstActionPending;
   const showSoftAuth =
     !firstActionVisible && hasFirstRealEntry && !softAuthDismissed && !signedIn;
@@ -254,6 +256,7 @@ export function HubDashboard() {
           ) : (
             <TodayFocusCard
               focus={focus}
+              coachInsight={coachInsightText}
               onAction={(_actionKey, rec) => {
                 if ((rec.module as DashboardModuleId) !== undefined) {
                   openModule(rec.module as DashboardModuleId);
