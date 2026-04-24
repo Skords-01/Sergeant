@@ -34,9 +34,9 @@ export function ResetPasswordPage() {
       );
       return;
     }
-    if (password.length < 6) {
+    if (password.length < 10) {
       setStatus("error");
-      setMessage("Пароль має бути мінімум 6 символів.");
+      setMessage("Пароль має бути мінімум 10 символів.");
       return;
     }
     if (password !== confirm) {
@@ -114,9 +114,9 @@ export function ResetPasswordPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                minLength={6}
+                minLength={10}
                 className={INPUT_CLS}
-                placeholder="Мінімум 6 символів"
+                placeholder="Мінімум 10 символів"
                 autoComplete="new-password"
               />
             </div>
@@ -134,7 +134,7 @@ export function ResetPasswordPage() {
                 value={confirm}
                 onChange={(e) => setConfirm(e.target.value)}
                 required
-                minLength={6}
+                minLength={10}
                 className={INPUT_CLS}
                 placeholder="Введи пароль ще раз"
                 autoComplete="new-password"
