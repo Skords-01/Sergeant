@@ -7,6 +7,7 @@
  */
 import { type KVStore } from "./kvStore";
 import { clearOnboardingDone } from "./onboarding";
+import { ONBOARDING_GOALS_KEY } from "./onboardingGoals";
 import {
   FIRST_ACTION_PENDING_KEY,
   FIRST_ACTION_STARTED_AT_KEY,
@@ -20,6 +21,7 @@ import { clearAllHintsState } from "./hints";
 export function resetOnboardingState(store: KVStore): void {
   clearOnboardingDone(store);
   store.remove(VIBE_PICKS_KEY);
+  store.remove(ONBOARDING_GOALS_KEY);
   store.remove(FIRST_ACTION_PENDING_KEY);
   store.remove(FIRST_ACTION_STARTED_AT_KEY);
   store.remove(FIRST_REAL_ENTRY_KEY);
@@ -27,4 +29,3 @@ export function resetOnboardingState(store: KVStore): void {
   store.remove(SOFT_AUTH_DISMISSED_KEY);
   clearAllHintsState(store);
 }
-

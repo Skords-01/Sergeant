@@ -5,6 +5,9 @@ import { createMemoryKVStore } from "./kvStore";
 import {
   ONBOARDING_DONE_KEY,
   ONBOARDING_EXISTING_DATA_SOURCES,
+  ONBOARDING_MODULE_DESCRIPTIONS,
+  ONBOARDING_STEP_COUNT,
+  ONBOARDING_STEPS,
   ONBOARDING_VIBE_CHIP_ORDER,
   ONBOARDING_VIBE_ICONS,
   ONBOARDING_VIBE_TEASERS,
@@ -174,5 +177,23 @@ describe("onboarding — buildFinalPicks", () => {
       "routine",
       "finyk",
     ]);
+  });
+});
+
+describe("onboarding — multi-step v2 types", () => {
+  it("has exactly 3 steps", () => {
+    expect(ONBOARDING_STEP_COUNT).toBe(3);
+    expect(ONBOARDING_STEPS).toHaveLength(3);
+  });
+
+  it("steps are welcome → modules → goals", () => {
+    expect(ONBOARDING_STEPS).toEqual(["welcome", "modules", "goals"]);
+  });
+
+  it("module descriptions cover every module id", () => {
+    for (const id of DASHBOARD_MODULE_IDS) {
+      expect(typeof ONBOARDING_MODULE_DESCRIPTIONS[id]).toBe("string");
+      expect(ONBOARDING_MODULE_DESCRIPTIONS[id].length).toBeGreaterThan(0);
+    }
   });
 });

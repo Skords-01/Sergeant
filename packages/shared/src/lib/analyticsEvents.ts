@@ -5,10 +5,14 @@
  * names to whatever sink it adopts later without drifting on strings.
  */
 export const ANALYTICS_EVENTS = Object.freeze({
-  // Onboarding splash
+  // Onboarding wizard (multi-step v2)
   ONBOARDING_STARTED: "onboarding_started",
   ONBOARDING_COMPLETED: "onboarding_completed",
   ONBOARDING_VIBE_PICKED: "onboarding_vibe_picked",
+  ONBOARDING_STEP_VIEWED: "onboarding_step_viewed",
+  ONBOARDING_STEP_COMPLETED: "onboarding_step_completed",
+  ONBOARDING_GOAL_SET: "onboarding_goal_set",
+  ONBOARDING_SKIPPED: "onboarding_skipped",
 
   // Finyk / activation
   EXPENSE_ADDED: "expense_added",

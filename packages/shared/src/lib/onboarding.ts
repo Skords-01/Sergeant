@@ -20,6 +20,36 @@ import { type DashboardModuleId, DASHBOARD_MODULE_IDS } from "./dashboard";
 import { readJSON, type KVStore } from "./kvStore";
 import { ALL_MODULES, sanitizePicks } from "./vibePicks";
 
+// ---------------------------------------------------------------------------
+// Multi-step wizard types (v2)
+// ---------------------------------------------------------------------------
+
+/** Wizard step identifiers. */
+export type OnboardingStepId = "welcome" | "modules" | "goals";
+
+/** Total number of wizard steps. */
+export const ONBOARDING_STEP_COUNT = 3 as const;
+
+/** Ordered step sequence rendered by the wizard. */
+export const ONBOARDING_STEPS: readonly OnboardingStepId[] = [
+  "welcome",
+  "modules",
+  "goals",
+];
+
+/**
+ * Module descriptions shown on step 2 (ModuleCards). Longer than the
+ * teaser line — explains what the module *does* rather than a stat
+ * preview.
+ */
+export const ONBOARDING_MODULE_DESCRIPTIONS: Record<DashboardModuleId, string> =
+  {
+    finyk: "Контроль витрат, Monobank-синхронізація, бюджети та тренди",
+    fizruk: "Тренування з таймером, програми, прогрес і виміри тіла",
+    routine: "Звички зі стріками, хітмеп, статистика та нагадування",
+    nutrition: "Фото → AI-аналіз калорій, сканер штрихкодів, денний план",
+  };
+
 /** MMKV / localStorage key used to record that onboarding has finished. */
 export const ONBOARDING_DONE_KEY = "hub_onboarding_done_v1";
 

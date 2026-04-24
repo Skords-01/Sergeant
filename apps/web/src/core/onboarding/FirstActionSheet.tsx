@@ -6,6 +6,31 @@ import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { trackEvent, ANALYTICS_EVENTS } from "../analytics";
 import { clearFirstActionPending, getVibePicks } from "./vibePicks.js";
 import { PresetSheet, getPresetModule } from "./PresetSheet.jsx";
+import { getOnboardingGoals } from "@sergeant/shared";
+
+const localStorageStore = {
+  getString: (k: string) => {
+    try {
+      return localStorage.getItem(k);
+    } catch {
+      return null;
+    }
+  },
+  setString: (k: string, v: string) => {
+    try {
+      localStorage.setItem(k, v);
+    } catch {
+      /* noop */
+    }
+  },
+  remove: (k: string) => {
+    try {
+      localStorage.removeItem(k);
+    } catch {
+      /* noop */
+    }
+  },
+};
 
 /**
  * Per-module "one tap to your first real entry" copy. Tapping a row
@@ -70,6 +95,39 @@ function pickPrimary(picks) {
  * row now makes the default choice for them (highest-priority pick) and
  * only reveals the alternatives if they tap "Інший модуль".
  */
+/**
+ * Goal-aware contextual descriptions. If the user set a goal during
+ * onboarding, the first-action card reflects it, making the CTA feel
+ * more personal than the generic static copy.
+ */
+function getGoalAwareDesc(moduleId: string, fallback: string): string {
+  const goals = getOnboardingGoals(localStorageStore);
+  if (moduleId === "finyk" && goals.finykBudget) {
+    return `Встанови бюджет ${goals.finykBudget.toLocaleString("uk-UA")}₴ — додай першу витрату.`;
+  }
+  if (moduleId === "fizruk" && goals.fizrukWeeklyGoal) {
+    return `${goals.fizrukWeeklyGoal}× на тиждень — починай із розминки.`;
+  }
+  if (moduleId === "routine" && goals.routineFirstHabit) {
+    const habitLabels: Record<string, string> = {
+      water: "«Пити воду»",
+      exercise: "«Зарядка»",
+      reading: "«Читання»",
+    };
+    const label = habitLabels[goals.routineFirstHabit] ?? "свою звичку";
+    return `Створи ${label} — стрік почнеться сьогодні.`;
+  }
+  if (moduleId === "nutrition" && goals.nutritionGoal) {
+    const goalLabels: Record<string, string> = {
+      lose: "Схуднути",
+      gain: "Набрати масу",
+      maintain: "Підтримка",
+    };
+    return `${goalLabels[goals.nutritionGoal]} — залогай перший прийом їжі.`;
+  }
+  return fallback;
+}
+
 export function FirstActionHeroCard({ onDismiss }) {
   const picks = useMemo(() => {
     const raw = getVibePicks();
@@ -185,7 +243,7 @@ export function FirstActionHeroCard({ onDismiss }) {
             <div className="min-w-0 flex-1">
               <div className="text-sm font-bold text-text">{primary.title}</div>
               <div className="text-xs text-muted mt-0.5 truncate">
-                {primary.desc}
+                {getGoalAwareDesc(primaryId, primary.desc)}
               </div>
             </div>
             <Icon

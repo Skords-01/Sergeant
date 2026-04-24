@@ -23,6 +23,9 @@ export * from "./lib/vibePicks";
 // Onboarding gate helpers (first-launch detection, done flag, splash taxonomy).
 export * from "./lib/onboarding";
 
+// Onboarding goal-setting (multi-step v2).
+export * from "./lib/onboardingGoals";
+
 // Reset helpers for Settings ("Restart onboarding").
 export * from "./lib/onboardingReset";
 
