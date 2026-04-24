@@ -224,7 +224,7 @@ function aggregateCurrentSnapshot(): CoachSnapshot {
     const state = safeParseLS<{
       habits?: Array<{ id: string; archived?: boolean }>;
       completions?: Record<string, string[]>;
-    } | null>("hub_routine_v1", null);
+    } | null>(STORAGE_KEYS.ROUTINE, null);
     if (state) {
       const habits = (state.habits || []).filter((h) => !h.archived);
       const completions = state.completions ?? {};
