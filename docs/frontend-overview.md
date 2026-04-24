@@ -34,6 +34,8 @@
 - Стилі: NativeWind (Tailwind-подібний підхід)
 - Ті самі доменні пакети + React Query (з persist для офлайну)
 - Better Auth через `@better-auth/expo`
+- Модуль Харчування: сканер штрихкодів (`expo-camera` + `/api/barcode`), список
+  покупок на спільному ключі сховища з web
 - E2E: Detox (скрипти в `apps/mobile/package.json`)
 
 ### 3. Mobile shell — `apps/mobile-shell`
