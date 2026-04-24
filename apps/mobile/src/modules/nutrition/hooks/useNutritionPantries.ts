@@ -1,6 +1,6 @@
 /**
- * Управління коморами (пантрі) на MMKV — легкий порт web
- * `useNutritionPantries` без `nutritionApi.parsePantry` (AI-розбір списку).
+ * Управління коморами (пантрі) на MMKV — порт web `useNutritionPantries`.
+ * AI-розбір великого списку: `useApiClient().nutrition.parsePantry` + `applyParsedItems` у `Pantry.tsx`.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -11,6 +11,7 @@ import {
   updatePantry,
   makeDefaultPantry,
   type Pantry,
+  type PantryItem,
 } from "@sergeant/nutrition-domain";
 import { STORAGE_KEYS } from "@sergeant/shared";
 
@@ -28,6 +29,8 @@ export interface UseNutritionPantriesResult {
   activePantry: Pantry;
   setActivePantryId: (id: string) => void;
   addLine: (line: string) => void;
+  /** Результат `parsePantry` (сервер) — злиття в активний склад. */
+  applyParsedItems: (items: readonly PantryItem[]) => void;
   removeItemAt: (index: number) => void;
   addPantry: (name: string) => void;
   refresh: () => void;
@@ -83,6 +86,18 @@ export function useNutritionPantries(): UseNutritionPantriesResult {
     });
   }, []);
 
+  const applyParsedItems = useCallback((items: readonly PantryItem[]) => {
+    const list = Array.isArray(items) ? items : [];
+    if (list.length === 0) return;
+    setPantries((cur) => {
+      const act = activeIdRef.current;
+      return updatePantry(cur, act, (p) => ({
+        ...p,
+        items: mergeItems(p.items, list),
+      }));
+    });
+  }, []);
+
   const removeItemAt = useCallback((index: number) => {
     if (index < 0) return;
     setPantries((cur) =>
@@ -112,6 +127,7 @@ export function useNutritionPantries(): UseNutritionPantriesResult {
     activePantry,
     setActivePantryId,
     addLine,
+    applyParsedItems,
     removeItemAt,
     addPantry,
     refresh,
