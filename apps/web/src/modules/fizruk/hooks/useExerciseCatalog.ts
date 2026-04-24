@@ -20,6 +20,7 @@ export function useExerciseCatalog() {
   const [customExercises, setCustomExercises] = useState([]);
 
   const primaryGroupsUk = FizrukData.PRIMARY_GROUPS_UK;
+  const equipmentUk = FizrukData.EQUIPMENT_UK;
   const musclesUk = FizrukData.MUSCLES_UK;
   const musclesByPrimaryGroup = FizrukData.MUSCLES_BY_PRIMARY_GROUP;
 
@@ -101,6 +102,7 @@ export function useExerciseCatalog() {
     exercises,
     search,
     primaryGroupsUk,
+    equipmentUk,
     musclesUk,
     musclesByPrimaryGroup,
     addExercise,

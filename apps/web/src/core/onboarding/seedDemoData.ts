@@ -453,7 +453,7 @@ function seedFizruk(): void {
           id: shortId("demo_wi", 1),
           exerciseId: "squat",
           nameUk: "Присідання зі штангою",
-          primaryGroup: "legs",
+          primaryGroup: "quadriceps",
           musclesPrimary: ["quads"],
           musclesSecondary: ["glutes", "core"],
           type: "strength",

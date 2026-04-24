@@ -3,10 +3,18 @@ import { EmptyState } from "@shared/components/ui/EmptyState";
 import { cn } from "@shared/lib/cn";
 import { Card } from "@shared/components/ui/Card";
 
+function toggleArr(arr, value) {
+  const a = Array.isArray(arr) ? arr : [];
+  return a.includes(value) ? a.filter((x) => x !== value) : [...a, value];
+}
+
 export function WorkoutCatalogSection({
   mode,
   q,
   setQ,
+  equipmentFilter,
+  setEquipmentFilter,
+  equipmentUk,
   grouped,
   open,
   setOpen,
@@ -33,6 +41,48 @@ export function WorkoutCatalogSection({
           </button>
         )}
       </div>
+
+      {equipmentUk && Object.keys(equipmentUk).length > 0 && (
+        <div className="mb-3">
+          <div className="text-xs font-semibold text-subtle mb-1.5">
+            Обладнання
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {Object.entries(equipmentUk as Record<string, string>).map(
+              ([id, label]) => {
+                const active = (equipmentFilter || []).includes(id);
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() =>
+                      setEquipmentFilter(toggleArr(equipmentFilter, id))
+                    }
+                    className={cn(
+                      "text-xs px-3 py-1.5 rounded-full border transition-colors",
+                      active
+                        ? "bg-text text-bg border-text"
+                        : "border-line bg-bg text-muted hover:border-muted hover:text-text",
+                    )}
+                    aria-pressed={active}
+                  >
+                    {label}
+                  </button>
+                );
+              },
+            )}
+            {(equipmentFilter || []).length > 0 && (
+              <button
+                type="button"
+                onClick={() => setEquipmentFilter([])}
+                className="text-xs px-3 py-1.5 rounded-full border border-line text-muted hover:text-text hover:border-muted transition-colors"
+              >
+                Скинути
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       {mode === "log" && (
         <p className="text-xs text-subtle mb-2 leading-relaxed">

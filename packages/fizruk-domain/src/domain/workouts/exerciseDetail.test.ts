@@ -32,7 +32,7 @@ function strength(
     id,
     exerciseId,
     nameUk: exerciseId,
-    primaryGroup: "legs",
+    primaryGroup: "quadriceps",
     musclesPrimary: [],
     musclesSecondary: [],
     type: "strength",

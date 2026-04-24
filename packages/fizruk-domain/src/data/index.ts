@@ -22,6 +22,7 @@ export interface ExerciseCatalog {
   source?: { name?: string; notes?: string };
   labels?: {
     primaryGroupsUk?: Record<string, string>;
+    equipmentUk?: Record<string, string>;
     musclesUk?: Record<string, string>;
     musclesByPrimaryGroup?: Record<string, string[]>;
   };
@@ -56,6 +57,10 @@ export const EXERCISES: RawExerciseDef[] = Array.isArray(
 /** Мапа українських назв primary-груп. */
 export const PRIMARY_GROUPS_UK: Record<string, string> =
   EXERCISE_CATALOG.labels?.primaryGroupsUk || {};
+
+/** Мапа українських назв обладнання. */
+export const EQUIPMENT_UK: Record<string, string> =
+  EXERCISE_CATALOG.labels?.equipmentUk || {};
 
 /** Мапа українських назв м'язів. */
 export const MUSCLES_UK: Record<string, string> =

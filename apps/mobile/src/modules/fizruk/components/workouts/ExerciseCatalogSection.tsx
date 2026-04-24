@@ -21,6 +21,7 @@ import { Input } from "@/components/ui/Input";
 export interface ExerciseCatalogSectionProps {
   exercises: readonly WorkoutExerciseCatalogEntry[];
   primaryGroupsUk?: Record<string, string>;
+  equipmentUk?: Record<string, string>;
   onPickExercise?(ex: WorkoutExerciseCatalogEntry): void;
   /** Long-press handler — typically navigates to the exercise detail page. */
   onInspectExercise?(ex: WorkoutExerciseCatalogEntry): void;
@@ -32,6 +33,8 @@ export interface ExerciseCatalogSectionProps {
   onQueryChange?(next: string): void;
   primaryGroup?: string | null;
   onPrimaryGroupChange?(next: string | null): void;
+  equipment?: readonly string[];
+  onEquipmentChange?(next: string[]): void;
   /** Optional root testID — sub-ids derive from it. */
   testID?: string;
 }
@@ -47,8 +50,6 @@ function PrimaryGroupChips({
   onChange(next: string | null): void;
   testID: string;
 }) {
-  // Canonical ordering — fall back to alphabetical for groups that
-  // aren't in the canonical list (e.g. user-imported data).
   const knownOrder = [...PRIMARY_GROUP_ORDER];
   const allKeys = Object.keys(groupsUk);
   const extras = allKeys.filter((k) => !knownOrder.includes(k)).sort();
@@ -78,6 +79,62 @@ function PrimaryGroupChips({
         />
       ))}
     </ScrollView>
+  );
+}
+
+function EquipmentChips({
+  equipmentUk,
+  selected,
+  onChange,
+  testID,
+}: {
+  equipmentUk: Record<string, string>;
+  selected: readonly string[];
+  onChange(next: string[]): void;
+  testID: string;
+}) {
+  const ids = Object.keys(equipmentUk);
+  if (ids.length === 0) return null;
+
+  const toggle = (id: string) => {
+    const arr = [...selected];
+    const idx = arr.indexOf(id);
+    if (idx >= 0) arr.splice(idx, 1);
+    else arr.push(id);
+    onChange(arr);
+  };
+
+  return (
+    <View className="gap-1">
+      <Text className="text-xs font-semibold text-stone-500 px-1">
+        Обладнання
+      </Text>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={{ gap: 8, paddingVertical: 2 }}
+        testID={testID}
+      >
+        {ids.map((id) => (
+          <Chip
+            key={id}
+            label={equipmentUk[id] ?? id}
+            active={selected.includes(id)}
+            onPress={() => toggle(id)}
+            testID={`${testID}-${id}`}
+          />
+        ))}
+        {selected.length > 0 && (
+          <Chip
+            label="Скинути"
+            active={false}
+            onPress={() => onChange([])}
+            testID={`${testID}-reset`}
+          />
+        )}
+      </ScrollView>
+    </View>
   );
 }
 
@@ -167,17 +224,23 @@ function ExerciseRow({
 export const ExerciseCatalogSection = memo(function ExerciseCatalogSection({
   exercises,
   primaryGroupsUk = {},
+  equipmentUk = {},
   onPickExercise,
   onInspectExercise,
   query: controlledQuery,
   onQueryChange,
   primaryGroup: controlledPrimaryGroup,
   onPrimaryGroupChange,
+  equipment: controlledEquipment,
+  onEquipmentChange,
   testID = "fizruk-workouts-catalog",
 }: ExerciseCatalogSectionProps) {
   const [uncontrolledQuery, setUncontrolledQuery] = useState("");
   const [uncontrolledGroup, setUncontrolledGroup] = useState<string | null>(
     null,
+  );
+  const [uncontrolledEquipment, setUncontrolledEquipment] = useState<string[]>(
+    [],
   );
 
   const query = controlledQuery ?? uncontrolledQuery;
@@ -185,6 +248,7 @@ export const ExerciseCatalogSection = memo(function ExerciseCatalogSection({
     controlledPrimaryGroup === undefined
       ? uncontrolledGroup
       : controlledPrimaryGroup;
+  const equipment = controlledEquipment ?? uncontrolledEquipment;
 
   const handleQueryChange = useCallback(
     (next: string) => {
@@ -202,14 +266,23 @@ export const ExerciseCatalogSection = memo(function ExerciseCatalogSection({
     [onPrimaryGroupChange],
   );
 
+  const handleEquipmentChange = useCallback(
+    (next: string[]) => {
+      if (onEquipmentChange) onEquipmentChange(next);
+      else setUncontrolledEquipment(next);
+    },
+    [onEquipmentChange],
+  );
+
   const groups = useMemo(
     () =>
       buildExerciseCatalogGroups(exercises, {
         query,
         primaryGroup,
+        equipment: equipment.length > 0 ? equipment : null,
         primaryGroupsUk,
       }),
-    [exercises, query, primaryGroup, primaryGroupsUk],
+    [exercises, query, primaryGroup, equipment, primaryGroupsUk],
   );
 
   return (
@@ -227,6 +300,12 @@ export const ExerciseCatalogSection = memo(function ExerciseCatalogSection({
         selected={primaryGroup ?? null}
         onChange={handlePrimaryGroupChange}
         testID={`${testID}-chips`}
+      />
+      <EquipmentChips
+        equipmentUk={equipmentUk}
+        selected={equipment}
+        onChange={handleEquipmentChange}
+        testID={`${testID}-equipment`}
       />
 
       {groups.length === 0 ? (

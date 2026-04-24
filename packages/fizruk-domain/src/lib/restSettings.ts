@@ -25,7 +25,14 @@ export const REST_CATEGORY_LABELS: Record<keyof typeof REST_DEFAULTS, string> =
     cardio: "Кардіо",
   };
 
-const ISOLATION_GROUPS = ["shoulders", "arms", "core"];
+const ISOLATION_GROUPS = [
+  "shoulders",
+  "biceps",
+  "triceps",
+  "forearms",
+  "core",
+  "calves",
+];
 const CARDIO_GROUPS = ["cardio"];
 
 export type RestCategory = keyof typeof REST_DEFAULTS;
