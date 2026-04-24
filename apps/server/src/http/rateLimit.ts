@@ -1,5 +1,7 @@
 import type { Request, RequestHandler } from "express";
+import type Redis from "ioredis";
 import { rateLimitHitsTotal } from "../obs/metrics.js";
+import { getRedis } from "../lib/redis.js";
 
 type Outcome = "allowed" | "blocked";
 
@@ -101,6 +103,56 @@ export function rateLimitSubject(req: Request): string {
   return `ip:${getIp(req)}`;
 }
 
+// Lua script: atomically INCR, set EXPIRE on first hit, return [count, pttl].
+const LUA_INCR_EXPIRE = `
+local c = redis.call('INCR', KEYS[1])
+if c == 1 then
+  redis.call('EXPIRE', KEYS[1], ARGV[1])
+end
+local ttl = redis.call('PTTL', KEYS[1])
+return {c, ttl}
+`;
+
+/**
+ * Fixed-window rate-limit check backed by Redis (global across replicas).
+ * Falls back to in-memory via {@link checkRateLimit} if Redis throws.
+ */
+export async function checkRateLimitRedis(
+  redis: Redis,
+  req: Request,
+  { key, limit, windowMs }: RateLimitOptions,
+): Promise<RateLimitResult> {
+  const subject = rateLimitSubject(req);
+  const k = `rl:${key}:${subject}`;
+  const windowSecs = Math.max(1, Math.ceil(windowMs / 1000));
+
+  const result = (await redis.eval(
+    LUA_INCR_EXPIRE,
+    1,
+    k,
+    String(windowSecs),
+  )) as [number, number];
+  const count = result[0];
+  const pttlMs = Math.max(0, result[1]);
+
+  if (count > limit) {
+    recordRateLimit(key, "blocked");
+    return {
+      ok: false,
+      remaining: 0,
+      resetMs: pttlMs,
+      retryAfterSec: Math.max(1, Math.ceil(pttlMs / 1000)),
+    };
+  }
+  recordRateLimit(key, "allowed");
+  return {
+    ok: true,
+    remaining: Math.max(0, limit - count),
+    resetMs: pttlMs,
+    retryAfterSec: Math.max(1, Math.ceil(pttlMs / 1000)),
+  };
+}
+
 /**
  * Fixed-window rate-limit check (in-memory, per-process).
  */
@@ -149,8 +201,19 @@ export function rateLimitExpress({
   limit,
   windowMs,
 }: RateLimitOptions): RequestHandler {
-  return (req, res, next) => {
-    const rl = checkRateLimit(req, { key, limit, windowMs });
+  return async (req, res, next) => {
+    const redis = getRedis();
+    let rl: RateLimitResult;
+    if (redis) {
+      try {
+        rl = await checkRateLimitRedis(redis, req, { key, limit, windowMs });
+      } catch {
+        // Redis unavailable — fall back to per-process in-memory limiter.
+        rl = checkRateLimit(req, { key, limit, windowMs });
+      }
+    } else {
+      rl = checkRateLimit(req, { key, limit, windowMs });
+    }
     try {
       res.setHeader("X-RateLimit-Remaining", String(rl.remaining));
     } catch {
