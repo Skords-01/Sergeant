@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Redirect, Tabs } from "expo-router";
-import { Text } from "react-native";
+import { DeviceEventEmitter, Text } from "react-native";
 import { useUser } from "@sergeant/api-client/react";
 import { shouldShowOnboarding } from "@sergeant/shared";
 import { OnboardingWizard, getOnboardingStore } from "@/core/OnboardingWizard";
@@ -51,6 +51,13 @@ export default function TabsLayout() {
   const [onboardingVisible, setOnboardingVisible] = useState<boolean>(() =>
     shouldShowOnboarding(getOnboardingStore()),
   );
+
+  useEffect(() => {
+    const sub = DeviceEventEmitter.addListener("hub:onboardingReset", () => {
+      setOnboardingVisible(true);
+    });
+    return () => sub.remove();
+  }, []);
 
   if (!E2E_AUTH_BYPASS && !isLoading && !data?.user) {
     return <Redirect href="/(auth)/sign-in" />;

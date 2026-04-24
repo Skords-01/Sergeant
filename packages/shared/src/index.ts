@@ -23,6 +23,9 @@ export * from "./lib/vibePicks";
 // Onboarding gate helpers (first-launch detection, done flag, splash taxonomy).
 export * from "./lib/onboarding";
 
+// Reset helpers for Settings ("Restart onboarding").
+export * from "./lib/onboardingReset";
+
 // First-real-entry detection shared between web and mobile.
 export * from "./lib/firstRealEntry";
 
@@ -37,6 +40,12 @@ export * from "./lib/quickStats";
 
 // Hub weekly-digest helpers — week key / storage key / digest freshness.
 export * from "./lib/weeklyDigest";
+
+// Shared hint/tip system (taxonomy + caps). Rendering is per-platform.
+export * from "./lib/hints";
+
+// Canonical analytics event names shared across platforms.
+export * from "./lib/analyticsEvents";
 
 // DOM-free haptic contract (platform adapters register at app bootstrap).
 export * from "./lib/haptic";

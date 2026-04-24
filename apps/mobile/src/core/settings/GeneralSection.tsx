@@ -41,12 +41,23 @@
  *    `colorScheme` is wired through the app root.
  */
 
-import { Pressable, Text, View } from "react-native";
-import { DASHBOARD_MODULE_LABELS, STORAGE_KEYS } from "@sergeant/shared";
+import { DeviceEventEmitter, Pressable, Text, View } from "react-native";
+import {
+  DASHBOARD_MODULE_LABELS,
+  resetOnboardingState,
+  STORAGE_KEYS,
+  type KVStore,
+} from "@sergeant/shared";
 
 import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
 import { useDashboardOrder } from "@/core/dashboard/useDashboardOrder";
-import { useLocalStorage } from "@/lib/storage";
+import {
+  safeReadLS as mmkvGet,
+  safeRemoveLS as mmkvRemove,
+  safeWriteLS as mmkvWrite,
+  useLocalStorage,
+} from "@/lib/storage";
 
 import {
   SettingsGroup,
@@ -57,12 +68,39 @@ import {
 interface HubPrefs {
   showCoach?: boolean;
   darkMode?: boolean;
+  showHints?: boolean;
 }
 
 // Mirrors the web `hub_prefs_v1` key so cloud-synced prefs live in a
 // single slice across platforms. See
 // `apps/web/src/core/settings/hubPrefs.ts`.
 const HUB_PREFS_KEY = STORAGE_KEYS.HUB_PREFS;
+
+const mmkvStore: KVStore = {
+  getString(key) {
+    try {
+      const raw = mmkvGet<unknown>(key, null);
+      if (raw === null || raw === undefined) return null;
+      return typeof raw === "string" ? raw : JSON.stringify(raw);
+    } catch {
+      return null;
+    }
+  },
+  setString(key, value) {
+    try {
+      mmkvWrite(key, value);
+    } catch {
+      /* noop */
+    }
+  },
+  remove(key) {
+    try {
+      mmkvRemove(key);
+    } catch {
+      /* noop */
+    }
+  },
+};
 
 function DeferredNotice({ children }: { children: string }) {
   return (
@@ -143,6 +181,7 @@ export function GeneralSection() {
   // the pref hasn't been touched yet.
   const showCoach = prefs.showCoach !== false;
   const dark = prefs.darkMode === true;
+  const showHints = prefs.showHints !== false;
 
   return (
     <SettingsGroup title="Загальні" emoji="⚙️">
@@ -162,6 +201,32 @@ export function GeneralSection() {
           }
           testID="general-show-coach-toggle"
         />
+        <ToggleRow
+          label="Показувати підказки"
+          description="Короткі підказки в моменті (без спаму)."
+          checked={showHints}
+          onChange={(next) =>
+            setPrefs((prev) => ({ ...prev, showHints: next }))
+          }
+          testID="general-show-hints-toggle"
+        />
+      </SettingsSubGroup>
+      <SettingsSubGroup title="Онбординг">
+        <Text className="text-xs text-stone-500 leading-snug">
+          Перезапуск не видаляє твої дані — лише повертає вітальний екран та
+          підказки першого запуску.
+        </Text>
+        <Button
+          size="sm"
+          variant="secondary"
+          onPress={() => {
+            resetOnboardingState(mmkvStore);
+            DeviceEventEmitter.emit("hub:onboardingReset");
+          }}
+          testID="general-restart-onboarding"
+        >
+          Перезапустити онбординг
+        </Button>
       </SettingsSubGroup>
       <SettingsSubGroup title="Упорядкувати модулі">
         <ModuleReorderList />

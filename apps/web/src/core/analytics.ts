@@ -14,39 +14,31 @@
 
 /** @typedef {{ eventName: string, payload: object, timestamp: string }} AnalyticsEvent */
 
-/**
- * Canonical event names used across the app. Using the constants avoids
- * typos and makes it easy to grep for every call site.
- */
-export const ANALYTICS_EVENTS = Object.freeze({
-  ONBOARDING_STARTED: "onboarding_started",
-  ONBOARDING_COMPLETED: "onboarding_completed",
-  EXPENSE_ADDED: "expense_added",
-  EXPENSE_DELETED: "expense_deleted",
-  BUDGET_SET: "budget_set",
-  ANALYTICS_OPENED: "analytics_opened",
-  BANK_CONNECT_STARTED: "bank_connect_started",
-  BANK_CONNECT_SUCCESS: "bank_connect_success",
-  PAYWALL_VIEWED: "paywall_viewed",
-  // Activation funnel — fired at most once per user to measure time-to-value.
-  FIRST_EXPENSE_ADDED: "first_expense_added",
-  FIRST_INSIGHT_SEEN: "first_insight_seen",
-  // 30-second FTUX funnel. Each step narrows the gap between "first open"
-  // and "user felt real value", so every transition has a named event.
-  ONBOARDING_VIBE_PICKED: "onboarding_vibe_picked",
-  ONBOARDING_FIRST_ACTION_SHOWN: "onboarding_first_action_shown",
-  ONBOARDING_FIRST_ACTION_PICKED: "onboarding_first_action_picked",
-  FTUX_PRESET_SHEET_SHOWN: "ftux_preset_sheet_shown",
-  FTUX_PRESET_PICKED: "ftux_preset_picked",
-  FTUX_PRESET_CUSTOM: "ftux_preset_custom",
-  FIRST_REAL_ENTRY: "first_real_entry",
-  // Headline metric: milliseconds from splash CTA tap to first real
-  // (non-demo) entry anywhere in the app. Target p50 < 20_000.
-  FTUX_TIME_TO_VALUE: "ftux_time_to_value",
-  AUTH_PROMPT_SHOWN: "auth_prompt_shown",
-  AUTH_PROMPT_DISMISSED: "auth_prompt_dismissed",
-  AUTH_AFTER_VALUE: "auth_after_value",
-});
+import { ANALYTICS_EVENTS } from "@sergeant/shared";
+
+export { ANALYTICS_EVENTS };
+
+const LOG_KEY = "hub_analytics_log_v1";
+const MAX_LOG = 200;
+
+function safeReadLog(): unknown[] {
+  try {
+    const raw = localStorage.getItem(LOG_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function safeWriteLog(events: unknown[]): void {
+  try {
+    localStorage.setItem(LOG_KEY, JSON.stringify(events.slice(-MAX_LOG)));
+  } catch {
+    /* quota — ignore */
+  }
+}
 
 /**
  * Record a product event. Fire-and-forget — safe to call from any UI
@@ -64,5 +56,11 @@ export function trackEvent(eventName, payload = {}) {
   };
   try {
     console.log("[analytics]", event);
+    const current = safeReadLog();
+    safeWriteLog([...current, event]);
+    // eslint-disable-next-line no-underscore-dangle
+    (window as any).__hubAnalytics = [...(current as any[]), event].slice(
+      -MAX_LOG,
+    );
   } catch {}
 }

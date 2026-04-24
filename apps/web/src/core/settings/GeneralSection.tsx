@@ -2,6 +2,8 @@ import { useCallback, useState, type ChangeEvent } from "react";
 import { cn } from "@shared/lib/cn";
 import { Icon } from "@shared/components/ui/Icon";
 import { Button } from "@shared/components/ui/Button";
+import { useToast } from "@shared/hooks/useToast";
+import { resetOnboardingState, type KVStore } from "@sergeant/shared";
 import { HubBackupPanel } from "../HubBackupPanel.jsx";
 import {
   DASHBOARD_MODULE_LABELS,
@@ -89,9 +91,35 @@ export function GeneralSection({
 }: GeneralSectionProps) {
   const [orderReset, setOrderReset] = useState(false);
   const [showCoach, setShowCoach] = useHubPref<boolean>("showCoach", true);
+  const [showHints, setShowHints] = useHubPref<boolean>("showHints", true);
   const [order, setOrder] = useState<ModuleId[]>(
     () => loadDashboardOrder() as ModuleId[],
   );
+  const toast = useToast();
+
+  const localStorageStore: KVStore = {
+    getString(key) {
+      try {
+        return localStorage.getItem(key);
+      } catch {
+        return null;
+      }
+    },
+    setString(key, value) {
+      try {
+        localStorage.setItem(key, value);
+      } catch {
+        /* noop */
+      }
+    },
+    remove(key) {
+      try {
+        localStorage.removeItem(key);
+      } catch {
+        /* noop */
+      }
+    },
+  };
 
   const handleMove = useCallback((index: number, direction: -1 | 1) => {
     setOrder((prev) => {
@@ -121,6 +149,35 @@ export function GeneralSection({
           checked={showCoach !== false}
           onChange={(e) => setShowCoach(e.target.checked)}
         />
+        <ToggleRow
+          label="Показувати підказки"
+          description="Короткі підказки в моменті (без спаму)."
+          checked={showHints !== false}
+          onChange={(e) => setShowHints(e.target.checked)}
+        />
+      </SettingsSubGroup>
+      <SettingsSubGroup title="Онбординг">
+        <p className="text-xs text-subtle leading-snug">
+          Перезапуск не видаляє твої дані — лише повертає вітальний екран та
+          підказки першого запуску.
+        </p>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="h-10 w-full"
+          onClick={() => {
+            resetOnboardingState(localStorageStore);
+            toast.success("Онбординг перезапущено");
+            try {
+              window.location.assign("/welcome");
+            } catch {
+              /* noop */
+            }
+          }}
+        >
+          Перезапустити онбординг
+        </Button>
       </SettingsSubGroup>
       <SettingsSubGroup title="Упорядкувати модулі">
         <p className="text-xs text-subtle leading-snug">
