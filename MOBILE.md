@@ -185,7 +185,6 @@ After a successful run:
   PR is safe to merge before secrets land in the repo — the release
   job will just log `::warning::iOS release secrets not configured,
 skipping signed build` and build the unsigned `.app` instead.
-  ||||||| 07ab907
 
 ## Release — Android
 

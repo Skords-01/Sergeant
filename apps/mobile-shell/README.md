@@ -136,11 +136,15 @@ pnpm --filter @sergeant/mobile-shell open:android
   (`apps/server/src/modules/push.ts → register`) маршрутизує у
   `push_devices` для native-токенів. Залишається лише реальний
   APNs/FCM **send**-pipeline — див. `docs/mobile.md#push-notifications`.
-- **Deep-link навігація у React Router.** `parseDeepLink()` у
+- ~~**Deep-link навігація у React Router.** `parseDeepLink()` у
   `src/index.ts` готовий і `App.addListener('appUrlOpen', ...)`
   викликає callback, але коннект з `useNavigate()` з
-  `@sergeant/web` ще не прокинутий — `options.navigate` наразі
-  падає в fallback `window.location.assign`.
+  `@sergeant/web` ще не прокинутий.~~ **Зроблено**: bridge
+  реалізований через `window.__sergeantShellNavigate` —
+  `ShellDeepLinkBridge` (`apps/web/src/core/app/ShellDeepLinkBridge.tsx`)
+  виставляє navigate-хук після маунту роутера і drain-ить cold-start
+  чергу з `window.__sergeantShellDeepLinkQueue`. Свідомо без
+  `options.navigate`, щоб уникнути out-of-component `history.pushState`.
 - **iOS safe-area + splash race.** CSS `env(safe-area-inset-*)` з
   web-side покриває 99% кейсів, але якщо splash візьметься
   триматись довше 3с (дивись `SplashScreen.hide({ fadeOutDuration })`
