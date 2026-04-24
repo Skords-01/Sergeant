@@ -4,13 +4,27 @@ import { NetworkFirst, CacheFirst } from "workbox-strategies";
 import { ExpirationPlugin } from "workbox-expiration";
 import { CacheableResponsePlugin } from "workbox-cacheable-response";
 
+// Replaced at build time via `apps/web/vite.config.js#define`.
+// Falls back to "dev" if the bundler didn't inject the constant.
+const SW_VERSION =
+  (typeof __SW_BUILD_ID__ !== "undefined" && __SW_BUILD_ID__) || "dev";
+
+const CACHE_NAMES = {
+  navigations: `navigations-v${SW_VERSION}`,
+  api: `api-cache-v${SW_VERSION}`,
+  fontsCss: "google-fonts-css",
+  fontsWoff: "google-fonts-woff",
+};
+
+let debugEnabled = false;
+
 cleanupOutdatedCaches();
 precacheAndRoute(self.__WB_MANIFEST);
 
 registerRoute(
   new NavigationRoute(
     new NetworkFirst({
-      cacheName: "navigations",
+      cacheName: CACHE_NAMES.navigations,
       networkTimeoutSeconds: 3,
       plugins: [new CacheableResponsePlugin({ statuses: [0, 200] })],
     }),
@@ -29,15 +43,23 @@ registerRoute(
   ({ url, request }) =>
     url.pathname.startsWith("/api/") &&
     !url.pathname.startsWith("/api/auth/") &&
+    // Volatile endpoints: caching these tends to create "ghost state"
+    // after deploys / logins / sync retries.
+    !url.pathname.startsWith("/api/sync/") &&
+    !url.pathname.startsWith("/api/coach") &&
+    !url.pathname.startsWith("/api/weekly-digest") &&
     request.method === "GET",
   new NetworkFirst({
-    cacheName: "api-cache",
+    cacheName: CACHE_NAMES.api,
     networkTimeoutSeconds: 5,
     plugins: [
       new CacheableResponsePlugin({ statuses: [200] }),
       new ExpirationPlugin({
         maxEntries: 60,
-        maxAgeSeconds: 60 * 60 * 24, // 1 day
+        // Keep it short: the API is largely user-specific and can change
+        // quickly. This cache is meant to help in brief offline windows,
+        // not to serve old state for days.
+        maxAgeSeconds: 60 * 30, // 30 min
         purgeOnQuotaError: true,
       }),
     ],
@@ -48,7 +70,7 @@ registerRoute(
 registerRoute(
   ({ url }) => url.origin === "https://fonts.googleapis.com",
   new CacheFirst({
-    cacheName: "google-fonts-css",
+    cacheName: CACHE_NAMES.fontsCss,
     plugins: [
       new ExpirationPlugin({
         maxEntries: 10,
@@ -62,7 +84,7 @@ registerRoute(
 registerRoute(
   ({ url }) => url.origin === "https://fonts.gstatic.com",
   new CacheFirst({
-    cacheName: "google-fonts-woff",
+    cacheName: CACHE_NAMES.fontsWoff,
     plugins: [
       new ExpirationPlugin({
         maxEntries: 30,
@@ -380,11 +402,153 @@ function startReminderLoop() {
     });
 }
 
+async function cacheEntryCount(cacheName) {
+  try {
+    const cache = await caches.open(cacheName);
+    const keys = await cache.keys();
+    return keys.length;
+  } catch {
+    return null;
+  }
+}
+
+async function buildSwSnapshot() {
+  const cacheNames = await caches.keys();
+  const workboxCaches = cacheNames.filter((n) => n.startsWith("workbox-"));
+  const counts = {};
+  for (const n of [
+    CACHE_NAMES.navigations,
+    CACHE_NAMES.api,
+    CACHE_NAMES.fontsCss,
+    CACHE_NAMES.fontsWoff,
+  ]) {
+    counts[n] = await cacheEntryCount(n);
+  }
+  for (const n of workboxCaches.slice(0, 5)) {
+    // Best-effort: don't scan unbounded.
+    if (counts[n] == null) counts[n] = await cacheEntryCount(n);
+  }
+
+  let notifiedKeyCount = null;
+  try {
+    await loadNotifiedKeys();
+    notifiedKeyCount = notifiedKeys.size;
+  } catch {
+    notifiedKeyCount = null;
+  }
+
+  return {
+    ok: true,
+    version: SW_VERSION,
+    debugEnabled,
+    caches: {
+      names: cacheNames,
+      counts,
+    },
+    reminders: {
+      notifiedKeys: notifiedKeyCount,
+      hasRoutine: !!routineData,
+      hasFizruk: !!fizrukData,
+      hasNutrition: !!nutritionData,
+    },
+  };
+}
+
+async function clearAppCaches() {
+  const names = await caches.keys();
+  const toDelete = names.filter(
+    (n) =>
+      n === CACHE_NAMES.fontsCss ||
+      n === CACHE_NAMES.fontsWoff ||
+      n.startsWith("navigations-v") ||
+      n.startsWith("api-cache-v") ||
+      n.startsWith("workbox-precache"),
+  );
+  await Promise.allSettled(toDelete.map((n) => caches.delete(n)));
+  return { ok: true, deleted: toDelete };
+}
+
+self.addEventListener("install", (event) => {
+  // If a client explicitly asks for it, we can activate immediately.
+  if (debugEnabled) {
+    event.waitUntil(self.skipWaiting());
+  }
+});
+
 self.addEventListener("message", (event) => {
   const { type, data } = event.data || {};
 
   if (type === "SKIP_WAITING") {
     self.skipWaiting();
+    return;
+  }
+
+  if (type === "SW_SET_DEBUG") {
+    debugEnabled = data?.enabled === true;
+    if (debugEnabled) {
+      // eslint-disable-next-line no-console
+      console.log("[sw] debug enabled", { version: SW_VERSION });
+    }
+    return;
+  }
+
+  if (type === "SW_DEBUG") {
+    const requestId = data?.requestId || null;
+    event.waitUntil(
+      buildSwSnapshot()
+        .then((snapshot) => {
+          try {
+            event.source?.postMessage?.({
+              type: "SW_DEBUG_RESULT",
+              requestId,
+              snapshot,
+            });
+          } catch {
+            /* noop */
+          }
+        })
+        .catch((err) => {
+          try {
+            event.source?.postMessage?.({
+              type: "SW_DEBUG_RESULT",
+              requestId,
+              snapshot: { ok: false, version: SW_VERSION, error: String(err) },
+            });
+          } catch {
+            /* noop */
+          }
+        }),
+    );
+    return;
+  }
+
+  if (type === "CLEAR_SW_CACHES") {
+    const requestId = data?.requestId || null;
+    event.waitUntil(
+      clearAppCaches()
+        .then((result) => {
+          try {
+            event.source?.postMessage?.({
+              type: "CLEAR_SW_CACHES_RESULT",
+              requestId,
+              result,
+            });
+          } catch {
+            /* noop */
+          }
+        })
+        .catch((err) => {
+          try {
+            event.source?.postMessage?.({
+              type: "CLEAR_SW_CACHES_RESULT",
+              requestId,
+              result: { ok: false, error: String(err) },
+            });
+          } catch {
+            /* noop */
+          }
+        }),
+    );
     return;
   }
 
@@ -439,7 +603,18 @@ self.addEventListener("notificationclose", (event) => {
 });
 
 self.addEventListener("activate", (event) => {
-  event.waitUntil(self.clients.claim());
+  event.waitUntil(
+    (async () => {
+      const cacheNames = await caches.keys();
+      const stale = cacheNames.filter(
+        (n) =>
+          (n.startsWith("navigations-v") && n !== CACHE_NAMES.navigations) ||
+          (n.startsWith("api-cache-v") && n !== CACHE_NAMES.api),
+      );
+      await Promise.allSettled(stale.map((n) => caches.delete(n)));
+      await self.clients.claim();
+    })(),
+  );
 });
 
 // ── Web Push ─────────────────────────────────────────────────────

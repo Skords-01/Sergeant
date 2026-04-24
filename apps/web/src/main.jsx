@@ -146,5 +146,20 @@ if (
         window.dispatchEvent(new CustomEvent("pwa-offline-ready"));
       },
     });
+
+    // Opt-in SW debug mode via `?sw=debug` (for support / triage).
+    try {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("sw") === "debug") {
+        navigator.serviceWorker.ready
+          .then((reg) => {
+            const ctl = navigator.serviceWorker.controller || reg.active;
+            ctl?.postMessage?.({ type: "SW_SET_DEBUG", data: { enabled: true } });
+          })
+          .catch(() => {});
+      }
+    } catch {
+      /* noop */
+    }
   });
 }
