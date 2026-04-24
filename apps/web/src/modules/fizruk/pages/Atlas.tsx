@@ -58,21 +58,27 @@ export function Atlas() {
           <p className="text-xs font-bold tracking-widest uppercase text-fizruk">
             Атлас мʼязів
           </p>
-          <h1 className="text-hero font-black text-white mt-2 leading-tight">
+          <h1 className="text-hero font-black text-teal-900 dark:text-white mt-2 leading-tight">
             Стан відновлення
           </h1>
           <div className="flex gap-4 mt-3">
             <div className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-success inline-block" />
-              <span className="text-xs text-white/70">Готовий</span>
+              <span className="text-xs text-teal-700 dark:text-white/70">
+                Готовий
+              </span>
             </div>
             <div className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-yellow-400 inline-block" />
-              <span className="text-xs text-white/70">Відновлюється</span>
+              <span className="text-xs text-teal-700 dark:text-white/70">
+                Відновлюється
+              </span>
             </div>
             <div className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-danger inline-block" />
-              <span className="text-xs text-white/70">Уникати</span>
+              <span className="text-xs text-teal-700 dark:text-white/70">
+                Уникати
+              </span>
             </div>
           </div>
         </section>
