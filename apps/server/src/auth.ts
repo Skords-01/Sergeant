@@ -56,6 +56,11 @@ export const auth = betterAuth({
   database: pool,
   baseURL: getBaseURL(),
   basePath: "/api/auth",
+  user: {
+    deleteUser: {
+      enabled: true,
+    },
+  },
   emailAndPassword: {
     enabled: true,
     // NIST SP 800-63B рекомендує мінімум 8 символів; 10 — розумний trade-off,
