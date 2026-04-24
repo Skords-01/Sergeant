@@ -7,7 +7,6 @@ import { cn } from "@shared/lib/cn";
 import { useDailyLog } from "../hooks/useDailyLog";
 import { Card } from "@shared/components/ui/Card";
 import { MiniLineChart } from "../components/MiniLineChart";
-import { PhotoProgress } from "../components/PhotoProgress";
 
 /**
  * Trend cards on this page used to be always-expanded, which meant four
@@ -542,8 +541,6 @@ export function Body({ onOpenMeasurements }) {
               </CollapsibleTrendCard>
             );
           })}
-
-        <PhotoProgress />
 
         {entries.length > 0 && (
           <Card as="section" radius="lg" aria-label="Журнал записів">
