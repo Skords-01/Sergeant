@@ -79,6 +79,7 @@ export function useStoriesAutoplay({
     // visually smooth, but enough to keep the progress bar moving and
     // guarantee the slide advances on time.
     const intervalId = window.setInterval(() => {
+      if (document.visibilityState === "hidden") return;
       update(performance.now());
     }, 250);
 
