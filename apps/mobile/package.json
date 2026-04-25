@@ -69,7 +69,7 @@
   },
   "devDependencies": {
     "@babel/preset-typescript": "^7.28.5",
-    "@config-plugins/detox": "^9.0.0",
+    "@config-plugins/detox": "^11.0.0",
     "@sergeant/config": "workspace:*",
     "@testing-library/react-native": "^12",
     "@types/jest": "^29",
