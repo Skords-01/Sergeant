@@ -8,18 +8,22 @@ Each playbook is a checklist that **AI agents and human developers** can follow 
 
 ## Available Playbooks
 
-| Playbook                                                       | Trigger                                                                           |
-| -------------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| [add-feature-flag.md](add-feature-flag.md)                     | "Put feature X behind a flag" / new experimental feature                          |
-| [cleanup-dead-code.md](cleanup-dead-code.md)                   | "Remove X and all its usages" / dead code cleanup                                 |
-| [hotfix-prod-regression.md](hotfix-prod-regression.md)         | "Прод впав" / HTTP 500 на `/health` / Sentry alert / production incident response |
-| [add-monobank-event-handler.md](add-monobank-event-handler.md) | "Треба обробити нову подію X від Monobank" / новий тип webhook event              |
-
-## Future Candidates
-
-These are described in `docs/ai-coding-improvements.md § 2.2` and can be added as the need arises:
-
-- `bump-dep-safely.md` — dependency upgrade protocol
+| Playbook                                                                       | Trigger                                                                           |
+| ------------------------------------------------------------------------------ | --------------------------------------------------------------------------------- |
+| [add-feature-flag.md](add-feature-flag.md)                                     | "Put feature X behind a flag" / new experimental feature                          |
+| [cleanup-dead-code.md](cleanup-dead-code.md)                                   | "Remove X and all its usages" / dead code cleanup                                 |
+| [hotfix-prod-regression.md](hotfix-prod-regression.md)                         | "Прод впав" / HTTP 500 на `/health` / Sentry alert / production incident response |
+| [add-monobank-event-handler.md](add-monobank-event-handler.md)                 | "Треба обробити нову подію X від Monobank" / новий тип webhook event              |
+| [bump-dep-safely.md](bump-dep-safely.md)                                       | "Оновити X до версії Y" / Renovate major-bump / security advisory                 |
+| [add-sql-migration.md](add-sql-migration.md)                                   | "Додати нове поле / таблицю в БД" / зміна схеми PostgreSQL                        |
+| [rotate-secrets.md](rotate-secrets.md)                                         | "Secret leaked" / планова ротація / security audit                                |
+| [add-new-page-route.md](add-new-page-route.md)                                 | "Додати нову сторінку в apps/web" / новий route для SPA                           |
+| [migrate-localstorage-to-typedstore.md](migrate-localstorage-to-typedstore.md) | Мігрувати файл з прямого localStorage на typedStore (tech debt #2)                |
+| [fix-exhaustive-deps.md](fix-exhaustive-deps.md)                               | Виправити exhaustive-deps warnings / React hooks cleanup                          |
+| [port-web-screen-to-mobile.md](port-web-screen-to-mobile.md)                   | "Перенести екран X з apps/web в apps/mobile" / React Native міграція              |
+| [add-api-endpoint.md](add-api-endpoint.md)                                     | "Додати новий endpoint в apps/server" / нова API-функціональність                 |
+| [onboard-external-api.md](onboard-external-api.md)                             | "Інтегрувати нову зовнішню API" / новий third-party сервіс                        |
+| [investigate-alert.md](investigate-alert.md)                                   | Prometheus alert спрацював / Sentry alert / деградація `/health`                  |
 
 ## How to Use
 
