@@ -1,0 +1,611 @@
+# Dev stack roadmap — інструменти і поради по всьому ЖЦ розробки
+
+**Статус:** plan / draft. Створено 2026-04-25.
+**Скоуп:** інструменти, інтеграції, практики для покращення розробки, тестування, CI/CD, проду, безпеки, performance і команди. Specifically для стеку Sergeant: pnpm + Turborepo + Vite/React + Express + Postgres + Railway + Vercel + Expo.
+**Принцип:** не «впровадити все одразу», а **поетапно** — від найдешевших і найважливіших до інвестиційних. Кожен пункт — самостійний tool / practice з ціною, effort-ом, ROI і dep-ами.
+
+---
+
+## TL;DR — топ-15 з найвищим ROI для Sergeant
+
+Якщо є тиждень — зроби лише це:
+
+| #   | Інструмент / практика                             | Effort    | Cost             | ROI    |
+| --- | ------------------------------------------------- | --------- | ---------------- | ------ |
+| 1   | **Sentry** для error tracking                     | 2 год     | $26/міс          | 🔥🔥🔥 |
+| 2   | **Knip + depcheck** — clean dead code             | 1 год     | $0               | 🔥🔥   |
+| 3   | **Strict TypeScript (incremental)**               | 1-2 тижні | $0               | 🔥🔥🔥 |
+| 4   | **Testcontainers** для server tests               | 4 год     | $0               | 🔥🔥🔥 |
+| 5   | **Vercel Pro plan** (рятує preview deploy)        | 5 хв      | $20/міс          | 🔥🔥   |
+| 6   | **Turbo remote cache**                            | 1 год     | $0 (Vercel free) | 🔥🔥   |
+| 7   | **Renovate** замість Dependabot                   | 1 год     | $0               | 🔥🔥   |
+| 8   | **AGENTS.md** (з #711)                            | 1 год     | $0               | 🔥🔥🔥 |
+| 9   | **MSW** для frontend tests                        | 4 год     | $0               | 🔥     |
+| 10  | **Snapshot tests на server serializers** (з #711) | 4 год     | $0               | 🔥🔥🔥 |
+| 11  | **Pino structured logging**                       | 4 год     | $0               | 🔥🔥   |
+| 12  | **Activate Playwright E2E на PR**                 | 2 год     | $0               | 🔥🔥   |
+| 13  | **PostHog** для product analytics                 | 4 год     | $0 (free tier)   | 🔥     |
+| 14  | **size-limit** + bundle-analyzer                  | 2 год     | $0               | 🔥     |
+| 15  | **CONTRIBUTING.md + 5-min quickstart**            | 2 год     | $0               | 🔥🔥   |
+
+**Сумарно:** ~3-5 робочих днів + ~$50/міс. Це 80% wins за 20% effort-у.
+
+---
+
+## 1. Розробка (DX, день-у-день)
+
+### 1.1. Local dev environment
+
+| Tool                       | What                               | Cost | Effort | Tier |
+| -------------------------- | ---------------------------------- | ---- | ------ | ---- |
+| **Docker Compose**         | Local Postgres + Redis для dev     | $0   | 2 год  | must |
+| **Devcontainer** (VS Code) | Full env-as-code, `code .` → ready | $0   | 4 год  | nice |
+| **Nix flake**              | Reproducible deterministic env     | $0   | 1 день | nice |
+| **mise / proto / volta**   | Pin Node + pnpm versions           | $0   | 30 хв  | must |
+| **direnv**                 | Auto `.envrc` activation per repo  | $0   | 30 хв  | nice |
+| **Lefthook**               | Faster pre-commit (Go)             | $0   | 1 год  | nice |
+| **Turbo remote cache**     | CI build cache (5 → 1 хв)          | $0   | 1 год  | must |
+
+**Sergeant-specific:**
+
+- В `apps/server` зараз неясно як локально стартувати Postgres. Один `docker-compose.yml` з seed-script + `pnpm dev:db` команда — зекономить новачкам години.
+- Volta або mise треба, бо `package.json` зараз має `engines.node` але без enforcement.
+
+### 1.2. CLI quality of life
+
+| Tool                                                                 | What                                | Cost |
+| -------------------------------------------------------------------- | ----------------------------------- | ---- |
+| **GitHub CLI** + alias-и (`gh pr create -f`, `gh pr merge --squash`) | $0                                  |
+| **lazygit**                                                          | TUI Git замість manual commands     | $0   |
+| **fzf**                                                              | Fuzzy-find для файлів і git history | $0   |
+| **starship**                                                         | Швидкий і красивий shell prompt     | $0   |
+| **zoxide**                                                           | Smart `cd`                          | $0   |
+| **eza** / **bat**                                                    | Кращі `ls` / `cat`                  | $0   |
+
+Це не змінює продуктивність радикально, але сумарно економить ~30 хв/день.
+
+---
+
+## 2. Створення коду (генератори, codegen)
+
+### 2.1. Code generators
+
+| Tool          | Use case                                         | Effort to setup |
+| ------------- | ------------------------------------------------ | --------------- |
+| **Plop**      | `plop module finyk` → створює структуру module-а | 4 год           |
+| **Hygen**     | Те саме що Plop, інша філософія                  | 4 год           |
+| **turbo-gen** | Turborepo-native generators                      | 2 год           |
+
+**Sergeant kandydaty:**
+
+- `plop module <name>` — нова модуль-структура (`pages/components/hooks/lib/`)
+- `plop hook <name>` — RQ-hook + RQ-key + test
+- `plop endpoint <method> <path>` — Express handler + zod schema + test
+- `plop migration <name>` — `apps/server/src/migrations/<NNN>_<name>.sql`
+
+### 2.2. Type-safe API contract
+
+Це **найбільша зміна архітектури**, але вирішує клас регресій типу #708 (bigint as string).
+
+| Approach                   | Pros                                    | Cons                               | Effort    |
+| -------------------------- | --------------------------------------- | ---------------------------------- | --------- |
+| **zod-to-openapi**         | Залишає Express, generate OpenAPI з zod | OpenAPI треба host-ити             | 1 тиждень |
+| **tRPC**                   | End-to-end types, no codegen            | Потребує переписати всі endpoint-и | 2-3 тижні |
+| **GraphQL Code Generator** | Якщо колись підете в GraphQL            | Серйозна архітектурна зміна        | 1 місяць+ |
+| **Drizzle ORM**            | TS-first, schema → types                | Замінити raw SQL у міграціях       | 1-2 тижні |
+
+**Рекомендую zod-to-openapi** — мінімальна інвазивна зміна, найбільший win.
+
+### 2.3. UI scaffolding
+
+| Tool                               | What                                |
+| ---------------------------------- | ----------------------------------- |
+| **shadcn/ui**                      | Copy-paste компоненти на Tailwind   |
+| **cva** (class-variance-authority) | Variants без boolean-prop-explosion |
+| **Radix UI**                       | Headless accessible primitives      |
+| **react-hook-form + zod**          | Form validation з типобезпекою      |
+
+У Sergeant вже Tailwind + design-tokens. cva і shadcn/ui — найкращий fit.
+
+---
+
+## 3. Якість коду (static analysis)
+
+### 3.1. Must-have
+
+| Tool                       | What                                                        | Effort    |
+| -------------------------- | ----------------------------------------------------------- | --------- |
+| **TypeScript strict mode** | Incremental: `strictNullChecks` → `noImplicitAny` → full    | 1-2 тижні |
+| **ESLint 9**               | У вас є                                                     | —         |
+| **Prettier + lint-staged** | У вас є                                                     | —         |
+| **Knip**                   | Find unused exports/files/deps (~50+ findings on first run) | 1 год     |
+| **depcheck**               | Find unused deps в package.json                             | 30 хв     |
+| **size-limit**             | Bundle size budget; fails CI on regression                  | 2 год     |
+| **CSpell**                 | Spell-checker для коду і коментарів                         | 30 хв     |
+
+**Sergeant-priority:** strict TypeScript. Зараз `strict: false` — це баги waiting to happen.
+
+### 3.2. Nice-to-have
+
+| Tool                   | What                                           | Cost         |
+| ---------------------- | ---------------------------------------------- | ------------ |
+| **Sonar / Codacy**     | Quality dashboard з historical trends          | Free for OSS |
+| **Semgrep**            | Security + correctness rules; кастомні правила | $0 / paid    |
+| **dependency-cruiser** | Visualize і enforce module boundaries          | $0           |
+| **CodeScene**          | Hotspots analysis, churn-analysis              | Free for OSS |
+| **complexity-report**  | Cyclomatic complexity per function             | $0           |
+| **ts-prune**           | Find dead exports (overlap with Knip)          | $0           |
+| **madge**              | Find circular dependencies                     | $0           |
+
+### 3.3. Custom ESLint rules
+
+У вас вже `eslint-plugins/sergeant-design/`. Кандидати на нові правила:
+
+- `no-bigint-string` — server response shape має coerced numbers (захист від класу #708).
+- `rq-keys-only-from-factory` — `["finyk", ...]` заборонено, тільки `finykKeys.*`.
+- `domain-package-isolation` — `@finyk` не імпортує `@fizruk` напряму.
+- `ai-marker-syntax` — валідація `AI-NOTE/AI-DANGER/AI-GENERATED/AI-LEGACY` (з #711).
+
+---
+
+## 4. Тестування
+
+Окрема секція в `docs/ai-coding-improvements.md` (#711) містить деталі по Vitest, Playwright, Argos, Storybook, snapshot tests. Тут — додаткові тулзи.
+
+### 4.1. Test infrastructure
+
+| Tool                          | What                                    | Effort | Tier |
+| ----------------------------- | --------------------------------------- | ------ | ---- |
+| **Testcontainers**            | Real Postgres у Docker для server tests | 4 год  | must |
+| **MSW (Mock Service Worker)** | Realistic API mocks для frontend tests  | 4 год  | must |
+| **fishery** / **factory-bot** | Test data factories                     | 2 год  | nice |
+| **faker**                     | Random test data                        | 30 хв  | nice |
+| **node:test**                 | If відмовляєтесь від Vitest для server  | 1 день | nice |
+
+**Sergeant-priority:** Testcontainers. Зараз у server tests `queryMock.mockResolvedValueOnce(...)` — це не ловить SQL-помилки. Реальний PG ловить.
+
+### 4.2. E2E і visual
+
+| Tool           | What                                 | Cost                  |
+| -------------- | ------------------------------------ | --------------------- |
+| **Playwright** | У вас є, треба активувати на PR      | $0                    |
+| **Detox**      | Mobile e2e (вже згаданий у Sergeant) | $0                    |
+| **Argos**      | Visual regression on PRs             | Free < 5K screenshots |
+| **Percy**      | BrowserStack-owned visual testing    | Free 5K screenshots   |
+| **Chromatic**  | Storybook-integrated visual testing  | $149/міс              |
+| **Lost Pixel** | Self-hosted visual testing           | $0                    |
+
+### 4.3. Performance і load
+
+| Tool              | What                     | Cost         |
+| ----------------- | ------------------------ | ------------ |
+| **k6**            | Load testing для API     | $0 (Grafana) |
+| **Artillery**     | Same, Node-native        | $0 / $40/міс |
+| **Lighthouse CI** | Performance budget на PR | $0           |
+| **WebPageTest**   | Real-device RUM          | Free quota   |
+| **Stryker**       | Mutation testing         | $0           |
+
+### 4.4. Coverage
+
+| Tool              | What                            |
+| ----------------- | ------------------------------- |
+| **c8 / Istanbul** | Code coverage                   |
+| **Codecov**       | Coverage tracking + PR comments |
+| **Coveralls**     | Альтернатива Codecov            |
+
+CI gate: `vitest --coverage` + threshold (наприклад 70% lines) на critical packages (`finyk-domain`, `mono`, `auth`).
+
+---
+
+## 5. CI/CD
+
+### 5.1. Pipeline optimization
+
+| Practice                     | What                                                              | Effort           |
+| ---------------------------- | ----------------------------------------------------------------- | ---------------- |
+| **Matrix builds**            | Паралельні test jobs по `apps/`. Зараз послідовно.                | 2 год            |
+| **Concurrency cancellation** | `concurrency: {group, cancel-in-progress}` — економить compute    | 30 хв            |
+| **Affected-only tests**      | `turbo run test --filter=...[HEAD^]` — тестувати тільки зачеплене | 4 год            |
+| **Cached node_modules**      | `actions/setup-node` з cache                                      | 30 хв (мабуть є) |
+| **Cached pnpm store**        | Окремо від node_modules                                           | 30 хв            |
+| **Required checks rules**    | Branch protection: lint + typecheck + test required               | 30 хв            |
+
+### 5.2. Tools
+
+| Tool                        | What                                           | Cost      |
+| --------------------------- | ---------------------------------------------- | --------- |
+| **Renovate**                | Auto-PR для оновлень (потужніше за Dependabot) | $0        |
+| **release-please** (Google) | Auto-changelog + auto-versioning monorepo      | $0        |
+| **semantic-release**        | Альтернатива                                   | $0        |
+| **changesets**              | Інтерактивний versioning для monorepo          | $0        |
+| **CodeQL**                  | Security scanning від GitHub                   | $0        |
+| **Codespaces**              | Cloud dev env інтегрована з PR                 | $4-15/міс |
+
+**Sergeant-priority:** Renovate (Dependabot тут не справляється з pnpm workspace правильно).
+
+### 5.3. Preview environments
+
+| Service                         | Pros               | Cons               | Cost        |
+| ------------------------------- | ------------------ | ------------------ | ----------- |
+| **Vercel**                      | У вас є, automatic | Rate-limit на free | $20/міс Pro |
+| **Railway preview branches**    | Backend + DB на PR | Cold start ~30 сек | included    |
+| **Render preview environments** | Same as Railway    | Інше vendor        | $0 starter  |
+| **Fly.io machines**             | Per-PR machines    | Setup складніший   | $0 starter  |
+
+**Sergeant-priority:** Vercel Pro (без preview AI-валідація сильно слабша).
+
+### 5.4. Bots і AI review
+
+| Tool                | What                          | Cost     |
+| ------------------- | ----------------------------- | -------- |
+| **CodeRabbit**      | У вас є                       | $24/міс  |
+| **Devin Review**    | У вас є                       | included |
+| **Greptile**        | AI code review з repo-context | $30/міс  |
+| **Copilot for PRs** | GitHub native                 | $10/міс  |
+
+---
+
+## 6. Production / Observability
+
+### 6.1. Error tracking
+
+| Tool                       | What                                           | Cost            |
+| -------------------------- | ---------------------------------------------- | --------------- |
+| **Sentry**                 | Error tracking + perf monitoring + source maps | $26/міс starter |
+| **Highlight.io**           | Sentry + session replay                        | $50/міс         |
+| **Bugsnag**                | Альтернатива Sentry                            | $25/міс         |
+| **Logtail / Better Stack** | Logs + uptime monitoring                       | $20/міс         |
+
+**Sergeant-priority:** Sentry. Найбільший single-tool ROI у production. Без error tracking ти дізнаєшся про bug-и тільки коли user скаржиться у чат — як було сьогодні з #706/#707/#708.
+
+### 6.2. APM і tracing
+
+| Tool                  | What                                 | Cost            |
+| --------------------- | ------------------------------------ | --------------- |
+| **Datadog APM**       | Comprehensive                        | $31/host/міс    |
+| **New Relic**         | Альтернатива Datadog                 | $0 (free 100GB) |
+| **Grafana Cloud**     | OSS-friendly, OpenTelemetry-first    | $0 starter      |
+| **OpenTelemetry SDK** | Vendor-agnostic instrumentation      | $0 (just SDK)   |
+| **Honeycomb**         | Best-in-class for distributed traces | $0 starter      |
+
+### 6.3. Logs
+
+| Tool                       | What                                 |
+| -------------------------- | ------------------------------------ |
+| **Pino**                   | Fastest Node logger, structured JSON |
+| **Winston**                | Mature, plugin ecosystem             |
+| **Logtail / Better Stack** | Log aggregation + search             |
+| **Vector**                 | OSS log router                       |
+| **Grafana Loki**           | OSS log storage                      |
+
+**Sergeant:** ваш `apps/server/src/obs/` модуль вже має logging. Перевірити що це pino + structured JSON. Якщо `console.log` — мігрувати.
+
+### 6.4. Uptime і health
+
+| Tool                    | What                        | Cost         |
+| ----------------------- | --------------------------- | ------------ |
+| **Better Stack Uptime** | Uptime monitoring + on-call | $34/міс      |
+| **UptimeRobot**         | Безкоштовний uptime ping    | $0           |
+| **Healthchecks.io**     | Cron + heartbeat monitoring | $0 free tier |
+| **Pingdom**             | Premium                     | $15/міс      |
+
+**Sergeant priority:** UptimeRobot на `/health` — настройти за 5 хв.
+
+### 6.5. Product analytics
+
+| Tool          | What                                             | Cost         |
+| ------------- | ------------------------------------------------ | ------------ |
+| **PostHog**   | Analytics + feature flags + session replay + A/B | $0 free tier |
+| **Plausible** | Privacy-first simple analytics                   | $9/міс       |
+| **Amplitude** | Behavioural analytics                            | $0 / paid    |
+| **Mixpanel**  | Same as Amplitude                                | $0 / paid    |
+| **GA4**       | Free, але creepy і слабкий за UX                 | $0           |
+
+**Sergeant priority:** PostHog. Один tool покриває аналітику + flags + replay. Якщо боїтесь cloud — self-host (open-source).
+
+### 6.6. Synthetic / RUM
+
+| Tool                         | What                  |
+| ---------------------------- | --------------------- |
+| **Lighthouse CI**            | Synthetic perf на PR  |
+| **Sentry Performance**       | RUM + traces          |
+| **Vercel Speed Insights**    | Vercel-native RUM     |
+| **Cloudflare Web Analytics** | RUM, privacy-friendly |
+
+---
+
+## 7. Database
+
+### 7.1. Postgres tools
+
+| Tool                   | What                            | Cost           |
+| ---------------------- | ------------------------------- | -------------- |
+| **PgHero**             | Performance dashboard           | $0             |
+| **pg_stat_statements** | Slow query identification       | $0 (extension) |
+| **pgBouncer**          | Connection pooling              | $0             |
+| **Atlas** (atlasgo.io) | Schema-as-code, drift detection | $0 / $30/міс   |
+| **dbmate**             | Migrations CLI (lightweight)    | $0             |
+| **squawk**             | Lint SQL migrations for safety  | $0             |
+| **Prisma**             | TS ORM з migrations             | $0             |
+| **Drizzle**            | TS ORM, simpler than Prisma     | $0             |
+| **Kysely**             | Type-safe SQL builder, no ORM   | $0             |
+
+**Sergeant priority:**
+
+- **squawk** lint у CI на migrations — ловить `DROP COLUMN`, `ALTER без CONCURRENTLY` тощо.
+- **pg_stat_statements** на проді — знайти повільні queries (за 1 день логів зазвичай 5+ кандидатів).
+- **Drizzle** як step-up з raw SQL — поетапно, не одразу.
+
+### 7.2. Backups і recovery
+
+| Practice                        | What                                                    |
+| ------------------------------- | ------------------------------------------------------- |
+| Railway automatic daily backups | у вас є, перевірити retention                           |
+| Quarterly recovery drill        | відновити backup на staging — впевнитись що він робочий |
+| **wal-e / wal-g**               | Continuous archiving (для self-hosted)                  |
+| **pgBackRest**                  | Same                                                    |
+
+### 7.3. Migrations safety patterns
+
+- **Backwards-compatible deploys**: спочатку додай column nullable, потім backfill, потім зроби NOT NULL у наступному релізі.
+- **Locks-aware migrations**: ніколи `ALTER TABLE ADD COLUMN NOT NULL` на великих таблицях без default.
+- **`CONCURRENTLY` для індексів** у проді.
+- **Feature flag перемикає behavior** до того як міграція повноцінно applied.
+
+---
+
+## 8. Безпека
+
+### 8.1. Must-have
+
+| Practice                             | Tool                                | Effort       |
+| ------------------------------------ | ----------------------------------- | ------------ |
+| Dependency CVE scanning              | Snyk / Dependabot security alerts   | 30 хв        |
+| Secrets pre-commit hook              | git-secrets / gitleaks / trufflehog | 30 хв        |
+| HTTP security headers                | helmet.js (Express)                 | 1 год        |
+| CORS strict whitelist                | manual config                       | 30 хв        |
+| Rate limiting                        | express-rate-limit                  | 1 год        |
+| HttpOnly + Secure + SameSite cookies | manual config                       | 30 хв        |
+| Strong password hashing              | Better Auth (handle-ить argon2)     | already done |
+| HTTPS everywhere                     | Railway / Vercel automatic          | done         |
+
+### 8.2. Nice-to-have
+
+| Tool              | What                            | Cost             |
+| ----------------- | ------------------------------- | ---------------- |
+| **Snyk**          | Comprehensive security scanning | $0 / $25/міс     |
+| **OWASP ZAP**     | Penetration testing             | $0               |
+| **trivy**         | Container security              | $0               |
+| **trufflehog**    | Secrets in git history scan     | $0               |
+| **CodeQL**        | GitHub native                   | $0               |
+| **1Password CLI** | Secrets injection in shell      | $3/міс           |
+| **Doppler**       | Centralized secrets             | $0 / $7/user/міс |
+| **Infisical**     | Open-source Doppler alternative | $0 / $9/user/міс |
+
+### 8.3. Audits
+
+- Раз на півроку — security audit (manual review або external).
+- Раз на квартал — `pnpm audit` review + critical CVE patches.
+- Penetration testing раз на рік (для production app з reali users).
+
+---
+
+## 9. Performance
+
+### 9.1. Frontend
+
+| Tool                          | What                        |
+| ----------------------------- | --------------------------- |
+| **rollup-plugin-visualizer**  | Bundle analyzer для Vite    |
+| **Lighthouse CI**             | Perf budget на PR           |
+| **Core Web Vitals tracking**  | LCP, CLS, INP               |
+| **React DevTools Profiler**   | Identify slow renders       |
+| **why-did-you-render**        | Find unnecessary re-renders |
+| **Million.js**                | React optimization compiler |
+| **React Compiler** (React 19) | Auto-memoization            |
+
+**Sergeant priority:** Bundle visualizer — швидко знайдеш зайві 100KB.
+
+### 9.2. Backend
+
+| Tool            | What                         |
+| --------------- | ---------------------------- |
+| **clinic.js**   | Node profiling (flamegraphs) |
+| **autocannon**  | HTTP benchmarking            |
+| **node --prof** | Native CPU profiling         |
+| **0x**          | Flamegraph generator         |
+
+### 9.3. Network
+
+| Tool                   | What                                         |
+| ---------------------- | -------------------------------------------- |
+| **Cloudflare**         | CDN + DDoS protection (Vercel вже це робить) |
+| **fastly**             | Premium CDN                                  |
+| **HTTP/3**             | Vercel/Cloudflare automatic                  |
+| **Brotli compression** | автоматичне у modern hosting                 |
+
+---
+
+## 10. Documentation
+
+### 10.1. Repo docs
+
+| Practice                                | Tool                |
+| --------------------------------------- | ------------------- |
+| **README.md з 5-min quickstart**        | manual              |
+| **CONTRIBUTING.md**                     | manual              |
+| **AGENTS.md**                           | manual (з #711)     |
+| **ADR** (Architecture Decision Records) | adr-tools / madr    |
+| **Postmortems folder**                  | `docs/postmortems/` |
+
+### 10.2. Generated docs
+
+| Tool                | What                    |
+| ------------------- | ----------------------- |
+| **TypeDoc**         | TS API docs             |
+| **Mintlify**        | Modern docs site        |
+| **Docusaurus**      | Meta's docs site        |
+| **VitePress**       | Vue-team's, lightweight |
+| **Astro Starlight** | Astro-based, beautiful  |
+| **Storybook docs**  | Component docs          |
+
+**Sergeant priority:** README quickstart перш за все. Зараз новий розробник буде довго стикатись.
+
+### 10.3. Diagrams
+
+| Tool                   | What                            |
+| ---------------------- | ------------------------------- |
+| **Mermaid** в markdown | Inline diagrams, GitHub-native  |
+| **Excalidraw**         | Hand-drawn style                |
+| **draw.io**            | Comprehensive                   |
+| **structurizr**        | Architecture-as-code (C4 model) |
+
+---
+
+## 11. Команда / процеси
+
+### 11.1. Tooling
+
+| Tool                            | What                     | Cost           |
+| ------------------------------- | ------------------------ | -------------- |
+| **Linear**                      | Issues, modern UX        | $8/user/міс    |
+| **Notion**                      | Wiki + docs + tasks      | $10/user/міс   |
+| **Height**                      | Linear-like альтернатива | $6.99/user/міс |
+| **GitHub Projects**             | Free якщо вже на GitHub  | $0             |
+| **Slack** + GitHub integrations | Comms                    | $7/user/міс    |
+
+### 11.2. Practices
+
+- **Async stand-ups** замість дзвінків (Slack thread + PR-ди).
+- **PR template** з блоком "How tested" (з #711).
+- **CODEOWNERS** для auto-assigned reviewers.
+- **Quarterly tech debt sprint** — 1 тиждень на рефакторинг без нових фіч.
+- **Postmortems на all production incidents** — folder `docs/postmortems/YYYY-MM-DD-*.md`.
+- **Onboarding doc** для нових — крок за кроком 1-й тиждень.
+
+### 11.3. Knowledge sharing
+
+- **Tech-talks 1 раз/міс** — 30 хв, slack-recording.
+- **Brown-bag sessions** — обід + презентація (для офлайн).
+- **Pair programming** для tricky задач.
+- **Architecture review meetings** для big changes (нова DB, новий external API).
+
+---
+
+## 12. Cost optimization
+
+| Practice                                | Saves                 |
+| --------------------------------------- | --------------------- |
+| Vercel Edge functions замість Lambda    | 30-50%                |
+| Cloudflare R2 замість S3 для статики    | 90% (no egress fees)  |
+| Postgres — review unused indexes        | ~20% IO               |
+| Logs sampling (1% in prod)              | 70-90% logs cost      |
+| Sentry sample rate 10-25%               | 75% Sentry cost       |
+| Datadog `host_count_limits`             | 30-50%                |
+| Railway `auto-scaling` instead of fixed | 40-60% on low traffic |
+
+---
+
+## Implementation order (по тижнях)
+
+### Тиждень 1 — швидкі wins ($46/міс новий cost)
+
+- [ ] Sentry + source maps upload
+- [ ] Vercel Pro plan upgrade
+- [ ] Knip + depcheck + видалення dead code
+- [ ] Renovate setup
+- [ ] Turbo remote cache
+- [ ] AGENTS.md (з #711)
+- [ ] CONTRIBUTING.md з 5-хв quickstart
+- [ ] UptimeRobot на /health
+
+### Тиждень 2 — type safety
+
+- [ ] Strict TypeScript step 1: `strictNullChecks` для одного package
+- [ ] Snapshot tests на server serializers (з #711)
+- [ ] Custom ESLint rule `no-bigint-string`
+- [ ] zod-to-openapi proof-of-concept
+
+### Тиждень 3 — testing
+
+- [ ] Testcontainers для server tests
+- [ ] MSW для frontend tests
+- [ ] Activate Playwright E2E на PR
+- [ ] PostHog setup + 5 key events tracking
+
+### Тиждень 4 — observability
+
+- [ ] Pino structured logging migration (якщо ще не)
+- [ ] pg_stat_statements на проді
+- [ ] squawk lint у CI на migrations
+- [ ] size-limit + bundle-analyzer
+
+### Місяць 2 — інвестиції
+
+- [ ] Argos visual regression
+- [ ] Storybook setup для shared components
+- [ ] Strict TypeScript повне покриття
+- [ ] Devcontainer / docker-compose для local dev
+- [ ] Drizzle migration POC (один модуль)
+
+### Maintenance (continuous)
+
+- [ ] Quarterly security audit
+- [ ] Quarterly recovery drill (DB backup restore)
+- [ ] Monthly tech debt review
+- [ ] Weekly metrics check (CI fail rate, time-to-PR, etc.)
+
+---
+
+## Метрики successу
+
+| Метрика                           | Baseline (зараз) | Target Q1 | Target Q2 |
+| --------------------------------- | ---------------- | --------- | --------- |
+| Time-to-PR                        | ~30 хв           | ~15 хв    | ~10 хв    |
+| CI-fail-rate першої спроби        | ~50%             | ~25%      | ~15%      |
+| Mean time to recovery (MTTR)      | n/a              | < 1 год   | < 30 хв   |
+| Bundle size (web)                 | n/a              | track     | -10%      |
+| Test coverage (critical packages) | n/a              | 60%       | 75%       |
+| Production error rate             | n/a              | track     | < 0.1%    |
+| `pnpm audit` critical CVEs        | n/a              | 0         | 0         |
+
+Інструмент tracking: PostHog dashboard + GitHub Insights + Sentry trends. Ревью раз на тиждень/місяць.
+
+---
+
+## Оцінка cost / month
+
+| Сервіс              | Cost            | Tier    |
+| ------------------- | --------------- | ------- |
+| Vercel Pro          | $20/міс         | must    |
+| Sentry              | $26/міс         | must    |
+| Railway (existing)  | varies          | running |
+| PostHog             | $0 (free tier)  | must    |
+| Renovate            | $0              | must    |
+| Better Stack Uptime | $0 (free tier)  | must    |
+| Argos               | $0 (free tier)  | nice    |
+| Doppler / Infisical | $0 (free tier)  | nice    |
+| **Total new cost**  | **~$46-50/міс** | —       |
+
+Збільшення cost-у мінімальне. ROI — годин на тиждень.
+
+---
+
+## Поза скоупом
+
+- **Mobile-specific** — окремий roadmap для Expo / Capacitor.
+- **Fizruk / Nutrition / Routine domain logic** — це продуктові roadmap-и.
+- **Marketing / SEO** — окремо (skill `seo-audit` уже є в `.agents/skills/`).
+- **Hiring і team scaling** — інші питання.
+
+---
+
+## Зв'язки з іншими roadmap-ами
+
+- `docs/monobank-roadmap.md` (#709) — продуктовий roadmap по Mono-інтеграції.
+- `docs/ai-coding-improvements.md` (#711) — інфраструктура для AI-агентів.
+- `docs/frontend-tech-debt.md` — існуючі borгs у web.
+- `docs/backend-tech-debt.md` — існуючі borгs у server.
+- `docs/monobank-webhook-migration.md` — completed migration.
+
+Цей документ — **superset** і **canonical** для все-проєктних рекомендацій.
