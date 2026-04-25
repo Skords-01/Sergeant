@@ -1,6 +1,6 @@
 # Dev stack roadmap — інструменти і поради по всьому ЖЦ розробки
 
-**Статус:** in progress. Створено 2026-04-25. Останнє оновлення: 2026-04-25 (9 з топ-15 закриті — див. колонку Статус у TL;DR + повний session log нижче).
+**Статус:** in progress. Створено 2026-04-25. Останнє оновлення: 2026-04-25 (11 з топ-15 закриті — додано Pino logging (#738) і size-limit (#740). Див. колонку Статус у TL;DR + повний session log нижче).
 **Скоуп:** інструменти, інтеграції, практики для покращення розробки, тестування, CI/CD, проду, безпеки, performance і команди. Specifically для стеку Sergeant: pnpm + Turborepo + Vite/React + Express + Postgres + Railway + Vercel + Expo.
 **Принцип:** не «впровадити все одразу», а **поетапно** — від найдешевших і найважливіших до інвестиційних. Кожен пункт — самостійний tool / practice з ціною, effort-ом, ROI і dep-ами.
 
@@ -22,15 +22,15 @@
 | 8   | **AGENTS.md** (з #711)                            | 1 год     | $0               | 🔥🔥🔥 | ✅ done [#714](https://github.com/Skords-01/Sergeant/pull/714) |
 | 9   | **MSW** для frontend tests                        | 4 год     | $0               | 🔥     | ✅ done [#729](https://github.com/Skords-01/Sergeant/pull/729) |
 | 10  | **Snapshot tests на server serializers** (з #711) | 4 год     | $0               | 🔥🔥🔥 | ✅ done [#718](https://github.com/Skords-01/Sergeant/pull/718) |
-| 11  | **Pino structured logging**                       | 4 год     | $0               | 🔥🔥   | ⏳ pending                                                     |
+| 11  | **Pino structured logging**                       | 4 год     | $0               | 🔥🔥   | ✅ done [#738](https://github.com/Skords-01/Sergeant/pull/738) |
 | 12  | **Activate Playwright E2E на PR**                 | 2 год     | $0               | 🔥🔥   | ✅ done [#717](https://github.com/Skords-01/Sergeant/pull/717) |
 | 13  | **PostHog** для product analytics                 | 4 год     | $0 (free tier)   | 🔥     | ⏳ pending                                                     |
-| 14  | **size-limit** + bundle-analyzer                  | 2 год     | $0               | 🔥     | ⏳ pending                                                     |
+| 14  | **size-limit** + bundle-analyzer                  | 2 год     | $0               | 🔥     | ✅ done [#740](https://github.com/Skords-01/Sergeant/pull/740) |
 | 15  | **CONTRIBUTING.md + 5-min quickstart**            | 2 год     | $0               | 🔥🔥   | ✅ done [#726](https://github.com/Skords-01/Sergeant/pull/726) |
 
 **Сумарно:** ~3-5 робочих днів + ~$50/міс. Це 80% wins за 20% effort-у.
 
-**Прогрес (2026-04-25):** 9 / 15 закрито — #2 Knip+depcheck, #4 Testcontainers (#728), #6 Turbo remote cache, #7 Renovate, #8 AGENTS.md, #9 MSW (#729), #10 Snapshot tests, #12 Playwright E2E, #15 CONTRIBUTING.md (#726). Наступні логічні кроки (без платних credentials): #11 (Pino logging — розблокує Sentry/PostHog), #14 (size-limit + bundle-analyzer), #3 (Strict TS incremental). #1 (Sentry) і #5 (Vercel Pro) чекають credentials мейнтейнера.
+**Прогрес (2026-04-25):** 11 / 15 закрито — #2 Knip+depcheck, #4 Testcontainers (#728), #6 Turbo remote cache, #7 Renovate, #8 AGENTS.md, #9 MSW (#729), #10 Snapshot tests, #11 Pino logging (#738), #12 Playwright E2E, #14 size-limit + bundle-analyzer (#740), #15 CONTRIBUTING.md (#726). Наступні кроки (без платних credentials): #3 (Strict TS incremental), #13 (PostHog free tier). #1 (Sentry) і #5 (Vercel Pro) чекають credentials мейнтейнера. Pino вже структурує логи у JSON — Sentry/PostHog stream підключаться без зміни коду.
 
 ---
 
@@ -153,7 +153,7 @@ read & write the shared cache.
 | **Prettier + lint-staged** | У вас є                                                     | —         | ✅                                                             |
 | **Knip**                   | Find unused exports/files/deps (~50+ findings on first run) | 1 год     | ✅ done [#716](https://github.com/Skords-01/Sergeant/pull/716) |
 | **depcheck**               | Find unused deps в package.json                             | 30 хв     | ✅ done [#716](https://github.com/Skords-01/Sergeant/pull/716) |
-| **size-limit**             | Bundle size budget; fails CI on regression                  | 2 год     | ⏳ pending                                                     |
+| **size-limit**             | Bundle size budget; fails CI on regression                  | 2 год     | ✅ done [#740](https://github.com/Skords-01/Sergeant/pull/740) |
 | **CSpell**                 | Spell-checker для коду і коментарів                         | 30 хв     | ⏳ pending                                                     |
 
 **Sergeant-priority:** strict TypeScript. Зараз `strict: false` — це баги waiting to happen.
@@ -339,7 +339,7 @@ CI gate: `vitest --coverage` + threshold (наприклад 70% lines) на cri
 | **Vector**                 | OSS log router                       |
 | **Grafana Loki**           | OSS log storage                      |
 
-**Sergeant:** ваш `apps/server/src/obs/` модуль вже має logging. Перевірити що це pino + structured JSON. Якщо `console.log` — мігрувати.
+**Sergeant:** ✅ done у [#738](https://github.com/Skords-01/Sergeant/pull/738). `apps/server/src/obs/logger.ts` тепер на pino + `pino-http` middleware, JSON-формат у проді (Railway), pretty-print у dev. Sentry/PostHog stream підключаться без зміни коду.
 
 ### 6.4. Uptime і health
 
@@ -720,6 +720,29 @@ CI gate: `vitest --coverage` + threshold (наприклад 70% lines) на cri
 - `docs/ai-coding-improvements.md` — TL;DR таблиця з Status-колонкою, прогрес-блок, маркери ✅ на блоках 1, 3, 4.2, 4.5, implementation checklist з лінками на PR.
 - `docs/dev-stack-roadmap.md` — TL;DR з Status-колонкою (5/15 done), §3.1 Static analysis і §4.1 Test infrastructure з ✅, §8.1 Security оновлений з Renovate vulnerabilityAlerts.
 - `docs/renovate-usage.md` — новий файл, як працювати з Renovate-PR-ами щодня.
+
+### 2026-04-25 (вечір) — друга хвиля + продуктова фіча
+
+Запущено три паралельні child-сесії після оновлення статусів у [#733](https://github.com/Skords-01/Sergeant/pull/733), плюс одна продуктова фіча в чаті:
+
+| PR                                                     | Що                                                                                    | Roadmap                |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------------- | ---------------------- |
+| [#737](https://github.com/Skords-01/Sergeant/pull/737) | `hotfix-prod-regression.md` + `add-monobank-event-handler.md` playbooks               | ai-coding §2 (✅ full) |
+| [#738](https://github.com/Skords-01/Sergeant/pull/738) | Pino + `pino-http` middleware у `apps/server/src/obs/logger.ts`, regenerated licenses | #11                    |
+| [#740](https://github.com/Skords-01/Sergeant/pull/740) | `size-limit` budget на `apps/web` + `Bundle size guard` CI step                       | #14                    |
+| [#743](https://github.com/Skords-01/Sergeant/pull/743) | HubChat **Quick Actions v1** (chip-секція + action cards у чаті)                      | (продуктова фіча)      |
+
+**Прогрес топ-15:** 9/15 → **11/15**.
+
+**Bonus:**
+
+- Vercel preview rate-limit лишається активний (free tier) — це неблокуюче, бо Smoke E2E запускається проти локально стартованого preview.
+- License policy CI крок один раз падав на #743 через регенерацію `THIRD_PARTY_LICENSES.md` у #738; merge-up закрив проблему.
+
+**Що залишилось без credentials:**
+
+- #3 Strict TypeScript (incremental, починаючи зі `strictNullChecks`).
+- #13 PostHog (free tier) — тепер легко завдяки структурованим логам з #11.
 
 ---
 

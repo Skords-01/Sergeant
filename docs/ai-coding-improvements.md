@@ -543,6 +543,19 @@ it("accountsHandler response shape matches snapshot", async () => {
 
 Блок 2 повністю закрито: 4/4 playbook-и створено (`add-feature-flag`, `cleanup-dead-code`, `hotfix-prod-regression`, `add-monobank-event-handler`).
 
+## 2026-04-25 (вечір) — друга хвиля сесій
+
+Після оновлення статусів у [#733](https://github.com/Skords-01/Sergeant/pull/733) запущено три паралельні child-сесії + одна продуктова фіча у поточному чаті:
+
+| PR                                                     | Що                                                                                         | Скоуп                             |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------------------ | --------------------------------- |
+| [#737](https://github.com/Skords-01/Sergeant/pull/737) | Додано 2 playbook-и (`hotfix-prod-regression`, `add-monobank-event-handler`)               | блок 2 → ✅ full                  |
+| [#738](https://github.com/Skords-01/Sergeant/pull/738) | Pino + `pino-http` у `apps/server/src/obs/logger.ts`, structured JSON у проді              | dev-stack #11                     |
+| [#740](https://github.com/Skords-01/Sergeant/pull/740) | `size-limit` budget на `apps/web` + CI step                                                | dev-stack #14                     |
+| [#743](https://github.com/Skords-01/Sergeant/pull/743) | HubChat **Quick Actions v1** — chip-секція + action cards (продукт, але AI-сесія написала) | (продукт; demo швидкості з infra) |
+
+**Висновок:** інфра з блоків 1–8 дала результат — #743 це фіча на ~1200 рядків (UI + tests + 30 unit-кейсів), яку AI-сесія написала за один сеанс. Без `AGENTS.md` (#714), без MSW (#729) і без stable CI (`#717` + `#720`) це б не вийшло однією сесією.
+
 ### Метрики (з блоку 5 цього документа) — оновлення
 
 | Метрика                                 | Baseline (до сесії)   | Зараз                                                                        |

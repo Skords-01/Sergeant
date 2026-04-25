@@ -143,9 +143,9 @@ function titleFor(name: string, status: ChatActionCardStatus): string {
     case "create_habit":
       return `Звичку створено${failedSuffix}`;
     case "morning_briefing":
-      return `Ранковий брифінг`;
+      return `Ранковий брифінг${failedSuffix}`;
     case "weekly_summary":
-      return `Тижневий підсумок`;
+      return `Тижневий підсумок${failedSuffix}`;
     default:
       return name;
   }

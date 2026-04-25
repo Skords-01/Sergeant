@@ -37,6 +37,24 @@ describe("buildActionCard", () => {
     expect(card?.title).toMatch(/не вийшло/);
   });
 
+  it("title для morning_briefing/weekly_summary містить failedSuffix при failed", () => {
+    const morning = buildActionCard({
+      name: "morning_briefing",
+      input: {},
+      result: "Помилка виконання: timeout",
+    });
+    expect(morning?.status).toBe("failed");
+    expect(morning?.title).toMatch(/не вийшло/);
+
+    const weekly = buildActionCard({
+      name: "weekly_summary",
+      input: {},
+      result: "Помилка виконання: timeout",
+    });
+    expect(weekly?.status).toBe("failed");
+    expect(weekly?.title).toMatch(/не вийшло/);
+  });
+
   it("позначає failed коли result починається з «Невідома дія»", () => {
     const card = buildActionCard({
       name: "log_meal",
