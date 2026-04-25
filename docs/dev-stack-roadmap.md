@@ -161,8 +161,9 @@ read & write the shared cache.
 #### size-limit + bundle-analyzer — як користуватись
 
 `size-limit` перевіряє brotli-розмір зібраного бандла проти бюджету у
-`apps/web/package.json` → `"size-limit"`. CI крок «Bundle size guard»
-запускається автоматично після `pnpm check`.
+`apps/web/package.json` → `"size-limit"` (явно `"brotli": true`).
+CI крок «Bundle size guard» у `.github/workflows/ci.yml` запускається
+автоматично після `pnpm check`.
 
 ```bash
 # Перевірити розмір бандла (потребує попередній build):

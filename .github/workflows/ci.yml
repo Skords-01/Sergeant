@@ -61,6 +61,9 @@ jobs:
       - name: Format, lint, test, build
         run: pnpm check
 
+      - name: Bundle size guard (size-limit)
+        run: pnpm --filter @sergeant/web exec size-limit
+
   coverage:
     name: Test coverage (vitest)
     runs-on: ubuntu-latest
