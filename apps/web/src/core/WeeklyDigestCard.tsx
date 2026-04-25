@@ -308,7 +308,17 @@ function DigestContent({
   );
 }
 
-export function WeeklyDigestCard() {
+interface WeeklyDigestCardProps {
+  /**
+   * Optional callback that collapses the card back to its single-line
+   * default state (the `WeeklyDigestFooter` rendered by HubDashboard).
+   * When provided, a chevron-up button is shown in the header so the
+   * user can dismiss the expanded card the same way they opened it.
+   */
+  onCollapse?: () => void;
+}
+
+export function WeeklyDigestCard({ onCollapse }: WeeklyDigestCardProps = {}) {
   const currentWeekKey = getWeekKey();
   const [selectedWeekKey, setSelectedWeekKey] = useState(currentWeekKey);
   const [showHistory, setShowHistory] = useState(false);
@@ -398,6 +408,17 @@ export function WeeklyDigestCard() {
                 <line x1="8" y1="2" x2="8" y2="6" />
                 <line x1="3" y1="10" x2="21" y2="10" />
               </svg>
+            </button>
+          )}
+          {onCollapse && (
+            <button
+              type="button"
+              onClick={onCollapse}
+              title="Згорнути"
+              aria-label="Згорнути звіт тижня"
+              className="w-7 h-7 flex items-center justify-center rounded-lg text-muted hover:text-text hover:bg-panelHi transition-colors"
+            >
+              <Icon name="chevron-up" size={15} strokeWidth={2.5} />
             </button>
           )}
         </div>

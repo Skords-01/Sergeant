@@ -29,7 +29,12 @@ import { getModulePrimaryAction } from "@shared/lib/moduleQuickActions";
 import { TodayFocusCard, useDashboardFocus } from "./TodayFocusCard";
 import { HubInsightsPanel } from "./HubInsightsPanel";
 import { WeeklyDigestCard, hasLiveWeeklyDigest } from "./WeeklyDigestCard";
-import { useWeeklyDigest, loadDigest, getWeekKey } from "./useWeeklyDigest";
+import {
+  useWeeklyDigest,
+  loadDigest,
+  getWeekKey,
+  getWeekRange,
+} from "./useWeeklyDigest";
 import { useCoachInsight } from "./useCoachInsight";
 import { AssistantAdviceCard } from "./AssistantAdviceCard";
 import { SoftAuthPromptCard } from "./onboarding/SoftAuthPromptCard";
@@ -626,26 +631,62 @@ function WeeklyDigestFooter({
   onExpand: () => void;
   fresh: boolean;
 }) {
+  const weekRange = getWeekRange();
   return (
     <button
       type="button"
       onClick={onExpand}
+      aria-label="Розгорнути звіт тижня"
       className={cn(
-        "w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl",
-        "text-xs font-medium text-muted hover:text-text",
-        "hover:bg-panelHi transition-colors",
+        "w-full flex items-center gap-3 rounded-2xl border border-line bg-panel px-3 py-2.5",
+        "shadow-card hover:shadow-float transition-[box-shadow,filter,opacity,transform]",
+        "text-left",
       )}
     >
-      <span className="flex items-center gap-2">
-        Тижневий звіт
-        {fresh && (
-          <span
-            className="inline-block w-1.5 h-1.5 rounded-full bg-primary"
-            aria-label="Новий звіт"
-          />
+      <span
+        className={cn(
+          "w-8 h-8 rounded-xl flex items-center justify-center shrink-0",
+          "bg-gradient-to-br from-brand-100 to-teal-100",
+          "dark:from-brand-900/40 dark:to-teal-900/30",
         )}
+      >
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="text-brand-600 dark:text-brand-400"
+          aria-hidden
+        >
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+          <polyline points="14 2 14 8 20 8" />
+          <line x1="16" y1="13" x2="8" y2="13" />
+          <line x1="16" y1="17" x2="8" y2="17" />
+          <polyline points="10 9 9 9 8 9" />
+        </svg>
       </span>
-      <Icon name="chevron-right" size={14} strokeWidth={2.5} />
+      <span className="flex-1 min-w-0 flex flex-col">
+        <span className="flex items-center gap-1.5">
+          <span className="text-sm font-semibold text-text">Звіт тижня</span>
+          {fresh && (
+            <span
+              className="inline-block w-1.5 h-1.5 rounded-full bg-primary"
+              aria-label="Новий звіт"
+            />
+          )}
+        </span>
+        <span className="text-2xs text-muted truncate">{weekRange}</span>
+      </span>
+      <Icon
+        name="chevron-right"
+        size={14}
+        strokeWidth={2.5}
+        className="text-muted shrink-0"
+      />
     </button>
   );
 }
@@ -885,7 +926,7 @@ export function HubDashboard({
           />
 
           {digestExpanded ? (
-            <WeeklyDigestCard />
+            <WeeklyDigestCard onCollapse={() => setDigestExpanded(false)} />
           ) : showDigestFooter ? (
             <WeeklyDigestFooter
               fresh={digestFresh}

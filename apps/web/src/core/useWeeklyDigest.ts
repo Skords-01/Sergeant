@@ -54,7 +54,7 @@ function localDateKey(d = new Date()): string {
 // further down in this file.
 export const getWeekKey = sharedGetWeekKey;
 
-function getWeekRange(d = new Date()): string {
+export function getWeekRange(d = new Date()): string {
   const monday = new Date(d);
   monday.setDate(d.getDate() - ((d.getDay() + 6) % 7));
   const sunday = new Date(monday);
