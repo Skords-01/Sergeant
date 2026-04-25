@@ -1,52 +1,66 @@
 /**
- * Brand logo mark — Sergeant chevron badge + wordmark.
+ * Brand logo mark — Sergeant "Operative" mark + wordmark.
  *
- * Renders a rounded emerald badge with three white sergeant chevrons
- * paired with the "Sergeant" wordmark in DM Sans ExtraBold.
+ * The mark combines three upward-pointing chevrons (sergeant rank insignia)
+ * with a small status dot above the top chevron — evoking both military rank
+ * and an "active/operational" status indicator. Minimalist, memorable, and
+ * instantly associative with the "Sergeant · Operational Center" identity.
  *
  * Variants:
- *   - "badge" (default): 32px rounded badge + wordmark side by side.
- *     Used in HubHeader, AuthPage, ResetPasswordPage.
- *   - "inline":           chevron icon inline with text (no badge).
+ *   - "badge" (default): Mark inside an emerald rounded badge + wordmark.
+ *     Used in AuthPage, ResetPasswordPage, OnboardingWizard.
+ *   - "inline":          Mark inline with text (no badge).
  *     Used in OnboardingWizard inside a sentence.
+ *   - "mark":            Raw mark only — no badge, no wordmark.
+ *     Used in HubHeader for the V2E operational-center layout.
  *
  * Sizes:
- *   - "lg": hub header — bigger badge + 22px wordmark.
- *   - "md": auth/onboarding — smaller badge + 18px wordmark.
+ *   - "lg": hub header — bigger mark + 22px wordmark.
+ *   - "md": auth/onboarding — smaller mark + 18px wordmark.
  */
 
-interface ChevronMarkProps {
+interface OperativeMarkProps {
   size: number;
 }
 
-function ChevronMark({ size }: ChevronMarkProps) {
+/**
+ * The "Operative" mark — three sergeant chevrons + status dot.
+ *
+ * The dot above the chevrons communicates "active / operational" and
+ * differentiates the mark from a generic military insignia. Together
+ * the shapes create a strong, unique silhouette that works at any size.
+ */
+function OperativeMark({ size }: OperativeMarkProps) {
   return (
     <svg
-      viewBox="0 0 18 18"
+      viewBox="0 0 24 26"
       width={size}
-      height={size}
+      height={size * (26 / 24)}
       fill="none"
       aria-hidden="true"
       className="shrink-0"
     >
+      {/* Status dot — "operational / active" */}
+      <circle cx="12" cy="3" r="2.2" fill="currentColor" />
+      {/* Three sergeant chevrons */}
       <path
-        d="M3 6.5 L9 3 L15 6.5"
+        d="M4 13 L12 8 L20 13"
         stroke="currentColor"
-        strokeWidth="2.2"
+        strokeWidth="2.4"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
       <path
-        d="M3 10.5 L9 7 L15 10.5"
+        d="M4 18 L12 13 L20 18"
         stroke="currentColor"
-        strokeWidth="2.2"
+        strokeWidth="2.4"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
       <path
-        d="M3 14.5 L9 11 L15 14.5"
+        d="M4 23 L12 18 L20 23"
         stroke="currentColor"
-        strokeWidth="2.2"
+        strokeWidth="2.4"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
@@ -64,11 +78,12 @@ interface BrandLogoProps {
   /** HTML element for the outer wrapper (default "span"). Use "h1" on pages that need a heading landmark. */
   as?: TagName;
   /**
-   * "badge" (default) renders the chevron inside an emerald rounded square
-   * next to the wordmark. "inline" renders a flat chevron icon next to the
-   * wordmark — used when the logo appears mid-sentence.
+   * "badge" (default) renders the mark inside an emerald rounded square
+   * next to the wordmark. "inline" renders a flat mark icon next to the
+   * wordmark — used when the logo appears mid-sentence. "mark" renders
+   * only the raw mark without wordmark — for the hub header.
    */
-  variant?: "badge" | "inline";
+  variant?: "badge" | "inline" | "mark";
 }
 
 export function BrandLogo({
@@ -82,20 +97,31 @@ export function BrandLogo({
       ? "text-[22px] leading-none font-extrabold tracking-tight"
       : "text-[18px] leading-none font-extrabold tracking-tight";
 
+  if (variant === "mark") {
+    const iconSize = size === "lg" ? 26 : 22;
+    return (
+      <Tag
+        className={`inline-flex items-center select-none text-brand-500 ${className ?? ""}`}
+      >
+        <OperativeMark size={iconSize} />
+      </Tag>
+    );
+  }
+
   if (variant === "inline") {
     const iconSize = size === "lg" ? 20 : 18;
     return (
       <Tag
         className={`inline-flex items-center gap-1.5 select-none text-brand-500 ${className ?? ""}`}
       >
-        <ChevronMark size={iconSize} />
+        <OperativeMark size={iconSize} />
         <span className={`${wordmarkCls} text-text`}>Sergeant</span>
       </Tag>
     );
   }
 
   const badgePx = size === "lg" ? 32 : 28;
-  const chevronPx = size === "lg" ? 20 : 18;
+  const chevronPx = size === "lg" ? 18 : 16;
   const radiusPx = size === "lg" ? 10 : 9;
   const gapCls = size === "lg" ? "gap-2.5" : "gap-2";
 
@@ -112,7 +138,7 @@ export function BrandLogo({
           borderRadius: radiusPx,
         }}
       >
-        <ChevronMark size={chevronPx} />
+        <OperativeMark size={chevronPx} />
       </span>
       <span className={`${wordmarkCls} text-text`}>Sergeant</span>
     </Tag>
