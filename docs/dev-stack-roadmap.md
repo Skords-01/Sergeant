@@ -158,6 +158,29 @@ read & write the shared cache.
 
 **Sergeant-priority:** strict TypeScript. Зараз `strict: false` — це баги waiting to happen.
 
+#### size-limit + bundle-analyzer — як користуватись
+
+`size-limit` перевіряє brotli-розмір зібраного бандла проти бюджету у
+`apps/web/package.json` → `"size-limit"`. CI крок «Bundle size guard»
+запускається автоматично після `pnpm check`.
+
+```bash
+# Перевірити розмір бандла (потребує попередній build):
+pnpm --filter @sergeant/web build
+pnpm --filter @sergeant/web exec size-limit
+
+# Або через npm-script:
+pnpm --filter @sergeant/web size
+
+# Згенерувати HTML-репорт bundle-analyzer (treemap):
+pnpm --filter @sergeant/web build:analyze
+# Відкрити apps/server/dist/bundle-report.html у браузері.
+```
+
+Бюджети (brotli): JS ≤ 615 kB, CSS ≤ 18 kB (~+10% від baseline 2026-04-25).
+Якщо CI падає — або зменшіть бандл, або обґрунтовано підніміть ліміт у
+`apps/web/package.json`.
+
 **Knip + depcheck — впроваджено у [#716](https://github.com/Skords-01/Sergeant/pull/716):** `knip.json` baseline + scripts у root `package.json`. Перший cleanup pass видалив: 6 невикористовуваних файлів (`CelebrationOverlay.tsx`, `ModuleChecklist.tsx`, `PermissionsPrompt.tsx`, `CategoryManager.tsx`, `PhotoProgress.tsx`, `useBodyPhotos.ts`), 4 unused exports, 2 stale eslint-plugin entries (`apps/server/src/obs/metrics.ts`, `logger.ts` cleanup).
 
 ### 3.2. Nice-to-have
