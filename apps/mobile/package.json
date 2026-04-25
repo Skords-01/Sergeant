@@ -31,7 +31,7 @@
     "@sergeant/nutrition-domain": "workspace:*",
     "@sergeant/routine-domain": "workspace:*",
     "@sergeant/shared": "workspace:*",
-    "@shopify/flash-list": "1.7.3",
+    "@shopify/flash-list": "1.8.3",
     "@tanstack/query-sync-storage-persister": "5.99.0",
     "@tanstack/react-query": "^5.99.0",
     "@tanstack/react-query-persist-client": "5.99.0",
