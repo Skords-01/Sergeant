@@ -344,7 +344,8 @@ export function Overview({ mono, storage, onNavigate, showBalance = true }) {
   const dayBudget = expenseLeft / remainingDays;
 
   const monthBalance = income - spent;
-  const spendPct = Math.min(100, income > 0 ? (spent / income) * 100 : 0);
+  const spendPct = income > 0 ? (spent / income) * 100 : 0;
+  const spendBarPct = Math.min(100, spendPct);
   const expenseFromIncomeBarClass =
     spendPct > 75 ? "bg-danger" : spendPct > 50 ? "bg-warning" : "bg-success";
   const showMonthForecast = showBalance && daysPassed > 0 && projectedSpend > 0;
@@ -418,6 +419,7 @@ export function Overview({ mono, storage, onNavigate, showBalance = true }) {
           showMonthForecast={showMonthForecast}
           projectedSpend={projectedSpend}
           spendPct={spendPct}
+          spendBarPct={spendBarPct}
           expenseFromIncomeBarClass={expenseFromIncomeBarClass}
           forecastTrendPct={forecastTrendPct}
           forecastBarClass={forecastBarClass}

@@ -18,6 +18,7 @@ const MonthPulseCardImpl = function MonthPulseCard({
   showMonthForecast,
   projectedSpend,
   spendPct,
+  spendBarPct,
   expenseFromIncomeBarClass,
   forecastTrendPct,
   forecastBarClass,
@@ -95,7 +96,7 @@ const MonthPulseCardImpl = function MonthPulseCard({
               "h-full rounded-full transition-[width,background-color] duration-700",
               expenseFromIncomeBarClass,
             )}
-            style={{ width: showBalance ? `${spendPct}%` : "0%" }}
+            style={{ width: showBalance ? `${spendBarPct}%` : "0%" }}
           />
         </div>
         <div className="flex justify-between text-xs text-muted">
