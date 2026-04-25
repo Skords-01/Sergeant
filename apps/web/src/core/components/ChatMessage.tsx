@@ -1,15 +1,65 @@
 import { cn } from "@shared/lib/cn";
+import { Icon } from "@shared/components/ui/Icon";
 import { AssistantMessageBody } from "./AssistantMessageBody";
 import { speak } from "../lib/hubChatSpeech";
 import type { ChatMessage as ChatMessageData } from "../lib/hubChatUtils";
+import type { ChatActionCard } from "../lib/hubChatActionCards";
 
 interface ChatMessageProps {
   message: ChatMessageData;
   onSpeak?: () => void;
 }
 
+function ActionCard({ card }: { card: ChatActionCard }) {
+  const failed = card.status === "failed";
+  return (
+    <div
+      data-testid={`chat-action-card-${card.toolName}`}
+      role="status"
+      aria-label={`${card.title}: ${card.summary}`}
+      className={cn(
+        "mt-2 flex items-start gap-2 rounded-xl border px-3 py-2",
+        failed
+          ? "bg-warning/10 border-warning/30"
+          : card.risky
+            ? "bg-warning/5 border-warning/40"
+            : "bg-brand-500/5 border-brand-500/30",
+      )}
+    >
+      <span
+        className={cn(
+          "shrink-0 mt-0.5",
+          failed
+            ? "text-warning"
+            : card.risky
+              ? "text-warning"
+              : "text-brand-500",
+        )}
+        aria-hidden
+      >
+        <Icon name={card.icon || (failed ? "alert" : "check")} size={14} />
+      </span>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-1.5 text-xs font-semibold text-text">
+          <span className="truncate">{card.title}</span>
+          {card.risky && (
+            <span className="text-2xs font-semibold text-warning shrink-0 rounded-full bg-warning/15 px-1.5 py-0.5">
+              Критична дія
+            </span>
+          )}
+        </div>
+        {card.summary && (
+          <div className="text-2xs text-subtle mt-0.5 break-words">
+            {card.summary}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function ChatMessage({ message, onSpeak }: ChatMessageProps) {
-  const { role, text } = message;
+  const { role, text, cards } = message;
   const isAssistant = role === "assistant";
 
   return (
@@ -31,6 +81,10 @@ export function ChatMessage({ message, onSpeak }: ChatMessageProps) {
         )}
       >
         {isAssistant ? <AssistantMessageBody text={text} /> : text}
+        {isAssistant &&
+          cards &&
+          cards.length > 0 &&
+          cards.map((c) => <ActionCard key={c.id} card={c} />)}
         {isAssistant && text && text.length > 3 && (
           <button
             type="button"

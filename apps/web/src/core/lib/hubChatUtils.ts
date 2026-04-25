@@ -1,6 +1,8 @@
 // Utility functions shared across HubChat modules
 
 import { friendlyApiError as baseFriendlyApiError } from "@shared/lib/friendlyApiError";
+import type { ChatActionCard } from "./hubChatActionCards";
+import type { QuickActionModule } from "./hubChatQuickActions";
 
 export const CONTEXT_TTL_MS = 15_000;
 export const CHAT_HISTORY_WRITE_DEBOUNCE_MS = 600;
@@ -11,8 +13,36 @@ export interface ChatMessage {
   id: string;
   role: ChatRole;
   text: string;
+  /** Опційний набір action-карт (рендериться у `ChatMessage` UI). */
+  cards?: ChatActionCard[];
   /** Optional extra fields preserved from persisted history. */
   [key: string]: unknown;
+}
+
+/**
+ * Визначає активний модуль за URL hash. Раніше дублювалося inline у
+ * `HubChat.tsx`; винесено сюди для перевикористання у quick actions
+ * та подальших helper-ах. Якщо hash не вказує на жоден з відомих
+ * модулів — повертає `null`.
+ */
+export function getActiveModule(): QuickActionModule | null {
+  try {
+    const hash = (globalThis.window?.location?.hash || "")
+      .replace(/^#\/?/, "")
+      .toLowerCase();
+    const first = hash.split(/[/?#]/)[0];
+    if (
+      first === "finyk" ||
+      first === "fizruk" ||
+      first === "routine" ||
+      first === "nutrition"
+    ) {
+      return first;
+    }
+  } catch {
+    /* noop */
+  }
+  return null;
 }
 
 /**
@@ -149,6 +179,14 @@ export function isHelpCommand(text: string): boolean {
 }
 
 export const HELP_TEXT = `### Доступні інструменти
+
+#### ⚡ Швидкі сценарії
+Тапни chip під чатом, щоб одразу запустити дію:
+- **Ранковий брифінг** / **Підсумок дня** — крос-модульний огляд.
+- **Додати витрату** / **Залогати їжу** / **Додати підхід** / **Позначити звичку** — швидкий старт; допиши деталі в інпуті.
+- **Ліміт бюджету** / **Що пропущено** / **Добити білок** — аналітика і поради.
+
+Залежно від модуля, з якого відкрив чат, релевантні chip-и підсвічуються першими.
 
 #### 💰 Фінік (фінанси)
 - Записати витрату/дохід — \`додай витрату 200 грн на каву\`

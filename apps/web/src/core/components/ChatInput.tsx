@@ -22,6 +22,12 @@ interface ChatInputProps {
   sendRef: MutableRefObject<
     ((text?: string, fromVoice?: boolean) => void) | null
   >;
+  /**
+   * Опційний callback ref для фокусу інпуту зовні (наприклад, після
+   * prefill з ChatQuickActions). HubChat прив'язує сюди функцію, яка
+   * потім викликає `.focus()`.
+   */
+  focusInputRef?: MutableRefObject<(() => void) | null>;
 }
 
 export function ChatInput({
@@ -34,8 +40,20 @@ export function ChatInput({
   onSend,
   onHelp,
   sendRef,
+  focusInputRef,
 }: ChatInputProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
+
+  // Експозимо зовні лише метод `focus` — без разкривання самого DOM
+  // вузла. Це дозволяє ChatQuickActions викликати focus() після
+  // prefill, але не відкриває ChatInput для випадкового вживання.
+  useEffect(() => {
+    if (!focusInputRef) return;
+    focusInputRef.current = () => inputRef.current?.focus();
+    return () => {
+      focusInputRef.current = null;
+    };
+  }, [focusInputRef]);
 
   // Автофокус лише на пристроях з «точним» вказівником — без спливаючої
   // клавіатури на телефонах (Web Interface Guidelines).

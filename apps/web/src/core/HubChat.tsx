@@ -23,57 +23,17 @@ import {
   requestIdle,
   cancelIdle,
   isHelpCommand,
+  getActiveModule,
   HELP_TEXT,
 } from "./lib/hubChatUtils";
 import { buildContextMeasured } from "./lib/hubChatContext";
 import { executeAction } from "./lib/hubChatActions";
 import { VOICE_KEYWORDS, speak, stopSpeaking } from "./lib/hubChatSpeech";
+import { buildActionCard } from "./lib/hubChatActionCards";
+import type { ChatActionCard } from "./lib/hubChatActionCards";
 import { ChatMessage, TypingIndicator } from "./components/ChatMessage";
 import { ChatInput } from "./components/ChatInput";
-
-const QUICK_WITH_MONO = [
-  "Як справи з бюджетом?",
-  "Які борги маю?",
-  "Скільки витратив?",
-  "Порадь щось",
-];
-
-const QUICK_NO_MONO = [
-  "Як почати тренування у Фізруку?",
-  "Що ти знаєш про мої тренування?",
-  "Порадь розминку перед залом",
-  "Порадь щось",
-];
-
-// Контекстні підказки, що залежать від модуля, з якого користувач
-// відкрив чат (якщо знаємо). Робимо підказки більш actionable, щоб
-// перший тап одразу вів до дії, а не до generic small-talk.
-const QUICK_BY_CONTEXT: Record<string, string[]> = {
-  finyk: [
-    "Додай витрату 120 грн на каву",
-    "Скільки витратив за тиждень?",
-    "Які мої активні підписки?",
-    "Склади короткий звіт по тижню",
-  ],
-  fizruk: [
-    "Почни тренування ноги",
-    "Порадь розминку перед залом",
-    "Скільки я тренувався цього тижня?",
-    "Додай сет присідання 5 повторів 40 кг",
-  ],
-  routine: [
-    "Познач звичку «вода» на сьогодні",
-    "Яка моя серія за цей тиждень?",
-    "Додай звичку читати 20 хв щодня",
-    "Що я пропустив цього тижня?",
-  ],
-  nutrition: [
-    "Залогай сніданок: вівсянка 100г + яблуко",
-    "Скільки ккал я з'їв сьогодні?",
-    "Порадь високобілкову вечерю",
-    "Склади короткий звіт по калоріях",
-  ],
-};
+import { ChatQuickActions } from "./components/ChatQuickActions";
 
 function HubChat({ onClose, initialMessage }) {
   const [messages, setMessages] = useState(() => {
@@ -199,25 +159,9 @@ function HubChat({ onClose, initialMessage }) {
   }, [finykPreviewUpdatedAt, scheduleContextBuild]);
 
   // Якщо чат відкрився з-під модуля (через URL hash або подію), беремо
-  // контекстні підказки; інакше — генеричні mono/no-mono.
-  const activeModule = (() => {
-    try {
-      const hash = (window.location.hash || "")
-        .replace(/^#\/?/, "")
-        .toLowerCase();
-      const first = hash.split(/[/?#]/)[0];
-      if (["finyk", "fizruk", "routine", "nutrition"].includes(first))
-        return first;
-    } catch {
-      /* noop */
-    }
-    return null;
-  })();
-  const quickPrompts = useMemo(() => {
-    if (activeModule && QUICK_BY_CONTEXT[activeModule])
-      return QUICK_BY_CONTEXT[activeModule];
-    return hasData ? QUICK_WITH_MONO : QUICK_NO_MONO;
-  }, [hasData, activeModule]);
+  // контекстні підказки. Helper винесено у hubChatUtils для перевикористання
+  // в ChatQuickActions.
+  const activeModule = useMemo(() => getActiveModule(), []);
 
   useEffect(() => {
     if (chatRef.current)
@@ -246,6 +190,9 @@ function HubChat({ onClose, initialMessage }) {
   }, [speaking]);
 
   const sendRef = useRef(null);
+  // Callback ref на `.focus()` ChatInput — використовується після
+  // prefill з ChatQuickActions, щоб фокус приходив на input одразу.
+  const focusInputRef = useRef<(() => void) | null>(null);
 
   const maybeSpeak = useCallback((text) => {
     speak(text);
@@ -346,10 +293,28 @@ function HubChat({ onClose, initialMessage }) {
           .map((r) => `✅ ${r.content}`)
           .join("\n");
         const prefix = `${actionsText}\n\n`;
+
+        // Паралельно будуємо action-картки для відомих tool-ів.
+        // Якщо tool невідомий — повертається null, лишається лише текст.
+        const cards: ChatActionCard[] = data.tool_calls
+          .map((tc, idx) =>
+            buildActionCard({
+              name: tc.name,
+              input: tc.input,
+              result: toolResults[idx]?.content || "",
+            }),
+          )
+          .filter((c): c is ChatActionCard => c !== null);
+
         const assistantId = newMsgId();
         setMessages((m) => [
           ...m,
-          { id: assistantId, role: "assistant", text: prefix },
+          {
+            id: assistantId,
+            role: "assistant",
+            text: prefix,
+            ...(cards.length > 0 ? { cards } : {}),
+          },
         ]);
 
         let followUpText = "";
@@ -613,24 +578,19 @@ function HubChat({ onClose, initialMessage }) {
           )}
         </div>
 
-        {/* Quick prompts */}
-        <div
-          className="flex gap-2 px-4 pt-2 pb-1 overflow-x-auto scrollbar-hide shrink-0"
-          role="group"
-          aria-label="Швидкі запити"
-        >
-          {quickPrompts.map((q) => (
-            <button
-              key={q}
-              type="button"
-              onClick={() => send(q)}
-              disabled={loading || !online}
-              className="text-xs px-3 py-1.5 bg-panel border border-line rounded-full text-subtle hover:text-text hover:border-muted whitespace-nowrap transition-colors shrink-0 disabled:opacity-40"
-            >
-              {q}
-            </button>
-          ))}
-        </div>
+        {/* Quick action chips (spec: assistant-quick-actions-v1) */}
+        <ChatQuickActions
+          activeModule={activeModule}
+          loading={loading}
+          online={online}
+          onSend={(prompt) => send(prompt)}
+          onPrefill={(prompt) => {
+            setInput(prompt);
+            // Невелика затримка, щоб React встиг змонтувати оновлений
+            // value у input перш ніж ми поставимо фокус.
+            setTimeout(() => focusInputRef.current?.(), 0);
+          }}
+        />
 
         {!online && (
           <div
@@ -653,6 +613,7 @@ function HubChat({ onClose, initialMessage }) {
           onSend={() => send()}
           onHelp={() => send("/help")}
           sendRef={sendRef}
+          focusInputRef={focusInputRef}
         />
       </div>
     </div>
