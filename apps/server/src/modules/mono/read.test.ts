@@ -96,6 +96,80 @@ describe("accountsHandler", () => {
 
     expect(res.statusCode).toBe(401);
   });
+
+  it("coerces bigint string columns (balance, creditLimit) to numbers", async () => {
+    // node-postgres returns bigint columns as strings by default. The
+    // client computes `!a.creditLimit` — non-empty string "0" is truthy
+    // and would silently exclude all non-credit cards from "На картках".
+    queryMock.mockResolvedValueOnce({
+      rows: [
+        {
+          userId: "user_1",
+          monoAccountId: "white",
+          type: "white",
+          currencyCode: 980,
+          cashbackType: null,
+          maskedPan: ["444111******0131"],
+          iban: null,
+          balance: "46789",
+          creditLimit: "0",
+          lastSeenAt: new Date("2025-01-01T00:00:00Z"),
+          sendId: null,
+        },
+        {
+          userId: "user_1",
+          monoAccountId: "black",
+          type: "black",
+          currencyCode: 980,
+          cashbackType: null,
+          maskedPan: ["444111******3551"],
+          iban: null,
+          balance: "-42739",
+          creditLimit: "4000000",
+          lastSeenAt: new Date("2025-01-01T00:00:00Z"),
+          sendId: null,
+        },
+      ],
+    });
+
+    const res = makeRes();
+    await accountsHandler(makeReq(), res);
+
+    const body = res.body as Array<Record<string, unknown>>;
+    expect(body[0].balance).toBe(46789);
+    expect(body[0].creditLimit).toBe(0);
+    expect(typeof body[0].balance).toBe("number");
+    expect(typeof body[0].creditLimit).toBe("number");
+    expect(body[1].balance).toBe(-42739);
+    expect(body[1].creditLimit).toBe(4000000);
+  });
+
+  it("preserves null balance/creditLimit", async () => {
+    queryMock.mockResolvedValueOnce({
+      rows: [
+        {
+          userId: "user_1",
+          monoAccountId: "acc1",
+          type: null,
+          currencyCode: 980,
+          cashbackType: null,
+          maskedPan: null,
+          iban: null,
+          balance: null,
+          creditLimit: null,
+          lastSeenAt: new Date("2025-01-01T00:00:00Z"),
+          sendId: null,
+        },
+      ],
+    });
+
+    const res = makeRes();
+    await accountsHandler(makeReq(), res);
+
+    const body = res.body as Array<Record<string, unknown>>;
+    expect(body[0].balance).toBeNull();
+    expect(body[0].creditLimit).toBeNull();
+  });
 });
 
 describe("transactionsHandler", () => {
@@ -222,5 +296,49 @@ describe("transactionsHandler", () => {
     await transactionsHandler({ query: {} } as unknown as Request, res);
 
     expect(res.statusCode).toBe(401);
+  });
+
+  it("coerces bigint string columns (amount, balance, etc.) to numbers", async () => {
+    queryMock.mockResolvedValueOnce({
+      rows: [
+        {
+          userId: "user_1",
+          monoAccountId: "acc1",
+          monoTxId: "tx_1",
+          time: new Date("2025-01-15T12:00:00Z"),
+          amount: "-12345",
+          operationAmount: "-12345",
+          currencyCode: 980,
+          mcc: 5411,
+          originalMcc: 5411,
+          hold: false,
+          description: "test",
+          comment: null,
+          cashbackAmount: "100",
+          commissionRate: "0",
+          balance: "987654",
+          receiptId: null,
+          invoiceId: null,
+          counterEdrpou: null,
+          counterIban: null,
+          counterName: null,
+          source: "webhook",
+          receivedAt: new Date("2025-01-15T00:00:00Z"),
+        },
+      ],
+    });
+
+    const res = makeRes();
+    await transactionsHandler(makeReq({}), res);
+
+    const body = res.body as { data: Array<Record<string, unknown>> };
+    const tx = body.data[0];
+    expect(tx.amount).toBe(-12345);
+    expect(tx.operationAmount).toBe(-12345);
+    expect(tx.cashbackAmount).toBe(100);
+    expect(tx.commissionRate).toBe(0);
+    expect(tx.balance).toBe(987654);
+    expect(typeof tx.amount).toBe("number");
+    expect(typeof tx.commissionRate).toBe("number");
   });
 });
