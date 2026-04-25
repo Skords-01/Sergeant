@@ -17,8 +17,9 @@ import {
 } from "../lib/finykStorage";
 import { normalizeTransaction } from "@sergeant/finyk-domain/domain/transactions";
 import type { Transaction } from "@sergeant/finyk-domain/domain/types";
+import { mergeTxByIdDesc } from "../lib/mergeTx";
 import { trackEvent, ANALYTICS_EVENTS } from "../../../core/analytics";
-import { useMonoStatements } from "./useMonoStatements";
+import { useMonoStatements, enqueueStatementCall } from "./useMonoStatements";
 
 /**
  * @typedef {{
@@ -241,12 +242,43 @@ export function useMonobank() {
     () => loadCacheSnapshot() ?? loadLastGoodBackup(),
   );
 
+  // Snapshot читаємо у write-ефекті через ref, щоб не додавати `snapshot`
+  // у залежності — інакше `setSnapshot(payload)` усередині запустить ефект
+  // знову нескінченним циклом.
+  const snapshotRef = useRef(snapshot);
+  useEffect(() => {
+    snapshotRef.current = snapshot;
+  }, [snapshot]);
+
+  // `incomplete` — у комбінованому результаті присутні дані не від усіх
+  // цільових рахунків. Це покриває і явний `hasPartialFailure` (один з
+  // акаунтів повернув error), і "ще не догрузилось" (RQ повернув data
+  // лише для частини per-account запитів). У обох випадках поточний
+  // snapshot — завідомо менший за повний місяць, тож писати його у
+  // localStorage без злиття з попереднім означає втратити дані тих
+  // рахунків, які тимчасово не відповіли.
+  const incomplete =
+    statements.accountsTotal > 0 &&
+    statements.accountsOk < statements.accountsTotal;
+
   useEffect(() => {
     if (statements.transactions.length === 0) return;
-    const payload: Snapshot = {
-      txs: statements.transactions,
-      timestamp: Date.now(),
-    };
+    const prev = snapshotRef.current;
+    const merged =
+      incomplete && prev
+        ? mergeTxByIdDesc(statements.transactions, prev.txs)
+        : statements.transactions;
+    // Якщо merge не дав приросту і snapshot уже свіжий — зайві writeJSON
+    // дають синхронні JSON.stringify по сотнях транзакцій + invalidate
+    // hub preview. Skip, якщо нічого не змінилось.
+    if (
+      prev &&
+      prev.txs.length === merged.length &&
+      prev.txs.every((t, i) => t.id === merged[i]?.id)
+    ) {
+      return;
+    }
+    const payload: Snapshot = { txs: merged, timestamp: Date.now() };
     if (writeJSON(CACHE_KEY, payload)) {
       notifyHubFinykPreview(queryClient);
     }
@@ -254,17 +286,32 @@ export function useMonobank() {
     // "Last good" — тільки коли усі рахунки успішні або транзакцій ≥ 15
     // (той самий поріг, що й раніше; захист від порожніх відповідей, які
     // іноді віддає Monobank при rate-limit відновленні).
-    if (!statements.hasPartialFailure || statements.transactions.length >= 15) {
-      if (statements.transactions.length >= 3) {
+    if (!statements.hasPartialFailure || merged.length >= 15) {
+      if (merged.length >= 3) {
         writeJSON(LAST_GOOD_KEY, payload);
       }
     }
-  }, [statements.transactions, statements.hasPartialFailure, queryClient]);
+  }, [
+    statements.transactions,
+    statements.hasPartialFailure,
+    incomplete,
+    queryClient,
+  ]);
 
-  const transactions: Transaction[] =
-    statements.transactions.length > 0
-      ? statements.transactions
-      : (snapshot?.txs ?? []);
+  // Видимі UI транзакції: коли частина акаунтів ще не повернулась/упала —
+  // зливаємо те, що маємо, з snapshot-ом, щоб не "зникали" транзакції
+  // інших рахунків. Коли все успішно — поточний `statements.transactions`
+  // авторитетний (це покриває refund-и/відкат-и на стороні Monobank, які
+  // не мають "закріплюватись" злиттям зі старим snapshot-ом).
+  const transactions: Transaction[] = useMemo(() => {
+    if (statements.transactions.length === 0) {
+      return snapshot?.txs ?? [];
+    }
+    if (incomplete && snapshot) {
+      return mergeTxByIdDesc(statements.transactions, snapshot.txs);
+    }
+    return statements.transactions;
+  }, [statements.transactions, incomplete, snapshot]);
 
   // `lastUpdated` — час останньої успішної відповіді RQ серед усіх
   // per-account запитів. Поки ще нема успіху або нульовий фетч — беремо
@@ -473,14 +520,19 @@ export function useMonobank() {
         new Date(year, month + 1, 0, 23, 59, 59).getTime() / 1000,
       );
       const results: Transaction[][] = [];
-      // Послідовно з паузами, щоб не натрапити на rate-limit Monobank.
+      // Послідовно через `enqueueStatementCall` (та сама пер-токен черга,
+      // що серіалізує і поточний місяць у `useMonoStatements`). Так
+      // history-fetch не "переплутується" з живими per-account запитами,
+      // які можуть бути в leті паралельно — все йде в один потік на токен.
       for (let i = 0; i < targetAccounts.length; i++) {
         const acc = targetAccounts[i];
         try {
           const txs = await queryClient.fetchQuery({
             queryKey: finykKeys.monoStatement(acc.id, from, to),
             queryFn: ({ signal }) =>
-              monoApi.statement(token, acc.id, from, to, { signal }),
+              enqueueStatementCall(token, () =>
+                monoApi.statement(token, acc.id, from, to, { signal }),
+              ),
             staleTime: STATEMENT_STALE_TIME,
             retry: authAwareRetry(2),
             retryDelay: (attempt) => 1000 * (attempt + 1),

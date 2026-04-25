@@ -19,7 +19,12 @@ vi.mock("@shared/api", async () => {
 });
 
 import { monoApi } from "@shared/api";
-import { useMonoStatements, currentMonthRange } from "./useMonoStatements";
+import {
+  useMonoStatements,
+  currentMonthRange,
+  enqueueStatementCall,
+  __resetMonoStatementQueues,
+} from "./useMonoStatements";
 
 function makeWrapper() {
   const client = new QueryClient({
@@ -47,6 +52,7 @@ const RANGE = { from: 1_700_000_000, to: 1_700_500_000 };
 describe("useMonoStatements", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    __resetMonoStatementQueues();
   });
 
   it("нічого не фетчить, поки немає токена або рахунків", async () => {
@@ -167,5 +173,63 @@ describe("useMonoStatements", () => {
     const r = currentMonthRange(new Date(2025, 11, 20, 10, 0, 0));
     expect(r.from).toBe(Math.floor(new Date(2025, 11, 1).getTime() / 1000));
     expect(r.to).toBe(Math.floor(new Date(2026, 0, 1).getTime() / 1000));
+  });
+
+  it("серіалізує statement-запити по токену: другий старт лише після завершення першого", async () => {
+    // Регресія: Monobank `/personal/statement` rate-limit-ить 1 req/60s/token.
+    // Раніше `useQueries` з кількома UAH-рахунками стартував усі запити
+    // паралельно, що гарантовано спричиняло 429 на 2-3-му рахунку.
+    // Тепер `enqueueStatementCall` серіалізує per-token, тож наступний
+    // mock-виклик не має навіть стартувати, поки попередній не зарезолвився.
+    let resolveFirst: (() => void) | null = null;
+    let secondStarted = false;
+
+    mockedStatement.mockImplementation(async (_t: string, accId: string) => {
+      if (accId === "a1") {
+        await new Promise<void>((res) => {
+          resolveFirst = res;
+        });
+        return [{ id: "tx1", time: 100, amount: -1000 }];
+      }
+      // a2 не повинен стартувати, поки a1 у польоті
+      secondStarted = true;
+      return [{ id: "tx2", time: 200, amount: -500 }];
+    });
+
+    const accounts = [makeAcc("a1"), makeAcc("a2")];
+    const { result } = renderHook(
+      () => useMonoStatements("TOKEN", accounts, RANGE),
+      { wrapper: makeWrapper() },
+    );
+
+    // Дамо мікротаскам відпрацювати, але першу проміс не резолвимо.
+    await new Promise((r) => setTimeout(r, 50));
+    expect(secondStarted).toBe(false);
+    expect(mockedStatement).toHaveBeenCalledTimes(1);
+
+    // Розблоковуємо першу — друга має піти у роботу.
+    resolveFirst?.();
+
+    await waitFor(() => expect(result.current.accountsOk).toBe(2));
+    expect(secondStarted).toBe(true);
+    expect(mockedStatement).toHaveBeenCalledTimes(2);
+  });
+
+  it("enqueueStatementCall: помилка одного запиту не блокує наступний у тій самій черзі", async () => {
+    // Якби ми не робили `.catch(() => undefined)` у chain-у — `prev.then(fn)`
+    // закидав би причину далі і всі майбутні enqueue по цьому токену
+    // ламались би. Перевіряємо: rejection не псує чергу.
+    const order: string[] = [];
+    const p1 = enqueueStatementCall("T", async () => {
+      order.push("a-start");
+      throw new Error("boom");
+    }).catch(() => "swallowed");
+    const p2 = enqueueStatementCall("T", async () => {
+      order.push("b-start");
+      return "ok";
+    });
+    await Promise.all([p1, p2]);
+    expect(order).toEqual(["a-start", "b-start"]);
+    await expect(p2).resolves.toBe("ok");
   });
 });

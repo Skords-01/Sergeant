@@ -38,6 +38,52 @@ import type { Transaction } from "@sergeant/finyk-domain/domain/types";
 const STALE_TIME = 60_000;
 const GC_TIME = 5 * 60_000;
 
+/**
+ * Monobank `/personal/statement/{acc}/{from}/{to}` rate-лімітований 1 req/60 s
+ * на токен. У користувачів з кількома UAH-рахунками паралельний запуск
+ * `useQueries` гарантовано спричиняє 429 на 2-му/3-му рахунку. Внутрішній
+ * pagination-loop у `mono.ts` потім чекає `Retry-After` (~60 с) і дотягує —
+ * але доки чекає, у `combine` лежать дані лише першого рахунку, snapshot
+ * перетирається меншою порцією (фікс у `useMonobank.ts`), а на боці
+ * Monobank ми робимо зайвий запит "наосліп" замість дочекатись.
+ *
+ * Пер-токен черга нижче серіалізує всі statement-запити для одного токена
+ * (поки не виконається попередній — наступний чекає в .then). Це політно
+ * до Monobank і дає predictable timeline в UI: запити йдуть один за одним,
+ * без вибуху 429-ок.
+ *
+ * `tokenStatementQueues` — module-level Map, ключ — самий токен. Очищаємо
+ * запис щойно остання Promise у ланцюжку завершилась, щоб не тримати
+ * посилання на старі (вже зарезолвлені) проміси.
+ */
+const tokenStatementQueues = new Map<string, Promise<unknown>>();
+
+export function enqueueStatementCall<T>(
+  token: string,
+  fn: () => Promise<T>,
+): Promise<T> {
+  const prev = tokenStatementQueues.get(token) ?? Promise.resolve();
+  // `prev.catch` гарантує, що навіть rejection попереднього запиту не
+  // обвалить чергу — наступний `fn` стартує однаково.
+  const work = prev.catch(() => undefined).then(fn);
+  // У Map тримаємо НЕ-rejecting tail (`work.catch(...)`), щоб V8 не
+  // флагував unhandled rejection для черги. Викликачу повертаємо
+  // оригінальний `work`, щоб він міг ловити його помилку штатно.
+  const tail = work.catch(() => undefined);
+  tokenStatementQueues.set(token, tail);
+  tail.finally(() => {
+    if (tokenStatementQueues.get(token) === tail) {
+      tokenStatementQueues.delete(token);
+    }
+  });
+  return work;
+}
+
+/** Test-only: очистити чергу між тестами. */
+export function __resetMonoStatementQueues(): void {
+  tokenStatementQueues.clear();
+}
+
 export interface MonoStatementsRange {
   /** Unix seconds, inclusive. */
   from: number;
@@ -109,7 +155,9 @@ export function useMonoStatements(
     queries: uahAccounts.map((acc) => ({
       queryKey: finykKeys.monoStatement(acc.id, from, to),
       queryFn: ({ signal }: { signal: AbortSignal }) =>
-        monoApi.statement(tok, acc.id, from, to, { signal }),
+        enqueueStatementCall(tok, () =>
+          monoApi.statement(tok, acc.id, from, to, { signal }),
+        ),
       enabled: Boolean(tok) && Boolean(acc?.id),
       staleTime: STALE_TIME,
       gcTime: GC_TIME,
