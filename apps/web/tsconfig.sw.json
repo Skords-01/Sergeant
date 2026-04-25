@@ -4,8 +4,6 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "lib": ["ES2022", "WebWorker"],
-    "allowJs": true,
-    "checkJs": false,
     "strict": false,
     "noImplicitAny": false,
     "noEmit": true,
@@ -16,6 +14,6 @@
     "forceConsistentCasingInFileNames": true,
     "types": []
   },
-  "include": ["src/sw.js"],
+  "include": ["src/sw.ts"],
   "exclude": ["node_modules", "dist"]
 }

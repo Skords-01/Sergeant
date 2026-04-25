@@ -9,14 +9,14 @@ export default defineConfig({
     environment: "node",
     include: ["src/**/*.test.{js,jsx,ts,tsx}", "server/**/*.test.{js,ts}"],
     passWithNoTests: false,
-    setupFiles: ["src/test/setup.js"],
+    setupFiles: ["src/test/setup.ts"],
     coverage: {
       ...baseCoverageConfig,
       include: ["src/**/*.{js,jsx,ts,tsx}"],
       exclude: [
         ...baseCoverageConfig.exclude,
         "src/test/**",
-        "src/sw.js",
+        "src/sw.ts",
         "src/main.jsx",
       ],
       thresholds: {

@@ -1,10 +1,15 @@
-/* global __SW_BUILD_ID__ */
+/// <reference lib="WebWorker" />
 
 import { precacheAndRoute, cleanupOutdatedCaches } from "workbox-precaching";
 import { registerRoute, NavigationRoute } from "workbox-routing";
 import { NetworkFirst, CacheFirst } from "workbox-strategies";
 import { ExpirationPlugin } from "workbox-expiration";
 import { CacheableResponsePlugin } from "workbox-cacheable-response";
+
+declare const self: ServiceWorkerGlobalScope & {
+  __WB_MANIFEST: Array<{ url: string; revision: string | null }>;
+};
+declare const __SW_BUILD_ID__: string;
 
 // Replaced at build time via `apps/web/vite.config.js#define`.
 // Falls back to "dev" if the bundler didn't inject the constant.
@@ -131,7 +136,7 @@ function habitScheduledOnDateSW(h, dk) {
   return true;
 }
 
-const notifiedKeys = new Set();
+const notifiedKeys = new Set<string>();
 let lastPrunedDk = null;
 let routineData = null;
 let fizrukData = null;
@@ -148,8 +153,8 @@ const IDB_NAME = "sergeant-sw";
 const IDB_STORE = "notified-keys";
 
 function openNotifiedDb() {
-  return new Promise((resolve, reject) => {
-    let req;
+  return new Promise<IDBDatabase>((resolve, reject) => {
+    let req: IDBOpenDBRequest;
     try {
       req = indexedDB.open(IDB_NAME, 1);
     } catch (err) {
@@ -168,9 +173,9 @@ function openNotifiedDb() {
 }
 
 async function idbLoadAllKeys() {
-  const db = await openNotifiedDb();
+  const db = (await openNotifiedDb()) as IDBDatabase;
   try {
-    return await new Promise((resolve, reject) => {
+    return await new Promise<IDBValidKey[]>((resolve, reject) => {
       const tx = db.transaction(IDB_STORE, "readonly");
       const req = tx.objectStore(IDB_STORE).getAllKeys();
       req.onsuccess = () => resolve(req.result || []);
@@ -182,9 +187,9 @@ async function idbLoadAllKeys() {
 }
 
 async function idbPutKey(key) {
-  const db = await openNotifiedDb();
+  const db = (await openNotifiedDb()) as IDBDatabase;
   try {
-    await new Promise((resolve, reject) => {
+    await new Promise<void>((resolve, reject) => {
       const tx = db.transaction(IDB_STORE, "readwrite");
       tx.objectStore(IDB_STORE).put(1, key);
       tx.oncomplete = () => resolve();
@@ -198,9 +203,9 @@ async function idbPutKey(key) {
 
 async function idbDeleteKeys(keys) {
   if (!keys.length) return;
-  const db = await openNotifiedDb();
+  const db = (await openNotifiedDb()) as IDBDatabase;
   try {
-    await new Promise((resolve, reject) => {
+    await new Promise<void>((resolve, reject) => {
       const tx = db.transaction(IDB_STORE, "readwrite");
       const store = tx.objectStore(IDB_STORE);
       for (const k of keys) store.delete(k);

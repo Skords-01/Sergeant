@@ -5,7 +5,7 @@
  * app (ФІНІК trends, ФІЗРУК progress, Рутина heatmap, Харчування macros).
  *
  * The source-of-truth palette lives in
- * `src/modules/finyk/constants/chartPalette.js` so existing JS imports
+ * `src/modules/finyk/constants/chartPalette.ts` so existing JS imports
  * keep working. This file re-exports the palette and adds shared
  * render-side primitives (Tailwind classNames + SVG attrs) so charts
  * across modules share axes, grid lines, ticks and tooltips.

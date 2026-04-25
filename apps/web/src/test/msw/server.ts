@@ -14,7 +14,7 @@
 //   });
 //
 // The server lifecycle (listen / resetHandlers / close) is wired in
-// `src/test/setup.js` so every test suite starts clean.
+// `src/test/setup.ts` so every test suite starts clean.
 import { setupServer } from "msw/node";
 import { handlers } from "./handlers";
 

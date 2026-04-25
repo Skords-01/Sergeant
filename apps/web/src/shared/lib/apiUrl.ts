@@ -51,7 +51,7 @@ function applyVersion(path: string): string {
   // Жорстка перевірка сегмента (а не `startsWith("/api/auth")`), щоб
   // `/api/authorize`, `/api/authentication` та інші майбутні endpoint-и з
   // таким префіксом не провалилися повз версіонування. Консистентно з
-  // `apps/web/src/sw.js` (пошук "api/auth"), де auth-шляхи теж
+  // `apps/web/src/sw.ts` (пошук "api/auth"), де auth-шляхи теж
   // виключаються точним сегментом.
   if (path === "/api/auth" || path.startsWith("/api/auth/")) {
     return path;
