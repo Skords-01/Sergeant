@@ -24,7 +24,7 @@ import {
   type ModulePreview,
   type User,
 } from "@sergeant/shared";
-import { openHubModuleWithAction } from "@shared/lib/hubNav";
+import { openHubModule, openHubModuleWithAction } from "@shared/lib/hubNav";
 import { getModulePrimaryAction } from "@shared/lib/moduleQuickActions";
 import { TodayFocusCard, useDashboardFocus } from "./TodayFocusCard";
 import { HubInsightsPanel } from "./HubInsightsPanel";
@@ -748,6 +748,20 @@ export function HubDashboard({
 
   const { focus, rest, dismiss } = useDashboardFocus();
 
+  // Insights з deep-link (`actionHash`) повинні відкрити модуль рівно
+  // на потрібній вкладці/елементі — не на дефолтному Огляді. Якщо
+  // hash немає, лишаємо стару поведінку (просто перейти на модуль).
+  const openInsightTarget = useCallback(
+    (module: string, hash?: string) => {
+      if (hash) {
+        openHubModule(module as Parameters<typeof openHubModule>[0], hash);
+        return;
+      }
+      onOpenModule(module);
+    },
+    [onOpenModule],
+  );
+
   const {
     insight: coachInsightText,
     loading: coachLoading,
@@ -921,7 +935,7 @@ export function HubDashboard({
         <div className="space-y-2">
           <HubInsightsPanel
             items={rest}
-            onOpenModule={onOpenModule}
+            onOpenModule={openInsightTarget}
             onDismiss={dismiss}
           />
 

@@ -43,7 +43,7 @@ function RecRow({ rec, onAction, onDismiss }) {
         {rec.action && (
           <button
             type="button"
-            onClick={() => onAction(rec.action)}
+            onClick={() => onAction(rec.action, rec.actionHash)}
             className="mt-1.5 inline-flex items-center gap-1 text-xs font-semibold text-text hover:text-primary transition-colors"
           >
             Відкрити
@@ -122,7 +122,7 @@ export function HubInsightsPanel({ items, onOpenModule, onDismiss }) {
               <RecRow
                 key={rec.id}
                 rec={rec}
-                onAction={(m) => onOpenModule(m)}
+                onAction={(m, hash) => onOpenModule(m, hash)}
                 onDismiss={onDismiss}
               />
             ))}

@@ -28,7 +28,7 @@ function baseCtx(overrides = {}) {
 }
 
 describe("budgetLimitsRule", () => {
-  it("генерує over при >=140% ліміту", () => {
+  it("генерує over при >=100% ліміту", () => {
     const ctx = baseCtx({
       limits: [{ id: "b", type: "limit", categoryId: "food", limit: 500 }],
       categorySpend: { food: 900 },
@@ -50,13 +50,37 @@ describe("budgetLimitsRule", () => {
     expect(recs[0]?.pwaAction).toBeUndefined();
   });
 
-  it("генерує warn при 90..139%", () => {
+  it("генерує warn при 90..99%", () => {
     const ctx = baseCtx({
       limits: [{ id: "b", type: "limit", categoryId: "cafe", limit: 100 }],
       categorySpend: { cafe: 95 },
     });
     const recs = budgetLimitsRule.evaluate(ctx);
     expect(recs[0]?.id).toBe("budget_warn_cafe");
+  });
+
+  it("використовує canonicalMonthSpend замість legacy categorySpend, коли він є", () => {
+    // Mono-транзакція з MCC цигарок без явного override → потрапляє у
+    // canonicalMonthSpend["smoking"], але не в legacy categorySpend.
+    // Інсайт повинен показувати ту саму суму, що й картка ліміту.
+    const ctx = baseCtx({
+      limits: [{ id: "b", type: "limit", categoryId: "smoking", limit: 500 }],
+      categorySpend: {},
+      canonicalMonthSpend: new Map([["smoking", 590]]),
+    });
+    const recs = budgetLimitsRule.evaluate(ctx);
+    expect(recs[0]?.id).toBe("budget_over_smoking");
+    // 590/500 = 1.18 → перевищено на 18%
+    expect(recs[0]?.title).toContain("18%");
+  });
+
+  it("додає actionHash з категорією для глибокого лінка на Планування", () => {
+    const ctx = baseCtx({
+      limits: [{ id: "b", type: "limit", categoryId: "smoking", limit: 100 }],
+      canonicalMonthSpend: new Map([["smoking", 95]]),
+    });
+    const rec = budgetLimitsRule.evaluate(ctx)[0];
+    expect(rec?.actionHash).toBe("budgets?cat=smoking");
   });
 
   it("нічого не повертає при 0 лімітах", () => {

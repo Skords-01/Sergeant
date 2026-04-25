@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback } from "react";
+import { useMemo, useState, useCallback, useEffect, useRef } from "react";
 import { useQueries } from "@tanstack/react-query";
 import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { Skeleton } from "@shared/components/ui/Skeleton";
@@ -100,7 +100,12 @@ async function fetchProactiveAdvice({
   return text;
 }
 
-export function Budgets({ mono, storage, showBalance = true }) {
+export function Budgets({
+  mono,
+  storage,
+  showBalance = true,
+  focusLimitCategoryId = null,
+}) {
   const { realTx, loadingTx, transactions } = mono;
   const {
     budgets,
@@ -210,6 +215,37 @@ export function Budgets({ mono, storage, showBalance = true }) {
   const toggleLimits = useCallback(() => {
     setLimitsOpen((v) => !v);
   }, [setLimitsOpen]);
+
+  // Якщо прийшов deep-link з Hub-інсайту (`#budgets?cat=…`), розгортаємо
+  // секцію лімітів і просимо потрібну картку проскролитись у в'юпорт.
+  // Підсвітка живе коротко (3 с) — досить, щоб око зачепилось, але не
+  // лишається назавжди й не плутає, коли користувач уже з нею взаємодіяв.
+  const limitCardRefs = useRef(new Map<string, HTMLDivElement | null>());
+  const [highlightedCategoryId, setHighlightedCategoryId] = useState<
+    string | null
+  >(null);
+  useEffect(() => {
+    if (!focusLimitCategoryId) return;
+    if (!limitsOpen) setLimitsOpen(true);
+  }, [focusLimitCategoryId, limitsOpen, setLimitsOpen]);
+  useEffect(() => {
+    if (!focusLimitCategoryId) return;
+    if (!limitsOpen) return;
+    // Дочекатись рендеру картки після відкриття секції.
+    const raf = requestAnimationFrame(() => {
+      const node = limitCardRefs.current.get(focusLimitCategoryId);
+      if (node) {
+        node.scrollIntoView({ behavior: "smooth", block: "center" });
+        setHighlightedCategoryId(focusLimitCategoryId);
+      }
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [focusLimitCategoryId, limitsOpen]);
+  useEffect(() => {
+    if (!highlightedCategoryId) return;
+    const t = setTimeout(() => setHighlightedCategoryId(null), 3000);
+    return () => clearTimeout(t);
+  }, [highlightedCategoryId]);
   const toggleGoals = useCallback(() => {
     setGoalsOpen((v) => !v);
   }, [setGoalsOpen]);
@@ -438,57 +474,75 @@ export function Budgets({ mono, storage, showBalance = true }) {
             const showAdvice = shouldShowProactiveAdvice(usage, null);
             const isEditing = editIdx === globalIdx;
             const catLabel = cat?.label || "—";
+            const isHighlighted = highlightedCategoryId === b.categoryId;
             return (
-              <LimitBudgetCard
+              <div
                 key={b.id || i}
-                budget={b}
-                categoryLabel={catLabel}
-                spent={usage.spent}
-                pctRaw={usage.pctRaw}
-                pctRounded={usage.pctRounded}
-                remaining={usage.remaining}
-                isEditing={isEditing}
-                showProactiveAdvice={showAdvice}
-                proactiveLoading={proactiveLoading[b.categoryId]}
-                proactiveText={
-                  proactiveAdvice[b.categoryId] &&
-                  dismissedAdvice[
-                    `${proactiveItems.find((it) => it.categoryId === b.categoryId)?.monthKey ?? ""}_${b.categoryId}`
-                  ] === proactiveAdvice[b.categoryId]
-                    ? null
-                    : proactiveAdvice[b.categoryId]
-                }
-                onDismissAdvice={
-                  proactiveAdvice[b.categoryId]
-                    ? () => {
-                        const mk =
-                          proactiveItems.find(
-                            (it) => it.categoryId === b.categoryId,
-                          )?.monthKey ?? "";
-                        if (mk) {
-                          dismissAdvice(
-                            b.categoryId,
-                            mk,
-                            proactiveAdvice[b.categoryId],
-                          );
-                        }
-                      }
-                    : undefined
-                }
-                onBeginEdit={() => setEditIdx(globalIdx)}
-                onChangeLimit={(nextLimit) =>
-                  setBudgets((bs) =>
-                    bs.map((x, j) =>
-                      j === globalIdx ? { ...x, limit: Number(nextLimit) } : x,
-                    ),
-                  )
-                }
-                onSave={() => setEditIdx(null)}
-                onDelete={() => {
-                  setBudgets((bs) => bs.filter((_, j) => j !== globalIdx));
-                  setEditIdx(null);
+                ref={(node) => {
+                  if (node) {
+                    limitCardRefs.current.set(b.categoryId, node);
+                  } else {
+                    limitCardRefs.current.delete(b.categoryId);
+                  }
                 }}
-              />
+                className={cn(
+                  "rounded-2xl transition-shadow duration-300",
+                  isHighlighted &&
+                    "ring-2 ring-finyk/60 ring-offset-2 ring-offset-bg",
+                )}
+              >
+                <LimitBudgetCard
+                  budget={b}
+                  categoryLabel={catLabel}
+                  spent={usage.spent}
+                  pctRaw={usage.pctRaw}
+                  pctRounded={usage.pctRounded}
+                  remaining={usage.remaining}
+                  isEditing={isEditing}
+                  showProactiveAdvice={showAdvice}
+                  proactiveLoading={proactiveLoading[b.categoryId]}
+                  proactiveText={
+                    proactiveAdvice[b.categoryId] &&
+                    dismissedAdvice[
+                      `${proactiveItems.find((it) => it.categoryId === b.categoryId)?.monthKey ?? ""}_${b.categoryId}`
+                    ] === proactiveAdvice[b.categoryId]
+                      ? null
+                      : proactiveAdvice[b.categoryId]
+                  }
+                  onDismissAdvice={
+                    proactiveAdvice[b.categoryId]
+                      ? () => {
+                          const mk =
+                            proactiveItems.find(
+                              (it) => it.categoryId === b.categoryId,
+                            )?.monthKey ?? "";
+                          if (mk) {
+                            dismissAdvice(
+                              b.categoryId,
+                              mk,
+                              proactiveAdvice[b.categoryId],
+                            );
+                          }
+                        }
+                      : undefined
+                  }
+                  onBeginEdit={() => setEditIdx(globalIdx)}
+                  onChangeLimit={(nextLimit) =>
+                    setBudgets((bs) =>
+                      bs.map((x, j) =>
+                        j === globalIdx
+                          ? { ...x, limit: Number(nextLimit) }
+                          : x,
+                      ),
+                    )
+                  }
+                  onSave={() => setEditIdx(null)}
+                  onDelete={() => {
+                    setBudgets((bs) => bs.filter((_, j) => j !== globalIdx));
+                    setEditIdx(null);
+                  }}
+                />
+              </div>
             );
           })}
 

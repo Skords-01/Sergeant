@@ -1,6 +1,11 @@
 // Rule: попередження/перевищення бюджетних лімітів (categoryId + limit).
-// Легасі: читає `categorySpend` (raw keys), оскільки ліміти у користувачів
-// вже збережені у тих же raw-id. Переведення на canonical — окрема міграція.
+//
+// Spent рахуємо з `canonicalMonthSpend` (резолв через `getCategory`,
+// MCC + keywords + override + customCategories) — рівно як на сторінці
+// Планування → Ліміти. Це гарантує, що відсоток в інсайті збігається
+// з тим, що користувач бачить на картці ліміту. Якщо canonical-індекс
+// порожній (ранні тести або ще-не-перебудований контекст), падаємо
+// на legacy raw-keyed `categorySpend`.
 
 import type { Rec, Rule } from "../types.js";
 import type { FinanceContext } from "../financeContext.js";
@@ -37,11 +42,19 @@ export const budgetLimitsRule: Rule<FinanceContext> = {
       if (!catId) continue;
       if (!limit.limit || limit.limit <= 0) continue;
 
-      const spent = ctx.categorySpend[catId] || 0;
+      const canonicalSpent = ctx.canonicalMonthSpend.get(catId);
+      const spent =
+        typeof canonicalSpent === "number"
+          ? canonicalSpent
+          : ctx.categorySpend[catId] || 0;
       const pct = spent / limit.limit;
       const catLabel = resolveLabel(catId, ctx.customCategories);
+      // Глибокий лінк на сторінку Планування з підсвіткою саме цієї
+      // категорії — інсайт повинен вести до картки, про яку говорить,
+      // а не на дефолтний Огляд модуля.
+      const actionHash = `budgets?cat=${encodeURIComponent(catId)}`;
 
-      if (pct >= 1.4) {
+      if (pct >= 1.0) {
         recs.push({
           id: `budget_over_${catId}`,
           module: "finyk" as const,
@@ -50,6 +63,7 @@ export const budgetLimitsRule: Rule<FinanceContext> = {
           title: `Бюджет "${catLabel}" перевищено на ${Math.round((pct - 1) * 100)}%`,
           body: `Витрачено ${Math.round(spent).toLocaleString("uk-UA")} ₴ з ${Math.round(limit.limit).toLocaleString("uk-UA")} ₴`,
           action: "finyk",
+          actionHash,
           // Ліміт уже пробито — часто це означає, що є ще незафіксовані
           // витрати, які б затягнули картину ще гірше. Одним тапом відкриваємо
           // sheet, щоб дописати їх, поки деталі свіжі в пам'яті.
@@ -64,6 +78,7 @@ export const budgetLimitsRule: Rule<FinanceContext> = {
           title: `Ліміт "${catLabel}" майже вичерпано`,
           body: `${Math.round(pct * 100)}% бюджету витрачено цього місяця`,
           action: "finyk",
+          actionHash,
         });
       }
     }

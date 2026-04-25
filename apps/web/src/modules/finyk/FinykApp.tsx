@@ -139,9 +139,11 @@ function useHashRouter(
   defaultPage = "overview",
 ): [string, (p: string) => void] {
   const getPage = useCallback(() => {
-    // Accept both `#page` (canonical, matches fizruk/nutrition) and legacy `#/page`.
+    // Accept `#page`, `#page?query`, legacy `#/page`. Query string is
+    // handled separately by `useHashQueryParam` — strip it here so it
+    // doesn't break page-id matching.
     let p =
-      window.location.hash.replace(/^#\/?/, "").split("/")[0] || defaultPage;
+      window.location.hash.replace(/^#\/?/, "").split(/[/?]/)[0] || defaultPage;
     if (p === "payments") p = "budgets";
     return p;
   }, [defaultPage]);
@@ -155,6 +157,31 @@ function useHashRouter(
     window.location.hash = p;
   };
   return [ALL_PAGE_IDS.includes(page) ? page : defaultPage, navigate];
+}
+
+/**
+ * Reads a single query param from the URL hash (`#budgets?cat=smoking`
+ * → `useHashQueryParam("cat") === "smoking"`). Used by deep-links from
+ * Hub insights so a "Відкрити" tap can scroll the Budgets page to the
+ * exact limit the recommendation is about.
+ */
+function useHashQueryParam(name: string): string | null {
+  const read = useCallback(() => {
+    const m = window.location.hash.match(/\?(.+)$/);
+    if (!m) return null;
+    try {
+      return new URLSearchParams(m[1]).get(name);
+    } catch {
+      return null;
+    }
+  }, [name]);
+  const [value, setValue] = useState<string | null>(read);
+  useEffect(() => {
+    const handler = () => setValue(read());
+    window.addEventListener("hashchange", handler);
+    return () => window.removeEventListener("hashchange", handler);
+  }, [read]);
+  return value;
 }
 
 const PRIVAT_ENABLED = false;
@@ -182,6 +209,10 @@ export default function App({
   // `warning`/`info`/`action` usage from the shared Toast module.
   const storage = useStorage({ toast });
   const [page, navigate] = useHashRouter();
+  // Підтримка глибоких лінків на конкретний ліміт із Hub-інсайту
+  // (`#budgets?cat=smoking`). Передається у Budgets, щоб одразу
+  // підсвітити та проскролити потрібну картку.
+  const focusLimitCategoryId = useHashQueryParam("cat");
   const [tokenInput, setTokenInput] = useState("");
   const [showToken, setShowToken] = useState(false);
   const [rememberToken, setRememberToken] = useState(
@@ -716,6 +747,7 @@ export default function App({
                 mono={mergedMono}
                 storage={storage}
                 showBalance={showBalance}
+                focusLimitCategoryId={focusLimitCategoryId}
               />
             </SectionErrorBoundary>
           )}
