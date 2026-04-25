@@ -260,38 +260,13 @@
 
   .panel-interactive {
     @apply bg-panel border border-line rounded-3xl shadow-card
-           transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-smooth
+           transition-interactive
            hover:shadow-float hover:-translate-y-0.5
            active:scale-[0.98] active:shadow-card;
   }
 
   .panel-soft {
     @apply bg-panel/80 backdrop-blur-sm border border-line/50 rounded-3xl shadow-soft;
-  }
-
-  /* ═══════════════════════════════════════════════════════════════════════
-     MODULE HERO SURFACES — Branded headers for module routes.
-     Card variants (finyk/fizruk/routine/nutrition) are the primary API.
-     The remaining rules below style sub-areas that aren't just cards.
-     ═══════════════════════════════════════════════════════════════════════ */
-
-  .fizruk-cta-accent {
-    @apply bg-teal-500 text-white font-semibold rounded-2xl
-           transition-[background-color,box-shadow,opacity,transform] duration-200 ease-smooth
-           hover:bg-teal-600 hover:shadow-glow-teal
-           active:scale-[0.98];
-  }
-
-  .fizruk-summary-header {
-    @apply p-4 bg-hero-teal;
-  }
-  .dark .fizruk-summary-header {
-    @apply bg-panel;
-    background-image: linear-gradient(
-      135deg,
-      rgba(20, 184, 166, 0.15) 0%,
-      transparent 100%
-    );
   }
 
   /* ═══════════════════════════════════════════════════════════════════════
@@ -371,7 +346,7 @@
      ═══════════════════════════════════════════════════════════════════════ */
   .metric-card {
     @apply bg-panel border border-line rounded-2xl p-4 shadow-card
-           transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200
+           transition-interactive
            hover:shadow-float hover:-translate-y-0.5;
   }
 
@@ -416,6 +391,24 @@
 }
 
 @layer utilities {
+  /* ═══════════════════════════════════════════════════════════════════════
+     TRANSITION UTILITIES — Unified interactive transition shorthand.
+     Replaces ad-hoc `transition-[background-color,border-color,...]`
+     lists scattered across components with a single canonical token.
+     ═══════════════════════════════════════════════════════════════════════ */
+  .transition-interactive {
+    transition-property:
+      background-color, border-color, color, box-shadow, opacity, transform;
+    transition-duration: var(--motion-duration);
+    transition-timing-function: var(--motion-ease-smooth);
+  }
+
+  .transition-surface {
+    transition-property: background-color, border-color, color;
+    transition-duration: var(--motion-duration-fast);
+    transition-timing-function: var(--motion-ease-smooth);
+  }
+
   /* ═══════════════════════════════════════════════════════════════════════
      SAFE AREA UTILITIES
      ═══════════════════════════════════════════════════════════════════════ */
@@ -490,183 +483,22 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
-   ANIMATIONS — Page transitions, micro-interactions
+   PARTIALS — Animations & module surfaces extracted for maintainability.
    ═══════════════════════════════════════════════════════════════════════ */
-@keyframes page-enter {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-.page-enter {
-  animation: page-enter 0.22s ease-out both;
-}
-
-@keyframes module-slide-in {
-  from {
-    opacity: 0;
-    transform: translateX(32px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes hub-slide-in {
-  from {
-    opacity: 0;
-    transform: translateX(-32px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes onboarding-enter {
-  from {
-    opacity: 0;
-    transform: translateY(24px) scale(0.97);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-.module-enter {
-  animation: module-slide-in 0.24s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
-}
-.hub-enter {
-  animation: hub-slide-in 0.24s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
-}
-.animate-onboarding-enter {
-  animation: onboarding-enter 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-}
-
-/* Onboarding wizard step transitions */
-@keyframes step-slide-left {
-  from {
-    opacity: 0;
-    transform: translateX(40px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-@keyframes step-slide-right {
-  from {
-    opacity: 0;
-    transform: translateX(-40px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-.animate-step-forward {
-  animation: step-slide-left 0.28s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
-}
-.animate-step-backward {
-  animation: step-slide-right 0.28s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
-}
-
-/* Module card stagger animation */
-@keyframes module-card-enter {
-  from {
-    opacity: 0;
-    transform: translateY(12px) scale(0.97);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-.animate-module-card {
-  animation: module-card-enter 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-}
-
-/* Staggered entry for lists */
-@keyframes stagger-in {
-  from {
-    opacity: 0;
-    transform: translateY(12px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.stagger-enter > * {
-  animation: stagger-in 0.3s ease-out both;
-}
-.stagger-enter > *:nth-child(1) {
-  animation-delay: 0ms;
-}
-.stagger-enter > *:nth-child(2) {
-  animation-delay: 50ms;
-}
-.stagger-enter > *:nth-child(3) {
-  animation-delay: 100ms;
-}
-.stagger-enter > *:nth-child(4) {
-  animation-delay: 150ms;
-}
-.stagger-enter > *:nth-child(5) {
-  animation-delay: 200ms;
-}
-.stagger-enter > *:nth-child(6) {
-  animation-delay: 250ms;
-}
-
-/* Success checkmark animation (Duolingo-style) */
-@keyframes check-draw {
-  0% {
-    stroke-dashoffset: 24;
-  }
-  100% {
-    stroke-dashoffset: 0;
-  }
-}
-
-.animate-check-draw {
-  stroke-dasharray: 24;
-  animation: check-draw 0.3s ease-out 0.1s forwards;
-}
-
-/* Celebration confetti burst */
-@keyframes confetti-burst {
-  0% {
-    transform: scale(0) rotate(0deg);
-    opacity: 1;
-  }
-  50% {
-    opacity: 1;
-  }
-  100% {
-    transform: scale(1.5) rotate(180deg);
-    opacity: 0;
-  }
-}
-
-.animate-confetti {
-  animation: confetti-burst 0.6s ease-out forwards;
-}
+@import "./styles/animations.css";
+@import "./styles/module-surfaces.css";
 
 /* ═══════════════════════════════════════════════════════════════════════
-   iOS INPUT ZOOM FIX — Keep 16px minimum
+   iOS INPUT ZOOM FIX — Keep 16px minimum on touch devices only.
+   Uses `hover: none` media query so desktop inputs keep their intended
+   font size from the typographic scale.
    ═══════════════════════════════════════════════════════════════════════ */
-input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
-select,
-textarea {
-  font-size: 16px !important;
+@media (hover: none) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -696,15 +528,6 @@ textarea {
     rgba(255, 255, 255, 0.1) 50%,
     transparent 100%
   );
-}
-
-@keyframes shimmer {
-  0% {
-    transform: translateX(-100%);
-  }
-  100% {
-    transform: translateX(100%);
-  }
 }
 
 .skeleton-text {
@@ -811,166 +634,20 @@ textarea {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
-   CELEBRATION EFFECTS — Confetti, success pulses
+   DARK MODE INNER GLOW — Subtle edge highlight on cards for depth.
+   Adds a 1px inset white highlight at 5% opacity to help dark-theme
+   cards stand out from the near-black background. Light theme already
+   has sufficient shadow contrast and does not need the extra inset.
    ═══════════════════════════════════════════════════════════════════════ */
-@keyframes celebration-pop {
-  0% {
-    transform: scale(0) rotate(-10deg);
-    opacity: 0;
-  }
-  50% {
-    transform: scale(1.15) rotate(3deg);
-  }
-  70% {
-    transform: scale(0.95) rotate(-2deg);
-  }
-  100% {
-    transform: scale(1) rotate(0deg);
-    opacity: 1;
-  }
-}
-
-.animate-celebration-pop {
-  animation: celebration-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-}
-
-@keyframes success-ring {
-  0% {
-    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5);
-  }
-  100% {
-    box-shadow: 0 0 0 16px rgba(16, 185, 129, 0);
-  }
-}
-
-.animate-success-ring {
-  animation: success-ring 0.6s ease-out forwards;
-}
-
-@keyframes streak-glow {
-  0%,
-  100% {
-    filter: drop-shadow(0 0 8px rgba(249, 112, 102, 0.4));
-  }
-  50% {
-    filter: drop-shadow(0 0 16px rgba(249, 112, 102, 0.6));
-  }
-}
-
-.animate-streak-glow {
-  animation: streak-glow 2s ease-in-out infinite;
-}
-
-/* ═══════════════════════════════════════════════════════════════════════
-   MODULE CARD GRADIENTS — Refined hero cards
-   ═══════════════════════════════════════════════════════════════════════ */
-.module-card {
-  @apply relative rounded-3xl p-5 border overflow-hidden
-         transition-[background-color,border-color,box-shadow,opacity,transform] duration-300 ease-smooth;
-}
-
-.module-card::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.module-card:hover::before {
-  opacity: 1;
-}
-
-.module-card-finyk {
-  @apply module-card bg-gradient-to-br from-emerald-50 via-teal-50/50 to-white;
-  border-color: rgba(167, 243, 208, 0.6);
-}
-
-.module-card-finyk::before {
-  background: linear-gradient(
-    135deg,
-    rgba(16, 185, 129, 0.08) 0%,
-    transparent 60%
-  );
-}
-
-.dark .module-card-finyk {
-  @apply bg-panel;
-  border-color: rgba(16, 185, 129, 0.2);
-  background-image: linear-gradient(
-    135deg,
-    rgba(16, 185, 129, 0.12) 0%,
-    transparent 60%
-  );
-}
-
-.module-card-fizruk {
-  @apply module-card bg-gradient-to-br from-teal-50 via-cyan-50/50 to-white;
-  border-color: rgba(153, 246, 228, 0.6);
-}
-
-.module-card-fizruk::before {
-  background: linear-gradient(
-    135deg,
-    rgba(20, 184, 166, 0.08) 0%,
-    transparent 60%
-  );
-}
-
-.dark .module-card-fizruk {
-  @apply bg-panel;
-  border-color: rgba(20, 184, 166, 0.2);
-  background-image: linear-gradient(
-    135deg,
-    rgba(20, 184, 166, 0.12) 0%,
-    transparent 60%
-  );
-}
-
-.module-card-routine {
-  @apply module-card bg-gradient-to-br from-coral-50/80 via-orange-50/30 to-white;
-  border-color: rgba(255, 212, 203, 0.6);
-}
-
-.module-card-routine::before {
-  background: linear-gradient(
-    135deg,
-    rgba(249, 112, 102, 0.08) 0%,
-    transparent 60%
-  );
-}
-
-.dark .module-card-routine {
-  @apply bg-panel;
-  border-color: rgba(249, 112, 102, 0.2);
-  background-image: linear-gradient(
-    135deg,
-    rgba(249, 112, 102, 0.12) 0%,
-    transparent 60%
-  );
-}
-
-.module-card-nutrition {
-  @apply module-card bg-gradient-to-br from-lime-50 via-green-50/30 to-white;
-  border-color: rgba(217, 249, 157, 0.6);
-}
-
-.module-card-nutrition::before {
-  background: linear-gradient(
-    135deg,
-    rgba(132, 204, 22, 0.08) 0%,
-    transparent 60%
-  );
-}
-
-.dark .module-card-nutrition {
-  @apply bg-panel;
-  border-color: rgba(132, 204, 22, 0.2);
-  background-image: linear-gradient(
-    135deg,
-    rgba(132, 204, 22, 0.12) 0%,
-    transparent 60%
-  );
+.dark .panel,
+.dark .panel-interactive,
+.dark .panel-soft,
+.dark .metric-card,
+.dark .metric-card-compact,
+.dark .glass-card {
+  box-shadow:
+    var(--shadow-card),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -981,7 +658,7 @@ textarea {
          w-14 h-14 rounded-full
          bg-brand-500 text-white
          shadow-float
-         transition-[background-color,box-shadow,opacity,transform] duration-200 ease-smooth;
+         transition-interactive;
   right: max(1rem, env(safe-area-inset-right, 0px));
 }
 
@@ -1018,7 +695,7 @@ textarea {
 
 .pill-nav-item {
   @apply px-4 py-2 rounded-full text-sm font-medium text-muted
-         transition-[background-color,color,box-shadow,opacity] duration-200 ease-smooth;
+         transition-surface;
 }
 
 .pill-nav-item:hover {
@@ -1045,37 +722,4 @@ textarea {
   @apply opacity-100;
   visibility: visible;
   transform: translateY(0);
-}
-
-/* ═══════════════════════════════════════════════════════════════════════
-   NUMBER COUNTER — Animated value changes
-   ═══════════════════════════════════════════════════════════════════════ */
-@keyframes number-tick-up {
-  0% {
-    transform: translateY(100%);
-    opacity: 0;
-  }
-  100% {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-@keyframes number-tick-down {
-  0% {
-    transform: translateY(-100%);
-    opacity: 0;
-  }
-  100% {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-.animate-tick-up {
-  animation: number-tick-up 0.3s ease-out forwards;
-}
-
-.animate-tick-down {
-  animation: number-tick-down 0.3s ease-out forwards;
 }

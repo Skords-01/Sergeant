@@ -38,8 +38,17 @@ export type {
   CardVariant,
 } from "./Card";
 
+export { Avatar } from "./Avatar";
+export type { AvatarProps, AvatarSize, AvatarStatus } from "./Avatar";
+
 export { EmptyState } from "./EmptyState";
 export type { EmptyStateProps } from "./EmptyState";
+
+export { EmptyStateIllustration } from "./EmptyStateIllustration";
+export type {
+  EmptyStateIllustrationProps,
+  IllustrationVariant,
+} from "./EmptyStateIllustration";
 
 export { FormField, Label } from "./FormField";
 export type { FormFieldProps, LabelProps } from "./FormField";
@@ -75,8 +84,18 @@ export type {
 export { Select } from "./Select";
 export type { SelectProps, SelectSize, SelectVariant } from "./Select";
 
+export { Popover, PopoverDivider, PopoverItem } from "./Popover";
+export type {
+  PopoverItemProps,
+  PopoverPlacement,
+  PopoverProps,
+} from "./Popover";
+
 export { Skeleton, SkeletonText } from "./Skeleton";
 export type { SkeletonProps } from "./Skeleton";
+
+export { SkeletonCard, SkeletonList } from "./SkeletonCard";
+export type { SkeletonCardProps, SkeletonListProps } from "./SkeletonCard";
 
 export { SkipLink } from "./SkipLink";
 export type { SkipLinkProps } from "./SkipLink";

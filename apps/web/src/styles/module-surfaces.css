@@ -1,0 +1,144 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   MODULE SURFACES — Hero cards, branded gradients, module-specific rules.
+   Extracted from index.css for maintainability.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── Module card base ────────────────────────────────────────────────── */
+
+.module-card {
+  @apply relative rounded-3xl p-5 border overflow-hidden
+         transition-interactive;
+}
+
+.module-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.module-card:hover::before {
+  opacity: 1;
+}
+
+/* ── Finyk (emerald) ─────────────────────────────────────────────────── */
+
+.module-card-finyk {
+  @apply module-card bg-gradient-to-br from-emerald-50 via-teal-50/50 to-white;
+  border-color: rgba(167, 243, 208, 0.6);
+}
+
+.module-card-finyk::before {
+  background: linear-gradient(
+    135deg,
+    rgba(16, 185, 129, 0.08) 0%,
+    transparent 60%
+  );
+}
+
+.dark .module-card-finyk {
+  @apply bg-panel;
+  border-color: rgba(16, 185, 129, 0.2);
+  background-image: linear-gradient(
+    135deg,
+    rgba(16, 185, 129, 0.12) 0%,
+    transparent 60%
+  );
+}
+
+/* ── Fizruk (teal) ───────────────────────────────────────────────────── */
+
+.module-card-fizruk {
+  @apply module-card bg-gradient-to-br from-teal-50 via-cyan-50/50 to-white;
+  border-color: rgba(153, 246, 228, 0.6);
+}
+
+.module-card-fizruk::before {
+  background: linear-gradient(
+    135deg,
+    rgba(20, 184, 166, 0.08) 0%,
+    transparent 60%
+  );
+}
+
+.dark .module-card-fizruk {
+  @apply bg-panel;
+  border-color: rgba(20, 184, 166, 0.2);
+  background-image: linear-gradient(
+    135deg,
+    rgba(20, 184, 166, 0.12) 0%,
+    transparent 60%
+  );
+}
+
+/* ── Routine (coral) ─────────────────────────────────────────────────── */
+
+.module-card-routine {
+  @apply module-card bg-gradient-to-br from-coral-50/80 via-orange-50/30 to-white;
+  border-color: rgba(255, 212, 203, 0.6);
+}
+
+.module-card-routine::before {
+  background: linear-gradient(
+    135deg,
+    rgba(249, 112, 102, 0.08) 0%,
+    transparent 60%
+  );
+}
+
+.dark .module-card-routine {
+  @apply bg-panel;
+  border-color: rgba(249, 112, 102, 0.2);
+  background-image: linear-gradient(
+    135deg,
+    rgba(249, 112, 102, 0.12) 0%,
+    transparent 60%
+  );
+}
+
+/* ── Nutrition (lime) ────────────────────────────────────────────────── */
+
+.module-card-nutrition {
+  @apply module-card bg-gradient-to-br from-lime-50 via-green-50/30 to-white;
+  border-color: rgba(217, 249, 157, 0.6);
+}
+
+.module-card-nutrition::before {
+  background: linear-gradient(
+    135deg,
+    rgba(132, 204, 22, 0.08) 0%,
+    transparent 60%
+  );
+}
+
+.dark .module-card-nutrition {
+  @apply bg-panel;
+  border-color: rgba(132, 204, 22, 0.2);
+  background-image: linear-gradient(
+    135deg,
+    rgba(132, 204, 22, 0.12) 0%,
+    transparent 60%
+  );
+}
+
+/* ── Fizruk-specific surface helpers ─────────────────────────────────── */
+
+.fizruk-cta-accent {
+  @apply bg-teal-500 text-white font-semibold rounded-2xl
+         transition-interactive
+         hover:bg-teal-600 hover:shadow-glow-teal
+         active:scale-[0.98];
+}
+
+.fizruk-summary-header {
+  @apply p-4 bg-hero-teal;
+}
+.dark .fizruk-summary-header {
+  @apply bg-panel;
+  background-image: linear-gradient(
+    135deg,
+    rgba(20, 184, 166, 0.15) 0%,
+    transparent 100%
+  );
+}
