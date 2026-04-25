@@ -441,7 +441,11 @@ export function handleCrossAction(action: ChatAction): string | undefined {
     case "remember": {
       const { fact, category } = (action as RememberAction).input || {};
       try {
-        const result = upsertMemoryFact(readMemoryEntries(), fact, category);
+        const result = upsertMemoryFact(
+          readMemoryEntries(),
+          typeof fact === "string" ? fact : "",
+          typeof category === "string" ? category : undefined,
+        );
         writeMemoryEntries(result.entries);
         const meta = CATEGORY_META[result.entry.category];
         const label = meta?.label ?? result.entry.category;

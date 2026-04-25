@@ -544,6 +544,16 @@ describe("add_calendar_event", () => {
 });
 
 describe("profile memory actions", () => {
+  it("remember повертає зрозумілу помилку без fact", () => {
+    const msg = executeAction({
+      name: "remember",
+      input: {},
+    });
+
+    expect(msg).toBe("Потрібен факт для запам'ятовування.");
+    expect(readLS("hub_user_profile_v1", [])).toHaveLength(0);
+  });
+
   it("remember зберігає факт у профіль і my_profile його показує", () => {
     const msg = executeAction({
       name: "remember",
