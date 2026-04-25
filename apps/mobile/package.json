@@ -72,7 +72,7 @@
     "@config-plugins/detox": "^9.0.0",
     "@sergeant/config": "workspace:*",
     "@testing-library/react-native": "^12",
-    "@types/jest": "^29",
+    "@types/jest": "^30.0.0",
     "@types/react": "~18.3.12",
     "detox": "^20.28.0",
     "jest": "^29",
