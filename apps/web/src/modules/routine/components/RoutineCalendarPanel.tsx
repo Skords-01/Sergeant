@@ -493,6 +493,74 @@ export function RoutineCalendarPanel({
               month: "long",
             })}
           </p>
+          {flatGroupedItems.length > 0 && (
+            <div className="mt-3 space-y-1">
+              {flatGroupedItems.map((item, idx) => {
+                if (item.kind === "header") {
+                  return (
+                    <SectionHeading
+                      key={`dh-${item.label}`}
+                      as="p"
+                      size="xs"
+                      tone="subtle"
+                      className={cn(idx > 0 && "mt-2")}
+                    >
+                      {item.label}
+                    </SectionHeading>
+                  );
+                }
+                const e = item.e;
+                return (
+                  <div
+                    key={`dd-${e.id}`}
+                    className={cn(
+                      "flex items-center gap-2 rounded-xl px-3 py-2 border border-line bg-panel/60",
+                      e.completed && "opacity-70",
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "w-1.5 h-1.5 rounded-full shrink-0",
+                        e.fizruk
+                          ? "bg-sky-500"
+                          : e.finykSub
+                            ? "bg-emerald-500"
+                            : C.dot,
+                      )}
+                    />
+                    <span className="flex-1 min-w-0 text-sm font-medium text-text truncate">
+                      {e.title}
+                    </span>
+                    <span className="text-2xs text-subtle shrink-0">
+                      {e.subtitle}
+                    </span>
+                    {e.habitId && (
+                      <button
+                        type="button"
+                        onClick={() => onToggleHabit(e.habitId, e.date)}
+                        className={cn(
+                          "w-7 h-7 rounded-lg border flex items-center justify-center text-xs font-bold transition-colors shrink-0",
+                          e.completed
+                            ? C.done
+                            : "border-line hover:bg-panelHi text-muted",
+                        )}
+                        aria-label={
+                          e.completed ? "Скасувати виконання" : "Виконано"
+                        }
+                      >
+                        {e.completed ? "✓" : "○"}
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          {flatGroupedItems.length === 0 && (
+            <p className="mt-2 text-2xs text-subtle text-center">
+              Подій на цей день немає
+            </p>
+          )}
         </Card>
       )}
 
