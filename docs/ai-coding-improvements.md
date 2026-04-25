@@ -502,6 +502,51 @@ it("accountsHandler response shape matches snapshot", async () => {
 
 ---
 
+# Session log
+
+## 2026-04-25 — інфра-спринт (8 PR, 4 з 8 блоків закрито)
+
+| PR                                                     | Що                                                                       | Блок          |
+| ------------------------------------------------------ | ------------------------------------------------------------------------ | ------------- |
+| [#714](https://github.com/Skords-01/Sergeant/pull/714) | `AGENTS.md` + PR template "How AI-tested"                                | 1             |
+| [#715](https://github.com/Skords-01/Sergeant/pull/715) | AI markers + ESLint rule `sergeant-design/ai-marker-syntax`              | 3             |
+| [#716](https://github.com/Skords-01/Sergeant/pull/716) | Knip + depcheck + cleanup (бонус з `dev-stack-roadmap` #2)               | (bonus)       |
+| [#717](https://github.com/Skords-01/Sergeant/pull/717) | Activate Playwright E2E на PR                                            | 4.2 / dev #12 |
+| [#718](https://github.com/Skords-01/Sergeant/pull/718) | Snapshot tests `accountsHandler` + `transactionsHandler`                 | 4.5 / dev #10 |
+| [#719](https://github.com/Skords-01/Sergeant/pull/719) | Оновлення roadmap-ів зі статусом                                         | (meta)        |
+| [#720](https://github.com/Skords-01/Sergeant/pull/720) | Fix `vitest.base.ts` ESM bug (розблокувало `pnpm test` для всіх пакетів) | (infra)       |
+| [#721](https://github.com/Skords-01/Sergeant/pull/721) | Renovate config (заміна Dependabot, dev-stack #7)                        | (bonus)       |
+
+### Що з блоків 1-8 цього документа залишилось
+
+| Блок | Статус             | Наступний крок                                                                                       |
+| ---- | ------------------ | ---------------------------------------------------------------------------------------------------- |
+| 1    | ✅ done            | Quarterly review reminder (next due: 2026-07-25)                                                     |
+| 2    | ⏳ pending         | Створити 4 playbook-и (`hotfix-prod`, `add-feature-flag`, `cleanup-dead-code`, `add-domain-package`) |
+| 3    | ✅ done            | Додавати маркери поступово при роботі з legacy-кодом                                                 |
+| 4    | 🟡 not started     | Потребує credentials мейнтейнера ($20/міс Vercel Pro)                                                |
+| 5    | ✅ done            | Workflow: Smoke E2E (#717). Visual regression (Argos) — далі                                         |
+| 6    | ⏳ pending         | Argos / Chromatic — після стабільного preview deploy (блок 4)                                        |
+| 7    | ⏳ pending         | Storybook або Histoire — окрема велика задача                                                        |
+| 8    | ✅ done (частково) | Покриті 2 endpoint-и Mono. Решта endpoint-ів — поступово                                             |
+
+### Bonus відкриття під час спринту
+
+- **`vitest.base.ts` ESM bug ([#720](https://github.com/Skords-01/Sergeant/pull/720))** — `pnpm test` був повністю зламаний на main з commit `dab67bdc`. Native Node ESM loader не вміє резолвити `.ts` через package exports. Конвертовано у `.js` з JSDoc-типами. Це регресія яку б ловив CI з блоку 4.5, якби він був повністю налаштований до того.
+- **AGENTS.md без prettier ([#719](https://github.com/Skords-01/Sergeant/pull/719))** — фідбек для майбутніх AI-сесій що створюють docs: завжди прогнати `prettier --write` перед commit-ом.
+
+### Метрики (з блоку 5 цього документа) — оновлення
+
+| Метрика                                 | Baseline (до сесії)   | Зараз                                                                        |
+| --------------------------------------- | --------------------- | ---------------------------------------------------------------------------- |
+| Time-to-PR (chat → open)                | ~30 хв                | без замірів (потребує телеметрії)                                            |
+| CI-fail-rate першої спроби              | n/a (CI був зламаний) | потребує спостереження кілька PR-ів                                          |
+| % PR-ів від AI які revert-нули          | n/a                   | 0 / 8 за цей спринт                                                          |
+| Recurring bugs                          | n/a                   | track via [#708](https://github.com/Skords-01/Sergeant/issues/708) reference |
+| AGENTS.md staleness (дні з last review) | n/a                   | 0 (last review: 2026-04-25)                                                  |
+
+---
+
 # Поза скоупом цього документа
 
 - Knowledge notes (це окремо — вже згадано у попередньому повідомленні чату).
