@@ -32,14 +32,7 @@ const GROUPS = [
   },
 ];
 
-export function HubSettingsPage({
-  dark,
-  onToggleDark,
-  syncing,
-  onSync,
-  onPull,
-  user,
-}) {
+export function HubSettingsPage({ syncing, onSync, onPull, user }) {
   const [tab, setTab] = useState("general");
   const [query, setQuery] = useState("");
   const refs = useRef({});
@@ -52,11 +45,9 @@ export function HubSettingsPage({
         id: "general",
         title: "Інтерфейс і синхронізація",
         keywords:
-          "загальні тема темна світла мова інтерфейс синхронізація акаунт sync cloud backup",
+          "загальні мова інтерфейс синхронізація акаунт sync cloud backup",
         render: () => (
           <GeneralSection
-            dark={dark}
-            onToggleDark={onToggleDark}
             syncing={syncing}
             onSync={onSync}
             onPull={onPull}
@@ -111,7 +102,7 @@ export function HubSettingsPage({
         render: () => <ExperimentalSection />,
       },
     ],
-    [dark, onToggleDark, syncing, onSync, onPull, user],
+    [syncing, onSync, onPull, user],
   );
 
   const q = query.trim().toLowerCase();
