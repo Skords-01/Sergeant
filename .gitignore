@@ -23,6 +23,9 @@ test-results/
 # Cursor / local IDE settings
 .cursor/
 
+# Local screenshots / scratch assets (use external storage like Notion/Figma)
+attached_assets/
+
 # Mobile / EAS
 apps/mobile/google-services.json
 apps/mobile/GoogleService-Info.plist
