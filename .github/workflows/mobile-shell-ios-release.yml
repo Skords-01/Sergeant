@@ -253,7 +253,7 @@ jobs:
           steps.secrets.outputs.configured == 'true'
           && env.APP_STORE_CONNECT_API_KEY_ID != ''
           && (github.event_name != 'workflow_dispatch' || inputs.upload_testflight)
-        uses: apple-actions/upload-testflight-build@v1
+        uses: apple-actions/upload-testflight-build@9fe2647a2deb0277d2909a036ee4584fe3226e73 # v2
         with:
           app-path: apps/mobile-shell/ios/App/build/App.ipa
           issuer-id: ${{ env.APP_STORE_CONNECT_API_ISSUER_ID }}
