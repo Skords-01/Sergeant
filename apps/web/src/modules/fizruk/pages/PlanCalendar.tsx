@@ -1,4 +1,4 @@
-import { Card } from "@shared/components/ui/Card";
+import { Button } from "@shared/components/ui/Button";
 import { RecoveryFocusCard } from "../components/RecoveryFocusCard";
 import { TodayPlanCard } from "../components/TodayPlanCard";
 
@@ -18,29 +18,19 @@ export function PlanCalendar({
           }}
         />
 
-        <Card as="section" radius="lg" padding="md">
-          <h2 className="text-sm font-semibold text-text mb-1">
-            Календар тренувань
-          </h2>
-          <p className="text-xs text-subtle leading-snug mb-3">
-            Призначення шаблонів на конкретні дні тепер в єдиному Hub-календарі
-            модуля «Рутина». Там бачиш і звички, і тренування, і підписки — все
-            в одному розкладі.
-          </p>
-          {onOpenRoutine ? (
-            <button
-              type="button"
+        <div className="space-y-2">
+          {onOpenRoutine && (
+            <Button
+              className="w-full h-12 min-h-[44px]"
               onClick={onOpenRoutine}
-              className="w-full rounded-xl border border-routine/30 bg-routine/5 hover:bg-routine/10 px-4 py-3 text-sm font-semibold text-routine-strong dark:text-routine transition-colors text-center"
             >
-              Відкрити Рутину
-            </button>
-          ) : (
-            <p className="text-xs text-subtle">
-              Перейди в модуль «Рутина» для планування.
-            </p>
+              Запланувати тренування
+            </Button>
           )}
-        </Card>
+          <p className="text-xs text-subtle text-center leading-snug">
+            Заплановані тренування відображатимуться у календарі модуля «Рутина»
+          </p>
+        </div>
       </div>
     </div>
   );

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "@shared/components/ui/Button";
 import { Card } from "@shared/components/ui/Card";
 import { SectionHeading } from "@shared/components/ui/SectionHeading";
@@ -37,12 +37,6 @@ export function TodayPlanCard({
   const [pendingTemplateId, setPendingTemplateId] = useState<string | null>(
     null,
   );
-
-  useEffect(() => {
-    if (selectedTemplateId) return;
-    const first = templates[0]?.id;
-    if (first) setSelectedTemplateId(first);
-  }, [templates, selectedTemplateId, setSelectedTemplateId]);
 
   const effectiveTemplateId = monthlyPlan.todayTemplateId || selectedTemplateId;
 
@@ -142,15 +136,14 @@ export function TodayPlanCard({
             }}
             aria-label="Обрати збережений шаблон тренування"
           >
-            {templates.length === 0 ? (
-              <option value="">— немає шаблонів —</option>
-            ) : (
-              templates.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name}
-                </option>
-              ))
-            )}
+            <option value="">
+              {templates.length === 0 ? "— немає шаблонів —" : "Оберіть шаблон"}
+            </option>
+            {templates.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.name}
+              </option>
+            ))}
           </select>
         </div>
 
@@ -178,39 +171,43 @@ export function TodayPlanCard({
           </div>
         ) : null}
 
-        <div className="mt-4">
-          <div className="text-xs text-subtle mb-2">
-            Вправи з шаблону
-            {plan.templateName ? ` «${plan.templateName}»` : ""}:
+        {effectiveTemplateId ? (
+          <div className="mt-4">
+            <div className="text-xs text-subtle mb-2">
+              Вправи з шаблону
+              {plan.templateName ? ` «${plan.templateName}»` : ""}:
+            </div>
+            {plan.picked.length ? (
+              <div className="space-y-2">
+                {plan.picked.map((ex) => (
+                  <button
+                    key={ex.id}
+                    type="button"
+                    className="w-full text-left border border-line rounded-2xl p-3 min-h-[44px] bg-bg hover:bg-panelHi transition-colors"
+                    onClick={() => {
+                      window.location.hash = `#exercise/${ex.id}`;
+                    }}
+                  >
+                    <div className="text-sm font-semibold text-text truncate">
+                      {ex?.name?.uk || ex?.name?.en}
+                    </div>
+                    <div className="text-xs text-subtle mt-0.5">
+                      {primaryGroupsUk?.[ex.primaryGroup] || ex.primaryGroup}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="text-sm text-subtle text-center py-6">
+                У шаблоні немає вправ або вправи видалені з каталогу
+              </div>
+            )}
           </div>
-          {plan.picked.length ? (
-            <div className="space-y-2">
-              {plan.picked.map((ex) => (
-                <button
-                  key={ex.id}
-                  type="button"
-                  className="w-full text-left border border-line rounded-2xl p-3 min-h-[44px] bg-bg hover:bg-panelHi transition-colors"
-                  onClick={() => {
-                    window.location.hash = `#exercise/${ex.id}`;
-                  }}
-                >
-                  <div className="text-sm font-semibold text-text truncate">
-                    {ex?.name?.uk || ex?.name?.en}
-                  </div>
-                  <div className="text-xs text-subtle mt-0.5">
-                    {primaryGroupsUk?.[ex.primaryGroup] || ex.primaryGroup}
-                  </div>
-                </button>
-              ))}
-            </div>
-          ) : (
-            <div className="text-sm text-subtle text-center py-6">
-              {templates.length
-                ? "У шаблоні немає вправ або вправи видалені з каталогу"
-                : "Обери або створи шаблон"}
-            </div>
-          )}
-        </div>
+        ) : (
+          <div className="mt-4 text-sm text-subtle text-center py-6">
+            Оберіть шаблон, щоб побачити вправи
+          </div>
+        )}
 
         <div className="mt-3 flex gap-2">
           <Button
