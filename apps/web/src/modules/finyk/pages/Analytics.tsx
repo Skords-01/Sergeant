@@ -239,6 +239,8 @@ export function Analytics({ mono, storage }: AnalyticsProps) {
     if (!isCurrentMonth && !historyCache[monthKey]) {
       ensureMonth(year, month, monthKey);
     }
+    // `ensureMonth`/`historyCache` excluded — `ensureMonth` is redefined
+    // each render and `historyCache` changes after fetch, both would loop.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [year, month, isCurrentMonth, monthKey]);
 
@@ -246,6 +248,7 @@ export function Analytics({ mono, storage }: AnalyticsProps) {
     if (!historyCache[prevKey]) {
       ensureMonth(prevYear, prevMonth, prevKey);
     }
+    // `ensureMonth`/`historyCache` excluded — same reason as above.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [prevYear, prevMonth, prevKey]);
 

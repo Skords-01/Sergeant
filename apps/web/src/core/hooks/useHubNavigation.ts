@@ -73,6 +73,8 @@ export function useHubNavigation(): HubNavigation {
       setModuleAnimClass(mod ? "module-enter" : "hub-enter");
       setActiveModule(mod);
     }
+    // `activeModule` is read but also set — adding it would loop.
+    // Setters (`setActiveModule`, `setModuleAnimClass`) are stable.
   }, [searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return { activeModule, openModule, goToHub, moduleAnimClass };

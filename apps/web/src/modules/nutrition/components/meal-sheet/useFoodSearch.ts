@@ -79,6 +79,7 @@ export function useFoodSearch(foodQuery: string): UseFoodSearchResult {
   // the fetch-effect; restore it explicitly here.
   useEffect(() => {
     if (foodErr) setFoodErr("");
+    // `foodErr` excluded: including it would loop (effect clears it).
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [trimmed]);
 
