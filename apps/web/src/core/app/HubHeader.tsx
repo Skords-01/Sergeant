@@ -8,11 +8,11 @@ import type { User } from "@sergeant/shared";
 const ICON_BUTTON_CLS =
   "w-11 h-11 flex items-center justify-center rounded-2xl text-muted hover:text-text hover:bg-panelHi transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/45 focus-visible:ring-offset-2 focus-visible:ring-offset-bg";
 
-const GREETINGS: Record<string, { text: string; emoji: string }> = {
-  morning: { text: "Доброго ранку", emoji: "\u2600\uFE0F" },
-  afternoon: { text: "Доброго дня", emoji: "\uD83C\uDF24\uFE0F" },
-  evening: { text: "Доброго вечора", emoji: "\uD83C\uDF19" },
-  night: { text: "Доброї ночі", emoji: "\uD83C\uDF1F" },
+const GREETINGS: Record<string, string> = {
+  morning: "Доброго ранку",
+  afternoon: "Доброго дня",
+  evening: "Доброго вечора",
+  night: "Доброї ночі",
 };
 
 function getTimeOfDay(): keyof typeof GREETINGS {
@@ -66,14 +66,11 @@ export function HubHeader({
   onToggleDark,
   hideAuthButton = false,
 }: HubHeaderProps) {
-  const greeting = useMemo(() => {
+  const greetingText = useMemo(() => {
     const tod = getTimeOfDay();
-    const g = GREETINGS[tod];
+    const base = GREETINGS[tod];
     const name = user?.name?.split(" ")[0];
-    return {
-      text: name ? `${g.text}, ${name}` : g.text,
-      emoji: g.emoji,
-    };
+    return name ? `${base}, ${name}` : base;
   }, [user?.name]);
 
   const dateStr = useMemo(formatUkrainianDate, []);
@@ -84,11 +81,15 @@ export function HubHeader({
       style={{ paddingTop: "max(2.5rem, env(safe-area-inset-top))" }}
     >
       <div className="min-w-0">
-        <BrandLogo as="h1" size="lg" className="mb-1" />
-        <p className="text-sm text-muted leading-tight truncate">
-          {greeting.text} <span aria-hidden>{greeting.emoji}</span>
+        <BrandLogo as="h1" size="lg" className="mb-1.5" />
+        <p className="text-[13px] leading-snug text-muted truncate">
+          {greetingText}
         </p>
-        {dateStr && <p className="text-xs text-muted mt-0.5">{dateStr}</p>}
+        {dateStr && (
+          <p className="text-[13px] leading-snug text-subtle truncate">
+            {dateStr}
+          </p>
+        )}
       </div>
       <div className="pt-1 flex items-center gap-1 shrink-0">
         <button

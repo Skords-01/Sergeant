@@ -135,7 +135,12 @@ function WelcomeStep({ onContinue }: { onContinue: () => void }) {
       <div className="space-y-2">
         <h2 className="text-2xl font-bold text-text">
           Привіт. Це{" "}
-          <BrandLogo size="md" className="inline-flex align-baseline" />.
+          <BrandLogo
+            size="md"
+            variant="inline"
+            className="inline-flex align-baseline"
+          />
+          .
         </h2>
         <p className="text-sm text-muted leading-relaxed max-w-xs mx-auto">
           Гроші, тіло, звички, їжа — все в одному місці. Офлайн. Приватно. Через

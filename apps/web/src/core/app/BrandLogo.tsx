@@ -1,53 +1,58 @@
 /**
- * Brand logo mark — styled "Sergeant" title with military chevron accent.
+ * Brand logo mark — Sergeant chevron badge + wordmark.
  *
- * Renders a small three-chevron SVG (sergeant rank insignia) in brand
- * emerald alongside the app name in DM Sans ExtraBold with a subtle
- * text gradient that adapts to light/dark themes via CSS variables.
+ * Renders a rounded emerald badge with three white sergeant chevrons
+ * paired with the "Sergeant" wordmark in DM Sans ExtraBold.
  *
- * Used in HubHeader, AuthPage, ResetPasswordPage and OnboardingWizard.
+ * Variants:
+ *   - "badge" (default): 32px rounded badge + wordmark side by side.
+ *     Used in HubHeader, AuthPage, ResetPasswordPage.
+ *   - "inline":           chevron icon inline with text (no badge).
+ *     Used in OnboardingWizard inside a sentence.
+ *
+ * Sizes:
+ *   - "lg": hub header — bigger badge + 22px wordmark.
+ *   - "md": auth/onboarding — smaller badge + 18px wordmark.
  */
 
-const CHEVRON_ICON = (
-  <svg
-    viewBox="0 0 18 18"
-    width={18}
-    height={18}
-    fill="none"
-    aria-hidden="true"
-    className="shrink-0"
-  >
-    <path
-      d="M3 6.5 L9 3 L15 6.5"
-      stroke="currentColor"
-      strokeWidth="2.2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    <path
-      d="M3 10.5 L9 7 L15 10.5"
-      stroke="currentColor"
-      strokeWidth="2.2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    <path
-      d="M3 14.5 L9 11 L15 14.5"
-      stroke="currentColor"
-      strokeWidth="2.2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </svg>
-);
+interface ChevronMarkProps {
+  size: number;
+}
 
-const GRADIENT_STYLE: React.CSSProperties = {
-  background:
-    "linear-gradient(135deg, rgb(var(--c-text)) 50%, rgb(var(--c-accent)))",
-  WebkitBackgroundClip: "text",
-  WebkitTextFillColor: "transparent",
-  backgroundClip: "text",
-};
+function ChevronMark({ size }: ChevronMarkProps) {
+  return (
+    <svg
+      viewBox="0 0 18 18"
+      width={size}
+      height={size}
+      fill="none"
+      aria-hidden="true"
+      className="shrink-0"
+    >
+      <path
+        d="M3 6.5 L9 3 L15 6.5"
+        stroke="currentColor"
+        strokeWidth="2.2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M3 10.5 L9 7 L15 10.5"
+        stroke="currentColor"
+        strokeWidth="2.2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M3 14.5 L9 11 L15 14.5"
+        stroke="currentColor"
+        strokeWidth="2.2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
 
 type TagName = "span" | "h1" | "h2" | "h3" | "div";
 
@@ -58,26 +63,58 @@ interface BrandLogoProps {
   size?: "lg" | "md";
   /** HTML element for the outer wrapper (default "span"). Use "h1" on pages that need a heading landmark. */
   as?: TagName;
+  /**
+   * "badge" (default) renders the chevron inside an emerald rounded square
+   * next to the wordmark. "inline" renders a flat chevron icon next to the
+   * wordmark — used when the logo appears mid-sentence.
+   */
+  variant?: "badge" | "inline";
 }
 
 export function BrandLogo({
   className,
   size = "lg",
   as: Tag = "span",
+  variant = "badge",
 }: BrandLogoProps) {
-  const textCls =
+  const wordmarkCls =
     size === "lg"
-      ? "text-[26px] leading-none font-extrabold tracking-tight"
-      : "text-2xl leading-none font-extrabold tracking-tight";
+      ? "text-[22px] leading-none font-extrabold tracking-tight"
+      : "text-[18px] leading-none font-extrabold tracking-tight";
+
+  if (variant === "inline") {
+    const iconSize = size === "lg" ? 20 : 18;
+    return (
+      <Tag
+        className={`inline-flex items-center gap-1.5 select-none text-brand-500 ${className ?? ""}`}
+      >
+        <ChevronMark size={iconSize} />
+        <span className={`${wordmarkCls} text-text`}>Sergeant</span>
+      </Tag>
+    );
+  }
+
+  const badgePx = size === "lg" ? 32 : 28;
+  const chevronPx = size === "lg" ? 20 : 18;
+  const radiusPx = size === "lg" ? 10 : 9;
+  const gapCls = size === "lg" ? "gap-2.5" : "gap-2";
 
   return (
     <Tag
-      className={`inline-flex items-center gap-1.5 select-none text-brand-500 ${className ?? ""}`}
+      className={`inline-flex items-center select-none ${gapCls} ${className ?? ""}`}
     >
-      {CHEVRON_ICON}
-      <span className={textCls} style={GRADIENT_STYLE}>
-        Sergeant
+      <span
+        aria-hidden="true"
+        className="inline-flex items-center justify-center bg-brand-500 text-white shadow-[0_1px_2px_rgba(16,185,129,0.25),0_4px_12px_-2px_rgba(16,185,129,0.35)]"
+        style={{
+          width: badgePx,
+          height: badgePx,
+          borderRadius: radiusPx,
+        }}
+      >
+        <ChevronMark size={chevronPx} />
       </span>
+      <span className={`${wordmarkCls} text-text`}>Sergeant</span>
     </Tag>
   );
 }
