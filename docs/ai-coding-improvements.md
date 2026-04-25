@@ -8,16 +8,16 @@
 
 ## Прогрес (2026-04-25)
 
-| Блок                                     | Статус         | PR                                                     | Notes                                                                                               |
-| ---------------------------------------- | -------------- | ------------------------------------------------------ | --------------------------------------------------------------------------------------------------- |
-| 1. `AGENTS.md` + repo-rules              | ✅ done        | [#714](https://github.com/Skords-01/Sergeant/pull/714) | + `.github/PULL_REQUEST_TEMPLATE.md` із секцією «How AI-tested this PR».                            |
-| 2. Playbooks (4 шаблони)                 | 🟢 partial     | [#730](https://github.com/Skords-01/Sergeant/pull/730) | Стартер з 2 playbook-ів (`add-feature-flag`, `cleanup-dead-code`) + README; залишилось додати ще 2. |
-| 3. Code markers + ESLint rule            | ✅ done        | [#715](https://github.com/Skords-01/Sergeant/pull/715) | Правило `sergeant-design/ai-marker-syntax` (warn) + 20 unit-тестів + реальні маркери.               |
-| 4. Vercel paid + preview-on-PR           | 🟡 not started | —                                                      | Потребує credentials/upgrade від мейнтейнера ($20/міс).                                             |
-| 5. Playwright E2E enabled on PR          | ✅ done        | [#717](https://github.com/Skords-01/Sergeant/pull/717) | Видалено блокуючий `needs: check`, додано Postgres service + кешування браузерів.                   |
-| 6. Visual regression (Argos / Chromatic) | ⏳ pending     | —                                                      | Залежить від блоку 5 (зроблено) і стабільного Vercel preview.                                       |
-| 7. Storybook                             | ⏳ pending     | —                                                      | Не зачіпали поки що.                                                                                |
-| 8. Snapshot tests для server serializers | ✅ done        | [#718](https://github.com/Skords-01/Sergeant/pull/718) | Покрито `accountsHandler` + `transactionsHandler`; всі bigint-поля вже мали coercion.               |
+| Блок                                     | Статус         | PR                                                                                                             | Notes                                                                                                           |
+| ---------------------------------------- | -------------- | -------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| 1. `AGENTS.md` + repo-rules              | ✅ done        | [#714](https://github.com/Skords-01/Sergeant/pull/714)                                                         | + `.github/PULL_REQUEST_TEMPLATE.md` із секцією «How AI-tested this PR».                                        |
+| 2. Playbooks (4 шаблони)                 | ✅ done        | [#730](https://github.com/Skords-01/Sergeant/pull/730), [#737](https://github.com/Skords-01/Sergeant/pull/737) | 4/4 playbooks: `add-feature-flag`, `cleanup-dead-code`, `hotfix-prod-regression`, `add-monobank-event-handler`. |
+| 3. Code markers + ESLint rule            | ✅ done        | [#715](https://github.com/Skords-01/Sergeant/pull/715)                                                         | Правило `sergeant-design/ai-marker-syntax` (warn) + 20 unit-тестів + реальні маркери.                           |
+| 4. Vercel paid + preview-on-PR           | 🟡 not started | —                                                                                                              | Потребує credentials/upgrade від мейнтейнера ($20/міс).                                                         |
+| 5. Playwright E2E enabled on PR          | ✅ done        | [#717](https://github.com/Skords-01/Sergeant/pull/717)                                                         | Видалено блокуючий `needs: check`, додано Postgres service + кешування браузерів.                               |
+| 6. Visual regression (Argos / Chromatic) | ⏳ pending     | —                                                                                                              | Залежить від блоку 5 (зроблено) і стабільного Vercel preview.                                                   |
+| 7. Storybook                             | ⏳ pending     | —                                                                                                              | Не зачіпали поки що.                                                                                            |
+| 8. Snapshot tests для server serializers | ✅ done        | [#718](https://github.com/Skords-01/Sergeant/pull/718)                                                         | Покрито `accountsHandler` + `transactionsHandler`; всі bigint-поля вже мали coercion.                           |
 
 Додатково з `dev-stack-roadmap.md`: **Knip + depcheck** — ✅ done у [#716](https://github.com/Skords-01/Sergeant/pull/716) (видалено 6 файлів, 4 unused exports, 2 stale eslint entries).
 
@@ -25,16 +25,16 @@
 
 ## TL;DR
 
-| #     | Блок                                                  | Effort   | Impact     | Залежності | Статус            |
-| ----- | ----------------------------------------------------- | -------- | ---------- | ---------- | ----------------- |
-| **1** | `AGENTS.md` + repo-rules                              | пів дня  | висок      | —          | ✅ done (#714)    |
-| **2** | Playbooks (4 шаблони)                                 | 1 день   | висок      | блок 1     | 🟢 partial (#730) |
-| **3** | Code markers (`AI-NOTE`, `AI-DANGER`, `AI-GENERATED`) | пів дня  | середн     | —          | ✅ done (#715)    |
-| **4** | Vercel paid + preview-on-PR                           | 1 година | дуже висок | $20/міс    | 🟡 not started    |
-| **5** | Playwright E2E enabled on PR                          | 1 день   | висок      | блок 4     | ✅ done (#717)    |
-| **6** | Visual regression (Argos / Chromatic)                 | пів дня  | середн     | блок 5     | ⏳ pending        |
-| **7** | Storybook                                             | 2 дні    | середн     | —          | ⏳ pending        |
-| **8** | Snapshot tests для server-side serializers            | пів дня  | висок      | —          | ✅ done (#718)    |
+| #     | Блок                                                  | Effort   | Impact     | Залежності | Статус                |
+| ----- | ----------------------------------------------------- | -------- | ---------- | ---------- | --------------------- |
+| **1** | `AGENTS.md` + repo-rules                              | пів дня  | висок      | —          | ✅ done (#714)        |
+| **2** | Playbooks (4 шаблони)                                 | 1 день   | висок      | блок 1     | ✅ done (#730 + #737) |
+| **3** | Code markers (`AI-NOTE`, `AI-DANGER`, `AI-GENERATED`) | пів дня  | середн     | —          | ✅ done (#715)        |
+| **4** | Vercel paid + preview-on-PR                           | 1 година | дуже висок | $20/міс    | 🟡 not started        |
+| **5** | Playwright E2E enabled on PR                          | 1 день   | висок      | блок 4     | ✅ done (#717)        |
+| **6** | Visual regression (Argos / Chromatic)                 | пів дня  | середн     | блок 5     | ⏳ pending            |
+| **7** | Storybook                                             | 2 дні    | середн     | —          | ⏳ pending            |
+| **8** | Snapshot tests для server-side serializers            | пів дня  | висок      | —          | ✅ done (#718)        |
 
 **Рекомендована черговість:** 4 → 1 → 3 → 8 → 2 → 5 → 6 → 7.
 Логіка: 4 (Vercel) знімає найбільший денний pain. 1+3 — швидкі низько-ризикові wins. 8 — захист від класу регресій типу bigint→string (#708). 2 формалізує повторювані задачі. 5+6+7 — більш дорогі infra-інвестиції.
@@ -519,21 +519,29 @@ it("accountsHandler response shape matches snapshot", async () => {
 
 ### Що з блоків 1-8 цього документа залишилось
 
-| Блок | Статус             | Наступний крок                                                                                                                                                  |
-| ---- | ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1    | ✅ done            | Quarterly review reminder (next due: 2026-07-25)                                                                                                                |
-| 2    | 🟢 partial (#730)  | Закрито 2 з 4 playbook-ів (`add-feature-flag`, `cleanup-dead-code`). Залишилось `hotfix-prod-regression` + `add-monobank-event-handler` / `add-domain-package`. |
-| 3    | ✅ done            | Додавати маркери поступово при роботі з legacy-кодом                                                                                                            |
-| 4    | 🟡 not started     | Потребує credentials мейнтейнера ($20/міс Vercel Pro)                                                                                                           |
-| 5    | ✅ done            | Workflow: Smoke E2E (#717). Visual regression (Argos) — далі                                                                                                    |
-| 6    | ⏳ pending         | Argos / Chromatic — після стабільного preview deploy (блок 4)                                                                                                   |
-| 7    | ⏳ pending         | Storybook або Histoire — окрема велика задача                                                                                                                   |
-| 8    | ✅ done (частково) | Покриті 2 endpoint-и Mono. Решта endpoint-ів — поступово                                                                                                        |
+| Блок | Статус             | Наступний крок                                                                                                           |
+| ---- | ------------------ | ------------------------------------------------------------------------------------------------------------------------ |
+| 1    | ✅ done            | Quarterly review reminder (next due: 2026-07-25)                                                                         |
+| 2    | ✅ done            | 4/4 playbook-и створено: `add-feature-flag`, `cleanup-dead-code`, `hotfix-prod-regression`, `add-monobank-event-handler` |
+| 3    | ✅ done            | Додавати маркери поступово при роботі з legacy-кодом                                                                     |
+| 4    | 🟡 not started     | Потребує credentials мейнтейнера ($20/міс Vercel Pro)                                                                    |
+| 5    | ✅ done            | Workflow: Smoke E2E (#717). Visual regression (Argos) — далі                                                             |
+| 6    | ⏳ pending         | Argos / Chromatic — після стабільного preview deploy (блок 4)                                                            |
+| 7    | ⏳ pending         | Storybook або Histoire — окрема велика задача                                                                            |
+| 8    | ✅ done (частково) | Покриті 2 endpoint-и Mono. Решта endpoint-ів — поступово                                                                 |
 
 ### Bonus відкриття під час спринту
 
 - **`vitest.base.ts` ESM bug ([#720](https://github.com/Skords-01/Sergeant/pull/720))** — `pnpm test` був повністю зламаний на main з commit `dab67bdc`. Native Node ESM loader не вміє резолвити `.ts` через package exports. Конвертовано у `.js` з JSDoc-типами. Це регресія яку б ловив CI з блоку 4.5, якби він був повністю налаштований до того.
 - **AGENTS.md без prettier ([#719](https://github.com/Skords-01/Sergeant/pull/719))** — фідбек для майбутніх AI-сесій що створюють docs: завжди прогнати `prettier --write` перед commit-ом.
+
+## 2026-04-25 — закриття блоку 2 (playbooks)
+
+| PR                                                     | Що                                                                                           | Блок |
+| ------------------------------------------------------ | -------------------------------------------------------------------------------------------- | ---- |
+| [#737](https://github.com/Skords-01/Sergeant/pull/737) | Додано `hotfix-prod-regression.md` + `add-monobank-event-handler.md`, оновлено README і мету | 2    |
+
+Блок 2 повністю закрито: 4/4 playbook-и створено (`add-feature-flag`, `cleanup-dead-code`, `hotfix-prod-regression`, `add-monobank-event-handler`).
 
 ### Метрики (з блоку 5 цього документа) — оновлення
 

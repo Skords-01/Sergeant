@@ -8,17 +8,17 @@ Each playbook is a checklist that **AI agents and human developers** can follow 
 
 ## Available Playbooks
 
-| Playbook                                     | Trigger                                                  |
-| -------------------------------------------- | -------------------------------------------------------- |
-| [add-feature-flag.md](add-feature-flag.md)   | "Put feature X behind a flag" / new experimental feature |
-| [cleanup-dead-code.md](cleanup-dead-code.md) | "Remove X and all its usages" / dead code cleanup        |
+| Playbook                                                       | Trigger                                                                           |
+| -------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| [add-feature-flag.md](add-feature-flag.md)                     | "Put feature X behind a flag" / new experimental feature                          |
+| [cleanup-dead-code.md](cleanup-dead-code.md)                   | "Remove X and all its usages" / dead code cleanup                                 |
+| [hotfix-prod-regression.md](hotfix-prod-regression.md)         | "Прод впав" / HTTP 500 на `/health` / Sentry alert / production incident response |
+| [add-monobank-event-handler.md](add-monobank-event-handler.md) | "Треба обробити нову подію X від Monobank" / новий тип webhook event              |
 
 ## Future Candidates
 
 These are described in `docs/ai-coding-improvements.md § 2.2` and can be added as the need arises:
 
-- `add-monobank-event-handler.md` — new Monobank webhook event type
-- `hotfix-prod-regression.md` — production incident response
 - `bump-dep-safely.md` — dependency upgrade protocol
 
 ## How to Use
