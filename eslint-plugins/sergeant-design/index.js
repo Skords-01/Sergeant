@@ -309,11 +309,81 @@ const noRawTrackedStorage = {
   },
 };
 
+// ─── no-raw-local-storage ───────────────────────────────────────────────
+//
+// On the web app, every direct `localStorage.*` access is a hazard:
+// JSON.parse of corrupted contents throws, `setItem` throws on
+// QuotaExceededError, and the whole API throws in private-browsing
+// Safari. The shared helpers (`safeReadLS` / `safeWriteLS` from
+// `@shared/lib/storage`, `useLocalStorageState` from
+// `@shared/hooks/useLocalStorageState`, and `createModuleStorage` from
+// `@shared/lib/createModuleStorage`) wrap these calls with try/catch and
+// quota fallbacks, and they're the integration boundary tests already
+// mock.
+//
+// This rule blocks raw `localStorage.foo` and `window.localStorage.foo`
+// member access. Files that legitimately implement the wrappers above —
+// or that haven't been migrated yet — opt out via the eslint.config
+// override list, NOT via inline disables, so the migration list stays
+// greppable in one place.
+
+const RAW_LOCAL_STORAGE_MESSAGE =
+  "Direct `localStorage` access throws on quota / private-browsing / corrupt JSON. Use `safeReadLS` / `safeWriteLS` from `@shared/lib/storage`, the `useLocalStorageState` hook, or `createModuleStorage` so failures are handled and tests can mock the boundary.";
+
+function isLocalStorageMember(node) {
+  if (!node || node.type !== "MemberExpression") return false;
+  // Direct: `localStorage.foo` / `localStorage["foo"]`
+  if (
+    node.object.type === "Identifier" &&
+    node.object.name === "localStorage"
+  ) {
+    return true;
+  }
+  // `window.localStorage.foo` / `globalThis.localStorage.foo` (the chain
+  // shows up as a MemberExpression whose `object` is itself a
+  // MemberExpression resolving to `localStorage`).
+  if (
+    node.object.type === "MemberExpression" &&
+    !node.object.computed &&
+    node.object.property.type === "Identifier" &&
+    node.object.property.name === "localStorage" &&
+    node.object.object.type === "Identifier" &&
+    (node.object.object.name === "window" ||
+      node.object.object.name === "globalThis" ||
+      node.object.object.name === "self")
+  ) {
+    return true;
+  }
+  return false;
+}
+
+const noRawLocalStorage = {
+  meta: {
+    type: "problem",
+    docs: {
+      description:
+        "Forbid direct `localStorage.*` (and `window.localStorage.*`) access in apps/web. Use safeReadLS / useLocalStorageState / createModuleStorage instead.",
+    },
+    schema: [],
+    messages: { raw: RAW_LOCAL_STORAGE_MESSAGE },
+  },
+  create(context) {
+    return {
+      MemberExpression(node) {
+        if (isLocalStorageMember(node)) {
+          context.report({ node, messageId: "raw" });
+        }
+      },
+    };
+  },
+};
+
 const plugin = {
   rules: {
     "no-eyebrow-drift": noEyebrowDrift,
     "no-ellipsis-dots": noEllipsisDots,
     "no-raw-tracked-storage": noRawTrackedStorage,
+    "no-raw-local-storage": noRawLocalStorage,
   },
 };
 
@@ -321,6 +391,7 @@ export {
   TRACKED_STORAGE_KEY_NAMES,
   TRACKED_STORAGE_KEY_VALUES,
   RAW_TRACKED_STORAGE_MESSAGE,
+  RAW_LOCAL_STORAGE_MESSAGE,
 };
 
 export default plugin;

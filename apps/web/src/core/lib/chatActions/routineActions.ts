@@ -1,4 +1,4 @@
-import { ls, lsSet } from "../hubChatUtils.js";
+import { ls, lsSet } from "../hubChatUtils";
 import {
   createHabit as routineCreateHabit,
   loadRoutineState,
@@ -16,7 +16,7 @@ import type {
   HabitTrendAction,
   HabitState,
   ChatAction,
-} from "./types.js";
+} from "./types";
 
 export function handleRoutineAction(action: ChatAction): string | undefined {
   switch (action.name) {

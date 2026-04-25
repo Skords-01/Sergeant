@@ -55,7 +55,7 @@ vi.mock("@shared/lib/pushNative", () => ({
   getStoredNativePushToken: vi.fn(),
 }));
 
-import { usePushNotifications } from "./usePushNotifications.js";
+import { usePushNotifications } from "./usePushNotifications";
 import { pushApi } from "@shared/api";
 import { getPlatform, isCapacitor } from "@sergeant/shared";
 import {

@@ -1,4 +1,4 @@
-import { normalizeFoodName } from "./pantryTextParser.js";
+import { normalizeFoodName } from "./pantryTextParser";
 
 const STORAGE_KEY = "nutrition_recipes_cache_v1";
 

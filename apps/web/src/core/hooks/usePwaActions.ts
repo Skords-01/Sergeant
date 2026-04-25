@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { PWA_ACTION_KEY, consumePwaAction } from "../app/pwaAction.js";
+import { PWA_ACTION_KEY, consumePwaAction } from "../app/pwaAction";
 
 export type PwaAction =
   | "add_expense"

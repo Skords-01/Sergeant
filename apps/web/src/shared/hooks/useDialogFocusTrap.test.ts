@@ -2,7 +2,7 @@
 import { describe, it, expect, afterEach } from "vitest";
 import { renderHook } from "@testing-library/react";
 import { createRef } from "react";
-import { useDialogFocusTrap } from "./useDialogFocusTrap.js";
+import { useDialogFocusTrap } from "./useDialogFocusTrap";
 
 /**
  * Spec: restoring focus to the dialog trigger on close is a WCAG 2.4.3

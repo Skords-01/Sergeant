@@ -4,7 +4,7 @@ import {
   REST_CATEGORY_LABELS,
 } from "../../modules/fizruk/hooks/useRestSettings";
 import { WorkoutBackupBar } from "../../modules/fizruk/components/workouts/WorkoutBackupBar";
-import { SettingsGroup, SettingsSubGroup } from "./SettingsPrimitives.jsx";
+import { SettingsGroup, SettingsSubGroup } from "./SettingsPrimitives";
 
 type RestCategory = keyof typeof REST_CATEGORY_LABELS;
 

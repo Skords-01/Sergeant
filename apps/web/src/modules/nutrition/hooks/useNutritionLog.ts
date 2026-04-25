@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { coachKeys, digestKeys } from "@shared/lib/queryKeys.js";
+import { coachKeys, digestKeys } from "@shared/lib/queryKeys";
 import {
   NUTRITION_LOG_KEY,
   loadNutritionLog,
@@ -16,11 +16,8 @@ import {
   type Meal,
   type NutritionDay,
   type NutritionLog,
-} from "../lib/nutritionStorage.js";
-import {
-  deleteMealThumbnail,
-  gcMealThumbnails,
-} from "../lib/mealPhotoStorage.js";
+} from "../lib/nutritionStorage";
+import { deleteMealThumbnail, gcMealThumbnails } from "../lib/mealPhotoStorage";
 
 /**
  * Collect all meal IDs present in a log.

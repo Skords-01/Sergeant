@@ -3,21 +3,21 @@ import { Button } from "@shared/components/ui/Button";
 import { Sheet } from "@shared/components/ui/Sheet";
 import { useVisualKeyboardInset } from "@sergeant/shared";
 import { hapticSuccess } from "@shared/lib/haptic";
-import { MEAL_TYPES } from "../lib/mealTypes.js";
-import { ensureSeedFoods } from "../lib/foodDb/foodDb.js";
-import { BarcodeScanner } from "./BarcodeScanner.jsx";
-import { currentTime, emptyForm } from "./meal-sheet/mealFormUtils.js";
-import { MealTemplatesRow } from "./meal-sheet/MealTemplatesRow.jsx";
-import { MealTypePicker } from "./meal-sheet/MealTypePicker.jsx";
-import { NameTimeRow } from "./meal-sheet/NameTimeRow.jsx";
-import { FromPantryRow } from "./meal-sheet/FromPantryRow.jsx";
-import { FoodPickerSection } from "./meal-sheet/FoodPickerSection.jsx";
-import { BarcodeSection } from "./meal-sheet/BarcodeSection.jsx";
-import { MacrosEditor } from "./meal-sheet/MacrosEditor.jsx";
-import { SaveAsFood } from "./meal-sheet/SaveAsFood.jsx";
-import { SaveAsTemplate } from "./meal-sheet/SaveAsTemplate.jsx";
-import { useFoodSearch } from "./meal-sheet/useFoodSearch.js";
-import { useBarcodeLookup } from "./meal-sheet/useBarcodeLookup.js";
+import { MEAL_TYPES } from "../lib/mealTypes";
+import { ensureSeedFoods } from "../lib/foodDb/foodDb";
+import { BarcodeScanner } from "./BarcodeScanner";
+import { currentTime, emptyForm } from "./meal-sheet/mealFormUtils";
+import { MealTemplatesRow } from "./meal-sheet/MealTemplatesRow";
+import { MealTypePicker } from "./meal-sheet/MealTypePicker";
+import { NameTimeRow } from "./meal-sheet/NameTimeRow";
+import { FromPantryRow } from "./meal-sheet/FromPantryRow";
+import { FoodPickerSection } from "./meal-sheet/FoodPickerSection";
+import { BarcodeSection } from "./meal-sheet/BarcodeSection";
+import { MacrosEditor } from "./meal-sheet/MacrosEditor";
+import { SaveAsFood } from "./meal-sheet/SaveAsFood";
+import { SaveAsTemplate } from "./meal-sheet/SaveAsTemplate";
+import { useFoodSearch } from "./meal-sheet/useFoodSearch";
+import { useBarcodeLookup } from "./meal-sheet/useBarcodeLookup";
 
 export function AddMealSheet({
   open,

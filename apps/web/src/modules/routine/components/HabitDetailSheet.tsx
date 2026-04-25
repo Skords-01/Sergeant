@@ -6,14 +6,14 @@ import {
   dateKeyFromDate,
   parseDateKey,
   habitScheduledOnDate,
-} from "../lib/hubCalendarAggregate.js";
-import { completionNoteKey } from "../lib/completionNoteKey.js";
-import { streakForHabit, maxStreakAllTime } from "../lib/streaks.js";
+} from "../lib/hubCalendarAggregate";
+import { completionNoteKey } from "../lib/completionNoteKey";
+import { streakForHabit, maxStreakAllTime } from "../lib/streaks";
 import {
   ROUTINE_THEME as C,
   RECURRENCE_OPTIONS,
   WEEKDAY_LABELS,
-} from "../lib/routineConstants.js";
+} from "../lib/routineConstants";
 import type { Habit, RoutineState } from "../lib/types";
 
 function todayKey(): string {

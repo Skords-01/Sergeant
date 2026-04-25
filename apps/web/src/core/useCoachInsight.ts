@@ -1,7 +1,7 @@
 import { useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { coachApi, isApiError } from "@shared/api";
-import { coachKeys } from "@shared/lib/queryKeys.js";
+import { coachKeys } from "@shared/lib/queryKeys";
 
 const CACHE_KEY = "hub_coach_insight_cache_v1";
 

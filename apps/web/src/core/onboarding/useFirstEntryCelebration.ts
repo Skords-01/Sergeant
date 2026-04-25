@@ -13,7 +13,7 @@
 
 import { useEffect, useRef } from "react";
 import { useToast } from "@shared/hooks/useToast";
-import { getTimeToValueMs } from "./vibePicks.js";
+import { getTimeToValueMs } from "./vibePicks";
 
 /**
  * Compose the success-moment toast. If we measured a time-to-value

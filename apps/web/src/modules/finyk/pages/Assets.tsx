@@ -27,8 +27,8 @@ import {
 import { filterVisibleAccounts } from "@sergeant/finyk-domain/domain/assets/aggregates";
 import { cn } from "@shared/lib/cn";
 import { openHubModule } from "@shared/lib/hubNav";
-import { notifyFinykRoutineCalendarSync } from "../hubRoutineSync.js";
-import { VoiceMicButton } from "@shared/components/ui/VoiceMicButton.jsx";
+import { notifyFinykRoutineCalendarSync } from "../hubRoutineSync";
+import { VoiceMicButton } from "@shared/components/ui/VoiceMicButton";
 import { parseExpenseSpeech as parseExpenseVoice } from "@sergeant/shared";
 import { computeFinykSchedule, startOfToday } from "../lib/upcomingSchedule";
 import { FinykStatsStrip } from "../components/FinykStatsStrip";

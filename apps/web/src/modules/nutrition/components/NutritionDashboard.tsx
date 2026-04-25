@@ -8,8 +8,8 @@ import {
   getDaySummary,
   getMacrosForDateRange,
   toLocalISODate,
-} from "../lib/nutritionStorage.js";
-import { WaterTrackerCard } from "./WaterTrackerCard.jsx";
+} from "../lib/nutritionStorage";
+import { WaterTrackerCard } from "./WaterTrackerCard";
 
 function todayISO() {
   return toLocalISODate(new Date());

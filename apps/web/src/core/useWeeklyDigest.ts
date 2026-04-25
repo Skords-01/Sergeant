@@ -2,11 +2,11 @@ import { useCallback } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { coachApi, weeklyDigestApi } from "@shared/api";
 import { STORAGE_KEYS, getWeekKey as sharedGetWeekKey } from "@sergeant/shared";
-import { safeReadLS } from "@shared/lib/storage.js";
+import { safeReadLS } from "@shared/lib/storage";
 import { loadDigest as sharedLoadDigest } from "@shared/lib/weeklyDigestStorage";
-import { coachKeys, digestKeys } from "@shared/lib/queryKeys.js";
+import { coachKeys, digestKeys } from "@shared/lib/queryKeys";
 import { formatApiError } from "@shared/lib/apiErrorFormat";
-import { MCC_CATEGORIES, INCOME_CATEGORIES } from "@finyk/constants.js";
+import { MCC_CATEGORIES, INCOME_CATEGORIES } from "@finyk/constants";
 
 const DIGEST_PREFIX = STORAGE_KEYS.WEEKLY_DIGEST_PREFIX;
 

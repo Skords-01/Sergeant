@@ -6,7 +6,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import {
   getFinykExcludedTxIdsFromStorage,
   getFinykTxSplitsFromStorage,
-} from "./utils.js";
+} from "./utils";
 import { INTERNAL_TRANSFER_ID } from "@sergeant/finyk-domain/constants";
 
 beforeEach(() => localStorage.clear());

@@ -3,8 +3,8 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
-import { useNutritionLog } from "./useNutritionLog.js";
-import type { Meal } from "../lib/nutritionStorage.js";
+import { useNutritionLog } from "./useNutritionLog";
+import type { Meal } from "../lib/nutritionStorage";
 
 function makeWrapper() {
   const client = new QueryClient({

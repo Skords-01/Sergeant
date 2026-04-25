@@ -3,7 +3,7 @@ import {
   HUB_BACKUP_KIND,
   HUB_BACKUP_SCHEMA_VERSION,
   isHubBackupPayload,
-} from "./hubBackup.js";
+} from "./hubBackup";
 
 describe("hubBackup", () => {
   it("isHubBackupPayload приймає валідний корінь", () => {

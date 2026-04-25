@@ -3,7 +3,7 @@ import { Button } from "@shared/components/ui/Button";
 import { Card } from "@shared/components/ui/Card";
 import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { Sheet } from "@shared/components/ui/Sheet";
-import { useLocalStorageState } from "@shared/hooks/useLocalStorageState.js";
+import { useLocalStorageState } from "@shared/hooks/useLocalStorageState";
 import {
   ACTIVE_WORKOUT_KEY,
   recoveryConflictsForExercise,

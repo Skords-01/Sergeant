@@ -1,8 +1,8 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@shared/components/ui/Button";
-import { nutritionKeys } from "@shared/lib/queryKeys.js";
-import { upsertFood, type FoodProduct } from "../../lib/foodDb/foodDb.js";
-import type { MealFormState } from "./mealFormUtils.js";
+import { nutritionKeys } from "@shared/lib/queryKeys";
+import { upsertFood, type FoodProduct } from "../../lib/foodDb/foodDb";
+import type { MealFormState } from "./mealFormUtils";
 
 interface SaveAsFoodProps {
   form: MealFormState;

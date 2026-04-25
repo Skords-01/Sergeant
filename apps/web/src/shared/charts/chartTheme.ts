@@ -26,7 +26,7 @@ import {
   chartPaletteList,
   moduleColors,
   statusColors,
-} from "../../modules/finyk/constants/chartPalette.js";
+} from "../../modules/finyk/constants/chartPalette";
 
 export {
   brandColors,

@@ -2,13 +2,13 @@ import { useState } from "react";
 import { ConfirmDialog } from "@shared/components/ui/ConfirmDialog";
 import { useToast } from "@shared/hooks/useToast";
 import { showUndoToast } from "@shared/lib/undoToast";
-import { useRoutineState } from "../../modules/routine/hooks/useRoutineState.js";
+import { useRoutineState } from "../../modules/routine/hooks/useRoutineState";
 import {
   deleteHabit,
   restoreHabit,
   snapshotHabit,
-} from "../../modules/routine/lib/routineStorage.js";
-import { ROUTINE_THEME as C } from "../../modules/routine/lib/routineConstants.js";
+} from "../../modules/routine/lib/routineStorage";
+import { ROUTINE_THEME as C } from "../../modules/routine/lib/routineConstants";
 import { HabitDetailSheet } from "../../modules/routine/components/HabitDetailSheet";
 import { HabitQuickCreateDialog } from "../../modules/routine/components/HabitQuickCreateDialog";
 import { RoutineBackupSection } from "../../modules/routine/components/RoutineBackupSection";
@@ -24,7 +24,7 @@ import {
   SettingsGroup,
   SettingsSubGroup,
   ToggleRow,
-} from "./SettingsPrimitives.jsx";
+} from "./SettingsPrimitives";
 
 export function RoutineSection() {
   const toast = useToast();

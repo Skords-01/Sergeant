@@ -5,7 +5,7 @@
  * `createModuleStorage` для apps/web.
  */
 
-import { createModuleStorage } from "@shared/lib/createModuleStorage.js";
+import { createModuleStorage } from "@shared/lib/createModuleStorage";
 import {
   CUSTOM_EXERCISES_KEY,
   FIZRUK_FULL_BACKUP_KEYS,

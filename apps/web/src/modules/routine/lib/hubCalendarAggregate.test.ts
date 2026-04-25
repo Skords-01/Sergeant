@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { buildHubCalendarEvents } from "./hubCalendarAggregate.js";
-import type { RoutineState } from "./types.js";
+import { buildHubCalendarEvents } from "./hubCalendarAggregate";
+import type { RoutineState } from "./types";
 
 describe("buildHubCalendarEvents", () => {
   it("додає подію звички на кожен день діапазону", () => {

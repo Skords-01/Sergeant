@@ -2,9 +2,9 @@ import { useEffect, useState, type Dispatch, type SetStateAction } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { foodSearchApi } from "@shared/api";
 import type { FoodSearchProduct } from "@shared/api";
-import { nutritionKeys } from "@shared/lib/queryKeys.js";
-import { searchFoods } from "../../lib/foodDb/foodDb.js";
-import type { FoodProduct } from "../../lib/foodDb/foodDb.js";
+import { nutritionKeys } from "@shared/lib/queryKeys";
+import { searchFoods } from "../../lib/foodDb/foodDb";
+import type { FoodProduct } from "../../lib/foodDb/foodDb";
 
 const LOCAL_DEBOUNCE_MS = 180;
 const OFF_DEBOUNCE_MS = 600;

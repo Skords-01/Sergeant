@@ -3,7 +3,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { renderHook, act, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
-import type { UseNutritionRemoteActionsParams } from "./useNutritionRemoteActions.js";
+import type { UseNutritionRemoteActionsParams } from "./useNutritionRemoteActions";
 
 vi.mock("@shared/api", async () => {
   const actual =
@@ -23,7 +23,7 @@ vi.mock("../lib/recipeCache.js", () => ({
   writeRecipeCache: vi.fn(),
 }));
 
-import { useNutritionRemoteActions } from "./useNutritionRemoteActions.js";
+import { useNutritionRemoteActions } from "./useNutritionRemoteActions";
 import { nutritionApi } from "@shared/api";
 type MockFn = ReturnType<typeof vi.fn>;
 const apiRecommendRecipes = nutritionApi.recommendRecipes as unknown as MockFn;

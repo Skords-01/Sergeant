@@ -1,5 +1,5 @@
 import { FLAG_REGISTRY, setFlag, useAllFlags } from "../lib/featureFlags";
-import { SettingsGroup, ToggleRow } from "./SettingsPrimitives.jsx";
+import { SettingsGroup, ToggleRow } from "./SettingsPrimitives";
 
 /**
  * Секція «Експериментальне» у Settings. Рендерить FLAG_REGISTRY як toggle-

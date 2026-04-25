@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { Icon } from "@shared/components/ui/Icon";
-import { DarkModeToggle } from "./DarkModeToggle.jsx";
-import { UserMenuButton } from "./UserMenuButton.jsx";
+import { DarkModeToggle } from "./DarkModeToggle";
+import { UserMenuButton } from "./UserMenuButton";
 import type { User } from "@sergeant/shared";
 
 const CHEVRON_ICON = (

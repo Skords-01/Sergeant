@@ -7,7 +7,7 @@ import {
   getRestCategory,
   REST_CATEGORY_LABELS,
 } from "../../hooks/useRestSettings";
-import { VoiceMicButton } from "@shared/components/ui/VoiceMicButton.jsx";
+import { VoiceMicButton } from "@shared/components/ui/VoiceMicButton";
 import { parseWorkoutSetSpeech } from "@sergeant/shared";
 import {
   makeDefaultWarmup,

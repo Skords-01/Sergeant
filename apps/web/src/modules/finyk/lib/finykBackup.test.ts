@@ -3,7 +3,7 @@ import {
   normalizeFinykBackup,
   normalizeFinykSyncPayload,
   FINYK_BACKUP_VERSION,
-} from "./finykBackup.js";
+} from "./finykBackup";
 
 describe("normalizeFinykBackup", () => {
   it("приймає мінімальний v1 без додаткових полів", () => {

@@ -1,19 +1,19 @@
 import { useState, useEffect, useRef } from "react";
 import { DEFAULT_SUBSCRIPTIONS, INTERNAL_TRANSFER_ID } from "../constants";
-import { notifyFinykRoutineCalendarSync } from "../hubRoutineSync.js";
+import { notifyFinykRoutineCalendarSync } from "../hubRoutineSync";
 import { trackEvent, ANALYTICS_EVENTS } from "../../../core/analytics";
 import {
   normalizeFinykBackup,
   normalizeFinykSyncPayload,
   FINYK_BACKUP_VERSION,
-} from "../lib/finykBackup.js";
+} from "../lib/finykBackup";
 import { downloadJson, toLocalISODate } from "@sergeant/shared";
 import {
   readJSON,
   writeJSON,
   writeJSONDebounced,
   finykStorageManager,
-} from "../lib/finykStorage.js";
+} from "../lib/finykStorage";
 
 function reportSilentError(scope, error) {
   console.warn(`[finyk] ${scope}`, error);

@@ -7,7 +7,7 @@ import { Icon } from "@shared/components/ui/Icon";
 import { Input } from "@shared/components/ui/Input";
 import { useToast } from "@shared/hooks/useToast";
 import { useOnlineStatus } from "@shared/hooks/useOnlineStatus";
-import { useAuth } from "./AuthContext.jsx";
+import { useAuth } from "./AuthContext";
 import { STORAGE_KEYS } from "@sergeant/shared";
 import {
   updateUser,
@@ -19,7 +19,7 @@ import {
   sendVerificationEmail,
   changeEmail,
   type SessionItem,
-} from "./authClient.js";
+} from "./authClient";
 
 // ────────────────────── Avatar helpers ──────────────────────
 

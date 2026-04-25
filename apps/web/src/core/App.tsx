@@ -16,36 +16,36 @@ import { ToastContainer } from "@shared/components/ui/Toast";
 import { HUB_OPEN_MODULE_EVENT } from "@shared/lib/hubNav";
 import { ApiClientProvider } from "@sergeant/api-client/react";
 import { apiClient } from "@shared/api";
-import { AuthProvider, useAuth } from "./AuthContext.jsx";
-import { useCloudSync } from "./useCloudSync.js";
-import { PageLoader } from "./app/PageLoader.jsx";
-import { OfflineBanner } from "./app/OfflineBanner.jsx";
-import { MigrationPrompt } from "./app/MigrationPrompt.jsx";
-import { usePwaInstall } from "./app/usePwaInstall.js";
-import { useIosInstallBanner } from "./app/useIosInstallBanner.js";
-import { useSWUpdate } from "./app/useSWUpdate.js";
-import { PWA_ACTION_KEY } from "./app/pwaAction.js";
-import { HubHeader } from "./app/HubHeader.jsx";
-import { HubTabs } from "./app/HubTabs.jsx";
-import { HubMainContent } from "./app/HubMainContent.jsx";
-import { HubFloatingActions } from "./app/HubFloatingActions.jsx";
-import { HubModals } from "./app/HubModals.jsx";
-import { ActiveWorkoutBanner } from "./app/ActiveWorkoutBanner.jsx";
-import { WelcomeScreen } from "./app/WelcomeScreen.jsx";
-import { shouldShowOnboarding } from "./OnboardingWizard.jsx";
-import { isFirstRealEntryDone } from "./onboarding/vibePicks.js";
-import { hasAnyRealEntry } from "./onboarding/firstRealEntry.js";
-import { useHubNavigation } from "./hooks/useHubNavigation.js";
-import { useHubUIState } from "./hooks/useHubUIState.js";
-import { usePwaActions, type PwaAction } from "./hooks/usePwaActions.js";
+import { AuthProvider, useAuth } from "./AuthContext";
+import { useCloudSync } from "./useCloudSync";
+import { PageLoader } from "./app/PageLoader";
+import { OfflineBanner } from "./app/OfflineBanner";
+import { MigrationPrompt } from "./app/MigrationPrompt";
+import { usePwaInstall } from "./app/usePwaInstall";
+import { useIosInstallBanner } from "./app/useIosInstallBanner";
+import { useSWUpdate } from "./app/useSWUpdate";
+import { PWA_ACTION_KEY } from "./app/pwaAction";
+import { HubHeader } from "./app/HubHeader";
+import { HubTabs } from "./app/HubTabs";
+import { HubMainContent } from "./app/HubMainContent";
+import { HubFloatingActions } from "./app/HubFloatingActions";
+import { HubModals } from "./app/HubModals";
+import { ActiveWorkoutBanner } from "./app/ActiveWorkoutBanner";
+import { WelcomeScreen } from "./app/WelcomeScreen";
+import { shouldShowOnboarding } from "./OnboardingWizard";
+import { isFirstRealEntryDone } from "./onboarding/vibePicks";
+import { hasAnyRealEntry } from "./onboarding/firstRealEntry";
+import { useHubNavigation } from "./hooks/useHubNavigation";
+import { useHubUIState } from "./hooks/useHubUIState";
+import { usePwaActions, type PwaAction } from "./hooks/usePwaActions";
 import { ShellDeepLinkBridge } from "./app/ShellDeepLinkBridge";
 import { HintsOrchestrator } from "./hints/HintsOrchestrator";
 
 const AuthPage = lazy(() =>
-  import("./AuthPage.jsx").then((m) => ({ default: m.AuthPage })),
+  import("./AuthPage").then((m) => ({ default: m.AuthPage })),
 );
 const ResetPasswordPage = lazy(() =>
-  import("./ResetPasswordPage.jsx").then((m) => ({
+  import("./ResetPasswordPage").then((m) => ({
     default: m.ResetPasswordPage,
   })),
 );
@@ -53,7 +53,7 @@ const DesignShowcase = lazy(() =>
   import("./DesignShowcase").then((m) => ({ default: m.DesignShowcase })),
 );
 const ProfilePage = lazy(() =>
-  import("./ProfilePage.jsx").then((m) => ({ default: m.ProfilePage })),
+  import("./ProfilePage").then((m) => ({ default: m.ProfilePage })),
 );
 interface ModuleAppProps {
   onBackToHub: () => void;

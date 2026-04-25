@@ -1,6 +1,6 @@
 import { cn } from "@shared/lib/cn";
-import { stopSpeaking, unlockTTS } from "../lib/hubChatSpeech.js";
-import { useSpeech } from "../hooks/useSpeech.js";
+import { stopSpeaking, unlockTTS } from "../lib/hubChatSpeech";
+import { useSpeech } from "../hooks/useSpeech";
 import {
   useRef,
   useCallback,

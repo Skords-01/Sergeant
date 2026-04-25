@@ -61,7 +61,7 @@ vi.mock("@sergeant/api-client/react", async () => {
   };
 });
 
-import { AuthProvider, useAuth } from "./AuthContext.js";
+import { AuthProvider, useAuth } from "./AuthContext";
 import { apiQueryKeys } from "@sergeant/api-client/react";
 
 interface UseUserState {

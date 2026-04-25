@@ -7,7 +7,7 @@ import { cn } from "@shared/lib/cn";
 import { useMonthlyPlan } from "../../fizruk/hooks/useMonthlyPlan";
 import { useWorkoutTemplates } from "../../fizruk/hooks/useWorkoutTemplates";
 import { useExerciseCatalog } from "../../fizruk/hooks/useExerciseCatalog";
-import { parseDateKey } from "../lib/hubCalendarAggregate.js";
+import { parseDateKey } from "../lib/hubCalendarAggregate";
 
 export interface FizrukDayPlanSheetProps {
   dateKey: string | null;

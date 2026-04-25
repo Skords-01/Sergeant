@@ -16,11 +16,11 @@ import {
   markFirstActionPending,
   markFirstActionStartedAt,
   saveVibePicks,
-} from "./onboarding/vibePicks.js";
+} from "./onboarding/vibePicks";
 import {
   markOnboardingDone,
   shouldShowOnboarding as sharedShouldShowOnboarding,
-} from "./onboarding/onboardingGate.js";
+} from "./onboarding/onboardingGate";
 import { MODULE_LABELS } from "@shared/lib/moduleLabels";
 import {
   ONBOARDING_MODULE_DESCRIPTIONS,

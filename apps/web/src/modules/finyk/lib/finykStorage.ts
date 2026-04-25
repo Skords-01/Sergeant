@@ -11,8 +11,8 @@
  * "finto_*" → "finyk_*" виконуються через shared `storageManager`.
  */
 
-import { createModuleStorage } from "@shared/lib/createModuleStorage.js";
-import { finykStorageManager } from "./storageManager.js";
+import { createModuleStorage } from "@shared/lib/createModuleStorage";
+import { finykStorageManager } from "./storageManager";
 import type {
   Budget,
   Category,

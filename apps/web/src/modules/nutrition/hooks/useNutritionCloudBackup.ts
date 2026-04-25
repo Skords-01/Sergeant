@@ -4,16 +4,16 @@ import { nutritionApi } from "@shared/api";
 import {
   applyNutritionBackupPayload,
   buildNutritionBackupPayload,
-} from "../domain/nutritionBackup.js";
+} from "../domain/nutritionBackup";
 import {
   decryptBlobToJson,
   encryptJsonToBlob,
-} from "../lib/nutritionCloudBackup.js";
-import { formatNutritionError } from "../lib/nutritionErrors.js";
+} from "../lib/nutritionCloudBackup";
+import { formatNutritionError } from "../lib/nutritionErrors";
 import type {
   BackupPasswordDialogState,
   RestoreConfirmState,
-} from "./useNutritionUiState.js";
+} from "./useNutritionUiState";
 
 export interface NutritionToast {
   success: (message: string) => void;

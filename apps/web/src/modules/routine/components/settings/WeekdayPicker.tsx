@@ -1,9 +1,6 @@
 import { memo } from "react";
 import { cn } from "@shared/lib/cn";
-import {
-  ROUTINE_THEME as C,
-  WEEKDAY_LABELS,
-} from "../../lib/routineConstants.js";
+import { ROUTINE_THEME as C, WEEKDAY_LABELS } from "../../lib/routineConstants";
 
 export interface WeekdayPickerProps {
   weekdays: number[] | null | undefined;

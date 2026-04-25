@@ -1,4 +1,4 @@
-import { loadRoutineState } from "./routineStorage.js";
+import { loadRoutineState } from "./routineStorage";
 
 /** Для сторінки Прогрес Фізрука — історія відтискань з даних Рутини */
 export function buildPushupHistoryFromRoutine(days = 30) {

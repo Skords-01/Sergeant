@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { safeReadLS, safeWriteLS } from "@shared/lib/storage.js";
+import { safeReadLS, safeWriteLS } from "@shared/lib/storage";
 import { STORAGE_KEYS } from "@sergeant/shared";
 import {
   REST_CATEGORY_LABELS,

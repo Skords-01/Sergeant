@@ -3,9 +3,9 @@ import { Card } from "@shared/components/ui/Card";
 import { Input } from "@shared/components/ui/Input";
 import { Icon } from "@shared/components/ui/Icon";
 import { cn } from "@shared/lib/cn";
-import { groupItemsByCategory } from "../lib/foodCategories.js";
-import type { FoodCategory } from "../lib/foodCategories.js";
-import type { PantryItem } from "../lib/pantryTextParser.js";
+import { groupItemsByCategory } from "../lib/foodCategories";
+import type { FoodCategory } from "../lib/foodCategories";
+import type { PantryItem } from "../lib/pantryTextParser";
 
 /**
  * Мінімальний "view-shape" елемента комори для `ItemRow`. Runtime-потік

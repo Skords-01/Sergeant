@@ -1,7 +1,7 @@
 import { memo } from "react";
 import { Card } from "@shared/components/ui/Card";
 import { cn } from "@shared/lib/cn";
-import { computePulseStyle } from "./pulseStyle.js";
+import { computePulseStyle } from "./pulseStyle";
 
 /**
  * Картка «Місяць» — дохід/витрати/прогрес, блок факт+прогнозу, фінпульс.

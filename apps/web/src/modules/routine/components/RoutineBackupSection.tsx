@@ -3,7 +3,7 @@ import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { Button } from "@shared/components/ui/Button";
 import { Card } from "@shared/components/ui/Card";
 import { cn } from "@shared/lib/cn";
-import { buildRoutineBackupPayload } from "../lib/routineStorage.js";
+import { buildRoutineBackupPayload } from "../lib/routineStorage";
 
 export interface RoutineBackupTheme {
   primary?: string;

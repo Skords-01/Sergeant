@@ -4,7 +4,7 @@ import {
   safeReadStringLS,
   safeWriteLS,
   safeRemoveLS,
-} from "./storage.js";
+} from "./storage";
 
 // vitest is configured with environment: "node" so we need a minimal
 // localStorage polyfill for these tests.

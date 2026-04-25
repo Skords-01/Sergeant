@@ -4,7 +4,7 @@ import {
   computeDailyFinykSummary,
   isDailySummaryDismissedToday,
   DAILY_SUMMARY_DISMISS_KEY,
-} from "./dailyFinykSummary.js";
+} from "./dailyFinykSummary";
 
 function setLS(key, value) {
   localStorage.setItem(key, JSON.stringify(value));

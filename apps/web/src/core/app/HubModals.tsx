@@ -2,7 +2,7 @@ import { lazy, Suspense, useEffect } from "react";
 import { ErrorBoundary } from "../ErrorBoundary";
 
 const HubSearch = lazy(() =>
-  import("../HubSearch.jsx").then((m) => ({ default: m.HubSearch })),
+  import("../HubSearch").then((m) => ({ default: m.HubSearch })),
 );
 const HubChat = lazy(() => import("../HubChat"));
 

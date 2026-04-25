@@ -3,7 +3,7 @@ import { Card } from "@shared/components/ui/Card";
 import { Button } from "@shared/components/ui/Button";
 import { cn } from "@shared/lib/cn";
 import { openHubModule } from "@shared/lib/hubNav";
-import { getTotalCount } from "../lib/shoppingListStorage.js";
+import { getTotalCount } from "../lib/shoppingListStorage";
 
 const CATEGORY_ICONS = {
   "М'ясо та риба": "🥩",

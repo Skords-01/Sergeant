@@ -3,7 +3,7 @@ import {
   loadRoutineState,
   saveRoutineState,
   ROUTINE_STORAGE_KEY,
-} from "./routineStorage.js";
+} from "./routineStorage";
 
 if (!globalThis.localStorage) {
   let store: Record<string, string> = {};

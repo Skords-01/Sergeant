@@ -2,14 +2,14 @@ import { useMemo, useRef, useState } from "react";
 import { Button } from "@shared/components/ui/Button";
 import { Icon } from "@shared/components/ui/Icon";
 import { Tabs } from "@shared/components/ui/Tabs";
-import { AIDigestSection } from "./settings/AIDigestSection.jsx";
-import { ExperimentalSection } from "./settings/ExperimentalSection.jsx";
-import { FinykSection } from "./settings/FinykSection.jsx";
-import { FizrukSection } from "./settings/FizrukSection.jsx";
-import { GeneralSection } from "./settings/GeneralSection.jsx";
-import { NotificationsSection } from "./settings/NotificationsSection.jsx";
-import { NutritionSection } from "./settings/NutritionSection.jsx";
-import { RoutineSection } from "./settings/RoutineSection.jsx";
+import { AIDigestSection } from "./settings/AIDigestSection";
+import { ExperimentalSection } from "./settings/ExperimentalSection";
+import { FinykSection } from "./settings/FinykSection";
+import { FizrukSection } from "./settings/FizrukSection";
+import { GeneralSection } from "./settings/GeneralSection";
+import { NotificationsSection } from "./settings/NotificationsSection";
+import { NutritionSection } from "./settings/NutritionSection";
+import { RoutineSection } from "./settings/RoutineSection";
 
 // Group definitions: each tab collects related sections. Search terms are
 // used for fuzzy search-by-keyword; matches fall back to showing every

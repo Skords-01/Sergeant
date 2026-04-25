@@ -2,11 +2,8 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useMonobank } from "./hooks/useMonobank";
 import { usePrivatbank } from "./hooks/usePrivatbank";
 import { useStorage } from "./hooks/useStorage";
-import { readRaw, writeRaw } from "./lib/finykStorage.js";
-import {
-  FINYK_MANUAL_ONLY_KEY,
-  enableFinykManualOnly,
-} from "./lib/demoData.js";
+import { readRaw, writeRaw } from "./lib/finykStorage";
+import { FINYK_MANUAL_ONLY_KEY, enableFinykManualOnly } from "./lib/demoData";
 import { PAGES } from "./constants";
 import { Button } from "@shared/components/ui/Button";
 import { Input } from "@shared/components/ui/Input";
@@ -15,18 +12,18 @@ import {
   ModuleHeader,
   ModuleHeaderBackButton,
 } from "@shared/components/layout";
-import { SectionErrorBoundary } from "@shared/components/ui/SectionErrorBoundary.jsx";
+import { SectionErrorBoundary } from "@shared/components/ui/SectionErrorBoundary";
 import { cn } from "@shared/lib/cn";
 import { useToast } from "@shared/hooks/useToast";
-import { Overview } from "./pages/Overview.jsx";
-import { Transactions } from "./pages/Transactions.jsx";
-import { Budgets } from "./pages/Budgets.jsx";
-import { Assets } from "./pages/Assets.jsx";
-import { Analytics } from "./pages/Analytics.jsx";
-import { ManualExpenseSheet } from "./components/ManualExpenseSheet.jsx";
+import { Overview } from "./pages/Overview";
+import { Transactions } from "./pages/Transactions";
+import { Budgets } from "./pages/Budgets";
+import { Assets } from "./pages/Assets";
+import { Analytics } from "./pages/Analytics";
+import { ManualExpenseSheet } from "./components/ManualExpenseSheet";
 import { useUnifiedFinanceData } from "./hooks/useUnifiedFinanceData";
 import { useFinykPersonalization } from "./hooks/useFinykPersonalization";
-import { consumePresetPrefill } from "../../core/onboarding/presetPrefill.js";
+import { consumePresetPrefill } from "../../core/onboarding/presetPrefill";
 
 const NAV_ICONS = {
   overview: (

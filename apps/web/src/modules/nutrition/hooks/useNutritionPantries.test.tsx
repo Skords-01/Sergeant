@@ -15,7 +15,7 @@ vi.mock("@shared/api", async () => {
   };
 });
 
-import { useNutritionPantries } from "./useNutritionPantries.js";
+import { useNutritionPantries } from "./useNutritionPantries";
 import { nutritionApi } from "@shared/api";
 const apiParsePantry = nutritionApi.parsePantry as unknown as ReturnType<
   typeof vi.fn
@@ -24,7 +24,7 @@ import {
   NUTRITION_PANTRIES_KEY,
   NUTRITION_ACTIVE_PANTRY_KEY,
   type Pantry,
-} from "../lib/nutritionStorage.js";
+} from "../lib/nutritionStorage";
 
 function makeWrapper() {
   const client = new QueryClient({

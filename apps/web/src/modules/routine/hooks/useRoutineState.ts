@@ -4,7 +4,7 @@ import {
   ROUTINE_STORAGE_KEY,
   loadRoutineState,
   setPref,
-} from "../lib/routineStorage.js";
+} from "../lib/routineStorage";
 import type { RoutineState } from "../lib/types";
 
 /**

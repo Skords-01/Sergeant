@@ -7,7 +7,7 @@ import {
   normalizeWaterLog,
   resetTodayWater,
   saveWaterLog,
-} from "./waterStorage.js";
+} from "./waterStorage";
 
 function createLocalStorageMock() {
   const store = new Map();

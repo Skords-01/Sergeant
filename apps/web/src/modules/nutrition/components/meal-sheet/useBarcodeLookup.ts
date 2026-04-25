@@ -9,9 +9,9 @@ import {
   bindBarcodeToFood,
   lookupFoodByBarcode,
   type FoodProduct,
-} from "../../lib/foodDb/foodDb.js";
-import { useBarcodeProductLookup } from "../../hooks/useBarcodeProduct.js";
-import type { MealFormState } from "./mealFormUtils.js";
+} from "../../lib/foodDb/foodDb";
+import { useBarcodeProductLookup } from "../../hooks/useBarcodeProduct";
+import type { MealFormState } from "./mealFormUtils";
 
 export interface UseBarcodeLookupParams {
   pickedFood: FoodProduct | null;

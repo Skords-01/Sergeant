@@ -7,25 +7,25 @@ import { lazy } from "react";
 // and rendering logic stay untouched.
 
 export const BudgetTrendChart = lazy(() =>
-  import("../BudgetTrendChart.jsx").then((m) => ({
+  import("../BudgetTrendChart").then((m) => ({
     default: m.BudgetTrendChart,
   })),
 );
 
 export const CategoryChart = lazy(() =>
-  import("../CategoryChart.jsx").then((m) => ({
+  import("../CategoryChart").then((m) => ({
     default: m.CategoryChart,
   })),
 );
 
 export const NetworthChart = lazy(() =>
-  import("../NetworthChart.jsx").then((m) => ({
+  import("../NetworthChart").then((m) => ({
     default: m.NetworthChart,
   })),
 );
 
 export const CategoryPieChart = lazy(() =>
-  import("../analytics/CategoryPieChart.jsx").then((m) => ({
+  import("../analytics/CategoryPieChart").then((m) => ({
     default: m.CategoryPieChart,
   })),
 );

@@ -3,7 +3,7 @@ import { cn } from "@shared/lib/cn";
 import { Icon } from "@shared/components/ui/Icon";
 import { Button } from "@shared/components/ui/Button";
 import { trackEvent, ANALYTICS_EVENTS } from "../analytics";
-import { getTimeToValueMs } from "./vibePicks.js";
+import { getTimeToValueMs } from "./vibePicks";
 
 /**
  * Confetti particle rendered by the celebration overlay.

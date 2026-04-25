@@ -1,6 +1,6 @@
 import { cn } from "@shared/lib/cn";
 import { SectionHeading } from "@shared/components/ui/SectionHeading";
-import { MEAL_TYPES } from "../../lib/mealTypes.js";
+import { MEAL_TYPES } from "../../lib/mealTypes";
 
 export function MealTypePicker({ mealType, setForm }) {
   return (

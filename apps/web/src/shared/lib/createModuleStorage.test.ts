@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { createModuleStorage } from "./createModuleStorage.js";
+import { createModuleStorage } from "./createModuleStorage";
 
 let storage;
 

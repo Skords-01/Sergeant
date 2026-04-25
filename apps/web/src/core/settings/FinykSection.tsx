@@ -5,8 +5,8 @@ import { Button } from "@shared/components/ui/Button";
 import { privatApi, isApiError } from "@shared/api";
 import { safeReadLS } from "@shared/lib/storage";
 import { hubKeys } from "@shared/lib/queryKeys";
-import { useStorage as useFinykStorage } from "../../modules/finyk/hooks/useStorage.js";
-import { getAccountLabel } from "../../modules/finyk/utils.js";
+import { useStorage as useFinykStorage } from "../../modules/finyk/hooks/useStorage";
+import { getAccountLabel } from "../../modules/finyk/utils";
 import {
   ConfirmModal,
   SettingsGroup,

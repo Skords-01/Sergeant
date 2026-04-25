@@ -12,11 +12,11 @@ import {
   markAllScheduledHabitsComplete,
   ROUTINE_EVENT,
   ROUTINE_STORAGE_ERROR,
-} from "./lib/routineStorage.js";
-import { addDays, startOfIsoWeek } from "./lib/weekUtils.js";
-import { maxActiveStreak, completionRateForRange } from "./lib/streaks.js";
+} from "./lib/routineStorage";
+import { addDays, startOfIsoWeek } from "./lib/weekUtils";
+import { maxActiveStreak, completionRateForRange } from "./lib/streaks";
 import { useRoutineReminders } from "./hooks/useRoutineReminders";
-import { useLocalStorageState } from "@shared/hooks/useLocalStorageState.js";
+import { useLocalStorageState } from "@shared/hooks/useLocalStorageState";
 import {
   buildHubCalendarEvents,
   countEventsByDate,
@@ -24,11 +24,11 @@ import {
   FIZRUK_GROUP_LABEL,
   parseDateKey,
   habitScheduledOnDate,
-} from "./lib/hubCalendarAggregate.js";
-import { FINYK_SUB_GROUP_LABEL } from "./lib/finykSubscriptionCalendar.js";
-import { HUB_FINYK_ROUTINE_SYNC_EVENT } from "../finyk/hubRoutineSync.js";
+} from "./lib/hubCalendarAggregate";
+import { FINYK_SUB_GROUP_LABEL } from "./lib/finykSubscriptionCalendar";
+import { HUB_FINYK_ROUTINE_SYNC_EVENT } from "../finyk/hubRoutineSync";
 import { useFinykHubPreview } from "../../core/hub/useFinykHubPreview";
-import { ROUTINE_THEME as C } from "./lib/routineConstants.js";
+import { ROUTINE_THEME as C } from "./lib/routineConstants";
 import { RoutineBottomNav } from "./components/RoutineBottomNav";
 import { RoutineCalendarPanel } from "./components/RoutineCalendarPanel";
 import { RoutineStatsPanel } from "./components/RoutineStatsPanel";

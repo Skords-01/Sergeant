@@ -1,8 +1,8 @@
 import type { Dispatch, SetStateAction } from "react";
 import { cn } from "@shared/lib/cn";
 import { Input } from "@shared/components/ui/Input";
-import { ROUTINE_THEME as C } from "../../lib/routineConstants.js";
-import { REMINDER_PRESETS } from "../../lib/routineDraftUtils.js";
+import { ROUTINE_THEME as C } from "../../lib/routineConstants";
+import { REMINDER_PRESETS } from "../../lib/routineDraftUtils";
 import type { HabitDraft } from "../../lib/types";
 
 export interface ReminderPresetsProps {

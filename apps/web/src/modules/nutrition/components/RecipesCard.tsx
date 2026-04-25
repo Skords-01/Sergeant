@@ -11,8 +11,8 @@ import {
   listSavedRecipes,
   saveRecipeToBook,
   scaleMacros,
-} from "../lib/recipeBook.js";
-import { MEAL_TYPES } from "../lib/mealTypes.js";
+} from "../lib/recipeBook";
+import { MEAL_TYPES } from "../lib/mealTypes";
 
 function guessMealTypeIdNow() {
   const h = new Date().getHours();

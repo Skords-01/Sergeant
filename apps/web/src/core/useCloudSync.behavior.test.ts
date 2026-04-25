@@ -20,7 +20,7 @@ import {
   notifySyncDirty,
   SYNC_EVENT,
   SYNC_STATUS_EVENT,
-} from "./useCloudSync.js";
+} from "./useCloudSync";
 import { STORAGE_KEYS } from "@sergeant/shared";
 
 beforeEach(() => {

@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { Button } from "@shared/components/ui/Button";
-import { useToast } from "@shared/hooks/useToast.jsx";
-import { safeReadLS, safeWriteLS } from "@shared/lib/storage.js";
+import { useToast } from "@shared/hooks/useToast";
+import { safeReadLS, safeWriteLS } from "@shared/lib/storage";
 import { STORAGE_KEYS } from "@sergeant/shared";
-import { useWeeklyDigest } from "../useWeeklyDigest.js";
-import { SettingsGroup, ToggleRow } from "./SettingsPrimitives.jsx";
+import { useWeeklyDigest } from "../useWeeklyDigest";
+import { SettingsGroup, ToggleRow } from "./SettingsPrimitives";
 
 export function AIDigestSection() {
   const { digest, loading, error, weekRange, generate } = useWeeklyDigest();

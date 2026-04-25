@@ -27,7 +27,7 @@ vi.mock("../lib/nutritionCloudBackup.js", () => ({
   decryptBlobToJson: vi.fn(() => Promise.resolve({ version: 1, log: {} })),
 }));
 
-import { useNutritionCloudBackup } from "./useNutritionCloudBackup.js";
+import { useNutritionCloudBackup } from "./useNutritionCloudBackup";
 import { nutritionApi } from "@shared/api";
 const apiBackupUpload = nutritionApi.backupUpload as unknown as ReturnType<
   typeof vi.fn
@@ -38,7 +38,7 @@ const apiBackupDownload = nutritionApi.backupDownload as unknown as ReturnType<
 import {
   encryptJsonToBlob,
   decryptBlobToJson,
-} from "../lib/nutritionCloudBackup.js";
+} from "../lib/nutritionCloudBackup";
 
 function makeWrapper() {
   const client = new QueryClient({

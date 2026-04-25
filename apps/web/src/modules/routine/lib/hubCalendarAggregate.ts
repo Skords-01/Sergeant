@@ -1,4 +1,4 @@
-import { safeReadLS } from "@shared/lib/storage.js";
+import { safeReadLS } from "@shared/lib/storage";
 import {
   MONTHLY_PLAN_STORAGE_KEY,
   TEMPLATES_STORAGE_KEY,
@@ -16,10 +16,10 @@ import {
   type HubCalendarEvent,
   type RoutineState,
 } from "@sergeant/routine-domain";
-import { buildFinykSubscriptionEvents } from "./finykSubscriptionCalendar.js";
+import { buildFinykSubscriptionEvents } from "./finykSubscriptionCalendar";
 
 // Re-export pure helpers under their historical names so the web
-// call-sites that `import { dateKeyFromDate } from "./hubCalendarAggregate.js"`
+// call-sites that `import { dateKeyFromDate } from "./hubCalendarAggregate"`
 // keep compiling unchanged after the Phase 5 / PR 2 extraction.
 export {
   dateKeyFromDate,

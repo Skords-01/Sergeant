@@ -16,7 +16,7 @@
  * - усі нагадування dismissible на один день
  */
 
-import { MCC_CATEGORIES, INCOME_CATEGORIES } from "@finyk/constants.js";
+import { MCC_CATEGORIES, INCOME_CATEGORIES } from "@finyk/constants";
 
 interface Category {
   id: string;

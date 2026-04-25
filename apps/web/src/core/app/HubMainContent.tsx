@@ -2,10 +2,10 @@ import { Button } from "@shared/components/ui/Button";
 import { Card } from "@shared/components/ui/Card";
 import { Icon } from "@shared/components/ui/Icon";
 import { ErrorBoundary } from "../ErrorBoundary";
-import { HubDashboard } from "../HubDashboard.jsx";
-import { HubReports } from "../HubReports.jsx";
-import { HubSettingsPage } from "../HubSettingsPage.jsx";
-import { IOSInstallBanner } from "./IOSInstallBanner.jsx";
+import { HubDashboard } from "../HubDashboard";
+import { HubReports } from "../HubReports";
+import { HubSettingsPage } from "../HubSettingsPage";
+import { IOSInstallBanner } from "./IOSInstallBanner";
 
 // Дешевий inline-fallback для секцій хаба: повідомляємо про збій і
 // даємо кнопку `reset`, щоб спробувати перемонтувати секцію без

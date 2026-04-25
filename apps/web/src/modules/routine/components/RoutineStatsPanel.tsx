@@ -6,9 +6,9 @@ import { Stat } from "@shared/components/ui/Stat";
 import { PushupsWidget } from "./PushupsWidget";
 import { HabitHeatmap } from "./HabitHeatmap";
 import { HabitLeadersBlock } from "./HabitLeadersBlock";
-import { completionRateForRange, maxStreakAllTime } from "../lib/streaks.js";
-import { dateKeyFromDate, parseDateKey } from "../lib/hubCalendarAggregate.js";
-import { ROUTINE_THEME as C } from "../lib/routineConstants.js";
+import { completionRateForRange, maxStreakAllTime } from "../lib/streaks";
+import { dateKeyFromDate, parseDateKey } from "../lib/hubCalendarAggregate";
+import { ROUTINE_THEME as C } from "../lib/routineConstants";
 import type { RoutineState } from "../lib/types";
 
 function dateKeyMinusDays(baseKey: string, daysBack: number): string {

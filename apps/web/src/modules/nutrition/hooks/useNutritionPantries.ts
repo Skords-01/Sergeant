@@ -8,8 +8,8 @@ import {
 } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { nutritionApi } from "@shared/api";
-import { formatNutritionError } from "../lib/nutritionErrors.js";
-import { mergeItems } from "../lib/mergeItems.js";
+import { formatNutritionError } from "../lib/nutritionErrors";
+import { mergeItems } from "../lib/mergeItems";
 import {
   loadActivePantryId,
   loadPantries,
@@ -18,12 +18,12 @@ import {
   updatePantry,
   NUTRITION_PANTRIES_KEY,
   NUTRITION_ACTIVE_PANTRY_KEY,
-} from "../lib/nutritionStorage.js";
+} from "../lib/nutritionStorage";
 import {
   normalizeFoodName,
   parseLoosePantryText,
   type PantryItem,
-} from "../lib/pantryTextParser.js";
+} from "../lib/pantryTextParser";
 
 export interface UseNutritionPantriesParams {
   setBusy: Dispatch<SetStateAction<boolean>>;

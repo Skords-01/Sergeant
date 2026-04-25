@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { generateInsights } from "./insightsEngine.js";
+import { generateInsights } from "./insightsEngine";
 
 function createLocalStorageMock() {
   /** @type {Map<string, string>} */

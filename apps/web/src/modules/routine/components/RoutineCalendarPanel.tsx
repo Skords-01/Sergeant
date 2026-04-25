@@ -18,20 +18,20 @@ import { WeekDayStrip } from "./WeekDayStrip";
 import { HabitDetailSheet } from "./HabitDetailSheet";
 import { FizrukDayPlanSheet } from "./FizrukDayPlanSheet";
 import { SwipeToAction } from "@shared/components/ui/SwipeToAction";
-import { completionNoteKey } from "../lib/completionNoteKey.js";
+import { completionNoteKey } from "../lib/completionNoteKey";
 import { DayProgressRing } from "./DayProgressRing";
 import { DayReportSheet } from "./DayReportSheet";
 import {
   FIZRUK_GROUP_LABEL,
   parseDateKey,
   habitScheduledOnDate,
-} from "../lib/hubCalendarAggregate.js";
+} from "../lib/hubCalendarAggregate";
 import {
   ROUTINE_THEME as C,
   ROUTINE_TIME_MODES as TIME_MODES,
   type RoutineTimeModeId,
-} from "../lib/routineConstants.js";
-import { setCompletionNote } from "../lib/routineStorage.js";
+} from "../lib/routineConstants";
+import { setCompletionNote } from "../lib/routineStorage";
 import {
   useRoutineCalendarActions,
   useRoutineCalendarData,

@@ -2,7 +2,7 @@ import {
   normalizeFinykBackup,
   readFinykBackupFromStorage,
   persistFinykNormalizedToStorage,
-} from "../modules/finyk/lib/finykBackup.js";
+} from "../modules/finyk/lib/finykBackup";
 import {
   buildFizrukFullBackupPayload,
   applyFizrukFullBackupPayload,
@@ -10,11 +10,11 @@ import {
 import {
   buildRoutineBackupPayload,
   applyRoutineBackupPayload,
-} from "../modules/routine/lib/routineStorage.js";
+} from "../modules/routine/lib/routineStorage";
 import {
   applyNutritionBackupPayload,
   buildNutritionBackupPayload,
-} from "../modules/nutrition/domain/nutritionBackup.js";
+} from "../modules/nutrition/domain/nutritionBackup";
 
 const HUB_MODULE_KEY = "hub_last_module";
 const HUB_CHAT_KEY = "hub_chat_history";

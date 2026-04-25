@@ -3,7 +3,7 @@ import {
   parseNutritionHash,
   setNutritionHash,
   type NutritionPage,
-} from "../lib/nutritionRouter.js";
+} from "../lib/nutritionRouter";
 
 export interface UseNutritionHashRouteResult {
   activePage: NutritionPage;

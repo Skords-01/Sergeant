@@ -2,7 +2,7 @@ import type { Dispatch, SetStateAction } from "react";
 import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { Button } from "@shared/components/ui/Button";
 import { Card } from "@shared/components/ui/Card";
-import { setHabitArchived } from "../../lib/routineStorage.js";
+import { setHabitArchived } from "../../lib/routineStorage";
 import type { PendingHabitDeletion, RoutineState } from "../../lib/types";
 
 export interface ArchivedHabitsSectionProps {

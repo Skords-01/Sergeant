@@ -3,7 +3,7 @@ import { downloadJson } from "@sergeant/shared";
 import { Button } from "@shared/components/ui/Button";
 import { useToast } from "@shared/hooks/useToast";
 import { cn } from "@shared/lib/cn";
-import { applyHubBackupPayload, buildHubBackupPayload } from "./hubBackup.js";
+import { applyHubBackupPayload, buildHubBackupPayload } from "./hubBackup";
 
 export function HubBackupPanel({ className }) {
   const fileRef = useRef(null);

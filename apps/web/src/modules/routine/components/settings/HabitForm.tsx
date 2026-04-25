@@ -12,13 +12,13 @@ import { Button } from "@shared/components/ui/Button";
 import { Card } from "@shared/components/ui/Card";
 import { Input } from "@shared/components/ui/Input";
 import type { ReactNode } from "react";
-import { VoiceMicButton } from "@shared/components/ui/VoiceMicButton.jsx";
+import { VoiceMicButton } from "@shared/components/ui/VoiceMicButton";
 import {
   ROUTINE_THEME as C,
   RECURRENCE_OPTIONS,
-} from "../../lib/routineConstants.js";
-import { ReminderPresets } from "./ReminderPresets.jsx";
-import { WeekdayPicker } from "./WeekdayPicker.jsx";
+} from "../../lib/routineConstants";
+import { ReminderPresets } from "./ReminderPresets";
+import { WeekdayPicker } from "./WeekdayPicker";
 import type { HabitDraft, RoutineState } from "../../lib/types";
 
 export interface HabitFormErrors {

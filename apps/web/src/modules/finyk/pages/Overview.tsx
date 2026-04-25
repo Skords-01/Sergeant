@@ -17,15 +17,15 @@ import {
 } from "@sergeant/finyk-domain/domain/budget";
 import { filterStatTransactions } from "@sergeant/finyk-domain/domain/transactions";
 import { Skeleton } from "@shared/components/ui/Skeleton";
-import { THEME_HEX } from "@shared/lib/themeHex.js";
+import { THEME_HEX } from "@shared/lib/themeHex";
 import { SyncStatusBadge } from "../components/SyncStatusBadge";
 
-import { FirstInsightBanner } from "./overview/FirstInsightBanner.jsx";
-import { HeroCard } from "./overview/HeroCard.jsx";
-import { MonthPulseCard } from "./overview/MonthPulseCard.jsx";
-import { NetworthSection } from "./overview/NetworthSection.jsx";
-import { BudgetAlertsList } from "./overview/BudgetAlertsList.jsx";
-import { PlannedFlowsCard } from "./overview/PlannedFlowsCard.jsx";
+import { FirstInsightBanner } from "./overview/FirstInsightBanner";
+import { HeroCard } from "./overview/HeroCard";
+import { MonthPulseCard } from "./overview/MonthPulseCard";
+import { NetworthSection } from "./overview/NetworthSection";
+import { BudgetAlertsList } from "./overview/BudgetAlertsList";
+import { PlannedFlowsCard } from "./overview/PlannedFlowsCard";
 
 const parseLocalDate = (isoDate) => {
   const [y, m, d] = (isoDate || "").split("-").map(Number);

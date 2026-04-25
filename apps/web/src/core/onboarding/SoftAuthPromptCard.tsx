@@ -3,7 +3,7 @@ import { cn } from "@shared/lib/cn";
 import { Icon } from "@shared/components/ui/Icon";
 import { Button } from "@shared/components/ui/Button";
 import { trackEvent, ANALYTICS_EVENTS } from "../analytics";
-import { dismissSoftAuth } from "./vibePicks.js";
+import { dismissSoftAuth } from "./vibePicks";
 
 /**
  * Inline dashboard card offering cloud sync *after* the user has logged

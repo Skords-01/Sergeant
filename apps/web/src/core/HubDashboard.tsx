@@ -15,7 +15,7 @@ import {
   safeReadStringLS,
   safeWriteLS,
   safeRemoveLS,
-} from "@shared/lib/storage.js";
+} from "@shared/lib/storage";
 import {
   DASHBOARD_MODULE_LABELS as SHARED_DASHBOARD_MODULE_LABELS,
   STORAGE_KEYS,
@@ -26,25 +26,25 @@ import {
 } from "@sergeant/shared";
 import { openHubModuleWithAction } from "@shared/lib/hubNav";
 import { getModulePrimaryAction } from "@shared/lib/moduleQuickActions";
-import { TodayFocusCard, useDashboardFocus } from "./TodayFocusCard.jsx";
-import { HubInsightsPanel } from "./HubInsightsPanel.jsx";
-import { WeeklyDigestCard, hasLiveWeeklyDigest } from "./WeeklyDigestCard.jsx";
-import { useWeeklyDigest, loadDigest, getWeekKey } from "./useWeeklyDigest.js";
-import { useCoachInsight } from "./useCoachInsight.js";
-import { AssistantAdviceCard } from "./AssistantAdviceCard.jsx";
-import { SoftAuthPromptCard } from "./onboarding/SoftAuthPromptCard.jsx";
-import { FirstActionHeroCard } from "./onboarding/FirstActionSheet.jsx";
-import { detectFirstRealEntry } from "./onboarding/firstRealEntry.js";
+import { TodayFocusCard, useDashboardFocus } from "./TodayFocusCard";
+import { HubInsightsPanel } from "./HubInsightsPanel";
+import { WeeklyDigestCard, hasLiveWeeklyDigest } from "./WeeklyDigestCard";
+import { useWeeklyDigest, loadDigest, getWeekKey } from "./useWeeklyDigest";
+import { useCoachInsight } from "./useCoachInsight";
+import { AssistantAdviceCard } from "./AssistantAdviceCard";
+import { SoftAuthPromptCard } from "./onboarding/SoftAuthPromptCard";
+import { FirstActionHeroCard } from "./onboarding/FirstActionSheet";
+import { detectFirstRealEntry } from "./onboarding/firstRealEntry";
 import {
   isSoftAuthDismissed,
   isFirstActionPending,
   recordSessionDay,
   getSessionDays,
   getVibePicks,
-} from "./onboarding/vibePicks.js";
-import { useFirstEntryCelebration } from "./onboarding/useFirstEntryCelebration.js";
-import { DailyNudge } from "./onboarding/DailyNudge.jsx";
-import { ReEngagementCard } from "./onboarding/ReEngagementCard.jsx";
+} from "./onboarding/vibePicks";
+import { useFirstEntryCelebration } from "./onboarding/useFirstEntryCelebration";
+import { DailyNudge } from "./onboarding/DailyNudge";
+import { ReEngagementCard } from "./onboarding/ReEngagementCard";
 import {
   getActiveNudge,
   shouldShowReengagement,

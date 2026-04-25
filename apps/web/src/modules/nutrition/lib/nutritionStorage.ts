@@ -22,7 +22,7 @@ import {
   type Pantry,
 } from "@sergeant/nutrition-domain";
 
-import { nutritionStorage } from "./nutritionStorageInstance.js";
+import { nutritionStorage } from "./nutritionStorageInstance";
 
 export {
   NUTRITION_ACTIVE_PANTRY_KEY,

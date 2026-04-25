@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { STORAGE_KEYS } from "@sergeant/shared";
-import { hasLiveWeeklyDigest } from "./WeeklyDigestCard.jsx";
-import { getWeekKey } from "./useWeeklyDigest.js";
+import { hasLiveWeeklyDigest } from "./WeeklyDigestCard";
+import { getWeekKey } from "./useWeeklyDigest";
 
 const PREFIX = STORAGE_KEYS.WEEKLY_DIGEST_PREFIX;
 

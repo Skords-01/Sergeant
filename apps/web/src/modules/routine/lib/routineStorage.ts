@@ -1,6 +1,6 @@
 /** Hub «Рутина»: звички, теги, категорії (не-спорт), localStorage */
 
-import { createModuleStorage } from "@shared/lib/createModuleStorage.js";
+import { createModuleStorage } from "@shared/lib/createModuleStorage";
 import {
   ROUTINE_STORAGE_KEY,
   ROUTINE_EVENT,

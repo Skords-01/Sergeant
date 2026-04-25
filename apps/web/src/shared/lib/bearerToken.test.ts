@@ -56,7 +56,7 @@ describe("поза Capacitor — все no-op", () => {
       importSpy as unknown as () => never,
     );
 
-    const { getBearerToken } = await import("./bearerToken.js");
+    const { getBearerToken } = await import("./bearerToken");
     await expect(getBearerToken()).resolves.toBeNull();
     expect(importSpy).not.toHaveBeenCalled();
   }, 20_000);
@@ -69,7 +69,7 @@ describe("поза Capacitor — все no-op", () => {
       clearBearerToken: vi.fn(),
     }));
 
-    const { setBearerToken } = await import("./bearerToken.js");
+    const { setBearerToken } = await import("./bearerToken");
     await expect(setBearerToken("x")).resolves.toBeUndefined();
     expect(setSpy).not.toHaveBeenCalled();
   });
@@ -82,7 +82,7 @@ describe("поза Capacitor — все no-op", () => {
       clearBearerToken: clearSpy,
     }));
 
-    const { clearBearerToken } = await import("./bearerToken.js");
+    const { clearBearerToken } = await import("./bearerToken");
     await expect(clearBearerToken()).resolves.toBeUndefined();
     expect(clearSpy).not.toHaveBeenCalled();
   });
@@ -101,7 +101,7 @@ describe("у Capacitor — делегує до auth-storage", () => {
       clearBearerToken: vi.fn(),
     }));
 
-    const { getBearerToken } = await import("./bearerToken.js");
+    const { getBearerToken } = await import("./bearerToken");
     await expect(getBearerToken()).resolves.toBe("tok-42");
     expect(storageGet).toHaveBeenCalledTimes(1);
   });
@@ -114,7 +114,7 @@ describe("у Capacitor — делегує до auth-storage", () => {
       clearBearerToken: vi.fn(),
     }));
 
-    const { setBearerToken } = await import("./bearerToken.js");
+    const { setBearerToken } = await import("./bearerToken");
     await setBearerToken("jwt-xyz");
     expect(storageSet).toHaveBeenCalledTimes(1);
     expect(storageSet).toHaveBeenCalledWith("jwt-xyz");
@@ -128,7 +128,7 @@ describe("у Capacitor — делегує до auth-storage", () => {
       clearBearerToken: storageClear,
     }));
 
-    const { clearBearerToken } = await import("./bearerToken.js");
+    const { clearBearerToken } = await import("./bearerToken");
     await clearBearerToken();
     expect(storageClear).toHaveBeenCalledTimes(1);
   });
@@ -143,17 +143,17 @@ describe("резилієнс: dynamic import падає", () => {
   });
 
   it("getBearerToken повертає null, не кидає", async () => {
-    const { getBearerToken } = await import("./bearerToken.js");
+    const { getBearerToken } = await import("./bearerToken");
     await expect(getBearerToken()).resolves.toBeNull();
   });
 
   it("setBearerToken — тихий no-op, не кидає", async () => {
-    const { setBearerToken } = await import("./bearerToken.js");
+    const { setBearerToken } = await import("./bearerToken");
     await expect(setBearerToken("x")).resolves.toBeUndefined();
   });
 
   it("clearBearerToken — тихий no-op, не кидає", async () => {
-    const { clearBearerToken } = await import("./bearerToken.js");
+    const { clearBearerToken } = await import("./bearerToken");
     await expect(clearBearerToken()).resolves.toBeUndefined();
   });
 });
@@ -172,7 +172,7 @@ describe("резилієнс: модуль резолвиться, але окр
       clearBearerToken: vi.fn(),
     }));
 
-    const { getBearerToken } = await import("./bearerToken.js");
+    const { getBearerToken } = await import("./bearerToken");
     await expect(getBearerToken()).resolves.toBeNull();
   });
 
@@ -185,7 +185,7 @@ describe("резилієнс: модуль резолвиться, але окр
       clearBearerToken: vi.fn(),
     }));
 
-    const { setBearerToken } = await import("./bearerToken.js");
+    const { setBearerToken } = await import("./bearerToken");
     await expect(setBearerToken("x")).resolves.toBeUndefined();
   });
 
@@ -198,7 +198,7 @@ describe("резилієнс: модуль резолвиться, але окр
       }),
     }));
 
-    const { clearBearerToken } = await import("./bearerToken.js");
+    const { clearBearerToken } = await import("./bearerToken");
     await expect(clearBearerToken()).resolves.toBeUndefined();
   });
 });

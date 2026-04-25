@@ -1,22 +1,22 @@
 import { useEffect, useState } from "react";
 import { cn } from "@shared/lib/cn";
 import { Button } from "@shared/components/ui/Button";
-import { useToast } from "@shared/hooks/useToast.jsx";
-import { requestRoutineNotificationPermission } from "../../modules/routine/hooks/useRoutineReminders.js";
-import { useRoutineState } from "../../modules/routine/hooks/useRoutineState.js";
+import { useToast } from "@shared/hooks/useToast";
+import { requestRoutineNotificationPermission } from "../../modules/routine/hooks/useRoutineReminders";
+import { useRoutineState } from "../../modules/routine/hooks/useRoutineState";
 import { useMonthlyPlan } from "../../modules/fizruk/hooks/useMonthlyPlan";
 import {
   loadNutritionPrefs,
   persistNutritionPrefs,
   NUTRITION_PREFS_KEY,
   type NutritionPrefs,
-} from "../../modules/nutrition/lib/nutritionStorage.js";
-import { PushNotificationToggle } from "../components/PushNotificationToggle.jsx";
+} from "../../modules/nutrition/lib/nutritionStorage";
+import { PushNotificationToggle } from "../components/PushNotificationToggle";
 import {
   SettingsGroup,
   SettingsSubGroup,
   ToggleRow,
-} from "./SettingsPrimitives.jsx";
+} from "./SettingsPrimitives";
 
 type PermStatus = NotificationPermission | "unsupported";
 

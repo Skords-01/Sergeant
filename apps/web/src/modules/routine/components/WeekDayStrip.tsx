@@ -4,7 +4,7 @@ import {
   dateKeyFromDate,
   parseDateKey,
   startOfIsoWeek,
-} from "../lib/weekUtils.js";
+} from "../lib/weekUtils";
 
 function weekKeysFromAnchor(anchorKey: string): string[] {
   const s = startOfIsoWeek(parseDateKey(anchorKey));

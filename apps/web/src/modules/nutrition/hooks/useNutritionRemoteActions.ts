@@ -10,18 +10,18 @@ import type {
   NutritionShoppingCategory,
   NutritionWeekPlan as ApiNutritionWeekPlan,
 } from "@shared/api";
-import { formatNutritionError } from "../lib/nutritionErrors.js";
-import { writeRecipeCache } from "../lib/recipeCache.js";
-import { stableRecipeId } from "../lib/recipeIds.js";
-import { getDayMacros, getDaySummary } from "../lib/nutritionStorage.js";
-import type { Meal, NutritionLogLike } from "../lib/nutritionStorage.js";
-import type { PantryItem } from "../lib/pantryTextParser.js";
+import { formatNutritionError } from "../lib/nutritionErrors";
+import { writeRecipeCache } from "../lib/recipeCache";
+import { stableRecipeId } from "../lib/recipeIds";
+import { getDayMacros, getDaySummary } from "../lib/nutritionStorage";
+import type { Meal, NutritionLogLike } from "../lib/nutritionStorage";
+import type { PantryItem } from "../lib/pantryTextParser";
 import type {
   NutritionDayPlan as UiNutritionDayPlan,
   NutritionRecipe as UiNutritionRecipe,
   NutritionWeekPlan as UiNutritionWeekPlan,
-} from "./useNutritionUiState.js";
-import type { ShoppingCategory } from "../lib/shoppingListStorage.js";
+} from "./useNutritionUiState";
+import type { ShoppingCategory } from "../lib/shoppingListStorage";
 
 type AnySetter<T = unknown> =
   | Dispatch<SetStateAction<T>>

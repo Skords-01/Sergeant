@@ -3,12 +3,12 @@ import {
   applyNutritionBackupPayload,
   buildNutritionBackupPayload,
   NUTRITION_BACKUP_KIND,
-} from "./nutritionBackup.js";
+} from "./nutritionBackup";
 import {
   NUTRITION_ACTIVE_PANTRY_KEY,
   NUTRITION_PANTRIES_KEY,
   NUTRITION_PREFS_KEY,
-} from "../lib/nutritionStorage.js";
+} from "../lib/nutritionStorage";
 
 function createLocalStorageMock() {
   const store = new Map();

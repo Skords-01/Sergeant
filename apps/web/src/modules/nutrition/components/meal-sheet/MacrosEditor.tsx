@@ -2,7 +2,7 @@ import { useState } from "react";
 import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { Input } from "@shared/components/ui/Input";
 import { Button } from "@shared/components/ui/Button";
-import { emptyForm } from "./mealFormUtils.js";
+import { emptyForm } from "./mealFormUtils";
 
 export function MacrosEditor({
   form,

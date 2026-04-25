@@ -15,7 +15,7 @@ import {
   saveCategories,
   getBudget,
   saveBudget,
-} from "./finykStorage.js";
+} from "./finykStorage";
 
 beforeEach(() => {
   localStorage.clear();

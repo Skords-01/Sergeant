@@ -1,4 +1,4 @@
-import type { Macros } from "../macros.js";
+import type { Macros } from "../macros";
 
 export interface SeedFood {
   name: string;

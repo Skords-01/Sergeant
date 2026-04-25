@@ -4,8 +4,8 @@ import { Button } from "@shared/components/ui/Button";
 import { Icon } from "@shared/components/ui/Icon";
 import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { trackEvent, ANALYTICS_EVENTS } from "../analytics";
-import { clearFirstActionPending, getVibePicks } from "./vibePicks.js";
-import { PresetSheet, getPresetModule } from "./PresetSheet.jsx";
+import { clearFirstActionPending, getVibePicks } from "./vibePicks";
+import { PresetSheet, getPresetModule } from "./PresetSheet";
 import { getOnboardingGoals } from "@sergeant/shared";
 
 const localStorageStore = {

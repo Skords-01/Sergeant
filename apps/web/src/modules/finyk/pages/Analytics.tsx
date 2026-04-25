@@ -18,7 +18,7 @@ import { ChartFallback } from "../components/charts/ChartFallback";
 import { MerchantList } from "../components/analytics/MerchantList";
 import { getTrendComparison } from "@sergeant/finyk-domain/domain/selectors";
 import type { TxSplitsMap } from "@sergeant/finyk-domain/domain/types";
-import { readJSON } from "../lib/finykStorage.js";
+import { readJSON } from "../lib/finykStorage";
 import { trackEvent, ANALYTICS_EVENTS } from "../../../core/analytics";
 
 interface SectionProps {

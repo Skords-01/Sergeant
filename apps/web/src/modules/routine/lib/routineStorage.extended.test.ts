@@ -27,8 +27,8 @@ import {
   buildRoutineBackupPayload,
   applyRoutineBackupPayload,
   ROUTINE_STORAGE_KEY,
-} from "./routineStorage.js";
-import { completionNoteKey } from "./completionNoteKey.js";
+} from "./routineStorage";
+import { completionNoteKey } from "./completionNoteKey";
 
 beforeEach(() => {
   localStorage.clear();

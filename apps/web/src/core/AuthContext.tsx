@@ -9,7 +9,7 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { useUser, apiQueryKeys } from "@sergeant/api-client/react";
 import type { User } from "@sergeant/shared";
-import { signIn, signUp, signOut, forgetPassword } from "./authClient.js";
+import { signIn, signUp, signOut, forgetPassword } from "./authClient";
 
 /**
  * AuthContext — єдине джерело правди «хто я» для веб-додатку.

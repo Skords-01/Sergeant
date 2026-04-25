@@ -7,7 +7,7 @@ import {
   removeItem,
   readJSON,
   writeJSON,
-} from "../lib/finykStorage.js";
+} from "../lib/finykStorage";
 
 const PRIVAT_ID_KEY = "finyk_privat_id";
 const PRIVAT_TOKEN_KEY = "finyk_privat_token";

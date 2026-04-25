@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { habitCompletionRate } from "../lib/streaks.js";
+import { habitCompletionRate } from "../lib/streaks";
 import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { Card } from "@shared/components/ui/Card";
 import type { Habit, RoutineState } from "../lib/types";

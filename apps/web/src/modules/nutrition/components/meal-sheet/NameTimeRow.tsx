@@ -1,9 +1,9 @@
 import { useCallback, useState } from "react";
 import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { Input } from "@shared/components/ui/Input";
-import { VoiceMicButton } from "@shared/components/ui/VoiceMicButton.jsx";
+import { VoiceMicButton } from "@shared/components/ui/VoiceMicButton";
 import { parseMealSpeech } from "@sergeant/shared";
-import { currentTime } from "./mealFormUtils.js";
+import { currentTime } from "./mealFormUtils";
 
 export function NameTimeRow({ form, field, setForm }) {
   // 95%+ of the time the user logs a meal «right now». Showing the time

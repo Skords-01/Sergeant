@@ -14,22 +14,22 @@ import {
   getMacrosForDateRange,
   estimateLogBytes,
   toLocalISODate,
-} from "../lib/nutritionStorage.js";
+} from "../lib/nutritionStorage";
 import { addDaysISODate } from "@sergeant/nutrition-domain";
 import {
   MEAL_ORDER,
   MEAL_META,
   isMealTypeId,
   mealTypeFromLabel,
-} from "../lib/mealTypes.js";
+} from "../lib/mealTypes";
 import {
   avgFromSummary,
   getRowsForRange,
   mealTypeBreakdown,
   summarizeRows,
   topMeals,
-} from "../lib/nutritionStats.js";
-import { getMealThumbnailBlob } from "../lib/mealPhotoStorage.js";
+} from "../lib/nutritionStats";
+import { getMealThumbnailBlob } from "../lib/mealPhotoStorage";
 
 function toISODate(d) {
   return toLocalISODate(d);

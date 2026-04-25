@@ -4,8 +4,8 @@ import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { Sheet } from "@shared/components/ui/Sheet";
 import { Card } from "@shared/components/ui/Card";
 import { useVisualKeyboardInset } from "@sergeant/shared";
-import { useRoutinePushups } from "../hooks/useRoutinePushups.js";
-import { dateKeyFromDate } from "../lib/hubCalendarAggregate.js";
+import { useRoutinePushups } from "../hooks/useRoutinePushups";
+import { dateKeyFromDate } from "../lib/hubCalendarAggregate";
 
 const C = {
   primary: "!bg-routine hover:!bg-routine-hover !text-white border-0",

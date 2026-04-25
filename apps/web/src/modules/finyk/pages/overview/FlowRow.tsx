@@ -1,6 +1,6 @@
 import { memo } from "react";
 import { cn } from "@shared/lib/cn";
-import { THEME_HEX } from "@shared/lib/themeHex.js";
+import { THEME_HEX } from "@shared/lib/themeHex";
 
 export interface FlowItem {
   title: string;

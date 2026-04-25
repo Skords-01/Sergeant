@@ -1,7 +1,7 @@
 import { cn } from "@shared/lib/cn";
-import { AssistantMessageBody } from "./AssistantMessageBody.jsx";
-import { speak } from "../lib/hubChatSpeech.js";
-import type { ChatMessage as ChatMessageData } from "../lib/hubChatUtils.js";
+import { AssistantMessageBody } from "./AssistantMessageBody";
+import { speak } from "../lib/hubChatSpeech";
+import type { ChatMessage as ChatMessageData } from "../lib/hubChatUtils";
 
 interface ChatMessageProps {
   message: ChatMessageData;

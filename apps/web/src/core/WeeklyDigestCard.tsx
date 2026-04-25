@@ -5,8 +5,8 @@ import {
   useWeeklyDigest,
   useDigestHistory,
   getWeekKey,
-} from "./useWeeklyDigest.js";
-import { WeeklyDigestStories } from "./WeeklyDigestStories.jsx";
+} from "./useWeeklyDigest";
+import { WeeklyDigestStories } from "./WeeklyDigestStories";
 
 // `hasLiveWeeklyDigest` now lives in `@sergeant/shared` (DOM-free, reused by
 // mobile). The web-side adapter in `@shared/lib/weeklyDigestStorage` binds

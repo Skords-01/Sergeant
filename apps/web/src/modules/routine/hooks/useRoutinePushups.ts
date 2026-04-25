@@ -3,8 +3,8 @@ import {
   addPushupReps,
   loadRoutineState,
   ROUTINE_EVENT,
-} from "../lib/routineStorage.js";
-import { dateKeyFromDate } from "../lib/hubCalendarAggregate.js";
+} from "../lib/routineStorage";
+import { dateKeyFromDate } from "../lib/hubCalendarAggregate";
 import type { RoutineState } from "../lib/types";
 
 const HISTORY_DAYS = 30;

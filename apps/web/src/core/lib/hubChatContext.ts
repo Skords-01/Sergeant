@@ -25,9 +25,9 @@ import {
   weeklyVolumeSeriesNow,
 } from "@sergeant/fizruk-domain";
 import { perfMark, perfEnd } from "@shared/lib/perf";
-import { ls, fmt } from "./hubChatUtils.js";
-import { generateRecommendations } from "./recommendationEngine.js";
-import { generateInsights } from "./insightsEngine.js";
+import { ls, fmt } from "./hubChatUtils";
+import { generateRecommendations } from "./recommendationEngine";
+import { generateInsights } from "./insightsEngine";
 
 interface Transaction {
   id: string;

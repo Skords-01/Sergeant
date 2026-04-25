@@ -1,4 +1,4 @@
-import { usePushNotifications } from "@shared/hooks/usePushNotifications.js";
+import { usePushNotifications } from "@shared/hooks/usePushNotifications";
 import { cn } from "@shared/lib/cn";
 
 interface PushNotificationToggleProps {

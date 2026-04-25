@@ -3,14 +3,14 @@ import { useDialogFocusTrap } from "@shared/hooks/useDialogFocusTrap";
 import { useToast } from "@shared/hooks/useToast";
 import { hapticSuccess } from "@shared/lib/haptic";
 import { cn } from "@shared/lib/cn";
-import { createHabit, updateHabit } from "../lib/routineStorage.js";
+import { createHabit, updateHabit } from "../lib/routineStorage";
 import {
   emptyHabitDraft,
   habitDraftToPatch,
   normalizeReminderTimes,
   routineTodayDate,
-} from "../lib/routineDraftUtils.js";
-import { dateKeyFromDate } from "../lib/hubCalendarAggregate.js";
+} from "../lib/routineDraftUtils";
+import { dateKeyFromDate } from "../lib/hubCalendarAggregate";
 import { HabitForm, type HabitFormErrors } from "./settings/HabitForm";
 import type { Habit, HabitDraft, RoutineState } from "../lib/types";
 import type { Dispatch, SetStateAction } from "react";

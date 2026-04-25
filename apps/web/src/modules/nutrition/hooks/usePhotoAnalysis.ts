@@ -8,8 +8,8 @@ import {
 } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { nutritionApi, type NutritionPhotoResult } from "@shared/api";
-import { fileToBase64 } from "../lib/fileToBase64.js";
-import { formatNutritionError } from "../lib/nutritionErrors.js";
+import { fileToBase64 } from "../lib/fileToBase64";
+import { formatNutritionError } from "../lib/nutritionErrors";
 
 export interface PhotoAnalysisPayload {
   image_base64: string;

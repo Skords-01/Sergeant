@@ -8,7 +8,7 @@ import {
   type ShoppingCategory,
   type ShoppingItem,
   type ShoppingList,
-} from "../lib/shoppingListStorage.js";
+} from "../lib/shoppingListStorage";
 
 export interface UseShoppingListResult {
   shoppingList: ShoppingList;

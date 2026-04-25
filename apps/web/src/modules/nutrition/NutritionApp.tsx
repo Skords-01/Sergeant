@@ -1,41 +1,38 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { NutritionHeader } from "./components/NutritionHeader.jsx";
-import { NutritionBottomNav } from "./components/NutritionBottomNav.jsx";
-import { SubTabs } from "./components/SubTabs.jsx";
-import { PhotoAnalyzeCard } from "./components/PhotoAnalyzeCard.jsx";
-import { NutritionDashboard } from "./components/NutritionDashboard.jsx";
-import { PantryCard } from "./components/PantryCard.jsx";
-import { RecipesCard } from "./components/RecipesCard.jsx";
-import { DailyPlanCard } from "./components/DailyPlanCard.jsx";
-import { ShoppingListCard } from "./components/ShoppingListCard.jsx";
-import { LogCard } from "./components/LogCard.jsx";
-import { NutritionPantrySelector } from "./components/NutritionPantrySelector.jsx";
-import { NutritionOverlays } from "./components/NutritionOverlays.jsx";
-import { Banner } from "@shared/components/ui/Banner.jsx";
+import { NutritionHeader } from "./components/NutritionHeader";
+import { NutritionBottomNav } from "./components/NutritionBottomNav";
+import { SubTabs } from "./components/SubTabs";
+import { PhotoAnalyzeCard } from "./components/PhotoAnalyzeCard";
+import { NutritionDashboard } from "./components/NutritionDashboard";
+import { PantryCard } from "./components/PantryCard";
+import { RecipesCard } from "./components/RecipesCard";
+import { DailyPlanCard } from "./components/DailyPlanCard";
+import { ShoppingListCard } from "./components/ShoppingListCard";
+import { LogCard } from "./components/LogCard";
+import { NutritionPantrySelector } from "./components/NutritionPantrySelector";
+import { NutritionOverlays } from "./components/NutritionOverlays";
+import { Banner } from "@shared/components/ui/Banner";
 import { Icon } from "@shared/components/ui/Icon";
 import {
   loadNutritionPrefs,
   persistNutritionPrefs,
-} from "./lib/nutritionStorage.js";
-import { useNutritionPantries } from "./hooks/useNutritionPantries.js";
-import { useNutritionLog } from "./hooks/useNutritionLog.js";
-import { usePhotoAnalysis } from "./hooks/usePhotoAnalysis.js";
-import { useShoppingList } from "./hooks/useShoppingList.js";
-import { useNutritionUiState } from "./hooks/useNutritionUiState.js";
-import { useNutritionHashRoute } from "./hooks/useNutritionHashRoute.js";
-import { useNutritionReminders } from "./hooks/useNutritionReminders.js";
-import { usePantryBarcodeScan } from "./hooks/usePantryBarcodeScan.js";
-import { useNutritionCloudBackup } from "./hooks/useNutritionCloudBackup.js";
-import { useNutritionRemoteActions } from "./hooks/useNutritionRemoteActions.js";
-import { buildRecipeCacheKey, readRecipeCache } from "./lib/recipeCache.js";
-import { stableRecipeId } from "./lib/recipeIds.js";
-import {
-  fileToThumbnailBlob,
-  saveMealThumbnail,
-} from "./lib/mealPhotoStorage.js";
+} from "./lib/nutritionStorage";
+import { useNutritionPantries } from "./hooks/useNutritionPantries";
+import { useNutritionLog } from "./hooks/useNutritionLog";
+import { usePhotoAnalysis } from "./hooks/usePhotoAnalysis";
+import { useShoppingList } from "./hooks/useShoppingList";
+import { useNutritionUiState } from "./hooks/useNutritionUiState";
+import { useNutritionHashRoute } from "./hooks/useNutritionHashRoute";
+import { useNutritionReminders } from "./hooks/useNutritionReminders";
+import { usePantryBarcodeScan } from "./hooks/usePantryBarcodeScan";
+import { useNutritionCloudBackup } from "./hooks/useNutritionCloudBackup";
+import { useNutritionRemoteActions } from "./hooks/useNutritionRemoteActions";
+import { buildRecipeCacheKey, readRecipeCache } from "./lib/recipeCache";
+import { stableRecipeId } from "./lib/recipeIds";
+import { fileToThumbnailBlob, saveMealThumbnail } from "./lib/mealPhotoStorage";
 import { useToast } from "@shared/hooks/useToast";
 import { showUndoToast } from "@shared/lib/undoToast";
-import { fmtMacro, todayISODate } from "./lib/nutritionFormat.js";
+import { fmtMacro, todayISODate } from "./lib/nutritionFormat";
 
 interface NutritionAppProps {
   onBackToHub?: () => void;

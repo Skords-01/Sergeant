@@ -3,7 +3,7 @@ import { Button } from "@shared/components/ui/Button";
 import { Input } from "@shared/components/ui/Input";
 import { Label } from "@shared/components/ui/FormField";
 import { Sheet } from "@shared/components/ui/Sheet";
-import { VoiceMicButton } from "@shared/components/ui/VoiceMicButton.jsx";
+import { VoiceMicButton } from "@shared/components/ui/VoiceMicButton";
 import {
   parseExpenseSpeech,
   toLocalISODate,

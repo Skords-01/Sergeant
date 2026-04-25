@@ -5,7 +5,7 @@ import {
   useBarcodeScanner,
   useWebScanner,
   type BarcodeResult,
-} from "../hooks/useBarcodeScanner.js";
+} from "../hooks/useBarcodeScanner";
 
 interface BarcodeScannerProps {
   /**

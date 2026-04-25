@@ -18,7 +18,7 @@ async function loadFresh() {
   // Чистимо кеш модулів + LS, щоб кожен кейс отримав свіжий store.
   vi.resetModules();
   globalThis.localStorage = makeLS();
-  return await import("./featureFlags.js");
+  return await import("./featureFlags");
 }
 
 describe("featureFlags", () => {

@@ -4,8 +4,8 @@ import { renderHook, act, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import type { MockInstance } from "vitest";
-import { useNutritionLog } from "./useNutritionLog.js";
-import { NUTRITION_LOG_KEY } from "../lib/nutritionStorage.js";
+import { useNutritionLog } from "./useNutritionLog";
+import { NUTRITION_LOG_KEY } from "../lib/nutritionStorage";
 
 function makeWrapper() {
   const client = new QueryClient({

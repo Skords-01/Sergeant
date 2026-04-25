@@ -6,7 +6,7 @@ import { compactToolbarButtonClass } from "@shared/components/ui/buttonPresets";
 import { EmptyState } from "@shared/components/ui/EmptyState";
 import { ActiveWorkoutPanel } from "../workouts/ActiveWorkoutPanel";
 import { SwipeToAction } from "@shared/components/ui/SwipeToAction";
-import { SectionErrorBoundary } from "@shared/components/ui/SectionErrorBoundary.jsx";
+import { SectionErrorBoundary } from "@shared/components/ui/SectionErrorBoundary";
 import { Card } from "@shared/components/ui/Card";
 import { useToast } from "@shared/hooks/useToast";
 import { hapticSuccess } from "@shared/lib/haptic";

@@ -12,7 +12,7 @@ import {
   type ShoppingList,
 } from "@sergeant/nutrition-domain";
 
-import { nutritionStorage } from "./nutritionStorageInstance.js";
+import { nutritionStorage } from "./nutritionStorageInstance";
 
 export {
   SHOPPING_LIST_KEY,

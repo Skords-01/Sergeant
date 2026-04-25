@@ -1,7 +1,7 @@
 import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { Sheet } from "@shared/components/ui/Sheet";
 import { cn } from "@shared/lib/cn";
-import { ROUTINE_THEME as C } from "../lib/routineConstants.js";
+import { ROUTINE_THEME as C } from "../lib/routineConstants";
 import type { Habit } from "../lib/types";
 
 export interface ScheduledHabitForReport extends Habit {

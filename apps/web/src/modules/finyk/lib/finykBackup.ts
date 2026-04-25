@@ -13,9 +13,9 @@
  * `@sergeant/finyk-domain/backup`.
  */
 
-import { DEFAULT_SUBSCRIPTIONS } from "../constants.js";
-import { notifyFinykRoutineCalendarSync } from "../hubRoutineSync.js";
-import { readJSON, writeJSON } from "./finykStorage.js";
+import { DEFAULT_SUBSCRIPTIONS } from "../constants";
+import { notifyFinykRoutineCalendarSync } from "../hubRoutineSync";
+import { readJSON, writeJSON } from "./finykStorage";
 import {
   DEFAULT_FINYK_MONTHLY_PLAN,
   FINYK_BACKUP_VERSION,

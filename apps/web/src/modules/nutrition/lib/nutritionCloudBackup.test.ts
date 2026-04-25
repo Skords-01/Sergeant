@@ -1,9 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { webcrypto } from "node:crypto";
-import {
-  decryptBlobToJson,
-  encryptJsonToBlob,
-} from "./nutritionCloudBackup.js";
+import { decryptBlobToJson, encryptJsonToBlob } from "./nutritionCloudBackup";
 
 describe("nutritionCloudBackup", () => {
   it("encrypts and decrypts JSON payload", async () => {

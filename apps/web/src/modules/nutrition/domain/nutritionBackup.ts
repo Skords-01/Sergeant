@@ -9,7 +9,7 @@ import {
   normalizeNutritionLog,
   type NutritionLog,
   type NutritionPrefs,
-} from "../lib/nutritionStorage.js";
+} from "../lib/nutritionStorage";
 
 export const NUTRITION_BACKUP_KIND = "hub-nutrition-backup";
 export const NUTRITION_BACKUP_SCHEMA_VERSION = 1;

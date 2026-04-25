@@ -1,13 +1,13 @@
-import { handleFinykAction } from "./chatActions/finykActions.js";
-import { handleFizrukAction } from "./chatActions/fizrukActions.js";
-import { handleRoutineAction } from "./chatActions/routineActions.js";
-import { handleNutritionAction } from "./chatActions/nutritionActions.js";
-import { handleCrossAction } from "./chatActions/crossActions.js";
+import { handleFinykAction } from "./chatActions/finykActions";
+import { handleFizrukAction } from "./chatActions/fizrukActions";
+import { handleRoutineAction } from "./chatActions/routineActions";
+import { handleNutritionAction } from "./chatActions/nutritionActions";
+import { handleCrossAction } from "./chatActions/crossActions";
 
-export type { ChatAction } from "./chatActions/types.js";
+export type { ChatAction } from "./chatActions/types";
 
 export function executeAction(
-  action: import("./chatActions/types.js").ChatAction,
+  action: import("./chatActions/types").ChatAction,
 ): string {
   try {
     return (

@@ -1,4 +1,4 @@
-import { mealTypeByNow, type MealTypeId } from "../../lib/mealTypes.js";
+import { mealTypeByNow, type MealTypeId } from "../../lib/mealTypes";
 import type { NullableMacros } from "@sergeant/shared";
 
 export function currentTime(): string {

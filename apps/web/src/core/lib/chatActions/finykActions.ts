@@ -1,4 +1,4 @@
-import { ls, lsSet } from "../hubChatUtils.js";
+import { ls, lsSet } from "../hubChatUtils";
 import { resolveExpenseCategoryMeta } from "../../../modules/finyk/utils";
 import type {
   ChangeCategoryAction,
@@ -23,7 +23,7 @@ import type {
   BudgetGoal,
   MonthlyPlan,
   ChatAction,
-} from "./types.js";
+} from "./types";
 
 export function handleFinykAction(action: ChatAction): string | undefined {
   switch (action.name) {

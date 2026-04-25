@@ -12,7 +12,7 @@ import {
   type WaterLog,
 } from "@sergeant/nutrition-domain";
 
-import { nutritionStorage } from "./nutritionStorageInstance.js";
+import { nutritionStorage } from "./nutritionStorageInstance";
 
 export {
   WATER_LOG_KEY,

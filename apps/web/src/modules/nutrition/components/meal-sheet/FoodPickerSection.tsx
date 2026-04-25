@@ -2,9 +2,9 @@ import { useCallback, useEffect } from "react";
 import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { Input } from "@shared/components/ui/Input";
 import { cn } from "@shared/lib/cn";
-import { FoodHitRow } from "./FoodHitRow.jsx";
-import { MacroChip } from "./MacroChip.jsx";
-import { macrosForGrams } from "../../lib/foodDb/foodDb.js";
+import { FoodHitRow } from "./FoodHitRow";
+import { MacroChip } from "./MacroChip";
+import { macrosForGrams } from "../../lib/foodDb/foodDb";
 
 export function FoodPickerSection({
   form,

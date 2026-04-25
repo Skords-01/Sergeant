@@ -1,5 +1,5 @@
-import type { Macros } from "../macros.js";
-import type { SeedFood } from "./seedFoodsUk.js";
+import type { Macros } from "../macros";
+import type { SeedFood } from "./seedFoodsUk";
 
 /**
  * Lazy-loader для 1600+ seed-продуктів. Статичний import затягував весь
@@ -8,7 +8,7 @@ import type { SeedFood } from "./seedFoodsUk.js";
  * ізолює ці дані у власний chunk, який vite/rollup вантажить на вимогу.
  */
 async function loadSeedFoods(): Promise<readonly SeedFood[]> {
-  const mod = await import("./seedFoodsUk.js");
+  const mod = await import("./seedFoodsUk");
   return mod.SEED_FOODS_UK;
 }
 

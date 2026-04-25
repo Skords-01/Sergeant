@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { renderHook, act } from "@testing-library/react";
-import { useLocalStorageState } from "./useLocalStorageState.js";
+import { useLocalStorageState } from "./useLocalStorageState";
 
 describe("useLocalStorageState", () => {
   beforeEach(() => {

@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@shared/components/ui/Button";
 import { useToast } from "@shared/hooks/useToast";
 import { BrandLogo } from "./app/BrandLogo";
-import { resetPassword } from "./authClient.js";
+import { resetPassword } from "./authClient";
 
 /**
  * Landing page for the Better Auth password-reset magic link. The email

@@ -3,8 +3,8 @@ import {
   getDaySummary,
   type DaySummary,
   type NutritionLog,
-} from "./nutritionStorage.js";
-import { mealTypeFromLabel } from "./mealTypes.js";
+} from "./nutritionStorage";
+import { mealTypeFromLabel } from "./mealTypes";
 
 function clamp0(n: unknown): number {
   const v = Number(n);

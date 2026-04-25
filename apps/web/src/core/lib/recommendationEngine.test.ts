@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { generateRecommendations } from "./recommendationEngine.js";
+import { generateRecommendations } from "./recommendationEngine";
 
 function setLS(key, value) {
   localStorage.setItem(key, JSON.stringify(value));

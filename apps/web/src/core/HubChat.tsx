@@ -24,12 +24,12 @@ import {
   cancelIdle,
   isHelpCommand,
   HELP_TEXT,
-} from "./lib/hubChatUtils.js";
-import { buildContextMeasured } from "./lib/hubChatContext.js";
-import { executeAction } from "./lib/hubChatActions.js";
-import { VOICE_KEYWORDS, speak, stopSpeaking } from "./lib/hubChatSpeech.js";
-import { ChatMessage, TypingIndicator } from "./components/ChatMessage.jsx";
-import { ChatInput } from "./components/ChatInput.jsx";
+} from "./lib/hubChatUtils";
+import { buildContextMeasured } from "./lib/hubChatContext";
+import { executeAction } from "./lib/hubChatActions";
+import { VOICE_KEYWORDS, speak, stopSpeaking } from "./lib/hubChatSpeech";
+import { ChatMessage, TypingIndicator } from "./components/ChatMessage";
+import { ChatInput } from "./components/ChatInput";
 
 const QUICK_WITH_MONO = [
   "Як справи з бюджетом?",

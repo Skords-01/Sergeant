@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { ROUTINE_EVENT } from "../../routine/lib/routineStorage.js";
-import { buildPushupHistoryFromRoutine } from "../../routine/lib/routinePushupsRead.js";
+import { ROUTINE_EVENT } from "../../routine/lib/routineStorage";
+import { buildPushupHistoryFromRoutine } from "../../routine/lib/routinePushupsRead";
 
 /**
  * Fizruk-side adapter for pushup activity sourced from the Routine module.

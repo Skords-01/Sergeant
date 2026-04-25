@@ -2,8 +2,8 @@ import { useEffect, useRef } from "react";
 import {
   dateKeyFromDate,
   habitScheduledOnDate,
-} from "../lib/hubCalendarAggregate.js";
-import { normalizeReminderTimes } from "../lib/routineDraftUtils.js";
+} from "../lib/hubCalendarAggregate";
+import { normalizeReminderTimes } from "../lib/routineDraftUtils";
 import type { RoutineState } from "../lib/types";
 
 export const ROUTINE_NOTIFY_PREFIX = "routine_notify_";

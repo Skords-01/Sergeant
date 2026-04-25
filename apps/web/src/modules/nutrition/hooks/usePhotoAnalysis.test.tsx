@@ -19,7 +19,7 @@ vi.mock("../lib/fileToBase64.js", () => ({
   fileToBase64: vi.fn(() => Promise.resolve("BASE64")),
 }));
 
-import { usePhotoAnalysis } from "./usePhotoAnalysis.js";
+import { usePhotoAnalysis } from "./usePhotoAnalysis";
 import { nutritionApi } from "@shared/api";
 const apiAnalyzePhoto = nutritionApi.analyzePhoto as unknown as ReturnType<
   typeof vi.fn

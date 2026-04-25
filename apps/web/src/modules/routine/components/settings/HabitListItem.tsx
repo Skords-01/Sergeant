@@ -1,7 +1,7 @@
 import { memo, type DragEventHandler } from "react";
 import { cn } from "@shared/lib/cn";
 import { Button } from "@shared/components/ui/Button";
-import { RECURRENCE_OPTIONS } from "../../lib/routineConstants.js";
+import { RECURRENCE_OPTIONS } from "../../lib/routineConstants";
 import type { Habit } from "../../lib/types";
 
 export interface HabitListItemProps {

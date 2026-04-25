@@ -1,6 +1,6 @@
 import { useCallback, type Dispatch, type SetStateAction } from "react";
 import { isApiError } from "@shared/api";
-import { useBarcodeProductLookup } from "./useBarcodeProduct.js";
+import { useBarcodeProductLookup } from "./useBarcodeProduct";
 
 export interface PantryBarcodeScanApi {
   upsertItem: (label: string) => void;

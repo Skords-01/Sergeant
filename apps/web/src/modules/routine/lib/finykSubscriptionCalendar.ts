@@ -1,6 +1,6 @@
-import { safeReadLS } from "@shared/lib/storage.js";
+import { safeReadLS } from "@shared/lib/storage";
 import { STORAGE_KEYS } from "@sergeant/shared";
-import { DEFAULT_SUBSCRIPTIONS } from "../../finyk/constants.js";
+import { DEFAULT_SUBSCRIPTIONS } from "../../finyk/constants";
 import { getSubscriptionAmountMeta } from "@sergeant/finyk-domain/domain/subscriptionUtils";
 import {
   buildFinykSubscriptionEvents as buildFinykSubscriptionEventsPure,

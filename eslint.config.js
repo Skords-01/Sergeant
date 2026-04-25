@@ -151,6 +151,115 @@ export default [
       "sergeant-design/no-raw-tracked-storage": "error",
     },
   },
+  // Web localStorage guardrail — direct `localStorage.*` access is a
+  // hazard (throws on quota / private-browsing / corrupt JSON). The
+  // shared `safeReadLS` / `safeWriteLS` helpers in
+  // `apps/web/src/shared/lib/storage.ts`, the `useLocalStorageState`
+  // hook, and `createModuleStorage` wrap the API with try/catch and
+  // quota fallbacks. New web code MUST go through one of those.
+  //
+  // The `ignores` list below names every existing call-site as of the
+  // rule's introduction (see `docs/frontend-tech-debt.md` §2). Migrate
+  // a file → drop it from the list. Test files are exempt entirely:
+  // they routinely seed/inspect raw `localStorage` as fixtures and are
+  // already isolated from production hazards.
+  {
+    files: ["apps/web/src/**/*.{js,jsx,ts,tsx}"],
+    ignores: [
+      // Tests can use `localStorage` freely as fixtures.
+      "apps/web/src/**/*.test.{js,jsx,ts,tsx}",
+      "apps/web/src/**/__tests__/**",
+      // Storage primitives — these are the wrappers everyone else
+      // should call into.
+      "apps/web/src/shared/lib/storage.ts",
+      "apps/web/src/shared/lib/storageManager.ts",
+      "apps/web/src/shared/lib/storageQuota.ts",
+      "apps/web/src/shared/lib/typedStore.ts",
+      "apps/web/src/shared/lib/createModuleStorage.ts",
+      "apps/web/src/shared/lib/weeklyDigestStorage.ts",
+      "apps/web/src/shared/lib/perf.ts",
+      "apps/web/src/shared/hooks/useLocalStorageState.ts",
+      "apps/web/src/shared/hooks/useDarkMode.ts",
+      "apps/web/src/shared/hooks/usePushNotifications.ts",
+      "apps/web/src/shared/hooks/useActiveFizrukWorkout.ts",
+      // Cloud-sync internals — the queue / patcher / state writer all
+      // need direct access; users should call the cloud-sync API.
+      "apps/web/src/core/cloudSync/logger.ts",
+      "apps/web/src/core/cloudSync/queue/offlineQueue.ts",
+      "apps/web/src/core/cloudSync/state/moduleData.ts",
+      "apps/web/src/core/cloudSync/storagePatch.ts",
+      // Module storage wrappers (legitimate primitives in their own
+      // namespace).
+      "apps/web/src/modules/finyk/hooks/useStorage.ts",
+      "apps/web/src/modules/finyk/lib/storageManager.ts",
+      "apps/web/src/modules/nutrition/domain/nutritionBackup.ts",
+      // Files that haven't been migrated yet — TODO: convert each to
+      // `safeReadLS` / `useLocalStorageState` / `createModuleStorage`
+      // and remove the entry below.
+      "apps/web/src/core/App.tsx",
+      "apps/web/src/core/AssistantAdviceCard.tsx",
+      "apps/web/src/core/HubChat.tsx",
+      "apps/web/src/core/HubDashboard.tsx",
+      "apps/web/src/core/HubReports.tsx",
+      "apps/web/src/core/HubSearch.tsx",
+      "apps/web/src/core/OnboardingWizard.tsx",
+      "apps/web/src/core/ProfilePage.tsx",
+      "apps/web/src/core/TodayFocusCard.tsx",
+      "apps/web/src/core/analytics.ts",
+      "apps/web/src/core/app/pwaAction.ts",
+      "apps/web/src/core/app/useIosInstallBanner.ts",
+      "apps/web/src/core/app/usePwaInstall.ts",
+      "apps/web/src/core/hints/HintsOrchestrator.tsx",
+      "apps/web/src/core/hooks/usePwaActions.ts",
+      "apps/web/src/core/hub/useFinykHubPreview.ts",
+      "apps/web/src/core/hubBackup.ts",
+      "apps/web/src/core/hubSearchEngine.ts",
+      "apps/web/src/core/lib/chatActions/crossActions.ts",
+      "apps/web/src/core/lib/chatActions/finykActions.ts",
+      "apps/web/src/core/lib/chatActions/fizrukActions.ts",
+      "apps/web/src/core/lib/dailyFinykSummary.ts",
+      "apps/web/src/core/lib/hubChatContext.ts",
+      "apps/web/src/core/lib/hubChatUtils.ts",
+      "apps/web/src/core/lib/insightsEngine.ts",
+      "apps/web/src/core/lib/recommendationEngine.ts",
+      "apps/web/src/core/lib/recommendations/financeContext.ts",
+      "apps/web/src/core/onboarding/DailyNudge.tsx",
+      "apps/web/src/core/onboarding/FirstActionSheet.tsx",
+      "apps/web/src/core/onboarding/ModuleChecklist.tsx",
+      "apps/web/src/core/onboarding/PermissionsPrompt.tsx",
+      "apps/web/src/core/onboarding/ReEngagementCard.tsx",
+      "apps/web/src/core/onboarding/cleanupDemoData.ts",
+      "apps/web/src/core/onboarding/firstRealEntry.ts",
+      "apps/web/src/core/onboarding/onboardingGate.ts",
+      "apps/web/src/core/onboarding/presetApply.ts",
+      "apps/web/src/core/onboarding/seedDemoData.ts",
+      "apps/web/src/core/onboarding/vibePicks.ts",
+      "apps/web/src/core/settings/FinykSection.tsx",
+      "apps/web/src/core/settings/GeneralSection.tsx",
+      "apps/web/src/core/settings/hubPrefs.ts",
+      "apps/web/src/core/useCoachInsight.ts",
+      "apps/web/src/core/useWeeklyDigest.ts",
+      "apps/web/src/modules/finyk/pages/Overview.tsx",
+      "apps/web/src/modules/finyk/pages/Transactions.tsx",
+      "apps/web/src/modules/fizruk/components/TodayPlanCard.tsx",
+      "apps/web/src/modules/fizruk/hooks/useExerciseCatalog.ts",
+      "apps/web/src/modules/fizruk/hooks/useFizrukProgramStart.ts",
+      "apps/web/src/modules/fizruk/hooks/useFizrukWorkoutReminder.ts",
+      "apps/web/src/modules/fizruk/hooks/useMonthlyPlan.ts",
+      "apps/web/src/modules/fizruk/hooks/useTrainingProgram.ts",
+      "apps/web/src/modules/fizruk/hooks/useWorkouts.ts",
+      "apps/web/src/modules/fizruk/pages/Body.tsx",
+      "apps/web/src/modules/fizruk/pages/Dashboard.tsx",
+      "apps/web/src/modules/fizruk/pages/Progress.tsx",
+      "apps/web/src/modules/fizruk/pages/Workouts.tsx",
+      "apps/web/src/modules/nutrition/hooks/useNutritionReminders.ts",
+      "apps/web/src/modules/routine/components/RoutineCalendarPanel.tsx",
+      "apps/web/src/modules/routine/hooks/useRoutineReminders.ts",
+    ],
+    rules: {
+      "sergeant-design/no-raw-local-storage": "error",
+    },
+  },
   // AuthContext migration (Session 4B, PR after #390): "who am I" is
   // single-sourced via `useUser()` from `@sergeant/api-client/react` → GET
   // `/api/v1/me`. Better Auth stays only as the actions layer. Block

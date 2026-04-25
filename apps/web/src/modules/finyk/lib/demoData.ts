@@ -14,7 +14,7 @@
 // here don't need to be touched.
 
 import { FINYK_MANUAL_ONLY_KEY } from "@sergeant/finyk-domain/storage-keys";
-import { writeRaw } from "./finykStorage.js";
+import { writeRaw } from "./finykStorage";
 
 // Re-export under its existing name so `apps/web` call sites that
 // import `FINYK_MANUAL_ONLY_KEY` from `./lib/demoData` keep working.

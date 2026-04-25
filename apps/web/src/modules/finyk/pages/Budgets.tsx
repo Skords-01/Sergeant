@@ -27,13 +27,13 @@ import {
 import { filterStatTransactions } from "@sergeant/finyk-domain/domain/transactions";
 import { getMonthlySummary } from "@sergeant/finyk-domain/domain/selectors";
 import { chatApi } from "@shared/api";
-import { finykKeys } from "@shared/lib/queryKeys.js";
-import { LimitBudgetCard } from "../components/budgets/LimitBudgetCard.jsx";
-import { GoalBudgetCard } from "../components/budgets/GoalBudgetCard.jsx";
-import { MonthlyPlanCard } from "../components/budgets/MonthlyPlanCard.jsx";
-import { AddBudgetForm } from "../components/budgets/AddBudgetForm.jsx";
-import { readJSON, writeJSON } from "../lib/finykStorage.js";
-import { useLocalStorageState } from "@shared/hooks/useLocalStorageState.js";
+import { finykKeys } from "@shared/lib/queryKeys";
+import { LimitBudgetCard } from "../components/budgets/LimitBudgetCard";
+import { GoalBudgetCard } from "../components/budgets/GoalBudgetCard";
+import { MonthlyPlanCard } from "../components/budgets/MonthlyPlanCard";
+import { AddBudgetForm } from "../components/budgets/AddBudgetForm";
+import { readJSON, writeJSON } from "../lib/finykStorage";
+import { useLocalStorageState } from "@shared/hooks/useLocalStorageState";
 import { trackEvent, ANALYTICS_EVENTS } from "../../../core/analytics";
 
 // ─── React Query integration for AI chat lookups ──────────────────────────

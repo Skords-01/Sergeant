@@ -3,7 +3,7 @@ import { Button } from "@shared/components/ui/Button";
 import { Input } from "@shared/components/ui/Input";
 import { useToast } from "@shared/hooks/useToast";
 import { BrandLogo } from "./app/BrandLogo";
-import { useAuth } from "./AuthContext.jsx";
+import { useAuth } from "./AuthContext";
 
 export function AuthPage({ onContinueWithoutAccount }) {
   const { login, register, requestPasswordReset, authError, setAuthError } =

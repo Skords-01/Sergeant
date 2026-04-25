@@ -18,7 +18,7 @@ import {
   __internal_collectQueuedModules as collectQueued,
   __internal_addToOfflineQueue as enqueue,
   __internal_parseDateSafe as parseDate,
-} from "./useCloudSync.js";
+} from "./useCloudSync";
 import { STORAGE_KEYS } from "@sergeant/shared";
 
 beforeEach(() => localStorage.clear());

@@ -4,8 +4,8 @@ import { Icon } from "@shared/components/ui/Icon";
 import { Sheet } from "@shared/components/ui/Sheet";
 import { openHubModuleWithAction } from "@shared/lib/hubNav";
 import { trackEvent, ANALYTICS_EVENTS } from "../analytics";
-import { applyPreset } from "./presetApply.js";
-import { writePresetPrefill } from "./presetPrefill.js";
+import { applyPreset } from "./presetApply";
+import { writePresetPrefill } from "./presetPrefill";
 
 /**
  * Per-module "tap-to-log" presets. Each entry is deliberately narrow —

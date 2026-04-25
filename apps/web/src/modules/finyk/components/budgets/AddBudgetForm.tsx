@@ -3,7 +3,7 @@ import { Button } from "@shared/components/ui/Button";
 import { Card } from "@shared/components/ui/Card";
 import { Input } from "@shared/components/ui/Input";
 import { cn } from "@shared/lib/cn";
-import { CategorySelector } from "../CategorySelector.jsx";
+import { CategorySelector } from "../CategorySelector";
 
 const GOAL_EMOJIS = [
   "🎯",

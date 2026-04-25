@@ -1,4 +1,4 @@
-import { ls, lsSet } from "../hubChatUtils.js";
+import { ls, lsSet } from "../hubChatUtils";
 import { saveRecipeToBook } from "../../../modules/nutrition/lib/recipeBook";
 import type {
   LogMealAction,
@@ -14,7 +14,7 @@ import type {
   NutritionMeal,
   NutritionDay,
   ChatAction,
-} from "./types.js";
+} from "./types";
 
 export function handleNutritionAction(action: ChatAction): string | undefined {
   switch (action.name) {

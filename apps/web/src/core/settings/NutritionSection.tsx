@@ -10,12 +10,12 @@ import {
   persistPantries,
   type NutritionPrefs,
   type Pantry,
-} from "../../modules/nutrition/lib/nutritionStorage.js";
+} from "../../modules/nutrition/lib/nutritionStorage";
 import {
   SettingsGroup,
   SettingsSubGroup,
   ToggleRow,
-} from "./SettingsPrimitives.jsx";
+} from "./SettingsPrimitives";
 
 function numberOrNullToInput(v: number | null): string {
   return v == null ? "" : String(Math.round(v));

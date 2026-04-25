@@ -8,7 +8,7 @@ import {
   persistShoppingList,
   removeCheckedItems,
   toggleShoppingItem,
-} from "./shoppingListStorage.js";
+} from "./shoppingListStorage";
 
 function createLocalStorageMock() {
   const store = new Map();

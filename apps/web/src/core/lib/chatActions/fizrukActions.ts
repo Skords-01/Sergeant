@@ -1,4 +1,4 @@
-import { ls, lsSet } from "../hubChatUtils.js";
+import { ls, lsSet } from "../hubChatUtils";
 import type {
   PlanWorkoutAction,
   LogSetAction,
@@ -16,7 +16,7 @@ import type {
   WorkoutItem,
   Workout,
   ChatAction,
-} from "./types.js";
+} from "./types";
 
 export function handleFizrukAction(action: ChatAction): string | undefined {
   switch (action.name) {

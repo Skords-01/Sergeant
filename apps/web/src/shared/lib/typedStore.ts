@@ -25,7 +25,7 @@
 
 import { useSyncExternalStore } from "react";
 import type { ZodType } from "zod";
-import { safeJsonSet } from "./storageQuota.js";
+import { safeJsonSet } from "./storageQuota";
 
 type Listener<T> = (value: T) => void;
 

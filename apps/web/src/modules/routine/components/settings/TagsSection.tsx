@@ -3,7 +3,7 @@ import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { Button } from "@shared/components/ui/Button";
 import { Card } from "@shared/components/ui/Card";
 import { Input } from "@shared/components/ui/Input";
-import { createTag, deleteTag, updateTag } from "../../lib/routineStorage.js";
+import { createTag, deleteTag, updateTag } from "../../lib/routineStorage";
 import type { RoutineState } from "../../lib/types";
 
 export interface TagsSectionProps {

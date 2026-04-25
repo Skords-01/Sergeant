@@ -9,7 +9,7 @@ import {
   createCategory,
   updateCategory,
   deleteCategory,
-} from "../../lib/routineStorage.js";
+} from "../../lib/routineStorage";
 import type {
   CategoryDraft,
   PendingCategoryDeletion,

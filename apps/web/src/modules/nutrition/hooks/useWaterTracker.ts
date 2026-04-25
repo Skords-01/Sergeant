@@ -7,7 +7,7 @@ import {
   subtractWaterMl,
   resetTodayWater,
   type WaterLog,
-} from "../lib/waterStorage.js";
+} from "../lib/waterStorage";
 
 export interface UseWaterTrackerResult {
   todayMl: number;

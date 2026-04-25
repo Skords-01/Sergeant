@@ -4,7 +4,7 @@ import { Icon } from "@shared/components/ui/Icon";
 import { Button } from "@shared/components/ui/Button";
 import { useToast } from "@shared/hooks/useToast";
 import { resetOnboardingState, type KVStore } from "@sergeant/shared";
-import { HubBackupPanel } from "../HubBackupPanel.jsx";
+import { HubBackupPanel } from "../HubBackupPanel";
 import {
   swClearCaches,
   swGetDebugSnapshot,
@@ -15,13 +15,13 @@ import {
   loadDashboardOrder,
   resetDashboardOrder,
   saveDashboardOrder,
-} from "../HubDashboard.jsx";
+} from "../HubDashboard";
 import {
   SettingsGroup,
   SettingsSubGroup,
   ToggleRow,
-} from "./SettingsPrimitives.jsx";
-import { useHubPref } from "./hubPrefs.js";
+} from "./SettingsPrimitives";
+import { useHubPref } from "./hubPrefs";
 
 type ModuleId = keyof typeof DASHBOARD_MODULE_LABELS;
 

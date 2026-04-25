@@ -1,4 +1,4 @@
-import type { NullableMacros } from "./macros.js";
+import type { NullableMacros } from "./macros";
 
 const DB_NAME = "hub_nutrition_recipe_book";
 const DB_VERSION = 1;

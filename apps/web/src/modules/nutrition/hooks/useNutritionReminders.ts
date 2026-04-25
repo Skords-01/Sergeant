@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { todayISODate } from "../lib/nutritionFormat.js";
+import { todayISODate } from "../lib/nutritionFormat";
 
 export interface NutritionReminderPrefs {
   reminderEnabled: boolean;

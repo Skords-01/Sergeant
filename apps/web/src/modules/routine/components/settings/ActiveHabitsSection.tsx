@@ -4,13 +4,13 @@ import { Button } from "@shared/components/ui/Button";
 import { Card } from "@shared/components/ui/Card";
 import { Input } from "@shared/components/ui/Input";
 import { EmptyState } from "@shared/components/ui/EmptyState";
-import { sortHabitsByOrder } from "../../lib/habitOrder.js";
+import { sortHabitsByOrder } from "../../lib/habitOrder";
 import {
   moveHabitInOrder,
   setHabitArchived,
   setHabitOrder,
-} from "../../lib/routineStorage.js";
-import { HabitListItem } from "./HabitListItem.jsx";
+} from "../../lib/routineStorage";
+import { HabitListItem } from "./HabitListItem";
 import type {
   Habit,
   PendingHabitDeletion,

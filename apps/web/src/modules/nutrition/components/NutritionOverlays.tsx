@@ -1,7 +1,7 @@
-import { PantryManagerSheet } from "./PantryManagerSheet.jsx";
-import { ItemEditSheet } from "./ItemEditSheet.jsx";
-import { BarcodeScanner } from "./BarcodeScanner.jsx";
-import { AddMealSheet } from "./AddMealSheet.jsx";
+import { PantryManagerSheet } from "./PantryManagerSheet";
+import { ItemEditSheet } from "./ItemEditSheet";
+import { BarcodeScanner } from "./BarcodeScanner";
+import { AddMealSheet } from "./AddMealSheet";
 import { InputDialog } from "@shared/components/ui/InputDialog";
 import { ConfirmDialog } from "@shared/components/ui/ConfirmDialog";
 

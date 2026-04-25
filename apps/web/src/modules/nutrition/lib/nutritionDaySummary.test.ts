@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getDaySummary } from "./nutritionStorage.js";
+import { getDaySummary } from "./nutritionStorage";
 
 describe("getDaySummary", () => {
   it("detects empty day", () => {

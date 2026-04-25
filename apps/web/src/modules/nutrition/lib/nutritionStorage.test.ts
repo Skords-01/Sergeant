@@ -12,8 +12,8 @@ import {
   normalizeNutritionLog,
   normalizePantries,
   persistPantries,
-} from "./nutritionStorage.js";
-import { storageManager } from "@shared/lib/storageManager.js";
+} from "./nutritionStorage";
+import { storageManager } from "@shared/lib/storageManager";
 
 function createLocalStorageMock() {
   /** @type {Map<string, string>} */
