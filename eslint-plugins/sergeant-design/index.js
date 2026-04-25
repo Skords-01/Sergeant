@@ -189,6 +189,7 @@ const TRACKED_STORAGE_KEY_NAMES = new Set([
   "NUTRITION_PANTRIES",
   "NUTRITION_ACTIVE_PANTRY",
   "NUTRITION_PREFS",
+  "NUTRITION_SAVED_RECIPES",
 ]);
 
 const TRACKED_STORAGE_KEY_VALUES = new Set([
@@ -231,6 +232,7 @@ const TRACKED_STORAGE_KEY_VALUES = new Set([
   "nutrition_pantries_v1",
   "nutrition_active_pantry_v1",
   "nutrition_prefs_v1",
+  "nutrition_recipe_book_v1",
 ]);
 
 const RAW_TRACKED_STORAGE_MESSAGE =

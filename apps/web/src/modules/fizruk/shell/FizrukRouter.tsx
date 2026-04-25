@@ -19,6 +19,7 @@ export interface FizrukRouterProps {
   todaySession: unknown;
   onNavigate: (page: FizrukPage) => void;
   onStartProgramWorkout: (session: unknown, program: unknown) => void;
+  onOpenModule?: (moduleId: string, opts?: { hash?: string }) => void;
 }
 
 /**
@@ -36,6 +37,7 @@ export function FizrukRouter({
   todaySession,
   onNavigate,
   onStartProgramWorkout,
+  onOpenModule,
 }: FizrukRouterProps) {
   switch (page) {
     case "dashboard":
@@ -48,7 +50,13 @@ export function FizrukRouter({
         />
       );
     case "plan":
-      return <PlanCalendar />;
+      return (
+        <PlanCalendar
+          onOpenRoutine={
+            onOpenModule ? () => onOpenModule("routine") : undefined
+          }
+        />
+      );
     case "atlas":
       return <Atlas />;
     case "workouts":

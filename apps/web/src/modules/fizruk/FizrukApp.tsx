@@ -18,12 +18,14 @@ import { FIZRUK_PAGES, type FizrukPage } from "./shell/fizrukRoute";
 
 interface FizrukAppProps {
   onBackToHub?: () => void;
+  onOpenModule?: (moduleId: string, opts?: { hash?: string }) => void;
   pwaAction?: string | null;
   onPwaActionConsumed?: () => void;
 }
 
 export default function FizrukApp({
   onBackToHub,
+  onOpenModule,
   pwaAction,
   onPwaActionConsumed,
 }: FizrukAppProps = {}) {
@@ -106,6 +108,7 @@ export default function FizrukApp({
         todaySession={todaySession}
         onNavigate={(target) => navigate(target)}
         onStartProgramWorkout={(session) => handleStartProgramWorkout(session)}
+        onOpenModule={onOpenModule}
       />
     </ModuleShell>
   );

@@ -16,6 +16,7 @@ import { Segmented } from "@shared/components/ui/Segmented";
 import { EmptyState } from "@shared/components/ui/EmptyState";
 import { WeekDayStrip } from "./WeekDayStrip";
 import { HabitDetailSheet } from "./HabitDetailSheet";
+import { FizrukDayPlanSheet } from "./FizrukDayPlanSheet";
 import { SwipeToAction } from "@shared/components/ui/SwipeToAction";
 import { completionNoteKey } from "../lib/completionNoteKey.js";
 import { DayProgressRing } from "./DayProgressRing";
@@ -103,6 +104,9 @@ export function RoutineCalendarPanel({
   }, [listQueryDraft, setListQuery]);
   const [dayReportOpen, setDayReportOpen] = useState(false);
   const [detailHabitId, setDetailHabitId] = useState<string | null>(null);
+  const [fizrukPlanDateKey, setFizrukPlanDateKey] = useState<string | null>(
+    null,
+  );
 
   // Completion-note drafts. Typing into the "Нотатка до відмітки" input used
   // to call `setRoutine` → `saveRoutineState` → `localStorage.setItem`
@@ -493,6 +497,15 @@ export function RoutineCalendarPanel({
               month: "long",
             })}
           </p>
+          {routine.prefs.showFizrukInCalendar !== false && (
+            <button
+              type="button"
+              onClick={() => setFizrukPlanDateKey(selectedDay)}
+              className="mt-2 w-full rounded-xl border border-sky-400/30 bg-sky-500/5 hover:bg-sky-500/10 px-3 py-2 text-xs font-medium text-sky-600 dark:text-sky-400 transition-colors text-center"
+            >
+              Планувати тренування
+            </button>
+          )}
           {flatGroupedItems.length > 0 && (
             <div className="mt-3 space-y-1">
               {flatGroupedItems.map((item, idx) => {
@@ -513,9 +526,19 @@ export function RoutineCalendarPanel({
                 return (
                   <div
                     key={`dd-${e.id}`}
+                    role={e.fizruk ? "button" : undefined}
+                    tabIndex={e.fizruk ? 0 : undefined}
+                    onClick={() => e.fizruk && setFizrukPlanDateKey(e.date)}
+                    onKeyDown={(ev) => {
+                      if (e.fizruk && (ev.key === "Enter" || ev.key === " ")) {
+                        ev.preventDefault();
+                        setFizrukPlanDateKey(e.date);
+                      }
+                    }}
                     className={cn(
                       "flex items-center gap-2 rounded-xl px-3 py-2 border border-line bg-panel/60",
                       e.completed && "opacity-70",
+                      e.fizruk && "cursor-pointer hover:bg-sky-500/5",
                     )}
                   >
                     <span
@@ -607,17 +630,13 @@ export function RoutineCalendarPanel({
             description={
               <>
                 У цьому періоді подій немає. Перевір регулярність звичок або{" "}
-                {typeof onOpenModule === "function" ? (
-                  <button
-                    type="button"
-                    className={C.linkAccent}
-                    onClick={() => onOpenModule("fizruk", { hash: "plan" })}
-                  >
-                    план Фізрука
-                  </button>
-                ) : (
-                  "план Фізрука"
-                )}
+                <button
+                  type="button"
+                  className={C.linkAccent}
+                  onClick={() => setFizrukPlanDateKey(selectedDay)}
+                >
+                  заплануй тренування
+                </button>
                 .
               </>
             }
@@ -673,24 +692,30 @@ export function RoutineCalendarPanel({
                         <div
                           className={cn(
                             "min-w-0 flex-1",
-                            e.habitId && "cursor-pointer",
+                            (e.habitId || e.fizruk) && "cursor-pointer",
                           )}
-                          role={e.habitId ? "button" : undefined}
-                          tabIndex={e.habitId ? 0 : undefined}
-                          onClick={() =>
-                            e.habitId && setDetailHabitId(e.habitId)
-                          }
+                          role={e.habitId || e.fizruk ? "button" : undefined}
+                          tabIndex={e.habitId || e.fizruk ? 0 : undefined}
+                          onClick={() => {
+                            if (e.habitId) setDetailHabitId(e.habitId);
+                            else if (e.fizruk) setFizrukPlanDateKey(e.date);
+                          }}
                           onKeyDown={(ev) => {
                             if (
-                              e.habitId &&
+                              (e.habitId || e.fizruk) &&
                               (ev.key === "Enter" || ev.key === " ")
                             ) {
                               ev.preventDefault();
-                              setDetailHabitId(e.habitId);
+                              if (e.habitId) setDetailHabitId(e.habitId);
+                              else if (e.fizruk) setFizrukPlanDateKey(e.date);
                             }
                           }}
                           aria-label={
-                            e.habitId ? `Деталі: ${e.title}` : undefined
+                            e.habitId
+                              ? `Деталі: ${e.title}`
+                              : e.fizruk
+                                ? `План тренування: ${e.title}`
+                                : undefined
                           }
                         >
                           <p className="font-semibold text-text text-base leading-snug">
@@ -706,17 +731,15 @@ export function RoutineCalendarPanel({
                           </p>
                         </div>
                         <div className="flex items-start gap-2 shrink-0">
-                          {e.fizruk && typeof onOpenModule === "function" && (
+                          {e.fizruk && (
                             <Button
                               size="sm"
                               variant="ghost"
-                              className="!h-9 !px-3 !text-xs border border-line bg-panelHi/80"
+                              className="!h-9 !px-3 !text-xs border border-sky-400/30 bg-sky-500/5"
                               type="button"
-                              onClick={() =>
-                                onOpenModule("fizruk", { hash: "plan" })
-                              }
+                              onClick={() => setFizrukPlanDateKey(e.date)}
                             >
-                              План
+                              Деталі
                             </Button>
                           )}
                           {e.finykSub && typeof onOpenModule === "function" && (
@@ -792,6 +815,10 @@ export function RoutineCalendarPanel({
           onClose={() => setDetailHabitId(null)}
         />
       )}
+      <FizrukDayPlanSheet
+        dateKey={fizrukPlanDateKey}
+        onClose={() => setFizrukPlanDateKey(null)}
+      />
     </div>
   );
 }

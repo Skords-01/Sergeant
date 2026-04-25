@@ -461,6 +461,7 @@ function AppInner() {
                 {activeModule === "fizruk" && (
                   <FizrukApp
                     onBackToHub={goToHub}
+                    onOpenModule={openModule}
                     pwaAction={pwaAction}
                     onPwaActionConsumed={clearPwaAction}
                   />
