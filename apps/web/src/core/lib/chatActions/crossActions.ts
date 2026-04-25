@@ -281,7 +281,7 @@ export function handleCrossAction(action: ChatAction): string | undefined {
       } | null>("finyk_tx_cache", null);
       const hiddenTxIds = ls<string[]>("finyk_hidden_txs", []);
       const customC = ls<unknown[]>("finyk_custom_cats_v1", []);
-      const catMap = ls<Record<string, string>>("finyk_cat_overrides", {});
+      const catMap = ls<Record<string, string>>("finyk_tx_cats", {});
       const expenses = (txCache?.txs || []).filter((t) => {
         if (hiddenTxIds.includes(t.id || "")) return false;
         const ts = (t.time || 0) * 1000;
