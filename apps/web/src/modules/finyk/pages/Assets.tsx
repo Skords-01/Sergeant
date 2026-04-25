@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { DebtCard } from "../components/DebtCard";
 import { SubCard } from "../components/SubCard";
 import { RecurringSuggestions } from "../components/RecurringSuggestions";
@@ -208,6 +208,10 @@ export function Assets({
     assets: false,
     liabilities: initialOpenDebt,
   });
+  const assetFormRef = useRef<HTMLElement | null>(null);
+  const assetNameInputRef = useRef<HTMLInputElement | null>(null);
+  const debtFormRef = useRef<HTMLElement | null>(null);
+  const debtNameInputRef = useRef<HTMLInputElement | null>(null);
 
   const { balance: monoTotal, debt: monoTotalDebt } = getMonoTotals(
     accounts,
@@ -271,6 +275,38 @@ export function Assets({
     setOpen((v) => ({ ...v, liabilities: true }));
     setShowDebtForm(true);
   };
+
+  useEffect(() => {
+    if (!showAssetForm || !open.assets) return;
+    const frame = requestAnimationFrame(() => {
+      assetFormRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+      try {
+        assetNameInputRef.current?.focus({ preventScroll: true });
+      } catch {
+        assetNameInputRef.current?.focus();
+      }
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [showAssetForm, open.assets]);
+
+  useEffect(() => {
+    if (!showDebtForm || !open.liabilities) return;
+    const frame = requestAnimationFrame(() => {
+      debtFormRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+      try {
+        debtNameInputRef.current?.focus({ preventScroll: true });
+      } catch {
+        debtNameInputRef.current?.focus();
+      }
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [showDebtForm, open.liabilities]);
 
   if (txPicker) {
     // --- Mono credit card repayment linking ---
@@ -899,41 +935,21 @@ export function Assets({
                 Інші активи
               </span>
             </SectionHeading>
-            {manualAssets.map((a, i) => (
-              <div
-                key={i}
-                className="flex items-center justify-between py-2.5 border-b border-text"
+            {showAssetForm ? (
+              <Card
+                ref={assetFormRef}
+                variant="finyk-soft"
+                radius="md"
+                className="space-y-3"
               >
-                <div className="flex items-center gap-3">
-                  <span className="text-xl leading-none">{a.emoji}</span>
-                  <div>
-                    <div className="text-sm font-medium">{a.name}</div>
-                    <div className="text-xs text-subtle">{a.currency}</div>
+                <div>
+                  <div className="text-sm font-bold text-text">Новий актив</div>
+                  <div className="text-xs text-muted mt-0.5">
+                    Готівка, брокерський рахунок, крипта тощо.
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-bold text-success">
-                    {Number(a.amount).toLocaleString("uk-UA")}{" "}
-                    {a.currency === "UAH"
-                      ? "₴"
-                      : a.currency === "USD"
-                        ? "$"
-                        : a.currency}
-                  </span>
-                  <button
-                    onClick={() =>
-                      setManualAssets((as) => as.filter((_, j) => j !== i))
-                    }
-                    className="text-subtle hover:text-danger text-sm transition-colors"
-                  >
-                    🗑
-                  </button>
-                </div>
-              </div>
-            ))}
-            {showAssetForm ? (
-              <Card variant="flat" radius="md" className="space-y-3">
                 <Input
+                  ref={assetNameInputRef}
                   placeholder="Назва"
                   value={newAsset.name}
                   onChange={(e) =>
@@ -997,6 +1013,38 @@ export function Assets({
                 + Додати актив
               </button>
             )}
+            {manualAssets.map((a, i) => (
+              <div
+                key={i}
+                className="flex items-center justify-between py-2.5 border-b border-text"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-xl leading-none">{a.emoji}</span>
+                  <div>
+                    <div className="text-sm font-medium">{a.name}</div>
+                    <div className="text-xs text-subtle">{a.currency}</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-bold text-success">
+                    {Number(a.amount).toLocaleString("uk-UA")}{" "}
+                    {a.currency === "UAH"
+                      ? "₴"
+                      : a.currency === "USD"
+                        ? "$"
+                        : a.currency}
+                  </span>
+                  <button
+                    onClick={() =>
+                      setManualAssets((as) => as.filter((_, j) => j !== i))
+                    }
+                    className="text-subtle hover:text-danger text-sm transition-colors"
+                  >
+                    🗑
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         )}
 
@@ -1015,46 +1063,22 @@ export function Assets({
         />
         {open.liabilities && (
           <div className="mb-3 space-y-0">
-            {monoDebtAccounts.map((a, i) => {
-              const linkedIds = monoDebtLinkedTxIds[a.id] || [];
-              const paidFromLinked = transactions
-                .filter((t) => linkedIds.includes(t.id))
-                .reduce((s, t) => s + Math.abs(t.amount / 100), 0);
-              const remaining = getMonoDebt(a);
-              const volatileTotal = paidFromLinked + remaining;
-              return (
-                <DebtCard
-                  key={i}
-                  name={getAccountLabel(a)}
-                  emoji="🖤"
-                  remaining={remaining}
-                  paid={paidFromLinked}
-                  total={volatileTotal}
-                  onLink={() => setTxPicker({ id: a.id, type: "monoDebt" })}
-                  linkedCount={linkedIds.length}
-                />
-              );
-            })}
-            {manualDebts.map((d) => (
-              <DebtCard
-                key={d.id}
-                name={d.name}
-                emoji={d.emoji}
-                remaining={calcDebtRemaining(d, transactions)}
-                paid={getDebtPaid(d, transactions)}
-                total={getDebtEffectiveTotal(d, transactions)}
-                dueDate={d.dueDate}
-                onDelete={() =>
-                  setManualDebts((ds) => ds.filter((x) => x.id !== d.id))
-                }
-                onLink={() => setTxPicker({ id: d.id, type: "debt" })}
-                linkedCount={d.linkedTxIds?.length || 0}
-              />
-            ))}
             {showDebtForm ? (
-              <Card variant="flat" radius="md" className="space-y-3">
+              <Card
+                ref={debtFormRef}
+                variant="finyk-soft"
+                radius="md"
+                className="space-y-3 mb-2"
+              >
+                <div>
+                  <div className="text-sm font-bold text-text">Новий пасив</div>
+                  <div className="text-xs text-muted mt-0.5">
+                    Кредит, борг або інше зобовʼязання.
+                  </div>
+                </div>
                 <div className="flex gap-2">
                   <Input
+                    ref={debtNameInputRef}
                     className="flex-1"
                     placeholder="Назва пасиву (кредит, борг…)"
                     value={newDebt.name}
@@ -1134,11 +1158,47 @@ export function Assets({
             ) : (
               <button
                 onClick={() => setShowDebtForm(true)}
-                className="w-full py-2.5 text-sm text-muted border border-dashed border-line rounded-xl hover:border-primary hover:text-primary transition-colors"
+                className="w-full py-2.5 text-sm text-muted border border-dashed border-line rounded-xl hover:border-primary hover:text-primary transition-colors mb-2"
               >
                 + Додати пасив
               </button>
             )}
+            {monoDebtAccounts.map((a, i) => {
+              const linkedIds = monoDebtLinkedTxIds[a.id] || [];
+              const paidFromLinked = transactions
+                .filter((t) => linkedIds.includes(t.id))
+                .reduce((s, t) => s + Math.abs(t.amount / 100), 0);
+              const remaining = getMonoDebt(a);
+              const volatileTotal = paidFromLinked + remaining;
+              return (
+                <DebtCard
+                  key={i}
+                  name={getAccountLabel(a)}
+                  emoji="🖤"
+                  remaining={remaining}
+                  paid={paidFromLinked}
+                  total={volatileTotal}
+                  onLink={() => setTxPicker({ id: a.id, type: "monoDebt" })}
+                  linkedCount={linkedIds.length}
+                />
+              );
+            })}
+            {manualDebts.map((d) => (
+              <DebtCard
+                key={d.id}
+                name={d.name}
+                emoji={d.emoji}
+                remaining={calcDebtRemaining(d, transactions)}
+                paid={getDebtPaid(d, transactions)}
+                total={getDebtEffectiveTotal(d, transactions)}
+                dueDate={d.dueDate}
+                onDelete={() =>
+                  setManualDebts((ds) => ds.filter((x) => x.id !== d.id))
+                }
+                onLink={() => setTxPicker({ id: d.id, type: "debt" })}
+                linkedCount={d.linkedTxIds?.length || 0}
+              />
+            ))}
           </div>
         )}
       </div>
