@@ -23,6 +23,8 @@ import { Analytics } from "./pages/Analytics";
 import { ManualExpenseSheet } from "./components/ManualExpenseSheet";
 import { useUnifiedFinanceData } from "./hooks/useUnifiedFinanceData";
 import { useFinykPersonalization } from "./hooks/useFinykPersonalization";
+import { useMonoTokenMigration } from "./hooks/useMonoTokenMigration";
+import { useFlag } from "../../core/lib/featureFlags";
 import { consumePresetPrefill } from "../../core/onboarding/presetPrefill";
 
 const NAV_ICONS = {
@@ -170,6 +172,9 @@ export default function App({
 }: FinykAppProps = {}) {
   const mono = useMonobank();
   const privat = usePrivatbank(PRIVAT_ENABLED);
+  const webhookEnabled = useFlag("mono_webhook");
+  // One-time migration of legacy browser tokens to server-side webhook
+  useMonoTokenMigration(/* isLoggedIn */ true);
   const toast = useToast();
   // Pass the full toast API to storage so it can dispatch `success`/`error`
   // variants directly — the old `showToast(msg, type)` wrapper silently
@@ -471,17 +476,23 @@ export default function App({
               </Button>
             </div>
 
-            <label className="flex items-center gap-2.5 mt-3 cursor-pointer select-none">
-              <input
-                type="checkbox"
-                className="w-4 h-4 rounded accent-emerald-600 cursor-pointer"
-                checked={rememberToken}
-                onChange={(e) => setRememberToken(e.target.checked)}
-              />
-              <span className="text-sm text-muted">
-                Запам{"'"}ятати токен на цьому пристрої
-              </span>
-            </label>
+            {webhookEnabled ? (
+              <p className="text-xs text-subtle mt-2">
+                Токен відправляється на сервер і не зберігається у браузері.
+              </p>
+            ) : (
+              <label className="flex items-center gap-2.5 mt-3 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  className="w-4 h-4 rounded accent-emerald-600 cursor-pointer"
+                  checked={rememberToken}
+                  onChange={(e) => setRememberToken(e.target.checked)}
+                />
+                <span className="text-sm text-muted">
+                  Запам{"'"}ятати токен на цьому пристрої
+                </span>
+              </label>
+            )}
 
             {authError && (
               <div className="mt-3 text-sm bg-warning/15 border border-warning/40 rounded-xl px-3 py-2.5 space-y-1">

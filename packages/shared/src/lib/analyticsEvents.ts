@@ -21,6 +21,7 @@ export const ANALYTICS_EVENTS = Object.freeze({
   ANALYTICS_OPENED: "analytics_opened",
   BANK_CONNECT_STARTED: "bank_connect_started",
   BANK_CONNECT_SUCCESS: "bank_connect_success",
+  MONO_TOKEN_MIGRATED: "mono_token_migrated",
   PAYWALL_VIEWED: "paywall_viewed",
   FIRST_EXPENSE_ADDED: "first_expense_added",
   FIRST_INSIGHT_SEEN: "first_insight_seen",
