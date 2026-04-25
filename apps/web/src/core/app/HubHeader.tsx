@@ -77,11 +77,72 @@ export function HubHeader({
 
   return (
     <header
-      className="px-5 pt-10 pb-2 max-w-lg mx-auto w-full flex items-start justify-between"
+      className="px-5 pt-10 pb-3 max-w-lg mx-auto w-full"
       style={{ paddingTop: "max(2.5rem, env(safe-area-inset-top))" }}
     >
-      <div className="min-w-0">
-        <BrandLogo as="h1" size="lg" className="mb-1.5" />
+      {/* ── Row 1: Mark + Wordmark + Action icons ─────────────── */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          <BrandLogo as="span" size="lg" variant="mark" />
+          <h1 className="text-[22px] leading-none font-extrabold tracking-tight text-text select-none">
+            Sergeant
+          </h1>
+        </div>
+
+        <div className="flex items-center gap-1 shrink-0">
+          <button
+            type="button"
+            onClick={onOpenSearch}
+            aria-label="Пошук"
+            title="Пошук по всіх модулях"
+            className={ICON_BUTTON_CLS}
+          >
+            <Icon name="search" size={20} />
+          </button>
+
+          {user ? (
+            <UserMenuButton
+              user={user}
+              syncing={syncing}
+              lastSync={lastSync}
+              onSync={onSync}
+              onPull={onPull}
+              onLogout={onLogout}
+              dark={dark}
+              onToggleDark={onToggleDark}
+            />
+          ) : (
+            <>
+              <DarkModeToggle dark={dark} onToggle={onToggleDark} />
+              {!authLoading && !hideAuthButton && (
+                <button
+                  type="button"
+                  onClick={onShowAuth}
+                  aria-label="Увійти в акаунт"
+                  title="Увійти"
+                  className={ICON_BUTTON_CLS}
+                >
+                  <Icon name="user" size={20} />
+                </button>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* ── Row 2: Vertical bar + subtitle ────────────────────── */}
+      <div className="flex items-center gap-1.5 mt-1.5 ml-[3px]">
+        <span
+          aria-hidden="true"
+          className="inline-block w-[3px] h-[14px] rounded-full bg-brand-500"
+        />
+        <span className="text-[11px] font-bold tracking-[0.12em] uppercase text-brand-600 dark:text-brand-400 select-none">
+          Оперативний центр
+        </span>
+      </div>
+
+      {/* ── Row 3: Greeting + date ────────────────────────────── */}
+      <div className="mt-2 ml-[3px]">
         <p className="text-[13px] leading-snug text-muted truncate">
           {greetingText}
         </p>
@@ -89,45 +150,6 @@ export function HubHeader({
           <p className="text-[13px] leading-snug text-subtle truncate">
             {dateStr}
           </p>
-        )}
-      </div>
-      <div className="pt-1 flex items-center gap-1 shrink-0">
-        <button
-          type="button"
-          onClick={onOpenSearch}
-          aria-label="Пошук"
-          title="Пошук по всіх модулях"
-          className={ICON_BUTTON_CLS}
-        >
-          <Icon name="search" size={20} />
-        </button>
-
-        {user ? (
-          <UserMenuButton
-            user={user}
-            syncing={syncing}
-            lastSync={lastSync}
-            onSync={onSync}
-            onPull={onPull}
-            onLogout={onLogout}
-            dark={dark}
-            onToggleDark={onToggleDark}
-          />
-        ) : (
-          <>
-            <DarkModeToggle dark={dark} onToggle={onToggleDark} />
-            {!authLoading && !hideAuthButton && (
-              <button
-                type="button"
-                onClick={onShowAuth}
-                aria-label="Увійти в акаунт"
-                title="Увійти"
-                className={ICON_BUTTON_CLS}
-              >
-                <Icon name="user" size={20} />
-              </button>
-            )}
-          </>
         )}
       </div>
     </header>
