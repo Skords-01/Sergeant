@@ -1,6 +1,6 @@
 # Monobank: міграція з polling на webhook
 
-> Status: **Draft** (2026-04-25). Складено перед розпаралелюванням робіт у 3 child-сесії. Після review та merge перших PR — оновлювати **Status log** внизу.
+> Status: **Rolled out** (2026-04-25). Усі 3 треки змерджено в `main`, env Railway виставлено, smoke-тест на проді пройдено (webhook-доставка ~2 с після транзакції). Default фіче-флагу `mono_webhook` → `true` цим PR-ом. Cleanup legacy polling — окремим PR після кількох днів observability.
 
 ## TL;DR
 
@@ -286,6 +286,14 @@ pnpm --filter @sergeant/server dev
 
 ## Status log
 
-| Дата       | PR      | Track | Результат                     |
-| ---------- | ------- | ----- | ----------------------------- |
-| 2026-04-25 | (draft) | —     | План створено, очікує review. |
+| Дата       | PR    | Track   | Результат                                                                                                                                                                                             |
+| ---------- | ----- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-04-25 | #695  | —       | План змерджено.                                                                                                                                                                                       |
+| 2026-04-25 | #697  | A.PR1   | DB-міграція `008_mono_integration.sql` + DTO стаби.                                                                                                                                                   |
+| 2026-04-25 | #699  | A.PR2   | Webhook receiver, AES-GCM шифрування токена, connect/disconnect.                                                                                                                                      |
+| 2026-04-25 | #700  | B       | DB-backed `/api/mono/{accounts,transactions,sync-state,backfill}`, backfill 31д, `useMonoTransactions`.                                                                                               |
+| 2026-04-25 | #702  | C       | Frontend connect flow, settings UX, auto token migration.                                                                                                                                             |
+| 2026-04-25 | (ops) | cutover | Виставлено `MONO_WEBHOOK_ENABLED=true`, `MONO_TOKEN_ENC_KEY`, `PUBLIC_API_BASE_URL` на Railway. Міграцію 008 застосовано вручну на проді (див. PR #704 — фікс білда). Smoke-тест webhook delivery ОК. |
+| 2026-04-25 | #704  | ops     | Fix: `build.mjs` тепер копіює `src/migrations/*.sql` у `dist-server/migrations` (раніше Pre-Deploy job мовчки no-op-ив).                                                                              |
+| 2026-04-25 | (TBD) | rollout | `mono_webhook` default → `true`, прибрано `experimental`.                                                                                                                                             |
+| TBD        | TBD   | cleanup | Видалено `useMonobankLegacy`, `enqueueStatementCall`, `useMonoStatements`, snapshot fallback, ключі `finyk_token*`.                                                                                   |
