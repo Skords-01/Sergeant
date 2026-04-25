@@ -20,6 +20,8 @@ import type { Transaction } from "@sergeant/finyk-domain/domain/types";
 import { mergeTxByIdDesc } from "../lib/mergeTx";
 import { trackEvent, ANALYTICS_EVENTS } from "../../../core/analytics";
 import { useMonoStatements, enqueueStatementCall } from "./useMonoStatements";
+import { useFlag } from "../../../core/lib/featureFlags";
+import { useMonobankWebhook } from "./useMonobankWebhook";
 
 /**
  * @typedef {{
@@ -153,6 +155,17 @@ function sleep(ms: number) {
  * }}
  */
 export function useMonobank() {
+  const webhookEnabled = useFlag("mono_webhook");
+  const webhookResult = useMonobankWebhook();
+  const legacyResult = useMonobankLegacy();
+
+  if (webhookEnabled) {
+    return webhookResult;
+  }
+  return legacyResult;
+}
+
+function useMonobankLegacy() {
   const queryClient = useQueryClient();
   const [token, setToken] = useState<string>(readStoredToken);
   const [connecting, setConnecting] = useState<boolean>(false);

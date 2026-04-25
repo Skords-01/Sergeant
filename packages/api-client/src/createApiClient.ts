@@ -21,7 +21,12 @@ import {
   createFoodSearchEndpoints,
   type FoodSearchEndpoints,
 } from "./endpoints/foodSearch";
-import { createMonoEndpoints, type MonoEndpoints } from "./endpoints/mono";
+import {
+  createMonoEndpoints,
+  createMonoWebhookEndpoints,
+  type MonoEndpoints,
+  type MonoWebhookEndpoints,
+} from "./endpoints/mono";
 import {
   createPrivatEndpoints,
   type PrivatEndpoints,
@@ -60,6 +65,7 @@ export interface ApiClient {
   barcode: BarcodeEndpoints;
   foodSearch: FoodSearchEndpoints;
   mono: MonoEndpoints;
+  monoWebhook: MonoWebhookEndpoints;
   privat: PrivatEndpoints;
   weeklyDigest: WeeklyDigestEndpoints;
 }
@@ -78,6 +84,7 @@ export function createApiClient(config: ApiClientConfig = {}): ApiClient {
     barcode: createBarcodeEndpoints(http),
     foodSearch: createFoodSearchEndpoints(http),
     mono: createMonoEndpoints(http),
+    monoWebhook: createMonoWebhookEndpoints(http),
     privat: createPrivatEndpoints(http),
     weeklyDigest: createWeeklyDigestEndpoints(http),
   };

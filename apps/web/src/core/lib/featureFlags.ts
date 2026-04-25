@@ -51,6 +51,14 @@ export const FLAG_REGISTRY: readonly FlagDefinition[] = [
     defaultValue: false,
     experimental: true,
   },
+  {
+    id: "mono_webhook",
+    label: "Monobank Webhook (server-side sync)",
+    description:
+      "Використовувати серверні webhook-транзакції замість клієнтського polling. Потрібна підтримка бекенду (Track A/B).",
+    defaultValue: false,
+    experimental: true,
+  },
 ] as const;
 
 export type FlagId = (typeof FLAG_REGISTRY)[number]["id"];
