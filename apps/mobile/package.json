@@ -22,7 +22,7 @@
     "@better-auth/expo": "^1.6.5",
     "@expo/metro-runtime": "~4.0.1",
     "@react-native-async-storage/async-storage": "1.23.1",
-    "@react-native-community/netinfo": "11.4.1",
+    "@react-native-community/netinfo": "11.5.2",
     "@sentry/react-native": "~6.10.0",
     "@sergeant/api-client": "workspace:*",
     "@sergeant/design-tokens": "workspace:*",
