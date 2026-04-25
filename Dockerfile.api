@@ -1,6 +1,6 @@
 # Мінімальний образ лише для Hub API (Railway / Docker).
 # Збірка: docker build -f Dockerfile.api -t hub-api .
-FROM node:20-alpine AS builder
+FROM node:20.20.2-alpine AS builder
 WORKDIR /app
 
 RUN corepack enable && corepack prepare pnpm@9.15.1 --activate
@@ -27,7 +27,7 @@ RUN pnpm build
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Runtime image
-FROM node:20-alpine AS runtime
+FROM node:20.20.2-alpine AS runtime
 WORKDIR /app
 
 ENV NODE_ENV=production
