@@ -1,6 +1,6 @@
 # Dev stack roadmap — інструменти і поради по всьому ЖЦ розробки
 
-**Статус:** in progress. Створено 2026-04-25. Останнє оновлення: 2026-04-25 (5 з топ-15 закриті — див. колонку Статус у TL;DR + повний session log нижче).
+**Статус:** in progress. Створено 2026-04-25. Останнє оновлення: 2026-04-25 (9 з топ-15 закриті — див. колонку Статус у TL;DR + повний session log нижче).
 **Скоуп:** інструменти, інтеграції, практики для покращення розробки, тестування, CI/CD, проду, безпеки, performance і команди. Specifically для стеку Sergeant: pnpm + Turborepo + Vite/React + Express + Postgres + Railway + Vercel + Expo.
 **Принцип:** не «впровадити все одразу», а **поетапно** — від найдешевших і найважливіших до інвестиційних. Кожен пункт — самостійний tool / practice з ціною, effort-ом, ROI і dep-ами.
 
@@ -15,22 +15,22 @@
 | 1   | **Sentry** для error tracking                     | 2 год     | $26/міс          | 🔥🔥🔥 | ⏳ pending (потребує credentials)                              |
 | 2   | **Knip + depcheck** — clean dead code             | 1 год     | $0               | 🔥🔥   | ✅ done [#716](https://github.com/Skords-01/Sergeant/pull/716) |
 | 3   | **Strict TypeScript (incremental)**               | 1-2 тижні | $0               | 🔥🔥🔥 | ⏳ pending                                                     |
-| 4   | **Testcontainers** для server tests               | 4 год     | $0               | 🔥🔥🔥 | ⏳ pending                                                     |
+| 4   | **Testcontainers** для server tests               | 4 год     | $0               | 🔥🔥🔥 | ✅ done [#728](https://github.com/Skords-01/Sergeant/pull/728) |
 | 5   | **Vercel Pro plan** (рятує preview deploy)        | 5 хв      | $20/міс          | 🔥🔥   | 🟡 not started (потребує credit card мейнтейнера)              |
 | 6   | **Turbo remote cache**                            | 1 год     | $0 (Vercel free) | 🔥🔥   | ✅ done (CI wiring merged; needs secrets — see §1.1)           |
 | 7   | **Renovate** замість Dependabot                   | 1 год     | $0               | 🔥🔥   | ✅ done [#721](https://github.com/Skords-01/Sergeant/pull/721) |
 | 8   | **AGENTS.md** (з #711)                            | 1 год     | $0               | 🔥🔥🔥 | ✅ done [#714](https://github.com/Skords-01/Sergeant/pull/714) |
-| 9   | **MSW** для frontend tests                        | 4 год     | $0               | 🔥     | ⏳ pending                                                     |
+| 9   | **MSW** для frontend tests                        | 4 год     | $0               | 🔥     | ✅ done [#729](https://github.com/Skords-01/Sergeant/pull/729) |
 | 10  | **Snapshot tests на server serializers** (з #711) | 4 год     | $0               | 🔥🔥🔥 | ✅ done [#718](https://github.com/Skords-01/Sergeant/pull/718) |
 | 11  | **Pino structured logging**                       | 4 год     | $0               | 🔥🔥   | ⏳ pending                                                     |
 | 12  | **Activate Playwright E2E на PR**                 | 2 год     | $0               | 🔥🔥   | ✅ done [#717](https://github.com/Skords-01/Sergeant/pull/717) |
 | 13  | **PostHog** для product analytics                 | 4 год     | $0 (free tier)   | 🔥     | ⏳ pending                                                     |
 | 14  | **size-limit** + bundle-analyzer                  | 2 год     | $0               | 🔥     | ⏳ pending                                                     |
-| 15  | **CONTRIBUTING.md + 5-min quickstart**            | 2 год     | $0               | 🔥🔥   | ⏳ pending                                                     |
+| 15  | **CONTRIBUTING.md + 5-min quickstart**            | 2 год     | $0               | 🔥🔥   | ✅ done [#726](https://github.com/Skords-01/Sergeant/pull/726) |
 
 **Сумарно:** ~3-5 робочих днів + ~$50/міс. Це 80% wins за 20% effort-у.
 
-**Прогрес (2026-04-25):** 6 / 15 закрито — #2 Knip+depcheck, #6 Turbo remote cache, #7 Renovate, #8 AGENTS.md, #10 Snapshot tests, #12 Playwright E2E. Наступні логічні кроки: #15 (CONTRIBUTING.md — дешевий win), #11 (Pino logging — розблокує Sentry/PostHog), #4 (Testcontainers — підсилить #10).
+**Прогрес (2026-04-25):** 9 / 15 закрито — #2 Knip+depcheck, #4 Testcontainers (#728), #6 Turbo remote cache, #7 Renovate, #8 AGENTS.md, #9 MSW (#729), #10 Snapshot tests, #12 Playwright E2E, #15 CONTRIBUTING.md (#726). Наступні логічні кроки (без платних credentials): #11 (Pino logging — розблокує Sentry/PostHog), #14 (size-limit + bundle-analyzer), #3 (Strict TS incremental). #1 (Sentry) і #5 (Vercel Pro) чекають credentials мейнтейнера.
 
 ---
 
@@ -193,8 +193,8 @@ read & write the shared cache.
 | ----------------------------- | ---------------------------------------- | ------ | ---- | -------------------------------------------------------------- |
 | **Snapshot tests (server)**   | Mono serializers response shape          | 4 год  | must | ✅ done [#718](https://github.com/Skords-01/Sergeant/pull/718) |
 | **Playwright Smoke E2E (PR)** | Login → dashboard happy-path на кожен PR | 2 год  | must | ✅ done [#717](https://github.com/Skords-01/Sergeant/pull/717) |
-| **Testcontainers**            | Real Postgres у Docker для server tests  | 4 год  | must | ⏳ pending                                                     |
-| **MSW (Mock Service Worker)** | Realistic API mocks для frontend tests   | 4 год  | must | ⏳ pending                                                     |
+| **Testcontainers**            | Real Postgres у Docker для server tests  | 4 год  | must | ✅ done [#728](https://github.com/Skords-01/Sergeant/pull/728) |
+| **MSW (Mock Service Worker)** | Realistic API mocks для frontend tests   | 4 год  | must | ✅ done [#729](https://github.com/Skords-01/Sergeant/pull/729) |
 | **fishery** / **factory-bot** | Test data factories                      | 2 год  | nice | ⏳ pending                                                     |
 | **faker**                     | Random test data                         | 30 хв  | nice | ⏳ pending                                                     |
 | **node:test**                 | If відмовляєтесь від Vitest для server   | 1 день | nice | ⏳ pending                                                     |
