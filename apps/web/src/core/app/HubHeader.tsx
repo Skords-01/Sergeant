@@ -1,4 +1,5 @@
 import { Icon } from "@shared/components/ui/Icon";
+import { BrandLogo } from "./BrandLogo";
 import { DarkModeToggle } from "./DarkModeToggle.jsx";
 import { UserMenuButton } from "./UserMenuButton.jsx";
 
@@ -24,7 +25,7 @@ export function HubHeader({
       className="px-5 pt-10 pb-2 max-w-lg mx-auto w-full flex items-center justify-between"
       style={{ paddingTop: "max(2.5rem, env(safe-area-inset-top))" }}
     >
-      <h1 className="text-3xl font-bold text-text tracking-tight">Sergeant</h1>
+      <BrandLogo />
       <div className="pt-1 flex items-center gap-1">
         <button
           type="button"

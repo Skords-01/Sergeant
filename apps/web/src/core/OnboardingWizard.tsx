@@ -9,6 +9,7 @@ import {
 import { cn } from "@shared/lib/cn";
 import { Button } from "@shared/components/ui/Button";
 import { Icon } from "@shared/components/ui/Icon";
+import { BrandLogo } from "./app/BrandLogo";
 import { trackEvent, ANALYTICS_EVENTS } from "./analytics";
 import {
   ALL_MODULES,
@@ -132,7 +133,10 @@ function WelcomeStep({ onContinue }: { onContinue: () => void }) {
         <Icon name="sparkle" size={40} strokeWidth={1.8} aria-hidden />
       </div>
       <div className="space-y-2">
-        <h2 className="text-2xl font-bold text-text">Привіт. Це Sergeant.</h2>
+        <h2 className="text-2xl font-bold text-text">
+          Привіт. Це{" "}
+          <BrandLogo size="md" className="inline-flex align-baseline" />.
+        </h2>
         <p className="text-sm text-muted leading-relaxed max-w-xs mx-auto">
           Гроші, тіло, звички, їжа — все в одному місці. Офлайн. Приватно. Через
           хвилину побачиш свій хаб.

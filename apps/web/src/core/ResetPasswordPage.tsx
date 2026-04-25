@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@shared/components/ui/Button";
 import { useToast } from "@shared/hooks/useToast";
+import { BrandLogo } from "./app/BrandLogo";
 import { resetPassword } from "./authClient.js";
 
 /**
@@ -77,9 +78,7 @@ export function ResetPasswordPage() {
     >
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-text tracking-tight mb-1">
-            Sergeant
-          </h1>
+          <BrandLogo size="md" className="justify-center mb-1" />
           <p className="text-sm text-subtle">Новий пароль</p>
         </div>
 
