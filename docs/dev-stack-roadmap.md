@@ -17,7 +17,7 @@
 | 3   | **Strict TypeScript (incremental)**               | 1-2 тижні | $0               | 🔥🔥🔥 | ⏳ pending                                                     |
 | 4   | **Testcontainers** для server tests               | 4 год     | $0               | 🔥🔥🔥 | ⏳ pending                                                     |
 | 5   | **Vercel Pro plan** (рятує preview deploy)        | 5 хв      | $20/міс          | 🔥🔥   | 🟡 not started (потребує credit card мейнтейнера)              |
-| 6   | **Turbo remote cache**                            | 1 год     | $0 (Vercel free) | 🔥🔥   | ⏳ pending                                                     |
+| 6   | **Turbo remote cache**                            | 1 год     | $0 (Vercel free) | 🔥🔥   | ✅ done (CI wiring merged; needs secrets — see §1.1)           |
 | 7   | **Renovate** замість Dependabot                   | 1 год     | $0               | 🔥🔥   | ✅ done [#721](https://github.com/Skords-01/Sergeant/pull/721) |
 | 8   | **AGENTS.md** (з #711)                            | 1 год     | $0               | 🔥🔥🔥 | ✅ done [#714](https://github.com/Skords-01/Sergeant/pull/714) |
 | 9   | **MSW** для frontend tests                        | 4 год     | $0               | 🔥     | ⏳ pending                                                     |
@@ -30,7 +30,7 @@
 
 **Сумарно:** ~3-5 робочих днів + ~$50/міс. Це 80% wins за 20% effort-у.
 
-**Прогрес (2026-04-25):** 5 / 15 закрито — #2 Knip+depcheck, #7 Renovate, #8 AGENTS.md, #10 Snapshot tests, #12 Playwright E2E. Наступні логічні кроки: #15 (CONTRIBUTING.md — дешевий win), #11 (Pino logging — розблокує Sentry/PostHog), #4 (Testcontainers — підсилить #10), #6 (Turbo remote cache — пришвидшить CI).
+**Прогрес (2026-04-25):** 6 / 15 закрито — #2 Knip+depcheck, #6 Turbo remote cache, #7 Renovate, #8 AGENTS.md, #10 Snapshot tests, #12 Playwright E2E. Наступні логічні кроки: #15 (CONTRIBUTING.md — дешевий win), #11 (Pino logging — розблокує Sentry/PostHog), #4 (Testcontainers — підсилить #10).
 
 ---
 
@@ -47,6 +47,37 @@
 | **direnv**                 | Auto `.envrc` activation per repo  | $0   | 30 хв  | nice |
 | **Lefthook**               | Faster pre-commit (Go)             | $0   | 1 год  | nice |
 | **Turbo remote cache**     | CI build cache (5 → 1 хв)          | $0   | 1 год  | must |
+
+#### Turbo remote cache — setup guide
+
+CI already passes `TURBO_TOKEN` / `TURBO_TEAM` env vars to every turbo
+invocation. When the secrets are absent turbo silently falls back to
+local-only caching, so nothing breaks.
+
+**To activate remote caching (maintainer steps):**
+
+1. Go to [vercel.com/account/tokens](https://vercel.com/account/tokens)
+   and create a new token (scope: the team that owns the Sergeant project).
+2. Copy the token value.
+3. In the GitHub repo → **Settings → Secrets and variables → Actions**,
+   add two repository secrets:
+   - `TURBO_TOKEN` — the Vercel token from step 2.
+   - `TURBO_TEAM` — your Vercel team slug (e.g. `my-team`). Find it at
+     the top-left of the Vercel dashboard or in the URL
+     (`vercel.com/<team-slug>`).
+4. Re-run any CI workflow — turbo will log
+   `Remote caching enabled` in the output.
+
+**Optional — local dev remote cache:**
+
+```bash
+# one-time setup
+npx turbo login          # opens Vercel OAuth in browser
+npx turbo link           # links the repo to the Vercel team
+```
+
+After linking, local `turbo run build` / `turbo run test` will also
+read & write the shared cache.
 
 **Sergeant-specific:**
 

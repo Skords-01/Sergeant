@@ -181,6 +181,8 @@ server/
 
 **Деплой:** фронт Vercel + API/PostgreSQL на Railway — покроково [docs/railway-vercel.md](docs/railway-vercel.md). Локальна БД: `pnpm db:up` (Docker Compose).
 
+> **New contributor?** See [CONTRIBUTING.md](CONTRIBUTING.md) for a 5-minute quickstart.
+
 ## HubChat (AI-чат)
 
 **Архітектура:** клієнт `src/core/HubChat.tsx` + `src/core/lib/hubChatActions.ts` (виконавець tool-calls) ↔ сервер `server/modules/chat.js` (Anthropic tool-use, Claude Sonnet 4.6). Користувач керує всіма 4 модулями голосом або текстом без переходу в UI.

@@ -11,6 +11,13 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  # Turborepo remote cache — speeds up turbo tasks across CI runs.
+  # Secrets are configured in the repo's GitHub settings; when absent
+  # turbo silently falls back to local-only caching (no CI breakage).
+  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+  TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+
 jobs:
   check:
     runs-on: ubuntu-latest
