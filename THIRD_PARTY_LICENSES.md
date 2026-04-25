@@ -625,6 +625,7 @@
 - [pify@4.0.1](https://github.com/sindresorhus/pify#readme) - MIT
 - [pino@10.3.1](https://getpino.io) - MIT
 - [pino-abstract-transport@3.0.0](https://github.com/pinojs/pino-abstract-transport#readme) - MIT
+- [pino-http@11.0.0](https://github.com/pinojs/pino-http#readme) - MIT
 - [pino-std-serializers@7.1.0](https://github.com/pinojs/pino-std-serializers#readme) - MIT
 - [pirates@4.0.7](https://github.com/danez/pirates#readme) - MIT
 - [pkg-dir@3.0.0](https://github.com/sindresorhus/pkg-dir#readme) - MIT
