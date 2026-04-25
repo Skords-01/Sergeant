@@ -47,10 +47,12 @@ export function useHubNavigation(): HubNavigation {
       const typedId = nextId as HubModuleId;
       const isSame = typedId === activeModule;
 
+      let hashStr = "";
       try {
         const raw = opts.hash != null ? String(opts.hash).trim() : "";
         if (raw) {
-          window.location.hash = raw.startsWith("#") ? raw : `#${raw}`;
+          hashStr = raw.startsWith("#") ? raw : `#${raw}`;
+          window.location.hash = hashStr;
         } else if (!isSame) {
           window.location.hash = "";
         }
@@ -60,7 +62,7 @@ export function useHubNavigation(): HubNavigation {
 
       setModuleAnimClass("module-enter");
       setActiveModule(typedId);
-      navigate(`/?module=${typedId}`, { replace: false });
+      navigate(`/?module=${typedId}${hashStr}`, { replace: false });
     },
     [activeModule, navigate],
   );
