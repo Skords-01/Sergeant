@@ -27,12 +27,12 @@
 
 Structured comments for AI-agent context. Enforced by ESLint rule `sergeant-design/ai-marker-syntax` (warn).
 
-| Marker | Purpose | Example |
-|--------|---------|---------|
-| `// AI-NOTE: <text>` | Contextual hint for future AI agents (not a human TODO) | `// AI-NOTE: coerce bigint→number; see rule #1` |
-| `// AI-DANGER: <text>` | High-risk zone — AI should confirm before changing | `// AI-DANGER: timing-safe comparison is critical here` |
-| `// AI-GENERATED: <generator>` | File is generated — edit the generator, not this file | `// AI-GENERATED: from codegen.ts` |
-| `// AI-LEGACY: expires YYYY-MM-DD` | Temporary code scheduled for removal | `// AI-LEGACY: expires 2026-06-01` |
+| Marker                             | Purpose                                                 | Example                                                 |
+| ---------------------------------- | ------------------------------------------------------- | ------------------------------------------------------- |
+| `// AI-NOTE: <text>`               | Contextual hint for future AI agents (not a human TODO) | `// AI-NOTE: coerce bigint→number; see rule #1`         |
+| `// AI-DANGER: <text>`             | High-risk zone — AI should confirm before changing      | `// AI-DANGER: timing-safe comparison is critical here` |
+| `// AI-GENERATED: <generator>`     | File is generated — edit the generator, not this file   | `// AI-GENERATED: from codegen.ts`                      |
+| `// AI-LEGACY: expires YYYY-MM-DD` | Temporary code scheduled for removal                    | `// AI-LEGACY: expires 2026-06-01`                      |
 
 **Rules:**
 
