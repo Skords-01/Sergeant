@@ -25,7 +25,8 @@
     "build:ios": "pnpm build:web && pnpm sync ios",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@capacitor-mlkit/barcode-scanning": "^7.5.0",
@@ -41,6 +42,8 @@
   },
   "devDependencies": {
     "@capacitor/cli": "^7.6.2",
+    "@sergeant/config": "workspace:*",
+    "@vitest/coverage-v8": "^3.0.0",
     "jsdom": "^29.0.2",
     "typescript": "^6.0.3",
     "vitest": "^3.0.0"

@@ -9,6 +9,9 @@ apps/server/dist-server/
 # Turbo
 .turbo/
 
+# Vitest coverage
+coverage/
+
 # Playwright (a11y tests)
 playwright-report/
 test-results/

@@ -23,6 +23,7 @@
     "lint:plugins": "node --test eslint-plugins/sergeant-design/__tests__/",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
+    "test:coverage": "turbo run test:coverage",
     "test:a11y": "pnpm --filter @sergeant/web test:a11y",
     "format": "prettier --write .",
     "format:check": "prettier --check .",

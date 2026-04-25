@@ -54,6 +54,60 @@ jobs:
       - name: Format, lint, test, build
         run: pnpm check
 
+  coverage:
+    name: Test coverage (vitest)
+    runs-on: ubuntu-latest
+    steps:
+      # actions/checkout v4.3.1 (SHA-pinned for supply-chain hardening)
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+
+      # pnpm/action-setup v4.1.0 (SHA-pinned for supply-chain hardening)
+      - uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2
+
+      # actions/setup-node v4.4.0 (SHA-pinned for supply-chain hardening)
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "20"
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Run vitest with coverage
+        # apps/server and apps/web enforce per-package floor thresholds in
+        # their vitest.config files (~2pp below baseline). A drop below the
+        # floor fails this job. Domain packages are already near 100%, so
+        # they don't carry explicit floors yet.
+        run: pnpm test:coverage
+
+      - name: Upload coverage HTML reports
+        if: always()
+        # actions/upload-artifact v4.4.3 (SHA-pinned)
+        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882
+        with:
+          name: vitest-coverage-html
+          path: |
+            apps/server/coverage
+            apps/web/coverage
+            apps/mobile-shell/coverage
+            packages/*/coverage
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Upload coverage JSON summaries
+        if: always()
+        # actions/upload-artifact v4.4.3 (SHA-pinned)
+        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882
+        with:
+          name: vitest-coverage-summary
+          path: |
+            apps/server/coverage/coverage-summary.json
+            apps/web/coverage/coverage-summary.json
+            apps/mobile-shell/coverage/coverage-summary.json
+            packages/*/coverage/coverage-summary.json
+          if-no-files-found: ignore
+          retention-days: 30
+
   a11y:
     name: Accessibility (axe-core)
     runs-on: ubuntu-latest
