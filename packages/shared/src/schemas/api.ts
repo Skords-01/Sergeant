@@ -570,4 +570,13 @@ export const BarcodeQuerySchema = z.object({
   barcode: z.string().trim().min(1, "Штрихкод не може бути порожнім").max(32),
 });
 
+// ────────────────────── Mono webhook integration (Track B) ──────────────────
+export const MonoTransactionsQuerySchema = z.object({
+  from: z.string().optional(),
+  to: z.string().optional(),
+  accountId: z.string().optional(),
+  limit: z.coerce.number().int().min(1).max(200).default(50),
+  cursor: z.string().min(3).optional(),
+});
+
 export { z };
