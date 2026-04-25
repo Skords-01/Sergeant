@@ -414,7 +414,7 @@ const BentoCard = memo(function BentoCard({
       type="button"
       onClick={onClick}
       className={cn(
-        "group relative flex flex-col rounded-3xl border border-line p-3.5",
+        "group relative flex flex-col w-full rounded-3xl border border-line p-3.5",
         "shadow-card transition-all duration-200 text-left",
         "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60",
         "active:scale-[0.98]",
@@ -542,7 +542,7 @@ const SortableCard = memo(function SortableCard({
   if (!cfg) return null;
 
   return (
-    <div ref={setNodeRef} style={style}>
+    <div ref={setNodeRef} style={style} className="min-w-0">
       <BentoCard
         config={cfg}
         onClick={handleClick}
