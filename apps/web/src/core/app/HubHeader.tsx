@@ -1,41 +1,9 @@
 import { useMemo } from "react";
 import { Icon } from "@shared/components/ui/Icon";
+import { BrandLogo } from "./BrandLogo";
 import { DarkModeToggle } from "./DarkModeToggle";
 import { UserMenuButton } from "./UserMenuButton";
 import type { User } from "@sergeant/shared";
-
-const CHEVRON_ICON = (
-  <svg
-    viewBox="0 0 18 18"
-    width={18}
-    height={18}
-    fill="none"
-    aria-hidden="true"
-    className="shrink-0"
-  >
-    <path
-      d="M3 6.5 L9 3 L15 6.5"
-      stroke="currentColor"
-      strokeWidth="2.2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    <path
-      d="M3 10.5 L9 7 L15 10.5"
-      stroke="currentColor"
-      strokeWidth="2.2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    <path
-      d="M3 14.5 L9 11 L15 14.5"
-      stroke="currentColor"
-      strokeWidth="2.2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </svg>
-);
 
 const ICON_BUTTON_CLS =
   "w-11 h-11 flex items-center justify-center rounded-2xl text-muted hover:text-text hover:bg-panelHi transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/45 focus-visible:ring-offset-2 focus-visible:ring-offset-bg";
@@ -116,12 +84,10 @@ export function HubHeader({
       style={{ paddingTop: "max(2.5rem, env(safe-area-inset-top))" }}
     >
       <div className="min-w-0">
-        <div className="flex items-center gap-1.5 text-brand-500 mb-0.5">
-          {CHEVRON_ICON}
-        </div>
-        <h1 className="text-2xl font-bold text-text leading-tight truncate">
+        <BrandLogo as="h1" size="lg" className="mb-1" />
+        <p className="text-sm text-muted leading-tight truncate">
           {greeting.text} <span aria-hidden>{greeting.emoji}</span>
-        </h1>
+        </p>
         {dateStr && <p className="text-xs text-muted mt-0.5">{dateStr}</p>}
       </div>
       <div className="pt-1 flex items-center gap-1 shrink-0">
