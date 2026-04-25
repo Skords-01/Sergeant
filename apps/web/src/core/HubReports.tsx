@@ -201,41 +201,95 @@ function BarChart({
   maxValue?: number;
   unit?: string;
 }) {
+  const [selected, setSelected] = useState<number | null>(null);
   const vals = dates.map((d) => data[d] ?? 0);
   const max = maxValue || Math.max(...vals, 1);
   const hasData = vals.some((v) => v > 0);
+  const isWeek = dates.length <= 7;
 
   if (!hasData) {
     return (
-      <div className="h-20 flex items-center justify-center text-xs text-muted">
+      <div className="h-24 flex items-center justify-center text-xs text-muted">
         Немає даних
       </div>
     );
   }
 
+  function labelStep(count: number) {
+    if (count <= 7) return 1;
+    if (count <= 15) return 2;
+    return Math.ceil(count / 8);
+  }
+  const step = labelStep(dates.length);
+
+  function formatLabel(dateStr: string) {
+    const d = new Date(dateStr + "T00:00:00");
+    if (isWeek) {
+      const dayNames = ["Нд", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"];
+      return dayNames[d.getDay()];
+    }
+    return String(d.getDate());
+  }
+
+  function formatTooltip(dateStr: string, value: number) {
+    const d = new Date(dateStr + "T00:00:00");
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    return `${day}.${month}: ${value.toLocaleString("uk-UA")}${unit}`;
+  }
+
   return (
-    <div className="flex items-end gap-0.5 h-20" aria-label="Графік">
-      {vals.map((v, i) => {
-        const pct = Math.max(0, Math.min(100, (v / max) * 100));
-        const isToday = dates[i] === localDateKey();
-        return (
-          <div
-            key={dates[i]}
-            className="flex-1 flex flex-col items-center justify-end gap-0.5 h-full"
-            title={`${dates[i]}: ${v}${unit}`}
-          >
-            <div
+    <div>
+      {selected !== null && (
+        <div className="text-xs text-center text-text font-medium mb-1 h-4">
+          {formatTooltip(dates[selected], vals[selected])}
+        </div>
+      )}
+      {selected === null && <div className="h-4 mb-1" />}
+      <div className="flex items-end gap-0.5 h-20" aria-label="Графік">
+        {vals.map((v, i) => {
+          const pct = Math.max(0, Math.min(100, (v / max) * 100));
+          const isToday = dates[i] === localDateKey();
+          const isSelected = selected === i;
+          return (
+            <button
+              key={dates[i]}
+              type="button"
+              className="flex-1 flex flex-col items-center justify-end gap-0.5 h-full appearance-none bg-transparent border-0 p-0 cursor-pointer"
+              onClick={() => setSelected(isSelected ? null : i)}
+            >
+              <div
+                className={cn(
+                  "w-full rounded-t-sm transition-[height,background-color,opacity]",
+                  colorClass,
+                  (isToday || isSelected) && "opacity-100",
+                  !isToday && !isSelected && "opacity-60",
+                )}
+                style={{
+                  height: `${pct}%`,
+                  minHeight: v > 0 ? "2px" : "0",
+                }}
+              />
+            </button>
+          );
+        })}
+      </div>
+      <div className="flex gap-0.5 mt-1">
+        {dates.map((d, i) => {
+          const show = i % step === 0 || i === dates.length - 1;
+          return (
+            <span
+              key={d}
               className={cn(
-                "w-full rounded-t-sm transition-[height,background-color,opacity]",
-                colorClass,
-                isToday && "opacity-100",
-                !isToday && "opacity-60",
+                "flex-1 text-center text-[10px] leading-tight",
+                selected === i ? "text-text font-medium" : "text-muted",
               )}
-              style={{ height: `${pct}%`, minHeight: v > 0 ? "2px" : "0" }}
-            />
-          </div>
-        );
-      })}
+            >
+              {show ? formatLabel(d) : ""}
+            </span>
+          );
+        })}
+      </div>
     </div>
   );
 }
