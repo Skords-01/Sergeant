@@ -49,27 +49,35 @@ const GRADIENT_STYLE: React.CSSProperties = {
   backgroundClip: "text",
 };
 
+type TagName = "span" | "h1" | "h2" | "h3" | "div";
+
 interface BrandLogoProps {
   /** Extra Tailwind classes for the outer wrapper. */
   className?: string;
   /** Size variant. "lg" is the hub header, "md" is auth/onboarding. */
   size?: "lg" | "md";
+  /** HTML element for the outer wrapper (default "span"). Use "h1" on pages that need a heading landmark. */
+  as?: TagName;
 }
 
-export function BrandLogo({ className, size = "lg" }: BrandLogoProps) {
+export function BrandLogo({
+  className,
+  size = "lg",
+  as: Tag = "span",
+}: BrandLogoProps) {
   const textCls =
     size === "lg"
       ? "text-[26px] leading-none font-extrabold tracking-tight"
       : "text-2xl leading-none font-extrabold tracking-tight";
 
   return (
-    <span
+    <Tag
       className={`inline-flex items-center gap-1.5 select-none text-brand-500 ${className ?? ""}`}
     >
       {CHEVRON_ICON}
       <span className={textCls} style={GRADIENT_STYLE}>
         Sergeant
       </span>
-    </span>
+    </Tag>
   );
 }

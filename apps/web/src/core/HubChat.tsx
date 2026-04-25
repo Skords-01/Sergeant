@@ -502,21 +502,24 @@ function HubChat({ onClose, initialMessage }) {
         </div>
 
         {/* Header */}
-        <div className="flex items-center justify-between px-4 pb-3 shrink-0 border-b border-line">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <span className="text-2xl leading-none shrink-0" aria-hidden>
-              🤖
-            </span>
+        <div className="flex items-start justify-between gap-3 px-4 pb-3 shrink-0 border-b border-line">
+          <div className="flex items-start gap-3 min-w-0">
+            <div
+              className="w-9 h-9 rounded-xl bg-brand-500/10 flex items-center justify-center shrink-0 mt-0.5"
+              aria-hidden
+            >
+              <Icon name="sparkle" size={18} className="text-brand-500" />
+            </div>
             <div className="min-w-0">
               <div
                 id="hub-chat-title"
-                className="text-sm font-semibold text-text"
+                className="text-[15px] font-bold text-text leading-snug"
               >
                 Асистент
               </div>
               <div
                 className={cn(
-                  "text-2xs",
+                  "text-2xs leading-snug mt-0.5",
                   hasData ? "text-subtle" : "text-warning",
                 )}
               >
@@ -524,53 +527,57 @@ function HubChat({ onClose, initialMessage }) {
                   ? "Фінік · Фізрук · Рутина · Харчування"
                   : "Mono не підключено"}
               </div>
-              <div className="text-2xs text-subtle mt-0.5">
-                {contextState.status === "building"
-                  ? "Готую контекст…"
-                  : contextState.status === "ready"
-                    ? "Контекст готовий"
-                    : ""}
-              </div>
-              <div className="text-2xs text-subtle mt-0.5">
-                Сесія: {sessionInfo.historyCount}/10 · ~
-                {Math.round(sessionInfo.chars / 100) / 10}k символів
+              <div className="flex items-center gap-1.5 text-2xs text-subtle mt-1">
+                <span
+                  className={cn(
+                    "inline-block w-1.5 h-1.5 rounded-full",
+                    contextState.status === "ready"
+                      ? "bg-brand-500"
+                      : contextState.status === "building"
+                        ? "bg-warning animate-pulse"
+                        : "bg-line",
+                  )}
+                />
+                <span>
+                  {contextState.status === "building"
+                    ? "Готую контекст…"
+                    : contextState.status === "ready"
+                      ? "Контекст готовий"
+                      : "Очікую"}
+                </span>
+                <span className="text-line">·</span>
+                <span>
+                  {sessionInfo.historyCount}/10 · ~
+                  {Math.round(sessionInfo.chars / 100) / 10}k
+                </span>
               </div>
               <p
                 id="hub-chat-privacy"
-                className="text-2xs text-subtle mt-1 leading-snug max-w-[min(100%,280px)]"
+                className="text-2xs text-muted/70 mt-1 leading-snug max-w-[min(100%,280px)]"
               >
-                Запит і короткий контекст (фінанси, тренування, звички,
-                харчування) відправляються на сервер до AI. Не діліться чужим
-                пристроєм без потреби.
+                Контекст (фінанси, тренування, звички, харчування)
+                відправляється до AI.
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-1 shrink-0">
+          <div className="flex items-center gap-0.5 shrink-0">
             <button
               type="button"
               onClick={clearChat}
-              className="h-9 px-3 flex items-center gap-1.5 rounded-xl text-muted hover:text-text hover:bg-panelHi transition-colors text-xs font-semibold"
-              title="Нова сесія (очистити чат)"
-              aria-label="Нова сесія (очистити чат)"
+              className="h-8 px-2.5 flex items-center gap-1.5 rounded-xl text-muted hover:text-text hover:bg-panelHi transition-colors text-2xs font-semibold"
+              title="Очистити історію та почати нову сесію"
+              aria-label="Очистити чат"
             >
-              ↻ Нова
-            </button>
-            <button
-              type="button"
-              onClick={clearChat}
-              className="w-9 h-9 flex items-center justify-center rounded-xl text-muted hover:text-danger hover:bg-danger/8 transition-colors"
-              title="Очистити чат"
-              aria-label="Очистити історію чату"
-            >
-              <Icon name="trash" size={15} />
+              <Icon name="refresh-cw" size={13} />
+              Новий чат
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="w-9 h-9 flex items-center justify-center rounded-xl text-muted hover:text-text hover:bg-panelHi transition-colors"
+              className="w-8 h-8 flex items-center justify-center rounded-xl text-muted hover:text-text hover:bg-panelHi transition-colors"
               aria-label="Закрити асистента"
             >
-              <Icon name="close" size={18} />
+              <Icon name="close" size={16} />
             </button>
           </div>
         </div>

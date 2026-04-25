@@ -69,7 +69,7 @@ export function AuthPage({ onContinueWithoutAccount }) {
     >
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <BrandLogo size="md" className="justify-center mb-1" />
+          <BrandLogo as="h1" size="md" className="justify-center mb-1" />
           <p className="text-sm text-subtle">
             {mode === "login" ? "Вхід в акаунт" : "Створення акаунту"}
           </p>
