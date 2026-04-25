@@ -1,32 +1,53 @@
 # AI-coding improvements roadmap
 
-**Статус:** plan / draft. Створено 2026-04-25 з ідей розмови про вайб-кодинг.
+**Статус:** in progress. Створено 2026-04-25 з ідей розмови про вайб-кодинг. Останнє оновлення: 2026-04-25 (Tier 1 + частина Tier 2 закриті, див. таблицю прогресу нижче).
 **Скоуп:** репо-конвенції, playbooks, code markers, testing/preview infra. Це **не** про конкретні фічі продукту — це про **інфраструктуру для AI-агентів** (Devin, Cursor, Claude Code), які пишуть код у Sergeant.
 **Принцип:** менший variance результатів + більше контексту в репо = швидше і якісніше виходять PR-и від AI.
 
 ---
 
+## Прогрес (2026-04-25)
+
+| Блок                                     | Статус         | PR                                                     | Notes                                                                                 |
+| ---------------------------------------- | -------------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------- |
+| 1. `AGENTS.md` + repo-rules              | ✅ done        | [#714](https://github.com/Skords-01/Sergeant/pull/714) | + `.github/PULL_REQUEST_TEMPLATE.md` із секцією «How AI-tested this PR».              |
+| 2. Playbooks (4 шаблони)                 | ⏳ pending     | —                                                      | Не зачіпали поки що.                                                                  |
+| 3. Code markers + ESLint rule            | ✅ done        | [#715](https://github.com/Skords-01/Sergeant/pull/715) | Правило `sergeant-design/ai-marker-syntax` (warn) + 20 unit-тестів + реальні маркери. |
+| 4. Vercel paid + preview-on-PR           | 🟡 not started | —                                                      | Потребує credentials/upgrade від мейнтейнера ($20/міс).                               |
+| 5. Playwright E2E enabled on PR          | ✅ done        | [#717](https://github.com/Skords-01/Sergeant/pull/717) | Видалено блокуючий `needs: check`, додано Postgres service + кешування браузерів.     |
+| 6. Visual regression (Argos / Chromatic) | ⏳ pending     | —                                                      | Залежить від блоку 5 (зроблено) і стабільного Vercel preview.                         |
+| 7. Storybook                             | ⏳ pending     | —                                                      | Не зачіпали поки що.                                                                  |
+| 8. Snapshot tests для server serializers | ✅ done        | [#718](https://github.com/Skords-01/Sergeant/pull/718) | Покрито `accountsHandler` + `transactionsHandler`; всі bigint-поля вже мали coercion. |
+
+Додатково з `dev-stack-roadmap.md`: **Knip + depcheck** — ✅ done у [#716](https://github.com/Skords-01/Sergeant/pull/716) (видалено 6 файлів, 4 unused exports, 2 stale eslint entries).
+
+---
+
 ## TL;DR
 
-| #     | Блок                                                  | Effort   | Impact     | Залежності |
-| ----- | ----------------------------------------------------- | -------- | ---------- | ---------- |
-| **1** | `AGENTS.md` + repo-rules                              | пів дня  | висок      | —          |
-| **2** | Playbooks (4 шаблони)                                 | 1 день   | висок      | блок 1     |
-| **3** | Code markers (`AI-NOTE`, `AI-DANGER`, `AI-GENERATED`) | пів дня  | середн     | —          |
-| **4** | Vercel paid + preview-on-PR                           | 1 година | дуже висок | $20/міс    |
-| **5** | Playwright E2E enabled on PR                          | 1 день   | висок      | блок 4     |
-| **6** | Visual regression (Argos / Chromatic)                 | пів дня  | середн     | блок 5     |
-| **7** | Storybook                                             | 2 дні    | середн     | —          |
-| **8** | Snapshot tests для server-side serializers            | пів дня  | висок      | —          |
+| #     | Блок                                                  | Effort   | Impact     | Залежності | Статус         |
+| ----- | ----------------------------------------------------- | -------- | ---------- | ---------- | -------------- |
+| **1** | `AGENTS.md` + repo-rules                              | пів дня  | висок      | —          | ✅ done (#714) |
+| **2** | Playbooks (4 шаблони)                                 | 1 день   | висок      | блок 1     | ⏳ pending     |
+| **3** | Code markers (`AI-NOTE`, `AI-DANGER`, `AI-GENERATED`) | пів дня  | середн     | —          | ✅ done (#715) |
+| **4** | Vercel paid + preview-on-PR                           | 1 година | дуже висок | $20/міс    | 🟡 not started |
+| **5** | Playwright E2E enabled on PR                          | 1 день   | висок      | блок 4     | ✅ done (#717) |
+| **6** | Visual regression (Argos / Chromatic)                 | пів дня  | середн     | блок 5     | ⏳ pending     |
+| **7** | Storybook                                             | 2 дні    | середн     | —          | ⏳ pending     |
+| **8** | Snapshot tests для server-side serializers            | пів дня  | висок      | —          | ✅ done (#718) |
 
 **Рекомендована черговість:** 4 → 1 → 3 → 8 → 2 → 5 → 6 → 7.
 Логіка: 4 (Vercel) знімає найбільший денний pain. 1+3 — швидкі низько-ризикові wins. 8 — захист від класу регресій типу bigint→string (#708). 2 формалізує повторювані задачі. 5+6+7 — більш дорогі infra-інвестиції.
 
+**Реальний порядок виконання (2026-04-25):** 1 → 8 → 5 → 3 (паралельно з Knip/depcheck). 4 (Vercel paid) пропущено через відсутність credentials — це створило rate-limit на preview deploy у CI блоку 5, але smoke-тести запускаються проти локально стартанутого Vite preview всередині CI job-а, тому сам блок 5 розблокувати вдалося.
+
 ---
 
-# Блок 1. Repo-level rule-файли
+# Блок 1. Repo-level rule-файли ✅ implemented (#714)
 
 ## 1.1. `AGENTS.md` (новий файл у корені репо)
+
+**Статус:** ✅ створено у [PR #714](https://github.com/Skords-01/Sergeant/pull/714). Файл живе у `/AGENTS.md`. Факти верифіковані проти реального стану репо (pnpm 9, Turbo, 4 apps, 9 packages, RQ keys factories `finykKeys`/`hubKeys`/`nutritionKeys`/`coachKeys`/`digestKeys`/`pushKeys` у `apps/web/src/shared/lib/queryKeys.ts`, міграції 001–008). Має бути reviewed quarterly (last-reviewed-line у самому файлі).
 
 **Що це:** конвенція Anthropic / Cursor / Devin — markdown-файл у корені репо з правилами **тільки для AI-агентів**. Усі сучасні coding-AI його читають автоматично.
 
@@ -288,7 +309,9 @@ module.exports = {
 };
 ```
 
-## 3.3. Convention для PR template
+## 3.3. Convention для PR template ✅ implemented (#714)
+
+**Статус:** ✅ `.github/PULL_REQUEST_TEMPLATE.md` створено у [PR #714](https://github.com/Skords-01/Sergeant/pull/714) з секціями `How AI-tested this PR` і `AGENTS.md updated?`.
 
 Доповнити `.github/PULL_REQUEST_TEMPLATE.md`:
 
@@ -340,7 +363,13 @@ module.exports = {
 
 Рекомендую paid Vercel.
 
-## 4.2. Playwright E2E на PR
+## 4.2. Playwright E2E на PR ✅ implemented (#717)
+
+**Статус:** ✅ enabled у [PR #717](https://github.com/Skords-01/Sergeant/pull/717).
+
+**Root cause skipped-стану:** job `Smoke E2E (Playwright)` мав `needs: check`, який не виконувався на більшості PR. Виправлено: dependency знято, додано PostgreSQL service container, Playwright browser caching, явний старт Vite preview-сервера всередині job-а (щоб обійти Vercel free-tier rate-limit). Доданий smoke-тест: `apps/web/tests/smoke/dashboard-health.spec.ts`. Job тепер біжить на КОЖЕН PR і завантажує `playwright-report` як artifact.
+
+**Caveat:** оскільки Vercel preview rate-limit-иться (free tier), тести працюють проти локального preview, а НЕ проти Vercel deployment. Це достатньо для catastrophic-regression detection, але не покриває edge-cases SSR/Vercel-specific behavior. Для цього треба блок 4.1 (Vercel paid).
 
 **Поточний стан:** у вас уже є job `Smoke E2E (Playwright)` у CI workflow, але він `skipped` (бачу в pr_checks #708). Чому skipped — треба з'ясувати (можливо `if: ...` condition не виконується для всіх PR).
 
@@ -397,7 +426,9 @@ Argos рекомендую — найкращий fit для open-source workflo
 
 **Win:** AI prototypes UI-компонент за 5 хв замість 30. Visual regression (4.3) автоматично покриває всі stories.
 
-## 4.5. Snapshot tests для server-side serializers
+## 4.5. Snapshot tests для server-side serializers ✅ implemented (#718)
+
+**Статус:** ✅ покрито у [PR #718](https://github.com/Skords-01/Sergeant/pull/718) — `accountsHandler` і `transactionsHandler` у `apps/server/src/modules/mono/read.ts`. Snapshot-файл: `apps/server/src/modules/mono/__snapshots__/read.test.ts.snap`. Бонус: під час review перевірено всі bigint-колонки → coercion вже на місці (новий клас регресій #708 не знайдений). JSDoc на `toNumberOrNull` розширено.
 
 **Контекст:** баг #708 (bigint→string) виглядав так: API повернув правильні значення, але типи не відповідали контракту. Unit-тест на shape ловить це.
 
@@ -443,21 +474,21 @@ it("accountsHandler response shape matches snapshot", async () => {
 
 # Implementation order (concrete checklist)
 
-1. [ ] **Tier 1 (тиждень 1):**
-   - [ ] Vercel paid plan upgrade
-   - [ ] `AGENTS.md` створення з розділами вище
-   - [ ] PR template update з блоком «How AI-tested»
-   - [ ] Snapshot tests для `apps/server/src/modules/mono/read.ts` (3 endpoint-и)
-2. [ ] **Tier 2 (тиждень 2-3):**
-   - [ ] AI markers convention + ESLint rule
+1. [~] **Tier 1 (тиждень 1):** 3/4 done
+   - [ ] Vercel paid plan upgrade — потребує credentials від мейнтейнера
+   - [x] `AGENTS.md` створення з розділами вище — [#714](https://github.com/Skords-01/Sergeant/pull/714)
+   - [x] PR template update з блоком «How AI-tested» — [#714](https://github.com/Skords-01/Sergeant/pull/714)
+   - [x] Snapshot tests для `apps/server/src/modules/mono/read.ts` (accountsHandler + transactionsHandler) — [#718](https://github.com/Skords-01/Sergeant/pull/718)
+2. [~] **Tier 2 (тиждень 2-3):** 2/3 done
+   - [x] AI markers convention + ESLint rule — [#715](https://github.com/Skords-01/Sergeant/pull/715)
    - [ ] Playbooks `hotfix-prod`, `add-feature-flag`, `cleanup-dead-code`
-   - [ ] Activate Playwright E2E на PR
+   - [x] Activate Playwright E2E на PR — [#717](https://github.com/Skords-01/Sergeant/pull/717)
 3. [ ] **Tier 3 (місяць 2):**
    - [ ] Argos візуальна регресія
    - [ ] Storybook (або Histoire) для shared components
    - [ ] Knowledge notes для прод-environment, тест-юзерів, flaky tests
 4. [ ] **Maintenance:**
-   - [ ] Quarterly `AGENTS.md` review reminder
+   - [ ] Quarterly `AGENTS.md` review reminder (next due: 2026-07-25)
    - [ ] Monthly metrics check
 
 ---

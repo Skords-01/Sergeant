@@ -1,6 +1,6 @@
 # Dev stack roadmap — інструменти і поради по всьому ЖЦ розробки
 
-**Статус:** plan / draft. Створено 2026-04-25.
+**Статус:** in progress. Створено 2026-04-25. Останнє оновлення: 2026-04-25 (4 з топ-15 закриті — див. колонку Статус у TL;DR).
 **Скоуп:** інструменти, інтеграції, практики для покращення розробки, тестування, CI/CD, проду, безпеки, performance і команди. Specifically для стеку Sergeant: pnpm + Turborepo + Vite/React + Express + Postgres + Railway + Vercel + Expo.
 **Принцип:** не «впровадити все одразу», а **поетапно** — від найдешевших і найважливіших до інвестиційних. Кожен пункт — самостійний tool / practice з ціною, effort-ом, ROI і dep-ами.
 
@@ -10,25 +10,27 @@
 
 Якщо є тиждень — зроби лише це:
 
-| #   | Інструмент / практика                             | Effort    | Cost             | ROI    |
-| --- | ------------------------------------------------- | --------- | ---------------- | ------ |
-| 1   | **Sentry** для error tracking                     | 2 год     | $26/міс          | 🔥🔥🔥 |
-| 2   | **Knip + depcheck** — clean dead code             | 1 год     | $0               | 🔥🔥   |
-| 3   | **Strict TypeScript (incremental)**               | 1-2 тижні | $0               | 🔥🔥🔥 |
-| 4   | **Testcontainers** для server tests               | 4 год     | $0               | 🔥🔥🔥 |
-| 5   | **Vercel Pro plan** (рятує preview deploy)        | 5 хв      | $20/міс          | 🔥🔥   |
-| 6   | **Turbo remote cache**                            | 1 год     | $0 (Vercel free) | 🔥🔥   |
-| 7   | **Renovate** замість Dependabot                   | 1 год     | $0               | 🔥🔥   |
-| 8   | **AGENTS.md** (з #711)                            | 1 год     | $0               | 🔥🔥🔥 |
-| 9   | **MSW** для frontend tests                        | 4 год     | $0               | 🔥     |
-| 10  | **Snapshot tests на server serializers** (з #711) | 4 год     | $0               | 🔥🔥🔥 |
-| 11  | **Pino structured logging**                       | 4 год     | $0               | 🔥🔥   |
-| 12  | **Activate Playwright E2E на PR**                 | 2 год     | $0               | 🔥🔥   |
-| 13  | **PostHog** для product analytics                 | 4 год     | $0 (free tier)   | 🔥     |
-| 14  | **size-limit** + bundle-analyzer                  | 2 год     | $0               | 🔥     |
-| 15  | **CONTRIBUTING.md + 5-min quickstart**            | 2 год     | $0               | 🔥🔥   |
+| #   | Інструмент / практика                             | Effort    | Cost             | ROI    | Статус                                                         |
+| --- | ------------------------------------------------- | --------- | ---------------- | ------ | -------------------------------------------------------------- |
+| 1   | **Sentry** для error tracking                     | 2 год     | $26/міс          | 🔥🔥🔥 | ⏳ pending (потребує credentials)                              |
+| 2   | **Knip + depcheck** — clean dead code             | 1 год     | $0               | 🔥🔥   | ✅ done [#716](https://github.com/Skords-01/Sergeant/pull/716) |
+| 3   | **Strict TypeScript (incremental)**               | 1-2 тижні | $0               | 🔥🔥🔥 | ⏳ pending                                                     |
+| 4   | **Testcontainers** для server tests               | 4 год     | $0               | 🔥🔥🔥 | ⏳ pending                                                     |
+| 5   | **Vercel Pro plan** (рятує preview deploy)        | 5 хв      | $20/міс          | 🔥🔥   | 🟡 not started (потребує credit card мейнтейнера)              |
+| 6   | **Turbo remote cache**                            | 1 год     | $0 (Vercel free) | 🔥🔥   | ⏳ pending                                                     |
+| 7   | **Renovate** замість Dependabot                   | 1 год     | $0               | 🔥🔥   | ⏳ pending                                                     |
+| 8   | **AGENTS.md** (з #711)                            | 1 год     | $0               | 🔥🔥🔥 | ✅ done [#714](https://github.com/Skords-01/Sergeant/pull/714) |
+| 9   | **MSW** для frontend tests                        | 4 год     | $0               | 🔥     | ⏳ pending                                                     |
+| 10  | **Snapshot tests на server serializers** (з #711) | 4 год     | $0               | 🔥🔥🔥 | ✅ done [#718](https://github.com/Skords-01/Sergeant/pull/718) |
+| 11  | **Pino structured logging**                       | 4 год     | $0               | 🔥🔥   | ⏳ pending                                                     |
+| 12  | **Activate Playwright E2E на PR**                 | 2 год     | $0               | 🔥🔥   | ✅ done [#717](https://github.com/Skords-01/Sergeant/pull/717) |
+| 13  | **PostHog** для product analytics                 | 4 год     | $0 (free tier)   | 🔥     | ⏳ pending                                                     |
+| 14  | **size-limit** + bundle-analyzer                  | 2 год     | $0               | 🔥     | ⏳ pending                                                     |
+| 15  | **CONTRIBUTING.md + 5-min quickstart**            | 2 год     | $0               | 🔥🔥   | ⏳ pending                                                     |
 
 **Сумарно:** ~3-5 робочих днів + ~$50/міс. Це 80% wins за 20% effort-у.
+
+**Прогрес (2026-04-25):** 4 / 15 закрито — #2 Knip+depcheck, #8 AGENTS.md, #10 Snapshot tests, #12 Playwright E2E. Наступні логічні кроки: #15 (CONTRIBUTING.md — дешевий win), #11 (Pino logging — розблокує Sentry/PostHog), #4 (Testcontainers — підсилить #10), #7 (Renovate — безпека).
 
 ---
 
@@ -113,17 +115,19 @@
 
 ### 3.1. Must-have
 
-| Tool                       | What                                                        | Effort    |
-| -------------------------- | ----------------------------------------------------------- | --------- |
-| **TypeScript strict mode** | Incremental: `strictNullChecks` → `noImplicitAny` → full    | 1-2 тижні |
-| **ESLint 9**               | У вас є                                                     | —         |
-| **Prettier + lint-staged** | У вас є                                                     | —         |
-| **Knip**                   | Find unused exports/files/deps (~50+ findings on first run) | 1 год     |
-| **depcheck**               | Find unused deps в package.json                             | 30 хв     |
-| **size-limit**             | Bundle size budget; fails CI on regression                  | 2 год     |
-| **CSpell**                 | Spell-checker для коду і коментарів                         | 30 хв     |
+| Tool                       | What                                                        | Effort    | Статус                                                         |
+| -------------------------- | ----------------------------------------------------------- | --------- | -------------------------------------------------------------- |
+| **TypeScript strict mode** | Incremental: `strictNullChecks` → `noImplicitAny` → full    | 1-2 тижні | ⏳ pending                                                     |
+| **ESLint 9**               | У вас є                                                     | —         | ✅                                                             |
+| **Prettier + lint-staged** | У вас є                                                     | —         | ✅                                                             |
+| **Knip**                   | Find unused exports/files/deps (~50+ findings on first run) | 1 год     | ✅ done [#716](https://github.com/Skords-01/Sergeant/pull/716) |
+| **depcheck**               | Find unused deps в package.json                             | 30 хв     | ✅ done [#716](https://github.com/Skords-01/Sergeant/pull/716) |
+| **size-limit**             | Bundle size budget; fails CI on regression                  | 2 год     | ⏳ pending                                                     |
+| **CSpell**                 | Spell-checker для коду і коментарів                         | 30 хв     | ⏳ pending                                                     |
 
 **Sergeant-priority:** strict TypeScript. Зараз `strict: false` — це баги waiting to happen.
+
+**Knip + depcheck — впроваджено у [#716](https://github.com/Skords-01/Sergeant/pull/716):** `knip.json` baseline + scripts у root `package.json`. Перший cleanup pass видалив: 6 невикористовуваних файлів (`CelebrationOverlay.tsx`, `ModuleChecklist.tsx`, `PermissionsPrompt.tsx`, `CategoryManager.tsx`, `PhotoProgress.tsx`, `useBodyPhotos.ts`), 4 unused exports, 2 stale eslint-plugin entries (`apps/server/src/obs/metrics.ts`, `logger.ts` cleanup).
 
 ### 3.2. Nice-to-have
 
@@ -154,26 +158,28 @@
 
 ### 4.1. Test infrastructure
 
-| Tool                          | What                                    | Effort | Tier |
-| ----------------------------- | --------------------------------------- | ------ | ---- |
-| **Testcontainers**            | Real Postgres у Docker для server tests | 4 год  | must |
-| **MSW (Mock Service Worker)** | Realistic API mocks для frontend tests  | 4 год  | must |
-| **fishery** / **factory-bot** | Test data factories                     | 2 год  | nice |
-| **faker**                     | Random test data                        | 30 хв  | nice |
-| **node:test**                 | If відмовляєтесь від Vitest для server  | 1 день | nice |
+| Tool                          | What                                     | Effort | Tier | Статус                                                         |
+| ----------------------------- | ---------------------------------------- | ------ | ---- | -------------------------------------------------------------- |
+| **Snapshot tests (server)**   | Mono serializers response shape          | 4 год  | must | ✅ done [#718](https://github.com/Skords-01/Sergeant/pull/718) |
+| **Playwright Smoke E2E (PR)** | Login → dashboard happy-path на кожен PR | 2 год  | must | ✅ done [#717](https://github.com/Skords-01/Sergeant/pull/717) |
+| **Testcontainers**            | Real Postgres у Docker для server tests  | 4 год  | must | ⏳ pending                                                     |
+| **MSW (Mock Service Worker)** | Realistic API mocks для frontend tests   | 4 год  | must | ⏳ pending                                                     |
+| **fishery** / **factory-bot** | Test data factories                      | 2 год  | nice | ⏳ pending                                                     |
+| **faker**                     | Random test data                         | 30 хв  | nice | ⏳ pending                                                     |
+| **node:test**                 | If відмовляєтесь від Vitest для server   | 1 день | nice | ⏳ pending                                                     |
 
 **Sergeant-priority:** Testcontainers. Зараз у server tests `queryMock.mockResolvedValueOnce(...)` — це не ловить SQL-помилки. Реальний PG ловить.
 
 ### 4.2. E2E і visual
 
-| Tool           | What                                 | Cost                  |
-| -------------- | ------------------------------------ | --------------------- |
-| **Playwright** | У вас є, треба активувати на PR      | $0                    |
-| **Detox**      | Mobile e2e (вже згаданий у Sergeant) | $0                    |
-| **Argos**      | Visual regression on PRs             | Free < 5K screenshots |
-| **Percy**      | BrowserStack-owned visual testing    | Free 5K screenshots   |
-| **Chromatic**  | Storybook-integrated visual testing  | $149/міс              |
-| **Lost Pixel** | Self-hosted visual testing           | $0                    |
+| Tool           | What                                                                         | Cost                  |
+| -------------- | ---------------------------------------------------------------------------- | --------------------- |
+| **Playwright** | ✅ активовано на PR ([#717](https://github.com/Skords-01/Sergeant/pull/717)) | $0                    |
+| **Detox**      | Mobile e2e (вже згаданий у Sergeant)                                         | $0                    |
+| **Argos**      | Visual regression on PRs                                                     | Free < 5K screenshots |
+| **Percy**      | BrowserStack-owned visual testing                                            | Free 5K screenshots   |
+| **Chromatic**  | Storybook-integrated visual testing                                          | $149/міс              |
+| **Lost Pixel** | Self-hosted visual testing                                                   | $0                    |
 
 ### 4.3. Performance і load
 
