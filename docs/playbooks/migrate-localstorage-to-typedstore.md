@@ -38,10 +38,16 @@ localStorage.setItem("myKey", JSON.stringify(data));
 
 ```ts
 import { createTypedStore } from "@shared/lib/typedStore";
+import { z } from "zod";
 
-const store = createTypedStore("myModule");
-const data = store.get("myKey");
-store.set("myKey", data);
+const store = createTypedStore({
+  key: "myKey",
+  version: 1,
+  schema: z.string().nullable(),
+  defaultValue: null,
+});
+const data = store.get();
+store.set(data);
 ```
 
 Перевірити:
