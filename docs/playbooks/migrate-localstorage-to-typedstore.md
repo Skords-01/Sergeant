@@ -18,7 +18,7 @@ grep -n "localStorage\.\(getItem\|setItem\|removeItem\)" apps/web/src/<path-to-f
 
 Sergeant має кілька storage-абстракцій:
 
-- **`typedStore`** (`apps/web/src/core/lib/typedStore.ts`) — основна, типобезпечна, sync across tabs.
+- **`createTypedStore`** (`apps/web/src/shared/lib/typedStore.ts`) — основна, типобезпечна, sync across tabs.
 - **`safeReadLS`** — safe JSON parse з fallback.
 - **`createModuleStorage`** — для module-scoped ключів.
 - **`useLocalStorageState`** — React hook з автоматичною підпискою.
@@ -37,10 +37,17 @@ localStorage.setItem("myKey", JSON.stringify(data));
 **Після:**
 
 ```ts
-import { typedStore } from "@shared/../core/lib/typedStore";
+import { createTypedStore } from "@shared/lib/typedStore";
+import { z } from "zod";
 
-const data = typedStore.get("myKey");
-typedStore.set("myKey", data);
+const store = createTypedStore({
+  key: "myKey",
+  version: 1,
+  schema: z.string().nullable(),
+  defaultValue: null,
+});
+const data = store.get();
+store.set(data);
 ```
 
 Перевірити:
