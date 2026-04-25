@@ -25,7 +25,7 @@ export function HubHeader({
       className="px-5 pt-10 pb-2 max-w-lg mx-auto w-full flex items-center justify-between"
       style={{ paddingTop: "max(2.5rem, env(safe-area-inset-top))" }}
     >
-      <BrandLogo />
+      <BrandLogo as="h1" />
       <div className="pt-1 flex items-center gap-1">
         <button
           type="button"
