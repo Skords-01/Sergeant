@@ -187,6 +187,7 @@ function EmptyFocus() {
     <div
       className={cn(
         "relative overflow-hidden rounded-2xl border border-line bg-panel p-4",
+        "bg-hub-hero dark:bg-panel",
         washClass,
       )}
     >
@@ -225,8 +226,8 @@ function EmptyFocus() {
               type="button"
               onClick={() => openHubModuleWithAction(chip.module, chip.action)}
               className={cn(
-                "group inline-flex items-center gap-1.5 pl-1 pr-3 py-1 rounded-full",
-                "bg-panel border border-line text-xs font-semibold text-text",
+                "group inline-flex items-center gap-1.5 pl-1.5 pr-3.5 py-2 rounded-full",
+                "bg-panel border border-line text-sm font-semibold text-text",
                 "shadow-sm transition-[box-shadow,opacity,transform] active:scale-[0.98]",
                 accent.hoverBorder,
               )}
@@ -234,7 +235,7 @@ function EmptyFocus() {
               <span
                 aria-hidden
                 className={cn(
-                  "inline-flex items-center justify-center w-5 h-5 rounded-full",
+                  "inline-flex items-center justify-center w-6 h-6 rounded-full",
                   accent.bubble,
                 )}
               >
@@ -315,6 +316,7 @@ export function TodayFocusCard({
       className={cn(
         "relative overflow-hidden rounded-2xl border border-line bg-panel",
         "shadow-card p-4",
+        "bg-hub-hero dark:bg-panel",
         wash,
       )}
     >

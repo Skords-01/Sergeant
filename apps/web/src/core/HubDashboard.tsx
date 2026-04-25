@@ -4,6 +4,7 @@ import {
   useEffect,
   useMemo,
   useState,
+  type CSSProperties,
   type ReactNode,
 } from "react";
 import { cn } from "@shared/lib/cn";
@@ -63,7 +64,7 @@ import {
   SortableContext,
   useSortable,
   arrayMove,
-  verticalListSortingStrategy,
+  rectSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
@@ -93,16 +94,13 @@ const localStorageStore: KVStore = {
   },
 };
 
-// Public labels for each module, surfaced in Settings → "Упорядкувати модулі".
-// The source of truth lives in `@sergeant/shared` so the mobile dashboard
-// and the web dashboard cannot drift out of sync on copy.
 export const DASHBOARD_MODULE_LABELS = SHARED_DASHBOARD_MODULE_LABELS;
 
 export function loadDashboardOrder() {
   return normalizeDashboardOrder(safeReadLS(DASHBOARD_ORDER_KEY, null));
 }
 
-export function saveDashboardOrder(order) {
+export function saveDashboardOrder(order: string[]) {
   safeWriteLS(DASHBOARD_ORDER_KEY, order);
 }
 
@@ -110,21 +108,23 @@ export function resetDashboardOrder() {
   safeRemoveLS(DASHBOARD_ORDER_KEY);
 }
 
-// Local aliases preserved so the rest of the file reads the same.
 const loadOrder = loadDashboardOrder;
 const saveOrder = saveDashboardOrder;
 
 // ═══════════════════════════════════════════════════════════════════════════
-// MODULE CONFIGURATIONS — calm accent-only styling
+// MODULE CONFIGURATIONS — bento card styling
 // ═══════════════════════════════════════════════════════════════════════════
 interface ModuleConfig {
   icon: ReactNode;
   label: string;
+  emoji: string;
   module: string;
   iconClass: string;
   accentClass: string;
+  cardBg: string;
   description: string;
   hasGoal: boolean;
+  emptyLabel: string;
   getPreview: () => ModulePreview;
 }
 
@@ -134,8 +134,8 @@ const MODULE_CONFIGS: Record<ModuleId, ModuleConfig> = {
   finyk: {
     icon: (
       <svg
-        width="16"
-        height="16"
+        width="18"
+        height="18"
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
@@ -148,11 +148,15 @@ const MODULE_CONFIGS: Record<ModuleId, ModuleConfig> = {
       </svg>
     ),
     label: "Фінік",
+    emoji: "\uD83D\uDCB0",
     module: "finyk",
     iconClass: "bg-finyk-soft text-finyk dark:bg-finyk/15",
     accentClass: "bg-finyk",
+    cardBg:
+      "bg-finyk-soft/40 dark:bg-finyk/8 hover:shadow-float hover:-translate-y-0.5",
     description: "Транзакції та бюджети",
     hasGoal: false,
+    emptyLabel: "Почни тут \u2192",
     getPreview: () =>
       selectModulePreview(
         "finyk",
@@ -162,8 +166,8 @@ const MODULE_CONFIGS: Record<ModuleId, ModuleConfig> = {
   fizruk: {
     icon: (
       <svg
-        width="16"
-        height="16"
+        width="18"
+        height="18"
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
@@ -177,11 +181,15 @@ const MODULE_CONFIGS: Record<ModuleId, ModuleConfig> = {
       </svg>
     ),
     label: "Фізрук",
+    emoji: "\uD83D\uDCAA",
     module: "fizruk",
     iconClass: "bg-fizruk-soft text-fizruk dark:bg-fizruk/15",
     accentClass: "bg-fizruk",
+    cardBg:
+      "bg-fizruk-soft/40 dark:bg-fizruk/8 hover:shadow-float hover:-translate-y-0.5",
     description: "Тренування та прогрес",
     hasGoal: false,
+    emptyLabel: "Почни тут \u2192",
     getPreview: () =>
       selectModulePreview(
         "fizruk",
@@ -191,8 +199,8 @@ const MODULE_CONFIGS: Record<ModuleId, ModuleConfig> = {
   routine: {
     icon: (
       <svg
-        width="16"
-        height="16"
+        width="18"
+        height="18"
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
@@ -205,11 +213,15 @@ const MODULE_CONFIGS: Record<ModuleId, ModuleConfig> = {
       </svg>
     ),
     label: "Рутина",
+    emoji: "\u2705",
     module: "routine",
     iconClass: "bg-routine-surface text-routine dark:bg-routine/15",
     accentClass: "bg-routine",
+    cardBg:
+      "bg-routine-surface/40 dark:bg-routine/8 hover:shadow-float hover:-translate-y-0.5",
     description: "Звички та щоденні цілі",
     hasGoal: true,
+    emptyLabel: "Почни тут \u2192",
     getPreview: () =>
       selectModulePreview(
         "routine",
@@ -219,8 +231,8 @@ const MODULE_CONFIGS: Record<ModuleId, ModuleConfig> = {
   nutrition: {
     icon: (
       <svg
-        width="16"
-        height="16"
+        width="18"
+        height="18"
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
@@ -234,11 +246,15 @@ const MODULE_CONFIGS: Record<ModuleId, ModuleConfig> = {
       </svg>
     ),
     label: "Харчування",
+    emoji: "\uD83E\uDD57",
     module: "nutrition",
     iconClass: "bg-nutrition-soft text-nutrition dark:bg-nutrition/15",
     accentClass: "bg-nutrition",
+    cardBg:
+      "bg-nutrition-soft/40 dark:bg-nutrition/8 hover:shadow-float hover:-translate-y-0.5",
     description: "КБЖВ та раціон",
     hasGoal: true,
+    emptyLabel: "Почни тут \u2192",
     getPreview: () =>
       selectModulePreview(
         "nutrition",
@@ -248,70 +264,166 @@ const MODULE_CONFIGS: Record<ModuleId, ModuleConfig> = {
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
-// STATUS ROW — «тихий» рядок модуля в секції «Статус»
+// «ТВІЙ ДЕНЬ» PILL STRIP — glanceable numbers, horizontal scroll
 // ═══════════════════════════════════════════════════════════════════════════
-// Раніше це був ModuleRow із chevron-ом, завжди-видимим progress-баром і
-// per-row Demo-піллю. Стало: без chevron-а (весь рядок клікабельний), без
-// progress-бару (крім випадків коли модуль справді має ціль і прогрес), без
-// «Демо» пілюлі (єдиний strip над секцією статус). Рядок, що відповідає
-// модулю з активним сигналом (focus/rest), отримує inline-кнопку `+`, що
-// dispatchає primary-дію без додаткового тапа «відкрити модуль».
-// ═══════════════════════════════════════════════════════════════════════════
-// Мемоізуємо рядок — перерендериться тільки якщо реально змінився його
-// config/quickAdd/isDragging. Без memo кожна зміна state на дашборді
-// (FTUX-герой, м'яка авторизація, digest-експанд) перераховувала всі
-// чотири модульні рядки, включно з `preview = config.getPreview()`,
-// що читає localStorage.
-interface QuickAddDescriptor {
-  label: string;
-  run: () => void;
+const PILL_MODULES: ModuleId[] = ["finyk", "routine", "nutrition", "fizruk"];
+
+const PILL_ACCENT: Record<ModuleId, string> = {
+  finyk: "text-finyk",
+  fizruk: "text-fizruk",
+  routine: "text-routine",
+  nutrition: "text-nutrition",
+};
+
+function TodaySummaryStrip({
+  onOpenModule,
+}: {
+  onOpenModule: (m: string) => void;
+}) {
+  const pills = useMemo(() => {
+    return PILL_MODULES.map((id) => {
+      const cfg = MODULE_CONFIGS[id];
+      const preview = cfg.getPreview();
+      return {
+        id,
+        label: cfg.label,
+        main: preview.main,
+        accent: PILL_ACCENT[id],
+      };
+    });
+  }, []);
+
+  const hasSomeData = pills.some((p) => p.main);
+  if (!hasSomeData) return null;
+
+  return (
+    <div className="flex gap-2 overflow-x-auto pb-0.5 -mx-1 px-1 no-scrollbar">
+      {pills.map((pill) => (
+        <button
+          key={pill.id}
+          type="button"
+          onClick={() => onOpenModule(pill.id)}
+          className={cn(
+            "shrink-0 flex flex-col items-center rounded-2xl",
+            "bg-panel border border-line px-3 py-2 min-w-[72px]",
+            "transition-all active:scale-[0.97]",
+            "hover:bg-panelHi hover:border-line",
+          )}
+        >
+          <span
+            className={cn(
+              "text-base font-bold tabular-nums",
+              pill.main ? pill.accent : "text-subtle",
+            )}
+          >
+            {pill.main || "\u2014"}
+          </span>
+          <span className="text-2xs text-muted font-medium mt-0.5">
+            {pill.label}
+          </span>
+        </button>
+      ))}
+    </div>
+  );
 }
 
-interface StatusRowProps {
+// ═══════════════════════════════════════════════════════════════════════════
+// STREAK INDICATOR
+// ═══════════════════════════════════════════════════════════════════════════
+function StreakIndicator() {
+  const streak = useMemo(() => {
+    const routine =
+      safeReadLS<Record<string, unknown>>(
+        STORAGE_KEYS.ROUTINE_QUICK_STATS,
+        null,
+      ) ||
+      (() => {
+        try {
+          const r = localStorage.getItem("routine_quick_stats");
+          return r ? JSON.parse(r) : null;
+        } catch {
+          return null;
+        }
+      })();
+    const fizruk =
+      safeReadLS<Record<string, unknown>>(
+        STORAGE_KEYS.FIZRUK_QUICK_STATS,
+        null,
+      ) ||
+      (() => {
+        try {
+          const r = localStorage.getItem("fizruk_quick_stats");
+          return r ? JSON.parse(r) : null;
+        } catch {
+          return null;
+        }
+      })();
+
+    const streaks = [
+      { days: Number(routine?.streak) || 0 },
+      { days: Number(fizruk?.streak) || 0 },
+    ]
+      .filter((s) => s.days >= 2)
+      .sort((a, b) => b.days - a.days);
+
+    return streaks[0]?.days ?? 0;
+  }, []);
+
+  if (streak < 2) return null;
+
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1 px-2.5 py-1 rounded-full",
+        "text-xs font-semibold text-text",
+        "bg-panel border border-line shadow-sm",
+      )}
+      title="Серія днів"
+    >
+      <span aria-hidden>{"\uD83D\uDD25"}</span>
+      {streak} {"днів поспіль"}
+    </span>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// BENTO MODULE CARD — replaces StatusRow, 2×2 grid
+// ═══════════════════════════════════════════════════════════════════════════
+interface BentoCardProps {
   config: ModuleConfig;
   onClick: () => void;
-  onQuickAdd?: QuickAddDescriptor | null;
+  onQuickAdd?: { label: string; run: () => void } | null;
   dragProps?: Record<string, unknown>;
   isDragging?: boolean;
 }
 
-const StatusRow = memo(function StatusRow({
+const BentoCard = memo(function BentoCard({
   config,
   onClick,
   onQuickAdd,
   dragProps,
   isDragging,
-}: StatusRowProps) {
+}: BentoCardProps) {
   const preview = config.getPreview();
   const showProgress =
     config.hasGoal && preview.progress !== undefined && preview.progress > 0;
+  const hasData = !!(preview.main || preview.sub);
 
   return (
-    <div
+    <button
+      type="button"
+      onClick={onClick}
       className={cn(
-        "group relative flex items-center",
-        "bg-panel hover:bg-panelHi transition-colors",
+        "group relative flex flex-col rounded-3xl border border-line p-3.5",
+        "shadow-card transition-all duration-200 text-left",
+        "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60",
+        "active:scale-[0.98]",
+        config.cardBg,
         isDragging && "opacity-70 shadow-float z-50 cursor-grabbing",
       )}
+      {...dragProps}
     >
-      <button
-        type="button"
-        onClick={onClick}
-        className={cn(
-          "flex items-center gap-3 px-3 py-2.5 flex-1 min-w-0 text-left",
-          "transition-transform duration-150 active:scale-[0.99]",
-          "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-inset",
-        )}
-        {...dragProps}
-      >
-        <div
-          className={cn(
-            "absolute left-0 top-2 bottom-2 w-0.5 rounded-r-full",
-            config.accentClass,
-          )}
-          aria-hidden
-        />
-
+      <div className="flex items-center justify-between mb-2">
         <div
           className={cn(
             "w-7 h-7 rounded-lg flex items-center justify-center shrink-0",
@@ -321,68 +433,80 @@ const StatusRow = memo(function StatusRow({
           {config.icon}
         </div>
 
-        <span className="text-xs font-semibold text-text truncate">
-          {config.label}
-        </span>
+        {onQuickAdd && (
+          <span
+            role="button"
+            tabIndex={0}
+            onClick={(e) => {
+              e.stopPropagation();
+              onQuickAdd.run();
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.stopPropagation();
+                e.preventDefault();
+                onQuickAdd.run();
+              }
+            }}
+            aria-label={onQuickAdd.label}
+            title={onQuickAdd.label}
+            className={cn(
+              "w-6 h-6 rounded-md flex items-center justify-center",
+              "text-text bg-panel/80 hover:bg-primary hover:text-bg",
+              "transition-colors",
+            )}
+          >
+            <Icon name="plus" size={13} strokeWidth={2.5} />
+          </span>
+        )}
+      </div>
 
-        <div className="ml-auto flex items-center gap-2 min-w-0">
-          {showProgress && (
-            <div
-              className="w-12 sm:w-16 h-1 rounded-full bg-line/40 dark:bg-white/10 overflow-hidden shrink-0"
-              aria-hidden
-            >
-              <div
-                className={cn(
-                  "h-full rounded-full transition-[width,background-color] duration-700 ease-out",
-                  config.accentClass,
-                )}
-                style={{ width: `${Math.min(preview.progress, 100)}%` }}
-              />
-            </div>
-          )}
-          {preview.main ? (
-            <span className="text-sm font-semibold text-text tabular-nums truncate">
+      <span className="text-xs font-semibold text-text">
+        {config.emoji} {config.label}
+      </span>
+
+      {hasData ? (
+        <>
+          {preview.main && (
+            <span className="text-lg font-bold text-text tabular-nums mt-1 truncate">
               {preview.main}
             </span>
-          ) : preview.sub ? (
-            <span className="text-xs text-muted truncate">{preview.sub}</span>
-          ) : (
-            <span className="text-xs text-subtle/80 truncate" aria-hidden>
-              —
+          )}
+          {preview.sub && (
+            <span className="text-2xs text-muted mt-0.5 truncate">
+              {preview.sub}
             </span>
           )}
-        </div>
-      </button>
-
-      {onQuickAdd && (
-        <button
-          type="button"
-          onClick={onQuickAdd.run}
-          aria-label={onQuickAdd.label}
-          title={onQuickAdd.label}
-          className={cn(
-            "shrink-0 mr-2 w-7 h-7 rounded-lg flex items-center justify-center",
-            "text-text bg-panelHi hover:bg-primary hover:text-bg",
-            "transition-colors",
-          )}
-        >
-          <Icon name="plus" size={14} strokeWidth={2.5} />
-        </button>
+        </>
+      ) : (
+        <span className="text-xs text-muted mt-1">{config.emptyLabel}</span>
       )}
-    </div>
+
+      {showProgress && (
+        <div
+          className="w-full h-1 rounded-full bg-line/40 dark:bg-white/10 overflow-hidden mt-2"
+          aria-hidden
+        >
+          <div
+            className={cn(
+              "h-full rounded-full transition-[width] duration-700 ease-out",
+              config.accentClass,
+            )}
+            style={{ width: `${Math.min(preview.progress ?? 0, 100)}%` }}
+          />
+        </div>
+      )}
+    </button>
   );
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
-// SORTABLE CARD WRAPPER
+// SORTABLE BENTO CARD WRAPPER
 // ═══════════════════════════════════════════════════════════════════════════
-// `memo` + локальний `useCallback` для onClick — коли `onOpenModule` і
-// `quickAdd` стабільні (див. `HubDashboard`), перерендер всього списку
-// стає no-op для рядків, які не тягнуть у dnd-kit.
 interface SortableCardProps {
   id: ModuleId;
   onOpenModule: (id: ModuleId) => void;
-  quickAdd?: QuickAddDescriptor | null;
+  quickAdd?: { label: string; run: () => void } | null;
 }
 
 const SortableCard = memo(function SortableCard({
@@ -419,7 +543,7 @@ const SortableCard = memo(function SortableCard({
 
   return (
     <div ref={setNodeRef} style={style}>
-      <StatusRow
+      <BentoCard
         config={cfg}
         onClick={handleClick}
         onQuickAdd={quickAdd}
@@ -431,11 +555,44 @@ const SortableCard = memo(function SortableCard({
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
+// STAGGER WRAPPER — applies fadeSlideUp with incremental delay
+// ═══════════════════════════════════════════════════════════════════════════
+function StaggerChild({
+  index,
+  children,
+}: {
+  index: number;
+  children: ReactNode;
+}) {
+  const style: CSSProperties = {
+    animationDelay: `${index * 50}ms`,
+  };
+  return (
+    <div className="animate-stagger-in" style={style}>
+      {children}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// MOTIVATIONAL FOOTER
+// ═══════════════════════════════════════════════════════════════════════════
+function MotivationalFooter() {
+  const entryCount = useMemo(() => countRealEntries(localStorageStore), []);
+
+  const message = useMemo(() => {
+    if (entryCount > 0) {
+      return `${entryCount === 1 ? "Вже 1 запис" : `Вже ${entryCount} записів`} \u2014 продовжуй!`;
+    }
+    return "Sergeant працює для тебе офлайн \uD83D\uDD12";
+  }, [entryCount]);
+
+  return <p className="text-xs text-subtle text-center py-8">{message}</p>;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // MONDAY AUTO DIGEST HOOK
 // ═══════════════════════════════════════════════════════════════════════════
-// Opt-in: users must explicitly enable this in Hub → Settings → AI Звіт тижня.
-// Default is OFF so a cold-start Monday visit never spends an AI call the
-// user didn't ask for. Toggle is persisted in localStorage.
 function useMondayAutoDigest() {
   const { generate } = useWeeklyDigest();
 
@@ -460,8 +617,7 @@ function useMondayAutoDigest() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// WEEKLY DIGEST FOOTER — тихий лінк у нижньому ряду. Fresh-dot показується,
-// коли live-digest за цей тиждень існує.
+// WEEKLY DIGEST FOOTER
 // ═══════════════════════════════════════════════════════════════════════════
 function WeeklyDigestFooter({
   onExpand,
@@ -513,25 +669,12 @@ export function HubDashboard({
   const [order, setOrder] = useState(loadOrder);
   useMondayAutoDigest();
 
-  // Inline FTUX hero — replaces the old post-wizard `FirstActionSheet`
-  // modal. Reads the localStorage flag once; dismiss clears the flag.
   const [firstActionVisible, setFirstActionVisible] = useState(() =>
     isFirstActionPending(),
   );
 
-  // Soft auth prompt — an "offer to save", never a toll gate. Two triggers:
-  //   1. user has entered real data (the moment the local data becomes
-  //      worth losing), or
-  //   2. user has been opening the hub for N+ distinct days without ever
-  //      creating an account — catches the browse-only cohort that would
-  //      otherwise silently lose everything on a device swap. N is small
-  //      enough that a regular user hits it within their first week.
   const hasRealEntry = detectFirstRealEntry();
   useFirstEntryCelebration(hasRealEntry);
-  // Record today's session on mount so the proactive nudge actually
-  // accumulates days. Using state + effect instead of a ref guard in the
-  // render body — the ref pattern caused a localStorage write during the
-  // render phase, which React Strict Mode can double-invoke.
   const [sessionDays, setSessionDays] = useState(-1);
   useEffect(() => {
     setSessionDays(recordSessionDay() || getSessionDays());
@@ -547,7 +690,6 @@ export function HubDashboard({
     typeof onShowAuth === "function" &&
     (hasRealEntry || sessionDays >= SOFT_AUTH_SESSION_DAYS_THRESHOLD);
 
-  // Re-engagement: detect dormant user (7+ days inactive)
   const [reengagement, setReengagement] = useState(() =>
     shouldShowReengagement(localStorageStore),
   );
@@ -555,7 +697,6 @@ export function HubDashboard({
     recordLastActiveDate(localStorageStore);
   }, []);
 
-  // Daily nudge (days 2–7, max 1 per day, dismissible)
   const [nudgeDismissed, setNudgeDismissed] = useState(false);
   const activeNudge = useMemo(() => {
     if (nudgeDismissed || sessionDays < 2) return null;
@@ -573,11 +714,6 @@ export function HubDashboard({
     refresh: coachRefresh,
   } = useCoachInsight();
 
-  // ─────────────────────────────────────────────────────────────────────
-  // «Є сигнал?» мапа — які модулі мають видиму рекомендацію. Використовується
-  // для inline-`+` у StatusRow. focus+rest охоплює всі recs, які не були
-  // dismissed.
-  // ─────────────────────────────────────────────────────────────────────
   const modulesWithSignal = useMemo(() => {
     const all = focus ? [focus, ...rest] : rest;
     const set = new Set<string>();
@@ -594,10 +730,6 @@ export function HubDashboard({
     }),
   );
 
-  // Стабільна мапа quickAdd-дій по модулю — раніше обчислювалась inline у
-  // `.map()` і створювала новий об'єкт з новою closure `run` кожного рендеру,
-  // що пробивало `memo(SortableCard)`. Тепер набір перераховується лише
-  // коли реально змінюється набір модулів з сигналом.
   const quickAddByModule = useMemo(() => {
     const map: Record<string, { label: string; run: () => void } | undefined> =
       {};
@@ -616,37 +748,34 @@ export function HubDashboard({
     return map;
   }, [modulesWithSignal]);
 
-  const handleDragEnd = useCallback((event) => {
-    const { active, over } = event;
-    if (active && over && active.id !== over.id) {
-      setOrder((prev) => {
-        const oldIndex = prev.indexOf(active.id);
-        const newIndex = prev.indexOf(over.id);
-        const next = arrayMove(prev, oldIndex, newIndex);
-        saveOrder(next);
-        return next;
-      });
-    }
-  }, []);
+  const handleDragEnd = useCallback(
+    (event: {
+      active: { id: string | number };
+      over: { id: string | number } | null;
+    }) => {
+      const { active, over } = event;
+      if (active && over && active.id !== over.id) {
+        setOrder((prev) => {
+          const activeId = String(active.id) as ModuleId;
+          const overId = String(over.id) as ModuleId;
+          const oldIndex = prev.indexOf(activeId);
+          const newIndex = prev.indexOf(overId);
+          const next = arrayMove(prev, oldIndex, newIndex);
+          saveOrder(next);
+          return next;
+        });
+      }
+    },
+    [],
+  );
 
-  // Weekly digest: не показуємо картку автоматично. Fresh-дот у footer
-  // появляється, якщо користувач явно згенерував digest цього тижня. Сам
-  // card розкривається тільки по тапу на footer-link.
   const [digestExpanded, setDigestExpanded] = useState(false);
   const digestFresh = hasLiveWeeklyDigest();
-  // Footer-лінк видно тільки коли є свіжий digest АБО сьогодні Пн/Вт
-  // (коли має сенс нагадати про підсумок тижня). Інакше лінк ховається,
-  // щоб не створювати постійного шуму.
   const now = new Date();
   const isMondayOrTuesday = now.getDay() === 1 || now.getDay() === 2;
   const showDigestFooter = digestFresh || isMondayOrTuesday;
 
-  // ─────────────────────────────────────────────────────────────────────
-  // ONE-HERO RULE. На екрані завжди рівно одна primary-картка:
-  //   FirstAction → SoftAuth → NextCard
-  // FTUX-онбординг-картки мають власні CTA, тому їх не треба дублювати з
-  // NextCard. Як тільки вони зняті, хероєм стає NextCard (focus чи empty).
-  // ─────────────────────────────────────────────────────────────────────
+  // ONE-HERO RULE
   let hero: React.ReactNode;
   if (firstActionVisible) {
     hero = (
@@ -670,79 +799,104 @@ export function HubDashboard({
     );
   }
 
+  // Stagger index counter
+  let si = 0;
+
   return (
     <div className="space-y-4">
       {reengagement.show && (
-        <ReEngagementCard
-          daysInactive={reengagement.daysInactive}
-          onContinue={() => setReengagement({ show: false, daysInactive: 0 })}
-          onDismiss={() => setReengagement({ show: false, daysInactive: 0 })}
-        />
+        <StaggerChild index={si++}>
+          <ReEngagementCard
+            daysInactive={reengagement.daysInactive}
+            onContinue={() => setReengagement({ show: false, daysInactive: 0 })}
+            onDismiss={() => setReengagement({ show: false, daysInactive: 0 })}
+          />
+        </StaggerChild>
       )}
 
-      {hero}
+      {/* Streak indicator */}
+      <StaggerChild index={si++}>
+        <StreakIndicator />
+      </StaggerChild>
 
-      <AssistantAdviceCard
-        insight={coachInsightText}
-        loading={coachLoading}
-        error={coachError}
-        onRefresh={coachRefresh}
-      />
+      {/* Hero card */}
+      <StaggerChild index={si++}>{hero}</StaggerChild>
+
+      {/* "Твій день" summary strip */}
+      <StaggerChild index={si++}>
+        <TodaySummaryStrip onOpenModule={onOpenModule} />
+      </StaggerChild>
+
+      {/* Assistant advice — hide error state */}
+      <StaggerChild index={si++}>
+        <AssistantAdviceCard
+          insight={coachInsightText}
+          loading={coachLoading}
+          error={coachError}
+          onRefresh={coachRefresh}
+        />
+      </StaggerChild>
 
       {activeNudge && !reengagement.show && (
-        <DailyNudge
-          nudge={activeNudge}
-          sessionDays={sessionDays}
-          onDismiss={() => setNudgeDismissed(true)}
-        />
+        <StaggerChild index={si++}>
+          <DailyNudge
+            nudge={activeNudge}
+            sessionDays={sessionDays}
+            onDismiss={() => setNudgeDismissed(true)}
+          />
+        </StaggerChild>
       )}
 
-      {/* STATUS — тихий список модулів. Рядок, під який підʼїхала
-          рекомендація, отримує inline `+` для quick-add. */}
-      <section className="space-y-2">
-        <SectionHeading as="h2" size="xs" className="px-0.5">
-          Статус
-        </SectionHeading>
+      {/* MODULE CARDS — 2×2 bento grid */}
+      <StaggerChild index={si++}>
+        <section className="space-y-2">
+          <SectionHeading as="h2" size="xs" className="px-0.5">
+            Модулі
+          </SectionHeading>
 
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragEnd={handleDragEnd}
-        >
-          <SortableContext items={order} strategy={verticalListSortingStrategy}>
-            <div className="rounded-2xl border border-line bg-panel overflow-hidden divide-y divide-line/60">
-              {order.map((id) => (
-                <SortableCard
-                  key={id}
-                  id={id}
-                  onOpenModule={onOpenModule}
-                  quickAdd={quickAddByModule[id] || null}
-                />
-              ))}
-            </div>
-          </SortableContext>
-        </DndContext>
-      </section>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext items={order} strategy={rectSortingStrategy}>
+              <div className="grid grid-cols-2 gap-3">
+                {order.map((id) => (
+                  <SortableCard
+                    key={id}
+                    id={id as ModuleId}
+                    onOpenModule={onOpenModule}
+                    quickAdd={quickAddByModule[id] || null}
+                  />
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
+        </section>
+      </StaggerChild>
 
-      {/* «ще» — тихий футер-ряд з вторинними точками входу. HubInsightsPanel
-          ховає rest за колапсом; WeeklyDigest-link показується лише в Пн/Вт
-          або коли є свіжий звіт, щоб не створювати постійного шуму. */}
-      <div className="space-y-2">
-        <HubInsightsPanel
-          items={rest}
-          onOpenModule={onOpenModule}
-          onDismiss={dismiss}
-        />
-
-        {digestExpanded ? (
-          <WeeklyDigestCard />
-        ) : showDigestFooter ? (
-          <WeeklyDigestFooter
-            fresh={digestFresh}
-            onExpand={() => setDigestExpanded(true)}
+      {/* Secondary content */}
+      <StaggerChild index={si++}>
+        <div className="space-y-2">
+          <HubInsightsPanel
+            items={rest}
+            onOpenModule={onOpenModule}
+            onDismiss={dismiss}
           />
-        ) : null}
-      </div>
+
+          {digestExpanded ? (
+            <WeeklyDigestCard />
+          ) : showDigestFooter ? (
+            <WeeklyDigestFooter
+              fresh={digestFresh}
+              onExpand={() => setDigestExpanded(true)}
+            />
+          ) : null}
+        </div>
+      </StaggerChild>
+
+      {/* Motivational footer */}
+      <MotivationalFooter />
     </div>
   );
 }

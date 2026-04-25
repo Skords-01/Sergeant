@@ -289,6 +289,9 @@ const preset = {
         "progress-fill": "progressFill 1s ease-out forwards",
         // Bounce for notifications
         "bounce-in": "bounceIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)",
+        // Stagger enter — children use animation-delay: ${index * 50}ms
+        "stagger-in":
+          "fadeSlideUp 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) both",
       },
       keyframes: {
         fadeIn: {
@@ -346,6 +349,10 @@ const preset = {
           "50%": { transform: "scale(1.05)" },
           "70%": { transform: "scale(0.9)" },
           "100%": { opacity: "1", transform: "scale(1)" },
+        },
+        fadeSlideUp: {
+          "0%": { opacity: "0", transform: "translateY(8px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
         },
       },
 
