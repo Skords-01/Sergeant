@@ -5,13 +5,17 @@ import {
   fireEvent,
   render,
   screen,
+  waitFor,
   within,
 } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 
 // ── Mocks ────────────────────────────────────────────────────
 
-const updateUserMock = vi.fn<(d: unknown) => Promise<{ error: null }>>();
+const updateUserMock =
+  vi.fn<
+    (d: unknown) => Promise<{ error: null } | { error: { message: string } }>
+  >();
 const changePasswordMock = vi.fn<(d: unknown) => Promise<{ error: null }>>();
 const listSessionsMock = vi.fn<() => Promise<{ data: unknown[] }>>();
 const revokeSessionMock = vi.fn<(d: unknown) => Promise<{ error: null }>>();
@@ -88,6 +92,15 @@ describe("ProfilePage", () => {
   beforeEach(() => {
     cleanup();
     vi.clearAllMocks();
+    localStorage.clear();
+    updateUserMock.mockResolvedValue({ error: null });
+    changePasswordMock.mockResolvedValue({ error: null });
+    listSessionsMock.mockResolvedValue({ data: [] });
+    revokeSessionMock.mockResolvedValue({ error: null });
+    deleteUserMock.mockResolvedValue({ error: null });
+    signOutMock.mockResolvedValue(undefined);
+    sendVerificationEmailMock.mockResolvedValue({ error: null });
+    changeEmailMock.mockResolvedValue({ error: null });
     useOnlineStatusMock.mockReturnValue(true);
     mockUser.image = null;
     mockUser.name = "Тест";
@@ -260,6 +273,62 @@ describe("ProfilePage", () => {
       renderPage();
       const refreshBtn = screen.getByRole("button", { name: "Оновити" });
       expect(refreshBtn).toBeDisabled();
+    });
+  });
+
+  describe("async safety", () => {
+    it("resets name save loading and shows error when updateUser throws", async () => {
+      updateUserMock.mockRejectedValueOnce(new Error("network"));
+      renderPage();
+      const nameInput = screen.getByLabelText("Ім'я");
+      fireEvent.change(nameInput, { target: { value: "Нове ім'я" } });
+
+      const saveBtn = screen.getAllByRole("button", { name: "Зберегти" })[0];
+      fireEvent.click(saveBtn);
+
+      await waitFor(() =>
+        expect(toastErrorMock).toHaveBeenCalledWith("Не вдалося оновити ім'я"),
+      );
+      expect(saveBtn).not.toBeDisabled();
+    });
+  });
+
+  describe("delete account dialog", () => {
+    it("uses accessible labels and closes on Escape", () => {
+      renderPage();
+
+      fireEvent.click(screen.getByRole("button", { name: "Видалити акаунт" }));
+
+      const dialog = screen.getByRole("dialog", {
+        name: "Видалити акаунт назавжди?",
+      });
+      expect(dialog).toHaveAttribute("aria-modal", "true");
+      expect(within(dialog).getByLabelText("Пароль")).toBeInTheDocument();
+
+      fireEvent.keyDown(document, { key: "Escape" });
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+  });
+
+  describe("memory bank", () => {
+    it("renders stored profile memory and exposes visible delete action", () => {
+      localStorage.setItem(
+        "hub_user_profile_v1",
+        JSON.stringify([
+          {
+            id: "mem_1",
+            fact: "Не їм арахіс",
+            category: "allergy",
+            createdAt: "2026-01-01T00:00:00Z",
+          },
+        ]),
+      );
+
+      renderPage();
+
+      expect(screen.getByText("Не їм арахіс")).toBeInTheDocument();
+      fireEvent.click(screen.getByLabelText("Видалити: Не їм арахіс"));
+      expect(screen.queryByText("Не їм арахіс")).not.toBeInTheDocument();
     });
   });
 });

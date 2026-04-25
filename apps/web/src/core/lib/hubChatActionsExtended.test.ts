@@ -543,6 +543,61 @@ describe("add_calendar_event", () => {
   });
 });
 
+describe("profile memory actions", () => {
+  it("remember зберігає факт у профіль і my_profile його показує", () => {
+    const msg = executeAction({
+      name: "remember",
+      input: { fact: "Не їм арахіс", category: "allergy" },
+    });
+
+    expect(msg).toContain("Запам'ятав");
+    const profile = readLS<
+      Array<{ id: string; fact: string; category: string }>
+    >("hub_user_profile_v1", []);
+    expect(profile).toHaveLength(1);
+    expect(profile[0]).toMatchObject({
+      fact: "Не їм арахіс",
+      category: "allergy",
+    });
+
+    const profileMsg = executeAction({
+      name: "my_profile",
+      input: { category: "allergy" },
+    });
+    expect(profileMsg).toContain("Не їм арахіс");
+    expect(profileMsg).toContain(profile[0].id);
+  });
+
+  it("remember оновлює дублі, forget видаляє факт", () => {
+    executeAction({
+      name: "remember",
+      input: { fact: "Люблю ранкові тренування", category: "preference" },
+    });
+    const initial = readLS<Array<{ id: string }>>("hub_user_profile_v1", []);
+
+    const updateMsg = executeAction({
+      name: "remember",
+      input: { fact: "люблю ранкові тренування", category: "training" },
+    });
+    expect(updateMsg).toContain("Оновив");
+    let profile = readLS<Array<{ id: string; category: string }>>(
+      "hub_user_profile_v1",
+      [],
+    );
+    expect(profile).toHaveLength(1);
+    expect(profile[0].id).toBe(initial[0].id);
+    expect(profile[0].category).toBe("training");
+
+    const forgetMsg = executeAction({
+      name: "forget",
+      input: { fact_id: profile[0].id },
+    });
+    expect(forgetMsg).toContain("Забув");
+    profile = readLS("hub_user_profile_v1", []);
+    expect(profile).toHaveLength(0);
+  });
+});
+
 // ─── Харчування ──────────────────────────────────────────────────────
 
 describe("add_to_shopping_list", () => {

@@ -355,7 +355,13 @@ export const CoachMemoryPostSchema = z.object({
 // ────────────────────── Sync ──────────────────────
 // Повторюємо константу `VALID_MODULES` з `server/modules/sync.js` у zod-enum:
 // єдина SSOT — той Set; тут лише back-compat перелік для 400 з деталями поля.
-const SyncModuleEnum = z.enum(["finyk", "fizruk", "routine", "nutrition"]);
+const SyncModuleEnum = z.enum([
+  "finyk",
+  "fizruk",
+  "routine",
+  "nutrition",
+  "profile",
+]);
 
 // `clientUpdatedAt` — обов'язковий last-write-wins guard. Без нього
 // `module_data.client_updated_at <= $4` зі сторожовою умовою у

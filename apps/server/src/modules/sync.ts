@@ -127,6 +127,7 @@ export const VALID_MODULES = new Set([
   "fizruk",
   "routine",
   "nutrition",
+  "profile",
 ]);
 export const MAX_BLOB_SIZE = 5 * 1024 * 1024;
 

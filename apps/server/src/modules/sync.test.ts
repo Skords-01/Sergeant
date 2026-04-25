@@ -291,6 +291,7 @@ describe("syncPullAll module filtering", () => {
     expect(params[0]).toBe("user_1");
     // Параметр $2 має бути рівно множиною VALID_MODULES (без coach).
     expect(new Set(params[1])).toEqual(VALID_MODULES);
+    expect(params[1]).toContain("profile");
     expect(params[1]).not.toContain("coach");
   });
 });
@@ -418,6 +419,31 @@ describe("syncPush (singular) — contract tests", () => {
     expect(sql).toMatch(/INSERT INTO module_data/);
     expect(params[0]).toBe("user_1");
     expect(params[1]).toBe("finyk");
+  });
+
+  it("accepts profile module for AI memory sync", async () => {
+    pool.query.mockResolvedValueOnce({
+      rows: [{ server_updated_at: "2026-01-01T00:00:00Z", version: 4 }],
+    });
+
+    const res = makeRes();
+    await syncPush(
+      makeReq({
+        module: "profile",
+        data: [{ id: "mem_1", fact: "Не їм арахіс", category: "allergy" }],
+        clientUpdatedAt: "2026-01-01T00:00:00Z",
+      }),
+      res,
+    );
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({
+      ok: true,
+      module: "profile",
+      version: 4,
+    });
+    const [, params] = pool.query.mock.calls[0];
+    expect(params[1]).toBe("profile");
   });
 
   it("invalid module → 400 + metric outcome='invalid'", async () => {

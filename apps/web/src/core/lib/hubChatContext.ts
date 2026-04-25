@@ -28,6 +28,7 @@ import { perfMark, perfEnd } from "@shared/lib/perf";
 import { ls, fmt } from "./hubChatUtils";
 import { generateRecommendations } from "./recommendationEngine";
 import { generateInsights } from "./insightsEngine";
+import { CATEGORY_META, readMemoryEntries } from "../profile/memoryBank";
 
 interface Transaction {
   id: string;
@@ -646,20 +647,8 @@ function buildContext(): string {
 
   // ── Профіль користувача (пам'ять) ───────────────────────────
   try {
-    const profile = ls<Array<{ fact: string; category: string }>>(
-      "hub_user_profile_v1",
-      [],
-    );
+    const profile = readMemoryEntries();
     if (profile.length > 0) {
-      const categoryLabels: Record<string, string> = {
-        allergy: "Алергії",
-        diet: "Дієта",
-        goal: "Цілі",
-        training: "Тренування",
-        health: "Здоров'я",
-        preference: "Уподобання",
-        other: "Інше",
-      };
       lines.push("[Профіль користувача]");
       const grouped: Record<string, string[]> = {};
       for (const entry of profile) {
@@ -668,7 +657,9 @@ function buildContext(): string {
         grouped[cat].push(entry.fact);
       }
       for (const [cat, facts] of Object.entries(grouped)) {
-        lines.push(`  ${categoryLabels[cat] || cat}: ${facts.join("; ")}`);
+        lines.push(
+          `  ${CATEGORY_META[cat]?.label || cat}: ${facts.join("; ")}`,
+        );
       }
     }
   } catch {}

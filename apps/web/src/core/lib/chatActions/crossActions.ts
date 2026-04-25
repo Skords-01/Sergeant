@@ -1,4 +1,11 @@
 import { ls, lsSet } from "../hubChatUtils";
+import {
+  CATEGORY_META,
+  readMemoryEntries,
+  removeMemoryEntry,
+  upsertMemoryFact,
+  writeMemoryEntries,
+} from "../../profile/memoryBank";
 import { resolveExpenseCategoryMeta } from "../../../modules/finyk/utils";
 import type {
   SetGoalAction,
@@ -9,6 +16,9 @@ import type {
   SaveNoteAction,
   ListNotesAction,
   ExportModuleDataAction,
+  RememberAction,
+  ForgetAction,
+  MyProfileAction,
   HabitState,
   Workout,
   NutritionDay,
@@ -425,6 +435,49 @@ export function handleCrossAction(action: ChatAction): string | undefined {
       }
       if (filtered.length > max) {
         parts.push(`  \u2026і ще ${filtered.length - max}`);
+      }
+      return parts.join("\n");
+    }
+    case "remember": {
+      const { fact, category } = (action as RememberAction).input || {};
+      try {
+        const result = upsertMemoryFact(readMemoryEntries(), fact, category);
+        writeMemoryEntries(result.entries);
+        const meta = CATEGORY_META[result.entry.category];
+        const label = meta?.label ?? result.entry.category;
+        return `${result.created ? "Запам'ятав" : "Оновив"}: ${result.entry.fact} (${label}, id:${result.entry.id})`;
+      } catch (error) {
+        return error instanceof Error
+          ? error.message
+          : "Не вдалося зберегти факт у профіль.";
+      }
+    }
+    case "forget": {
+      const { fact_id } = (action as ForgetAction).input || {};
+      const id = (fact_id || "").trim();
+      if (!id) return "Потрібен id факту для видалення.";
+      const result = removeMemoryEntry(readMemoryEntries(), id);
+      if (!result.removed) return `Факт з id ${id} не знайдено.`;
+      writeMemoryEntries(result.entries);
+      return `Забув: ${result.removed.fact}`;
+    }
+    case "my_profile": {
+      const { category } = (action as MyProfileAction).input || {};
+      const profile = readMemoryEntries();
+      if (profile.length === 0) return "Профіль пам'яті порожній.";
+      const cat = category?.trim().toLowerCase();
+      const filtered = cat
+        ? profile.filter((entry) => entry.category.toLowerCase() === cat)
+        : profile;
+      if (filtered.length === 0) {
+        return `У профілі немає записів для категорії "${category}".`;
+      }
+      const parts = [`Профіль користувача (${filtered.length}):`];
+      for (const entry of filtered) {
+        const meta = CATEGORY_META[entry.category];
+        parts.push(
+          `  - [${meta?.label ?? entry.category}] ${entry.fact} (id:${entry.id})`,
+        );
       }
       return parts.join("\n");
     }
