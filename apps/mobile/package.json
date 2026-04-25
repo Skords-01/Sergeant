@@ -68,7 +68,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@babel/preset-typescript": "^7.26.0",
+    "@babel/preset-typescript": "^7.28.5",
     "@config-plugins/detox": "^9.0.0",
     "@sergeant/config": "workspace:*",
     "@testing-library/react-native": "^12",
