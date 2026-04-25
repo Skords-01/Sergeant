@@ -17,6 +17,7 @@ import { nutritionStorage } from "./nutritionStorageInstance.js";
 export {
   WATER_LOG_KEY,
   addWaterMl,
+  subtractWaterMl,
   getTodayWaterMl,
   normalizeWaterLog,
   resetTodayWater,

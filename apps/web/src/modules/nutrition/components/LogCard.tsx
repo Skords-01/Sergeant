@@ -15,6 +15,7 @@ import {
   estimateLogBytes,
   toLocalISODate,
 } from "../lib/nutritionStorage.js";
+import { addDaysISODate } from "@sergeant/nutrition-domain";
 import {
   MEAL_ORDER,
   MEAL_META,
@@ -36,9 +37,11 @@ function toISODate(d) {
 
 function formatDate(isoDate) {
   const today = toISODate(new Date());
-  const yesterday = toISODate(new Date(Date.now() - 86400000));
+  const yesterday = addDaysISODate(today, -1);
+  const tomorrow = addDaysISODate(today, 1);
   if (isoDate === today) return "Сьогодні";
   if (isoDate === yesterday) return "Вчора";
+  if (isoDate === tomorrow) return "Завтра";
   const [y, m, d] = isoDate.split("-");
   return `${d}.${m}.${y}`;
 }
@@ -92,22 +95,13 @@ export function LogCard({
   onAddMealFromSearch,
   onRemoveMeal,
   onEditMeal,
-  prefs: _prefs,
-  setPrefs: _setPrefs,
   onDuplicateYesterday,
-  onImportMerge: _onImportMerge,
-  onImportReplace: _onImportReplace,
   onTrimLog,
-  onFetchDayHint: _onFetchDayHint,
-  dayHintText: _dayHintText,
-  dayHintBusy: _dayHintBusy,
-  onCloudBackupUpload: _onCloudBackupUpload,
-  onCloudBackupDownload: _onCloudBackupDownload,
-  cloudBackupBusy: _cloudBackupBusy,
 }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [duplicateConfirm, setDuplicateConfirm] = useState(false);
+  const [trimConfirm, setTrimConfirm] = useState(false);
   const [statsRange, setStatsRange] = useState(30);
   const [weekOpen, setWeekOpen] = useState(false);
 
@@ -152,12 +146,11 @@ export function LogCard({
   function shiftDate(delta) {
     const [y, m, d] = selectedDate.split("-").map(Number);
     const next = new Date(y, m - 1, d + delta);
-    const nextIso = toISODate(next);
-    const todayIso = toISODate(new Date());
-    if (nextIso <= todayIso) setSelectedDate(nextIso);
+    setSelectedDate(toISODate(next));
   }
 
-  const isToday = selectedDate === toISODate(new Date());
+  const previousDayIso = addDaysISODate(selectedDate, -1);
+  const hasPreviousDayMeals = (log[previousDayIso]?.meals?.length || 0) > 0;
 
   return (
     <>
@@ -180,18 +173,22 @@ export function LogCard({
           <button
             type="button"
             onClick={() => shiftDate(1)}
-            disabled={isToday}
-            className={cn(
-              "w-10 h-10 flex items-center justify-center rounded-full transition-colors",
-              isToday
-                ? "text-line cursor-not-allowed"
-                : "bg-panelHi text-muted hover:text-text",
-            )}
+            className="w-10 h-10 flex items-center justify-center rounded-full bg-panelHi text-muted hover:text-text transition-colors"
             aria-label="Наступний день"
           >
             ›
           </button>
         </div>
+
+        {typeof onDuplicateYesterday === "function" && hasPreviousDayMeals && (
+          <button
+            type="button"
+            onClick={() => setDuplicateConfirm(true)}
+            className="w-full h-10 rounded-2xl border border-line bg-panel/40 px-3 text-xs font-semibold text-subtle hover:text-text hover:border-nutrition/50 transition-colors flex items-center justify-center gap-1.5"
+          >
+            Скопіювати з попереднього дня ({previousDayIso})
+          </button>
+        )}
 
         <Card
           variant="flat"
@@ -514,9 +511,22 @@ export function LogCard({
         danger={false}
         onConfirm={() => {
           setDuplicateConfirm(false);
-          onDuplicateYesterday();
+          onDuplicateYesterday?.();
         }}
         onCancel={() => setDuplicateConfirm(false)}
+      />
+
+      <ConfirmDialog
+        open={trimConfirm}
+        title="Видалити стару історію?"
+        description="Журнал буде обрізано до останніх 365 днів. Старіші прийоми та фото страв безповоротно видаляються."
+        confirmLabel="Видалити"
+        danger
+        onConfirm={() => {
+          setTrimConfirm(false);
+          onTrimLog?.(365);
+        }}
+        onCancel={() => setTrimConfirm(false)}
       />
     </>
   );

@@ -97,8 +97,8 @@ export function ShoppingListCard({
           {!canGenerate && (
             <div className="mt-2 text-xs text-subtle text-center">
               {source === "recipes"
-                ? 'Згенеруй рецепти на сторінці "Рецепти" спочатку'
-                : 'Згенеруй тижневий план на сторінці "Рецепти" спочатку'}
+                ? "Спершу згенеруй рецепти у Меню → Рецепти"
+                : "Спершу згенеруй тижневий план у Меню → План на день"}
             </div>
           )}
         </div>

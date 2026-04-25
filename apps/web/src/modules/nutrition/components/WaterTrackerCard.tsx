@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { cn } from "@shared/lib/cn";
 import { useWaterTracker } from "../hooks/useWaterTracker.js";
 import { Card } from "@shared/components/ui/Card";
+import { Input } from "@shared/components/ui/Input";
 
 const QUICK_ML = [200, 300, 500, 750];
 
@@ -10,9 +11,32 @@ function fmt(ml) {
 }
 
 export function WaterTrackerCard({ goalMl = 2000 }) {
-  const { todayMl, add, reset } = useWaterTracker();
+  const { todayMl, add, subtract, reset } = useWaterTracker();
   const [resetPending, setResetPending] = useState(false);
   const resetTimerRef = useRef(null);
+  const [customMl, setCustomMl] = useState("");
+  const [lastAddedMl, setLastAddedMl] = useState(0);
+
+  const handleAdd = (ml) => {
+    const n = Number(ml);
+    if (!Number.isFinite(n) || n <= 0) return;
+    const clamped = Math.min(Math.floor(n), 5000);
+    add(clamped);
+    setLastAddedMl(clamped);
+  };
+
+  const handleUndo = () => {
+    if (lastAddedMl <= 0) return;
+    subtract(lastAddedMl);
+    setLastAddedMl(0);
+  };
+
+  const handleCustomAdd = () => {
+    const n = Number(customMl);
+    if (!Number.isFinite(n) || n <= 0) return;
+    handleAdd(n);
+    setCustomMl("");
+  };
 
   const pct = goalMl > 0 ? Math.min(100, (todayMl / goalMl) * 100) : 0;
   const done = todayMl >= goalMl && goalMl > 0;
@@ -101,7 +125,7 @@ export function WaterTrackerCard({ goalMl = 2000 }) {
           <button
             key={ml}
             type="button"
-            onClick={() => add(ml)}
+            onClick={() => handleAdd(ml)}
             className={cn(
               "h-9 rounded-xl text-xs font-semibold transition-colors",
               "bg-sky-500/10 text-sky-700 dark:text-sky-400 border border-sky-500/20",
@@ -111,6 +135,46 @@ export function WaterTrackerCard({ goalMl = 2000 }) {
             +{ml < 1000 ? ml : `${ml / 1000}л`}
           </button>
         ))}
+      </div>
+
+      {/* Custom amount + undo */}
+      <div className="mt-2 flex items-center gap-1.5">
+        <Input
+          value={customMl}
+          onChange={(e) => setCustomMl(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              handleCustomAdd();
+            }
+          }}
+          placeholder="мл"
+          inputMode="numeric"
+          className="h-9 flex-1"
+          aria-label="Свій об'єм у мл"
+        />
+        <button
+          type="button"
+          onClick={handleCustomAdd}
+          disabled={!customMl || Number(customMl) <= 0}
+          className={cn(
+            "h-9 px-3 rounded-xl text-xs font-semibold transition-colors",
+            "bg-sky-500/10 text-sky-700 dark:text-sky-400 border border-sky-500/20",
+            "hover:bg-sky-500/20 disabled:opacity-50 active:scale-95",
+          )}
+        >
+          + Додати
+        </button>
+        {lastAddedMl > 0 && (
+          <button
+            type="button"
+            onClick={handleUndo}
+            className="h-9 px-3 rounded-xl text-xs font-semibold text-subtle hover:text-text border border-line transition-colors"
+            aria-label={`Відмінити останнє додавання (${lastAddedMl} мл)`}
+          >
+            ↶ {lastAddedMl}
+          </button>
+        )}
       </div>
     </Card>
   );

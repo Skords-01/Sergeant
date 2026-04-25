@@ -306,20 +306,16 @@ export default function NutritionApp({
     shopping.clearChecked();
   }, [shopping, pantry]);
 
-  const {
-    uploadCloudBackup,
-    downloadCloudBackup,
-    handleBackupPasswordConfirm,
-    applyRestorePayload,
-  } = useNutritionCloudBackup({
-    toast,
-    setErr,
-    cloudBackupBusy,
-    setCloudBackupBusy,
-    backupPasswordDialog,
-    setBackupPasswordDialog,
-    setRestoreConfirm,
-  });
+  const { handleBackupPasswordConfirm, applyRestorePayload } =
+    useNutritionCloudBackup({
+      toast,
+      setErr,
+      cloudBackupBusy,
+      setCloudBackupBusy,
+      backupPasswordDialog,
+      setBackupPasswordDialog,
+      setRestoreConfirm,
+    });
 
   const recipeCacheEntry = useMemo(
     () => readRecipeCache(recipeCacheKey),
@@ -383,6 +379,10 @@ export default function NutritionApp({
                   log={log.nutritionLog}
                   prefs={prefs}
                   onGoToLog={() => setActivePageAndHash("log")}
+                  onGoToDailyPlan={() => {
+                    setMenuSubTab("plan");
+                    setActivePageAndHash("menu");
+                  }}
                   onFetchDayHint={fetchDayHint}
                   dayHintText={dayHintText}
                   dayHintBusy={dayHintBusy}
@@ -517,18 +517,8 @@ export default function NutritionApp({
                   log.setAddMealPhotoResult(null);
                   log.setAddMealSheetOpen(true);
                 }}
-                prefs={prefs}
-                setPrefs={setPrefs}
                 onDuplicateYesterday={log.duplicateYesterday}
-                onImportMerge={log.mergeLogFromJsonText}
-                onImportReplace={log.replaceLogFromJsonText}
                 onTrimLog={log.trimLogToLastDays}
-                onFetchDayHint={fetchDayHint}
-                dayHintText={dayHintText}
-                dayHintBusy={dayHintBusy}
-                onCloudBackupUpload={uploadCloudBackup}
-                onCloudBackupDownload={downloadCloudBackup}
-                cloudBackupBusy={cloudBackupBusy}
               />
             )}
 
@@ -572,6 +562,7 @@ export default function NutritionApp({
                     fmtMacro={fmtMacro}
                     recipeCacheEntry={recipeCacheEntry}
                     addMealToLog={wrappedSaveMeal}
+                    selectedDate={log.selectedDate}
                   />
                 )}
               </>

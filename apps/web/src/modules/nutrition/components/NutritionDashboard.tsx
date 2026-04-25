@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { Card } from "@shared/components/ui/Card";
 import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { cn } from "@shared/lib/cn";
+import { pluralUa } from "@sergeant/shared";
 import {
   getDayMacros,
   getDaySummary,
@@ -126,6 +127,7 @@ export function NutritionDashboard({
   log,
   prefs,
   onGoToLog,
+  onGoToDailyPlan,
   onAddMeal,
   onFetchDayHint,
   dayHintText,
@@ -154,11 +156,11 @@ export function NutritionDashboard({
             <div className="text-sm font-semibold text-text">Сьогодні</div>
             <div className="text-xs text-subtle">
               {summary.mealCount}{" "}
-              {summary.mealCount === 1
-                ? "прийом"
-                : summary.mealCount >= 2 && summary.mealCount <= 4
-                  ? "прийоми"
-                  : "прийомів"}{" "}
+              {pluralUa(summary.mealCount, {
+                one: "прийом",
+                few: "прийоми",
+                many: "прийомів",
+              })}{" "}
               їжі
             </div>
           </div>
@@ -233,7 +235,7 @@ export function NutritionDashboard({
         {!hasTargets && (
           <button
             type="button"
-            onClick={onGoToLog}
+            onClick={onGoToDailyPlan ?? onGoToLog}
             className="mt-3 w-full text-xs text-nutrition-strong dark:text-nutrition font-medium hover:underline text-center"
           >
             Налаштувати денні цілі КБЖВ →

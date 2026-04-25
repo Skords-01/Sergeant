@@ -10,13 +10,22 @@ describe("mergeItems", () => {
     expect(out.map((x) => x.name)).toEqual(["яйця", "рис"]);
   });
 
-  it("sums compatible qty+unit to base unit", () => {
+  it("sums compatible qty+unit while keeping the existing human-friendly unit", () => {
     const out = mergeItems(
       [{ name: "молоко", qty: 1, unit: "л" }],
       [{ name: "молоко", qty: 500, unit: "мл" }],
     );
     expect(out).toHaveLength(1);
-    expect(out[0]).toMatchObject({ name: "молоко", unit: "мл", qty: 1500 });
+    expect(out[0]).toMatchObject({ name: "молоко", unit: "л", qty: 1.5 });
+  });
+
+  it("sums when existing entry uses a sub-unit and stays in that sub-unit", () => {
+    const out = mergeItems(
+      [{ name: "борошно", qty: 200, unit: "г" }],
+      [{ name: "борошно", qty: 1, unit: "кг" }],
+    );
+    expect(out).toHaveLength(1);
+    expect(out[0]).toMatchObject({ name: "борошно", unit: "г", qty: 1200 });
   });
 
   it("avoids exact duplicates by fingerprint", () => {

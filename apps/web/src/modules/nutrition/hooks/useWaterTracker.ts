@@ -4,6 +4,7 @@ import {
   saveWaterLog,
   getTodayWaterMl,
   addWaterMl,
+  subtractWaterMl,
   resetTodayWater,
   type WaterLog,
 } from "../lib/waterStorage.js";
@@ -11,6 +12,7 @@ import {
 export interface UseWaterTrackerResult {
   todayMl: number;
   add: (ml: number) => void;
+  subtract: (ml: number) => void;
   reset: () => void;
 }
 
@@ -27,9 +29,13 @@ export function useWaterTracker(): UseWaterTrackerResult {
     setLog((prev) => addWaterMl(prev, ml));
   }, []);
 
+  const subtract = useCallback((ml: number) => {
+    setLog((prev) => subtractWaterMl(prev, ml));
+  }, []);
+
   const reset = useCallback(() => {
     setLog((prev) => resetTodayWater(prev));
   }, []);
 
-  return { todayMl, add, reset };
+  return { todayMl, add, subtract, reset };
 }

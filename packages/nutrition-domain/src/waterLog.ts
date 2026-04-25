@@ -46,6 +46,20 @@ export function addWaterMl(log: unknown, ml: unknown): WaterLog {
   return { ...base, [today]: (base[today] || 0) + delta };
 }
 
+export function subtractWaterMl(log: unknown, ml: unknown): WaterLog {
+  const delta = sanitizeMl(ml);
+  const base = normalizeWaterLog(log);
+  if (delta <= 0) return base;
+  const today = toLocalISODate();
+  const next = (base[today] || 0) - delta;
+  if (next <= 0) {
+    const { [today]: _removed, ...rest } = base;
+    void _removed;
+    return rest;
+  }
+  return { ...base, [today]: next };
+}
+
 export function resetTodayWater(log: unknown): WaterLog {
   const base = normalizeWaterLog(log);
   const today = toLocalISODate();

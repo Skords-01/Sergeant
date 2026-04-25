@@ -358,23 +358,34 @@ export function DailyPlanCard({
                             : null;
                       setPrefs((p) => {
                         const next = { ...p, [key]: v };
+                        // Авто-перерахунок Ккал лише коли користувач явно не
+                        // задав ціль (kcal === null) або коли вона дорівнює
+                        // попередньому авто-значенню. Інакше тиха перезапис
+                        // з'їдала кастомні значення (M7 з аудиту).
                         if (key !== "dailyTargetKcal") {
-                          const prot =
-                            key === "dailyTargetProtein_g"
-                              ? v
-                              : (p.dailyTargetProtein_g ?? 0);
-                          const fat =
-                            key === "dailyTargetFat_g"
-                              ? v
-                              : (p.dailyTargetFat_g ?? 0);
-                          const carb =
-                            key === "dailyTargetCarbs_g"
-                              ? v
-                              : (p.dailyTargetCarbs_g ?? 0);
-                          const calc = Math.round(
-                            (prot || 0) * 4 + (fat || 0) * 9 + (carb || 0) * 4,
+                          const prevProt = p.dailyTargetProtein_g ?? 0;
+                          const prevFat = p.dailyTargetFat_g ?? 0;
+                          const prevCarb = p.dailyTargetCarbs_g ?? 0;
+                          const prevCalc = Math.round(
+                            prevProt * 4 + prevFat * 9 + prevCarb * 4,
                           );
-                          if (calc > 0) next.dailyTargetKcal = calc;
+                          const isAutoKcal =
+                            p.dailyTargetKcal == null ||
+                            p.dailyTargetKcal === prevCalc;
+                          if (isAutoKcal) {
+                            const prot =
+                              key === "dailyTargetProtein_g" ? v : prevProt;
+                            const fat =
+                              key === "dailyTargetFat_g" ? v : prevFat;
+                            const carb =
+                              key === "dailyTargetCarbs_g" ? v : prevCarb;
+                            const calc = Math.round(
+                              (prot || 0) * 4 +
+                                (fat || 0) * 9 +
+                                (carb || 0) * 4,
+                            );
+                            next.dailyTargetKcal = calc > 0 ? calc : null;
+                          }
                         }
                         return next;
                       });

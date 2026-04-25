@@ -22,6 +22,25 @@ function toBaseUnit(qty: unknown, unit: unknown): BaseUnit | null {
   return null;
 }
 
+// Convert a base-unit value back to a human-friendly unit, preferring the
+// existing pantry entry's unit so що "1 кг борошна" + "200 г" лишається у
+// кг, а не перетворюється на 1200 г (M9 з аудиту).
+function fromBaseUnit(
+  base: BaseUnit,
+  preferredUnit: string | null,
+): { qty: number; unit: string } {
+  const pref = String(preferredUnit || "").toLowerCase();
+  if (base.base === "г") {
+    if (pref === "кг") return { qty: base.value / 1000, unit: "кг" };
+    return { qty: base.value, unit: "г" };
+  }
+  if (base.base === "мл") {
+    if (pref === "л") return { qty: base.value / 1000, unit: "л" };
+    return { qty: base.value, unit: "мл" };
+  }
+  return { qty: base.value, unit: "шт" };
+}
+
 function roundNice(n: number): number {
   const x = Number(n);
   if (!Number.isFinite(x)) return n;
@@ -82,10 +101,15 @@ export function mergeItems(
           const ux = normalizeUnit(cur.unit);
           const baseX = toBaseUnit(qx, ux);
           if (baseX) {
+            const totalBase: BaseUnit = {
+              base: baseX.base,
+              value: baseX.value + baseIncoming.value,
+            };
+            const out = fromBaseUnit(totalBase, ux);
             merged[idx] = {
               ...cur,
-              qty: roundNice(baseX.value + baseIncoming.value),
-              unit: baseIncoming.base,
+              qty: roundNice(out.qty),
+              unit: out.unit,
             };
             continue;
           }

@@ -254,9 +254,13 @@ export function useNutritionPantries({
         const unit = String(item.unit || "г")
           .toLowerCase()
           .trim();
-        let remaining = qty;
-        if (unit === "кг") remaining = qty - gramsConsumed / 1000;
-        else remaining = qty - gramsConsumed;
+        // Only deduct from mass-based units (грами/кілограми). Inventory in
+        // штуках, мл/л, чи будь-яких інших одиницях не має одно-однозначної
+        // конверсії з "грамів спожитого", тому лишаємо позицію як є —
+        // інакше "200г молока" з'їдало б всю пляшку "2 л" (див. H2 з аудиту).
+        if (unit !== "г" && unit !== "кг") return p;
+        const remaining =
+          unit === "кг" ? qty - gramsConsumed / 1000 : qty - gramsConsumed;
         if (remaining <= 0) {
           items.splice(idx, 1);
         } else {

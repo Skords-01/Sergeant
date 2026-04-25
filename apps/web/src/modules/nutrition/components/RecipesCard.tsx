@@ -5,6 +5,7 @@ import { Button } from "@shared/components/ui/Button";
 import { Icon } from "@shared/components/ui/Icon";
 import { cn } from "@shared/lib/cn";
 import { ConfirmDialog } from "@shared/components/ui/ConfirmDialog";
+import { toLocalISODate } from "@sergeant/shared";
 import {
   deleteSavedRecipe,
   listSavedRecipes,
@@ -48,6 +49,7 @@ export function RecipesCard({
   fmtMacro,
   recipeCacheEntry,
   addMealToLog,
+  selectedDate,
 }) {
   const [saved, setSaved] = useState([]);
   const [savedBusy, setSavedBusy] = useState(false);
@@ -110,9 +112,16 @@ export function RecipesCard({
     const mealType = guessMealTypeIdNow();
     const label =
       MEAL_TYPES.find((x) => x.id === mealType)?.label || "Прийом їжі";
+    // Не пишемо поточний час, якщо журнал відкритий не на сьогодні —
+    // інакше "вчора 09:30" виглядає як артефакт. Див. H5 з аудиту.
+    const now = new Date();
+    const isToday = !selectedDate || selectedDate === toLocalISODate(now);
+    const time = isToday
+      ? `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`
+      : "";
     await addMealToLog({
       id: `meal_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-      time: `${String(new Date().getHours()).padStart(2, "0")}:${String(new Date().getMinutes()).padStart(2, "0")}`,
+      time,
       mealType,
       label,
       name: r?.title || "Рецепт",
@@ -333,9 +342,13 @@ export function RecipesCard({
                 <div className="text-xs text-subtle mb-1">Порції</div>
                 <Input
                   value={String(prefs.servings)}
-                  onChange={(e) =>
-                    setPrefs((p) => ({ ...p, servings: e.target.value }))
-                  }
+                  onChange={(e) => {
+                    const n = Number(e.target.value);
+                    setPrefs((p) => ({
+                      ...p,
+                      servings: Number.isFinite(n) && n > 0 ? n : 1,
+                    }));
+                  }}
                   inputMode="numeric"
                   disabled={busy}
                 />
@@ -344,9 +357,13 @@ export function RecipesCard({
                 <div className="text-xs text-subtle mb-1">Хвилин</div>
                 <Input
                   value={String(prefs.timeMinutes)}
-                  onChange={(e) =>
-                    setPrefs((p) => ({ ...p, timeMinutes: e.target.value }))
-                  }
+                  onChange={(e) => {
+                    const n = Number(e.target.value);
+                    setPrefs((p) => ({
+                      ...p,
+                      timeMinutes: Number.isFinite(n) && n >= 0 ? n : 0,
+                    }));
+                  }}
                   inputMode="numeric"
                   disabled={busy}
                 />

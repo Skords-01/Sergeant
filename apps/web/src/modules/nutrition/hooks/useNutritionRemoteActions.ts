@@ -1,6 +1,7 @@
 import { useCallback, type Dispatch, type SetStateAction } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { nutritionApi } from "@shared/api";
+import { toLocalISODate } from "@sergeant/shared";
 import type {
   NutritionDayMeal,
   NutritionDayPlan as ApiNutritionDayPlan,
@@ -464,9 +465,17 @@ export function useNutritionRemoteActions({
         dinner: "Вечеря",
         snack: "Перекус",
       };
+      // Тільки коли користувач переглядає сьогодні, ставимо поточний час —
+      // інакше для минулих/майбутніх днів сьогоднішній час виглядав би як баг
+      // (запис "вчора 09:30 ранку" створений увечері). Див. H5 з аудиту.
+      const now = new Date();
+      const isToday = log.selectedDate === toLocalISODate(now);
+      const time = isToday
+        ? `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`
+        : "";
       log.handleAddMeal({
         id,
-        time: `${String(new Date().getHours()).padStart(2, "0")}:${String(new Date().getMinutes()).padStart(2, "0")}`,
+        time,
         mealType: (meal.type || "snack") as Meal["mealType"],
         label: (meal.type ? typeLabels[meal.type] : undefined) || "Прийом їжі",
         name: meal.name || "Страва",
