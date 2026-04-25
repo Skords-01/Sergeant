@@ -1,0 +1,129 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":semanticCommitTypeAll(chore)",
+    ":semanticCommitScope(deps)",
+    ":dependencyDashboard",
+    ":maintainLockFilesWeekly",
+    ":separateMultipleMajorReleases",
+    ":prHourlyLimit2",
+    ":prConcurrentLimit10",
+    "group:monorepos",
+    "group:recommended"
+  ],
+  "timezone": "Europe/Kyiv",
+  "schedule": ["before 6am on monday"],
+  "labels": ["dependencies"],
+  "rangeStrategy": "bump",
+  "rebaseWhen": "conflicted",
+  "prCreation": "not-pending",
+  "automergeStrategy": "squash",
+  "ignorePaths": [
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/dist-server/**",
+    "apps/mobile-shell/android/**",
+    "apps/mobile-shell/ios/**",
+    "apps/mobile/android/**",
+    "apps/mobile/ios/**"
+  ],
+  "vulnerabilityAlerts": {
+    "labels": ["security"],
+    "schedule": ["at any time"],
+    "minimumReleaseAge": "0 days"
+  },
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 6am on monday"],
+    "commitMessageAction": "refresh",
+    "extends": ["schedule:weekly"]
+  },
+  "packageRules": [
+    {
+      "description": "All @types/* together (type-only updates rarely break anything)",
+      "matchPackageNames": ["/^@types//"],
+      "groupName": "type definitions",
+      "automerge": false
+    },
+    {
+      "description": "ESLint and plugins",
+      "matchPackageNames": [
+        "eslint",
+        "/^eslint-/",
+        "/^@typescript-eslint//",
+        "/^@eslint//"
+      ],
+      "groupName": "eslint"
+    },
+    {
+      "description": "Vitest ecosystem",
+      "matchPackageNames": ["vitest", "/^@vitest//"],
+      "groupName": "vitest"
+    },
+    {
+      "description": "Playwright (browsers + runner together)",
+      "matchPackageNames": ["/^@playwright//", "/^playwright/"],
+      "groupName": "playwright"
+    },
+    {
+      "description": "TanStack ecosystem (Query, Router, etc.)",
+      "matchPackageNames": ["/^@tanstack//"],
+      "groupName": "tanstack"
+    },
+    {
+      "description": "Radix UI primitives",
+      "matchPackageNames": ["/^@radix-ui//"],
+      "groupName": "radix-ui"
+    },
+    {
+      "description": "Vite ecosystem",
+      "matchPackageNames": ["vite", "/^@vitejs//", "/^vite-/"],
+      "groupName": "vite"
+    },
+    {
+      "description": "Turbo + tooling",
+      "matchPackageNames": ["turbo"],
+      "groupName": "turborepo"
+    },
+    {
+      "description": "Expo SDK pieces stay grouped — version is tied to Expo SDK release",
+      "matchPackageNames": ["expo", "/^expo-/", "/^@expo//"],
+      "groupName": "expo sdk",
+      "rangeStrategy": "pin",
+      "schedule": ["before 6am on monday"]
+    },
+    {
+      "description": "Capacitor stays grouped",
+      "matchPackageNames": ["/^@capacitor//"],
+      "groupName": "capacitor"
+    },
+    {
+      "description": "React Native + react-native-* peers",
+      "matchPackageNames": ["react-native", "/^react-native-/"],
+      "groupName": "react-native",
+      "rangeStrategy": "pin"
+    },
+    {
+      "description": "Pin Node engine — must match CI matrix",
+      "matchManagers": ["npm"],
+      "matchDepTypes": ["engines"],
+      "matchPackageNames": ["node"],
+      "enabled": false
+    },
+    {
+      "description": "Auto-merge dev-only patch updates after CI passes",
+      "matchDepTypes": ["devDependencies"],
+      "matchUpdateTypes": ["patch", "pin", "digest"],
+      "automerge": true,
+      "automergeType": "branch",
+      "platformAutomerge": true
+    },
+    {
+      "description": "GitHub Actions: pin to commit SHA + add a comment with the version tag",
+      "matchManagers": ["github-actions"],
+      "pinDigests": true,
+      "groupName": "github-actions"
+    }
+  ]
+}

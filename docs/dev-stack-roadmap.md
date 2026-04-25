@@ -18,7 +18,7 @@
 | 4   | **Testcontainers** для server tests               | 4 год     | $0               | 🔥🔥🔥 | ⏳ pending                                                     |
 | 5   | **Vercel Pro plan** (рятує preview deploy)        | 5 хв      | $20/міс          | 🔥🔥   | 🟡 not started (потребує credit card мейнтейнера)              |
 | 6   | **Turbo remote cache**                            | 1 год     | $0 (Vercel free) | 🔥🔥   | ⏳ pending                                                     |
-| 7   | **Renovate** замість Dependabot                   | 1 год     | $0               | 🔥🔥   | ⏳ pending                                                     |
+| 7   | **Renovate** замість Dependabot                   | 1 год     | $0               | 🔥🔥   | ✅ done [#721](https://github.com/Skords-01/Sergeant/pull/721) |
 | 8   | **AGENTS.md** (з #711)                            | 1 год     | $0               | 🔥🔥🔥 | ✅ done [#714](https://github.com/Skords-01/Sergeant/pull/714) |
 | 9   | **MSW** для frontend tests                        | 4 год     | $0               | 🔥     | ⏳ pending                                                     |
 | 10  | **Snapshot tests на server serializers** (з #711) | 4 год     | $0               | 🔥🔥🔥 | ✅ done [#718](https://github.com/Skords-01/Sergeant/pull/718) |
@@ -30,7 +30,7 @@
 
 **Сумарно:** ~3-5 робочих днів + ~$50/міс. Це 80% wins за 20% effort-у.
 
-**Прогрес (2026-04-25):** 4 / 15 закрито — #2 Knip+depcheck, #8 AGENTS.md, #10 Snapshot tests, #12 Playwright E2E. Наступні логічні кроки: #15 (CONTRIBUTING.md — дешевий win), #11 (Pino logging — розблокує Sentry/PostHog), #4 (Testcontainers — підсилить #10), #7 (Renovate — безпека).
+**Прогрес (2026-04-25):** 5 / 15 закрито — #2 Knip+depcheck, #7 Renovate, #8 AGENTS.md, #10 Snapshot tests, #12 Playwright E2E. Наступні логічні кроки: #15 (CONTRIBUTING.md — дешевий win), #11 (Pino logging — розблокує Sentry/PostHog), #4 (Testcontainers — підсилить #10), #6 (Turbo remote cache — пришвидшить CI).
 
 ---
 
@@ -519,7 +519,7 @@ CI gate: `vitest --coverage` + threshold (наприклад 70% lines) на cri
 - [ ] Sentry + source maps upload
 - [ ] Vercel Pro plan upgrade
 - [ ] Knip + depcheck + видалення dead code
-- [ ] Renovate setup
+- [x] Renovate setup ([#721](https://github.com/Skords-01/Sergeant/pull/721))
 - [ ] Turbo remote cache
 - [ ] AGENTS.md (з #711)
 - [ ] CONTRIBUTING.md з 5-хв quickstart
