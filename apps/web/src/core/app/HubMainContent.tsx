@@ -37,8 +37,6 @@ export function HubMainContent({
   onDismissIos,
   hubView,
   onOpenChat,
-  dark,
-  onToggleDark,
   syncing,
   onSync,
   onPull,
@@ -180,8 +178,6 @@ export function HubMainContent({
         {hubView === "settings" && (
           <ErrorBoundary key="settings" fallback={HubSectionFallback}>
             <HubSettingsPage
-              dark={dark}
-              onToggleDark={onToggleDark}
               syncing={syncing}
               onSync={onSync}
               onPull={onPull}

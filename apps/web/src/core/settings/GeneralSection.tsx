@@ -1,4 +1,4 @@
-import { useCallback, useState, type ChangeEvent } from "react";
+import { useCallback, useState } from "react";
 import { cn } from "@shared/lib/cn";
 import { Icon } from "@shared/components/ui/Icon";
 import { Button } from "@shared/components/ui/Button";
@@ -78,8 +78,6 @@ function ModuleReorderList({ order, onMove }: ModuleReorderListProps) {
 }
 
 export interface GeneralSectionProps {
-  dark: boolean;
-  onToggleDark: (event: ChangeEvent<HTMLInputElement>) => void;
   syncing: boolean;
   onSync: () => void;
   onPull: () => void;
@@ -87,8 +85,6 @@ export interface GeneralSectionProps {
 }
 
 export function GeneralSection({
-  dark,
-  onToggleDark,
   syncing,
   onSync,
   onPull,
@@ -146,7 +142,6 @@ export function GeneralSection({
 
   return (
     <SettingsGroup title="Загальні" emoji="⚙️">
-      <ToggleRow label="Темна тема" checked={dark} onChange={onToggleDark} />
       <SettingsSubGroup title="Дашборд">
         <ToggleRow
           label="Показувати підказки"
