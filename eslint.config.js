@@ -61,6 +61,11 @@ export default [
       // typographic glyph kerns correctly and is what Web Interface
       // Guidelines recommend for truncation cues. Auto-fixable.
       "sergeant-design/no-ellipsis-dots": "error",
+      // AI code-marker syntax guardrail — catches malformed AI markers
+      // like `AI-NOTES`, `AINOTE`, `AI_NOTE`, or missing colons. Set to
+      // "warn" initially so it doesn't block CI; promote to "error" once
+      // the codebase is clean.
+      "sergeant-design/ai-marker-syntax": "warn",
       "no-empty": ["error", { allowEmptyCatch: true }],
       "no-unused-vars": [
         "error",

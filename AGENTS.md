@@ -23,6 +23,23 @@
 6. **No force push to main/master.** `--force-with-lease` on feature branches is OK.
 7. **Pre-commit hooks** via Husky — do not skip (`--no-verify` is forbidden).
 
+## AI markers
+
+Structured comments for AI-agent context. Enforced by ESLint rule `sergeant-design/ai-marker-syntax` (warn).
+
+| Marker | Purpose | Example |
+|--------|---------|---------|
+| `// AI-NOTE: <text>` | Contextual hint for future AI agents (not a human TODO) | `// AI-NOTE: coerce bigint→number; see rule #1` |
+| `// AI-DANGER: <text>` | High-risk zone — AI should confirm before changing | `// AI-DANGER: timing-safe comparison is critical here` |
+| `// AI-GENERATED: <generator>` | File is generated — edit the generator, not this file | `// AI-GENERATED: from codegen.ts` |
+| `// AI-LEGACY: expires YYYY-MM-DD` | Temporary code scheduled for removal | `// AI-LEGACY: expires 2026-06-01` |
+
+**Rules:**
+
+- Use exactly these 4 prefixes followed by a colon and a space.
+- Malformed variants (`AI-NOTES`, `AINOTE`, `AI_NOTE`, missing colon) trigger a lint warning.
+- Do not spam markers — use only where they add genuine context for AI.
+
 ## Soft rules (preferred)
 
 - Branch naming: `devin/<unix-ts>-<short-area>-<desc>`. Example: `devin/1777137234-mono-bigint-coercion`.
@@ -59,9 +76,9 @@ These three fail on `main`. Ignore them if your PR does not touch `apps/mobile`.
 
 ## See also
 
+- `docs/ai-coding-improvements.md` — full roadmap for AI coding infra
 - `docs/monobank-roadmap.md`
 - `docs/monobank-webhook-migration.md`
 - `docs/frontend-tech-debt.md`
 - `docs/backend-tech-debt.md`
-- `docs/ai-coding-improvements.md`
 - `docs/dev-stack-roadmap.md`

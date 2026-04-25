@@ -82,6 +82,7 @@ export async function webhookHandler(
 
   const conn = connResult.rows[0];
 
+  // AI-DANGER: timing-safe comparison is critical here. Do not replace with === or change the secret-lookup flow without coordinating a secret-rotation.
   if (!timingSafeEqual(conn.webhook_secret, secret)) {
     monoWebhookReceivedTotal.inc({ status: "invalid_secret" });
     res.status(404).json({ error: "Not found" });

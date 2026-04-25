@@ -309,6 +309,71 @@ const noRawTrackedStorage = {
   },
 };
 
+// ─── ai-marker-syntax ───────────────────────────────────────────────────
+//
+// Validates AI code-marker comments follow the canonical syntax defined in
+// docs/ai-coding-improvements.md §3.1. Exactly four markers are allowed:
+//
+//   // AI-NOTE: <text>
+//   // AI-DANGER: <text>
+//   // AI-GENERATED: <generator>
+//   // AI-LEGACY: expires YYYY-MM-DD
+//
+// The rule scans all comments (line and block) looking for strings that
+// *almost* match one of these markers — e.g. `AI-NOTES`, `AINOTE`,
+// `AI_NOTE`, or a valid prefix missing the colon — and reports them as
+// malformed. Well-formed markers are silently accepted.
+
+// A line within a comment is a valid AI marker if it starts (after
+// optional whitespace / block-comment stars) with one of the four
+// canonical prefixes followed by a colon and a space.
+const VALID_LINE_RE = /^[\s/*]*AI-(NOTE|DANGER|GENERATED|LEGACY):\s/;
+
+// A line within a comment looks like a *malformed* AI marker attempt if
+// it starts (after optional whitespace / stars) with something close to
+// a canonical marker but not quite right — typos like `AI-NOTES`,
+// `AINOTE`, `AI_NOTE`, or a valid prefix missing the colon.
+// Only anchored-to-start matches count; "AI-generated" in the middle of
+// prose (e.g. "the AI-generated digest") is intentionally ignored.
+const MALFORMED_LINE_RE =
+  /^[\s/*]*AI[-_\s]?(NOTES?|DANGERS?|GENERATED|LEGACY)\b/i;
+
+const AI_MARKER_MESSAGE =
+  'Malformed AI marker: "{{text}}". Valid markers are: // AI-NOTE: …, // AI-DANGER: …, // AI-GENERATED: …, // AI-LEGACY: …';
+
+const aiMarkerSyntax = {
+  meta: {
+    type: "suggestion",
+    docs: {
+      description:
+        "Validate AI code-marker comments follow the canonical syntax (AI-NOTE:, AI-DANGER:, AI-GENERATED:, AI-LEGACY:). Catches typos like AI-NOTES, AINOTE, AI_NOTE, or missing colons.",
+    },
+    schema: [],
+    messages: { malformed: AI_MARKER_MESSAGE },
+  },
+  create(context) {
+    return {
+      Program() {
+        const sourceCode = context.sourceCode ?? context.getSourceCode();
+        const comments = sourceCode.getAllComments();
+        for (const comment of comments) {
+          const lines = comment.value.split("\n");
+          for (const line of lines) {
+            if (!MALFORMED_LINE_RE.test(line)) continue;
+            if (VALID_LINE_RE.test(line)) continue;
+            const match = line.match(MALFORMED_LINE_RE);
+            context.report({
+              loc: comment.loc,
+              messageId: "malformed",
+              data: { text: match[0].trim() },
+            });
+          }
+        }
+      },
+    };
+  },
+};
+
 // ─── no-raw-local-storage ───────────────────────────────────────────────
 //
 // On the web app, every direct `localStorage.*` access is a hazard:
@@ -384,6 +449,7 @@ const plugin = {
     "no-ellipsis-dots": noEllipsisDots,
     "no-raw-tracked-storage": noRawTrackedStorage,
     "no-raw-local-storage": noRawLocalStorage,
+    "ai-marker-syntax": aiMarkerSyntax,
   },
 };
 

@@ -7,6 +7,7 @@ interface AuthedRequest extends Request {
   user?: { id: string };
 }
 
+// AI-NOTE: coerce bigint→number here; pg returns int8 as string, breaking `!a.creditLimit` checks. See AGENTS.md rule #1.
 /**
  * `node-postgres` returns Postgres `bigint` (int8) columns as **strings**
  * by default — losing precision is impossible, but JavaScript boolean
