@@ -54,6 +54,7 @@ export const nutritionApi = apiClient.nutrition;
 export const barcodeApi = apiClient.barcode;
 export const foodSearchApi = apiClient.foodSearch;
 export const monoApi = apiClient.mono;
+export const monoWebhookApi = apiClient.monoWebhook;
 export const privatApi = apiClient.privat;
 export const weeklyDigestApi = apiClient.weeklyDigest;
 
@@ -82,8 +83,13 @@ export type {
   MonoAccount,
   MonoCashbackType,
   MonoClientInfo,
+  MonoAccountDto,
+  MonoConnectionStatus,
   MonoJar,
   MonoStatementEntry,
+  MonoSyncState,
+  MonoTransactionDto,
+  MonoWebhookEndpoints,
   NutritionBackupDownloadResponse,
   NutritionBackupUploadResponse,
   NutritionDayHintResponse,

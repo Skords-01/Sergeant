@@ -62,6 +62,15 @@ export const finykKeys = {
   monoStatement: (accId: string, from: number, to: number) =>
     ["finyk", "mono", "statement", accId, from, to] as const,
 
+  // DB-backed webhook endpoints (Track B)
+  monoSyncState: ["finyk", "mono", "sync-state"] as const,
+  monoAccounts: ["finyk", "mono", "accounts"] as const,
+  monoTransactionsDb: (
+    from: string | undefined,
+    to: string | undefined,
+    accountId: string | undefined,
+  ) => ["finyk", "mono", "transactions-db", from, to, accountId] as const,
+
   // Privatbank read endpoints
   privat: ["finyk", "privat"] as const,
   privatAccounts: (idHash: string) =>
