@@ -141,17 +141,18 @@ export function HubHeader({
         </span>
       </div>
 
-      {/* ── Row 3: Greeting + date ────────────────────────────── */}
-      <div className="mt-2 ml-[3px]">
-        <p className="text-[13px] leading-snug text-muted truncate">
-          {greetingText}
-        </p>
+      {/* ── Row 3: Greeting · date (single line) ──────────────── */}
+      <p className="mt-1.5 ml-[3px] text-[13px] leading-snug text-muted truncate">
+        {greetingText}
         {dateStr && (
-          <p className="text-[13px] leading-snug text-subtle truncate">
-            {dateStr}
-          </p>
+          <>
+            <span className="mx-1.5 text-subtle" aria-hidden="true">
+              ·
+            </span>
+            <span className="text-subtle">{dateStr}</span>
+          </>
         )}
-      </div>
+      </p>
     </header>
   );
 }
