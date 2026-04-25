@@ -2,12 +2,12 @@
   "$schema": "https://unpkg.com/knip@latest/schema.json",
   "workspaces": {
     ".": {
-      "entry": ["scripts/*.mjs", "eslint-plugins/**/*.js"],
-      "project": ["scripts/**", "eslint-plugins/**"],
+      "entry": ["scripts/*.mjs"],
+      "project": ["scripts/**"],
       "ignoreDependencies": ["ts-prune"]
     },
     "apps/web": {
-      "entry": ["src/sw.js"],
+      "entry": ["src/sw.ts"],
       "project": ["src/**/*.{js,jsx,ts,tsx}"],
       "ignoreDependencies": [
         "autoprefixer",
