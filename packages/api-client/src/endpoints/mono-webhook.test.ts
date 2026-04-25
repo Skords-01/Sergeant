@@ -102,7 +102,8 @@ describe("createMonoWebhookEndpoints", () => {
         receivedAt: "2025-01-15T12:00:01Z",
       },
     ];
-    fetchMock.mockResolvedValueOnce(jsonResponse(txs));
+    const page = { data: txs, nextCursor: null };
+    fetchMock.mockResolvedValueOnce(jsonResponse(page));
 
     const endpoints = createMonoWebhookEndpoints(createHttpClient());
     const result = await endpoints.transactions({
@@ -112,7 +113,7 @@ describe("createMonoWebhookEndpoints", () => {
       limit: 10,
     });
 
-    expect(result).toEqual(txs);
+    expect(result).toEqual(page);
     const url = new URL(
       fetchMock.mock.calls[0][0] as string,
       "http://localhost",

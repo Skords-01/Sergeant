@@ -6,6 +6,7 @@ import {
   type MonoSyncState,
   type MonoAccountDto,
   type MonoTransactionDto,
+  type MonoTransactionsPage,
 } from "@shared/api";
 import { finykKeys, hubKeys } from "@shared/lib/queryKeys";
 import { authAwareRetry } from "@shared/lib/queryClient";
@@ -120,7 +121,7 @@ export function useMonobankWebhook({
   ).toISOString();
   const txQueryKey = `${fromDate}|${toDate}`;
 
-  const txQuery = useQuery<MonoTransactionDto[]>({
+  const txQuery = useQuery<MonoTransactionsPage>({
     queryKey: finykKeys.monoWebhookTransactions(txQueryKey),
     queryFn: ({ signal }) =>
       monoWebhookApi.transactions({ from: fromDate, to: toDate }, { signal }),
@@ -131,8 +132,9 @@ export function useMonobankWebhook({
   });
 
   const transactions: Transaction[] = useMemo(() => {
-    if (!txQuery.data) return [];
-    return txQuery.data
+    const items = txQuery.data?.data;
+    if (!items) return [];
+    return items
       .map(webhookTxToNormalized)
       .sort((a, b) => (b.time ?? 0) - (a.time ?? 0));
   }, [txQuery.data]);
@@ -200,7 +202,7 @@ export function useMonobankWebhook({
         const to = new Date(year, month + 1, 1).toISOString();
         const key = `${from}|${to}`;
 
-        const data = await queryClient.fetchQuery({
+        const page = await queryClient.fetchQuery({
           queryKey: finykKeys.monoWebhookTransactions(key),
           queryFn: ({ signal }) =>
             monoWebhookApi.transactions({ from, to }, { signal }),
@@ -208,7 +210,7 @@ export function useMonobankWebhook({
           retry: authAwareRetry(2),
         });
 
-        const normalized = (data || [])
+        const normalized = (page?.data ?? [])
           .map(webhookTxToNormalized)
           .sort((a, b) => (b.time ?? 0) - (a.time ?? 0));
         setHistoryTx(normalized);

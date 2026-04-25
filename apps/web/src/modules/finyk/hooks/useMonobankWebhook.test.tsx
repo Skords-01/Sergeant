@@ -108,32 +108,35 @@ describe("useMonobankWebhook", () => {
         lastSeenAt: "2024-01-15T10:00:00Z",
       },
     ]);
-    mockedTransactions.mockResolvedValue([
-      {
-        userId: "u1",
-        monoAccountId: "acc1",
-        monoTxId: "tx1",
-        time: "2024-01-15T09:00:00Z",
-        amount: -5000,
-        operationAmount: -5000,
-        currencyCode: 980,
-        mcc: 5411,
-        originalMcc: null,
-        hold: false,
-        description: "Сільпо",
-        comment: null,
-        cashbackAmount: 50,
-        commissionRate: null,
-        balance: 95000,
-        receiptId: null,
-        invoiceId: null,
-        counterEdrpou: null,
-        counterIban: null,
-        counterName: null,
-        source: "webhook",
-        receivedAt: "2024-01-15T09:00:01Z",
-      },
-    ]);
+    mockedTransactions.mockResolvedValue({
+      data: [
+        {
+          userId: "u1",
+          monoAccountId: "acc1",
+          monoTxId: "tx1",
+          time: "2024-01-15T09:00:00Z",
+          amount: -5000,
+          operationAmount: -5000,
+          currencyCode: 980,
+          mcc: 5411,
+          originalMcc: null,
+          hold: false,
+          description: "Сільпо",
+          comment: null,
+          cashbackAmount: 50,
+          commissionRate: null,
+          balance: 95000,
+          receiptId: null,
+          invoiceId: null,
+          counterEdrpou: null,
+          counterIban: null,
+          counterName: null,
+          source: "webhook",
+          receivedAt: "2024-01-15T09:00:01Z",
+        },
+      ],
+      nextCursor: null,
+    });
 
     const { result } = renderHook(() => useMonobankWebhook(), {
       wrapper: makeWrapper(),
@@ -202,7 +205,7 @@ describe("useMonobankWebhook", () => {
         lastSeenAt: "2024-01-15T10:00:00Z",
       },
     ]);
-    mockedTransactions.mockResolvedValue([]);
+    mockedTransactions.mockResolvedValue({ data: [], nextCursor: null });
 
     const fetchSpy = vi
       .spyOn(globalThis, "fetch")
@@ -234,7 +237,7 @@ describe("useMonobankWebhook", () => {
       accountsCount: 1,
     });
     mockedAccounts.mockResolvedValue([]);
-    mockedTransactions.mockResolvedValue([]);
+    mockedTransactions.mockResolvedValue({ data: [], nextCursor: null });
     mockedDisconnect.mockResolvedValue(undefined);
 
     const { result } = renderHook(() => useMonobankWebhook(), {

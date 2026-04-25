@@ -130,6 +130,7 @@ export {
   type MonoStatementEntry,
   type MonoSyncState,
   type MonoTransactionDto,
+  type MonoTransactionsPage,
   type MonoWebhookEndpoints,
 } from "./endpoints/mono";
 

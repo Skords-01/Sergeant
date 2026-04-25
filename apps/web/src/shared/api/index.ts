@@ -89,6 +89,7 @@ export type {
   MonoStatementEntry,
   MonoSyncState,
   MonoTransactionDto,
+  MonoTransactionsPage,
   MonoWebhookEndpoints,
   NutritionBackupDownloadResponse,
   NutritionBackupUploadResponse,

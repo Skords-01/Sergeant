@@ -70,7 +70,10 @@ describe("useMonoTransactions", () => {
         receivedAt: "2025-01-15T12:00:01Z",
       },
     ];
-    mockedTransactions.mockResolvedValueOnce(txData);
+    mockedTransactions.mockResolvedValueOnce({
+      data: txData,
+      nextCursor: null,
+    });
 
     const { result } = renderHook(
       () =>
@@ -86,7 +89,7 @@ describe("useMonoTransactions", () => {
   });
 
   it("returns empty array when no data", async () => {
-    mockedTransactions.mockResolvedValueOnce([]);
+    mockedTransactions.mockResolvedValueOnce({ data: [], nextCursor: null });
 
     const { result } = renderHook(
       () => useMonoTransactions("2025-01-01", "2025-01-31"),

@@ -66,6 +66,16 @@ export interface MonoSyncState {
   accountsCount: number;
 }
 
+/**
+ * Cursor-paginated response from `GET /api/mono/transactions`. Server returns
+ * up to `limit` items (default 50) ordered by `(time DESC, monoTxId DESC)`;
+ * `nextCursor` is non-null when more rows are available.
+ */
+export interface MonoTransactionsPage {
+  data: MonoTransactionDto[];
+  nextCursor: string | null;
+}
+
 export interface MonoAccount {
   id: string;
   sendId?: string;
@@ -286,7 +296,7 @@ export interface MonoWebhookEndpoints {
       cursor?: string;
     },
     opts?: { signal?: AbortSignal },
-  ) => Promise<MonoTransactionDto[]>;
+  ) => Promise<MonoTransactionsPage>;
   backfill: (opts?: { signal?: AbortSignal }) => Promise<void>;
 }
 
@@ -313,7 +323,7 @@ export function createMonoWebhookEndpoints(
         signal: opts?.signal,
       }),
     transactions: (params, opts) =>
-      http.get<MonoTransactionDto[]>("/api/mono/transactions", {
+      http.get<MonoTransactionsPage>("/api/mono/transactions", {
         query: params,
         signal: opts?.signal,
       }),

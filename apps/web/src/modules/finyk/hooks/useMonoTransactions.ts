@@ -49,7 +49,7 @@ export function useMonoTransactions(
   });
 
   return {
-    transactions: data ?? [],
+    transactions: data?.data ?? [],
     isFetching,
     isLoading,
     error: error ?? null,
