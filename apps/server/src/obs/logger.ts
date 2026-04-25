@@ -85,11 +85,6 @@ const pinoOptions: LoggerOptions = {
 
 export const logger: Logger = pino(pinoOptions);
 
-/** Дочірній логер із додатковими bindings (напр. `logger.child({ module: "nutrition" })`). */
-export function childLogger(bindings: Record<string, unknown>): Logger {
-  return logger.child(bindings);
-}
-
 export interface SerializedError {
   name?: string;
   message: string;

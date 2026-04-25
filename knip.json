@@ -1,0 +1,62 @@
+{
+  "$schema": "https://unpkg.com/knip@latest/schema.json",
+  "workspaces": {
+    ".": {
+      "entry": ["scripts/*.mjs", "eslint-plugins/**/*.js"],
+      "project": ["scripts/**", "eslint-plugins/**"],
+      "ignoreDependencies": ["ts-prune"]
+    },
+    "apps/web": {
+      "entry": ["src/sw.js"],
+      "project": ["src/**/*.{js,jsx,ts,tsx}"],
+      "ignoreDependencies": [
+        "autoprefixer",
+        "postcss",
+        "tailwindcss",
+        "web-vitals"
+      ]
+    },
+    "apps/server": {
+      "entry": ["src/index.ts", "build.mjs", "migrate.mjs"],
+      "project": ["src/**/*.{js,ts}"],
+      "ignoreDependencies": ["pino-pretty"]
+    },
+    "apps/mobile": {
+      "entry": ["app/**/*.{ts,tsx}", "src/**/*.{ts,tsx}"],
+      "project": ["app/**/*.{ts,tsx}", "src/**/*.{ts,tsx}"],
+      "ignoreDependencies": [
+        "sucrase",
+        "@babel/preset-typescript",
+        "@config-plugins/detox"
+      ]
+    },
+    "apps/mobile-shell": {
+      "entry": [
+        "src/index.ts",
+        "src/platform.ts",
+        "src/barcodeNative.ts",
+        "src/auth-storage.ts",
+        "src/pushNative.ts",
+        "capacitor.config.ts"
+      ],
+      "project": ["src/**/*.{ts,tsx}"]
+    },
+    "packages/api-client": {
+      "entry": ["src/index.ts", "src/react/index.ts"],
+      "project": ["src/**/*.{ts,tsx}"]
+    },
+    "packages/config": {
+      "entry": ["*.ts", "*.json"],
+      "project": ["**/*"]
+    },
+    "packages/design-tokens": {
+      "entry": ["tokens.js", "tailwind-preset.js"],
+      "project": ["**/*.js"]
+    },
+    "packages/shared": {
+      "entry": ["src/index.ts"],
+      "project": ["src/**/*.ts"]
+    }
+  },
+  "ignoreExportsUsedInFile": true
+}

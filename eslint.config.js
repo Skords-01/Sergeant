@@ -227,8 +227,6 @@ export default [
       "apps/web/src/core/lib/recommendations/financeContext.ts",
       "apps/web/src/core/onboarding/DailyNudge.tsx",
       "apps/web/src/core/onboarding/FirstActionSheet.tsx",
-      "apps/web/src/core/onboarding/ModuleChecklist.tsx",
-      "apps/web/src/core/onboarding/PermissionsPrompt.tsx",
       "apps/web/src/core/onboarding/ReEngagementCard.tsx",
       "apps/web/src/core/onboarding/cleanupDemoData.ts",
       "apps/web/src/core/onboarding/firstRealEntry.ts",

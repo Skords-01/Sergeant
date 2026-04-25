@@ -1,6 +1,5 @@
 import type { Request, Response } from "express";
 import client from "prom-client";
-import type { Counter, Histogram } from "prom-client";
 import type { Pool } from "pg";
 
 /**
@@ -293,58 +292,6 @@ export function statusClass(status: number | string | undefined): StatusClass {
   if (s >= 300) return "3xx";
   if (s >= 200) return "2xx";
   return "other";
-}
-
-export interface ObserveAsyncOptions<T> {
-  histogram: Histogram<string>;
-  labels: Record<string, string>;
-  counter?: Counter<string>;
-  counterLabels?: (outcome: string) => Record<string, string>;
-  classify?: (result: T) => string;
-}
-
-/**
- * Обгортка, що міряє тривалість async-операції в мс і пише в histogram
- * разом з outcome counter (опційно).
- */
-export async function observeAsync<T>(
-  opts: ObserveAsyncOptions<T>,
-  fn: () => Promise<T>,
-): Promise<T> {
-  const start = process.hrtime.bigint();
-  let outcome = "ok";
-  try {
-    const result = await fn();
-    if (typeof opts.classify === "function") {
-      try {
-        outcome = opts.classify(result) || "ok";
-      } catch {
-        /* ignore */
-      }
-    }
-    return result;
-  } catch (e) {
-    const name = (e as { name?: string } | null | undefined)?.name;
-    outcome = name === "AbortError" ? "timeout" : "error";
-    throw e;
-  } finally {
-    const ms = Number(process.hrtime.bigint() - start) / 1e6;
-    try {
-      opts.histogram.observe(opts.labels, ms);
-    } catch {
-      /* metrics must never break a request */
-    }
-    if (opts.counter) {
-      try {
-        const labels = opts.counterLabels
-          ? opts.counterLabels(outcome)
-          : { ...opts.labels, outcome };
-        opts.counter.inc(labels);
-      } catch {
-        /* ignore */
-      }
-    }
-  }
 }
 
 export interface PoolSamplerOptions {

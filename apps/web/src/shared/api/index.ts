@@ -44,8 +44,6 @@ export const apiClient = createApiClient({
   getToken: () => getBearerToken(),
 });
 
-export const http = apiClient.http;
-
 export const syncApi = apiClient.sync;
 export const coachApi = apiClient.coach;
 export const chatApi = apiClient.chat;

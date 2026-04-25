@@ -23,7 +23,6 @@
 //   store.set(budgets);
 //   const unsubscribe = store.subscribe((next) => { ... });
 
-import { useSyncExternalStore } from "react";
 import type { ZodType } from "zod";
 import { safeJsonSet } from "./storageQuota";
 
@@ -261,16 +260,4 @@ export function createTypedStore<T>(
   }
 
   return { key, get, set, reset, subscribe, reload };
-}
-
-/**
- * React-адаптер: реактивно читає значення зі store. Автоматично оновлюється,
- * якщо сховище змінилось з іншого компонента, tab'у або через `set`.
- */
-export function useTypedStore<T>(store: TypedStore<T>): T {
-  return useSyncExternalStore(
-    (onChange) => store.subscribe(onChange),
-    () => store.get(),
-    () => store.get(),
-  );
 }
