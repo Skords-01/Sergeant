@@ -63,7 +63,14 @@
   },
   "pnpm": {
     "overrides": {
-      "react-server-dom-webpack": "^19.0.2"
+      "react-server-dom-webpack": "^19.0.2",
+      "tar": ">=7.5.11",
+      "@xmldom/xmldom": ">=0.8.13",
+      "serialize-javascript": ">=7.0.5",
+      "postcss": ">=8.5.10",
+      "uuid": ">=14.0.0",
+      "ajv": ">=8.18.0",
+      "@tootallnate/once": ">=3.0.1"
     }
   }
 }
