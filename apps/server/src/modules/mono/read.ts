@@ -8,6 +8,21 @@ interface AuthedRequest extends Request {
 }
 
 /**
+ * `node-postgres` returns Postgres `bigint` (int8) columns as **strings**
+ * by default — losing precision is impossible, but JavaScript boolean
+ * coercion of a non-empty string `"0"` is `true`, breaking client-side
+ * predicates like `!a.creditLimit`. We coerce to plain numbers because
+ * Monobank balances are denominated in cents and stay well within the
+ * safe-integer range (≤ 9 × 10¹⁵).
+ */
+function toNumberOrNull(v: unknown): number | null {
+  if (v == null) return null;
+  if (typeof v === "number") return v;
+  if (typeof v === "string" || typeof v === "bigint") return Number(v);
+  return null;
+}
+
+/**
  * GET /api/mono/accounts — returns user's Monobank accounts from DB.
  */
 export async function accountsHandler(
@@ -43,6 +58,8 @@ export async function accountsHandler(
   res.json(
     rows.map((r) => ({
       ...r,
+      balance: toNumberOrNull(r.balance),
+      creditLimit: toNumberOrNull(r.creditLimit),
       maskedPan: r.maskedPan ?? [],
       lastSeenAt:
         r.lastSeenAt instanceof Date
@@ -175,6 +192,11 @@ export async function transactionsHandler(
 
   const result = items.map((r) => ({
     ...r,
+    amount: toNumberOrNull(r.amount) ?? 0,
+    operationAmount: toNumberOrNull(r.operationAmount) ?? 0,
+    cashbackAmount: toNumberOrNull(r.cashbackAmount),
+    commissionRate: toNumberOrNull(r.commissionRate),
+    balance: toNumberOrNull(r.balance),
     time: r.time instanceof Date ? r.time.toISOString() : r.time,
     receivedAt:
       r.receivedAt instanceof Date ? r.receivedAt.toISOString() : r.receivedAt,
