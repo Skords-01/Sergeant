@@ -245,6 +245,7 @@ export function useFinykTransactionsStore(
       };
       safeWriteLS(KEY_TX_CACHE, snapshot);
     }
+    // Mount-only: `seed` is expected to be stable (from parent context).
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

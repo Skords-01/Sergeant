@@ -132,6 +132,7 @@ export default function NutritionApp({
         window.clearTimeout(fallback);
       };
     }
+    // `photo.fileRef` is a stable ref; `setPhotoCardForceOpen` is a setter.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [log, onPwaActionConsumed, pwaAction]);
 

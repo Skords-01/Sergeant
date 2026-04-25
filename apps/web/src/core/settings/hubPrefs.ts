@@ -49,6 +49,8 @@ export function useHubPref<T>(
     };
     window.addEventListener("storage", handler);
     return () => window.removeEventListener("storage", handler);
+    // `read`/`setValue` excluded — `read` is stable for a given `key`,
+    // `setValue` is a React setter.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
 

@@ -271,7 +271,15 @@ export function handleFinykAction(action: ChatAction): string | undefined {
       });
       lsSet("finyk_manual_expenses_v1", manualExpenses);
       debt.linkedTxIds = [...(debt.linkedTxIds || []), txId];
-      const totalPaid = payAmount;
+      const prevPaid = debt.linkedTxIds
+        .filter((lid) => lid !== txId)
+        .reduce((sum, lid) => {
+          const linked = manualExpenses.find(
+            (e: { id: string }) => e.id === lid,
+          );
+          return sum + (linked ? Math.abs(Number(linked.amount) || 0) : 0);
+        }, 0);
+      const totalPaid = prevPaid + payAmount;
       const closed = totalPaid >= Number(debt.totalAmount);
       if (closed) {
         debts.splice(idx, 1);

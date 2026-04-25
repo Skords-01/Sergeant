@@ -403,6 +403,7 @@ export function HubSearch({ onClose, onOpenModule }: HubSearchProps) {
     }
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
+    // `openHit`/`commitQuery` are stable callbacks; `setActiveIdx` is a setter.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [flat, activeIdx, onClose, query]);
 

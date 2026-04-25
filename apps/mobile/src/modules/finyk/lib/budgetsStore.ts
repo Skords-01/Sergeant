@@ -110,6 +110,7 @@ export function useFinykBudgetsStore(
     if (seed.budgets) safeWriteLS(KEY_BUDGETS, seed.budgets);
     if (seed.monthlyPlan) safeWriteLS(KEY_MONTHLY_PLAN, seed.monthlyPlan);
     if (seed.subscriptions) safeWriteLS(KEY_SUBS, seed.subscriptions);
+    // Mount-only: `seed` is expected to be stable (from parent context).
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
