@@ -218,14 +218,14 @@ Vercel Edge Middleware для проксі `/api/*` лежить у корені
 
 ### 5.2 Розбити великі компоненти (800+ рядків)
 
-| Файл | Рядків | Що винести |
-| --- | --- | --- |
-| `finyk/pages/Assets.tsx` | 1207 | Секції (AssetCard, AssetForm, AssetChart) |
-| `core/HubDashboard.tsx` | 957 | Модульні карточки, layout |
-| `fizruk/.../ActiveWorkoutPanel.tsx` | 949 | Timer, SetLogger, ExerciseList |
-| `finyk/FinykApp.tsx` | 864 | Nav, routing logic |
-| `finyk/pages/Transactions.tsx` | 827 | Filters, TxList, TxDetails |
-| `routine/.../RoutineCalendarPanel.tsx` | 824 | Calendar grid, event list |
+| Файл                                   | Рядків | Що винести                                |
+| -------------------------------------- | ------ | ----------------------------------------- |
+| `finyk/pages/Assets.tsx`               | 1207   | Секції (AssetCard, AssetForm, AssetChart) |
+| `core/HubDashboard.tsx`                | 957    | Модульні карточки, layout                 |
+| `fizruk/.../ActiveWorkoutPanel.tsx`    | 949    | Timer, SetLogger, ExerciseList            |
+| `finyk/FinykApp.tsx`                   | 864    | Nav, routing logic                        |
+| `finyk/pages/Transactions.tsx`         | 827    | Filters, TxList, TxDetails                |
+| `routine/.../RoutineCalendarPanel.tsx` | 824    | Calendar grid, event list                 |
 
 ### 5.3 Додати barrel exports (index.ts) для модулів
 
@@ -241,10 +241,10 @@ Vercel Edge Middleware для проксі `/api/*` лежить у корені
 
 ## Порядок виконання
 
-| Етап | Задачі | Оцінка часу |
-| --- | --- | --- |
-| 1 | Чистка (1.1–1.4) | 30 хв |
-| 2 | Реорганізація core/ (2.1) | 2–3 год |
-| 3 | Серверні зміни (3.1–3.2) | 30 хв |
-| 4 | Консистентність (4.1–4.4) | 1 год |
-| 5 | Довгострокове (5.1–5.3) | поступово |
+| Етап | Задачі                    | Оцінка часу |
+| ---- | ------------------------- | ----------- |
+| 1    | Чистка (1.1–1.4)          | 30 хв       |
+| 2    | Реорганізація core/ (2.1) | 2–3 год     |
+| 3    | Серверні зміни (3.1–3.2)  | 30 хв       |
+| 4    | Консистентність (4.1–4.4) | 1 год       |
+| 5    | Довгострокове (5.1–5.3)   | поступово   |
