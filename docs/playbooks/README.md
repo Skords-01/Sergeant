@@ -24,6 +24,11 @@ Each playbook is a checklist that **AI agents and human developers** can follow 
 | [add-api-endpoint.md](add-api-endpoint.md)                                     | "Додати новий endpoint в apps/server" / нова API-функціональність                 |
 | [onboard-external-api.md](onboard-external-api.md)                             | "Інтегрувати нову зовнішню API" / новий third-party сервіс                        |
 | [investigate-alert.md](investigate-alert.md)                                   | Prometheus alert спрацював / Sentry alert / деградація `/health`                  |
+| [add-hubchat-tool.md](add-hubchat-tool.md)                                     | «Дай асистенту нову дію X» / новий tool-call для Anthropic-асистента              |
+| [add-react-query-hook.md](add-react-query-hook.md)                             | Новий `useQuery` / `useMutation` у `apps/web` / нова server-state дата            |
+| [add-onboarding-step.md](add-onboarding-step.md)                               | «Додай новий крок в онбординг» / новий FTUX-етап для нових юзерів                 |
+| [tune-system-prompt.md](tune-system-prompt.md)                                 | «AI відповідає не так як треба» / зміна тону / правил tool-calling                |
+| [stabilize-flaky-test.md](stabilize-flaky-test.md)                             | «Тест X падає 1 з 5 разів» / тест у AGENTS.md flaky-list                          |
 
 ## How to Use
 

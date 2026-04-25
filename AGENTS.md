@@ -203,7 +203,7 @@ Things that bite hard if assumed wrong.
 ### Money (UAH)
 
 - **Database & API: minor units (kopiykas) as `number`** after bigint coercion. Mono webhook delivers minor units; we keep that representation through the stack.
-- **UI display:** divide by 100 at render time only. Use `formatUah(minor)` from `@sergeant/shared` — never inline `value / 100`.
+- **UI display:** divide by 100 at render time only. For Finyk transactions and balances use `fmtAmt(minor, currencyCode?)` from `@sergeant/finyk-domain/lib/formatting` — it handles `+`/`-` sign and currency symbol consistently. For other contexts (insights, dashboards) write a thin local helper that wraps `(minor / 100).toLocaleString("uk-UA", { minimumFractionDigits: 2 })` rather than re-inlining the math at every call site.
 - **Negative = expense, positive = income.** Match Mono's convention; transfers between own accounts come as a pair (-X on source, +X on destination) and are netted in budget calculations, not summed.
 
 ### Identity
