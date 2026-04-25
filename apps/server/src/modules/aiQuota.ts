@@ -1,9 +1,9 @@
 import type { Request, Response } from "express";
-import { getSessionUser } from "./auth.js";
-import pool from "./db.js";
-import { getIp } from "./http/rateLimit.js";
-import { logger } from "./obs/logger.js";
-import { aiQuotaBlocksTotal, aiQuotaFailOpenTotal } from "./obs/metrics.js";
+import { getSessionUser } from "../auth.js";
+import pool from "../db.js";
+import { getIp } from "../http/rateLimit.js";
+import { logger } from "../obs/logger.js";
+import { aiQuotaBlocksTotal, aiQuotaFailOpenTotal } from "../obs/metrics.js";
 
 type SessionUser = { id: string } | null;
 

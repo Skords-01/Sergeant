@@ -1,5 +1,5 @@
 import type { RequestHandler } from "express";
-import { assertAiQuota } from "../aiQuota.js";
+import { assertAiQuota } from "../modules/aiQuota.js";
 
 /**
  * Router-middleware обгортка над `assertAiQuota`. Якщо квоту вичерпано —

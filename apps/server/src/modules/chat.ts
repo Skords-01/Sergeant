@@ -6,7 +6,7 @@ import {
   anthropicMessagesStream,
   extractAnthropicText,
 } from "../lib/anthropic.js";
-import type { WithAiQuotaRefund } from "../aiQuota.js";
+import type { WithAiQuotaRefund } from "./aiQuota.js";
 import { TOOLS, SYSTEM_PREFIX } from "./chat/tools.js";
 
 type WithAnthropicKey = Request & { anthropicKey?: string };

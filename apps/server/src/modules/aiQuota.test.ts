@@ -1,17 +1,17 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import type { Request, Response } from "express";
 
-vi.mock("./auth.js", () => ({
+vi.mock("../auth.js", () => ({
   getSessionUser: vi.fn(),
 }));
 
-vi.mock("./db.js", () => {
+vi.mock("../db.js", () => {
   const pool = { connect: vi.fn(), query: vi.fn() };
   return { default: pool, pool };
 });
 
-import { getSessionUser as _getSessionUser } from "./auth.js";
-import _pool from "./db.js";
+import { getSessionUser as _getSessionUser } from "../auth.js";
+import _pool from "../db.js";
 import {
   assertAiQuota,
   consumeToolQuota,
