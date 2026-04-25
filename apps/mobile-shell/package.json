@@ -29,7 +29,7 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "@capacitor-mlkit/barcode-scanning": "^7.5.0",
+    "@capacitor-mlkit/barcode-scanning": "^8.0.1",
     "@capacitor/android": "^7.6.2",
     "@capacitor/app": "^7.1.2",
     "@capacitor/core": "^7.6.2",
