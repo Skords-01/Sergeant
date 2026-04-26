@@ -12,7 +12,10 @@ export type MobileColor =
   | "text"
   | "textMuted"
   | "accent"
-  | "danger";
+  | "success"
+  | "warning"
+  | "danger"
+  | "info";
 
 /** Mobile spacing scale identifiers (pixel values defined in `mobile.js`). */
 export type MobileSpacing = "xs" | "sm" | "md" | "lg" | "xl" | "xxl";
