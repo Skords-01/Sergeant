@@ -18,6 +18,7 @@ import {
   writeDayCollapse,
   isDayExpanded,
   formatStickyDayLabel,
+  computeDaySummary,
 } from "./transactionsLib";
 import { TransactionsHeader } from "./TransactionsHeader";
 import { TransactionsBatchToolbar } from "./TransactionsBatchToolbar";
@@ -325,18 +326,17 @@ export function Transactions({
     return groups;
   }, [filtered]);
 
-  // Per-day totals (signed amount in cents, item count). Cheap enough to
-  // compute during grouping, but kept separate so the collapsed-header
-  // summary doesn't force us to touch the hot grouping loop.
+  // Per-day totals (signed amount in cents, item count). Внутрішні
+  // перекази та явно виключені з статистики транзакції НЕ йдуть у
+  // `total` — інакше header-суми розходяться з «Підсумком місяця» і
+  // перекази тихо рахуються як дохід (див. issue про «++15 403,58₴»).
   const daySummaries = useMemo(() => {
-    const map = {};
+    const map: Record<string, ReturnType<typeof computeDaySummary>> = {};
     for (const g of groupedByDate) {
-      let total = 0;
-      for (const t of g.items) total += Number(t.amount || 0);
-      map[g.key] = { total, count: g.items.length };
+      map[g.key] = computeDaySummary(g.items, { excludedTxIds, txSplits });
     }
     return map;
-  }, [groupedByDate]);
+  }, [groupedByDate, excludedTxIds, txSplits]);
 
   // Day collapse/expand state. Persisted as a sparse override map:
   // absence → default rule (only "today" is expanded). Explicit boolean
@@ -529,9 +529,15 @@ export function Transactions({
                 if (!group) return null;
                 const key = group.key;
                 const collapsed = collapsedKeys.has(key);
-                const summary = daySummaries[key] ?? { total: 0, count: 0 };
-                const showTotal = showBalance && summary.count > 0;
-                const sign = summary.total > 0 ? "+" : "";
+                const summary = daySummaries[key] ?? {
+                  total: 0,
+                  count: 0,
+                  statCount: 0,
+                };
+                // Коли у день є тільки «не в статистиці» транзакції, сховати
+                // суму — інакше побачимо «0,00₴» або (як раніше) злиплі
+                // перекази у вигляді доходу.
+                const showTotal = showBalance && summary.statCount > 0;
                 const label = formatStickyDayLabel(key);
                 return (
                   <button
@@ -573,7 +579,7 @@ export function Transactions({
                           summary.total > 0 ? "text-success" : "text-text",
                         )}
                       >
-                        {sign}
+                        {/* fmtAmt сам додає `+`/`-` — не дублюємо префікс. */}
                         {fmtAmt(summary.total, CURRENCY.UAH)}
                       </span>
                     )}
