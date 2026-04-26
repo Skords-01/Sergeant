@@ -558,6 +558,7 @@ export const ASSISTANT_CAPABILITIES: readonly AssistantCapability[] = [
     prompt: "Постав розклад звички: ",
     requiresInput: true,
     requiresOnline: true,
+    aiHint: "примусово weekly",
     keywords: ["weekday", "schedule", "weekly", "розклад", "дні"],
   },
   {
@@ -576,6 +577,7 @@ export const ASSISTANT_CAPABILITIES: readonly AssistantCapability[] = [
     prompt: "Постав звичку на паузу: ",
     requiresInput: true,
     requiresOnline: true,
+    aiHint: "ідемпотентно",
     keywords: ["pause", "resume", "unpause", "пауза", "відновити"],
   },
   {
@@ -611,37 +613,6 @@ export const ASSISTANT_CAPABILITIES: readonly AssistantCapability[] = [
     prompt: "Статистика звички: ",
     requiresInput: true,
     requiresOnline: true,
-  },
-  {
-    id: "set_habit_schedule",
-    module: "routine",
-    label: "Розклад звички",
-    icon: "calendar-check",
-    description:
-      "Виставити дні тижня для звички (recurrence='weekly'). Англ. ('mon'..'sun') або укр. ('пн'..'нд').",
-    examples: [
-      "тренування пн/ср/пт",
-      "медитація щодня крім вихідних",
-      "англійська вт чт",
-    ],
-    prompt: "Постав розклад звички: ",
-    requiresInput: true,
-    requiresOnline: true,
-    keywords: ["schedule", "розклад", "дні тижня", "weekly"],
-  },
-  {
-    id: "pause_habit",
-    module: "routine",
-    label: "Пауза звички",
-    icon: "pause",
-    description:
-      "Тимчасово поставити звичку на паузу або зняти з неї. Зберігає історію виконань.",
-    examples: ["постав на паузу 'Англійська'", "зніми паузу зі звички 'Біг'"],
-    prompt: "Пауза звички: ",
-    requiresInput: true,
-    requiresOnline: true,
-    aiHint: "ідемпотентно",
-    keywords: ["pause", "пауза", "відновити"],
   },
   {
     id: "missed_this_week",
