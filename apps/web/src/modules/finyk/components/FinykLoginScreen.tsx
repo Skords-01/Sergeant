@@ -259,10 +259,10 @@ export function FinykLoginScreen({
               className="mt-1 w-full min-h-[44px]"
               onClick={onBackToHub}
             >
-              Назад до Hub
+              ← Назад до хабу
             </Button>
           )}
-          <p className="text-xs text-subtle text-center mt-3 flex items-center justify-center gap-1.5">
+          <p className="mt-4 text-center text-xs text-subtle flex items-center justify-center gap-1.5">
             <svg
               width="12"
               height="12"
