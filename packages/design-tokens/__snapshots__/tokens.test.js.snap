@@ -2,13 +2,16 @@
 
 exports[`@sergeant/design-tokens — mobile.js > mobile.colors matches the canonical web moduleColors + statusColors 1`] = `
 {
-  "accent": "#7c5cff",
+  "accent": "#10b981",
   "bg": "#0b0d10",
   "border": "#1f242c",
   "danger": "#ef4444",
+  "info": "#0ea5e9",
+  "success": "#10b981",
   "surface": "#13161b",
   "text": "#f2f4f7",
   "textMuted": "#8a94a6",
+  "warning": "#f59e0b",
 }
 `;
 
