@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from "react";
+import type { ModuleAccent } from "@sergeant/design-tokens";
 import { cn } from "@shared/lib/cn";
 import { Icon } from "@shared/components/ui/Icon";
 import { EmptyState } from "@shared/components/ui/EmptyState";
@@ -106,7 +107,7 @@ function localDateKey(d = new Date()) {
 
 type Hit = {
   id: string;
-  module: "finyk" | "fizruk" | "routine" | "nutrition";
+  module: ModuleAccent;
   moduleLabel: string;
   title: string;
   subtitle: string;

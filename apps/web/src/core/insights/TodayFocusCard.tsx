@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import type { StatusColor } from "@sergeant/design-tokens";
 import { cn } from "@shared/lib/cn";
 import { Icon } from "@shared/components/ui/Icon";
 import { SectionHeading } from "@shared/components/ui/SectionHeading";
@@ -270,7 +271,7 @@ function EmptyFocus() {
 interface FocusRec {
   id: string;
   module: keyof typeof MODULE_ACCENT;
-  severity?: "info" | "success" | "warning" | "danger";
+  severity?: StatusColor;
   title: string;
   body?: string;
   icon?: string;

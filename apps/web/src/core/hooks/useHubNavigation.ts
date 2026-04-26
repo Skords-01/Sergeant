@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
+import type { ModuleAccent } from "@sergeant/design-tokens";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 const VALID_MODULES = new Set(["finyk", "fizruk", "routine", "nutrition"]);
 
-export type HubModuleId = "finyk" | "fizruk" | "routine" | "nutrition";
+export type HubModuleId = ModuleAccent;
 
 export interface OpenModuleOptions {
   hash?: string | null;

@@ -10,9 +10,11 @@
  * вони лишаються як є. Це доповнювальний, опційний канал.
  */
 
+import type { ModuleAccent } from "@sergeant/design-tokens";
+
 export const HUB_OPEN_MODULE_EVENT = "hub:open-module";
 
-export type HubModuleId = "finyk" | "fizruk" | "routine" | "nutrition";
+export type HubModuleId = ModuleAccent;
 export type HubModuleAction =
   | "add_expense"
   | "start_workout"

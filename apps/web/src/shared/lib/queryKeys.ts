@@ -1,3 +1,5 @@
+import type { ModuleAccent } from "@sergeant/design-tokens";
+
 /**
  * Централізовані ключі для @tanstack/react-query.
  *
@@ -92,8 +94,7 @@ export const pushKeys = {
 // ─── Hub (dashboard previews, shared state) ───────────────────────────────
 export const hubKeys = {
   all: ["hub"] as const,
-  preview: (module: "finyk" | "fizruk" | "routine" | "nutrition") =>
-    ["hub", "preview", module] as const,
+  preview: (module: ModuleAccent) => ["hub", "preview", module] as const,
 };
 
 // ─── Token hashing helper ─────────────────────────────────────────────────

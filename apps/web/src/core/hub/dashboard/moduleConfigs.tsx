@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import type { ModuleAccent } from "@sergeant/design-tokens";
 import { safeReadStringLS } from "@shared/lib/storage";
 import {
   STORAGE_KEYS,
@@ -20,7 +21,7 @@ export interface ModuleConfig {
   getPreview: () => ModulePreview;
 }
 
-export type ModuleId = "finyk" | "fizruk" | "routine" | "nutrition";
+export type ModuleId = ModuleAccent;
 
 /**
  * Per-module bento-card configuration: icon glyph, label/description,

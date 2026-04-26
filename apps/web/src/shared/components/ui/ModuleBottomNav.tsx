@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import type { ModuleAccent } from "@sergeant/design-tokens";
 import { cn } from "../../lib/cn";
 
 /**
@@ -24,7 +25,7 @@ import { cn } from "../../lib/cn";
  *   tabs semantics.
  */
 
-export type ModuleNavColor = "finyk" | "fizruk" | "routine" | "nutrition";
+export type ModuleNavColor = ModuleAccent;
 
 export interface ModuleBottomNavItem {
   id: string;

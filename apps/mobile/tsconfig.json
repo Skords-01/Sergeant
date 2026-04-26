@@ -20,7 +20,7 @@
       "@sergeant/fizruk-domain/*": ["../../packages/fizruk-domain/src/*"],
       "@sergeant/finyk-domain": ["../../packages/finyk-domain/src/index.ts"],
       "@sergeant/finyk-domain/*": ["../../packages/finyk-domain/src/*"],
-      "@sergeant/design-tokens": ["../../packages/design-tokens/tokens.js"],
+      "@sergeant/design-tokens": ["../../packages/design-tokens/index.d.ts"],
       "@sergeant/design-tokens/*": ["../../packages/design-tokens/*"]
     }
   },

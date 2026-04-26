@@ -1,3 +1,5 @@
+import type { ModuleAccent } from "@sergeant/design-tokens";
+
 export interface ChangeCategoryAction {
   name: "change_category";
   input: { tx_id: string; category_id: string };
@@ -421,7 +423,7 @@ export interface HabitTrendAction {
   input: { habit_id?: string; period_days?: number | string };
 }
 
-export type CompareWeeksModule = "finyk" | "fizruk" | "routine" | "nutrition";
+export type CompareWeeksModule = ModuleAccent;
 
 export interface CompareWeeksAction {
   name: "compare_weeks";

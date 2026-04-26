@@ -30,9 +30,10 @@
  */
 
 import type { ReactNode } from "react";
+import type { StatusColor } from "@sergeant/design-tokens";
 import { View, type ViewProps } from "react-native";
 
-export type BannerVariant = "info" | "success" | "warning" | "danger";
+export type BannerVariant = StatusColor;
 
 const variants: Record<BannerVariant, string> = {
   info: "border-cream-300 bg-cream-100",

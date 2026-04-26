@@ -1,7 +1,8 @@
 import type { HTMLAttributes, ReactNode } from "react";
+import type { StatusColor } from "@sergeant/design-tokens";
 import { cn } from "@shared/lib/cn";
 
-export type BannerVariant = "info" | "success" | "warning" | "danger";
+export type BannerVariant = StatusColor;
 
 const variants: Record<BannerVariant, string> = {
   info: "border-line bg-panelHi/60 text-text",
