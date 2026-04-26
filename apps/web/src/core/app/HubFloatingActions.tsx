@@ -35,8 +35,10 @@ export function HubFloatingActions({ hidden = false, onOpenChat }) {
         title="Асистент"
         className={cn(
           "pointer-events-auto h-14 pl-4 pr-5 flex items-center justify-center gap-2 rounded-full",
-          "bg-brand-500 text-white shadow-float",
-          "hover:bg-brand-600 hover:shadow-glow active:scale-95 transition-[background-color,box-shadow,opacity,transform]",
+          // brand-700 (not brand-500) — needed for WCAG AA contrast against
+          // `text-white` at 14px regular weight (≥4.5:1).
+          "bg-brand-700 text-white shadow-float",
+          "hover:bg-brand-800 hover:shadow-glow active:scale-95 transition-[background-color,box-shadow,opacity,transform]",
           "focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/45 focus-visible:ring-offset-2 focus-visible:ring-offset-bg",
         )}
       >

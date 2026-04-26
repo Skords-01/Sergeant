@@ -13,7 +13,15 @@ export interface BentoCardProps {
   config: ModuleConfig;
   onClick: () => void;
   onQuickAdd?: { label: string; run: () => void } | null;
-  dragProps?: Record<string, unknown>;
+  /**
+   * Ref/props applied to the inner primary `<button>` so dnd-kit can use it
+   * as the drag activator. Keeping the activator on the primary button (not
+   * the wrapper) allows the quick-add button to live as a sibling instead of
+   * a nested interactive control — see the `nested-interactive` axe rule
+   * (#839).
+   */
+  primaryRef?: (node: HTMLButtonElement | null) => void;
+  primaryProps?: Record<string, unknown>;
   isDragging?: boolean;
 }
 
@@ -22,15 +30,16 @@ export interface BentoCardProps {
  * the module emoji + label, latest preview numbers (`main`/`sub`) and a
  * progress bar when the module has a daily goal (`hasGoal`).
  *
- * Quick-add affordance (the small `+` button in the top-right corner) is
- * rendered only when the parent supplies an `onQuickAdd` action — keeps
- * dead pixels off the card for modules without a primary quick action.
+ * The card itself is the primary `<button>`; the small `+` quick-add affordance
+ * is rendered as an absolutely-positioned sibling button. They are siblings —
+ * not parent/child — so axe's `nested-interactive` rule passes.
  */
 export const BentoCard = memo(function BentoCard({
   config,
   onClick,
   onQuickAdd,
-  dragProps,
+  primaryRef,
+  primaryProps,
   isDragging,
 }: BentoCardProps) {
   const preview = config.getPreview();
@@ -39,93 +48,95 @@ export const BentoCard = memo(function BentoCard({
   const hasData = !!(preview.main || preview.sub);
 
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "group relative flex flex-col w-full rounded-3xl border border-line p-3.5",
-        "shadow-card transition-all duration-200 text-left",
-        "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60",
-        "active:scale-[0.98]",
-        config.cardBg,
-        isDragging && "opacity-70 shadow-float z-50 cursor-grabbing",
-      )}
-      {...dragProps}
-    >
-      <div className="flex items-center justify-between mb-2">
-        <div
-          className={cn(
-            "w-7 h-7 rounded-lg flex items-center justify-center shrink-0",
-            config.iconClass,
-          )}
-        >
-          {config.icon}
-        </div>
-
-        {onQuickAdd && (
-          <span
-            role="button"
-            tabIndex={0}
-            onClick={(e) => {
-              e.stopPropagation();
-              onQuickAdd.run();
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.stopPropagation();
-                e.preventDefault();
-                onQuickAdd.run();
-              }
-            }}
-            aria-label={onQuickAdd.label}
-            title={onQuickAdd.label}
-            className={cn(
-              "w-6 h-6 rounded-md flex items-center justify-center",
-              "text-text bg-panel/80 hover:bg-primary hover:text-bg",
-              "transition-colors",
-            )}
-          >
-            <Icon name="plus" size={13} strokeWidth={2.5} />
-          </span>
+    <div className={cn("relative", isDragging && "opacity-70 z-50")}>
+      <button
+        ref={primaryRef}
+        type="button"
+        onClick={onClick}
+        {...primaryProps}
+        className={cn(
+          "group relative flex flex-col w-full rounded-3xl border border-line p-3.5",
+          "shadow-card transition-all duration-200 text-left",
+          "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60",
+          "active:scale-[0.98]",
+          config.cardBg,
+          isDragging && "shadow-float cursor-grabbing",
         )}
-      </div>
-
-      <span className="text-xs font-semibold text-text">
-        {config.emoji} {config.label}
-      </span>
-
-      {hasData ? (
-        <>
-          {preview.main && (
-            <span className="text-lg font-bold text-text tabular-nums mt-1 truncate">
-              {preview.main}
-            </span>
-          )}
-          {preview.sub && (
-            <span className="text-2xs text-muted mt-0.5 truncate">
-              {preview.sub}
-            </span>
-          )}
-        </>
-      ) : (
-        <span className="text-xs text-muted mt-1">{config.emptyLabel}</span>
-      )}
-
-      {showProgress && (
-        <div
-          className="w-full h-1 rounded-full bg-line/40 dark:bg-white/10 overflow-hidden mt-2"
-          aria-hidden
-        >
+      >
+        <div className="flex items-center justify-between mb-2">
           <div
             className={cn(
-              "h-full rounded-full transition-[width] duration-700 ease-out",
-              config.accentClass,
+              "w-7 h-7 rounded-lg flex items-center justify-center shrink-0",
+              config.iconClass,
             )}
-            style={{ width: `${Math.min(preview.progress ?? 0, 100)}%` }}
-          />
+          >
+            {config.icon}
+          </div>
+
+          {/* Layout placeholder for the absolutely-positioned quick-add
+              sibling — keeps the label centred consistently regardless of
+              whether the module exposes a quick-add action. */}
+          {onQuickAdd && <span aria-hidden className="w-6 h-6 shrink-0" />}
         </div>
+
+        <span className="text-xs font-semibold text-text">
+          {config.emoji} {config.label}
+        </span>
+
+        {hasData ? (
+          <>
+            {preview.main && (
+              <span className="text-lg font-bold text-text tabular-nums mt-1 truncate">
+                {preview.main}
+              </span>
+            )}
+            {preview.sub && (
+              <span className="text-2xs text-muted mt-0.5 truncate">
+                {preview.sub}
+              </span>
+            )}
+          </>
+        ) : (
+          <span className="text-xs text-muted mt-1">{config.emptyLabel}</span>
+        )}
+
+        {showProgress && (
+          <div
+            className="w-full h-1 rounded-full bg-line/40 dark:bg-white/10 overflow-hidden mt-2"
+            aria-hidden
+          >
+            <div
+              className={cn(
+                "h-full rounded-full transition-[width] duration-700 ease-out",
+                config.accentClass,
+              )}
+              style={{ width: `${Math.min(preview.progress ?? 0, 100)}%` }}
+            />
+          </div>
+        )}
+      </button>
+
+      {onQuickAdd && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onQuickAdd.run();
+          }}
+          aria-label={onQuickAdd.label}
+          title={onQuickAdd.label}
+          className={cn(
+            "absolute top-3.5 right-3.5",
+            "w-6 h-6 rounded-md flex items-center justify-center",
+            "text-text bg-panel/80 hover:bg-primary hover:text-bg",
+            "transition-colors",
+            "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60",
+          )}
+        >
+          <Icon name="plus" size={13} strokeWidth={2.5} />
+        </button>
       )}
-    </button>
+    </div>
   );
 });
 
@@ -149,6 +160,7 @@ export const SortableCard = memo(function SortableCard({
     attributes,
     listeners,
     setNodeRef,
+    setActivatorNodeRef,
     transform,
     transition,
     isDragging,
@@ -162,7 +174,12 @@ export const SortableCard = memo(function SortableCard({
     [transform, transition],
   );
 
-  const dragProps = useMemo(
+  // AI-NOTE: spread dnd-kit attributes/listeners on the *inner* primary button
+  // (via `primaryProps` + `setActivatorNodeRef`). Spreading them on the wrapper
+  // would either nest interactive controls (button-in-button with quick-add)
+  // or attach `role="button"` to a `<div>` whose only focusable child is the
+  // primary `<button>` — both fail axe a11y rules.
+  const primaryProps = useMemo(
     () => ({ ...attributes, ...listeners }),
     [attributes, listeners],
   );
@@ -178,8 +195,9 @@ export const SortableCard = memo(function SortableCard({
         config={cfg}
         onClick={handleClick}
         onQuickAdd={quickAdd}
+        primaryRef={setActivatorNodeRef}
+        primaryProps={primaryProps}
         isDragging={isDragging}
-        dragProps={dragProps}
       />
     </div>
   );

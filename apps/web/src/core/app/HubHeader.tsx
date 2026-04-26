@@ -136,7 +136,7 @@ export function HubHeader({
           aria-hidden="true"
           className="inline-block w-[3px] h-[14px] rounded-full bg-brand-500"
         />
-        <span className="text-[11px] font-bold tracking-[0.12em] uppercase text-brand-600 dark:text-brand-400 select-none">
+        <span className="text-[11px] font-bold tracking-[0.12em] uppercase text-brand-700 dark:text-brand-400 select-none">
           Оперативний центр
         </span>
       </div>
