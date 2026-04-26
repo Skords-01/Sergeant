@@ -243,7 +243,7 @@ export default function App({
             <ModuleHeaderBackButton onClick={onBackToHub} />
           ) : (
             <div
-              className="shrink-0 w-10 h-10 rounded-xl bg-emerald-500/12 flex items-center justify-center text-emerald-600 dark:text-emerald-400 border border-emerald-500/15"
+              className="shrink-0 w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400 border border-emerald-500/15"
               aria-hidden
             >
               <svg

@@ -30,7 +30,7 @@ export const ROUTINE_THEME = {
 
   // Icon containers
   iconBox:
-    "bg-routine-surface dark:bg-routine/12 border-coral-100 dark:border-routine/30 text-routine-strong dark:text-routine",
+    "bg-routine-surface dark:bg-routine/10 border-coral-100 dark:border-routine/30 text-routine-strong dark:text-routine",
 
   // Navigation
   navActive: "text-routine-strong dark:text-routine",
@@ -51,7 +51,7 @@ export const ROUTINE_THEME = {
     "bg-routine-surface dark:bg-routine/15 border-routine-ring dark:border-routine/40 ring-1 ring-coral-100/50 dark:ring-routine/30",
 
   // Completion states
-  done: "border-routine/45 bg-routine-surface dark:bg-routine/12 text-routine-strong dark:text-routine",
+  done: "border-routine/45 bg-routine-surface dark:bg-routine/10 text-routine-strong dark:text-routine",
   doneCheck: "text-routine-strong dark:text-routine",
 
   // Primary button

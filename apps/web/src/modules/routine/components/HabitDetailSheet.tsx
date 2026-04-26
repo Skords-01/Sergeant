@@ -183,7 +183,7 @@ export function HabitDetailSheet({
         {tag.map((t) => (
           <span
             key={t}
-            className="text-2xs px-2 py-0.5 rounded-full bg-routine-surface dark:bg-routine/12 border border-routine-line/50 dark:border-routine/25 text-routine-strong dark:text-routine font-medium"
+            className="text-2xs px-2 py-0.5 rounded-full bg-routine-surface dark:bg-routine/10 border border-routine-line/50 dark:border-routine/25 text-routine-strong dark:text-routine font-medium"
           >
             {t}
           </span>

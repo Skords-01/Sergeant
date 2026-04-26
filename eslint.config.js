@@ -66,6 +66,13 @@ export default [
       // "warn" initially so it doesn't block CI; promote to "error" once
       // the codebase is clean.
       "sergeant-design/ai-marker-syntax": "warn",
+      // Tailwind opacity guardrail — `<color>/<N>` only renders when N
+      // is in `theme.opacity`. Sergeant's preset registers 0/5/8/10/…/100
+      // (see `packages/design-tokens/tailwind-preset.js`); any other
+      // step (e.g. `/7`, `/12`, `/18`) is silently dropped and the
+      // surrounding `dark:` / `hover:` override falls through to the
+      // light-mode background — this is what bug #814 was.
+      "sergeant-design/valid-tailwind-opacity": "error",
       "no-empty": ["error", { allowEmptyCatch: true }],
       "no-unused-vars": [
         "error",
@@ -128,6 +135,15 @@ export default [
     files: ["packages/eslint-plugin-sergeant-design/**/*.js"],
     rules: {
       "sergeant-design/no-ellipsis-dots": "off",
+    },
+  },
+  // The plugin's own __tests__ feed offending Tailwind opacity strings
+  // (`bg-finyk/7`, `text-danger/18`, …) into the linter as fixtures — the
+  // rule would otherwise self-flag every fixture.
+  {
+    files: ["packages/eslint-plugin-sergeant-design/**/*.{js,mjs}"],
+    rules: {
+      "sergeant-design/valid-tailwind-opacity": "off",
     },
   },
   // Jest setup / test files need jest globals.

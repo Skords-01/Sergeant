@@ -607,7 +607,7 @@ export function FinykSection() {
           {privatConnected ? (
             <div className="space-y-3">
               <div className="flex items-center gap-3 p-3 bg-bg border border-green-500/30 rounded-xl">
-                <div className="w-9 h-9 rounded-xl bg-green-500/12 border border-green-500/20 flex items-center justify-center text-base shrink-0">
+                <div className="w-9 h-9 rounded-xl bg-green-500/10 border border-green-500/20 flex items-center justify-center text-base shrink-0">
                   🏦
                 </div>
                 <div>

@@ -443,6 +443,120 @@ const noRawLocalStorage = {
   },
 };
 
+// ─────────────────────────────────────────────────────────────────────────
+// `valid-tailwind-opacity` — flag color/opacity modifiers that won't render
+// ─────────────────────────────────────────────────────────────────────────
+//
+// Tailwind v3 only generates a `<color>/<N>` utility when `N` exists in
+// `theme.opacity`. The default scale steps in 5-pt increments
+// (0, 5, 10, 15, 20… 100); the Sergeant preset extends that with `8`
+// (canonical "barely there" 8 % wash on panel surfaces — see
+// `packages/design-tokens/tailwind-preset.js`). Every other value
+// (`bg-finyk/7`, `text-danger/12`, `border-line/18`) silently produces
+// **no class** and the surrounding `dark:` / `hover:` override falls
+// through to the light-mode background — exactly the dark-mode "светлые
+// плитки" regression #814 fixed.
+//
+// This rule scans className strings (and template literals / JSX
+// attributes) for the pattern `<utility>-<color>/<N>` and reports any
+// `N` that is not in the allowed set. Arbitrary values (`bg-[#fff]/[.5]`)
+// are left alone — Tailwind handles them via the JIT path.
+//
+// Keep `ALLOWED_TAILWIND_OPACITY_STEPS` in sync with the `opacity`
+// extension in `packages/design-tokens/tailwind-preset.js`.
+
+const ALLOWED_TAILWIND_OPACITY_STEPS = new Set([
+  0, 5, 8, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90,
+  95, 100,
+]);
+
+const TAILWIND_OPACITY_UTILITIES = [
+  "bg",
+  "text",
+  "border",
+  "ring",
+  "fill",
+  "stroke",
+  "from",
+  "to",
+  "via",
+  "shadow",
+  "outline",
+  "divide",
+  "placeholder",
+  "caret",
+  "decoration",
+  "accent",
+];
+
+// Match `<utility>-<color-token>/<digits>` where:
+//   • `<utility>` is one of the color-aware utilities above,
+//   • `<color-token>` is a non-arbitrary identifier (letters, digits,
+//     hyphens) — the JIT path `bg-[#fff]/[.5]` is intentionally skipped,
+//   • `<digits>` is 1–3 decimal digits.
+// The leading `\b` lets variant prefixes (`dark:`, `hover:`, `lg:`) sit
+// in front of the utility.
+const RX_TAILWIND_OPACITY = new RegExp(
+  String.raw`\b(` +
+    TAILWIND_OPACITY_UTILITIES.join("|") +
+    String.raw`)-([a-zA-Z][a-zA-Z0-9-]*)\/(\d{1,3})\b`,
+  "g",
+);
+
+const TAILWIND_OPACITY_MESSAGE =
+  "Tailwind opacity step `/{{step}}` is not registered — `{{utility}}` will silently render no class. Use one of: 0, 5, 8, 10, 15, 20, 25 … 100, or extend `theme.opacity` in `packages/design-tokens/tailwind-preset.js`.";
+
+function findInvalidOpacitySteps(value) {
+  if (typeof value !== "string" || value.length === 0) return [];
+  // Skip strings that obviously aren't className soup — cheap escape so
+  // we don't tokenize unrelated literals (URLs, regexes, etc.).
+  if (!value.includes("/")) return [];
+  const hits = [];
+  let match;
+  RX_TAILWIND_OPACITY.lastIndex = 0;
+  while ((match = RX_TAILWIND_OPACITY.exec(value)) !== null) {
+    const [full, utilityPrefix, , stepRaw] = match;
+    const step = Number(stepRaw);
+    if (!Number.isFinite(step)) continue;
+    if (ALLOWED_TAILWIND_OPACITY_STEPS.has(step)) continue;
+    hits.push({ utility: full, prefix: utilityPrefix, step });
+  }
+  return hits;
+}
+
+const validTailwindOpacity = {
+  meta: {
+    type: "problem",
+    docs: {
+      description:
+        "Forbid Tailwind `<color>/<N>` opacity modifiers whose step is not registered in `theme.opacity` — the class is silently dropped, breaking dark-mode and hover overrides.",
+    },
+    schema: [],
+    messages: { unregistered: TAILWIND_OPACITY_MESSAGE },
+  },
+  create(context) {
+    function report(node, value) {
+      const hits = findInvalidOpacitySteps(value);
+      for (const hit of hits) {
+        context.report({
+          node,
+          messageId: "unregistered",
+          data: { utility: hit.utility, step: String(hit.step) },
+        });
+      }
+    }
+    return {
+      Literal(node) {
+        if (typeof node.value === "string") report(node, node.value);
+      },
+      TemplateElement(node) {
+        const cooked = node.value && node.value.cooked;
+        if (typeof cooked === "string") report(node, cooked);
+      },
+    };
+  },
+};
+
 const plugin = {
   rules: {
     "no-eyebrow-drift": noEyebrowDrift,
@@ -450,6 +564,7 @@ const plugin = {
     "no-raw-tracked-storage": noRawTrackedStorage,
     "no-raw-local-storage": noRawLocalStorage,
     "ai-marker-syntax": aiMarkerSyntax,
+    "valid-tailwind-opacity": validTailwindOpacity,
   },
 };
 
@@ -458,6 +573,8 @@ export {
   TRACKED_STORAGE_KEY_VALUES,
   RAW_TRACKED_STORAGE_MESSAGE,
   RAW_LOCAL_STORAGE_MESSAGE,
+  ALLOWED_TAILWIND_OPACITY_STEPS,
+  TAILWIND_OPACITY_UTILITIES,
 };
 
 export default plugin;
