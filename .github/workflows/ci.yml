@@ -19,6 +19,31 @@ env:
   TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
 
 jobs:
+  commitlint:
+    name: Commit messages (commitlint)
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      # actions/checkout v4.3.1 (SHA-pinned for supply-chain hardening)
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          fetch-depth: 0
+
+      # pnpm/action-setup v4.1.0 (SHA-pinned for supply-chain hardening)
+      - uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2
+
+      # actions/setup-node v4.4.0 (SHA-pinned for supply-chain hardening)
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "20"
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate PR commit messages
+        run: pnpm exec commitlint --from "origin/${{ github.base_ref }}" --to "${{ github.event.pull_request.head.sha }}" --verbose
+
   check:
     runs-on: ubuntu-latest
     steps:

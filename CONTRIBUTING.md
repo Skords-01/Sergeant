@@ -169,6 +169,28 @@ For UI changes, attach a screenshot or recording to the PR description when prac
 
 Hooks are installed by `pnpm install` via the `prepare` script. **Do not skip them**: `--no-verify` is forbidden per `AGENTS.md` hard rule #7.
 
+### Commit message lint (commitlint)
+
+The `commit-msg` hook runs [commitlint](https://commitlint.js.org/) to enforce Conventional Commits with the exact scope enum from `AGENTS.md` rule #5. A commit with an unknown scope or missing scope is rejected **before** it lands in history.
+
+#### Verify locally
+
+```bash
+# Lint the last commit
+pnpm exec commitlint --last
+
+# Lint a range (useful before pushing a stack)
+pnpm exec commitlint --from HEAD~3 --to HEAD
+```
+
+#### CI
+
+The `commitlint` job in `.github/workflows/ci.yml` validates every commit in a PR against `origin/<base>`. If any commit fails, the job fails.
+
+#### Bypassing
+
+You cannot bypass commitlint — `--no-verify` is forbidden (`AGENTS.md` hard rule #7). If the scope enum needs a new entry, update both `AGENTS.md` and `commitlint.config.js` in the same PR.
+
 ---
 
 ## Commit Messages
@@ -218,12 +240,13 @@ If a PR genuinely spans multiple scopes, use the most user-visible scope and exp
 
 Every push/PR triggers `.github/workflows/ci.yml`.
 
-| Job           | What                                                                                |
-| ------------- | ----------------------------------------------------------------------------------- |
-| **check**     | Install, audit, license policy check, `pnpm check`, bundle size guard               |
-| **coverage**  | `pnpm test:coverage`, coverage HTML/JSON artifacts                                  |
-| **a11y**      | Playwright Chromium install + axe-core accessibility checks                         |
-| **smoke-e2e** | Real Postgres service, migrations, API server, Vite preview, Playwright smoke suite |
+| Job            | What                                                                                |
+| -------------- | ----------------------------------------------------------------------------------- |
+| **commitlint** | Conventional Commits + scope enum validation (PR only)                              |
+| **check**      | Install, audit, license policy check, `pnpm check`, bundle size guard               |
+| **coverage**   | `pnpm test:coverage`, coverage HTML/JSON artifacts                                  |
+| **a11y**       | Playwright Chromium install + axe-core accessibility checks                         |
+| **smoke-e2e**  | Real Postgres service, migrations, API server, Vite preview, Playwright smoke suite |
 
 ### CI gotchas
 
