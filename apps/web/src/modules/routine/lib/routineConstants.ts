@@ -14,11 +14,11 @@ export const ROUTINE_THEME = {
   statCard:
     "rounded-2xl bg-panel/80 border border-coral-100/60 dark:border-coral-800/30 p-3 text-center shadow-card backdrop-blur-sm",
   statCardHighlight:
-    "rounded-2xl bg-routine-surface/80 border border-routine-ring/50 dark:border-routine/30 p-3 text-center shadow-card",
+    "rounded-2xl bg-routine-surface/80 border border-routine-ring/50 dark:border-routine-border-dark/30 p-3 text-center shadow-card",
 
   // Empty state
   emptyStateWarm:
-    "rounded-2xl border border-coral-100/60 dark:border-routine/25 bg-coral-50/50 dark:bg-routine/8 p-6 text-center shadow-card",
+    "rounded-2xl border border-coral-100/60 dark:border-routine-border-dark/25 bg-coral-50/50 dark:bg-routine-surface-dark/8 p-6 text-center shadow-card",
 
   // Links & accents
   linkAccent:
@@ -26,11 +26,12 @@ export const ROUTINE_THEME = {
 
   // Habit list items
   habitRowAccent: "border-l-routine",
-  habitRowDone: "border-l-routine bg-coral-50/50 dark:bg-routine/10",
+  habitRowDone:
+    "border-l-routine bg-coral-50/50 dark:bg-routine-surface-dark/10",
 
   // Icon containers
   iconBox:
-    "bg-routine-surface dark:bg-routine/10 border-coral-100 dark:border-routine/30 text-routine-strong dark:text-routine",
+    "bg-routine-surface dark:bg-routine-surface-dark/10 border-coral-100 dark:border-routine-border-dark/30 text-routine-strong dark:text-routine",
 
   // Navigation
   navActive: "text-routine-strong dark:text-routine",
@@ -38,7 +39,7 @@ export const ROUTINE_THEME = {
 
   // Chips/pills
   chipOn:
-    "border-routine-ring dark:border-routine/40 bg-routine-surface dark:bg-routine/15 text-routine-strong dark:text-routine shadow-sm",
+    "border-routine-ring dark:border-routine-border-dark/40 bg-routine-surface dark:bg-routine-surface-dark/15 text-routine-strong dark:text-routine shadow-sm",
   chipOff:
     "border-line bg-panel text-muted hover:text-text hover:bg-panelHi transition-colors",
 
@@ -48,10 +49,10 @@ export const ROUTINE_THEME = {
 
   // Month selector
   monthSel:
-    "bg-routine-surface dark:bg-routine/15 border-routine-ring dark:border-routine/40 ring-1 ring-coral-100/50 dark:ring-routine/30",
+    "bg-routine-surface dark:bg-routine-surface-dark/15 border-routine-ring dark:border-routine-border-dark/40 ring-1 ring-coral-100/50 dark:ring-routine-border-dark/30",
 
   // Completion states
-  done: "border-routine/45 bg-routine-surface dark:bg-routine/10 text-routine-strong dark:text-routine",
+  done: "border-routine/45 bg-routine-surface dark:bg-routine-surface-dark/10 text-routine-strong dark:text-routine",
   doneCheck: "text-routine-strong dark:text-routine",
 
   // Primary button

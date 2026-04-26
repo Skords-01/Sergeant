@@ -166,6 +166,41 @@ const preset = {
           ring: brandColors.lime[200],
           soft: brandColors.lime[50],
         },
+
+        // ═══════════════════════════════════════════════════════════════════
+        // MODULE DARK-MODE TOKENS — semantic surfaces & borders for dark
+        // theme. Each is a standalone CSS variable (see `.dark` block in
+        // `apps/web/src/index.css`) decoupled from the live module accent
+        // (`finyk`, `routine`, …) so that opacity tints applied in dark
+        // mode don't silently drift if the primary accent is retuned.
+        //
+        // Use them with the `dark:` variant + an opacity step on the
+        // registered scale (8 / 10 / 15 / 20 / 25 / 30 / 40 / …):
+        //
+        //   dark:bg-routine-surface-dark/10
+        //   dark:hover:bg-routine-surface-dark/25
+        //   dark:border-routine-border-dark/30
+        //   dark:ring-routine-border-dark/40
+        //
+        // AI-CONTEXT: Replaces the older `dark:bg-routine/10` /
+        // `dark:border-finyk/30` pattern. The named token makes the
+        // design intent explicit and survives accent retuning.
+        // ═══════════════════════════════════════════════════════════════════
+        "finyk-surface-dark":
+          "rgb(var(--c-finyk-surface-dark) / <alpha-value>)",
+        "finyk-border-dark": "rgb(var(--c-finyk-border-dark) / <alpha-value>)",
+        "fizruk-surface-dark":
+          "rgb(var(--c-fizruk-surface-dark) / <alpha-value>)",
+        "fizruk-border-dark":
+          "rgb(var(--c-fizruk-border-dark) / <alpha-value>)",
+        "routine-surface-dark":
+          "rgb(var(--c-routine-surface-dark) / <alpha-value>)",
+        "routine-border-dark":
+          "rgb(var(--c-routine-border-dark) / <alpha-value>)",
+        "nutrition-surface-dark":
+          "rgb(var(--c-nutrition-surface-dark) / <alpha-value>)",
+        "nutrition-border-dark":
+          "rgb(var(--c-nutrition-border-dark) / <alpha-value>)",
       },
 
       // ═══════════════════════════════════════════════════════════════════

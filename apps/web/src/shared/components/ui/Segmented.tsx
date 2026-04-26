@@ -55,13 +55,13 @@ const ACCENT_SOFT: Record<SegmentedAccent, string> = {
   brand:
     "border-brand-200 bg-brand-50 text-brand-700 shadow-sm dark:border-brand/40 dark:bg-brand/15 dark:text-brand",
   fizruk:
-    "border-fizruk-ring bg-fizruk-surface text-fizruk-strong shadow-sm dark:border-fizruk/40 dark:bg-fizruk/15 dark:text-fizruk",
+    "border-fizruk-ring bg-fizruk-surface text-fizruk-strong shadow-sm dark:border-fizruk-border-dark/40 dark:bg-fizruk-surface-dark/15 dark:text-fizruk",
   routine:
-    "border-routine-ring bg-routine-surface text-routine-strong shadow-sm dark:border-routine/40 dark:bg-routine/15 dark:text-routine",
+    "border-routine-ring bg-routine-surface text-routine-strong shadow-sm dark:border-routine-border-dark/40 dark:bg-routine-surface-dark/15 dark:text-routine",
   nutrition:
-    "border-nutrition-ring bg-nutrition-surface text-nutrition-strong shadow-sm dark:border-nutrition/40 dark:bg-nutrition/15 dark:text-nutrition",
+    "border-nutrition-ring bg-nutrition-surface text-nutrition-strong shadow-sm dark:border-nutrition-border-dark/40 dark:bg-nutrition-surface-dark/15 dark:text-nutrition",
   finyk:
-    "border-finyk-ring bg-finyk-surface text-finyk-strong shadow-sm dark:border-finyk/40 dark:bg-finyk/15 dark:text-finyk",
+    "border-finyk-ring bg-finyk-surface text-finyk-strong shadow-sm dark:border-finyk-border-dark/40 dark:bg-finyk-surface-dark/15 dark:text-finyk",
 };
 
 const INACTIVE =

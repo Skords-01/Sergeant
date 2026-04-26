@@ -183,7 +183,7 @@ export function HabitDetailSheet({
         {tag.map((t) => (
           <span
             key={t}
-            className="text-2xs px-2 py-0.5 rounded-full bg-routine-surface dark:bg-routine/10 border border-routine-line/50 dark:border-routine/25 text-routine-strong dark:text-routine font-medium"
+            className="text-2xs px-2 py-0.5 rounded-full bg-routine-surface dark:bg-routine-surface-dark/10 border border-routine-line/50 dark:border-routine-border-dark/25 text-routine-strong dark:text-routine font-medium"
           >
             {t}
           </span>
@@ -321,11 +321,12 @@ export function HabitDetailSheet({
                 className={cn(
                   "aspect-square flex items-center justify-center rounded-lg text-xs font-medium transition-colors",
                   done
-                    ? "bg-routine-surface2 dark:bg-routine/15 text-routine-strong dark:text-routine border border-routine-ring/40 dark:border-routine/30 font-bold"
+                    ? "bg-routine-surface2 dark:bg-routine-surface-dark/15 text-routine-strong dark:text-routine border border-routine-ring/40 dark:border-routine-border-dark/30 font-bold"
                     : scheduled
                       ? "bg-panelHi/60 text-muted border border-line/30"
                       : "text-subtle/50",
-                  isToday && "ring-1 ring-routine-ring/60 dark:ring-routine/50",
+                  isToday &&
+                    "ring-1 ring-routine-ring/60 dark:ring-routine-border-dark/50",
                 )}
                 title={
                   done
@@ -342,7 +343,7 @@ export function HabitDetailSheet({
         </div>
         <div className="flex items-center gap-3 mt-2 text-3xs text-subtle">
           <span className="flex items-center gap-1">
-            <span className="inline-block w-3 h-3 rounded bg-routine-surface2 dark:bg-routine/15 border border-routine-ring/40 dark:border-routine/30" />
+            <span className="inline-block w-3 h-3 rounded bg-routine-surface2 dark:bg-routine-surface-dark/15 border border-routine-ring/40 dark:border-routine-border-dark/30" />
             Виконано
           </span>
           <span className="flex items-center gap-1">

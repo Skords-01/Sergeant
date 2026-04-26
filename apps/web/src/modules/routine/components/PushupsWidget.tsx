@@ -115,7 +115,7 @@ export function PushupsWidget() {
                 addReps(n);
                 setOpen(false);
               }}
-              className="min-h-[44px] rounded-2xl border border-routine-line/80 dark:border-routine/30 bg-routine-surface dark:bg-routine/10 px-1 py-2.5 text-center text-xs font-bold text-routine-strong dark:text-routine transition-colors active:opacity-90 sm:px-2 sm:text-sm"
+              className="min-h-[44px] rounded-2xl border border-routine-line/80 dark:border-routine-border-dark/30 bg-routine-surface dark:bg-routine-surface-dark/10 px-1 py-2.5 text-center text-xs font-bold text-routine-strong dark:text-routine transition-colors active:opacity-90 sm:px-2 sm:text-sm"
             >
               +{n}
             </button>

@@ -52,10 +52,10 @@ export const MODULE_CONFIGS: Record<ModuleId, ModuleConfig> = {
     label: "Фінік",
     emoji: "\uD83D\uDCB0",
     module: "finyk",
-    iconClass: "bg-finyk-soft text-finyk dark:bg-finyk/15",
+    iconClass: "bg-finyk-soft text-finyk dark:bg-finyk-surface-dark/15",
     accentClass: "bg-finyk",
     cardBg:
-      "bg-finyk-soft/40 dark:bg-finyk/8 hover:shadow-float hover:-translate-y-0.5",
+      "bg-finyk-soft/40 dark:bg-finyk-surface-dark/8 hover:shadow-float hover:-translate-y-0.5",
     description: "Транзакції та бюджети",
     hasGoal: false,
     emptyLabel: "Почни тут \u2192",
@@ -85,10 +85,10 @@ export const MODULE_CONFIGS: Record<ModuleId, ModuleConfig> = {
     label: "Фізрук",
     emoji: "\uD83D\uDCAA",
     module: "fizruk",
-    iconClass: "bg-fizruk-soft text-fizruk dark:bg-fizruk/15",
+    iconClass: "bg-fizruk-soft text-fizruk dark:bg-fizruk-surface-dark/15",
     accentClass: "bg-fizruk",
     cardBg:
-      "bg-fizruk-soft/40 dark:bg-fizruk/8 hover:shadow-float hover:-translate-y-0.5",
+      "bg-fizruk-soft/40 dark:bg-fizruk-surface-dark/8 hover:shadow-float hover:-translate-y-0.5",
     description: "Тренування та прогрес",
     hasGoal: false,
     emptyLabel: "Почни тут \u2192",
@@ -117,10 +117,11 @@ export const MODULE_CONFIGS: Record<ModuleId, ModuleConfig> = {
     label: "Рутина",
     emoji: "\u2705",
     module: "routine",
-    iconClass: "bg-routine-surface text-routine dark:bg-routine/15",
+    iconClass:
+      "bg-routine-surface text-routine dark:bg-routine-surface-dark/15",
     accentClass: "bg-routine",
     cardBg:
-      "bg-routine-surface/40 dark:bg-routine/8 hover:shadow-float hover:-translate-y-0.5",
+      "bg-routine-surface/40 dark:bg-routine-surface-dark/8 hover:shadow-float hover:-translate-y-0.5",
     description: "Звички та щоденні цілі",
     hasGoal: true,
     emptyLabel: "Почни тут \u2192",
@@ -150,10 +151,11 @@ export const MODULE_CONFIGS: Record<ModuleId, ModuleConfig> = {
     label: "Харчування",
     emoji: "\uD83E\uDD57",
     module: "nutrition",
-    iconClass: "bg-nutrition-soft text-nutrition dark:bg-nutrition/15",
+    iconClass:
+      "bg-nutrition-soft text-nutrition dark:bg-nutrition-surface-dark/15",
     accentClass: "bg-nutrition",
     cardBg:
-      "bg-nutrition-soft/40 dark:bg-nutrition/8 hover:shadow-float hover:-translate-y-0.5",
+      "bg-nutrition-soft/40 dark:bg-nutrition-surface-dark/8 hover:shadow-float hover:-translate-y-0.5",
     description: "КБЖВ та раціон",
     hasGoal: true,
     emptyLabel: "Почни тут \u2192",

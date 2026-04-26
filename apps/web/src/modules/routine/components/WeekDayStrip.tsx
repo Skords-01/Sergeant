@@ -52,7 +52,7 @@ export function WeekDayStrip({
               className={cn(
                 "flex min-h-[44px] flex-col items-center justify-center rounded-xl border py-1 text-2xs font-semibold transition-colors sm:text-xs",
                 isSel
-                  ? "border-routine-ring dark:border-routine/40 bg-routine-surface2 dark:bg-routine/15 text-text shadow-sm ring-1 ring-routine-line/50 dark:ring-routine/30"
+                  ? "border-routine-ring dark:border-routine-border-dark/40 bg-routine-surface2 dark:bg-routine-surface-dark/15 text-text shadow-sm ring-1 ring-routine-line/50 dark:ring-routine-border-dark/30"
                   : "border-transparent bg-panelHi/50 text-muted hover:bg-panelHi hover:text-text",
                 isToday && !isSel && "ring-1 ring-routine/40",
               )}

@@ -67,13 +67,13 @@ const variants: Record<ButtonVariant, string> = {
   // low opacity so the button blends with the warm dark panel instead of
   // reading as an acidic pastel — same convention used by Badge/Tabs.
   "finyk-soft":
-    "bg-finyk-soft text-finyk-strong dark:bg-finyk/15 dark:text-finyk border border-finyk-ring/50 dark:border-finyk/30 hover:bg-brand-100 dark:hover:bg-finyk/25 active:scale-[0.98]",
+    "bg-finyk-soft text-finyk-strong dark:bg-finyk-surface-dark/15 dark:text-finyk border border-finyk-ring/50 dark:border-finyk-border-dark/30 hover:bg-brand-100 dark:hover:bg-finyk-surface-dark/25 active:scale-[0.98]",
   "fizruk-soft":
-    "bg-fizruk-soft text-fizruk-strong dark:bg-fizruk/15 dark:text-fizruk border border-fizruk-ring/50 dark:border-fizruk/30 hover:bg-teal-100 dark:hover:bg-fizruk/25 active:scale-[0.98]",
+    "bg-fizruk-soft text-fizruk-strong dark:bg-fizruk-surface-dark/15 dark:text-fizruk border border-fizruk-ring/50 dark:border-fizruk-border-dark/30 hover:bg-teal-100 dark:hover:bg-fizruk-surface-dark/25 active:scale-[0.98]",
   "routine-soft":
-    "bg-routine-surface text-routine-strong dark:bg-routine/15 dark:text-routine border border-routine-ring/50 dark:border-routine/30 hover:bg-coral-100 dark:hover:bg-routine/25 active:scale-[0.98]",
+    "bg-routine-surface text-routine-strong dark:bg-routine-surface-dark/15 dark:text-routine border border-routine-ring/50 dark:border-routine-border-dark/30 hover:bg-coral-100 dark:hover:bg-routine-surface-dark/25 active:scale-[0.98]",
   "nutrition-soft":
-    "bg-nutrition-soft text-nutrition-strong dark:bg-nutrition/15 dark:text-nutrition border border-nutrition-ring/50 dark:border-nutrition/30 hover:bg-lime-100 dark:hover:bg-nutrition/25 active:scale-[0.98]",
+    "bg-nutrition-soft text-nutrition-strong dark:bg-nutrition-surface-dark/15 dark:text-nutrition border border-nutrition-ring/50 dark:border-nutrition-border-dark/30 hover:bg-lime-100 dark:hover:bg-nutrition-surface-dark/25 active:scale-[0.98]",
 };
 
 const sizes: Record<ButtonSize, string> = {

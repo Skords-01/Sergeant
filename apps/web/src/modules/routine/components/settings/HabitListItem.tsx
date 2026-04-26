@@ -51,7 +51,7 @@ export const HabitListItem = memo(function HabitListItem({
       className={cn(
         "flex flex-col gap-2 border-b border-line/40 pb-3 last:border-0 last:pb-0 cursor-grab active:cursor-grabbing",
         editing &&
-          "ring-2 ring-routine-ring/60 dark:ring-routine/40 rounded-xl p-2 -mx-1",
+          "ring-2 ring-routine-ring/60 dark:ring-routine-border-dark/40 rounded-xl p-2 -mx-1",
         dragging && "opacity-70",
       )}
       onDragStart={onDragStart}
@@ -94,7 +94,7 @@ export const HabitListItem = memo(function HabitListItem({
             type="button"
             variant="ghost"
             size="sm"
-            className="!h-9 !px-3 !text-xs border border-routine-line/60 dark:border-routine/25 bg-routine-surface/40 dark:bg-routine/10"
+            className="!h-9 !px-3 !text-xs border border-routine-line/60 dark:border-routine-border-dark/25 bg-routine-surface/40 dark:bg-routine-surface-dark/10"
             onClick={onOpenDetails}
           >
             Деталі
