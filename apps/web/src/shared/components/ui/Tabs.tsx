@@ -60,6 +60,16 @@ export interface TabsProps<V extends string = string> {
   fill?: boolean;
   /** Accessible label for the tablist. */
   ariaLabel?: string;
+  /**
+   * Returns the DOM `id` of the panel each tab controls. Pass this when
+   * the consumer renders `<div role="tabpanel" id="…">` siblings — Tabs
+   * will then emit `aria-controls={getPanelId(value)}`. Omit if the page
+   * doesn't render real panels (e.g. tabs that drive route changes or
+   * design-system showcases): without a target we'd produce dangling
+   * IDREFs (axe `aria-valid-attr-value`), which is worse than no
+   * `aria-controls` at all.
+   */
+  getPanelId?: (value: V) => string;
   className?: string;
   tabsClassName?: string;
 }
@@ -114,6 +124,7 @@ export function Tabs<V extends string = string>({
   size = "md",
   fill = false,
   ariaLabel,
+  getPanelId,
   className,
   tabsClassName,
 }: TabsProps<V>) {
@@ -219,7 +230,7 @@ export function Tabs<V extends string = string>({
             id={`${baseId}-tab-${item.value}`}
             data-value={String(item.value)}
             aria-selected={isActive}
-            aria-controls={`${baseId}-panel-${item.value}`}
+            aria-controls={getPanelId ? getPanelId(item.value) : undefined}
             tabIndex={isActive ? 0 : -1}
             disabled={item.disabled}
             onClick={() => !item.disabled && onChange(item.value)}

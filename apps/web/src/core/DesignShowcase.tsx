@@ -125,10 +125,13 @@ export function DesignShowcase() {
       {/* ── Sticky nav ──────────────────────────────────────────── */}
       <header className="sticky top-0 z-[100] bg-panel/90 backdrop-blur-md border-b border-line">
         <div className="max-w-3xl mx-auto px-5 h-12 flex items-center gap-4">
-          <span className="font-extrabold text-text text-sm shrink-0">
+          <h1 className="font-extrabold text-text text-sm shrink-0">
             Design System
-          </span>
-          <nav className="flex items-center gap-0.5 overflow-x-auto flex-1 min-w-0 scrollbar-hide">
+          </h1>
+          <nav
+            aria-label="Розділи дизайн-системи"
+            className="flex items-center gap-0.5 overflow-x-auto flex-1 min-w-0 scrollbar-hide"
+          >
             {NAV_SECTIONS.map((s) => (
               <a
                 key={s.id}
@@ -622,12 +625,21 @@ export function DesignShowcase() {
 
           <Group label="Select — розміри та error" row>
             {(["sm", "md", "lg"] as const).map((size) => (
-              <Select key={size} size={size} className="w-40">
+              <Select
+                key={size}
+                size={size}
+                className="w-40"
+                aria-label={`Приклад Select, розмір ${size}`}
+              >
                 <option>Варіант 1</option>
                 <option>Варіант 2</option>
               </Select>
             ))}
-            <Select className="w-40" error>
+            <Select
+              className="w-40"
+              error
+              aria-label="Приклад Select, стан error"
+            >
               <option>Error стан</option>
             </Select>
           </Group>
@@ -862,6 +874,7 @@ export function DesignShowcase() {
                   >
                     <ModuleBottomNav
                       module={mod}
+                      ariaLabel={`ModuleBottomNav (${mod})`}
                       items={[
                         {
                           id: "home",

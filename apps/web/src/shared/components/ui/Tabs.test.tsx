@@ -101,6 +101,33 @@ describe("Tabs", () => {
     expect(active.className).toContain("text-finyk");
   });
 
+  it("omits aria-controls when no getPanelId is provided (avoids dangling IDREFs)", () => {
+    const { getAllByRole } = render(
+      <Tabs items={ITEMS} value="overview" onChange={() => {}} />,
+    );
+    const tabs = getAllByRole("tab");
+    for (const t of tabs) {
+      expect(t.getAttribute("aria-controls")).toBeNull();
+    }
+  });
+
+  it("emits aria-controls={getPanelId(value)} when the prop is provided", () => {
+    const { getAllByRole } = render(
+      <Tabs
+        items={ITEMS}
+        value="overview"
+        onChange={() => {}}
+        getPanelId={(v) => `panel-${v}`}
+      />,
+    );
+    const [overview, transactions, categories] = getAllByRole("tab");
+    expect(overview.getAttribute("aria-controls")).toBe("panel-overview");
+    expect(transactions.getAttribute("aria-controls")).toBe(
+      "panel-transactions",
+    );
+    expect(categories.getAttribute("aria-controls")).toBe("panel-categories");
+  });
+
   it("style='pill' + variant='routine' paints active pill with routine-soft palette", () => {
     const { getAllByRole } = render(
       <Tabs
