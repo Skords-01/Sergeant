@@ -17,6 +17,117 @@ interface NormalizedProduct {
   partial?: boolean;
 }
 
+// ──────────────────────────────────────────────────────────────────────────────
+// In-memory TTL cache for cascade results.
+//
+// Key: normalized barcode (digits only, 8–14). Value: either a found product
+// or a "miss" sentinel (so 404-у не доводиться знов проганяти cascade на
+// 3 upstream-и для популярних, але не існуючих штрихкодів).
+//
+// TTL-и розділено: hit живе довше (продукт майже не змінюється — 6 годин
+// дефолт), miss — коротше (30 хв), бо upstream-и регулярно поповнюють бази.
+//
+// Bounded size: коли заповнено, evict-имо найстаріший вставлений ключ
+// (Map зберігає insertion order — це FIFO, не справжній LRU, але для barcode
+// lookup-у з 99% read-через-write патерном різниця не суттєва і простіше).
+//
+// Усі TTL/розмір env-overridable; `__barcodeTestHooks()` дозволяє юніт-тестам
+// скидати стан і темпорально override-ити TTL для cache-expiry-сценаріїв.
+// ──────────────────────────────────────────────────────────────────────────────
+
+interface BarcodeCacheConfig {
+  hitTtlMs: number;
+  missTtlMs: number;
+  maxSize: number;
+}
+
+interface BarcodeCacheEntry {
+  product: NormalizedProduct | null; // null = "miss" sentinel
+  expiresAt: number; // monotonic ms (Date.now())
+}
+
+function readPositiveIntEnv(name: string, fallback: number): number {
+  const raw = process.env[name];
+  if (raw == null || raw === "") return fallback;
+  const n = Number(raw);
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : fallback;
+}
+
+const DEFAULT_HIT_TTL_MS = 6 * 60 * 60 * 1000; // 6 годин
+const DEFAULT_MISS_TTL_MS = 30 * 60 * 1000; // 30 хвилин
+const DEFAULT_MAX_SIZE = 1000;
+
+const cacheConfig: BarcodeCacheConfig = {
+  hitTtlMs: readPositiveIntEnv("BARCODE_CACHE_HIT_TTL_MS", DEFAULT_HIT_TTL_MS),
+  missTtlMs: readPositiveIntEnv(
+    "BARCODE_CACHE_MISS_TTL_MS",
+    DEFAULT_MISS_TTL_MS,
+  ),
+  maxSize: readPositiveIntEnv("BARCODE_CACHE_MAX_SIZE", DEFAULT_MAX_SIZE),
+};
+
+const cache = new Map<string, BarcodeCacheEntry>();
+
+function cacheGet(key: string): BarcodeCacheEntry | undefined {
+  const entry = cache.get(key);
+  if (!entry) return undefined;
+  if (entry.expiresAt <= Date.now()) {
+    cache.delete(key);
+    return undefined;
+  }
+  return entry;
+}
+
+function cacheSet(key: string, product: NormalizedProduct | null): void {
+  const ttlMs = product ? cacheConfig.hitTtlMs : cacheConfig.missTtlMs;
+  // Refresh insertion order if updating an existing entry.
+  if (cache.has(key)) cache.delete(key);
+  cache.set(key, { product, expiresAt: Date.now() + ttlMs });
+  while (cache.size > cacheConfig.maxSize) {
+    const oldest = cache.keys().next().value;
+    if (oldest === undefined) break;
+    cache.delete(oldest);
+  }
+}
+
+export interface BarcodeTestHooks {
+  configure(overrides: Partial<BarcodeCacheConfig>): void;
+  reset(): void;
+  cacheSize(): number;
+  config(): Readonly<BarcodeCacheConfig>;
+}
+
+/**
+ * Test-only hooks. Не використовуй у прод-коді.
+ */
+export function __barcodeTestHooks(): BarcodeTestHooks {
+  return {
+    configure(overrides) {
+      if (overrides.hitTtlMs != null) cacheConfig.hitTtlMs = overrides.hitTtlMs;
+      if (overrides.missTtlMs != null)
+        cacheConfig.missTtlMs = overrides.missTtlMs;
+      if (overrides.maxSize != null) cacheConfig.maxSize = overrides.maxSize;
+    },
+    reset() {
+      cache.clear();
+      cacheConfig.hitTtlMs = readPositiveIntEnv(
+        "BARCODE_CACHE_HIT_TTL_MS",
+        DEFAULT_HIT_TTL_MS,
+      );
+      cacheConfig.missTtlMs = readPositiveIntEnv(
+        "BARCODE_CACHE_MISS_TTL_MS",
+        DEFAULT_MISS_TTL_MS,
+      );
+      cacheConfig.maxSize = readPositiveIntEnv(
+        "BARCODE_CACHE_MAX_SIZE",
+        DEFAULT_MAX_SIZE,
+      );
+    },
+    cacheSize: () => cache.size,
+    config: () => ({ ...cacheConfig }),
+  };
+}
+
 interface OFFProduct {
   product_name?: string;
   product_name_uk?: string;
@@ -335,35 +446,53 @@ export default async function handler(
     return;
   }
 
+  // Cache hit short-circuits the cascade entirely. Miss-sentinel returns the
+  // same 404 без чергового round-trip-у на upstream-и.
+  const cached = cacheGet(barcode);
+  if (cached) {
+    if (cached.product) {
+      res.status(200).json({ product: cached.product });
+    } else {
+      res.status(404).json({ error: "Продукт не знайдено" });
+    }
+    return;
+  }
+
   try {
     // Cascade: OFF → USDA → UPCitemdb
     let product: NormalizedProduct | null = null;
+    let upstreamThrew = false;
 
     try {
       product = await lookupOFF(barcode);
     } catch {
-      /* continue to next source */
+      upstreamThrew = true;
     }
     if (!product) {
       try {
         product = await lookupUSDA(barcode);
       } catch {
-        /* continue to next source */
+        upstreamThrew = true;
       }
     }
     if (!product) {
       try {
         product = await lookupUPCitemdb(barcode);
       } catch {
-        /* continue to next source */
+        upstreamThrew = true;
       }
     }
 
     if (!product) {
+      // Кешуємо miss тільки якщо жоден upstream НЕ кинув: інакше це не
+      // справжній miss, а transient failure — повторний запит має пройти
+      // cascade знову.
+      if (!upstreamThrew) cacheSet(barcode, null);
       res.status(404).json({ error: "Продукт не знайдено" });
       return;
     }
 
+    cacheSet(barcode, product);
     res.status(200).json({ product });
   } catch (e: unknown) {
     if (hasErrorName(e, "TimeoutError") || hasErrorName(e, "AbortError")) {
