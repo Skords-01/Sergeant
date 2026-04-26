@@ -84,3 +84,93 @@ export function calcFinykSpendingByDate(
   }
   return { total, daily: dailyRounded };
 }
+
+export interface FinykPeriodAggregate {
+  /** Сума витрат у періоді (positive, кругле UAH). */
+  totalSpent: number;
+  /** Сума надходжень у періоді (positive, кругле UAH). */
+  totalIncome: number;
+  /** Кількість не виключених транзакцій у періоді (доходи + витрати). */
+  txCount: number;
+  /**
+   * Сума витрат, згрупована за ключем категорії, який повертає
+   * `categoryKey`. Якщо `categoryKey` не задано — усі витрати збираються
+   * під ключем `"other"`. Значення округлені.
+   */
+  byCategory: Record<string, number>;
+}
+
+export interface FinykPeriodAggregateOptions extends SpendingOptions {
+  /** Нижня межа діапазону (мс), включно. */
+  start: number;
+  /** Верхня межа діапазону (мс), виключно. За замовчуванням +∞. */
+  end?: number;
+  /**
+   * Бакет для транзакції-витрати (amount < 0). Викликається тільки на
+   * не виключених expense-транзакціях. Якщо не задано, усі витрати
+   * потрапляють у бакет `"other"`.
+   */
+  categoryKey?: (tx: Tx) => string;
+}
+
+/**
+ * Зведення Фінік-транзакцій за період: сумарні витрати/доходи, кількість
+ * транзакцій та розподіл витрат за категоріями. Єдиний агрегатор, який
+ * мають викликати дашборд-споживачі (`useWeeklyDigest`, `useCoachInsight`,
+ * Hub-Reports тощо), щоб не дублювати правила фільтрації (excluded ids,
+ * splits, sign-aware sum) у власних реалізаціях.
+ */
+export function calcFinykPeriodAggregate(
+  transactions: Tx[] | null | undefined,
+  options: FinykPeriodAggregateOptions,
+): FinykPeriodAggregate {
+  const {
+    start,
+    end = Number.POSITIVE_INFINITY,
+    excludedTxIds,
+    txSplits = {},
+    categoryKey,
+  } = options;
+
+  const list = Array.isArray(transactions) ? transactions : [];
+  const excluded =
+    excludedTxIds instanceof Set
+      ? excludedTxIds
+      : new Set(Array.isArray(excludedTxIds) ? excludedTxIds : []);
+
+  let totalSpent = 0;
+  let totalIncome = 0;
+  let txCount = 0;
+  const byCategory: Record<string, number> = {};
+
+  for (const tx of list) {
+    if (!tx) continue;
+    if (excluded.has(tx.id)) continue;
+    const rawTime = tx.time ?? 0;
+    const ms = rawTime > 1e10 ? rawTime : rawTime * 1000;
+    if (!Number.isFinite(ms) || ms < start || ms >= end) continue;
+    txCount++;
+    const raw = tx.amount ?? 0;
+    if (raw < 0) {
+      const amt = getTxStatAmount(tx, txSplits);
+      if (!Number.isFinite(amt) || amt <= 0) continue;
+      totalSpent += amt;
+      const key = categoryKey ? categoryKey(tx) : "other";
+      byCategory[key] = (byCategory[key] ?? 0) + amt;
+    } else if (raw > 0) {
+      totalIncome += raw / 100;
+    }
+  }
+
+  const byCategoryRounded: Record<string, number> = {};
+  for (const k of Object.keys(byCategory)) {
+    byCategoryRounded[k] = Math.round(byCategory[k]);
+  }
+
+  return {
+    totalSpent: Math.round(totalSpent),
+    totalIncome: Math.round(totalIncome),
+    txCount,
+    byCategory: byCategoryRounded,
+  };
+}

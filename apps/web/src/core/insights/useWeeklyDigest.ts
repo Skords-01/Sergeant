@@ -7,6 +7,8 @@ import { loadDigest as sharedLoadDigest } from "@shared/lib/weeklyDigestStorage"
 import { coachKeys, digestKeys } from "@shared/lib/queryKeys";
 import { formatApiError } from "@shared/lib/apiErrorFormat";
 import { MCC_CATEGORIES, INCOME_CATEGORIES } from "@finyk/constants";
+import { readFinykStatsContext } from "@finyk/lib/lsStats";
+import { calcFinykPeriodAggregate } from "@sergeant/finyk-domain";
 
 const DIGEST_PREFIX = STORAGE_KEYS.WEEKLY_DIGEST_PREFIX;
 
@@ -120,55 +122,34 @@ export interface FinykAggregate {
 }
 
 export function aggregateFinyk(weekKey: string): FinykAggregate {
-  const txRaw = safeReadLS<{ txs?: unknown[] } | null>("finyk_tx_cache", null);
-  const txList: unknown[] = txRaw?.txs ?? (Array.isArray(txRaw) ? txRaw : []);
-  const txCategories = safeReadLS<Record<string, string>>("finyk_tx_cats", {});
-  const hiddenIds = new Set(safeReadLS<string[]>("finyk_hidden_txs", []));
-  const customCategories = safeReadLS<Category[]>("finyk_custom_cats_v1", []);
-  const transferIds = new Set(
-    Object.entries(txCategories)
-      .filter(([, v]) => v === "internal_transfer")
-      .map(([k]) => k),
-  );
+  const { txs, excludedTxIds, txSplits, txCategories, customCategories } =
+    readFinykStatsContext();
 
-  const monday = new Date(`${weekKey}T00:00:00`);
-  const sunday = new Date(monday);
-  sunday.setDate(monday.getDate() + 7);
+  const monday = new Date(`${weekKey}T00:00:00`).getTime();
+  const sunday = monday + 7 * 86_400_000;
 
-  let totalSpent = 0;
-  let totalIncome = 0;
-  let txCount = 0;
-  const catAmounts: Record<string, number> = {};
+  // AI-NOTE: Раніше aggregateFinyk парсив `finyk_tx_cache`/`finyk_hidden_txs`/
+  // `finyk_tx_cats` напряму і виключав лише hidden + internal_transfer. Тепер
+  // делегуємо у `@sergeant/finyk-domain` (calcFinykPeriodAggregate) і
+  // використовуємо канонічний excluded-set Фініка (hidden + transfers + recv +
+  // finyk_excluded_stat_txs) — той самий, що Overview/Reports. byCategory
+  // ключуємо за «label після resolveCatLabel», як і раніше, щоб мерджити
+  // різні id-шники, що мапляться в одну UI-категорію.
+  const aggregate = calcFinykPeriodAggregate(txs, {
+    start: monday,
+    end: sunday,
+    excludedTxIds,
+    txSplits,
+    categoryKey: (tx) => {
+      const raw = txCategories[tx.id] ?? tx.mcc ?? "other";
+      return resolveCatLabel(raw, customCategories as Category[]);
+    },
+  });
 
-  if (Array.isArray(txList)) {
-    for (const tx of txList as Array<{
-      id: string;
-      time: number;
-      amount: number;
-      mcc?: number;
-    }>) {
-      const ts = tx.time > 1e10 ? tx.time : tx.time * 1000;
-      const d = new Date(ts);
-      if (d < monday || d >= sunday) continue;
-      if (hiddenIds.has(tx.id)) continue;
-      if (transferIds.has(tx.id)) continue;
-      const amount = (tx.amount ?? 0) / 100;
-      txCount++;
-      if (amount < 0) {
-        totalSpent += Math.abs(amount);
-        const rawCat = txCategories[tx.id] || tx.mcc || "other";
-        const cat = resolveCatLabel(rawCat, customCategories);
-        catAmounts[cat] = (catAmounts[cat] ?? 0) + Math.abs(amount);
-      } else {
-        totalIncome += amount;
-      }
-    }
-  }
-
-  const topCategories = Object.entries(catAmounts)
+  const topCategories = Object.entries(aggregate.byCategory)
     .sort(([, a], [, b]) => b - a)
     .slice(0, 5)
-    .map(([name, amount]) => ({ name, amount: Math.round(amount) }));
+    .map(([name, amount]) => ({ name, amount }));
 
   const finykStorage = safeReadLS<{
     monthlyPlan?: { expense?: number };
@@ -176,9 +157,9 @@ export function aggregateFinyk(weekKey: string): FinykAggregate {
   const monthlyBudget = finykStorage?.monthlyPlan?.expense ?? null;
 
   return {
-    totalSpent: Math.round(totalSpent),
-    totalIncome: Math.round(totalIncome),
-    txCount,
+    totalSpent: aggregate.totalSpent,
+    totalIncome: aggregate.totalIncome,
+    txCount: aggregate.txCount,
     topCategories,
     monthlyBudget,
   };

@@ -30,3 +30,63 @@ export function getFinykTxSplitsFromStorage() {
   const v = safeReadLS("finyk_tx_splits", {});
   return v && typeof v === "object" ? v : {};
 }
+
+interface BankTxLike {
+  id: string;
+  amount: number;
+  time?: number;
+  mcc?: number;
+  description?: string;
+}
+
+interface CategoryLike {
+  id: string;
+  label?: string;
+  name?: string;
+  mccs?: number[];
+}
+
+/**
+ * Повертає весь контекст, потрібний для агрегації Фінік-транзакцій
+ * дашбордними споживачами (`useWeeklyDigest`, `useCoachInsight` тощо):
+ * список банківських транзакцій з кешу, набір excluded id-шників (за тими
+ * ж правилами що й Overview/Reports), мапу spli-ів, мапу tx → categoryId
+ * та користувацькі категорії. Замість кожного разу повторювати 5 викликів
+ * `safeReadLS` з різних кешів — забираємо їх в одному місці.
+ */
+export interface FinykStatsContext {
+  txs: BankTxLike[];
+  excludedTxIds: Set<string>;
+  txSplits: Record<string, unknown>;
+  txCategories: Record<string, string>;
+  customCategories: CategoryLike[];
+}
+
+export function readFinykStatsContext(): FinykStatsContext {
+  const txRaw = safeReadLS<{ txs?: BankTxLike[] } | BankTxLike[] | null>(
+    "finyk_tx_cache",
+    null,
+  );
+  const txs: BankTxLike[] = Array.isArray(txRaw)
+    ? txRaw
+    : Array.isArray(txRaw?.txs)
+      ? txRaw.txs
+      : [];
+  const txCategoriesRaw = safeReadLS<Record<string, string>>(
+    "finyk_tx_cats",
+    {},
+  );
+  const txCategories =
+    txCategoriesRaw && typeof txCategoriesRaw === "object"
+      ? txCategoriesRaw
+      : {};
+  const customCategories =
+    safeReadLS<CategoryLike[]>("finyk_custom_cats_v1", []) || [];
+  return {
+    txs,
+    excludedTxIds: getFinykExcludedTxIdsFromStorage(),
+    txSplits: getFinykTxSplitsFromStorage() as Record<string, unknown>,
+    txCategories,
+    customCategories: Array.isArray(customCategories) ? customCategories : [],
+  };
+}

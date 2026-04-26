@@ -2,6 +2,8 @@ import { useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { coachApi, isApiError } from "@shared/api";
 import { coachKeys } from "@shared/lib/queryKeys";
+import { readFinykStatsContext } from "@finyk/lib/lsStats";
+import { calcFinykPeriodAggregate } from "@sergeant/finyk-domain";
 
 const CACHE_KEY = "hub_coach_insight_cache_v1";
 
@@ -57,22 +59,8 @@ interface CoachSnapshot {
 }
 
 function aggregateCurrentSnapshot(): CoachSnapshot {
-  const txRaw = safeParseLS<{ txs?: unknown[]; length?: number } | null>(
-    "finyk_tx_cache",
-    null,
-  );
-  const txList: unknown[] = (txRaw as { txs?: unknown[] })?.txs
-    ? ((txRaw as { txs: unknown[] }).txs ?? [])
-    : Array.isArray(txRaw)
-      ? (txRaw as unknown[])
-      : [];
-  const txCategories = safeParseLS<Record<string, string>>("finyk_tx_cats", {});
-  const hiddenIds = new Set(safeParseLS<string[]>("finyk_hidden_txs", []));
-  const transferIds = new Set(
-    Object.entries(txCategories)
-      .filter(([, v]) => v === "internal_transfer")
-      .map(([k]) => k),
-  );
+  const { txs, excludedTxIds, txSplits, txCategories } =
+    readFinykStatsContext();
 
   const now = new Date();
   const mondayOffset = (now.getDay() + 6) % 7;
@@ -80,44 +68,27 @@ function aggregateCurrentSnapshot(): CoachSnapshot {
   weekStart.setDate(now.getDate() - mondayOffset);
   weekStart.setHours(0, 0, 0, 0);
 
-  let totalSpent = 0;
-  let totalIncome = 0;
-  let txCount = 0;
-  const catAmounts: Record<string, number> = {};
+  // AI-NOTE: Делегуємо у `calcFinykPeriodAggregate` (`@sergeant/finyk-domain`)
+  // замість власного парсингу `finyk_tx_cache`/`finyk_hidden_txs`/
+  // `finyk_tx_cats`. Excluded-set єдиний з Overview/Reports
+  // (`getFinykExcludedTxIdsFromStorage`). Категорії бакетимо за raw
+  // `txCategories[id] || mcc` — coach API сам розкриває назви.
+  const aggregate = calcFinykPeriodAggregate(txs, {
+    start: weekStart.getTime(),
+    excludedTxIds,
+    txSplits,
+    categoryKey: (tx) => txCategories[tx.id] || String(tx.mcc ?? "other"),
+  });
 
-  if (Array.isArray(txList)) {
-    for (const tx of txList as Array<{
-      id: string;
-      time: number;
-      amount: number;
-      mcc?: number;
-    }>) {
-      const ts = tx.time > 1e10 ? tx.time : tx.time * 1000;
-      const d = new Date(ts);
-      if (d < weekStart) continue;
-      if (hiddenIds.has(tx.id)) continue;
-      if (transferIds.has(tx.id)) continue;
-      const amount = (tx.amount ?? 0) / 100;
-      txCount++;
-      if (amount < 0) {
-        totalSpent += Math.abs(amount);
-        const cat = txCategories[tx.id] || String(tx.mcc ?? "other");
-        catAmounts[cat] = (catAmounts[cat] ?? 0) + Math.abs(amount);
-      } else {
-        totalIncome += amount;
-      }
-    }
-  }
-
-  const topCategories = Object.entries(catAmounts)
+  const topCategories = Object.entries(aggregate.byCategory)
     .sort(([, a], [, b]) => b - a)
     .slice(0, 5)
-    .map(([name, amount]) => ({ name, amount: Math.round(amount) }));
+    .map(([name, amount]) => ({ name, amount }));
 
   const finyk: FinykSnapshot = {
-    totalSpent: Math.round(totalSpent),
-    totalIncome: Math.round(totalIncome),
-    txCount,
+    totalSpent: aggregate.totalSpent,
+    totalIncome: aggregate.totalIncome,
+    txCount: aggregate.txCount,
     topCategories,
   };
 
