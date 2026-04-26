@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { Label } from "@shared/components/ui/FormField";
-import { subtleNavButtonClass } from "@shared/components/ui/buttonPresets";
+import { Button } from "@shared/components/ui/Button";
 import { cn } from "@shared/lib/cn";
 import { useDailyLog } from "../hooks/useDailyLog";
 import { Card } from "@shared/components/ui/Card";
@@ -344,13 +344,14 @@ export function Body({ onOpenMeasurements }) {
               </div>
             </div>
             {onOpenMeasurements && (
-              <button
-                type="button"
+              <Button
+                variant="secondary"
+                size="sm"
                 onClick={onOpenMeasurements}
-                className={subtleNavButtonClass}
+                className="text-xs font-semibold text-subtle hover:text-text"
               >
                 Виміри
-              </button>
+              </Button>
             )}
           </div>
         </div>

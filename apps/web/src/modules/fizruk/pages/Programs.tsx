@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { SectionHeading } from "@shared/components/ui/SectionHeading";
-import { subtleNavButtonClass } from "@shared/components/ui/buttonPresets";
+import { Button } from "@shared/components/ui/Button";
 import { cn } from "@shared/lib/cn";
 import { useExerciseCatalog } from "../hooks/useExerciseCatalog";
 import { BUILTIN_PROGRAMS } from "@sergeant/fizruk-domain";
@@ -32,13 +32,14 @@ export function Programs({
             </p>
           </div>
           {activeProgram && (
-            <button
-              type="button"
+            <Button
+              variant="secondary"
+              size="sm"
               onClick={deactivateProgram}
-              className={subtleNavButtonClass}
+              className="text-xs font-semibold text-subtle hover:text-text"
             >
               Зупинити
-            </button>
+            </Button>
           )}
         </div>
 
