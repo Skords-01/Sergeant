@@ -245,7 +245,6 @@ export default [
       "apps/web/src/core/insights/useCoachInsight.ts",
       "apps/web/src/core/insights/useWeeklyDigest.ts",
       "apps/web/src/modules/finyk/pages/Overview.tsx",
-      "apps/web/src/modules/finyk/pages/Transactions.tsx",
       "apps/web/src/modules/fizruk/components/TodayPlanCard.tsx",
       "apps/web/src/modules/fizruk/hooks/useExerciseCatalog.ts",
       "apps/web/src/modules/fizruk/hooks/useFizrukProgramStart.ts",

@@ -7,68 +7,22 @@ import { mergeExpenseCategoryDefinitions, CURRENCY } from "../constants";
 import { Skeleton } from "@shared/components/ui/Skeleton";
 import { EmptyState } from "@shared/components/ui/EmptyState";
 import { Icon } from "@shared/components/ui/Icon";
-import { Sheet } from "@shared/components/ui/Sheet";
 import { cn } from "@shared/lib/cn";
 import { perfMark, perfEnd } from "@shared/lib/perf";
 import { useToast } from "@shared/hooks/useToast";
 import { showUndoToast } from "@shared/lib/undoToast";
-import { STORAGE_KEYS } from "@sergeant/shared";
+import {
+  DAY_COLLAPSE_KEY,
+  dayKeyFromTx,
+  readDayCollapse,
+  writeDayCollapse,
+  isDayExpanded,
+  formatStickyDayLabel,
+} from "./transactionsLib";
+import { TransactionsHeader } from "./TransactionsHeader";
+import { TransactionsBatchToolbar } from "./TransactionsBatchToolbar";
 
 const now = new Date();
-const DAY_COLLAPSE_KEY = STORAGE_KEYS.FINYK_TX_DAY_COLLAPSE;
-
-function dayKeyFromTx(ts) {
-  const d = new Date(ts * 1000);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-}
-
-function readDayCollapse() {
-  try {
-    const raw = localStorage.getItem(DAY_COLLAPSE_KEY);
-    if (!raw) return {};
-    const parsed = JSON.parse(raw);
-    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-      return parsed;
-    }
-    return {};
-  } catch {
-    return {};
-  }
-}
-
-function writeDayCollapse(v) {
-  try {
-    localStorage.setItem(DAY_COLLAPSE_KEY, JSON.stringify(v));
-  } catch {
-    /* quota / private-mode — drop silently */
-  }
-}
-
-// Усі дні згорнуті за замовчуванням; ручне розгортання зберігається
-// в `overrides` і переживає перезавантаження (та міжтабову синхронізацію).
-// `todayKey` лишається в сигнатурі на випадок, якщо колись захочемо
-// повернути логіку "сьогодні завжди відкрите" через feature-toggle,
-// але зараз користувач свідомо попросив згорнуто-за-замовчуванням.
-function isDayExpanded(overrides, key, _todayKey) {
-  return !!overrides[key];
-}
-
-function formatStickyDayLabel(key) {
-  const [y, m, da] = key.split("-").map(Number);
-  const d = new Date(y, m - 1, da);
-  const t0 = new Date();
-  t0.setHours(0, 0, 0, 0);
-  const d0 = new Date(d);
-  d0.setHours(0, 0, 0, 0);
-  const diffDays = Math.round((t0.getTime() - d0.getTime()) / 86400000);
-  if (diffDays === 0) return "Сьогодні";
-  if (diffDays === 1) return "Вчора";
-  return d.toLocaleDateString("uk-UA", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  });
-}
 
 export function Transactions({
   mono,
@@ -454,113 +408,19 @@ export function Transactions({
   return (
     <div ref={setScrollParent} className="flex-1 overflow-y-auto">
       <div className="max-w-4xl mx-auto px-4 pt-4 page-tabbar-pad">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => goMonth(-1)}
-              className="w-8 h-8 flex items-center justify-center rounded-xl text-subtle hover:text-text hover:bg-panelHi transition-colors text-lg"
-            >
-              ‹
-            </button>
-            <span className="text-sm font-semibold text-text capitalize px-1">
-              {monthLabel}
-            </span>
-            <button
-              onClick={() => goMonth(1)}
-              disabled={isCurrentMonth}
-              className="w-8 h-8 flex items-center justify-center rounded-xl text-subtle hover:text-text hover:bg-panelHi transition-colors text-lg disabled:opacity-30"
-            >
-              ›
-            </button>
-          </div>
-          <div className="flex items-center gap-1.5">
-            {selectMode ? (
-              <button
-                onClick={exitSelectMode}
-                className="text-xs px-3 py-2 rounded-full border border-primary/40 bg-primary/8 text-primary min-h-[36px] font-semibold"
-              >
-                Скасувати
-              </button>
-            ) : (
-              <>
-                {hiddenTxIds.length > 0 && (
-                  <button
-                    onClick={() => setShowHidden((v) => !v)}
-                    className={cn(
-                      "text-xs px-3 py-2 rounded-full border border-line transition-colors min-h-[36px]",
-                      showHidden
-                        ? "text-primary border-primary"
-                        : "text-subtle",
-                    )}
-                  >
-                    {showHidden ? (
-                      <svg
-                        width="14"
-                        height="14"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        aria-hidden
-                      >
-                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                        <circle cx="12" cy="12" r="3" />
-                      </svg>
-                    ) : (
-                      <span>{hiddenTxIds.length} прих.</span>
-                    )}
-                  </button>
-                )}
-                <button
-                  onClick={() => setSelectMode(true)}
-                  className="text-xs px-3 py-2 rounded-full border border-line text-subtle hover:text-text hover:border-muted transition-colors min-h-[36px]"
-                  title="Вибрати кілька"
-                  aria-label="Режим вибору"
-                >
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    aria-hidden
-                  >
-                    <polyline points="9 11 12 14 22 4" />
-                    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
-                  </svg>
-                </button>
-                <button
-                  onClick={refresh}
-                  disabled={activeLoading}
-                  className="text-xs px-3 py-2 rounded-full border border-line text-subtle hover:text-text hover:border-muted transition-colors disabled:opacity-40 min-h-[36px]"
-                  aria-label="Оновити"
-                >
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className={activeLoading ? "motion-safe:animate-spin" : ""}
-                    aria-hidden
-                  >
-                    <polyline points="23 4 23 10 17 10" />
-                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
-                  </svg>
-                </button>
-              </>
-            )}
-          </div>
-        </div>
+        <TransactionsHeader
+          monthLabel={monthLabel}
+          isCurrentMonth={isCurrentMonth}
+          goMonth={goMonth}
+          selectMode={selectMode}
+          exitSelectMode={exitSelectMode}
+          setSelectMode={setSelectMode}
+          showHidden={showHidden}
+          setShowHidden={setShowHidden}
+          hiddenCount={hiddenTxIds.length}
+          refresh={refresh}
+          loading={activeLoading}
+        />
 
         {/* Sync status */}
         {syncState?.status !== "idle" && (
@@ -754,74 +614,17 @@ export function Transactions({
         )}
       </div>
 
-      {/* Batch action toolbar */}
-      {selectMode && (
-        <div className="fixed bottom-0 left-0 right-0 z-[60] safe-area-pb">
-          <div className="max-w-4xl mx-auto px-4 pb-[calc(60px+env(safe-area-inset-bottom,0px)+0.5rem)] pt-3">
-            <div className="bg-panel border border-line rounded-2xl shadow-float px-4 py-3 flex items-center justify-between gap-3">
-              <span className="text-sm font-semibold text-text">
-                {selectedIds.size > 0
-                  ? `${selectedIds.size} обрано`
-                  : "Оберіть транзакції"}
-              </span>
-              <div className="flex items-center gap-2 flex-wrap">
-                {selectedIds.size > 0 && (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => setBatchCatPicker(true)}
-                      className="text-sm font-semibold px-4 py-2 rounded-xl bg-primary text-bg min-h-[40px] transition-colors"
-                    >
-                      Категорія
-                    </button>
-                    <button
-                      type="button"
-                      onClick={applyBatchHide}
-                      className="text-sm font-semibold px-4 py-2 rounded-xl border border-line bg-panelHi text-text min-h-[40px] transition-colors hover:border-muted"
-                    >
-                      Приховати
-                    </button>
-                    <button
-                      type="button"
-                      onClick={applyBatchExclude}
-                      className="text-sm font-semibold px-4 py-2 rounded-xl border border-line bg-panelHi text-text min-h-[40px] transition-colors hover:border-muted"
-                    >
-                      Зі статистики
-                    </button>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Batch category picker */}
-      <Sheet
-        open={batchCatPicker}
-        onClose={() => setBatchCatPicker(false)}
-        title="Вибрати категорію"
-        description={`Застосується до ${selectedIds.size} транзакц${selectedIds.size === 1 ? "ії" : "ій"}`}
-        panelClassName="finyk-sheet"
-        zIndex={70}
-        bodyClassName="px-4 pb-6 flex flex-col gap-1"
-      >
-        {mergeExpenseCategoryDefinitions(customCategories)
-          .filter((c) => c.id !== "income")
-          .map((cat) => (
-            <button
-              key={cat.id}
-              type="button"
-              onClick={() => applyBatchCategory(cat.id)}
-              className="w-full text-left flex items-center gap-3 px-4 py-3 rounded-2xl hover:bg-panelHi transition-colors min-h-[48px]"
-            >
-              <span className="text-lg">
-                {(cat as { emoji?: string }).emoji}
-              </span>
-              <span className="text-sm font-medium text-text">{cat.label}</span>
-            </button>
-          ))}
-      </Sheet>
+      <TransactionsBatchToolbar
+        selectMode={selectMode}
+        selectedSize={selectedIds.size}
+        onOpenCatPicker={() => setBatchCatPicker(true)}
+        onApplyHide={applyBatchHide}
+        onApplyExclude={applyBatchExclude}
+        batchCatPicker={batchCatPicker}
+        onCloseCatPicker={() => setBatchCatPicker(false)}
+        onApplyCategory={applyBatchCategory}
+        customCategories={customCategories}
+      />
     </div>
   );
 }
