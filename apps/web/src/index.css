@@ -58,6 +58,39 @@
 
     --shadow-soft: 0 8px 32px rgba(28, 25, 23, 0.12);
 
+    /* Module glow drop-shadows for bottom nav icons (active state). */
+    --shadow-finyk-nav: 0 0 8px rgba(16, 185, 129, 0.3);
+    --shadow-fizruk-nav: 0 0 8px rgba(20, 184, 166, 0.3);
+    --shadow-routine-nav: 0 0 8px rgba(249, 112, 102, 0.3);
+    --shadow-nutrition-nav: 0 0 8px rgba(132, 204, 22, 0.3);
+
+    /* Destructive hover ring (Button variant="destructive"). */
+    --shadow-danger-ring: 0 0 0 3px rgba(239, 68, 68, 0.15);
+
+    /* Dark-mode overlay gradients for module hero Card variants. These are
+       layered on top of `bg-panel` when the theme is dark so the card keeps
+       a faint module tint instead of reading as a neutral warm panel. */
+    --gradient-card-finyk-dark: linear-gradient(
+      135deg,
+      rgba(16, 185, 129, 0.1) 0%,
+      transparent 100%
+    );
+    --gradient-card-fizruk-dark: linear-gradient(
+      135deg,
+      rgba(20, 184, 166, 0.1) 0%,
+      transparent 100%
+    );
+    --gradient-card-routine-dark: linear-gradient(
+      135deg,
+      rgba(249, 112, 102, 0.1) 0%,
+      transparent 100%
+    );
+    --gradient-card-nutrition-dark: linear-gradient(
+      135deg,
+      rgba(146, 204, 23, 0.1) 0%,
+      transparent 100%
+    );
+
     /* Brand accent for focus states */
     --c-accent: 16 185 129; /* emerald-500 */
 

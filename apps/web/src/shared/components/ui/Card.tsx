@@ -70,13 +70,13 @@ const variants: Record<CardVariant, string> = {
 
   // Module hero cards — branded surface in light, subtle tinted panel in dark.
   finyk:
-    "rounded-3xl border border-brand-200/50 bg-hero-emerald shadow-card dark:border-brand-800/30 dark:bg-panel dark:[background-image:linear-gradient(135deg,rgba(16,185,129,0.1)_0%,transparent_100%)]",
+    "rounded-3xl border border-brand-200/50 bg-hero-emerald shadow-card dark:border-brand-800/30 dark:bg-panel dark:bg-card-finyk-dark",
   fizruk:
-    "rounded-3xl border border-teal-200/50 bg-hero-teal shadow-card dark:border-teal-800/30 dark:bg-panel dark:[background-image:linear-gradient(135deg,rgba(20,184,166,0.1)_0%,transparent_100%)]",
+    "rounded-3xl border border-teal-200/50 bg-hero-teal shadow-card dark:border-teal-800/30 dark:bg-panel dark:bg-card-fizruk-dark",
   routine:
-    "rounded-3xl border border-coral-200/50 bg-hero-coral shadow-card dark:border-[rgba(162,51,51,0.3)] dark:bg-panel dark:[background-image:linear-gradient(135deg,rgba(249,112,102,0.1)_0%,transparent_100%)]",
+    "rounded-3xl border border-coral-200/50 bg-hero-coral shadow-card dark:border-[rgba(162,51,51,0.3)] dark:bg-panel dark:bg-card-routine-dark",
   nutrition:
-    "rounded-3xl border border-lime-200/50 bg-hero-lime shadow-card dark:border-[rgba(70,98,18,0.3)] dark:bg-panel dark:[background-image:linear-gradient(135deg,rgba(146,204,23,0.1)_0%,transparent_100%)]",
+    "rounded-3xl border border-lime-200/50 bg-hero-lime shadow-card dark:border-[rgba(70,98,18,0.3)] dark:bg-panel dark:bg-card-nutrition-dark",
 
   // Soft module cards (less prominent)
   "finyk-soft":

@@ -200,11 +200,24 @@ const preset = {
         "glow-teal": "0 0 0 3px rgba(20, 184, 166, 0.15)",
         "glow-coral": "0 0 0 3px rgba(249, 112, 102, 0.15)",
         "glow-lime": "0 0 0 3px rgba(146, 204, 23, 0.15)",
+        // Destructive hover ring (Button variant="destructive").
+        "danger-ring": "var(--shadow-danger-ring)",
         // Elevated cards (hover state)
         cardHover:
           "0 2px 4px rgba(13, 23, 38, 0.06), 0 12px 32px rgba(13, 23, 38, 0.12)",
         // Inner shadows for depth
         inner: "inset 0 2px 4px rgba(0, 0, 0, 0.05)",
+      },
+
+      // ═══════════════════════════════════════════════════════════════════
+      // DROP SHADOWS — SVG/icon glows for module bottom-nav active state.
+      // Backed by CSS variables so a token change cascades everywhere.
+      // ═══════════════════════════════════════════════════════════════════
+      dropShadow: {
+        "module-nav-finyk": "var(--shadow-finyk-nav)",
+        "module-nav-fizruk": "var(--shadow-fizruk-nav)",
+        "module-nav-routine": "var(--shadow-routine-nav)",
+        "module-nav-nutrition": "var(--shadow-nutrition-nav)",
       },
 
       // ═══════════════════════════════════════════════════════════════════
@@ -234,6 +247,14 @@ const preset = {
         "card-teal": "linear-gradient(135deg, #f0fdfa 0%, #ffffff 100%)",
         "card-coral": "linear-gradient(135deg, #fff5f3 0%, #ffffff 100%)",
         "card-lime": "linear-gradient(135deg, #f8fee7 0%, #ffffff 100%)",
+
+        // Dark-mode overlays for module hero Card variants. Layered on top
+        // of `bg-panel` so branded cards keep a faint module tint in dark
+        // mode instead of reading as a neutral warm surface.
+        "card-finyk-dark": "var(--gradient-card-finyk-dark)",
+        "card-fizruk-dark": "var(--gradient-card-fizruk-dark)",
+        "card-routine-dark": "var(--gradient-card-routine-dark)",
+        "card-nutrition-dark": "var(--gradient-card-nutrition-dark)",
 
         hero: "linear-gradient(150deg, #fdf9f3 0%, #fefdfb 100%)",
         "hero-g": "linear-gradient(150deg, #f0fdfa 0%, #ffffff 100%)",
