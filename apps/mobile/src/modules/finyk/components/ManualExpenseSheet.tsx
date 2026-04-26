@@ -240,9 +240,7 @@ export function ManualExpenseSheet({
     >
       <View className="px-4 pb-4" testID={testID}>
         <View className="mb-4">
-          <Text className="text-sm font-medium text-stone-700 mb-1">
-            Сума ₴
-          </Text>
+          <Text className="text-sm font-medium text-fg mb-1">Сума ₴</Text>
           <Input
             value={amount}
             onChangeText={(v) => {
@@ -261,9 +259,7 @@ export function ManualExpenseSheet({
         </View>
 
         <View className="mb-4">
-          <Text className="text-sm font-medium text-stone-700 mb-1">
-            Категорія
-          </Text>
+          <Text className="text-sm font-medium text-fg mb-1">Категорія</Text>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -293,7 +289,7 @@ export function ManualExpenseSheet({
                     className={
                       selected
                         ? "text-white text-sm font-medium"
-                        : "text-stone-700 text-sm font-medium"
+                        : "text-fg text-sm font-medium"
                     }
                   >
                     {c}
@@ -305,7 +301,7 @@ export function ManualExpenseSheet({
         </View>
 
         <View className="mb-4">
-          <Text className="text-sm font-medium text-stone-700 mb-1">Опис</Text>
+          <Text className="text-sm font-medium text-fg mb-1">Опис</Text>
           <Input
             value={description}
             onChangeText={setDescription}
@@ -316,7 +312,7 @@ export function ManualExpenseSheet({
         </View>
 
         <View className="mb-2">
-          <Text className="text-sm font-medium text-stone-700 mb-1">Дата</Text>
+          <Text className="text-sm font-medium text-fg mb-1">Дата</Text>
           <Input
             value={date}
             onChangeText={setDate}

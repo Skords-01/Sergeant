@@ -86,14 +86,14 @@ function EmptyFocus({
     >
       <View className="mb-2 flex-row items-center justify-between">
         {/* eslint-disable-next-line sergeant-design/no-eyebrow-drift -- intentional narrative eyebrow, mirrors web TodayFocusCard */}
-        <Text className="text-[11px] font-semibold uppercase tracking-wide text-stone-500">
+        <Text className="text-[11px] font-semibold uppercase tracking-wide text-fg-muted">
           Зараз
         </Text>
       </View>
-      <Text className="text-base font-bold leading-snug text-stone-900">
+      <Text className="text-base font-bold leading-snug text-fg">
         Що зафіксуємо?
       </Text>
-      <Text className="mt-1 text-xs leading-relaxed text-stone-500">
+      <Text className="mt-1 text-xs leading-relaxed text-fg-muted">
         Один тап — один запис. Обери модуль і продовжуй.
       </Text>
       <View className="mt-3 flex-row flex-wrap gap-2">
@@ -164,24 +164,24 @@ export function TodayFocusCard({
       <View className="pl-3">
         <View className="mb-1 flex-row items-center justify-between gap-3">
           {/* eslint-disable-next-line sergeant-design/no-eyebrow-drift -- intentional narrative eyebrow, mirrors web TodayFocusCard */}
-          <Text className="text-[11px] font-semibold uppercase tracking-wide text-stone-500">
+          <Text className="text-[11px] font-semibold uppercase tracking-wide text-fg-muted">
             Зараз
           </Text>
         </View>
 
-        <Text className="text-base font-bold leading-snug text-stone-900">
+        <Text className="text-base font-bold leading-snug text-fg">
           {focus.icon ? `${focus.icon} ` : ""}
           {focus.title}
         </Text>
 
         {focus.body ? (
-          <Text className="mt-1 text-xs leading-relaxed text-stone-500">
+          <Text className="mt-1 text-xs leading-relaxed text-fg-muted">
             {focus.body}
           </Text>
         ) : null}
 
         {coachInsight ? (
-          <Text className="mt-2 border-l-2 border-brand-500/40 pl-2 text-xs italic leading-relaxed text-stone-800">
+          <Text className="mt-2 border-l-2 border-brand-500/40 pl-2 text-xs italic leading-relaxed text-fg">
             {coachInsight}
           </Text>
         ) : null}
@@ -210,9 +210,7 @@ export function TodayFocusCard({
               className="ml-auto rounded-lg px-2.5 py-1.5 active:opacity-60"
               testID="today-focus-dismiss"
             >
-              <Text className="text-xs font-medium text-stone-500">
-                Пізніше
-              </Text>
+              <Text className="text-xs font-medium text-fg-muted">Пізніше</Text>
             </Pressable>
           ) : null}
         </View>

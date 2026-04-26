@@ -78,14 +78,11 @@ export const HabitListItem = memo(function HabitListItem({
     <View className={rowClass} testID={testID}>
       <View className="flex-row items-start justify-between gap-2">
         <View className="min-w-0 flex-1">
-          <Text
-            className="text-sm font-medium text-stone-900"
-            numberOfLines={1}
-          >
+          <Text className="text-sm font-medium text-fg" numberOfLines={1}>
             {(h.emoji || "✓") + " " + (h.name || "")}
           </Text>
           {meta ? (
-            <Text className="text-xs text-stone-500 mt-0.5" numberOfLines={2}>
+            <Text className="text-xs text-fg-muted mt-0.5" numberOfLines={2}>
               {meta}
             </Text>
           ) : null}
@@ -102,7 +99,7 @@ export const HabitListItem = memo(function HabitListItem({
               testID={testID ? `${testID}-up` : undefined}
               className="min-w-[36px] min-h-[36px] rounded-lg border border-cream-300 bg-cream-50 items-center justify-center"
             >
-              <Text className="text-xs text-stone-600">↑</Text>
+              <Text className="text-xs text-fg-muted">↑</Text>
             </Pressable>
             <Pressable
               onPress={onMoveDown}
@@ -111,7 +108,7 @@ export const HabitListItem = memo(function HabitListItem({
               testID={testID ? `${testID}-down` : undefined}
               className="min-w-[36px] min-h-[36px] rounded-lg border border-cream-300 bg-cream-50 items-center justify-center"
             >
-              <Text className="text-xs text-stone-600">↓</Text>
+              <Text className="text-xs text-fg-muted">↓</Text>
             </Pressable>
             <Pressable
               onPress={onStartEdit}
@@ -120,9 +117,7 @@ export const HabitListItem = memo(function HabitListItem({
               testID={testID ? `${testID}-edit` : undefined}
               className="h-9 px-3 rounded-lg border border-cream-300 bg-cream-50 items-center justify-center"
             >
-              <Text className="text-xs font-medium text-stone-700">
-                Змінити
-              </Text>
+              <Text className="text-xs font-medium text-fg">Змінити</Text>
             </Pressable>
             <Pressable
               onPress={onArchive}
@@ -131,9 +126,7 @@ export const HabitListItem = memo(function HabitListItem({
               testID={testID ? `${testID}-archive` : undefined}
               className="h-9 px-3 rounded-lg border border-cream-300 bg-cream-50 items-center justify-center"
             >
-              <Text className="text-xs font-medium text-stone-700">
-                В архів
-              </Text>
+              <Text className="text-xs font-medium text-fg">В архів</Text>
             </Pressable>
           </>
         ) : onUnarchive ? (
@@ -144,9 +137,7 @@ export const HabitListItem = memo(function HabitListItem({
             testID={testID ? `${testID}-unarchive` : undefined}
             className="h-9 px-3 rounded-lg border border-cream-300 bg-cream-50 items-center justify-center"
           >
-            <Text className="text-xs font-medium text-stone-700">
-              Відновити
-            </Text>
+            <Text className="text-xs font-medium text-fg">Відновити</Text>
           </Pressable>
         ) : null}
         <Pressable

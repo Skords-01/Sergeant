@@ -115,7 +115,7 @@ export function CategoriesSection({
                   className={cn(
                     "flex items-center justify-between gap-2 px-3 py-2 rounded-xl bg-panelHi border border-line",
                     editingCatId === c.id &&
-                      "ring-2 ring-routine-ring/60 dark:ring-routine/40",
+                      "ring-2 ring-routine-ring/60 dark:ring-routine-border-dark/40",
                   )}
                 >
                   <div className="flex items-center gap-2 min-w-0">

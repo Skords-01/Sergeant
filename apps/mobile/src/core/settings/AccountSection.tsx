@@ -47,12 +47,12 @@ function DevPushTestButton() {
         className="items-center rounded-xl border border-cream-300 bg-cream-50 px-4 py-3 active:opacity-80"
         testID="account-dev-push-test"
       >
-        <Text className="text-sm font-semibold text-stone-700">
+        <Text className="text-sm font-semibold text-fg">
           {pushTest.isPending ? "Надсилаю…" : "DEV: надіслати тестовий пуш"}
         </Text>
       </Pressable>
       <View>
-        <Text className="text-[11px] leading-snug text-stone-400">
+        <Text className="text-[11px] leading-snug text-fg-subtle">
           Видно лише у dev-збірках. Використовується для швидкої перевірки
           push-пайплайна без виходу з дашборду.
         </Text>

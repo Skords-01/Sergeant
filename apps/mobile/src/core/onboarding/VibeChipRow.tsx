@@ -46,7 +46,7 @@ function cx(...classes: Array<string | false | null | undefined>): string {
 export function VibeChipRow({ picks, togglePick }: VibeChipRowProps) {
   return (
     <View className="w-full gap-2">
-      <Text className="text-center text-[11px] text-stone-500">
+      <Text className="text-center text-[11px] text-fg-muted">
         Зніми зайве — решту легко додати потім.
       </Text>
       <View className="flex-row flex-wrap gap-2">
@@ -82,13 +82,13 @@ export function VibeChipRow({ picks, togglePick }: VibeChipRowProps) {
               <View className="min-w-0 flex-1">
                 <Text
                   numberOfLines={1}
-                  className="text-sm font-semibold leading-tight text-stone-900"
+                  className="text-sm font-semibold leading-tight text-fg"
                 >
                   {DASHBOARD_MODULE_LABELS[id]}
                 </Text>
                 <Text
                   numberOfLines={1}
-                  className="text-[11px] leading-tight text-stone-500"
+                  className="text-[11px] leading-tight text-fg-muted"
                 >
                   {ONBOARDING_VIBE_TEASERS[id]}
                 </Text>

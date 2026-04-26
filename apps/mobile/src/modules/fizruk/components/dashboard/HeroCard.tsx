@@ -120,7 +120,7 @@ export function HeroCard({
               className={
                 isToday
                   ? "text-xl font-bold text-white"
-                  : "text-xl font-bold text-stone-900"
+                  : "text-xl font-bold text-fg"
               }
               testID={`${testID}-title`}
             >
@@ -161,7 +161,7 @@ export function HeroCard({
           <Text className="text-xs font-semibold text-teal-800">
             Швидкий старт
           </Text>
-          <Text className="text-base font-semibold text-stone-900">
+          <Text className="text-base font-semibold text-fg">
             План поки порожній
           </Text>
           <Text className="text-sm text-teal-800/80 leading-snug">

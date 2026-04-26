@@ -29,7 +29,7 @@ const PlannedFlowsCardImpl = function PlannedFlowsCard({
   return (
     <Card radius="lg" padding="lg">
       <View className="flex-row items-center justify-between mb-2">
-        <Text className="text-sm font-semibold text-stone-900">
+        <Text className="text-sm font-semibold text-fg">
           Заплановані платежі
         </Text>
         <Pressable

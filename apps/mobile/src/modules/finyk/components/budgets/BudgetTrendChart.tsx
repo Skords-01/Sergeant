@@ -35,7 +35,7 @@ function BudgetTrendChartImpl({
     return (
       <View className="rounded-xl border border-dashed border-cream-300 px-4 py-6">
         <Text
-          className="text-xs text-stone-500 text-center"
+          className="text-xs text-fg-muted text-center"
           testID={testID ? `${testID}-empty` : undefined}
         >
           Замало даних для прогнозу — повертайся за кілька днів.

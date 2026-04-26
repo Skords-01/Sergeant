@@ -34,10 +34,8 @@ export function MeasurementEntryList({
         className="rounded-2xl border border-dashed border-cream-300 bg-cream-50 p-4 items-center"
         testID={`${testID}-empty`}
       >
-        <Text className="text-sm font-semibold text-stone-900">
-          Поки порожньо
-        </Text>
-        <Text className="text-xs text-stone-500 mt-1 text-center">
+        <Text className="text-sm font-semibold text-fg">Поки порожньо</Text>
+        <Text className="text-xs text-fg-muted mt-1 text-center">
           Натисни «+ Додати» і запиши свій перший замір.
         </Text>
       </View>

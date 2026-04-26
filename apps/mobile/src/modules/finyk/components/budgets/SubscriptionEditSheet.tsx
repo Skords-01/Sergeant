@@ -112,7 +112,7 @@ export function SubscriptionEditSheet({
       }
     >
       <View testID={testID}>
-        <Text className="text-sm font-medium text-stone-700 mb-1">Іконка</Text>
+        <Text className="text-sm font-medium text-fg mb-1">Іконка</Text>
         <View className="flex-row flex-wrap gap-2 mb-3">
           {EMOJIS.map((e) => {
             const selected = form.emoji === e;
@@ -134,7 +134,7 @@ export function SubscriptionEditSheet({
           })}
         </View>
 
-        <Text className="text-sm font-medium text-stone-700 mb-1">Назва</Text>
+        <Text className="text-sm font-medium text-fg mb-1">Назва</Text>
         <Input
           value={form.name}
           onChangeText={(v) => setForm((f) => ({ ...f, name: v }))}
@@ -143,7 +143,7 @@ export function SubscriptionEditSheet({
         />
         <View className="h-2" />
 
-        <Text className="text-sm font-medium text-stone-700 mb-1">
+        <Text className="text-sm font-medium text-fg mb-1">
           Ключове слово (для авто-пошуку)
         </Text>
         <Input
@@ -153,9 +153,7 @@ export function SubscriptionEditSheet({
         />
         <View className="h-2" />
 
-        <Text className="text-sm font-medium text-stone-700 mb-1">
-          День оплати
-        </Text>
+        <Text className="text-sm font-medium text-fg mb-1">День оплати</Text>
         <Input
           value={String(form.billingDay)}
           onChangeText={(v) =>
@@ -167,7 +165,7 @@ export function SubscriptionEditSheet({
         />
         <View className="h-2" />
 
-        <Text className="text-sm font-medium text-stone-700 mb-1">Валюта</Text>
+        <Text className="text-sm font-medium text-fg mb-1">Валюта</Text>
         <View className="flex-row gap-2 mb-3">
           {CURRENCIES.map((c) => {
             const selected = form.currency === c;
@@ -183,13 +181,13 @@ export function SubscriptionEditSheet({
                     : "px-3 py-1.5 rounded-full border border-cream-300"
                 }
               >
-                <Text className="text-sm font-medium text-stone-700">{c}</Text>
+                <Text className="text-sm font-medium text-fg">{c}</Text>
               </Pressable>
             );
           })}
         </View>
 
-        <Text className="text-sm font-medium text-stone-700 mb-1">
+        <Text className="text-sm font-medium text-fg mb-1">
           Очікувана сума (опц.)
         </Text>
         <Input

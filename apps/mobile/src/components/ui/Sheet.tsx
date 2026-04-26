@@ -169,11 +169,11 @@ export function Sheet({
             </View>
             <View className="flex-row items-start justify-between gap-3 px-5 pt-1 pb-3">
               <View className="flex-1">
-                <Text className="text-lg font-extrabold text-stone-900 leading-tight">
+                <Text className="text-lg font-extrabold text-fg leading-tight">
                   {title}
                 </Text>
                 {description ? (
-                  <Text className="text-xs text-stone-500 mt-1">
+                  <Text className="text-xs text-fg-muted mt-1">
                     {description}
                   </Text>
                 ) : null}
@@ -186,7 +186,7 @@ export function Sheet({
                 accessibilityLabel={closeLabel}
                 className="bg-cream-100"
               >
-                <Text className="text-stone-500 text-lg font-bold">✕</Text>
+                <Text className="text-fg-muted text-lg font-bold">✕</Text>
               </Button>
             </View>
             <ScrollView

@@ -52,7 +52,7 @@ const PlanFactCardImpl = function PlanFactCard({
     <Card radius="lg" padding="lg">
       <View className="flex-row items-center justify-between">
         <View className="flex-1">
-          <Text className="text-xs font-medium text-stone-500">
+          <Text className="text-xs font-medium text-fg-muted">
             📅 Фінплан на місяць
           </Text>
           <Text
@@ -61,14 +61,14 @@ const PlanFactCardImpl = function PlanFactCard({
                 ? "text-sm font-semibold text-danger mt-1"
                 : pctExpense >= 85
                   ? "text-sm font-semibold text-amber-700 mt-1"
-                  : "text-sm font-semibold text-stone-800 mt-1"
+                  : "text-sm font-semibold text-fg mt-1"
             }
           >
             {summary}
           </Text>
         </View>
         {onNavigate ? (
-          <Text className="text-xs text-stone-400 ml-3">›</Text>
+          <Text className="text-xs text-fg-subtle ml-3">›</Text>
         ) : null}
       </View>
       {planExpense > 0 ? (

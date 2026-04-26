@@ -60,11 +60,11 @@ export function SavedRecipesListPage({ testID }: { testID?: string }) {
         testID={`saved-recipe-row-${item.id}`}
       >
         <Card>
-          <Text className="text-stone-900 font-medium" numberOfLines={2}>
+          <Text className="text-fg font-medium" numberOfLines={2}>
             {item.title}
           </Text>
           {item.timeMinutes != null ? (
-            <Text className="text-xs text-stone-500 mt-1">
+            <Text className="text-xs text-fg-muted mt-1">
               {item.timeMinutes} хв
             </Text>
           ) : null}
@@ -84,7 +84,7 @@ export function SavedRecipesListPage({ testID }: { testID?: string }) {
         >
           <Text className="text-coral-700 text-base">‹ Назад</Text>
         </Pressable>
-        <Text className="text-lg font-semibold text-stone-800 flex-1">
+        <Text className="text-lg font-semibold text-fg flex-1">
           Збережені рецепти
         </Text>
       </View>
@@ -120,7 +120,7 @@ export function SavedRecipesListPage({ testID }: { testID?: string }) {
 
       {recipes.length === 0 ? (
         <View className="px-4 py-6">
-          <Text className="text-stone-600 text-sm">
+          <Text className="text-fg-muted text-sm">
             Порожньо. Додай рецепт вручну, імпортуй копію з web (експорт JSON)
             або збережи згодом з AI, коли з’явиться на мобайлі.
           </Text>
@@ -141,7 +141,7 @@ export function SavedRecipesListPage({ testID }: { testID?: string }) {
         transparent
       >
         <Pressable
-          className="flex-1 justify-end bg-stone-900/40"
+          className="flex-1 justify-end bg-fg/40"
           onPress={() => setImportOpen(false)}
         >
           <Pressable
@@ -149,11 +149,11 @@ export function SavedRecipesListPage({ testID }: { testID?: string }) {
             className="bg-cream-50 p-4 rounded-t-2xl max-h-[80%]"
             accessibilityViewIsModal
           >
-            <Text className="text-stone-800 font-medium mb-2">
+            <Text className="text-fg font-medium mb-2">
               Встав JSON (масив, об’єкт з recipes або один рецепт)
             </Text>
             <TextInput
-              className="border border-cream-200 rounded-lg p-2 text-stone-900 min-h-[160px] text-sm"
+              className="border border-cream-200 rounded-lg p-2 text-fg min-h-[160px] text-sm"
               value={importText}
               onChangeText={setImportText}
               multiline

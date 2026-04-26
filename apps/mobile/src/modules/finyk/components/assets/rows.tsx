@@ -73,13 +73,10 @@ export const AccountRow = memo(function AccountRow({
       <View className="flex-row items-center gap-3 min-w-0 flex-1">
         <Text className="text-xl">💳</Text>
         <View className="min-w-0 flex-1">
-          <Text
-            className="text-sm font-medium text-stone-900"
-            numberOfLines={1}
-          >
+          <Text className="text-sm font-medium text-fg" numberOfLines={1}>
             {getAccountLabel(account)}
           </Text>
-          <Text className="text-xs text-stone-500 mt-0.5">
+          <Text className="text-xs text-fg-muted mt-0.5">
             {fmtKop(account.balance ?? 0)} {symbol}
           </Text>
         </View>
@@ -109,14 +106,11 @@ export const ManualAssetRow = memo(function ManualAssetRow({
     >
       <View className="flex-row items-center gap-3 min-w-0 flex-1">
         <Text className="text-xl">{asset.emoji || "💰"}</Text>
-        <Text
-          className="text-sm font-medium text-stone-900 flex-1"
-          numberOfLines={1}
-        >
+        <Text className="text-sm font-medium text-fg flex-1" numberOfLines={1}>
           {asset.name}
         </Text>
       </View>
-      <Text className="text-sm font-semibold text-stone-900">
+      <Text className="text-sm font-semibold text-fg">
         {fmtMajor(asset.amount)} {symbol}
       </Text>
     </Pressable>
@@ -146,10 +140,7 @@ export const DebtRow = memo(function DebtRow({
     >
       <View className="flex-row items-center gap-3 min-w-0 flex-1">
         <Text className="text-xl">{debt.emoji || "💸"}</Text>
-        <Text
-          className="text-sm font-medium text-stone-900 flex-1"
-          numberOfLines={1}
-        >
+        <Text className="text-sm font-medium text-fg flex-1" numberOfLines={1}>
           {debt.name || "Борг"}
         </Text>
       </View>
@@ -186,10 +177,7 @@ export const ReceivableRow = memo(function ReceivableRow({
     >
       <View className="flex-row items-center gap-3 min-w-0 flex-1">
         <Text className="text-xl">{receivable.emoji || "👤"}</Text>
-        <Text
-          className="text-sm font-medium text-stone-900 flex-1"
-          numberOfLines={1}
-        >
+        <Text className="text-sm font-medium text-fg flex-1" numberOfLines={1}>
           {receivable.name || "Дебіторка"}
         </Text>
       </View>

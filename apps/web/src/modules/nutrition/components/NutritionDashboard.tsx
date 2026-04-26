@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { chartHex } from "@sergeant/design-tokens/tokens";
 import { Card } from "@shared/components/ui/Card";
 import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { cn } from "@shared/lib/cn";
@@ -54,28 +55,28 @@ const MACRO_DEFS = [
   {
     key: "kcal",
     label: "Ккал",
-    color: "#f97316",
+    color: chartHex.kcal,
     prefKey: "dailyTargetKcal",
     unit: "",
   },
   {
     key: "protein_g",
     label: "Білки",
-    color: "#3b82f6",
+    color: chartHex.protein,
     prefKey: "dailyTargetProtein_g",
     unit: "г",
   },
   {
     key: "fat_g",
     label: "Жири",
-    color: "#eab308",
+    color: chartHex.fat,
     prefKey: "dailyTargetFat_g",
     unit: "г",
   },
   {
     key: "carbs_g",
     label: "Вуглев.",
-    color: "#22c55e",
+    color: chartHex.carbs,
     prefKey: "dailyTargetCarbs_g",
     unit: "г",
   },

@@ -72,7 +72,7 @@ export function PlanEditSheet({
     >
       <View testID={testID}>
         <View className="mb-4">
-          <Text className="text-sm font-medium text-stone-700 mb-1">
+          <Text className="text-sm font-medium text-fg mb-1">
             План доходу ₴
           </Text>
           <Input
@@ -84,7 +84,7 @@ export function PlanEditSheet({
           />
         </View>
         <View className="mb-4">
-          <Text className="text-sm font-medium text-stone-700 mb-1">
+          <Text className="text-sm font-medium text-fg mb-1">
             План витрат ₴
           </Text>
           <Input
@@ -96,7 +96,7 @@ export function PlanEditSheet({
           />
         </View>
         <View className="mb-2">
-          <Text className="text-sm font-medium text-stone-700 mb-1">
+          <Text className="text-sm font-medium text-fg mb-1">
             План накопичень ₴
           </Text>
           <Input

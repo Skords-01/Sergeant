@@ -103,11 +103,11 @@ export function Measurements({
     >
       <View className="flex-row items-center gap-2 px-4 pt-4 pb-1">
         <Text className="text-[22px]">📏</Text>
-        <Text className="text-[22px] font-bold text-stone-900 flex-1">
+        <Text className="text-[22px] font-bold text-fg flex-1">
           Вимірювання
         </Text>
       </View>
-      <Text className="px-4 text-sm text-stone-600 leading-snug mb-3">
+      <Text className="px-4 text-sm text-fg-muted leading-snug mb-3">
         Вага, обхвати та самопочуття — все в одному місці. Записи зберігаються
         локально й синхронізуються через CloudSync.
       </Text>
@@ -119,8 +119,8 @@ export function Measurements({
         <MeasurementsTrendCard entries={entries} testID={`${testID}-trend`} />
 
         <View className="flex-row items-baseline justify-between">
-          <Text className="text-sm font-semibold text-stone-900">Історія</Text>
-          <Text className="text-xs text-stone-500" testID={`${testID}-count`}>
+          <Text className="text-sm font-semibold text-fg">Історія</Text>
+          <Text className="text-xs text-fg-muted" testID={`${testID}-count`}>
             {entries.length > 0 ? `${entries.length} записів` : ""}
           </Text>
         </View>

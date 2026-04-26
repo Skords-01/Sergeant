@@ -139,9 +139,7 @@ export function ReceivableSheet({
     >
       <View className="gap-3">
         <View>
-          <Text className="text-xs font-medium text-stone-700 mb-1">
-            Хто винен
-          </Text>
+          <Text className="text-xs font-medium text-fg mb-1">Хто винен</Text>
           <Input
             placeholder="Ім'я або назва"
             value={draft.name}
@@ -152,9 +150,7 @@ export function ReceivableSheet({
         </View>
         <View className="flex-row gap-3">
           <View className="w-24">
-            <Text className="text-xs font-medium text-stone-700 mb-1">
-              Емодзі
-            </Text>
+            <Text className="text-xs font-medium text-fg mb-1">Емодзі</Text>
             <Input
               value={draft.emoji}
               onChangeText={(t) => setDraft((d) => ({ ...d, emoji: t }))}
@@ -163,9 +159,7 @@ export function ReceivableSheet({
             />
           </View>
           <View className="flex-1">
-            <Text className="text-xs font-medium text-stone-700 mb-1">
-              Сума, ₴
-            </Text>
+            <Text className="text-xs font-medium text-fg mb-1">Сума, ₴</Text>
             <Input
               placeholder="0"
               type="number"
@@ -177,9 +171,7 @@ export function ReceivableSheet({
           </View>
         </View>
         <View>
-          <Text className="text-xs font-medium text-stone-700 mb-1">
-            Нотатка
-          </Text>
+          <Text className="text-xs font-medium text-fg mb-1">Нотатка</Text>
           <Input
             placeholder="Необов'язково"
             value={draft.note}

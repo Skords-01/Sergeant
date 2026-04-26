@@ -31,8 +31,9 @@
  *   The fallback uses a slightly "less aggressive" surface
  *   (`Card padding="lg"`) than the top-level boundary so a module
  *   crash doesn't visually masquerade as a full-app crash.
- * - NativeWind classes lean on concrete `cream-*` / `stone-*` tokens
- *   pending mobile design-token rollout — same caveat as elsewhere.
+ * - NativeWind classes resolve through the shared semantic
+ *   `fg` / `fg-muted` / `panel` / `line` CSS-variable tokens so the
+ *   fallback re-tints with the active light/dark palette.
  */
 
 import { Component, type ReactNode } from "react";
@@ -103,7 +104,7 @@ export default class ModuleErrorBoundary extends Component<
       return (
         <View className="flex-1 bg-cream-50 items-stretch justify-center p-6">
           <Card variant="default" padding="lg">
-            <Text className="text-base font-semibold text-stone-900 mb-2">
+            <Text className="text-base font-semibold text-fg mb-2">
               {title}
             </Text>
             <ScrollView className="max-h-40 mb-4">

@@ -71,11 +71,9 @@ export function Programs({ testID = "fizruk-programs" }: ProgramsProps) {
     >
       <View className="flex-row items-center gap-2 px-4 pt-4 pb-1">
         <Text className="text-[22px]">🗓️</Text>
-        <Text className="text-[22px] font-bold text-stone-900 flex-1">
-          Програми
-        </Text>
+        <Text className="text-[22px] font-bold text-fg flex-1">Програми</Text>
       </View>
-      <Text className="px-4 text-sm text-stone-600 leading-snug mb-3">
+      <Text className="px-4 text-sm text-fg-muted leading-snug mb-3">
         Готові програми тренувань. Активуй одну — сьогоднішня сесія
         з&apos;явиться вгорі з кнопкою «Почати».
       </Text>
@@ -96,13 +94,13 @@ export function Programs({ testID = "fizruk-programs" }: ProgramsProps) {
             className="items-center justify-center py-10"
             testID={`${testID}-empty`}
           >
-            <Text className="text-sm text-stone-500">
+            <Text className="text-sm text-fg-muted">
               Каталог порожній — спробуй пізніше.
             </Text>
           </View>
         ) : (
           <View className="gap-3" testID={`${testID}-list`}>
-            <Text className="text-sm font-semibold text-stone-900">
+            <Text className="text-sm font-semibold text-fg">
               Каталог програм
             </Text>
             {programs.map((program) => (

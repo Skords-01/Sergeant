@@ -169,7 +169,7 @@ export function Log({ testID, onMealAdded }: LogProps) {
           testID="nutrition-log-prev-day"
           className="w-10 h-10 items-center justify-center rounded-full"
         >
-          <Text className="text-xl text-stone-600">‹</Text>
+          <Text className="text-xl text-fg-muted">‹</Text>
         </Pressable>
         <Pressable
           onPress={goToday}
@@ -178,11 +178,11 @@ export function Log({ testID, onMealAdded }: LogProps) {
           testID="nutrition-log-today"
           className="flex-1 items-center"
         >
-          <Text className="text-sm font-bold text-stone-900">
+          <Text className="text-sm font-bold text-fg">
             {formatIsoDate(selectedDate)}
           </Text>
           {!isToday ? (
-            <Text className="text-[10px] text-stone-400 mt-0.5">
+            <Text className="text-[10px] text-fg-subtle mt-0.5">
               {selectedDate}
             </Text>
           ) : null}
@@ -194,7 +194,7 @@ export function Log({ testID, onMealAdded }: LogProps) {
           testID="nutrition-log-next-day"
           className="w-10 h-10 items-center justify-center rounded-full"
         >
-          <Text className="text-xl text-stone-600">›</Text>
+          <Text className="text-xl text-fg-muted">›</Text>
         </Pressable>
       </View>
 
@@ -203,34 +203,34 @@ export function Log({ testID, onMealAdded }: LogProps) {
         <Card>
           <View className="flex-row justify-around py-1">
             <View className="items-center">
-              <Text className="text-[10px] font-bold uppercase text-stone-500">
+              <Text className="text-[10px] font-bold uppercase text-fg-muted">
                 Ккал
               </Text>
-              <Text className="text-sm font-extrabold text-stone-900 mt-1">
+              <Text className="text-sm font-extrabold text-fg mt-1">
                 {Math.round(macros.kcal)}
               </Text>
             </View>
             <View className="items-center">
-              <Text className="text-[10px] font-bold uppercase text-stone-500">
+              <Text className="text-[10px] font-bold uppercase text-fg-muted">
                 Б
               </Text>
-              <Text className="text-sm font-extrabold text-stone-900 mt-1">
+              <Text className="text-sm font-extrabold text-fg mt-1">
                 {Math.round(macros.protein_g)} г
               </Text>
             </View>
             <View className="items-center">
-              <Text className="text-[10px] font-bold uppercase text-stone-500">
+              <Text className="text-[10px] font-bold uppercase text-fg-muted">
                 Ж
               </Text>
-              <Text className="text-sm font-extrabold text-stone-900 mt-1">
+              <Text className="text-sm font-extrabold text-fg mt-1">
                 {Math.round(macros.fat_g)} г
               </Text>
             </View>
             <View className="items-center">
-              <Text className="text-[10px] font-bold uppercase text-stone-500">
+              <Text className="text-[10px] font-bold uppercase text-fg-muted">
                 В
               </Text>
-              <Text className="text-sm font-extrabold text-stone-900 mt-1">
+              <Text className="text-sm font-extrabold text-fg mt-1">
                 {Math.round(macros.carbs_g)} г
               </Text>
             </View>
@@ -255,10 +255,10 @@ export function Log({ testID, onMealAdded }: LogProps) {
       {rows.length === 0 ? (
         <View className="flex-1 items-center justify-center px-6 pb-20">
           <Text className="text-5xl mb-3">🍽️</Text>
-          <Text className="text-sm font-semibold text-stone-900 text-center">
+          <Text className="text-sm font-semibold text-fg text-center">
             Немає записів за цей день
           </Text>
-          <Text className="text-xs text-stone-500 text-center mt-1">
+          <Text className="text-xs text-fg-muted text-center mt-1">
             Натисніть «+ Додати прийом», щоб записати їжу.
           </Text>
         </View>
@@ -282,17 +282,17 @@ export function Log({ testID, onMealAdded }: LogProps) {
                 <View className="flex-row items-start gap-3">
                   <Text className="text-2xl leading-none">{item.emoji}</Text>
                   <View className="flex-1">
-                    <Text className="text-[10px] font-bold uppercase text-stone-500 leading-none">
+                    <Text className="text-[10px] font-bold uppercase text-fg-muted leading-none">
                       {item.typeLabel}
                     </Text>
-                    <Text className="text-sm font-semibold text-stone-900 mt-1">
+                    <Text className="text-sm font-semibold text-fg mt-1">
                       {item.meal.name || "Без назви"}
                     </Text>
                     <View className="flex-row items-center gap-3 mt-2">
-                      <Text className="text-xs text-stone-500">
+                      <Text className="text-xs text-fg-muted">
                         {Math.round(item.meal.macros?.kcal || 0)} ккал
                       </Text>
-                      <Text className="text-xs text-stone-400">
+                      <Text className="text-xs text-fg-subtle">
                         Б{Math.round(item.meal.macros?.protein_g || 0)} · Ж
                         {Math.round(item.meal.macros?.fat_g || 0)} · В
                         {Math.round(item.meal.macros?.carbs_g || 0)}

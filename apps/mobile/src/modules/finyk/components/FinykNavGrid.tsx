@@ -30,10 +30,8 @@ function NavCard({ entry }: { entry: NavEntry }) {
       className="flex-1 min-w-[46%] rounded-2xl border border-cream-300 bg-cream-50 p-4 active:opacity-80"
     >
       <Text className="text-2xl mb-2">{entry.emoji}</Text>
-      <Text className="text-sm font-semibold text-stone-900">
-        {entry.label}
-      </Text>
-      <Text className="text-xs text-stone-500 mt-1" numberOfLines={2}>
+      <Text className="text-sm font-semibold text-fg">{entry.label}</Text>
+      <Text className="text-xs text-fg-muted mt-1" numberOfLines={2}>
         {entry.description}
       </Text>
     </Pressable>

@@ -75,7 +75,7 @@ export function CategoryPickerSheet({
           testID={`${testID}-clear`}
           className="flex-row items-center px-3 py-3 rounded-xl bg-cream-100 active:opacity-70"
         >
-          <Text className="text-stone-500 text-sm flex-1">↺ Скинути</Text>
+          <Text className="text-fg-muted text-sm flex-1">↺ Скинути</Text>
           {selectedId == null && (
             <Text className="text-brand-500 text-base">✓</Text>
           )}
@@ -99,7 +99,7 @@ export function CategoryPickerSheet({
                 className={
                   selected
                     ? "text-brand-700 text-sm font-semibold flex-1"
-                    : "text-stone-900 text-sm flex-1"
+                    : "text-fg text-sm flex-1"
                 }
               >
                 {opt.label}

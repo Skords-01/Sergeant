@@ -105,10 +105,10 @@ export function SoftAuthPromptCard({
           <Text className="text-lg">☁️</Text>
         </View>
         <View className="min-w-0 flex-1">
-          <Text className="text-sm font-semibold text-stone-900">
+          <Text className="text-sm font-semibold text-fg">
             Зберегти на всіх пристроях?
           </Text>
-          <Text className="mt-1 text-xs leading-relaxed text-stone-500">
+          <Text className="mt-1 text-xs leading-relaxed text-fg-muted">
             Акаунт синхронізує твої дані між телефоном і браузером. 20 секунд.
           </Text>
           <View className="mt-3 flex-row items-center gap-2">
@@ -127,7 +127,7 @@ export function SoftAuthPromptCard({
               className="rounded-xl px-3 py-2 active:opacity-60"
               testID="soft-auth-dismiss"
             >
-              <Text className="text-xs text-stone-500">Пізніше</Text>
+              <Text className="text-xs text-fg-muted">Пізніше</Text>
             </Pressable>
           </View>
         </View>

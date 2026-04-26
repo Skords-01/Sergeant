@@ -67,10 +67,10 @@ export function Progress({ data }: ProgressProps = {}) {
             testID="fizruk-progress-empty"
           >
             <Text className="text-3xl mb-2">{"📈"}</Text>
-            <Text className="text-sm font-semibold text-stone-900 mb-1">
+            <Text className="text-sm font-semibold text-fg mb-1">
               {"Даних ще немає"}
             </Text>
-            <Text className="text-xs text-stone-500 text-center">
+            <Text className="text-xs text-fg-muted text-center">
               {"Додай тренування або заміри — і тут зʼявиться аналітика"}
             </Text>
           </Card>
@@ -81,7 +81,7 @@ export function Progress({ data }: ProgressProps = {}) {
             <WeightChartSection weightTrend={weightTrend} />
             <MeasurementsChartSection bodyFatTrend={bodyFatTrend} />
             <View testID="fizruk-progress-phase-hint" className="pt-1">
-              <Text className="text-[10px] text-stone-400 text-center">
+              <Text className="text-[10px] text-fg-subtle text-center">
                 {
                   "Фаза 6 · PR-D — графіки (victory-native). Фотопрогрес і бекап — у PR-E."
                 }

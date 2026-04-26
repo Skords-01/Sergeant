@@ -210,10 +210,10 @@ export function Dashboard({
         testID={`${testID}-scroll`}
       >
         <View>
-          <Text className="text-[22px] font-bold text-stone-900">Сьогодні</Text>
+          <Text className="text-[22px] font-bold text-fg">Сьогодні</Text>
           <Text
             accessibilityRole="text"
-            className="text-sm text-stone-500 capitalize"
+            className="text-sm text-fg-muted capitalize"
           >
             {todayLabel}
           </Text>

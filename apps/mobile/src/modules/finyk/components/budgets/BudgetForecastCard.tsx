@@ -40,18 +40,16 @@ function BudgetForecastCardImpl({
       <View className="flex-row items-center justify-between mb-2">
         <View className="flex-1 min-w-0">
           <Text
-            className="text-sm font-semibold text-stone-900"
+            className="text-sm font-semibold text-fg"
             numberOfLines={1}
             testID={testID ? `${testID}-label` : undefined}
           >
             {categoryLabel}
           </Text>
-          <Text className="text-[11px] text-stone-500">
+          <Text className="text-[11px] text-fg-muted">
             Факт {fmt(spent)} ₴ · Прогноз{" "}
             <Text
-              className={
-                overLimit ? "text-danger font-semibold" : "text-stone-700"
-              }
+              className={overLimit ? "text-danger font-semibold" : "text-fg"}
               testID={testID ? `${testID}-forecast` : undefined}
             >
               {fmt(forecast)} ₴

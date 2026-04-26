@@ -1,5 +1,6 @@
 import { forwardRef, type ReactNode, type SelectHTMLAttributes } from "react";
 import { cn } from "../../lib/cn";
+import type { FormVariant, SmallMediumLarge } from "./types";
 
 /**
  * Sergeant Design System — Select
@@ -12,8 +13,8 @@ import { cn } from "../../lib/cn";
  * pickers; this component is a styled wrapper with a caret affordance.
  */
 
-export type SelectSize = "sm" | "md" | "lg";
-export type SelectVariant = "default" | "filled" | "ghost";
+export type SelectSize = SmallMediumLarge;
+export type SelectVariant = FormVariant;
 
 const sizes: Record<SelectSize, string> = {
   sm: "h-9 pl-3 pr-9 text-sm rounded-xl",

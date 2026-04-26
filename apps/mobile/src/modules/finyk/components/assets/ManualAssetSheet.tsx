@@ -141,7 +141,7 @@ export function ManualAssetSheet({
       <View className="gap-3">
         <View>
           <Text
-            className="text-xs font-medium text-stone-700 mb-1"
+            className="text-xs font-medium text-fg mb-1"
             nativeID={testID ? `${testID}-name-label` : undefined}
           >
             Назва
@@ -157,9 +157,7 @@ export function ManualAssetSheet({
         </View>
         <View className="flex-row gap-3">
           <View className="w-24">
-            <Text className="text-xs font-medium text-stone-700 mb-1">
-              Емодзі
-            </Text>
+            <Text className="text-xs font-medium text-fg mb-1">Емодзі</Text>
             <Input
               value={draft.emoji}
               onChangeText={(t) => setDraft((d) => ({ ...d, emoji: t }))}
@@ -168,9 +166,7 @@ export function ManualAssetSheet({
             />
           </View>
           <View className="flex-1">
-            <Text className="text-xs font-medium text-stone-700 mb-1">
-              Сума
-            </Text>
+            <Text className="text-xs font-medium text-fg mb-1">Сума</Text>
             <Input
               placeholder="0"
               type="number"
@@ -182,9 +178,7 @@ export function ManualAssetSheet({
           </View>
         </View>
         <View>
-          <Text className="text-xs font-medium text-stone-700 mb-1">
-            Валюта
-          </Text>
+          <Text className="text-xs font-medium text-fg mb-1">Валюта</Text>
           <View className="flex-row gap-2">
             {(["UAH", "USD", "EUR"] as const).map((c) => {
               const active = draft.currency === c;
@@ -205,7 +199,7 @@ export function ManualAssetSheet({
                     className={
                       active
                         ? "text-sm font-medium text-white"
-                        : "text-sm font-medium text-stone-700"
+                        : "text-sm font-medium text-fg"
                     }
                   >
                     {c}

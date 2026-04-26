@@ -38,7 +38,7 @@ function ComparisonRow({
   const good = diff === 0 ? null : up === upIsGood;
   const tint =
     good === null
-      ? "text-stone-500"
+      ? "text-fg-muted"
       : good
         ? "text-emerald-600"
         : "text-rose-600";
@@ -48,9 +48,9 @@ function ComparisonRow({
       className="flex-row items-center justify-between"
       testID={`finyk-analytics-compare-${kind}`}
     >
-      <Text className="text-sm text-stone-500">{label}</Text>
+      <Text className="text-sm text-fg-muted">{label}</Text>
       <View className="flex-row items-center gap-2">
-        <Text className="text-sm font-medium text-stone-900 tabular-nums">
+        <Text className="text-sm font-medium text-fg tabular-nums">
           {fmt(current)} ₴
         </Text>
         {prev > 0 && pct !== null ? (

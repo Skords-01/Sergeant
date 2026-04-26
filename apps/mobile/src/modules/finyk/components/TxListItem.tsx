@@ -87,13 +87,13 @@ function TxListItemImpl({
     ? "bg-danger"
     : canSwipeUnhide
       ? "bg-brand-500"
-      : "bg-stone-500";
+      : "bg-fg-muted";
 
   const hasSwipe = canSwipeDelete || canSwipeHide || canSwipeUnhide;
   const hasPress = isManual && !!onPressManual;
 
   return (
-    <View className={rowIndex % 2 === 1 ? "bg-stone-100/40" : ""}>
+    <View className={rowIndex % 2 === 1 ? "bg-panel-hi/40" : ""}>
       <SwipeToAction
         onSwipeLeft={hasSwipe ? onSwipeLeft : undefined}
         leftLabel={swipeLabel}

@@ -26,7 +26,7 @@ export function NameTimeRow({ form, field }: NameTimeRowProps) {
       <View className={timeVisible ? "flex-row gap-3" : ""}>
         <View className={timeVisible ? "flex-1" : ""}>
           {/* eslint-disable-next-line sergeant-design/no-eyebrow-drift -- form label */}
-          <Text className="text-xs font-bold uppercase text-stone-500 mb-1 tracking-wider">
+          <Text className="text-xs font-bold uppercase text-fg-muted mb-1 tracking-wider">
             Назва страви
           </Text>
           <Input
@@ -40,7 +40,7 @@ export function NameTimeRow({ form, field }: NameTimeRowProps) {
         {timeVisible ? (
           <View className="w-24">
             {/* eslint-disable-next-line sergeant-design/no-eyebrow-drift -- form label */}
-            <Text className="text-xs font-bold uppercase text-stone-500 mb-1 tracking-wider">
+            <Text className="text-xs font-bold uppercase text-fg-muted mb-1 tracking-wider">
               Час
             </Text>
             <Input
@@ -60,7 +60,7 @@ export function NameTimeRow({ form, field }: NameTimeRowProps) {
           accessibilityLabel={`Змінити час (${form.time})`}
           className="mt-2"
         >
-          <Text className="text-xs text-stone-400 underline">
+          <Text className="text-xs text-fg-subtle underline">
             Не зараз? Змінити час ({form.time})
           </Text>
         </Pressable>

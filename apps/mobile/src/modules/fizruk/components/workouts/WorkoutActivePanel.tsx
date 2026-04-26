@@ -55,7 +55,7 @@ export const WorkoutActivePanel = memo(function WorkoutActivePanel({
             <Text className="text-xs font-semibold text-teal-800">
               Немає активного тренування
             </Text>
-            <Text className="text-base text-stone-700 mt-1">
+            <Text className="text-base text-fg mt-1">
               Почни сесію, щоб додавати вправи та запускати таймер відпочинку.
             </Text>
           </View>
@@ -84,7 +84,7 @@ export const WorkoutActivePanel = memo(function WorkoutActivePanel({
             Активне тренування
           </Text>
           <Text
-            className="text-3xl font-extrabold text-stone-900"
+            className="text-3xl font-extrabold text-fg"
             accessibilityLabel={`Пройшло ${elapsedLabel}`}
             testID={`${testID}-elapsed`}
           >
@@ -93,7 +93,7 @@ export const WorkoutActivePanel = memo(function WorkoutActivePanel({
         </View>
 
         <View className="gap-2">
-          <Text className="text-xs font-semibold text-stone-700">
+          <Text className="text-xs font-semibold text-fg">
             Швидкий відпочинок
           </Text>
           <View className="flex-row flex-wrap gap-2">

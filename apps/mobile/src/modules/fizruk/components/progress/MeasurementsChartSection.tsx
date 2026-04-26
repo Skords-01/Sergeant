@@ -25,7 +25,7 @@ const MeasurementsChartSectionImpl = function MeasurementsChartSection({
 }: MeasurementsChartSectionProps) {
   return (
     <Card radius="lg" padding="lg" testID="fizruk-progress-bodyfat">
-      <Text className="text-xs font-semibold text-stone-500 mb-3">
+      <Text className="text-xs font-semibold text-fg-muted mb-3">
         {"Тренд % жиру"}
       </Text>
       <TrendChart

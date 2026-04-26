@@ -10,8 +10,8 @@ const PEEK_CARDS = [
   {
     id: "finyk",
     label: "💰 Фінік",
-    cardBg: "bg-finyk-soft/40 dark:bg-finyk/8",
-    iconClass: "bg-finyk-soft text-finyk dark:bg-finyk/15",
+    cardBg: "bg-finyk-soft/40 dark:bg-finyk-surface-dark/8",
+    iconClass: "bg-finyk-soft text-finyk dark:bg-finyk-surface-dark/15",
     icon: "credit-card",
     metric: "−320 ₴",
     sub: "тиждень",
@@ -19,8 +19,8 @@ const PEEK_CARDS = [
   {
     id: "fizruk",
     label: "💪 Фізрук",
-    cardBg: "bg-fizruk-soft/40 dark:bg-fizruk/8",
-    iconClass: "bg-fizruk-soft text-fizruk dark:bg-fizruk/15",
+    cardBg: "bg-fizruk-soft/40 dark:bg-fizruk-surface-dark/8",
+    iconClass: "bg-fizruk-soft text-fizruk dark:bg-fizruk-surface-dark/15",
     icon: "dumbbell",
     metric: "5 трен.",
     sub: "14 днів",
@@ -28,8 +28,9 @@ const PEEK_CARDS = [
   {
     id: "routine",
     label: "✅ Рутина",
-    cardBg: "bg-routine-surface/40 dark:bg-routine/8",
-    iconClass: "bg-routine-surface text-routine dark:bg-routine/15",
+    cardBg: "bg-routine-surface/40 dark:bg-routine-surface-dark/8",
+    iconClass:
+      "bg-routine-surface text-routine dark:bg-routine-surface-dark/15",
     icon: "check",
     metric: "7 днів",
     sub: "стрік",
@@ -37,8 +38,9 @@ const PEEK_CARDS = [
   {
     id: "nutrition",
     label: "🥗 Харчування",
-    cardBg: "bg-nutrition-soft/40 dark:bg-nutrition/8",
-    iconClass: "bg-nutrition-soft text-nutrition dark:bg-nutrition/15",
+    cardBg: "bg-nutrition-soft/40 dark:bg-nutrition-surface-dark/8",
+    iconClass:
+      "bg-nutrition-soft text-nutrition dark:bg-nutrition-surface-dark/15",
     icon: "utensils",
     metric: "420 ккал",
     sub: "сніданок",

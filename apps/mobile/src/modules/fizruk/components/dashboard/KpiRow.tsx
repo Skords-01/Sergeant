@@ -30,7 +30,7 @@ function Tile({ label, value, hint, testID, tone = "default" }: TileProps) {
       ? "text-teal-700"
       : tone === "negative"
         ? "text-rose-600"
-        : "text-stone-900";
+        : "text-fg";
   return (
     <Card
       variant="default"
@@ -39,10 +39,10 @@ function Tile({ label, value, hint, testID, tone = "default" }: TileProps) {
       className="flex-1"
       testID={testID}
     >
-      <Text className="text-[10px] font-semibold text-stone-500">{label}</Text>
+      <Text className="text-[10px] font-semibold text-fg-muted">{label}</Text>
       <Text className={`text-lg font-bold ${toneClass} mt-0.5`}>{value}</Text>
       {hint ? (
-        <Text className="text-[10px] text-stone-500 mt-0.5">{hint}</Text>
+        <Text className="text-[10px] text-fg-muted mt-0.5">{hint}</Text>
       ) : null}
     </Card>
   );

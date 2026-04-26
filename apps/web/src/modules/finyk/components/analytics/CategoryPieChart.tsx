@@ -1,4 +1,5 @@
 import { memo, useState } from "react";
+import { chartHex } from "@sergeant/design-tokens/tokens";
 import { cn } from "@shared/lib/cn";
 
 // Convert a polar angle (0° = 12 o'clock, clockwise) to cartesian coordinates.
@@ -89,7 +90,7 @@ function CategoryPieChartComponent({ data = [], size = 160, className }) {
               categoryId: "_other",
               label: "Інше",
               spent: otherSpent,
-              color: "#94a3b8",
+              color: chartHex.neutral,
             },
           ]
         : top;

@@ -6,6 +6,7 @@ import {
   type TextareaHTMLAttributes,
 } from "react";
 import { cn } from "../../lib/cn";
+import type { FormVariant, SmallMediumLarge } from "./types";
 
 /**
  * Opinionated per-`type` defaults for `spellCheck`, `inputMode`, and
@@ -46,8 +47,8 @@ const DEFAULT_INPUT_MODE: Partial<
  * States: error, success
  */
 
-export type InputSize = "sm" | "md" | "lg";
-export type InputVariant = "default" | "filled" | "ghost";
+export type InputSize = SmallMediumLarge;
+export type InputVariant = FormVariant;
 
 const sizes: Record<InputSize, string> = {
   sm: "h-9 px-3 text-sm rounded-xl",

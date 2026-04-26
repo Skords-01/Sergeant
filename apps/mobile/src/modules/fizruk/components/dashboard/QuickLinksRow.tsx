@@ -101,7 +101,7 @@ export function QuickLinksRow({
 }: QuickLinksRowProps) {
   return (
     <View className="gap-2" testID={testID}>
-      <Text className="text-sm font-semibold text-stone-700">Розділи</Text>
+      <Text className="text-sm font-semibold text-fg">Розділи</Text>
       <View className="flex-row flex-wrap -mx-1">
         {QUICK_LINK_TILES.map((tile) => (
           <View key={tile.id} className="w-1/2 px-1 mb-2">
@@ -119,10 +119,10 @@ export function QuickLinksRow({
                   className={pressed ? "opacity-80" : ""}
                 >
                   <Text className="text-2xl">{tile.glyph}</Text>
-                  <Text className="text-sm font-semibold text-stone-900 mt-1.5">
+                  <Text className="text-sm font-semibold text-fg mt-1.5">
                     {tile.title}
                   </Text>
-                  <Text className="text-[11px] text-stone-500 leading-snug">
+                  <Text className="text-[11px] text-fg-muted leading-snug">
                     {tile.subtitle}
                   </Text>
                 </Card>

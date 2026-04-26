@@ -35,7 +35,7 @@ const ExerciseLoadCalculatorImpl = function ExerciseLoadCalculator({
   if (zones.length === 0) return null;
   return (
     <Card variant="default" radius="lg" padding="md" testID={testID}>
-      <Text className="text-[10px] uppercase font-bold text-stone-500 mb-2">
+      <Text className="text-[10px] uppercase font-bold text-fg-muted mb-2">
         Калькулятор навантаження
       </Text>
       <View className="gap-2">

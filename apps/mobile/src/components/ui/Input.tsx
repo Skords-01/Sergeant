@@ -232,7 +232,7 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
           setFocused(false);
           onBlur?.(event);
         }}
-        className={cx("flex-1 text-base text-stone-900", className)}
+        className={cx("flex-1 text-base text-fg", className)}
         {...props}
       />
       {suffix ? <View className="ml-2">{suffix}</View> : null}
@@ -304,7 +304,7 @@ export const Textarea = forwardRef<TextInput, TextareaProps>(function Textarea(
           setFocused(false);
           onBlur?.(event);
         }}
-        className={cx("text-base text-stone-900", className)}
+        className={cx("text-base text-fg", className)}
         style={{ minHeight: rows * 20 }}
         {...props}
       />

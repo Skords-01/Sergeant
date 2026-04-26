@@ -168,21 +168,23 @@ const MODULE_CHIP_ACCENT: Record<
   { bubble: string; hoverBorder: string }
 > = {
   finyk: {
-    bubble: "bg-finyk-soft text-finyk dark:bg-finyk/20 dark:text-finyk",
+    bubble:
+      "bg-finyk-soft text-finyk dark:bg-finyk-surface-dark/20 dark:text-finyk",
     hoverBorder: "hover:border-finyk/40 hover:bg-finyk-soft/40",
   },
   fizruk: {
-    bubble: "bg-fizruk-soft text-fizruk dark:bg-fizruk/20 dark:text-fizruk",
+    bubble:
+      "bg-fizruk-soft text-fizruk dark:bg-fizruk-surface-dark/20 dark:text-fizruk",
     hoverBorder: "hover:border-fizruk/40 hover:bg-fizruk-soft/40",
   },
   routine: {
     bubble:
-      "bg-routine-surface text-routine dark:bg-routine/20 dark:text-routine",
+      "bg-routine-surface text-routine dark:bg-routine-surface-dark/20 dark:text-routine",
     hoverBorder: "hover:border-routine/40 hover:bg-routine-surface/40",
   },
   nutrition: {
     bubble:
-      "bg-nutrition-soft text-nutrition dark:bg-nutrition/20 dark:text-nutrition",
+      "bg-nutrition-soft text-nutrition dark:bg-nutrition-surface-dark/20 dark:text-nutrition",
     hoverBorder: "hover:border-nutrition/40 hover:bg-nutrition-soft/40",
   },
 };

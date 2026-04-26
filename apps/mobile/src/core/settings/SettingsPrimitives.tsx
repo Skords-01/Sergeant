@@ -62,14 +62,11 @@ export function SettingsGroup({
       >
         <View className="flex-row items-center gap-2 flex-1 min-w-0">
           {emoji ? <Text className="text-base">{emoji}</Text> : null}
-          <Text
-            className="text-sm font-semibold text-stone-900"
-            numberOfLines={1}
-          >
+          <Text className="text-sm font-semibold text-fg" numberOfLines={1}>
             {title}
           </Text>
         </View>
-        <Text className="text-stone-500 text-base">{open ? "▾" : "▸"}</Text>
+        <Text className="text-fg-muted text-base">{open ? "▾" : "▸"}</Text>
       </Pressable>
       {open ? (
         <View className="border-t border-cream-300 p-4 gap-5">{children}</View>
@@ -98,13 +95,13 @@ export function ToggleRow({
     <View className="flex-row items-start justify-between gap-3">
       <View className="flex-1 min-w-0">
         {typeof label === "string" ? (
-          <Text className="text-sm text-stone-900">{label}</Text>
+          <Text className="text-sm text-fg">{label}</Text>
         ) : (
           label
         )}
         {description ? (
           typeof description === "string" ? (
-            <Text className={cx("text-xs text-stone-500 mt-0.5 leading-snug")}>
+            <Text className={cx("text-xs text-fg-muted mt-0.5 leading-snug")}>
               {description}
             </Text>
           ) : (
@@ -136,7 +133,7 @@ export function SettingsSubGroup({ title, children }: SettingsSubGroupProps) {
   return (
     <View className="gap-3">
       {title ? (
-        <Text className="text-xs font-semibold text-stone-500">{title}</Text>
+        <Text className="text-xs font-semibold text-fg-muted">{title}</Text>
       ) : null}
       <View className="gap-3">{children}</View>
     </View>

@@ -133,10 +133,10 @@ export function MeasurementEntryForm({
                 className="w-1/2 px-1 mb-3"
                 testID={`${testID}-field-${field.id}`}
               >
-                <Text className="text-xs font-semibold text-stone-700 mb-1">
+                <Text className="text-xs font-semibold text-fg mb-1">
                   {field.label}
                   {field.unit ? (
-                    <Text className="text-stone-500">{` (${field.unit})`}</Text>
+                    <Text className="text-fg-muted">{` (${field.unit})`}</Text>
                   ) : null}
                 </Text>
                 <Input

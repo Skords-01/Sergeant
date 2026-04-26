@@ -150,11 +150,9 @@ export function HabitsPage({ testID }: HabitsPageProps) {
     >
       <View className="flex-row items-center gap-2 px-4 pt-4 pb-1">
         <Text className="text-[22px]">⚙️</Text>
-        <Text className="text-[22px] font-bold text-stone-900 flex-1">
-          Звички
-        </Text>
+        <Text className="text-[22px] font-bold text-fg flex-1">Звички</Text>
       </View>
-      <Text className="px-4 text-sm text-stone-600 leading-snug mb-2">
+      <Text className="px-4 text-sm text-fg-muted leading-snug mb-2">
         Додавай, редагуй і архівуй звички. Порядок у списку = порядок у
         календарі — використай ↑ / ↓ для зміни.
       </Text>
@@ -164,7 +162,7 @@ export function HabitsPage({ testID }: HabitsPageProps) {
         contentContainerStyle={{ padding: 16, paddingBottom: 96, gap: 12 }}
       >
         <View className="rounded-2xl border border-cream-300 bg-white px-3 py-2">
-          <Text className="text-sm font-semibold text-stone-900 mb-1">
+          <Text className="text-sm font-semibold text-fg mb-1">
             Активні звички
           </Text>
           {activeHabits.length === 0 ? (
@@ -172,8 +170,8 @@ export function HabitsPage({ testID }: HabitsPageProps) {
               className="py-6 items-center"
               testID={testID ? `${testID}-empty` : undefined}
             >
-              <Text className="text-sm text-stone-500">Поки порожньо</Text>
-              <Text className="text-xs text-stone-400 mt-1 text-center">
+              <Text className="text-sm text-fg-muted">Поки порожньо</Text>
+              <Text className="text-xs text-fg-subtle mt-1 text-center">
                 Натисни «+ Додати» нижче, щоб створити першу звичку.
               </Text>
             </View>
@@ -201,19 +199,19 @@ export function HabitsPage({ testID }: HabitsPageProps) {
             testID={testID ? `${testID}-archive-toggle` : undefined}
             className="flex-row items-center justify-between py-1"
           >
-            <Text className="text-sm font-semibold text-stone-900">
+            <Text className="text-sm font-semibold text-fg">
               Архів{" "}
-              <Text className="text-xs font-normal text-stone-500">
+              <Text className="text-xs font-normal text-fg-muted">
                 ({archivedHabits.length})
               </Text>
             </Text>
-            <Text className="text-xs text-stone-500">
+            <Text className="text-xs text-fg-muted">
               {archiveOpen ? "▲" : "▼"}
             </Text>
           </Pressable>
           {archiveOpen ? (
             archivedHabits.length === 0 ? (
-              <Text className="text-xs text-stone-500 py-3">
+              <Text className="text-xs text-fg-muted py-3">
                 Архів порожній.
               </Text>
             ) : (

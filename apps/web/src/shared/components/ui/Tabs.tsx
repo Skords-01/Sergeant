@@ -86,13 +86,14 @@ const VARIANT_UNDERLINE: Record<TabsVariant, string> = {
 
 const VARIANT_PILL: Record<TabsVariant, string> = {
   brand: "bg-brand-50 text-brand-700 dark:bg-brand/15 dark:text-brand",
-  finyk: "bg-finyk-soft text-finyk-strong dark:bg-finyk/15 dark:text-finyk",
+  finyk:
+    "bg-finyk-soft text-finyk-strong dark:bg-finyk-surface-dark/15 dark:text-finyk",
   fizruk:
-    "bg-fizruk-soft text-fizruk-strong dark:bg-fizruk/15 dark:text-fizruk",
+    "bg-fizruk-soft text-fizruk-strong dark:bg-fizruk-surface-dark/15 dark:text-fizruk",
   routine:
-    "bg-routine-surface text-routine-strong dark:bg-routine/15 dark:text-routine",
+    "bg-routine-surface text-routine-strong dark:bg-routine-surface-dark/15 dark:text-routine",
   nutrition:
-    "bg-nutrition-soft text-nutrition-strong dark:bg-nutrition/15 dark:text-nutrition",
+    "bg-nutrition-soft text-nutrition-strong dark:bg-nutrition-surface-dark/15 dark:text-nutrition",
 };
 
 const VARIANT_RING: Record<TabsVariant, string> = {

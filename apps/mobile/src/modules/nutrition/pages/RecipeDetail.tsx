@@ -75,7 +75,7 @@ export function RecipeDetailPage({
       <View className="flex-1 bg-cream-50">
         <Header onBack={onBack} title="Рецепт" />
         <View className="p-4">
-          <Text className="text-stone-600">Некоректний ID рецепта.</Text>
+          <Text className="text-fg-muted">Некоректний ID рецепта.</Text>
         </View>
       </View>
     );
@@ -86,8 +86,8 @@ export function RecipeDetailPage({
       <View className="flex-1 bg-cream-50">
         <Header onBack={onBack} title="Рецепт" />
         <View className="p-4 gap-3" testID={`recipe-${recipeId}-missing`}>
-          <Text className="text-stone-800 font-medium">Рецепт не знайдено</Text>
-          <Text className="text-stone-600 text-sm">
+          <Text className="text-fg font-medium">Рецепт не знайдено</Text>
+          <Text className="text-fg-muted text-sm">
             ID: {recipeId}. На пристрої немає цієї копії. Web (IndexedDB) треба
             імпортувати вручну (список рецептів → Імпорт JSON) або створити
             рецепт з тим самим id.
@@ -154,12 +154,12 @@ export function RecipeDetailPage({
       >
         <View className="flex-row flex-wrap gap-2">
           {recipe.timeMinutes != null ? (
-            <Text className="text-xs text-stone-600 bg-cream-200 px-2 py-1 rounded">
+            <Text className="text-xs text-fg-muted bg-cream-200 px-2 py-1 rounded">
               ⏱ {recipe.timeMinutes} хв
             </Text>
           ) : null}
           {recipe.servings != null && recipe.servings > 0 ? (
-            <Text className="text-xs text-stone-600 bg-cream-200 px-2 py-1 rounded">
+            <Text className="text-xs text-fg-muted bg-cream-200 px-2 py-1 rounded">
               Порції: {recipe.servings}
             </Text>
           ) : null}
@@ -167,11 +167,11 @@ export function RecipeDetailPage({
 
         {hasMacros ? (
           <Card>
-            <Text className="text-sm font-medium text-stone-800 mb-1">
+            <Text className="text-sm font-medium text-fg mb-1">
               Макроси (на порцію)
             </Text>
             <Text
-              className="text-stone-700 text-sm"
+              className="text-fg text-sm"
               testID={`recipe-${recipe.id}-macros`}
             >
               {macrosText}
@@ -179,7 +179,7 @@ export function RecipeDetailPage({
           </Card>
         ) : (
           <Text
-            className="text-xs text-stone-500"
+            className="text-xs text-fg-muted"
             testID={`recipe-${recipe.id}-empty-macros`}
           >
             Макроси не зазначено
@@ -188,11 +188,11 @@ export function RecipeDetailPage({
 
         {recipe.ingredients.length > 0 ? (
           <Card>
-            <Text className="text-sm font-medium text-stone-800 mb-2">
+            <Text className="text-sm font-medium text-fg mb-2">
               Інгредієнти
             </Text>
             {recipe.ingredients.map((line, i) => (
-              <Text key={i} className="text-stone-700 text-sm mb-1">
+              <Text key={i} className="text-fg text-sm mb-1">
                 • {line}
               </Text>
             ))}
@@ -201,11 +201,9 @@ export function RecipeDetailPage({
 
         {recipe.steps.length > 0 ? (
           <Card>
-            <Text className="text-sm font-medium text-stone-800 mb-2">
-              Покроково
-            </Text>
+            <Text className="text-sm font-medium text-fg mb-2">Покроково</Text>
             {recipe.steps.map((line, i) => (
-              <Text key={i} className="text-stone-700 text-sm mb-2">
+              <Text key={i} className="text-fg text-sm mb-2">
                 {i + 1}. {line}
               </Text>
             ))}
@@ -214,11 +212,9 @@ export function RecipeDetailPage({
 
         {recipe.tips.length > 0 ? (
           <Card>
-            <Text className="text-sm font-medium text-stone-800 mb-2">
-              Поради
-            </Text>
+            <Text className="text-sm font-medium text-fg mb-2">Поради</Text>
             {recipe.tips.map((line, i) => (
-              <Text key={i} className="text-stone-700 text-sm mb-1">
+              <Text key={i} className="text-fg text-sm mb-1">
                 {line}
               </Text>
             ))}
@@ -239,10 +235,7 @@ function Header({ title, onBack }: { title: string; onBack: () => void }) {
       >
         <Text className="text-coral-700 text-base">‹ Назад</Text>
       </Pressable>
-      <Text
-        className="text-lg font-semibold text-stone-800 flex-1"
-        numberOfLines={2}
-      >
+      <Text className="text-lg font-semibold text-fg flex-1" numberOfLines={2}>
         {title}
       </Text>
     </View>

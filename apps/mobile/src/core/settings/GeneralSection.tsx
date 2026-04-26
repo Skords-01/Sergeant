@@ -105,7 +105,7 @@ const mmkvStore: KVStore = {
 function DeferredNotice({ children }: { children: string }) {
   return (
     <Card variant="flat" radius="md" padding="md" className="border-dashed">
-      <Text className="text-xs text-stone-500 leading-snug">{children}</Text>
+      <Text className="text-xs text-fg-muted leading-snug">{children}</Text>
     </Card>
   );
 }
@@ -134,10 +134,10 @@ function ModuleReorderList() {
               isFirst ? "" : "border-t border-cream-300"
             }`}
           >
-            <Text className="w-4 text-xs font-semibold text-stone-500 tabular-nums">
+            <Text className="w-4 text-xs font-semibold text-fg-muted tabular-nums">
               {index + 1}
             </Text>
-            <Text className="flex-1 text-sm text-stone-900" numberOfLines={1}>
+            <Text className="flex-1 text-sm text-fg" numberOfLines={1}>
               {label}
             </Text>
             <Pressable
@@ -151,7 +151,7 @@ function ModuleReorderList() {
               }`}
               testID={`dashboard-reorder-up-${id}`}
             >
-              <Text className="text-sm text-stone-600">▲</Text>
+              <Text className="text-sm text-fg-muted">▲</Text>
             </Pressable>
             <Pressable
               accessibilityRole="button"
@@ -164,7 +164,7 @@ function ModuleReorderList() {
               }`}
               testID={`dashboard-reorder-down-${id}`}
             >
-              <Text className="text-sm text-stone-600">▼</Text>
+              <Text className="text-sm text-fg-muted">▼</Text>
             </Pressable>
           </View>
         );
@@ -212,7 +212,7 @@ export function GeneralSection() {
         />
       </SettingsSubGroup>
       <SettingsSubGroup title="Онбординг">
-        <Text className="text-xs text-stone-500 leading-snug">
+        <Text className="text-xs text-fg-muted leading-snug">
           Перезапуск не видаляє твої дані — лише повертає вітальний екран та
           підказки першого запуску.
         </Text>
@@ -246,7 +246,7 @@ export function GeneralSection() {
         </DeferredNotice>
       </SettingsSubGroup>
       <View className="gap-1">
-        <Text className="text-[11px] text-stone-400 leading-snug">
+        <Text className="text-[11px] text-fg-subtle leading-snug">
           Решта опцій цього блоку (push/pull хмари, backup) портується разом із
           відповідними інфраструктурними кроками — див. примітки у кожній
           під-групі вище.

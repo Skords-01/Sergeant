@@ -55,14 +55,14 @@ function GoalBudgetRowImpl({
     >
       <View className="flex-row items-center justify-between mb-2">
         <Text
-          className="text-sm font-semibold text-stone-900 flex-1"
+          className="text-sm font-semibold text-fg flex-1"
           numberOfLines={1}
         >
           {budget.emoji ? `${budget.emoji} ` : ""}
           {budget.name || "—"}
         </Text>
         <Text
-          className="text-xs text-stone-500"
+          className="text-xs text-fg-muted"
           testID={testID ? `${testID}-amount` : undefined}
         >
           {fmt(saved)} / {fmt(target)} ₴
@@ -78,9 +78,9 @@ function GoalBudgetRowImpl({
         <View style={{ width: barWidth }} className="h-full bg-emerald-500" />
       </View>
       {monthlyLabel ? (
-        <Text className="text-xs text-stone-500 mt-1.5">{monthlyLabel}</Text>
+        <Text className="text-xs text-fg-muted mt-1.5">{monthlyLabel}</Text>
       ) : null}
-      <Text className="text-xs text-stone-500 mt-0.5">
+      <Text className="text-xs text-fg-muted mt-0.5">
         {pct}% ·{" "}
         {daysLeft !== null
           ? daysLeft > 0

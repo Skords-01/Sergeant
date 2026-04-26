@@ -184,7 +184,7 @@ export function RecipeFormPage({ testID }: { testID?: string }) {
           <Text className="text-coral-700 text-base">‹ Назад</Text>
         </Pressable>
         <Text
-          className="text-lg font-semibold text-stone-800 flex-1"
+          className="text-lg font-semibold text-fg flex-1"
           numberOfLines={1}
         >
           {titleBar}
@@ -197,9 +197,9 @@ export function RecipeFormPage({ testID }: { testID?: string }) {
         keyboardShouldPersistTaps="handled"
       >
         <Card>
-          <Text className="text-xs text-stone-500 mb-1">Назва *</Text>
+          <Text className="text-xs text-fg-muted mb-1">Назва *</Text>
           <TextInput
-            className="border border-cream-200 rounded-lg p-2 text-stone-900"
+            className="border border-cream-200 rounded-lg p-2 text-fg"
             value={title}
             onChangeText={setTitle}
             placeholder="Борщ"
@@ -210,11 +210,11 @@ export function RecipeFormPage({ testID }: { testID?: string }) {
 
         {!isEdit ? (
           <Card>
-            <Text className="text-xs text-stone-500 mb-1">
+            <Text className="text-xs text-fg-muted mb-1">
               ID (необов’язково, для deep link)
             </Text>
             <TextInput
-              className="border border-cream-200 rounded-lg p-2 text-stone-900"
+              className="border border-cream-200 rounded-lg p-2 text-fg"
               value={idDraft}
               onChangeText={setIdDraft}
               placeholder="Залиш порожнім — згенеруємо"
@@ -226,10 +226,10 @@ export function RecipeFormPage({ testID }: { testID?: string }) {
         ) : null}
 
         <Card>
-          <Text className="text-xs text-stone-500 mb-1">Час, хв · Порції</Text>
+          <Text className="text-xs text-fg-muted mb-1">Час, хв · Порції</Text>
           <View className="flex-row gap-2">
             <TextInput
-              className="flex-1 border border-cream-200 rounded-lg p-2 text-stone-900"
+              className="flex-1 border border-cream-200 rounded-lg p-2 text-fg"
               value={timeStr}
               onChangeText={setTimeStr}
               keyboardType="number-pad"
@@ -237,7 +237,7 @@ export function RecipeFormPage({ testID }: { testID?: string }) {
               placeholderTextColor="#a8a29e"
             />
             <TextInput
-              className="flex-1 border border-cream-200 rounded-lg p-2 text-stone-900"
+              className="flex-1 border border-cream-200 rounded-lg p-2 text-fg"
               value={servingsStr}
               onChangeText={setServingsStr}
               keyboardType="decimal-pad"
@@ -248,12 +248,12 @@ export function RecipeFormPage({ testID }: { testID?: string }) {
         </Card>
 
         <Card>
-          <Text className="text-xs text-stone-500 mb-1">
+          <Text className="text-xs text-fg-muted mb-1">
             Ккал · Б / Ж / В (г, на порцію)
           </Text>
           <View className="flex-row flex-wrap gap-2">
             <TextInput
-              className="min-w-[20%] flex-1 border border-cream-200 rounded-lg p-2 text-stone-900"
+              className="min-w-[20%] flex-1 border border-cream-200 rounded-lg p-2 text-fg"
               value={k}
               onChangeText={setK}
               keyboardType="decimal-pad"
@@ -261,7 +261,7 @@ export function RecipeFormPage({ testID }: { testID?: string }) {
               placeholderTextColor="#a8a29e"
             />
             <TextInput
-              className="min-w-[20%] flex-1 border border-cream-200 rounded-lg p-2 text-stone-900"
+              className="min-w-[20%] flex-1 border border-cream-200 rounded-lg p-2 text-fg"
               value={p}
               onChangeText={setP}
               keyboardType="decimal-pad"
@@ -269,7 +269,7 @@ export function RecipeFormPage({ testID }: { testID?: string }) {
               placeholderTextColor="#a8a29e"
             />
             <TextInput
-              className="min-w-[20%] flex-1 border border-cream-200 rounded-lg p-2 text-stone-900"
+              className="min-w-[20%] flex-1 border border-cream-200 rounded-lg p-2 text-fg"
               value={f}
               onChangeText={setF}
               keyboardType="decimal-pad"
@@ -277,7 +277,7 @@ export function RecipeFormPage({ testID }: { testID?: string }) {
               placeholderTextColor="#a8a29e"
             />
             <TextInput
-              className="min-w-[20%] flex-1 border border-cream-200 rounded-lg p-2 text-stone-900"
+              className="min-w-[20%] flex-1 border border-cream-200 rounded-lg p-2 text-fg"
               value={c}
               onChangeText={setC}
               keyboardType="decimal-pad"
@@ -288,11 +288,11 @@ export function RecipeFormPage({ testID }: { testID?: string }) {
         </Card>
 
         <Card>
-          <Text className="text-xs text-stone-500 mb-1">
+          <Text className="text-xs text-fg-muted mb-1">
             Інгредієнти (кожен з нового рядка)
           </Text>
           <TextInput
-            className="border border-cream-200 rounded-lg p-2 text-stone-900 min-h-[100px] text-sm"
+            className="border border-cream-200 rounded-lg p-2 text-fg min-h-[100px] text-sm"
             value={ingText}
             onChangeText={setIngText}
             multiline
@@ -301,9 +301,9 @@ export function RecipeFormPage({ testID }: { testID?: string }) {
         </Card>
 
         <Card>
-          <Text className="text-xs text-stone-500 mb-1">Покроково (рядки)</Text>
+          <Text className="text-xs text-fg-muted mb-1">Покроково (рядки)</Text>
           <TextInput
-            className="border border-cream-200 rounded-lg p-2 text-stone-900 min-h-[120px] text-sm"
+            className="border border-cream-200 rounded-lg p-2 text-fg min-h-[120px] text-sm"
             value={stepsText}
             onChangeText={setStepsText}
             multiline
@@ -312,9 +312,9 @@ export function RecipeFormPage({ testID }: { testID?: string }) {
         </Card>
 
         <Card>
-          <Text className="text-xs text-stone-500 mb-1">Поради (рядки)</Text>
+          <Text className="text-xs text-fg-muted mb-1">Поради (рядки)</Text>
           <TextInput
-            className="border border-cream-200 rounded-lg p-2 text-stone-900 min-h-[64px] text-sm"
+            className="border border-cream-200 rounded-lg p-2 text-fg min-h-[64px] text-sm"
             value={tipsText}
             onChangeText={setTipsText}
             multiline

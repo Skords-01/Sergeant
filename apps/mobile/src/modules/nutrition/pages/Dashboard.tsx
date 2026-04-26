@@ -129,10 +129,10 @@ export function Dashboard({ testID, onMealAdded }: DashboardProps) {
       <Card testID="nutrition-today-card">
         <View className="flex-row items-center justify-between mb-3">
           <View>
-            <Text className="text-sm font-semibold text-stone-900 leading-none">
+            <Text className="text-sm font-semibold text-fg leading-none">
               Сьогодні
             </Text>
-            <Text className="text-xs text-stone-500 mt-1">
+            <Text className="text-xs text-fg-muted mt-1">
               {summary.mealCount} {mealCountLabel(summary.mealCount)} їжі
             </Text>
           </View>
@@ -170,7 +170,7 @@ export function Dashboard({ testID, onMealAdded }: DashboardProps) {
                 <Text className="text-[10px] font-bold uppercase text-lime-700 leading-none mb-1">
                   {m.label}
                 </Text>
-                <Text className="text-sm font-extrabold text-stone-900 leading-none">
+                <Text className="text-sm font-extrabold text-fg leading-none">
                   {Math.round(macros[m.key] || 0)}
                   {m.unit ? ` ${m.unit}` : ""}
                 </Text>
@@ -181,7 +181,7 @@ export function Dashboard({ testID, onMealAdded }: DashboardProps) {
       </Card>
 
       <Card testID="nutrition-week-card">
-        <Text className="text-sm font-semibold text-stone-900 mb-2 leading-none">
+        <Text className="text-sm font-semibold text-fg mb-2 leading-none">
           Тиждень · ккал
         </Text>
         <WeekKcalChart
@@ -202,12 +202,12 @@ export function Dashboard({ testID, onMealAdded }: DashboardProps) {
           className="flex-row items-center justify-between"
         >
           <View>
-            <Text className="text-sm font-semibold text-stone-900">Комора</Text>
-            <Text className="text-xs text-stone-500 mt-0.5">
+            <Text className="text-sm font-semibold text-fg">Комора</Text>
+            <Text className="text-xs text-fg-muted mt-0.5">
               Склад продуктів (кілька комор)
             </Text>
           </View>
-          <Text className="text-stone-400 text-lg" aria-hidden>
+          <Text className="text-fg-subtle text-lg" aria-hidden>
             ›
           </Text>
         </Pressable>
@@ -224,14 +224,14 @@ export function Dashboard({ testID, onMealAdded }: DashboardProps) {
           className="flex-row items-center justify-between"
         >
           <View>
-            <Text className="text-sm font-semibold text-stone-900">
+            <Text className="text-sm font-semibold text-fg">
               Збережені рецепти
             </Text>
-            <Text className="text-xs text-stone-500 mt-0.5">
+            <Text className="text-xs text-fg-muted mt-0.5">
               Локальна книга, імпорт з web (JSON)
             </Text>
           </View>
-          <Text className="text-stone-400 text-lg" aria-hidden>
+          <Text className="text-fg-subtle text-lg" aria-hidden>
             ›
           </Text>
         </Pressable>

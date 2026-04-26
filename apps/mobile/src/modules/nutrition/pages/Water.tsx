@@ -25,15 +25,13 @@ export function Water({ testID }: WaterProps) {
       contentContainerStyle={{ padding: 16, gap: 12 }}
     >
       <View>
-        <Text className="text-xs text-stone-500 mb-1 leading-none">
+        <Text className="text-xs text-fg-muted mb-1 leading-none">
           Щоденний трекер
         </Text>
-        <Text className="text-lg font-bold text-stone-900 leading-none">
-          Вода
-        </Text>
+        <Text className="text-lg font-bold text-fg leading-none">Вода</Text>
       </View>
       <WaterTrackerCard goalMl={goalMl} testID="nutrition-water-card" />
-      <Text className="text-[11px] text-stone-400 leading-snug">
+      <Text className="text-[11px] text-fg-subtle leading-snug">
         Підрахунок скидається опівночі локального часу. Зміна денної цілі
         доступна у налаштуваннях харчування — з&apos;явиться в PR-7.
       </Text>

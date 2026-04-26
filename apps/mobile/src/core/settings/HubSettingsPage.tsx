@@ -48,9 +48,7 @@ export function HubSettingsPage() {
         contentContainerStyle={{ padding: 16, paddingBottom: 32, gap: 12 }}
         keyboardShouldPersistTaps="handled"
       >
-        <Text className="text-[22px] font-bold text-stone-900 mb-1">
-          Налаштування
-        </Text>
+        <Text className="text-[22px] font-bold text-fg mb-1">Налаштування</Text>
 
         <GeneralSection />
         <NotificationsSection />

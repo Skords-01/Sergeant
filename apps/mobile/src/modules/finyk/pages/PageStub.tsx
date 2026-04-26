@@ -37,21 +37,19 @@ export function FinykPageStub({
         contentContainerClassName="px-5 pt-4 pb-16"
         showsVerticalScrollIndicator={false}
       >
-        <Text className="text-2xl font-bold text-stone-900">{title}</Text>
-        <Text className="text-sm text-stone-500 mt-1 mb-5">{description}</Text>
+        <Text className="text-2xl font-bold text-fg">{title}</Text>
+        <Text className="text-sm text-fg-muted mt-1 mb-5">{description}</Text>
 
         {children}
 
         <Card variant="default" padding="lg">
-          <Text className="text-sm font-semibold text-stone-900 mb-3">
+          <Text className="text-sm font-semibold text-fg mb-3">
             Заплановано до порту
           </Text>
           {plannedFeatures.map((item) => (
             <View key={item} className="flex-row items-start mb-2">
               <Text className="text-brand-600 mr-2">•</Text>
-              <Text className="text-sm text-stone-700 flex-1 leading-5">
-                {item}
-              </Text>
+              <Text className="text-sm text-fg flex-1 leading-5">{item}</Text>
             </View>
           ))}
         </Card>

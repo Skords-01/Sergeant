@@ -27,13 +27,13 @@ export function MacrosEditor({ form, field }: MacrosEditorProps) {
   return (
     <View className="mb-1">
       {/* eslint-disable-next-line sergeant-design/no-eyebrow-drift -- section heading in form */}
-      <Text className="text-xs font-bold uppercase text-stone-500 mb-2 tracking-wider">
+      <Text className="text-xs font-bold uppercase text-fg-muted mb-2 tracking-wider">
         КБЖВ
       </Text>
       <View className="flex-row flex-wrap gap-2">
         {FIELDS.map(({ key, label, placeholder }) => (
           <View key={key} className="flex-1 min-w-[45%]">
-            <Text className="text-[10px] font-bold uppercase text-stone-400 mb-1">
+            <Text className="text-[10px] font-bold uppercase text-fg-subtle mb-1">
               {label}
             </Text>
             <Input

@@ -118,7 +118,7 @@ export function NutritionBarcodeScanScreen() {
   if (!permission) {
     return (
       <View className="flex-1 p-4 justify-center">
-        <Text className="text-stone-600">Перевіряємо дозвіл на камеру…</Text>
+        <Text className="text-fg-muted">Перевіряємо дозвіл на камеру…</Text>
       </View>
     );
   }
@@ -126,7 +126,7 @@ export function NutritionBarcodeScanScreen() {
   if (!permission.granted) {
     return (
       <View className="flex-1 p-4 justify-center gap-4">
-        <Text className="text-stone-700 text-center">
+        <Text className="text-fg text-center">
           Щоб сканувати штрихкоди, потрібен доступ до камери.
         </Text>
         <Button variant="nutrition" onPress={() => void requestPermission()}>
@@ -146,7 +146,7 @@ export function NutritionBarcodeScanScreen() {
     );
     return (
       <View className="flex-1 p-4 bg-cream-50 justify-center gap-3">
-        <Text className="text-lg font-semibold text-stone-800 text-center">
+        <Text className="text-lg font-semibold text-fg text-center">
           {f.name || "Продукт"}
         </Text>
         {productPreview.p.partial ? (
@@ -154,7 +154,7 @@ export function NutritionBarcodeScanScreen() {
             Дані часткові — уточни КБЖВ вручну після додавання.
           </Text>
         ) : null}
-        <Text className="text-sm text-stone-600 text-center">
+        <Text className="text-sm text-fg-muted text-center">
           {f.kcal} ккал · Б {f.protein_g} г · Ж {f.fat_g} г · В {f.carbs_g} г
         </Text>
         <Button
@@ -203,14 +203,14 @@ export function NutritionBarcodeScanScreen() {
           <Text className="text-sm text-red-600 text-center">{error}</Text>
         ) : null}
         {idleHint && !error ? (
-          <Text className="text-xs text-stone-500 text-center">{idleHint}</Text>
+          <Text className="text-xs text-fg-muted text-center">{idleHint}</Text>
         ) : null}
         {isAddMeal ? (
-          <Text className="text-xs text-stone-500 text-center">
+          <Text className="text-xs text-fg-muted text-center">
             Після зчитання ти повернешся до форми додавання прийому їжі.
           </Text>
         ) : (
-          <Text className="text-xs text-stone-500 text-center">
+          <Text className="text-xs text-fg-muted text-center">
             Наведи камеру на штрихкод продукту.
           </Text>
         )}
@@ -222,7 +222,7 @@ export function NutritionBarcodeScanScreen() {
           }}
           className="py-2"
         >
-          <Text className="text-center text-stone-500 text-xs">
+          <Text className="text-center text-fg-muted text-xs">
             Скинути блокування й сканерувати знову
           </Text>
         </Pressable>

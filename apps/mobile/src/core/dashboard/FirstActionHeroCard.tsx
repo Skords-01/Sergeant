@@ -199,13 +199,13 @@ export function FirstActionHeroCard({
       <View className="flex-row items-start justify-between gap-3">
         <View className="flex-1">
           {/* eslint-disable-next-line sergeant-design/no-eyebrow-drift -- intentional FTUX eyebrow, mirrors web FirstActionHeroCard */}
-          <Text className="text-[11px] font-semibold uppercase tracking-wide text-stone-500">
+          <Text className="text-[11px] font-semibold uppercase tracking-wide text-fg-muted">
             Почнемо
           </Text>
-          <Text className="mt-1 text-base font-bold leading-snug text-stone-900">
+          <Text className="mt-1 text-base font-bold leading-snug text-fg">
             {primary.title}
           </Text>
-          <Text className="mt-1 text-xs leading-relaxed text-stone-500">
+          <Text className="mt-1 text-xs leading-relaxed text-fg-muted">
             {primary.desc}
           </Text>
         </View>
@@ -216,7 +216,7 @@ export function FirstActionHeroCard({
           className="rounded-lg px-2 py-1 active:opacity-60"
           testID="first-action-dismiss"
         >
-          <Text className="text-xs font-medium text-stone-400">Пізніше</Text>
+          <Text className="text-xs font-medium text-fg-subtle">Пізніше</Text>
         </Pressable>
       </View>
 
@@ -239,7 +239,7 @@ export function FirstActionHeroCard({
             className="rounded-lg px-2.5 py-1.5 active:opacity-60"
             testID="first-action-expand"
           >
-            <Text className="text-xs font-medium text-stone-500">
+            <Text className="text-xs font-medium text-fg-muted">
               {expanded ? "Приховати" : "Інший модуль"}
             </Text>
           </Pressable>

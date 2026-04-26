@@ -108,7 +108,7 @@ function EquipmentChips({
 
   return (
     <View className="gap-1">
-      <Text className="text-xs font-semibold text-stone-500 px-1">
+      <Text className="text-xs font-semibold text-fg-muted px-1">
         Обладнання
       </Text>
       <ScrollView
@@ -168,7 +168,7 @@ function Chip({
         className={
           active
             ? "text-xs font-semibold text-white"
-            : "text-xs font-semibold text-stone-700"
+            : "text-xs font-semibold text-fg"
         }
       >
         {label}
@@ -204,14 +204,11 @@ function ExerciseRow({
       className="px-3 py-3 rounded-xl border border-cream-300 bg-cream-50 flex-row items-center justify-between"
     >
       <View className="flex-1 pr-2">
-        <Text
-          className="text-sm font-semibold text-stone-900"
-          numberOfLines={2}
-        >
+        <Text className="text-sm font-semibold text-fg" numberOfLines={2}>
           {title}
         </Text>
         {groupLabel ? (
-          <Text className="text-xs text-stone-500 mt-0.5" numberOfLines={1}>
+          <Text className="text-xs text-fg-muted mt-0.5" numberOfLines={1}>
             {groupLabel}
           </Text>
         ) : null}
@@ -317,10 +314,10 @@ export const ExerciseCatalogSection = memo(function ExerciseCatalogSection({
           padding="lg"
           testID={`${testID}-empty`}
         >
-          <Text className="text-sm font-semibold text-stone-900">
+          <Text className="text-sm font-semibold text-fg">
             Нічого не знайдено
           </Text>
-          <Text className="text-xs text-stone-500 mt-1">
+          <Text className="text-xs text-fg-muted mt-1">
             Спробуй інший пошук або очисти фільтр по групі.
           </Text>
         </Card>
@@ -333,10 +330,10 @@ export const ExerciseCatalogSection = memo(function ExerciseCatalogSection({
               testID={`${testID}-group-${group.id}`}
             >
               <View className="flex-row items-center justify-between px-1">
-                <Text className="text-xs font-semibold uppercase text-stone-500">
+                <Text className="text-xs font-semibold uppercase text-fg-muted">
                   {group.label}
                 </Text>
-                <Text className="text-xs text-stone-500">
+                <Text className="text-xs text-fg-muted">
                   {group.items.length}/{group.total}
                 </Text>
               </View>

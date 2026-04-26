@@ -181,8 +181,8 @@ export function Body({
           🫀
         </Text>
         <View className="flex-1">
-          <Text className="text-[22px] font-bold text-stone-900">Тіло</Text>
-          <Text className="text-xs text-stone-500 mt-0.5">
+          <Text className="text-[22px] font-bold text-fg">Тіло</Text>
+          <Text className="text-xs text-fg-muted mt-0.5">
             Вага · сон · самопочуття
           </Text>
         </View>
@@ -210,10 +210,8 @@ export function Body({
             className="rounded-2xl border border-dashed border-cream-300 bg-cream-50 p-4 items-center"
             testID={`${testID}-empty`}
           >
-            <Text className="text-sm font-semibold text-stone-900">
-              Поки порожньо
-            </Text>
-            <Text className="text-xs text-stone-500 mt-1 text-center">
+            <Text className="text-sm font-semibold text-fg">Поки порожньо</Text>
+            <Text className="text-xs text-fg-muted mt-1 text-center">
               Додай перший запис у розділі «Вимірювання», щоб побачити тут
               зведення й графіки.
             </Text>

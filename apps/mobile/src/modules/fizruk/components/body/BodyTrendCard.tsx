@@ -128,11 +128,11 @@ const BodyTrendCardImpl = function BodyTrendCard({
         testID={`${rootTestID}-toggle`}
       >
         <View className="flex-1 min-w-0">
-          <Text className="text-sm font-semibold text-stone-900">{title}</Text>
+          <Text className="text-sm font-semibold text-fg">{title}</Text>
         </View>
         {latest != null ? (
           <View className="flex-row items-baseline gap-2 shrink-0">
-            <Text className="text-sm font-semibold text-stone-900 tabular-nums">
+            <Text className="text-sm font-semibold text-fg tabular-nums">
               {`${latest.toFixed(0)}${unit}`}
             </Text>
             {delta != null && delta !== 0 ? (
@@ -149,7 +149,7 @@ const BodyTrendCardImpl = function BodyTrendCard({
           </View>
         ) : null}
         <Text
-          className={`text-stone-500 ${open ? "rotate-180" : ""}`}
+          className={`text-fg-muted ${open ? "rotate-180" : ""}`}
           accessibilityElementsHidden
         >
           ▾
@@ -158,7 +158,7 @@ const BodyTrendCardImpl = function BodyTrendCard({
       {open ? (
         <View className="px-4 pb-4">
           <View className="flex-row items-baseline justify-end mb-2">
-            <Text className="text-[11px] text-stone-500">
+            <Text className="text-[11px] text-fg-muted">
               {`останні ${limit ?? 8}`}
             </Text>
           </View>

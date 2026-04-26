@@ -41,10 +41,10 @@ export function Atlas() {
         contentContainerStyle={{ padding: 16, paddingBottom: 32, gap: 12 }}
       >
         <View>
-          <Text className="text-[22px] font-bold text-stone-900">
+          <Text className="text-[22px] font-bold text-fg">
             {"Атлас м'язів"}
           </Text>
-          <Text className="text-sm text-stone-600 leading-snug">
+          <Text className="text-sm text-fg-muted leading-snug">
             {
               "Інтерактивна карта груп м'язів. Тапни зону — отримаєш назву, інтенсивність навантаження та можливість перейти до вправ у наступних PR."
             }
@@ -58,7 +58,7 @@ export function Atlas() {
             height={420}
           />
           <View className="mt-2 items-center">
-            <Text className="text-xs text-stone-500">
+            <Text className="text-xs text-fg-muted">
               {selected
                 ? `Обрано: ${BODY_ATLAS_MUSCLE_LABELS_UK[selected]}`
                 : "Натисни на м'яз, щоб побачити деталі."}

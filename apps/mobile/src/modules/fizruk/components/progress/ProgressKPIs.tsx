@@ -32,21 +32,21 @@ const ProgressKPIsImpl = function ProgressKPIs({ kpis }: ProgressKPIsProps) {
     <Card radius="lg" padding="lg" testID="fizruk-progress-kpis">
       <View className="flex-row items-start justify-between gap-3">
         <View className="flex-1 min-w-0">
-          <Text className="text-xl font-bold text-stone-900">{"Прогрес"}</Text>
-          <Text className="text-xs text-stone-500 mt-0.5" numberOfLines={1}>
+          <Text className="text-xl font-bold text-fg">{"Прогрес"}</Text>
+          <Text className="text-xs text-fg-muted mt-0.5" numberOfLines={1}>
             {subtitle}
           </Text>
         </View>
         <View className="flex-row items-center gap-4">
           <View className="items-center" testID="fizruk-progress-prs-stat">
-            <Text className="text-xs text-stone-500">{"PR"}</Text>
-            <Text className="text-base font-extrabold text-stone-900 tabular-nums">
+            <Text className="text-xs text-fg-muted">{"PR"}</Text>
+            <Text className="text-base font-extrabold text-fg tabular-nums">
               {kpis.prsCount}
             </Text>
           </View>
           <View className="items-center" testID="fizruk-progress-entries-stat">
-            <Text className="text-xs text-stone-500">{"Заміри"}</Text>
-            <Text className="text-base font-extrabold text-stone-900 tabular-nums">
+            <Text className="text-xs text-fg-muted">{"Заміри"}</Text>
+            <Text className="text-base font-extrabold text-fg tabular-nums">
               {kpis.entriesCount}
             </Text>
           </View>

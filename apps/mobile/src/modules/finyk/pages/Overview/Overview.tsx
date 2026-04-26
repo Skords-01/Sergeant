@@ -312,7 +312,7 @@ export function Overview({
         showBalance={showBalance}
       />
 
-      <Text className="text-xs text-stone-500 px-1 -mt-1">
+      <Text className="text-xs text-fg-muted px-1 -mt-1">
         Огляд, категорії та бюджети на цій сторінці — у гривні (UAH). Інші
         валюти рахунків у загальному балансі не конвертуються автоматично.
       </Text>
@@ -380,13 +380,13 @@ export function Overview({
           onPress={() => handleOverviewNavigate("transactions")}
           className="w-full py-4 rounded-2xl border border-dashed border-cream-300 active:opacity-70"
         >
-          <Text className="text-sm font-medium text-stone-500 text-center">
+          <Text className="text-sm font-medium text-fg-muted text-center">
             Усі операції ({realTx.length}) →
           </Text>
         </Pressable>
       )}
       {loadingTx && (
-        <Text className="text-center text-xs text-stone-500 py-4">
+        <Text className="text-center text-xs text-fg-muted py-4">
           Оновлення…
         </Text>
       )}

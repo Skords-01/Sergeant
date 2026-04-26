@@ -209,15 +209,15 @@ function CategoryDonutComponent({ data, size = 160 }: CategoryDonutProps) {
                 style={{ backgroundColor: arc.color }}
               />
               <Text
-                className="text-xs text-stone-900 flex-1 min-w-0"
+                className="text-xs text-fg flex-1 min-w-0"
                 numberOfLines={1}
               >
                 {arc.label}
               </Text>
-              <Text className="text-xs text-stone-500 tabular-nums">
+              <Text className="text-xs text-fg-muted tabular-nums">
                 {arc.pct < 1 && arc.pct > 0 ? "<1" : arc.pct}%
               </Text>
-              <Text className="text-xs font-medium text-stone-900 tabular-nums">
+              <Text className="text-xs font-medium text-fg tabular-nums">
                 {arc.spent.toLocaleString("uk-UA")} ₴
               </Text>
             </View>
@@ -234,7 +234,7 @@ function CategoryDonutComponent({ data, size = 160 }: CategoryDonutProps) {
           testID="finyk-analytics-donut-toggle"
           className="self-center px-3 py-1.5 rounded-full border border-cream-300 bg-cream-50 active:opacity-70"
         >
-          <Text className="text-xs font-medium text-stone-700">
+          <Text className="text-xs font-medium text-fg">
             {expanded ? "Згорнути ↑" : `Показати всі (${data.length}) ↓`}
           </Text>
         </Pressable>

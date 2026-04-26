@@ -18,7 +18,7 @@ export interface SparklineProps {
 }
 
 const TONE_CLASSES: Record<NonNullable<SparklineProps["tone"]>, string> = {
-  neutral: "bg-stone-400",
+  neutral: "bg-line",
   positive: "bg-emerald-500",
   warn: "bg-amber-500",
   danger: "bg-danger",

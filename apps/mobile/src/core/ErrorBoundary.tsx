@@ -29,9 +29,10 @@
  *   via `expo-router` so the user lands on the hub after a crash
  *   (chosen over `DevSettings.reload()` which is dev-only; see PR body
  *   for the trade-off write-up).
- * - NativeWind classes lean on concrete `cream-*` / `stone-*` tokens
- *   until mobile's semantic design-token variables land — same caveat
- *   noted in `Button.tsx` / `Card.tsx`.
+ * - NativeWind classes resolve through the shared semantic
+ *   `fg` / `fg-muted` / `panel` / `line` CSS-variable tokens so the
+ *   fallback re-tints with the active light/dark palette — same
+ *   wiring noted in `Card.tsx`.
  */
 
 import { Component, type ErrorInfo, type ReactNode } from "react";
@@ -60,7 +61,7 @@ function DefaultErrorFallback({ error, resetError }: FallbackProps) {
   return (
     <View className="flex-1 bg-cream-50 items-stretch justify-center p-6">
       <Card variant="default" padding="lg">
-        <Text className="text-lg font-semibold text-stone-900 mb-2">
+        <Text className="text-lg font-semibold text-fg mb-2">
           Щось пішло не так
         </Text>
         <ScrollView className="max-h-40 mb-4">

@@ -121,3 +121,5 @@ export type {
 } from "./Tabs";
 
 export { ToastContainer } from "./Toast";
+
+export type { FormVariant, SmallMediumLarge } from "./types";

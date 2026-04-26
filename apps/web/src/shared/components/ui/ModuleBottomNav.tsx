@@ -59,25 +59,25 @@ const COLORS: Record<ModuleNavColor, ColorTokens> = {
   finyk: {
     text: "text-finyk",
     pill: "bg-gradient-to-r from-brand-400 to-brand-500",
-    glow: "drop-shadow-[0_0_8px_rgba(16,185,129,0.3)]",
+    glow: "drop-shadow-module-nav-finyk",
     badge: "bg-finyk",
   },
   fizruk: {
     text: "text-fizruk",
     pill: "bg-gradient-to-r from-teal-400 to-teal-500",
-    glow: "drop-shadow-[0_0_8px_rgba(20,184,166,0.3)]",
+    glow: "drop-shadow-module-nav-fizruk",
     badge: "bg-fizruk",
   },
   routine: {
     text: "text-routine",
     pill: "bg-gradient-to-r from-coral-400 to-coral-500",
-    glow: "drop-shadow-[0_0_8px_rgba(249,112,102,0.3)]",
+    glow: "drop-shadow-module-nav-routine",
     badge: "bg-routine",
   },
   nutrition: {
     text: "text-nutrition",
     pill: "bg-gradient-to-r from-lime-400 to-lime-500",
-    glow: "drop-shadow-[0_0_8px_rgba(132,204,22,0.3)]",
+    glow: "drop-shadow-module-nav-nutrition",
     badge: "bg-nutrition",
   },
 };

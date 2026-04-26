@@ -131,3 +131,42 @@ export const statusColors = {
   danger: "#ef4444", // red-500
   info: "#0ea5e9", // sky-500
 };
+
+/**
+ * Status colors as a flat hex map — alias of `statusColors` for inline
+ * SVG / canvas / native status-bar call sites that can't consume the
+ * Tailwind `text-success` / `bg-danger` utilities (body-highlighter,
+ * raw `<path stroke>` attrs, etc.). Same values as `statusColors`;
+ * exposed under `statusHex` so web-only code uses one consistent name
+ * across `@shared/lib/themeHex`, chart series and mobile status bar.
+ */
+export const statusHex = {
+  success: statusColors.success,
+  warning: statusColors.warning,
+  danger: statusColors.danger,
+  info: statusColors.info,
+};
+
+/**
+ * Chart hex tokens — semantic names for inline-styled chart primitives
+ * that accept a raw `"#rrggbb"` string (SVG `fill` / `stroke`, canvas
+ * contexts, `style={{ color }}`). Each key maps to exactly one design
+ * intent so callers never reach for raw Tailwind hex values.
+ *
+ *   primary / forecast — default budget trend stroke
+ *   limit              — "over budget" marker line (red-500)
+ *   neutral            — the "Інше" bucket in category donuts (slate-400)
+ *
+ * Macro ring colors (kcal / protein / fat / carbs) live here too so the
+ * Nutrition dashboard matches the mobile ring colors via a single
+ * source of truth.
+ */
+export const chartHex = {
+  primary: "#6366f1", // indigo-500 — budget trend default
+  limit: statusColors.danger, // #ef4444 — over-budget / limit line
+  neutral: "#94a3b8", // slate-400 — "Other" slice / unused category
+  kcal: "#f97316", // orange-500
+  protein: "#3b82f6", // blue-500
+  fat: "#eab308", // yellow-500
+  carbs: "#22c55e", // green-500
+};

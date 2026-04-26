@@ -1,4 +1,5 @@
 import { memo } from "react";
+import { chartHex } from "@sergeant/design-tokens/tokens";
 import { cn } from "@shared/lib/cn";
 
 /**
@@ -12,7 +13,7 @@ import { cn } from "@shared/lib/cn";
 function BudgetTrendChartComponent({
   dailyData,
   limit,
-  color = "#6366f1",
+  color = chartHex.primary,
   className,
 }) {
   if (!dailyData || dailyData.length === 0) return null;
@@ -94,7 +95,7 @@ function BudgetTrendChartComponent({
             x2={w - padR}
             y1={limitY}
             y2={limitY}
-            stroke="#ef4444"
+            stroke={chartHex.limit}
             strokeWidth="1.2"
             strokeDasharray="4 3"
             opacity="0.7"

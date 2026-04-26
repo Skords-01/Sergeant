@@ -207,13 +207,9 @@ export function SyncStatusIndicator({
           style={{ opacity: dotOpacity }}
           className="h-2 w-2 rounded-full bg-amber-500"
         />
-        <Text className="text-xs font-medium text-stone-900">
-          Синхронізація…
-        </Text>
+        <Text className="text-xs font-medium text-fg">Синхронізація…</Text>
         {pending > 0 ? (
-          <Text className="text-xs text-stone-500">
-            {pendingLabel(pending)}
-          </Text>
+          <Text className="text-xs text-fg-muted">{pendingLabel(pending)}</Text>
         ) : null}
       </View>
     );

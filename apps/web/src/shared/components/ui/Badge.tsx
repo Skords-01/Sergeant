@@ -56,13 +56,13 @@ const softVariants: Record<BadgeVariant, string> = {
     "bg-danger-soft text-danger border-danger/30 dark:bg-danger/15 dark:border-danger/30",
   info: "bg-blue-50 text-blue-700 border-blue-200/70 dark:bg-info/15 dark:text-blue-300 dark:border-info/30",
   finyk:
-    "bg-finyk-soft text-finyk-strong border-finyk-ring/50 dark:bg-finyk/15 dark:text-finyk dark:border-finyk/30",
+    "bg-finyk-soft text-finyk-strong border-finyk-ring/50 dark:bg-finyk-surface-dark/15 dark:text-finyk dark:border-finyk-border-dark/30",
   fizruk:
-    "bg-fizruk-soft text-fizruk-strong border-fizruk-ring/50 dark:bg-fizruk/15 dark:text-fizruk dark:border-fizruk/30",
+    "bg-fizruk-soft text-fizruk-strong border-fizruk-ring/50 dark:bg-fizruk-surface-dark/15 dark:text-fizruk dark:border-fizruk-border-dark/30",
   routine:
-    "bg-routine-surface text-routine-strong border-routine-ring/50 dark:bg-routine/15 dark:text-routine dark:border-routine/30",
+    "bg-routine-surface text-routine-strong border-routine-ring/50 dark:bg-routine-surface-dark/15 dark:text-routine dark:border-routine-border-dark/30",
   nutrition:
-    "bg-nutrition-soft text-nutrition-strong border-nutrition-ring/50 dark:bg-nutrition/15 dark:text-nutrition dark:border-nutrition/30",
+    "bg-nutrition-soft text-nutrition-strong border-nutrition-ring/50 dark:bg-nutrition-surface-dark/15 dark:text-nutrition dark:border-nutrition-border-dark/30",
 };
 
 const outlineVariants: Record<BadgeVariant, string> = {

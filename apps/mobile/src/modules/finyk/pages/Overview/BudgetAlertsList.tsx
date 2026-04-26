@@ -63,7 +63,7 @@ const BudgetAlertsListImpl = function BudgetAlertsList({
                 : "bg-amber-50 border-amber-200",
             )}
           >
-            <Text className="text-sm font-medium text-stone-900 flex-1 mr-2">
+            <Text className="text-sm font-medium text-fg flex-1 mr-2">
               {cat?.label || catId}
             </Text>
             <Text
