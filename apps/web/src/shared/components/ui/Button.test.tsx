@@ -48,9 +48,13 @@ describe("Button", () => {
     expect(ref.current?.textContent).toBe("Ok");
   });
 
-  it("applies variant classes (primary → bg-brand-500)", () => {
+  it("applies variant classes (primary → bg-brand-strong text-white)", () => {
     const { getByRole } = render(<Button variant="primary">Go</Button>);
-    expect(getByRole("button").className).toContain("bg-brand-500");
+    const cls = getByRole("button").className;
+    // `bg-brand-strong` (= emerald-700) clears WCAG AA against text-white
+    // — see docs/brand-palette-wcag-aa-proposal.md.
+    expect(cls).toContain("bg-brand-strong");
+    expect(cls).toContain("text-white");
   });
 
   it("applies size classes distinctly for md vs xs", () => {
