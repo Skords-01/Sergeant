@@ -21,12 +21,36 @@
  *   warning: string;
  *   danger: string;
  *   info: string;
+ *   accentStrong: string;
+ *   successStrong: string;
+ *   warningStrong: string;
+ *   dangerStrong: string;
+ *   infoStrong: string;
  * }>}
  *
  * AI-NOTE: `accent` must match web `statusColors.success` / `--c-accent`
  * (#10b981, emerald-500) so that Sergeant's brand accent is identical
  * cross-platform. Keep `success` / `warning` / `danger` / `info` aligned
  * with `statusColors` in `./tokens.js`.
+ *
+ * AI-CONTEXT: `*Strong` companions mirror the web `*-strong` Tailwind
+ * tokens introduced in PR #854 / docs/brand-palette-wcag-aa-proposal.md.
+ * On the current *dark-only* mobile theme the saturated `*` shades already
+ * clear WCAG AA against `bg` / `surface` (emerald-500 ≈ 5.4:1, amber-500
+ * ≈ 8.3:1, etc.) — `*Strong` is **not** required there, and using it on
+ * dark surfaces would actually regress contrast (emerald-700 ≈ 2.0:1 on
+ * `#13161b`). The fields are exported now so RN primitives can adopt the
+ * same naming the web uses, and so when mobile gains a *light* theme
+ * (`darkMode: "class"` is already wired in `apps/mobile/tailwind.config.js`)
+ * the strong shades become the correct on-cream choice without another
+ * token migration. Components rendering on the current dark theme should
+ * keep using the saturated `*` value; switch to `*Strong` only inside
+ * code paths gated on the light scheme.
+ *
+ * NativeWind utilities `bg-{c}-strong` / `text-{c}-strong` are already
+ * available via `tailwind-preset.js` — these JS exports cover the
+ * StyleSheet-based consumers (`StyleSheet.create({ color: colors.* })`)
+ * that don't go through NativeWind's class-name interop.
  */
 export const colors = Object.freeze({
   bg: "#0b0d10",
@@ -39,6 +63,13 @@ export const colors = Object.freeze({
   warning: "#f59e0b",
   danger: "#ef4444",
   info: "#0ea5e9",
+  // WCAG-AA companions for light surfaces (see AI-CONTEXT above).
+  // emerald-700 / amber-700 / red-700 / sky-700.
+  accentStrong: "#047857",
+  successStrong: "#047857",
+  warningStrong: "#b45309",
+  dangerStrong: "#b91c1c",
+  infoStrong: "#0369a1",
 });
 
 /** @type {Readonly<{ xs: number; sm: number; md: number; lg: number; xl: number; xxl: number; }>} */

@@ -15,7 +15,14 @@ export type MobileColor =
   | "success"
   | "warning"
   | "danger"
-  | "info";
+  | "info"
+  // WCAG-AA companions sized for light surfaces. See `mobile.js` AI-CONTEXT
+  // for when to use these (only on light-mode rendering paths).
+  | "accentStrong"
+  | "successStrong"
+  | "warningStrong"
+  | "dangerStrong"
+  | "infoStrong";
 
 /** Mobile spacing scale identifiers (pixel values defined in `mobile.js`). */
 export type MobileSpacing = "xs" | "sm" | "md" | "lg" | "xl" | "xxl";
