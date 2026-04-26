@@ -79,6 +79,33 @@ pnpm db:migrate
 - [ ] Bigint→number coercion у serializer (rule #1)
 - [ ] Типи в `packages/api-client` оновлені (rule #3)
 - [ ] `pnpm db:migrate` працює локально
+- [ ] `pnpm lint:migrations` — green (CI: `migration-lint` job)
+
+## CI: Migration lint (`migration-lint` job)
+
+The `migration-lint` CI job (runs on every PR) enforces AGENTS.md rule #4 automatically:
+
+1. **No unguarded `DROP COLUMN` / `DROP TABLE`** in new or changed `*.sql` files (`.down.sql` is exempt).
+2. **Sequential numbering** — no gaps, no duplicates across all migration files.
+
+If the job fails because your migration contains a legitimate DROP:
+
+- Ensure the column/table is already unused in code (deployed in a **previous, merged** PR).
+- Add an escape-hatch comment anywhere in the migration file:
+  ```sql
+  -- ALLOW_DROP: column unused since PR #NNN (due: YYYY-MM-DD)
+  ```
+  The `due:` date is an audit reminder — choose a date ~30 days out.
+
+Run locally:
+
+```bash
+pnpm lint:migrations
+# or directly:
+BASE_REF=main node scripts/lint-migrations.mjs
+```
+
+Script: [`scripts/lint-migrations.mjs`](../../scripts/lint-migrations.mjs) | Tests: `node --test scripts/__tests__/lint-migrations.test.mjs`
 
 ## Notes
 
