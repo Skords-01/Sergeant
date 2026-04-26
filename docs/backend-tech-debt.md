@@ -111,8 +111,12 @@
 ### `modules/barcode.ts`
 
 - **OK** — timeouts на OFF/USDA/UPCitemdb.
-- **Високий (опц.)** — TTL in-memory кеш по штрихкоду.
-- **Середній** — немає **`barcode.test.ts`**.
+- **Високий (опц.)** — TTL in-memory кеш по штрихкоду. _Status (2026-04-26):_
+  заплановано в найближчому backend hardening PR (як частина hit/miss
+  TTL + bounded size).
+- **Середній** — немає **`barcode.test.ts`**. _Status (2026-04-26):_
+  заплановано в тому ж баркодному PR-і — покриває cascade (OFF → USDA →
+  UPCitemdb), cache hit/miss, invalid input, upstream failure.
 
 ### `modules/food-search.ts` + `food-search.test.ts`
 

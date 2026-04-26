@@ -371,7 +371,7 @@ module.exports = {
 
 **Caveat:** оскільки Vercel preview rate-limit-иться (free tier), тести працюють проти локального preview, а НЕ проти Vercel deployment. Це достатньо для catastrophic-regression detection, але не покриває edge-cases SSR/Vercel-specific behavior. Для цього треба блок 4.1 (Vercel paid).
 
-**Поточний стан:** у вас уже є job `Smoke E2E (Playwright)` у CI workflow, але він `skipped` (бачу в pr_checks #708). Чому skipped — треба з'ясувати (можливо `if: ...` condition не виконується для всіх PR).
+**Поточний стан (2026-04-26):** Smoke E2E (Playwright) job активований у [#717](https://github.com/Skords-01/Sergeant/pull/717) і виконується на КОЖНИЙ PR (раніше був `skipped` через невиконуваний `needs: check`). Запис нижче залишений як архівний контекст того, як саме розблокували pipeline.
 
 **Рекомендований happy-path test set:**
 
