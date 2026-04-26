@@ -73,6 +73,16 @@ export default [
       // surrounding `dark:` / `hover:` override falls through to the
       // light-mode background — this is what bug #814 was.
       "sergeant-design/valid-tailwind-opacity": "error",
+      // WCAG-AA `-strong` tier guardrail — every saturated brand `bg-*`
+      // utility paired with `text-white` regresses to ~2.4–2.8 : 1
+      // contrast (the bug class fixed in PRs #854 / #855). The fix is
+      // `bg-{family}-strong text-white`. See docs/BRANDBOOK.md →
+      // "WCAG-AA `-strong` Tier" for the full mapping. Set to "warn"
+      // initially (same staged-migration pattern as ai-marker-syntax)
+      // because ~28 pre-existing call-sites in app/component code
+      // currently violate it; promote to "error" once a follow-up
+      // cleanup PR migrates the call-sites to the `-strong` tokens.
+      "sergeant-design/no-low-contrast-text-on-fill": "warn",
       "no-empty": ["error", { allowEmptyCatch: true }],
       "no-unused-vars": [
         "error",
@@ -139,11 +149,14 @@ export default [
   },
   // The plugin's own __tests__ feed offending Tailwind opacity strings
   // (`bg-finyk/7`, `text-danger/18`, …) into the linter as fixtures — the
-  // rule would otherwise self-flag every fixture.
+  // rule would otherwise self-flag every fixture. The same applies to
+  // `no-low-contrast-text-on-fill`, whose test fixtures contain the
+  // very `bg-brand text-white` patterns the rule is meant to flag.
   {
     files: ["packages/eslint-plugin-sergeant-design/**/*.{js,mjs}"],
     rules: {
       "sergeant-design/valid-tailwind-opacity": "off",
+      "sergeant-design/no-low-contrast-text-on-fill": "off",
     },
   },
   // Jest setup / test files need jest globals.

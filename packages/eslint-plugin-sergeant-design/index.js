@@ -557,6 +557,129 @@ const validTailwindOpacity = {
   },
 };
 
+// ─── no-low-contrast-text-on-fill ──────────────────────────────────────
+//
+// Forbid the saturated brand-fill + `text-white` combination on light
+// surfaces. The full rationale, decision matrix, and contrast measurements
+// live in `docs/BRANDBOOK.md` → "WCAG-AA `-strong` Tier" and
+// `docs/brand-palette-wcag-aa-proposal.md`.
+//
+// Quick recap: every saturated brand colour ships with a `-strong`
+// companion that clears WCAG AA 4.5 : 1 against `text-white`. Reaching
+// for the saturated `bg-{family}` (or its `-{50…600}` scale steps) when
+// the foreground is `text-white` regresses to ~2.4–2.8 : 1, which is
+// what tripped /design's axe gate before PRs #854 / #855.
+//
+// What this rule flags (in a single className string):
+//   - `bg-{family}` or `bg-{family}-{50|100|200|300|400|500|600}`,
+//     un-prefixed by any variant (`dark:` / `hover:` / `lg:` etc.),
+//   - co-located with `text-white` (also un-prefixed).
+//
+// What this rule deliberately does NOT flag:
+//   - `bg-{family}-strong text-white` — the correct pairing.
+//   - `bg-{family}-{700|800|900}` — explicit dark steps.
+//   - `bg-{family}/<N>` — opacity-tinted soft washes (different concern;
+//     the soft-tier text token is `text-{family}-strong`, not white).
+//   - `bg-[#hex] text-white` — arbitrary values; opt-out for one-offs.
+//   - `dark:bg-{family} text-white` — on dark surfaces emerald-500
+//     vs. white passes (~5.4 : 1); the strong tier would actually
+//     regress contrast there.
+//   - `bg-{family} text-text` / no `text-white` — colour tile without
+//     white-on-fill text is a different design problem.
+
+const STRONG_BG_FAMILIES = [
+  "brand",
+  "accent",
+  "success",
+  "warning",
+  "danger",
+  "info",
+  "finyk",
+  "fizruk",
+  "routine",
+  "nutrition",
+];
+
+// Match `bg-{family}` or `bg-{family}-{step}` with **no** variant prefix
+// (variant prefixes contain a `:`; we exclude them via the leading
+// boundary). The (?<!\S) lookbehind ensures we only match at a
+// whitespace boundary so `dark:bg-finyk` does NOT match `bg-finyk`.
+//
+// The trailing lookahead deliberately rejects `/` so that
+// `bg-brand/50` (an opacity-tinted soft wash, explicitly out-of-scope
+// per the rule docs) does NOT half-match `bg-brand` with
+// `stepRaw=undefined`. Only whitespace / end-of-string close the
+// match; the optional `-(\d{1,3})` group already swallows the
+// numeric step, so `bg-brand-500/40` similarly fails the lookahead
+// and is left for the (separate) opacity-tier rules.
+const RX_SATURATED_BG = new RegExp(
+  String.raw`(?<!\S)bg-(${STRONG_BG_FAMILIES.join("|")})(?:-(\d{1,3}))?(?=\s|$)`,
+  "g",
+);
+
+// `text-white` similarly must be base-state; variant-prefixed
+// `dark:text-white` shouldn't fire the rule.
+const RX_TEXT_WHITE = /(?<!\S)text-white(?=\s|$)/;
+
+const LOW_CONTRAST_MESSAGE =
+  "`{{utility}}` + `text-white` fails WCAG AA (~2.4–2.8 : 1). Use `bg-{{family}}-strong` instead — see docs/BRANDBOOK.md → 'WCAG-AA `-strong` Tier'.";
+
+function findLowContrastFills(value) {
+  if (typeof value !== "string" || value.length === 0) return [];
+  if (!RX_TEXT_WHITE.test(value)) return [];
+  const hits = [];
+  let match;
+  RX_SATURATED_BG.lastIndex = 0;
+  while ((match = RX_SATURATED_BG.exec(value)) !== null) {
+    const [full, family, stepRaw] = match;
+    if (stepRaw !== undefined) {
+      const step = Number(stepRaw);
+      // Steps 700/800/900 are dark enough to clear AA against white;
+      // we only flag the lighter scale steps. (Nutrition's lime-700
+      // technically clears 4.5 : 1 by a 0.17 margin only — the
+      // `-strong` companion bumps it to lime-800; treat lime-700 as
+      // acceptable here so we don't false-flag explicit dark-step
+      // overrides like `bg-nutrition-700`.)
+      if (!Number.isFinite(step) || step >= 700) continue;
+    }
+    hits.push({ utility: full, family });
+  }
+  return hits;
+}
+
+const noLowContrastTextOnFill = {
+  meta: {
+    type: "problem",
+    docs: {
+      description:
+        "Forbid saturated brand `bg-*` utilities behind `text-white` — use the `-strong` companion (= 700/800 step) so the pairing clears WCAG AA 4.5 : 1.",
+    },
+    schema: [],
+    messages: { lowContrast: LOW_CONTRAST_MESSAGE },
+  },
+  create(context) {
+    function report(node, value) {
+      const hits = findLowContrastFills(value);
+      for (const hit of hits) {
+        context.report({
+          node,
+          messageId: "lowContrast",
+          data: { utility: hit.utility, family: hit.family },
+        });
+      }
+    }
+    return {
+      Literal(node) {
+        if (typeof node.value === "string") report(node, node.value);
+      },
+      TemplateElement(node) {
+        const cooked = node.value && node.value.cooked;
+        if (typeof cooked === "string") report(node, cooked);
+      },
+    };
+  },
+};
+
 const plugin = {
   rules: {
     "no-eyebrow-drift": noEyebrowDrift,
@@ -565,6 +688,7 @@ const plugin = {
     "no-raw-local-storage": noRawLocalStorage,
     "ai-marker-syntax": aiMarkerSyntax,
     "valid-tailwind-opacity": validTailwindOpacity,
+    "no-low-contrast-text-on-fill": noLowContrastTextOnFill,
   },
 };
 
@@ -575,6 +699,7 @@ export {
   RAW_LOCAL_STORAGE_MESSAGE,
   ALLOWED_TAILWIND_OPACITY_STEPS,
   TAILWIND_OPACITY_UTILITIES,
+  STRONG_BG_FAMILIES,
 };
 
 export default plugin;
