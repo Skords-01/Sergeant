@@ -10,8 +10,11 @@
  */
 
 import { act, fireEvent, render } from "@testing-library/react-native";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ApiClientProvider } from "@sergeant/api-client/react";
 import { STORAGE_KEYS } from "@sergeant/shared";
 
+import { apiClient } from "@/api/apiClient";
 import { _getMMKVInstance } from "@/lib/storage";
 
 import { WeeklyDigestFooter } from "./WeeklyDigestFooter";
@@ -31,6 +34,17 @@ function weekKeyFor(d: Date): string {
   )}-${String(monday.getDate()).padStart(2, "0")}`;
 }
 
+function renderFooter(ui: React.ReactElement) {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  return render(
+    <ApiClientProvider client={apiClient}>
+      <QueryClientProvider client={client}>{ui}</QueryClientProvider>
+    </ApiClientProvider>,
+  );
+}
+
 describe("WeeklyDigestFooter", () => {
   beforeEach(() => {
     _getMMKVInstance().clearAll();
@@ -42,21 +56,19 @@ describe("WeeklyDigestFooter", () => {
   it("renders on Monday even without a digest (ready-to-generate CTA)", () => {
     // 2026-04-20 is a Monday.
     const monday = new Date("2026-04-20T10:00:00");
-    const { getByTestId, queryByTestId } = render(
+    const { getByTestId, queryByTestId } = renderFooter(
       <WeeklyDigestFooter now={monday} />,
     );
 
     expect(getByTestId("weekly-digest-footer")).toBeTruthy();
-    // Monday *always* renders, but without a digest the fresh-dot
-    // stays hidden — the shared helper treats Monday as "live" only
-    // when actively checking freshness, not for presence reasons.
+    // Monday is live by definition so the CTA surfaces as fresh.
     expect(queryByTestId("weekly-digest-footer-fresh-dot")).toBeTruthy();
   });
 
   it("hides the footer on a quiet mid-week day with no digest", () => {
     // 2026-04-24 is a Friday.
     const friday = new Date("2026-04-24T10:00:00");
-    const { queryByTestId } = render(<WeeklyDigestFooter now={friday} />);
+    const { queryByTestId } = renderFooter(<WeeklyDigestFooter now={friday} />);
 
     expect(queryByTestId("weekly-digest-footer")).toBeNull();
   });
@@ -65,7 +77,7 @@ describe("WeeklyDigestFooter", () => {
     const wed = new Date("2026-04-22T10:00:00");
     writeDigest(weekKeyFor(wed), { generatedAt: wed.toISOString() });
 
-    const { getByTestId } = render(<WeeklyDigestFooter now={wed} />);
+    const { getByTestId } = renderFooter(<WeeklyDigestFooter now={wed} />);
 
     expect(getByTestId("weekly-digest-footer")).toBeTruthy();
     expect(getByTestId("weekly-digest-footer-fresh-dot")).toBeTruthy();
@@ -73,7 +85,7 @@ describe("WeeklyDigestFooter", () => {
 
   it("opens the placeholder digest card when the link is pressed", () => {
     const mon = new Date("2026-04-20T10:00:00");
-    const { getByTestId, queryByTestId } = render(
+    const { getByTestId, queryByTestId } = renderFooter(
       <WeeklyDigestFooter now={mon} />,
     );
 

@@ -2,14 +2,17 @@
  * Render smoke test for the Hub-core Settings shell.
  *
  * Keeps the scope tight: the shell renders the screen title and all
- * seven Hub-core section headers (General / Notifications / Routine /
- * Finyk / Fizruk / AIDigest / Experimental). Section-level behaviour
+ * nine Hub-core section headers (General / Notifications / Routine /
+ * Finyk / Fizruk / AIDigest / Assistant / Experimental / Account).
+ * Section-level behaviour
  * is covered by the per-section suites.
  */
 
 import { render } from "@testing-library/react-native";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ApiClientProvider } from "@sergeant/api-client/react";
 
+import { apiClient } from "@/api/apiClient";
 import { _getMMKVInstance } from "@/lib/storage";
 
 import { HubSettingsPage } from "./HubSettingsPage";
@@ -45,9 +48,11 @@ function renderPage() {
     defaultOptions: { queries: { retry: false } },
   });
   return render(
-    <QueryClientProvider client={client}>
-      <HubSettingsPage />
-    </QueryClientProvider>,
+    <ApiClientProvider client={apiClient}>
+      <QueryClientProvider client={client}>
+        <HubSettingsPage />
+      </QueryClientProvider>
+    </ApiClientProvider>,
   );
 }
 

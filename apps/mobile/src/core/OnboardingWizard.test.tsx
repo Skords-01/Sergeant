@@ -22,7 +22,7 @@ describe("OnboardingWizard", () => {
     // act warnings. Matches the pattern used by Sheet/Skeleton tests.
     jest
       .spyOn(AccessibilityInfo, "isReduceMotionEnabled")
-      .mockResolvedValue(false);
+      .mockImplementation(() => new Promise<boolean>(() => {}));
     jest
       .spyOn(AccessibilityInfo, "addEventListener")
       .mockReturnValue({ remove: () => {} } as ReturnType<
@@ -34,37 +34,51 @@ describe("OnboardingWizard", () => {
     jest.restoreAllMocks();
   });
 
-  it("renders the splash headline and all four vibe chips", () => {
+  function renderOnModulesStep(onDone = jest.fn()) {
+    const screen = render(<OnboardingWizard onDone={onDone} />);
+    fireEvent.press(screen.getByTestId("onboarding-next-welcome"));
+    return screen;
+  }
+
+  function renderOnGoalsStep(onDone = jest.fn()) {
+    const screen = renderOnModulesStep(onDone);
+    fireEvent.press(screen.getByTestId("onboarding-next-modules"));
+    return screen;
+  }
+
+  it("renders the welcome headline and all four module cards", () => {
     const { getByText, getByTestId } = render(
       <OnboardingWizard onDone={jest.fn()} />,
     );
-    expect(getByText("Твоє життя — один екран.")).toBeTruthy();
-    expect(getByTestId("onboarding-chip-finyk")).toBeTruthy();
-    expect(getByTestId("onboarding-chip-fizruk")).toBeTruthy();
-    expect(getByTestId("onboarding-chip-routine")).toBeTruthy();
-    expect(getByTestId("onboarding-chip-nutrition")).toBeTruthy();
+    expect(getByText("Привіт. Це Sergeant.")).toBeTruthy();
+    expect(getByText(/Гроші, тіло, звички, їжа/)).toBeTruthy();
+
+    fireEvent.press(getByTestId("onboarding-next-welcome"));
+
+    expect(getByTestId("onboarding-module-finyk")).toBeTruthy();
+    expect(getByTestId("onboarding-module-fizruk")).toBeTruthy();
+    expect(getByTestId("onboarding-module-routine")).toBeTruthy();
+    expect(getByTestId("onboarding-module-nutrition")).toBeTruthy();
   });
 
-  it("defaults every chip to the selected state (lazy-path)", () => {
-    const { getByTestId } = render(<OnboardingWizard onDone={jest.fn()} />);
+  it("defaults every module card to the selected state (lazy-path)", () => {
+    const { getByTestId } = renderOnModulesStep();
     for (const id of ["finyk", "fizruk", "routine", "nutrition"] as const) {
-      const chip = getByTestId(`onboarding-chip-${id}`);
+      const chip = getByTestId(`onboarding-module-${id}`);
       expect(chip.props.accessibilityState?.selected).toBe(true);
     }
   });
 
-  it("toggles a chip off and surfaces the empty-picks hint when every chip is cleared", () => {
-    const { getByTestId, getByText, queryByText } = render(
-      <OnboardingWizard onDone={jest.fn()} />,
-    );
-    fireEvent.press(getByTestId("onboarding-chip-finyk"));
+  it("toggles a module off and surfaces the empty-picks hint when every module is cleared", () => {
+    const { getByTestId, getByText, queryByText } = renderOnModulesStep();
+    fireEvent.press(getByTestId("onboarding-module-finyk"));
     expect(
-      getByTestId("onboarding-chip-finyk").props.accessibilityState?.selected,
+      getByTestId("onboarding-module-finyk").props.accessibilityState?.selected,
     ).toBe(false);
     expect(queryByText(/Без вибору — всі 4 модулі/)).toBeNull();
 
     for (const id of ["fizruk", "routine", "nutrition"] as const) {
-      fireEvent.press(getByTestId(`onboarding-chip-${id}`));
+      fireEvent.press(getByTestId(`onboarding-module-${id}`));
     }
     expect(getByText(/Без вибору — всі 4 модулі/)).toBeTruthy();
   });
@@ -72,7 +86,7 @@ describe("OnboardingWizard", () => {
   it("persists picks + done flag + first-action markers on finish", () => {
     const onDone = jest.fn();
     const mmkv = _getMMKVInstance();
-    const { getByTestId } = render(<OnboardingWizard onDone={onDone} />);
+    const { getByTestId } = renderOnGoalsStep(onDone);
 
     fireEvent.press(getByTestId("onboarding-finish"));
 
@@ -95,12 +109,13 @@ describe("OnboardingWizard", () => {
     });
   });
 
-  it("falls back to every module when the user cleared every chip before tapping finish", () => {
+  it("falls back to every module when the user cleared every module before tapping finish", () => {
     const onDone = jest.fn();
-    const { getByTestId } = render(<OnboardingWizard onDone={onDone} />);
+    const { getByTestId } = renderOnModulesStep(onDone);
     for (const id of ["finyk", "fizruk", "routine", "nutrition"] as const) {
-      fireEvent.press(getByTestId(`onboarding-chip-${id}`));
+      fireEvent.press(getByTestId(`onboarding-module-${id}`));
     }
+    fireEvent.press(getByTestId("onboarding-next-modules"));
 
     fireEvent.press(getByTestId("onboarding-finish"));
 
@@ -115,9 +130,10 @@ describe("OnboardingWizard", () => {
 
   it("persists the caller's chosen subset when they deselected some modules", () => {
     const onDone = jest.fn();
-    const { getByTestId } = render(<OnboardingWizard onDone={onDone} />);
-    fireEvent.press(getByTestId("onboarding-chip-fizruk"));
-    fireEvent.press(getByTestId("onboarding-chip-nutrition"));
+    const { getByTestId } = renderOnModulesStep(onDone);
+    fireEvent.press(getByTestId("onboarding-module-fizruk"));
+    fireEvent.press(getByTestId("onboarding-module-nutrition"));
+    fireEvent.press(getByTestId("onboarding-next-modules"));
 
     fireEvent.press(getByTestId("onboarding-finish"));
 
