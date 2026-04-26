@@ -48,7 +48,7 @@ try/catch крашить на quota exceeded, corrupted storage або private b
 - **TODO-список немігрованих файлів** — кожен файл, що ще
   читає/пише напряму, перерахований у `eslint.config.js` явно. Міграція
   файла = видалення рядка зі списку. На 2026-04-26 TODO-список
-  містить 55 файлів (базовий рівень при введенні був 49; оновиться вниз
+  містить 52 файли (базовий рівень при введенні був 49; оновиться вниз
   після чергових міграцій).
   Фактичних raw `localStorage.*` production-файлів
   (включно з wrappers) — ~78 (`rg -l "\blocalStorage\." apps/web/src` = 119
@@ -213,12 +213,16 @@ Production код чистий. Тестові `any` — фабрики фікт
 - ✅ Codemod `.js`/`.jsx` extensions — 436 імпортів очищено
 - ✅ ESLint guardrail для прямих `localStorage.*` (нові виклики блокуються)
 - ✅ `react-hooks/exhaustive-deps` disable-сайти — задокументовано
+- ✅ `no-raw-local-storage` top-3 міграція (55 → 52 файли):
+  - `core/settings/FinykSection.tsx` — 20 raw calls → `safeReadStringLS`/`safeWriteLS`/`safeRemoveLS`
+  - `core/lib/chatActions/fizrukActions.ts` — 7 raw calls → `safeReadLS` + `readWorkouts()` helper
+  - `core/hub/HubDashboard.tsx` — вже використовував `localStorageStore` (KVStore adapter), прибрано з allowlist
 
 ## Recommended next steps
 
 1. **Міграція TODO-списку `no-raw-local-storage`** — пріоритетно файли з
-   найбільшою кількістю викликів (`core/settings/FinykSection.tsx` — 20,
-   `core/lib/chatActions/fizrukActions.ts` — 7, `core/hub/HubDashboard.tsx` — 5).
+   найбільшою кількістю викликів (наступні за пріоритетом після вже
+   мігрованих top-3).
 2. **File splitting** — Assets, ProfilePage, ActiveWorkoutPanel.
 3. **Test coverage** — recommendation engine, reports aggregation, cloud
    sync flows.
