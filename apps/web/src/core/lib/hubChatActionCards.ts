@@ -34,6 +34,7 @@ export interface ChatActionCard {
 
 /** Tools, які класифіковані як ризикові за специфікацією §4. */
 const RISKY_TOOLS: ReadonlySet<string> = new Set([
+  "batch_categorize",
   "delete_transaction",
   "hide_transaction",
   "forget",
@@ -47,6 +48,8 @@ const RISKY_TOOLS: ReadonlySet<string> = new Set([
  */
 const KNOWN_TOOLS: ReadonlySet<string> = new Set([
   "create_transaction",
+  "find_transaction",
+  "batch_categorize",
   "log_meal",
   "log_water",
   "start_workout",
@@ -84,6 +87,8 @@ function deriveStatus(
 function moduleFor(name: string): ChatActionCardModule {
   if (
     name === "create_transaction" ||
+    name === "find_transaction" ||
+    name === "batch_categorize" ||
     name === "delete_transaction" ||
     name === "hide_transaction" ||
     name === "import_monobank_range"
@@ -105,6 +110,8 @@ function moduleFor(name: string): ChatActionCardModule {
 function iconFor(name: string): string | undefined {
   switch (name) {
     case "create_transaction":
+    case "find_transaction":
+    case "batch_categorize":
       return "credit-card";
     case "log_meal":
       return "utensils";
@@ -130,6 +137,10 @@ function titleFor(name: string, status: ChatActionCardStatus): string {
   switch (name) {
     case "create_transaction":
       return `Транзакцію записано${failedSuffix}`;
+    case "find_transaction":
+      return `Транзакції знайдено${failedSuffix}`;
+    case "batch_categorize":
+      return `Категорії оновлено${failedSuffix}`;
     case "log_meal":
       return `Прийом їжі залоговано${failedSuffix}`;
     case "log_water":
@@ -184,6 +195,24 @@ function summaryFor(
       if (amount !== undefined) parts.push(`${amount} ₴`);
       if (desc) parts.push(desc);
       if (parts.length) return parts.join(" · ");
+      break;
+    }
+    case "find_transaction": {
+      const query = stringField("query");
+      const amount = numberField("amount");
+      const parts: string[] = [];
+      if (query) parts.push(query);
+      if (amount !== undefined) parts.push(`${amount} ₴`);
+      if (parts.length) return parts.join(" · ");
+      break;
+    }
+    case "batch_categorize": {
+      const pattern = stringField("pattern");
+      const category = stringField("category_id");
+      const parts: string[] = [];
+      if (pattern) parts.push(pattern);
+      if (category) parts.push(`→ ${category}`);
+      if (parts.length) return parts.join(" ");
       break;
     }
     case "log_meal": {

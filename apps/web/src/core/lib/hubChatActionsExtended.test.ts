@@ -33,6 +33,120 @@ function readLS<T>(key: string, fallback: T): T {
 
 // ─── Фінік ────────────────────────────────────────────────────────────
 
+describe("find_transaction", () => {
+  it("шукає ручну транзакцію за описом і сумою", () => {
+    localStorage.setItem(
+      "finyk_manual_expenses_v1",
+      JSON.stringify([
+        {
+          id: "m_atb",
+          amount: 450,
+          description: "АТБ продукти",
+          category: "food",
+          date: "2024-06-14T12:00:00.000Z",
+          type: "expense",
+        },
+        {
+          id: "m_taxi",
+          amount: 220,
+          description: "таксі",
+          category: "transport",
+          date: "2024-06-15T12:00:00.000Z",
+          type: "expense",
+        },
+      ]),
+    );
+    const msg = executeAction({
+      name: "find_transaction",
+      input: { query: "атб", amount: 450 },
+    });
+    expect(msg).toContain("m_atb");
+    expect(msg).toContain("АТБ продукти");
+    expect(msg).not.toContain("m_taxi");
+  });
+
+  it("шукає bank cache transactions і не показує hidden ids", () => {
+    localStorage.setItem(
+      "finyk_tx_cache",
+      JSON.stringify({
+        txs: [
+          {
+            id: "mono_ok",
+            amount: -12500,
+            description: "Сільпо",
+            time: 1718376000,
+          },
+          {
+            id: "mono_hidden",
+            amount: -12500,
+            description: "Сільпо",
+            time: 1718376000,
+          },
+        ],
+      }),
+    );
+    localStorage.setItem("finyk_hidden_txs", JSON.stringify(["mono_hidden"]));
+    const msg = executeAction({
+      name: "find_transaction",
+      input: { query: "сільпо", amount: 125 },
+    });
+    expect(msg).toContain("mono_ok");
+    expect(msg).not.toContain("mono_hidden");
+  });
+});
+
+describe("batch_categorize", () => {
+  it("у dry-run показує preview і не пише категорії", () => {
+    localStorage.setItem(
+      "finyk_manual_expenses_v1",
+      JSON.stringify([
+        { id: "m_silpo_1", amount: 300, description: "Сільпо центр" },
+        { id: "m_silpo_2", amount: 200, description: "Сільпо доставка" },
+      ]),
+    );
+    const msg = executeAction({
+      name: "batch_categorize",
+      input: { pattern: "сільпо", category_id: "food" },
+    });
+    expect(msg).toContain("Dry-run");
+    expect(msg).toContain("m_silpo_1");
+    expect(readLS<Record<string, string>>("finyk_tx_cats", {})).toEqual({});
+  });
+
+  it("з dry_run=false записує категорію для matched транзакцій", () => {
+    localStorage.setItem(
+      "finyk_manual_expenses_v1",
+      JSON.stringify([
+        { id: "m_silpo_1", amount: 300, description: "Сільпо центр" },
+        { id: "m_taxi", amount: 150, description: "Uklon" },
+      ]),
+    );
+    const msg = executeAction({
+      name: "batch_categorize",
+      input: { pattern: "сільпо", category_id: "food", dry_run: false },
+    });
+    expect(msg).toContain("змінено на food");
+    expect(readLS<Record<string, string>>("finyk_tx_cats", {})).toEqual({
+      m_silpo_1: "food",
+    });
+  });
+
+  it("валідує pattern і category_id", () => {
+    expect(
+      executeAction({
+        name: "batch_categorize",
+        input: { pattern: "", category_id: "food" },
+      }),
+    ).toContain("pattern");
+    expect(
+      executeAction({
+        name: "batch_categorize",
+        input: { pattern: "атб", category_id: "" },
+      }),
+    ).toContain("category_id");
+  });
+});
+
 describe("delete_transaction", () => {
   it("видаляє ручну транзакцію за id", () => {
     localStorage.setItem(

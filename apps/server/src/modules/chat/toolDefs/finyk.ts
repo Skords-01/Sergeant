@@ -21,6 +21,89 @@ export const FINYK_TOOLS: AnthropicTool[] = [
     },
   },
   {
+    name: "find_transaction",
+    description:
+      "Знайти транзакції у Фініку за описом/мерчантом, сумою або датою. Використовуй перед категоризацією, коли користувач каже 'знайди покупку в АТБ' або 'транзакція на 450 грн позавчора'. Не змінює дані.",
+    input_schema: {
+      type: "object",
+      properties: {
+        query: {
+          type: "string",
+          description:
+            "Текст для пошуку в описі, мерчанті, категорії або id транзакції",
+        },
+        amount: {
+          type: "number",
+          description: "Сума у грн для пошуку (опційно)",
+        },
+        amount_tolerance: {
+          type: "number",
+          description:
+            "Допуск для amount у грн (опційно, за замовчуванням 0.01)",
+        },
+        date_from: {
+          type: "string",
+          description: "Початкова дата YYYY-MM-DD (опційно)",
+        },
+        date_to: {
+          type: "string",
+          description: "Кінцева дата YYYY-MM-DD (опційно)",
+        },
+        limit: {
+          type: "number",
+          description: "Максимум результатів, 1-10 (опційно, default 5)",
+        },
+      },
+    },
+  },
+  {
+    name: "batch_categorize",
+    description:
+      "Масово змінити категорію транзакцій за текстовим патерном і фільтрами. За замовчуванням dry_run=true — спершу показує preview без запису. Виконуй з dry_run=false тільки коли користувач підтвердив застосування.",
+    input_schema: {
+      type: "object",
+      properties: {
+        pattern: {
+          type: "string",
+          description:
+            "Текстовий патерн для опису/мерчанта/category/id (напр. 'Сільпо')",
+        },
+        category_id: {
+          type: "string",
+          description: "Цільовий id категорії з блоку [Категорії]",
+        },
+        dry_run: {
+          type: "boolean",
+          description:
+            "true — лише preview без запису; false — застосувати зміни. Default true",
+        },
+        amount: {
+          type: "number",
+          description: "Опційний фільтр суми у грн",
+        },
+        amount_tolerance: {
+          type: "number",
+          description:
+            "Допуск для amount у грн (опційно, за замовчуванням 0.01)",
+        },
+        date_from: {
+          type: "string",
+          description: "Початкова дата YYYY-MM-DD (опційно)",
+        },
+        date_to: {
+          type: "string",
+          description: "Кінцева дата YYYY-MM-DD (опційно)",
+        },
+        limit: {
+          type: "number",
+          description:
+            "Максимум транзакцій для preview/apply, 1-50 (default 20)",
+        },
+      },
+      required: ["pattern", "category_id"],
+    },
+  },
+  {
     name: "create_debt",
     description: "Створити новий борг (я винен комусь).",
     input_schema: {
