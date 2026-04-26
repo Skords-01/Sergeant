@@ -278,6 +278,8 @@ When Anthropic returns `stop_reason: "max_tokens"`, the model may truncate **mid
 1. **Don't churn `SYSTEM_PREFIX`.** Each edit invalidates the cache for every active user, so a casual wording tweak can briefly multiply Anthropic spend. Batch prompt changes; bump a `SYSTEM_PROMPT_VERSION` constant when wiring caching so cache misses are observable.
 2. **`context` (the dynamic data block) must stay outside the cached segment.** When caching is wired, the cached prefix is `SYSTEM_PREFIX` only; the per-user `context` is appended as a separate, non-cached `text` block.
 
+Anthropic cache breakpoints have a model-specific minimum length and silently no-op below it: the request succeeds, but both `cache_creation_input_tokens` and `cache_read_input_tokens` stay `0`. In the PR #790 smoke, `SYSTEM_PREFIX` alone was ~987 tokens — below the Sonnet 1024-token floor observed there — so the viable Sergeant rollout also marks the last stable tool definition with `cache_control`. That tools breakpoint is the real cost win today; the `SYSTEM_PREFIX` marker stays forward-looking for when the prompt grows past the minimum.
+
 See the `enable-prompt-caching` playbook for the actual rollout steps.
 
 ## Performance budgets
