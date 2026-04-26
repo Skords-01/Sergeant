@@ -110,7 +110,7 @@ Payload-и мають використовувати `TOOLS_WITH_CACHE`:
 ```ts
 {
   model: "claude-sonnet-4-6",
-  max_tokens: 600,
+  max_tokens: 1500,
   system: buildSystem(context),
   tools: TOOLS_WITH_CACHE,
   messages: cleaned,

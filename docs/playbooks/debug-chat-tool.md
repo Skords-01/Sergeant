@@ -64,7 +64,7 @@ Response **другого** `/api/chat` запиту повертає `{ type: "
 
 - Текст відповіді згадує результат tool-а («Залоговано 200 мл води») — все ок, проблема була не в pipeline, а у UI: action card / quick action не оновився, або `cloudsync` не синхронізував.
 - Текст відповіді — generic «Готово» без конкретики → handler повернув занадто короткий результат. Розширь, додай числа з input-а у return string.
-- `stop_reason: "max_tokens"` → continuation request обірвано на 400 токенах (див. `AGENTS.md` → _max_tokens budget per request_). Або скороти `tool_result.content`, або тимчасово підніми `max_tokens` і прогни ще раз.
+- `stop_reason: "max_tokens"` → continuation request обірвано на 2500 токенах (див. `AGENTS.md` → _max_tokens budget per request_). Або скороти `tool_result.content`, або тимчасово підніми `max_tokens` і прогни ще раз.
 
 ### 6. Чи UI оновився?
 
@@ -83,7 +83,7 @@ Response **другого** `/api/chat` запиту повертає `{ type: "
 | `Невідома дія: foo`                                             | Case у `chatActions/<domain>Actions.ts` не додано              |
 | Handler write успішний, але після reload даних нема             | `localStorage.setItem` замість `lsSet` → quota throw silently  |
 | `tool_result.content` порожній → модель «зависла»               | Handler return undefined (TypeScript це не зловив через `any`) |
-| Друге `/api/chat` обірвало JSON → parse error в `executeAction` | `stop_reason: "max_tokens"` на continuation (400)              |
+| Друге `/api/chat` обірвало JSON → parse error в `executeAction` | `stop_reason: "max_tokens"` на continuation (2500)             |
 | Tool взагалі не викликається                                    | `SYSTEM_PREFIX` не згадує tool у списку рядки 7–14             |
 
 ---

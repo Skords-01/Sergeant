@@ -130,7 +130,7 @@ curl -X POST http://localhost:3000/api/chat \
   -d '{"messages":[{"role":"user","content":"залогуй 200мл води"}],"context":""}'
 ```
 
-Якщо відповідь містить блоки `tool_use` але `localStorage` не змінився — це **норма**: сервер лише визначив tool call, виконання відбувається в `executeAction` на клієнті після рендеру відповіді в HubChat. Для перевірки повного циклу без UI треба вручну прогнати `tool_result` через другий `/api/chat` запит (див. continuation handler у `chat.ts`, `max_tokens: 400`).
+Якщо відповідь містить блоки `tool_use` але `localStorage` не змінився — це **норма**: сервер лише визначив tool call, виконання відбувається в `executeAction` на клієнті після рендеру відповіді в HubChat. Для перевірки повного циклу без UI треба вручну прогнати `tool_result` через другий `/api/chat` запит (див. continuation handler у `chat.ts`, `max_tokens: 2500`).
 
 ### Пов'язані playbookи
 

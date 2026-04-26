@@ -263,13 +263,13 @@ The HubChat assistant uses Anthropic tool-calling. Tools are **defined on the se
 
 `apps/server/src/modules/chat.ts` uses two distinct `max_tokens` values, intentionally:
 
-| Request                      | `max_tokens` | Where (chat.ts)                 | Why                                                                                             |
-| ---------------------------- | ------------ | ------------------------------- | ----------------------------------------------------------------------------------------------- |
-| First user-message chat call | **600**      | line ~171, payload to Anthropic | Enough for a tool call + short reply, or a 2–4-sentence answer.                                 |
-| Tool-result continuation     | **400**      | line ~114, follow-up payload    | Just enough to summarise the tool result; the model already "used" its budget on the tool call. |
+| Request                      | `max_tokens` | Where (chat.ts)                 | Why                                                                                                                                              |
+| ---------------------------- | ------------ | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| First user-message chat call | **1500**     | line ~243, payload to Anthropic | Enough for a tool call + short reply, OR a structured direct-text answer with markdown formatting (3–6 sentences українською).                   |
+| Tool-result continuation     | **2500**     | line ~181, follow-up payload    | Фінальна відповідь юзеру після tool_result — брифінги, підсумки, аналіз бюджету. Markdown-таблиці + кілька секцій легко займають 1.5–2k токенів. |
 
-Do **not** lower these without testing the worst-case `/help` response and the largest tool-result blob.
-When Anthropic returns `stop_reason: "max_tokens"`, the model may truncate **mid-JSON-tool-call**— the client `executeAction` then throws a parse error and the user sees "Невідома дія". If you need a longer system prompt or more tools, raise `max_tokens` first; do not silently squeeze the budget.
+Do **not** lower these without testing the worst-case `/help` response and the largest tool-result blob (briefing + weekly summary go through the continuation path).
+When Anthropic returns `stop_reason: "max_tokens"`, the model may truncate **mid-JSON-tool-call** — the client `executeAction` then throws a parse error and the user sees "Невідома дія". On the continuation path it instead truncates the user-facing markdown mid-sentence (this is what motivated the bump from 400→2500 / 600→1500 in PR #804). If you need a longer system prompt or more tools, raise `max_tokens` first; do not silently squeeze the budget.
 
 ### `SYSTEM_PREFIX` is a prompt-cache candidate
 
