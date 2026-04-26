@@ -5,6 +5,7 @@ import { Icon } from "@shared/components/ui/Icon";
 import { cn } from "@shared/lib/cn";
 import { Card } from "@shared/components/ui/Card";
 import { Input } from "@shared/components/ui/Input";
+import { Tooltip } from "@shared/components/ui/Tooltip";
 
 // Презентаційна картка ліміту бюджету. Усі дані приходять готовими пропсами,
 // тому memo потрібен, щоб картка не перемальовувалась при змінах сусідніх
@@ -138,14 +139,18 @@ function LimitBudgetCardComponent({
                         />
                       </button>
                       {onDismissAdvice && (
-                        <button
-                          type="button"
-                          onClick={onDismissAdvice}
-                          className="px-3 text-xs text-muted hover:text-text border-l border-line transition-colors"
-                          title="Прибрати пораду до наступної генерації"
+                        <Tooltip
+                          content="Прибрати пораду до наступної генерації"
+                          placement="top-center"
                         >
-                          Зрозуміло
-                        </button>
+                          <button
+                            type="button"
+                            onClick={onDismissAdvice}
+                            className="px-3 text-xs text-muted hover:text-text border-l border-line transition-colors"
+                          >
+                            Зрозуміло
+                          </button>
+                        </Tooltip>
                       )}
                     </div>
                     {adviceOpen && (

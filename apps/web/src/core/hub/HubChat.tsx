@@ -3,6 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { ApiError, chatApi, isApiError } from "@shared/api";
 import { cn } from "@shared/lib/cn";
 import { Icon } from "@shared/components/ui/Icon";
+import { Tooltip } from "@shared/components/ui/Tooltip";
 import { perfMark, perfEnd } from "@shared/lib/perf";
 import { useOnlineStatus } from "@shared/hooks/useOnlineStatus";
 import { useDialogFocusTrap } from "@shared/hooks/useDialogFocusTrap";
@@ -540,16 +541,20 @@ function HubChat({
             </div>
           </div>
           <div className="flex items-center gap-0.5 shrink-0">
-            <button
-              type="button"
-              onClick={clearChat}
-              className="h-8 px-2.5 flex items-center gap-1.5 rounded-xl text-muted hover:text-text hover:bg-panelHi transition-colors text-2xs font-semibold"
-              title="Очистити історію та почати нову сесію"
-              aria-label="Очистити чат"
+            <Tooltip
+              content="Очистити історію та почати нову сесію"
+              placement="bottom-center"
             >
-              <Icon name="refresh-cw" size={13} />
-              Новий чат
-            </button>
+              <button
+                type="button"
+                onClick={clearChat}
+                className="h-8 px-2.5 flex items-center gap-1.5 rounded-xl text-muted hover:text-text hover:bg-panelHi transition-colors text-2xs font-semibold"
+                aria-label="Очистити чат"
+              >
+                <Icon name="refresh-cw" size={13} />
+                Новий чат
+              </button>
+            </Tooltip>
             <button
               type="button"
               onClick={onClose}
@@ -578,16 +583,17 @@ function HubChat({
           {loading && (
             <div className="flex items-center gap-2">
               <TypingIndicator />
-              <button
-                type="button"
-                onClick={cancelInFlight}
-                className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-full bg-panelHi hover:bg-line/40 text-muted hover:text-text text-2xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/45"
-                aria-label="Скасувати поточний запит"
-                title="Скасувати (Esc)"
-              >
-                <Icon name="close" size={12} />
-                Скасувати
-              </button>
+              <Tooltip content="Скасувати (Esc)" placement="top-center">
+                <button
+                  type="button"
+                  onClick={cancelInFlight}
+                  className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-full bg-panelHi hover:bg-line/40 text-muted hover:text-text text-2xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/45"
+                  aria-label="Скасувати поточний запит"
+                >
+                  <Icon name="close" size={12} />
+                  Скасувати
+                </button>
+              </Tooltip>
             </div>
           )}
         </div>

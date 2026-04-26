@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { cn } from "@shared/lib/cn";
 import { Icon } from "@shared/components/ui/Icon";
+import { Tooltip } from "@shared/components/ui/Tooltip";
 import {
   useWeeklyDigest,
   useDigestHistory,
@@ -411,15 +412,16 @@ export function WeeklyDigestCard({ onCollapse }: WeeklyDigestCardProps = {}) {
             </button>
           )}
           {onCollapse && (
-            <button
-              type="button"
-              onClick={onCollapse}
-              title="Згорнути"
-              aria-label="Згорнути звіт тижня"
-              className="w-7 h-7 flex items-center justify-center rounded-lg text-muted hover:text-text hover:bg-panelHi transition-colors"
-            >
-              <Icon name="chevron-up" size={15} strokeWidth={2.5} />
-            </button>
+            <Tooltip content="Згорнути" placement="top-center">
+              <button
+                type="button"
+                onClick={onCollapse}
+                aria-label="Згорнути звіт тижня"
+                className="w-7 h-7 flex items-center justify-center rounded-lg text-muted hover:text-text hover:bg-panelHi transition-colors"
+              >
+                <Icon name="chevron-up" size={15} strokeWidth={2.5} />
+              </button>
+            </Tooltip>
           )}
         </div>
       </div>
