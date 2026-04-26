@@ -20,6 +20,7 @@
     "preview": "pnpm --filter @sergeant/web preview",
     "lint": "turbo run lint && node scripts/check-imports.mjs && pnpm lint:plugins",
     "lint:imports": "node scripts/check-imports.mjs",
+    "lint:migrations": "node scripts/lint-migrations.mjs",
     "lint:plugins": "node --test packages/eslint-plugin-sergeant-design/__tests__/*.test.mjs",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",

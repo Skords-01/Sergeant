@@ -260,3 +260,23 @@ jobs:
           path: apps/web/playwright-report
           if-no-files-found: ignore
           retention-days: 7
+
+  migration-lint:
+    name: Migration lint (AGENTS rule #4)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      # actions/checkout v4.3.1 (SHA-pinned for supply-chain hardening)
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          fetch-depth: 0
+
+      # actions/setup-node v4.4.0 (SHA-pinned for supply-chain hardening)
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "20"
+
+      - name: Lint migration files
+        run: node scripts/lint-migrations.mjs
+        env:
+          BASE_REF: ${{ github.base_ref }}
