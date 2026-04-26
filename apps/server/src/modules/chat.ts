@@ -12,6 +12,67 @@ import { TOOLS, SYSTEM_PREFIX } from "./chat/tools.js";
 type WithAnthropicKey = Request & { anthropicKey?: string };
 
 /**
+ * Anthropic prompt-caching, дві кажові точки (cache breakpoints):
+ *
+ * 1. **SYSTEM_PREFIX** як окремий `text`-блок з `cache_control`. Сьогодні сам префікс
+ *    ~987 токенів — рівно під мінімумом Anthropic 1024 для Sonnet, тому слот
+ *    фактично не реєструється. Позначаємо forward-looking: як тільки
+ *    SYSTEM_PREFIX виросте понад поріг — кеш ввімкнеться автоматично.
+ *
+ * 2. **Останній tool** в `tools` (див. `applyToolsCacheBreakpoint`). Оскільки cache
+ *    breakpoint охоплює все ДО себе в порядку system → tools → messages, це
+ *    реально кешує ~6000+ токенів (system + всі 19+ tools). TTL ephemeral = 5хв.
+ *
+ * Per-user `context` рендериться другим блоком system — **без** `cache_control`,
+ * щоб не створювати власного cache slot per-user-ом. Але оскільки cache key
+ * охоплює весь system, різний context між юзерами все одно фрагментує кеш (один слот
+ * на user). Це ОК: юзер в межах своєї сесії (5хв) отримує багато cache_read.
+ *
+ * Коли `context` порожній, Anthropic API відхиляє `text`-блоки з empty `text`,
+ * тому під cap-ом повертаємо лише самий cached prefix.
+ */
+interface AnthropicSystemBlock {
+  type: "text";
+  text: string;
+  cache_control?: { type: "ephemeral" };
+}
+
+function buildSystem(context: string): AnthropicSystemBlock[] {
+  const cached: AnthropicSystemBlock = {
+    type: "text",
+    text: SYSTEM_PREFIX,
+    cache_control: { type: "ephemeral" },
+  };
+  if (!context) return [cached];
+  return [cached, { type: "text", text: context }];
+}
+
+/**
+ * Клонує `TOOLS` і додає `cache_control: ephemeral` до останнього tool. Не
+ * мутує імпортований масив, бо він реєкспортиться в інших місцях.
+ *
+ * Anthropic бачить останній cache_control в порядку system → tools → messages
+ * як "кешуй все до цього блоку включно". Це реальний вин кешування сьогодні — без
+ * цього cache_control на SYSTEM_PREFIX самостійно не ввімкнеться.
+ */
+function applyToolsCacheBreakpoint(
+  tools: typeof TOOLS,
+): Array<(typeof TOOLS)[number] & { cache_control?: { type: "ephemeral" } }> {
+  if (tools.length === 0) return tools;
+  const cloned = tools.slice();
+  const last = cloned[cloned.length - 1];
+  cloned[cloned.length - 1] = {
+    ...last,
+    cache_control: { type: "ephemeral" },
+  } as typeof last & { cache_control: { type: "ephemeral" } };
+  return cloned as Array<
+    (typeof TOOLS)[number] & { cache_control?: { type: "ephemeral" } }
+  >;
+}
+
+const TOOLS_WITH_CACHE = applyToolsCacheBreakpoint(TOOLS);
+
+/**
  * Якщо Anthropic повернув не-2xx або виклик упав (timeout/abort), викликаємо
  * прикріплений `assertAiQuota` refund closure, щоб не списувати квоту за
  * неуспішний запит. Після першого виклику closure no-op (ідемпотентно).
@@ -112,8 +173,8 @@ export default async function handler(
     const payload = {
       model: "claude-sonnet-4-6",
       max_tokens: 400,
-      system: SYSTEM_PREFIX + context,
-      tools: TOOLS,
+      system: buildSystem(context),
+      tools: TOOLS_WITH_CACHE,
       messages: fullMessages,
     };
 
@@ -169,8 +230,8 @@ export default async function handler(
       {
         model: "claude-sonnet-4-6",
         max_tokens: 600,
-        system: SYSTEM_PREFIX + context,
-        tools: TOOLS,
+        system: buildSystem(context),
+        tools: TOOLS_WITH_CACHE,
         messages: cleaned,
       },
       { timeoutMs: 30000, endpoint: "chat", signal: clientAbort.signal },

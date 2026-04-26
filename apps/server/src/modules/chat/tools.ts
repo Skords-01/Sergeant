@@ -32,4 +32,7 @@ export const TOOLS: AnthropicTool[] = [
   ...MEMORY_TOOLS,
 ];
 
-export { SYSTEM_PREFIX } from "./toolDefs/systemPrompt.js";
+export {
+  SYSTEM_PREFIX,
+  SYSTEM_PROMPT_VERSION,
+} from "./toolDefs/systemPrompt.js";

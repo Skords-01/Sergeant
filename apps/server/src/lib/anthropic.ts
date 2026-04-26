@@ -96,6 +96,14 @@ function recordOutcome(outcome: string, meta: RecordOutcomeMeta): void {
 interface AnthropicUsage {
   input_tokens?: number;
   output_tokens?: number;
+  /**
+   * Anthropic prompt-caching: токени які були записані в кеш (перший хіт або
+   * post-invalidation refresh). `cache_read_input_tokens` — токени які були
+   * віддані з кешу без передавання в LLM (основний джерело економії).
+   * Див. https://docs.claude.com/en/docs/build-with-claude/prompt-caching.
+   */
+  cache_creation_input_tokens?: number;
+  cache_read_input_tokens?: number;
 }
 
 interface AnthropicResponseData {
@@ -118,6 +126,22 @@ function recordUsage(model: string, data: AnthropicResponseData | null): void {
       aiTokensTotal.inc(
         { provider: "anthropic", model, kind: "completion" },
         usage.output_tokens,
+      );
+    }
+    // Prompt-caching: окремі series, щоб в Grafana був явний cache hit/miss
+    // без реконструкції з різниці prompt − cache. `cache_write` биває
+    // при першому хіті в вікні життя кешу (або після бампу SYSTEM_PROMPT_VERSION),
+    // `cache_read` — при кожному наступному хіті.
+    if (Number.isFinite(usage.cache_creation_input_tokens)) {
+      aiTokensTotal.inc(
+        { provider: "anthropic", model, kind: "cache_write" },
+        usage.cache_creation_input_tokens,
+      );
+    }
+    if (Number.isFinite(usage.cache_read_input_tokens)) {
+      aiTokensTotal.inc(
+        { provider: "anthropic", model, kind: "cache_read" },
+        usage.cache_read_input_tokens,
       );
     }
   } catch {
