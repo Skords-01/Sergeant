@@ -40,6 +40,19 @@ function startOfCurrentMonth(): Date {
   return d;
 }
 
+interface TxSplit {
+  categoryId?: string;
+  amount?: number;
+}
+
+function readSplits(
+  txSplits: Record<string, unknown>,
+  id: string,
+): readonly TxSplit[] {
+  const v = txSplits[id];
+  return Array.isArray(v) ? (v as readonly TxSplit[]) : [];
+}
+
 export function buildFinanceContext(): FinanceContext {
   const now = new Date();
   const monthStart = startOfCurrentMonth();
@@ -66,6 +79,9 @@ export function buildFinanceContext(): FinanceContext {
     "finyk_manual_expenses_v1",
     [],
   );
+  const txSplitsRaw = safeLS<Record<string, unknown>>("finyk_tx_splits", {});
+  const txSplits: Record<string, unknown> =
+    txSplitsRaw && typeof txSplitsRaw === "object" ? txSplitsRaw : {};
 
   const thisMonthTx = transactions.filter((tx) => {
     if (hiddenTxIds.has(tx.id)) return false;
@@ -79,9 +95,19 @@ export function buildFinanceContext(): FinanceContext {
   const categorySpend: Record<string, number> = {};
   for (const tx of thisMonthTx) {
     if ((tx.amount ?? 0) >= 0) continue;
-    const catId = txCategories[tx.id] || "other";
-    categorySpend[catId] =
-      (categorySpend[catId] || 0) + Math.abs(tx.amount / 100);
+    const splits = readSplits(txSplits, tx.id);
+    if (splits.length > 0) {
+      for (const s of splits) {
+        if (!s.categoryId || s.categoryId === "internal_transfer") continue;
+        const amt = Math.abs(Number(s.amount) || 0);
+        if (amt <= 0) continue;
+        categorySpend[s.categoryId] = (categorySpend[s.categoryId] || 0) + amt;
+      }
+    } else {
+      const catId = txCategories[tx.id] || "other";
+      categorySpend[catId] =
+        (categorySpend[catId] || 0) + Math.abs(tx.amount / 100);
+    }
   }
   for (const me of manualExpenses) {
     const ts = new Date(me.date).getTime();
@@ -96,21 +122,40 @@ export function buildFinanceContext(): FinanceContext {
   for (const tx of transactions) {
     if (hiddenTxIds.has(tx.id) || transferIds.has(tx.id)) continue;
     if ((tx.amount ?? 0) >= 0) continue;
-    const override = txCategories[tx.id] || null;
-    const cat = getCategory(
-      tx.description || "",
-      tx.mcc || 0,
-      override,
-      customCategories,
-    );
-    const catId = cat?.id;
-    if (!catId || catId === "internal_transfer") continue;
-    canonicalTotalCount.set(catId, (canonicalTotalCount.get(catId) || 0) + 1);
-    if (txTimestamp(tx) >= monthStartMs) {
-      canonicalMonthSpend.set(
-        catId,
-        (canonicalMonthSpend.get(catId) || 0) + Math.abs(tx.amount / 100),
+    const splits = readSplits(txSplits, tx.id);
+    if (splits.length > 0) {
+      for (const s of splits) {
+        if (!s.categoryId || s.categoryId === "internal_transfer") continue;
+        canonicalTotalCount.set(
+          s.categoryId,
+          (canonicalTotalCount.get(s.categoryId) || 0) + 1,
+        );
+        if (txTimestamp(tx) >= monthStartMs) {
+          const amt = Math.abs(Number(s.amount) || 0);
+          if (amt <= 0) continue;
+          canonicalMonthSpend.set(
+            s.categoryId,
+            (canonicalMonthSpend.get(s.categoryId) || 0) + amt,
+          );
+        }
+      }
+    } else {
+      const override = txCategories[tx.id] || null;
+      const cat = getCategory(
+        tx.description || "",
+        tx.mcc || 0,
+        override,
+        customCategories,
       );
+      const catId = cat?.id;
+      if (!catId || catId === "internal_transfer") continue;
+      canonicalTotalCount.set(catId, (canonicalTotalCount.get(catId) || 0) + 1);
+      if (txTimestamp(tx) >= monthStartMs) {
+        canonicalMonthSpend.set(
+          catId,
+          (canonicalMonthSpend.get(catId) || 0) + Math.abs(tx.amount / 100),
+        );
+      }
     }
   }
   for (const me of manualExpenses) {

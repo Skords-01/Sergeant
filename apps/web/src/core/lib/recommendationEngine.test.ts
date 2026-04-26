@@ -75,6 +75,30 @@ describe("generateRecommendations", () => {
     expect(warnRec).toBeDefined();
   });
 
+  it("враховує txSplits при обчисленні бюджетних витрат", () => {
+    const now = new Date();
+    const ts = Math.floor(now.getTime() / 1000);
+    // Одна транзакція -20000 коп (-200 грн), розбита: 120 грн smoking + 80 грн food
+    setLS("finyk_tx_cache", {
+      txs: [{ id: "tx_s", amount: -20000, time: ts, description: "Магазин" }],
+    });
+    setLS("finyk_tx_cats", { tx_s: "food" });
+    setLS("finyk_tx_splits", {
+      tx_s: [
+        { categoryId: "smoking", amount: 120 },
+        { categoryId: "food", amount: 80 },
+      ],
+    });
+    setLS("finyk_budgets", [
+      { id: "b_s", type: "limit", categoryId: "smoking", limit: 100 },
+    ]);
+
+    const recs = generateRecommendations();
+    const overRec = recs.find((r) => r.id === "budget_over_smoking");
+    expect(overRec).toBeDefined();
+    expect(overRec!.title).toContain("перевищено");
+  });
+
   it("генерує рекомендацію про тренування якщо тиждень без тренувань", () => {
     // Останнє тренування > 7 днів тому
     const oldDate = new Date();
