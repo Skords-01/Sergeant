@@ -78,6 +78,68 @@ Danger:   #ef4444 (Red 500)
 Info:     #0ea5e9 (Sky 500)
 ```
 
+### WCAG-AA `-strong` Tier
+
+The saturated `-500` shades above are correct for **brand identity**
+(logos, marketing assets, dark-mode rendering, App Store screenshots,
+solid module surfaces) but do **not** clear WCAG 2.1 AA 4.5 : 1
+against the cream `bg-bg` (`#fdf9f3`) or pure white `bg-panel`
+(`#ffffff`) at body sizes. Each saturated brand colour ships with a
+`-strong` companion that does. **Use the strong tier whenever the
+colour is rendered as text or as the fill behind `text-white`.**
+
+| Family    | Saturated (`-500`) | Strong (Tailwind utility)                                  | Hex       | Contrast vs `bg-bg` | Contrast vs `text-white` |
+| --------- | ------------------ | ---------------------------------------------------------- | --------- | ------------------- | ------------------------ |
+| brand     | `#10b981`          | `bg-brand-strong` / `text-brand-strong` (= emerald-700)    | `#047857` | 5.23 : 1            | 5.48 : 1                 |
+| success   | `#10b981`          | `bg-success-strong` / `text-success-strong` (emerald-700)  | `#047857` | 5.23 : 1            | 5.48 : 1                 |
+| warning   | `#f59e0b`          | `bg-warning-strong` / `text-warning-strong` (amber-700)    | `#b45309` | 5.16 : 1            | 5.40 : 1                 |
+| danger    | `#ef4444`          | `bg-danger-strong` / `text-danger-strong` (red-700)        | `#b91c1c` | 6.43 : 1            | 6.74 : 1                 |
+| info      | `#0ea5e9`          | `bg-info-strong` / `text-info-strong` (sky-700)            | `#0369a1` | 6.59 : 1            | 6.91 : 1                 |
+| finyk     | `#10b981`          | `bg-finyk-strong` / `text-finyk-strong` (emerald-700)      | `#047857` | 5.23 : 1            | 5.48 : 1                 |
+| fizruk    | `#14b8a6`          | `bg-fizruk-strong` / `text-fizruk-strong` (teal-700)       | `#0f766e` | 5.21 : 1            | 5.47 : 1                 |
+| routine   | `#f97066`          | `bg-routine-strong` / `text-routine-strong` (coral-700)    | `#b62b1e` | 6.10 : 1            | 6.39 : 1                 |
+| nutrition | `#92cc17`          | `bg-nutrition-strong` / `text-nutrition-strong` (lime-800) | `#466212` | 6.64 : 1            | 6.96 : 1                 |
+
+> **Note on nutrition.** Lime is exceptionally light at every step;
+> `lime-700` (`#567c0f`) clears 4.67 : 1 — only a 0.17 margin over the
+> threshold. The nutrition `-strong` companion is therefore bumped one
+> step further to `lime-800` (`#466212`) for a 6.64 : 1 ratio. Other
+> families stay at `-700`.
+
+#### Decision matrix — which tier per primitive
+
+| Primitive           | Variant / tone                                              | Background                     | Text                   | Tier rule                                    |
+| ------------------- | ----------------------------------------------------------- | ------------------------------ | ---------------------- | -------------------------------------------- |
+| `Button`            | `primary`, `destructive`                                    | `bg-{brand,danger}-strong`     | `text-white`           | **strong** for fill + `text-white`           |
+| `Button`            | `secondary`, `ghost`                                        | `bg-panel` / transparent       | `text-text`            | no brand colour involved                     |
+| `Button`            | module solid (`finyk` / `fizruk` / `routine` / `nutrition`) | `bg-{module}-strong`           | `text-white`           | **strong**                                   |
+| `Button`            | module soft (`*-soft`)                                      | `bg-{module}-soft`             | `text-{module}-strong` | **strong** for text                          |
+| `Badge`             | solid (any tone)                                            | `bg-{tone}-strong`             | `text-white`           | **strong**                                   |
+| `Badge`             | soft (any tone)                                             | `bg-{tone}-soft`               | `text-{tone}-strong`   | **strong** for text                          |
+| `Badge`             | outline (any tone)                                          | transparent                    | `text-{tone}-strong`   | **strong** for text; border keeps `*-500/60` |
+| `Tabs`              | active label                                                | page bg                        | `text-{c}-strong`      | **strong** for text                          |
+| `Segmented`         | active solid                                                | `bg-{c}-strong`                | `text-white`           | **strong**                                   |
+| `Stat`              | coloured value                                              | inherited                      | `text-{c}-strong`      | **strong** for text                          |
+| `SectionHeading`    | `accent` variant                                            | inherited                      | `text-brand-strong`    | **strong**                                   |
+| `FormField`         | error message                                               | inherited                      | `text-danger-strong`   | **strong**                                   |
+| `Banner`            | success / warning / danger / info                           | tinted soft surface            | `text-{tone}-strong`   | **strong** for text                          |
+| `ProgressRing` SVG  | stroke colour                                               | n/a (decorative stroke ≠ text) | inherited              | saturated `-500` is fine; stroke isn't text  |
+| Icons (decorative)  | any                                                         | n/a                            | n/a                    | saturated `-500` is fine                     |
+| Marketing / hero    | logo, illustration                                          | n/a                            | n/a                    | **always** saturated `-500`                  |
+| Dark-mode (`.dark`) | any                                                         | dark surface                   | brand `-300/400/500`   | **never** `-strong` (would regress contrast) |
+
+Cross-platform: the `-strong` Tailwind utilities are exposed by
+`packages/design-tokens/tailwind-preset.js` so both `apps/web`
+(Tailwind) and `apps/mobile` (NativeWind) get them automatically. For
+RN consumers that style via `StyleSheet.create({ color: ... })`,
+`@sergeant/design-tokens/mobile` exposes `accentStrong` /
+`successStrong` / `warningStrong` / `dangerStrong` / `infoStrong` with
+the same hex values (see `packages/design-tokens/mobile.js`).
+
+See [`docs/brand-palette-wcag-aa-proposal.md`](./brand-palette-wcag-aa-proposal.md)
+for the full rationale, contrast measurements, and the migration
+history (PR #851 → PR #855).
+
 ### Background Colors (Light Mode)
 
 ```
@@ -206,9 +268,12 @@ box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
 
 #### Primary Button
 
-- Background: Brand emerald (#10b981)
-- Text: White
-- Hover: Darker shade + subtle glow
+- Background: `bg-brand-strong` (= emerald-700, `#047857`) — clears
+  WCAG AA 5.48 : 1 against `text-white`. The saturated `bg-brand`
+  (`#10b981`) only cleared ~2.5 : 1 and was retired from CTAs in
+  PR #855; see _WCAG-AA `-strong` Tier_ above.
+- Text: `text-white`
+- Hover: Darker shade (`bg-brand-800`) + subtle glow
 - Active: Scale down to 98%
 
 #### Secondary Button
@@ -259,11 +324,14 @@ Duolingo-inspired circular progress indicator:
 
 ### Badges
 
-Pill-shaped status indicators:
+Pill-shaped status indicators. All solid tones use the `-strong` fill
+so labels remain legible at body sizes (see _WCAG-AA `-strong` Tier_).
 
-- Success: Emerald background
-- Warning: Amber background
-- Danger: Red background
+- Success: `bg-success-strong` (emerald-700) + `text-white`
+- Warning: `bg-warning-strong` (amber-700) + `text-white`
+- Danger: `bg-danger-strong` (red-700) + `text-white`
+- Outline / soft variants: `text-{tone}-strong` against the tinted or
+  transparent surface
 - Sizes: xs, sm, md, lg
 
 ---
@@ -367,8 +435,20 @@ background: linear-gradient(150deg, #fdf9f3 0%, #fefdfb 50%, #f0fdfa 100%);
 
 ### Color Contrast
 
-- Text on backgrounds: Minimum 4.5:1 ratio
-- Large text (>18px): Minimum 3:1 ratio
+- Text on backgrounds: Minimum 4.5 : 1 ratio (WCAG 2.1 AA, § 1.4.3)
+- Large text (≥18 px regular **or** ≥14 px bold): Minimum 3 : 1 ratio
+- All saturated brand colours (`brand` / `success` / `warning` /
+  `danger` / `info` / `finyk` / `fizruk` / `routine` / `nutrition`)
+  ship with a `-strong` companion that clears the 4.5 : 1 threshold
+  at body sizes. Reach for it whenever the colour appears as text or
+  as the fill behind `text-white`. The full mapping lives in
+  _Color System → WCAG-AA `-strong` Tier_. A companion ESLint rule
+  (`sergeant-design/no-low-contrast-text-on-fill`) is being introduced
+  alongside this guide to flag the saturated-tier mistakes statically.
+- The `/design` showcase route is gated by axe-core in CI (see
+  `apps/web/tests/a11y/axe.spec.ts`) so any primitive that drifts
+  back to a saturated `-500` fill behind `text-white` fails the
+  pipeline before merge.
 
 ### Motion
 
