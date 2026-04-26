@@ -50,9 +50,10 @@ try/catch крашить на quota exceeded, corrupted storage або private b
   файла = видалення рядка зі списку. На 2026-04-26 TODO-список
   містить 55 файлів (базовий рівень при введенні був 49; оновиться вниз
   після чергових міграцій).
-  Фактичних raw `localStorage.*` call-сайтів у production файлах
-  (включно з wrappers) — ~78 (`rg "\blocalStorage\." apps/web/src` = 118
-  рядків разом з тестами).
+  Фактичних raw `localStorage.*` production-файлів
+  (включно з wrappers) — ~78 (`rg -l "\blocalStorage\." apps/web/src` = 119
+  файлів разом з тестами; ~532 рядки матчів усього, з них ~246 у
+  production-файлах).
 
 **Що це дає:** новий код / нові файли НЕ зможуть додати прямий
 `localStorage.*` без явного оновлення allowlist (видно в diff). Існуючі
