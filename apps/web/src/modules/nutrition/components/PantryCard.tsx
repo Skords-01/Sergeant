@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Card } from "@shared/components/ui/Card";
 import { Input } from "@shared/components/ui/Input";
 import { Icon } from "@shared/components/ui/Icon";
+import { Tooltip } from "@shared/components/ui/Tooltip";
 import { cn } from "@shared/lib/cn";
 import { groupItemsByCategory } from "../lib/foodCategories";
 import type { FoodCategory } from "../lib/foodCategories";
@@ -259,16 +260,17 @@ export function PantryCard({
           </div>
           <div className="flex items-center gap-2 shrink-0">
             {typeof onScanBarcode === "function" && (
-              <button
-                type="button"
-                onClick={onScanBarcode}
-                disabled={busy}
-                className="w-8 h-8 rounded-xl bg-nutrition/10 text-nutrition-strong dark:text-nutrition border border-nutrition/30 hover:bg-nutrition/20 transition-colors disabled:opacity-50 flex items-center justify-center text-base"
-                aria-label="Сканувати штрих-код"
-                title="Сканувати штрих-код"
-              >
-                📷
-              </button>
+              <Tooltip content="Сканувати штрих-код" placement="bottom-center">
+                <button
+                  type="button"
+                  onClick={onScanBarcode}
+                  disabled={busy}
+                  className="w-8 h-8 rounded-xl bg-nutrition/10 text-nutrition-strong dark:text-nutrition border border-nutrition/30 hover:bg-nutrition/20 transition-colors disabled:opacity-50 flex items-center justify-center text-base"
+                  aria-label="Сканувати штрих-код"
+                >
+                  📷
+                </button>
+              </Tooltip>
             )}
             <div className="flex rounded-xl bg-panelHi border border-line p-0.5">
               {INPUT_MODES.map((m) => (

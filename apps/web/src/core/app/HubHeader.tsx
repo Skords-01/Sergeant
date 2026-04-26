@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { Icon } from "@shared/components/ui/Icon";
+import { Tooltip } from "@shared/components/ui/Tooltip";
 import { BrandLogo } from "./BrandLogo";
 import { DarkModeToggle } from "./DarkModeToggle";
 import { UserMenuButton } from "./UserMenuButton";
@@ -90,15 +91,16 @@ export function HubHeader({
         </div>
 
         <div className="flex items-center gap-1 shrink-0">
-          <button
-            type="button"
-            onClick={onOpenSearch}
-            aria-label="Пошук"
-            title="Пошук по всіх модулях"
-            className={ICON_BUTTON_CLS}
-          >
-            <Icon name="search" size={20} />
-          </button>
+          <Tooltip content="Пошук по всіх модулях" placement="bottom-center">
+            <button
+              type="button"
+              onClick={onOpenSearch}
+              aria-label="Пошук"
+              className={ICON_BUTTON_CLS}
+            >
+              <Icon name="search" size={20} />
+            </button>
+          </Tooltip>
 
           {user ? (
             <UserMenuButton
@@ -115,15 +117,16 @@ export function HubHeader({
             <>
               <DarkModeToggle dark={dark} onToggle={onToggleDark} />
               {!authLoading && !hideAuthButton && (
-                <button
-                  type="button"
-                  onClick={onShowAuth}
-                  aria-label="Увійти в акаунт"
-                  title="Увійти"
-                  className={ICON_BUTTON_CLS}
-                >
-                  <Icon name="user" size={20} />
-                </button>
+                <Tooltip content="Увійти" placement="bottom-center">
+                  <button
+                    type="button"
+                    onClick={onShowAuth}
+                    aria-label="Увійти в акаунт"
+                    className={ICON_BUTTON_CLS}
+                  >
+                    <Icon name="user" size={20} />
+                  </button>
+                </Tooltip>
               )}
             </>
           )}
