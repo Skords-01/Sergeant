@@ -228,7 +228,7 @@ Every push/PR triggers `.github/workflows/ci.yml`.
 ### CI gotchas
 
 - `pnpm audit --audit-level=critical --prod` is blocking.
-- `pnpm audit --audit-level=high --prod` and full-tree high audit are non-blocking but should still be reviewed.
+- `pnpm audit --audit-level=high --prod` and full-tree `--audit-level=high` are **blocking**. If a PR carries the `audit-exception` label both steps are skipped (see [Audit exception workflow](#audit-exception-workflow) below).
 - `pnpm licenses:check` is blocking and requires `THIRD_PARTY_LICENSES.md` to match the lockfile.
 - `pnpm --filter @sergeant/web exec size-limit` is blocking.
 - `a11y` installs Playwright Chromium with system dependencies.
@@ -253,6 +253,16 @@ These three tests fail on `main` and **should not block merge** if your PR does 
 - `apps/mobile/src/core/OnboardingWizard.test.tsx`
 - `apps/mobile/src/core/dashboard/WeeklyDigestFooter.test.tsx`
 - `apps/mobile/src/core/settings/HubSettingsPage.test.tsx`
+
+### Audit exception workflow
+
+When `pnpm audit --audit-level=high` fails in CI due to a vulnerability with no available fix:
+
+1. **Document** the vulnerability in [`docs/security/audit-exceptions.md`](docs/security/audit-exceptions.md) — include advisory link, affected package, severity, reason, mitigation, due date, and owner.
+2. **Add the `audit-exception` label** to the PR. This skips the two high-severity audit steps while keeping the critical-only audit blocking.
+3. **Remove the label** once the vulnerability is resolved and the entry is cleared from the exceptions file.
+
+> The `audit-exception` label is an escape hatch, not a blank cheque. Every exception must be tracked in `docs/security/audit-exceptions.md` with a due date so it does not drift indefinitely.
 
 ---
 
