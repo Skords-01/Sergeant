@@ -92,6 +92,42 @@ return rows.map((r) => ({
 }));
 ```
 
+### `sergeant-design/rq-keys-only-from-factory`
+
+Forbids inline array literals for React Query `queryKey` / `mutationKey`. All keys must come from the centralized factory in `queryKeys.ts` ([AGENTS.md rule #2](../../AGENTS.md)). Severity: **error** (scoped to `apps/web/src/**`).
+
+The rule catches inline `ArrayExpression` in:
+
+- **RQ hooks:** `useQuery`, `useMutation`, `useInfiniteQuery`, `useSuspenseQuery`, `useSuspenseInfiniteQuery`
+- **QueryClient option methods:** `invalidateQueries`, `cancelQueries`, `removeQueries`, `fetchQuery`, `prefetchQuery`, `refetchQueries`, `resetQueries`
+- **QueryClient direct-key methods:** `getQueryData`, `setQueryData`, `getQueriesData`, `getQueryState`, `ensureQueryData`
+
+The factory file itself is always exempt — it legitimately defines the key arrays.
+
+#### Options
+
+| Option              | Type     | Default                                | Description                                                  |
+| ------------------- | -------- | -------------------------------------- | ------------------------------------------------------------ |
+| `factoryModulePath` | `string` | `apps/web/src/shared/lib/queryKeys.ts` | Path to the query keys factory file (relative to repo root). |
+
+#### Examples
+
+```ts
+// ❌ BAD — inline array literal drifts from the factory
+useQuery({ queryKey: ["finyk", "transactions", accountId], queryFn: fn });
+queryClient.invalidateQueries({ queryKey: ["finyk"] });
+queryClient.getQueryData(["finyk", "mono"]);
+
+// ✅ GOOD — factory key from queryKeys.ts
+import { finykKeys } from "@shared/lib/queryKeys";
+useQuery({
+  queryKey: finykKeys.monoTransactionsDb(from, to, accountId),
+  queryFn: fn,
+});
+queryClient.invalidateQueries({ queryKey: finykKeys.all });
+queryClient.getQueryData(finykKeys.mono);
+```
+
 ## Running tests
 
 ```sh

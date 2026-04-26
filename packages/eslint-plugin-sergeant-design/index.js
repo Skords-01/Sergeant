@@ -939,6 +939,156 @@ const noBigintString = {
   },
 };
 
+// ─── rq-keys-only-from-factory ──────────────────────────────────────────
+//
+// AGENTS.md hard rule #2 — all React Query keys must come from the
+// centralized factory in `apps/web/src/shared/lib/queryKeys.ts`.
+// Inline array literals (`queryKey: ['something', id]`) drift from the
+// factory, break bulk invalidation, and let typos compile silently.
+//
+// The rule flags `queryKey` or `mutationKey` properties whose value is
+// an ArrayExpression in:
+//   - `useQuery({ queryKey: [...] })`
+//   - `useMutation({ mutationKey: [...] })`
+//   - `useInfiniteQuery({ queryKey: [...] })`
+//   - `queryClient.invalidateQueries({ queryKey: [...] })`
+//   - `queryClient.getQueryData([...])`
+//   - `queryClient.setQueryData([...], ...)`
+//   - `queryClient.cancelQueries({ queryKey: [...] })`
+//   - `queryClient.removeQueries({ queryKey: [...] })`
+//   - `queryClient.fetchQuery({ queryKey: [...] })`
+//   - `queryClient.prefetchQuery({ queryKey: [...] })`
+//   - `queryClient.refetchQueries({ queryKey: [...] })`
+//
+// The factory file itself is exempt (it legitimately defines the arrays).
+
+const RQ_HOOKS = new Set([
+  "useQuery",
+  "useMutation",
+  "useInfiniteQuery",
+  "useSuspenseQuery",
+  "useSuspenseInfiniteQuery",
+]);
+
+const QC_OPTION_METHODS = new Set([
+  "invalidateQueries",
+  "cancelQueries",
+  "removeQueries",
+  "fetchQuery",
+  "prefetchQuery",
+  "refetchQueries",
+  "resetQueries",
+  "isFetching",
+]);
+
+const QC_DIRECT_KEY_METHODS = new Set([
+  "getQueryData",
+  "getQueriesData",
+  "setQueryData",
+  "getQueryState",
+  "ensureQueryData",
+]);
+
+const DEFAULT_FACTORY_PATH = "apps/web/src/shared/lib/queryKeys.ts";
+
+const RQ_KEYS_MESSAGE =
+  "Inline array literal for `{{prop}}` — use a factory from `queryKeys.ts` instead (AGENTS.md rule #2). Inline keys drift from the factory, break bulk invalidation, and let typos compile.";
+
+const rqKeysOnlyFromFactory = {
+  meta: {
+    type: "problem",
+    docs: {
+      description:
+        "Forbid inline array literals for React Query `queryKey` / `mutationKey`. All keys must come from the centralized factory in `queryKeys.ts` (AGENTS.md rule #2).",
+    },
+    schema: [
+      {
+        type: "object",
+        properties: {
+          factoryModulePath: { type: "string" },
+        },
+        additionalProperties: false,
+      },
+    ],
+    messages: { inlineKey: RQ_KEYS_MESSAGE },
+  },
+  create(context) {
+    const options = context.options[0] || {};
+    const factoryPath = options.factoryModulePath || DEFAULT_FACTORY_PATH;
+
+    const filename = context.filename || context.getFilename();
+    const normalizedFilename = filename.replace(/\\/g, "/");
+    const factoryBase = factoryPath.replace(/\\/g, "/").replace(/\.\w+$/, "");
+    const filenameBase = normalizedFilename.replace(/\.\w+$/, "");
+
+    if (filenameBase.endsWith(factoryBase)) {
+      return {};
+    }
+
+    function reportInlineArrayKey(node, propName) {
+      context.report({
+        node,
+        messageId: "inlineKey",
+        data: { prop: propName },
+      });
+    }
+
+    function checkOptionsObjectForInlineKey(arg) {
+      if (!arg || arg.type !== "ObjectExpression") return;
+      for (const prop of arg.properties) {
+        if (prop.type !== "Property") continue;
+        const keyName =
+          prop.key.type === "Identifier"
+            ? prop.key.name
+            : prop.key.type === "Literal"
+              ? prop.key.value
+              : null;
+        if (
+          (keyName === "queryKey" || keyName === "mutationKey") &&
+          prop.value.type === "ArrayExpression"
+        ) {
+          reportInlineArrayKey(prop.value, keyName);
+        }
+      }
+    }
+
+    return {
+      CallExpression(node) {
+        const callee = node.callee;
+
+        // useQuery / useMutation / useInfiniteQuery / etc.
+        if (callee.type === "Identifier" && RQ_HOOKS.has(callee.name)) {
+          checkOptionsObjectForInlineKey(node.arguments[0]);
+          return;
+        }
+
+        // queryClient.invalidateQueries({ queryKey: [...] }) etc.
+        if (
+          callee.type === "MemberExpression" &&
+          !callee.computed &&
+          callee.property.type === "Identifier"
+        ) {
+          const methodName = callee.property.name;
+
+          if (QC_OPTION_METHODS.has(methodName)) {
+            checkOptionsObjectForInlineKey(node.arguments[0]);
+            return;
+          }
+
+          // queryClient.getQueryData([...]) — first arg is the key directly
+          if (QC_DIRECT_KEY_METHODS.has(methodName)) {
+            const firstArg = node.arguments[0];
+            if (firstArg && firstArg.type === "ArrayExpression") {
+              reportInlineArrayKey(firstArg, "queryKey");
+            }
+            return;
+          }
+        }
+      },
+    };
+  },
+};
+
 const plugin = {
   rules: {
     "no-eyebrow-drift": noEyebrowDrift,
@@ -949,6 +1099,7 @@ const plugin = {
     "valid-tailwind-opacity": validTailwindOpacity,
     "no-low-contrast-text-on-fill": noLowContrastTextOnFill,
     "no-bigint-string": noBigintString,
+    "rq-keys-only-from-factory": rqKeysOnlyFromFactory,
   },
 };
 
@@ -961,6 +1112,8 @@ export {
   TAILWIND_OPACITY_UTILITIES,
   STRONG_BG_FAMILIES,
   DEFAULT_NUMERIC_COLUMNS,
+  RQ_KEYS_MESSAGE,
+  DEFAULT_FACTORY_PATH,
 };
 
 export default plugin;
