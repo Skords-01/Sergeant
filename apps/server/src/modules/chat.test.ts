@@ -267,3 +267,117 @@ describe("TOOLS registry — структура нових tools", () => {
     ]);
   });
 });
+
+describe("chat handler — system payload (prompt caching)", () => {
+  // AI-CONTEXT: stable SYSTEM_PREFIX винесений в окремий cached блок;
+  // per-user `context` — другий блок без cache_control. Інакше cache slot
+  // фрагментується пo користувачах і весь сенс кешу зникає.
+  it("формує system як масив із cache_control на SYSTEM_PREFIX, без cache_control на context", async () => {
+    anthropicMessages.mockResolvedValueOnce({
+      response: { ok: true, status: 200 },
+      data: { content: [{ type: "text", text: "Ок." }] },
+    });
+
+    const req = makeReq({
+      messages: [{ role: "user", content: "що в мене на тиждень?" }],
+      context: "[Профіль користувача] Алергія на горіхи.",
+    });
+    const res = makeRes();
+    await handler(req, res);
+
+    const payload = anthropicMessages.mock.calls[0][1] as {
+      system: Array<{
+        type: string;
+        text: string;
+        cache_control?: { type: string };
+      }>;
+    };
+    expect(Array.isArray(payload.system)).toBe(true);
+    expect(payload.system).toHaveLength(2);
+    expect(payload.system[0].type).toBe("text");
+    expect(payload.system[0].cache_control).toEqual({ type: "ephemeral" });
+    // SYSTEM_PREFIX починається з "Ти персональний асистент…"
+    expect(payload.system[0].text).toMatch(/^Ти персональний асистент/);
+    expect(payload.system[1].type).toBe("text");
+    expect(payload.system[1].text).toContain("Алергія на горіхи");
+    // context-блок НЕ кешується — інакше Anthropic зробить окремий cache slot
+    // на кожен різний context, і з кешу не буде сенсу
+    expect(payload.system[1].cache_control).toBeUndefined();
+  });
+
+  it("при порожньому context повертає лише cached SYSTEM_PREFIX (Anthropic відхиляє empty text-блоки)", async () => {
+    anthropicMessages.mockResolvedValueOnce({
+      response: { ok: true, status: 200 },
+      data: { content: [{ type: "text", text: "Ок." }] },
+    });
+
+    const req = makeReq({
+      messages: [{ role: "user", content: "привіт" }],
+      // context навмисно опущений → defaults до "" в handler-і
+    });
+    const res = makeRes();
+    await handler(req, res);
+
+    const payload = anthropicMessages.mock.calls[0][1] as {
+      system: Array<{ text: string; cache_control?: { type: string } }>;
+    };
+    expect(payload.system).toHaveLength(1);
+    expect(payload.system[0].cache_control).toEqual({ type: "ephemeral" });
+  });
+
+  // AI-CONTEXT: SYSTEM_PREFIX сам по собі ~987 токенів, нижче Anthropic-мінімуму
+  // 1024 для Sonnet. Реальний cache hit йде через breakpoint на ОСТАННЬОМУ tool,
+  // що охоплює system + всі tools (~6000+ токенів). Без цього кеш не вмикається.
+  it("додає cache_control: ephemeral до останнього tool (реальний cache breakpoint)", async () => {
+    anthropicMessages.mockResolvedValueOnce({
+      response: { ok: true, status: 200 },
+      data: { content: [{ type: "text", text: "Ок." }] },
+    });
+
+    const req = makeReq({
+      messages: [{ role: "user", content: "привіт" }],
+    });
+    const res = makeRes();
+    await handler(req, res);
+
+    const payload = anthropicMessages.mock.calls[0][1] as {
+      tools: Array<{ cache_control?: { type: string } }>;
+    };
+    expect(payload.tools.length).toBeGreaterThan(0);
+    const last = payload.tools[payload.tools.length - 1];
+    expect(last.cache_control).toEqual({ type: "ephemeral" });
+    // Усі попередні tools — без cache_control (інакше марно палимо breakpoints)
+    for (let i = 0; i < payload.tools.length - 1; i++) {
+      expect(payload.tools[i].cache_control).toBeUndefined();
+    }
+  });
+
+  it("tool-result continuation теж використовує cached SYSTEM_PREFIX", async () => {
+    anthropicMessages.mockResolvedValueOnce({
+      response: { ok: true, status: 200 },
+      data: { content: [{ type: "text", text: "Готово." }] },
+    });
+
+    const req = makeReq({
+      messages: [{ role: "user", content: "видали m_a" }],
+      tool_calls_raw: [
+        {
+          type: "tool_use",
+          id: "toolu_x",
+          name: "delete_transaction",
+          input: { tx_id: "m_a" },
+        },
+      ],
+      tool_results: [{ tool_use_id: "toolu_x", content: "ок" }],
+      context: "[Категорії] 1=Food",
+    });
+    const res = makeRes();
+    await handler(req, res);
+
+    const payload = anthropicMessages.mock.calls[0][1] as {
+      system: Array<{ cache_control?: { type: string } }>;
+    };
+    expect(Array.isArray(payload.system)).toBe(true);
+    expect(payload.system[0].cache_control).toEqual({ type: "ephemeral" });
+  });
+});
