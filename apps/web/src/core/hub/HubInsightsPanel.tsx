@@ -11,8 +11,16 @@ const MODULE_ACCENT = {
   hub: "bg-primary",
 };
 
+const SEVERITY_ACCENT = {
+  danger: "bg-danger",
+  warning: "bg-warning",
+};
+
 function RecRow({ rec, onAction, onDismiss }) {
-  const accent = MODULE_ACCENT[rec.module] || "bg-primary";
+  const accent =
+    rec.severity === "danger" || rec.severity === "warning"
+      ? SEVERITY_ACCENT[rec.severity]
+      : MODULE_ACCENT[rec.module] || "bg-primary";
   return (
     <div
       className={cn(

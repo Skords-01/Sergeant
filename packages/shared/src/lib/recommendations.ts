@@ -30,6 +30,7 @@ export type HubModuleAction =
 
 /** Module namespaces that can surface a recommendation. */
 export type RecModule = "finyk" | "fizruk" | "routine" | "nutrition" | "hub";
+export type RecSeverity = "info" | "success" | "warning" | "danger";
 
 /**
  * Structural Rec type matching `@sergeant/insights` so recs produced
@@ -40,6 +41,7 @@ export interface Rec {
   id: string;
   module: RecModule;
   priority: number;
+  severity?: RecSeverity;
   icon: string;
   title: string;
   body: string;

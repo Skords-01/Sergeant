@@ -37,6 +37,21 @@ const MODULE_WASH = {
   hub: "bg-panelHi",
 };
 
+const SEVERITY_TONE = {
+  danger: {
+    accent: "bg-danger",
+    wash: "bg-danger-soft/70 dark:bg-danger/10",
+    border: "border-danger/30",
+    eyebrow: "text-danger",
+  },
+  warning: {
+    accent: "bg-warning",
+    wash: "bg-warning-soft/70 dark:bg-warning/10",
+    border: "border-warning/35",
+    eyebrow: "text-warning",
+  },
+};
+
 // Fallback for CTA коли rec не несе свого `pwaAction`: просто відкриває
 // модуль. Імперативна дія (`add_expense`, `start_workout`, …) береться з
 // `MODULE_PRIMARY_ACTION` і dispatchається через hubNav — центральний шлях
@@ -253,6 +268,7 @@ function EmptyFocus() {
 interface FocusRec {
   id: string;
   module: keyof typeof MODULE_ACCENT;
+  severity?: "info" | "success" | "warning" | "danger";
   title: string;
   body?: string;
   icon?: string;
@@ -279,8 +295,13 @@ export function TodayFocusCard({
     return <EmptyFocus />;
   }
 
-  const accent = MODULE_ACCENT[focus.module] || "bg-primary";
-  const wash = MODULE_WASH[focus.module] || "bg-panelHi";
+  const severityTone =
+    focus.severity === "danger" || focus.severity === "warning"
+      ? SEVERITY_TONE[focus.severity]
+      : null;
+  const accent =
+    severityTone?.accent || MODULE_ACCENT[focus.module] || "bg-primary";
+  const wash = severityTone?.wash || MODULE_WASH[focus.module] || "bg-panelHi";
 
   const primary = focus.pwaAction
     ? (() => {
@@ -318,6 +339,7 @@ export function TodayFocusCard({
         "shadow-card p-4",
         "bg-hub-hero dark:bg-panel",
         wash,
+        severityTone?.border,
       )}
     >
       {/* Accent bar */}
@@ -331,7 +353,12 @@ export function TodayFocusCard({
 
       <div className="pl-3">
         <div className="flex items-center justify-between gap-3 mb-1">
-          <SectionHeading as="span" size="xs" tone="muted">
+          <SectionHeading
+            as="span"
+            size="xs"
+            tone="muted"
+            className={severityTone?.eyebrow}
+          >
             Зараз
           </SectionHeading>
         </div>

@@ -36,6 +36,7 @@ describe("budgetLimitsRule", () => {
     const recs = budgetLimitsRule.evaluate(ctx);
     expect(recs[0]?.id).toBe("budget_over_food");
     expect(recs[0]?.priority).toBeGreaterThanOrEqual(80);
+    expect(recs[0]?.severity).toBe("danger");
     // Over-budget тягне pwaAction, щоб одним тапом дописати ще свіжі витрати.
     expect(recs[0]?.pwaAction).toBe("add_expense");
   });
@@ -47,6 +48,7 @@ describe("budgetLimitsRule", () => {
     });
     const recs = budgetLimitsRule.evaluate(ctx);
     expect(recs[0]?.id).toBe("budget_warn_cafe");
+    expect(recs[0]?.severity).toBe("warning");
     expect(recs[0]?.pwaAction).toBeUndefined();
   });
 

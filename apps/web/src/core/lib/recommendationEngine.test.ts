@@ -55,6 +55,7 @@ describe("generateRecommendations", () => {
     expect(budgetRec).toBeDefined();
     expect(budgetRec.module).toBe("finyk");
     expect(budgetRec.priority).toBeGreaterThanOrEqual(80);
+    expect(budgetRec.severity).toBe("danger");
   });
 
   it("показує попередження якщо бюджет майже вичерпано (90%+)", () => {
@@ -65,7 +66,7 @@ describe("generateRecommendations", () => {
     });
     setLS("finyk_tx_cats", { tx2: "cafe" });
     setLS("finyk_budgets", [
-      { id: "b2", type: "limit", categoryId: "cafe", limit: 100 },
+      { id: "b2", type: "limit", categoryId: "cafe", limit: 1000 },
     ]);
 
     const recs = generateRecommendations();
@@ -73,6 +74,7 @@ describe("generateRecommendations", () => {
       (r) => r.id === "budget_warn_cafe" || r.id === "budget_over_cafe",
     );
     expect(warnRec).toBeDefined();
+    expect(warnRec!.severity).toBe("warning");
   });
 
   it("враховує txSplits при обчисленні бюджетних витрат", () => {
@@ -97,6 +99,7 @@ describe("generateRecommendations", () => {
     const overRec = recs.find((r) => r.id === "budget_over_smoking");
     expect(overRec).toBeDefined();
     expect(overRec!.title).toContain("перевищено");
+    expect(overRec!.severity).toBe("danger");
   });
 
   it("генерує рекомендацію про тренування якщо тиждень без тренувань", () => {

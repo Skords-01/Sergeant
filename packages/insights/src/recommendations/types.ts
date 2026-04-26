@@ -21,11 +21,13 @@ export type HubModuleAction =
   | "add_habit";
 
 export type Module = "finyk" | "fizruk" | "routine" | "nutrition" | "hub";
+export type RecSeverity = "info" | "success" | "warning" | "danger";
 
 export interface Rec {
   id: string;
   module: Module;
   priority: number;
+  severity?: RecSeverity;
   icon: string;
   title: string;
   body: string;
