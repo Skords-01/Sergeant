@@ -146,7 +146,7 @@ export function StaggerChild({
     animationDelay: `${index * 50}ms`,
   };
   return (
-    <div className="animate-stagger-in" style={style}>
+    <div className="motion-safe:animate-stagger-in" style={style}>
       {children}
     </div>
   );

@@ -187,7 +187,7 @@ export function PersonalInfoSection({
               )}
             >
               {uploadingAvatar ? (
-                <span className="inline-block animate-spin">
+                <span className="inline-block motion-safe:animate-spin">
                   <Icon name="refresh-cw" size={18} className="text-white" />
                 </span>
               ) : (

@@ -130,7 +130,7 @@ export function Popover({
           className={cn(
             "absolute z-50 min-w-[180px]",
             "bg-panel border border-line rounded-2xl shadow-float",
-            "animate-fade-in",
+            "motion-safe:animate-fade-in",
             "py-1.5",
             placementClasses[placement],
             className,

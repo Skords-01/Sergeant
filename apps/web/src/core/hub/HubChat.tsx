@@ -513,7 +513,7 @@ function HubChat({
                     contextState.status === "ready"
                       ? "bg-brand-500"
                       : contextState.status === "building"
-                        ? "bg-warning animate-pulse"
+                        ? "bg-warning motion-safe:animate-pulse"
                         : "bg-line",
                   )}
                 />
