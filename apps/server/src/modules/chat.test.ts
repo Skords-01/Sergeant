@@ -384,6 +384,50 @@ describe("chat handler — system payload (prompt caching)", () => {
     expect(Array.isArray(payload.system)).toBe(true);
     expect(payload.system[0].cache_control).toEqual({ type: "ephemeral" });
   });
+
+  it("два послідовні запити обидва шлють cache_control на system block", async () => {
+    anthropicMessages
+      .mockResolvedValueOnce({
+        response: { ok: true, status: 200 },
+        data: { content: [{ type: "text", text: "Ок 1." }] },
+      })
+      .mockResolvedValueOnce({
+        response: { ok: true, status: 200 },
+        data: { content: [{ type: "text", text: "Ок 2." }] },
+      });
+
+    const req1 = makeReq({
+      messages: [{ role: "user", content: "перший запит" }],
+      context: "[Дані] баланс 1000₴",
+    });
+    const res1 = makeRes();
+    await handler(req1, res1);
+
+    const req2 = makeReq({
+      messages: [{ role: "user", content: "другий запит" }],
+      context: "[Дані] баланс 1000₴",
+    });
+    const res2 = makeRes();
+    await handler(req2, res2);
+
+    expect(anthropicMessages).toHaveBeenCalledTimes(2);
+
+    for (let call = 0; call < 2; call++) {
+      const payload = anthropicMessages.mock.calls[call][1] as {
+        system: Array<{
+          type: string;
+          text: string;
+          cache_control?: { type: string };
+        }>;
+        tools: Array<{ cache_control?: { type: string } }>;
+      };
+      expect(Array.isArray(payload.system)).toBe(true);
+      expect(payload.system[0].cache_control).toEqual({ type: "ephemeral" });
+      expect(payload.system[0].text).toMatch(/^Ти персональний асистент/);
+      const lastTool = payload.tools[payload.tools.length - 1];
+      expect(lastTool.cache_control).toEqual({ type: "ephemeral" });
+    }
+  });
 });
 
 describe("chat handler — auto-continuation на stop_reason=max_tokens", () => {

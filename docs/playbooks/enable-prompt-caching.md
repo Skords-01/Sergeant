@@ -1,5 +1,7 @@
 # Playbook: Enable Anthropic Prompt Caching
 
+**Status:** ✅ active (PR-12.A, Sprint 0)
+
 **Trigger:** «Зменшити cost Anthropic» / «Anthropic API занадто дорогий» / `aiTokensTotal{kind="prompt"}` росте лінійно з трафіком, бо стабільні `SYSTEM_PREFIX` і `TOOLS` повторюються на кожному запиті.
 
 ---
@@ -244,6 +246,34 @@ ANTHROPIC_API_KEY=sk-ant-... pnpm --filter @sergeant/server dev
 - **TTL ephemeral кешу — ~5 хв** з останнього read. Для sparse трафіку (юзер заходить раз на годину) prompt caching не дасть значної економії; має сенс для активних сесій / інтенсивного chat-flow.
 - **Cache key чутливий побайтно.** Невидимий whitespace-diff, BOM, нерозривні пробіли — все робить cache miss. Не редагуй `SYSTEM_PREFIX` у редакторі без unicode-aware diff.
 - **Minimum length failures silent.** Якщо prompt нижче порогу моделі, request успішний, але `cache_creation_input_tokens` і `cache_read_input_tokens` лишаються 0.
+
+## Моніторинг (як перевірити в production)
+
+### Prometheus метрики
+
+1. **Token-level** (наявні): `aiTokensTotal{kind="cache_write"}` / `aiTokensTotal{kind="cache_read"}` — кількість токенів записаних / прочитаних з кешу.
+2. **Request-level** (новий): `anthropic_prompt_cache_hit_total{version="<SYSTEM_PROMPT_VERSION>", outcome="hit|miss"}` — кількість запитів з cache hit / miss. Outcome `hit` якщо `cache_read_input_tokens > 0`.
+
+### Grafana queries
+
+```promql
+# Cache hit rate (%)
+sum(rate(anthropic_prompt_cache_hit_total{outcome="hit"}[5m]))
+/
+sum(rate(anthropic_prompt_cache_hit_total[5m]))
+
+# Token savings from cache reads
+sum(rate(ai_tokens_total{kind="cache_read"}[5m]))
+
+# Cache invalidation спалахи (після бампу SYSTEM_PROMPT_VERSION)
+sum(rate(anthropic_prompt_cache_hit_total{outcome="miss"}[5m])) by (version)
+```
+
+### Після деплою
+
+- Перші ~5 хв — очікувані cache miss-и для всіх юзерів.
+- Через 5–15 хв: `anthropic_prompt_cache_hit_total{outcome="hit"}` має зростати.
+- Якщо `outcome="hit"` лишається на 0 — див. секцію "Manual verification у dev".
 
 ## See also
 

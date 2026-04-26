@@ -91,7 +91,14 @@ export const dbPoolWaiting = new client.Gauge({
 export const aiTokensTotal = new client.Counter({
   name: "ai_tokens_total",
   help: "AI tokens consumed",
-  labelNames: ["provider", "model", "kind"], // kind=prompt|completion
+  labelNames: ["provider", "model", "kind"], // kind=prompt|completion|cache_write|cache_read
+  registers: [register],
+});
+
+export const anthropicPromptCacheHitTotal = new client.Counter({
+  name: "anthropic_prompt_cache_hit_total",
+  help: "Anthropic prompt cache hit/miss per request",
+  labelNames: ["version", "outcome"], // outcome=hit|miss
   registers: [register],
 });
 

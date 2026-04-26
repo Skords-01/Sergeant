@@ -2,6 +2,7 @@ import {
   aiRequestDurationMs,
   aiRequestsTotal,
   aiTokensTotal,
+  anthropicPromptCacheHitTotal,
   externalHttpDurationMs,
   externalHttpRequestsTotal,
 } from "../obs/metrics.js";
@@ -18,6 +19,12 @@ export interface AnthropicCallOptions {
    * caller вирішив перервати.
    */
   signal?: AbortSignal;
+  /**
+   * Версія system prompt (SYSTEM_PROMPT_VERSION). Якщо передано, `recordUsage`
+   * інкрементує `anthropic_prompt_cache_hit_total{version, outcome}` —
+   * per-request лічильник cache hit/miss.
+   */
+  promptVersion?: string;
 }
 
 /**
@@ -112,7 +119,11 @@ interface AnthropicResponseData {
   [key: string]: unknown;
 }
 
-function recordUsage(model: string, data: AnthropicResponseData | null): void {
+function recordUsage(
+  model: string,
+  data: AnthropicResponseData | null,
+  promptVersion?: string,
+): void {
   try {
     const usage = data?.usage;
     if (!usage) return;
@@ -144,6 +155,14 @@ function recordUsage(model: string, data: AnthropicResponseData | null): void {
         usage.cache_read_input_tokens,
       );
     }
+    // Per-request cache outcome counter for Grafana dashboards.
+    if (promptVersion) {
+      const cacheRead = usage.cache_read_input_tokens ?? 0;
+      anthropicPromptCacheHitTotal.inc({
+        version: promptVersion,
+        outcome: cacheRead > 0 ? "hit" : "miss",
+      });
+    }
   } catch {
     /* ignore */
   }
@@ -156,6 +175,7 @@ export async function anthropicMessages(
     timeoutMs = 20000,
     endpoint = "unknown",
     signal: externalSignal,
+    promptVersion,
   }: AnthropicCallOptions = {},
 ): Promise<AnthropicMessagesResult> {
   const maxAttempts = 3;
@@ -205,7 +225,7 @@ export async function anthropicMessages(
       const ms = Number(process.hrtime.bigint() - overallStart) / 1e6;
       if (response.ok) {
         recordOutcome("ok", { model, endpoint, ms });
-        recordUsage(model, data);
+        recordUsage(model, data, promptVersion);
       } else {
         recordOutcome(response.status === 429 ? "rate_limited" : "error", {
           model,

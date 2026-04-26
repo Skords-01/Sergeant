@@ -12,7 +12,8 @@ import {
   extractAnthropicText,
 } from "../lib/anthropic.js";
 import type { WithAiQuotaRefund } from "./aiQuota.js";
-import { TOOLS, SYSTEM_PREFIX } from "./chat/tools.js";
+import { TOOLS, SYSTEM_PREFIX, SYSTEM_PROMPT_VERSION } from "./chat/tools.js";
+import { anthropicPromptCacheHitTotal } from "../obs/metrics.js";
 
 type WithAnthropicKey = Request & { anthropicKey?: string };
 
@@ -116,9 +117,17 @@ interface ClientChatMessage {
   content: string;
 }
 
+interface StreamUsage {
+  input_tokens?: number;
+  output_tokens?: number;
+  cache_creation_input_tokens?: number;
+  cache_read_input_tokens?: number;
+}
+
 interface StreamEvent {
   type: string;
   delta?: { type?: string; text?: string; stop_reason?: string };
+  message?: { usage?: StreamUsage };
 }
 
 /**
@@ -152,6 +161,7 @@ async function callAnthropicWithContinuation(
     timeoutMs?: number;
     endpoint: string;
     signal?: AbortSignal;
+    promptVersion?: string;
   },
 ): Promise<{
   response: FetchResponse | null;
@@ -336,6 +346,7 @@ export default async function handler(
         payload,
         "chat-tool-result",
         clientAbort.signal,
+        SYSTEM_PROMPT_VERSION,
       );
       return;
     }
@@ -349,6 +360,7 @@ export default async function handler(
           timeoutMs: 30000,
           endpoint: "chat-tool-result",
           signal: clientAbort.signal,
+          promptVersion: SYSTEM_PROMPT_VERSION,
         },
       ));
     } catch (e) {
@@ -392,7 +404,12 @@ export default async function handler(
         tools: TOOLS_WITH_CACHE,
         messages: cleaned,
       },
-      { timeoutMs: 30000, endpoint: "chat", signal: clientAbort.signal },
+      {
+        timeoutMs: 30000,
+        endpoint: "chat",
+        signal: clientAbort.signal,
+        promptVersion: SYSTEM_PROMPT_VERSION,
+      },
     ));
   } catch (e) {
     await refundQuotaOnUpstreamFailure(req);
@@ -448,6 +465,7 @@ interface StreamIterationResult {
   outcome: "ok" | "error";
   stopReason: string | null;
   accumulatedText: string;
+  usage: StreamUsage | null;
 }
 
 /**
@@ -464,7 +482,12 @@ async function streamOneIterationToSse(
 ): Promise<StreamIterationResult> {
   const reader = upstream.body?.getReader();
   if (!reader) {
-    return { outcome: "error", stopReason: null, accumulatedText: "" };
+    return {
+      outcome: "error",
+      stopReason: null,
+      accumulatedText: "",
+      usage: null,
+    };
   }
 
   const decoder = new TextDecoder();
@@ -472,6 +495,7 @@ async function streamOneIterationToSse(
   let accumulatedText = "";
   let stopReason: string | null = null;
   let outcome: "ok" | "error" = "ok";
+  let usage: StreamUsage | null = null;
 
   try {
     while (true) {
@@ -503,6 +527,8 @@ async function streamOneIterationToSse(
           }
         } else if (ev.type === "message_delta" && ev.delta?.stop_reason) {
           stopReason = ev.delta.stop_reason;
+        } else if (ev.type === "message_start" && ev.message?.usage) {
+          usage = ev.message.usage;
         }
       }
     }
@@ -514,7 +540,7 @@ async function streamOneIterationToSse(
     }
   }
 
-  return { outcome, stopReason, accumulatedText };
+  return { outcome, stopReason, accumulatedText, usage };
 }
 
 /**
@@ -535,6 +561,7 @@ async function streamAnthropicToSse(
   payload: Record<string, unknown>,
   endpoint: string = "chat",
   abortSignal?: AbortSignal,
+  promptVersion?: string,
 ): Promise<void> {
   let firstResponse: FetchResponse;
   let firstRecordEnd: (outcome?: string) => void;
@@ -589,6 +616,18 @@ async function streamAnthropicToSse(
       const iter = await streamOneIterationToSse(res, currentResponse);
       currentRecordEnd(iter.outcome);
       if (iter.accumulatedText) accumulatedAllText += iter.accumulatedText;
+
+      if (promptVersion && iter.usage) {
+        const cacheRead = iter.usage.cache_read_input_tokens ?? 0;
+        try {
+          anthropicPromptCacheHitTotal.inc({
+            version: promptVersion,
+            outcome: cacheRead > 0 ? "hit" : "miss",
+          });
+        } catch {
+          /* metrics must never break a request */
+        }
+      }
 
       if (
         iter.outcome === "error" ||
