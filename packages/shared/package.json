@@ -19,6 +19,7 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
+    "@sergeant/design-tokens": "workspace:*",
     "zod": "^4.3.6"
   },
   "devDependencies": {

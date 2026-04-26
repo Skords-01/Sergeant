@@ -15,11 +15,12 @@
  * array until the relevant module's data is available (Phase 3+).
  */
 
+import type { ModuleAccent, StatusColor } from "@sergeant/design-tokens";
+
 /**
  * Imperative CTA action dispatched when the user taps the primary
  * button on a focus/rest rec. Mirrors `HubModuleAction` from
- * `@sergeant/insights/recommendations/types` — kept as a string union
- * here so `@sergeant/shared` can remain a zero-dep leaf package.
+ * `@sergeant/insights/recommendations/types`.
  */
 export type HubModuleAction =
   | "add_expense"
@@ -29,8 +30,8 @@ export type HubModuleAction =
   | "add_habit";
 
 /** Module namespaces that can surface a recommendation. */
-export type RecModule = "finyk" | "fizruk" | "routine" | "nutrition" | "hub";
-export type RecSeverity = "info" | "success" | "warning" | "danger";
+export type RecModule = ModuleAccent | "hub";
+export type RecSeverity = StatusColor;
 
 /**
  * Structural Rec type matching `@sergeant/insights` so recs produced
