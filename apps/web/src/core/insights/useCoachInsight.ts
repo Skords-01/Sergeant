@@ -51,11 +51,55 @@ interface RoutineSnapshot {
   overallRate: number;
 }
 
+interface DateContext {
+  todayKey: string;
+  weekDayUk: string;
+  dayOfWeekIso: number;
+  daysIntoWeek: number;
+  weekRange: string;
+}
+
 interface CoachSnapshot {
+  dateContext: DateContext;
   finyk: FinykSnapshot;
   fizruk: FizrukSnapshot | null;
   nutrition: NutritionSnapshot | null;
   routine: RoutineSnapshot | null;
+}
+
+const WEEKDAY_UK_FROM_ISO: Record<number, string> = {
+  1: "понеділок",
+  2: "вівторок",
+  3: "середа",
+  4: "четвер",
+  5: "п'ятниця",
+  6: "субота",
+  7: "неділя",
+};
+
+// AI-NOTE: Кийвський "сьогодні" + ISO weekday — з тих самих частин Date,
+// що й існуючий `localDateKey` (без `toISOString().slice(0,10)`, бо UTC-зсув
+// ламає Routine-стрики ввечері — див. domain invariants у `AGENTS.md`).
+function buildDateContext(
+  now: Date,
+  weekStart: Date,
+  mondayOffset: number,
+): DateContext {
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekStart.getDate() + 6);
+
+  // mondayOffset: 0 у понеділок, 6 у неділю → ISO 1..7.
+  const dayOfWeekIso = mondayOffset + 1;
+  const formatDayMonth = (d: Date): string =>
+    `${String(d.getDate()).padStart(2, "0")}.${String(d.getMonth() + 1).padStart(2, "0")}`;
+
+  return {
+    todayKey: localDateKey(now),
+    weekDayUk: WEEKDAY_UK_FROM_ISO[dayOfWeekIso] ?? "",
+    dayOfWeekIso,
+    daysIntoWeek: dayOfWeekIso,
+    weekRange: `${formatDayMonth(weekStart)}–${formatDayMonth(weekEnd)}`,
+  };
 }
 
 function aggregateCurrentSnapshot(): CoachSnapshot {
@@ -215,7 +259,9 @@ function aggregateCurrentSnapshot(): CoachSnapshot {
     /* non-fatal */
   }
 
-  return { finyk, fizruk, nutrition, routine };
+  const dateContext = buildDateContext(now, weekStart, mondayOffset);
+
+  return { dateContext, finyk, fizruk, nutrition, routine };
 }
 
 async function fetchCoachInsight(): Promise<string | null> {

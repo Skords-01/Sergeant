@@ -307,8 +307,28 @@ export const WeeklyDigestSchema = z.object({
   routine: RoutineDigestSchema.nullish(),
 });
 
+// AI-NOTE: `dateContext` обов'язковий для адекватного темпорального
+// обрамлення інсайту (без нього модель імпровізує "середина тижня" в неділю).
+// Поля: `todayKey` — Kyiv-time `YYYY-MM-DD`; `weekDayUk` — день тижня
+// українською ("понеділок"…"неділя"); `dayOfWeekIso` — 1 (пн)…7 (нд);
+// `daysIntoWeek` — скільки днів тижня вже пройшло (= `dayOfWeekIso`);
+// `weekRange` — людиночитабельний діапазон тижня для контексту.
+const CoachDateContextSchema = z
+  .object({
+    todayKey: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/)
+      .optional(),
+    weekDayUk: z.string().max(20).optional(),
+    dayOfWeekIso: z.number().int().min(1).max(7).optional(),
+    daysIntoWeek: z.number().int().min(1).max(7).optional(),
+    weekRange: z.string().max(80).optional(),
+  })
+  .partial();
+
 const CoachSnapshotSchema = z
   .object({
+    dateContext: CoachDateContextSchema.nullish(),
     finyk: FinykDigestSchema.nullish(),
     fizruk: FizrukDigestSchema.nullish(),
     nutrition: NutritionDigestSchema.nullish(),
