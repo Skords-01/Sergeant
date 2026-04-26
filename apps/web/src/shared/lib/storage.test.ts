@@ -61,7 +61,7 @@ describe("shared storage helpers", () => {
 
   it("safeWriteLS serializes objects and returns true on success", () => {
     expect(safeWriteLS("obj", { x: 1 })).toBe(true);
-    expect(JSON.parse(localStorage.getItem("obj"))).toEqual({ x: 1 });
+    expect(JSON.parse(localStorage.getItem("obj")!)).toEqual({ x: 1 });
   });
 
   it("safeWriteLS stores raw strings without double-quoting", () => {
