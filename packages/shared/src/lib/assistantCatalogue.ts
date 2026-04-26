@@ -752,7 +752,7 @@ export const ASSISTANT_CAPABILITIES: readonly AssistantCapability[] = [
     requiresOnline: true,
   },
 
-  // ───── Кросмодульні (3) ───────────────────────────────────────────────
+  // ───── Кросмодульні (5) ───────────────────────────────────────────────
   {
     id: "morning_briefing",
     module: "cross",
@@ -796,6 +796,27 @@ export const ASSISTANT_CAPABILITIES: readonly AssistantCapability[] = [
     requiresInput: false,
     requiresOnline: true,
     keywords: ["тиждень", "звіт"],
+  },
+  {
+    id: "compare_weeks",
+    module: "cross",
+    label: "Порівняти тижні",
+    shortLabel: "Тижні",
+    icon: "bar-chart",
+    description:
+      "Порівняти два тижні по 4 модулях: витрати, тренування, звички, калорії.",
+    examples: [
+      "порівняй цей тиждень з минулим",
+      "як я провів тиждень порівняно з попереднім",
+      "compare_weeks 2026-W17 vs 2026-W16",
+    ],
+    prompt: "Порівняй цей тиждень з минулим по всіх модулях.",
+    requiresInput: false,
+    isQuickAction: true,
+    quickActionPriority: 40,
+    requiresOnline: true,
+    keywords: ["тиждень", "порівняння", "аналіз"],
+    aiHint: "YYYY-Www; default цей+минулий",
   },
   {
     id: "set_goal",

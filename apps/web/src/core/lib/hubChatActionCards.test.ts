@@ -259,6 +259,47 @@ describe("buildActionCard", () => {
     expect(card?.title.length).toBeGreaterThan(0);
     expect(card?.summary.length).toBeGreaterThan(0);
   });
+
+  describe("compare_weeks", () => {
+    it("картка з обома тижнями у summary", () => {
+      const card = buildActionCard({
+        name: "compare_weeks",
+        input: { week_a: "2026-W17", week_b: "2026-W16" },
+        result: "Порівняння тижнів: 20 квіт – 26 квіт vs 13 квіт – 19 квіт",
+      });
+      expect(card).not.toBeNull();
+      expect(card?.module).toBe("hub");
+      expect(card?.title).toBe("Порівняння тижнів");
+      expect(card?.summary).toBe("2026-W17 vs 2026-W16");
+      expect(card?.icon).toBe("bar-chart");
+      expect(card?.risky).toBeUndefined();
+    });
+
+    it("без аргументів — fallback summary 'поточний vs попередній'", () => {
+      const card = buildActionCard({
+        name: "compare_weeks",
+        input: {},
+        result: "Порівняння тижнів: … vs …",
+      });
+      expect(card?.summary).toBe("поточний vs попередній");
+    });
+
+    it("failed — title із суфіксом «не вийшло»", () => {
+      const card = buildActionCard({
+        name: "compare_weeks",
+        input: { week_a: "2026-W17" },
+        result: 'Некоректний week_a: "bad". Очікую YYYY-Www.',
+      });
+      expect(card?.status).toBe("completed");
+      const failed = buildActionCard({
+        name: "compare_weeks",
+        input: {},
+        result: "Помилка виконання: timeout",
+      });
+      expect(failed?.status).toBe("failed");
+      expect(failed?.title).toBe("Порівняння тижнів — не вийшло");
+    });
+  });
 });
 
 describe("isRiskyTool", () => {

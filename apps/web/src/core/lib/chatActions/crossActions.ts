@@ -14,6 +14,13 @@ import {
   mergeExpenseCategoryDefinitions,
   INTERNAL_TRANSFER_ID,
 } from "../../../modules/finyk/constants";
+import {
+  aggregateFinyk,
+  aggregateFizruk,
+  aggregateNutrition,
+  aggregateRoutine,
+  getWeekKey,
+} from "../../insights/useWeeklyDigest";
 import type {
   SetGoalAction,
   SpendingTrendAction,
@@ -26,11 +33,75 @@ import type {
   RememberAction,
   ForgetAction,
   MyProfileAction,
+  CompareWeeksAction,
+  CompareWeeksModule,
   HabitState,
   Workout,
   NutritionDay,
   ChatAction,
 } from "./types";
+
+/**
+ * Convert an ISO-8601 week label `YYYY-Www` (e.g. `2026-W17`) to the
+ * `YYYY-MM-DD` of that week's Monday — the format `aggregate*` functions
+ * expect. Also accepts a bare `YYYY-MM-DD` for resilience: when the model
+ * "guesses" today's day key instead of the week key, we still do the right
+ * thing by snapping to that week's Monday.
+ *
+ * Returns `null` if the input cannot be parsed.
+ */
+function weekLabelToMondayKey(input: string): string | null {
+  const wwwMatch = /^(\d{4})-W(\d{1,2})$/.exec(input.trim());
+  if (wwwMatch) {
+    const year = Number(wwwMatch[1]);
+    const week = Number(wwwMatch[2]);
+    if (!Number.isFinite(year) || !Number.isFinite(week)) return null;
+    if (week < 1 || week > 53) return null;
+    const jan4 = new Date(year, 0, 4);
+    const jan4Day = jan4.getDay() || 7;
+    const week1Monday = new Date(jan4);
+    week1Monday.setDate(jan4.getDate() - (jan4Day - 1));
+    const target = new Date(week1Monday);
+    target.setDate(week1Monday.getDate() + (week - 1) * 7);
+    return [
+      target.getFullYear(),
+      String(target.getMonth() + 1).padStart(2, "0"),
+      String(target.getDate()).padStart(2, "0"),
+    ].join("-");
+  }
+  const dayMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(input.trim());
+  if (dayMatch) {
+    const d = new Date(`${input.trim()}T00:00:00`);
+    if (Number.isNaN(d.getTime())) return null;
+    return getWeekKey(d);
+  }
+  return null;
+}
+
+function previousWeekKey(weekKey: string): string {
+  const monday = new Date(`${weekKey}T00:00:00`);
+  monday.setDate(monday.getDate() - 7);
+  return [
+    monday.getFullYear(),
+    String(monday.getMonth() + 1).padStart(2, "0"),
+    String(monday.getDate()).padStart(2, "0"),
+  ].join("-");
+}
+
+function formatWeekRangeLabel(weekKey: string): string {
+  const monday = new Date(`${weekKey}T00:00:00`);
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+  const fmt = (d: Date) =>
+    d.toLocaleDateString("uk-UA", { day: "numeric", month: "short" });
+  return `${fmt(monday)} – ${fmt(sunday)}`;
+}
+
+function diffLine(label: string, a: number, b: number, unit: string): string {
+  const delta = a - b;
+  const sign = delta > 0 ? "+" : "";
+  return `${label}: ${a}${unit} vs ${b}${unit} (${sign}${delta}${unit})`;
+}
 
 export function handleCrossAction(action: ChatAction): string | undefined {
   switch (action.name) {
@@ -564,6 +635,112 @@ export function handleCrossAction(action: ChatAction): string | undefined {
         default:
           return `Невідомий модуль: ${mod}. Доступні: finyk, fizruk, routine, nutrition.`;
       }
+    }
+    case "compare_weeks": {
+      const { week_a, week_b, modules } = (action as CompareWeeksAction).input;
+      const allModules: CompareWeeksModule[] = [
+        "finyk",
+        "fizruk",
+        "routine",
+        "nutrition",
+      ];
+      const selected: CompareWeeksModule[] =
+        Array.isArray(modules) && modules.length > 0
+          ? (modules.filter((m) =>
+              allModules.includes(m as CompareWeeksModule),
+            ) as CompareWeeksModule[])
+          : allModules;
+      if (selected.length === 0) {
+        return "Не вказано жодного валідного модуля. Доступні: finyk, fizruk, routine, nutrition.";
+      }
+
+      const aKey = week_a
+        ? weekLabelToMondayKey(week_a)
+        : getWeekKey(new Date());
+      if (!aKey) {
+        return `Некоректний week_a: "${week_a}". Очікую YYYY-Www (наприклад 2026-W17).`;
+      }
+      const bKey = week_b
+        ? weekLabelToMondayKey(week_b)
+        : previousWeekKey(aKey);
+      if (!bKey) {
+        return `Некоректний week_b: "${week_b}". Очікую YYYY-Www (наприклад 2026-W16).`;
+      }
+
+      const aLabel = formatWeekRangeLabel(aKey);
+      const bLabel = formatWeekRangeLabel(bKey);
+      const lines: string[] = [`Порівняння тижнів: ${aLabel} vs ${bLabel}`];
+
+      if (selected.includes("finyk")) {
+        const fa = aggregateFinyk(aKey);
+        const fb = aggregateFinyk(bKey);
+        const aSpent = Math.round(fa.totalSpent);
+        const bSpent = Math.round(fb.totalSpent);
+        lines.push("");
+        lines.push("Фінік:");
+        lines.push(`  ${diffLine("Витрати", aSpent, bSpent, " грн")}`);
+        lines.push(`  ${diffLine("Транзакцій", fa.txCount, fb.txCount, "")}`);
+        const topA = fa.topCategories[0];
+        const topB = fb.topCategories[0];
+        if (topA || topB) {
+          lines.push(
+            `  Топ категорія: ${topA ? `${topA.name} (${Math.round(topA.amount)} грн)` : "—"} vs ${topB ? `${topB.name} (${Math.round(topB.amount)} грн)` : "—"}`,
+          );
+        }
+      }
+
+      if (selected.includes("fizruk")) {
+        const za = aggregateFizruk(aKey);
+        const zb = aggregateFizruk(bKey);
+        lines.push("");
+        lines.push("Фізрук:");
+        if (!za && !zb) {
+          lines.push("  Немає тренувань у обидва тижні.");
+        } else {
+          const aCount = za?.workoutsCount ?? 0;
+          const bCount = zb?.workoutsCount ?? 0;
+          const aVol = za?.totalVolume ?? 0;
+          const bVol = zb?.totalVolume ?? 0;
+          lines.push(`  ${diffLine("Тренувань", aCount, bCount, "")}`);
+          lines.push(`  ${diffLine("Об'єм", aVol, bVol, " кг·повт")}`);
+        }
+      }
+
+      if (selected.includes("routine")) {
+        const ra = aggregateRoutine(aKey);
+        const rb = aggregateRoutine(bKey);
+        lines.push("");
+        lines.push("Рутина:");
+        if (!ra && !rb) {
+          lines.push("  Немає активних звичок.");
+        } else {
+          const aRate = ra?.overallRate ?? 0;
+          const bRate = rb?.overallRate ?? 0;
+          lines.push(`  ${diffLine("Виконання", aRate, bRate, "%")}`);
+          if (ra && rb) {
+            lines.push(`  Звичок: ${ra.habitCount} vs ${rb.habitCount}`);
+          }
+        }
+      }
+
+      if (selected.includes("nutrition")) {
+        const na = aggregateNutrition(aKey);
+        const nb = aggregateNutrition(bKey);
+        lines.push("");
+        lines.push("Харчування:");
+        if (!na && !nb) {
+          lines.push("  Немає логів їжі у обидва тижні.");
+        } else {
+          const aKcal = na?.avgKcal ?? 0;
+          const bKcal = nb?.avgKcal ?? 0;
+          const aDays = na?.daysLogged ?? 0;
+          const bDays = nb?.daysLogged ?? 0;
+          lines.push(`  ${diffLine("Калорії/день", aKcal, bKcal, " ккал")}`);
+          lines.push(`  Днів залоговано: ${aDays} vs ${bDays}`);
+        }
+      }
+
+      return lines.join("\n");
     }
     default:
       return undefined;

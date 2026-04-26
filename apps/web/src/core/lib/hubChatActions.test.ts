@@ -4,7 +4,7 @@
  * create_habit, create_transaction, log_set, log_water.
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { executeAction } from "./hubChatActions";
+import { executeAction, executeActions } from "./hubChatActions";
 
 beforeEach(() => {
   localStorage.clear();
@@ -215,5 +215,49 @@ describe("log_water", () => {
         input: { amount_ml: 0 },
       }),
     ).toContain("Некоректна");
+  });
+});
+
+describe("executeActions — паралельне виконання", () => {
+  it("повертає результати у тому ж порядку, що й input", async () => {
+    const results = await executeActions([
+      { name: "create_habit", input: { name: "Пити воду" } },
+      {
+        name: "create_transaction",
+        input: { amount: 50, description: "кава" },
+      },
+      { name: "log_water", input: { amount_ml: 250 } },
+    ]);
+    expect(results).toHaveLength(3);
+    expect(results[0].name).toBe("create_habit");
+    expect(results[1].name).toBe("create_transaction");
+    expect(results[2].name).toBe("log_water");
+    expect(results[0].result).toContain("Пити воду");
+    expect(results[1].result).toContain("50");
+    expect(results[2].result).toContain("250");
+  });
+
+  it("ізолює помилки — один failure не валить інші", async () => {
+    const results = await executeActions([
+      { name: "create_habit", input: { name: "" } },
+      { name: "create_habit", input: { name: "Біг" } },
+    ]);
+    expect(results).toHaveLength(2);
+    expect(results[0].result).toContain("назви");
+    expect(results[1].result).toContain("Біг");
+  });
+
+  it("порожній масив → порожній результат", async () => {
+    const results = await executeActions([]);
+    expect(results).toEqual([]);
+  });
+
+  it("обгортає кожен виклик у Promise — підтримує майбутні async-handler-и", async () => {
+    const promise = executeActions([
+      { name: "log_water", input: { amount_ml: 100 } },
+    ]);
+    expect(promise).toBeInstanceOf(Promise);
+    const out = await promise;
+    expect(out[0].result).toContain("100");
   });
 });

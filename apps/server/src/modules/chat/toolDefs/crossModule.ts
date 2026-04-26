@@ -136,4 +136,31 @@ export const CROSS_MODULE_TOOLS: AnthropicTool[] = [
       },
     },
   },
+  {
+    name: "compare_weeks",
+    description:
+      "Порівняти два тижні по всіх модулях: витрати, вага, виконання звичок, калорії. Викликай коли користувач каже 'порівняй цей тиждень з минулим' або 'як я провів тиждень порівняно з попереднім'.",
+    input_schema: {
+      type: "object",
+      properties: {
+        week_a: {
+          type: "string",
+          description:
+            "Тиждень A як YYYY-Www (наприклад 2026-W17). Default — поточний.",
+        },
+        week_b: {
+          type: "string",
+          description: "Тиждень B як YYYY-Www. Default — попередній.",
+        },
+        modules: {
+          type: "array",
+          items: {
+            type: "string",
+            enum: ["finyk", "fizruk", "routine", "nutrition"],
+          },
+          description: "Які модулі включити (default — всі 4).",
+        },
+      },
+    },
+  },
 ];

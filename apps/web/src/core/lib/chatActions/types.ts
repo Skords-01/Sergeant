@@ -421,6 +421,17 @@ export interface HabitTrendAction {
   input: { habit_id?: string; period_days?: number | string };
 }
 
+export type CompareWeeksModule = "finyk" | "fizruk" | "routine" | "nutrition";
+
+export interface CompareWeeksAction {
+  name: "compare_weeks";
+  input: {
+    week_a?: string;
+    week_b?: string;
+    modules?: CompareWeeksModule[];
+  };
+}
+
 export interface Calculate1rmAction {
   name: "calculate_1rm";
   input: {
@@ -522,6 +533,7 @@ export type ChatAction =
   | CategoryBreakdownAction
   | DetectAnomaliesAction
   | HabitTrendAction
+  | CompareWeeksAction
   | Calculate1rmAction
   | ConvertUnitsAction
   | SaveNoteAction

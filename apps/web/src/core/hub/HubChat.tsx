@@ -26,7 +26,7 @@ import {
   getActiveModule,
 } from "../lib/hubChatUtils";
 import { buildContextMeasured } from "../lib/hubChatContext";
-import { executeAction } from "../lib/hubChatActions";
+import { executeActions } from "../lib/hubChatActions";
 import { VOICE_KEYWORDS, speak, stopSpeaking } from "../lib/hubChatSpeech";
 import { buildActionCard } from "../lib/hubChatActionCards";
 import type { ChatActionCard } from "../lib/hubChatActionCards";
@@ -297,9 +297,10 @@ function HubChat({
       }
 
       if (data.tool_calls && data.tool_calls.length > 0) {
-        const toolResults = data.tool_calls.map((tc) => ({
+        const handlerResults = await executeActions(data.tool_calls);
+        const toolResults = data.tool_calls.map((tc, idx) => ({
           tool_use_id: tc.id,
-          content: executeAction(tc),
+          content: handlerResults[idx]?.result ?? "",
         }));
 
         const actionsText = toolResults
@@ -307,7 +308,7 @@ function HubChat({
           .join("\n");
         const prefix = `${actionsText}\n\n`;
 
-        // Паралельно будуємо action-картки для відомих tool-ів.
+        // Будуємо action-картки для відомих tool-ів.
         // Якщо tool невідомий — повертається null, лишається лише текст.
         const cards: ChatActionCard[] = data.tool_calls
           .map((tc, idx) =>

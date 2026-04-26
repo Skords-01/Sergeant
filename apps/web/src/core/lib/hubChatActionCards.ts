@@ -60,6 +60,7 @@ const KNOWN_TOOLS: ReadonlySet<string> = new Set([
   "pause_habit",
   "morning_briefing",
   "weekly_summary",
+  "compare_weeks",
 ]);
 
 interface CardInput {
@@ -135,6 +136,8 @@ function iconFor(name: string): string | undefined {
       return "sun";
     case "weekly_summary":
       return "bar-chart";
+    case "compare_weeks":
+      return "bar-chart";
     default:
       return undefined;
   }
@@ -169,6 +172,8 @@ function titleFor(name: string, status: ChatActionCardStatus): string {
       return `Ранковий брифінг${failedSuffix}`;
     case "weekly_summary":
       return `Тижневий підсумок${failedSuffix}`;
+    case "compare_weeks":
+      return `Порівняння тижнів${failedSuffix}`;
     default:
       return name;
   }
@@ -281,6 +286,14 @@ function summaryFor(
       const program = stringField("program_id") || stringField("name");
       if (program) return program;
       break;
+    }
+    case "compare_weeks": {
+      const weekA = stringField("week_a");
+      const weekB = stringField("week_b");
+      if (weekA && weekB) return `${weekA} vs ${weekB}`;
+      if (weekA) return `${weekA} vs попередній`;
+      if (weekB) return `поточний vs ${weekB}`;
+      return "поточний vs попередній";
     }
     default:
       break;
