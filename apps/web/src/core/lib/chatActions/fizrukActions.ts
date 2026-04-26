@@ -1,3 +1,4 @@
+import { safeReadLS } from "@shared/lib/storage";
 import { ls, lsSet } from "../hubChatUtils";
 import type {
   PlanWorkoutAction,
@@ -17,6 +18,20 @@ import type {
   Workout,
   ChatAction,
 } from "./types";
+
+function readWorkouts(): Workout[] {
+  const parsed = safeReadLS<unknown>("fizruk_workouts_v1", null);
+  if (Array.isArray(parsed)) return parsed as Workout[];
+  if (
+    parsed &&
+    typeof parsed === "object" &&
+    "workouts" in parsed &&
+    Array.isArray((parsed as { workouts: unknown }).workouts)
+  ) {
+    return (parsed as { workouts: Workout[] }).workouts;
+  }
+  return [];
+}
 
 export function handleFizrukAction(action: ChatAction): string | undefined {
   switch (action.name) {
@@ -77,14 +92,7 @@ export function handleFizrukAction(action: ChatAction): string | undefined {
         note: note ? String(note).trim() : "",
         planned: true,
       };
-      const wRaw = localStorage.getItem("fizruk_workouts_v1");
-      let existing: Workout[] = [];
-      try {
-        const parsed = wRaw ? JSON.parse(wRaw) : null;
-        if (Array.isArray(parsed)) existing = parsed as Workout[];
-        else if (parsed && Array.isArray(parsed.workouts))
-          existing = parsed.workouts as Workout[];
-      } catch {}
+      const existing = readWorkouts();
       lsSet("fizruk_workouts_v1", {
         schemaVersion: 1,
         workouts: [newW, ...existing],
@@ -109,14 +117,7 @@ export function handleFizrukAction(action: ChatAction): string | undefined {
         reps: repsN,
       }));
 
-      const wRaw = localStorage.getItem("fizruk_workouts_v1");
-      let workouts: Workout[] = [];
-      try {
-        const parsed = wRaw ? JSON.parse(wRaw) : null;
-        if (Array.isArray(parsed)) workouts = parsed as Workout[];
-        else if (parsed && Array.isArray(parsed.workouts))
-          workouts = parsed.workouts as Workout[];
-      } catch {}
+      let workouts = readWorkouts();
 
       const activeId = ls<string | null>("fizruk_active_workout_id_v1", null);
       const exerciseNameLower = exName.toLowerCase();
@@ -211,14 +212,7 @@ export function handleFizrukAction(action: ChatAction): string | undefined {
         "fizruk_active_workout_id_v1",
         null,
       );
-      const wRaw = localStorage.getItem("fizruk_workouts_v1");
-      let workouts: Workout[] = [];
-      try {
-        const parsed = wRaw ? JSON.parse(wRaw) : null;
-        if (Array.isArray(parsed)) workouts = parsed as Workout[];
-        else if (parsed && Array.isArray(parsed.workouts))
-          workouts = parsed.workouts as Workout[];
-      } catch {}
+      const workouts = readWorkouts();
       if (
         existingActiveId &&
         workouts.some((w) => w.id === existingActiveId && !w.endedAt)
@@ -247,14 +241,7 @@ export function handleFizrukAction(action: ChatAction): string | undefined {
     case "finish_workout": {
       const { workout_id } = (action as FinishWorkoutAction).input || {};
       const activeId = ls<string | null>("fizruk_active_workout_id_v1", null);
-      const wRaw = localStorage.getItem("fizruk_workouts_v1");
-      let workouts: Workout[] = [];
-      try {
-        const parsed = wRaw ? JSON.parse(wRaw) : null;
-        if (Array.isArray(parsed)) workouts = parsed as Workout[];
-        else if (parsed && Array.isArray(parsed.workouts))
-          workouts = parsed.workouts as Workout[];
-      } catch {}
+      const workouts = readWorkouts();
       const targetId =
         (workout_id && String(workout_id).trim()) ||
         activeId ||
@@ -408,14 +395,7 @@ export function handleFizrukAction(action: ChatAction): string | undefined {
     }
     case "suggest_workout": {
       const { focus } = (action as SuggestWorkoutAction).input || {};
-      const wRaw = localStorage.getItem("fizruk_workouts_v1");
-      let workouts: Workout[] = [];
-      try {
-        const parsed = wRaw ? JSON.parse(wRaw) : null;
-        if (Array.isArray(parsed)) workouts = parsed as Workout[];
-        else if (parsed && Array.isArray(parsed.workouts))
-          workouts = parsed.workouts as Workout[];
-      } catch {}
+      const workouts = readWorkouts();
       const completed = workouts.filter((w) => w.endedAt);
       if (completed.length === 0) {
         return `Немає історії тренувань. Рекомендую почати з full-body тренування: присідання, жим лежачи, тяга, підтягування.${focus ? ` (фокус: ${focus})` : ""}`;
@@ -464,14 +444,7 @@ export function handleFizrukAction(action: ChatAction): string | undefined {
     case "copy_workout": {
       const { source_workout_id, date } =
         (action as CopyWorkoutAction).input || {};
-      const wRaw = localStorage.getItem("fizruk_workouts_v1");
-      let workouts: Workout[] = [];
-      try {
-        const parsed = wRaw ? JSON.parse(wRaw) : null;
-        if (Array.isArray(parsed)) workouts = parsed as Workout[];
-        else if (parsed && Array.isArray(parsed.workouts))
-          workouts = parsed.workouts as Workout[];
-      } catch {}
+      const workouts = readWorkouts();
       let source: Workout | undefined;
       if (source_workout_id) {
         source = workouts.find((w) => w.id === source_workout_id);
@@ -522,14 +495,7 @@ export function handleFizrukAction(action: ChatAction): string | undefined {
       const { exercise_name, muscle_group, period_days } =
         (action as CompareProgressAction).input || {};
       const days = Number(period_days) || 30;
-      const wRaw = localStorage.getItem("fizruk_workouts_v1");
-      let workouts: Workout[] = [];
-      try {
-        const parsed = wRaw ? JSON.parse(wRaw) : null;
-        if (Array.isArray(parsed)) workouts = parsed as Workout[];
-        else if (parsed && Array.isArray(parsed.workouts))
-          workouts = parsed.workouts as Workout[];
-      } catch {}
+      const workouts = readWorkouts();
       const completed = workouts.filter((w) => w.endedAt);
       if (completed.length === 0)
         return "Немає завершених тренувань для аналізу.";
