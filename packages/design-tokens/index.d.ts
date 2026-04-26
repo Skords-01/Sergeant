@@ -52,3 +52,22 @@ export declare const moduleColors: Readonly<
 
 /** Status / semantic colours, keyed by `StatusColor`. */
 export declare const statusColors: Readonly<Record<StatusColor, string>>;
+
+/**
+ * Status colours as a flat hex map — alias of `statusColors` for inline
+ * SVG / canvas / native call sites that consume raw `"#rrggbb"` strings.
+ */
+export declare const statusHex: Readonly<Record<StatusColor, string>>;
+
+/** Semantic chart colour identifiers (kcal/protein/fat/carbs + structural). */
+export type ChartHexKey =
+  | "primary"
+  | "limit"
+  | "neutral"
+  | "kcal"
+  | "protein"
+  | "fat"
+  | "carbs";
+
+/** Chart hex tokens — semantic names for inline-styled chart primitives. */
+export declare const chartHex: Readonly<Record<ChartHexKey, string>>;
