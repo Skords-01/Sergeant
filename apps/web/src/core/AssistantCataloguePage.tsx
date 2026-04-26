@@ -1,7 +1,8 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Button } from "@shared/components/ui/Button";
 import { Icon } from "@shared/components/ui/Icon";
 import { SectionHeading } from "@shared/components/ui/SectionHeading";
+import { useLocalStorageState } from "@shared/hooks";
 import { cn } from "@shared/lib/cn";
 import {
   ASSISTANT_CAPABILITIES,
@@ -17,6 +18,16 @@ import { CapabilityDetailModal } from "./components/CapabilityDetailModal";
 interface AssistantCataloguePageProps {
   onClose: () => void;
 }
+
+// AI-NOTE: bumping the suffix invalidates older shapes if we change semantics.
+const COLLAPSED_GROUPS_LS_KEY = "assistant_catalogue_collapsed_v1";
+
+const isCapabilityModule = (v: unknown): v is CapabilityModule =>
+  typeof v === "string" &&
+  (CAPABILITY_MODULE_ORDER as readonly string[]).includes(v);
+
+const isCollapsedShape = (v: unknown): v is CapabilityModule[] =>
+  Array.isArray(v) && v.every(isCapabilityModule);
 
 /**
  * Send a chat message via the global `hub:openChat` event. Avoids importing
@@ -37,12 +48,51 @@ export function AssistantCataloguePage({
 }: AssistantCataloguePageProps) {
   const [query, setQuery] = useState("");
   const [detail, setDetail] = useState<AssistantCapability | null>(null);
+  // AI-CONTEXT: persisting collapsed groups (not expanded) keeps "everything
+  // open" the default — adding a new module to the registry stays visible
+  // until the user explicitly collapses it.
+  const [collapsedModules, setCollapsedModules] = useLocalStorageState<
+    CapabilityModule[]
+  >(COLLAPSED_GROUPS_LS_KEY, [], { validate: isCollapsedShape });
 
   const filtered = useMemo(
     () => (query.trim() ? searchCapabilities(query) : ASSISTANT_CAPABILITIES),
     [query],
   );
   const groups = useMemo(() => groupCapabilitiesByModule(filtered), [filtered]);
+  const isSearching = query.trim().length > 0;
+
+  const collapsedSet = useMemo(
+    () => new Set(collapsedModules),
+    [collapsedModules],
+  );
+  // While searching we always show matches expanded so the user can read
+  // results without re-toggling each section. The persisted state is left
+  // untouched so the previous layout returns once the query is cleared.
+  const isModuleCollapsed = (module: CapabilityModule) =>
+    !isSearching && collapsedSet.has(module);
+
+  const toggleModule = useCallback(
+    (module: CapabilityModule) => {
+      setCollapsedModules((prev) =>
+        prev.includes(module)
+          ? prev.filter((m) => m !== module)
+          : [...prev, module],
+      );
+    },
+    [setCollapsedModules],
+  );
+
+  const allCollapsed =
+    groups.length > 0 && groups.every((g) => collapsedSet.has(g.module));
+
+  const toggleAll = useCallback(() => {
+    if (allCollapsed) {
+      setCollapsedModules([]);
+    } else {
+      setCollapsedModules(CAPABILITY_MODULE_ORDER.slice());
+    }
+  }, [allCollapsed, setCollapsedModules]);
 
   const handleActivate = (cap: AssistantCapability) => {
     if (cap.requiresInput) {
@@ -86,7 +136,7 @@ export function AssistantCataloguePage({
           або побачити приклади.
         </p>
 
-        <div className="relative mb-4">
+        <div className="relative mb-3">
           <span
             aria-hidden
             className="absolute left-3 top-1/2 -translate-y-1/2 text-subtle"
@@ -103,6 +153,28 @@ export function AssistantCataloguePage({
           />
         </div>
 
+        {!isSearching && groups.length > 0 && (
+          <div className="flex justify-end mb-3">
+            <button
+              type="button"
+              onClick={toggleAll}
+              data-testid="catalogue-toggle-all"
+              className={cn(
+                "inline-flex items-center gap-1.5 text-xs font-semibold text-muted",
+                "rounded-full px-2.5 py-1 hover:bg-panel hover:text-text transition-colors",
+                "focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/45",
+              )}
+            >
+              <Icon
+                name={allCollapsed ? "chevron-down" : "chevron-up"}
+                size={12}
+                aria-hidden
+              />
+              {allCollapsed ? "Розгорнути все" : "Згорнути все"}
+            </button>
+          </div>
+        )}
+
         {filtered.length === 0 && (
           <div className="text-center text-subtle py-12 text-sm">
             Нічого не знайдено за «{query}». Спробуй інший термін.
@@ -115,6 +187,8 @@ export function AssistantCataloguePage({
               key={g.module}
               module={g.module}
               capabilities={g.capabilities}
+              collapsed={isModuleCollapsed(g.module)}
+              onToggle={() => toggleModule(g.module)}
               onActivate={handleActivate}
             />
           ))}
@@ -133,33 +207,67 @@ export function AssistantCataloguePage({
 interface ModuleGroupProps {
   module: CapabilityModule;
   capabilities: readonly AssistantCapability[];
+  collapsed: boolean;
+  onToggle: () => void;
   onActivate: (cap: AssistantCapability) => void;
 }
 
-function ModuleGroup({ module, capabilities, onActivate }: ModuleGroupProps) {
+function ModuleGroup({
+  module,
+  capabilities,
+  collapsed,
+  onToggle,
+  onActivate,
+}: ModuleGroupProps) {
   const meta = CAPABILITY_MODULE_META[module];
+  const headingId = `catalogue-module-${module}`;
+  const listId = `catalogue-module-${module}-list`;
   return (
-    <section aria-labelledby={`catalogue-module-${module}`}>
-      <SectionHeading
-        as="h2"
-        size="sm"
-        tone="text"
-        id={`catalogue-module-${module}`}
-        className="flex items-center gap-2 mb-2"
+    <section aria-labelledby={headingId}>
+      <button
+        type="button"
+        onClick={onToggle}
+        data-testid={`catalogue-module-${module}-toggle`}
+        aria-expanded={!collapsed}
+        aria-controls={listId}
+        className={cn(
+          "w-full flex items-center gap-2 text-left rounded-lg",
+          "-mx-1 px-1 py-0.5 mb-2 hover:bg-panel/60 transition-colors",
+          "focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/45",
+        )}
       >
         <Icon name={meta.icon} size={14} aria-hidden />
-        {meta.title}
-        <span className="text-subtle font-normal normal-case tracking-normal">
-          ({capabilities.length})
-        </span>
-      </SectionHeading>
-      <ul className="space-y-2">
-        {capabilities.map((cap) => (
-          <li key={cap.id}>
-            <CapabilityRow capability={cap} onActivate={onActivate} />
-          </li>
-        ))}
-      </ul>
+        <SectionHeading
+          as="span"
+          size="sm"
+          tone="text"
+          id={headingId}
+          className="flex items-center gap-2 m-0"
+        >
+          {meta.title}
+          <span className="text-subtle font-normal normal-case tracking-normal">
+            ({capabilities.length})
+          </span>
+        </SectionHeading>
+        <Icon
+          name="chevron-down"
+          size={14}
+          aria-hidden
+          className={cn(
+            "ml-auto text-muted transition-transform",
+            collapsed ? "-rotate-90" : "rotate-0",
+          )}
+        />
+      </button>
+      {!collapsed && (
+        <ul id={listId} className="space-y-2">
+          {capabilities.map((cap) => (
+            <li key={cap.id}>
+              <CapabilityRow capability={cap} onActivate={onActivate} />
+            </li>
+          ))}
+        </ul>
+      )}
     </section>
   );
 }

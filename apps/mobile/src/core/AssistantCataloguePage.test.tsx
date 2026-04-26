@@ -23,6 +23,7 @@ import {
   CAPABILITY_MODULE_ORDER,
 } from "@sergeant/shared";
 
+import { _getMMKVInstance } from "@/lib/storage";
 import { AssistantCataloguePage } from "./AssistantCataloguePage";
 
 jest.mock("react-native-safe-area-context", () => {
@@ -34,6 +35,7 @@ jest.mock("react-native-safe-area-context", () => {
 });
 
 beforeEach(() => {
+  _getMMKVInstance().clearAll();
   jest
     .spyOn(AccessibilityInfo, "isReduceMotionEnabled")
     .mockResolvedValue(false);
@@ -126,5 +128,72 @@ describe("AssistantCataloguePage", () => {
     expect(getAllByText(sample!.description).length).toBeGreaterThanOrEqual(2);
     // Example bullets are sheet-only — a single match is enough.
     expect(getByText(`«${sample!.examples[0]}»`)).toBeTruthy();
+  });
+});
+
+describe("AssistantCataloguePage — group collapsing", () => {
+  it("toggles a group on header tap and hides its rows when collapsed", () => {
+    const { getByTestId, queryByTestId } = render(<AssistantCataloguePage />);
+    const finykHeader = getByTestId("catalogue-module-finyk-toggle");
+
+    expect(
+      queryByTestId("catalogue-capability-create_transaction"),
+    ).toBeTruthy();
+    fireEvent.press(finykHeader);
+    expect(queryByTestId("catalogue-capability-create_transaction")).toBeNull();
+    // Other groups stay expanded.
+    expect(queryByTestId("catalogue-capability-start_workout")).toBeTruthy();
+
+    // Tapping the header again re-expands.
+    fireEvent.press(finykHeader);
+    expect(
+      queryByTestId("catalogue-capability-create_transaction"),
+    ).toBeTruthy();
+  });
+
+  it("`Згорнути все` collapses every group and the toggle flips its label", () => {
+    const { getByTestId, queryByTestId, getByText } = render(
+      <AssistantCataloguePage />,
+    );
+    const toggleAll = getByTestId("catalogue-toggle-all");
+    expect(getByText("Згорнути все")).toBeTruthy();
+
+    fireEvent.press(toggleAll);
+    expect(queryByTestId("catalogue-capability-create_transaction")).toBeNull();
+    expect(queryByTestId("catalogue-capability-start_workout")).toBeNull();
+    expect(getByText("Розгорнути все")).toBeTruthy();
+
+    fireEvent.press(toggleAll);
+    expect(
+      queryByTestId("catalogue-capability-create_transaction"),
+    ).toBeTruthy();
+  });
+
+  it("hides the toggle-all control while a search query is active", () => {
+    const { getByTestId, queryByTestId } = render(<AssistantCataloguePage />);
+    fireEvent.changeText(
+      getByTestId("assistant-catalogue-search"),
+      "тренування",
+    );
+    expect(queryByTestId("catalogue-toggle-all")).toBeNull();
+  });
+
+  it("auto-expands persisted-collapsed groups while searching, restores them after", () => {
+    const { getByTestId, queryByTestId } = render(<AssistantCataloguePage />);
+
+    // Persist `fizruk` as collapsed.
+    fireEvent.press(getByTestId("catalogue-module-fizruk-toggle"));
+    expect(queryByTestId("catalogue-capability-start_workout")).toBeNull();
+
+    // Searching forces the group open so matches are visible.
+    fireEvent.changeText(
+      getByTestId("assistant-catalogue-search"),
+      "тренування",
+    );
+    expect(queryByTestId("catalogue-capability-start_workout")).toBeTruthy();
+
+    // Clearing the query restores the persisted collapsed state.
+    fireEvent.changeText(getByTestId("assistant-catalogue-search"), "");
+    expect(queryByTestId("catalogue-capability-start_workout")).toBeNull();
   });
 });

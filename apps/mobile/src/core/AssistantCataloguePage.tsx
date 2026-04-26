@@ -25,7 +25,7 @@
  *    `max-w-2xl` container.
  */
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -33,6 +33,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import {
   ASSISTANT_CAPABILITIES,
   CAPABILITY_MODULE_META,
+  CAPABILITY_MODULE_ORDER,
   groupCapabilitiesByModule,
   searchCapabilities,
   type AssistantCapability,
@@ -42,6 +43,21 @@ import {
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Sheet } from "@/components/ui/Sheet";
+import { useLocalStorage } from "@/lib/storage";
+
+// AI-NOTE: keep in lockstep with web — see
+// apps/web/src/core/AssistantCataloguePage.tsx (`COLLAPSED_GROUPS_LS_KEY`).
+const COLLAPSED_GROUPS_KEY = "assistant_catalogue_collapsed_v1";
+
+const CAPABILITY_MODULE_SET = new Set<string>(CAPABILITY_MODULE_ORDER);
+
+function sanitizeCollapsed(value: unknown): CapabilityModule[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter(
+    (v): v is CapabilityModule =>
+      typeof v === "string" && CAPABILITY_MODULE_SET.has(v),
+  );
+}
 
 // Emoji prefix per module — keeps a consistent visual rhythm with the
 // existing settings sections (`💳 Фінік`, `🏋 Фізрук`, `✅ Рутина`,
@@ -72,12 +88,51 @@ export function AssistantCataloguePage({
 }: AssistantCataloguePageProps) {
   const [query, setQuery] = useState("");
   const [detail, setDetail] = useState<AssistantCapability | null>(null);
+  // AI-CONTEXT: persisting *collapsed* (not expanded) ids keeps every
+  // module visible by default — newly registered modules surface
+  // immediately without a one-off migration.
+  const [collapsedRaw, setCollapsedRaw] = useLocalStorage<CapabilityModule[]>(
+    COLLAPSED_GROUPS_KEY,
+    [],
+  );
+  const collapsedModules = useMemo(
+    () => sanitizeCollapsed(collapsedRaw),
+    [collapsedRaw],
+  );
+  const collapsedSet = useMemo(
+    () => new Set(collapsedModules),
+    [collapsedModules],
+  );
 
   const filtered = useMemo(
     () => (query.trim() ? searchCapabilities(query) : ASSISTANT_CAPABILITIES),
     [query],
   );
   const groups = useMemo(() => groupCapabilitiesByModule(filtered), [filtered]);
+  const isSearching = query.trim().length > 0;
+  // While searching all groups expand so matches are immediately visible.
+  // The persisted collapsed set is left untouched.
+  const isModuleCollapsed = (module: CapabilityModule) =>
+    !isSearching && collapsedSet.has(module);
+
+  const toggleModule = useCallback(
+    (module: CapabilityModule) => {
+      setCollapsedRaw((prev) => {
+        const list = sanitizeCollapsed(prev);
+        return list.includes(module)
+          ? list.filter((m) => m !== module)
+          : [...list, module];
+      });
+    },
+    [setCollapsedRaw],
+  );
+
+  const allCollapsed =
+    groups.length > 0 && groups.every((g) => collapsedSet.has(g.module));
+
+  const toggleAll = useCallback(() => {
+    setCollapsedRaw(allCollapsed ? [] : CAPABILITY_MODULE_ORDER.slice());
+  }, [allCollapsed, setCollapsedRaw]);
 
   const handleClose = () => {
     if (onClose) {
@@ -131,6 +186,27 @@ export function AssistantCataloguePage({
           />
         </View>
 
+        {!isSearching && groups.length > 0 ? (
+          <View className="flex-row justify-end mb-3">
+            <Pressable
+              onPress={toggleAll}
+              accessibilityRole="button"
+              accessibilityLabel={
+                allCollapsed ? "Розгорнути все" : "Згорнути все"
+              }
+              testID="catalogue-toggle-all"
+              className="flex-row items-center gap-1 px-2.5 py-1 rounded-full active:opacity-70"
+            >
+              <Text className="text-stone-500 text-xs">
+                {allCollapsed ? "⌄" : "⌃"}
+              </Text>
+              <Text className="text-stone-600 text-xs font-semibold">
+                {allCollapsed ? "Розгорнути все" : "Згорнути все"}
+              </Text>
+            </Pressable>
+          </View>
+        ) : null}
+
         {filtered.length === 0 ? (
           <Text className="text-center text-stone-500 py-8 text-sm">
             Нічого не знайдено за «{query}». Спробуй інший термін.
@@ -142,6 +218,8 @@ export function AssistantCataloguePage({
                 key={g.module}
                 module={g.module}
                 capabilities={g.capabilities}
+                collapsed={isModuleCollapsed(g.module)}
+                onToggle={() => toggleModule(g.module)}
                 onActivate={setDetail}
               />
             ))}
@@ -160,28 +238,50 @@ export function AssistantCataloguePage({
 interface ModuleGroupProps {
   module: CapabilityModule;
   capabilities: readonly AssistantCapability[];
+  collapsed: boolean;
+  onToggle: () => void;
   onActivate: (cap: AssistantCapability) => void;
 }
 
-function ModuleGroup({ module, capabilities, onActivate }: ModuleGroupProps) {
+function ModuleGroup({
+  module,
+  capabilities,
+  collapsed,
+  onToggle,
+  onActivate,
+}: ModuleGroupProps) {
   const meta = CAPABILITY_MODULE_META[module];
   return (
     <View accessibilityLabel={meta.title}>
-      <Text className="text-sm font-bold text-stone-900 mb-2">
-        {MODULE_EMOJI[module]} {meta.title}{" "}
-        <Text className="text-stone-400 font-normal">
-          ({capabilities.length})
+      <Pressable
+        onPress={onToggle}
+        accessibilityRole="button"
+        accessibilityState={{ expanded: !collapsed }}
+        accessibilityLabel={`${meta.title}, ${capabilities.length}`}
+        testID={`catalogue-module-${module}-toggle`}
+        className="flex-row items-center gap-1 mb-2 active:opacity-70"
+      >
+        <Text className="text-sm font-bold text-stone-900 flex-1">
+          {MODULE_EMOJI[module]} {meta.title}{" "}
+          <Text className="text-stone-400 font-normal">
+            ({capabilities.length})
+          </Text>
         </Text>
-      </Text>
-      <View className="gap-2">
-        {capabilities.map((cap) => (
-          <CapabilityRow
-            key={cap.id}
-            capability={cap}
-            onActivate={onActivate}
-          />
-        ))}
-      </View>
+        <Text className="text-stone-400 text-base">
+          {collapsed ? "⌄" : "⌃"}
+        </Text>
+      </Pressable>
+      {!collapsed ? (
+        <View className="gap-2">
+          {capabilities.map((cap) => (
+            <CapabilityRow
+              key={cap.id}
+              capability={cap}
+              onActivate={onActivate}
+            />
+          ))}
+        </View>
+      ) : null}
     </View>
   );
 }
