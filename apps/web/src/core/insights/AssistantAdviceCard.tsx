@@ -85,7 +85,9 @@ export function AssistantAdviceCard({
         {!collapsed && (
           <div className="px-4 pb-3.5 -mt-0.5">
             {loading && !insight && (
-              <p className="text-sm text-muted animate-pulse">Готую пораду…</p>
+              <p className="text-sm text-muted motion-safe:animate-pulse">
+                Готую пораду…
+              </p>
             )}
 
             {insight && (
@@ -102,7 +104,8 @@ export function AssistantAdviceCard({
               aria-label="Оновити пораду"
               className={cn(
                 "mt-2 p-1 rounded-lg text-muted hover:text-text hover:bg-panelHi transition-colors",
-                loading && "opacity-40 cursor-not-allowed animate-spin",
+                loading &&
+                  "opacity-40 cursor-not-allowed motion-safe:animate-spin",
               )}
             >
               <Icon name="refresh-cw" size={14} />

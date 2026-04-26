@@ -127,7 +127,7 @@ export function Sheet({
         className={cn(
           "relative w-full max-w-lg bg-panel border-t border-line rounded-t-3xl shadow-soft",
           "flex flex-col max-h-[90vh]",
-          "animate-slide-up",
+          "motion-safe:animate-slide-up",
           panelClassName,
         )}
       >

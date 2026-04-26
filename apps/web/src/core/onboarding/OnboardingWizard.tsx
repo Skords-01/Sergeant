@@ -265,7 +265,7 @@ function ModulesStep({
         {MODULE_CARDS.map((card, idx) => (
           <div
             key={card.id}
-            className="animate-module-card"
+            className="motion-safe:animate-module-card"
             style={{ animationDelay: `${idx * 60}ms` }}
           >
             <ModuleCard
@@ -644,7 +644,9 @@ export function OnboardingWizard({
   }, [finish]);
 
   const transitionClass =
-    direction === "forward" ? "animate-step-forward" : "animate-step-backward";
+    direction === "forward"
+      ? "motion-safe:animate-step-forward"
+      : "motion-safe:animate-step-backward";
 
   const content = (
     <div className="space-y-4">

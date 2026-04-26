@@ -35,7 +35,11 @@ export function Spinner({ className, size = "sm", ...props }: SpinnerProps) {
   return (
     <div
       aria-hidden="true"
-      className={cn("inline-block animate-spin", sizes[size], className)}
+      className={cn(
+        "inline-block motion-safe:animate-spin",
+        sizes[size],
+        className,
+      )}
     >
       <svg
         focusable="false"

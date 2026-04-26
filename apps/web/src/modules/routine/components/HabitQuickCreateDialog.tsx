@@ -162,7 +162,7 @@ export function HabitQuickCreateDialog({
           "relative z-10 w-full max-w-md mx-0 sm:mx-4",
           "bg-bg rounded-t-3xl sm:rounded-3xl shadow-float border border-line",
           "max-h-[92dvh] overflow-hidden flex flex-col",
-          "animate-in slide-in-from-bottom-4 duration-200",
+          "motion-safe:animate-in motion-safe:slide-in-from-bottom-4 motion-safe:duration-200",
         )}
       >
         <div className="flex items-center justify-between px-5 pt-4 pb-2">
