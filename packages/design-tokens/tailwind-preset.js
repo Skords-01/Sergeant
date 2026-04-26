@@ -141,6 +141,9 @@ const preset = {
           DEFAULT: moduleColors.routine.primary,
           secondary: moduleColors.routine.secondary,
           surface: moduleColors.routine.surface,
+          // Tint крок між surface (coral-50 #fff5f3) та surfaceAlt (coral-100 #ffe8e3) —
+          // використовується для виділення активного дня / виконаного слота в календарі.
+          surface2: "#ffeeeb",
           surfaceAlt: moduleColors.routine.surfaceAlt,
           hover: brandColors.coral[600],
           strong: brandColors.coral[700],
