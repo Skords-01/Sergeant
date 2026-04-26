@@ -119,17 +119,28 @@ export function computeFinykSchedule({
 
   type GetSubAmountMeta = typeof getSubscriptionAmountMeta;
   for (const sub of subs) {
-    const { amount, currency } = getSubscriptionAmountMeta(
+    const { amount, currency, lastTx } = getSubscriptionAmountMeta(
       sub as Parameters<GetSubAmountMeta>[0],
       transactions as Parameters<GetSubAmountMeta>[1],
     );
     if (!amount || currency !== "₴") continue;
     subsMonthly += amount;
+    // AI-NOTE: коли остання списана транзакція припадає на `dueDate`
+    // (тобто billingDay сьогодні і користувач уже привʼязав сьогоднішнє
+    // списання), цикл уже сплачено — переносимо `dueDate` на наступний
+    // billingDay, щоб тайл "Наступний платіж" не показував сплачений.
+    let dueDate = getNextBillingDate(Number(sub.billingDay), todayStart);
+    if (lastTx?.time && lastTx.time >= dueDate.getTime()) {
+      dueDate = getNextBillingDate(
+        Number(sub.billingDay),
+        new Date(dueDate.getTime() + 86400000),
+      );
+    }
     upcoming.push({
       label: sub.name ?? "Підписка",
       amount,
       sign: "-",
-      dueDate: getNextBillingDate(Number(sub.billingDay), todayStart),
+      dueDate,
     });
   }
 

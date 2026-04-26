@@ -4,7 +4,9 @@ import {
   getNextBillingDate,
   formatRelativeDue,
   startOfToday,
+  computeFinykSchedule,
 } from "./upcomingSchedule";
+import { CURRENCY } from "@sergeant/finyk-domain/constants";
 
 describe("parseLocalDate", () => {
   it("парсить ISO-дату без часового поясу", () => {
@@ -62,6 +64,58 @@ describe("formatRelativeDue", () => {
   it("коротка дата якщо більше тижня", () => {
     const result = formatRelativeDue(new Date(2025, 5, 30), today);
     expect(result).toContain("30");
+  });
+});
+
+describe("computeFinykSchedule — paid current cycle", () => {
+  // Фіксуємо `todayStart` на 26 квітня (день списання).
+  const todayStart = new Date(2026, 3, 26);
+
+  function makeSub(linkedTxId = "tx-today") {
+    return {
+      id: "sub-gpt",
+      name: "ChatGPT Plus",
+      billingDay: 26,
+      linkedTxId,
+      currency: "UAH",
+    };
+  }
+
+  it("переносить `nextCharge` на наступний місяць, якщо привʼязана транзакція припадає на сьогодні", () => {
+    const tx = {
+      id: "tx-today",
+      amount: -101694,
+      time: new Date(2026, 3, 26, 12, 37).getTime(),
+      currencyCode: CURRENCY.UAH,
+    };
+    const { nextCharge } = computeFinykSchedule({
+      subscriptions: [makeSub()],
+      manualDebts: [],
+      receivables: [],
+      transactions: [tx],
+      todayStart,
+    });
+    expect(nextCharge).not.toBeNull();
+    expect(nextCharge?.dueDate.getMonth()).toBe(4); // травень
+    expect(nextCharge?.dueDate.getDate()).toBe(26);
+  });
+
+  it("не переносить, якщо остання транзакція з минулого циклу", () => {
+    const tx = {
+      id: "tx-prev",
+      amount: -101694,
+      time: new Date(2026, 2, 26, 12, 0).getTime(), // 26 березня
+      currencyCode: CURRENCY.UAH,
+    };
+    const { nextCharge } = computeFinykSchedule({
+      subscriptions: [makeSub("tx-prev")],
+      manualDebts: [],
+      receivables: [],
+      transactions: [tx],
+      todayStart,
+    });
+    expect(nextCharge?.dueDate.getMonth()).toBe(3); // квітень (сьогодні)
+    expect(nextCharge?.dueDate.getDate()).toBe(26);
   });
 });
 
