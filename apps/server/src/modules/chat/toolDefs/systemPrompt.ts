@@ -20,8 +20,11 @@ import {
  * v6 (2026-04-26): tool-list bullets тепер генеруються з `ASSISTANT_CAPABILITIES`
  *   у `@sergeant/shared` — реджистр є єдиним джерелом істини. Видалено блок
  *   інструкції про /help (PR #795 редіректить /help у каталог UI).
+ * v7 (2026-04-26): прибрано дублі `set_habit_schedule` + `pause_habit` у каталозі
+ *   (ще один артефакт паралельних PR #796/#798); порядок tool-list-у Рутини
+ *   змінився, додано aiHint "примусово weekly" до `set_habit_schedule`.
  */
-export const SYSTEM_PROMPT_VERSION = "v6";
+export const SYSTEM_PROMPT_VERSION = "v7";
 
 // AI-CONTEXT: модульний label у промпті відрізняється від `CAPABILITY_MODULE_META.title`,
 // бо UI показує "Фінік", а промпту історично подавали "Фінанси" (тон-нейтральніше для
