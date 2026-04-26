@@ -41,11 +41,13 @@ jobs:
       - name: Audit (critical only)
         run: pnpm audit --audit-level=critical --prod
 
-      - name: Audit (high, non-blocking)
-        run: pnpm audit --audit-level=high --prod || true
+      - name: Audit (high, production)
+        if: ${{ !contains(github.event.pull_request.labels.*.name, 'audit-exception') }}
+        run: pnpm audit --audit-level=high --prod
 
-      - name: Audit full tree (non-blocking)
-        run: pnpm audit --audit-level=high || true
+      - name: Audit full tree (high)
+        if: ${{ !contains(github.event.pull_request.labels.*.name, 'audit-exception') }}
+        run: pnpm audit --audit-level=high
 
       - name: License policy check (production tree)
         # Validates that every package in the production dependency
