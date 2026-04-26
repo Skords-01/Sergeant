@@ -55,6 +55,12 @@ export interface AssistantCapability {
 
   /** Destructive — shown with a warning badge. */
   risky?: boolean;
+  /**
+   * Recently added — shown with a "Новинка" badge in the catalogue.
+   * Set to `true` for capabilities introduced in the last few releases;
+   * flip back to `undefined` once the feature is no longer notable.
+   */
+  isNew?: boolean;
   /** Surfaced as a chip below the chat input. */
   isQuickAction?: boolean;
   /** Lower number sorts higher among quick-action chips. */
@@ -558,6 +564,7 @@ export const ASSISTANT_CAPABILITIES: readonly AssistantCapability[] = [
     prompt: "Постав розклад звички: ",
     requiresInput: true,
     requiresOnline: true,
+    isNew: true,
     aiHint: "примусово weekly",
     keywords: ["weekday", "schedule", "weekly", "розклад", "дні"],
   },
@@ -577,6 +584,7 @@ export const ASSISTANT_CAPABILITIES: readonly AssistantCapability[] = [
     prompt: "Постав звичку на паузу: ",
     requiresInput: true,
     requiresOnline: true,
+    isNew: true,
     aiHint: "ідемпотентно",
     keywords: ["pause", "resume", "unpause", "пауза", "відновити"],
   },
@@ -814,6 +822,7 @@ export const ASSISTANT_CAPABILITIES: readonly AssistantCapability[] = [
     requiresInput: false,
     isQuickAction: true,
     quickActionPriority: 40,
+    isNew: true,
     requiresOnline: true,
     keywords: ["тиждень", "порівняння", "аналіз"],
     aiHint: "YYYY-Www; default цей+минулий",
