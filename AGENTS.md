@@ -1,6 +1,6 @@
 # Agents in Sergeant
 
-> Last reviewed: 2026-04-25. Reviewer: @Skords-01
+> Last reviewed: 2026-04-26. Reviewer: @Skords-01
 
 ## Repo overview
 
@@ -17,25 +17,26 @@
 
 Quick lookup before editing: which path uses which test stack and which conventions are mandatory.
 
-| Path                                                  | Test stack                              | RQ keys factory                       | Notes                                                                                  |
-| ----------------------------------------------------- | --------------------------------------- | ------------------------------------- | -------------------------------------------------------------------------------------- |
-| `apps/web/src/modules/finyk/**`                       | Vitest + MSW + RTL                      | `finykKeys`                           | Tailwind, localStorage. Mono webhooks → `monoWebhook*` keys.                           |
-| `apps/web/src/modules/fizruk/**`                      | Vitest + MSW + RTL                      | (none yet — local-first via MMKV-web) | Workouts/sets are local-first. Cloud sync via `cloudsync` queue.                       |
-| `apps/web/src/modules/nutrition/**`                   | Vitest + MSW + RTL                      | `nutritionKeys`                       | OFF = OpenFoodFacts; barcode scans share cache key with meal-sheet.                    |
-| `apps/web/src/modules/routine/**`                     | Vitest + RTL                            | (local-first)                         | Habits + streaks; rely on Kyiv-day boundary (see Domain invariants).                   |
-| `apps/web/src/core/**`                                | Vitest + RTL + (MSW for fetch)          | `hubKeys`, `coachKeys`, `digestKeys`  | HubChat, OnboardingWizard, dashboard. Quick actions registry lives here.               |
-| `apps/web/src/shared/**`                              | Vitest                                  | factories defined here                | Pure utils. No React.                                                                  |
-| `apps/server/src/modules/**`                          | Vitest + Testcontainers (real Postgres) | n/a                                   | Always coerce bigint→number in serializers (rule #1). Update `api-client` types.       |
-| `apps/server/src/modules/chat/**`                     | Vitest                                  | n/a                                   | Anthropic tool defs split per domain in `toolDefs/`. See Architecture section.         |
-| `apps/server/src/migrations/**`                       | n/a                                     | n/a                                   | Sequential `NNN_*.sql` (currently 001–008). No gaps. Two-phase for DROP — see rule #4. |
-| `apps/mobile/src/core/**`                             | Vitest (3 known flaky — see below)      | (mobile RQ uses module-local keys)    | NativeWind (not Tailwind). MMKV (not localStorage). No DOM.                            |
-| `apps/mobile/app/**`                                  | Vitest                                  | n/a                                   | Expo Router routes. Each `_layout.tsx` is a navigator.                                 |
-| `apps/mobile-shell/**`                                | none                                    | n/a                                   | Capacitor wrapper around `apps/web`. No app code lives here, only build glue.          |
-| `packages/shared/**`                                  | Vitest                                  | n/a                                   | Zod schemas, types, business logic. Used by all apps — change with care.               |
-| `packages/api-client/**`                              | Vitest                                  | n/a                                   | HTTP clients + types. Must mirror `apps/server/src/modules/*` response shapes.         |
-| `packages/insights/**`                                | Vitest                                  | n/a                                   | Cross-module analytics. Pure functions over normalized data.                           |
-| `packages/{finyk,fizruk,nutrition,routine}-domain/**` | Vitest                                  | n/a                                   | Domain logic shared web ↔ mobile (e.g., kcal math, budget computations).               |
-| `packages/eslint-plugin-sergeant-design/**`           | `node --test` (`__tests__/*.mjs`)       | n/a                                   | Custom ESLint rules. Run via `pnpm lint:plugins`.                                      |
+| Path                                                  | Test stack                              | RQ keys factory                       | Notes                                                                                                                                                           |
+| ----------------------------------------------------- | --------------------------------------- | ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `apps/web/src/modules/finyk/**`                       | Vitest + MSW + RTL                      | `finykKeys`                           | Tailwind, localStorage. Mono webhooks → `monoWebhook*` keys.                                                                                                    |
+| `apps/web/src/modules/fizruk/**`                      | Vitest + MSW + RTL                      | (none yet — local-first via MMKV-web) | Workouts/sets are local-first. Cloud sync via `cloudsync` queue.                                                                                                |
+| `apps/web/src/modules/nutrition/**`                   | Vitest + MSW + RTL                      | `nutritionKeys`                       | OFF = OpenFoodFacts; barcode scans share cache key with meal-sheet.                                                                                             |
+| `apps/web/src/modules/routine/**`                     | Vitest + RTL                            | (local-first)                         | Habits + streaks; rely on Kyiv-day boundary (see Domain invariants).                                                                                            |
+| `apps/web/src/core/**`                                | Vitest + RTL + (MSW for fetch)          | `hubKeys`, `coachKeys`, `digestKeys`  | HubChat, OnboardingWizard, dashboard. Quick actions registry lives here.                                                                                        |
+| `apps/web/src/core/lib/chatActions/**`                | Vitest + RTL                            | n/a                                   | HubChat tool handlers. Повертають `string` для `tool_result`. Пишуть у localStorage тільки через `ls`/`lsSet`. Тест: happy path + error path кожного handler-а. |
+| `apps/web/src/shared/**`                              | Vitest                                  | factories defined here                | Pure utils. No React.                                                                                                                                           |
+| `apps/server/src/modules/**`                          | Vitest + Testcontainers (real Postgres) | n/a                                   | Always coerce bigint→number in serializers (rule #1). Update `api-client` types.                                                                                |
+| `apps/server/src/modules/chat/**`                     | Vitest                                  | n/a                                   | Anthropic tool defs split per domain in `toolDefs/`. See Architecture section.                                                                                  |
+| `apps/server/src/migrations/**`                       | n/a                                     | n/a                                   | Sequential `NNN_*.sql` (currently 001–008). No gaps. Two-phase for DROP — see rule #4.                                                                          |
+| `apps/mobile/src/core/**`                             | Vitest (3 known flaky — see below)      | (mobile RQ uses module-local keys)    | NativeWind (not Tailwind). MMKV (not localStorage). No DOM.                                                                                                     |
+| `apps/mobile/app/**`                                  | Vitest                                  | n/a                                   | Expo Router routes. Each `_layout.tsx` is a navigator.                                                                                                          |
+| `apps/mobile-shell/**`                                | none                                    | n/a                                   | Capacitor wrapper around `apps/web`. No app code lives here, only build glue.                                                                                   |
+| `packages/shared/**`                                  | Vitest                                  | n/a                                   | Zod schemas, types, business logic. Used by all apps — change with care.                                                                                        |
+| `packages/api-client/**`                              | Vitest                                  | n/a                                   | HTTP clients + types. Must mirror `apps/server/src/modules/*` response shapes.                                                                                  |
+| `packages/insights/**`                                | Vitest                                  | n/a                                   | Cross-module analytics. Pure functions over normalized data.                                                                                                    |
+| `packages/{finyk,fizruk,nutrition,routine}-domain/**` | Vitest                                  | n/a                                   | Domain logic shared web ↔ mobile (e.g., kcal math, budget computations).                                                                                        |
+| `packages/eslint-plugin-sergeant-design/**`           | `node --test` (`__tests__/*.mjs`)       | n/a                                   | Custom ESLint rules. Run via `pnpm lint:plugins`.                                                                                                               |
 
 ## Hard rules (do not break)
 
@@ -175,18 +176,20 @@ If a PR genuinely spans multiple scopes (rare), use the most "user-visible" one 
 
 Structured comments for AI-agent context. Enforced by ESLint rule `sergeant-design/ai-marker-syntax` (warn).
 
-| Marker                             | Purpose                                                 | Example                                                 |
-| ---------------------------------- | ------------------------------------------------------- | ------------------------------------------------------- |
-| `// AI-NOTE: <text>`               | Contextual hint for future AI agents (not a human TODO) | `// AI-NOTE: coerce bigint→number; see rule #1`         |
-| `// AI-DANGER: <text>`             | High-risk zone — AI should confirm before changing      | `// AI-DANGER: timing-safe comparison is critical here` |
-| `// AI-GENERATED: <generator>`     | File is generated — edit the generator, not this file   | `// AI-GENERATED: from codegen.ts`                      |
-| `// AI-LEGACY: expires YYYY-MM-DD` | Temporary code scheduled for removal                    | `// AI-LEGACY: expires 2026-06-01`                      |
+| Marker                             | Purpose                                                                    | Example                                                                                 |
+| ---------------------------------- | -------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `// AI-NOTE: <text>`               | Contextual hint for future AI agents (not a human TODO)                    | `// AI-NOTE: coerce bigint→number; see rule #1`                                         |
+| `// AI-CONTEXT: <text>`            | Architectural decision — _why_, not _what_ (rationale future AI must know) | `// AI-CONTEXT: tool виконується на клієнті — localStorage local-first, без round-trip` |
+| `// AI-DANGER: <text>`             | High-risk zone — AI should confirm before changing                         | `// AI-DANGER: timing-safe comparison is critical here`                                 |
+| `// AI-GENERATED: <generator>`     | File is generated — edit the generator, not this file                      | `// AI-GENERATED: from codegen.ts`                                                      |
+| `// AI-LEGACY: expires YYYY-MM-DD` | Temporary code scheduled for removal                                       | `// AI-LEGACY: expires 2026-06-01`                                                      |
 
 **Rules:**
 
-- Use exactly these 4 prefixes followed by a colon and a space.
+- Use exactly these 5 prefixes followed by a colon and a space.
 - Malformed variants (`AI-NOTES`, `AINOTE`, `AI_NOTE`, missing colon) trigger a lint warning.
 - Do not spam markers — use only where they add genuine context for AI.
+- `AI-NOTE` vs `AI-CONTEXT`: use `AI-NOTE` for short pointer-style hints ("see rule #1", "keep order stable"). Use `AI-CONTEXT` to record the _reason_ behind a non-obvious architectural choice that an agent might otherwise "clean up" (e.g. why two systems coexist, why a value is duplicated, why a sync write is intentional). The `sergeant-design/ai-marker-syntax` ESLint rule currently validates the original four prefixes; `AI-CONTEXT` is accepted but not yet enforced — extend the plugin in a follow-up if drift becomes a problem.
 
 ## Domain invariants
 
@@ -256,6 +259,27 @@ The HubChat assistant uses Anthropic tool-calling. Tools are **defined on the se
 - The server **does not** run tool side effects — never put DB writes in `chat.ts`. They go through the regular `apps/server/src/modules/<domain>/*` HTTP endpoints, called by the client executor.
 - "Risky" tools (delete/forget/import) live in `RISKY_TOOLS` in `hubChatActionCards.ts` and get a "Критична дія" badge in the UI.
 
+### `max_tokens` budget per request
+
+`apps/server/src/modules/chat.ts` uses two distinct `max_tokens` values, intentionally:
+
+| Request                      | `max_tokens` | Where (chat.ts)                 | Why                                                                                             |
+| ---------------------------- | ------------ | ------------------------------- | ----------------------------------------------------------------------------------------------- |
+| First user-message chat call | **600**      | line ~171, payload to Anthropic | Enough for a tool call + short reply, or a 2–4-sentence answer.                                 |
+| Tool-result continuation     | **400**      | line ~114, follow-up payload    | Just enough to summarise the tool result; the model already "used" its budget on the tool call. |
+
+Do **not** lower these without testing the worst-case `/help` response and the largest tool-result blob.
+When Anthropic returns `stop_reason: "max_tokens"`, the model may truncate **mid-JSON-tool-call**— the client `executeAction` then throws a parse error and the user sees "Невідома дія". If you need a longer system prompt or more tools, raise `max_tokens` first; do not silently squeeze the budget.
+
+### `SYSTEM_PREFIX` is a prompt-cache candidate
+
+`SYSTEM_PREFIX` (in `apps/server/src/modules/chat/toolDefs/systemPrompt.ts`) is the same on every request — only the appended `context` block varies. That makes it the natural target for Anthropic prompt caching (`cache_control: { type: "ephemeral" }` on the `system` array). Two consequences:
+
+1. **Don't churn `SYSTEM_PREFIX`.** Each edit invalidates the cache for every active user, so a casual wording tweak can briefly multiply Anthropic spend. Batch prompt changes; bump a `SYSTEM_PROMPT_VERSION` constant when wiring caching so cache misses are observable.
+2. **`context` (the dynamic data block) must stay outside the cached segment.** When caching is wired, the cached prefix is `SYSTEM_PREFIX` only; the per-user `context` is appended as a separate, non-cached `text` block.
+
+See the `enable-prompt-caching` playbook for the actual rollout steps.
+
 ## Performance budgets
 
 CI gates fail when these regress. Numbers come from `apps/web/package.json` → `"size-limit"` and the `Bundle size guard` workflow step ([#740](https://github.com/Skords-01/Sergeant/pull/740)).
@@ -279,6 +303,7 @@ Real regressions we've shipped — do not repeat:
 3. **Hardcoded RQ keys.** Several places had `["finyk", "transactions"]` inline; bulk-invalidate after a mutation missed half of them. Centralized factories make this impossible.
 4. **One-shot DB migration that dropped a column.** Pre-deploy ran the migration before the new image started serving, so the still-warm old version crashed on the missing column. Two-phase migration policy (rule #4) prevents this.
 5. **Skipped `// AI-DANGER` zone.** A subtle timing-safe comparison was rewritten as `===` during a "cleanup" PR. Catch them with `// AI-DANGER:` markers and lint warnings on malformed prefixes.
+6. **Direct `localStorage.setItem` in chat tool handlers.** A handler that writes to localStorage via `localStorage.setItem` (instead of the project's `lsSet` helper) bypasses quota fallbacks **and** the cloud-sync queue used by `cloudsync`. Under a concurrent request (e.g. user fires two tool calls fast, or background sync runs) the local write and the cloud-sync write race — the user sees the change in the UI but the next device boot pulls a stale value from cloud. Always go through `ls` / `lsSet` (or `safeReadLS` / `safeWriteLS` / `createModuleStorage`); the same wrappers are also enforced by the `sergeant-design/no-raw-local-storage` ESLint rule.
 
 ## Soft rules (preferred)
 
