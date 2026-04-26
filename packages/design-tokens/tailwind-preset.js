@@ -166,6 +166,19 @@ const preset = {
       },
 
       // ═══════════════════════════════════════════════════════════════════
+      // OPACITY — module/status tint scale
+      // ═══════════════════════════════════════════════════════════════════
+      // AI-CONTEXT: Tailwind's default opacity scale steps in 5-pt
+      // increments (5, 10, 15…), so `<color>/8` is otherwise undefined.
+      // The Sergeant palette uses an 8 % wash as the canonical "barely
+      // there" tint over panel surfaces (e.g. dark-mode module bento
+      // tiles, primary/danger row highlights). Keep this entry — many
+      // call sites depend on it.
+      opacity: {
+        8: "0.08",
+      },
+
+      // ═══════════════════════════════════════════════════════════════════
       // BORDER RADIUS — Soft, organic, friendly shapes
       // ═══════════════════════════════════════════════════════════════════
       borderRadius: {
