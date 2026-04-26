@@ -63,6 +63,24 @@ export interface AssistantCapability {
   requiresOnline?: boolean;
   /** Extra search keywords (not displayed). */
   keywords?: readonly string[];
+
+  /**
+   * Server tool name for system-prompt generation.
+   * - `undefined` (default): `id` IS the server tool name (validated against
+   *   the actual TOOLS array on the server).
+   * - `string`: explicit override when capability `id` diverges from the
+   *   server tool name.
+   * - `null`: prompt-only capability — no backing server tool. The model
+   *   answers from the injected ДАНІ block (e.g. budget risk analysis,
+   *   daily summary derived from numbers already in context).
+   */
+  serverTool?: string | null;
+  /**
+   * Optional terse hint emitted next to the tool name in the generated
+   * system prompt (e.g. "dry_run спершу", "лише ручні m_<id>"). Helps the
+   * model pick the right tool without bloating the prompt.
+   */
+  aiHint?: string;
 }
 
 /** Display order of modules in the catalogue UI. */
@@ -95,7 +113,7 @@ export const CAPABILITY_MODULE_META: Record<
 // AI-NOTE: counts in section comments below match `ASSISTANT_CAPABILITIES`.
 // Update them when adding/removing entries; tests assert per-module totals.
 export const ASSISTANT_CAPABILITIES: readonly AssistantCapability[] = [
-  // ───── Фінік (16) ─────────────────────────────────────────────────────
+  // ───── Фінік (18) ─────────────────────────────────────────────────────
   {
     id: "create_transaction",
     module: "finyk",
@@ -130,6 +148,40 @@ export const ASSISTANT_CAPABILITIES: readonly AssistantCapability[] = [
     requiresOnline: true,
   },
   {
+    id: "find_transaction",
+    module: "finyk",
+    label: "Знайти транзакцію",
+    icon: "search",
+    description:
+      "Пошук транзакції за описом, мерчантом, сумою або датою. Не змінює дані.",
+    examples: [
+      "знайди покупку в АТБ",
+      "транзакція на 450 грн позавчора",
+      "що було в Сільпо за тиждень",
+    ],
+    prompt: "Знайди транзакцію: ",
+    requiresInput: true,
+    requiresOnline: true,
+    keywords: ["search", "пошук", "merchant"],
+  },
+  {
+    id: "batch_categorize",
+    module: "finyk",
+    label: "Категоризувати масово",
+    icon: "tags",
+    description:
+      "Перенести багато транзакцій в одну категорію за патерном. Спочатку показує preview (dry_run), застосовує лише після підтвердження.",
+    examples: [
+      "віднеси все Сільпо в продукти",
+      "категоризуй всі АЗС на транспорт",
+    ],
+    prompt: "Категоризуй масово: ",
+    requiresInput: true,
+    requiresOnline: true,
+    aiHint: "dry_run спершу",
+    keywords: ["batch", "масово", "категорія"],
+  },
+  {
     id: "hide_transaction",
     module: "finyk",
     label: "Приховати транзакцію",
@@ -153,6 +205,7 @@ export const ASSISTANT_CAPABILITIES: readonly AssistantCapability[] = [
     requiresInput: true,
     risky: true,
     requiresOnline: true,
+    aiHint: "лише ручні m_<id>",
   },
   {
     id: "create_debt",
@@ -201,6 +254,7 @@ export const ASSISTANT_CAPABILITIES: readonly AssistantCapability[] = [
     quickActionPriority: 20,
     requiresOnline: true,
     keywords: ["budget", "ліміт", "risk"],
+    serverTool: null,
   },
   {
     id: "set_budget_limit",
@@ -226,6 +280,7 @@ export const ASSISTANT_CAPABILITIES: readonly AssistantCapability[] = [
     prompt: "Онови бюджет: ",
     requiresInput: true,
     requiresOnline: true,
+    aiHint: "ліміт або ціль",
   },
   {
     id: "set_monthly_plan",
@@ -428,7 +483,7 @@ export const ASSISTANT_CAPABILITIES: readonly AssistantCapability[] = [
     requiresOnline: true,
   },
 
-  // ───── Рутина (10) ─────────────────────────────────────────────────────
+  // ───── Рутина (12) ─────────────────────────────────────────────────────
   {
     id: "mark_habit_done",
     module: "routine",
@@ -522,6 +577,37 @@ export const ASSISTANT_CAPABILITIES: readonly AssistantCapability[] = [
     requiresOnline: true,
   },
   {
+    id: "set_habit_schedule",
+    module: "routine",
+    label: "Розклад звички",
+    icon: "calendar-check",
+    description:
+      "Виставити дні тижня для звички (recurrence='weekly'). Англ. ('mon'..'sun') або укр. ('пн'..'нд').",
+    examples: [
+      "тренування пн/ср/пт",
+      "медитація щодня крім вихідних",
+      "англійська вт чт",
+    ],
+    prompt: "Постав розклад звички: ",
+    requiresInput: true,
+    requiresOnline: true,
+    keywords: ["schedule", "розклад", "дні тижня", "weekly"],
+  },
+  {
+    id: "pause_habit",
+    module: "routine",
+    label: "Пауза звички",
+    icon: "pause",
+    description:
+      "Тимчасово поставити звичку на паузу або зняти з неї. Зберігає історію виконань.",
+    examples: ["постав на паузу 'Англійська'", "зніми паузу зі звички 'Біг'"],
+    prompt: "Пауза звички: ",
+    requiresInput: true,
+    requiresOnline: true,
+    aiHint: "ідемпотентно",
+    keywords: ["pause", "пауза", "відновити"],
+  },
+  {
     id: "missed_this_week",
     module: "routine",
     label: "Що пропущено за тиждень",
@@ -535,6 +621,7 @@ export const ASSISTANT_CAPABILITIES: readonly AssistantCapability[] = [
     quickActionPriority: 20,
     requiresOnline: true,
     keywords: ["missed", "тиждень", "streak"],
+    serverTool: null,
   },
   {
     id: "add_calendar_event",
@@ -688,6 +775,7 @@ export const ASSISTANT_CAPABILITIES: readonly AssistantCapability[] = [
     quickActionPriority: 20,
     requiresOnline: true,
     keywords: ["підсумок", "звіт", "вечір"],
+    serverTool: null,
   },
   {
     id: "weekly_summary",
@@ -873,6 +961,17 @@ export const ASSISTANT_CAPABILITIES: readonly AssistantCapability[] = [
     requiresOnline: true,
   },
 ];
+
+/**
+ * Resolve the server tool name for a capability.
+ * - `null` ⇒ prompt-only capability (no backing tool).
+ * - `string` ⇒ explicit override.
+ * - default ⇒ capability `id` is used as the tool name.
+ */
+export function getCapabilityServerTool(c: AssistantCapability): string | null {
+  if (c.serverTool === null) return null;
+  return c.serverTool ?? c.id;
+}
 
 /**
  * Capabilities surfaced as quick-action chips below the chat input.

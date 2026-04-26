@@ -3,6 +3,7 @@ import {
   ASSISTANT_CAPABILITIES,
   CAPABILITY_MODULE_ORDER,
   CAPABILITY_MODULE_META,
+  getCapabilityServerTool,
   getQuickActionCapabilities,
   groupCapabilitiesByModule,
   searchCapabilities,
@@ -106,6 +107,53 @@ describe("ASSISTANT_CAPABILITIES — invariants", () => {
     for (const c of ASSISTANT_CAPABILITIES) {
       expect(c.examples.length, `${c.id} has no examples`).toBeGreaterThan(0);
     }
+  });
+
+  it("aiHint is short (≤30 chars) and trimmed when present", () => {
+    for (const c of ASSISTANT_CAPABILITIES) {
+      if (c.aiHint == null) continue;
+      expect(c.aiHint.length, `${c.id} aiHint too long`).toBeLessThanOrEqual(
+        30,
+      );
+      expect(c.aiHint.trim(), `${c.id} aiHint must be trimmed`).toBe(c.aiHint);
+    }
+  });
+
+  it("serverTool overrides resolve to a non-empty snake_case string", () => {
+    for (const c of ASSISTANT_CAPABILITIES) {
+      const tool = getCapabilityServerTool(c);
+      if (tool === null) continue;
+      expect(tool, `${c.id} resolves to empty tool name`).toMatch(
+        /^[a-z][a-z0-9_]*$/,
+      );
+    }
+  });
+});
+
+describe("getCapabilityServerTool", () => {
+  it("returns id when serverTool is undefined", () => {
+    const c = ASSISTANT_CAPABILITIES.find((x) => x.id === "create_transaction");
+    expect(c).toBeDefined();
+    expect(getCapabilityServerTool(c!)).toBe("create_transaction");
+  });
+
+  it("returns null for prompt-only entries (serverTool: null)", () => {
+    const c = ASSISTANT_CAPABILITIES.find((x) => x.id === "budget_risks");
+    expect(c).toBeDefined();
+    expect(getCapabilityServerTool(c!)).toBeNull();
+  });
+
+  it("at least 3 prompt-only entries exist (budget_risks, daily_summary, missed_this_week)", () => {
+    const promptOnly = ASSISTANT_CAPABILITIES.filter(
+      (c) => c.serverTool === null,
+    ).map((c) => c.id);
+    expect(promptOnly).toEqual(
+      expect.arrayContaining([
+        "budget_risks",
+        "daily_summary",
+        "missed_this_week",
+      ]),
+    );
   });
 });
 
