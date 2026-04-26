@@ -2,7 +2,6 @@ import { useRef } from "react";
 import { Virtuoso } from "react-virtuoso";
 import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { Button } from "@shared/components/ui/Button";
-import { compactToolbarButtonClass } from "@shared/components/ui/buttonPresets";
 import { EmptyState } from "@shared/components/ui/EmptyState";
 import { ActiveWorkoutPanel } from "../workouts/ActiveWorkoutPanel";
 import { SwipeToAction } from "@shared/components/ui/SwipeToAction";
@@ -215,15 +214,17 @@ export function WorkoutJournalSection({
               <p className="text-xs font-semibold text-text">
                 Записати тренування заднім числом
               </p>
-              <button
-                type="button"
+              <Button
+                variant="secondary"
+                size="xs"
+                iconOnly
                 onClick={() => setRetroOpen(false)}
-                className={compactToolbarButtonClass}
                 aria-label="Закрити"
                 title="Закрити"
+                className="h-8 w-8 rounded-lg text-xs text-subtle hover:text-text"
               >
                 ×
-              </button>
+              </Button>
             </div>
             <p className="text-xs text-subtle leading-relaxed">
               Вкажи, коли було тренування, потім додай вправи та заповни
