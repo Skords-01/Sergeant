@@ -131,10 +131,12 @@ export function AssistantCataloguePage({
           <h1 className="text-xl font-bold text-text">Можливості асистента</h1>
         </div>
 
-        <p className="text-sm text-subtle mb-4">
+        <p className="text-sm text-subtle mb-3">
           Усе, що вміє робити асистент. Натисни картку щоб запустити сценарій
           або побачити приклади.
         </p>
+
+        <CapabilityLegend />
 
         <div className="relative mb-3">
           <span
@@ -301,25 +303,29 @@ function CapabilityRow({ capability, onActivate }: CapabilityRowProps) {
           <span className="text-sm font-semibold text-text">
             {capability.label}
           </span>
+          {capability.isNew && (
+            <BadgeChip
+              tone="success"
+              icon="sparkles"
+              label="Новинка"
+              title="Нещодавно додана можливість"
+            />
+          )}
           {capability.isQuickAction && (
-            <span
+            <BadgeChip
+              tone="brand"
+              icon="zap"
+              label="Чіп"
               title="Швидкий сценарій (показується chip-ом у чаті)"
-              // eslint-disable-next-line sergeant-design/no-eyebrow-drift
-              className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wide font-bold text-brand-600 bg-brand-500/10 border border-brand-500/40 rounded-full px-1.5 py-0.5"
-            >
-              <Icon name="zap" size={10} aria-hidden />
-              Чіп
-            </span>
+            />
           )}
           {capability.risky && (
-            <span
+            <BadgeChip
+              tone="warning"
+              icon="alert-triangle"
+              label="Ризик"
               title="Критична дія — скасувати не можна"
-              // eslint-disable-next-line sergeant-design/no-eyebrow-drift
-              className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wide font-bold text-warning bg-warning/10 border border-warning/40 rounded-full px-1.5 py-0.5"
-            >
-              <Icon name="alert-triangle" size={10} aria-hidden />
-              Ризик
-            </span>
+            />
           )}
         </span>
         <span className="block text-xs text-subtle mt-0.5">
@@ -333,6 +339,62 @@ function CapabilityRow({ capability, onActivate }: CapabilityRowProps) {
         />
       </span>
     </button>
+  );
+}
+
+function CapabilityLegend() {
+  return (
+    <div
+      data-testid="catalogue-legend"
+      className={cn(
+        "mb-4 bg-panel/60 border border-line rounded-2xl px-3 py-2.5",
+        "flex flex-wrap items-center gap-x-3 gap-y-2",
+      )}
+      aria-label="Що означають позначки"
+    >
+      <span className="text-xs font-semibold text-muted">Позначки:</span>
+      <span className="inline-flex items-center gap-1.5 text-xs text-subtle">
+        <BadgeChip tone="brand" icon="zap" label="ЧІП" />
+        швидкий сценарій
+      </span>
+      <span className="inline-flex items-center gap-1.5 text-xs text-subtle">
+        <BadgeChip tone="warning" icon="alert-triangle" label="РИЗИК" />
+        критична дія
+      </span>
+      <span className="inline-flex items-center gap-1.5 text-xs text-subtle">
+        <BadgeChip tone="success" icon="sparkles" label="НОВИНКА" />
+        нещодавно додано
+      </span>
+    </div>
+  );
+}
+
+interface BadgeChipProps {
+  tone: "brand" | "warning" | "success";
+  icon: string;
+  label: string;
+  title?: string;
+}
+
+function BadgeChip({ tone, icon, label, title }: BadgeChipProps) {
+  const cls =
+    tone === "brand"
+      ? "text-brand-600 bg-brand-500/10 border-brand-500/40"
+      : tone === "warning"
+        ? "text-warning bg-warning/10 border-warning/40"
+        : "text-success bg-success/10 border-success/40";
+  return (
+    <span
+      title={title}
+      className={cn(
+        "inline-flex items-center gap-1 text-[10px] uppercase tracking-wide font-bold",
+        "border rounded-full px-1.5 py-0.5",
+        cls,
+      )}
+    >
+      <Icon name={icon} size={10} aria-hidden />
+      {label}
+    </span>
   );
 }
 

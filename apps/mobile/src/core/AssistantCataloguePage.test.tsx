@@ -178,6 +178,32 @@ describe("AssistantCataloguePage — group collapsing", () => {
     expect(queryByTestId("catalogue-toggle-all")).toBeNull();
   });
 
+  it("renders the legend explaining badges (Чіп / Ризик / Новинка)", () => {
+    const { getByTestId, getByText, getAllByText } = render(
+      <AssistantCataloguePage />,
+    );
+    expect(getByTestId("catalogue-legend")).toBeTruthy();
+    expect(getByText("Позначки:")).toBeTruthy();
+    // Badge labels also appear on real rows (e.g. compare_weeks is a chip
+    // and isNew), so allow ≥1 match for the chip text.
+    expect(getAllByText("⚡ ЧІП").length).toBeGreaterThanOrEqual(1);
+    expect(getAllByText("⚠ РИЗИК").length).toBeGreaterThanOrEqual(1);
+    expect(getAllByText("✨ НОВИНКА").length).toBeGreaterThanOrEqual(1);
+    // The captions are legend-only.
+    expect(getByText("швидкий сценарій")).toBeTruthy();
+    expect(getByText("критична дія")).toBeTruthy();
+    expect(getByText("нещодавно додано")).toBeTruthy();
+  });
+
+  it("renders the Новинка badge on rows flagged isNew (compare_weeks)", () => {
+    const { getByTestId, queryByTestId } = render(<AssistantCataloguePage />);
+    expect(getByTestId("catalogue-capability-compare_weeks-new")).toBeTruthy();
+    // create_transaction is not flagged isNew → no badge rendered for it.
+    expect(
+      queryByTestId("catalogue-capability-create_transaction-new"),
+    ).toBeNull();
+  });
+
   it("auto-expands persisted-collapsed groups while searching, restores them after", () => {
     const { getByTestId, queryByTestId } = render(<AssistantCataloguePage />);
 

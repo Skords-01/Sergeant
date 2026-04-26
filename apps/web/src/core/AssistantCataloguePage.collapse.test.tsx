@@ -123,6 +123,31 @@ describe("AssistantCataloguePage — group collapsing", () => {
     ]);
   });
 
+  it("renders the legend explaining Чіп / Ризик / Новинка badges", () => {
+    render(<AssistantCataloguePage onClose={() => {}} />);
+    const legend = screen.getByTestId("catalogue-legend");
+    expect(legend.textContent).toMatch(/Позначки/);
+    expect(legend.textContent).toMatch(/ЧІП/);
+    expect(legend.textContent).toMatch(/швидкий сценарій/);
+    expect(legend.textContent).toMatch(/РИЗИК/);
+    expect(legend.textContent).toMatch(/критична дія/);
+    expect(legend.textContent).toMatch(/НОВИНКА/);
+    expect(legend.textContent).toMatch(/нещодавно додано/);
+  });
+
+  it("renders the Новинка badge on capabilities flagged with isNew", () => {
+    render(<AssistantCataloguePage onClose={() => {}} />);
+    // compare_weeks is flagged isNew in the registry; its row renders the
+    // badge alongside the label.
+    const row = screen.getByTestId("catalogue-capability-compare_weeks");
+    expect(row.textContent).toMatch(/Новинка/);
+    // Non-new capability has no Новинка text.
+    const plainRow = screen.getByTestId(
+      "catalogue-capability-create_transaction",
+    );
+    expect(plainRow.textContent).not.toMatch(/Новинка/);
+  });
+
   it("ignores corrupt persisted shapes (non-array, unknown module ids)", () => {
     localStorage.setItem(COLLAPSED_LS_KEY, JSON.stringify({ bad: true }));
     render(<AssistantCataloguePage onClose={() => {}} />);

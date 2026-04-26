@@ -170,6 +170,8 @@ export function AssistantCataloguePage({
           Запуск сценаріїв — у HubChat (наразі веб-версія).
         </Text>
 
+        <CapabilityLegend />
+
         <View className="bg-white border border-cream-300 rounded-2xl px-3 py-2 mb-4 flex-row items-center gap-2">
           <Text className="text-stone-400 text-base">🔍</Text>
           <TextInput
@@ -286,6 +288,38 @@ function ModuleGroup({
   );
 }
 
+function CapabilityLegend() {
+  return (
+    <View
+      testID="catalogue-legend"
+      accessibilityLabel="Що означають позначки"
+      className="bg-white border border-cream-300 rounded-2xl px-3 py-2.5 mb-3 flex-row flex-wrap gap-x-3 gap-y-1.5 items-center"
+    >
+      <Text className="text-xs font-semibold text-stone-500">Позначки:</Text>
+      <View className="flex-row items-center gap-1.5">
+        <View className="border border-stone-300 rounded-full px-2 py-0.5">
+          <Text className="text-[10px] font-bold text-stone-700">⚡ ЧІП</Text>
+        </View>
+        <Text className="text-[11px] text-stone-500">швидкий сценарій</Text>
+      </View>
+      <View className="flex-row items-center gap-1.5">
+        <View className="border border-amber-400 bg-amber-50 rounded-full px-2 py-0.5">
+          <Text className="text-[10px] font-bold text-amber-700">⚠ РИЗИК</Text>
+        </View>
+        <Text className="text-[11px] text-stone-500">критична дія</Text>
+      </View>
+      <View className="flex-row items-center gap-1.5">
+        <View className="border border-emerald-400 bg-emerald-50 rounded-full px-2 py-0.5">
+          <Text className="text-[10px] font-bold text-emerald-700">
+            ✨ НОВИНКА
+          </Text>
+        </View>
+        <Text className="text-[11px] text-stone-500">нещодавно додано</Text>
+      </View>
+    </View>
+  );
+}
+
 interface CapabilityRowProps {
   capability: AssistantCapability;
   onActivate: (cap: AssistantCapability) => void;
@@ -305,6 +339,16 @@ function CapabilityRow({ capability, onActivate }: CapabilityRowProps) {
           <Text className="text-sm font-semibold text-stone-900 flex-shrink">
             {capability.label}
           </Text>
+          {capability.isNew ? (
+            <View
+              testID={`catalogue-capability-${capability.id}-new`}
+              className="border border-emerald-400 bg-emerald-50 rounded-full px-2 py-0.5"
+            >
+              <Text className="text-[10px] font-bold text-emerald-700">
+                ✨ НОВИНКА
+              </Text>
+            </View>
+          ) : null}
           {capability.isQuickAction ? (
             <View className="border border-stone-300 rounded-full px-2 py-0.5">
               <Text className="text-[10px] font-bold text-stone-700">

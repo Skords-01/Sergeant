@@ -22,6 +22,21 @@ const PATHS: Record<string, ReactNode> = {
   "chevron-left": <polyline points="15 18 9 12 15 6" />,
   "chevron-down": <polyline points="6 9 12 15 18 9" />,
   "chevron-up": <polyline points="18 15 12 9 6 15" />,
+  zap: <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />,
+  "alert-triangle": (
+    <>
+      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+      <line x1="12" y1="9" x2="12" y2="13" />
+      <line x1="12" y1="17" x2="12.01" y2="17" />
+    </>
+  ),
+  sparkles: (
+    <>
+      <path d="M12 3l1.7 4.6L18 9l-4.3 1.4L12 15l-1.7-4.6L6 9l4.3-1.4L12 3z" />
+      <path d="M19 14l.8 2.2L22 17l-2.2.8L19 20l-.8-2.2L16 17l2.2-.8L19 14z" />
+      <path d="M5 16l.6 1.6L7 18l-1.4.4L5 20l-.6-1.6L3 18l1.4-.4L5 16z" />
+    </>
+  ),
   close: (
     <>
       <line x1="18" y1="6" x2="6" y2="18" />
