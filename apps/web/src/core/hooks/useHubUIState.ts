@@ -14,17 +14,28 @@ function readViewFromURL(): HubView {
   return "dashboard";
 }
 
+/** Options for `openChat`. */
+export interface OpenChatOptions {
+  /**
+   * If true, the assistant immediately sends `message` instead of
+   * prefilling it into the input. Used by the catalogue page when the
+   * user taps a `requiresInput=false` capability.
+   */
+  autoSend?: boolean;
+}
+
 // Onboarding is now a URL-addressable route (`/welcome`) owned by
 // `AppInner`; it no longer lives in hub UI state. The router handles
 // gating and redirects, so this hook only tracks chat/search/hub-view.
 export interface HubUIState {
   chatOpen: boolean;
   chatInitialMessage: string | null;
+  chatAutoSend: boolean;
   searchOpen: boolean;
   hubView: HubView;
   setHubView: (view: HubView) => void;
   setSearchOpen: (value: boolean) => void;
-  openChat: (message?: string | null) => void;
+  openChat: (message?: string | null, options?: OpenChatOptions) => void;
   closeChat: () => void;
   closeSearch: () => void;
 }
@@ -34,6 +45,7 @@ export function useHubUIState(): HubUIState {
   const [chatInitialMessage, setChatInitialMessage] = useState<string | null>(
     null,
   );
+  const [chatAutoSend, setChatAutoSend] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [hubView, setHubViewRaw] = useState<HubView>(readViewFromURL);
 
@@ -62,14 +74,19 @@ export function useHubUIState(): HubUIState {
     return () => window.removeEventListener("popstate", onPopState);
   }, []);
 
-  const openChat = useCallback((message: string | null = null) => {
-    setChatInitialMessage(message || null);
-    setChatOpen(true);
-  }, []);
+  const openChat = useCallback(
+    (message: string | null = null, options: OpenChatOptions = {}) => {
+      setChatInitialMessage(message || null);
+      setChatAutoSend(Boolean(options.autoSend && message));
+      setChatOpen(true);
+    },
+    [],
+  );
 
   const closeChat = useCallback(() => {
     setChatOpen(false);
     setChatInitialMessage(null);
+    setChatAutoSend(false);
   }, []);
 
   const closeSearch = useCallback(() => setSearchOpen(false), []);
@@ -77,6 +94,7 @@ export function useHubUIState(): HubUIState {
   return {
     chatOpen,
     chatInitialMessage,
+    chatAutoSend,
     searchOpen,
     hubView,
     setHubView,

@@ -24,7 +24,6 @@ import {
   cancelIdle,
   isHelpCommand,
   getActiveModule,
-  HELP_TEXT,
 } from "../lib/hubChatUtils";
 import { buildContextMeasured } from "../lib/hubChatContext";
 import { executeAction } from "../lib/hubChatActions";
@@ -35,7 +34,12 @@ import { ChatMessage, TypingIndicator } from "../components/ChatMessage";
 import { ChatInput } from "../components/ChatInput";
 import { ChatQuickActions } from "../components/ChatQuickActions";
 
-function HubChat({ onClose, initialMessage }) {
+function HubChat({
+  onClose,
+  initialMessage,
+  autoSendInitial,
+  onOpenCatalogue,
+}) {
   const [messages, setMessages] = useState(() => {
     try {
       const saved = localStorage.getItem("hub_chat_history");
@@ -96,10 +100,15 @@ function HubChat({ onClose, initialMessage }) {
   const lastWasVoice = useRef(false);
 
   useEffect(() => {
-    if (initialMessage) {
+    if (!initialMessage) return;
+    if (autoSendInitial) {
+      // sendRef is assigned during render, so it's available by the
+      // time effects fire on first paint.
+      sendRef.current?.(initialMessage);
+    } else {
       setInput(initialMessage);
     }
-  }, [initialMessage]);
+  }, [initialMessage, autoSendInitial]);
 
   const queryClient = useQueryClient();
   const finykPreview = useFinykHubPreview();
@@ -204,8 +213,12 @@ function HubChat({ onClose, initialMessage }) {
     if (!msg || loading) return;
 
     if (isHelpCommand(msg)) {
-      setMessages((m) => [...m, makeUserMsg(msg), makeAssistantMsg(HELP_TEXT)]);
+      // /help no longer renders a wall of markdown — it now opens the
+      // catalogue page so the user can browse and tap capabilities.
       setInput("");
+      if (onOpenCatalogue) {
+        onOpenCatalogue();
+      }
       return;
     }
 

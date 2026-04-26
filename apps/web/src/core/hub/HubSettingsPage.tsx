@@ -3,6 +3,7 @@ import { Button } from "@shared/components/ui/Button";
 import { Icon } from "@shared/components/ui/Icon";
 import { Tabs } from "@shared/components/ui/Tabs";
 import { AIDigestSection } from "../settings/AIDigestSection";
+import { AssistantCatalogueSection } from "../settings/AssistantCatalogueSection";
 import { ExperimentalSection } from "../settings/ExperimentalSection";
 import { FinykSection } from "../settings/FinykSection";
 import { FizrukSection } from "../settings/FizrukSection";
@@ -18,7 +19,7 @@ const GROUPS = [
   {
     id: "general",
     label: "Загальні",
-    sections: ["general", "notifications", "ai"],
+    sections: ["general", "notifications", "ai", "assistant"],
   },
   {
     id: "modules",
@@ -68,6 +69,13 @@ export function HubSettingsPage({ syncing, onSync, onPull, user }) {
         keywords:
           "ai штучний інтелект дайджест digest тижневий тренер coach insights",
         render: () => <AIDigestSection />,
+      },
+      {
+        id: "assistant",
+        title: "Можливості асистента",
+        keywords:
+          "асистент команди chat help допомога інструменти каталог можливості tools",
+        render: () => <AssistantCatalogueSection />,
       },
       {
         id: "routine",

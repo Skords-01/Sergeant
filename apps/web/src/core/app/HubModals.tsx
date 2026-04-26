@@ -29,6 +29,8 @@ export function HubModals({
   chatOpen,
   onCloseChat,
   chatInitialMessage,
+  chatAutoSend,
+  onOpenCatalogue,
   searchOpen,
   onCloseSearch,
   onOpenModule,
@@ -41,6 +43,8 @@ export function HubModals({
             <HubChat
               onClose={onCloseChat}
               initialMessage={chatInitialMessage}
+              autoSendInitial={chatAutoSend}
+              onOpenCatalogue={onOpenCatalogue}
             />
           </Suspense>
         </ErrorBoundary>

@@ -1,11 +1,20 @@
-// Швидкі сценарії для HubChat — registry за специфікацією
-// `docs/superpowers/specs/2026-04-24-assistant-quick-actions-v1-design.md`.
+// Quick action chips registry — back-compat shim over the unified
+// AssistantCapability catalogue in `@sergeant/shared`.
 //
-// Registry лише описує сценарії і генерує prompt; виконання іде через
-// існуючий `send` у HubChat → Anthropic tool-use → `executeAction`.
-// Жодних побічних ефектів тут бути не повинно — тримаємо файл pure,
-// щоб тести були тривіальні.
+// `QuickAction` and `QuickActionModule` types are kept for the existing
+// `ChatQuickActions` component (and its tests) so this PR is a pure
+// data-source switch with no behavioural change. The shim will be deleted
+// once `ChatQuickActions` is migrated to read `AssistantCapability`
+// directly (next PR).
 
+import {
+  ASSISTANT_CAPABILITIES,
+  getQuickActionCapabilities,
+  type AssistantCapability,
+  type CapabilityModule,
+} from "@sergeant/shared";
+
+/** Module set used by the chip UI (subset of CapabilityModule). */
 export type QuickActionModule =
   | "hub"
   | "finyk"
@@ -13,186 +22,91 @@ export type QuickActionModule =
   | "routine"
   | "nutrition";
 
+/**
+ * Cross-cutting registry modules collapse onto the legacy `hub` bucket
+ * for the chip UI (which only colour-codes 5 module variants). Module-
+ * specific buckets pass through unchanged.
+ */
+function toLegacyModule(m: CapabilityModule): QuickActionModule {
+  switch (m) {
+    case "finyk":
+    case "fizruk":
+    case "routine":
+    case "nutrition":
+      return m;
+    default:
+      // cross / analytics / utility / memory all render as "hub" chips.
+      return "hub";
+  }
+}
+
 export interface QuickAction {
-  /** Унікальний id (kebab-case) — стабільний ключ для React і аналітики. */
   id: string;
-  /** Модуль, до якого належить сценарій. `hub` — крос-модульні дії. */
   module: QuickActionModule;
-  /** Повний текст кнопки (desktop, modal "Ще"). */
   label: string;
-  /** Короткий текст для chip-ів на mobile, де місця обмаль. */
   shortLabel: string;
-  /** Назва іконки з `@shared/components/ui/Icon`. */
   icon: string;
-  /**
-   * Prompt, що передається в `send`. Якщо закінчується на `: ` —
-   * сценарій неповний: треба вставити в input і дати юзеру дописати,
-   * а не одразу відправляти.
-   */
   prompt: string;
-  /** Описова підказка для tooltip / "Ще" sheet. */
   description?: string;
-  /**
-   * Сортувальний пріоритет (нижче = вище у списку). Між модулями
-   * сортуємо спершу по `module`-приналежності, потім по `priority`.
-   */
   priority: number;
-  /** Якщо true — кнопка disabled у offline-режимі. */
   requiresOnline: boolean;
-  /** Ключові слова для майбутнього search/usage ranking. */
   keywords?: readonly string[];
 }
 
 /**
- * Базовий набір сценаріїв v1 (точно за таблицею у спеці §1).
- * Усі require online — без AI ці сценарії безглузді.
+ * Mapping from registry id → legacy chip id where they diverge. Registry
+ * ids match server tool names (e.g. `create_transaction`); legacy chip
+ * ids predate the registry and are exposed in `data-testid` selectors and
+ * mobile e2e specs that we don't want to churn.
  */
-export const QUICK_ACTIONS: readonly QuickAction[] = [
-  // Hub — крос-модульні
-  {
-    id: "morning-briefing",
-    module: "hub",
-    label: "Ранковий брифінг",
-    shortLabel: "Брифінг",
-    icon: "sun",
-    prompt: "Що важливого на сьогодні? Дай короткий ранковий брифінг.",
-    description: "Підсумок з усіх 4 модулів за сьогодні.",
-    priority: 10,
-    requiresOnline: true,
-    keywords: ["день", "сьогодні", "огляд"],
-  },
-  {
-    id: "daily-summary",
-    module: "hub",
-    label: "Підсумок дня",
-    shortLabel: "Підсумок",
-    icon: "bar-chart",
-    prompt: "Підсумуй мій день по фінансах, тренуваннях, звичках і харчуванню.",
-    description: "Звіт по всіх 4 модулях за день.",
-    priority: 20,
-    requiresOnline: true,
-    keywords: ["підсумок", "звіт", "вечір"],
-  },
+const LEGACY_CHIP_ID_OVERRIDES: Readonly<Record<string, string>> = {
+  create_transaction: "add-expense",
+};
 
-  // Фінік
-  {
-    id: "add-expense",
-    module: "finyk",
-    label: "Додати витрату",
-    shortLabel: "Витрата",
-    icon: "credit-card",
-    prompt: "Додай витрату: ",
-    description: "Швидко записати витрату — допиши суму і опис.",
-    priority: 10,
-    requiresOnline: true,
-    keywords: ["expense", "транзакція"],
-  },
-  {
-    id: "budget-risks",
-    module: "finyk",
-    label: "Ліміт бюджету",
-    shortLabel: "Бюджет",
-    icon: "target",
-    prompt: "Покажи ризики по бюджетах і що варто змінити.",
-    description: "Аналіз поточних лімітів і відхилень.",
-    priority: 20,
-    requiresOnline: true,
-    keywords: ["budget", "ліміт"],
-  },
+/** Adapt a registry capability to the legacy `QuickAction` shape. */
+function toQuickAction(c: AssistantCapability): QuickAction {
+  return {
+    // Registry ids are snake_case (matching server tool names); legacy chip
+    // ids were kebab-case. Convert here to keep `data-testid` and any other
+    // consumers stable.
+    id: LEGACY_CHIP_ID_OVERRIDES[c.id] ?? c.id.replace(/_/g, "-"),
+    module: toLegacyModule(c.module),
+    label: c.label,
+    // Legacy chips always had a shortLabel; fall back to label when the
+    // catalogue entry doesn't define one (e.g. desktop-only cards).
+    shortLabel: c.shortLabel ?? c.label,
+    icon: c.icon,
+    prompt: c.prompt,
+    description: c.description,
+    priority: c.quickActionPriority ?? 999,
+    requiresOnline: c.requiresOnline ?? true,
+    keywords: c.keywords,
+  };
+}
 
-  // Фізрук
-  {
-    id: "start-workout",
-    module: "fizruk",
-    label: "Почати тренування",
-    shortLabel: "Тренування",
-    icon: "dumbbell",
-    prompt: "Почни тренування на сьогодні.",
-    description: "Стартує сесію за програмою на сьогодні.",
-    priority: 10,
-    requiresOnline: true,
-    keywords: ["workout", "gym"],
-  },
-  {
-    id: "log-set",
-    module: "fizruk",
-    label: "Додати підхід",
-    shortLabel: "Підхід",
-    icon: "plus",
-    prompt: "Додай підхід: ",
-    description: "Допиши вправу, вагу і повторення.",
-    priority: 20,
-    requiresOnline: true,
-    keywords: ["set", "підхід", "вправа"],
-  },
-
-  // Рутина
-  {
-    id: "mark-habit-done",
-    module: "routine",
-    label: "Позначити звичку",
-    shortLabel: "Звичка",
-    icon: "check",
-    prompt: "Познач звичку виконаною: ",
-    description: "Допиши назву звички, яку зробив сьогодні.",
-    priority: 10,
-    requiresOnline: true,
-    keywords: ["habit", "звичка"],
-  },
-  {
-    id: "missed-this-week",
-    module: "routine",
-    label: "Що пропущено",
-    shortLabel: "Пропущено",
-    icon: "calendar",
-    prompt: "Що я пропустив у рутині цього тижня?",
-    description: "Аналіз пропущених звичок за тиждень.",
-    priority: 20,
-    requiresOnline: true,
-    keywords: ["streak", "тиждень"],
-  },
-
-  // Харчування
-  {
-    id: "log-meal",
-    module: "nutrition",
-    label: "Залогати їжу",
-    shortLabel: "Їжа",
-    icon: "utensils",
-    prompt: "Залогай їжу: ",
-    description: "Допиши страву і кількість.",
-    priority: 10,
-    requiresOnline: true,
-    keywords: ["meal", "їжа"],
-  },
-  {
-    id: "protein-target",
-    module: "nutrition",
-    label: "Добити білок",
-    shortLabel: "Білок",
-    icon: "target",
-    prompt: "Що з'їсти сьогодні, щоб добити білок без перебору калорій?",
-    description: "Підказка по їжі під поточний macro-баланс.",
-    priority: 20,
-    requiresOnline: true,
-    keywords: ["protein", "macro"],
-  },
-];
+/** Single source of truth for the chip strip — derived from the catalogue. */
+export const QUICK_ACTIONS: readonly QuickAction[] =
+  getQuickActionCapabilities().map(toQuickAction);
 
 /**
- * Чи закінчується prompt на `: ` — ознака неповного сценарію (треба
- * вставити в input, а не одразу відправляти). Спираємось на конвенцію
- * зі спеки §1.
+ * Full catalogue exposed under the legacy adapter, kept for any callers
+ * that previously enumerated all chips for command-palette-style menus.
+ * Not used by `ChatQuickActions` (it consumes `QUICK_ACTIONS`).
+ */
+export const ALL_QUICK_ACTIONS: readonly QuickAction[] =
+  ASSISTANT_CAPABILITIES.map(toQuickAction);
+
+/**
+ * `prompt` ending in `": "` ⇒ incomplete: caller should prefill the input
+ * instead of sending. Spec §1.
  */
 export function isIncompletePrompt(prompt: string): boolean {
   return /:\s$/.test(prompt);
 }
 
 /**
- * Сортує сценарії так, щоб першими були дії активного модуля, далі —
- * крос-модульні `hub`, далі — все інше. У межах однієї групи —
- * за `priority` (зростаюче). Stable: для рівних `priority` зберігаємо
- * порядок з `actions`.
+ * Sort: active module first, then cross-cutting `hub`, then everything
+ * else. Within a group by `priority` ascending; stable.
  */
 export function sortQuickActionsForModule(
   actions: readonly QuickAction[],
@@ -215,10 +129,7 @@ export function sortQuickActionsForModule(
     .map(({ a }) => a);
 }
 
-/**
- * Готує впорядкований топ для chips. Обмежуємо до `limit` (default 6),
- * решта йде під кнопку «Ще» у викликаючому компоненті.
- */
+/** Top N chips after sorting; the rest go under the "Ще" toggle. */
 export function pickTopQuickActions(
   actions: readonly QuickAction[],
   activeModule: QuickActionModule | null,
