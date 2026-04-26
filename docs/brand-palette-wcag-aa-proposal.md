@@ -126,10 +126,12 @@ The four module colours already have a `strong` field on the
 `semanticVariants` block in
 [`tailwind-preset.js`](../packages/design-tokens/tailwind-preset.js)
 (lines 119–124 for `finyk`, identical pattern for the rest). Today
-those are populated with `brandColors.{family}[700]` and exposed as
-`text-finyk-strong`, etc. They are used by soft Badge variants
-(`bg-finyk-soft text-finyk-strong border-finyk-ring/50`) and in
-`StatCard` headlines.
+those are populated with `brandColors.{family}[700]` for `finyk` /
+`fizruk` / `routine` and `brandColors.lime[800]` for `nutrition`
+(lime-700 was too thin a margin against the cream `bg-bg`, see
+§ 2.1 below), and exposed as `text-finyk-strong`, etc. They are used
+by soft Badge variants (`bg-finyk-soft text-finyk-strong
+border-finyk-ring/50`) and in `StatCard` headlines.
 
 Extend the convention to the other six tokens:
 
@@ -161,15 +163,15 @@ warning:        statusColors.warning,           // unchanged: #f59e0b
 Computed contrast at 14 px regular against the cream `--c-bg`
 (`#fdf9f3`):
 
-| Token                   | Hex                     | Ratio on `bg-bg` | WCAG AA 14 px   |
-| ----------------------- | ----------------------- | ---------------: | --------------- |
-| `text-success-strong`   | `#047857` (emerald-700) |     **5.23 : 1** | ✓ Pass          |
-| `text-fizruk-strong`    | `#0f766e` (teal-700)    |     **5.22 : 1** | ✓ Pass          |
-| `text-routine-strong`   | `#c23a3a` (coral-700)   |     **5.06 : 1** | ✓ Pass          |
-| `text-nutrition-strong` | `#567c0f` (lime-700)    |     **4.67 : 1** | ✓ Pass (margin) |
-| `text-warning-strong`   | `#b45309` (amber-700)   |     **4.83 : 1** | ✓ Pass          |
-| `text-danger-strong`    | `#b91c1c` (red-700)     |     **6.17 : 1** | ✓ Pass          |
-| `text-info-strong`      | `#0369a1` (sky-700)     |     **5.66 : 1** | ✓ Pass          |
+| Token                   | Hex                     | Ratio on `bg-bg` | WCAG AA 14 px |
+| ----------------------- | ----------------------- | ---------------: | ------------- |
+| `text-success-strong`   | `#047857` (emerald-700) |     **5.23 : 1** | ✓ Pass        |
+| `text-fizruk-strong`    | `#0f766e` (teal-700)    |     **5.22 : 1** | ✓ Pass        |
+| `text-routine-strong`   | `#c23a3a` (coral-700)   |     **5.06 : 1** | ✓ Pass        |
+| `text-nutrition-strong` | `#466212` (lime-800)    |     **6.64 : 1** | ✓ Pass        |
+| `text-warning-strong`   | `#b45309` (amber-700)   |     **4.83 : 1** | ✓ Pass        |
+| `text-danger-strong`    | `#b91c1c` (red-700)     |     **6.17 : 1** | ✓ Pass        |
+| `text-info-strong`      | `#0369a1` (sky-700)     |     **5.66 : 1** | ✓ Pass        |
 
 And `text-white` against the corresponding `bg-{c}-strong` solid — the
 other half of the symmetric pair, used by `Button` / `Badge` solid
@@ -180,15 +182,20 @@ tones:
 | `text-white` on `bg-success-strong` (emerald-700) | **5.48 : 1** | ✓ Pass        |
 | `text-white` on `bg-fizruk-strong` (teal-700)     | **5.47 : 1** | ✓ Pass        |
 | `text-white` on `bg-routine-strong` (coral-700)   | **5.30 : 1** | ✓ Pass        |
-| `text-white` on `bg-nutrition-strong` (lime-700)  | **4.90 : 1** | ✓ Pass        |
+| `text-white` on `bg-nutrition-strong` (lime-800)  | **6.96 : 1** | ✓ Pass        |
 | `text-white` on `bg-warning-strong` (amber-700)   | **5.02 : 1** | ✓ Pass        |
 | `text-white` on `bg-danger-strong` (red-700)      | **6.47 : 1** | ✓ Pass        |
 | `text-white` on `bg-info-strong` (sky-700)        | **5.93 : 1** | ✓ Pass        |
 
-The `nutrition-strong` / lime-700 pair clears 4.5 : 1 by a thin (~ 0.17)
-margin. If type ramps drop below 14 px we may need to step it down to
-`lime-800` (`#466212`, ratio 6.31 : 1 on cream) for body sizes; the
-numeric callouts (≥24 px bold) clear at 3 : 1 either way.
+All seven `-strong` tokens land comfortably above the 4.5 : 1 floor.
+`nutrition-strong` is the only family that _isn't_ `[700]` — the
+existing preset already bumped it to `lime-800` (`#466212`) because
+`lime-700` (`#567c0f`) only clears 4.67 : 1 on cream, well below the
+5–6 : 1 headroom the other modules enjoy. The implementation PR
+_keeps_ the lime-800 choice as-is. The other six tokens (success /
+warning / danger / info / brand / accent) follow the `[700]`
+convention. Numeric callouts (≥24 px bold) clear the WCAG AA 3 : 1
+large-text rule at any of these tiers.
 
 ### 2.2 Component-level usage rules
 

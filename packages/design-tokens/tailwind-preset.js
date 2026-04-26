@@ -81,6 +81,12 @@ const preset = {
           light: brandColors.emerald[400],
           dark: brandColors.emerald[600],
           subtle: brandColors.emerald[50],
+          // `strong` is the WCAG-AA companion to `DEFAULT` — emerald-700
+          // clears 4.5:1 against the cream `bg-bg` and against `text-white`
+          // when used as a solid fill. Use `bg-brand-strong text-white` on
+          // primary CTAs and `text-brand-strong` for body-sized brand text.
+          // See docs/brand-palette-wcag-aa-proposal.md.
+          strong: brandColors.emerald[700],
           ...brandColors.emerald,
         },
         teal: brandColors.teal,
@@ -92,7 +98,9 @@ const preset = {
         // STATUS COLORS — Consistent semantic meanings
         // Each status has a solid accent (for fills / icons / rings) plus a
         // `-soft` background token that resolves through CSS variables so
-        // dark mode works without bespoke dark: overrides.
+        // dark mode works without bespoke dark: overrides, and a `-strong`
+        // companion (text-on-cream / fill-with-white) that clears WCAG AA
+        // at body sizes. See docs/brand-palette-wcag-aa-proposal.md.
         // ═══════════════════════════════════════════════════════════════════
         success: statusColors.success,
         danger: statusColors.danger,
@@ -102,6 +110,12 @@ const preset = {
         "warning-soft": "rgb(var(--c-warning-soft) / <alpha-value>)",
         "danger-soft": "rgb(var(--c-danger-soft) / <alpha-value>)",
         "info-soft": "rgb(var(--c-info-soft) / <alpha-value>)",
+        // WCAG-AA companions: `text-{c}-strong` on cream / soft surfaces,
+        // `bg-{c}-strong text-white` on solid fills (Buttons, Badges, Tabs).
+        "success-strong": brandColors.emerald[700], // #047857 — 5.23:1 on cream / 5.48:1 on white
+        "warning-strong": "#b45309", // amber-700 — 4.83:1 on cream / 5.02:1 on white
+        "danger-strong": "#b91c1c", // red-700   — 6.17:1 on cream / 6.47:1 on white
+        "info-strong": "#0369a1", // sky-700   — 5.66:1 on cream / 5.93:1 on white
 
         // ═══════════════════════════════════════════════════════════════════
         // CHART PALETTE — For pie charts, graphs, data visualization
