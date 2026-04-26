@@ -1,6 +1,7 @@
 import { BodyAtlas } from "../components/BodyAtlas";
 import { useRecovery } from "../hooks/useRecovery";
 import { Card } from "@shared/components/ui/Card";
+import { SectionHeading } from "@shared/components/ui/SectionHeading";
 
 export function Atlas() {
   const rec = useRecovery();
@@ -53,11 +54,9 @@ export function Atlas() {
           className="rounded-3xl p-5 border border-line/20 bg-hero-teal dark:border-teal-800/30 dark:bg-panel dark:[background-image:linear-gradient(135deg,rgba(20,184,166,0.18)_0%,rgba(20,184,166,0.05)_100%)]"
           aria-label="Атлас мʼязів"
         >
-          {/* eslint-disable-next-line sergeant-design/no-eyebrow-drift --
-              Module hero kicker in branded `text-fizruk` above an h1. */}
-          <p className="text-xs font-bold tracking-widest uppercase text-fizruk">
+          <SectionHeading size="sm" variant="fizruk" as="p">
             Атлас мʼязів
-          </p>
+          </SectionHeading>
           <h1 className="text-hero font-black text-teal-900 dark:text-white mt-2 leading-tight">
             Стан відновлення
           </h1>

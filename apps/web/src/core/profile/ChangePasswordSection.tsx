@@ -3,6 +3,7 @@ import { Button } from "@shared/components/ui/Button";
 import { Card } from "@shared/components/ui/Card";
 import { Icon } from "@shared/components/ui/Icon";
 import { Input } from "@shared/components/ui/Input";
+import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { useToast } from "@shared/hooks/useToast";
 import { changePassword } from "../auth/authClient";
 
@@ -48,12 +49,9 @@ export function ChangePasswordSection({ online }: { online: boolean }) {
       </div>
 
       <form onSubmit={handleSubmit} className="p-4 space-y-4">
-        {/* eslint-disable-next-line sergeant-design/no-eyebrow-drift --
-            Standalone label for a form section inside Card, not a collapsible
-            SettingsSubGroup — SectionHeading cannot express this layout. */}
-        <p className="text-xs font-bold text-muted uppercase tracking-widest">
+        <SectionHeading size="sm" variant="muted" as="p">
           Зміна паролю
-        </p>
+        </SectionHeading>
         <div className="space-y-2">
           <label
             htmlFor="profile-current-pw"

@@ -158,13 +158,9 @@ export function WorkoutFinishSheets({
             <div className="fizruk-summary-header">
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  {/* eslint-disable-next-line sergeant-design/no-eyebrow-drift --
-                      "Завершено" hero kicker in module tint (`text-fizruk`)
-                      over `fizruk-summary-header` — intentional branded
-                      treatment. */}
-                  <div className="text-xs font-bold tracking-widest uppercase text-fizruk">
+                  <SectionHeading size="sm" variant="fizruk" as="div">
                     Завершено
-                  </div>
+                  </SectionHeading>
                   <div className="text-lg font-black text-teal-900 dark:text-white mt-1 leading-tight">
                     Тренування виконано
                   </div>
