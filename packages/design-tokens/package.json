@@ -31,6 +31,9 @@
   "scripts": {
     "typecheck": "echo 'design-tokens has no ts sources'",
     "lint": "echo 'design-tokens has no ts sources'",
-    "test": "echo 'design-tokens has no tests'"
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "vitest": "^3.0.0"
   }
 }
