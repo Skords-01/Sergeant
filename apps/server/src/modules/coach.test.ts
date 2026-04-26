@@ -267,4 +267,54 @@ describe("coachInsight", () => {
       "Даних за поточний тиждень ще немає.",
     );
   });
+
+  it("dateContext → prompt містить 'Сьогодні:' та день тижня з 7", async () => {
+    anthropicMessages.mockResolvedValueOnce({
+      response: { ok: true, status: 200 },
+      data: { content: [{ type: "text", text: "ok" }] },
+    });
+    const res = makeRes();
+    await coachInsight(
+      makeReq({
+        snapshot: {
+          dateContext: {
+            todayKey: "2026-04-26",
+            weekDayUk: "неділя",
+            dayOfWeekIso: 7,
+            daysIntoWeek: 7,
+            weekRange: "20.04–26.04",
+          },
+        },
+      }),
+      res,
+    );
+    expect(res.statusCode).toBe(200);
+    const [, payload] = anthropicMessages.mock.calls[0] as [
+      unknown,
+      { messages: { content: string }[] },
+    ];
+    const prompt = payload.messages[0].content;
+    expect(prompt).toContain("КОНТЕКСТ ДАТИ");
+    expect(prompt).toContain("Сьогодні: 2026-04-26, неділя.");
+    expect(prompt).toContain(
+      "Поточний тиждень (понеділок–неділя): 20.04–26.04.",
+    );
+    expect(prompt).toContain("День тижня: 7 з 7");
+    expect(prompt).toContain("завершується");
+  });
+
+  it("без dateContext → prompt інструктує НЕ використовувати темпоральні маркери", async () => {
+    anthropicMessages.mockResolvedValueOnce({
+      response: { ok: true, status: 200 },
+      data: { content: [{ type: "text", text: "ok" }] },
+    });
+    const res = makeRes();
+    await coachInsight(makeReq({ snapshot: {} }), res);
+    expect(res.statusCode).toBe(200);
+    const [, payload] = anthropicMessages.mock.calls[0] as [
+      unknown,
+      { messages: { content: string }[] },
+    ];
+    expect(payload.messages[0].content).toContain("Поточну дату не передано");
+  });
 });

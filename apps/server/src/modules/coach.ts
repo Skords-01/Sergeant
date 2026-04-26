@@ -235,6 +235,13 @@ export async function coachInsight(req: Request, res: Response): Promise<void> {
   if (!parsed.ok) return;
   const { snapshot, memory } = parsed.data as {
     snapshot: {
+      dateContext?: {
+        todayKey?: string;
+        weekDayUk?: string;
+        dayOfWeekIso?: number;
+        daysIntoWeek?: number;
+        weekRange?: string;
+      };
       finyk?: {
         totalSpent?: number;
         totalIncome?: number;
@@ -258,6 +265,34 @@ export async function coachInsight(req: Request, res: Response): Promise<void> {
   };
 
   const memorySummary = buildMemorySummary(memory);
+
+  const dateContext = snapshot?.dateContext;
+  // AI-NOTE: Темпоральний контекст шлемо явно — без нього модель імпровізує
+  // "середина тижня" в неділю (issue з порадою на 26.04.2026). `daysIntoWeek`
+  // = `dayOfWeekIso` (понеділок-старт), повторюємо як окреме поле, щоб модель
+  // не плуталась між «номером дня» і «скільки пройшло».
+  const dateLines: string[] = [];
+  if (dateContext?.todayKey || dateContext?.weekDayUk) {
+    const parts: string[] = [];
+    if (dateContext.todayKey) parts.push(dateContext.todayKey);
+    if (dateContext.weekDayUk) parts.push(dateContext.weekDayUk);
+    dateLines.push(`Сьогодні: ${parts.join(", ")}.`);
+  }
+  if (dateContext?.weekRange) {
+    dateLines.push(
+      `Поточний тиждень (понеділок–неділя): ${dateContext.weekRange}.`,
+    );
+  }
+  if (typeof dateContext?.daysIntoWeek === "number") {
+    dateLines.push(
+      `День тижня: ${dateContext.daysIntoWeek} з 7 (тиждень ${
+        dateContext.daysIntoWeek >= 7 ? "завершується" : "у процесі"
+      }).`,
+    );
+  }
+  const dateContextText = dateLines.length
+    ? dateLines.join("\n")
+    : 'Поточну дату не передано — НЕ використовуй темпоральні маркери ("сьогодні", "середина тижня", "кінець тижня").';
 
   const snapshotLines: string[] = [];
   if (snapshot?.finyk) {
@@ -295,6 +330,9 @@ export async function coachInsight(req: Request, res: Response): Promise<void> {
 
   const systemPrompt = `Ти персональний AI-коуч у додатку "Мій простір". Ти знаєш цю людину по місяцях даних і говориш з нею як довірений коуч — тепло, але конкретно.
 
+КОНТЕКСТ ДАТИ (Київ):
+${dateContextText}
+
 ПАМ'ЯТЬ (попередні тижні):
 ${memorySummary}
 
@@ -305,6 +343,7 @@ ${snapshotText}
 - Відзначити конкретний патерн або прогрес (з даних)
 - Запропонувати одну конкретну дію на сьогодні
 - Бути особистим і мотивуючим, але без загальних фраз
+- Якщо згадуєш "сьогодні" чи прогрес тижня — спирайся ТІЛЬКИ на КОНТЕКСТ ДАТИ; не вигадуй "середина тижня" / "кінець тижня" самостійно. Тиждень = понеділок→неділя.
 
 Відповідай ТІЛЬКИ текстом повідомлення, без вітань, без підписів, без лапок.`;
 
