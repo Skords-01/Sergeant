@@ -6,9 +6,11 @@
  * Scope of this cut (Phase 2 / Hub-core — remaining sections PR):
  *  - Shell with a screen title ("Налаштування") and a vertical stack of
  *    collapsible `SettingsGroup` cards, one per section.
- *  - All seven Hub-core sections now porting in: `GeneralSection`,
+ *  - All eight Hub-core sections now porting in: `GeneralSection`,
  *    `NotificationsSection`, `RoutineSection`, `FinykSection`,
- *    `FizrukSection`, `AIDigestSection`, `ExperimentalSection`.
+ *    `FizrukSection`, `AIDigestSection`, `AssistantCatalogueSection`,
+ *    `ExperimentalSection`. The catalogue section is a thin launcher
+ *    for the `/assistant` modal route — see `app/assistant.tsx`.
  *
  * Intentional differences from the web shell:
  *  - No `Tabs` group switcher and no fuzzy search input yet — both
@@ -30,6 +32,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AccountSection } from "./AccountSection";
 import { AIDigestSection } from "./AIDigestSection";
+import { AssistantCatalogueSection } from "./AssistantCatalogueSection";
 import { ExperimentalSection } from "./ExperimentalSection";
 import { FinykSection } from "./FinykSection";
 import { FizrukSection } from "./FizrukSection";
@@ -55,6 +58,7 @@ export function HubSettingsPage() {
         <FinykSection />
         <FizrukSection />
         <AIDigestSection />
+        <AssistantCatalogueSection />
         <ExperimentalSection />
         <AccountSection />
       </ScrollView>

@@ -62,6 +62,7 @@ describe("HubSettingsPage", () => {
     expect(getByText("Фінік")).toBeTruthy();
     expect(getByText("Фізрук")).toBeTruthy();
     expect(getByText("AI Звіт тижня")).toBeTruthy();
+    expect(getByText("Можливості асистента")).toBeTruthy();
     expect(getByText("Експериментальне")).toBeTruthy();
     expect(getByText("Акаунт")).toBeTruthy();
   });

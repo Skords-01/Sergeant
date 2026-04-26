@@ -42,6 +42,7 @@ function RootShell() {
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="(auth)" options={{ presentation: "modal" }} />
         <Stack.Screen name="settings" options={{ presentation: "modal" }} />
+        <Stack.Screen name="assistant" options={{ presentation: "modal" }} />
         <Stack.Screen name="auth/callback" options={{ headerShown: false }} />
         <Stack.Screen name="+not-found" />
       </Stack>
