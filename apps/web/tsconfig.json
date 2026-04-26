@@ -20,9 +20,13 @@
       "@sergeant/insights": ["../../packages/insights/src/index.ts"],
       "@sergeant/insights/*": ["../../packages/insights/src/*"],
       "@shared/*": ["./src/shared/*"],
+      "@finyk": ["./src/modules/finyk/index.ts"],
       "@finyk/*": ["./src/modules/finyk/*"],
+      "@fizruk": ["./src/modules/fizruk/index.ts"],
       "@fizruk/*": ["./src/modules/fizruk/*"],
+      "@routine": ["./src/modules/routine/index.ts"],
       "@routine/*": ["./src/modules/routine/*"],
+      "@nutrition": ["./src/modules/nutrition/index.ts"],
       "@nutrition/*": ["./src/modules/nutrition/*"]
     }
   },
