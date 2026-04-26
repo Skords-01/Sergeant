@@ -114,6 +114,32 @@ describe("buildActionCard", () => {
     expect(card?.module).toBe("finyk");
   });
 
+  it("будує картку для find_transaction", () => {
+    const card = buildActionCard({
+      name: "find_transaction",
+      input: { query: "АТБ", amount: 450 },
+      result: "Знайдено 1 транзакц.",
+    });
+    expect(card?.module).toBe("finyk");
+    expect(card?.title).toContain("знайдено");
+    expect(card?.summary).toContain("АТБ");
+    expect(card?.summary).toContain("450");
+    expect(card?.risky).toBeUndefined();
+  });
+
+  it("будує risky картку для batch_categorize", () => {
+    const card = buildActionCard({
+      name: "batch_categorize",
+      input: { pattern: "Сільпо", category_id: "food" },
+      result: "Категорію 2 транзакц. змінено на food",
+    });
+    expect(card?.module).toBe("finyk");
+    expect(card?.title).toContain("Категорії");
+    expect(card?.summary).toContain("Сільпо");
+    expect(card?.summary).toContain("food");
+    expect(card?.risky).toBe(true);
+  });
+
   it("ставить module=fizruk для log_set", () => {
     const card = buildActionCard({
       name: "log_set",
@@ -181,6 +207,7 @@ describe("buildActionCard", () => {
 
 describe("isRiskyTool", () => {
   it("розпізнає risky tools", () => {
+    expect(isRiskyTool("batch_categorize")).toBe(true);
     expect(isRiskyTool("delete_transaction")).toBe(true);
     expect(isRiskyTool("hide_transaction")).toBe(true);
     expect(isRiskyTool("forget")).toBe(true);

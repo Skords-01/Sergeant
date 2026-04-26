@@ -3,6 +3,32 @@ export interface ChangeCategoryAction {
   input: { tx_id: string; category_id: string };
 }
 
+export interface FindTransactionAction {
+  name: "find_transaction";
+  input: {
+    query?: string;
+    amount?: number | string;
+    amount_tolerance?: number | string;
+    date_from?: string;
+    date_to?: string;
+    limit?: number | string;
+  };
+}
+
+export interface BatchCategorizeAction {
+  name: "batch_categorize";
+  input: {
+    pattern: string;
+    category_id: string;
+    dry_run?: boolean;
+    amount?: number | string;
+    amount_tolerance?: number | string;
+    date_from?: string;
+    date_to?: string;
+    limit?: number | string;
+  };
+}
+
 export interface CreateDebtAction {
   name: "create_debt";
   input: {
@@ -431,6 +457,8 @@ export interface MyProfileAction {
 
 export type ChatAction =
   | ChangeCategoryAction
+  | FindTransactionAction
+  | BatchCategorizeAction
   | CreateDebtAction
   | CreateReceivableAction
   | HideTransactionAction
