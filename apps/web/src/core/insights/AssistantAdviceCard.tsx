@@ -85,7 +85,12 @@ export function AssistantAdviceCard({
         {!collapsed && (
           <div className="px-4 pb-3.5 -mt-0.5">
             {loading && !insight && (
-              <p className="text-sm text-muted animate-pulse">Готую пораду…</p>
+              <p
+                className="text-sm text-text/80 dark:text-text/90"
+                aria-live="polite"
+              >
+                Готую пораду…
+              </p>
             )}
 
             {insight && (
