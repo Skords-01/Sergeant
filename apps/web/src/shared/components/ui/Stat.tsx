@@ -36,8 +36,8 @@ const variantClass: Record<StatVariant, string> = {
   danger: "text-danger",
   finyk: "text-finyk",
   fizruk: "text-fizruk",
-  routine: "text-coral-500",
-  nutrition: "text-lime-600 dark:text-lime-400",
+  routine: "text-routine",
+  nutrition: "text-nutrition",
 };
 
 const valueSize: Record<StatSize, string> = {
