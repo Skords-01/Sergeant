@@ -1,5 +1,8 @@
 import { ls, lsSet } from "../hubChatUtils";
-import { resolveExpenseCategoryMeta } from "../../../modules/finyk/utils";
+import {
+  resolveExpenseCategoryMeta,
+  getTxStatAmount,
+} from "../../../modules/finyk/utils";
 import type {
   ChangeCategoryAction,
   CreateDebtAction,
@@ -424,9 +427,11 @@ export function handleFinykAction(action: ChatAction): string | undefined {
           id: string;
           amount: number;
           description?: string;
+          mcc?: number;
           time?: number;
         }>;
       } | null>("finyk_tx_cache", null);
+      const reportSplits = ls<Record<string, unknown>>("finyk_tx_splits", {});
       const txs = (txCache?.txs || []).filter((t) => {
         const ts = (t.time || 0) * 1000;
         return ts >= fromTs && ts <= toTs;
@@ -436,7 +441,7 @@ export function handleFinykAction(action: ChatAction): string | undefined {
       const expenses = filtered.filter((t) => t.amount < 0);
       const income = filtered.filter((t) => t.amount > 0);
       const totalExpense = expenses.reduce(
-        (s, t) => s + Math.abs(t.amount / 100),
+        (s, t) => s + getTxStatAmount(t, reportSplits),
         0,
       );
       const totalIncome = income.reduce((s, t) => s + t.amount / 100, 0);

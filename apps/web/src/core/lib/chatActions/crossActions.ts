@@ -6,7 +6,14 @@ import {
   upsertMemoryFact,
   writeMemoryEntries,
 } from "../../profile/memoryBank";
-import { resolveExpenseCategoryMeta } from "../../../modules/finyk/utils";
+import {
+  calcCategorySpent,
+  getTxStatAmount,
+} from "../../../modules/finyk/utils";
+import {
+  mergeExpenseCategoryDefinitions,
+  INTERNAL_TRANSFER_ID,
+} from "../../../modules/finyk/constants";
 import type {
   SetGoalAction,
   SpendingTrendAction,
@@ -161,14 +168,21 @@ export function handleCrossAction(action: ChatAction): string | undefined {
         parts.push(`Калорії: ~${avg} ккал/день (${weekKcal.length} днів)`);
       }
       const txCache = ls<{
-        txs?: Array<{ amount: number; time?: number }>;
+        txs?: Array<{
+          id: string;
+          amount: number;
+          time?: number;
+          description?: string;
+          mcc?: number;
+        }>;
       } | null>("finyk_tx_cache", null);
+      const txSplits = ls<Record<string, unknown>>("finyk_tx_splits", {});
       if (txCache?.txs) {
         const weekTs = weekAgo.getTime() / 1000;
         const weekTxs = txCache.txs.filter((t) => (t.time || 0) > weekTs);
         const spent = weekTxs
           .filter((t) => t.amount < 0)
-          .reduce((s, t) => s + Math.abs(t.amount / 100), 0);
+          .reduce((s, t) => s + getTxStatAmount(t, txSplits), 0);
         parts.push(`Витрати: ${Math.round(spent)} грн`);
       }
       return parts.join("\n");
@@ -240,13 +254,18 @@ export function handleCrossAction(action: ChatAction): string | undefined {
       const currentStart = now - days * 86400000;
       const prevStart = currentStart - days * 86400000;
       const txCache = ls<{
-        txs?: Array<{ amount: number; time?: number; description?: string }>;
+        txs?: Array<{
+          id: string;
+          amount: number;
+          time?: number;
+          description?: string;
+          mcc?: number;
+        }>;
       } | null>("finyk_tx_cache", null);
       const allTxs = txCache?.txs || [];
       const hiddenTxIds = ls<string[]>("finyk_hidden_txs", []);
-      const txs = allTxs.filter(
-        (t) => !hiddenTxIds.includes((t as { id?: string }).id || ""),
-      );
+      const trendSplits = ls<Record<string, unknown>>("finyk_tx_splits", {});
+      const txs = allTxs.filter((t) => !hiddenTxIds.includes(t.id || ""));
       const currentPeriod = txs.filter((t) => {
         const ts = (t.time || 0) * 1000;
         return ts >= currentStart && ts <= now;
@@ -258,7 +277,7 @@ export function handleCrossAction(action: ChatAction): string | undefined {
       const sumExpenses = (arr: typeof txs) =>
         arr
           .filter((t) => t.amount < 0)
-          .reduce((s, t) => s + Math.abs(t.amount / 100), 0);
+          .reduce((s, t) => s + getTxStatAmount(t, trendSplits), 0);
       const sumIncome = (arr: typeof txs) =>
         arr.filter((t) => t.amount > 0).reduce((s, t) => s + t.amount / 100, 0);
       const curExp = sumExpenses(currentPeriod);
@@ -283,42 +302,50 @@ export function handleCrossAction(action: ChatAction): string | undefined {
       const cutoff = Date.now() - days * 86400000;
       const txCache = ls<{
         txs?: Array<{
-          id?: string;
+          id: string;
           amount: number;
           time?: number;
-          categoryId?: string;
+          description?: string;
+          mcc?: number;
         }>;
       } | null>("finyk_tx_cache", null);
       const hiddenTxIds = ls<string[]>("finyk_hidden_txs", []);
       const customC = ls<unknown[]>("finyk_custom_cats_v1", []);
       const catMap = ls<Record<string, string>>("finyk_tx_cats", {});
+      const breakdownSplits = ls<Record<string, unknown>>(
+        "finyk_tx_splits",
+        {},
+      );
       const expenses = (txCache?.txs || []).filter((t) => {
         if (hiddenTxIds.includes(t.id || "")) return false;
         const ts = (t.time || 0) * 1000;
         return t.amount < 0 && ts >= cutoff;
       });
-      const byCategory: Record<string, number> = {};
-      for (const tx of expenses) {
-        const catId = catMap[tx.id || ""] || tx.categoryId || "other";
-        byCategory[catId] =
-          (byCategory[catId] || 0) + Math.abs(tx.amount / 100);
+      interface CatDef {
+        id: string;
+        label: string;
       }
-      const total = Object.values(byCategory).reduce((a, b) => a + b, 0);
-      const sorted = Object.entries(byCategory)
-        .map(([id, amount]) => {
-          const meta = resolveExpenseCategoryMeta(id, customC);
-          return {
-            label: meta?.label || id,
-            amount,
-            pct: total > 0 ? Math.round((amount / total) * 100) : 0,
-          };
-        })
+      const sorted = (mergeExpenseCategoryDefinitions(customC) as CatDef[])
+        .filter((c) => c.id !== "income" && c.id !== INTERNAL_TRANSFER_ID)
+        .map((c) => ({
+          label: c.label,
+          amount: calcCategorySpent(
+            expenses,
+            c.id,
+            catMap,
+            breakdownSplits,
+            customC,
+          ),
+        }))
+        .filter((c) => c.amount > 0)
         .sort((a, b) => b.amount - a.amount);
+      const total = sorted.reduce((s, c) => s + c.amount, 0);
       const parts: string[] = [
         `Витрати по категоріях за ${days} днів (${Math.round(total)} грн):`,
       ];
       for (const c of sorted.slice(0, 15)) {
-        parts.push(`  ${c.label}: ${Math.round(c.amount)} грн (${c.pct}%)`);
+        const pct = total > 0 ? Math.round((c.amount / total) * 100) : 0;
+        parts.push(`  ${c.label}: ${Math.round(c.amount)} грн (${pct}%)`);
       }
       return parts.join("\n");
     }
@@ -330,13 +357,15 @@ export function handleCrossAction(action: ChatAction): string | undefined {
       const cutoff = Date.now() - days * 86400000;
       const txCache = ls<{
         txs?: Array<{
-          id?: string;
+          id: string;
           amount: number;
           time?: number;
           description?: string;
+          mcc?: number;
         }>;
       } | null>("finyk_tx_cache", null);
       const hiddenTxIds = ls<string[]>("finyk_hidden_txs", []);
+      const anomalySplits = ls<Record<string, unknown>>("finyk_tx_splits", {});
       const expenses = (txCache?.txs || []).filter((t) => {
         if (hiddenTxIds.includes(t.id || "")) return false;
         const ts = (t.time || 0) * 1000;
@@ -344,11 +373,15 @@ export function handleCrossAction(action: ChatAction): string | undefined {
       });
       if (expenses.length < 3)
         return "Недостатньо транзакцій для аналізу аномалій.";
-      const amounts = expenses.map((t) => Math.abs(t.amount / 100));
+      const amounts = expenses.map((t) => getTxStatAmount(t, anomalySplits));
       const avg = amounts.reduce((a, b) => a + b, 0) / amounts.length;
       const anomalies = expenses
-        .filter((t) => Math.abs(t.amount / 100) > avg * threshold)
-        .sort((a, b) => Math.abs(b.amount) - Math.abs(a.amount))
+        .filter((t) => getTxStatAmount(t, anomalySplits) > avg * threshold)
+        .sort(
+          (a, b) =>
+            getTxStatAmount(b, anomalySplits) -
+            getTxStatAmount(a, anomalySplits),
+        )
         .slice(0, 5);
       if (anomalies.length === 0) {
         return `За ${days} днів аномалій не виявлено (середня витрата: ${Math.round(avg)} грн, поріг: ${Math.round(avg * threshold)} грн).`;
@@ -361,7 +394,7 @@ export function handleCrossAction(action: ChatAction): string | undefined {
           ? new Date(tx.time * 1000).toLocaleDateString("uk-UA")
           : "?";
         parts.push(
-          `  ${d}: ${Math.round(Math.abs(tx.amount / 100))} грн — ${tx.description || "(без опису)"}`,
+          `  ${d}: ${Math.round(getTxStatAmount(tx, anomalySplits))} грн — ${tx.description || "(без опису)"}`,
         );
       }
       return parts.join("\n");

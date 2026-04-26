@@ -9,6 +9,7 @@
  */
 
 import { STORAGE_KEYS } from "@sergeant/shared";
+import { getTxStatAmount } from "../../modules/finyk/utils";
 
 export interface Insight {
   id: string;
@@ -27,6 +28,8 @@ interface Transaction {
   id: string;
   amount: number;
   time: number;
+  description?: string;
+  mcc?: number;
 }
 
 interface Habit {
@@ -146,6 +149,10 @@ function activeWeeksSpendingInsight(): Insight | null {
       .filter(([, v]) => v === "internal_transfer")
       .map(([k]) => k),
   );
+  const txSplits = safeLS<Record<string, unknown>>(
+    STORAGE_KEYS.FINYK_TX_SPLITS,
+    {},
+  );
 
   if (workouts.length < 6) return null;
 
@@ -173,7 +180,7 @@ function activeWeeksSpendingInsight(): Insight | null {
         const d = new Date(ts);
         return d >= mon && d <= sun && (tx.amount ?? 0) < 0;
       })
-      .reduce((s, tx) => s + Math.abs(tx.amount / 100), 0);
+      .reduce((s, tx) => s + getTxStatAmount(tx, txSplits), 0);
 
     if (spending > 0) weekStats.push({ wCount, spending });
   }
