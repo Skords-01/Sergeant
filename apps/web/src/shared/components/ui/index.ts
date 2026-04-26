@@ -93,6 +93,13 @@ export type {
   PopoverProps,
 } from "./Popover";
 
+export { ProgressRing } from "./ProgressRing";
+export type {
+  ProgressRingProps,
+  ProgressRingSize,
+  ProgressRingVariant,
+} from "./ProgressRing";
+
 export { Skeleton, SkeletonText } from "./Skeleton";
 export type { SkeletonProps } from "./Skeleton";
 
