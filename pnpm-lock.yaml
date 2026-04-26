@@ -606,7 +606,11 @@ importers:
 
   packages/config: {}
 
-  packages/design-tokens: {}
+  packages/design-tokens:
+    devDependencies:
+      vitest:
+        specifier: ^3.0.0
+        version: 3.2.4(@types/debug@4.1.13)(@types/node@25.6.0)(jiti@2.6.1)(jsdom@29.0.2(@noble/hashes@2.2.0))(lightningcss@1.27.0)(msw@2.13.6(@types/node@25.6.0)(typescript@6.0.3))(terser@5.46.1)(tsx@4.21.0)(yaml@2.8.3)
 
   packages/eslint-plugin-sergeant-design: {}
 
