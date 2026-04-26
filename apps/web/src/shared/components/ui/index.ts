@@ -122,4 +122,7 @@ export type {
 
 export { ToastContainer } from "./Toast";
 
+export { Tooltip } from "./Tooltip";
+export type { TooltipPlacement, TooltipProps } from "./Tooltip";
+
 export type { FormVariant, SmallMediumLarge } from "./types";
