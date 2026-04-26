@@ -101,7 +101,7 @@ export function WaterTrackerCard({
       </View>
 
       {goalMl > 0 ? (
-        <View className="h-2 bg-panel-hi rounded-full overflow-hidden mb-3">
+        <View className="h-2 bg-panelHi rounded-full overflow-hidden mb-3">
           <View
             style={{ width: `${pct}%` }}
             className={`h-full rounded-full ${

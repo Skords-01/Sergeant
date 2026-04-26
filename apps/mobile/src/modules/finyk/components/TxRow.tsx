@@ -166,14 +166,14 @@ function TxRowImpl({
           <View className="flex-row flex-wrap items-center mt-0.5">
             <Text className="text-xs text-fg-muted mr-1.5">{catName}</Text>
             {cat.id === INTERNAL_TRANSFER_ID && (
-              <View className="bg-panel-hi rounded-full px-1.5 py-0.5 mr-1.5">
+              <View className="bg-panelHi rounded-full px-1.5 py-0.5 mr-1.5">
                 <Text className="text-[10px] font-semibold text-fg">
                   не в статистиці
                 </Text>
               </View>
             )}
             {overrideCatId && cat.id !== INTERNAL_TRANSFER_ID && (
-              <View className="bg-panel-hi rounded-full px-1.5 py-0.5 mr-1.5">
+              <View className="bg-panelHi rounded-full px-1.5 py-0.5 mr-1.5">
                 <Text className="text-[10px] font-semibold text-fg">змін.</Text>
               </View>
             )}

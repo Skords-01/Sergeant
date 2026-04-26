@@ -93,7 +93,7 @@ function TxListItemImpl({
   const hasPress = isManual && !!onPressManual;
 
   return (
-    <View className={rowIndex % 2 === 1 ? "bg-panel-hi/40" : ""}>
+    <View className={rowIndex % 2 === 1 ? "bg-panelHi/40" : ""}>
       <SwipeToAction
         onSwipeLeft={hasSwipe ? onSwipeLeft : undefined}
         leftLabel={swipeLabel}

@@ -419,7 +419,7 @@ export function PlanCalendar({
               if (day == null) {
                 return (
                   <View key={`e-${i}`} className="w-[14.2857%] p-0.5">
-                    <View className="min-h-[52px] rounded-xl bg-panel-hi/40" />
+                    <View className="min-h-[52px] rounded-xl bg-panelHi/40" />
                   </View>
                 );
               }
@@ -436,7 +436,7 @@ export function PlanCalendar({
                 ? "border-emerald-500 bg-emerald-50"
                 : hasPlan
                   ? "border-emerald-400/60 bg-emerald-50/60"
-                  : "border-line bg-panel-hi/40";
+                  : "border-line bg-panelHi/40";
 
               const forecast = recoveryForecast[key] ?? null;
               const dotClass = recoveryDotClass(forecast?.status);

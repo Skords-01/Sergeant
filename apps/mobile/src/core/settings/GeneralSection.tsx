@@ -33,12 +33,16 @@
  *    would additionally need `expo-document-picker`, not yet a
  *    dependency. Placeholder `Card` here points at that follow-up.
  *
- * Dark-mode wiring caveat:
- *  - Mobile has no semantic dark-mode tokens yet (see `Card.tsx`
- *    and `Button.tsx` TODOs). This section persists the user's
- *    preference so the cloud-sync payload is already in the right
- *    shape; actually re-tinting surfaces lands once `nativewind`'s
- *    `colorScheme` is wired through the app root.
+ * Dark-mode wiring:
+ *  - Toggling "Темна тема" flips `prefs.darkMode` in the shared
+ *    `STORAGE_KEYS.HUB_PREFS` MMKV slice.
+ *  - `<ColorSchemeBridge />` (mounted in `apps/mobile/app/_layout.tsx`)
+ *    subscribes to the same slice and calls
+ *    `nativewind.colorScheme.set(...)`, which in turn re-tints every
+ *    semantic-token surface (`bg-panel`, `text-fg`, `border-line`, …)
+ *    via the `:root` ↔ `.dark` palette in `apps/mobile/global.css`.
+ *  - Tri-state: `darkMode === true → "dark"`,
+ *    `darkMode === false → "light"`, missing → `"system"` (follows OS).
  */
 
 import { DeviceEventEmitter, Pressable, Text, View } from "react-native";

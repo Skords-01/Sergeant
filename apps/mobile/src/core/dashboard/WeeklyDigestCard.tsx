@@ -76,7 +76,7 @@ export const WeeklyDigestCard = memo(function WeeklyDigestCard({
       onRequestClose={onClose}
       testID={testID ?? "weekly-digest-card"}
     >
-      <View className="flex-1 bg-fg/40 px-4 justify-end">
+      <View className="flex-1 bg-black/40 px-4 justify-end">
         <Pressable
           accessibilityElementsHidden
           importantForAccessibility="no-hide-descendants"

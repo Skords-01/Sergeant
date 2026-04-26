@@ -123,7 +123,7 @@ export function ConfirmDialog({
           accessibilityLabel={cancelLabel}
           onPress={onCancel}
           testID="confirm-dialog-scrim"
-          className="absolute inset-0 bg-fg/40"
+          className="absolute inset-0 bg-black/40"
         />
 
         {/* Card */}
