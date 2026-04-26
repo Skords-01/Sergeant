@@ -742,10 +742,13 @@ function WorkoutsHome({
             Немає активного тренування
           </div>
           <div className="text-xs text-subtle mt-1">
-            Почни нове або обери один із збережених шаблонів.
+            Почни нове, обери шаблон або внеси проведене заняття заднім числом.
           </div>
           <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
-            <Button className="h-12 text-base" onClick={handleStart}>
+            <Button
+              className="h-12 text-base sm:col-span-2"
+              onClick={handleStart}
+            >
               ▶︎ Почати тренування
             </Button>
             <Button
@@ -753,19 +756,18 @@ function WorkoutsHome({
               className="h-12 text-base"
               onClick={onOpenTemplates}
             >
-              📋 Почати з шаблону →
+              📋 Тренування за шаблоном →
+            </Button>
+            <Button
+              variant="ghost"
+              className="h-12 text-base"
+              onClick={onOpenRetro}
+            >
+              ✏️ Внести проведене заняття
             </Button>
           </div>
         </div>
       )}
-
-      <Button
-        variant="ghost"
-        className="h-11 w-full text-sm"
-        onClick={onOpenRetro}
-      >
-        ✏️ Внести проведене заняття
-      </Button>
 
       <div>
         <div className="flex items-center justify-between px-1 mb-2">
