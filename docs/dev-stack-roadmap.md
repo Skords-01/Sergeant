@@ -198,7 +198,7 @@ pnpm --filter @sergeant/web build:analyze
 
 ### 3.3. Custom ESLint rules
 
-У вас вже `eslint-plugins/sergeant-design/`. Кандидати на нові правила:
+У вас вже `packages/eslint-plugin-sergeant-design/`. Кандидати на нові правила:
 
 - `no-bigint-string` — server response shape має coerced numbers (захист від класу #708).
 - `rq-keys-only-from-factory` — `["finyk", ...]` заборонено, тільки `finykKeys.*`.

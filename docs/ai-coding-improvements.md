@@ -284,12 +284,12 @@ function migrateLegacyToken() { ... }
 
 ## 3.2. Lint-rule ✅ implemented
 
-ESLint-rule `sergeant-design/ai-marker-syntax` додано у `eslint-plugins/sergeant-design/index.js`. Підключено в `eslint.config.js` як `"warn"`. Unit-тести: `eslint-plugins/sergeant-design/__tests__/ai-marker-syntax.test.mjs`.
+ESLint-rule `sergeant-design/ai-marker-syntax` додано у `packages/eslint-plugin-sergeant-design/index.js`. Підключено в `eslint.config.js` як `"warn"`. Unit-тести: `packages/eslint-plugin-sergeant-design/__tests__/ai-marker-syntax.test.mjs`.
 
-Можна (опціонально) додати ESLint-rule яка валідує синтаксис маркерів — щоб не було typo-варіацій (`AI-NOTES`, `AINOTE`, `AI_NOTE`). Custom плагін `eslint-plugins/sergeant-design/` вже є — додати правило туди.
+Можна (опціонально) додати ESLint-rule яка валідує синтаксис маркерів — щоб не було typo-варіацій (`AI-NOTES`, `AINOTE`, `AI_NOTE`). Custom плагін `packages/eslint-plugin-sergeant-design/` вже є — додати правило туди.
 
 ```js
-// eslint-plugins/sergeant-design/rules/ai-marker.js
+// packages/eslint-plugin-sergeant-design/rules/ai-marker.js
 module.exports = {
   meta: { type: "suggestion", schema: [] },
   create(context) {

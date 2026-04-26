@@ -98,7 +98,7 @@ describe("no-raw-tracked-storage parity with SYNC_MODULES", () => {
       { missing, extra },
       { missing: [], extra: [] },
       "Rule's TRACKED_STORAGE_KEY_NAMES drifted from SYNC_MODULES. " +
-        "Update eslint-plugins/sergeant-design/index.js to match.",
+        "Update packages/eslint-plugin-sergeant-design/index.js to match.",
     );
   });
 
@@ -119,7 +119,7 @@ describe("no-raw-tracked-storage parity with SYNC_MODULES", () => {
       { missing, extra },
       { missing: [], extra: [] },
       "Rule's TRACKED_STORAGE_KEY_VALUES drifted from STORAGE_KEYS. " +
-        "Update eslint-plugins/sergeant-design/index.js to match.",
+        "Update packages/eslint-plugin-sergeant-design/index.js to match.",
     );
   });
 });

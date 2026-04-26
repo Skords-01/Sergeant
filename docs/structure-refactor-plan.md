@@ -184,7 +184,7 @@ Vercel Edge Middleware для проксі `/api/*` лежить у корені
 
 ### 4.3 Перенести `eslint-plugins/` у `packages/`
 
-`eslint-plugins/sergeant-design/` — повноцінний пакет зі своїм
+`packages/eslint-plugin-sergeant-design/` — повноцінний пакет зі своїм
 `package.json`. Логічно мав би жити як workspace-пакет.
 
 **Дії:**

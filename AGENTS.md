@@ -35,7 +35,7 @@ Quick lookup before editing: which path uses which test stack and which conventi
 | `packages/api-client/**`                              | Vitest                                  | n/a                                   | HTTP clients + types. Must mirror `apps/server/src/modules/*` response shapes.         |
 | `packages/insights/**`                                | Vitest                                  | n/a                                   | Cross-module analytics. Pure functions over normalized data.                           |
 | `packages/{finyk,fizruk,nutrition,routine}-domain/**` | Vitest                                  | n/a                                   | Domain logic shared web ↔ mobile (e.g., kcal math, budget computations).               |
-| `eslint-plugins/sergeant-design/**`                   | `node --test` (`__tests__/*.mjs`)       | n/a                                   | Custom ESLint rules. Run via `pnpm lint:plugins`.                                      |
+| `packages/eslint-plugin-sergeant-design/**`           | `node --test` (`__tests__/*.mjs`)       | n/a                                   | Custom ESLint rules. Run via `pnpm lint:plugins`.                                      |
 
 ## Hard rules (do not break)
 
@@ -154,7 +154,7 @@ Format: `<type>(<scope>): <subject>`. Allowed types: `feat`, `fix`, `docs`, `cho
 | `insights`         | `packages/insights/**`                                            |
 | `design-tokens`    | `packages/design-tokens/**`                                       |
 | `config`           | `packages/config/**`                                              |
-| `eslint-plugins`   | `eslint-plugins/sergeant-design/**`                               |
+| `eslint-plugins`   | `packages/eslint-plugin-sergeant-design/**`                       |
 | `migrations`       | `apps/server/src/migrations/**` only                              |
 | `deps`             | Renovate / dependency-only PRs                                    |
 | `docs`             | `docs/**`, `README.md`, `AGENTS.md`, `CONTRIBUTING.md`            |

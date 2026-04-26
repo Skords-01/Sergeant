@@ -5,7 +5,7 @@ import jsxA11y from "eslint-plugin-jsx-a11y";
 import react from "eslint-plugin-react";
 import reactHooks from "eslint-plugin-react-hooks";
 import tseslint from "typescript-eslint";
-import sergeantDesign from "./eslint-plugins/sergeant-design/index.js";
+import sergeantDesign from "./packages/eslint-plugin-sergeant-design/index.js";
 
 const tsRecommendedScoped = tseslint.configs.recommended.map((cfg) => ({
   ...cfg,
@@ -125,7 +125,7 @@ export default [
   // own error message + docs — it would be tautological to lint
   // itself.
   {
-    files: ["eslint-plugins/sergeant-design/**/*.js"],
+    files: ["packages/eslint-plugin-sergeant-design/**/*.js"],
     rules: {
       "sergeant-design/no-ellipsis-dots": "off",
     },

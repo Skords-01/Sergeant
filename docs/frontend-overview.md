@@ -51,7 +51,7 @@
 
 ## Якість і дизайн-система
 
-- ESLint + jsx-a11y; кастомний `eslint-plugins/sergeant-design`
+- ESLint + jsx-a11y; кастомний `packages/eslint-plugin-sergeant-design`
 - Веб: Vitest + Playwright (у т.ч. a11y)
 
 ## Примітки для редизайну / frontend-design

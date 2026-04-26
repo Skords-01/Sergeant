@@ -608,6 +608,8 @@ importers:
 
   packages/design-tokens: {}
 
+  packages/eslint-plugin-sergeant-design: {}
+
   packages/finyk-domain:
     dependencies:
       "@sergeant/shared":

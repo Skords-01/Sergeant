@@ -174,7 +174,7 @@ Use one of these scopes; do not invent scopes like `app`, `core`, `monorepo`, or
 | `insights`         | `packages/insights/**`                                         |
 | `design-tokens`    | `packages/design-tokens/**`                                    |
 | `config`           | `packages/config/**`                                           |
-| `eslint-plugins`   | `eslint-plugins/sergeant-design/**`                            |
+| `eslint-plugins`   | `packages/eslint-plugin-sergeant-design/**`                    |
 | `migrations`       | `apps/server/src/migrations/**` only                           |
 | `deps`             | Renovate / dependency-only PRs                                 |
 | `docs`             | `docs/**`, `README.md`, `AGENTS.md`, `CONTRIBUTING.md`         |
