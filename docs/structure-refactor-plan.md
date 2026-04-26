@@ -178,9 +178,10 @@ core/
 - `chartPalette` ✅ переведено на `.ts`
   (`apps/web/src/modules/finyk/constants/chartPalette.ts`).
 - `setup.js` — більше не існує у `apps/web/src/`.
-- Залишаються лише `apps/web/src/sw.js` (service worker;
-  використовує Workbox API без білд-кроку) і `apps/web/src/main.jsx`
-  (Vite entry). Strict TS — окремий пункт у `dev-stack-roadmap.md` §3.1.
+- `sw.js` ✅ переведено на `.ts` (`apps/web/src/sw.ts`,
+  service worker через Workbox).
+- Залишається лише `apps/web/src/main.jsx` (Vite entry).
+  Strict TS — окремий пункт у `dev-stack-roadmap.md` §3.1.
 
 ### 4.3 Перенести `eslint-plugins/` у `packages/` ✅ done
 
