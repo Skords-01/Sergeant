@@ -29,15 +29,21 @@ export type StatVariant =
 
 export type StatSize = "sm" | "md" | "lg";
 
+// `text-{c}-strong` (= `[700]`, lime-800 for nutrition) keeps Stat
+// numbers readable at body sizes against cream `bg-bg`. The previous
+// `text-{c}` (= `[500]`) only cleared ~2.4:1 — the `text-2xl` size
+// nominally exempts it from the 4.5:1 rule (large-text 3:1), but the
+// nested `<span>` value isn't `font-bold`, so axe applies the regular
+// threshold. See docs/brand-palette-wcag-aa-proposal.md.
 const variantClass: Record<StatVariant, string> = {
   default: "text-text",
-  success: "text-success",
-  warning: "text-warning",
-  danger: "text-danger",
-  finyk: "text-finyk",
-  fizruk: "text-fizruk",
-  routine: "text-routine",
-  nutrition: "text-nutrition",
+  success: "text-success-strong",
+  warning: "text-warning-strong",
+  danger: "text-danger-strong",
+  finyk: "text-finyk-strong",
+  fizruk: "text-fizruk-strong",
+  routine: "text-routine-strong",
+  nutrition: "text-nutrition-strong",
 };
 
 const valueSize: Record<StatSize, string> = {

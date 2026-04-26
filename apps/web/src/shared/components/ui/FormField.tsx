@@ -129,7 +129,7 @@ export function FormField({
       {hasError ? (
         <p
           id={`${controlId}-error`}
-          className="text-xs text-danger mt-1"
+          className="text-xs text-danger-strong mt-1"
           role="alert"
         >
           {error}

@@ -74,12 +74,16 @@ export interface TabsProps<V extends string = string> {
   tabsClassName?: string;
 }
 
+// Active-tab text on the page background. The brand `*-500` shade only
+// clears ~2.5:1 on cream `bg-bg`; the `*-strong` companion (= `[700]`,
+// or lime-800 for nutrition) clears ≥4.5:1. See
+// docs/brand-palette-wcag-aa-proposal.md § 2.2.
 const VARIANT_TEXT: Record<TabsVariant, string> = {
-  brand: "text-brand",
-  finyk: "text-finyk",
-  fizruk: "text-fizruk",
-  routine: "text-routine",
-  nutrition: "text-nutrition",
+  brand: "text-brand-strong",
+  finyk: "text-finyk-strong",
+  fizruk: "text-fizruk-strong",
+  routine: "text-routine-strong",
+  nutrition: "text-nutrition-strong",
 };
 
 const VARIANT_UNDERLINE: Record<TabsVariant, string> = {

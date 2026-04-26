@@ -31,17 +31,21 @@ export type BadgeTone = "soft" | "solid" | "outline";
 
 export type BadgeSize = "xs" | "sm" | "md";
 
+// Solid tones use `bg-{c}-strong text-white` (5.0–7.0:1) so labels stay
+// readable at body sizes. The previous `bg-{c} text-white` failed WCAG
+// AA (~2.5:1) for every brand / status / module token. See
+// docs/brand-palette-wcag-aa-proposal.md § 2.2.
 const solidVariants: Record<BadgeVariant, string> = {
   neutral: "bg-fg-muted/90 text-surface border-transparent",
-  accent: "bg-accent text-white border-transparent",
-  success: "bg-brand-700 text-white border-transparent",
-  warning: "bg-warning text-white border-transparent",
-  danger: "bg-danger text-white border-transparent",
-  info: "bg-info text-white border-transparent",
-  finyk: "bg-finyk text-white border-transparent",
-  fizruk: "bg-fizruk text-white border-transparent",
-  routine: "bg-routine text-white border-transparent",
-  nutrition: "bg-nutrition text-white border-transparent",
+  accent: "bg-brand-strong text-white border-transparent",
+  success: "bg-success-strong text-white border-transparent",
+  warning: "bg-warning-strong text-white border-transparent",
+  danger: "bg-danger-strong text-white border-transparent",
+  info: "bg-info-strong text-white border-transparent",
+  finyk: "bg-finyk-strong text-white border-transparent",
+  fizruk: "bg-fizruk-strong text-white border-transparent",
+  routine: "bg-routine-strong text-white border-transparent",
+  nutrition: "bg-nutrition-strong text-white border-transparent",
 };
 
 const softVariants: Record<BadgeVariant, string> = {
@@ -53,7 +57,7 @@ const softVariants: Record<BadgeVariant, string> = {
   warning:
     "bg-amber-50 text-amber-700 border-amber-200/70 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/30",
   danger:
-    "bg-danger-soft text-danger border-danger/30 dark:bg-danger/15 dark:border-danger/30",
+    "bg-danger-soft text-danger-strong border-danger/30 dark:bg-danger/15 dark:text-red-200 dark:border-danger/30",
   info: "bg-blue-50 text-blue-700 border-blue-200/70 dark:bg-info/15 dark:text-blue-300 dark:border-info/30",
   finyk:
     "bg-finyk-soft text-finyk-strong border-finyk-ring/50 dark:bg-finyk-surface-dark/15 dark:text-finyk dark:border-finyk-border-dark/30",
@@ -65,17 +69,21 @@ const softVariants: Record<BadgeVariant, string> = {
     "bg-nutrition-soft text-nutrition-strong border-nutrition-ring/50 dark:bg-nutrition-surface-dark/15 dark:text-nutrition dark:border-nutrition-border-dark/30",
 };
 
+// Outline tones place coloured text directly on the page background.
+// Borders aren't text, so the brand `*-500` shade stays at 60 % alpha
+// for the outline; the *label* uses `text-{c}-strong` (≥4.5:1 on
+// cream `bg-bg`).
 const outlineVariants: Record<BadgeVariant, string> = {
   neutral: "border-line text-fg-muted bg-transparent",
-  accent: "border-accent/60 text-accent bg-transparent",
-  success: "border-success/60 text-success bg-transparent",
-  warning: "border-warning/60 text-warning bg-transparent",
-  danger: "border-danger/60 text-danger bg-transparent",
-  info: "border-info/60 text-info bg-transparent",
-  finyk: "border-finyk/60 text-finyk bg-transparent",
-  fizruk: "border-fizruk/60 text-fizruk bg-transparent",
-  routine: "border-routine/60 text-routine bg-transparent",
-  nutrition: "border-nutrition/60 text-nutrition bg-transparent",
+  accent: "border-accent/60 text-brand-strong bg-transparent",
+  success: "border-success/60 text-success-strong bg-transparent",
+  warning: "border-warning/60 text-warning-strong bg-transparent",
+  danger: "border-danger/60 text-danger-strong bg-transparent",
+  info: "border-info/60 text-info-strong bg-transparent",
+  finyk: "border-finyk/60 text-finyk-strong bg-transparent",
+  fizruk: "border-fizruk/60 text-fizruk-strong bg-transparent",
+  routine: "border-routine/60 text-routine-strong bg-transparent",
+  nutrition: "border-nutrition/60 text-nutrition-strong bg-transparent",
 };
 
 const sizes: Record<BadgeSize, string> = {

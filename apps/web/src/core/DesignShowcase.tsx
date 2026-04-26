@@ -1051,7 +1051,7 @@ export function DesignShowcase() {
                 variant="default"
                 padding="sm"
                 radius="lg"
-                className="motion-safe:animate-pulse-soft text-xs font-mono text-muted"
+                className="motion-safe:animate-pulse-soft text-xs font-mono text-text"
               >
                 pulse-soft
               </Card>

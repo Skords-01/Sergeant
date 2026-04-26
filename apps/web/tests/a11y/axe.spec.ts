@@ -45,28 +45,15 @@ const SURFACES: Array<{ name: string; path: string }> = [
   { name: "fizruk-dashboard", path: "/?module=fizruk" },
   { name: "nutrition-dashboard", path: "/?module=nutrition" },
   { name: "routine-dashboard", path: "/?module=routine" },
-  // NOTE: `/design` (DesignShowcase) is intentionally NOT in this list.
-  // The page renders the full primitive catalogue (every brand colour ×
-  // tone × variant × size), which surfaces ~70 axe violations that are
-  // systemic to the design tokens, not to this spec or the four module
-  // surfaces above:
-  //   - color-contrast (63 nodes, serious): brand palette (#10b981 emerald,
-  //     #14b8a6 teal, #92cc17 lime, #f97066 coral, #f59e0b warning, #0ea5e9
-  //     info) on `text-white` solids, plus `text-<accent>` labels rendered
-  //     ON the showcase background, fail WCAG 4.5:1. Fixing requires
-  //     re-tuning the design tokens (separate design-system PR).
-  //   - aria-valid-attr-value (6 nodes, critical): the Tabs primitive
-  //     emits `aria-controls={baseId}-panel-{value}` but consumers of the
-  //     showcase don't render matching panels, so the IDREF resolves to
-  //     nothing. Tracked as a follow-up to make `aria-controls` opt-in.
-  //   - select-name (4 nodes, critical): `<Select>` examples in the
-  //     showcase are rendered without surrounding `<FormField>`, so they
-  //     have no accessible name. Easy follow-up to add `aria-label`s to
-  //     the showcase examples.
-  // Re-add this entry once the contrast / Tabs / Select follow-ups land
-  // (so axe gates the primitives at the showcase level — same intent as
-  // commit 8e9d8833). For now the four module surfaces above already
-  // catch a11y regressions in production-shaped DOM.
+  // /design (DesignShowcase) renders the full primitive catalogue —
+  // every brand × tone × variant × size combination of Button / Badge /
+  // Tabs / Segmented / Stat / SectionHeading / Banner / FormField / etc.
+  // axe-gating it catches contrast & ARIA regressions at the *primitive*
+  // level before consumers do. Re-armed in PR #855 once Step 2 of the
+  // brand-palette WCAG-AA migration landed (Button/Badge/Tabs/Stat/
+  // Segmented/SectionHeading/FormField now use the `*-strong` companions
+  // documented in docs/brand-palette-wcag-aa-proposal.md).
+  { name: "design-showcase", path: "/design" },
 ];
 
 for (const { name, path } of SURFACES) {

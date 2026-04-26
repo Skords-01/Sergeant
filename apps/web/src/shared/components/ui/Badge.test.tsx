@@ -19,14 +19,18 @@ describe("Badge", () => {
     expect(el.className).toContain("text-fg-muted");
   });
 
-  it("solid tone uses saturated accent + white text for variant='success'", () => {
+  it("solid tone uses WCAG-AA accent + white text for variant='success'", () => {
     const { container } = render(
       <Badge tone="solid" variant="success">
         OK
       </Badge>,
     );
     const el = container.querySelector("span")!;
-    expect(el.className).toContain("bg-brand-700");
+    // `bg-success-strong` (= emerald-700) clears 5.48:1 against
+    // text-white. The previous `bg-brand-700` resolved to the same hex,
+    // but the semantic name pairs better with the WCAG-AA contract in
+    // docs/brand-palette-wcag-aa-proposal.md.
+    expect(el.className).toContain("bg-success-strong");
     expect(el.className).toContain("text-white");
   });
 
@@ -38,7 +42,9 @@ describe("Badge", () => {
     );
     const el = container.querySelector("span")!;
     expect(el.className).toContain("bg-transparent");
-    expect(el.className).toContain("text-finyk");
+    // `text-finyk-strong` (= emerald-700) clears WCAG AA on cream `bg-bg`;
+    // the previous `text-finyk` (=emerald-500) only cleared ~2.4:1.
+    expect(el.className).toContain("text-finyk-strong");
     expect(el.className).toContain("border-finyk/60");
   });
 

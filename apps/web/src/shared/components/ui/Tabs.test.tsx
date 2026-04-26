@@ -98,7 +98,9 @@ describe("Tabs", () => {
     );
     const active = getAllByRole("tab")[0];
     expect(active.className).toContain("border-finyk");
-    expect(active.className).toContain("text-finyk");
+    // `text-finyk-strong` (=emerald-700) clears WCAG AA on cream `bg-bg`;
+    // the previous `text-finyk` (=emerald-500) only cleared ~2.4:1.
+    expect(active.className).toContain("text-finyk-strong");
   });
 
   it("omits aria-controls when no getPanelId is provided (avoids dangling IDREFs)", () => {

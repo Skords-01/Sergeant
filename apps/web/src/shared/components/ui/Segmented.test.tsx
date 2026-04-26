@@ -57,7 +57,9 @@ describe("Segmented", () => {
       />,
     );
     const active = getAllByRole("tab")[0];
-    expect(active.className).toContain("bg-fizruk");
+    // `bg-fizruk-strong` (= teal-700) clears 5.47:1 against text-white.
+    // The previous `bg-fizruk` (= teal-500) only cleared ~2.5:1.
+    expect(active.className).toContain("bg-fizruk-strong");
     expect(active.className).toContain("text-white");
   });
 

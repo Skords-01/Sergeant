@@ -67,9 +67,12 @@ const variants: Record<SectionHeadingVariant, string> = {
   subtle: "text-subtle",
   muted: "text-muted",
   text: "text-text",
-  // `accent` uses the global --c-accent (emerald by default). Resolves
-  // per-module if a parent scopes the CSS variable.
-  accent: "text-accent",
+  // `accent` uses `text-brand-strong` (= emerald-700) instead of the
+  // global `--c-accent` token (= emerald-500). The latter only clears
+  // ~2.4:1 against the cream `bg-bg`; `-strong` clears 5.23:1. See
+  // docs/brand-palette-wcag-aa-proposal.md § 2.2 and the SectionHeading
+  // contract test that pins the className.
+  accent: "text-brand-strong",
   // Module-branded tints — normalised to /70 so callers don't drift
   // between /70, /80, /90.
   finyk: "text-finyk-strong dark:text-finyk/70",
