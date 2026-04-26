@@ -19,8 +19,9 @@ import { HabitDetailSheet } from "./HabitDetailSheet";
 import { FizrukDayPlanSheet } from "./FizrukDayPlanSheet";
 import { SwipeToAction } from "@shared/components/ui/SwipeToAction";
 import { completionNoteKey } from "../lib/completionNoteKey";
-import { DayProgressRing } from "./DayProgressRing";
 import { DayReportSheet } from "./DayReportSheet";
+import { RoutineCalendarHero } from "./RoutineCalendarHero";
+import { RoutineCalendarMonthGrid } from "./RoutineCalendarMonthGrid";
 import {
   FIZRUK_GROUP_LABEL,
   parseDateKey,
@@ -212,67 +213,16 @@ export function RoutineCalendarPanel({
       hidden={panelHidden}
       className="space-y-4"
     >
-      <Card
-        as="section"
-        variant="routine"
-        padding="lg"
-        aria-label="Огляд періоду"
-      >
-        <p
-          className={cn(
-            // eslint-disable-next-line sergeant-design/no-eyebrow-drift -- Calendar hero kicker composed with dynamic C.heroKicker routine tint; see RoutineApp header for the sibling pattern.
-            "text-xs font-bold tracking-widest uppercase",
-            C.heroKicker,
-          )}
-        >
-          {rangeLabel}
-        </p>
-        <p className="text-xs text-subtle mt-1">{headlineDate}</p>
-        <div className="mt-4 flex flex-col sm:flex-row items-center gap-4">
-          <DayProgressRing
-            completed={dayProgress.completed}
-            scheduled={dayProgress.scheduled}
-            onClick={() => setDayReportOpen(true)}
-          />
-          <div className="flex-1 grid grid-cols-2 gap-2 w-full sm:grid-cols-2 lg:grid-cols-4">
-            <div className={C.statCard}>
-              <SectionHeading as="p" size="xs" tone="subtle">
-                Подій у зрізі
-              </SectionHeading>
-              <p className="text-2xl font-black text-text tabular-nums mt-0.5">
-                {filtered.length}
-              </p>
-            </div>
-            <div className={C.statCard}>
-              <SectionHeading as="p" size="xs" tone="subtle">
-                Звичок активних
-              </SectionHeading>
-              <p className="text-2xl font-black text-text tabular-nums mt-0.5">
-                {routine.habits.filter((h) => !h.archived).length}
-              </p>
-            </div>
-            <div className={C.statCard}>
-              <SectionHeading as="p" size="xs" tone="subtle">
-                Виконання
-              </SectionHeading>
-              <p className="text-2xl font-black text-text tabular-nums mt-0.5">
-                {Math.round(completionRate.rate * 100)}%
-              </p>
-              <p className="text-3xs text-subtle tabular-nums">
-                {completionRate.completed}/{completionRate.scheduled}
-              </p>
-            </div>
-            <div className={C.statCard}>
-              <SectionHeading as="p" size="xs" tone="subtle">
-                Поточна серія
-              </SectionHeading>
-              <p className="text-2xl font-black text-text tabular-nums mt-0.5">
-                {currentStreak}
-              </p>
-            </div>
-          </div>
-        </div>
-      </Card>
+      <RoutineCalendarHero
+        rangeLabel={rangeLabel}
+        headlineDate={headlineDate}
+        dayProgress={dayProgress}
+        filteredCount={filtered.length}
+        activeHabitsCount={routine.habits.filter((h) => !h.archived).length}
+        completionRate={completionRate}
+        currentStreak={currentStreak}
+        onOpenDayReport={() => setDayReportOpen(true)}
+      />
 
       <DayReportSheet
         open={dayReportOpen}
@@ -399,192 +349,20 @@ export function RoutineCalendarPanel({
       </div>
 
       {timeMode === "month" && (
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center justify-between gap-2">
-            <button
-              type="button"
-              className="w-10 h-10 rounded-xl border border-line bg-panel/90 text-muted hover:text-text shadow-sm"
-              onClick={() => goMonth(-1)}
-              aria-label="Попередній місяць"
-            >
-              ‹
-            </button>
-            <span className="text-sm font-semibold capitalize flex-1 text-center">
-              {monthTitle}
-            </span>
-            <button
-              type="button"
-              className="w-10 h-10 rounded-xl border border-line bg-panel/90 text-muted hover:text-text shadow-sm"
-              onClick={() => goMonth(1)}
-              aria-label="Наступний місяць"
-            >
-              ›
-            </button>
-          </div>
-          <button
-            type="button"
-            onClick={goToToday}
-            className={cn(
-              "w-full min-h-[40px] rounded-xl text-xs font-semibold border transition-colors",
-              C.chipOn,
-            )}
-          >
-            Сьогодні
-          </button>
-        </div>
-      )}
-
-      {timeMode === "month" && (
-        <Card as="section" radius="lg" padding="md">
-          <div className="grid grid-cols-7 gap-1 text-center text-2xs font-semibold text-subtle mb-2">
-            {["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Нд"].map((d) => (
-              <div key={d}>{d}</div>
-            ))}
-          </div>
-          <div className="grid grid-cols-7 gap-1">
-            {cells.map((day, i) => {
-              if (day == null)
-                return (
-                  <div key={`e-${i}`} className="aspect-square min-h-[40px]" />
-                );
-              const key = `${monthCursor.y}-${String(monthCursor.m + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-              const n = dayCounts.get(key) || 0;
-              const sel = selectedDay === key;
-              const label = parseDateKey(key).toLocaleDateString("uk-UA", {
-                weekday: "long",
-                day: "numeric",
-                month: "long",
-                year: "numeric",
-              });
-              const aria =
-                n > 0
-                  ? `${label}, подій: ${n}${sel ? ", обрано" : ""}`
-                  : `${label}${sel ? ", обрано" : ""}`;
-              return (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => setSelectedDay(key)}
-                  aria-label={aria}
-                  aria-pressed={sel}
-                  className={cn(
-                    "aspect-square min-h-[40px] rounded-xl text-sm font-semibold flex flex-col items-center justify-center gap-0.5 transition-colors",
-                    sel
-                      ? C.monthSel
-                      : "hover:bg-panelHi border border-transparent",
-                  )}
-                >
-                  <span aria-hidden>{day}</span>
-                  {n > 0 && (
-                    <span className="flex items-center gap-0.5" aria-hidden>
-                      <span className={cn("w-1.5 h-1.5 rounded-full", C.dot)} />
-                      {n > 1 && (
-                        <span className="text-3xs text-subtle tabular-nums">
-                          {n}
-                        </span>
-                      )}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-          <p className="text-xs text-subtle mt-3 pt-3 border-t border-line">
-            Обрано:{" "}
-            {parseDateKey(selectedDay).toLocaleDateString("uk-UA", {
-              weekday: "long",
-              day: "numeric",
-              month: "long",
-            })}
-          </p>
-          {routine.prefs.showFizrukInCalendar !== false && (
-            <button
-              type="button"
-              onClick={() => setFizrukPlanDateKey(selectedDay)}
-              className="mt-2 w-full rounded-xl border border-sky-400/30 bg-sky-500/5 hover:bg-sky-500/10 px-3 py-2 text-xs font-medium text-sky-600 dark:text-sky-400 transition-colors text-center"
-            >
-              Планувати тренування
-            </button>
-          )}
-          {flatGroupedItems.length > 0 && (
-            <div className="mt-3 space-y-1">
-              {flatGroupedItems.map((item, idx) => {
-                if (item.kind === "header") {
-                  return (
-                    <SectionHeading
-                      key={`dh-${item.label}`}
-                      as="p"
-                      size="xs"
-                      tone="subtle"
-                      className={cn(idx > 0 && "mt-2")}
-                    >
-                      {item.label}
-                    </SectionHeading>
-                  );
-                }
-                const e = item.e;
-                return (
-                  <div
-                    key={`dd-${e.id}`}
-                    role={e.fizruk ? "button" : undefined}
-                    tabIndex={e.fizruk ? 0 : undefined}
-                    onClick={() => e.fizruk && setFizrukPlanDateKey(e.date)}
-                    onKeyDown={(ev) => {
-                      if (e.fizruk && (ev.key === "Enter" || ev.key === " ")) {
-                        ev.preventDefault();
-                        setFizrukPlanDateKey(e.date);
-                      }
-                    }}
-                    className={cn(
-                      "flex items-center gap-2 rounded-xl px-3 py-2 border border-line bg-panel/60",
-                      e.completed && "opacity-70",
-                      e.fizruk && "cursor-pointer hover:bg-sky-500/5",
-                    )}
-                  >
-                    <span
-                      className={cn(
-                        "w-1.5 h-1.5 rounded-full shrink-0",
-                        e.fizruk
-                          ? "bg-sky-500"
-                          : e.finykSub
-                            ? "bg-emerald-500"
-                            : C.dot,
-                      )}
-                    />
-                    <span className="flex-1 min-w-0 text-sm font-medium text-text truncate">
-                      {e.title}
-                    </span>
-                    <span className="text-2xs text-subtle shrink-0">
-                      {e.subtitle}
-                    </span>
-                    {e.habitId && (
-                      <button
-                        type="button"
-                        onClick={() => onToggleHabit(e.habitId, e.date)}
-                        className={cn(
-                          "w-7 h-7 rounded-lg border flex items-center justify-center text-xs font-bold transition-colors shrink-0",
-                          e.completed
-                            ? C.done
-                            : "border-line hover:bg-panelHi text-muted",
-                        )}
-                        aria-label={
-                          e.completed ? "Скасувати виконання" : "Виконано"
-                        }
-                      >
-                        {e.completed ? "✓" : "○"}
-                      </button>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-          {flatGroupedItems.length === 0 && (
-            <p className="mt-2 text-2xs text-subtle text-center">
-              Подій на цей день немає
-            </p>
-          )}
-        </Card>
+        <RoutineCalendarMonthGrid
+          monthCursor={monthCursor}
+          monthTitle={monthTitle}
+          cells={cells}
+          dayCounts={dayCounts}
+          selectedDay={selectedDay}
+          goMonth={goMonth}
+          goToToday={goToToday}
+          onSelectDay={setSelectedDay}
+          showFizrukShortcut={routine.prefs.showFizrukInCalendar !== false}
+          onPlanFizruk={setFizrukPlanDateKey}
+          flatGroupedItems={flatGroupedItems}
+          onToggleHabit={onToggleHabit}
+        />
       )}
 
       <section className="space-y-4 pb-2">
