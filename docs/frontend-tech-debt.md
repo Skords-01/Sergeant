@@ -207,6 +207,41 @@ Production код чистий. Тестові `any` — фабрики фікт
 
 ---
 
+### 11. Strict TypeScript rollout — Phase 1 (`strictNullChecks`) in progress
+
+**Контекст:** `apps/web/tsconfig.json` має `strict: false` + `allowJs: true`.
+Базовий `packages/config/tsconfig.base.json` — `strict: true`, але web-app
+перевизначає його. Це regression risk на найбільшому production surface.
+
+**Триетапний план:**
+
+| Phase | Прапор                                      | Скоуп                          | Статус      |
+| ----- | ------------------------------------------- | ------------------------------ | ----------- |
+| 1     | `strictNullChecks`                          | `src/shared/**`                | ✅ Виконано |
+| 2     | `strictNullChecks`                          | `src/core/lib/**` + розширення | TODO        |
+| 3     | повний `strict: true` + видалення `allowJs` | всі файли                      | TODO        |
+
+**Phase 1 деталі (цей PR — PR-6.A):**
+
+- Додано `apps/web/tsconfig.strict.json` — extends основний tsconfig,
+  додає `strictNullChecks: true`, includes тільки `src/shared/**`.
+- Typecheck script оновлено: `tsc -p tsconfig.strict.json --noEmit` додано
+  до pipeline.
+- **Baseline error count (з `strictNullChecks` на весь `apps/web`):** 518 помилок.
+  - `src/shared/**` — 7 помилок → виправлено (non-null assertions у тестах).
+  - `src/core/lib/**` — 16 помилок → TODO Phase 2.
+  - Інші модулі (`modules/`, `core/` без lib) — ~495 помилок → Phase 3.
+- Жодних `@ts-expect-error` або runtime-змін не додано.
+
+**Phase 2 (наступний PR):** розширити `tsconfig.strict.json` include на
+`src/core/lib/**`. Виправити 16 помилок (4 у production-коді
+`hubChatContext.ts`, решта в тестах).
+
+**Phase 3:** увімкнути `strict: true` у головному `tsconfig.json`, видалити
+`allowJs`, виправити всі залишкові помилки.
+
+---
+
 ## Recently completed
 
 - ✅ Vitest path aliases — 80/80 файлів зелені

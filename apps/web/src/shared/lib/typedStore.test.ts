@@ -42,7 +42,7 @@ describe("typedStore", () => {
       defaultValue: { count: 0, name: "" },
     });
     store.set({ count: 5, name: "a" });
-    const raw = JSON.parse(globalThis.localStorage.getItem("test"));
+    const raw = JSON.parse(globalThis.localStorage.getItem("test")!);
     expect(raw).toEqual({ __v: 2, data: { count: 5, name: "a" } });
     expect(store.get()).toEqual({ count: 5, name: "a" });
   });
@@ -122,7 +122,7 @@ describe("typedStore", () => {
       schema,
       defaultValue: { count: 0, name: "" },
     });
-    let seen = null;
+    let seen: { count: number; name: string } | null = null;
     const off = store.subscribe((v) => {
       seen = v;
     });

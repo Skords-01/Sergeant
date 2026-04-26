@@ -55,7 +55,7 @@ describe("createModuleStorage: debounce + skip-if-equal", () => {
     storage.writeJSONDebounced("k", { a: 1 }, 200);
     expect(localStorage.getItem("k")).toBeNull();
     vi.advanceTimersByTime(201);
-    expect(JSON.parse(localStorage.getItem("k"))).toEqual({ a: 1 });
+    expect(JSON.parse(localStorage.getItem("k")!)).toEqual({ a: 1 });
 
     const spy = vi.spyOn(Storage.prototype, "setItem");
     storage.writeJSONDebounced("k", { a: 1 }, 200);
@@ -70,7 +70,7 @@ describe("createModuleStorage: debounce + skip-if-equal", () => {
     storage.writeJSONDebounced("q", 2, 300);
     storage.writeJSONDebounced("q", 3, 300);
     vi.advanceTimersByTime(301);
-    expect(JSON.parse(localStorage.getItem("q"))).toBe(3);
+    expect(JSON.parse(localStorage.getItem("q")!)).toBe(3);
   });
 
   it("flushPendingWrites одразу скидає буфер", () => {
@@ -78,7 +78,7 @@ describe("createModuleStorage: debounce + skip-if-equal", () => {
     storage.writeJSONDebounced("p", "v", 500);
     expect(localStorage.getItem("p")).toBeNull();
     storage.flushPendingWrites();
-    expect(JSON.parse(localStorage.getItem("p"))).toBe("v");
+    expect(JSON.parse(localStorage.getItem("p")!)).toBe("v");
   });
 
   it("removeItem скасовує pending write", () => {
@@ -100,7 +100,7 @@ describe("createModuleStorage: ізоляція між модулями", () => 
     // b перезапише a, бо ключ один — але pending-стан ізольований.
     vi.advanceTimersByTime(101);
     // Останнє застосоване = B (оскільки обидва записали).
-    expect(JSON.parse(localStorage.getItem("same"))).toBe("B");
+    expect(JSON.parse(localStorage.getItem("same")!)).toBe("B");
     a.flushPendingWrites();
     b.flushPendingWrites();
   });
