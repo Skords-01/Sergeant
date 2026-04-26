@@ -12,7 +12,7 @@ import {
   getIncomeCategory,
   resolveExpenseCategoryMeta,
 } from "../utils";
-import type { SpendingTxLike } from "../lib/transactions.js";
+import type { SpendingTxLike, TxSplitsLike } from "../lib/transactions.js";
 
 export {
   calcCategorySpent,
@@ -99,10 +99,11 @@ interface CategorySpend extends Category {
 
 export interface GetCategorySpendListOptions {
   txCategories?: Record<string, string | undefined>;
-  txSplits?: Record<
-    string,
-    readonly { categoryId: string; amount?: number }[] | undefined
-  >;
+  // `TxSplitsLike` — навмисно широкий контракт, співпадає з тим, що
+  // приймає `calcCategorySpent`. Так викликачі (web + mobile) можуть
+  // передавати той самий `Record<string, unknown>`, що тримають у
+  // localStorage/MMKV, без додаткового `as` на місці.
+  txSplits?: TxSplitsLike;
   customCategories?: CustomCategory[];
 }
 
