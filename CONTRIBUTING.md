@@ -57,6 +57,9 @@ pnpm install --frozen-lockfile
 cp .env.example .env
 # Defaults work out of the box for local dev (Postgres creds, ports, CORS).
 # For AI features fill in ANTHROPIC_API_KEY; everything else is optional.
+# Local dev only — disables AI quota accounting so HubChat doesn't burn the
+# shared daily limit while you iterate:
+echo "AI_QUOTA_DISABLED=1" >> .env
 
 # 3. Database
 pnpm db:up                  # docker compose up -d (Postgres 16 on :5432)
@@ -111,21 +114,47 @@ pnpm --filter <package> exec vitest run <path>
 
 ---
 
+## Working with HubChat locally
+
+HubChat tools визначаються на сервері в `apps/server/src/modules/chat/toolDefs/<domain>.ts` і виконуються на клієнті в `apps/web/src/core/lib/chatActions/<domain>Actions.ts` (див. `AGENTS.md` → _Architecture: AI tool execution path_). Сервер — тонкий pass-through до Anthropic, який повертає `tool_use` блоки; localStorage / API write-и робить клієнтський executor.
+
+### Тригерити tool call без браузера
+
+```bash
+# Попередньо: відкрий http://localhost:5173, залогінся, скопіюй значення
+# better-auth.session_token з DevTools → Application → Cookies.
+
+curl -X POST http://localhost:3000/api/chat \
+  -H "Cookie: better-auth.session_token=<token>" \
+  -H "Content-Type: application/json" \
+  -d '{"messages":[{"role":"user","content":"залогуй 200мл води"}],"context":""}'
+```
+
+Якщо відповідь містить блоки `tool_use` але `localStorage` не змінився — це **норма**: сервер лише визначив tool call, виконання відбувається в `executeAction` на клієнті після рендеру відповіді в HubChat. Для перевірки повного циклу без UI треба вручну прогнати `tool_result` через другий `/api/chat` запит (див. continuation handler у `chat.ts`, `max_tokens: 400`).
+
+### Пов'язані playbookи
+
+- [`docs/playbooks/add-hubchat-tool.md`](docs/playbooks/add-hubchat-tool.md) — як додати новий tool.
+- [`docs/playbooks/tune-system-prompt.md`](docs/playbooks/tune-system-prompt.md) — як міняти `SYSTEM_PREFIX` без поломки tool-calling.
+- [`docs/playbooks/debug-chat-tool.md`](docs/playbooks/debug-chat-tool.md) — секвенція перевірок коли «асистент каже що зробив, але нічого не сталось».
+
+---
+
 ## Testing by change type
 
 Run the smallest meaningful test set while developing, then use `pnpm check` before review when feasible.
 
-| Change type                | Minimum local verification                                                                                  |
-| -------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| Docs-only                  | `pnpm format:check` or `pnpm exec prettier --check <file>`                                                  |
-| Web UI (`apps/web`)        | Targeted Vitest/RTL test, `pnpm --filter @sergeant/web build`, screenshot in PR for visible UI changes      |
-| Server/API (`apps/server`) | Targeted server Vitest, response shape snapshot if applicable, update `packages/api-client` types           |
-| DB migration               | Follow `add-sql-migration` playbook, run `pnpm db:up` + `pnpm --filter @sergeant/server db:migrate:dev`     |
-| React Query hook           | Use centralized keys from `apps/web/src/shared/lib/queryKeys.ts`, test cache invalidation path              |
-| HubChat tool               | Update server tool definition, client executor, visible action card/quick action if user-facing             |
-| Mobile (`apps/mobile`)     | Targeted mobile Vitest; be aware of known flaky tests listed below                                          |
-| Mobile shell               | Run relevant Capacitor/mobile-shell build command and watch Android/iOS workflow results                    |
-| Dependency bump            | Separate PR, run lockfile install, tests for touched package, and watch `pnpm audit` / license check output |
+| Change type                | Minimum local verification                                                                                                                                                                                                                                                                                                                                         |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Docs-only                  | `pnpm format:check` or `pnpm exec prettier --check <file>`                                                                                                                                                                                                                                                                                                         |
+| Web UI (`apps/web`)        | Targeted Vitest/RTL test, `pnpm --filter @sergeant/web build`, screenshot in PR for visible UI changes                                                                                                                                                                                                                                                             |
+| Server/API (`apps/server`) | Targeted server Vitest, response shape snapshot if applicable, update `packages/api-client` types                                                                                                                                                                                                                                                                  |
+| DB migration               | Follow `add-sql-migration` playbook, run `pnpm db:up` + `pnpm --filter @sergeant/server db:migrate:dev`                                                                                                                                                                                                                                                            |
+| React Query hook           | Use centralized keys from `apps/web/src/shared/lib/queryKeys.ts`, test cache invalidation path                                                                                                                                                                                                                                                                     |
+| HubChat tool               | Update server tool definition, client executor, visible action card/quick action if user-facing. Targeted Vitest: `pnpm --filter @sergeant/web exec vitest run src/core/lib/chatActions` + `pnpm --filter @sergeant/server exec vitest run src/modules/chat`. Якщо додав tool у `toolDefs/` — онови список tools у `SYSTEM_PREFIX` (`systemPrompt.ts` рядки 7–14). |
+| Mobile (`apps/mobile`)     | Targeted mobile Vitest; be aware of known flaky tests listed below                                                                                                                                                                                                                                                                                                 |
+| Mobile shell               | Run relevant Capacitor/mobile-shell build command and watch Android/iOS workflow results                                                                                                                                                                                                                                                                           |
+| Dependency bump            | Separate PR, run lockfile install, tests for touched package, and watch `pnpm audit` / license check output                                                                                                                                                                                                                                                        |
 
 For UI changes, attach a screenshot or recording to the PR description when practical.
 
@@ -248,6 +277,7 @@ These three tests fail on `main` and **should not block merge** if your PR does 
 - [ ] DB changes follow sequential migration rules and avoid unsafe one-shot drops.
 - [ ] New permanent repo rules are added to `AGENTS.md`; otherwise mark “No” in the template.
 - [ ] No new `AI-DANGER` marker is added without justification.
+- [ ] Якщо додано HubChat tool — список tools у `SYSTEM_PREFIX` (`apps/server/src/modules/chat/toolDefs/systemPrompt.ts` рядки 7–14) оновлено.
 
 ### Hard rules (from `AGENTS.md`)
 
