@@ -331,5 +331,21 @@ export default [
       "sergeant-design/no-bigint-string": "error",
     },
   },
+  // React Query keys factory guardrail — AGENTS.md hard rule #2: all
+  // `queryKey` / `mutationKey` values must come from the centralized
+  // factory in `apps/web/src/shared/lib/queryKeys.ts`. Inline array
+  // literals break bulk invalidation and let typos compile silently.
+  // The factory file itself is exempt (it defines the arrays).
+  {
+    files: ["apps/web/src/**/*.{ts,tsx}"],
+    ignores: [
+      "apps/web/src/shared/lib/queryKeys.ts",
+      "apps/web/src/**/*.test.{ts,tsx}",
+      "apps/web/src/**/__tests__/**",
+    ],
+    rules: {
+      "sergeant-design/rq-keys-only-from-factory": "error",
+    },
+  },
   eslintConfigPrettier,
 ];
