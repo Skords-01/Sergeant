@@ -52,8 +52,8 @@ const TrendCardImpl = function MeasurementsTrendCard({
       testID={testID}
     >
       <View className="flex-row items-baseline justify-between mb-2">
-        <Text className="text-sm font-semibold text-stone-900">Тренд ваги</Text>
-        <Text className="text-[11px] text-stone-500">останні 8</Text>
+        <Text className="text-sm font-semibold text-fg">Тренд ваги</Text>
+        <Text className="text-[11px] text-fg-muted">останні 8</Text>
       </View>
       <TrendChart
         series={weightSeries}

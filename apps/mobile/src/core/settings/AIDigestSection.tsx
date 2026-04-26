@@ -64,17 +64,15 @@ export function AIDigestSection() {
 
   return (
     <SettingsGroup title="AI Звіт тижня" emoji="📋">
-      <Text className="text-xs text-stone-500 leading-snug">
+      <Text className="text-xs text-fg-muted leading-snug">
         Тижневий AI-аналіз прогресу по всіх модулях: фінанси, тренування,
         харчування та звички. Звіт доступний на дашборді щопонеділка або за
         запитом.
       </Text>
       <Card variant="flat" radius="md" padding="md">
-        <Text className="text-xs font-semibold text-stone-900">
-          Поточний тиждень
-        </Text>
+        <Text className="text-xs font-semibold text-fg">Поточний тиждень</Text>
         <Text
-          className="text-xs text-stone-500 mt-0.5"
+          className="text-xs text-fg-muted mt-0.5"
           testID="aidigest-week-range"
         >
           {weekRange}
@@ -91,7 +89,7 @@ export function AIDigestSection() {
           onPress={onGenerate}
           testID="aidigest-generate-now"
         >
-          <Text className="text-sm font-semibold text-stone-900">
+          <Text className="text-sm font-semibold text-fg">
             Згенерувати дайджест зараз
           </Text>
         </Button>

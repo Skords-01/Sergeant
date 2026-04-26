@@ -57,11 +57,9 @@ export function HeatmapPage({
     >
       <View className="flex-row items-center gap-2 px-4 pt-4 pb-1">
         <Text className="text-[22px]">📊</Text>
-        <Text className="text-[22px] font-bold text-stone-900 flex-1">
-          Хітмеп
-        </Text>
+        <Text className="text-[22px] font-bold text-fg flex-1">Хітмеп</Text>
       </View>
-      <Text className="px-4 text-sm text-stone-600 leading-snug mb-2">
+      <Text className="px-4 text-sm text-fg-muted leading-snug mb-2">
         Активність виконання звичок за останній рік. Тап по клітинці — деталі
         дня.
       </Text>
@@ -75,10 +73,10 @@ export function HeatmapPage({
             testID={`${testID}-empty`}
             className="rounded-2xl border border-dashed border-cream-300 bg-cream-50 p-6 items-center"
           >
-            <Text className="text-sm font-semibold text-stone-900">
+            <Text className="text-sm font-semibold text-fg">
               Поки немає звичок
             </Text>
-            <Text className="text-xs text-stone-500 mt-1 text-center">
+            <Text className="text-xs text-fg-muted mt-1 text-center">
               Додай звичку на вкладці «Налаштування», щоб побачити свою
               активність тут.
             </Text>
@@ -89,10 +87,10 @@ export function HeatmapPage({
               testID={`${testID}-empty-completions`}
               className="rounded-2xl border border-dashed border-cream-300 bg-cream-50 p-6 items-center"
             >
-              <Text className="text-sm font-semibold text-stone-900">
+              <Text className="text-sm font-semibold text-fg">
                 Ще немає виконаних днів
               </Text>
-              <Text className="text-xs text-stone-500 mt-1 text-center">
+              <Text className="text-xs text-fg-muted mt-1 text-center">
                 Відмічай виконання звичок на вкладці «Календар» — тут зʼявиться
                 карта активності.
               </Text>

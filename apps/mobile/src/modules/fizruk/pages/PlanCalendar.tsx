@@ -191,7 +191,7 @@ function recoveryDotClass(
     case "ready":
       return "bg-emerald-500";
     case "fresh":
-      return "bg-stone-300";
+      return "bg-line";
     default:
       return "";
   }
@@ -357,10 +357,8 @@ export function PlanCalendar({
         contentContainerStyle={{ padding: 16, paddingBottom: 32, gap: 14 }}
       >
         <View>
-          <Text className="text-[22px] font-bold text-stone-900">
-            План на місяць
-          </Text>
-          <Text className="text-sm text-stone-500">
+          <Text className="text-[22px] font-bold text-fg">План на місяць</Text>
+          <Text className="text-sm text-fg-muted">
             Шаблон тренування на кожен день + заплановані сесії.
           </Text>
         </View>
@@ -371,25 +369,25 @@ export function PlanCalendar({
               accessibilityRole="button"
               accessibilityLabel="Попередній місяць"
               onPress={() => go(-1)}
-              className="w-10 h-10 rounded-xl border border-stone-200 items-center justify-center"
+              className="w-10 h-10 rounded-xl border border-line items-center justify-center"
             >
-              <Text className="text-lg text-stone-700">‹</Text>
+              <Text className="text-lg text-fg">‹</Text>
             </Pressable>
-            <Text className="text-base font-bold text-stone-900 capitalize">
+            <Text className="text-base font-bold text-fg capitalize">
               {monthTitle}
             </Text>
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Наступний місяць"
               onPress={() => go(1)}
-              className="w-10 h-10 rounded-xl border border-stone-200 items-center justify-center"
+              className="w-10 h-10 rounded-xl border border-line items-center justify-center"
             >
-              <Text className="text-lg text-stone-700">›</Text>
+              <Text className="text-lg text-fg">›</Text>
             </Pressable>
           </View>
 
           <View className="flex-row items-center justify-between mb-2">
-            <Text className="text-[11px] text-stone-500">
+            <Text className="text-[11px] text-fg-muted">
               {days && Object.keys(days).length > 0
                 ? `${Object.keys(days).length} днів із шаблоном`
                 : "Ще немає призначених шаблонів"}
@@ -409,7 +407,7 @@ export function PlanCalendar({
           <View className="flex-row mb-1">
             {WEEKDAYS.map((w) => (
               <View key={w} className="w-[14.2857%] items-center">
-                <Text className="text-[10px] font-semibold text-stone-400">
+                <Text className="text-[10px] font-semibold text-fg-subtle">
                   {w}
                 </Text>
               </View>
@@ -421,7 +419,7 @@ export function PlanCalendar({
               if (day == null) {
                 return (
                   <View key={`e-${i}`} className="w-[14.2857%] p-0.5">
-                    <View className="min-h-[52px] rounded-xl bg-stone-100/40" />
+                    <View className="min-h-[52px] rounded-xl bg-panel-hi/40" />
                   </View>
                 );
               }
@@ -438,7 +436,7 @@ export function PlanCalendar({
                 ? "border-emerald-500 bg-emerald-50"
                 : hasPlan
                   ? "border-emerald-400/60 bg-emerald-50/60"
-                  : "border-stone-200 bg-stone-100/40";
+                  : "border-line bg-panel-hi/40";
 
               const forecast = recoveryForecast[key] ?? null;
               const dotClass = recoveryDotClass(forecast?.status);
@@ -457,9 +455,7 @@ export function PlanCalendar({
                     className={`min-h-[52px] rounded-xl border ${borderClass} p-1 items-center active:opacity-70`}
                   >
                     <View className="flex-row items-center gap-1">
-                      <Text className="text-xs font-bold text-stone-900">
-                        {day}
-                      </Text>
+                      <Text className="text-xs font-bold text-fg">{day}</Text>
                       {forecast ? (
                         <View
                           testID={`plan-day-${key}-recovery-${forecast.status}`}
@@ -470,7 +466,7 @@ export function PlanCalendar({
                     {tpl ? (
                       <Text
                         numberOfLines={1}
-                        className="text-[9px] text-stone-500 leading-tight mt-0.5"
+                        className="text-[9px] text-fg-muted leading-tight mt-0.5"
                       >
                         {tpl.name}
                       </Text>
@@ -486,17 +482,17 @@ export function PlanCalendar({
             })}
           </View>
 
-          <Text className="text-[11px] text-stone-500 mt-3">
+          <Text className="text-[11px] text-fg-muted mt-3">
             Натисни день, щоб призначити або зняти шаблон.
           </Text>
         </Card>
 
         {isEmpty ? (
           <Card radius="lg" padding="lg">
-            <Text className="text-sm font-semibold text-stone-900">
+            <Text className="text-sm font-semibold text-fg">
               Порожній місяць
             </Text>
-            <Text className="text-xs text-stone-500 leading-snug mt-1">
+            <Text className="text-xs text-fg-muted leading-snug mt-1">
               Ще немає ні шаблонів на день, ні запланованих тренувань. Створи
               перше тренування або шаблон — і вони з&apos;являться тут.
             </Text>
@@ -540,7 +536,7 @@ export function PlanCalendar({
                     ? "border-red-200 bg-red-50"
                     : sheetForecast.status === "ready"
                       ? "border-emerald-200 bg-emerald-50"
-                      : "border-stone-200 bg-stone-50"
+                      : "border-line bg-bg"
                 }`}
               >
                 <View className="flex-row items-center gap-2 mb-1">
@@ -549,7 +545,7 @@ export function PlanCalendar({
                       sheetForecast.status,
                     )}`}
                   />
-                  <Text className="text-xs font-bold text-stone-900">
+                  <Text className="text-xs font-bold text-fg">
                     {sheetForecast.status === "overworked"
                       ? "Відновлення: перевантаження"
                       : sheetForecast.status === "ready"
@@ -558,7 +554,7 @@ export function PlanCalendar({
                   </Text>
                 </View>
                 {sheetForecast.overworkedMuscles.length > 0 ? (
-                  <Text className="text-xs text-stone-600 leading-snug">
+                  <Text className="text-xs text-fg-muted leading-snug">
                     Перевантажені:{" "}
                     {sheetForecast.overworkedMuscles
                       .map((m) => m.label)
@@ -566,7 +562,7 @@ export function PlanCalendar({
                   </Text>
                 ) : null}
                 {sheetForecast.recoveredMuscles.length > 0 ? (
-                  <Text className="text-xs text-stone-600 leading-snug">
+                  <Text className="text-xs text-fg-muted leading-snug">
                     Відновлені:{" "}
                     {sheetForecast.recoveredMuscles
                       .map((m) => m.label)
@@ -605,7 +601,7 @@ export function PlanCalendar({
                         key={w.id}
                         className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2"
                       >
-                        <Text className="text-sm font-semibold text-stone-900">
+                        <Text className="text-sm font-semibold text-fg">
                           {time ? (
                             <Text className="text-emerald-700">{time} </Text>
                           ) : null}
@@ -614,7 +610,7 @@ export function PlanCalendar({
                             : "Тренування"}
                         </Text>
                         {itemNames.length > 0 ? (
-                          <Text className="text-xs text-stone-500 mt-0.5">
+                          <Text className="text-xs text-fg-muted mt-0.5">
                             {itemNames.join(" · ")}
                           </Text>
                         ) : null}
@@ -626,7 +622,7 @@ export function PlanCalendar({
             ) : null}
 
             <View>
-              <Text className="text-xs text-stone-500 mb-2">
+              <Text className="text-xs text-fg-muted mb-2">
                 Шаблон тренування
               </Text>
               <View className="gap-2">
@@ -637,12 +633,10 @@ export function PlanCalendar({
                   className={`px-3 py-3 rounded-xl border ${
                     !sheet.templateId
                       ? "border-emerald-500 bg-emerald-50"
-                      : "border-stone-200"
+                      : "border-line"
                   }`}
                 >
-                  <Text className="text-sm text-stone-900">
-                    Без плану (вихідний)
-                  </Text>
+                  <Text className="text-sm text-fg">Без плану (вихідний)</Text>
                 </Pressable>
                 {templates.map((t) => (
                   <Pressable
@@ -653,15 +647,15 @@ export function PlanCalendar({
                     className={`px-3 py-3 rounded-xl border ${
                       sheet.templateId === t.id
                         ? "border-emerald-500 bg-emerald-50"
-                        : "border-stone-200"
+                        : "border-line"
                     }`}
                   >
-                    <Text className="text-sm text-stone-900">{t.name}</Text>
+                    <Text className="text-sm text-fg">{t.name}</Text>
                   </Pressable>
                 ))}
               </View>
               {templates.length === 0 ? (
-                <Text className="text-xs text-stone-500 mt-2">
+                <Text className="text-xs text-fg-muted mt-2">
                   Спочатку створи шаблон у «Тренування → Шаблони».
                 </Text>
               ) : null}

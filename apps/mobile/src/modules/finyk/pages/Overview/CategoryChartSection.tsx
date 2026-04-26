@@ -46,10 +46,8 @@ const CategoryChartSectionImpl = function CategoryChartSection({
   if (catSpends.length === 0) {
     return (
       <View className="rounded-2xl border border-dashed border-cream-300 bg-cream-50 p-6 items-center">
-        <Text className="text-sm font-semibold text-stone-900">
-          Поки немає витрат
-        </Text>
-        <Text className="text-xs text-stone-500 mt-1 text-center">
+        <Text className="text-sm font-semibold text-fg">Поки немає витрат</Text>
+        <Text className="text-xs text-fg-muted mt-1 text-center">
           Цього місяця витрат за категоріями ще немає.
         </Text>
         <Pressable
@@ -71,7 +69,7 @@ const CategoryChartSectionImpl = function CategoryChartSection({
 
   return (
     <Card radius="lg" padding="lg">
-      <Text className="text-xs font-medium text-stone-500 mb-4">
+      <Text className="text-xs font-medium text-fg-muted mb-4">
         Витрати за категоріями
       </Text>
       <View className="gap-3">
@@ -82,12 +80,12 @@ const CategoryChartSectionImpl = function CategoryChartSection({
             <>
               <View className="flex-row justify-between mb-1.5">
                 <Text
-                  className="text-xs text-stone-500 flex-1 mr-2"
+                  className="text-xs text-fg-muted flex-1 mr-2"
                   numberOfLines={1}
                 >
                   {cat.label}
                 </Text>
-                <Text className="text-xs font-bold text-stone-900">
+                <Text className="text-xs font-bold text-fg">
                   −{fmt(cat.spent)} ₴
                 </Text>
               </View>

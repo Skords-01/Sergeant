@@ -59,7 +59,7 @@ export function RecentWorkoutsSection({
   return (
     <View className="gap-2" testID={testID}>
       <View className="flex-row items-baseline justify-between">
-        <Text className="text-sm font-semibold text-stone-700">
+        <Text className="text-sm font-semibold text-fg">
           Останні тренування
         </Text>
         <Pressable
@@ -86,10 +86,10 @@ export function RecentWorkoutsSection({
           className="items-center"
           testID={`${testID}-empty`}
         >
-          <Text className="text-sm font-semibold text-stone-900">
+          <Text className="text-sm font-semibold text-fg">
             Ще жодного завершеного тренування
           </Text>
-          <Text className="text-xs text-stone-500 text-center mt-1">
+          <Text className="text-xs text-fg-muted text-center mt-1">
             Почни сесію — результати з&apos;являться тут автоматично.
           </Text>
         </Card>
@@ -106,12 +106,12 @@ export function RecentWorkoutsSection({
               <View className="flex-row items-center justify-between gap-3">
                 <View className="flex-1">
                   <Text
-                    className="text-sm font-semibold text-stone-900"
+                    className="text-sm font-semibold text-fg"
                     numberOfLines={1}
                   >
                     {row.label}
                   </Text>
-                  <Text className="text-[11px] text-stone-500 mt-0.5">
+                  <Text className="text-[11px] text-fg-muted mt-0.5">
                     {formatDateShort(row.endedAt)} ·{" "}
                     {formatDuration(row.durationSec)}
                   </Text>
@@ -120,7 +120,7 @@ export function RecentWorkoutsSection({
                   <Text className="text-sm font-bold text-teal-700">
                     {formatTonnage(row.tonnageKg)}
                   </Text>
-                  <Text className="text-[10px] text-stone-500">тоннаж</Text>
+                  <Text className="text-[10px] text-fg-muted">тоннаж</Text>
                 </View>
               </View>
             </Card>

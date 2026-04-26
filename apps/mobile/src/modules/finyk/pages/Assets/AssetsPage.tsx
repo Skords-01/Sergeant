@@ -94,16 +94,13 @@ function SectionHeader({
       className="flex-row items-center justify-between px-4 py-3 bg-cream-50 border border-cream-300 rounded-2xl"
     >
       <View className="flex-row items-center gap-2 min-w-0 flex-1">
-        <Text
-          className="text-sm font-semibold text-stone-900"
-          numberOfLines={1}
-        >
+        <Text className="text-sm font-semibold text-fg" numberOfLines={1}>
           {title}
         </Text>
       </View>
       <View className="flex-row items-center gap-3">
-        <Text className="text-sm font-medium text-stone-700">{summary}</Text>
-        <Text className="text-xs text-stone-500">{open ? "▲" : "▼"}</Text>
+        <Text className="text-sm font-medium text-fg">{summary}</Text>
+        <Text className="text-xs text-fg-muted">{open ? "▲" : "▼"}</Text>
       </View>
     </Pressable>
   );
@@ -216,11 +213,9 @@ export function AssetsPage({ seed, testID }: AssetsPageProps) {
     >
       <View className="flex-row items-center gap-2 px-4 pt-4 pb-1">
         <Text className="text-[22px]">🏦</Text>
-        <Text className="text-[22px] font-bold text-stone-900 flex-1">
-          Активи
-        </Text>
+        <Text className="text-[22px] font-bold text-fg flex-1">Активи</Text>
       </View>
-      <Text className="px-4 text-sm text-stone-600 leading-snug mb-2">
+      <Text className="px-4 text-sm text-fg-muted leading-snug mb-2">
         Рахунки, борги і дебіторка в одному місці.
       </Text>
 
@@ -262,7 +257,7 @@ export function AssetsPage({ seed, testID }: AssetsPageProps) {
               {visibleAccounts.length === 0 &&
               store.manualAssets.length === 0 ? (
                 <Text
-                  className="text-sm text-stone-500 py-4 text-center"
+                  className="text-sm text-fg-muted py-4 text-center"
                   testID={testID ? `${testID}-accounts-empty` : undefined}
                 >
                   Ще немає рахунків
@@ -316,7 +311,7 @@ export function AssetsPage({ seed, testID }: AssetsPageProps) {
             <View className="rounded-2xl border border-cream-300 bg-white px-3 py-1">
               {store.manualDebts.length === 0 ? (
                 <Text
-                  className="text-sm text-stone-500 py-4 text-center"
+                  className="text-sm text-fg-muted py-4 text-center"
                   testID={testID ? `${testID}-debts-empty` : undefined}
                 >
                   Ще немає боргів
@@ -362,7 +357,7 @@ export function AssetsPage({ seed, testID }: AssetsPageProps) {
             <View className="rounded-2xl border border-cream-300 bg-white px-3 py-1">
               {store.receivables.length === 0 ? (
                 <Text
-                  className="text-sm text-stone-500 py-4 text-center"
+                  className="text-sm text-fg-muted py-4 text-center"
                   testID={testID ? `${testID}-receivables-empty` : undefined}
                 >
                   Ще немає дебіторки

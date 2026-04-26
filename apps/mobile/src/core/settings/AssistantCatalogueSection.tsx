@@ -24,7 +24,7 @@ import { SettingsGroup } from "./SettingsPrimitives";
 export function AssistantCatalogueSection() {
   return (
     <SettingsGroup title="Можливості асистента" emoji="✨">
-      <Text className="text-xs text-stone-500 leading-snug">
+      <Text className="text-xs text-fg-muted leading-snug">
         ~60+ інструментів, які може запустити AI-асистент: фінанси, тренування,
         звички, харчування, аналітика, утиліти, пам&apos;ять. Тапни — побачиш
         приклади команд.

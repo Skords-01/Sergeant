@@ -64,17 +64,17 @@ const ExerciseSummaryCardsImpl = function ExerciseSummaryCards({
           padding="md"
           testID={`${testID}-pr`}
         >
-          <Text className="text-[10px] uppercase font-bold text-stone-500">
+          <Text className="text-[10px] uppercase font-bold text-fg-muted">
             Особистий рекорд
           </Text>
-          <Text className="text-2xl font-extrabold text-stone-900 mt-1 tabular-nums">
+          <Text className="text-2xl font-extrabold text-fg mt-1 tabular-nums">
             {best.best1rm > 0 ? formatKg(best.best1rm, 0) : "—"}
           </Text>
-          <Text className="text-xs text-stone-500 mt-1">
+          <Text className="text-xs text-fg-muted mt-1">
             {describeBestSet(best.bestSet)}
           </Text>
           {prDate ? (
-            <Text className="text-[10px] text-stone-400 mt-1">{prDate}</Text>
+            <Text className="text-[10px] text-fg-subtle mt-1">{prDate}</Text>
           ) : null}
         </Card>
       </View>
@@ -86,13 +86,13 @@ const ExerciseSummaryCardsImpl = function ExerciseSummaryCards({
           padding="md"
           testID={`${testID}-next`}
         >
-          <Text className="text-[10px] uppercase font-bold text-stone-500">
+          <Text className="text-[10px] uppercase font-bold text-fg-muted">
             Наступного разу
           </Text>
-          <Text className="text-2xl font-extrabold text-stone-900 mt-1 tabular-nums">
+          <Text className="text-2xl font-extrabold text-fg mt-1 tabular-nums">
             {suggestedNext ? formatKg(suggestedNext.weightKg, 1) : "—"}
           </Text>
-          <Text className="text-xs text-stone-500 mt-1">
+          <Text className="text-xs text-fg-muted mt-1">
             {suggestedNext
               ? `× ${suggestedNext.reps} повт.`
               : "Заповни сети, щоб з'явилась рекомендація"}
@@ -104,7 +104,7 @@ const ExerciseSummaryCardsImpl = function ExerciseSummaryCards({
             </Text>
           ) : null}
           {suggestedNext && best.lastTop ? (
-            <Text className="text-[10px] text-stone-400 mt-1">
+            <Text className="text-[10px] text-fg-subtle mt-1">
               {`зараз: ${best.lastTop.weightKg ?? 0} × ${best.lastTop.reps ?? 0}`}
             </Text>
           ) : null}

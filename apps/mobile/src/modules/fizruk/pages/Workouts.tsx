@@ -284,13 +284,13 @@ export function Workouts({ testID = "fizruk-workouts" }: WorkoutsProps) {
             className="w-10 h-10 items-center justify-center -ml-2"
             hitSlop={8}
           >
-            <Text className="text-2xl text-stone-800">‹</Text>
+            <Text className="text-2xl text-fg">‹</Text>
           </Pressable>
         ) : (
           <Text className="text-[22px]">🏋️</Text>
         )}
         <View className="flex-1">
-          <Text className="text-[22px] font-bold text-stone-900">
+          <Text className="text-[22px] font-bold text-fg">
             {view === "catalog"
               ? "Каталог вправ"
               : view === "journal"
@@ -298,7 +298,7 @@ export function Workouts({ testID = "fizruk-workouts" }: WorkoutsProps) {
                 : "Тренування"}
           </Text>
           {view === "home" ? (
-            <Text className="text-xs text-stone-500 mt-0.5">{subtitle}</Text>
+            <Text className="text-xs text-fg-muted mt-0.5">{subtitle}</Text>
           ) : null}
         </View>
       </View>
@@ -324,7 +324,7 @@ export function Workouts({ testID = "fizruk-workouts" }: WorkoutsProps) {
           <>
             {activeWorkout && activeItems.length > 0 ? (
               <View className="gap-3" testID={`${testID}-items`}>
-                <Text className="text-sm font-semibold text-stone-900 px-1">
+                <Text className="text-sm font-semibold text-fg px-1">
                   Вправи тренування
                 </Text>
                 <View className="gap-3">
@@ -344,7 +344,7 @@ export function Workouts({ testID = "fizruk-workouts" }: WorkoutsProps) {
             ) : null}
 
             <View className="gap-3" testID={`${testID}-quicklinks`}>
-              <Text className="text-sm font-semibold text-stone-700 px-1">
+              <Text className="text-sm font-semibold text-fg px-1">
                 Довідники
               </Text>
               <Pressable
@@ -366,14 +366,14 @@ export function Workouts({ testID = "fizruk-workouts" }: WorkoutsProps) {
                     <View className="flex-row items-center gap-3">
                       <Text className="text-2xl">📚</Text>
                       <View className="flex-1">
-                        <Text className="text-sm font-semibold text-stone-900">
+                        <Text className="text-sm font-semibold text-fg">
                           Каталог вправ
                         </Text>
-                        <Text className="text-[11px] text-stone-500 mt-0.5">
+                        <Text className="text-[11px] text-fg-muted mt-0.5">
                           Пошук · групи м&apos;язів · своя вправа
                         </Text>
                       </View>
-                      <Text className="text-stone-400 text-lg">›</Text>
+                      <Text className="text-fg-subtle text-lg">›</Text>
                     </View>
                   </Card>
                 )}
@@ -382,7 +382,7 @@ export function Workouts({ testID = "fizruk-workouts" }: WorkoutsProps) {
 
             <View className="gap-3" testID={`${testID}-recent`}>
               <View className="flex-row items-center justify-between px-1">
-                <Text className="text-sm font-semibold text-stone-700">
+                <Text className="text-sm font-semibold text-fg">
                   Останні тренування
                 </Text>
                 {workouts.length > 0 ? (
@@ -415,7 +415,7 @@ export function Workouts({ testID = "fizruk-workouts" }: WorkoutsProps) {
                 </View>
               ) : (
                 <Card variant="flat" radius="lg" padding="lg">
-                  <Text className="text-sm text-stone-600">
+                  <Text className="text-sm text-fg-muted">
                     Після першого завершеного тренування тут з&apos;являться
                     останні сесії.
                   </Text>
@@ -481,7 +481,7 @@ function ActiveItemCard({
   const sets = item.sets ?? [];
   return (
     <Card variant="default" radius="lg" padding="md" testID={testID}>
-      <Text className="text-sm font-semibold text-stone-900">
+      <Text className="text-sm font-semibold text-fg">
         {item.nameUk || "Вправа"}
       </Text>
       {sets.length > 0 ? (
@@ -495,8 +495,8 @@ function ActiveItemCard({
               testID={`${testID}-set-${idx}`}
               className="flex-row items-center justify-between py-1.5 px-2 rounded-lg bg-cream-100"
             >
-              <Text className="text-xs text-stone-500">Сет {idx + 1}</Text>
-              <Text className="text-sm font-semibold text-stone-900">
+              <Text className="text-xs text-fg-muted">Сет {idx + 1}</Text>
+              <Text className="text-sm font-semibold text-fg">
                 {set.weightKg} кг × {set.reps}
               </Text>
             </Pressable>
@@ -552,9 +552,7 @@ function RecentWorkoutRow({
     >
       <View className="flex-1 pr-2">
         <View className="flex-row items-center gap-2">
-          <Text className="text-sm font-semibold text-stone-900">
-            {dateLabel}
-          </Text>
+          <Text className="text-sm font-semibold text-fg">{dateLabel}</Text>
           {isActive ? (
             <Text className="text-[10px] uppercase font-bold text-teal-700 bg-teal-100 px-2 py-0.5 rounded-full">
               Активне
@@ -565,7 +563,7 @@ function RecentWorkoutRow({
             </Text>
           ) : null}
         </View>
-        <Text className="text-xs text-stone-500 mt-0.5" numberOfLines={1}>
+        <Text className="text-xs text-fg-muted mt-0.5" numberOfLines={1}>
           {subtitle}
         </Text>
       </View>

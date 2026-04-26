@@ -153,9 +153,9 @@ export function AssistantCataloguePage({
           accessibilityLabel="Назад"
           testID="assistant-catalogue-back"
         >
-          <Text className="text-stone-700 text-lg">‹</Text>
+          <Text className="text-fg text-lg">‹</Text>
         </Button>
-        <Text className="text-[20px] font-bold text-stone-900">
+        <Text className="text-[20px] font-bold text-fg">
           Можливості асистента
         </Text>
       </View>
@@ -165,7 +165,7 @@ export function AssistantCataloguePage({
         contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 32 }}
         keyboardShouldPersistTaps="handled"
       >
-        <Text className="text-sm text-stone-500 mb-3 leading-snug">
+        <Text className="text-sm text-fg-muted mb-3 leading-snug">
           Усе, що вміє асистент. Тапни картку — побачиш приклади команд та опис.
           Запуск сценаріїв — у HubChat (наразі веб-версія).
         </Text>
@@ -173,13 +173,13 @@ export function AssistantCataloguePage({
         <CapabilityLegend />
 
         <View className="bg-white border border-cream-300 rounded-2xl px-3 py-2 mb-4 flex-row items-center gap-2">
-          <Text className="text-stone-400 text-base">🔍</Text>
+          <Text className="text-fg-subtle text-base">🔍</Text>
           <TextInput
             value={query}
             onChangeText={setQuery}
             placeholder="Пошук — «витрата», «звичка», «1RM»…"
             placeholderTextColor="#a8a29e"
-            className="flex-1 text-sm text-stone-900 py-1"
+            className="flex-1 text-sm text-fg py-1"
             accessibilityLabel="Пошук можливостей"
             testID="assistant-catalogue-search"
             returnKeyType="search"
@@ -199,10 +199,10 @@ export function AssistantCataloguePage({
               testID="catalogue-toggle-all"
               className="flex-row items-center gap-1 px-2.5 py-1 rounded-full active:opacity-70"
             >
-              <Text className="text-stone-500 text-xs">
+              <Text className="text-fg-muted text-xs">
                 {allCollapsed ? "⌄" : "⌃"}
               </Text>
-              <Text className="text-stone-600 text-xs font-semibold">
+              <Text className="text-fg-muted text-xs font-semibold">
                 {allCollapsed ? "Розгорнути все" : "Згорнути все"}
               </Text>
             </Pressable>
@@ -210,7 +210,7 @@ export function AssistantCataloguePage({
         ) : null}
 
         {filtered.length === 0 ? (
-          <Text className="text-center text-stone-500 py-8 text-sm">
+          <Text className="text-center text-fg-muted py-8 text-sm">
             Нічого не знайдено за «{query}». Спробуй інший термін.
           </Text>
         ) : (
@@ -263,13 +263,13 @@ function ModuleGroup({
         testID={`catalogue-module-${module}-toggle`}
         className="flex-row items-center gap-1 mb-2 active:opacity-70"
       >
-        <Text className="text-sm font-bold text-stone-900 flex-1">
+        <Text className="text-sm font-bold text-fg flex-1">
           {MODULE_EMOJI[module]} {meta.title}{" "}
-          <Text className="text-stone-400 font-normal">
+          <Text className="text-fg-subtle font-normal">
             ({capabilities.length})
           </Text>
         </Text>
-        <Text className="text-stone-400 text-base">
+        <Text className="text-fg-subtle text-base">
           {collapsed ? "⌄" : "⌃"}
         </Text>
       </Pressable>
@@ -295,18 +295,18 @@ function CapabilityLegend() {
       accessibilityLabel="Що означають позначки"
       className="bg-white border border-cream-300 rounded-2xl px-3 py-2.5 mb-3 flex-row flex-wrap gap-x-3 gap-y-1.5 items-center"
     >
-      <Text className="text-xs font-semibold text-stone-500">Позначки:</Text>
+      <Text className="text-xs font-semibold text-fg-muted">Позначки:</Text>
       <View className="flex-row items-center gap-1.5">
-        <View className="border border-stone-300 rounded-full px-2 py-0.5">
-          <Text className="text-[10px] font-bold text-stone-700">⚡ ЧІП</Text>
+        <View className="border border-line rounded-full px-2 py-0.5">
+          <Text className="text-[10px] font-bold text-fg">⚡ ЧІП</Text>
         </View>
-        <Text className="text-[11px] text-stone-500">швидкий сценарій</Text>
+        <Text className="text-[11px] text-fg-muted">швидкий сценарій</Text>
       </View>
       <View className="flex-row items-center gap-1.5">
         <View className="border border-amber-400 bg-amber-50 rounded-full px-2 py-0.5">
           <Text className="text-[10px] font-bold text-amber-700">⚠ РИЗИК</Text>
         </View>
-        <Text className="text-[11px] text-stone-500">критична дія</Text>
+        <Text className="text-[11px] text-fg-muted">критична дія</Text>
       </View>
       <View className="flex-row items-center gap-1.5">
         <View className="border border-emerald-400 bg-emerald-50 rounded-full px-2 py-0.5">
@@ -314,7 +314,7 @@ function CapabilityLegend() {
             ✨ НОВИНКА
           </Text>
         </View>
-        <Text className="text-[11px] text-stone-500">нещодавно додано</Text>
+        <Text className="text-[11px] text-fg-muted">нещодавно додано</Text>
       </View>
     </View>
   );
@@ -336,7 +336,7 @@ function CapabilityRow({ capability, onActivate }: CapabilityRowProps) {
     >
       <Card variant="default" radius="lg" padding="md">
         <View className="flex-row items-start gap-2 flex-wrap">
-          <Text className="text-sm font-semibold text-stone-900 flex-shrink">
+          <Text className="text-sm font-semibold text-fg flex-shrink">
             {capability.label}
           </Text>
           {capability.isNew ? (
@@ -350,10 +350,8 @@ function CapabilityRow({ capability, onActivate }: CapabilityRowProps) {
             </View>
           ) : null}
           {capability.isQuickAction ? (
-            <View className="border border-stone-300 rounded-full px-2 py-0.5">
-              <Text className="text-[10px] font-bold text-stone-700">
-                ⚡ ЧІП
-              </Text>
+            <View className="border border-line rounded-full px-2 py-0.5">
+              <Text className="text-[10px] font-bold text-fg">⚡ ЧІП</Text>
             </View>
           ) : null}
           {capability.risky ? (
@@ -364,7 +362,7 @@ function CapabilityRow({ capability, onActivate }: CapabilityRowProps) {
             </View>
           ) : null}
         </View>
-        <Text className="text-xs text-stone-500 mt-1 leading-snug">
+        <Text className="text-xs text-fg-muted mt-1 leading-snug">
           {capability.description}
         </Text>
       </Card>
@@ -391,7 +389,7 @@ function CapabilityDetailSheet({
     >
       {cap ? (
         <View className="px-5 py-4 gap-4">
-          <Text className="text-sm text-stone-900">{cap.description}</Text>
+          <Text className="text-sm text-fg">{cap.description}</Text>
 
           {cap.risky ? (
             <View className="border border-amber-400 bg-amber-50 rounded-2xl px-3 py-2">
@@ -403,22 +401,20 @@ function CapabilityDetailSheet({
           ) : null}
 
           <View>
-            <Text className="text-sm font-bold text-stone-900 mb-2">
-              Приклади
-            </Text>
+            <Text className="text-sm font-bold text-fg mb-2">Приклади</Text>
             <View className="gap-1.5">
               {cap.examples.map((ex, i) => (
                 <View
                   key={i}
                   className="border border-cream-300 bg-white rounded-xl px-3 py-2"
                 >
-                  <Text className="text-sm text-stone-900">«{ex}»</Text>
+                  <Text className="text-sm text-fg">«{ex}»</Text>
                 </View>
               ))}
             </View>
           </View>
 
-          <Text className="text-xs text-stone-500 leading-snug">
+          <Text className="text-xs text-fg-muted leading-snug">
             Запуск сценарію відбувається в HubChat. Поки що чат AI-асистента
             доступний у веб-версії — мобільна версія в дорозі.
           </Text>

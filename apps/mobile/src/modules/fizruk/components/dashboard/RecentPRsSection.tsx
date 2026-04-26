@@ -36,7 +36,7 @@ export function RecentPRsSection({
   if (prs.length === 0) {
     return (
       <View className="gap-2" testID={testID}>
-        <Text className="text-sm font-semibold text-stone-700">Рекорди</Text>
+        <Text className="text-sm font-semibold text-fg">Рекорди</Text>
         <Card
           variant="default"
           radius="lg"
@@ -44,10 +44,10 @@ export function RecentPRsSection({
           className="items-center"
           testID={`${testID}-empty`}
         >
-          <Text className="text-sm font-semibold text-stone-900">
+          <Text className="text-sm font-semibold text-fg">
             Поки без рекордів
           </Text>
-          <Text className="text-xs text-stone-500 text-center mt-1">
+          <Text className="text-xs text-fg-muted text-center mt-1">
             Запиши вагу й повторення у сетах — Dashboard підсвітить найкращі.
           </Text>
         </Card>
@@ -57,7 +57,7 @@ export function RecentPRsSection({
 
   return (
     <View className="gap-2" testID={testID}>
-      <Text className="text-sm font-semibold text-stone-700">Рекорди</Text>
+      <Text className="text-sm font-semibold text-fg">Рекорди</Text>
       <View className="gap-2">
         {prs.map((pr) => (
           <Card
@@ -70,12 +70,12 @@ export function RecentPRsSection({
             <View className="flex-row items-center justify-between gap-3">
               <View className="flex-1">
                 <Text
-                  className="text-sm font-semibold text-stone-900"
+                  className="text-sm font-semibold text-fg"
                   numberOfLines={1}
                 >
                   {pr.nameUk ?? pr.exerciseId}
                 </Text>
-                <Text className="text-[11px] text-stone-500 mt-0.5">
+                <Text className="text-[11px] text-fg-muted mt-0.5">
                   {pr.weightKg} × {pr.reps}
                   {pr.atIso ? ` · ${formatDateShort(pr.atIso)}` : ""}
                 </Text>
@@ -84,7 +84,7 @@ export function RecentPRsSection({
                 <Text className="text-sm font-bold text-teal-700">
                   {pr.oneRmKg} кг
                 </Text>
-                <Text className="text-[10px] text-stone-500">1ПМ</Text>
+                <Text className="text-[10px] text-fg-muted">1ПМ</Text>
               </View>
             </View>
           </Card>

@@ -186,7 +186,7 @@ export function ActiveSetEditor({
       <View className="gap-4 py-2" testID={testID}>
         {/* Weight */}
         <View className="gap-2">
-          <Text className="text-xs font-semibold uppercase text-stone-500">
+          <Text className="text-xs font-semibold uppercase text-fg-muted">
             Вага (кг)
           </Text>
           <View className="flex-row items-center gap-2">
@@ -198,7 +198,7 @@ export function ActiveSetEditor({
               accessibilityLabel="Зменшити вагу"
               testID={`${testID}-weight-dec`}
             >
-              <Text className="text-stone-900 text-lg font-bold">−</Text>
+              <Text className="text-fg text-lg font-bold">−</Text>
             </Button>
             <Input
               value={numInputValue(draft.weightKg)}
@@ -217,7 +217,7 @@ export function ActiveSetEditor({
               accessibilityLabel="Збільшити вагу"
               testID={`${testID}-weight-inc`}
             >
-              <Text className="text-stone-900 text-lg font-bold">+</Text>
+              <Text className="text-fg text-lg font-bold">+</Text>
             </Button>
           </View>
           {errors.weightKg ? (
@@ -232,7 +232,7 @@ export function ActiveSetEditor({
 
         {/* Reps */}
         <View className="gap-2">
-          <Text className="text-xs font-semibold uppercase text-stone-500">
+          <Text className="text-xs font-semibold uppercase text-fg-muted">
             Повторення
           </Text>
           <View className="flex-row items-center gap-2">
@@ -244,7 +244,7 @@ export function ActiveSetEditor({
               accessibilityLabel="Зменшити повторення"
               testID={`${testID}-reps-dec`}
             >
-              <Text className="text-stone-900 text-lg font-bold">−</Text>
+              <Text className="text-fg text-lg font-bold">−</Text>
             </Button>
             <Input
               value={numInputValue(draft.reps)}
@@ -263,7 +263,7 @@ export function ActiveSetEditor({
               accessibilityLabel="Збільшити повторення"
               testID={`${testID}-reps-inc`}
             >
-              <Text className="text-stone-900 text-lg font-bold">+</Text>
+              <Text className="text-fg text-lg font-bold">+</Text>
             </Button>
           </View>
           {errors.reps ? (
@@ -278,7 +278,7 @@ export function ActiveSetEditor({
 
         {/* RPE */}
         <View className="gap-2">
-          <Text className="text-xs font-semibold uppercase text-stone-500">
+          <Text className="text-xs font-semibold uppercase text-fg-muted">
             RPE (Borg 1..10) — необов&apos;язково
           </Text>
           <View className="flex-row flex-wrap gap-1.5">

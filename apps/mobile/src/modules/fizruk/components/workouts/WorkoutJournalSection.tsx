@@ -41,10 +41,10 @@ export interface WorkoutJournalSectionProps<W extends WorkoutLike> {
 function JournalEmpty({ testID }: { testID: string }) {
   return (
     <Card variant="flat" radius="lg" padding="lg" testID={testID}>
-      <Text className="text-sm font-semibold text-stone-900">
+      <Text className="text-sm font-semibold text-fg">
         Журнал поки порожній
       </Text>
-      <Text className="text-xs text-stone-500 mt-1">
+      <Text className="text-xs text-fg-muted mt-1">
         Щойно ти додаси перше тренування і додаси в нього вправи, воно
         з&apos;явиться тут згруповане по днях.
       </Text>
@@ -101,9 +101,7 @@ function WorkoutRow<W extends WorkoutLike>({
     >
       <View className="flex-1 pr-2">
         <View className="flex-row items-center gap-2">
-          <Text className="text-sm font-semibold text-stone-900">
-            {startedAt}
-          </Text>
+          <Text className="text-sm font-semibold text-fg">{startedAt}</Text>
           {isActive ? (
             <Text className="text-[10px] uppercase font-bold text-teal-700 bg-teal-100 px-2 py-0.5 rounded-full">
               Активне
@@ -114,11 +112,11 @@ function WorkoutRow<W extends WorkoutLike>({
             </Text>
           ) : null}
         </View>
-        <Text className="text-xs text-stone-500 mt-0.5" numberOfLines={1}>
+        <Text className="text-xs text-fg-muted mt-0.5" numberOfLines={1}>
           {subtitle}
         </Text>
       </View>
-      <Text className="text-stone-400 text-lg">›</Text>
+      <Text className="text-fg-subtle text-lg">›</Text>
     </Pressable>
   );
 }
@@ -148,7 +146,7 @@ export const WorkoutJournalSection = memo(function WorkoutJournalSection<
       {sections.map((section) => (
         <View key={section.dateKey || "unknown"} className="gap-2">
           <Text
-            className="text-xs font-semibold uppercase text-stone-500 px-1"
+            className="text-xs font-semibold uppercase text-fg-muted px-1"
             testID={`${testID}-heading-${section.dateKey || "unknown"}`}
           >
             {formatWorkoutDateLabel(section.dateKey)}

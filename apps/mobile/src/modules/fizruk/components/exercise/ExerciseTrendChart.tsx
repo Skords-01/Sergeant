@@ -53,10 +53,10 @@ const ExerciseTrendChartImpl = function ExerciseTrendChart({
         testID={`${testIDPrefix}-empty`}
         className="rounded-2xl border border-dashed border-cream-300 bg-cream-50 p-4"
       >
-        <Text className="text-sm font-semibold text-stone-900">
+        <Text className="text-sm font-semibold text-fg">
           Немає даних для графіка
         </Text>
-        <Text className="text-xs text-stone-500 mt-1">
+        <Text className="text-xs text-fg-muted mt-1">
           Заверши хоча б один силовий підхід, щоб побачити тренд.
         </Text>
       </View>
@@ -69,10 +69,10 @@ const ExerciseTrendChartImpl = function ExerciseTrendChart({
         testID={`${testIDPrefix}-empty`}
         className="rounded-2xl border border-dashed border-cream-300 bg-cream-50 p-4"
       >
-        <Text className="text-sm font-semibold text-stone-900">
+        <Text className="text-sm font-semibold text-fg">
           Замало точок для лінії
         </Text>
-        <Text className="text-xs text-stone-500 mt-1">
+        <Text className="text-xs text-fg-muted mt-1">
           {`Потрібні щонайменше два тижні з даними, щоб побудувати ${label.toLowerCase()}.`}
         </Text>
       </View>
@@ -92,7 +92,7 @@ const ExerciseTrendChartImpl = function ExerciseTrendChart({
   return (
     <View testID={`${testIDPrefix}-chart`}>
       <View className="flex-row items-baseline justify-between mb-2">
-        <Text className="text-base font-bold text-stone-900 tabular-nums">
+        <Text className="text-base font-bold text-fg tabular-nums">
           {`${latest.value}${unit}`}
         </Text>
         <Text
@@ -102,7 +102,7 @@ const ExerciseTrendChartImpl = function ExerciseTrendChart({
               ? "text-xs font-semibold text-emerald-700 tabular-nums"
               : delta < 0
                 ? "text-xs font-semibold text-amber-700 tabular-nums"
-                : "text-xs font-semibold text-stone-500 tabular-nums"
+                : "text-xs font-semibold text-fg-muted tabular-nums"
           }
         >
           {`${delta > 0 ? "+" : ""}${delta}${unit}`}
@@ -129,8 +129,8 @@ const ExerciseTrendChartImpl = function ExerciseTrendChart({
         </VictoryGroup>
       </View>
       <View className="flex-row justify-between mt-1">
-        <Text className="text-[10px] text-stone-400">{first.dateLabel}</Text>
-        <Text className="text-[10px] text-stone-400">{latest.dateLabel}</Text>
+        <Text className="text-[10px] text-fg-subtle">{first.dateLabel}</Text>
+        <Text className="text-[10px] text-fg-subtle">{latest.dateLabel}</Text>
       </View>
     </View>
   );

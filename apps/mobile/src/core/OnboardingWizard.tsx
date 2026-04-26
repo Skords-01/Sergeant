@@ -195,9 +195,7 @@ function StepIndicator({ current, total }: { current: number; total: number }) {
           key={i}
           className={cx(
             "rounded-full",
-            i === current
-              ? "h-1.5 w-6 bg-brand-500"
-              : "h-1.5 w-1.5 bg-stone-300",
+            i === current ? "h-1.5 w-6 bg-brand-500" : "h-1.5 w-1.5 bg-line",
           )}
         />
       ))}
@@ -216,17 +214,17 @@ function WelcomeStep({ onContinue }: { onContinue: () => void }) {
         <Text className="text-4xl">✨</Text>
       </View>
       <View className="items-center gap-2">
-        <Text className="text-center text-2xl font-bold text-stone-900">
+        <Text className="text-center text-2xl font-bold text-fg">
           Привіт. Це Sergeant.
         </Text>
-        <Text className="text-center text-sm leading-relaxed text-stone-500">
+        <Text className="text-center text-sm leading-relaxed text-fg-muted">
           Гроші, тіло, звички, їжа — все в одному місці. Офлайн. Приватно.
         </Text>
       </View>
       <View className="flex-row items-center gap-3">
-        <Text className="text-xs text-stone-400">📶 Офлайн</Text>
-        <Text className="text-xs text-stone-400">🔒 Локально</Text>
-        <Text className="text-xs text-stone-400">⚡ ~30 сек</Text>
+        <Text className="text-xs text-fg-subtle">📶 Офлайн</Text>
+        <Text className="text-xs text-fg-subtle">🔒 Локально</Text>
+        <Text className="text-xs text-fg-subtle">⚡ ~30 сек</Text>
       </View>
       <Button
         variant="primary"
@@ -259,10 +257,10 @@ function ModulesStep({
   return (
     <View className="items-center gap-4">
       <View className="items-center gap-1">
-        <Text className="text-center text-xl font-bold text-stone-900">
+        <Text className="text-center text-xl font-bold text-fg">
           Що тобі важливо?
         </Text>
-        <Text className="text-center text-xs text-stone-500">
+        <Text className="text-center text-xs text-fg-muted">
           Обери модулі — решту легко додати потім.
         </Text>
       </View>
@@ -302,13 +300,13 @@ function ModulesStep({
                 <Text className="text-lg">{CHIP_GLYPH[id]}</Text>
               </View>
               <View className="min-w-0 flex-1 pr-4">
-                <Text className="text-sm font-bold leading-tight text-stone-900">
+                <Text className="text-sm font-bold leading-tight text-fg">
                   {DASHBOARD_MODULE_LABELS[id]}
                 </Text>
-                <Text className="mt-0.5 text-xs leading-snug text-stone-500">
+                <Text className="mt-0.5 text-xs leading-snug text-fg-muted">
                   {ONBOARDING_MODULE_DESCRIPTIONS[id]}
                 </Text>
-                <Text className="mt-1 text-[11px] leading-tight text-stone-400">
+                <Text className="mt-1 text-[11px] leading-tight text-fg-subtle">
                   {ONBOARDING_VIBE_TEASERS[id]}
                 </Text>
               </View>
@@ -322,7 +320,7 @@ function ModulesStep({
           className="items-center justify-center rounded-xl px-4 py-3 active:opacity-70"
           testID="onboarding-back-modules"
         >
-          <Text className="text-sm text-stone-500">←</Text>
+          <Text className="text-sm text-fg-muted">←</Text>
         </Pressable>
         <Button
           variant="primary"
@@ -335,7 +333,7 @@ function ModulesStep({
         </Button>
       </View>
       {picks.length === 0 && (
-        <Text className="text-center text-[11px] text-stone-500">
+        <Text className="text-center text-[11px] text-fg-muted">
           Без вибору — всі 4 модулі.
         </Text>
       )}
@@ -373,10 +371,10 @@ function GoalsStep({
   return (
     <View className="items-center gap-4">
       <View className="items-center gap-1">
-        <Text className="text-center text-xl font-bold text-stone-900">
+        <Text className="text-center text-xl font-bold text-fg">
           {hasQuestions ? "Твої цілі" : "Готово!"}
         </Text>
-        <Text className="text-center text-xs text-stone-500">
+        <Text className="text-center text-xs text-fg-muted">
           {hasQuestions
             ? "Необов'язково — можна пропустити."
             : "Налаштуй деталі потім у кожному модулі."}
@@ -391,7 +389,7 @@ function GoalsStep({
               const currentVal = (goals[goalKey] as string | null) ?? null;
               return (
                 <View key={q.id} className="gap-1.5">
-                  <Text className="text-sm font-semibold text-stone-900">
+                  <Text className="text-sm font-semibold text-fg">
                     {q.title}
                   </Text>
                   <View className="flex-row flex-wrap gap-2">
@@ -417,7 +415,7 @@ function GoalsStep({
                             : "border-cream-300 bg-cream-50",
                         )}
                       >
-                        <Text className="text-sm font-medium text-stone-900">
+                        <Text className="text-sm font-medium text-fg">
                           {opt.label}
                         </Text>
                       </Pressable>
@@ -437,7 +435,7 @@ function GoalsStep({
               ];
               return (
                 <View key={q.id} className="gap-1.5">
-                  <Text className="text-sm font-semibold text-stone-900">
+                  <Text className="text-sm font-semibold text-fg">
                     {q.title}
                   </Text>
                   <View className="flex-row flex-wrap gap-2">
@@ -456,7 +454,7 @@ function GoalsStep({
                             : "border-cream-300 bg-cream-50",
                         )}
                       >
-                        <Text className="text-sm font-medium text-stone-900">
+                        <Text className="text-sm font-medium text-fg">
                           {preset.toLocaleString("uk-UA")}
                           {s.unit ? ` ${s.unit}` : ""}
                         </Text>
@@ -477,7 +475,7 @@ function GoalsStep({
           className="items-center justify-center rounded-xl px-4 py-3 active:opacity-70"
           testID="onboarding-back-goals"
         >
-          <Text className="text-sm text-stone-500">←</Text>
+          <Text className="text-sm text-fg-muted">←</Text>
         </Pressable>
         <Button
           variant="primary"

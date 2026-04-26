@@ -41,19 +41,19 @@ function SummaryCardComponent({ summary, loading }: SummaryCardProps) {
   return (
     <View className="flex-row gap-3" testID="finyk-analytics-summary">
       <View className="flex-1 items-center">
-        <Text className="text-[10px] text-stone-500 mb-1">Витрати</Text>
+        <Text className="text-[10px] text-fg-muted mb-1">Витрати</Text>
         <Text className="text-sm font-bold tabular-nums text-rose-600">
           {fmt(summary.spent)} ₴
         </Text>
       </View>
       <View className="flex-1 items-center">
-        <Text className="text-[10px] text-stone-500 mb-1">Дохід</Text>
+        <Text className="text-[10px] text-fg-muted mb-1">Дохід</Text>
         <Text className="text-sm font-bold tabular-nums text-emerald-600">
           {fmt(summary.income)} ₴
         </Text>
       </View>
       <View className="flex-1 items-center">
-        <Text className="text-[10px] text-stone-500 mb-1">Баланс</Text>
+        <Text className="text-[10px] text-fg-muted mb-1">Баланс</Text>
         <Text
           className={
             "text-sm font-bold tabular-nums " +

@@ -51,10 +51,10 @@ function MonthNavComponent({ year, month, onChange, now }: MonthNavProps) {
         testID="finyk-analytics-month-prev"
         className="w-10 h-10 rounded-xl border border-cream-300 items-center justify-center active:opacity-60"
       >
-        <Text className="text-base text-stone-600">‹</Text>
+        <Text className="text-base text-fg-muted">‹</Text>
       </Pressable>
       <Text
-        className="text-sm font-semibold text-stone-900 capitalize"
+        className="text-sm font-semibold text-fg capitalize"
         testID="finyk-analytics-month-label"
       >
         {label}
@@ -71,7 +71,7 @@ function MonthNavComponent({ year, month, onChange, now }: MonthNavProps) {
           (isCurrentMonth ? "opacity-30" : "active:opacity-60")
         }
       >
-        <Text className="text-base text-stone-600">›</Text>
+        <Text className="text-base text-fg-muted">›</Text>
       </Pressable>
     </View>
   );

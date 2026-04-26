@@ -221,12 +221,12 @@ export function HubDashboard() {
       >
         <View className="flex-row items-start justify-between gap-3">
           <View className="flex-1 gap-1">
-            <Text className="text-[26px] font-bold text-stone-900">
+            <Text className="text-[26px] font-bold text-fg">
               Привіт, {greetingName}
             </Text>
             <Text
               accessibilityRole="text"
-              className="text-sm text-stone-500 capitalize"
+              className="text-sm text-fg-muted capitalize"
             >
               {todayLabel}
             </Text>
@@ -269,14 +269,14 @@ export function HubDashboard() {
         </View>
 
         <View className="gap-2">
-          <Text className="text-sm font-semibold text-stone-600">Статус</Text>
+          <Text className="text-sm font-semibold text-fg-muted">Статус</Text>
           <DraggableDashboard
             modules={visibleOrder}
             onReorder={reorderVisible}
             onOpenModule={openModule}
             previews={previews}
           />
-          <Text className="mt-1 text-[11px] leading-snug text-stone-400">
+          <Text className="mt-1 text-[11px] leading-snug text-fg-subtle">
             Утримай і потягни, щоб змінити порядок модулів. Порядок
             синхронізується з вебом.
           </Text>

@@ -51,8 +51,8 @@ export function WeekKcalChart({
             <Text
               className={
                 isToday
-                  ? "text-[9px] leading-none text-stone-900 font-bold"
-                  : "text-[9px] leading-none text-stone-400"
+                  ? "text-[9px] leading-none text-fg font-bold"
+                  : "text-[9px] leading-none text-fg-subtle"
               }
             >
               {label}

@@ -36,19 +36,16 @@ function SubscriptionRowImpl({
     >
       <Text className="text-xl mr-3">{subscription.emoji || "📦"}</Text>
       <View className="flex-1 min-w-0">
-        <Text
-          className="text-sm font-semibold text-stone-900"
-          numberOfLines={1}
-        >
+        <Text className="text-sm font-semibold text-fg" numberOfLines={1}>
           {subscription.name}
         </Text>
-        <Text className="text-xs text-stone-500" numberOfLines={1}>
+        <Text className="text-xs text-fg-muted" numberOfLines={1}>
           {amountLabel ?? `${subscription.currency || "UAH"}`} · день{" "}
           {subscription.billingDay}
         </Text>
         {nextChargeLabel ? (
           <Text
-            className="text-[11px] text-stone-400"
+            className="text-[11px] text-fg-subtle"
             numberOfLines={1}
             testID={testID ? `${testID}-next-date` : undefined}
           >
@@ -68,7 +65,7 @@ function SubscriptionRowImpl({
             className={
               daysToNext <= 3
                 ? "text-[11px] font-medium text-amber-800"
-                : "text-[11px] font-medium text-stone-600"
+                : "text-[11px] font-medium text-fg-muted"
             }
           >
             {daysToNext === 0 ? "сьогодні" : `за ${daysToNext} дн.`}

@@ -37,13 +37,10 @@ export const FlowRow = memo(function FlowRow({
       )}
     >
       <View className="flex-1 mr-3">
-        <Text
-          className="text-base font-medium text-stone-900"
-          numberOfLines={1}
-        >
+        <Text className="text-base font-medium text-fg" numberOfLines={1}>
           {flow.title}
         </Text>
-        <Text className="text-xs text-stone-500 mt-0.5">{flow.hint}</Text>
+        <Text className="text-xs text-fg-muted mt-0.5">{flow.hint}</Text>
       </View>
       <Text
         className={cn(

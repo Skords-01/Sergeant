@@ -114,14 +114,14 @@ const RecRow = memo(function RecRow({
         importantForAccessibility="no-hide-descendants"
       />
       <View className="flex-1 pl-1">
-        <Text className="text-sm font-semibold text-stone-900">
+        <Text className="text-sm font-semibold text-fg">
           {rec.icon ? (
             <Text accessibilityElementsHidden>{`${rec.icon} `}</Text>
           ) : null}
           {rec.title}
         </Text>
         {rec.body ? (
-          <Text className="mt-0.5 text-xs leading-relaxed text-stone-500">
+          <Text className="mt-0.5 text-xs leading-relaxed text-fg-muted">
             {rec.body}
           </Text>
         ) : null}
@@ -133,10 +133,8 @@ const RecRow = memo(function RecRow({
             className="mt-1.5 flex-row items-center gap-1 self-start active:opacity-70"
             testID={testID ? `${testID}-action` : undefined}
           >
-            <Text className="text-xs font-semibold text-stone-900">
-              Відкрити
-            </Text>
-            <Text className="text-xs text-stone-900">›</Text>
+            <Text className="text-xs font-semibold text-fg">Відкрити</Text>
+            <Text className="text-xs text-fg">›</Text>
           </Pressable>
         ) : null}
       </View>
@@ -150,7 +148,7 @@ const RecRow = memo(function RecRow({
           className="shrink-0 -mr-1 -mt-1"
           testID={testID ? `${testID}-dismiss` : undefined}
         >
-          <Text className="text-sm text-stone-500">✕</Text>
+          <Text className="text-sm text-fg-muted">✕</Text>
         </Button>
       ) : null}
     </View>
@@ -225,15 +223,13 @@ export function HubInsightsPanel({
         testID={`${baseTestID}-toggle`}
       >
         <View className="flex-row items-center gap-2">
-          <Text className="text-xs font-semibold text-stone-900">Інсайти</Text>
+          <Text className="text-xs font-semibold text-fg">Інсайти</Text>
           <View className="min-w-[20px] items-center justify-center rounded-full bg-cream-200 px-1.5 py-0.5">
-            <Text className="text-[10px] font-bold text-stone-500">
-              {total}
-            </Text>
+            <Text className="text-[10px] font-bold text-fg-muted">{total}</Text>
           </View>
         </View>
         <Text
-          className="text-sm text-stone-500"
+          className="text-sm text-fg-muted"
           style={{
             transform: [{ rotate: open ? "90deg" : "0deg" }],
           }}

@@ -123,7 +123,7 @@ export function ConfirmDialog({
           accessibilityLabel={cancelLabel}
           onPress={onCancel}
           testID="confirm-dialog-scrim"
-          className="absolute inset-0 bg-stone-900/40"
+          className="absolute inset-0 bg-fg/40"
         />
 
         {/* Card */}
@@ -133,12 +133,12 @@ export function ConfirmDialog({
           accessibilityLabel={title}
           className="w-full max-w-sm bg-cream-50 border border-cream-300 rounded-3xl p-6 shadow-lg"
         >
-          <Text className="text-[17px] font-bold text-stone-900 mb-2 leading-snug">
+          <Text className="text-[17px] font-bold text-fg mb-2 leading-snug">
             {title}
           </Text>
           {typeof description === "string" ||
           typeof description === "number" ? (
-            <Text className="text-sm text-stone-500 leading-relaxed mb-5">
+            <Text className="text-sm text-fg-muted leading-relaxed mb-5">
               {description}
             </Text>
           ) : description ? (

@@ -234,7 +234,7 @@ export function Exercise({
       >
         <View className="px-4 pt-4">
           <Card variant="flat" radius="lg" padding="lg">
-            <Text className="text-sm text-stone-500">Невірний ID вправи</Text>
+            <Text className="text-sm text-fg-muted">Невірний ID вправи</Text>
           </Card>
         </View>
       </SafeAreaView>
@@ -274,7 +274,7 @@ export function Exercise({
 
         {hasStrength ? (
           <Card variant="default" radius="lg" padding="md">
-            <Text className="text-[10px] uppercase font-bold text-stone-500 mb-2">
+            <Text className="text-[10px] uppercase font-bold text-fg-muted mb-2">
               Прогресія 1RM (за тижнями)
             </Text>
             <ExerciseTrendChart
@@ -289,7 +289,7 @@ export function Exercise({
 
         {hasStrength ? (
           <Card variant="default" radius="lg" padding="md">
-            <Text className="text-[10px] uppercase font-bold text-stone-500 mb-2">
+            <Text className="text-[10px] uppercase font-bold text-fg-muted mb-2">
               Обʼєм тренування (кг × повтори)
             </Text>
             <ExerciseTrendChart
@@ -304,7 +304,7 @@ export function Exercise({
 
         {hasCardio ? (
           <Card variant="default" radius="lg" padding="md">
-            <Text className="text-[10px] uppercase font-bold text-stone-500 mb-2">
+            <Text className="text-[10px] uppercase font-bold text-fg-muted mb-2">
               Темп (хв/км)
             </Text>
             <ExerciseTrendChart
@@ -318,7 +318,7 @@ export function Exercise({
               label="Темп"
               testIDPrefix={`${testID}-trend-pace`}
             />
-            <Text className="text-[10px] text-stone-400 mt-1">
+            <Text className="text-[10px] text-fg-subtle mt-1">
               Менше — краще (швидший темп)
             </Text>
           </Card>
@@ -326,7 +326,7 @@ export function Exercise({
 
         {hasCardio ? (
           <Card variant="default" radius="lg" padding="md">
-            <Text className="text-[10px] uppercase font-bold text-stone-500 mb-2">
+            <Text className="text-[10px] uppercase font-bold text-fg-muted mb-2">
               Дистанція (км)
             </Text>
             <ExerciseTrendChart
@@ -348,7 +348,7 @@ export function Exercise({
         ) : null}
 
         <Card variant="default" radius="lg" padding="md">
-          <Text className="text-[10px] uppercase font-bold text-stone-500 mb-2">
+          <Text className="text-[10px] uppercase font-bold text-fg-muted mb-2">
             Історія сетів
           </Text>
           <ExerciseHistoryList history={history} testID={`${testID}-history`} />

@@ -564,7 +564,7 @@ export function TransactionsPage({
           >
             <View className="flex-row items-center flex-1 min-w-0">
               <Text
-                className="text-stone-500 mr-2 text-xs"
+                className="text-fg-muted mr-2 text-xs"
                 style={{ width: 10 }}
                 accessibilityElementsHidden
                 importantForAccessibility="no"
@@ -572,11 +572,11 @@ export function TransactionsPage({
                 {item.collapsed ? "▸" : "▾"}
               </Text>
               {/* eslint-disable-next-line sergeant-design/no-eyebrow-drift */}
-              <Text className="text-xs font-semibold uppercase tracking-wide text-stone-500 flex-shrink">
+              <Text className="text-xs font-semibold uppercase tracking-wide text-fg-muted flex-shrink">
                 {item.label}
               </Text>
               {item.count > 0 ? (
-                <Text className="text-[10px] font-normal text-stone-400 ml-2">
+                <Text className="text-[10px] font-normal text-fg-subtle ml-2">
                   · {item.count}
                 </Text>
               ) : null}
@@ -586,7 +586,7 @@ export function TransactionsPage({
                 className={
                   item.total >= 0
                     ? "text-xs font-semibold text-brand-600"
-                    : "text-xs font-semibold text-stone-700"
+                    : "text-xs font-semibold text-fg"
                 }
                 style={{ fontVariant: ["tabular-nums"] }}
               >
@@ -705,9 +705,9 @@ export function TransactionsPage({
               testID={`${testID}-prev-month`}
               className="w-9 h-9 items-center justify-center rounded-xl active:opacity-60"
             >
-              <Text className="text-xl text-stone-500">‹</Text>
+              <Text className="text-xl text-fg-muted">‹</Text>
             </Pressable>
-            <Text className="text-sm font-semibold text-stone-900 capitalize px-2">
+            <Text className="text-sm font-semibold text-fg capitalize px-2">
               {monthLabel}
             </Text>
             <Pressable
@@ -722,8 +722,8 @@ export function TransactionsPage({
               <Text
                 className={
                   isCurrentMonth
-                    ? "text-xl text-stone-300"
-                    : "text-xl text-stone-500"
+                    ? "text-xl text-fg-subtle"
+                    : "text-xl text-fg-muted"
                 }
               >
                 ›
@@ -743,7 +743,7 @@ export function TransactionsPage({
                 testID={`${testID}-clear-filters`}
                 className="bg-cream-100 border border-cream-300 rounded-full h-9 px-3 items-center justify-center active:opacity-70"
               >
-                <Text className="text-stone-600 text-xs font-medium">
+                <Text className="text-fg-muted text-xs font-medium">
                   ✕ Скинути
                 </Text>
               </Pressable>
@@ -762,13 +762,13 @@ export function TransactionsPage({
 
         {/* Search */}
         <View className="bg-cream-100 border border-cream-300 rounded-2xl px-3 flex-row items-center">
-          <Text className="text-stone-400 mr-2">🔍</Text>
+          <Text className="text-fg-subtle mr-2">🔍</Text>
           <TextInput
             value={search}
             onChangeText={setSearch}
             placeholder="Пошук по транзакціях…"
             placeholderTextColor="#a8a29e"
-            className="flex-1 py-2.5 text-sm text-stone-900"
+            className="flex-1 py-2.5 text-sm text-fg"
             accessibilityLabel="Пошук транзакцій"
             testID={`${testID}-search`}
           />
@@ -779,7 +779,7 @@ export function TransactionsPage({
               accessibilityLabel="Очистити пошук"
               hitSlop={8}
             >
-              <Text className="text-stone-400 px-1">✕</Text>
+              <Text className="text-fg-subtle px-1">✕</Text>
             </Pressable>
           )}
         </View>
@@ -807,7 +807,7 @@ export function TransactionsPage({
                   className={
                     selected
                       ? "text-white text-xs font-semibold"
-                      : "text-stone-700 text-xs font-medium"
+                      : "text-fg text-xs font-medium"
                   }
                   numberOfLines={1}
                 >
@@ -831,7 +831,7 @@ export function TransactionsPage({
               className={
                 activeCategoryLabel
                   ? "text-white text-xs font-semibold"
-                  : "text-stone-700 text-xs font-medium"
+                  : "text-fg text-xs font-medium"
               }
               numberOfLines={1}
             >
@@ -853,7 +853,7 @@ export function TransactionsPage({
               className={
                 filters.range.startMs != null || filters.range.endMs != null
                   ? "text-white text-xs font-semibold"
-                  : "text-stone-700 text-xs font-medium"
+                  : "text-fg text-xs font-medium"
               }
             >
               📅 {rangeLabel ?? "Період"}
@@ -875,7 +875,7 @@ export function TransactionsPage({
                 className={
                   filters.accountIds.length > 0
                     ? "text-white text-xs font-semibold"
-                    : "text-stone-700 text-xs font-medium"
+                    : "text-fg text-xs font-medium"
                 }
               >
                 🏦 Рахунки
@@ -895,12 +895,12 @@ export function TransactionsPage({
           testID={`${testID}-empty`}
         >
           <Text className="text-5xl mb-3">🧾</Text>
-          <Text className="text-base font-semibold text-stone-900 mb-1 text-center">
+          <Text className="text-base font-semibold text-fg mb-1 text-center">
             {hasActiveFilter
               ? "Нічого не знайдено"
               : "Немає транзакцій за цей місяць"}
           </Text>
-          <Text className="text-sm text-stone-500 text-center mb-4">
+          <Text className="text-sm text-fg-muted text-center mb-4">
             {hasActiveFilter
               ? "Спробуйте інший фільтр або очистіть пошук."
               : "Додайте першу витрату — і вона з'явиться тут."}
@@ -965,7 +965,7 @@ export function TransactionsPage({
       >
         <View testID={`${testID}-accounts-sheet`}>
           {accounts.length === 0 ? (
-            <Text className="text-sm text-stone-500 px-3 py-2">
+            <Text className="text-sm text-fg-muted px-3 py-2">
               Немає підключених рахунків.
             </Text>
           ) : (
@@ -986,11 +986,11 @@ export function TransactionsPage({
                   testID={`${testID}-account-opt-${aid}`}
                   className="flex-row items-center px-3 py-3 rounded-xl active:opacity-70"
                 >
-                  <Text className="text-sm text-stone-900 flex-1">
+                  <Text className="text-sm text-fg flex-1">
                     {a.type ?? aid ?? "Рахунок"}
                   </Text>
                   <Text
-                    className={checked ? "text-brand-500" : "text-stone-300"}
+                    className={checked ? "text-brand-500" : "text-fg-subtle"}
                   >
                     {checked ? "☑" : "☐"}
                   </Text>
@@ -1005,7 +1005,7 @@ export function TransactionsPage({
               testID={`${testID}-account-clear`}
               className="mt-2 px-3 py-3 rounded-xl bg-cream-100 active:opacity-70"
             >
-              <Text className="text-sm text-stone-600 text-center">
+              <Text className="text-sm text-fg-muted text-center">
                 Скинути вибір рахунків
               </Text>
             </Pressable>
@@ -1029,9 +1029,7 @@ export function TransactionsPage({
               testID={`${testID}-range-clear`}
               className="flex-1 h-11 rounded-xl bg-cream-100 items-center justify-center active:opacity-70"
             >
-              <Text className="text-sm text-stone-700 font-medium">
-                Скинути
-              </Text>
+              <Text className="text-sm text-fg font-medium">Скинути</Text>
             </Pressable>
             <Pressable
               onPress={applyDateRange}
@@ -1048,7 +1046,7 @@ export function TransactionsPage({
       >
         <View className="px-4 pb-4 gap-3" testID={`${testID}-range-sheet`}>
           <View>
-            <Text className="text-xs text-stone-500 mb-1">Від</Text>
+            <Text className="text-xs text-fg-muted mb-1">Від</Text>
             <TextInput
               value={draftRange.start}
               onChangeText={(v) => setDraftRange((r) => ({ ...r, start: v }))}
@@ -1056,12 +1054,12 @@ export function TransactionsPage({
               placeholderTextColor="#a8a29e"
               autoCapitalize="none"
               autoCorrect={false}
-              className="bg-cream-100 border border-cream-300 rounded-xl px-3 py-2.5 text-sm text-stone-900"
+              className="bg-cream-100 border border-cream-300 rounded-xl px-3 py-2.5 text-sm text-fg"
               testID={`${testID}-range-start`}
             />
           </View>
           <View>
-            <Text className="text-xs text-stone-500 mb-1">До</Text>
+            <Text className="text-xs text-fg-muted mb-1">До</Text>
             <TextInput
               value={draftRange.end}
               onChangeText={(v) => setDraftRange((r) => ({ ...r, end: v }))}
@@ -1069,7 +1067,7 @@ export function TransactionsPage({
               placeholderTextColor="#a8a29e"
               autoCapitalize="none"
               autoCorrect={false}
-              className="bg-cream-100 border border-cream-300 rounded-xl px-3 py-2.5 text-sm text-stone-900"
+              className="bg-cream-100 border border-cream-300 rounded-xl px-3 py-2.5 text-sm text-fg"
               testID={`${testID}-range-end`}
             />
           </View>
@@ -1096,7 +1094,7 @@ export function TransactionsPage({
             testID={`${testID}-bank-edit-categorize`}
             className="px-3 py-3 rounded-xl active:opacity-70"
           >
-            <Text className="text-sm text-stone-900">🏷 Змінити категорію</Text>
+            <Text className="text-sm text-fg">🏷 Змінити категорію</Text>
           </Pressable>
           <Pressable
             onPress={() => {
@@ -1107,7 +1105,7 @@ export function TransactionsPage({
             testID={`${testID}-bank-edit-hide`}
             className="px-3 py-3 rounded-xl active:opacity-70"
           >
-            <Text className="text-sm text-stone-900">🙈 Приховати</Text>
+            <Text className="text-sm text-fg">🙈 Приховати</Text>
           </Pressable>
         </View>
       </Sheet>
@@ -1123,7 +1121,7 @@ export function TransactionsPage({
           testID={`${testID}-filter-cat-sheet`}
         >
           {/* eslint-disable-next-line sergeant-design/no-eyebrow-drift */}
-          <Text className="text-[11px] uppercase tracking-wide text-stone-400 px-3 pt-2 pb-1">
+          <Text className="text-[11px] uppercase tracking-wide text-fg-subtle px-3 pt-2 pb-1">
             Витрати
           </Text>
           {allExpenseCategories.map((c) => {
@@ -1140,15 +1138,15 @@ export function TransactionsPage({
                 testID={`${testID}-filter-cat-opt-${c.id}`}
                 className="flex-row items-center px-3 py-3 rounded-xl active:opacity-70"
               >
-                <Text className="text-sm text-stone-900 flex-1">{c.label}</Text>
-                <Text className={checked ? "text-brand-500" : "text-stone-300"}>
+                <Text className="text-sm text-fg flex-1">{c.label}</Text>
+                <Text className={checked ? "text-brand-500" : "text-fg-subtle"}>
                   {checked ? "☑" : "☐"}
                 </Text>
               </Pressable>
             );
           })}
           {/* eslint-disable-next-line sergeant-design/no-eyebrow-drift */}
-          <Text className="text-[11px] uppercase tracking-wide text-stone-400 px-3 pt-3 pb-1">
+          <Text className="text-[11px] uppercase tracking-wide text-fg-subtle px-3 pt-3 pb-1">
             Доходи
           </Text>
           {allIncomeCategories.map((c) => {
@@ -1165,8 +1163,8 @@ export function TransactionsPage({
                 testID={`${testID}-filter-cat-opt-${c.id}`}
                 className="flex-row items-center px-3 py-3 rounded-xl active:opacity-70"
               >
-                <Text className="text-sm text-stone-900 flex-1">{c.label}</Text>
-                <Text className={checked ? "text-brand-500" : "text-stone-300"}>
+                <Text className="text-sm text-fg flex-1">{c.label}</Text>
+                <Text className={checked ? "text-brand-500" : "text-fg-subtle"}>
                   {checked ? "☑" : "☐"}
                 </Text>
               </Pressable>
@@ -1182,7 +1180,7 @@ export function TransactionsPage({
               testID={`${testID}-filter-cat-clear`}
               className="mt-2 px-3 py-3 rounded-xl bg-cream-100 active:opacity-70"
             >
-              <Text className="text-sm text-stone-600 text-center">
+              <Text className="text-sm text-fg-muted text-center">
                 Скинути категорію
               </Text>
             </Pressable>

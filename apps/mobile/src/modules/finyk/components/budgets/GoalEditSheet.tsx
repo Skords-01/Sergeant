@@ -116,9 +116,7 @@ export function GoalEditSheet({
     >
       <View testID={testID}>
         <View className="mb-3">
-          <Text className="text-sm font-medium text-stone-700 mb-1">
-            Назва цілі
-          </Text>
+          <Text className="text-sm font-medium text-fg mb-1">Назва цілі</Text>
           <Input
             value={name}
             onChangeText={setName}
@@ -126,9 +124,7 @@ export function GoalEditSheet({
           />
         </View>
         <View className="mb-3">
-          <Text className="text-sm font-medium text-stone-700 mb-1">
-            Сума цілі ₴
-          </Text>
+          <Text className="text-sm font-medium text-fg mb-1">Сума цілі ₴</Text>
           <Input
             value={target}
             onChangeText={setTarget}
@@ -138,7 +134,7 @@ export function GoalEditSheet({
           />
         </View>
         <View className="mb-3">
-          <Text className="text-sm font-medium text-stone-700 mb-1">
+          <Text className="text-sm font-medium text-fg mb-1">
             Вже відкладено ₴
           </Text>
           <Input
@@ -150,7 +146,7 @@ export function GoalEditSheet({
           />
         </View>
         <View className="mb-2">
-          <Text className="text-sm font-medium text-stone-700 mb-1">
+          <Text className="text-sm font-medium text-fg mb-1">
             Дата (YYYY-MM-DD)
           </Text>
           <Input value={date} onChangeText={setDate} placeholder="2026-12-31" />

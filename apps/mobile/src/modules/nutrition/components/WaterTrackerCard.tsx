@@ -71,10 +71,10 @@ export function WaterTrackerCard({
         <View className="flex-row items-center gap-2">
           <Text className="text-lg leading-none">💧</Text>
           <View>
-            <Text className="text-sm font-semibold text-stone-900 leading-none">
+            <Text className="text-sm font-semibold text-fg leading-none">
               Вода
             </Text>
-            <Text className="text-xs text-stone-500 mt-0.5">
+            <Text className="text-xs text-fg-muted mt-0.5">
               {fmt(todayMl)}
               {goalMl > 0 ? ` / ${fmt(goalMl)}` : ""}
               {done ? " ✓" : ""}
@@ -93,7 +93,7 @@ export function WaterTrackerCard({
             testID={testID ? `${testID}-reset` : undefined}
             className="px-2 py-1 rounded-lg"
           >
-            <Text className="text-xs text-stone-500">
+            <Text className="text-xs text-fg-muted">
               {resetPending ? "Скинути?" : "↺"}
             </Text>
           </Pressable>
@@ -101,7 +101,7 @@ export function WaterTrackerCard({
       </View>
 
       {goalMl > 0 ? (
-        <View className="h-2 bg-stone-200 rounded-full overflow-hidden mb-3">
+        <View className="h-2 bg-panel-hi rounded-full overflow-hidden mb-3">
           <View
             style={{ width: `${pct}%` }}
             className={`h-full rounded-full ${

@@ -211,7 +211,7 @@ export function HabitHeatmap({
       testID={testID}
       className="rounded-2xl border border-cream-300 bg-cream-50 p-4"
     >
-      <Text className="text-sm font-semibold text-stone-700 mb-3">
+      <Text className="text-sm font-semibold text-fg mb-3">
         Активність за рік
       </Text>
 
@@ -231,7 +231,7 @@ export function HabitHeatmap({
                 justifyContent: "center",
               }}
             >
-              <Text className="text-[8px] leading-[12px] text-stone-500 text-right pr-1">
+              <Text className="text-[8px] leading-[12px] text-fg-muted text-right pr-1">
                 {lbl}
               </Text>
             </View>
@@ -279,7 +279,7 @@ export function HabitHeatmap({
         {grid.monthMarkers.map((marker) => (
           <Text
             key={`${marker.year}-${marker.monthIdx}`}
-            className="text-[10px] text-stone-500"
+            className="text-[10px] text-fg-muted"
             testID={`${testID}-month-${marker.year}-${marker.monthIdx}`}
           >
             {MONTH_LABELS_UK[marker.monthIdx]}
@@ -292,10 +292,10 @@ export function HabitHeatmap({
           testID={`${testID}-details`}
           className="mt-3 flex-row items-center justify-between gap-2 rounded-xl border border-cream-300 bg-cream-100 px-3 py-2"
         >
-          <Text className="text-xs text-stone-600 flex-1" numberOfLines={1}>
+          <Text className="text-xs text-fg-muted flex-1" numberOfLines={1}>
             {formatSelectedDate(selectedCell)}
           </Text>
-          <Text className="text-xs font-semibold text-stone-900">
+          <Text className="text-xs font-semibold text-fg">
             {formatSelectedStatus(selectedCell)}
           </Text>
           <Pressable
@@ -305,7 +305,7 @@ export function HabitHeatmap({
             testID={`${testID}-details-close`}
             className="ml-1 px-2 py-1"
           >
-            <Text className="text-xs font-bold text-stone-500">✕</Text>
+            <Text className="text-xs font-bold text-fg-muted">✕</Text>
           </Pressable>
         </View>
       ) : (
@@ -313,7 +313,7 @@ export function HabitHeatmap({
           testID={`${testID}-legend`}
           className="mt-3 flex-row items-center gap-2"
         >
-          <Text className="text-[10px] text-stone-500">менше</Text>
+          <Text className="text-[10px] text-fg-muted">менше</Text>
           {LEGEND_ORDER.map((lvl) => (
             <View
               key={lvl}
@@ -326,7 +326,7 @@ export function HabitHeatmap({
               }}
             />
           ))}
-          <Text className="text-[10px] text-stone-500">більше</Text>
+          <Text className="text-[10px] text-fg-muted">більше</Text>
         </View>
       )}
     </View>

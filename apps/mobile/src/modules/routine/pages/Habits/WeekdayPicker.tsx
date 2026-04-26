@@ -62,7 +62,7 @@ export const WeekdayPicker = memo(function WeekdayPicker({
 
   return (
     <View testID={testID}>
-      <Text className="text-xs text-stone-500 mb-2">Дні тижня</Text>
+      <Text className="text-xs text-fg-muted mb-2">Дні тижня</Text>
       <View className="flex-row flex-wrap gap-2">
         {WEEKDAY_LABELS.map((label, wd) => {
           const on = active.includes(wd);
@@ -84,7 +84,7 @@ export const WeekdayPicker = memo(function WeekdayPicker({
                 className={
                   on
                     ? "text-xs font-semibold text-white"
-                    : "text-xs font-semibold text-stone-700"
+                    : "text-xs font-semibold text-fg"
                 }
               >
                 {label}

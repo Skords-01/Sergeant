@@ -62,10 +62,10 @@ function deltaClass(
   direction: BodyTrendDirection,
   positiveDirection: "up" | "down" | "flat",
 ): string {
-  if (direction === "none") return "text-stone-400";
-  if (direction === "flat") return "text-stone-500";
+  if (direction === "none") return "text-fg-subtle";
+  if (direction === "flat") return "text-fg-muted";
   if (direction === positiveDirection) return "text-emerald-700";
-  if (positiveDirection === "flat") return "text-stone-500";
+  if (positiveDirection === "flat") return "text-fg-muted";
   return "text-amber-700";
 }
 
@@ -136,12 +136,12 @@ const BodySummaryCardImpl = function BodySummaryCard({
           </Text>
         ) : null}
         {/* eslint-disable-next-line sergeant-design/no-eyebrow-drift -- compact summary-tile label, mirrors web Body.tsx kicker */}
-        <Text className="text-[11px] uppercase tracking-wide text-stone-500">
+        <Text className="text-[11px] uppercase tracking-wide text-fg-muted">
           {label}
         </Text>
       </View>
       <Text
-        className="mt-1 text-xl font-extrabold text-stone-900 tabular-nums"
+        className="mt-1 text-xl font-extrabold text-fg tabular-nums"
         testID={testID ? `${testID}-value` : undefined}
       >
         {valueStr}
@@ -157,7 +157,7 @@ const BodySummaryCardImpl = function BodySummaryCard({
           {arrow ? `${arrow} ` : ""}
           {deltaStr}
         </Text>
-        <Text className="text-[10px] text-stone-400">
+        <Text className="text-[10px] text-fg-subtle">
           {`· ${windowDays} дн.`}
         </Text>
       </View>

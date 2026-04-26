@@ -86,13 +86,10 @@ export const StatusRow = memo(function StatusRow({
           <Text className="text-xl">{config.glyph}</Text>
         </View>
         <View className="flex-1">
-          <Text
-            className="text-base font-semibold text-stone-900"
-            numberOfLines={1}
-          >
+          <Text className="text-base font-semibold text-fg" numberOfLines={1}>
             {config.label}
           </Text>
-          <Text className="text-xs text-stone-500" numberOfLines={1}>
+          <Text className="text-xs text-fg-muted" numberOfLines={1}>
             {config.description}
           </Text>
           {showProgress ? (
@@ -119,21 +116,18 @@ export const StatusRow = memo(function StatusRow({
             testID={`dashboard-row-${id}-preview`}
           >
             {preview?.main ? (
-              <Text
-                className="text-sm font-semibold text-stone-900"
-                numberOfLines={1}
-              >
+              <Text className="text-sm font-semibold text-fg" numberOfLines={1}>
                 {preview.main}
               </Text>
             ) : null}
             {preview?.sub ? (
-              <Text className="text-[11px] text-stone-500" numberOfLines={1}>
+              <Text className="text-[11px] text-fg-muted" numberOfLines={1}>
                 {preview.sub}
               </Text>
             ) : null}
           </View>
         ) : null}
-        <Text className="text-stone-400 text-lg">›</Text>
+        <Text className="text-fg-subtle text-lg">›</Text>
       </View>
     </Pressable>
   );

@@ -157,26 +157,24 @@ function TxRowImpl({
           <Text
             numberOfLines={1}
             className={cx(
-              "text-sm font-medium text-stone-900",
+              "text-sm font-medium text-fg",
               hidden && "line-through",
             )}
           >
             {tx.description || "Транзакція"}
           </Text>
           <View className="flex-row flex-wrap items-center mt-0.5">
-            <Text className="text-xs text-stone-500 mr-1.5">{catName}</Text>
+            <Text className="text-xs text-fg-muted mr-1.5">{catName}</Text>
             {cat.id === INTERNAL_TRANSFER_ID && (
-              <View className="bg-stone-200 rounded-full px-1.5 py-0.5 mr-1.5">
-                <Text className="text-[10px] font-semibold text-stone-700">
+              <View className="bg-panel-hi rounded-full px-1.5 py-0.5 mr-1.5">
+                <Text className="text-[10px] font-semibold text-fg">
                   не в статистиці
                 </Text>
               </View>
             )}
             {overrideCatId && cat.id !== INTERNAL_TRANSFER_ID && (
-              <View className="bg-stone-200 rounded-full px-1.5 py-0.5 mr-1.5">
-                <Text className="text-[10px] font-semibold text-stone-700">
-                  змін.
-                </Text>
+              <View className="bg-panel-hi rounded-full px-1.5 py-0.5 mr-1.5">
+                <Text className="text-[10px] font-semibold text-fg">змін.</Text>
               </View>
             )}
             {hasSplit && (
@@ -194,7 +192,7 @@ function TxRowImpl({
               </View>
             )}
             {!isCreditCard && accountName && (
-              <Text className="text-[10px] text-stone-400 mr-1.5">
+              <Text className="text-[10px] text-fg-subtle mr-1.5">
                 {accountName}
               </Text>
             )}
@@ -205,7 +203,7 @@ function TxRowImpl({
                 </Text>
               </View>
             )}
-            <Text className="text-xs text-stone-500">· {fmtDate(tx.time)}</Text>
+            <Text className="text-xs text-fg-muted">· {fmtDate(tx.time)}</Text>
           </View>
         </View>
       </View>
@@ -214,7 +212,7 @@ function TxRowImpl({
         <Text
           className={cx(
             "text-sm font-semibold",
-            tx.amount > 0 ? "text-brand-700" : "text-stone-900",
+            tx.amount > 0 ? "text-brand-700" : "text-fg",
           )}
           style={{ fontVariant: ["tabular-nums"] }}
         >
@@ -222,7 +220,7 @@ function TxRowImpl({
         </Text>
         {tx.currencyCode !== CURRENCY.UAH && tx.operationAmount && (
           <Text
-            className="text-[10px] text-stone-400"
+            className="text-[10px] text-fg-subtle"
             style={{ fontVariant: ["tabular-nums"] }}
           >
             {hideAmount ? "••••" : fmtAmt(tx.operationAmount, tx.currencyCode)}

@@ -36,27 +36,25 @@ export function RoutineTabPlaceholder({
       >
         <View className="flex-row items-center gap-2 mb-1">
           <Text className="text-[22px]">{emoji}</Text>
-          <Text className="text-[22px] font-bold text-stone-900 flex-1">
-            {title}
-          </Text>
+          <Text className="text-[22px] font-bold text-fg flex-1">{title}</Text>
         </View>
-        <Text className="text-sm text-stone-600 mb-2 leading-snug">
+        <Text className="text-sm text-fg-muted mb-2 leading-snug">
           {description}
         </Text>
 
         <Card radius="lg" padding="md">
-          <Text className="text-sm font-semibold text-stone-900 mb-2">
+          <Text className="text-sm font-semibold text-fg mb-2">
             Заплановано до порту
           </Text>
           {plannedFeatures.map((item) => (
             <View key={item} className="flex-row mb-1.5">
               <Text className="text-coral-600 mr-2">•</Text>
-              <Text className="text-sm text-stone-700 flex-1 leading-snug">
+              <Text className="text-sm text-fg flex-1 leading-snug">
                 {item}
               </Text>
             </View>
           ))}
-          <Text className="text-xs text-stone-500 mt-2 leading-snug">
+          <Text className="text-xs text-fg-muted mt-2 leading-snug">
             Скоро — буде портовано у наступному PR Фази 5.
           </Text>
         </Card>

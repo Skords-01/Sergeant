@@ -26,10 +26,10 @@ const FirstInsightBannerImpl = function FirstInsightBanner({
         <Text className="text-xl">💡</Text>
       </View>
       <View className="flex-1">
-        <Text className="text-sm font-semibold text-stone-900">
+        <Text className="text-sm font-semibold text-fg">
           Ось куди йдуть твої гроші
         </Text>
-        <Text className="text-xs text-stone-500 mt-0.5">
+        <Text className="text-xs text-fg-muted mt-0.5">
           Хочеш поставити бюджет — і бачити, коли починаєш виходити за рамки?
         </Text>
         <View className="flex-row gap-2 mt-3">
@@ -49,7 +49,7 @@ const FirstInsightBannerImpl = function FirstInsightBanner({
             onPress={onDismiss}
             className="px-3 py-1.5 rounded-xl active:opacity-60"
           >
-            <Text className="text-xs text-stone-500">Пізніше</Text>
+            <Text className="text-xs text-fg-muted">Пізніше</Text>
           </Pressable>
         </View>
       </View>
@@ -59,7 +59,7 @@ const FirstInsightBannerImpl = function FirstInsightBanner({
         onPress={onDismiss}
         className="w-8 h-8 items-center justify-center active:opacity-60"
       >
-        <Text className="text-stone-400 text-lg">×</Text>
+        <Text className="text-fg-subtle text-lg">×</Text>
       </Pressable>
     </View>
   );

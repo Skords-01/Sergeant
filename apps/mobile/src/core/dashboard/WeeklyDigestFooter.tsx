@@ -74,10 +74,10 @@ export const WeeklyDigestFooter = memo(function WeeklyDigestFooter({
             testID="weekly-digest-footer-fresh-dot"
           />
         ) : null}
-        <Text className="text-xs font-medium text-stone-500">
+        <Text className="text-xs font-medium text-fg-muted">
           Тижневий дайджест
         </Text>
-        <Text className="text-xs text-stone-400">›</Text>
+        <Text className="text-xs text-fg-subtle">›</Text>
       </Pressable>
       <WeeklyDigestCard open={open} onClose={handleClose} />
     </View>

@@ -97,9 +97,7 @@ export function PantryPage({ testID }: { testID?: string }) {
         >
           <Text className="text-coral-700 text-base">‹ Назад</Text>
         </Pressable>
-        <Text className="text-lg font-semibold text-stone-800 flex-1">
-          Комора
-        </Text>
+        <Text className="text-lg font-semibold text-fg flex-1">Комора</Text>
       </View>
 
       <ScrollView
@@ -125,9 +123,7 @@ export function PantryPage({ testID }: { testID?: string }) {
                   }
                 >
                   <Text
-                    className={
-                      sel ? "text-white text-xs" : "text-stone-700 text-xs"
-                    }
+                    className={sel ? "text-white text-xs" : "text-fg text-xs"}
                     numberOfLines={1}
                   >
                     {p.name}
@@ -138,16 +134,16 @@ export function PantryPage({ testID }: { testID?: string }) {
           </View>
         ) : null}
 
-        <Text className="text-xs text-stone-500">
+        <Text className="text-xs text-fg-muted">
           Додавай рядок як на веб: «2 л молока», «яйця 10 шт» — парсер
           `parseLoosePantryText` зведе в структуровані позиції.
         </Text>
 
         <Card>
-          <Text className="text-sm font-medium text-stone-800 mb-1">
+          <Text className="text-sm font-medium text-fg mb-1">
             AI-розбір списку
           </Text>
-          <Text className="text-xs text-stone-500 mb-2">
+          <Text className="text-xs text-fg-muted mb-2">
             Великий список мовою природи — на сервері Claude розкладе в позиції
             й додасть у цей склад (злиття, як на web). Потрібен Anthropic key на
             бекенді; за `NUTRITION_API_TOKEN` — те саме в
@@ -157,7 +153,7 @@ export function PantryPage({ testID }: { testID?: string }) {
             value={bulkText}
             onChangeText={setBulkText}
             placeholder="молоко, яйця, борошно… (кілька рядків)"
-            className="border border-cream-300 rounded-xl px-3 py-2 text-stone-800 bg-white min-h-[88px] text-sm"
+            className="border border-cream-300 rounded-xl px-3 py-2 text-fg bg-white min-h-[88px] text-sm"
             multiline
             textAlignVertical="top"
             placeholderTextColor="#a8a29e"
@@ -190,7 +186,7 @@ export function PantryPage({ testID }: { testID?: string }) {
             value={draft}
             onChangeText={setDraft}
             placeholder="Продукт або список…"
-            className="flex-1 border border-cream-300 rounded-xl px-3 py-2 text-stone-800 bg-white"
+            className="flex-1 border border-cream-300 rounded-xl px-3 py-2 text-fg bg-white"
             placeholderTextColor="#a8a29e"
             onSubmitEditing={onAdd}
           />
@@ -201,14 +197,14 @@ export function PantryPage({ testID }: { testID?: string }) {
 
         {grouped.length === 0 ? (
           <Card className="p-4">
-            <Text className="text-stone-600 text-sm text-center">
+            <Text className="text-fg-muted text-sm text-center">
               Склад порожній. Додай продукти рядком вище.
             </Text>
           </Card>
         ) : (
           grouped.map((bucket) => (
             <View key={bucket.cat.id} className="gap-1">
-              <Text className="text-xs font-semibold text-stone-500">
+              <Text className="text-xs font-semibold text-fg-muted">
                 {bucket.cat.emoji} {bucket.cat.label}
               </Text>
               {bucket.items.map(({ item, idx }) => {
@@ -219,9 +215,9 @@ export function PantryPage({ testID }: { testID?: string }) {
                     className="flex-row items-center py-1.5 border-b border-cream-200/80"
                   >
                     <View className="flex-1">
-                      <Text className="text-stone-800 text-sm">{it.name}</Text>
+                      <Text className="text-fg text-sm">{it.name}</Text>
                       {it.qty != null || it.unit ? (
-                        <Text className="text-xs text-stone-500">
+                        <Text className="text-xs text-fg-muted">
                           {it.qty != null && it.unit
                             ? `${it.qty} ${it.unit}`
                             : it.qty != null
@@ -238,7 +234,7 @@ export function PantryPage({ testID }: { testID?: string }) {
                       accessibilityLabel={`Видалити ${it.name}`}
                       className="px-2 py-1"
                     >
-                      <Text className="text-stone-400 text-lg leading-none">
+                      <Text className="text-fg-subtle text-lg leading-none">
                         ×
                       </Text>
                     </Pressable>
@@ -250,7 +246,7 @@ export function PantryPage({ testID }: { testID?: string }) {
         )}
 
         <View className="mt-4 border-t border-cream-200 pt-4 gap-2">
-          <Text className="text-xs text-stone-500">
+          <Text className="text-xs text-fg-muted">
             Новий склад (кілька комор)
           </Text>
           <View className="flex-row gap-2">
@@ -258,7 +254,7 @@ export function PantryPage({ testID }: { testID?: string }) {
               value={newPantryName}
               onChangeText={setNewPantryName}
               placeholder="Назва (напр. Офіс)"
-              className="flex-1 border border-cream-300 rounded-xl px-3 py-2 text-stone-800 bg-white"
+              className="flex-1 border border-cream-300 rounded-xl px-3 py-2 text-fg bg-white"
               placeholderTextColor="#a8a29e"
             />
             <Button

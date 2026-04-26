@@ -26,18 +26,18 @@ function MerchantListComponent({ merchants }: MerchantListProps) {
         const barPct = Math.max(2, Math.round((m.total / maxTotal) * 100));
         return (
           <View key={m.name} className="flex-row items-center gap-3">
-            <Text className="text-xs text-stone-500 w-4 text-right tabular-nums">
+            <Text className="text-xs text-fg-muted w-4 text-right tabular-nums">
               {i + 1}
             </Text>
             <View className="flex-1 min-w-0">
               <View className="flex-row items-center justify-between mb-0.5">
                 <Text
-                  className="text-sm text-stone-900 flex-1 min-w-0 pr-2"
+                  className="text-sm text-fg flex-1 min-w-0 pr-2"
                   numberOfLines={1}
                 >
                   {m.name}
                 </Text>
-                <Text className="text-sm font-semibold tabular-nums text-stone-900">
+                <Text className="text-sm font-semibold tabular-nums text-fg">
                   {m.total.toLocaleString("uk-UA")} ₴
                 </Text>
               </View>
@@ -48,7 +48,7 @@ function MerchantListComponent({ merchants }: MerchantListProps) {
                     style={{ width: `${barPct}%` }}
                   />
                 </View>
-                <Text className="text-[10px] text-stone-500">
+                <Text className="text-[10px] text-fg-muted">
                   {m.count} разів
                 </Text>
               </View>

@@ -70,16 +70,16 @@ export function MacroRing({
           ) : null}
         </Svg>
         <View className="absolute inset-0 items-center justify-center">
-          <Text className="text-xs font-bold text-stone-900 leading-none">
+          <Text className="text-xs font-bold text-fg leading-none">
             {Math.round(value)}
           </Text>
         </View>
       </View>
-      <Text className="text-[10px] font-semibold text-stone-500 leading-none">
+      <Text className="text-[10px] font-semibold text-fg-muted leading-none">
         {label}
       </Text>
       {target > 0 ? (
-        <Text className="text-[9px] text-stone-400 leading-none">
+        <Text className="text-[9px] text-fg-subtle leading-none">
           / {target}
           {unit || ""}
         </Text>

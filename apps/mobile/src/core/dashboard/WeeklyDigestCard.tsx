@@ -76,7 +76,7 @@ export const WeeklyDigestCard = memo(function WeeklyDigestCard({
       onRequestClose={onClose}
       testID={testID ?? "weekly-digest-card"}
     >
-      <View className="flex-1 bg-stone-900/40 px-4 justify-end">
+      <View className="flex-1 bg-fg/40 px-4 justify-end">
         <Pressable
           accessibilityElementsHidden
           importantForAccessibility="no-hide-descendants"
@@ -86,14 +86,14 @@ export const WeeklyDigestCard = memo(function WeeklyDigestCard({
         <Card className="mb-6 max-h-[85%] rounded-3xl bg-cream-50 p-5">
           <ScrollView>
             <View className="gap-2">
-              <Text className="text-sm font-semibold uppercase text-stone-500">
+              <Text className="text-sm font-semibold uppercase text-fg-muted">
                 Тижневий дайджест
               </Text>
-              <Text className="text-xl font-bold text-stone-900">
+              <Text className="text-xl font-bold text-fg">
                 Тиждень {resolvedWeekKey}
               </Text>
               {generatedAt ? (
-                <Text className="text-xs text-stone-500">
+                <Text className="text-xs text-fg-muted">
                   Згенеровано{" "}
                   {generatedAt.toLocaleDateString("uk-UA", {
                     day: "numeric",
@@ -105,7 +105,7 @@ export const WeeklyDigestCard = memo(function WeeklyDigestCard({
               {showBody && loading ? (
                 <View className="flex-row items-center gap-2 py-4">
                   <ActivityIndicator size="small" color="#0d9488" />
-                  <Text className="text-xs text-stone-500">Генерую звіт…</Text>
+                  <Text className="text-xs text-fg-muted">Генерую звіт…</Text>
                 </View>
               ) : null}
 
@@ -116,7 +116,7 @@ export const WeeklyDigestCard = memo(function WeeklyDigestCard({
                   </Text>
                   {isCurrentWeek ? (
                     <Button variant="secondary" onPress={onGenerate}>
-                      <Text className="text-sm font-semibold text-stone-900">
+                      <Text className="text-sm font-semibold text-fg">
                         Спробувати знову
                       </Text>
                     </Button>
@@ -126,7 +126,7 @@ export const WeeklyDigestCard = memo(function WeeklyDigestCard({
 
               {showBody && !hasData && !loading && !error && isCurrentWeek ? (
                 <View className="gap-2 py-1">
-                  <Text className="text-xs leading-relaxed text-stone-500">
+                  <Text className="text-xs leading-relaxed text-fg-muted">
                     AI-звіт підсумовує прогрес по всіх модулях і дає
                     рекомендації на тиждень.
                   </Text>
@@ -147,18 +147,18 @@ export const WeeklyDigestCard = memo(function WeeklyDigestCard({
                     return (
                       <View
                         key={key}
-                        className="mt-1 rounded-xl border border-stone-200 bg-white/80 p-2.5"
+                        className="mt-1 rounded-xl border border-line bg-white/80 p-2.5"
                       >
-                        <Text className="text-xs font-semibold text-stone-800">
+                        <Text className="text-xs font-semibold text-fg">
                           {MODULE_LABEL[key]}
                         </Text>
                         {typeof summary === "string" && summary ? (
-                          <Text className="text-xs text-stone-600">
+                          <Text className="text-xs text-fg-muted">
                             {summary}
                           </Text>
                         ) : null}
                         {typeof comment === "string" && comment ? (
-                          <Text className="mt-0.5 text-xs leading-relaxed text-stone-500">
+                          <Text className="mt-0.5 text-xs leading-relaxed text-fg-muted">
                             {comment}
                           </Text>
                         ) : null}
@@ -169,7 +169,7 @@ export const WeeklyDigestCard = memo(function WeeklyDigestCard({
                               typeof rec === "string" ? (
                                 <Text
                                   key={i}
-                                  className="text-xs leading-snug text-stone-700"
+                                  className="text-xs leading-snug text-fg"
                                 >
                                   → {rec}
                                 </Text>
@@ -200,7 +200,7 @@ export const WeeklyDigestCard = memo(function WeeklyDigestCard({
                     (digest as Record<string, unknown>)
                       .overallRecommendations as string[]
                   ).map((rec, i) => (
-                    <Text key={i} className="text-xs text-stone-800">
+                    <Text key={i} className="text-xs text-fg">
                       ★ {rec}
                     </Text>
                   ))}
@@ -208,7 +208,7 @@ export const WeeklyDigestCard = memo(function WeeklyDigestCard({
               ) : null}
 
               {showBody && !hasData && !isCurrentWeek && !loading && !error ? (
-                <Text className="text-xs text-stone-500">
+                <Text className="text-xs text-fg-muted">
                   За цей тиждень звіт у кеші не знайдено.
                 </Text>
               ) : null}
@@ -219,9 +219,7 @@ export const WeeklyDigestCard = memo(function WeeklyDigestCard({
                 className="mt-4 self-end"
                 testID={testID ? `${testID}-close` : "weekly-digest-card-close"}
               >
-                <Text className="text-sm font-semibold text-stone-900">
-                  Закрити
-                </Text>
+                <Text className="text-sm font-semibold text-fg">Закрити</Text>
               </Button>
             </View>
           </ScrollView>

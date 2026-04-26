@@ -40,7 +40,7 @@ const NetworthSectionImpl = function NetworthSection({
         className="border-dashed"
       >
         <Text
-          className="text-sm text-stone-500 text-center"
+          className="text-sm text-fg-muted text-center"
           testID="finyk-overview-networth-empty"
         >
           Ще мало знімків для графіка нетворсу — з’явиться після кількох змін
@@ -64,10 +64,10 @@ const NetworthSectionImpl = function NetworthSection({
       className="px-5 pt-4 pb-3"
     >
       <View className="flex-row items-center justify-between mb-3">
-        <Text className="text-xs font-medium text-stone-500">
+        <Text className="text-xs font-medium text-fg-muted">
           Динаміка нетворсу
         </Text>
-        <Text className="text-xs text-stone-400">
+        <Text className="text-xs text-fg-subtle">
           {networthHistory.length} міс.
         </Text>
       </View>

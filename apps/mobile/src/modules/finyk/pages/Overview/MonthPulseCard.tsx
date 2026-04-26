@@ -77,28 +77,28 @@ const MonthPulseCardImpl = function MonthPulseCard({
     >
       <View className="flex-row items-start justify-between mb-4">
         <View>
-          <Text className="text-xs font-medium text-stone-500">Місяць</Text>
-          <Text className="text-xs text-stone-400 mt-0.5 capitalize">
+          <Text className="text-xs font-medium text-fg-muted">Місяць</Text>
+          <Text className="text-xs text-fg-subtle mt-0.5 capitalize">
             {dateLabel}
           </Text>
         </View>
-        <Text className="text-xs text-stone-400">
+        <Text className="text-xs text-fg-subtle">
           {Math.max(0, daysInMonth - daysPassed)} дн. залишилось
         </Text>
       </View>
 
       <View className="flex-row justify-between items-start gap-4">
         <View>
-          <Text className="text-xs text-stone-500 font-medium">Витрати</Text>
-          <Text className="text-3xl font-bold mt-1 text-stone-900">
+          <Text className="text-xs text-fg-muted font-medium">Витрати</Text>
+          <Text className="text-3xl font-bold mt-1 text-fg">
             {showBalance ? fmt(spent) : "••••"}
             {showBalance && (
-              <Text className="text-base font-medium text-stone-400"> ₴</Text>
+              <Text className="text-base font-medium text-fg-subtle"> ₴</Text>
             )}
           </Text>
         </View>
         <View className="items-end">
-          <Text className="text-xs text-stone-500 font-medium">Дохід</Text>
+          <Text className="text-xs text-fg-muted font-medium">Дохід</Text>
           <Text className="text-3xl font-bold mt-1 text-emerald-600">
             {showBalance ? `+${fmt(income)}` : "••••"}
             {showBalance && (
@@ -113,8 +113,8 @@ const MonthPulseCardImpl = function MonthPulseCard({
 
       <View className="mt-4">
         <View className="flex-row justify-between">
-          <Text className="text-xs text-stone-500">Витрати від доходу</Text>
-          <Text className="text-xs text-stone-500">
+          <Text className="text-xs text-fg-muted">Витрати від доходу</Text>
+          <Text className="text-xs text-fg-muted">
             {showBalance ? `${Math.round(spendPct)}%` : "—"}
           </Text>
         </View>
@@ -129,12 +129,12 @@ const MonthPulseCardImpl = function MonthPulseCard({
           />
         </View>
         <View className="flex-row justify-between mt-1.5">
-          <Text className="text-xs text-stone-500">
+          <Text className="text-xs text-fg-muted">
             {showBalance
               ? `Залишок: ${monthBalance >= 0 ? "+" : "−"}${fmt(Math.abs(monthBalance))} ₴`
               : "—"}
           </Text>
-          <Text className="text-xs text-stone-500">
+          <Text className="text-xs text-fg-muted">
             {showBalance && !showMonthForecast && projectedSpend > 0
               ? `Прогноз витрат ${fmt(projectedSpend)} ₴`
               : "—"}
@@ -144,15 +144,15 @@ const MonthPulseCardImpl = function MonthPulseCard({
 
       {showMonthForecast && (
         <View className="mt-4 pt-4 border-t border-cream-300">
-          <Text className="text-xs font-medium text-stone-500">
+          <Text className="text-xs font-medium text-fg-muted">
             Факт і прогноз витрат
           </Text>
-          <Text className="text-xs text-stone-500 mt-2">
+          <Text className="text-xs text-fg-muted mt-2">
             За {daysPassed}{" "}
             {daysPassed === 1 ? "день" : daysPassed < 5 ? "дні" : "дн."} · факт{" "}
-            <Text className="font-semibold text-stone-900">{fmt(spent)} ₴</Text>
+            <Text className="font-semibold text-fg">{fmt(spent)} ₴</Text>
             {" · "}до кінця місяця ~{" "}
-            <Text className="font-semibold text-stone-900">
+            <Text className="font-semibold text-fg">
               {fmt(Math.round(projectedSpend))} ₴
             </Text>
           </Text>
@@ -164,7 +164,7 @@ const MonthPulseCardImpl = function MonthPulseCard({
               }}
             />
           </View>
-          <Text className="text-xs text-stone-500 mt-1">
+          <Text className="text-xs text-fg-muted mt-1">
             {forecastTrendPct}% від прогнозу за темпом
           </Text>
         </View>
@@ -172,8 +172,8 @@ const MonthPulseCardImpl = function MonthPulseCard({
 
       <View className="mt-4 pt-4 border-t border-cream-300">
         <View className="flex-row items-center justify-between">
-          <Text className="text-xs font-medium text-stone-500">Фінпульс</Text>
-          <Text className="text-xs text-stone-400">
+          <Text className="text-xs font-medium text-fg-muted">Фінпульс</Text>
+          <Text className="text-xs text-fg-subtle">
             цільова витрата на день
           </Text>
         </View>
@@ -187,7 +187,7 @@ const MonthPulseCardImpl = function MonthPulseCard({
           {showBalance ? (
             <>
               {fmt(Math.abs(dayBudget))}
-              <Text className="text-base font-medium text-stone-500">
+              <Text className="text-base font-medium text-fg-muted">
                 {" "}
                 ₴/день
               </Text>
@@ -199,7 +199,7 @@ const MonthPulseCardImpl = function MonthPulseCard({
         <Text className={cn("text-sm mt-0.5", color)}>{statusText}</Text>
         {(recurringOutThisMonth > 0 || recurringInThisMonth > 0) &&
           showBalance && (
-            <Text className="text-xs text-stone-500 mt-2">
+            <Text className="text-xs text-fg-muted mt-2">
               Враховано планових: −{fmt(recurringOutThisMonth)} / +
               {fmt(recurringInThisMonth)} ₴
               {unknownOutCount > 0 && ` + ${unknownOutCount} без суми`}

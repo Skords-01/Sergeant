@@ -24,7 +24,7 @@ const WeightChartSectionImpl = function WeightChartSection({
 }: WeightChartSectionProps) {
   return (
     <Card radius="lg" padding="lg" testID="fizruk-progress-weight">
-      <Text className="text-xs font-semibold text-stone-500 mb-3">
+      <Text className="text-xs font-semibold text-fg-muted mb-3">
         {"Тренд ваги"}
       </Text>
       <TrendChart

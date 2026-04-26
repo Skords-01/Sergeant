@@ -97,9 +97,9 @@ export function ModuleChecklist({
   return (
     <View className="rounded-2xl border border-cream-200 bg-cream-50 p-4">
       <View className="mb-3 flex-row items-center justify-between">
-        <Text className="text-sm font-bold text-stone-900">
+        <Text className="text-sm font-bold text-fg">
           {def.title}{" "}
-          <Text className="text-xs font-normal text-stone-400">
+          <Text className="text-xs font-normal text-fg-subtle">
             ({completed}/{total})
           </Text>
         </Text>
@@ -108,7 +108,7 @@ export function ModuleChecklist({
           hitSlop={12}
           accessibilityLabel="Сховати чекліст"
         >
-          <Text className="text-xs text-stone-400">✕</Text>
+          <Text className="text-xs text-fg-subtle">✕</Text>
         </Pressable>
       </View>
 
@@ -145,13 +145,13 @@ export function ModuleChecklist({
               <Text
                 className={cx(
                   "flex-1 text-sm",
-                  done ? "text-stone-400 line-through" : "text-stone-900",
+                  done ? "text-fg-subtle line-through" : "text-fg",
                 )}
               >
                 {step.label}
               </Text>
               {!done && step.action && (
-                <Text className="text-xs text-stone-400">›</Text>
+                <Text className="text-xs text-fg-subtle">›</Text>
               )}
             </Pressable>
           );

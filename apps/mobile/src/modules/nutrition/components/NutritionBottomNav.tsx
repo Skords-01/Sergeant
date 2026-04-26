@@ -68,7 +68,7 @@ export function NutritionBottomNav({
             </Text>
             <Text
               className={`text-[11px] mt-0.5 ${
-                selected ? "text-coral-700 font-semibold" : "text-stone-500"
+                selected ? "text-coral-700 font-semibold" : "text-fg-muted"
               }`}
             >
               {item.label}

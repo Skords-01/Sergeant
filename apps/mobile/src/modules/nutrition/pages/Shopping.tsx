@@ -28,24 +28,22 @@ export function Shopping({ testID }: { testID?: string }) {
       testID={testID}
       contentContainerClassName="p-4 gap-3 pb-8"
     >
-      <Text className="text-lg font-semibold text-stone-800">
-        Список покупок
-      </Text>
-      <Text className="text-xs text-stone-500">
+      <Text className="text-lg font-semibold text-fg">Список покупок</Text>
+      <Text className="text-xs text-fg-muted">
         Паритет із web-даними в одному ключі сховища. Повна генерація з рецептів
         / плану — поки в основному веб-клієнті; тут — перегляд, галочки та ручні
         позиції в «Інше».
       </Text>
 
       <View className="flex-row items-center justify-between">
-        <Text className="text-sm text-stone-600" testID="shopping-count">
+        <Text className="text-sm text-fg-muted" testID="shopping-count">
           {totalCount.total} поз. · відмічено {totalCount.checked}
         </Text>
       </View>
 
       {shoppingList.categories.length === 0 ? (
         <Card className="p-4">
-          <Text className="text-stone-600 text-sm text-center">
+          <Text className="text-fg-muted text-sm text-center">
             Список порожній. Додай позицію нижче або згенеруй список у
             веб-версії (Рецепти / план) — після sync він з’явиться тут, коли
             додамо той самий сценарій в додатку.
@@ -55,7 +53,7 @@ export function Shopping({ testID }: { testID?: string }) {
 
       {shoppingList.categories.map((cat) => (
         <View key={cat.name} className="gap-1">
-          <Text className="text-xs font-semibold text-stone-500 mt-1">
+          <Text className="text-xs font-semibold text-fg-muted mt-1">
             {cat.name}
           </Text>
           {cat.items.map((item) => (
@@ -69,8 +67,8 @@ export function Shopping({ testID }: { testID?: string }) {
               <Text
                 className={
                   item.checked
-                    ? "text-stone-400 line-through flex-1"
-                    : "text-stone-800 flex-1"
+                    ? "text-fg-subtle line-through flex-1"
+                    : "text-fg flex-1"
                 }
               >
                 {item.name}
@@ -86,7 +84,7 @@ export function Shopping({ testID }: { testID?: string }) {
           value={draft}
           onChangeText={setDraft}
           placeholder="Назва продукту"
-          className="flex-1 border border-cream-300 rounded-xl px-3 py-2 text-stone-800 bg-white"
+          className="flex-1 border border-cream-300 rounded-xl px-3 py-2 text-fg bg-white"
           placeholderTextColor="#a8a29e"
         />
         <Button variant="nutrition" onPress={onAdd} disabled={!draft.trim()}>

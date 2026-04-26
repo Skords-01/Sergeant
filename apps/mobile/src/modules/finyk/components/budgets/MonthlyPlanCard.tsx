@@ -61,10 +61,8 @@ function MonthlyPlanCardImpl({
       }
     >
       <View className="flex-row items-center justify-between mb-3">
-        <Text className="text-sm font-semibold text-stone-900">
-          Фінплан на місяць
-        </Text>
-        <Text className="text-xs text-stone-500">✏️</Text>
+        <Text className="text-sm font-semibold text-fg">Фінплан на місяць</Text>
+        <Text className="text-xs text-fg-muted">✏️</Text>
       </View>
 
       {hasPlan ? (
@@ -72,22 +70,22 @@ function MonthlyPlanCardImpl({
           {/* Header row: (empty) | План | Факт | Δ */}
           <View className="flex-row items-center mb-1.5 px-1">
             <View className="w-16" />
-            <Text className="flex-1 text-[10px] text-stone-500 text-right">
+            <Text className="flex-1 text-[10px] text-fg-muted text-right">
               План
             </Text>
-            <Text className="flex-1 text-[10px] text-stone-500 text-right">
+            <Text className="flex-1 text-[10px] text-fg-muted text-right">
               Факт
             </Text>
-            <Text className="flex-1 text-[10px] text-stone-500 text-right">
+            <Text className="flex-1 text-[10px] text-fg-muted text-right">
               Δ
             </Text>
           </View>
 
           {/* Дохід */}
           <View className="flex-row items-center mb-1 px-1">
-            <Text className="w-16 text-xs text-stone-500">Дохід</Text>
+            <Text className="w-16 text-xs text-fg-muted">Дохід</Text>
             <Text
-              className="flex-1 text-right text-sm text-stone-700"
+              className="flex-1 text-right text-sm text-fg"
               testID={testID ? `${testID}-income` : undefined}
             >
               {planIncome > 0 ? `${fmt(planIncome)} ₴` : "—"}
@@ -98,7 +96,7 @@ function MonthlyPlanCardImpl({
             <Text
               className={
                 planIncome === 0
-                  ? "flex-1 text-right text-[11px] text-stone-400"
+                  ? "flex-1 text-right text-[11px] text-fg-subtle"
                   : incomeDelta >= 0
                     ? "flex-1 text-right text-[11px] text-emerald-600"
                     : "flex-1 text-right text-[11px] text-amber-600"
@@ -110,8 +108,8 @@ function MonthlyPlanCardImpl({
 
           {/* Витрати */}
           <View className="flex-row items-center mb-1 px-1">
-            <Text className="w-16 text-xs text-stone-500">Витрати</Text>
-            <Text className="flex-1 text-right text-sm text-stone-700">
+            <Text className="w-16 text-xs text-fg-muted">Витрати</Text>
+            <Text className="flex-1 text-right text-sm text-fg">
               {planExpense > 0 ? `${fmt(planExpense)} ₴` : "—"}
             </Text>
             <Text
@@ -127,7 +125,7 @@ function MonthlyPlanCardImpl({
             <Text
               className={
                 planExpense === 0
-                  ? "flex-1 text-right text-[11px] text-stone-400"
+                  ? "flex-1 text-right text-[11px] text-fg-subtle"
                   : expenseDelta > 0
                     ? "flex-1 text-right text-[11px] text-danger"
                     : "flex-1 text-right text-[11px] text-emerald-600"
@@ -139,8 +137,8 @@ function MonthlyPlanCardImpl({
 
           {/* Накопичення */}
           <View className="flex-row items-center mb-2 px-1">
-            <Text className="w-16 text-xs text-stone-500">Накопич.</Text>
-            <Text className="flex-1 text-right text-sm text-stone-700">
+            <Text className="w-16 text-xs text-fg-muted">Накопич.</Text>
+            <Text className="flex-1 text-right text-sm text-fg">
               {planSavings > 0 ? `${fmt(planSavings)} ₴` : "—"}
             </Text>
             <Text
@@ -155,7 +153,7 @@ function MonthlyPlanCardImpl({
             <Text
               className={
                 planSavings === 0 && factSavings === 0
-                  ? "flex-1 text-right text-[11px] text-stone-400"
+                  ? "flex-1 text-right text-[11px] text-fg-subtle"
                   : savingsDelta >= 0
                     ? "flex-1 text-right text-[11px] text-emerald-600"
                     : "flex-1 text-right text-[11px] text-danger"
@@ -170,14 +168,14 @@ function MonthlyPlanCardImpl({
           {planExpense > 0 ? (
             <>
               <View className="flex-row justify-between mb-1">
-                <Text className="text-[11px] text-stone-500">
+                <Text className="text-[11px] text-fg-muted">
                   {pctExpense}% витрачено
                 </Text>
                 <Text
                   className={
                     isOver
                       ? "text-[11px] text-danger font-semibold"
-                      : "text-[11px] text-stone-500"
+                      : "text-[11px] text-fg-muted"
                   }
                   testID={testID ? `${testID}-remaining` : undefined}
                 >
@@ -228,7 +226,7 @@ function MonthlyPlanCardImpl({
           ) : null}
         </>
       ) : (
-        <Text className="text-sm text-stone-500">
+        <Text className="text-sm text-fg-muted">
           Постав план — і побачиш скільки безпечно витрачати на день.
         </Text>
       )}

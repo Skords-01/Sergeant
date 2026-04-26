@@ -48,7 +48,7 @@ function LimitBudgetRowImpl({
     >
       <View className="flex-row items-center justify-between mb-2">
         <Text
-          className="text-sm font-semibold text-stone-900 flex-1"
+          className="text-sm font-semibold text-fg flex-1"
           numberOfLines={1}
         >
           {categoryLabel || "—"}
@@ -59,7 +59,7 @@ function LimitBudgetRowImpl({
               ? "text-xs font-semibold text-danger"
               : warnLimit
                 ? "text-xs text-amber-600"
-                : "text-xs text-stone-500"
+                : "text-xs text-fg-muted"
           }
           testID={testID ? `${testID}-amount` : undefined}
         >
@@ -96,7 +96,7 @@ function LimitBudgetRowImpl({
             ? "text-xs text-danger mt-2"
             : warnLimit
               ? "text-xs text-amber-700 mt-2"
-              : "text-xs text-stone-500 mt-2"
+              : "text-xs text-fg-muted mt-2"
         }
         testID={testID ? `${testID}-status` : undefined}
       >

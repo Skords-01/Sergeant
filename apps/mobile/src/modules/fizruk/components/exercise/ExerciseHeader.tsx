@@ -24,7 +24,7 @@ const ExerciseHeaderImpl = function ExerciseHeader({
   return (
     <View testID={testID} className="gap-2">
       <Text
-        className="text-xl font-bold text-stone-900 leading-tight"
+        className="text-xl font-bold text-fg leading-tight"
         accessibilityRole="header"
       >
         {title}
@@ -45,10 +45,10 @@ const ExerciseHeaderImpl = function ExerciseHeader({
           ))}
         </View>
       ) : (
-        <Text className="text-xs text-stone-500">{"Профіль вправи"}</Text>
+        <Text className="text-xs text-fg-muted">{"Профіль вправи"}</Text>
       )}
       {description ? (
-        <Text className="text-xs text-stone-600 leading-snug">
+        <Text className="text-xs text-fg-muted leading-snug">
           {description}
         </Text>
       ) : null}

@@ -331,7 +331,7 @@ export function AddMealSheet({
     >
       {step === "source" ? (
         <View>
-          <Text className="text-xs text-stone-400 mb-4">
+          <Text className="text-xs text-fg-subtle mb-4">
             Оберіть джерело нижче. Макроси, назву й час відредагуєте на
             наступному кроці.
           </Text>
@@ -357,9 +357,7 @@ export function AddMealSheet({
               testID="add-meal-photo-analyzing"
             >
               <ActivityIndicator />
-              <Text className="text-xs text-stone-500 mt-2">
-                Аналізую фото…
-              </Text>
+              <Text className="text-xs text-fg-muted mt-2">Аналізую фото…</Text>
             </View>
           ) : (
             <View className="mt-2 gap-2">
@@ -386,7 +384,7 @@ export function AddMealSheet({
             <View className="flex-row items-center gap-3">
               <View className="flex-1 h-px bg-cream-300" />
               {/* eslint-disable-next-line sergeant-design/no-eyebrow-drift -- divider text */}
-              <Text className="text-[10px] text-stone-400 uppercase tracking-wider">
+              <Text className="text-[10px] text-fg-subtle uppercase tracking-wider">
                 або
               </Text>
               <View className="flex-1 h-px bg-cream-300" />
@@ -426,7 +424,7 @@ export function AddMealSheet({
               accessibilityLabel="Назад до вибору джерела"
               className="mb-3"
             >
-              <Text className="text-xs text-stone-400 underline">
+              <Text className="text-xs text-fg-subtle underline">
                 ← Назад до вибору джерела
               </Text>
             </Pressable>
@@ -440,16 +438,16 @@ export function AddMealSheet({
               className="mt-3 p-3 rounded-xl border border-cream-200 bg-cream-50/80"
               testID="add-meal-photo-refine-block"
             >
-              <Text className="text-sm font-medium text-stone-800 mb-1">
+              <Text className="text-sm font-medium text-fg mb-1">
                 Уточнення AI
               </Text>
-              <Text className="text-xs text-stone-500 mb-2">
+              <Text className="text-xs text-fg-muted mb-2">
                 Можна вказати вагу порції та відповіді на питання — перерахунок
                 КБЖВ через сервер.
               </Text>
-              <Text className="text-xs text-stone-500 mb-0.5">Порція, г</Text>
+              <Text className="text-xs text-fg-muted mb-0.5">Порція, г</Text>
               <TextInput
-                className="border border-cream-200 rounded-lg px-2 py-1.5 text-stone-900 bg-white text-sm"
+                className="border border-cream-200 rounded-lg px-2 py-1.5 text-fg bg-white text-sm"
                 value={refinePortion}
                 onChangeText={setRefinePortion}
                 keyboardType="decimal-pad"
@@ -460,13 +458,13 @@ export function AddMealSheet({
               {photoSession.prior.questions.slice(0, 6).map((q) => (
                 <View key={q} className="mt-2">
                   <Text
-                    className="text-xs text-stone-500 mb-0.5"
+                    className="text-xs text-fg-muted mb-0.5"
                     numberOfLines={3}
                   >
                     {q}
                   </Text>
                   <TextInput
-                    className="border border-cream-200 rounded-lg px-2 py-1.5 text-stone-900 bg-white text-sm"
+                    className="border border-cream-200 rounded-lg px-2 py-1.5 text-fg bg-white text-sm"
                     value={refineAnswers[q] ?? ""}
                     onChangeText={(v) =>
                       setRefineAnswers((a) => ({ ...a, [q]: v }))
@@ -483,7 +481,7 @@ export function AddMealSheet({
                   testID="add-meal-refine-busy"
                 >
                   <ActivityIndicator />
-                  <Text className="text-xs text-stone-500 mt-1">Уточнюю…</Text>
+                  <Text className="text-xs text-fg-muted mt-1">Уточнюю…</Text>
                 </View>
               ) : (
                 <View className="mt-2">

@@ -84,8 +84,8 @@ export interface BodyAtlasProps {
 // Shapes are painted through inline SVG attributes (not NativeWind),
 // which is why we resolve hex strings eagerly here.
 const ACCENT_HEX = "#14b8a6"; // teal-500 (Fizruk primary).
-const SILHOUETTE_FILL = "#e7e5e4"; // stone-200 — neutral body colour.
-const SILHOUETTE_STROKE = "#a8a29e"; // stone-400 — subtle outline.
+const SILHOUETTE_FILL = "#e7e5e4"; // warm neutral body colour.
+const SILHOUETTE_STROKE = "#a8a29e"; // subtle warm-grey outline.
 
 /** Clamp `n` into [min, max]. */
 function clamp(n: number, min: number, max: number): number {
@@ -225,14 +225,14 @@ export function BodyAtlas({
             className={
               side === "front"
                 ? "px-3 py-1.5 rounded-full bg-teal-600"
-                : "px-3 py-1.5 rounded-full border border-stone-300 bg-white"
+                : "px-3 py-1.5 rounded-full border border-line bg-white"
             }
           >
             <Text
               className={
                 side === "front"
                   ? "text-xs font-semibold text-white"
-                  : "text-xs font-semibold text-stone-700"
+                  : "text-xs font-semibold text-fg"
               }
             >
               Спереду
@@ -250,14 +250,14 @@ export function BodyAtlas({
             className={
               side === "back"
                 ? "px-3 py-1.5 rounded-full bg-teal-600"
-                : "px-3 py-1.5 rounded-full border border-stone-300 bg-white"
+                : "px-3 py-1.5 rounded-full border border-line bg-white"
             }
           >
             <Text
               className={
                 side === "back"
                   ? "text-xs font-semibold text-white"
-                  : "text-xs font-semibold text-stone-700"
+                  : "text-xs font-semibold text-fg"
               }
             >
               Ззаду

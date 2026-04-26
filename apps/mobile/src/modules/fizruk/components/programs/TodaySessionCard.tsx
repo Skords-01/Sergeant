@@ -38,16 +38,16 @@ export function TodaySessionCard({
     return (
       <Card variant="default" radius="lg" padding="lg" testID={testID}>
         <View className="gap-1.5">
-          <Text className="text-xs font-semibold text-stone-500">
+          <Text className="text-xs font-semibold text-fg-muted">
             Сьогоднішня сесія
           </Text>
           <Text
-            className="text-base font-semibold text-stone-900"
+            className="text-base font-semibold text-fg"
             testID={`${testID}-empty`}
           >
             Активуй програму, щоб побачити план на сьогодні
           </Text>
-          <Text className="text-sm text-stone-500 leading-snug">
+          <Text className="text-sm text-fg-muted leading-snug">
             Обери програму нижче — її сесії автоматично з&apos;являтимуться тут
             за днем тижня.
           </Text>
@@ -64,12 +64,12 @@ export function TodaySessionCard({
             {activeProgram.name}
           </Text>
           <Text
-            className="text-base font-semibold text-stone-900"
+            className="text-base font-semibold text-fg"
             testID={`${testID}-rest`}
           >
             Сьогодні — вихідний
           </Text>
-          <Text className="text-sm text-stone-600 leading-snug">
+          <Text className="text-sm text-fg-muted leading-snug">
             Наступна сесія — згідно графіка програми. Відпочинок — частина
             прогресу.
           </Text>

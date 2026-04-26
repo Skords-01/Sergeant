@@ -80,10 +80,10 @@ const ExerciseHistoryListImpl = function ExerciseHistoryList({
         testID={`${testID}-empty`}
         className="rounded-2xl border border-dashed border-cream-300 bg-cream-50 p-4"
       >
-        <Text className="text-sm font-semibold text-stone-900">
+        <Text className="text-sm font-semibold text-fg">
           Поки немає записів
         </Text>
-        <Text className="text-xs text-stone-500 mt-1">
+        <Text className="text-xs text-fg-muted mt-1">
           Заверши хоча б один підхід — історія з&apos;явиться тут.
         </Text>
       </View>
@@ -102,18 +102,16 @@ const ExerciseHistoryListImpl = function ExerciseHistoryList({
             testID={`${testID}-row-${key}`}
           >
             <View className="flex-row items-center justify-between gap-2">
-              <Text className="text-xs text-stone-500">
+              <Text className="text-xs text-fg-muted">
                 {formatHistoryDate(workout?.startedAt)}
               </Text>
               <View className="px-2 py-0.5 rounded-full border border-cream-300">
-                <Text className="text-[10px] text-stone-500">
+                <Text className="text-[10px] text-fg-muted">
                   {entryTypeLabel(entry)}
                 </Text>
               </View>
             </View>
-            <Text className="text-sm text-stone-900 mt-2">
-              {describeEntry(entry)}
-            </Text>
+            <Text className="text-sm text-fg mt-2">{describeEntry(entry)}</Text>
           </View>
         );
       })}

@@ -60,7 +60,7 @@ export function ProgramCard({
       <View className="gap-3">
         <View className="gap-1.5">
           <View className="flex-row items-center gap-2 flex-wrap">
-            <Text className="text-base font-bold text-stone-900 flex-1">
+            <Text className="text-base font-bold text-fg flex-1">
               {program.name}
             </Text>
             {active ? (
@@ -74,10 +74,10 @@ export function ProgramCard({
               </View>
             ) : null}
           </View>
-          <Text className="text-xs text-stone-500">
+          <Text className="text-xs text-fg-muted">
             {formatProgramCadence(program)}
           </Text>
-          <Text className="text-sm text-stone-700 leading-snug">
+          <Text className="text-sm text-fg leading-snug">
             {program.description}
           </Text>
         </View>
@@ -95,7 +95,7 @@ export function ProgramCard({
               ? isToday && active
                 ? "text-white"
                 : "text-teal-800"
-              : "text-stone-400";
+              : "text-fg-subtle";
             return (
               <View
                 key={`${program.id}-d${i}`}

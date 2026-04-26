@@ -291,11 +291,9 @@ export function BudgetsPage({ seed, now, testID }: BudgetsPageProps) {
     >
       <View className="flex-row items-center gap-2 px-4 pt-4 pb-1">
         <Text className="text-[22px]">📅</Text>
-        <Text className="text-[22px] font-bold text-stone-900 flex-1">
-          Планування
-        </Text>
+        <Text className="text-[22px] font-bold text-fg flex-1">Планування</Text>
       </View>
-      <Text className="px-4 text-sm text-stone-600 leading-snug mb-2">
+      <Text className="px-4 text-sm text-fg-muted leading-snug mb-2">
         Місячний план, ліміти, цілі та підписки.
       </Text>
 
@@ -320,7 +318,7 @@ export function BudgetsPage({ seed, now, testID }: BudgetsPageProps) {
         {/* Limits section */}
         <View className="gap-2">
           <View className="flex-row items-center justify-between px-1">
-            <Text className="text-sm font-semibold text-stone-900">
+            <Text className="text-sm font-semibold text-fg">
               🔴 Ліміти за категоріями
             </Text>
             <Pressable
@@ -336,7 +334,7 @@ export function BudgetsPage({ seed, now, testID }: BudgetsPageProps) {
           {limitBudgets.length === 0 ? (
             <View className="rounded-2xl border border-dashed border-cream-300 px-4 py-6">
               <Text
-                className="text-sm text-stone-500 text-center"
+                className="text-sm text-fg-muted text-center"
                 testID="finyk-budgets-limits-empty"
               >
                 Ще немає лімітів. Додай перший — і Finyk покаже, скільки
@@ -374,7 +372,7 @@ export function BudgetsPage({ seed, now, testID }: BudgetsPageProps) {
         {/* Forecast */}
         {forecasts.length > 0 ? (
           <View className="gap-2">
-            <Text className="text-sm font-semibold text-stone-900 px-1">
+            <Text className="text-sm font-semibold text-fg px-1">
               📈 Прогноз на кінець місяця
             </Text>
             {forecasts.map((fc) => (
@@ -397,13 +395,13 @@ export function BudgetsPage({ seed, now, testID }: BudgetsPageProps) {
 
         {/* Goals */}
         <View className="gap-2">
-          <Text className="text-sm font-semibold text-stone-900 px-1">
+          <Text className="text-sm font-semibold text-fg px-1">
             🟢 Цілі накопичень
           </Text>
           {goalBudgets.length === 0 ? (
             <View className="rounded-2xl border border-dashed border-cream-300 px-4 py-6">
               <Text
-                className="text-sm text-stone-500 text-center"
+                className="text-sm text-fg-muted text-center"
                 testID="finyk-budgets-goals-empty"
               >
                 Ще немає цілей. Додай ціль — і відстежуй прогрес місяць за
@@ -436,9 +434,7 @@ export function BudgetsPage({ seed, now, testID }: BudgetsPageProps) {
         {/* Subscriptions */}
         <View className="gap-2">
           <View className="flex-row items-center justify-between px-1">
-            <Text className="text-sm font-semibold text-stone-900">
-              🔁 Підписки
-            </Text>
+            <Text className="text-sm font-semibold text-fg">🔁 Підписки</Text>
             <Pressable
               onPress={() =>
                 setSheet({ kind: "subscription", subscription: null })
@@ -454,7 +450,7 @@ export function BudgetsPage({ seed, now, testID }: BudgetsPageProps) {
           <View className="rounded-2xl border border-cream-300 bg-white">
             {budgetsStore.subscriptions.length === 0 ? (
               <Text
-                className="text-sm text-stone-500 py-4 text-center"
+                className="text-sm text-fg-muted py-4 text-center"
                 testID="finyk-budgets-subs-empty"
               >
                 Ще немає підписок

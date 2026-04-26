@@ -19,7 +19,7 @@ export function MealTypePicker({ mealType, setForm }: MealTypePickerProps) {
   return (
     <View className="mb-4">
       {/* eslint-disable-next-line sergeant-design/no-eyebrow-drift -- section heading in form */}
-      <Text className="text-xs font-bold uppercase text-stone-500 mb-2 tracking-wider">
+      <Text className="text-xs font-bold uppercase text-fg-muted mb-2 tracking-wider">
         Прийом їжі
       </Text>
       <View className="flex-row flex-wrap gap-2">
@@ -43,7 +43,7 @@ export function MealTypePicker({ mealType, setForm }: MealTypePickerProps) {
             >
               <Text
                 className={`text-sm font-semibold ${
-                  active ? "text-white" : "text-stone-600"
+                  active ? "text-white" : "text-fg-muted"
                 }`}
               >
                 {mt.emoji} {mt.label}

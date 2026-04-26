@@ -56,11 +56,11 @@ export function MeasurementEntryRow({
         accessibilityLabel={`Редагувати запис ${formatMeasurementDate(entry.at)}`}
         testID={`${rowTestID}-edit`}
       >
-        <Text className="text-sm font-semibold text-stone-900">
+        <Text className="text-sm font-semibold text-fg">
           {formatMeasurementDate(entry.at)}
         </Text>
         <Text
-          className="text-xs text-stone-600 mt-0.5"
+          className="text-xs text-fg-muted mt-0.5"
           numberOfLines={2}
           testID={`${rowTestID}-summary`}
         >

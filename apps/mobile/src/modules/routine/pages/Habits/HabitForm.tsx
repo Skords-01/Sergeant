@@ -226,7 +226,7 @@ export function HabitForm({
       <View className="px-4 pb-4" testID={testID}>
         {/* Emoji + Name */}
         <View className="mb-4">
-          <Text className="text-sm font-medium text-stone-700 mb-1">Назва</Text>
+          <Text className="text-sm font-medium text-fg mb-1">Назва</Text>
           <View className="flex-row gap-2 items-start">
             <Pressable
               onPress={() => setShowEmoji((v) => !v)}
@@ -288,9 +288,7 @@ export function HabitForm({
 
         {/* Recurrence */}
         <View className="mb-4">
-          <Text className="text-sm font-medium text-stone-700 mb-1">
-            Регулярність
-          </Text>
+          <Text className="text-sm font-medium text-fg mb-1">Регулярність</Text>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -319,7 +317,7 @@ export function HabitForm({
                     className={
                       active
                         ? "text-xs font-medium text-white"
-                        : "text-xs font-medium text-stone-700"
+                        : "text-xs font-medium text-fg"
                     }
                   >
                     {o.shortLabel ?? o.label}
@@ -357,9 +355,7 @@ export function HabitForm({
 
         {/* Reminder presets */}
         <View className="mb-4">
-          <Text className="text-sm font-medium text-stone-700 mb-1">
-            Нагадування
-          </Text>
+          <Text className="text-sm font-medium text-fg mb-1">Нагадування</Text>
           <View className="flex-row flex-wrap gap-2">
             {REMINDER_PRESETS.map((p) => {
               const active = activePresetId === p.id;
@@ -380,7 +376,7 @@ export function HabitForm({
                     className={
                       active
                         ? "text-xs font-medium text-white"
-                        : "text-xs font-medium text-stone-700"
+                        : "text-xs font-medium text-fg"
                     }
                   >
                     {p.label}
@@ -396,7 +392,7 @@ export function HabitForm({
                 testID={testID ? `${testID}-reminder-clear` : undefined}
                 className="h-9 px-3 rounded-full border border-cream-300 bg-transparent items-center justify-center"
               >
-                <Text className="text-xs font-medium text-stone-500">
+                <Text className="text-xs font-medium text-fg-muted">
                   Без нагадувань
                 </Text>
               </Pressable>
@@ -412,10 +408,10 @@ export function HabitForm({
           testID={testID ? `${testID}-advanced-toggle` : undefined}
           className="flex-row items-center gap-1 py-2"
         >
-          <Text className="text-xs text-stone-500">
+          <Text className="text-xs text-fg-muted">
             {showAdvanced ? "Менше опцій" : "Більше опцій"}
           </Text>
-          <Text className="text-xs text-stone-400">
+          <Text className="text-xs text-fg-subtle">
             {showAdvanced ? "▲" : "▼"}
           </Text>
         </Pressable>
@@ -423,7 +419,7 @@ export function HabitForm({
         {showAdvanced ? (
           <View className="mb-2">
             <View className="mb-3">
-              <Text className="text-sm font-medium text-stone-700 mb-1">
+              <Text className="text-sm font-medium text-fg mb-1">
                 Початок (дата)
               </Text>
               <Input
@@ -436,7 +432,7 @@ export function HabitForm({
               />
             </View>
             <View className="mb-3">
-              <Text className="text-sm font-medium text-stone-700 mb-1">
+              <Text className="text-sm font-medium text-fg mb-1">
                 Кінець (необовʼязково)
               </Text>
               <Input
@@ -451,9 +447,7 @@ export function HabitForm({
 
             {routine.tags.length > 0 ? (
               <View className="mb-3">
-                <Text className="text-sm font-medium text-stone-700 mb-1">
-                  Тег
-                </Text>
+                <Text className="text-sm font-medium text-fg mb-1">Тег</Text>
                 <View className="flex-row flex-wrap gap-2">
                   <Pressable
                     onPress={() => setDraft((d) => ({ ...d, tagIds: [] }))}
@@ -472,7 +466,7 @@ export function HabitForm({
                       className={
                         draft.tagIds.length === 0
                           ? "text-xs font-medium text-white"
-                          : "text-xs font-medium text-stone-700"
+                          : "text-xs font-medium text-fg"
                       }
                     >
                       — без тегу —
@@ -499,7 +493,7 @@ export function HabitForm({
                           className={
                             selected
                               ? "text-xs font-medium text-white"
-                              : "text-xs font-medium text-stone-700"
+                              : "text-xs font-medium text-fg"
                           }
                         >
                           {t.name}
@@ -513,7 +507,7 @@ export function HabitForm({
 
             {routine.categories.length > 0 ? (
               <View className="mb-1">
-                <Text className="text-sm font-medium text-stone-700 mb-1">
+                <Text className="text-sm font-medium text-fg mb-1">
                   Категорія
                 </Text>
                 <View className="flex-row flex-wrap gap-2">
@@ -536,7 +530,7 @@ export function HabitForm({
                       className={
                         !draft.categoryId
                           ? "text-xs font-medium text-white"
-                          : "text-xs font-medium text-stone-700"
+                          : "text-xs font-medium text-fg"
                       }
                     >
                       — без категорії —
@@ -565,7 +559,7 @@ export function HabitForm({
                           className={
                             selected
                               ? "text-xs font-medium text-white"
-                              : "text-xs font-medium text-stone-700"
+                              : "text-xs font-medium text-fg"
                           }
                         >
                           {c.emoji ? `${c.emoji} ` : ""}

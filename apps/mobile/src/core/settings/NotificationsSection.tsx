@@ -85,7 +85,7 @@ interface RoutinePrefs {
 function DeferredNotice({ children }: { children: string }) {
   return (
     <Card variant="flat" radius="md" padding="md" className="border-dashed">
-      <Text className="text-xs text-stone-500 leading-snug">{children}</Text>
+      <Text className="text-xs text-fg-muted leading-snug">{children}</Text>
     </Card>
   );
 }
@@ -150,7 +150,7 @@ export function NotificationsSection() {
       <Card variant="flat" radius="md" padding="md">
         <View className="flex-row items-center justify-between gap-3">
           <View className="flex-1 min-w-0">
-            <Text className="text-sm font-semibold text-stone-900">
+            <Text className="text-sm font-semibold text-fg">
               Push-сповіщення
             </Text>
             <Text
@@ -181,7 +181,7 @@ export function NotificationsSection() {
           ) : null}
         </View>
         {permStatus === "denied" ? (
-          <Text className="text-xs text-stone-500 mt-2 leading-snug">
+          <Text className="text-xs text-fg-muted mt-2 leading-snug">
             Сповіщення заблоковано у системних налаштуваннях. Увімкни їх там,
             щоб отримувати нагадування.
           </Text>

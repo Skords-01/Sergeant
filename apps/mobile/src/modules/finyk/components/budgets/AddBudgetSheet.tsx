@@ -160,7 +160,7 @@ export function AddBudgetSheet({
               className={
                 form.type === "limit"
                   ? "text-sm font-semibold text-white"
-                  : "text-sm font-semibold text-stone-700"
+                  : "text-sm font-semibold text-fg"
               }
             >
               🔴 Ліміт
@@ -181,7 +181,7 @@ export function AddBudgetSheet({
               className={
                 form.type === "goal"
                   ? "text-sm font-semibold text-white"
-                  : "text-sm font-semibold text-stone-700"
+                  : "text-sm font-semibold text-fg"
               }
             >
               🟢 Ціль
@@ -191,9 +191,7 @@ export function AddBudgetSheet({
 
         {form.type === "limit" ? (
           <>
-            <Text className="text-sm font-medium text-stone-700 mb-1">
-              Категорія
-            </Text>
+            <Text className="text-sm font-medium text-fg mb-1">Категорія</Text>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -223,7 +221,7 @@ export function AddBudgetSheet({
                         className={
                           selected
                             ? "text-white text-sm font-medium"
-                            : "text-stone-700 text-sm font-medium"
+                            : "text-fg text-sm font-medium"
                         }
                       >
                         {c.label}
@@ -232,9 +230,7 @@ export function AddBudgetSheet({
                   );
                 })}
             </ScrollView>
-            <Text className="text-sm font-medium text-stone-700 mb-1">
-              Ліміт ₴
-            </Text>
+            <Text className="text-sm font-medium text-fg mb-1">Ліміт ₴</Text>
             <Input
               value={form.limit}
               onChangeText={(v) => setForm((f) => ({ ...f, limit: v }))}
@@ -245,9 +241,7 @@ export function AddBudgetSheet({
           </>
         ) : (
           <>
-            <Text className="text-sm font-medium text-stone-700 mb-1">
-              Іконка
-            </Text>
+            <Text className="text-sm font-medium text-fg mb-1">Іконка</Text>
             <View className="flex-row flex-wrap gap-2 mb-3">
               {GOAL_EMOJIS.map((e) => {
                 const selected = form.emoji === e;
@@ -268,9 +262,7 @@ export function AddBudgetSheet({
                 );
               })}
             </View>
-            <Text className="text-sm font-medium text-stone-700 mb-1">
-              Назва цілі
-            </Text>
+            <Text className="text-sm font-medium text-fg mb-1">Назва цілі</Text>
             <Input
               value={form.name}
               onChangeText={(v) => setForm((f) => ({ ...f, name: v }))}
@@ -278,7 +270,7 @@ export function AddBudgetSheet({
               testID={testID ? `${testID}-name` : undefined}
             />
             <View className="h-2" />
-            <Text className="text-sm font-medium text-stone-700 mb-1">
+            <Text className="text-sm font-medium text-fg mb-1">
               Сума цілі ₴
             </Text>
             <Input
@@ -289,7 +281,7 @@ export function AddBudgetSheet({
               testID={testID ? `${testID}-target` : undefined}
             />
             <View className="h-2" />
-            <Text className="text-sm font-medium text-stone-700 mb-1">
+            <Text className="text-sm font-medium text-fg mb-1">
               Вже відкладено ₴
             </Text>
             <Input
@@ -299,7 +291,7 @@ export function AddBudgetSheet({
               placeholder="0"
             />
             <View className="h-2" />
-            <Text className="text-sm font-medium text-stone-700 mb-1">
+            <Text className="text-sm font-medium text-fg mb-1">
               Дата (YYYY-MM-DD)
             </Text>
             <Input
