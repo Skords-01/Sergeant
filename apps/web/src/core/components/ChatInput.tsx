@@ -155,7 +155,7 @@ export function ChatInput({
           className={cn(
             "w-11 h-11 rounded-full flex items-center justify-center shrink-0 transition-[background-color,border-color,color,opacity] border focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/45 focus-visible:ring-offset-2 focus-visible:ring-offset-panel",
             listening
-              ? "bg-danger text-white border-danger motion-safe:animate-pulse"
+              ? "bg-danger-strong text-white border-danger-strong motion-safe:animate-pulse"
               : "bg-panel border-line text-muted hover:text-text hover:border-muted",
           )}
           title={listening ? "Зупинити запис" : "Голосовий ввід"}

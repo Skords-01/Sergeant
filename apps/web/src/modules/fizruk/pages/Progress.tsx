@@ -544,7 +544,7 @@ export function Progress() {
                     className={cn(
                       "shrink-0 px-3 h-7 rounded-full text-xs font-semibold transition-colors border",
                       prFilter === "all"
-                        ? "bg-fizruk text-white border-fizruk"
+                        ? "bg-fizruk-strong text-white border-fizruk-strong"
                         : "bg-panel border-line text-subtle hover:text-text",
                     )}
                   >
@@ -558,7 +558,7 @@ export function Progress() {
                       className={cn(
                         "shrink-0 px-3 h-7 rounded-full text-xs font-semibold transition-colors border whitespace-nowrap",
                         prFilter === g
-                          ? "bg-fizruk text-white border-fizruk"
+                          ? "bg-fizruk-strong text-white border-fizruk-strong"
                           : "bg-panel border-line text-subtle hover:text-text",
                       )}
                     >
@@ -649,7 +649,7 @@ export function Progress() {
           </SectionHeading>
           <button
             type="button"
-            className="w-full py-4 rounded-full font-bold text-base bg-fizruk text-white mb-2 transition-[background-color,box-shadow,opacity,transform] active:scale-[0.98]"
+            className="w-full py-4 rounded-full font-bold text-base bg-fizruk-strong text-white mb-2 transition-[background-color,box-shadow,opacity,transform] active:scale-[0.98]"
             onClick={exportJson}
           >
             Експорт (backup)

@@ -77,12 +77,11 @@ export default [
       // utility paired with `text-white` regresses to ~2.4–2.8 : 1
       // contrast (the bug class fixed in PRs #854 / #855). The fix is
       // `bg-{family}-strong text-white`. See docs/BRANDBOOK.md →
-      // "WCAG-AA `-strong` Tier" for the full mapping. Set to "warn"
-      // initially (same staged-migration pattern as ai-marker-syntax)
-      // because ~28 pre-existing call-sites in app/component code
-      // currently violate it; promote to "error" once a follow-up
-      // cleanup PR migrates the call-sites to the `-strong` tokens.
-      "sergeant-design/no-low-contrast-text-on-fill": "warn",
+      // "WCAG-AA `-strong` Tier" for the full mapping. Promoted from
+      // "warn" to "error" once the cleanup PR migrated the last 28
+      // call-sites — the codebase is now clean against this rule, and
+      // any new violation must be intentional.
+      "sergeant-design/no-low-contrast-text-on-fill": "error",
       "no-empty": ["error", { allowEmptyCatch: true }],
       "no-unused-vars": [
         "error",

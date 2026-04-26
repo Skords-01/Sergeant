@@ -3,8 +3,8 @@ import { cn } from "@shared/lib/cn";
 
 const VARIANT: Record<ToastType, string> = {
   success: "bg-brand-700 text-white",
-  error: "bg-danger text-white",
-  warning: "bg-warning text-white",
+  error: "bg-danger-strong text-white",
+  warning: "bg-warning-strong text-white",
   info: "bg-primary text-bg",
 };
 

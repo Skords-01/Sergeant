@@ -83,7 +83,7 @@ export function WorkoutItemCard({
             {groupSelectMode && (
               <button
                 type="button"
-                className={`w-5 h-5 rounded-md border flex items-center justify-center flex-shrink-0 transition-colors ${isSelected ? "bg-success border-success text-white" : "border-line bg-bg"}`}
+                className={`w-5 h-5 rounded-md border flex items-center justify-center flex-shrink-0 transition-colors ${isSelected ? "bg-success-strong border-success-strong text-white" : "border-line bg-bg"}`}
                 onClick={() => onToggleGroupSelect(it.id)}
               >
                 {isSelected && (

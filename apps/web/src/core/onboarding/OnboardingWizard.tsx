@@ -210,7 +210,7 @@ function ModuleCard({
       )}
     >
       {active && (
-        <span className="absolute top-2.5 right-2.5 w-5 h-5 rounded-full bg-brand-500 text-white flex items-center justify-center">
+        <span className="absolute top-2.5 right-2.5 w-5 h-5 rounded-full bg-brand-strong text-white flex items-center justify-center">
           <Icon name="check" size={12} strokeWidth={3} />
         </span>
       )}

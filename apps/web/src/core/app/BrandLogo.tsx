@@ -131,7 +131,7 @@ export function BrandLogo({
     >
       <span
         aria-hidden="true"
-        className="inline-flex items-center justify-center bg-brand-500 text-white shadow-[0_1px_2px_rgba(16,185,129,0.25),0_4px_12px_-2px_rgba(16,185,129,0.35)]"
+        className="inline-flex items-center justify-center bg-brand-strong text-white shadow-[0_1px_2px_rgba(16,185,129,0.25),0_4px_12px_-2px_rgba(16,185,129,0.35)]"
         style={{
           width: badgePx,
           height: badgePx,

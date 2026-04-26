@@ -260,7 +260,7 @@ export function WorkoutTemplatesSection({
                       {groupSelectMode && (
                         <button
                           type="button"
-                          className={`w-5 h-5 rounded-md border flex items-center justify-center flex-shrink-0 transition-colors ${isSelected ? "bg-success border-success text-white" : "border-line bg-bg"}`}
+                          className={`w-5 h-5 rounded-md border flex items-center justify-center flex-shrink-0 transition-colors ${isSelected ? "bg-success-strong border-success-strong text-white" : "border-line bg-bg"}`}
                           onClick={() => handleToggleGroupSelect(id)}
                         >
                           {isSelected && (
@@ -403,7 +403,7 @@ export function WorkoutTemplatesSection({
                 {typeof onStartTemplate === "function" && (
                   <Button
                     size="sm"
-                    className="h-10 min-h-[44px] px-3 bg-fizruk text-white border-fizruk hover:bg-fizruk/90"
+                    className="h-10 min-h-[44px] px-3 bg-fizruk-strong text-white border-fizruk-strong hover:bg-fizruk/90"
                     onClick={() => onStartTemplate(t)}
                     disabled={!(t.exerciseIds || []).length}
                   >

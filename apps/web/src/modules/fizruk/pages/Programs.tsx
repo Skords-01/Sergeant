@@ -94,7 +94,7 @@ export function Programs({
                             "flex-1 text-center rounded py-1 text-3xs font-bold transition-colors",
                             hasSession
                               ? isToday && isActive
-                                ? "bg-success text-white"
+                                ? "bg-success-strong text-white"
                                 : "bg-success/15 text-success"
                               : "bg-line/30 text-subtle/40",
                           )}
@@ -109,7 +109,7 @@ export function Programs({
                     {!isActive ? (
                       <button
                         type="button"
-                        className="flex-1 py-2.5 rounded-xl bg-success text-white text-sm font-semibold transition-[background-color,opacity,transform] active:scale-[0.98]"
+                        className="flex-1 py-2.5 rounded-xl bg-success-strong text-white text-sm font-semibold transition-[background-color,opacity,transform] active:scale-[0.98]"
                         onClick={() => activateProgram(prog.id)}
                       >
                         Активувати
@@ -119,7 +119,7 @@ export function Programs({
                         {todaySession && onStartWorkout && (
                           <button
                             type="button"
-                            className="flex-1 py-2.5 rounded-xl bg-fizruk text-white text-sm font-semibold transition-[background-color,opacity,transform] active:scale-[0.98]"
+                            className="flex-1 py-2.5 rounded-xl bg-fizruk-strong text-white text-sm font-semibold transition-[background-color,opacity,transform] active:scale-[0.98]"
                             onClick={() => {
                               const session =
                                 prog.sessions[todaySession.sessionKey];

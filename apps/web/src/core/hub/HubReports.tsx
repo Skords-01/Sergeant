@@ -436,7 +436,7 @@ export function HubReports() {
               className={cn(
                 "px-3 py-1.5 text-xs font-medium transition-colors",
                 period === p
-                  ? "bg-brand-500 text-white"
+                  ? "bg-brand-strong text-white"
                   : "text-muted hover:text-text hover:bg-panelHi",
               )}
             >

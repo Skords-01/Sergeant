@@ -174,7 +174,7 @@ function ScoreButton({ value, selected, onClick, label }) {
       className={cn(
         "flex-1 flex flex-col items-center gap-1 py-2.5 rounded-xl border text-xs font-semibold transition-[background-color,border-color,color,opacity]",
         selected
-          ? "bg-success text-white border-success"
+          ? "bg-success-strong text-white border-success-strong"
           : "border-line text-subtle hover:border-success/50 hover:text-text",
       )}
       aria-pressed={selected}
@@ -468,8 +468,8 @@ export function Body({ onOpenMeasurements }) {
               className={cn(
                 "w-full py-3 rounded-xl font-semibold text-sm transition-[background-color,box-shadow,opacity,transform]",
                 submitSuccess
-                  ? "bg-success text-white"
-                  : "bg-success text-white active:scale-[0.98]",
+                  ? "bg-success-strong text-white"
+                  : "bg-success-strong text-white active:scale-[0.98]",
               )}
             >
               {submitSuccess ? "Записано ✓" : "Записати"}

@@ -56,7 +56,7 @@ function AddBudgetFormComponent({
           className={cn(
             "flex-1 py-2 text-sm font-semibold rounded-xl border transition-colors",
             formType === "goal"
-              ? "bg-success border-success text-white"
+              ? "bg-success-strong border-success-strong text-white"
               : "border-line text-subtle",
           )}
         >

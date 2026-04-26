@@ -379,7 +379,7 @@ export function Dashboard({
             {todaySession && (
               <button
                 type="button"
-                className="w-full py-3 rounded-xl bg-fizruk text-white font-semibold text-sm transition-[background-color,box-shadow,opacity,transform] active:scale-[0.98]"
+                className="w-full py-3 rounded-xl bg-fizruk-strong text-white font-semibold text-sm transition-[background-color,box-shadow,opacity,transform] active:scale-[0.98]"
                 onClick={() => {
                   const session =
                     activeProgram.sessions?.[todaySession.sessionKey];

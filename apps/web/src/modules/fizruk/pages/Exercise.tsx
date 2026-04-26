@@ -624,7 +624,7 @@ export function Exercise({ exerciseId }) {
           <div className="mt-3">
             <button
               type="button"
-              className="w-full py-4 rounded-full font-bold text-base bg-fizruk text-white"
+              className="w-full py-4 rounded-full font-bold text-base bg-fizruk-strong text-white"
               onClick={() => (window.location.hash = "#workouts")}
             >
               Перейти до журналу
