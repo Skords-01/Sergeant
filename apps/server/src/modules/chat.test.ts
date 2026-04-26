@@ -60,6 +60,10 @@ function asRec(v: unknown): Record<string, unknown> {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  // mockResolvedValueOnce-черга НЕ скидається через clearAllMocks — потрібен mockReset.
+  // Інакше leftover-моки з попереднього тесту (наприклад cap-тест queue-ить 5, а
+  // консьюмить лише 4) залежать у наступному.
+  anthropicMessages.mockReset();
 });
 
 describe("chat handler — tool_use parsing", () => {
@@ -537,5 +541,77 @@ describe("chat handler — auto-continuation на stop_reason=max_tokens", () =>
 
     expect(anthropicMessages.mock.calls.length).toBeLessThanOrEqual(4);
     expect(res.body).toEqual({ text: "chunk1 chunk2 chunk3 chunk4 " });
+  });
+
+  it("у 2-му continuation messages мають user/assistant alternation (а не два assistant-msg поспіль)", async () => {
+    // Anthropic Messages API rejects consecutive same-role messages → перевіряємо,
+    // що при 2+ continuation в payload завжди один merged assistant-msg, а не
+    // окремий msg на кожен chunk.
+    const part = (i: number) => ({
+      response: { ok: true, status: 200 },
+      data: {
+        stop_reason: "max_tokens",
+        content: [{ type: "text", text: `c${i} ` }],
+      },
+    });
+    anthropicMessages
+      .mockResolvedValueOnce(part(1))
+      .mockResolvedValueOnce(part(2))
+      .mockResolvedValueOnce({
+        response: { ok: true, status: 200 },
+        data: {
+          stop_reason: "end_turn",
+          content: [{ type: "text", text: "c3" }],
+        },
+      });
+
+    const req = makeReq({
+      messages: [{ role: "user", content: "запит" }],
+    });
+    const res = makeRes();
+    await handler(req, res);
+
+    expect(anthropicMessages).toHaveBeenCalledTimes(3);
+    const thirdCallMessages = anthropicMessages.mock.calls[2][1].messages;
+    // [user, assistant("c1 c2 ")] — рівно один assistant, накопичений текст
+    expect(thirdCallMessages).toHaveLength(2);
+    expect(thirdCallMessages[0]).toEqual({ role: "user", content: "запит" });
+    expect(thirdCallMessages[1]).toEqual({
+      role: "assistant",
+      content: "c1 c2 ",
+    });
+    // Sanity: не два assistant-msg-и поспіль
+    const roles = thirdCallMessages.map((m: { role: string }) => m.role);
+    for (let k = 1; k < roles.length; k++) {
+      expect(roles[k]).not.toBe(roles[k - 1]);
+    }
+    expect(res.body).toEqual({ text: "c1 c2 c3" });
+  });
+
+  it("graceful degradation: повертає накопичений partial-text коли continuation впав з помилкою", async () => {
+    // Перший виклик ок з max_tokens, другий — 500 з upstream. Очікуємо partial успіх,
+    // НЕ помилку: юзер бачить що було склеєно, refund не викликається.
+    anthropicMessages
+      .mockResolvedValueOnce({
+        response: { ok: true, status: 200 },
+        data: {
+          stop_reason: "max_tokens",
+          content: [{ type: "text", text: "Перша частина… " }],
+        },
+      })
+      .mockResolvedValueOnce({
+        response: { ok: false, status: 500 },
+        data: { error: { message: "Anthropic 500" } },
+      });
+
+    const req = makeReq({
+      messages: [{ role: "user", content: "запит" }],
+    });
+    const res = makeRes();
+    await handler(req, res);
+
+    expect(anthropicMessages).toHaveBeenCalledTimes(2);
+    expect(res.statusCode).toBe(200);
+    expect(asRec(res.body).text).toBe("Перша частина… ");
   });
 });

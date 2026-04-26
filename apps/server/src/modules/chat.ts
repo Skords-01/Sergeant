@@ -178,7 +178,24 @@ async function callAnthropicWithContinuation(
     lastData = data as AnthropicMessagesResponseData;
 
     if (!response?.ok) {
-      // Upstream error — caller обробить (refund + propagate).
+      // Якщо вже є partial-текст з попередніх успішних викликів — повертаємо його
+      // як успішний результат (graceful degradation): юзер бачить часткову
+      // відповідь замість 5xx, квоту не рефандимо (перші виклики легітимно
+      // обслужені). Без partial-у — помилку віддаємо caller-у на refund.
+      // Синтезуємо ok-response, щоб caller-и (які роблять `if (!response.ok)`)
+      // потрапили у success-гілку.
+      if (continued && mergedTextChunks.length > 0) {
+        return {
+          response: { ok: true, status: 200 } as unknown as FetchResponse,
+          data: {
+            content: buildMergedContent(
+              mergedTextChunks.join(""),
+              lastNonTextBlocks,
+            ),
+          },
+          continued,
+        };
+      }
       return { response, data: lastData, continued };
     }
 
@@ -210,10 +227,13 @@ async function callAnthropicWithContinuation(
       };
     }
 
-    // Продовжуємо: доклеюємо partial текст як assistant-повідомлення і б'ємо знову.
+    // Продовжуємо: rebuild з baseMessages + ОДИН assistant-msg з усім склеєним
+    // текстом. Anthropic Messages API вимагає user/assistant alternation —
+    // якщо просто .push-ити новий assistant-msg на кожній ітерації, на 2-му
+    // continuation-і отримаємо два assistant-and-row → 400 від upstream.
     currentMessages = [
-      ...currentMessages,
-      { role: "assistant", content: textParts },
+      ...baseMessages,
+      { role: "assistant", content: mergedTextChunks.join("") },
     ];
     continued = true;
   }
@@ -558,7 +578,8 @@ async function streamAnthropicToSse(
   }, SSE_HEARTBEAT_MS);
   if (typeof heartbeat.unref === "function") heartbeat.unref();
 
-  let currentMessages = (payload.messages as Array<unknown>) ?? [];
+  const baseMessages = (payload.messages as Array<unknown>) ?? [];
+  let accumulatedAllText = "";
   let currentResponse: FetchResponse = firstResponse;
   let currentRecordEnd = firstRecordEnd;
   let continuationsLeft = MAX_TEXT_CONTINUATIONS;
@@ -567,6 +588,7 @@ async function streamAnthropicToSse(
     while (true) {
       const iter = await streamOneIterationToSse(res, currentResponse);
       currentRecordEnd(iter.outcome);
+      if (iter.accumulatedText) accumulatedAllText += iter.accumulatedText;
 
       if (
         iter.outcome === "error" ||
@@ -579,16 +601,18 @@ async function streamAnthropicToSse(
         break;
       }
 
-      // Continuation: відкриваємо новий upstream з partial-text як assistant-msg.
-      currentMessages = [
-        ...currentMessages,
-        { role: "assistant", content: iter.accumulatedText },
+      // Continuation: rebuild з baseMessages + ОДИН assistant-msg з усім склеєним
+      // текстом (Anthropic API вимагає user/assistant alternation — два
+      // assistant-msg-и поспіль → 400).
+      const nextMessages = [
+        ...baseMessages,
+        { role: "assistant", content: accumulatedAllText },
       ];
       try {
         const { response: nextResponse, recordStreamEnd: nextRecordEnd } =
           await anthropicMessagesStream(
             apiKey,
-            { ...payload, messages: currentMessages },
+            { ...payload, messages: nextMessages },
             {
               endpoint: `${endpoint}-cont`,
               timeoutMs: 60000,
