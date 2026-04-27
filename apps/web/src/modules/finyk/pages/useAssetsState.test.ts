@@ -19,7 +19,7 @@ function makeStorage(overrides = {}) {
     addSubscriptionFromRecurring: vi.fn(),
     dismissedRecurring: [],
     dismissRecurring: vi.fn(),
-    excludedTxIds: [],
+    excludedTxIds: new Set<string>(),
     monoDebtLinkedTxIds: {},
     toggleMonoDebtTx: vi.fn(),
     customCategories: [],
