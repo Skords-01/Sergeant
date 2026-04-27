@@ -61,7 +61,7 @@
 | Resend                      | env `RESEND_API_KEY`; `authTransactionalMail.ts` | in use    |
 | Monobank webhook            | env `MONO_WEBHOOK_ENABLED`; `bankProxy.ts`       | in use    |
 | USDA / OpenFoodFacts        | `apps/server/src/lib/nutritionResponse.ts`       | in use    |
-| PWA (vite-plugin-pwa)       | `apps/web/vite.config.ts`                        | in use    |
+| PWA (vite-plugin-pwa)       | `apps/web/vite.config.js`                        | in use    |
 | Vercel (Hobby)              | `vercel.json` (root + `apps/web`)                | in use    |
 | Railway (Dockerfile.api)    | `railway.toml` → `Dockerfile.api`                | in use    |
 | Turborepo                   | root `package.json` → `turbo ^2.3`               | in use    |
