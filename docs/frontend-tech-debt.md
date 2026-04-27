@@ -95,12 +95,15 @@ Codemod ідемпотентний: повторний запуск дасть `
 
 ---
 
-### 4. Великі файли (>600 рядків) — 25 файлів
+### 4. Великі файли (>600 рядків) — 24 файли
+
+> `finyk/pages/Assets.tsx` (раніше 1147 рядків) декомпозовано на
+> `useAssetsState.ts` (259), `AssetsForm.tsx` (376), `AssetsTable.tsx` (511),
+> та `Assets.tsx` (40) — усі < 600 LOC. Див. PR-3.B з аудиту.
 
 | Рядків | Файл                                                |
 | ------ | --------------------------------------------------- |
 | 1614   | `nutrition/lib/foodDb/seedFoodsUk.ts`               |
-| 1147   | `finyk/pages/Assets.tsx`                            |
 | 1064   | `core/DesignShowcase.tsx`                           |
 | 1060   | `core/ProfilePage.tsx`                              |
 | 949    | `fizruk/components/workouts/ActiveWorkoutPanel.tsx` |
