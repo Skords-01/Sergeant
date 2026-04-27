@@ -13,9 +13,36 @@ import type { Tx } from "@sergeant/finyk-domain/domain/debtEngine";
 // AI-NOTE: Props mirror the original Assets component signature from FinykApp.
 // The original component was untyped; we use loose structural types here to
 // preserve backwards compatibility without introducing strict coupling.
+//
+// `storage` lists only the slice of `useStorage()` that this hook actually
+// destructures — keeping the prop honest about its real surface and letting
+// tests / alternate callers supply lightweight stand-ins without satisfying
+// the full 47-field hook signature.
+type StorageSlice = Pick<
+  ReturnType<typeof import("../hooks/useStorage").useStorage>,
+  | "hiddenAccounts"
+  | "manualAssets"
+  | "setManualAssets"
+  | "manualDebts"
+  | "setManualDebts"
+  | "receivables"
+  | "setReceivables"
+  | "toggleLinkedTx"
+  | "subscriptions"
+  | "setSubscriptions"
+  | "updateSubscription"
+  | "addSubscriptionFromRecurring"
+  | "dismissedRecurring"
+  | "dismissRecurring"
+  | "excludedTxIds"
+  | "monoDebtLinkedTxIds"
+  | "toggleMonoDebtTx"
+  | "customCategories"
+>;
+
 export type AssetsProps = {
   mono: { accounts: MonoAccount[]; transactions: Tx[] };
-  storage: ReturnType<typeof import("../hooks/useStorage").useStorage>;
+  storage: StorageSlice;
   showBalance?: boolean;
   initialOpenDebt?: boolean;
 };
