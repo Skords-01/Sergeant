@@ -4,7 +4,7 @@
 **Скоуп:** репо `Skords-01/Sergeant` (default branch на момент клонування).
 **Метод:** репозиторний прохід — структура, конфіги, `AGENTS.md`/`CONTRIBUTING.md`/`README.md`, `docs/*` (roadmap, tech-debt, observability, playbooks), `.github/workflows/ci.yml`, `eslint.config.js`, `packages/eslint-plugin-sergeant-design/`, `apps/*/tsconfig.json`, міграції в `apps/server/src/migrations/`. Без виконання CI/тестів.
 
-> **Статус виконання — оновлено 2026-04-27 (друга ревізія)**
+> **Статус виконання — оновлено 2026-04-27 (третя ревізія: +#897 +#898)**
 > Поки документ жив в attachments, частина PR-ідей з нього вже відпрацьована
 > через дочерні Devin-сесії. Узагальнений знімок прогресу:
 
@@ -26,6 +26,8 @@
 | PR-12.B  | `chatActions` contract tests (happy + error path per handler)          | ✅ closed  | [#885](https://github.com/Skords-01/Sergeant/pull/885)                                                                 |
 | PR-7.A   | `recommendationEngine` + `TodayFocusCard` unit/integration tests       | ✅ closed  | [#886](https://github.com/Skords-01/Sergeant/pull/886)                                                                 |
 | PR-3.B   | decompose `Assets.tsx` (1147 LOC) into smaller modules                 | ✅ closed  | [#887](https://github.com/Skords-01/Sergeant/pull/887)                                                                 |
+| PR-9.B   | gitleaks SHA-pinned secret-scan blocking job in CI                     | ✅ closed  | [#897](https://github.com/Skords-01/Sergeant/pull/897)                                                                 |
+| PR-3.C   | split `seedFoodsUk.ts` (1614 LOC) by category into `seeds/*`           | ✅ closed  | [#898](https://github.com/Skords-01/Sergeant/pull/898)                                                                 |
 | Інші     | див. inline-теги нижче                                                 | ⏳ pending | —                                                                                                                      |
 
 > Sprint-таблиці нижче (`Спринт 0`, `Спринт 1-2`, `Спринт 3-6`) також оновлені
@@ -125,7 +127,7 @@
 
 - `PR-3.A` — `feat(web,tsconfig): enable strict + noImplicitAny on apps/web (phase 1: shared/+ core/)` із expected baseline error-count і `// @ts-expect-error` baseline-файлом. Конкретно: спершу strict тільки в `apps/web/src/shared/**` і `apps/web/src/core/lib/**` через project references.
 - `PR-3.B` ✅ closed — [#887](https://github.com/Skords-01/Sergeant/pull/887) `refactor(web,finyk): decompose Assets.tsx (1147 LOC) into smaller modules` — пілот для top-10 list.
-- `PR-3.C` 🔄 in progress — `refactor(web,nutrition): split seedFoodsUk.ts (1614 LOC) by category (meat/fish/dairy/grains/...)` — чисто data-split, низький ризик. Дочерня сесія активна.
+- `PR-3.C` ✅ closed — [#898](https://github.com/Skords-01/Sergeant/pull/898) `refactor(web,nutrition): split seedFoodsUk.ts (1614 LOC) by category (meat/fish/dairy/grains/...)` — чисто data-split, 19 per-category файлів, всі 390 елементів структурно ідентичні.
 - `PR-3.D` ✅ closed — [#865](https://github.com/Skords-01/Sergeant/pull/865) `chore(web,storage): migrate top-3 high-call-site localStorage files to safe wrappers` (`core/settings/FinykSection.tsx` -20, `core/lib/chatActions/fizrukActions.ts` -7, `core/hub/HubDashboard.tsx` -5) — burn-down list.
 - `PR-3.E` — `ci(web): add report on frontend-tech-debt freshness` (CI fail, якщо `frontend-tech-debt.md` не редагувався 60+ днів).
 
@@ -280,7 +282,7 @@
 **PR-ідеї:**
 
 - `PR-9.A` ✅ closed — [#862](https://github.com/Skords-01/Sergeant/pull/862) `ci(security): make pnpm audit --audit-level=high blocking by default + escape hatch via labeled PR (e.g. label "audit-exception")`. Це міняє default на «потрібно явно дозволити», а не «потрібно явно заблокувати».
-- `PR-9.B` ⏳ pending — `ci(security): add gitleaks step (SHA-pinned)` для secret scanning у CI.
+- `PR-9.B` ✅ closed — [#897](https://github.com/Skords-01/Sergeant/pull/897) `ci(security): add gitleaks step (SHA-pinned)` — окремий blocking `Secret scan (gitleaks)` job, паралельний з `check`/`coverage`.
 - `PR-9.C` ⏳ pending — `docs(security): vulnerability SLA matrix (critical: same-day; high: ≤14 days; med: ≤30 days)` + автоматичний reminder action.
 - `PR-9.D` ✅ closed — [#871](https://github.com/Skords-01/Sergeant/pull/871) `feat(eslint-plugins): no-anthropic-key-in-logs` (AST + heuristic-rule на `console.log`/`logger.*`/`pino.*` з `process.env.ANTHROPIC_API_KEY` або secret-identifier у scope з імпортом `@anthropic-ai/sdk`).
 
@@ -388,15 +390,15 @@
 ### Спринт 1-2 (3-4 тижні) — «закрити рутиний борг»
 
 | #   | PR                                                      | Effort | Імпакт                |
-| --- | ------------------------------------------------------- | ------ | --------------------- | ------------------------------------------------------------------------------------------- |
-| 5   | `PR-6.B` — noImplicitAny phase 2                        | 3-5 д  | strict TS phase 2     | ⏳ pending                                                                                  |
-| 6   | `PR-3.D` — top-3 localStorage migration                 | 1 д    | burn-down             | ✅ [#865](https://github.com/Skords-01/Sergeant/pull/865)                                   |
-| 7   | `PR-3.B` + `PR-3.C` — Assets.tsx + seedFoodsUk split    | 2 д    | top-LOC decomposition | `PR-3.B` ✅ [#887](https://github.com/Skords-01/Sergeant/pull/887); `PR-3.C` 🔄 in progress |
-| 8   | `PR-2.B` — `no-bigint-string` ESLint rule               | 1-2 д  | автоматизує rule #1   | ✅ [#868](https://github.com/Skords-01/Sergeant/pull/868)                                   |
-| 9   | `PR-2.C` — `rq-keys-only-from-factory`                  | 1-2 д  | автоматизує rule #2   | ✅ [#869](https://github.com/Skords-01/Sergeant/pull/869)                                   |
-| 10  | `PR-12.B` — chatActions contract tests                  | 2 д    | safety net на tools   | ✅ [#885](https://github.com/Skords-01/Sergeant/pull/885)                                   |
-| 11  | `PR-7.A` + `PR-7.B` — recommendation + cloud-sync tests | 3 д    | critical paths        | `PR-7.A` ✅ [#886](https://github.com/Skords-01/Sergeant/pull/886); `PR-7.B` ⏳ pending     |
-| 12  | `PR-5.A` — migration linter                             | 1 д    | автоматизує rule #4   | ✅ [#863](https://github.com/Skords-01/Sergeant/pull/863)                                   |
+| --- | ------------------------------------------------------- | ------ | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| 5   | `PR-6.B` — noImplicitAny phase 2                        | 3-5 д  | strict TS phase 2     | ⏳ pending                                                                                                                             |
+| 6   | `PR-3.D` — top-3 localStorage migration                 | 1 д    | burn-down             | ✅ [#865](https://github.com/Skords-01/Sergeant/pull/865)                                                                              |
+| 7   | `PR-3.B` + `PR-3.C` — Assets.tsx + seedFoodsUk split    | 2 д    | top-LOC decomposition | `PR-3.B` ✅ [#887](https://github.com/Skords-01/Sergeant/pull/887); `PR-3.C` ✅ [#898](https://github.com/Skords-01/Sergeant/pull/898) |
+| 8   | `PR-2.B` — `no-bigint-string` ESLint rule               | 1-2 д  | автоматизує rule #1   | ✅ [#868](https://github.com/Skords-01/Sergeant/pull/868)                                                                              |
+| 9   | `PR-2.C` — `rq-keys-only-from-factory`                  | 1-2 д  | автоматизує rule #2   | ✅ [#869](https://github.com/Skords-01/Sergeant/pull/869)                                                                              |
+| 10  | `PR-12.B` — chatActions contract tests                  | 2 д    | safety net на tools   | ✅ [#885](https://github.com/Skords-01/Sergeant/pull/885)                                                                              |
+| 11  | `PR-7.A` + `PR-7.B` — recommendation + cloud-sync tests | 3 д    | critical paths        | `PR-7.A` ✅ [#886](https://github.com/Skords-01/Sergeant/pull/886); `PR-7.B` ⏳ pending                                                |
+| 12  | `PR-5.A` — migration linter                             | 1 д    | автоматизує rule #4   | ✅ [#863](https://github.com/Skords-01/Sergeant/pull/863)                                                                              |
 
 ### Спринт 3-6 (2-3 місяці) — «масштабування»
 
