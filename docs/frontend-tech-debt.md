@@ -100,32 +100,36 @@ Codemod ідемпотентний: повторний запуск дасть `
 > `finyk/pages/Assets.tsx` (раніше 1147 рядків) декомпозовано на
 > `useAssetsState.ts` (259), `AssetsForm.tsx` (376), `AssetsTable.tsx` (511),
 > та `Assets.tsx` (40) — усі < 600 LOC. Див. PR-3.B з аудиту.
+>
+> `nutrition/lib/foodDb/seedFoodsUk.ts` (раніше 1614 рядків) розбито на
+> 19 файлів по категоріях у `seeds/` + barrel re-export (~44 LOC).
+> Див. PR-3.C з аудиту.
 
-| Рядків | Файл                                                |
-| ------ | --------------------------------------------------- |
-| 1614   | `nutrition/lib/foodDb/seedFoodsUk.ts`               |
-| 1064   | `core/DesignShowcase.tsx`                           |
-| 1060   | `core/ProfilePage.tsx`                              |
-| 949    | `fizruk/components/workouts/ActiveWorkoutPanel.tsx` |
-| 907    | `core/onboarding/seedDemoData.ts`                   |
-| 902    | `core/hub/HubDashboard.tsx`                         |
-| 894    | `fizruk/pages/Workouts.tsx`                         |
-| 827    | `finyk/pages/Transactions.tsx`                      |
-| 824    | `routine/components/RoutineCalendarPanel.tsx`       |
-| 824    | `finyk/FinykApp.tsx`                                |
-| 694    | `core/OnboardingWizard.tsx`                         |
-| 692    | `fizruk/pages/Progress.tsx`                         |
-| 688    | `core/lib/chatActions/fizrukActions.ts`             |
-| 686    | `core/lib/hubChatContext.ts`                        |
-| 671    | `routine/RoutineApp.tsx`                            |
-| 669    | `nutrition/components/LogCard.tsx`                  |
-| 662    | `core/hub/HubChat.tsx`                              |
-| 642    | `sw.js`                                             |
-| 638    | `core/hub/HubReports.tsx`                           |
-| 637    | `fizruk/pages/Exercise.tsx`                         |
-| 631    | `fizruk/pages/Body.tsx`                             |
-| 610    | `nutrition/NutritionApp.tsx`                        |
-| 610    | `core/hub/HubSearch.tsx`                            |
+| Рядків   | Файл                                                |
+| -------- | --------------------------------------------------- |
+| ~~1614~~ | ~~`nutrition/lib/foodDb/seedFoodsUk.ts`~~           |
+| 1064     | `core/DesignShowcase.tsx`                           |
+| 1060     | `core/ProfilePage.tsx`                              |
+| 949      | `fizruk/components/workouts/ActiveWorkoutPanel.tsx` |
+| 907      | `core/onboarding/seedDemoData.ts`                   |
+| 902      | `core/hub/HubDashboard.tsx`                         |
+| 894      | `fizruk/pages/Workouts.tsx`                         |
+| 827      | `finyk/pages/Transactions.tsx`                      |
+| 824      | `routine/components/RoutineCalendarPanel.tsx`       |
+| 824      | `finyk/FinykApp.tsx`                                |
+| 694      | `core/OnboardingWizard.tsx`                         |
+| 692      | `fizruk/pages/Progress.tsx`                         |
+| 688      | `core/lib/chatActions/fizrukActions.ts`             |
+| 686      | `core/lib/hubChatContext.ts`                        |
+| 671      | `routine/RoutineApp.tsx`                            |
+| 669      | `nutrition/components/LogCard.tsx`                  |
+| 662      | `core/hub/HubChat.tsx`                              |
+| 642      | `sw.js`                                             |
+| 638      | `core/hub/HubReports.tsx`                           |
+| 637      | `fizruk/pages/Exercise.tsx`                         |
+| 631      | `fizruk/pages/Body.tsx`                             |
+| 610      | `nutrition/NutritionApp.tsx`                        |
+| 610      | `core/hub/HubSearch.tsx`                            |
 
 **Імпакт:** повільніший code review, важче тестувати окремі частини, можливі
 circular deps.
