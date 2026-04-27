@@ -24,13 +24,15 @@
  * (Phase 6 measurements are numeric-only, matching the
  * `Measurements` screen).
  *
- * Note on BodyAtlas: the web Body page does NOT use
- * `body-highlighter` (atlas lives on `/fizruk/atlas`), so the mobile
- * port intentionally does not embed `BodyAtlas` here.
+ * Recovery section: `useRecovery` provides a compact summary of
+ * muscle recovery status (ready / avoid lists), complementing the
+ * full interactive atlas on the Atlas page.
  */
 import { useCallback, useMemo } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+
+import type { RecoveryStatus } from "@sergeant/fizruk-domain";
 
 import {
   BODY_SUMMARY_WINDOW_DAYS,
@@ -42,6 +44,19 @@ import { hapticTap } from "@sergeant/shared";
 
 import { BodySummaryCard, BodyTrendCard } from "../components/body";
 import { useMeasurements } from "../hooks/useMeasurements";
+import { useRecovery } from "../hooks/useRecovery";
+
+const STATUS_LABEL: Record<RecoveryStatus, string> = {
+  green: "Відновлено",
+  yellow: "Часткове",
+  red: "Навантажено",
+};
+
+const STATUS_COLOR: Record<RecoveryStatus, string> = {
+  green: "bg-green-500",
+  yellow: "bg-yellow-500",
+  red: "bg-red-500",
+};
 
 export interface BodyProps {
   /**
@@ -152,6 +167,7 @@ export function Body({
   testID = "fizruk-body",
 }: BodyProps = {}) {
   const { entries } = useMeasurements();
+  const { ready, avoid, wellbeingMult } = useRecovery();
 
   const summaries = useMemo(
     () => buildBodySummaries(entries, SUMMARY_FIELDS, BODY_SUMMARY_WINDOW_DAYS),
@@ -268,6 +284,66 @@ export function Body({
                     testID={`${testID}-trend-${t.field}`}
                   />
                 ))}
+              </View>
+            ) : null}
+
+            {ready.length > 0 || avoid.length > 0 ? (
+              <View
+                className="rounded-2xl bg-white p-4 gap-3"
+                testID={`${testID}-recovery`}
+              >
+                <View className="flex-row items-center justify-between">
+                  <Text className="text-sm font-semibold text-fg">
+                    Відновлення
+                  </Text>
+                  {wellbeingMult !== 1.0 ? (
+                    <Text className="text-[11px] text-fg-muted">
+                      {`самопочуття ×${wellbeingMult.toFixed(2)}`}
+                    </Text>
+                  ) : null}
+                </View>
+                {ready.length > 0 ? (
+                  <View className="gap-1">
+                    <Text className="text-xs font-medium text-fg-muted">
+                      Готові до тренування
+                    </Text>
+                    <View className="flex-row flex-wrap gap-1.5">
+                      {ready.map((m) => (
+                        <View
+                          key={m.id}
+                          className="flex-row items-center gap-1 rounded-full bg-green-500/10 px-2 py-0.5"
+                        >
+                          <View
+                            className={`h-1.5 w-1.5 rounded-full ${STATUS_COLOR[m.status]}`}
+                          />
+                          <Text className="text-[11px] text-fg">{m.label}</Text>
+                        </View>
+                      ))}
+                    </View>
+                  </View>
+                ) : null}
+                {avoid.length > 0 ? (
+                  <View className="gap-1">
+                    <Text className="text-xs font-medium text-fg-muted">
+                      Потребують відпочинку
+                    </Text>
+                    <View className="flex-row flex-wrap gap-1.5">
+                      {avoid.map((m) => (
+                        <View
+                          key={m.id}
+                          className="flex-row items-center gap-1 rounded-full bg-red-500/10 px-2 py-0.5"
+                        >
+                          <View
+                            className={`h-1.5 w-1.5 rounded-full ${STATUS_COLOR[m.status]}`}
+                          />
+                          <Text className="text-[11px] text-fg">
+                            {`${m.label} · ${STATUS_LABEL[m.status]}`}
+                          </Text>
+                        </View>
+                      ))}
+                    </View>
+                  </View>
+                ) : null}
               </View>
             ) : null}
           </>
