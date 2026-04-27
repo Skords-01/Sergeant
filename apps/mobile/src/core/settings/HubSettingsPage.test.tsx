@@ -17,6 +17,14 @@ import { _getMMKVInstance } from "@/lib/storage";
 
 import { HubSettingsPage } from "./HubSettingsPage";
 
+jest.mock("@/components/ui/Toast", () => ({
+  useToast: () => ({
+    success: jest.fn(),
+    error: jest.fn(),
+    info: jest.fn(),
+  }),
+}));
+
 jest.mock("expo-notifications", () => ({
   __esModule: true,
   IosAuthorizationStatus: { PROVISIONAL: 3 },

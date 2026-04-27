@@ -36,9 +36,7 @@ const HeroCardImpl = function HeroCard({
         {showBalance ? (
           <>
             {networth.toLocaleString("uk-UA", { maximumFractionDigits: 0 })}
-            <span className="text-2xl font-semibold text-finyk/60 ml-1">
-              ₴
-            </span>
+            <span className="text-2xl font-semibold text-finyk/60 ml-1">₴</span>
           </>
         ) : (
           "••••••"
@@ -88,9 +86,14 @@ const HeroCardImpl = function HeroCard({
       {dayBudget > 0 && (
         <div className="mt-3 px-3 py-2.5 rounded-2xl bg-finyk/[.06] border border-finyk/[.14]">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-muted font-medium">Бюджет на день</span>
+            <span className="text-xs text-muted font-medium">
+              Бюджет на день
+            </span>
             <span className="text-base font-extrabold text-finyk-strong dark:text-finyk">
-              {Math.round(dayBudget).toLocaleString("uk-UA", { maximumFractionDigits: 0 })} ₴
+              {Math.round(dayBudget).toLocaleString("uk-UA", {
+                maximumFractionDigits: 0,
+              })}{" "}
+              ₴
             </span>
           </div>
           <div className="mt-1.5 h-1 rounded-full bg-finyk/[.15] overflow-hidden">

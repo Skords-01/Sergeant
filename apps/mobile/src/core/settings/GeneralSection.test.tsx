@@ -5,25 +5,61 @@
  *  - collapsed-by-default header with the "Загальні" title;
  *  - expanding reveals the two active toggles ("Темна тема" +
  *    "Показувати AI-коуч"), the dashboard reorder list with the
- *    visible-module labels, and the two still-deferred sub-group
- *    placeholders (Cloud sync / Backup);
+ *    visible-module labels, and the deferred Cloud-sync sub-group
+ *    placeholder plus the live Backup sub-group;
  *  - toggling "Темна тема" persists `darkMode` into the shared
  *    `hub_prefs_v1` MMKV slice;
  *  - toggling "Показувати AI-коуч" persists `showCoach` with the
  *    web-compatible default-on semantics (`prefs.showCoach !== false`);
  *  - the ▲ / ▼ buttons on the dashboard reorder list rewrite
- *    `STORAGE_KEYS.DASHBOARD_ORDER` via `useDashboardOrder`.
+ *    `STORAGE_KEYS.DASHBOARD_ORDER` via `useDashboardOrder`;
+ *  - export / import backup buttons are rendered and wired.
  */
 
 import { fireEvent, render } from "@testing-library/react-native";
-import { STORAGE_KEYS } from "@sergeant/shared";
+import { downloadJson, STORAGE_KEYS } from "@sergeant/shared";
 
+import { buildHubBackupPayload } from "@/core/hub/hubBackup";
 import { _getMMKVInstance } from "@/lib/storage";
 
 import { GeneralSection } from "./GeneralSection";
 
+// Mock the Toast context so `useToast()` works in tests.
+jest.mock("@/components/ui/Toast", () => ({
+  useToast: () => ({
+    success: jest.fn(),
+    error: jest.fn(),
+    info: jest.fn(),
+  }),
+}));
+
+// Mock the hub backup helpers.
+jest.mock("@/core/hub/hubBackup", () => ({
+  buildHubBackupPayload: jest.fn(() => ({
+    kind: "hub-backup",
+    schemaVersion: 1,
+    exportedAt: "2026-01-01",
+    finyk: {},
+    fizruk: {},
+    routine: {},
+    nutrition: {},
+  })),
+  applyHubBackupPayload: jest.fn(),
+}));
+
+// Mock shared download/import so we can verify they are called.
+jest.mock("@sergeant/shared", () => {
+  const actual = jest.requireActual("@sergeant/shared");
+  return {
+    ...actual,
+    downloadJson: jest.fn().mockResolvedValue(undefined),
+    pickJson: jest.fn().mockResolvedValue(null),
+  };
+});
+
 beforeEach(() => {
   _getMMKVInstance().clearAll();
+  jest.clearAllMocks();
 });
 
 describe("GeneralSection", () => {
@@ -97,5 +133,29 @@ describe("GeneralSection", () => {
     const stored = _getMMKVInstance().getString(STORAGE_KEYS.HUB_PREFS);
     expect(stored).toBeTruthy();
     expect(JSON.parse(stored as string)).toMatchObject({ showCoach: false });
+  });
+
+  it("renders export and import backup buttons", () => {
+    const { getByText, getByTestId } = render(<GeneralSection />);
+    fireEvent.press(getByText("Загальні"));
+
+    expect(getByTestId("general-export-backup")).toBeTruthy();
+    expect(getByTestId("general-import-backup")).toBeTruthy();
+  });
+
+  it("calls downloadJson with a hub backup payload on export", async () => {
+    const { getByText, getByTestId } = render(<GeneralSection />);
+    fireEvent.press(getByText("Загальні"));
+
+    fireEvent.press(getByTestId("general-export-backup"));
+
+    // Wait for the async handler to resolve.
+    await new Promise((r) => setTimeout(r, 0));
+
+    expect(buildHubBackupPayload).toHaveBeenCalled();
+    expect(downloadJson).toHaveBeenCalledWith(
+      expect.stringMatching(/^hub-backup-\d{4}-\d{2}-\d{2}\.json$/),
+      expect.objectContaining({ kind: "hub-backup" }),
+    );
   });
 });

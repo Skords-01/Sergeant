@@ -12,6 +12,9 @@ import "@shared/lib/haptic";
 // Registers the web Blob + <a download>-based adapter on the shared
 // file-download contract (`@sergeant/shared`). Import for side effects only.
 import "@shared/lib/fileDownload";
+// Registers the web <input type="file">-based adapter on the shared
+// file-import contract (`@sergeant/shared`). Import for side effects only.
+import "@shared/lib/fileImport";
 // Registers the web `window.visualViewport`-based adapter on the shared
 // visual-keyboard-inset contract (`@sergeant/shared`). Import for side
 // effects only.

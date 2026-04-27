@@ -20,10 +20,10 @@
  *     order still contains all four ids so a web session opening the
  *     same account keeps Nutrition in its slot — see
  *     `reorderWithHidden` in `@sergeant/shared`.
- *   - `onShowAuth` is stubbed with `Alert.alert` until the Better
- *     Auth native sheet lands in mobile nav. TODO: replace the alert
- *     with the actual sheet trigger once `packages/auth-client/expo`
- *     is wired.
+ *   - `onShowAuth` navigates to the `(auth)/sign-in` modal via
+ *     `router.push`. The `(auth)` group is presented as a modal in
+ *     `app/_layout.tsx`; after successful sign-in the modal closes
+ *     and `useUser` reactively updates the dashboard.
  *   - `useWeeklyDigest` + `useCoachInsight` (фаза 8) — після входу
  *     підтягують дайджест/інсайт; понеділкова автоген — лише для
  *     залогінених.
@@ -31,7 +31,7 @@
 
 import { router, type Href } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
-import { Alert, Pressable, ScrollView, Text, View } from "react-native";
+import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useUser } from "@sergeant/api-client/react";
@@ -163,13 +163,7 @@ export function HubDashboard() {
   const bumpHero = useCallback(() => setHeroTick((t) => t + 1), []);
 
   const handleShowAuth = useCallback(() => {
-    // TODO: replace with Better Auth native sheet once it lands in
-    // mobile nav. Keeping a stub alert makes the CTA discoverable in
-    // manual testing without pulling auth ahead of schedule.
-    Alert.alert(
-      "Акаунт скоро",
-      "Sign-in screen на mobile ще в розробці. Поки синхронізація запуститься автоматично, коли акаунт буде готовий.",
-    );
+    router.push("/(auth)/sign-in" as Href);
   }, []);
 
   // Insights panel is fed the `rest` slice from the shared focus

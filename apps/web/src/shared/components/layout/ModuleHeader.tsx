@@ -39,10 +39,26 @@ const MODULE_HEADER_TOKENS: Record<
   ModuleAccent,
   { gradient: string; border: string; subtitle: string }
 > = {
-  finyk:     { gradient: "from-finyk/[.06]",     border: "border-finyk/[.14]",     subtitle: "text-finyk-strong dark:text-finyk/70" },
-  fizruk:    { gradient: "from-fizruk/[.06]",    border: "border-fizruk/[.14]",    subtitle: "text-fizruk-strong dark:text-fizruk/70" },
-  routine:   { gradient: "from-routine/[.06]",   border: "border-routine/[.14]",   subtitle: "text-routine-strong dark:text-routine/70" },
-  nutrition: { gradient: "from-nutrition/[.06]", border: "border-nutrition/[.14]", subtitle: "text-nutrition-strong dark:text-nutrition/70" },
+  finyk: {
+    gradient: "from-finyk/[.06]",
+    border: "border-finyk/[.14]",
+    subtitle: "text-finyk-strong dark:text-finyk/70",
+  },
+  fizruk: {
+    gradient: "from-fizruk/[.06]",
+    border: "border-fizruk/[.14]",
+    subtitle: "text-fizruk-strong dark:text-fizruk/70",
+  },
+  routine: {
+    gradient: "from-routine/[.06]",
+    border: "border-routine/[.14]",
+    subtitle: "text-routine-strong dark:text-routine/70",
+  },
+  nutrition: {
+    gradient: "from-nutrition/[.06]",
+    border: "border-nutrition/[.14]",
+    subtitle: "text-nutrition-strong dark:text-nutrition/70",
+  },
 };
 
 export function ModuleHeader({
@@ -62,7 +78,12 @@ export function ModuleHeader({
       className={cn(
         "shrink-0 backdrop-blur-md z-40 relative safe-area-pt",
         mt
-          ? cn("bg-gradient-to-b to-panel/95", mt.gradient, mt.border, "border-b")
+          ? cn(
+              "bg-gradient-to-b to-panel/95",
+              mt.gradient,
+              mt.border,
+              "border-b",
+            )
           : "bg-panel/95 border-b border-line",
         className,
       )}
@@ -84,10 +105,12 @@ export function ModuleHeader({
                 </span>
               ) : null}
               {subtitle ? (
-                <span className={cn(
-                  "text-2xs font-medium truncate",
-                  mt ? mt.subtitle : "text-subtle",
-                )}>
+                <span
+                  className={cn(
+                    "text-2xs font-medium truncate",
+                    mt ? mt.subtitle : "text-subtle",
+                  )}
+                >
                   {subtitle}
                 </span>
               ) : null}
