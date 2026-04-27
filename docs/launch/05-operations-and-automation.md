@@ -234,34 +234,57 @@
 
 Покроковий чекліст від нуля до працюючого Telegram ops hub:
 
-- [ ] **Канал:** створи приватний Telegram-канал `sergeant-alerts`
-  - Settings → Channel type → Private
-- [ ] **Topics:** увімкни Topics (Settings → Topics → Enable)
-  - Створи теми: `#incidents`, `#revenue`, `#ops`, `#digest`, `#support`
-- [ ] **Бот:** створи бота через [@BotFather](https://t.me/BotFather)
-  - `/newbot` → ім'я: `Sergeant Ops Bot` → username: `sergeant_ops_bot`
-  - Збережи `BOT_TOKEN`
-- [ ] **Додай бота як адміна** каналу (Channel Settings → Administrators → Add → бот)
-  - Дозволи: Post messages, Edit messages
-- [ ] **Отримай `CHAT_ID`:**
-  ```bash
-  curl "https://api.telegram.org/bot<BOT_TOKEN>/getUpdates"
-  ```
-  Знайди `"chat":{"id":-100XXXXXXXXXX}` — це твій `CHAT_ID`
-- [ ] **Env vars** (Railway + n8n):
-  ```env
-  TELEGRAM_BOT_TOKEN=<BOT_TOKEN>
-  TELEGRAM_ALERT_CHAT_ID=<CHAT_ID>
-  ```
-- [ ] **Тест:** відправ тестове повідомлення:
-  ```bash
-  curl -X POST "https://api.telegram.org/bot<BOT_TOKEN>/sendMessage" \
-    -d chat_id=<CHAT_ID> \
-    -d text="✅ Sergeant Ops Bot connected!"
-  ```
-- [ ] **Push-сповіщення:** переконайся що в Telegram увімкнено push для цього каналу
-  - Channel → Mute → вимкни (або налаштуй custom notifications)
-- [ ] **n8n інтеграція:** перший workflow Stripe → Telegram (див. [§6.2 Billing pipeline](#1-billing-pipeline))
+1. **Канал:** створи приватний Telegram-канал `sergeant-alerts`
+   - Відкрий Telegram → New Channel → назва `sergeant-alerts`
+   - Settings → Channel type → Private
+   - [Telegram FAQ: Channels](https://telegram.org/faq_channels)
+
+2. **Topics:** увімкни Topics (Settings → Topics → Enable)
+   - Створи теми: `#incidents`, `#revenue`, `#ops`, `#digest`, `#support`
+   - [Telegram Blog: Topics in Groups](https://telegram.org/blog/topics-in-groups-collectible-usernames)
+
+3. **Бот:** створи бота через [@BotFather](https://t.me/BotFather)
+   - Відкрий [t.me/BotFather](https://t.me/BotFather) → `/newbot`
+   - Ім'я: `Sergeant Ops Bot` → username: `sergeant_ops_bot`
+   - Збережи `BOT_TOKEN` (формат: `123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11`)
+   - [Telegram Bot API: Authorizing your bot](https://core.telegram.org/bots/api#authorizing-your-bot)
+
+4. **Додай бота як адміна** каналу
+   - Channel Settings → Administrators → Add Administrator → вибери бота
+   - Дозволи: Post messages, Edit messages
+   - [Telegram Bot API: доступні методи](https://core.telegram.org/bots/api#available-methods)
+
+5. **Отримай `CHAT_ID`:**
+
+   ```bash
+   curl -s "https://api.telegram.org/bot<BOT_TOKEN>/getUpdates" | jq '.result[0].channel_post.chat.id'
+   ```
+
+   Знайди `"chat":{"id":-100XXXXXXXXXX}` — це твій `CHAT_ID`
+   - [Telegram Bot API: getUpdates](https://core.telegram.org/bots/api#getupdates)
+
+6. **Env vars** (Railway + n8n):
+
+   ```env
+   TELEGRAM_BOT_TOKEN=<BOT_TOKEN>
+   TELEGRAM_ALERT_CHAT_ID=<CHAT_ID>
+   ```
+
+7. **Тест:** відправ тестове повідомлення:
+
+   ```bash
+   curl -X POST "https://api.telegram.org/bot<BOT_TOKEN>/sendMessage" \
+     -d chat_id=<CHAT_ID> \
+     -d text="Sergeant Ops Bot connected!"
+   ```
+
+   Очікувана відповідь: `{"ok":true,"result":{"message_id":1,...}}`
+   - [Telegram Bot API: sendMessage](https://core.telegram.org/bots/api#sendmessage)
+
+8. **Push-сповіщення:** переконайся що в Telegram увімкнено push для цього каналу
+   - Channel → Mute → вимкни (або налаштуй custom notifications)
+
+9. **n8n інтеграція:** перший workflow Stripe → Telegram (див. [§6.2 Billing pipeline](#1-billing-pipeline))
 
 ### Anti-pattern — як НЕ моніторити
 
@@ -285,38 +308,38 @@
 
 ### Daily (5 хв; з OpenClaw — 1 хв)
 
-- [ ] Telegram `#sergeant-alerts` → є red flag? Розібратись. Нема? Далі.
-- [ ] OpenClaw morning brief (якщо налаштовано):
+- [ ] 1m — Telegram `#sergeant-alerts` → є red flag? Розібратись. Нема? Далі.
+- [ ] 1m — OpenClaw morning brief (якщо налаштовано):
       `«За ніч: X сігнапів, Y підписок, Z errors. Все ок? Так — ✓; Ні — деталі»`
-- [ ] Stripe → нові підписки (для emotional fuel)
-- [ ] Telegram bot inbox → support
-- [ ] _(опціонально)_ PostHog Today якщо є гіпотеза
+- [ ] 1m — Stripe → нові підписки (для emotional fuel)
+- [ ] 1m — Telegram bot inbox → support
+- [ ] 1m — _(опціонально)_ PostHog Today якщо є гіпотеза
 
 ### Weekly (30 хв, в неділю ввечері)
 
-- [ ] Grafana dashboard → MRR / DAU / churn / errors WoW
-- [ ] PostHog → cohorts, funnels, top events
-- [ ] GitHub → PR queue: Renovate, code review, mergeable
-- [ ] Stripe → revenue summary, refunds, disputes
-- [ ] Canny → top 5 feature requests
-- [ ] Loops → email metrics (open / click / unsub)
-- [ ] Sentry → top 5 issues, чи є те що треба фіксити
-- [ ] Buffer → next week content schedule
-- [ ] Notion / GitHub Projects → roadmap update
-- [ ] OpenClaw weekly report (якщо налаштовано):
+- [ ] 5m — Grafana dashboard → MRR / DAU / churn / errors WoW
+- [ ] 5m — PostHog → cohorts, funnels, top events
+- [ ] 3m — GitHub → PR queue: Renovate, code review, mergeable
+- [ ] 3m — Stripe → revenue summary, refunds, disputes
+- [ ] 2m — Canny → top 5 feature requests
+- [ ] 2m — Loops → email metrics (open / click / unsub)
+- [ ] 3m — Sentry → top 5 issues, чи є те що треба фіксити
+- [ ] 2m — Buffer → next week content schedule
+- [ ] 3m — Notion / GitHub Projects → roadmap update
+- [ ] 2m — OpenClaw weekly report (якщо налаштовано):
       AI генерує summary тижня + 3 рекомендації
 
 ### Monthly (2 год, перше число місяця)
 
-- [ ] Financial review: revenue, costs, margin, runway
-- [ ] Cohort analysis: D30 retention, LTV trend
-- [ ] Pricing experiment review (з PostHog feature flags)
-- [ ] Roadmap update: що зробив, що далі (місячний план)
-- [ ] Content audit: що зайшло (top 5 постів), що ні
-- [ ] Tooling review: чи треба ще щось додати? Викинути?
-- [ ] Backup test: відновити staging з backup
-- [ ] Security review: `pnpm audit`, expired secrets
-- [ ] Personal: чи не вигораю? Що покращити в процесі?
+- [ ] 20m — Financial review: revenue, costs, margin, runway
+- [ ] 15m — Cohort analysis: D30 retention, LTV trend
+- [ ] 10m — Pricing experiment review (з PostHog feature flags)
+- [ ] 15m — Roadmap update: що зробив, що далі (місячний план)
+- [ ] 10m — Content audit: що зайшло (top 5 постів), що ні
+- [ ] 10m — Tooling review: чи треба ще щось додати? Викинути?
+- [ ] 15m — Backup test: відновити staging з backup
+- [ ] 15m — Security review: `pnpm audit`, expired secrets
+- [ ] 10m — Personal: чи не вигораю? Що покращити в процесі?
 
 ---
 
@@ -353,6 +376,109 @@
 | `/ops <query>` | Ad-hoc запит до OpenClaw            | `/ops чому signups впали?` → AI-аналіз з гіпотезою + лінками             |
 | `/help`        | Список всіх команд                  | Таблиця вище                                                             |
 
+### Приклади вводу/виводу команд
+
+**`/mrr`**
+
+```
+> /mrr
+
+MRR: ₴12,400 (+₴198 за 24h)
+├ Pro monthly: 89 (₴8,811)
+├ Pro yearly: 37 (₴3,589)
+└ Total active: 126 subs
+Churn MTD: 2 (0.6%)
+```
+
+**`/errors`**
+
+```
+> /errors
+
+Sentry 24h: 3 нових issues, 0 fatal
+├ #S-1042 TypeError in DashboardPage — 12 events (Chrome 124)
+├ #S-1043 NetworkError in SyncWorker — 5 events (offline retry)
+└ #S-1044 RangeError in BudgetChart — 2 events (edge case: 0 txns)
+Unresolved total: 14 | Regressed: 0
+```
+
+**`/signups`**
+
+```
+> /signups
+
+Signups 24h: 23 (сер. 7d: 18, +28%)
+├ Google OAuth: 14 (61%)
+├ Email: 7 (30%)
+└ Apple: 2 (9%)
+Top source: DOU article "5 звичок які змінять життя"
+Activation (D0): 78% (норма > 70%)
+```
+
+**`/churn`**
+
+```
+> /churn
+
+Churn тиждень: 4 cancel (1.2%)
+├ "не користувався": 2 (50%)
+├ "price": 1 (25%)
+└ "не вистачає фіч": 1 (25%)
+LTV avg cancelled: ₴594 (4.8 міс)
+Retention D30 cohort: 72%
+```
+
+**`/deploy`**
+
+```
+> /deploy
+
+Vercel (web): ✓ deployed 2h ago
+  commit: abc1234 "fix(web): budget chart zero-state"
+Railway (server): ✓ deployed 3h ago
+  commit: def5678 "feat(server): mono webhook retry"
+Railway (n8n): ✓ healthy, 14d uptime
+All green.
+```
+
+**`/ci`**
+
+```
+> /ci
+
+CI main: ✓ all passing (run #1847, 4m12s)
+PRs open: 3
+├ #891 Renovate: update vitest 3.1 → 3.2 — CI ✓, auto-merge ready
+├ #890 feat(web): habit streaks calendar — CI ✓, review pending
+└ #889 fix(server): bigint coercion — CI ✗ (snapshot mismatch)
+```
+
+**`/backup`**
+
+```
+> /backup
+
+Last backup: today 03:00 UTC
+  Size: 142 MB (delta +3 MB)
+  Tables: 24, rows: 847K
+  Restore test: ✓ verified (staging, 03:12 UTC)
+Next backup: tomorrow 03:00 UTC
+```
+
+**`/ops <query>`**
+
+```
+> /ops чому signups впали?
+
+Analyzing... (PostHog + Vercel + Google Analytics)
+
+Signups сьогодні: 8 (vs avg 18, -56%)
+Гіпотеза: landing page deploy 14:00 зламав CTA button
+  └ Vercel deploy abc1234 → JS error in HeroSection
+  └ PostHog funnel: landing→signup drop 90% → 34%
+Рекомендація: rollback deploy abc1234, перевірити CTA.
+```
+
 ### BotFather command list (copy-paste ready)
 
 Відправ це в [@BotFather](https://t.me/BotFather) → `/setcommands` → вибери свого бота → paste:
@@ -381,20 +507,20 @@ help - Список всіх команд
 
 ## 5. Платформи автоматизації — порівняння
 
-| Критерій                    | **n8n** 🥇             | **OpenClaw** 🤖     | **Make.com** 🥈                                                                                                        | **Zapier** 🥉                                                                                                                | **Klaviyo** ❌                                                                                                              | **Switch trigger** |
-| --------------------------- | ---------------------- | ------------------- | ---------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- | ------------------ |
-| **Роль**                    | Конвеєр (робить)       | Асистент (думає)    | Конвеєр (робить)                                                                                                       | Конвеєр (робить)                                                                                                             | Email marketing                                                                                                             | —                  |
-| **Хостинг**                 | Self-host (Docker)     | Self-host (Docker)  | SaaS                                                                                                                   | SaaS                                                                                                                         | SaaS                                                                                                                        | —                  |
-| **Open-source**             | ✅ Apache 2.0          | ✅                  | ❌                                                                                                                     | ❌                                                                                                                           | ❌                                                                                                                          | —                  |
-| **Вартість MVP**            | $3–5/міс (Railway)     | $3–5/міс + LLM API  | Free tier 1K ops/міс                                                                                                   | $19+/міс                                                                                                                     | $45+/міс                                                                                                                    | —                  |
-| **Вартість scale**          | $10–20/міс             | $10 + LLM ($20–50)  | $9–29+/міс                                                                                                             | $69–599/міс                                                                                                                  | $100+/міс                                                                                                                   | —                  |
-| **Інтеграції**              | 400+ нативних          | будь-що через MCP   | 1500+                                                                                                                  | 6000+                                                                                                                        | Вузький: email/SMS                                                                                                          | —                  |
-| **AI / LLM**                | Optional nodes         | First-class         | Optional                                                                                                               | Optional                                                                                                                     | Optional                                                                                                                    | —                  |
-| **Visual builder**          | ✅ Node-based          | ❌ Prompt-based     | ✅ Best-in-class                                                                                                       | ✅ Step-based                                                                                                                | ✅                                                                                                                          | —                  |
-| **Self-hosted = privacy**   | ✅ Дані не лишають VPS | ✅                  | ❌                                                                                                                     | ❌                                                                                                                           | ❌                                                                                                                          | —                  |
-| **Криві задачі**            | Складні multi-step     | Ad-hoc, аналітика   | Mid-complexity                                                                                                         | Простий if-this-then                                                                                                         | Email flows                                                                                                                 | —                  |
-| **Підходить для Sergeant?** | ✅✅✅                 | ✅✅✅              | ⚠️ якщо не хочеш host                                                                                                  | ❌ дорого                                                                                                                    | ❌ overkill                                                                                                                 | —                  |
-| **Switch trigger**          | Дефолт для Sergeant    | Дефолт для Sergeant | Мігрувати сюди якщо self-host не вдалось стабілізувати за 2 тижні; або якщо потрібна нативна інтеграція відсутня в n8n | Мігрувати якщо Make.com free tier скінчився і self-host все ще неприйнятний; або > 5 team members потребують no-code builder | Мігрувати тільки якщо email marketing стає core loop (e-commerce товарні каталоги, складні сегментації) і Loops не покриває |
+| Критерій                    | **n8n** 🥇             | **OpenClaw** 🤖     | **Make.com** 🥈                                                                            | **Zapier** 🥉                                                                                                   | **Klaviyo** ❌                                                                               | **Switch trigger** |
+| --------------------------- | ---------------------- | ------------------- | ------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- | ------------------ |
+| **Роль**                    | Конвеєр (робить)       | Асистент (думає)    | Конвеєр (робить)                                                                           | Конвеєр (робить)                                                                                                | Email marketing                                                                              | —                  |
+| **Хостинг**                 | Self-host (Docker)     | Self-host (Docker)  | SaaS                                                                                       | SaaS                                                                                                            | SaaS                                                                                         | —                  |
+| **Open-source**             | ✅ Apache 2.0          | ✅                  | ❌                                                                                         | ❌                                                                                                              | ❌                                                                                           | —                  |
+| **Вартість MVP**            | $3–5/міс (Railway)     | $3–5/міс + LLM API  | Free tier 1K ops/міс                                                                       | $19+/міс                                                                                                        | $45+/міс                                                                                     | —                  |
+| **Вартість scale**          | $10–20/міс             | $10 + LLM ($20–50)  | $9–29+/міс                                                                                 | $69–599/міс                                                                                                     | $100+/міс                                                                                    | —                  |
+| **Інтеграції**              | 400+ нативних          | будь-що через MCP   | 1500+                                                                                      | 6000+                                                                                                           | Вузький: email/SMS                                                                           | —                  |
+| **AI / LLM**                | Optional nodes         | First-class         | Optional                                                                                   | Optional                                                                                                        | Optional                                                                                     | —                  |
+| **Visual builder**          | ✅ Node-based          | ❌ Prompt-based     | ✅ Best-in-class                                                                           | ✅ Step-based                                                                                                   | ✅                                                                                           | —                  |
+| **Self-hosted = privacy**   | ✅ Дані не лишають VPS | ✅                  | ❌                                                                                         | ❌                                                                                                              | ❌                                                                                           | —                  |
+| **Криві задачі**            | Складні multi-step     | Ad-hoc, аналітика   | Mid-complexity                                                                             | Простий if-this-then                                                                                            | Email flows                                                                                  | —                  |
+| **Підходить для Sergeant?** | ✅✅✅                 | ✅✅✅              | ⚠️ якщо не хочеш host                                                                      | ❌ дорого                                                                                                       | ❌ overkill                                                                                  | —                  |
+| **Switch trigger**          | Дефолт для Sergeant    | Дефолт для Sergeant | downtime > 4 год/міс × 2 тижні поспіль; або відсутня інтеграція + custom connector > 8 год | Make.com free tier (1K ops) вичерпано і self-host неприйнятний; або ≥ 5 team members потребують no-code builder | email = core loop: > 10 сегментів, > 5 automated flows, каталог > 100 SKU; Loops не покриває |
 
 ### Висновки
 
@@ -405,13 +531,13 @@ help - Список всіх команд
 
 **Коли мігрувати (switch triggers):**
 
-| З        | На         | Тригер                                                                                       |
-| -------- | ---------- | -------------------------------------------------------------------------------------------- |
-| n8n      | Make.com   | Self-host нестабільний > 2 тижні; або потрібна інтеграція відсутня в n8n і немає часу писати |
-| Make.com | n8n        | Перевищено free tier і self-host вже не лякає                                                |
-| Make.com | Zapier     | > 5 людей у команді потребують no-code builder                                               |
-| Loops    | Klaviyo    | Email стає core product loop з товарними каталогами                                          |
-| OpenClaw | Claude MCP | Self-host agent нестабільний; Claude Projects + MCP покриває потреби                         |
+| З        | На         | Тригер (quantitative)                                                                                                              |
+| -------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| n8n      | Make.com   | Self-host downtime > 4 год/міс протягом 2 тижнів поспіль; або потрібна інтеграція відсутня в n8n і час на custom connector > 8 год |
+| Make.com | n8n        | Перевищено 1 000 ops/міс (free tier) і є досвід Docker (self-host вже не лякає)                                                    |
+| Make.com | Zapier     | ≥ 5 людей у команді потребують no-code builder; бюджет ≥ $69/міс на автоматизацію                                                  |
+| Loops    | Klaviyo    | Email = core product loop: > 10 сегментів аудиторії, > 5 automated flows, товарний каталог > 100 SKU                               |
+| OpenClaw | Claude MCP | Self-host agent downtime > 8 год/міс; або LLM API cost > $100/міс і Claude Projects + MCP покриває потреби                         |
 
 ---
 
@@ -543,27 +669,36 @@ Cron 08:30 Kyiv
      Усе зелене. Що робимо сьогодні?"
 ```
 
-**Prompt template:**
+**System message:**
 
 ```
-Ти — Sergeant Ops Bot. Збери дані за останні 24h з наступних джерел:
-- Stripe API: MRR delta, нові підписки, cancellations
-- PostHog API: signups count, 7-day average порівняння
-- Sentry API: нові issues (severity >= warning)
-- GitHub API: open PR count, failed CI count
-- Telegram: open support threads count
-
-Формат відповіді — Telegram message ≤ 8 рядків, українською. Структура:
-"Доброго ранку. За ніч:
- ├ MRR: ₴{mrr} ({delta})
- ├ Сігнапи: {count} (медіана 7d: {avg}, {pct_change}%)
- ├ Errors: {count} нових
- ├ Support: {count} тікети чекають
- └ PR queue: {count} ({details})
- {verdict}. Що робимо сьогодні?"
-
+Ти — Sergeant Ops Bot. Твоя роль — щоранку генерувати стислий digest для
+Telegram-каналу #digest. Відповідь — українською, ≤ 8 рядків, tree-format.
 Якщо все ОК — verdict = "Усе зелене".
-Якщо є проблема — verdict = "⚠️ {issue}" + рекомендація.
+Якщо є проблема — verdict = "⚠️ {issue}" + 1 конкретна рекомендація.
+```
+
+**User message:**
+
+```
+Згенеруй morning brief. Дані за останні 24h:
+- Stripe API → MRR delta, нові підписки, cancellations
+- PostHog API → signups count, 7-day average
+- Sentry API → нові issues (severity >= warning)
+- GitHub API → open PR count, failed CI
+- Telegram → open support threads
+```
+
+**Очікуваний формат відповіді:**
+
+```
+Доброго ранку. За ніч:
+ ├ MRR: ₴12.4K (+₴99 нова Pro річна)
+ ├ Сігнапи: 23 (медіана 18, +28%)
+ ├ Errors: 0 нових
+ ├ Support: 2 тікети чекають
+ └ PR queue: 1 Renovate (auto-merge готовий)
+ Усе зелене. Що робимо сьогодні?
 ```
 
 #### 2. Ad-hoc запити (Telegram bot)
@@ -578,19 +713,34 @@ DM боту: "/ops чому signups впали?"
   → Відповідь з гіпотезою + лінки
 ```
 
-**Prompt template:**
+**System message:**
 
 ```
-Ти — Sergeant Ops Bot. Юзер запитує: "{query}"
-
+Ти — Sergeant Ops Bot. Юзер задає ad-hoc питання через Telegram DM.
 Зібери релевантні дані з доступних API (PostHog, Stripe, Sentry, GitHub, Vercel).
-Сформулюй відповідь з:
-1. Факти (числа, графіки, дати).
-2. Гіпотеза (чому це могло статися).
-3. Рекомендовані дії (1-3 конкретних кроки).
-4. Лінки на відповідні дашборди.
-
 Відповідь — українською, Telegram-friendly (≤ 15 рядків). Не спекулюй без даних.
+Структура: 1) Факти (числа, дати). 2) Гіпотеза. 3) Рекомендовані дії (1-3 кроки). 4) Лінки.
+```
+
+**User message:**
+
+```
+/ops чому signups впали?
+```
+
+**Очікуваний формат відповіді:**
+
+```
+Signups сьогодні: 8 (vs avg 18, -56%)
+
+Факти:
+ ├ PostHog funnel: landing→signup drop 90% → 34% (з 14:00)
+ ├ Vercel deploy abc1234 о 14:00 — JS error в HeroSection
+ └ Sentry: TypeError #S-1042 (12 events, Chrome 124)
+
+Гіпотеза: deploy abc1234 зламав CTA button на landing.
+Дії: 1) Rollback abc1234  2) Перевірити HeroSection  3) Моніторити funnel 1 год
+Лінки: PostHog funnel | Vercel deploys | Sentry #S-1042
 ```
 
 #### 3. Контент-генератор
@@ -605,24 +755,48 @@ Cron Mon 10:00
   → Telegram: "Контент тижня готовий у Buffer. Approve?"
 ```
 
-**Prompt template:**
+**System message:**
 
 ```
-Ти — контент-менеджер Sergeant. Проаналізуй метрики за минулий тиждень:
+Ти — контент-менеджер Sergeant. Створюєш build-in-public контент
+для X/Threads і Telegram. Tone: автентичний, не corporate. Цифри без NDA.
+Українською (X/Threads — англійською якщо аудиторія міжнародна).
+```
+
+**User message:**
+
+```
+Проаналізуй метрики за минулий тиждень і створи контент:
 - PostHog: top event growth, цікаві тренди
 - Stripe: revenue milestones
 - GitHub: merged features/fixes
 
-Створи:
-1. **X/Threads thread** (3 варіанти, build-in-public стиль):
-   - Hook (1 рядок, інтригуючий)
-   - 3-5 tweets з конкретними цифрами/інсайтами
-   - CTA (спробувати Sergeant / follow)
-2. **Telegram post** (1 варіант, для @sergeant_channel):
-   - Дружній тон, emoji помірно
-   - Конкретні цифри або feature highlight
+Потрібно:
+1. X/Threads thread (3 варіанти, build-in-public): hook + 3-5 tweets + CTA
+2. Telegram post (1 варіант, для @sergeant_channel): дружній тон, цифри/feature
+```
 
-Tone: автентичний, не corporate. Цифри без NDA. Українською.
+**Очікуваний формат відповіді:**
+
+```
+## Варіант A — X/Threads thread
+
+1/ Цього тижня наш MRR перетнув ₴12K. Ось 3 речі які спрацювали 🧵
+
+2/ Найбільший буст — DOU стаття. +156% signups за 1 день.
+   Lesson: контент > paid ads для українського ринку.
+
+3/ Shipping щодня: 14 PR merged, 3 нові фічі.
+   Habit streaks calendar 📅 — найпопулярніша (47% DAU).
+
+4/ Churn впав з 2.1% до 1.2%. Секрет: push-нагадування day-3.
+
+5/ Try Sergeant free → sergeant.app | Follow для weekly updates 🚀
+
+## Telegram post
+
+Тиждень #23: MRR ₴12.4K (+₴800), 161 новий юзер, churn 1.2%.
+Нова фіча: календар звичок з streaks 🔥
 ```
 
 #### 4. Аналіз churn
@@ -636,26 +810,39 @@ Cron Sun 18:00 + Stripe subscription.deleted webhook
      Гіпотеза: переглянути onboarding day-3."
 ```
 
-**Prompt template:**
+**System message:**
 
 ```
-Ти — аналітик retention Sergeant. Дані:
-- Stripe API: cancelled subscriptions за тиждень
+Ти — аналітик retention Sergeant. Аналізуєш churn щотижня.
+Кластеризуєш причини cancel, порівнюєш з минулим тижнем, даєш гіпотезу + дію.
+Відповідь — українською, Telegram message ≤ 10 рядків, tree-format.
+```
+
+**User message:**
+
+```
+Проаналізуй churn за тиждень. Дані:
+- Stripe API: cancelled subscriptions за останні 7 днів
 - Cancel survey responses (з webhook payload)
-- PostHog: user activity before cancel (last 30 days)
+- PostHog: user activity before cancel (last 30 days per user)
 
 Завдання:
-1. Кластеризуй причини cancel (price / не потрібно / bugs / feature missing / інше).
-2. Для кожного кластеру — % від total cancels.
-3. Для top-1 причини — гіпотеза + конкретна рекомендація.
-4. Порівняй з минулим тижнем.
+1. Кластеризуй причини (price / не потрібно / bugs / feature missing / інше)
+2. % від total cancels для кожного кластеру
+3. Top-1 причина → гіпотеза + конкретна рекомендація
+4. Порівняння з минулим тижнем (delta)
+```
 
-Формат: Telegram message ≤ 10 рядків, українською.
-"Churn тижня: {count} ({pct}%).
- ├ {reason_1}: {count_1} ({pct_1}%)
- ├ {reason_2}: {count_2}
- └ ...
- Top причина: {reason}. Гіпотеза: {hypothesis}. Дія: {action}."
+**Очікуваний формат відповіді:**
+
+```
+Churn тижня: 4 (1.2%). Минулий тиждень: 3 (0.9%), +0.3pp.
+ ├ "не користувався": 2 (50%) — PostHog: 0 sessions за 14d перед cancel
+ ├ "price": 1 (25%) — LTV ₴198 (1 міс), Free→Pro без activation
+ └ "не вистачає фіч": 1 (25%) — survey: "хочу інтеграцію з Apple Health"
+Top причина: "не користувався".
+Гіпотеза: onboarding не створює habit loop до day-3.
+Дія: A/B test push-нагадування на day-1 і day-3 з персоналізованим контентом.
 ```
 
 #### 5. Trend detection
@@ -670,21 +857,34 @@ Cron daily 23:00
   → ELSE → нічого (не спамити)
 ```
 
-**Prompt template:**
+**System message:**
 
 ```
-Ти — trend detector Sergeant. Проскануй джерела:
+Ти — trend detector Sergeant. Сканієш джерела раз на добу (23:00 Kyiv).
+Правила:
+- Якщо НІЧОГО аномального — return empty (НЕ відправляй повідомлення).
+- Якщо є тренд — 1 Telegram alert (максимум 1 на день, найважливіший).
+- Пріоритет: revenue > errors > engagement > growth.
+```
+
+**User message:**
+
+```
+Просканируй за останні 24h:
 - PostHog: events з delta > ±50% за 7 днів (порівняння з попередніми 7 днями)
 - Sentry: issues з growing frequency (> 2x за 3 дні)
-- Stripe: disputes або failed payments pattern
+- Stripe: disputes або failed payments pattern (> 2 за тиждень)
+```
 
-Правила:
-- Якщо НІЧОГО аномального — НЕ відправляй повідомлення (return empty).
-- Якщо є тренд — Telegram alert:
-  "📊 Trend detected: {event_name} {direction} {pct}% за 7d.
-   Контекст: {context}.
-   Рекомендація: {action}."
-- Максимум 1 alert на день (найважливіший тренд).
+**Очікуваний формат відповіді:**
+
+```
+📊 Trend detected: "workout_completed" ↑ 73% за 7d.
+Контекст: зростання почалось після DOU статті (Пн).
+  ├ Нові юзери: 89% workouts від юзерів < 7d
+  ├ Retention сигнал: D1 activation цих юзерів 84% (vs avg 67%)
+  └ Потенційний churn risk: 0 (поки рано оцінювати)
+Рекомендація: підготувати onboarding email для workout-first юзерів.
 ```
 
 #### 6. Code review assistant (PR коменти)
@@ -699,21 +899,50 @@ GitHub webhook (pull_request opened, NOT renovate)
   → Не блокує merge, just информує
 ```
 
-**Prompt template:**
+**System message:**
 
 ```
-Ти — code reviewer Sergeant. PR: #{pr_number} "{pr_title}".
-
-Завдання:
-1. Прочитай diff.
-2. Перевір AGENTS.md hard rules (bigint coercion, RQ key factories, API contract
-   тріада, migration rules, commit format, Tailwind opacity, WCAG contrast).
-3. Оціни risk: low / medium / high.
-4. Summary (3-5 речень): що змінилось, чи є потенційні проблеми.
-5. Якщо є порушення hard rules — вкажи конкретний рядок + правило.
-
+Ти — code reviewer Sergeant. Рев'юїш PR автоматично після CI green.
+Перевіряєш AGENTS.md hard rules: bigint coercion, RQ key factories,
+API contract тріада, migration rules, commit format, Tailwind opacity, WCAG contrast.
 Формат: GitHub PR comment (markdown). НЕ блокуй merge.
 Тон: конструктивний, конкретний. Без generic "looks good".
+```
+
+**User message:**
+
+```
+Review PR #{pr_number} "{pr_title}".
+1. Прочитай diff
+2. Перевір hard rules з AGENTS.md
+3. Оціни risk: low / medium / high
+4. Summary (3-5 речень)
+5. Якщо порушення — вкажи файл:рядок + правило
+```
+
+**Очікуваний формат відповіді:**
+
+```markdown
+## 🔍 OpenClaw Review — PR #890
+
+**Risk: low** | Files changed: 4 | Lines: +87 / -12
+
+### Summary
+
+Додано календар звичок з streaks. Компонент `HabitCalendar` рендерить
+30-денну сітку з кольоровими індикаторами. Дані — local-first (MMKV-web).
+Тести покривають happy path + edge case (порожній місяць).
+
+### Hard rules check
+
+- ✓ RQ keys: не використовуються (local-first)
+- ✓ Commit format: `feat(web): habit streaks calendar`
+- ✓ Tailwind opacity: `/10`, `/20` — на scale
+- ⚠️ `bg-routine text-white` (line 42) — потрібно `bg-routine-strong` (rule #9)
+
+### Рекомендація
+
+Замінити `bg-routine` → `bg-routine-strong` у `HabitCalendar.tsx:42`.
 ```
 
 ### 6.4 Data flow повністю
@@ -892,7 +1121,6 @@ curl "https://api.telegram.org/bot<TOKEN>/getUpdates"
 ```yaml
 # docker-compose.ops.yml
 # Запуск: docker compose -f docker-compose.ops.yml up -d
-version: "3.8"
 
 services:
   n8n:
@@ -1069,69 +1297,86 @@ OpenClaw weekly report → GitHub Issue (label: weekly-action-items)
 
 ## 10. Quick wins (можна зробити цього тижня)
 
-### Понеділок
+### Понеділок (відповідає [§3 Daily](#daily-5-хв-з-openclaw--1-хв) — налаштовуємо канал для daily check)
 
-- [ ] Створити Telegram канал `#sergeant-alerts` + topics:
+- [ ] 15m — Створити Telegram канал `#sergeant-alerts` + topics (див. [§2 setup checklist](#setup-checklist--telegram-ops-hub)):
   ```bash
-  # Через @BotFather:
+  # 1. Відкрий @BotFather в Telegram:
+  # https://t.me/BotFather
+  # 2. Створи бота:
   /newbot
   # Ім'я: Sergeant Ops Bot
   # Username: sergeant_ops_bot
-  # Скопіюй BOT_TOKEN
+  # 3. Скопіюй BOT_TOKEN (формат: 123456:ABC-DEF...)
   ```
-- [ ] Додати GitHub repo secret:
+- [ ] 5m — Додати GitHub repo secret:
   ```bash
-  # GitHub → Settings → Secrets → Actions → New:
-  # Name: TELEGRAM_BOT_TOKEN
-  # Value: <BOT_TOKEN з BotFather>
+  gh secret set TELEGRAM_BOT_TOKEN --repo Skords-01/Sergeant
+  # Або: GitHub → Settings → Secrets → Actions → New
+  # Name: TELEGRAM_BOT_TOKEN | Value: <BOT_TOKEN з BotFather>
   ```
-- [ ] Встановити BotFather commands (copy-paste з [§4](#botfather-command-list-copy-paste-ready))
+- [ ] 5m — Встановити BotFather commands (copy-paste з [§4](#botfather-command-list-copy-paste-ready))
 
-### Вівторок
+### Вівторок (налаштовуємо n8n для [§3 Weekly](#weekly-30-хв-в-неділю-ввечері) автоматизації)
 
-- [ ] Розгорнути n8n на Railway (~30 хв):
+- [ ] 30m — Розгорнути n8n на Railway:
   ```bash
   # Railway CLI:
   railway login
-  railway init
+  railway init --name sergeant-n8n
   railway add --template n8n
+  railway variables set N8N_BASIC_AUTH_ACTIVE=true
+  railway variables set TZ=Europe/Kyiv
+  railway up
   # Або через UI: railway.app → New Project → Template → n8n
   ```
-- [ ] Перший workflow: Stripe webhook → Telegram (див. [§6.2 billing pipeline](#1-billing-pipeline))
+- [ ] 45m — Перший workflow: Stripe webhook → Telegram (див. [§6.2 billing pipeline](#1-billing-pipeline))
 
-### Середа
+### Середа (автоматизуємо алерти з [§1 зона Product](#зона-1--product) і [§1 зона DevOps](#зона-4--devops--ci))
 
-- [ ] Додати workflow: Sentry → Telegram (див. [§6.2 Sentry routing](#3-sentry-alert-routing)):
+- [ ] 30m — Додати workflow: Sentry → Telegram (див. [§6.2 Sentry routing](#3-sentry-alert-routing)):
+  ```bash
+  # n8n UI → New Workflow:
+  # 1. Trigger: Sentry Webhook (project: sergeant-web)
+  # 2. IF: severity >= warning
+  # 3. Action: Telegram Send Message → #incidents topic
   ```
-  n8n UI → New Workflow → Sentry Trigger → Telegram Send Message
-  ```
-- [ ] Додати workflow: GitHub Actions failed → Telegram:
-  ```
-  n8n UI → New Workflow → GitHub Trigger (workflow_run) → IF failed → Telegram
+- [ ] 30m — Додати workflow: GitHub Actions failed → Telegram:
+  ```bash
+  # n8n UI → New Workflow:
+  # 1. Trigger: GitHub Webhook (event: workflow_run)
+  # 2. IF: conclusion == 'failure' AND branch == 'main'
+  # 3. Action: Telegram Send Message → #ops topic
   ```
 
-### Четвер
+### Четвер (підключаємо AI для [§3 Daily](#daily-5-хв-з-openclaw--1-хв) morning brief)
 
-- [ ] Налаштувати OpenClaw / AI agent:
+- [ ] 60m — Налаштувати OpenClaw / AI agent:
   ```bash
   # Варіант A: Docker (див. §7.2)
-  docker run -d --name openclaw ...
+  docker run -d --name openclaw \
+    -e LLM_MODEL=claude-sonnet-4-5 \
+    -e LLM_API_KEY="$ANTHROPIC_API_KEY" \
+    -e TELEGRAM_BOT_TOKEN="$TELEGRAM_BOT_TOKEN" \
+    ghcr.io/all-hands-ai/openhands:latest
   # Варіант B: Claude Projects → claude.ai/projects → New
   ```
-- [ ] Daily morning brief workflow (див. [§6.3 prompt template](#1-daily-morning-briefing))
+- [ ] 30m — Daily morning brief workflow (див. [§6.3 prompt template](#1-daily-morning-briefing))
 
-### П'ятниця
+### П'ятниця (організовуємо roadmap для [§3 Weekly](#weekly-30-хв-в-неділю-ввечері))
 
-- [ ] GitHub Project `Sergeant Operations` — створити views:
+- [ ] 30m — GitHub Project `Sergeant Operations` — створити views:
+  ```bash
+  # GitHub → Projects tab → New project → Board
+  # Додай fields: Priority (P0-P3), Zone (Product/Revenue/...)
+  # Docs: https://docs.github.com/en/issues/planning-and-tracking-with-projects/creating-projects/creating-a-project
   ```
-  GitHub → Projects → New → Board → add fields (див. §8.2)
-  ```
-- [ ] Тестова прогонка тижневого ритуалу (чекліст з [§3 weekly](#weekly-30-хв-в-неділю-ввечері))
+- [ ] 30m — Тестова прогонка [§3 Weekly ритуалу](#weekly-30-хв-в-неділю-ввечері) (30 хв чекліст)
 
 ### Субота–Неділя
 
-- [ ] Документувати setup у Notion / GitHub Wiki
-- [ ] Перший weekly report від OpenClaw (запустити вручну для тесту)
+- [ ] 30m — Документувати setup у Notion / GitHub Wiki
+- [ ] 15m — Перший weekly report від OpenClaw (запустити вручну для тесту, див. [§6.3](#63-6-конкретних-задач-для-openclaw))
 
 ---
 
@@ -1158,13 +1403,20 @@ OpenClaw weekly report → GitHub Issue (label: weekly-action-items)
 | **Medium** (2-3 людини, 100–1K юзерів) | 2–3     | $10–15 (dedicated Railway) | $10–15         | $30–60  | $30 (Grafana Pro)                  | $25 (Crisp Pro) | **$105–170**  |
 | **Large** (5+ людей, 1K–10K юзерів)    | 5+      | $20–40 (dedicated VPS)     | $20–40         | $50–100 | $50 (Datadog / Grafana Enterprise) | $50 (Intercom)  | **$190–380**  |
 
-**Поріг окупності:**
+**Поріг окупності (break-even):**
 
-| Сценарій   | Break-even при ₴99/міс Pro | Break-even при ₴799/рік Pro |
-| ---------- | -------------------------- | --------------------------- |
-| **Small**  | ~12 підписників            | ~5 річних                   |
-| **Medium** | ~50 підписників            | ~20 річних                  |
-| **Large**  | ~110 підписників           | ~45 річних                  |
+> **Формула:** `break_even_subs = ceil(total_ops_cost / price_per_sub_per_month)`
+>
+> - Monthly Pro: `₴99/міс` → `break_even = ceil(cost_uah / 99)`
+> - Yearly Pro: `₴799/рік ≈ ₴66.6/міс` → `break_even = ceil(cost_uah / 66.6)`
+
+| Сценарій   | Ops cost/міс (≈₴41/$) | Break-even monthly (₴99) | Формула              | Break-even yearly (₴799/рік ≈ ₴66.6/міс) | Формула                 |
+| ---------- | --------------------- | ------------------------ | -------------------- | ---------------------------------------- | ----------------------- |
+| **Small**  | ≈₴1,100 ($26–40)      | ~12 підписників          | `ceil(1100 / 99)=12` | ~17 річних                               | `ceil(1100 / 66.6)=17`  |
+| **Medium** | ≈₴4,500 ($105–170)    | ~46 підписників          | `ceil(4500 / 99)=46` | ~68 річних                               | `ceil(4500 / 66.6)=68`  |
+| **Large**  | ≈₴9,500 ($190–380)    | ~96 підписників          | `ceil(9500 / 99)=96` | ~143 річних                              | `ceil(9500 / 66.6)=143` |
+
+> _Ops cost конвертовано за орієнтовним курсом ≈₴41/$1. Актуальний курс перевіряй на день розрахунку._
 
 ---
 
