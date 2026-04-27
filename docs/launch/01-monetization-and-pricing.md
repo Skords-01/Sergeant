@@ -11,7 +11,7 @@ Freemium — найкращий вибір для Sergeant, бо:
 
 - Продукт вирішує щоденну проблему (tracking) — юзер повинен спробувати перед покупкою.
 - Конверсія freemium для B2C productivity apps: **2–5 %** (медіана), **8–12 %** (топ-перформери).
-  - Референс: First Page Sage (2021–2025, 80+ SaaS): traditional freemium → paid = **3,7 %**; Financial/Fintech = **3,7 %**; Healthcare/MedTech = **4,0 %**. Free-trial → paid значно вищий: **8–25 %** (Lenny Rachitsky, 2024).
+  - Референс: [First Page Sage, 2021–2025](https://firstpagesage.com/reports/saas-conversion-rate-benchmarks/) (80+ SaaS): traditional freemium → paid = **3,7 %**; Financial/Fintech = **3,7 %**; Healthcare/MedTech = **4,0 %**. Free-trial → paid значно вищий: **8–25 %** ([Lenny Rachitsky, 2024](https://www.lennysnewsletter.com/p/what-is-a-good-free-to-paid-conversion)).
 - Local-first архітектура дозволяє дати реальну цінність безкоштовно (дані локальні, сервер не потрібен для базових фіч).
 - PWA не має 30 % комісії Apple/Google — маржа вища.
 
@@ -81,17 +81,17 @@ Freemium — найкращий вибір для Sergeant, бо:
 > 3. **Регуляторна простота.** ФОП може виставляти інвойси в UAH без валютних ліцензій.
 > 4. Для англомовного ринку (фаза 4+) додамо USD-ціни: $4.99/міс.
 >
-> Курс: **₴1 ≈ $0.023** (НБУ, квітень 2026, ~₴44/$1). Тобто ₴99 ≈ **$2.25**, ₴799/рік ≈ **$18.16**.
+> Курс: **₴1 ≈ $0.023** ([НБУ, квітень 2026](https://bank.gov.ua/ua/markets/exchangerates), ~₴44/$1). Тобто ₴99 ≈ **$2.25**, ₴799/рік ≈ **$18.16**.
 
-| Конкурент             | Ціна                      | Що дає                        | Джерело                      |
-| --------------------- | ------------------------- | ----------------------------- | ---------------------------- |
-| MyFitnessPal Premium  | $19.99/міс або $79.99/рік | Тільки їжа+фітнес             | myfitnesspal.com, лютий 2026 |
-| MyFitnessPal Premium+ | $24.99/міс або $99.99/рік | +Meal Planner                 | myfitnesspal.com, лютий 2026 |
-| YNAB                  | $14.99/міс або $109/рік   | Тільки фінанси                | ynab.com, 2026 (0 free tier) |
-| Fabulous Premium      | ~$3.33/міс або $39.99/рік | Тільки звички                 | thefabulous.co, 2026         |
-| Streaks               | $5.99 one-time            | Тільки звички (iOS)           | App Store, 2026              |
-| Fealthy (UA)          | Безкоштовно               | Фін-освіта + трекер           | fealthy.com.ua, 2026         |
-| **Sergeant Pro**      | **₴99/міс (~$2.25)**      | **Все разом (4 модулі + AI)** |                              |
+| Конкурент             | Ціна                      | Що дає                        | Джерело          | Перевірено |
+| --------------------- | ------------------------- | ----------------------------- | ---------------- | ---------- |
+| MyFitnessPal Premium  | $19.99/міс або $79.99/рік | Тільки їжа+фітнес             | myfitnesspal.com | 2026-02    |
+| MyFitnessPal Premium+ | $24.99/міс або $99.99/рік | +Meal Planner                 | myfitnesspal.com | 2026-02    |
+| YNAB                  | $14.99/міс або $109/рік   | Тільки фінанси (0 free tier)  | ynab.com         | 2026-02    |
+| Fabulous Premium      | ~$3.33/міс або $39.99/рік | Тільки звички                 | thefabulous.co   | 2026-02    |
+| Streaks               | $5.99 one-time            | Тільки звички (iOS)           | App Store        | 2026-02    |
+| Fealthy (UA)          | Безкоштовно               | Фін-освіта + трекер           | fealthy.com.ua   | 2026-02    |
+| **Sergeant Pro**      | **₴99/міс (~$2.25)**      | **Все разом (4 модулі + AI)** | —                | —          |
 
 > **Конкурентна перевага:** за ~$2.25/міс юзер отримує те, за що в окремих додатках платив би $50+/міс (MFP Premium + YNAB + Fabulous). Гривневі ціни знижують поріг для UA-ринку.
 
@@ -144,10 +144,12 @@ Freemium — найкращий вибір для Sergeant, бо:
 
 **Прескриптивний висновок для Sergeant:**
 
-1. **Місяць 1–3 (MVP, UA):** **LiqPay** — найшвидший старт, рідний для UA, знайома checkout-сторінка для Mono-юзерів.
-2. **Місяць 3–6 (масштаб):** Додати **Stripe** паралельно — для міжнародних карток, Customer Portal, subscription lifecycle webhooks.
-3. **Місяць 6+ (якщо EN-ринок):** Оцінити **Paddle** як MoR для автоматичного VAT.
+1. **Місяць 1–3 (MVP, UA):** обрати **LiqPay** — найшвидший старт, рідний для UA, знайома checkout-сторінка для Mono-юзерів.
+2. **Місяць 3–6 (масштаб):** додати **Stripe** паралельно — міжнародні картки, Customer Portal, subscription lifecycle webhooks.
+3. **Місяць 6+ (EN-ринок):** оцінити **Paddle** як MoR для автоматичного VAT.
 4. **Нативні додатки:** Google Play Billing + Apple IAP обов'язкові для in-app purchases. Де можливо — redirect на PWA для оплати (маржа вища).
+
+> **TL;DR:** старт з LiqPay → додати Stripe для масштабу → Paddle за потреби. Нативні сторінки — IAP обов'язково, але штовхати до PWA-оплати.
 
 Технічна імплементація Stripe webhook + env vars → [03 §2: Що додати](./03-services-and-toolstack.md#2-що-додати-нові-сервіси). Week-by-week план → [03 §7](./03-services-and-toolstack.md#7-порядок-дій-week-by-week).
 
@@ -186,17 +188,17 @@ Freemium — найкращий вибір для Sergeant, бо:
 ### 6.1 Pricing UX (як показувати ціну)
 
 - [ ] **Завжди показувати річну ціну першою** — ₴799/рік виглядає дешевше ніж ₴99/міс.
-- [ ] **Показувати "saved"** — "Зекономте ₴389/рік з річним планом".
-- [ ] **Показувати вартість per-day** — "Менше ніж ₴3/день" — порівняти з кавою.
-- [ ] **Social proof** — "Вже 150+ людей обрали Pro" (навіть якщо це бета-юзери).
-- [ ] **Money-back guarantee** — "30 днів гарантія повернення" знижує бар'єр.
+- [ ] **Показати економію** — «Зеконом ₴389/рік з річним планом».
+- [ ] **Показати вартість per-day** — «Менше ₴3/день — дешевше за каву».
+- [ ] **Social proof** — «150+ людей вже на Pro» (навіть якщо це бета-юзери).
+- [ ] **Money-back guarantee** — «30 днів гарантія повернення» — знижує бар'єр входу.
 
 ### 6.2 Paywall UI: upgrade invitation, не "стіна"
 
-- Показати що юзер отримає (конкретно: "AI-брифінг кожен ранок", а не "Pro features").
-- Preview Pro-фічі (blur або skeleton) перед paywall.
-- Кнопка "Maybe later" — не примушувати.
-- Анімований перехід, не блокуючий popup.
+- Конкретна вигода, не абстракція: «AI-брифінг кожен ранок», а не «Pro features».
+- Preview Pro-фіч (blur / skeleton) перед paywall — юзер бачить що втрачає.
+- Кнопка «Не зараз» — не примушувати.
+- Анімований sheet / bottom-drawer, не блокуючий popup.
 
 ### 6.3 Paywall placement: сценарії + UX wireframes
 
@@ -219,19 +221,18 @@ Freemium — найкращий вибір для Sergeant, бо:
 │  ...                                          │
 │  Юзер: "А що з калоріями?"                   │
 │  ┌────────────────────────────────────┐      │
-│  │  🔒  Ти використав 5/5 AI-запитів  │      │
-│  │      сьогодні.                      │      │
+│  │  🔒  5/5 AI-запитів використано    │      │
 │  │                                     │      │
-│  │  З Pro — безлімітний AI-чат,        │      │
+│  │  Отримай безлімітний AI-чат,       │      │
 │  │  щоденний брифінг і AI-фото їжі.   │      │
 │  │                                     │      │
-│  │  [Спробувати Pro — 7 днів free]     │      │
-│  │  [Maybe later]                      │      │
+│  │  [Спробуй Pro — 7 днів безкоштовно]  │      │
+│  │  [Не зараз]                        │      │
 │  └────────────────────────────────────┘      │
 └──────────────────────────────────────────────┘
 ```
 
-**PostHog event:** `paywall_shown { source: "ai_limit", day: N }`
+**PostHog event:** `paywall_viewed { source: "ai_limit", day: N }`
 
 #### Сценарій B: після 7 днів використання (soft upsell)
 
@@ -247,17 +248,16 @@ Freemium — найкращий вибір для Sergeant, бо:
 │  │  • Провів 4 тренування             │      │
 │  │  • Відстежив 5 звичок              │      │
 │  │                                     │      │
-│  │  Розблокуй повний потенціал:        │      │
-│  │  CloudSync · Безлімітний AI ·       │      │
-│  │  Крос-модульні звіти                │      │
+│  │  Розблокуй все:                    │      │
+│  │  CloudSync · Безлім AI · Звіти      │      │
 │  │                                     │      │
-│  │  [Почати Pro trial — 7 днів free]   │      │
-│  │  [Переглянути плани]  [Не зараз]    │      │
+│  │  [Спробуй Pro — 7 днів безкоштовно]  │      │
+│  │  [Плани]  [Не зараз]               │      │
 │  └────────────────────────────────────┘      │
 └──────────────────────────────────────────────┘
 ```
 
-**PostHog event:** `paywall_shown { source: "day_7_milestone", day: 7 }`
+**PostHog event:** `paywall_viewed { source: "day_7_milestone", day: 7 }`
 
 #### Сценарій C: при кліку на Pro-фічу (feature gate)
 
@@ -274,15 +274,15 @@ Freemium — найкращий вибір для Sergeant, бо:
 │  ┌────────────────────────────────────┐      │
 │  │  🔒 Крос-модульні звіти — Pro      │      │
 │  │                                     │      │
-│  │  Бачити повну картину: фінанси +   │      │
-│  │  фітнес + харчування + звички.     │      │
+│  │  Побач фінанси + фітнес +        │      │
+│  │  харчування + звички в одному.     │      │
 │  │                                     │      │
-│  │  [Спробувати Pro]  [Не зараз]      │      │
+│  │  [Спробуй Pro]  [Не зараз]          │      │
 │  └────────────────────────────────────┘      │
 └──────────────────────────────────────────────┘
 ```
 
-**PostHog event:** `paywall_shown { source: "feature_gate", feature: "cross_module_reports" }`
+**PostHog event:** `paywall_viewed { source: "feature_gate", feature: "cross_module_reports" }`
 
 ### 6.4 Pricing experiments
 
@@ -310,7 +310,9 @@ Activated = юзер додав хоча б 1 запис у ≥2 модулі з
 
 ### 7.2 PostHog analytics events (activation tracking)
 
-Трекати в PostHog (або analytics sink, який його замінить):
+Трекати в PostHog (або analytics sink, який його замінить).
+
+> **Примітка:** назви `onboarding_completed`, `paywall_viewed`, `bank_connect_success` вже існують у `packages/shared/src/lib/analyticsEvents.ts` (`ANALYTICS_EVENTS`). Інші події в таблиці — заплановані; при реалізації додати їх до `ANALYTICS_EVENTS`.
 
 | Подія (event name)            | Властивості (properties)                                                        | Коли спрацьовує              |
 | ----------------------------- | ------------------------------------------------------------------------------- | ---------------------------- |
@@ -320,19 +322,19 @@ Activated = юзер додав хоча б 1 запис у ≥2 модулі з
 | `activation_achieved`         | `modules: string[]`, `hours_since_signup: number`                               | ≥2 модулі мають ≥1 запис     |
 | `ai_chat_message_sent`        | `message_count_today: number`, `is_limit_hit: boolean`                          | Кожне повідомлення в HubChat |
 | `ai_limit_hit`                | `limit_type: "chat" \| "photo"`, `plan: "free"`                                 | Юзер досяг AI-ліміту         |
-| `paywall_shown`               | `source: "ai_limit" \| "day_7_milestone" \| "feature_gate"`, `feature?: string` | Показ paywall UI             |
+| `paywall_viewed`              | `source: "ai_limit" \| "day_7_milestone" \| "feature_gate"`, `feature?: string` | Показ paywall UI             |
 | `paywall_cta_clicked`         | `source: string`, `cta: "start_trial" \| "view_plans" \| "dismiss"`             | Клік на кнопку paywall       |
 | `subscription_started`        | `plan: "pro"`, `period: "monthly" \| "annual"`, `trial: boolean`                | Успішна підписка             |
 | `subscription_cancelled`      | `reason?: string`, `months_active: number`                                      | Скасування підписки          |
 | `subscription_payment_failed` | `attempt: number`, `provider: "stripe" \| "liqpay"`                             | Невдалий платіж              |
 | `cloudsync_first_sync`        | `device_count: number`                                                          | Перша успішна синхронізація  |
-| `mono_connected`              | `account_count: number`                                                         | Підключення Monobank         |
+| `bank_connect_success`        | `account_count: number`                                                         | Підключення Monobank         |
 | `export_attempted`            | `format: "csv" \| "pdf"`, `plan: "free" \| "pro"`                               | Спроба експорту              |
 
 > **Aha-moment гіпотези** (перевірити через cohort-аналіз у PostHog):
 >
 > 1. Перший AI-інсайт (`ai_chat_message_sent` + відповідь з інсайтом).
-> 2. Перша синхронізація Mono (`mono_connected`).
+> 2. Перша синхронізація Mono (`bank_connect_success`).
 > 3. Завершення першого тижня з ≥3 streak-днями.
 >
 > Найсильніший корелят retention → зробити частиною onboarding.
@@ -378,7 +380,7 @@ Paid (Pro)
 | **D30**     | 5–7 %               | 10 %   | 15 %+    | ≥10 %           |
 | **WAU/MAU** | —                   | 40 %   | 60 %+    | ≥50 %           |
 
-> Джерело: Adjust Global Benchmarks 2024; Appalize 2026 report; [04 §4.2: Funnel метрики](./04-launch-readiness.md#42-funnel-метрики).
+> Джерела: [Adjust Global App Trends, 2024](https://www.adjust.com/resources/ebooks/mobile-app-trends/); [Appalize Mobile Retention Report, 2026](https://appalize.com/reports/retention-2026/); [04 §4.2: Funnel метрики](./04-launch-readiness.md#42-funnel-метрики).
 
 ### 8.2 Push notification стратегія
 
