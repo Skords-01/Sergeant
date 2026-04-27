@@ -1,26 +1,17 @@
 import type { Request, Response } from "express";
 import { FoodSearchQuerySchema } from "../http/schemas.js";
 import { validateQuery } from "../http/validate.js";
+import {
+  normalizeOFFSearch,
+  normalizeUSDASearch,
+  type OFFSearchProduct,
+  type USDASearchFood,
+} from "../lib/normalizers/index.js";
 
 const OFF_SEARCH = "https://world.openfoodfacts.org/api/v2/search";
 const OFF_FIELDS =
   "code,product_name,product_name_uk,brands,nutriments,serving_quantity";
 const USDA_SEARCH = "https://api.nal.usda.gov/fdc/v1/foods/search";
-
-interface OFFSearchProduct {
-  code?: string;
-  product_name?: string;
-  product_name_uk?: string;
-  brands?: string;
-  nutriments?: Record<string, unknown>;
-  serving_quantity?: number | string;
-}
-
-interface USDASearchFood {
-  fdcId?: number;
-  description?: string;
-  foodNutrients?: Array<{ nutrientId?: number; value?: number }>;
-}
 
 // Deterministic fallback id based on product content — used when the upstream
 // record has no stable code (OFF `code` / USDA `fdcId`). Avoids embedding
@@ -169,102 +160,14 @@ function translateFirstToken(query: string): string | null {
 export function normalizeOFFProduct(
   product: OFFSearchProduct | null | undefined,
 ): NormalizedSearchProduct | null {
-  const n = (product?.nutriments || {}) as Record<string, unknown>;
-
-  const round1 = (v: unknown): number | null =>
-    v != null && Number.isFinite(Number(v))
-      ? Math.round(Number(v) * 10) / 10
-      : null;
-
-  // Дозволяємо друковані символи латиниці + кирилиця (без керуючих символів).
-  // \u0020-\u024F вже охоплює ASCII-цифри та пунктуацію, тож окремих
-  // \d.,()\-/ у діапазоні не треба.
-  const name =
-    product?.product_name_uk ||
-    (product?.product_name &&
-    /^[\u0020-\u024F\u0400-\u04FF]+$/.test(product.product_name)
-      ? product.product_name
-      : null) ||
-    null;
-  if (!name) return null;
-
-  const brand = product?.brands
-    ? String(product.brands).split(",")[0].trim()
-    : null;
-
-  const kcal = round1(n["energy-kcal_100g"] ?? n["energy-kcal"] ?? null);
-  const protein = round1(n["proteins_100g"] ?? null);
-  const fat = round1(n["fat_100g"] ?? null);
-  const carbs = round1(n["carbohydrates_100g"] ?? null);
-
-  if (kcal == null && protein == null && fat == null && carbs == null) {
-    return null;
-  }
-
-  return {
-    id: product?.code
-      ? `off_${String(product.code).replace(/^0+/, "") || "0"}`
-      : stableId("off", [name, brand]),
-    name,
-    brand,
-    source: "off",
-    per100: {
-      kcal: kcal ?? 0,
-      protein_g: protein ?? 0,
-      fat_g: fat ?? 0,
-      carbs_g: carbs ?? 0,
-    },
-    defaultGrams: product?.serving_quantity
-      ? Math.round(Number(product.serving_quantity))
-      : 100,
-  };
+  return normalizeOFFSearch(product, stableId);
 }
 
 // USDA nutrient IDs: 1008=Energy(kcal), 1003=Protein, 1004=Fat, 1005=Carbs
 export function normalizeUSDAProduct(
   food: USDASearchFood | null | undefined,
 ): NormalizedSearchProduct | null {
-  const name = food?.description;
-  if (!name) return null;
-
-  const round1 = (v: unknown): number | null =>
-    v != null && Number.isFinite(Number(v))
-      ? Math.round(Number(v) * 10) / 10
-      : null;
-
-  const nutrients = Array.isArray(food?.foodNutrients)
-    ? food.foodNutrients
-    : [];
-  const get = (id: number): number | null => {
-    const n = nutrients.find((x) => x.nutrientId === id);
-    return n?.value != null ? Number(n.value) : null;
-  };
-
-  const kcal = round1(get(1008));
-  const protein = round1(get(1003));
-  const fat = round1(get(1004));
-  const carbs = round1(get(1005));
-
-  if (kcal == null && protein == null && fat == null && carbs == null) {
-    return null;
-  }
-
-  return {
-    id:
-      food?.fdcId != null
-        ? `usda_${String(food.fdcId)}`
-        : stableId("usda", [name]),
-    name,
-    brand: null,
-    source: "usda",
-    per100: {
-      kcal: kcal ?? 0,
-      protein_g: protein ?? 0,
-      fat_g: fat ?? 0,
-      carbs_g: carbs ?? 0,
-    },
-    defaultGrams: 100,
-  };
+  return normalizeUSDASearch(food, stableId);
 }
 
 async function fetchOFF(

@@ -3,6 +3,12 @@ import { recordExternalHttp } from "../lib/externalHttp.js";
 import { BarcodeQuerySchema } from "../http/schemas.js";
 import { validateQuery } from "../http/validate.js";
 import { barcodeLookupsTotal } from "../obs/metrics.js";
+import {
+  normalizeOFFBarcode,
+  normalizeUSDABarcode,
+  type OFFProduct,
+  type USDAFood,
+} from "../lib/normalizers/index.js";
 
 interface NormalizedProduct {
   name: string;
@@ -128,31 +134,7 @@ export function __barcodeTestHooks(): BarcodeTestHooks {
   };
 }
 
-interface OFFProduct {
-  product_name?: string;
-  product_name_uk?: string;
-  brands?: string;
-  nutriments?: Record<string, unknown>;
-  serving_size?: string;
-  serving_quantity?: number | string;
-}
-
-interface USDAFoodNutrient {
-  nutrientId?: number;
-  nutrient?: { id?: number };
-  value?: number;
-  amount?: number;
-}
-
-interface USDAFood {
-  description?: string;
-  brandOwner?: string;
-  brandName?: string;
-  foodNutrients?: USDAFoodNutrient[];
-  servingSize?: number;
-  servingSizeUnit?: string;
-  gtinUpc?: string;
-}
+// Raw upstream types imported from ../lib/normalizers/index.js
 
 function hasErrorName(e: unknown, name: string): boolean {
   return !!e && typeof e === "object" && (e as { name?: string }).name === name;
@@ -187,47 +169,7 @@ const OFF_FIELDS =
 function normalizeOFF(
   product: OFFProduct | null | undefined,
 ): NormalizedProduct | null {
-  const n = (product?.nutriments || {}) as Record<string, unknown>;
-  const name = product?.product_name_uk || product?.product_name || null;
-  const brand = product?.brands
-    ? String(product.brands).split(",")[0].trim()
-    : null;
-
-  const round1 = (v: unknown): number | null =>
-    v != null && Number.isFinite(Number(v))
-      ? Math.round(Number(v) * 10) / 10
-      : null;
-
-  const kcal = round1(n["energy-kcal_100g"] ?? n["energy-kcal"] ?? null);
-  const protein = round1(n["proteins_100g"] ?? null);
-  const fat = round1(n["fat_100g"] ?? null);
-  const carbs = round1(n["carbohydrates_100g"] ?? null);
-
-  const servingSize = product?.serving_size
-    ? String(product.serving_size)
-    : null;
-  const servingGrams =
-    product?.serving_quantity != null &&
-    Number.isFinite(Number(product.serving_quantity))
-      ? Number(product.serving_quantity)
-      : null;
-
-  if (!name) return null;
-  // require at least one macro to avoid returning empty shells
-  if (kcal == null && protein == null && fat == null && carbs == null)
-    return null;
-
-  return {
-    name,
-    brand,
-    kcal_100g: kcal,
-    protein_100g: protein,
-    fat_100g: fat,
-    carbs_100g: carbs,
-    servingSize,
-    servingGrams,
-    source: "off",
-  };
+  return normalizeOFFBarcode(product);
 }
 
 async function lookupOFF(barcode: string): Promise<NormalizedProduct | null> {
@@ -270,60 +212,10 @@ async function lookupOFF(barcode: string): Promise<NormalizedProduct | null> {
 // ──────────────────────────────────────────────────────────────────────────────
 const FDC_BASE = "https://api.nal.usda.gov/fdc/v1";
 
-// Nutrient IDs in USDA FoodData Central
-const FDC_NUTRIENT = {
-  kcal: 1008,
-  protein: 1003,
-  fat: 1004,
-  carbs: 1005,
-} as const;
-
 function normalizeUSDA(
   food: USDAFood | null | undefined,
 ): NormalizedProduct | null {
-  if (!food) return null;
-  const name = food.description || null;
-  if (!name) return null;
-
-  const brand = food.brandOwner || food.brandName || null;
-
-  const nutrientMap: Record<number, number> = {};
-  for (const n of food.foodNutrients || []) {
-    const id = n.nutrientId ?? n.nutrient?.id;
-    const value = n.value ?? n.amount;
-    if (id != null && value != null && Number.isFinite(Number(value))) {
-      nutrientMap[id] = Math.round(Number(value) * 10) / 10;
-    }
-  }
-
-  const kcal = nutrientMap[FDC_NUTRIENT.kcal] ?? null;
-  const protein = nutrientMap[FDC_NUTRIENT.protein] ?? null;
-  const fat = nutrientMap[FDC_NUTRIENT.fat] ?? null;
-  const carbs = nutrientMap[FDC_NUTRIENT.carbs] ?? null;
-
-  // Serving size from USDA householdServingFullText + servingSize in grams
-  const servingGrams =
-    food.servingSize != null && Number.isFinite(Number(food.servingSize))
-      ? Number(food.servingSize)
-      : null;
-  const servingUnit = food.servingSizeUnit || null;
-  const servingSize =
-    servingGrams && servingUnit ? `${servingGrams} ${servingUnit}` : null;
-
-  if (kcal == null && protein == null && fat == null && carbs == null)
-    return null;
-
-  return {
-    name,
-    brand,
-    kcal_100g: kcal,
-    protein_100g: protein,
-    fat_100g: fat,
-    carbs_100g: carbs,
-    servingSize,
-    servingGrams,
-    source: "usda",
-  };
+  return normalizeUSDABarcode(food);
 }
 
 async function lookupUSDA(barcode: string): Promise<NormalizedProduct | null> {
