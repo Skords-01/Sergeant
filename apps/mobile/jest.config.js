@@ -21,6 +21,7 @@ module.exports = {
   // jest-resolve reports "Cannot find module './types.js'".
   moduleNameMapper: {
     "^(\\.{1,2}/.*)\\.js$": "$1",
+    "^@app/(.*)$": "<rootDir>/app/$1",
   },
   transformIgnorePatterns: [
     // Keep the default `node_modules/` ignore but punch holes for the RN

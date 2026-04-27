@@ -140,4 +140,18 @@ describe("HubDashboard one-hero rule", () => {
     };
     expect(router.push).toHaveBeenCalledWith("/(tabs)/routine");
   });
+
+  it("navigates to sign-in when SoftAuthPromptCard CTA is tapped", () => {
+    const mmkv = _getMMKVInstance();
+    mmkv.set(FIRST_REAL_ENTRY_KEY, "1");
+
+    const { getByTestId } = renderDashboard();
+
+    fireEvent.press(getByTestId("soft-auth-open"));
+
+    const { router } = jest.requireMock("expo-router") as {
+      router: { push: jest.Mock };
+    };
+    expect(router.push).toHaveBeenCalledWith("/(auth)/sign-in");
+  });
 });
