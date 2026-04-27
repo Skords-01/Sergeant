@@ -347,5 +347,21 @@ export default [
       "sergeant-design/rq-keys-only-from-factory": "error",
     },
   },
+  // Anthropic key logging guardrail — prevents accidental logging of
+  // `process.env.ANTHROPIC_API_KEY` or secret-like identifiers via
+  // console.* / logger.* / pino.* / log.*. See AGENTS.md security rules.
+  // Scoped to both server (where the key lives) and web (defense in depth).
+  {
+    files: ["apps/server/src/**/*.{js,ts}", "apps/web/src/**/*.{ts,tsx}"],
+    ignores: [
+      "apps/server/src/**/*.test.{js,ts}",
+      "apps/server/src/**/__tests__/**",
+      "apps/web/src/**/*.test.{ts,tsx}",
+      "apps/web/src/**/__tests__/**",
+    ],
+    rules: {
+      "sergeant-design/no-anthropic-key-in-logs": "error",
+    },
+  },
   eslintConfigPrettier,
 ];

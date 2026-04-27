@@ -128,6 +128,46 @@ queryClient.invalidateQueries({ queryKey: finykKeys.all });
 queryClient.getQueryData(finykKeys.mono);
 ```
 
+### `sergeant-design/no-anthropic-key-in-logs`
+
+Forbids logging Anthropic API keys or secrets via `console.*`, `logger.*`, `pino.*`, or `log.*` methods. Catches `process.env.ANTHROPIC_API_KEY` passed as an argument (always), and secret-like identifiers (`apiKey`, `anthropicKey`, `secret`) when the file imports `@anthropic-ai/sdk`. Severity: **error** (scoped to `apps/server/src/**` and `apps/web/src/**`).
+
+#### Detection
+
+- **Always flagged:** `process.env.ANTHROPIC_API_KEY` as a direct argument, inside a template literal, or in string concatenation.
+- **Flagged with Anthropic import:** identifiers matching `/apiKey/i`, `/anthropicKey/`, `/secret/i` — only when the file imports `@anthropic-ai/sdk`.
+- **Not flagged:** string literals mentioning "ANTHROPIC_API_KEY" (e.g. error messages), non-logger function calls, unknown logger objects.
+
+#### Options
+
+```json
+{
+  "sergeant-design/no-anthropic-key-in-logs": [
+    "error",
+    {
+      "additionalSecretIdentifiers": ["Token$", "^credential"]
+    }
+  ]
+}
+```
+
+| Option                        | Type       | Default | Description                                     |
+| ----------------------------- | ---------- | ------- | ----------------------------------------------- |
+| `additionalSecretIdentifiers` | `string[]` | `[]`    | Extra regex patterns to match identifier names. |
+
+#### Examples
+
+```ts
+// ❌ BAD — logs the actual API key value
+console.log(process.env.ANTHROPIC_API_KEY);
+console.log(`Key is ${process.env.ANTHROPIC_API_KEY}`);
+logger.info(apiKey); // when file imports @anthropic-ai/sdk
+
+// ✅ GOOD — safe logging
+console.error("ANTHROPIC_API_KEY is not set");
+console.log(requestId);
+```
+
 ## Running tests
 
 ```sh

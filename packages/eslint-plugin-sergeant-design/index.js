@@ -1089,6 +1089,211 @@ const rqKeysOnlyFromFactory = {
   },
 };
 
+// ─── no-anthropic-key-in-logs ────────────────────────────────────────────
+//
+// Prevents accidental logging of Anthropic API keys (or any secret) via
+// `console.*` or common logger methods (`logger.*`, `pino.*`, `log.*`).
+//
+// Detects:
+//   - `process.env.ANTHROPIC_API_KEY` passed as a log argument.
+//   - Identifiers matching secret-like names (`apiKey`, `anthropicKey`,
+//     `secret`, etc.) when the file imports `@anthropic-ai/sdk`.
+//   - Template literals that interpolate any of the above.
+//
+// Configurable via `additionalSecretIdentifiers: string[]` — extra
+// regex patterns to match against identifier names.
+
+const CONSOLE_METHODS = new Set(["log", "warn", "error", "info", "debug"]);
+const LOGGER_METHODS = new Set([
+  "log",
+  "warn",
+  "error",
+  "info",
+  "debug",
+  "trace",
+  "fatal",
+]);
+const LOGGER_OBJECTS = new Set(["logger", "pino", "log"]);
+
+const DEFAULT_SECRET_PATTERNS = [
+  /\bapi[_-]?key\b/i,
+  /\banthropicKey\b/,
+  /\bsecret\b/i,
+  /\bANTHROPIC_API_KEY\b/,
+];
+
+const NO_ANTHROPIC_KEY_MESSAGE =
+  "Do not log Anthropic API keys (or any secret). See AGENTS.md security rules.";
+
+function isConsoleLogCall(callee) {
+  if (callee.type !== "MemberExpression" || callee.computed) return false;
+  if (
+    callee.property.type !== "Identifier" ||
+    !CONSOLE_METHODS.has(callee.property.name)
+  ) {
+    return false;
+  }
+  return (
+    callee.object.type === "Identifier" && callee.object.name === "console"
+  );
+}
+
+function isLoggerCall(callee) {
+  if (callee.type !== "MemberExpression" || callee.computed) return false;
+  if (callee.property.type !== "Identifier") return false;
+  if (!LOGGER_METHODS.has(callee.property.name)) return false;
+  return (
+    callee.object.type === "Identifier" &&
+    LOGGER_OBJECTS.has(callee.object.name)
+  );
+}
+
+function isProcessEnvAnthropicKey(node) {
+  // process.env.ANTHROPIC_API_KEY
+  if (node.type !== "MemberExpression" || node.computed) return false;
+  if (
+    node.property.type !== "Identifier" ||
+    node.property.name !== "ANTHROPIC_API_KEY"
+  ) {
+    return false;
+  }
+  const obj = node.object;
+  if (obj.type !== "MemberExpression" || obj.computed) return false;
+  if (obj.property.type !== "Identifier" || obj.property.name !== "env") {
+    return false;
+  }
+  return obj.object.type === "Identifier" && obj.object.name === "process";
+}
+
+function matchesSecretPattern(name, patterns) {
+  for (const pat of patterns) {
+    if (pat.test(name)) return true;
+  }
+  return false;
+}
+
+function argumentContainsSecret(node, patterns, fileHasAnthropicImport) {
+  if (!node) return false;
+
+  // process.env.ANTHROPIC_API_KEY — always flag
+  if (isProcessEnvAnthropicKey(node)) return true;
+
+  // Identifier with a secret-like name
+  if (node.type === "Identifier") {
+    if (node.name === "ANTHROPIC_API_KEY") return true;
+    if (fileHasAnthropicImport && matchesSecretPattern(node.name, patterns)) {
+      return true;
+    }
+  }
+
+  // MemberExpression — check the property name
+  if (
+    node.type === "MemberExpression" &&
+    !node.computed &&
+    node.property.type === "Identifier"
+  ) {
+    if (isProcessEnvAnthropicKey(node)) return true;
+    if (
+      fileHasAnthropicImport &&
+      matchesSecretPattern(node.property.name, patterns)
+    ) {
+      return true;
+    }
+  }
+
+  // Template literal — check expressions
+  if (node.type === "TemplateLiteral") {
+    for (const expr of node.expressions) {
+      if (argumentContainsSecret(expr, patterns, fileHasAnthropicImport)) {
+        return true;
+      }
+    }
+  }
+
+  // String concatenation (BinaryExpression with +)
+  if (node.type === "BinaryExpression" && node.operator === "+") {
+    return (
+      argumentContainsSecret(node.left, patterns, fileHasAnthropicImport) ||
+      argumentContainsSecret(node.right, patterns, fileHasAnthropicImport)
+    );
+  }
+
+  return false;
+}
+
+const noAnthropicKeyInLogs = {
+  meta: {
+    type: "problem",
+    docs: {
+      description:
+        "Forbid logging Anthropic API keys or secrets via console.* / logger.* / pino.* / log.*. See AGENTS.md security rules.",
+    },
+    schema: [
+      {
+        type: "object",
+        properties: {
+          additionalSecretIdentifiers: {
+            type: "array",
+            items: { type: "string" },
+            uniqueItems: true,
+          },
+        },
+        additionalProperties: false,
+      },
+    ],
+    messages: { noLogSecret: NO_ANTHROPIC_KEY_MESSAGE },
+  },
+  create(context) {
+    const options = context.options[0] || {};
+    const extraPatterns = (options.additionalSecretIdentifiers || []).map(
+      (s) => new RegExp(s),
+    );
+    const allPatterns = [...DEFAULT_SECRET_PATTERNS, ...extraPatterns];
+
+    let fileHasAnthropicImport = false;
+
+    return {
+      ImportDeclaration(node) {
+        if (
+          node.source &&
+          node.source.value &&
+          typeof node.source.value === "string" &&
+          node.source.value.includes("@anthropic-ai/sdk")
+        ) {
+          fileHasAnthropicImport = true;
+        }
+      },
+      // Also detect require("@anthropic-ai/sdk")
+      CallExpression(node) {
+        // Check for require("@anthropic-ai/sdk")
+        if (
+          node.callee.type === "Identifier" &&
+          node.callee.name === "require" &&
+          node.arguments.length > 0 &&
+          node.arguments[0].type === "Literal" &&
+          typeof node.arguments[0].value === "string" &&
+          node.arguments[0].value.includes("@anthropic-ai/sdk")
+        ) {
+          fileHasAnthropicImport = true;
+        }
+
+        // Check log calls
+        const callee = node.callee;
+        if (!isConsoleLogCall(callee) && !isLoggerCall(callee)) return;
+
+        for (const arg of node.arguments) {
+          if (
+            argumentContainsSecret(arg, allPatterns, fileHasAnthropicImport)
+          ) {
+            context.report({ node, messageId: "noLogSecret" });
+            return;
+          }
+        }
+      },
+    };
+  },
+};
+
 const plugin = {
   rules: {
     "no-eyebrow-drift": noEyebrowDrift,
@@ -1100,6 +1305,7 @@ const plugin = {
     "no-low-contrast-text-on-fill": noLowContrastTextOnFill,
     "no-bigint-string": noBigintString,
     "rq-keys-only-from-factory": rqKeysOnlyFromFactory,
+    "no-anthropic-key-in-logs": noAnthropicKeyInLogs,
   },
 };
 
@@ -1114,6 +1320,7 @@ export {
   DEFAULT_NUMERIC_COLUMNS,
   RQ_KEYS_MESSAGE,
   DEFAULT_FACTORY_PATH,
+  NO_ANTHROPIC_KEY_MESSAGE,
 };
 
 export default plugin;
