@@ -37,6 +37,8 @@ export type {
 
 export { webFileDownloadAdapter } from "./fileDownload";
 
+export { webFileImportAdapter } from "./fileImport";
+
 export { friendlyApiError } from "./friendlyApiError";
 
 export {

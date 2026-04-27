@@ -16,9 +16,12 @@ import { PushRegistrar } from "@/features/push/PushRegistrar";
 // Registers the mobile `expo-haptics`-based adapter on the shared
 // haptic contract (`@sergeant/shared`). Import for side effects only.
 import "@/lib/haptic";
-// Registers the mobile file-download stub on the shared contract.
-// Replaced with an `expo-file-system` + `expo-sharing` adapter in Phase 4+.
+// Registers the mobile `expo-file-system` + `expo-sharing` adapter on the
+// shared file-download contract (`@sergeant/shared`). Import for side effects only.
 import "@/lib/fileDownload";
+// Registers the mobile `expo-document-picker` + `expo-file-system` adapter on
+// the shared file-import contract (`@sergeant/shared`). Import for side effects only.
+import "@/lib/fileImport";
 // Registers the mobile `Keyboard.addListener`-based adapter on the shared
 // visual-keyboard-inset contract (`@sergeant/shared`). Import for side
 // effects only.

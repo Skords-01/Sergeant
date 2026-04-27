@@ -74,6 +74,9 @@ export * from "./lib/platform";
 // DOM-free file-download contract (platform adapters register at app bootstrap).
 export * from "./lib/fileDownload";
 
+// DOM-free file-import contract (platform adapters register at app bootstrap).
+export * from "./lib/fileImport";
+
 // DOM-free visual-keyboard-inset hook contract (platform adapters register at
 // app bootstrap).
 export * from "./hooks/useVisualKeyboardInset";

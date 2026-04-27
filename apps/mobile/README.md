@@ -29,6 +29,8 @@
 - `PushRegistrar` шле native APNs/FCM токен у `POST /api/v1/push/register`
   з ідемпотентним кешем у `AsyncStorage`;
 - CloudSync + MMKV-офлайн-черга + React Query warm-start (фаза 3);
+- JSON-бекап експорт/імпорт Hub (`expo-file-system` + `expo-sharing` +
+  `expo-document-picker`, Phase 4+);
 - Detox e2e конфіги для iOS і Android у CI (поки smoke-build, реальні
   сценарії треба дописати).
 

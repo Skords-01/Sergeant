@@ -476,7 +476,7 @@ sergeant/
 └── packages/
     ├── api-client/      ← HTTP + React Query хуки (web + mobile)
     ├── shared/          ← domain types, schemas (Zod), pure utils, storageKeys,
-    │                      haptic/fileDownload/visualKeyboardInset контракти,
+    │                      haptic/fileDownload/fileImport/visualKeyboardInset контракти,
     │                      HubDashboard + onboarding pure-домен
     ├── finyk-domain/    ← чиста доменна логіка фінансів (R3)
     ├── fizruk-domain/   ← чиста доменна логіка Фізрука (R4 + Phase 6 domains)
@@ -948,10 +948,11 @@ Web використовує кастомні компоненти + canvas/SVG.
     `LogCard`) використовує `URL.createObjectURL` виключно для image-preview
     (мініатюри страв, попередній перегляд фото перед аналізом) — це окремий
     пайплайн `expo-image-picker`/`expo-image-manipulator` з §10 таблиці, не
-    JSON-download-контракт. Mobile-адаптер зараз — warn-stub у
-    `apps/mobile/src/lib/fileDownload.ts`; Фаза 4+ замінить його на
+    JSON-download-контракт. Mobile-адаптер реалізовано:
+    `apps/mobile/src/lib/fileDownload.ts` використовує
     `expo-file-system.writeAsStringAsync` (`cacheDirectory`) +
-    `expo-sharing.shareAsync` без змін у споживачах.
+    `expo-sharing.shareAsync`. Імпорт — через `FileImportAdapter`
+    (`expo-document-picker` + `expo-file-system.readAsStringAsync`).
 - **R9.** ✅ Done (PR [#433](https://github.com/Skords-01/Sergeant/pull/433) — shared hook + web/mobile адаптери + 5 споживачів
   мігровано + видалено дублікат у `routine/hooks`). Pure-контракт
   `VisualKeyboardInsetAdapter` + `useVisualKeyboardInset(active)` живе у
@@ -983,15 +984,15 @@ CRUD, foodDb export/import, UI). Жодних змін у публічному A
 
 Зведення навмисних заглушок і відкладених інтеграцій — щоб не розмазувати їх по окремих issue без зв’язку з фазами вище.
 
-| Зона                        | Файл (приклад)                                                                                           | Цільова фаза / PR          | Коротко                                                    |
-| --------------------------- | -------------------------------------------------------------------------------------------------------- | -------------------------- | ---------------------------------------------------------- |
-| JSON backup download        | `apps/mobile/src/lib/fileDownload.ts`                                                                    | Фаза 4+ (R8)               | Замінити warn-stub на `expo-file-system` + `expo-sharing`. |
-| Weekly digest UI            | `apps/mobile/src/core/dashboard/WeeklyDigestCard.tsx`                                                    | Після паритету з web       | Мінімальний stub замість повного `WeeklyDigestCard` з PWA. |
-| Deep links / hub маршрути   | `apps/mobile/src/components/DeepLinkPlaceholder.tsx`, `apps/mobile/src/modules/finyk/pages/PageStub.tsx` | За мірою появи екранів     | Плейсхолдери до повного nested-стеку.                      |
-| Observability               | `apps/mobile/src/core/ModuleErrorBoundary.tsx`                                                           | Фаза 10+                   | `TODO(phase-10):` `@sentry/react-native`.                  |
-| Haptics `pattern`           | `apps/mobile/src/lib/haptic.ts`                                                                          | RN API                     | `expo-haptics` не експонує pattern — no-op + TODO.         |
-| Universal links             | `apps/mobile/app.config.ts`                                                                              | Публікація / Phase 10+     | Associated domains після стабільного прод-домену.          |
-| Routine reminders vs web SW | `apps/mobile/src/modules/routine/hooks/useRoutineReminders.ts`                                           | Паралельно з нотифікаціями | Коментар про відмінність від web Service Worker.           |
+| Зона                        | Файл (приклад)                                                                                           | Цільова фаза / PR          | Коротко                                                                                                  |
+| --------------------------- | -------------------------------------------------------------------------------------------------------- | -------------------------- | -------------------------------------------------------------------------------------------------------- |
+| JSON backup download        | `apps/mobile/src/lib/fileDownload.ts`                                                                    | ~~Фаза 4+ (R8)~~ Done      | `expo-file-system` + `expo-sharing` + `expo-document-picker`. Import/export UI live in `GeneralSection`. |
+| Weekly digest UI            | `apps/mobile/src/core/dashboard/WeeklyDigestCard.tsx`                                                    | Після паритету з web       | Мінімальний stub замість повного `WeeklyDigestCard` з PWA.                                               |
+| Deep links / hub маршрути   | `apps/mobile/src/components/DeepLinkPlaceholder.tsx`, `apps/mobile/src/modules/finyk/pages/PageStub.tsx` | За мірою появи екранів     | Плейсхолдери до повного nested-стеку.                                                                    |
+| Observability               | `apps/mobile/src/core/ModuleErrorBoundary.tsx`                                                           | Фаза 10+                   | `TODO(phase-10):` `@sentry/react-native`.                                                                |
+| Haptics `pattern`           | `apps/mobile/src/lib/haptic.ts`                                                                          | RN API                     | `expo-haptics` не експонує pattern — no-op + TODO.                                                       |
+| Universal links             | `apps/mobile/app.config.ts`                                                                              | Публікація / Phase 10+     | Associated domains після стабільного прод-домену.                                                        |
+| Routine reminders vs web SW | `apps/mobile/src/modules/routine/hooks/useRoutineReminders.ts`                                           | Паралельно з нотифікаціями | Коментар про відмінність від web Service Worker.                                                         |
 
 Деталі R8 та інших R-пунктів — у підпунктах **R7–R9** вище в цій же секції §11.
 

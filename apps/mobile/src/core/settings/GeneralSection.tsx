@@ -1,5 +1,5 @@
 /**
- * Sergeant Hub-core — GeneralSection (React Native, first cut)
+ * Sergeant Hub-core — GeneralSection (React Native)
  *
  * Mobile mirror of `apps/web/src/core/settings/GeneralSection.tsx`.
  *
@@ -10,6 +10,9 @@
  *  - "Показувати AI-коуч" toggle — mirrors the web
  *    `useHubPref("showCoach", true)` semantics (default on;
  *    `prefs.showCoach !== false`).
+ *  - **Local backup export / import** — uses the shared
+ *    `downloadJson` + `pickJson` contracts backed by
+ *    `expo-file-system` + `expo-sharing` + `expo-document-picker`.
  *
  * Dashboard reorder list:
  *  - Рендерить **видимий** підмножину модулей (без `nutrition` у
@@ -27,11 +30,6 @@
  *    double-mount NetInfo listeners and the periodic retry. A
  *    dedicated read/trigger hook lands in a follow-up; until then
  *    a `Card` notice explains the deferral inline.
- *  - **Local backup export / import.** `apps/mobile/src/lib/fileDownload.ts`
- *    ships a warn-only stub today (see that file's header — real
- *    `expo-file-system` + `expo-sharing` wiring is Phase 4+). Import
- *    would additionally need `expo-document-picker`, not yet a
- *    dependency. Placeholder `Card` here points at that follow-up.
  *
  * Dark-mode wiring:
  *  - Toggling "Темна тема" flips `prefs.darkMode` in the shared
@@ -45,9 +43,12 @@
  *    `darkMode === false → "light"`, missing → `"system"` (follows OS).
  */
 
+import { useState } from "react";
 import { DeviceEventEmitter, Pressable, Text, View } from "react-native";
 import {
   DASHBOARD_MODULE_LABELS,
+  downloadJson,
+  pickJson,
   resetOnboardingState,
   STORAGE_KEYS,
   type KVStore,
@@ -55,7 +56,13 @@ import {
 
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { useToast } from "@/components/ui/Toast";
 import { useDashboardOrder } from "@/core/dashboard/useDashboardOrder";
+import {
+  buildHubBackupPayload,
+  applyHubBackupPayload,
+} from "@/core/hub/hubBackup";
 import {
   safeReadLS as mmkvGet,
   safeRemoveLS as mmkvRemove,
@@ -179,13 +186,40 @@ function ModuleReorderList() {
 
 export function GeneralSection() {
   const [prefs, setPrefs] = useLocalStorage<HubPrefs>(HUB_PREFS_KEY, {});
+  const [confirmImport, setConfirmImport] = useState(false);
+  const toast = useToast();
 
-  // Web mirrors `useHubPref("showCoach", true)` — default-on, so we
-  // read `prefs.showCoach !== false` to preserve that behaviour when
-  // the pref hasn't been touched yet.
   const showCoach = prefs.showCoach !== false;
   const dark = prefs.darkMode === true;
   const showHints = prefs.showHints !== false;
+
+  const handleExport = async () => {
+    try {
+      const payload = buildHubBackupPayload();
+      await downloadJson(
+        `hub-backup-${new Date().toISOString().slice(0, 10)}.json`,
+        payload,
+      );
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Не вдалось експортувати",
+      );
+    }
+  };
+
+  const handleImportConfirmed = async () => {
+    setConfirmImport(false);
+    try {
+      const result = await pickJson();
+      if (!result) return;
+      applyHubBackupPayload(result.data);
+      toast.success("Резервну копію відновлено");
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Не вдалось імпортувати файл",
+      );
+    }
+  };
 
   return (
     <SettingsGroup title="Загальні" emoji="⚙️">
@@ -237,23 +271,51 @@ export function GeneralSection() {
       </SettingsSubGroup>
       <SettingsSubGroup title="Хмарна синхронізація">
         <DeferredNotice>
-          Кнопки ручного збереження та завантаження з хмари підключаться у
+          Кнопки ручного збереження та завантаження з хмари підключаються у
           наступному PR — разом із read-only хуком, який не дублюватиме вже
           активний CloudSyncProvider.
         </DeferredNotice>
       </SettingsSubGroup>
       <SettingsSubGroup title="Резервна копія Hub">
-        <DeferredNotice>
-          Експорт та імпорт JSON-резервної копії чекають реального
-          mobile-адаптера downloadJson (expo-file-system + expo-sharing) —
-          сьогодні у коді є тільки warn-only заглушка.
-        </DeferredNotice>
+        <Card variant="flat" radius="md" padding="md">
+          <Text className="text-xs text-fg-muted leading-relaxed mb-3">
+            Резервна копія всього Hub (Фінік, Фізрук, Рутина, Харчування). Токен
+            Monobank і кеш транзакцій не входять у файл.
+          </Text>
+          <View className="flex-row flex-wrap gap-2">
+            <Button
+              size="sm"
+              variant="secondary"
+              onPress={handleExport}
+              testID="general-export-backup"
+            >
+              Експортувати
+            </Button>
+            <Button
+              size="sm"
+              variant="secondary"
+              onPress={() => setConfirmImport(true)}
+              testID="general-import-backup"
+            >
+              Імпортувати…
+            </Button>
+          </View>
+        </Card>
+        <ConfirmDialog
+          open={confirmImport}
+          title="Імпорт резервної копії"
+          description="Поточні дані модулів будуть замінені даними з файлу. Продовжити?"
+          confirmLabel="Імпортувати"
+          cancelLabel="Скасувати"
+          danger={false}
+          onConfirm={handleImportConfirmed}
+          onCancel={() => setConfirmImport(false)}
+        />
       </SettingsSubGroup>
       <View className="gap-1">
         <Text className="text-[11px] text-fg-subtle leading-snug">
-          Решта опцій цього блоку (push/pull хмари, backup) портується разом із
-          відповідними інфраструктурними кроками — див. примітки у кожній
-          під-групі вище.
+          Решта опцій цього блоку (push/pull хмари) портується разом із
+          відповідними інфраструктурними кроками — див. примітки вище.
         </Text>
       </View>
     </SettingsGroup>
