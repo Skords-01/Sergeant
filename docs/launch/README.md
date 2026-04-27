@@ -1,57 +1,67 @@
 # Sergeant — Launch & Monetization Docs
 
-> Консолідація робочих чорнеток (монетизація, лонч-чекліст, аудит сервісів, тулстек, оперативний гайд) у єдиний набір, згрупований за логікою. Всі цифри/ціни — попередні, для брейнштормінгу.
+> Робочі документи запуску: бізнес-модель, GTM, тулстек, чеклист готовності, операції.
+> Всі цифри попередні — для брейнштормінгу та A/B-тестів.
+
+## Структура
+
+```
+docs/launch/
+├── README.md  ← ви тут
+├── 01-monetization-and-pricing.md   бізнес-модель, тіри, paywall
+├── 02-go-to-market.md               фази запуску, growth, контент
+├── 03-services-and-toolstack.md     стек, бюджет, week-by-week план
+├── 04-launch-readiness.md           legal, edge cases, метрики, чеклист
+└── 05-operations-and-automation.md  6 зон, n8n + OpenClaw, ритуали
+```
 
 ## Як читати
 
-| Хочеш…                                                                                | Дивись                                                               |
-| ------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
-| Зрозуміти бізнес-модель і ціни                                                        | [01-monetization-and-pricing.md](./01-monetization-and-pricing.md)   |
-| Спланувати запуск і просування                                                        | [02-go-to-market.md](./02-go-to-market.md)                           |
-| Побачити повну картину сервісів і тулів (що є, що додати, що змінити, скільки коштує) | [03-services-and-toolstack.md](./03-services-and-toolstack.md)       |
-| Перевірити готовність до запуску (legal, edge cases, ops, чеклист)                    | [04-launch-readiness.md](./04-launch-readiness.md)                   |
-| Зрозуміти як адмініструвати і автоматизувати все це (6 зон, n8n + OpenClaw)           | [05-operations-and-automation.md](./05-operations-and-automation.md) |
+| Питання                                     | Документ                                                                                 |
+| ------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| Яка бізнес-модель і скільки коштує Pro?     | [01 — Монетизація](./01-monetization-and-pricing.md#2-тарифні-плани)                     |
+| Як побудувати paywall технічно?             | [01 — Paywall](./01-monetization-and-pricing.md#6-технічна-реалізація-paywall)           |
+| Які фази запуску і що робити на кожній?     | [02 — GTM](./02-go-to-market.md#1-стратегія-запуску-фази)                                |
+| Як зростати після запуску (SEO, referrals)? | [02 — Growth](./02-go-to-market.md#5-фаза-3--growth-ongoing)                             |
+| Який стек зараз і що додати?                | [03 — Стек](./03-services-and-toolstack.md#1-поточний-стек-що-вже-є)                     |
+| Скільки коштуватиме інфраструктура?         | [03 — Бюджет](./03-services-and-toolstack.md#9-повна-monthly-cost-projection)            |
+| Що треба юридично перед запуском?           | [04 — Legal](./04-launch-readiness.md#1-юридичне-та-compliance)                          |
+| Чеклист «все готово до запуску»?            | [04 — Чеклист](./04-launch-readiness.md#7-pre-launch-чеклист)                            |
+| Як адмініструвати продукт і не вигоріти?    | [05 — Операції](./05-operations-and-automation.md#1-шість-операційних-зон)               |
+| Як налаштувати n8n + OpenClaw?              | [05 — Автоматизація](./05-operations-and-automation.md#6-зона-6-у-деталях-n8n--openclaw) |
 
 ## Високорівнева ідея
 
 ```
-Sergeant = один додаток замість п'яти (фінанси · фітнес · звички · харчування + AI)
-              ▲                                                                 ▲
-              │                                                                 │
-        local-first PWA + native                                       AI бачить весь день
+Sergeant = один додаток замість п'яти
+  Фінік · Фізрук · Routine · Nutrition + AI-коуч
+      ▲                                    ▲
+      │                                    │
+ local-first PWA + native          AI бачить весь день
 ```
 
-**Бізнес-модель:** Freemium + підписка Pro (₴99/міс або ₴799/рік). MVP-paywall на Stripe / LiqPay. Пейволл — soft + metered: всі 4 модулі базово безкоштовно, ліміти на AI / sync / звіти.
+**Модель:** Freemium + підписка Pro (₴99/міс | ₴799/рік).
+Soft metered paywall — всі модулі базово безкоштовно; ліміти на AI, sync, звіти.
 
-**Ринок:** Україна → Польща → англомовний → Польща/Туреччина/Бразилія.
+**Ринок:** Україна → Польща → англомовний.
 
-**North Star roadmap:**
+## Roadmap
 
-| Місяць | Ціль                                                                               |
-| ------ | ---------------------------------------------------------------------------------- |
-| 1      | MVP paywall (Stripe), Free + Pro, landing, Telegram-канал                          |
-| 2      | Closed beta (100–200 юзерів), референтна система, NPS                              |
-| 3      | Public launch (Product Hunt + DOU + AIN), Founder's Lifetime Deal                  |
-| 4–6    | Google Play, SEO, paid ads тест, B2B-пілот                                         |
-| 7–12   | App Store, розширення на Польщу, партнерство з Mono, marketplace, target ₴100K MRR |
+| Місяць | Ціль                                                  |
+| ------ | ----------------------------------------------------- |
+| 1      | MVP paywall (Stripe), Free + Pro, landing, TG-канал   |
+| 2      | Closed beta 100-200 юзерів, referral, NPS             |
+| 3      | Public launch — Product Hunt, DOU, Founder's Lifetime |
+| 4-6    | Google Play, SEO, paid ads тест, B2B-пілот            |
+| 7-12   | App Store, Польща, партнерство Mono, ₴100K MRR        |
 
-## Що було оригіналом
+## Quick wins (можна починати зараз)
 
-| Оригінал (drafts)               | Куди увійшло                                                                                  |
-| ------------------------------- | --------------------------------------------------------------------------------------------- |
-| `sergeant-monetization-plan.md` | 01 (ч.1: монетизація), 02 (ч.2: промоутинг), 04 (метрики, ризики)                             |
-| `sergeant-launch-checklist.md`  | 01 (retention/churn, paywall UX), 02 (growth engine), 04 (legal, edge cases, ops, чеклист)    |
-| `sergeant-services-audit.md`    | 03 (повністю)                                                                                 |
-| `sergeant-toolstack.md`         | 03 (повністю)                                                                                 |
-| `sergeant-operations-guide.md`  | 05 (повністю): 6 зон, правило «3 вкладки», n8n + OpenClaw, автоматизації, daily/weekly ритуал |
-
-## Quick Wins (можна робити вже зараз)
-
-1. **Share-карточки** — красиві OG-зображення з результатами тижня (Routine/Fizruk/Finyk/Nutrition) → шерінг у Telegram/Instagram.
-2. **Telegram-канал** — почати збирати аудиторію до запуску.
-3. **Founder's story на DOU** — безкоштовний PR.
-4. **Paywall skeleton** — `subscriptions` таблиця + `requirePlan()` middleware (без платежів — щоб архітектура була готова).
-5. **Waitlist landing** — збір email-ів.
-6. **PWA install prompt optimization** — піднімати % установок PWA.
-
-Деталі по кожному — у відповідному документі.
+| Дія                      | Деталі                                                                                                        |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------- |
+| Share-картки             | OG-зображення з результатами тижня → [вірусні петлі](./02-go-to-market.md#53-вірусні-петлі-viral-loops)       |
+| Telegram-канал           | Збирати аудиторію до запуску → [pre-launch](./02-go-to-market.md#2-фаза-0--pre-launch)                        |
+| Founder's story на DOU   | Безкоштовний PR → [українські канали](./02-go-to-market.md#українські-канали)                                 |
+| Paywall skeleton         | `subscriptions` + `requirePlan()` → [paywall](./01-monetization-and-pricing.md#6-технічна-реалізація-paywall) |
+| Waitlist landing         | Збір email → [landing page](./02-go-to-market.md#landing-page)                                                |
+| PWA install optimization | Піднімати % установок → [PWA install rate](./05-operations-and-automation.md#зона-1--product)                 |
