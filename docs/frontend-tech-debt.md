@@ -272,6 +272,42 @@ Ref: PR-6.F (sergeant-audit-devin.md).
   - `core/lib/chatActions/fizrukActions.ts` — 7 raw calls → `safeReadLS` + `readWorkouts()` helper
   - `core/hub/HubDashboard.tsx` — вже використовував `localStorageStore` (KVStore adapter), прибрано з allowlist
 
+---
+
+### `no-strict-bypass` — TODO files
+
+**PR-6.E:** додано ESLint-правило
+[`sergeant-design/no-strict-bypass`](../packages/eslint-plugin-sergeant-design/index.js)
+зі scope `apps/web/src/**` + `apps/server/src/**`. Ловить 4 патерни:
+`// @ts-expect-error`, `// @ts-ignore`, `as any`, `as unknown as X`.
+
+Тести (`**/*.test.*`, `**/__tests__/**`, `**/*.spec.*`) — повний opt-out.
+
+На момент введення правила (2026-04-26) в production-коді знайдено
+**11 файлів** з `as unknown as X` (інших патернів — 0). Файли додані
+до allowlist у `eslint.config.js`. Міграція файла = видалення рядка
+з allowlist.
+
+| Файл                                                                | Патерн          | Кількість |
+| ------------------------------------------------------------------- | --------------- | --------- |
+| `apps/web/src/shared/components/ui/VoiceMicButton.tsx`              | `as unknown as` | 2         |
+| `apps/web/src/modules/fizruk/pages/Workouts.tsx`                    | `as unknown as` | 1         |
+| `apps/web/src/modules/nutrition/hooks/useBarcodeScanner.ts`         | `as unknown as` | 1         |
+| `apps/web/src/modules/nutrition/hooks/useNutritionRemoteActions.ts` | `as unknown as` | 1         |
+| `apps/web/src/modules/finyk/hooks/useFinykPersonalization.ts`       | `as unknown as` | 6         |
+| `apps/web/src/core/lib/hubChatUtils.ts`                             | `as unknown as` | 2         |
+| `apps/web/src/core/App.tsx`                                         | `as unknown as` | 3         |
+| `apps/server/src/modules/chat.ts`                                   | `as unknown as` | 1         |
+| `apps/server/src/lib/anthropic.ts`                                  | `as unknown as` | 1         |
+| `apps/server/src/lib/bankProxy.ts`                                  | `as unknown as` | 1         |
+| `apps/server/src/lib/webpushSend.ts`                                | `as unknown as` | 1         |
+
+**Fix recipe:** більшість `as unknown as X` замінюються правильним generic
+type parameter, type guard (`if ('prop' in obj)`), або `satisfies` +
+explicit return type.
+
+---
+
 ## Recommended next steps
 
 1. **Міграція TODO-списку `no-raw-local-storage`** — пріоритетно файли з

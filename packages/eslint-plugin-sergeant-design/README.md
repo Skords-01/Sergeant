@@ -168,6 +168,43 @@ console.error("ANTHROPIC_API_KEY is not set");
 console.log(requestId);
 ```
 
+### `sergeant-design/no-strict-bypass`
+
+Forbids type-safety bypasses in production code (PR-6.E). Catches four patterns:
+
+1. `// @ts-expect-error` comments
+2. `// @ts-ignore` comments
+3. `as any` casts
+4. `as unknown as X` double-casts
+
+Severity: **error** (scoped to `apps/web/src/**` and `apps/server/src/**`). Test files are exempt. Existing violations are allowlisted in `eslint.config.js` — see [`docs/frontend-tech-debt.md`](../../docs/frontend-tech-debt.md) §no-strict-bypass.
+
+#### Options
+
+| Option                         | Type      | Default | Description                          |
+| ------------------------------ | --------- | ------- | ------------------------------------ |
+| `forbidPatterns.tsExpectError` | `boolean` | `true`  | Flag `@ts-expect-error` comments.    |
+| `forbidPatterns.tsIgnore`      | `boolean` | `true`  | Flag `@ts-ignore` comments.          |
+| `forbidPatterns.asAny`         | `boolean` | `true`  | Flag `as any` casts.                 |
+| `forbidPatterns.asUnknownAs`   | `boolean` | `true`  | Flag `as unknown as X` double-casts. |
+
+#### Examples
+
+```ts
+// ❌ BAD — bypasses type system
+// @ts-expect-error
+const x = badCall();
+// @ts-ignore
+const y = badCall();
+const z = value as any;
+const w = window as unknown as { webkitAudioContext: typeof AudioContext };
+
+// ✅ GOOD — proper types
+const x: ReturnType<typeof badCall> = badCall();
+const z: SpecificType = value;
+const el = document.getElementById("foo") as HTMLDivElement;
+```
+
 ## Running tests
 
 ```sh

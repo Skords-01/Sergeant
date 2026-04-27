@@ -1294,6 +1294,116 @@ const noAnthropicKeyInLogs = {
   },
 };
 
+// ─── no-strict-bypass ───────────────────────────────────────────────────
+//
+// PR-6.E — forbid new type-safety bypasses in production code:
+//   1. `// @ts-expect-error` comments
+//   2. `// @ts-ignore` comments
+//   3. `as any` casts (TSAsExpression → TSAnyKeyword)
+//   4. `as unknown as X` double-casts (TSAsExpression wrapping another
+//      TSAsExpression whose typeAnnotation is TSUnknownKeyword)
+//
+// Test files are exempt via eslint.config.js `ignores`.
+// Existing violations are allowlisted (see docs/frontend-tech-debt.md).
+
+const NO_STRICT_BYPASS_MESSAGES = {
+  tsExpectError:
+    "`@ts-expect-error` bypasses type checking — fix the type error or add a proper type assertion instead.",
+  tsIgnore:
+    "`@ts-ignore` silently suppresses type errors — fix the type error or use a narrower workaround.",
+  asAny:
+    "`as any` erases type safety — use a specific type or a type guard instead.",
+  asUnknownAs:
+    "`as unknown as X` double-cast bypasses the type system — refactor to avoid the unsafe cast.",
+};
+
+const DEFAULT_FORBID_PATTERNS = {
+  tsExpectError: true,
+  tsIgnore: true,
+  asAny: true,
+  asUnknownAs: true,
+};
+
+const noStrictBypass = {
+  meta: {
+    type: "problem",
+    docs: {
+      description:
+        "Forbid `@ts-expect-error`, `@ts-ignore`, `as any`, and `as unknown as X` in production code (PR-6.E).",
+    },
+    schema: [
+      {
+        type: "object",
+        properties: {
+          forbidPatterns: {
+            type: "object",
+            properties: {
+              tsExpectError: { type: "boolean" },
+              tsIgnore: { type: "boolean" },
+              asAny: { type: "boolean" },
+              asUnknownAs: { type: "boolean" },
+            },
+            additionalProperties: false,
+          },
+        },
+        additionalProperties: false,
+      },
+    ],
+    messages: NO_STRICT_BYPASS_MESSAGES,
+  },
+  create(context) {
+    const options = context.options[0] || {};
+    const forbid = { ...DEFAULT_FORBID_PATTERNS, ...options.forbidPatterns };
+
+    const listeners = {};
+
+    // ── Comment-based patterns ──────────────────────────────────────
+    if (forbid.tsExpectError || forbid.tsIgnore) {
+      listeners["Program:exit"] = function () {
+        const sourceCode = context.sourceCode || context.getSourceCode();
+        for (const comment of sourceCode.getAllComments()) {
+          const text = comment.value.trim();
+          if (forbid.tsExpectError && /^@ts-expect-error\b/.test(text)) {
+            context.report({ node: comment, messageId: "tsExpectError" });
+          }
+          if (forbid.tsIgnore && /^@ts-ignore\b/.test(text)) {
+            context.report({ node: comment, messageId: "tsIgnore" });
+          }
+        }
+      };
+    }
+
+    // ── AST-based patterns (TS parser required) ─────────────────────
+    if (forbid.asAny || forbid.asUnknownAs) {
+      listeners["TSAsExpression"] = function (node) {
+        // `as any`
+        if (
+          forbid.asAny &&
+          node.typeAnnotation &&
+          node.typeAnnotation.type === "TSAnyKeyword"
+        ) {
+          context.report({ node, messageId: "asAny" });
+          return;
+        }
+
+        // `as unknown as X` — outer TSAsExpression whose inner expression
+        // is another TSAsExpression with TSUnknownKeyword.
+        if (
+          forbid.asUnknownAs &&
+          node.expression &&
+          node.expression.type === "TSAsExpression" &&
+          node.expression.typeAnnotation &&
+          node.expression.typeAnnotation.type === "TSUnknownKeyword"
+        ) {
+          context.report({ node, messageId: "asUnknownAs" });
+        }
+      };
+    }
+
+    return listeners;
+  },
+};
+
 const plugin = {
   rules: {
     "no-eyebrow-drift": noEyebrowDrift,
@@ -1306,6 +1416,7 @@ const plugin = {
     "no-bigint-string": noBigintString,
     "rq-keys-only-from-factory": rqKeysOnlyFromFactory,
     "no-anthropic-key-in-logs": noAnthropicKeyInLogs,
+    "no-strict-bypass": noStrictBypass,
   },
 };
 
@@ -1321,6 +1432,8 @@ export {
   RQ_KEYS_MESSAGE,
   DEFAULT_FACTORY_PATH,
   NO_ANTHROPIC_KEY_MESSAGE,
+  NO_STRICT_BYPASS_MESSAGES,
+  DEFAULT_FORBID_PATTERNS,
 };
 
 export default plugin;
