@@ -2,38 +2,20 @@ import type { Request, Response } from "express";
 import { query } from "../../db.js";
 import { validateQuery } from "../../http/validate.js";
 import { MonoTransactionsQuerySchema } from "../../http/schemas.js";
+import {
+  normalizeMonoAccount,
+  normalizeMonoTransaction,
+  type MonoAccountRow,
+  type MonoTransactionRow,
+} from "../../lib/normalizers/index.js";
 
 interface AuthedRequest extends Request {
   user?: { id: string };
 }
 
 // AI-NOTE: coerce bigint→number here; pg returns int8 as string, breaking `!a.creditLimit` checks. See AGENTS.md rule #1.
-/**
- * `node-postgres` returns Postgres `bigint` (int8) columns as **strings**
- * by default — losing precision is impossible, but JavaScript boolean
- * coercion of a non-empty string `"0"` is `true`, breaking client-side
- * predicates like `!a.creditLimit`. We coerce to plain numbers because
- * Monobank balances are denominated in cents and stay well within the
- * safe-integer range (≤ 9 × 10¹⁵).
- *
- * ### Coerced BIGINT fields by handler
- *
- * **accountsHandler** — `balance`, `creditLimit`
- *
- * **transactionsHandler** — `amount`, `operationAmount`, `cashbackAmount`,
- * `commissionRate`, `balance`
- *
- * Fields that remain strings intentionally:
- * `monoAccountId`, `monoTxId`, `sendId`, `iban`, `receiptId`, `invoiceId`,
- * `counterEdrpou`, `counterIban`, `counterName` — these are TEXT columns,
- * not numeric.
- */
-function toNumberOrNull(v: unknown): number | null {
-  if (v == null) return null;
-  if (typeof v === "number") return v;
-  if (typeof v === "string" || typeof v === "bigint") return Number(v);
-  return null;
-}
+// Coercion helpers extracted to lib/normalizers/mono.ts — toNumberOrNull,
+// normalizeMonoAccount, normalizeMonoTransaction.
 
 /**
  * GET /api/mono/accounts — returns user's Monobank accounts from DB.
@@ -68,18 +50,7 @@ export async function accountsHandler(
     { op: "mono_accounts_read" },
   );
 
-  res.json(
-    rows.map((r) => ({
-      ...r,
-      balance: toNumberOrNull(r.balance),
-      creditLimit: toNumberOrNull(r.creditLimit),
-      maskedPan: r.maskedPan ?? [],
-      lastSeenAt:
-        r.lastSeenAt instanceof Date
-          ? r.lastSeenAt.toISOString()
-          : r.lastSeenAt,
-    })),
-  );
+  res.json(rows.map((r) => normalizeMonoAccount(r as MonoAccountRow)));
 }
 
 /**
@@ -203,17 +174,9 @@ export async function transactionsHandler(
   const hasMore = rows.length > limit;
   const items = hasMore ? rows.slice(0, limit) : rows;
 
-  const result = items.map((r) => ({
-    ...r,
-    amount: toNumberOrNull(r.amount) ?? 0,
-    operationAmount: toNumberOrNull(r.operationAmount) ?? 0,
-    cashbackAmount: toNumberOrNull(r.cashbackAmount),
-    commissionRate: toNumberOrNull(r.commissionRate),
-    balance: toNumberOrNull(r.balance),
-    time: r.time instanceof Date ? r.time.toISOString() : r.time,
-    receivedAt:
-      r.receivedAt instanceof Date ? r.receivedAt.toISOString() : r.receivedAt,
-  }));
+  const result = items.map((r) =>
+    normalizeMonoTransaction(r as MonoTransactionRow),
+  );
 
   if (hasMore) {
     const last = result[result.length - 1];
