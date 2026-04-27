@@ -45,5 +45,12 @@ export function NutritionHeader({ busy: _busy, onBackToHub }) {
       <AppleBadge />
     );
 
-  return <ModuleHeader module="nutrition" left={left} title="ХАРЧУВАННЯ" subtitle="Мій раціон" />;
+  return (
+    <ModuleHeader
+      module="nutrition"
+      left={left}
+      title="ХАРЧУВАННЯ"
+      subtitle="Мій раціон"
+    />
+  );
 }
