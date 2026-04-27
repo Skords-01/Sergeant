@@ -142,12 +142,12 @@ export default function App({
   const { clientInfo, connecting, error, authError, connect } = mono;
   const syncTone =
     mergedMono?.syncState?.status === "error"
-      ? { dot: "bg-danger", text: "помилка" }
+      ? { dot: "bg-danger",  text: "помилка",   pill: "bg-danger-soft  text-danger  border-danger/20"  }
       : mergedMono?.syncState?.status === "partial"
-        ? { dot: "bg-warning", text: "частково" }
+        ? { dot: "bg-warning", text: "частково", pill: "bg-warning/10   text-warning border-warning/20" }
         : mergedMono?.syncState?.status === "loading"
-          ? { dot: "bg-muted", text: "оновлення" }
-          : { dot: "bg-success", text: "ок" };
+          ? { dot: "bg-muted",   text: "оновлення", pill: "bg-panelHi     text-muted   border-line"       }
+          : { dot: "bg-success", text: "ок",         pill: "bg-success/10  text-success border-success/20" };
 
   // Свайп між вкладками (без pull-to-refresh: скрол живе всередині сторінок, зовнішній scrollTop завжди 0)
   const touchStartX = useRef(null);
@@ -268,10 +268,15 @@ export default function App({
         right={
           <div className="flex items-center gap-2">
             <div
-              className="flex items-center gap-2 text-xs text-subtle select-none"
+              className={cn(
+                "flex items-center gap-1.5 select-none",
+                "text-xs font-medium px-2 py-0.5 rounded-full border",
+                "transition-colors duration-200",
+                syncTone.pill,
+              )}
               aria-label={`Стан синхронізації: ${syncTone.text}`}
             >
-              <span className={cn("w-2 h-2 rounded-full", syncTone.dot)} />
+              <span className={cn("w-1.5 h-1.5 rounded-full shrink-0", syncTone.dot)} />
               <span className="hidden sm:inline">{syncTone.text}</span>
             </div>
             <button
@@ -402,7 +407,7 @@ export default function App({
             setEditingManualExpenseId(null);
             setShowExpenseSheet(true);
           }}
-          className="fixed bottom-[calc(60px+env(safe-area-inset-bottom,0px)+16px)] right-4 w-12 h-12 rounded-full bg-finyk-strong text-white shadow-float flex items-center justify-center text-2xl hover:bg-finyk-hover hover:shadow-glow hover:scale-105 active:scale-95 transition-[background-color,box-shadow,opacity,transform] duration-200 ease-smooth z-20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-finyk/45 focus-visible:ring-offset-2 focus-visible:ring-offset-panel"
+          className="fixed bottom-[calc(60px+env(safe-area-inset-bottom,0px)+16px)] right-4 w-12 h-12 rounded-full bg-gradient-to-br from-brand-400 to-brand-600 text-white shadow-float flex items-center justify-center text-2xl hover:from-brand-500 hover:to-brand-700 hover:shadow-glow hover:scale-105 active:scale-95 transition-[background-image,box-shadow,opacity,transform] duration-200 ease-smooth z-20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-finyk/45 focus-visible:ring-offset-2 focus-visible:ring-offset-panel"
           aria-label="Додати витрату"
         >
           +

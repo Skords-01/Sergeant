@@ -42,7 +42,7 @@ export type SectionHeadingWeight = "semibold" | "bold" | "extrabold";
 // Size-only tokens (font-scale + casing + tracking). Weight is applied
 // separately so `weight` prop overrides can compose cleanly.
 const sizeTokens: Record<SectionHeadingSize, string> = {
-  xs: "text-2xs uppercase tracking-widest",
+  xs: "text-xs uppercase tracking-wider",
   sm: "text-xs uppercase tracking-widest",
   md: "text-sm",
   lg: "text-lg leading-tight",

@@ -133,7 +133,7 @@ export function Sheet({
       >
         {!hideHandle && (
           <div className="flex justify-center pt-3 pb-1 shrink-0">
-            <div className="w-10 h-1 bg-line rounded-full" aria-hidden />
+            <div className="w-12 h-[5px] bg-line/70 rounded-full" aria-hidden />
           </div>
         )}
         <div className="flex items-start justify-between gap-3 px-5 pt-1 pb-3 shrink-0">
@@ -156,11 +156,23 @@ export function Sheet({
               aria-label={closeLabel}
               className={cn(
                 "flex items-center justify-center w-11 h-11 min-w-[44px] min-h-[44px] rounded-full",
-                "bg-panelHi text-muted hover:text-text text-lg transition-colors",
+                "bg-panelHi text-muted hover:text-text transition-colors",
                 "focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/45 focus-visible:ring-offset-2 focus-visible:ring-offset-panel",
               )}
             >
-              ✕
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                aria-hidden
+              >
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
             </button>
           </div>
         </div>
