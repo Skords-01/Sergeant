@@ -34,6 +34,7 @@
    pnpm n8n:export
    ```
 3. Додай запис у `manifest.json`:
+
    ```json
    "NN-my-workflow.json": {
      "owner": "<team>",
@@ -48,6 +49,7 @@
    - `owner`: `ops` | `finyk` | `product` | `devex` | `growth` | `security`
    - `status`: `experimental` (дефолт для нових) | `prod-ready`
    - `riskTier`: `P0` (revenue/data) | `P1` (alert/security) | `P2` (growth/info)
+
 4. Валідуй:
    ```bash
    pnpm ops:n8n:validate
