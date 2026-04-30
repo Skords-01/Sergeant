@@ -1,6 +1,6 @@
 # Backend Tech Debt Inventory
 
-> **Last validated:** 2026-04-30 by @devin-ai-integration[bot]. **Next review:** 2026-07-29.
+> **Last validated:** 2026-04-30 by @Skords-01. **Next review:** 2026-07-29.
 > **Status:** Active
 
 > Scope: **`apps/server/src/`** (Node.js 20 ESM, Express 4, PostgreSQL, Better Auth, Anthropic, Monobank/Privat, web-push, Pino, Prometheus, Sentry). У тексті нижче історично згадувався tree `server/*.js` — той самий продукт після переносу в monorepo; нові PR мають посилатися лише на `apps/server/src/**/*.ts`.

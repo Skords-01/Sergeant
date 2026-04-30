@@ -1,6 +1,6 @@
 # 03. Сервіси та тулстек
 
-> **Last validated:** 2026-04-30 by @devin-ai-integration[bot]. **Next review:** 2026-07-29.
+> **Last validated:** 2026-04-30 by @Skords-01. **Next review:** 2026-07-29.
 > **Status:** Active
 
 > Повний аудит зовнішніх сервісів, інфраструктури, dev-інструментів: що є, що додати, що змінити.
