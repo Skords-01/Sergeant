@@ -1,6 +1,6 @@
 # Playbook: Add a Hard Rule
 
-> **Last validated:** 2026-04-30 by @devin-ai-integration[bot]. **Next review:** 2026-07-29.
+> **Last validated:** 2026-04-30 by @devin-ai-integration. **Next review:** 2026-07-29.
 > **Status:** Active
 
 **Trigger:** "Add a new Hard Rule" / "Add a new mandatory convention" / any rule that should be enforced across all contributors and AI agents.
