@@ -32,6 +32,7 @@ pnpm docs:check-playbook-index     # CI: fail if INDEX.md is stale
 pnpm docs:freshness-dashboard      # Build dist/freshness-dashboard.html
 pnpm lint:ai-legacy                # CI gate: fail on expired/malformed `// AI-LEGACY: expires …` markers
 pnpm ai-legacy:dashboard           # Build dist/ai-legacy-dashboard.html
+pnpm lint:hard-rules-registry      # CI gate: validates docs/governance/hard-rules.json ↔ AGENTS.md ↔ CONTRIBUTING.md
 ```
 
 ## Before you write code
