@@ -1,6 +1,6 @@
 # Agents in Sergeant
 
-> **Last validated:** 2026-04-29 by @devin-ai. **Next review:** 2026-07-29.
+> **Last validated:** 2026-04-30 by @devin-ai. **Next review:** 2026-07-29.
 > **Status:** Active
 
 ## Repo overview
@@ -44,6 +44,8 @@ Quick lookup before editing: which path uses which test stack and which conventi
 > Owner is the GitHub handle responsible for review and incident escalation (L2 on-call). All modules currently roll up to `@Skords-01`; per-module delegation will be tracked here when sub-owners are introduced.
 
 ## Hard rules (do not break)
+
+> **Quick index:** [`docs/governance/hard-rules-matrix.md`](docs/governance/hard-rules-matrix.md) (auto-generated from [`docs/governance/hard-rules.json`](docs/governance/hard-rules.json) — single source of truth for ids, severities, ESLint mappings, and playbook cross-references). Run `pnpm hard-rules:list` for a CLI dump. Adding a rule → see [`docs/playbooks/add-hard-rule.md`](docs/playbooks/add-hard-rule.md).
 
 ### 1. DB types: coerce `bigint` to `number` in serializers
 

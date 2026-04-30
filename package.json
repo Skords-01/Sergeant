@@ -59,6 +59,9 @@
     "docs:gen-playbook-index": "node scripts/docs/generate-playbook-index.mjs",
     "docs:check-playbook-index": "node scripts/docs/generate-playbook-index.mjs --check",
     "docs:check-freshness-coverage": "node scripts/docs/check-freshness.mjs --check-coverage",
+    "hard-rules:generate": "node scripts/docs/generate-hard-rules-matrix.mjs",
+    "hard-rules:check": "node scripts/docs/generate-hard-rules-matrix.mjs --check",
+    "hard-rules:list": "node scripts/docs/generate-hard-rules-matrix.mjs --list",
     "docs:freshness-dashboard": "node scripts/docs/generate-freshness-dashboard.mjs",
     "ci:validate-pr-body": "node scripts/ci/validate-pr-body.mjs"
   },

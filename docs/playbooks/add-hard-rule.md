@@ -1,6 +1,6 @@
 # Playbook: Add a Hard Rule
 
-> **Last validated:** 2026-04-29 by @devin-ai. **Next review:** 2026-07-29.
+> **Last validated:** 2026-04-30 by @devin-ai. **Next review:** 2026-07-29.
 > **Status:** Active
 
 **Trigger:** "Add a new Hard Rule" / "Add a new mandatory convention" / any rule that should be enforced across all contributors and AI agents.
@@ -68,14 +68,28 @@ If the rule can be mechanically detected:
 2. Tests go in `packages/eslint-plugin-sergeant-design/__tests__/`.
 3. Run `pnpm lint:plugins` to verify.
 
-### 7. Bump freshness headers
+### 7. Append to the JSON registry and regenerate the matrix
 
-Bump the `Last validated:` date on every doc you touched.
-
-### 8. Commit and PR
+Add a new entry to [`docs/governance/hard-rules.json`](../governance/hard-rules.json) with the same `HR-N` id, then regenerate the index:
 
 ```bash
-git add AGENTS.md CONTRIBUTING.md CLAUDE.md .github/PULL_REQUEST_TEMPLATE.md
+pnpm hard-rules:generate         # rewrites docs/governance/hard-rules-matrix.md
+pnpm hard-rules:check            # CI parity check (must succeed)
+```
+
+The registry is the **single source of truth for tooling**: ESLint mappings, severity badges, the `pnpm hard-rules:list` CLI, and (later) the monthly policy-review report all read it. Skipping this step makes the rule invisible to automation.
+
+### 8. Bump freshness headers
+
+The pre-commit hook (`scripts/docs/bump-last-validated.mjs`) handles this automatically when you `git add` the touched docs. Verify after `git commit` that the headers were rewritten to today's date.
+
+### 9. Commit and PR
+
+```bash
+git add AGENTS.md CONTRIBUTING.md CLAUDE.md \
+        docs/governance/hard-rules.json \
+        docs/governance/hard-rules-matrix.md \
+        .github/PULL_REQUEST_TEMPLATE.md
 git commit -m "docs(root): add Hard Rule #N — short title"
 ```
 
@@ -84,6 +98,9 @@ git commit -m "docs(root): add Hard Rule #N — short title"
 ## Verification
 
 - [ ] `grep -E '^### N\.' AGENTS.md` — rule exists with full content.
+- [ ] `docs/governance/hard-rules.json` — entry with id `HR-N` exists.
+- [ ] `pnpm hard-rules:check` — matrix is in sync with the JSON registry.
+- [ ] `pnpm hard-rules:list` — new rule appears in CLI dump.
 - [ ] `CONTRIBUTING.md` § Hard rules has the one-line mirror.
 - [ ] If AI-relevant: `CLAUDE.md` updated.
 - [ ] If ESLint-enforced: `pnpm lint:plugins` passes, `pnpm lint` catches violations.
@@ -94,6 +111,8 @@ git commit -m "docs(root): add Hard Rule #N — short title"
 
 ## See also
 
-- [AGENTS.md](../../AGENTS.md) — canonical location for all Hard Rules.
+- [AGENTS.md](../../AGENTS.md) — canonical (human) location for all Hard Rules.
+- [docs/governance/hard-rules.json](../governance/hard-rules.json) — machine-readable registry.
+- [docs/governance/hard-rules-matrix.md](../governance/hard-rules-matrix.md) — auto-generated cross-reference.
 - [CONTRIBUTING.md](../../CONTRIBUTING.md) — mirror section.
 - [CLAUDE.md](../../CLAUDE.md) — AI agent pre-flight.

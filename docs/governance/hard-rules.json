@@ -1,0 +1,331 @@
+{
+  "$schema": "./hard-rules.schema.json",
+  "version": "1.0",
+  "generatedFrom": "AGENTS.md § Hard rules",
+  "rules": [
+    {
+      "id": "HR-1",
+      "title": "DB types: coerce bigint to number in serializers",
+      "summary": "The pg driver returns bigint as string; always coerce in the serializer with Number() so it never leaks to API consumers.",
+      "category": "data-integrity",
+      "severity": "error",
+      "since": "2026-02-01",
+      "owner": "@Skords-01",
+      "appliesTo": ["apps/server/src/modules/**"],
+      "enforcement": [
+        {
+          "kind": "test",
+          "path": "apps/server/src/modules/**/*.test.ts",
+          "what": "Inline-snapshot tests lock response shapes; a stringified number in the diff means the coercion was forgotten."
+        }
+      ],
+      "seeAlso": [
+        "https://github.com/Skords-01/Sergeant/issues/708",
+        "docs/playbooks/add-api-endpoint.md"
+      ]
+    },
+    {
+      "id": "HR-2",
+      "title": "RQ keys: only via centralized factories",
+      "summary": "All useQuery/useMutation keys must come from `apps/web/src/shared/lib/queryKeys.ts` factories (finykKeys, nutritionKeys, …); secrets must be hashed via hashToken() before use in a key.",
+      "category": "code-quality",
+      "severity": "convention",
+      "since": "2025-09-01",
+      "owner": "@Skords-01",
+      "appliesTo": ["apps/web/**"],
+      "enforcement": [
+        {
+          "kind": "manual",
+          "what": "Reviewer checks for inline `[\"finyk\", …]`-style key arrays; factories provide types so typos break the build."
+        }
+      ],
+      "seeAlso": ["docs/playbooks/add-react-query-hook.md"]
+    },
+    {
+      "id": "HR-3",
+      "title": "API contract: server response shape ↔ api-client types ↔ test",
+      "summary": "Changing a JSON response shape in apps/server/src/modules/* requires three coordinated edits in the same PR: handler, packages/api-client types, and the inline-snapshot test.",
+      "category": "code-quality",
+      "severity": "convention",
+      "since": "2025-09-01",
+      "owner": "@Skords-01",
+      "appliesTo": ["apps/server/src/modules/**", "packages/api-client/**"],
+      "enforcement": [
+        {
+          "kind": "test",
+          "path": "apps/server/src/modules/**/*.test.ts",
+          "what": "Snapshot drift catches missing handler/test sync."
+        },
+        {
+          "kind": "manual",
+          "what": "PR reviewer checks api-client types match the response shape."
+        }
+      ],
+      "seeAlso": [
+        "docs/playbooks/add-api-endpoint.md",
+        "docs/playbooks/add-monobank-event-handler.md"
+      ]
+    },
+    {
+      "id": "HR-4",
+      "title": "SQL migrations: sequential, no gaps, two-phase for DROP",
+      "summary": "Files in apps/server/src/migrations/ use NNN_description.sql (no gaps). Renaming/removing a column requires two phases deployed separately so Railway pre-deploy never breaks the running app.",
+      "category": "data-integrity",
+      "severity": "error",
+      "since": "2025-08-01",
+      "owner": "@Skords-01",
+      "appliesTo": ["apps/server/src/migrations/**"],
+      "enforcement": [
+        {
+          "kind": "workflow",
+          "workflow": ".github/workflows/migration-lint.yml",
+          "what": "Migration lint job (AGENTS rule #4) checks numbering and forbids same-PR DROP+code change."
+        }
+      ],
+      "seeAlso": [
+        "docs/playbooks/add-sql-migration.md",
+        "docs/playbooks/pre-merge-migration-checklist.md",
+        "https://github.com/Skords-01/Sergeant/issues/704"
+      ]
+    },
+    {
+      "id": "HR-5",
+      "title": "Conventional Commits: explicit scope enum",
+      "summary": "Commit format <type>(<scope>): <subject>; scope must come from the registered enum (web, server, mobile, …, ci, docs, root). Do not invent new scopes.",
+      "category": "process",
+      "severity": "error",
+      "since": "2025-12-01",
+      "owner": "@Skords-01",
+      "enforcement": [
+        {
+          "kind": "workflow",
+          "workflow": ".github/workflows/commitlint.yml",
+          "what": "commitlint validates type + scope-enum on every PR."
+        }
+      ],
+      "seeAlso": ["commitlint.config.js", "docs/playbooks/add-hard-rule.md"]
+    },
+    {
+      "id": "HR-6",
+      "title": "No force push to main/master",
+      "summary": "`--force-with-lease` on feature branches is OK; force pushes to main/master are forbidden.",
+      "category": "process",
+      "severity": "error",
+      "since": "2025-08-01",
+      "owner": "@Skords-01",
+      "enforcement": [
+        {
+          "kind": "branch-protection",
+          "what": "GitHub branch-protection on main/master disables force pushes."
+        }
+      ],
+      "seeAlso": []
+    },
+    {
+      "id": "HR-7",
+      "title": "Pre-commit hooks via Husky — do not skip",
+      "summary": "`--no-verify` is forbidden; if a hook is broken, fix the hook in the same PR rather than bypassing it.",
+      "category": "process",
+      "severity": "error",
+      "since": "2025-08-01",
+      "owner": "@Skords-01",
+      "enforcement": [
+        {
+          "kind": "manual",
+          "what": "Convention; reviewer rejects PRs whose commits clearly skipped hooks (Prettier/ESLint drift in committed files)."
+        }
+      ],
+      "seeAlso": [".husky/pre-commit", "package.json"]
+    },
+    {
+      "id": "HR-8",
+      "title": "Tailwind colour-opacity steps must be on the registered scale",
+      "summary": "Tailwind only emits `<color>/<N>` for N in the registered opacity scale (0, 5, 8, 10, 15, 20, …, 100). Any other step (/7, /9, /12, /18) is silently dropped — the design system enforces this via ESLint.",
+      "category": "design-system",
+      "severity": "error",
+      "since": "2026-03-15",
+      "owner": "@Skords-01",
+      "appliesTo": [
+        "apps/web/**/*.{ts,tsx,js,jsx}",
+        "apps/mobile/**/*.{ts,tsx,js,jsx}"
+      ],
+      "enforcement": [
+        {
+          "kind": "eslint",
+          "rule": "sergeant-design/valid-tailwind-opacity",
+          "level": "error"
+        }
+      ],
+      "seeAlso": [
+        "packages/design-tokens/tailwind-preset.js",
+        "packages/eslint-plugin-sergeant-design/index.js",
+        "https://github.com/Skords-01/Sergeant/pull/814"
+      ]
+    },
+    {
+      "id": "HR-9",
+      "title": "Saturated brand fills behind text-white must use the -strong companion",
+      "summary": "Saturated brand colours regress to ~2.4–2.8:1 contrast against white. Use `bg-{family}-strong` (or `bg-{family}/N` soft wash with `text-{family}-strong`) for any text-on-fill context.",
+      "category": "accessibility",
+      "severity": "error",
+      "since": "2026-03-20",
+      "owner": "@Skords-01",
+      "appliesTo": ["apps/web/**/*.{ts,tsx,js,jsx}"],
+      "enforcement": [
+        {
+          "kind": "eslint",
+          "rule": "sergeant-design/no-low-contrast-text-on-fill",
+          "level": "error"
+        }
+      ],
+      "seeAlso": [
+        "docs/design/BRANDBOOK.md",
+        "docs/design/brand-palette-wcag-aa-proposal.md",
+        "https://github.com/Skords-01/Sergeant/pull/854",
+        "https://github.com/Skords-01/Sergeant/pull/855",
+        "https://github.com/Skords-01/Sergeant/pull/857"
+      ]
+    },
+    {
+      "id": "HR-10",
+      "title": "Lifecycle markers — every file/doc declares its status",
+      "summary": "Code files use JSDoc lifecycle tags (@scaffolded / @experimental / @deprecated); docs use a `> **Status:** <state>` badge under the freshness marker. `pnpm dead-code:files` honours @scaffolded — never delete a scaffolded file just because it has zero importers.",
+      "category": "code-quality",
+      "severity": "warning",
+      "since": "2026-04-01",
+      "owner": "@Skords-01",
+      "enforcement": [
+        {
+          "kind": "script",
+          "path": "scripts/check-tech-debt-freshness.mjs",
+          "what": "Validates AI-LEGACY / @deprecated marker dates."
+        },
+        {
+          "kind": "script",
+          "path": "scripts/knip-respects-scaffolded.mjs",
+          "what": "Confirms knip honours @scaffolded markers."
+        },
+        {
+          "kind": "script",
+          "path": "scripts/check-governance-sync.mjs",
+          "what": "Every doc with a freshness marker must carry a Status: badge."
+        }
+      ],
+      "seeAlso": ["docs/governance/policy-review.md"]
+    },
+    {
+      "id": "HR-11",
+      "title": "No arbitrary hex colors in className",
+      "summary": "Tailwind arbitrary values like `bg-[#fff]` bypass the design-tokens preset and module-accent system. Add new shades to `packages/design-tokens/tailwind-preset.js` (with -soft / -strong companions per HR-9).",
+      "category": "design-system",
+      "severity": "error",
+      "since": "2026-03-20",
+      "owner": "@Skords-01",
+      "appliesTo": ["apps/web/**/*.{ts,tsx,js,jsx}"],
+      "enforcement": [
+        {
+          "kind": "eslint",
+          "rule": "sergeant-design/no-hex-in-classname",
+          "level": "error"
+        }
+      ],
+      "seeAlso": ["packages/design-tokens/tailwind-preset.js"]
+    },
+    {
+      "id": "HR-12",
+      "title": "Module-accent containment — no foreign accents inside a module subtree",
+      "summary": "Each module (finyk, fizruk, nutrition, routine) owns one accent family; never use another module's accent inside its subtree. \"One accent = one module.\"",
+      "category": "design-system",
+      "severity": "error",
+      "since": "2026-03-25",
+      "owner": "@Skords-01",
+      "appliesTo": ["apps/web/src/modules/**"],
+      "enforcement": [
+        {
+          "kind": "eslint",
+          "rule": "sergeant-design/no-foreign-module-accent",
+          "level": "error"
+        }
+      ],
+      "seeAlso": ["docs/design/MODULE-ACCENT.md"]
+    },
+    {
+      "id": "HR-13",
+      "title": "No raw-palette light/dark className pairs",
+      "summary": "Paired `bg-amber-500/10 dark:bg-amber-500/15` etc. must use semantic replacements (`bg-{family}-soft`, `border-{module}-soft-border`, …) backed by `--c-{family}-soft*` CSS variables.",
+      "category": "design-system",
+      "severity": "error",
+      "since": "2026-04-15",
+      "owner": "@Skords-01",
+      "appliesTo": ["apps/web/**/*.{ts,tsx,js,jsx}"],
+      "enforcement": [
+        {
+          "kind": "eslint",
+          "rule": "sergeant-design/no-raw-dark-palette",
+          "level": "error"
+        }
+      ],
+      "seeAlso": [
+        "apps/web/src/index.css",
+        "https://github.com/Skords-01/Sergeant/pull/1149",
+        "https://github.com/Skords-01/Sergeant/pull/1153",
+        "https://github.com/Skords-01/Sergeant/pull/1155",
+        "https://github.com/Skords-01/Sergeant/pull/1157"
+      ]
+    },
+    {
+      "id": "HR-14",
+      "title": "Visible focus indicators must use focus-visible:, not focus:",
+      "summary": "Focus rings use the `focus-visible:` Tailwind variant so they only render for keyboard navigation, not after every mouse click. `focus:` paired with a colour utility is forbidden on web.",
+      "category": "accessibility",
+      "severity": "error",
+      "since": "2026-04-20",
+      "owner": "@Skords-01",
+      "appliesTo": ["apps/web/**/*.{ts,tsx,js,jsx}"],
+      "enforcement": [
+        {
+          "kind": "eslint",
+          "rule": "sergeant-design/prefer-focus-visible",
+          "level": "error"
+        }
+      ],
+      "seeAlso": ["https://github.com/Skords-01/Sergeant/pull/1158"]
+    },
+    {
+      "id": "HR-15",
+      "title": "Read governance before coding; update docs alongside code",
+      "summary": "Before implementing: read the relevant playbook + matching hard rules + freshness headers of cited docs. Before opening the PR: update api-client types, design-system docs, playbooks, and freshness headers — docs are part of the change set, not a follow-up.",
+      "category": "governance",
+      "severity": "warning",
+      "since": "2026-04-26",
+      "owner": "@Skords-01",
+      "enforcement": [
+        {
+          "kind": "script",
+          "path": "scripts/check-governance-sync.mjs",
+          "what": "Validates Status badges + freshness markers stay paired."
+        },
+        {
+          "kind": "script",
+          "path": "scripts/docs/check-freshness.mjs",
+          "what": "`--check-coverage` fails if a non-excluded .md lacks a freshness header."
+        },
+        {
+          "kind": "workflow",
+          "workflow": ".github/workflows/docs-freshness.yml",
+          "what": "Daily cron + per-PR coverage gate."
+        },
+        {
+          "kind": "manual",
+          "what": "PR template's `Pre-flight (Hard Rule #15)` checklist (`Read AGENTS.md / playbook / freshness headers`)."
+        }
+      ],
+      "seeAlso": [
+        "docs/governance/doc-freshness.md",
+        "docs/governance/policy-review.md",
+        "docs/playbooks/README.md",
+        ".github/PULL_REQUEST_TEMPLATE.md"
+      ]
+    }
+  ]
+}
