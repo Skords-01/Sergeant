@@ -31,6 +31,7 @@
     "n8n:export": "node scripts/ops/n8n-workflows.mjs export",
     "lint:tech-debt-freshness": "node scripts/check-tech-debt-freshness.mjs",
     "lint:governance-sync": "node scripts/check-governance-sync.mjs",
+    "lint:hard-rules-registry": "node scripts/check-hard-rules-registry.mjs",
     "api:generate-openapi": "node scripts/api/generate-openapi.mjs",
     "api:check-openapi": "node scripts/api/check-openapi-fresh.mjs",
     "lint:plugins": "node --test packages/eslint-plugin-sergeant-design/__tests__/*.test.mjs",
@@ -58,11 +59,13 @@
     "docs:check-links": "node scripts/docs/check-markdown-links.mjs",
     "docs:gen-playbook-index": "node scripts/docs/generate-playbook-index.mjs",
     "docs:check-playbook-index": "node scripts/docs/generate-playbook-index.mjs --check",
+    "docs:check-playbook-schema": "node scripts/docs/check-playbook-schema.mjs",
     "docs:check-freshness-coverage": "node scripts/docs/check-freshness.mjs --check-coverage",
     "docs:check-adr-graph": "node scripts/docs/check-adr-graph.mjs",
     "docs:freshness-dashboard": "node scripts/docs/generate-freshness-dashboard.mjs",
     "lint:ai-legacy": "node scripts/check-ai-legacy.mjs --check",
     "ai-legacy:dashboard": "node scripts/check-ai-legacy.mjs --dashboard dist/ai-legacy-dashboard.html",
+    "lint:codeowners": "node scripts/check-codeowners-coverage.mjs",
     "ci:validate-pr-body": "node scripts/ci/validate-pr-body.mjs"
   },
   "devDependencies": {

@@ -7,6 +7,7 @@ import {
 } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { cn } from "@shared/lib/cn";
+import { safeWriteLS } from "@shared/lib/storage";
 import { SkipLink } from "@shared/components/ui/SkipLink";
 import ModuleErrorBoundary from "./ModuleErrorBoundary";
 import { useDarkMode } from "@shared/hooks/useDarkMode";
@@ -76,20 +77,20 @@ interface ModuleAppProps {
   onOpenModule?: (module: string) => void;
 }
 
-const FinykApp = lazy(
+const FinykApp = lazy<ComponentType<ModuleAppProps>>(
   () => import("../modules/finyk/FinykApp"),
-) as unknown as ComponentType<ModuleAppProps>;
+);
 const FizrukApp = lazy(() => import("../modules/fizruk/FizrukApp"));
-const NutritionApp = lazy(
+const NutritionApp = lazy<ComponentType<ModuleAppProps>>(
   () => import("../modules/nutrition/NutritionApp"),
-) as unknown as ComponentType<ModuleAppProps>;
+);
 // Routine раніше імпортувалось синхронно — це зобов'язувало тягнути
 // весь модуль у main chunk навіть для користувачів, що сидять у Фінікові.
 // Ліниве завантаження збігається з іншими модулями (Suspense fallback
 // та ModuleErrorBoundary уже огортають цей слот).
-const RoutineApp = lazy(
+const RoutineApp = lazy<ComponentType<ModuleAppProps>>(
   () => import("../modules/routine/RoutineApp"),
-) as unknown as ComponentType<ModuleAppProps>;
+);
 
 export default function App() {
   return (
@@ -291,11 +292,7 @@ function AppInner() {
         ).detail || {};
       const { module, hash, action } = detail;
       if (action && validActions.has(action)) {
-        try {
-          localStorage.setItem(PWA_ACTION_KEY, action);
-        } catch {
-          /* noop */
-        }
+        safeWriteLS(PWA_ACTION_KEY, action);
         setPwaAction(action);
       }
       openModule(module, hash ? { hash } : undefined);

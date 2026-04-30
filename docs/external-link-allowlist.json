@@ -37,6 +37,10 @@
     {
       "pattern": "^https?://(www\\.)?adjust\\.com/resources/ebooks/mobile-app-trends/",
       "reason": "Adjust applies aggressive rate-limiting to ebook download URLs; treated-as-ok already covers 429 but listed here so PR reviewers see the explicit justification."
+    },
+    {
+      "pattern": "^https?://claude\\.ai(/.*)?$",
+      "reason": "claude.ai gates project pages behind login and returns 403 to anonymous HEAD/GET; cited in docs/launch/05-operations-and-automation.md as a Claude Projects reference, the link is correct for authenticated users."
     }
   ]
 }
