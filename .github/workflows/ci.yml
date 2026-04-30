@@ -94,12 +94,20 @@ jobs:
       - name: Governance sync (Hard Rules + Status badges + dangling refs)
         run: pnpm lint:governance-sync
 
+      - name: Hard Rules registry (JSON ↔ AGENTS.md ↔ CONTRIBUTING.md)
+        # Validates docs/governance/hard-rules.json against its schema and
+        # cross-checks every rule's id+title vs. AGENTS.md `### N. ...` and
+        # CONTRIBUTING.md `N. **...**`. Hard Rule #15 — these three move
+        # together, so we fail the PR the moment they drift.
+        run: pnpm lint:hard-rules-registry
+
       - name: CODEOWNERS coverage (governance / CI / migrations / skills)
         # Fails if a path the team has flagged as "must require codeowner
         # review" exists in the tree but has no matching rule in
         # .github/CODEOWNERS. Required-coverage list lives at the top of
         # scripts/check-codeowners-coverage.mjs.
         run: pnpm lint:codeowners
+
 
       - name: Format, lint, test, build
         run: pnpm check
