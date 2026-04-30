@@ -60,7 +60,7 @@ accepted.
 - Номер — `NNN` (zero-padded до 3 цифр).
 - Desc — snake_case, ≤ 5 слів.
 - Run order — лексикографічний сорт (Postgres pg-migrate реалізація у
-  `apps/server/src/db/migrate.ts` читає `fs.readdirSync().sort()`).
+  `apps/server/migrate.mjs` читає `fs.readdirSync().sort()`).
 
 ### Consequences
 

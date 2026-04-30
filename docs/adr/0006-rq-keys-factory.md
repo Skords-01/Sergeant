@@ -125,7 +125,7 @@ accepted.
 Mono-token, push-endpoint, AI-API-key — секрети, які могли б природно стати частиною ключа (`["finyk", "mono", "client-info", monoToken]` — кожен токен → свій кеш). Але `queryKey` потрапляє в:
 
 - React Query devtools (видимий локально, але потенційно у скрін-шейрі при дебагу).
-- Sentry breadcrumbs через `query.state.error` + key-логування (`apps/web/src/sentry.ts` стрипає body, але не key).
+- Sentry breadcrumbs через `query.state.error` + key-логування (`apps/server/src/sentry.ts` стрипає body, але не key).
 - Pino-логи серверних end-point-ів через `req.query` (deprecated шлях; зараз ми передаємо токен в Authorization header, але історично було).
 
 Витік Mono-токена у логи — security-incident.

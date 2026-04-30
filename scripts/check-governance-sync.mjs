@@ -14,13 +14,16 @@
 //    Files in ADRs with Status: proposed are exempt (future refs OK).
 //
 // Usage:
-//   node scripts/check-governance-sync.mjs
+//   node scripts/check-governance-sync.mjs            # warnings + errors
+//   node scripts/check-governance-sync.mjs --strict   # treat new dangling refs as errors
 //
-// Exit code 1 on any failure.
+// Exit code 1 on any failure (or on warnings in --strict mode).
 
 import { readFileSync, existsSync, readdirSync } from "node:fs";
 import { resolve, dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
+
+const STRICT = process.argv.includes("--strict");
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -189,10 +192,18 @@ function checkDanglingRefs() {
     // Check if this is the RN migration tracker (target-state refs are OK)
     if (relPath.includes("react-native-migration")) continue;
 
+    // Pattern refs contain template placeholders (<domain>, <module>, *, {…})
+    // or glob syntax — these are illustrative, not real file paths.
+    const templateRe = /[<>*{}]/;
+
     let refMatch;
     while ((refMatch = refRe.exec(content)) !== null) {
       totalRefs++;
       const refPath = refMatch[1];
+
+      // Skip template / glob refs — they are illustrative patterns, not real paths
+      if (templateRe.test(refPath)) continue;
+
       const absRef = resolve(ROOT, refPath);
       if (!existsSync(absRef)) {
         danglingRefs++;
@@ -206,6 +217,15 @@ function checkDanglingRefs() {
 
   if (danglingRefs === 0) {
     ok(`All ${totalRefs} source refs in docs resolve to existing files.`);
+  } else if (STRICT) {
+    error(
+      `${danglingRefs} of ${totalRefs} source refs in docs point to non-existent files (--strict mode):`,
+    );
+    for (const [doc, refs] of danglingByFile) {
+      for (const ref of refs) {
+        error(`  ${doc} → ${ref}`);
+      }
+    }
   } else {
     warn(
       `${danglingRefs} of ${totalRefs} source refs in docs point to non-existent files:`,
