@@ -95,7 +95,24 @@ export function handleNutritionAction(
       const prev = Number(log[dateKey]) || 0;
       log[dateKey] = prev + ml;
       lsSet("nutrition_water_v1", log);
-      return `Додано ${ml} мл води (разом за ${dateKey}: ${log[dateKey]} мл)`;
+      return {
+        result: `Додано ${ml} мл води (разом за ${dateKey}: ${log[dateKey]} мл)`,
+        // Undo віднімає рівно свої ml від поточного значення, а не
+        // відновлює prev — інакше паралельні +log_water між додаванням
+        // і undo втратилися б. Якщо після віднімання лишился 0 — чистимо key.
+        undo: () => {
+          const cur = ls<Record<string, number>>("nutrition_water_v1", {});
+          const cv = Number(cur[dateKey]) || 0;
+          const after = cv - ml;
+          if (after <= 0) {
+            const { [dateKey]: _removed, ...rest } = cur;
+            void _removed;
+            lsSet("nutrition_water_v1", rest);
+          } else {
+            lsSet("nutrition_water_v1", { ...cur, [dateKey]: after });
+          }
+        },
+      };
     }
     case "add_recipe": {
       const {
@@ -190,6 +207,7 @@ export function handleNutritionAction(
       const qty = (quantity && String(quantity).trim()) || "";
       const notTxt = (note && String(note).trim()) || "";
       let action_msg = "додано";
+      let createdId: string | null = null;
       if (itemIdx >= 0) {
         items[itemIdx] = {
           ...items[itemIdx],
@@ -198,8 +216,9 @@ export function handleNutritionAction(
         };
         action_msg = "оновлено";
       } else {
+        createdId = `si_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
         items.push({
-          id: `si_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+          id: createdId,
           name: itemName,
           quantity: qty,
           note: notTxt,
@@ -208,7 +227,41 @@ export function handleNutritionAction(
       }
       categories[catIdx] = { ...categories[catIdx], items };
       lsSet("nutrition_shopping_list_v1", { ...list, categories });
-      return `Продукт "${itemName}" ${action_msg} у список покупок${qty ? ` (${qty})` : ""} [${catName}]`;
+      const result = `Продукт "${itemName}" ${action_msg} у список покупок${qty ? ` (${qty})` : ""} [${catName}]`;
+      if (!createdId) {
+        // "оновлено" гілка — undo-флоу недоступний без снапшота,
+        // який може переписати паралельні редагування. Повертаємо
+        // простий string — в follow-up можна додати вручну ("оновлено”
+        // рідко буває, більшість турнів в LLM — додають).
+        return result;
+      }
+      const newId = createdId;
+      return {
+        result,
+        undo: () => {
+          const cur = ls<{
+            categories?: Array<{
+              name: string;
+              items: Array<{ id: string }>;
+            }>;
+          }>("nutrition_shopping_list_v1", {});
+          const cats = Array.isArray(cur.categories)
+            ? cur.categories.slice()
+            : [];
+          const ci = cats.findIndex((c) => c.name === catName);
+          if (ci < 0) return;
+          const its = (cats[ci].items || []).filter((it) => it.id !== newId);
+          if (its.length === 0) {
+            cats.splice(ci, 1);
+          } else {
+            cats[ci] = { ...cats[ci], items: its };
+          }
+          lsSet("nutrition_shopping_list_v1", {
+            ...cur,
+            categories: cats,
+          });
+        },
+      };
     }
     case "consume_from_pantry": {
       const { name } = (action as ConsumeFromPantryAction).input;

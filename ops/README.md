@@ -33,9 +33,9 @@ ops/
     └── 19-db-health-report.json          # Cron Mon 07:00 → DB size + slow queries → Telegram
 ```
 
-## Quick start
+## Швидкий старт
 
-### 1. Env vars
+### 1. Env-змінні
 
 ```bash
 cp ops/.env.ops.example ops/.env.ops
@@ -85,84 +85,84 @@ railway up --detach
 - Оновити `WEBHOOK_URL` та `N8N_HOST` у env vars
 - Переконайся що persistent volume підключено до `/home/node/.n8n`
 
-## Workflows — деталі
+## Workflow-и — деталі
 
-### 01. Billing Pipeline
+### 01. Billing-пайплайн
 
 **Тригер:** Stripe webhook `customer.subscription.created`
 **Дія:** Update user plan → Pro в БД → Telegram повідомлення в `#revenue`
 
-### 02. Failed Payment Recovery
+### 02. Відновлення після невдалого платежу
 
 **Тригер:** Stripe webhook `invoice.payment_failed`
 **Дія:** Telegram alert → Email "оновіть картку" → Retry wait → Downgrade після 4 спроб
 
-### 03. Sentry Alert Routing
+### 03. Маршрутизація Sentry-алертів
 
 **Тригер:** Sentry webhook (new issue / spike)
 **Дія:** Filter severity ≥ warning → Telegram `#incidents` (fatal отримує окремий формат)
 
-### 04. Daily Backup Verification
+### 04. Щоденна перевірка бекапів
 
 **Тригер:** Cron 03:00 UTC
 **Дія:** Railway API → restore на staging → sanity SQL → Telegram OK / CRITICAL
 
-### 05. Renovate PR Auto-Handler
+### 05. Auto-handler для Renovate-PR
 
 **Тригер:** GitHub webhook `pull_request.opened` (author = renovate[bot])
 **Дія:** Patch → auto-approve; minor/major → Telegram review needed
 
-### 06. Mono Webhook Enrichment
+### 06. Mono-webhook enrichment
 
 **Тригер:** Mono webhook (нова транзакція)
 **Дія:** Save → AI categorize (Claude) → Update DB → Budget threshold check → Telegram alert
 
-### 07. Morning Briefing Push
+### 07. Ранковий push-брифінг
 
 **Тригер:** Cron 07:30 Kyiv (щодня)
 **Дія:** Postgres → список юзерів з push-підписками → POST `/api/push/send` для кожного → "Доброго ранку! Відкрий Sergeant"
 
-### 08. Weekly Financial Digest
+### 08. Тижневий фін-дайджест
 
 **Тригер:** Cron неділя 20:00 Kyiv
 **Дія:** Postgres → витрати за 7 днів по категоріях → Claude Haiku → Telegram дайджест
 
-### 09. Habit Streak At-Risk Alert
+### 09. Алерт про ризик втрати стріку
 
 **Тригер:** Cron 21:00 Kyiv (щодня)
 **Дія:** Postgres → юзери з push-підписками → push "Не забудь звички!"
 
-### 10. Debt/Receivable Reminder
+### 10. Нагадування про борги
 
 **Тригер:** Cron 10:00 Kyiv (щодня)
 **Дія:** Postgres → борги/дебіторка з `dueDate` ≤ +3 дні → push для кожного + Telegram summary
 
-### 15. Railway Deployment Notify
+### 15. Railway-деплой — нотифікація
 
 **Тригер:** Railway webhook (`deployment.success` / `deployment.failed`)
 **Дія:** Парсинг payload → Telegram `#deploys` з гілкою, хешем, статусом
 
-### 16. PostHog Daily Metrics
+### 16. Щоденні PostHog-метрики
 
 **Тригер:** Cron 09:00 Kyiv (щодня)
 **Дія:** PostHog API → DAU + pageviews за вчора → Telegram `#metrics`
 
-### 17. GitHub PR Stale Alert
+### 17. Алерт про застоялі GitHub-PR
 
 **Тригер:** Cron 10:00 Kyiv (Пн–Пт)
 **Дія:** GitHub API → open PRs → фільтр >48h без активності → Telegram якщо є
 
-### 18. Nightly Security Audit Summary
+### 18. Підсумок нічного security-аудиту
 
 **Тригер:** Cron 04:00 UTC (після `nightly-audit.yml` о 03:00)
 **Дія:** GitHub API → останній запуск `nightly-audit.yml` → Telegram `#incidents` якщо `failure`
 
-### 19. DB Health Report
+### 19. Репорт про здоров’я БД
 
 **Тригер:** Cron понеділок 07:00 Kyiv
 **Дія:** Postgres → розмір DB, топ-5 таблиць, повільні запити (`pg_stat_statements`) → Telegram `#ops`
 
-## Credentials у n8n
+## Credential-и у n8n
 
 Після імпорту workflows — налаштуй credentials через n8n UI:
 
@@ -176,7 +176,7 @@ railway up --detach
 | GitHub            | Token / Webhook secret | 05, 17, 18            |
 | Railway           | API Token              | 04                    |
 
-### Нові env-змінні для воркфлоу 07–19
+### Нові env-змінні для workflow-ів 07–19
 
 Додай у n8n → Settings → Environment Variables:
 
@@ -188,12 +188,12 @@ railway up --detach
 | `POSTHOG_PROJECT_ID`       | 16                 | PostHog → Settings → Project → ID у URL                               |
 | `GITHUB_PAT`               | 17, 18             | GitHub → Settings → Developer settings → PAT (classic), scope: `repo` |
 
-### Railway Webhook (для воркфлоу 15)
+### Railway-webhook (для workflow 15)
 
 1. n8n UI → Workflow 15 → скопіюй webhook URL (вигляд: `https://n8n.your-domain.com/webhook/railway-deploy`)
 2. Railway → твій проект → Settings → Webhooks → Add webhook → вставити URL
 
-## Troubleshooting
+## Розв’язання проблем
 
 ### n8n не стартує
 
@@ -242,7 +242,7 @@ SERVER_METRICS_URL=http://host.docker.internal:3000/metrics
 2. Перевір збіг `METRICS_TOKEN` у `.env.ops` і `.env`
 3. `curl -H "Authorization: Bearer <token>" http://localhost:3000/metrics`
 
-## Додавання нового workflow
+## Додавання нового workflow-у
 
 Дивись секцію «Workflow basics» у [`docs/adr/0026-n8n-workflow-source-of-truth.md`](../docs/adr/0026-n8n-workflow-source-of-truth.md) та приклади у `ops/n8n-workflows/`.
 

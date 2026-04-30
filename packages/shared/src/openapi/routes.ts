@@ -304,10 +304,27 @@ export const paths: ZodOpenApiPathsObject = {
       summary: "Отримати останній зашифрований backup nutrition-blob",
       description:
         "Token-authenticated через header `x-token`. Повертає 404, якщо " +
-        "для наданого токена бекапів ще немає.",
+        "для наданого токена бекапів ще немає. Роут під `requireSession()` — " +
+        "потрібна активна сесія ЧИ Bearer-токен НА ДОДАЧУ до запитуваного `x-token`.",
       tags: ["nutrition"],
+      security: cookieOrBearer,
+      requestParams: {
+        // `x-token` формує ключ для пошуку бекап-файлу в файловій сховищі сервера
+        // (див. `apps/server/src/modules/nutrition/backup-download.ts:safeKeyFromToken`).
+        // Без цього хедера в контракті generated-клієнти і люди-читачі не можуть
+        // виявити який вхід потрібен для отримання бекапу.
+        header: z.object({
+          "x-token": z
+            .string()
+            .min(1)
+            .describe(
+              "Опаковий токен, який хешується для формування імені файлу бекапу.",
+            ),
+        }),
+      },
       responses: {
         "200": okEmpty,
+        "401": unauthorized,
         "404": {
           description: "Backup для наданого x-token не знайдено.",
           content: {
@@ -698,13 +715,22 @@ export const paths: ZodOpenApiPathsObject = {
       tags: ["transcribe"],
       security: cookieOrBearer,
       requestParams: { query: namedSchemas.TranscribeQuery },
+      // Медіа-типи синхронізовані зі списком `SUPPORTED_AUDIO_MIME` у
+      // `apps/server/src/modules/transcribe/transcribe.ts`. Будь-який inconsistency
+      // означає, що опублікований контракт бреше клієнтам про те, які формати
+      // приймаються — обїїхавши в 415 намість успіху.
       requestBody: {
         content: {
           "audio/webm": { schema: { type: "string", format: "binary" } },
           "audio/ogg": { schema: { type: "string", format: "binary" } },
           "audio/mp4": { schema: { type: "string", format: "binary" } },
+          "audio/m4a": { schema: { type: "string", format: "binary" } },
           "audio/mpeg": { schema: { type: "string", format: "binary" } },
+          "audio/mp3": { schema: { type: "string", format: "binary" } },
           "audio/wav": { schema: { type: "string", format: "binary" } },
+          "audio/x-wav": { schema: { type: "string", format: "binary" } },
+          "audio/wave": { schema: { type: "string", format: "binary" } },
+          "audio/flac": { schema: { type: "string", format: "binary" } },
         },
       },
       responses: {

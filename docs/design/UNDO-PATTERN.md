@@ -1,12 +1,9 @@
-# Undo pattern — soft-delete + 5 s undo toast
+# Undo-патерн — soft-delete + 5-секундний undo-toast
 
 > **Last validated:** 2026-04-28 by @Skords-01. **Next review:** 2026-07-27.
 > **Status:** Active
 
-> Sergeant's unified destructive-action pattern. Use `showUndoToast`
-> instead of `window.confirm()`, instead of a custom "Are you sure?"
-> dialog, instead of a silent delete. Confirmation dialogs are
-> reserved for **non-reversible** flows.
+> Уніфікований у Sergeant патерн для destructive-дій. Використовуйте `showUndoToast` замість `window.confirm()`, замість кастомного «Are you sure?»-діалогу і замість silent-delete. Confirmation-діалоги зарезервовані для **необоротних** flow.
 
 ## TL;DR
 
@@ -29,51 +26,36 @@ const handleDelete = (id: string) => {
 };
 ```
 
-That's it. Five seconds, one undo button, haptic feedback on both
-appearance and undo, optimistic UI removal, no modal interrupting flow.
+Усе. Пʼять секунд, одна undo-кнопка, haptic-feedback на появі та на undo, оптимістичне видалення в UI, без модалки, що перериває flow.
 
-## Why this pattern
+## Чому саме цей патерн
 
-Pre-Sergeant we had three competing destructive-action patterns:
+До уніфікації в нас було три конкуруючі патерни destructive-дії:
 
-1. **Hard delete + `window.confirm()`** — interrupts flow, no recovery
-   if the user mis-clicks "OK".
-2. **Custom modal `<ConfirmDialog>`** — same interruption, plus the
-   inconsistency tax of writing modal logic per delete site.
-3. **Silent hard delete** — single tap and the data is gone forever.
-   This is the worst variant; especially painful for fat-finger taps
-   on mobile.
+1. **Hard delete + `window.confirm()`** — переривання flow, без recovery, якщо юзер мис-кліком натиснув «OK».
+2. **Кастомна модалка `<ConfirmDialog>`** — те саме переривання плюс «inconsistency-tax» — модальну логіку доводиться писати на кожен delete-сайт.
+3. **Silent hard delete** — один тап і дані зникають назавжди. Найгірший варіант; особливо боляче для fat-finger-тапів на мобілці.
 
-The unified undo policy replaces all three with one rule: **deletes
-are soft and reversible for 5 seconds; confirmations are only used
-when the action genuinely cannot be undone.**
+Уніфікована undo-політика замінює всі три одним правилом: **видалення soft і оборотні протягом 5 секунд; confirmation-и потрібні лише там, де дію справді не можна скасувати.**
 
-| User action                  | Old patterns                                                | Unified pattern                         |
-| ---------------------------- | ----------------------------------------------------------- | --------------------------------------- |
-| Delete a transaction         | `window.confirm("Видалити?")`                               | Optimistic remove + 5 s undo toast      |
-| Delete a habit               | `<ConfirmDialog>` "Видалити?"                               | Optimistic remove + 5 s undo toast      |
-| Delete a tag                 | _silent delete_                                             | Optimistic remove + 5 s undo toast      |
-| Drop a workout               | confirm + delete                                            | Optimistic remove + 5 s undo toast      |
-| Trim journal history         | `<ConfirmDialog>` (year-old data, hard)                     | **Keep ConfirmDialog** — non-reversible |
-| Detach exercise from catalog | `<ConfirmDialog>` (still has `showUndoToast` after confirm) | Hybrid — confirm + undo                 |
+| Дія юзера                        | Старі патерни                                         | Уніфікований патерн                   |
+| -------------------------------- | ----------------------------------------------------- | ------------------------------------- |
+| Видалити транзакцію              | `window.confirm("Видалити?")`                         | Optimistic remove + 5 s undo-toast    |
+| Видалити звичку                  | `<ConfirmDialog>` «Видалити?»                         | Optimistic remove + 5 s undo-toast    |
+| Видалити тег                     | _silent delete_                                       | Optimistic remove + 5 s undo-toast    |
+| Скинути тренування               | confirm + delete                                      | Optimistic remove + 5 s undo-toast    |
+| Trim історії журналу             | `<ConfirmDialog>` (річні дані, hard)                  | **Лишити ConfirmDialog** — необоротно |
+| Відʼєднати exercise від каталогу | `<ConfirmDialog>` (з `showUndoToast` після confirm-у) | Гібрид — confirm + undo               |
 
-## When NOT to use undo (keep ConfirmDialog)
+## Коли НЕ використовувати undo (лишити ConfirmDialog)
 
-The few exceptions in the codebase, with reasoning:
+Кілька винятків у кодбазі та чому:
 
-- **`LogCard` "Видалити стару історію"** — trims everything older than
-  365 days; potentially hundreds of deletions; restoring would require
-  snapshotting megabytes of meal data. Confirm + hard delete.
-- **`HubChat` "Очистити всі чати"** — bulk operation across all sessions;
-  irreversible by design.
-- **`Workouts` "Видалити вправу з каталогу"** — detaches the exercise
-  from any historical workouts. Records survive but lose their
-  catalog metadata. Confirm to make the consequence explicit; we
-  _also_ offer a 5 s undo on the exercise itself, but the historical
-  detach is non-reversible.
+- **`LogCard` «Видалити стару історію»** — обрізає все старше за 365 днів; потенційно сотні видалень; відновлення потребуватиме snapshot-у мегабайтів meal-даних. Confirm + hard delete.
+- **`HubChat` «Очистити всі чати»** — bulk-операція по всіх сесіях; необоротна за дизайном.
+- **`Workouts` «Видалити вправу з каталогу»** — відʼєднує exercise від усіх історичних тренувань. Записи виживають, але втрачають catalog-метадані. Confirm робить наслідки явними; ми _додатково_ даємо 5 s undo на самій вправі, але історичний detach необоротний.
 
-If you find yourself reaching for `<ConfirmDialog>` for a delete, ask:
-"can I just snapshot and restore?" If yes — use `showUndoToast`.
+Якщо ви тягнетесь до `<ConfirmDialog>` для delete-дії — спитайте: «чи можна просто snapshot-нути і відновити?» Якщо так — `showUndoToast`.
 
 ## API
 
@@ -87,17 +69,15 @@ showUndoToast(toast, {
 });
 ```
 
-Defaults live in `@sergeant/shared` (`UNDO_TOAST_DEFAULT_*`) so web and
-mobile stay aligned.
+Дефолти живуть у `@sergeant/shared` (`UNDO_TOAST_DEFAULT_*`), щоб web і mobile тримати в синхроні.
 
-## Snapshot strategies
+## Стратегії snapshot-у
 
-Two patterns are used in the codebase. Pick the one that fits your
-storage shape.
+Два патерни вживаються в кодбазі. Обирайте за формою стораджа.
 
-### A. Item snapshot (RQ / array state)
+### A. Snapshot одного item-а (RQ / array-state)
 
-Best when the list is plain and the item carries its own ID:
+Найкраще, коли список плаский і кожен item має власний ID:
 
 ```tsx
 const snapshot = items.find((x) => x.id === id);
@@ -108,13 +88,11 @@ showUndoToast(toast, {
 });
 ```
 
-Used by: `Transactions.tsx`, `AssetsTable.tsx`, `MemoryBankSection.tsx`.
+Використовується у: `Transactions.tsx`, `AssetsTable.tsx`, `MemoryBankSection.tsx`.
 
-### B. Full-state snapshot (reducers / cascading deletes)
+### B. Snapshot цілого state (reducer-и / каскадні видалення)
 
-Best when the deletion has side-effects (orphaning relations, cascading
-through joins, reordering arrays). Snapshot the **whole state** and
-restore it as a single setter call:
+Найкраще, коли видалення має side-effect-и (osi-rotean-я звʼязків, каскад через джойни, перевпорядкування масивів). Snapshot-ніть **увесь state** і відновіть його одним setter-ом:
 
 ```tsx
 const snapshot = routine; // freeze the full RoutineState
@@ -125,27 +103,23 @@ showUndoToast(toast, {
 });
 ```
 
-Used by: `TagsSection.tsx`, `CategoriesSection.tsx`, `HabitsSection.tsx`.
+Використовується у: `TagsSection.tsx`, `CategoriesSection.tsx`, `HabitsSection.tsx`.
 
-> The full-state snapshot is **safe** for local-first stores because
-> the 5 s window is short — concurrent edits from another tab are
-> extremely rare and would only overwrite the snapshot path, not lose
-> data permanently. For server-backed lists, prefer pattern A so
-> concurrent server updates aren't clobbered on undo.
+> Snapshot цілого state **безпечний** для local-first сторів — 5-секундне вікно коротке, конкурентні правки з іншого таба надзвичайно рідкісні і у найгіршому випадку перезапишуть snapshot-path, не втративши даних назавжди. Для server-backed-списків бажано patтерн A — щоб конкурентні серверні апдейти не затирались на undo.
 
-## Anti-patterns
+## Анти-патерни
 
 ```tsx
-// ❌ BAD — silent delete; no recovery
+// ❌ BAD — silent delete; нема як відновити
 <button onClick={() => deleteTag(tagId)} />;
 
-// ❌ BAD — confirm dialog for a reversible action
+// ❌ BAD — confirm-діалог для оборотної дії
 if (window.confirm("Видалити тег?")) deleteTag(tagId);
 
-// ❌ BAD — toast without undo button (just announcement)
-toast.success("Тег видалено"); // no way to recover
+// ❌ BAD — toast без undo-кнопки (просто оголошення)
+toast.success("Тег видалено"); // нема способу відновити
 
-// ❌ BAD — no haptic, no live region; relies only on visual
+// ❌ BAD — без haptic, без live-region; покладається тільки на візуал
 <div>Тег видалено · undo</div>;
 
 // ✅ GOOD
@@ -157,52 +131,38 @@ showUndoToast(toast, {
 });
 ```
 
-## Copy guidelines
+## Гайдлайни копії
 
-- **Past-tense** confirmation: "Видалено звичку «Вода»", not
-  "Звичку «Вода» буде видалено".
-- **Quote the name** in `«…»` so users can identify which item is
-  affected when toasts queue.
-- **Include side-effect detail** when the action cascades:
-  "Видалено тег «дім» (відʼєднано від 4)".
-- **Default undo label**: `"Повернути"` (set in `@sergeant/shared`).
-  Don't override unless the action is unusual (e.g. "Підняти" for
-  an "archive" flow).
+- **Минулий час** як підтвердження: «Видалено звичку «Вода»», а не «Звичку «Вода» буде видалено».
+- **Цитуйте назву** в `«…»`, щоб юзер міг ідентифікувати, який саме item зачеплений, коли toast-и черговіються.
+- **Згадайте каскадні наслідки**, якщо вони є: «Видалено тег «дім» (відʼєднано від 4)».
+- **Default undo-label**: `"Повернути"` (виставлено в `@sergeant/shared`). Не override-уйте без потреби (наприклад, «Підняти» для archive-flow-у).
 
 ## Haptic + a11y
 
-`showUndoToast` automatically:
+`showUndoToast` автоматично:
 
-- Fires `hapticWarning()` when the toast appears (dangerous-action
-  feedback on iOS).
-- Fires `hapticTap()` when the user taps the undo button.
-- Fires `hapticError()` if `onUndo` throws.
-- Wraps `onUndo` in a `try/catch` and surfaces a follow-up error toast
-  via `toast.error(onUndoErrorMsg)` so the user knows the restore
-  failed (instead of silently swallowing the exception, which used to
-  hide localStorage-quota errors).
+- Викликає `hapticWarning()` на появі toast-а (фідбек dangerous-action на iOS).
+- Викликає `hapticTap()` на тапі по undo-кнопці.
+- Викликає `hapticError()`, якщо `onUndo` кидає виняток.
+- Обгортає `onUndo` у `try/catch` і піднімає follow-up error-toast через `toast.error(onUndoErrorMsg)`, щоб юзер дізнався, що restore впав (а не мовчки ковтати exception, що раніше ховало localStorage-quota-помилки).
 
-Toasts are rendered via the `useToast` provider, which is wired to the
-app-level live region, so screen-reader users hear the message and the
-undo button receives keyboard focus normally.
+Toast-и рендеряться через `useToast`-провайдер, який підʼєднаний до app-level live-region — тож скрін-рідер чує повідомлення, а undo-кнопка нормально отримує клавіатурний focus.
 
-## Migration checklist
+## Migration-чеклист
 
-When adopting this pattern in a new module:
+Коли підключаєте патерн у новому модулі:
 
-1. Import `showUndoToast` and `useToast`.
-2. Snapshot the item (or full state) before mutating.
-3. Apply the optimistic mutation.
-4. Call `showUndoToast(toast, { msg, onUndo })`.
-5. Remove any `window.confirm()` / `<ConfirmDialog>` for this action
-   unless it falls under the "non-reversible" exceptions above.
-6. Verify haptics fire on a real device — `useToast` does not call
-   `hapticTap()` for non-undo toasts; this is intentional, but worth
-   sanity-checking.
+1. Імпортуйте `showUndoToast` і `useToast`.
+2. Snapshot-ніть item (або цілий state) перед мутацією.
+3. Застосуйте оптимістичну мутацію.
+4. Викличте `showUndoToast(toast, { msg, onUndo })`.
+5. Приберіть `window.confirm()` / `<ConfirmDialog>` для цієї дії, якщо вона не входить у винятки про необоротність вище.
+6. Перевірте на реальному девайсі, що haptic-и фаяться — `useToast` не викликає `hapticTap()` для не-undo-toast-ів; це навмисно, але варто перевірити sanity.
 
-## Related docs
+## Пов'язані доки
 
-- [`apps/web/src/shared/lib/undoToast.tsx`](../../apps/web/src/shared/lib/undoToast.tsx) — implementation.
-- [`apps/web/src/shared/lib/undoToast.test.tsx`](../../apps/web/src/shared/lib/undoToast.test.tsx) — contract tests.
-- [`packages/shared/src/lib/undoToast.ts`](../../packages/shared/src/lib/undoToast.ts) — defaults shared with mobile.
-- `AGENTS.md` § Soft rules — "Destructive UX defaults".
+- [`apps/web/src/shared/lib/undoToast.tsx`](../../apps/web/src/shared/lib/undoToast.tsx) — імплементація.
+- [`apps/web/src/shared/lib/undoToast.test.tsx`](../../apps/web/src/shared/lib/undoToast.test.tsx) — contract-тести.
+- [`packages/shared/src/lib/undoToast.ts`](../../packages/shared/src/lib/undoToast.ts) — дефолти, шарені з мобілкою.
+- `AGENTS.md` § Soft rules — «Destructive UX defaults».

@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useTransition,
+} from "react";
 import { cn } from "@shared/lib/cn";
 import { Banner } from "@shared/components/ui/Banner";
 import {
@@ -160,6 +166,10 @@ export default function RoutineApp({
   onPwaActionConsumed,
 }: RoutineAppProps = {}) {
   const [routine, setRoutine] = useRoutineState();
+  // Low-priority transition for habit toggles: the checkbox haptic fires
+  // instantly while React defers the heavier re-render (full list + persist)
+  // so the animation never feels janky on slower devices.
+  const [, startHabitTransition] = useTransition();
   // Finyk calendar events depend on both the Finyk Monobank cache and the
   // subscription calendar. The former now flows through React Query
   // (`hubKeys.preview("finyk")`), the latter still uses a custom event
@@ -401,9 +411,14 @@ export default function RoutineApp({
       // око встигне відскакувати до heatmap-анімації. `hapticTap` —
       // noop на desktop/iOS Safari і під prefers-reduced-motion.
       hapticTap();
-      setRoutine((prev) => toggleHabitCompletion(prev, habitId, dateKey));
+      // Wrap in startTransition so React can commit the haptic + checkbox
+      // visual change at high priority while deferring the full list
+      // re-render + localStorage persist to a lower-priority lane.
+      startHabitTransition(() => {
+        setRoutine((prev) => toggleHabitCompletion(prev, habitId, dateKey));
+      });
     },
-    [setRoutine],
+    [setRoutine, startHabitTransition],
   );
 
   const onBulkMarkDay = useCallback(() => {

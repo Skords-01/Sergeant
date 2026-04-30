@@ -679,3 +679,106 @@ describe("mark_habit_done · undo", () => {
     expect(after.completions.h1).not.toContain("2024-06-15");
   });
 });
+
+// ---------------------------------------------------------------------------
+// create_reminder · undo
+// ---------------------------------------------------------------------------
+describe("create_reminder · undo", () => {
+  it("повертає {undo} який видаляє щойно додане нагадування", () => {
+    localStorage.setItem(
+      "hub_routine_v1",
+      JSON.stringify({
+        habits: [{ id: "h1", name: "Йога", reminderTimes: [] }],
+        completions: {},
+      }),
+    );
+    const out = handleRoutineAction({
+      name: "create_reminder",
+      input: { habit_id: "h1", time: "08:00" },
+    });
+    if (typeof out === "string" || out == null)
+      throw new Error("expected object");
+
+    const before = JSON.parse(localStorage.getItem("hub_routine_v1") || "{}");
+    expect(before.habits[0].reminderTimes).toEqual(["08:00"]);
+
+    out.undo();
+    const after = JSON.parse(localStorage.getItem("hub_routine_v1") || "{}");
+    expect(after.habits[0].reminderTimes).toEqual([]);
+  });
+
+  it("якщо час уже існує — return string (no-op, без undo)", () => {
+    localStorage.setItem(
+      "hub_routine_v1",
+      JSON.stringify({
+        habits: [{ id: "h1", name: "Йога", reminderTimes: ["08:00"] }],
+        completions: {},
+      }),
+    );
+    const out = handleRoutineAction({
+      name: "create_reminder",
+      input: { habit_id: "h1", time: "08:00" },
+    });
+    expect(typeof out).toBe("string");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// complete_habit_for_date · undo
+// ---------------------------------------------------------------------------
+describe("complete_habit_for_date · undo", () => {
+  it("undo на mark-complete видаляє ту дату; інші дати залишаються", () => {
+    localStorage.setItem(
+      "hub_routine_v1",
+      JSON.stringify({
+        habits: [{ id: "h1", name: "Йога" }],
+        completions: { h1: ["2025-01-01"] },
+      }),
+    );
+    const out = handleRoutineAction({
+      name: "complete_habit_for_date",
+      input: { habit_id: "h1", date: "2025-01-02" },
+    });
+    if (typeof out === "string" || out == null)
+      throw new Error("expected object");
+
+    out.undo();
+    const after = JSON.parse(localStorage.getItem("hub_routine_v1") || "{}");
+    expect(after.completions.h1).toEqual(["2025-01-01"]);
+  });
+
+  it("повторне виставлення дати: вже виконано → return string без undo", () => {
+    localStorage.setItem(
+      "hub_routine_v1",
+      JSON.stringify({
+        habits: [{ id: "h1" }],
+        completions: { h1: ["2025-01-02"] },
+      }),
+    );
+    const out = handleRoutineAction({
+      name: "complete_habit_for_date",
+      input: { habit_id: "h1", date: "2025-01-02" },
+    });
+    expect(typeof out).toBe("string");
+  });
+
+  it("undo на uncheck (completed:false) повертає дату назад", () => {
+    localStorage.setItem(
+      "hub_routine_v1",
+      JSON.stringify({
+        habits: [{ id: "h1" }],
+        completions: { h1: ["2025-01-02"] },
+      }),
+    );
+    const out = handleRoutineAction({
+      name: "complete_habit_for_date",
+      input: { habit_id: "h1", date: "2025-01-02", completed: false },
+    });
+    if (typeof out === "string" || out == null)
+      throw new Error("expected object");
+
+    out.undo();
+    const after = JSON.parse(localStorage.getItem("hub_routine_v1") || "{}");
+    expect(after.completions.h1).toContain("2025-01-02");
+  });
+});

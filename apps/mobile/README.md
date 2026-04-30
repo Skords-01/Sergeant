@@ -221,7 +221,7 @@ apps/mobile
 `useSession()` — ці дані джерелом правди — сервер, а не локальне
 SecureStore.
 
-## Push notifications
+## Push-нотифікації
 
 Push-флоу на mobile закриває `PushRegistrar`
 (`src/features/push/PushRegistrar.tsx`). Після логіну він:

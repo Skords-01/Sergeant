@@ -786,3 +786,82 @@ describe("create_transaction · undo", () => {
     expect(typeof out).toBe("string");
   });
 });
+
+// ---------------------------------------------------------------------------
+// create_debt · undo
+// ---------------------------------------------------------------------------
+describe("create_debt · undo", () => {
+  it("повертає {undo} який видаляє щойно створений борг за id", () => {
+    const out = handleFinykAction({
+      name: "create_debt",
+      input: { name: "Кредитка", amount: 5000 },
+    });
+    if (typeof out === "string" || out == null)
+      throw new Error("expected object");
+
+    const before = JSON.parse(localStorage.getItem("finyk_debts") || "[]");
+    expect(before).toHaveLength(1);
+
+    out.undo();
+    const after = JSON.parse(localStorage.getItem("finyk_debts") || "[]");
+    expect(after).toHaveLength(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// create_receivable · undo
+// ---------------------------------------------------------------------------
+describe("create_receivable · undo", () => {
+  it("повертає {undo} який видаляє щойно створену дебіторку за id", () => {
+    const out = handleFinykAction({
+      name: "create_receivable",
+      input: { name: "Колега", amount: 200 },
+    });
+    if (typeof out === "string" || out == null)
+      throw new Error("expected object");
+
+    out.undo();
+    const after = JSON.parse(localStorage.getItem("finyk_recv") || "[]");
+    expect(after).toHaveLength(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// add_asset · undo
+// ---------------------------------------------------------------------------
+describe("add_asset · undo", () => {
+  it("повертає {undo} який видаляє щойно доданий актив (matching shape)", () => {
+    const out = handleFinykAction({
+      name: "add_asset",
+      input: { name: "BTC", amount: 0.5, currency: "BTC" },
+    });
+    if (typeof out === "string" || out == null)
+      throw new Error("expected object");
+
+    const before = JSON.parse(localStorage.getItem("finyk_assets") || "[]");
+    expect(before).toHaveLength(1);
+
+    out.undo();
+    const after = JSON.parse(localStorage.getItem("finyk_assets") || "[]");
+    expect(after).toHaveLength(0);
+  });
+
+  it("undo прибирає лише свій актив, попередні залишаються", () => {
+    handleFinykAction({
+      name: "add_asset",
+      input: { name: "USD", amount: 1000 },
+    });
+    const second = handleFinykAction({
+      name: "add_asset",
+      input: { name: "EUR", amount: 500 },
+    });
+    if (typeof second === "string" || second == null)
+      throw new Error("expected object");
+
+    second.undo();
+
+    const after = JSON.parse(localStorage.getItem("finyk_assets") || "[]");
+    expect(after).toHaveLength(1);
+    expect(after[0].name).toBe("USD");
+  });
+});

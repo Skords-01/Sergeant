@@ -10,6 +10,7 @@ import { Card } from "@shared/components/ui/Card";
 import { useToast } from "@shared/hooks/useToast";
 import { hapticSuccess } from "@shared/lib/haptic";
 import { showUndoToast } from "@shared/lib/undoToast";
+import { useAnnounce } from "@shared/components/ui/ScreenReaderAnnouncer";
 
 function WorkoutRow({ w, activeWorkoutId, setActiveWorkoutId }) {
   // An ended workout is always "Завершене" — even if it happens to be the
@@ -92,6 +93,7 @@ export function WorkoutJournalSection({
   restoreWorkout,
 }) {
   const toast = useToast();
+  const { announce } = useAnnounce();
   const workoutList = workouts || [];
   const handleSwipeDelete = useCallback(
     (id) => {
@@ -181,6 +183,11 @@ export function WorkoutJournalSection({
               // Nutrition (meal save).
               hapticSuccess();
               toast.success("Тренування збережено.");
+              // Mirror the visible toast for screen-reader users — the
+              // toast queue uses an `aria-live` region too but only for
+              // the toast text region, which AT may filter as cosmetic.
+              // A polite announce() here is short and high-signal.
+              announce("Тренування завершено та збережено.");
               // Collapse the expanded active workout panel immediately —
               // a finished session should live on in the history list as a
               // "Завершене" entry, not keep occupying the "Активне" slot.

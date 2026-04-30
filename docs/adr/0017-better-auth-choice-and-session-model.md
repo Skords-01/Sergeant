@@ -277,7 +277,7 @@ Subsequent requests: Authorization: Bearer <token>
 
 ---
 
-## ADR-7.4 — Cross-site cookies: SameSite=None для Vercel↔Railway split
+## ADR-7.4 — Cross-site куки: SameSite=None для спліта Vercel↔Railway
 
 ### Status
 

@@ -66,6 +66,13 @@ export type {
   UsePullToRefreshOptions,
 } from "./usePullToRefresh";
 
+export { useSwipeToDismiss } from "./useSwipeToDismiss";
+export type {
+  SwipeBind,
+  UseSwipeToDismissOptions,
+  UseSwipeToDismissReturn,
+} from "./useSwipeToDismiss";
+
 export { useFocusTrap } from "./useFocusTrap";
 
 export { useFormValidation, validationRules } from "./useFormValidation";

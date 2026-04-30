@@ -1,41 +1,30 @@
-# Empty states
+# Empty-states
 
 > **Last validated:** 2026-04-28 by @Skords-01. **Next review:** 2026-07-27.
 > **Status:** Active
 
-> **Audience:** anyone writing UI in `apps/web` or `apps/mobile`.
-> **Goal:** consistent treatment of "no data yet" — pick the right
-> tier for the surface, don't invent a one-off.
+> **Аудиторія:** усі, хто пише UI у `apps/web` або `apps/mobile`.
+> **Ціль:** однакова обробка стану «даних поки немає» — обирати правильний tier для поверхні, а не вигадувати разовий патерн.
 
-Sergeant has a fully-featured `<EmptyState>` component
-(`apps/web/src/shared/components/ui/EmptyState.tsx`) with an animated
-icon, title/description/hint/example-preview/action slots, and module-
-accent tinting. Most module entry points already use it
-(`Transactions`, `Budgets`, `WorkoutCatalogSection`, `Exercise`,
-`Progress`, `RoutineCalendarPanel`, `LogCard`, `Analytics`, …).
+У Sergeant є повноцінний компонент `<EmptyState>` (`apps/web/src/shared/components/ui/EmptyState.tsx`) з анімованою іконкою, слотами title/description/hint/example-preview/action і module-accent-тонуванням. Більшість module-entry-point-ів уже на ньому (`Transactions`, `Budgets`, `WorkoutCatalogSection`, `Exercise`, `Progress`, `RoutineCalendarPanel`, `LogCard`, `Analytics`, …).
 
-There are **three tiers** of empty-state treatment. Pick by surface.
+Є **три tier-и** обробки empty-state. Обираємо за поверхнею.
 
 ## Tier 1 — Full screen / hero
 
-When the module's primary surface has no data yet, use
-`<ModuleEmptyState>` (a curated wrapper over `<EmptyState>`):
+Коли primary-поверхня модуля ще не має даних — використайте `<ModuleEmptyState>` (curated-обгортка над `<EmptyState>`):
 
 ```tsx
 <ModuleEmptyState module="finyk" onAction={() => openAddSheet()} />
 ```
 
-It comes with module-tuned copy, icon, hint, and an example-preview
-card — all per-module. Use this for the **first run** of a module.
+У ньому module-tuned копія, іконка, hint і example-preview-картка — усе per-module. Використовуйте для **першого запуску** модуля.
 
-For non-module screens (Hub-search, Reports), use the bare
-`<EmptyState>` and pass copy yourself.
+Для не-module-екранів (Hub-search, Reports) використайте сирий `<EmptyState>` і самі передайте копію.
 
 ## Tier 2 — Compact / inline-card
 
-When a sub-card inside a populated screen has nothing to show
-(e.g. "Saved templates" card with no templates yet, but the rest of
-the screen has data), use `<EmptyState compact>`:
+Коли sub-card усередині заповненого екрана немає чого показати (наприклад, картка «Збережені шаблони» без шаблонів, але інша частина екрана з даними) — використайте `<EmptyState compact>`:
 
 ```tsx
 <EmptyState
@@ -47,19 +36,13 @@ the screen has data), use `<EmptyState compact>`:
 />
 ```
 
-`compact` shrinks the icon (40 px instead of 56 px) and the padding
-(`py-8` instead of `py-14`). It's the right size for a card-internal
-empty surface (~120-180 px tall).
+`compact` зменшує іконку (40 px замість 56 px) і паддінги (`py-8` замість `py-14`). Це правильний розмір для card-internal-empty-поверхні (~120–180 px заввишки).
 
-**Don't repeat the action** if a primary CTA is already visible on
-the same screen. The empty state is descriptive, not a duplicate
-button.
+**Не дублюйте action**, якщо primary-CTA уже видно на тому самому екрані. Empty-state — описовий, а не дубль кнопки.
 
-## Tier 3 — Inline text (≤ 1 line)
+## Tier 3 — inline-текст (≤ 1 рядок)
 
-For tiny cards — chart legends, mini-stats inside an analytics grid,
-sheet sub-sections — a single muted line is correct. `EmptyState`
-would dominate an 80 px stat-card.
+Для крихітних карток — chart-легенди, mini-stats всередині analytics-grid-у, sub-секції sheet-ів — правильно один muted-рядок. `EmptyState` домінуватиме у 80 px stat-картці.
 
 ```tsx
 {statsRows.length === 0 ? (
@@ -69,42 +52,36 @@ would dominate an 80 px stat-card.
 )}
 ```
 
-Style guide for tier 3:
+Стайл-гайд для tier 3:
 
-- `text-xs text-muted` (or `text-subtle` for an even quieter note).
-- Center if the surrounding card centers content; otherwise left-align.
-- One short sentence. No CTA, no icon. If you need either — go up to
-  tier 2.
+- `text-xs text-muted` (або `text-subtle` для ще тихішої нотатки).
+- Центруйте, якщо контейнер центрує контент; інакше — left-align.
+- Одне коротке речення. Без CTA, без іконки. Якщо потрібне щось із цього — переходьте у tier 2.
 
-## When tier 1 vs tier 2 vs tier 3?
+## Як обирати tier 1 vs tier 2 vs tier 3
 
-Decide by **surface size** and **whether this is the user's first
-time**, not by container type:
+Вирішуйте за **розміром поверхні** і за тим, **чи це перший раз для юзера**, а не за типом контейнера:
 
-| Surface                                                       | Tier   |
-| ------------------------------------------------------------- | ------ |
-| Module landing page, no data yet (first run)                  | 1      |
-| Empty page after a filter (e.g. "no transactions in March")   | 1 or 2 |
-| Card section with no items (e.g. saved templates list)        | 2      |
-| Mini stat-card (40-120 px tall)                               | 3      |
-| Action-sheet sub-section (e.g. "no templates assigned today") | 3      |
+| Поверхня                                                                | Tier    |
+| ----------------------------------------------------------------------- | ------- |
+| Module landing page, ще немає даних (перший запуск)                     | 1       |
+| Порожня сторінка після фільтра (наприклад, «нема транзакцій у березні») | 1 або 2 |
+| Card-section без items (наприклад, список збережених шаблонів)          | 2       |
+| Mini-stat-картка (40–120 px заввишки)                                   | 3       |
+| Sub-секція action-sheet-у (наприклад, «нема шаблонів на сьогодні»)      | 3       |
 
-## Copy guidelines
+## Гайдлайни копії
 
-- **Ukrainian, "ти" form** (Sergeant tone — see Wave 1 PR #1126).
-- Title is a state, not an instruction: "Поки немає шаблонів", not
-  "Створи шаблон". The action button carries the verb.
-- Description is one sentence; if you can't say it in one, the
-  empty-state is too complex for this surface — ladder to tier 2 / 1.
-- Hint (tier 1) is a _helpful aside_, not a duplicate of description.
-  Good: "Порада: підключи Monobank — імпорт автоматично." Bad:
-  "Тут зараз порожньо."
+- **Українська, форма «ти»** (тон Sergeant — див. Wave 1 PR #1126).
+- Title — це стан, а не інструкція: «Поки немає шаблонів», а не «Створи шаблон». Дієслово несе кнопка action-у.
+- Description — одне речення; якщо не виходить в одне — empty-state надто складний для цієї поверхні; підніміться до tier 2 / 1.
+- Hint (tier 1) — це _корисна побіжна нотатка_, не дубль description-а. Добре: «Порада: підключи Monobank — імпорт автоматично.» Погано: «Тут зараз порожньо.»
 
-## Anti-patterns
+## Анти-патерни
 
 ```tsx
-// ❌ Tier-1 EmptyState inside a 100-px tall stat-card.
-// The icon is bigger than the card, looks broken.
+// ❌ Tier-1 EmptyState всередині 100-px stat-картки.
+// Іконка більша за саму картку, виглядає як bug.
 <div className="bg-panelHi rounded-2xl px-3 py-3">
   <SectionHeading>Топ страв</SectionHeading>
   <EmptyState icon={<Icon name="utensils" size={24} />}
@@ -112,7 +89,7 @@ time**, not by container type:
               description="…" />
 </div>
 
-// ✅ Tier 3 — one muted line.
+// ✅ Tier 3 — один muted-рядок.
 <div className="bg-panelHi rounded-2xl px-3 py-3">
   <SectionHeading>Топ страв</SectionHeading>
   {top.length === 0 ? (
@@ -122,15 +99,15 @@ time**, not by container type:
 ```
 
 ```tsx
-// ❌ Tier-3 bare text on a full module page, first run.
-// User has no idea what this module does or how to start.
+// ❌ Tier-3 голий текст на повноекранному модулі при першому запуску.
+// Юзер не розуміє, що цей модуль робить і з чого почати.
 {
   txs.length === 0 && (
     <p className="text-xs text-subtle">Транзакцій ще немає.</p>
   );
 }
 
-// ✅ Tier 1 — ModuleEmptyState with action.
+// ✅ Tier 1 — ModuleEmptyState із action-ом.
 {
   txs.length === 0 && (
     <ModuleEmptyState module="finyk" onAction={() => openManualExpense()} />
@@ -139,9 +116,9 @@ time**, not by container type:
 ```
 
 ```tsx
-// ❌ Action button duplicated — the page already has a "+ Новий
-// шаблон" button at the top, and the empty state shows another one
-// 60 px below it. Visual noise; user clicks one of them at random.
+// ❌ Action-кнопка задубльована — на сторінці вже є «+ Новий шаблон»
+// угорі, а в empty-state з'являється ще одна за 60 px нижче. Візуальний
+// шум; юзер тицяє в одну з них рандомно.
 <>
   <Button onClick={startNew}>+ Новий шаблон</Button>
   <Card>
@@ -151,7 +128,7 @@ time**, not by container type:
   </Card>
 </>
 
-// ✅ Empty state is descriptive only; the CTA above is visible.
+// ✅ Empty-state суто описовий; CTA вище видно.
 <>
   <Button onClick={startNew}>+ Новий шаблон</Button>
   <Card>
@@ -162,13 +139,11 @@ time**, not by container type:
 </>
 ```
 
-## How this is enforced
+## Як це enforce-иться
 
-Today: code review + this doc.
+Сьогодні: code review + цей документ.
 
-If empty-state drift becomes a problem, candidate rules:
+Якщо empty-state-дрейф стане проблемою — кандидати на правило:
 
-- Disallow bare `<p>Поки … немає…</p>` patterns outside of files
-  marked with `// eslint-disable-next-line sergeant-design/empty-state-tier`.
-- Warn when `<EmptyState compact>` is used in a container ≥ 250 px tall
-  (probably wants tier 1).
+- Заборонити голий патерн `<p>Поки … немає…</p>` поза файлами, позначеними `// eslint-disable-next-line sergeant-design/empty-state-tier`.
+- Ворнити, коли `<EmptyState compact>` використовується в контейнері ≥ 250 px заввишки (швидше за все, треба tier 1).

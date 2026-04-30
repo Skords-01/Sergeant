@@ -54,8 +54,8 @@
     "body-highlighter": "^3.0.2",
     "clsx": "^2.1.1",
     "posthog-js": "^1.372.3",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0",
     "react-markdown": "^9.0.1",
     "react-router-dom": "^7.14.1",
     "react-virtuoso": "^4.18.5",
@@ -95,5 +95,8 @@
     "vite": "^6.4.2",
     "vite-plugin-pwa": "^1.2.0",
     "vitest": "^3.0.0"
+  },
+  "engines": {
+    "node": "20.x"
   }
 }

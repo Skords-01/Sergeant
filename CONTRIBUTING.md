@@ -1,19 +1,19 @@
-# Contributing to Sergeant
+# Contributing у Sergeant
 
-> **Last validated:** 2026-04-29 by @devin-ai. **Next review:** 2026-07-29.
+> **Last validated:** 2026-04-30 by @devin-ai-integration[bot]. **Next review:** 2026-07-29.
 > **Status:** Active
 
 > **Ціль:** zero-to-running за ≤ 5 хвилин на будь-якій машині з Docker.
 
 ---
 
-## Prerequisites
+## Передумови
 
-| Tool        | Version    | Install                                                      |
-| ----------- | ---------- | ------------------------------------------------------------ |
-| **Node.js** | 20.x       | [nodejs.org](https://nodejs.org/) or `volta install node@20` |
-| **pnpm**    | 9.15.1     | `corepack enable && corepack prepare pnpm@9.15.1 --activate` |
-| **Docker**  | Any recent | [docker.com](https://docs.docker.com/get-docker/)            |
+| Tool        | Версія           | Інсталяція                                                    |
+| ----------- | ---------------- | ------------------------------------------------------------- |
+| **Node.js** | 20.x             | [nodejs.org](https://nodejs.org/) або `volta install node@20` |
+| **pnpm**    | 9.15.1           | `corepack enable && corepack prepare pnpm@9.15.1 --activate`  |
+| **Docker**  | Будь-який свіжий | [docker.com](https://docs.docker.com/get-docker/)             |
 
 Перевірте runtime перед інсталяцією:
 
@@ -28,7 +28,7 @@ Repo pins `"packageManager": "pnpm@9.15.1"` — Corepack автоматично 
 
 ---
 
-## Before you start
+## Перед стартом
 
 1. Прочитайте [`AGENTS.md`](AGENTS.md), якщо змінюєте код або правила проєкту. Там зібрані hard rules, module ownership map, performance budgets і anti-patterns з минулих багів.
 2. Визначте area/scope зміни: `web`, `server`, `mobile`, `api-client`, domain package, docs тощо.
@@ -36,7 +36,7 @@ Repo pins `"packageManager": "pnpm@9.15.1"` — Corepack автоматично 
 
 ---
 
-## 5-Minute Quickstart
+## 5-хвилинний quickstart
 
 ```bash
 # 1. Clone & install
@@ -46,63 +46,66 @@ pnpm install --frozen-lockfile
 
 # 2. Environment
 cp .env.example .env
-# Defaults work out of the box for local dev (Postgres creds, ports, CORS).
-# For AI features fill in ANTHROPIC_API_KEY; everything else is optional.
-# Local dev only — disables AI quota accounting so HubChat doesn't burn the
-# shared daily limit while you iterate:
+# Defaults працюють з коробки для локального dev (Postgres creds, ports, CORS).
+# Для AI-фіч заповніть ANTHROPIC_API_KEY; решта — опційна.
+# Лише для локального dev — вимикає AI-quota accounting, щоб HubChat не палив
+# спільний денний ліміт під час ітерацій:
 echo "AI_QUOTA_DISABLED=1" >> .env
 
-# 3. Database
-pnpm dev:db                 # docker compose up -d (Postgres 16 on :5432) + run SQL migrations
-# (or run them separately: `pnpm db:up` then `pnpm db:migrate`)
+# 3. База даних
+pnpm dev:db                 # docker compose up -d (Postgres 16 на :5432) + прогон SQL-міграцій
+# (або окремо: `pnpm db:up`, потім `pnpm db:migrate`)
 
-# 4. Dev servers (two terminals)
+# 4. Dev-сервери (два термінали)
 pnpm dev:server             # Express API  → http://localhost:3000
 pnpm dev:web                # Vite dev     → http://localhost:5173  (proxies /api → :3000)
 ```
 
-Open <http://localhost:5173> — ви маєте побачити Hub dashboard.
+Відкрийте <http://localhost:5173> — ви маєте побачити Hub dashboard.
 
 ### Teardown
 
 ```bash
-pnpm db:down                # stop & remove the Postgres container (data persists in volume)
+pnpm db:down                # зупинити й видалити Postgres-контейнер (дані зберігаються у volume)
 ```
 
 ---
 
-## Environment & secrets
+## Environment та секрети
 
 - Скопіюйте `.env.example` у `.env`; реальний `.env` **ніколи не комітьте**.
 - `DATABASE_URL=postgresql://hub:hub@localhost:5432/hub` працює з локальним Docker Postgres.
-- `ANTHROPIC_API_KEY` потрібен тільки для AI features; без нього базовий local dev має запускатися.
+- `ANTHROPIC_API_KEY` потрібен тільки для AI-фіч; без нього базовий local dev має запускатися.
 - `VITE_*` змінні потрапляють у frontend bundle. Не кладіть у `VITE_*` DB URLs, private API keys, session secrets або приватні tokens.
 - Frontend secrets живуть у Vercel тільки якщо вони справді публічні для browser bundle; backend secrets — у Railway.
 - Для VAPID, Resend, USDA, Sentry і production CORS дивіться коментарі в [`.env.example`](.env.example) та [`docs/integrations/railway-vercel.md`](docs/integrations/railway-vercel.md).
 
 ---
 
-## Everyday Commands
+## Щоденні команди
 
-| Command                          | What it does                                                                         |
-| -------------------------------- | ------------------------------------------------------------------------------------ |
-| `pnpm lint`                      | ESLint (all apps + packages) + import checker + plugin tests                         |
-| `pnpm typecheck`                 | TypeScript type-check across the monorepo                                            |
-| `pnpm test`                      | Vitest for all packages                                                              |
-| `pnpm test:coverage`             | Vitest with per-package coverage floors                                              |
-| `pnpm format`                    | Prettier — auto-fix                                                                  |
-| `pnpm format:check`              | Prettier — check only (CI uses this)                                                 |
-| `pnpm build`                     | Turbo build (all apps)                                                               |
-| `pnpm check`                     | `format:check` + `lint` + `typecheck` + `test` + `build` — the full CI suite locally |
-| `pnpm gen`                       | Plop generators (`migration`, `rq-hook`, `hubchat-tool`, `endpoint`, `adr`)          |
-| `pnpm gen:adr`                   | New ADR — auto-numbers from `docs/adr/NNNN-*.md`                                     |
-| `pnpm docs:check-links`          | Scan every `*.md` file for broken `[text](target)` links (internal + external cache) |
-| `pnpm docs:gen-playbook-index`   | Rewrite `docs/playbooks/INDEX.md` from each playbook's `**Trigger:**` line           |
-| `pnpm docs:check-playbook-index` | CI mode — fail if `INDEX.md` is stale (add `--check` locally too)                    |
-| `pnpm docs:freshness-dashboard`  | Build `dist/freshness-dashboard.html` report (colour-coded, sortable)                |
-| `pnpm ci:validate-pr-body`       | Validate `$PR_BODY` against `.github/PULL_REQUEST_TEMPLATE.md`                       |
+| Команда                           | Що робить                                                                                                           |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `pnpm lint`                       | ESLint (усі apps + packages) + import checker + plugin-тести                                                        |
+| `pnpm typecheck`                  | TypeScript type-check по всьому monorepo                                                                            |
+| `pnpm test`                       | Vitest для всіх packages                                                                                            |
+| `pnpm test:coverage`              | Vitest з per-package coverage floors                                                                                |
+| `pnpm format`                     | Prettier — auto-fix                                                                                                 |
+| `pnpm format:check`               | Prettier — лише перевірка (CI використовує саме це)                                                                 |
+| `pnpm build`                      | Turbo build (усі apps)                                                                                              |
+| `pnpm check`                      | `format:check` + `lint` + `typecheck` + `test` + `build` — повний CI-набір локально                                 |
+| `pnpm gen`                        | Plop-генератори (`migration`, `rq-hook`, `hubchat-tool`, `endpoint`, `adr`)                                         |
+| `pnpm gen:adr`                    | Новий ADR — авто-нумерація з `docs/adr/NNNN-*.md`                                                                   |
+| `pnpm docs:check-links`           | Сканує всі `*.md` на биті `[text](target)` лінки (internal + external cache)                                        |
+| `pnpm docs:gen-playbook-index`    | Перегенеровує `docs/playbooks/INDEX.md` з рядка `**Trigger:**` кожного playbook                                     |
+| `pnpm docs:check-playbook-index`  | CI mode — fail якщо `INDEX.md` застарів (локально додавайте `--check`)                                              |
+| `pnpm docs:check-playbook-schema` | CI gate: кожен playbook у `docs/playbooks/` має H1 `# Playbook:`, freshness header, `> **Status:**`, `**Trigger:**` |
+| `pnpm docs:freshness-dashboard`   | Збирає звіт `dist/freshness-dashboard.html` (з кольорами, sortable)                                                 |
+| `pnpm lint:ai-legacy`             | CI gate: exit 1 якщо є прострочений / malformed `// AI-LEGACY: expires …` маркер                                    |
+| `pnpm ai-legacy:dashboard`        | Збирає звіт `dist/ai-legacy-dashboard.html` (по всіх `AI-LEGACY` маркерах у коді)                                   |
+| `pnpm ci:validate-pr-body`        | Валідовує `$PR_BODY` проти `.github/PULL_REQUEST_TEMPLATE.md`                                                       |
 
-### Scoped commands
+### Scoped команди
 
 ```bash
 pnpm --filter @sergeant/web dev
@@ -112,7 +115,7 @@ pnpm --filter <package> exec vitest run <path>
 
 ---
 
-## Working with HubChat locally
+## Робота з HubChat локально
 
 HubChat tools визначаються на сервері в `apps/server/src/modules/chat/toolDefs/<domain>.ts` і виконуються на клієнті в `apps/web/src/core/lib/chatActions/<domain>Actions.ts` (див. `AGENTS.md` → _Architecture: AI tool execution path_). Сервер — тонкий pass-through до Anthropic, який повертає `tool_use` блоки; localStorage / API write-и робить клієнтський executor.
 
@@ -138,62 +141,62 @@ curl -X POST http://localhost:3000/api/chat \
 
 ---
 
-## Testing by change type
+## Тестування за типом зміни
 
-Run the smallest meaningful test set while developing, then use `pnpm check` before review when feasible.
+Виконуйте мінімальний значущий набір тестів під час розробки, а перед review — `pnpm check`, коли це доречно.
 
-| Change type                | Minimum local verification                                                                                                                                                                                                                                                                                                                                         |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Docs-only                  | `pnpm format:check` or `pnpm exec prettier --check <file>`                                                                                                                                                                                                                                                                                                         |
-| Web UI (`apps/web`)        | Targeted Vitest/RTL test, `pnpm --filter @sergeant/web build`, screenshot in PR for visible UI changes                                                                                                                                                                                                                                                             |
-| Server/API (`apps/server`) | Targeted server Vitest, response shape snapshot if applicable, update `packages/api-client` types                                                                                                                                                                                                                                                                  |
-| DB migration               | Follow `add-sql-migration` playbook, run `pnpm db:up` + `pnpm --filter @sergeant/server db:migrate:dev`                                                                                                                                                                                                                                                            |
-| React Query hook           | Use centralized keys from `apps/web/src/shared/lib/queryKeys.ts`, test cache invalidation path                                                                                                                                                                                                                                                                     |
-| HubChat tool               | Update server tool definition, client executor, visible action card/quick action if user-facing. Targeted Vitest: `pnpm --filter @sergeant/web exec vitest run src/core/lib/chatActions` + `pnpm --filter @sergeant/server exec vitest run src/modules/chat`. Якщо додав tool у `toolDefs/` — онови список tools у `SYSTEM_PREFIX` (`systemPrompt.ts` рядки 7–14). |
-| Mobile (`apps/mobile`)     | Targeted mobile Vitest; be aware of known flaky tests listed below                                                                                                                                                                                                                                                                                                 |
-| Mobile shell               | Run relevant Capacitor/mobile-shell build command and watch Android/iOS workflow results                                                                                                                                                                                                                                                                           |
-| Dependency bump            | Separate PR, run lockfile install, tests for touched package, and watch `pnpm audit` / license check output                                                                                                                                                                                                                                                        |
+| Тип зміни                  | Мінімальна локальна верифікація                                                                                                                                                                                                                                                                                                                                        |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Docs-only                  | `pnpm format:check` або `pnpm exec prettier --check <file>`                                                                                                                                                                                                                                                                                                            |
+| Web UI (`apps/web`)        | Точковий Vitest/RTL тест, `pnpm --filter @sergeant/web build`, скріншот у PR для видимих UI-змін                                                                                                                                                                                                                                                                       |
+| Server/API (`apps/server`) | Точковий server Vitest, response shape snapshot за потреби, оновити `packages/api-client` types                                                                                                                                                                                                                                                                        |
+| DB-міграція                | За playbook `add-sql-migration`, прогнати `pnpm db:up` + `pnpm --filter @sergeant/server db:migrate:dev`                                                                                                                                                                                                                                                               |
+| React Query hook           | Використовувати centralized keys з `apps/web/src/shared/lib/queryKeys.ts`, тестувати cache invalidation path                                                                                                                                                                                                                                                           |
+| HubChat tool               | Оновити server tool definition, client executor, видиму action card / quick action якщо user-facing. Точковий Vitest: `pnpm --filter @sergeant/web exec vitest run src/core/lib/chatActions` + `pnpm --filter @sergeant/server exec vitest run src/modules/chat`. Якщо додав tool у `toolDefs/` — онови список tools у `SYSTEM_PREFIX` (`systemPrompt.ts` рядки 7–14). |
+| Mobile (`apps/mobile`)     | Точковий mobile Vitest; пам'ятати про відомі флакі-тести нижче                                                                                                                                                                                                                                                                                                         |
+| Mobile shell               | Прогнати потрібну Capacitor / mobile-shell build-команду й слідкувати за результатами Android/iOS workflow                                                                                                                                                                                                                                                             |
+| Bump залежності            | Окремий PR, lockfile install, тести для зачепленого package, переглянути вивід `pnpm audit` / license-check                                                                                                                                                                                                                                                            |
 
-For UI changes, attach a screenshot or recording to the PR description when practical.
+Для UI-змін додавайте у PR-опис скріншот або запис, коли це доречно.
 
 ---
 
-## Pre-commit Hooks
+## Pre-commit хуки
 
-[Husky](https://typicode.github.io/husky/) + [lint-staged](https://github.com/lint-staged/lint-staged) run automatically on every commit:
+[Husky](https://typicode.github.io/husky/) + [lint-staged](https://github.com/lint-staged/lint-staged) автоматично запускаються на кожен commit:
 
-- **JS/TS files** → `eslint --fix --max-warnings=0` + `prettier --write`
+- **JS/TS файли** → `eslint --fix --max-warnings=0` + `prettier --write`
 - **JSON/MD/CSS/HTML/YAML** → `prettier --write`
 
-Hooks are installed by `pnpm install` via the `prepare` script. **Do not skip them**: `--no-verify` is forbidden per `AGENTS.md` hard rule #7.
+Хуки інсталюються `pnpm install` через `prepare` script. **Не пропускайте їх**: `--no-verify` заборонено за `AGENTS.md` hard rule #7.
 
-### Commit message lint (commitlint)
+### Лінт commit-повідомлень (commitlint)
 
-The `commit-msg` hook runs [commitlint](https://commitlint.js.org/) to enforce Conventional Commits with the exact scope enum from `AGENTS.md` rule #5. A commit with an unknown scope or missing scope is rejected **before** it lands in history.
+Хук `commit-msg` запускає [commitlint](https://commitlint.js.org/) — він enforce-ить Conventional Commits з точним scope-enum з `AGENTS.md` rule #5. Commit з невідомим або відсутнім scope відхиляється **до** того, як потрапляє в історію.
 
-#### Verify locally
+#### Перевірити локально
 
 ```bash
-# Lint the last commit
+# Лінт останнього коміту
 pnpm exec commitlint --last
 
-# Lint a range (useful before pushing a stack)
+# Лінт діапазону (зручно перед push-ем стеку)
 pnpm exec commitlint --from HEAD~3 --to HEAD
 ```
 
 #### CI
 
-The `commitlint` job in `.github/workflows/ci.yml` validates every commit in a PR against `origin/<base>`. If any commit fails, the job fails.
+Job `commitlint` у `.github/workflows/ci.yml` валідує кожен commit у PR проти `origin/<base>`. Якщо хоч один commit падає — job падає.
 
-#### Bypassing
+#### Bypass
 
-You cannot bypass commitlint — `--no-verify` is forbidden (`AGENTS.md` hard rule #7). If the scope enum needs a new entry, update both `AGENTS.md` and `commitlint.config.js` in the same PR.
+Bypass-нути commitlint не можна — `--no-verify` заборонено (`AGENTS.md` hard rule #7). Якщо в scope-enum потрібен новий запис — оновлюйте `AGENTS.md` і `commitlint.config.js` у тому самому PR.
 
 ---
 
-## Commit Messages
+## Commit-повідомлення
 
-We follow [Conventional Commits](https://www.conventionalcommits.org/):
+Ми тримаємось [Conventional Commits](https://www.conventionalcommits.org/):
 
 ```text
 <type>(<scope>): <short description>
@@ -204,116 +207,116 @@ docs(root): clarify local setup
 chore(config): tune shared eslint config
 ```
 
-Allowed types: `feat`, `fix`, `docs`, `chore`, `refactor`, `perf`, `test`, `build`, `ci`.
+Дозволені types: `feat`, `fix`, `docs`, `chore`, `refactor`, `perf`, `test`, `build`, `ci`.
 
 Повний список дозволених scopes — у [`AGENTS.md` § Hard rules #5](AGENTS.md) (single source of truth). Також enforced через [`commitlint.config.js`](commitlint.config.js). Не вигадуй нові scopes (`app`, `core`, `monorepo`, `all`).
 
-If a PR genuinely spans multiple scopes, use the most user-visible scope and explain the rest in the PR body.
+Якщо PR справді охоплює кілька scopes — використовуйте найбільш user-visible scope і поясніть решту в тілі PR.
 
 ---
 
 ## CI Pipeline
 
-Every push/PR triggers `.github/workflows/ci.yml`.
+Кожен push/PR тригерить `.github/workflows/ci.yml`.
 
-| Job            | What                                                                                |
-| -------------- | ----------------------------------------------------------------------------------- |
-| **commitlint** | Conventional Commits + scope enum validation (PR only)                              |
-| **check**      | Install, audit, license policy check, `pnpm check`, bundle size guard               |
-| **coverage**   | `pnpm test:coverage`, coverage HTML/JSON artifacts                                  |
-| **a11y**       | Playwright Chromium install + axe-core accessibility checks                         |
-| **smoke-e2e**  | Real Postgres service, migrations, API server, Vite preview, Playwright smoke suite |
+| Job            | Що робить                                                                       |
+| -------------- | ------------------------------------------------------------------------------- |
+| **commitlint** | Conventional Commits + scope-enum валідація (тільки PR)                         |
+| **check**      | Install, audit, license policy check, `pnpm check`, bundle-size guard           |
+| **coverage**   | `pnpm test:coverage`, coverage HTML/JSON артефакти                              |
+| **a11y**       | Playwright Chromium install + axe-core accessibility checks                     |
+| **smoke-e2e**  | Реальний Postgres service, міграції, API-сервер, Vite preview, Playwright smoke |
 
 ### CI gotchas
 
-- `pnpm audit --audit-level=critical --prod` is blocking.
-- `pnpm audit --audit-level=high --prod` and full-tree `--audit-level=high` are **blocking**. If a PR carries the `audit-exception` label both steps are skipped (see [Audit exception workflow](#audit-exception-workflow) below).
-- `pnpm licenses:check` is blocking and requires `THIRD_PARTY_LICENSES.md` to match the lockfile.
-- `pnpm --filter @sergeant/web exec size-limit` is blocking.
-- `a11y` installs Playwright Chromium with system dependencies.
-- `smoke-e2e` runs migrations with `pnpm --filter @sergeant/server db:migrate:dev`.
-- Separate workflows exist for Detox Android/iOS and mobile-shell Android/iOS builds. Watch them when touching `apps/mobile` or `apps/mobile-shell`.
+- `pnpm audit --audit-level=critical --prod` — блокуючий.
+- `pnpm audit --audit-level=high --prod` і full-tree `--audit-level=high` — **блокуючі**. Якщо PR має лейбл `audit-exception`, обидва кроки скіпаються (див. [Audit exception workflow](#audit-exception-workflow) нижче).
+- `pnpm licenses:check` — блокуючий, потребує щоб `THIRD_PARTY_LICENSES.md` збігався з lockfile.
+- `pnpm --filter @sergeant/web exec size-limit` — блокуючий.
+- `a11y` ставить Playwright Chromium з system dependencies.
+- `smoke-e2e` прогоняє міграції через `pnpm --filter @sergeant/server db:migrate:dev`.
+- Для Detox Android/iOS і mobile-shell Android/iOS білдів існують окремі workflows. Слідкуйте за ними, коли чіпаєте `apps/mobile` чи `apps/mobile-shell`.
 
 ### Performance budgets
 
-CI fails when bundle budgets regress:
+CI падає, коли bundle-budgets регресують:
 
-| Metric                       | Budget       |
+| Метрика                      | Бюджет       |
 | ---------------------------- | ------------ |
 | `apps/web` JS total (brotli) | **≤ 615 kB** |
 | `apps/web` CSS (brotli)      | **≤ 22 kB**  |
 
-If a legitimate feature needs a higher limit, bump the number in the same PR and call it out in the description.
+Якщо легітимна фіча потребує вищого ліміту — підіймайте число у тому ж PR і відмічайте в описі.
 
-### Known flaky mobile tests
+### Відомі флакі mobile-тести
 
-These two tests fail on `main` and **should not block merge** if your PR does not touch `apps/mobile`:
+Ці два тести падають на `main` і **не повинні блокувати merge**, якщо ваш PR не чіпає `apps/mobile`:
 
 - `apps/mobile/src/core/dashboard/WeeklyDigestFooter.test.tsx`
 - `apps/mobile/src/core/settings/HubSettingsPage.test.tsx`
 
-> `OnboardingWizard.test.tsx` was de-flaked in commit [`53853e00`](https://github.com/Skords-01/Sergeant/commit/53853e00) (PR-7.E 1/3) — replacing the never-resolving `AccessibilityInfo.isReduceMotionEnabled()` mock with `mockResolvedValue(false)` settled the unsettled microtask that interacted with React `act()` flushing under CI load.
+> `OnboardingWizard.test.tsx` був де-флакнутий у коміті [`53853e00`](https://github.com/Skords-01/Sergeant/commit/53853e00) (PR-7.E 1/3) — заміна never-resolving `AccessibilityInfo.isReduceMotionEnabled()` mock-а на `mockResolvedValue(false)` врегулювала непогашений microtask, що взаємодіяв з React `act()` flushing під CI-навантаженням.
 
-The canonical list lives in [`AGENTS.md` → _Pre-existing flaky tests_](AGENTS.md#pre-existing-flaky-tests-do-not-block-merge); update both files together when stabilising or adding entries.
+Канонічний список — у [`AGENTS.md` → _Pre-existing flaky tests_](AGENTS.md#pre-existing-flaky-tests-do-not-block-merge); оновлюйте обидва файли разом, коли стабілізуєте чи додаєте записи.
 
 ### Audit exception workflow
 
-When `pnpm audit --audit-level=high` fails in CI due to a vulnerability with no available fix:
+Коли `pnpm audit --audit-level=high` падає в CI через вразливість, для якої немає фіксу:
 
-1. **Document** the vulnerability in [`docs/security/audit-exceptions.md`](docs/security/audit-exceptions.md) — include advisory link, affected package, severity, reason, mitigation, due date, and owner.
-2. **Add the `audit-exception` label** to the PR. This skips the two high-severity audit steps while keeping the critical-only audit blocking.
-3. **Remove the label** once the vulnerability is resolved and the entry is cleared from the exceptions file.
+1. **Задокументуйте** вразливість у [`docs/security/audit-exceptions.md`](docs/security/audit-exceptions.md) — додайте посилання на advisory, affected package, severity, причину, mitigation, due date й owner-а.
+2. **Додайте лейбл `audit-exception`** до PR. Це скіпає два high-severity audit-кроки, залишаючи critical-only audit блокуючим.
+3. **Зніміть лейбл**, як тільки вразливість закрита й запис прибрано з exceptions-файлу.
 
-> The `audit-exception` label is an escape hatch, not a blank cheque. Every exception must be tracked in `docs/security/audit-exceptions.md` with a due date so it does not drift indefinitely.
+> Лейбл `audit-exception` — це escape hatch, а не чек у відкриту. Кожний exception мусить бути затреканий у `docs/security/audit-exceptions.md` з due date, щоб не дрейфував безкінечно.
 
 ---
 
-## Pull Request Expectations
+## Очікування до Pull Request-а
 
-1. **Branch naming:** `devin/<unix-ts>-<area>-<desc>` or `<your-name>/<short-desc>`.
-2. **Fill out the PR template** (`.github/PULL_REQUEST_TEMPLATE.md`) — especially _How to test_ and _How AI-tested this PR_ sections.
-3. **All checks green** before requesting review: relevant checks locally, CI on the PR.
-4. **Keep PRs focused** — one logical change per PR.
-5. **Don't mix dependency bumps** with feature work; use separate PRs.
-6. **Use Ukrainian for new/updated prose docs where practical.** Keep code identifiers, commands, API names, commit scopes, stack terms, and external quotes in their original language when clearer.
+1. **Branch naming:** `devin/<unix-ts>-<area>-<desc>` або `<your-name>/<short-desc>`.
+2. **Заповніть PR template** (`.github/PULL_REQUEST_TEMPLATE.md`) — особливо секції _How to test_ та _How AI-tested this PR_.
+3. **Усі чеки зелені** перед запитом review: відповідні чеки локально, CI на PR.
+4. **Тримайте PR сфокусованим** — одна логічна зміна на PR.
+5. **Не змішуйте dependency bumps** з фіча-роботою; робіть окремі PR.
+6. **Українська мова для нових/оновлених prose-доків де практично.** Code identifiers, commands, API names, commit scopes, stack terms і external quotes лишайте у вихідній мові, коли це зрозуміліше.
 
-### PR checklist before review
+### Чек-лист PR перед review
 
-- [ ] Branch name follows the convention.
-- [ ] PR template is filled: what changed, why, how to test.
-- [ ] Relevant local checks are listed in the PR.
-- [ ] UI changes include screenshot/recording when practical.
-- [ ] No secrets, `.env`, tokens, or private keys are committed.
-- [ ] Dependency bumps are not mixed with feature work.
-- [ ] API response shape changes update server, `packages/api-client`, and tests together.
-- [ ] DB changes follow sequential migration rules and avoid unsafe one-shot drops.
-- [ ] New permanent repo rules are added to `AGENTS.md`; otherwise mark “No” in the template.
-- [ ] No new `AI-DANGER` marker is added without justification.
+- [ ] Назва бранчу за конвенцією.
+- [ ] PR template заповнений: що змінилось, чому, як тестувати.
+- [ ] Відповідні локальні чеки перелічені у PR.
+- [ ] UI-зміни мають скріншот / запис, коли це практично.
+- [ ] Жодних секретів, `.env`, токенів чи приватних ключів не закомічено.
+- [ ] Bumps залежностей не змішані з фіча-роботою.
+- [ ] Зміни API response shape оновлюють server, `packages/api-client` і тести разом.
+- [ ] DB-зміни виконують sequential migration rules і не мають небезпечних one-shot drops.
+- [ ] Нові постійні правила репо додані до `AGENTS.md`; інакше — “No” у шаблоні.
+- [ ] Не додано новий `AI-DANGER` маркер без обґрунтування.
 - [ ] Якщо додано HubChat tool — список tools у `SYSTEM_PREFIX` (`apps/server/src/modules/chat/toolDefs/systemPrompt.ts` рядки 7–14) оновлено.
 
-### Hard rules (from `AGENTS.md`)
+### Hard rules (з `AGENTS.md`)
 
-These are non-negotiable. Read `AGENTS.md` for full context.
+Це non-negotiable. Повний контекст — в `AGENTS.md`.
 
-1. **Coerce `bigint` → `number`** in every server serializer (`pg` returns bigints as strings).
-2. **React Query keys** only via factories in `apps/web/src/shared/lib/queryKeys.ts` — never hardcoded arrays.
-3. **API contract changes** must update `packages/api-client` types AND add a test.
-4. **SQL migrations** are sequential `NNN_*.sql` in `apps/server/src/migrations/` — no gaps.
-5. **Conventional Commits** with the allowed type/scope set above.
-6. **No force-push to main.** `--force-with-lease` on feature branches is fine.
-7. **Never skip pre-commit hooks** (`--no-verify` is forbidden).
-8. **Tailwind opacity steps** must be on the registered scale (`0,5,8,10,15,…,100`). Off-scale values silently drop.
-9. **Saturated brand fills behind `text-white`** must use the `-strong` companion for WCAG AA compliance.
-10. **Lifecycle markers** — every file declares its status. New components/hooks committed ahead of integration MUST carry a `@scaffolded` JSDoc block with `@owner` + `@nextStep`. Docs add `> **Status:** Active | Scaffolded | Deprecated | Archived`. Dead-code cleanup PRs MUST run `pnpm dead-code:files` (which honours markers) — never delete a `@scaffolded` file just because it has no importers.
-11. **No arbitrary hex colors in `className`** — raw `<utility>-[#hex]` values bypass the design-system token layer. Use semantic tokens (`bg-success-soft`, `text-fg`, etc.) instead. Add new shades to the preset, not inline at call-site. Enforced by `sergeant-design/no-hex-in-classname` (`error`).
-12. **Module-accent containment** — inside `apps/<app>/src/modules/<X>/`, only `<X>`'s accent utilities may appear. Cross-module shells (`core/`, `shared/`, `stories/`) are exempt. Enforced by `sergeant-design/no-foreign-module-accent` (`error`).
-13. **No raw-palette light/dark `className` pairs** — a className that pairs a raw-palette light utility (`bg-amber-50`, `text-coral-100`, `border-teal-200/50`, …) with a `dark:` raw-palette override (`dark:bg-amber-500/15`, `dark:text-coral-900/30`, `dark:border-teal-800/30`) encodes both themes by hand and silently breaks on the next palette migration (bug [#814](https://github.com/Skords-01/Sergeant/pull/814)). Lift the (light, dark) pair into the design-system token layer (`bg-success-soft`, `bg-finyk-surface`, `text-brand-strong`, `border-routine-soft-border`, …). Dark-side-only "patches" on semantic light and `dark:bg-white/N` glass washes intentionally stay. Enforced by `sergeant-design/no-raw-dark-palette` (`error`, scoped to `apps/web/**/*.{ts,tsx,js,jsx}` — semantic replacements depend on the `--c-{family}-soft*` CSS variables defined in `apps/web/src/index.css`, which NativeWind does not consume). Full migration history in [`docs/design/DARK-MODE-AUDIT.md`](docs/design/DARK-MODE-AUDIT.md).
-14. **Visible focus indicators must use `focus-visible:`, not `focus:`** — `focus:ring-*` / `focus:bg-*` / `focus:border-*` fire on every focus event, including pointer click, which makes the focus indicator flash on every mouse interaction. `focus-visible:` is the modern primitive that only fires for keyboard / assistive-tech focus. The single legitimate `focus:` utility is `focus:outline-none` (the canonical reset that pairs with `focus-visible:ring-*`). Non-colour `focus:` utilities (`focus:not-sr-only`, `focus:fixed`, `focus:px-4`, `focus:text-sm`, `focus:font-semibold`, …) are fine. Enforced by `sergeant-design/prefer-focus-visible` (`error`, scoped to `apps/web/**/*.{ts,tsx,js,jsx}` — React Native does not expose a `:focus-visible` pseudo-class). See `AGENTS.md` § Hard Rule #14.
-15. **Read governance before coding; update docs alongside code** — read `AGENTS.md`, `CONTRIBUTING.md`, `CLAUDE.md`, and the matching playbook before writing code. Documentation is part of the change set: when code/contracts move, update the corresponding docs in the same PR (api-client types, design-system, playbooks, freshness headers). See `AGENTS.md` § Hard Rule #15 for the full must-update table.
+1. **Coerce `bigint` → `number`** у кожному server-серіалізаторі (`pg` повертає bigints як string-и).
+2. **React Query keys** лише через factories у `apps/web/src/shared/lib/queryKeys.ts` — ніколи не хардкодженими масивами.
+3. **Зміни API-контракту** мусять оновити `packages/api-client` types ТА додати тест.
+4. **SQL-міграції** — sequential `NNN_*.sql` у `apps/server/src/migrations/` — без gap-ів.
+5. **Conventional Commits** з дозволеним type/scope-набором вище.
+6. **Без force-push у main.** `--force-with-lease` на feature-branches — ок.
+7. **Не пропускати pre-commit хуки** (`--no-verify` заборонено).
+8. **Tailwind opacity steps** мусять бути на зареєстрованій шкалі (`0,5,8,10,15,…,100`). Off-scale значення мовчки дропаються.
+9. **Saturated brand fills behind `text-white`** мусять використовувати `-strong` companion для WCAG AA.
+10. **Lifecycle markers** — кожен файл декларує свій статус. Нові components/hooks, закомічені до інтеграції, ОБОВ'ЯЗКОВО мають JSDoc-блок `@scaffolded` з `@owner` + `@nextStep`. Документи додають `> **Status:** Active | Scaffolded | Deprecated | Archived`. PR-и для dead-code cleanup ОБОВ'ЯЗКОВО прогоняють `pnpm dead-code:files` (який враховує markers) — ніколи не видаляйте `@scaffolded`-файл лише тому, що в нього нуль importer-ів.
+11. **Без свавільних hex-кольорів у `className`** — raw `<utility>-[#hex]` обходить design-system token layer. Використовуйте семантичні tokens (`bg-success-soft`, `text-fg`, …). Нові відтінки додавайте у preset, а не inline на місці виклику. Enforced `sergeant-design/no-hex-in-classname` (`error`).
+12. **Module-accent containment** — всередині `apps/<app>/src/modules/<X>/` дозволені лише accent-utilities модуля `<X>`. Cross-module shells (`core/`, `shared/`, `stories/`) — exempt. Enforced `sergeant-design/no-foreign-module-accent` (`error`).
+13. **Без raw-palette light/dark `className`-пар** — className, що поєднує raw-palette light utility (`bg-amber-50`, `text-coral-100`, `border-teal-200/50`, …) з `dark:` raw-palette override (`dark:bg-amber-500/15`, `dark:text-coral-900/30`, `dark:border-teal-800/30`), кодує обидві теми вручну й мовчки ламається при наступній palette-міграції (баг [#814](https://github.com/Skords-01/Sergeant/pull/814)). Підіймайте пару (light, dark) у design-system token layer (`bg-success-soft`, `bg-finyk-surface`, `text-brand-strong`, `border-routine-soft-border`, …). Dark-side-only «латки» на семантичному light і `dark:bg-white/N` glass-washes лишаються свідомо. Enforced `sergeant-design/no-raw-dark-palette` (`error`, scoped до `apps/web/**/*.{ts,tsx,js,jsx}` — semantic-заміни залежать від CSS-змінних `--c-{family}-soft*` у `apps/web/src/index.css`, які NativeWind не споживає). Повна історія міграції — у [`docs/design/DARK-MODE-AUDIT.md`](docs/design/DARK-MODE-AUDIT.md).
+14. **Видимі focus-індикатори мусять бути на `focus-visible:`, не `focus:`** — `focus:ring-*` / `focus:bg-*` / `focus:border-*` стріляють на кожен focus event, включаючи pointer-клік, через що focus-індикатор блимає при кожній mouse-взаємодії. `focus-visible:` — сучасний primitive, що стріляє лише при keyboard / assistive-tech focus. Єдина легітимна `focus:` utility — `focus:outline-none` (канонічний reset, що йде в парі з `focus-visible:ring-*`). Не-кольорові `focus:` utilities (`focus:not-sr-only`, `focus:fixed`, `focus:px-4`, `focus:text-sm`, `focus:font-semibold`, …) — ок. Enforced `sergeant-design/prefer-focus-visible` (`error`, scoped до `apps/web/**/*.{ts,tsx,js,jsx}` — React Native не виставляє `:focus-visible` pseudo-class). Див. `AGENTS.md` § Hard Rule #14.
+15. **Читай governance перед написанням коду; оновлюй документацію разом із кодом** — читай `AGENTS.md`, `CONTRIBUTING.md`, `CLAUDE.md` й відповідний playbook перед написанням коду. Документація — частина change-set: коли код / контракти рухаються, оновлюйте відповідні документи в тому ж PR (api-client types, design-system, playbooks, freshness headers). Повна must-update таблиця — `AGENTS.md` § Hard Rule #15.
 
 ---
 
-## Project Structure (Quick Reference)
+## Структура проєкту (швидка довідка)
 
 ```text
 Sergeant/
@@ -338,19 +341,19 @@ Sergeant/
 
 ---
 
-## Deployment
+## Деплой
 
-| Target       | Platform | Notes                                                                   |
-| ------------ | -------- | ----------------------------------------------------------------------- |
-| **Frontend** | Vercel   | Preview deploy on every PR; free tier may rate-limit.                   |
-| **Backend**  | Railway  | `Dockerfile.api`. Pre-deploy runs `pnpm db:migrate`. Health: `/health`. |
+| Target       | Платформа | Нотатки                                                                     |
+| ------------ | --------- | --------------------------------------------------------------------------- |
+| **Frontend** | Vercel    | Preview deploy на кожен PR; free tier може rate-limit-ити.                  |
+| **Backend**  | Railway   | `Dockerfile.api`. Pre-deploy прогоняє `pnpm db:migrate`. Health: `/health`. |
 
-See [`docs/integrations/railway-vercel.md`](docs/integrations/railway-vercel.md) for step-by-step deployment instructions.
+Покрокові інструкції — у [`docs/integrations/railway-vercel.md`](docs/integrations/railway-vercel.md).
 
 ---
 
-## Need Help?
+## Потрібна допомога?
 
-- Check existing docs in [`docs/`](docs/) and playbooks in [`docs/playbooks/`](docs/playbooks/).
-- Read [`AGENTS.md`](AGENTS.md) for the full set of repo conventions and AI-marker syntax.
-- Open an issue or ask in a PR comment.
+- Перегляньте існуючі docs у [`docs/`](docs/) і playbooks у [`docs/playbooks/`](docs/playbooks/).
+- Прочитайте [`AGENTS.md`](AGENTS.md) для повного набору repo-конвенцій і AI-marker syntax.
+- Відкрийте issue або запитайте у PR-коментарі.

@@ -23,7 +23,7 @@
 
 ---
 
-## 1. Executive Summary
+## 1. Коротко про план (Executive Summary)
 
 ### 1.1. Загальна Картина
 
@@ -49,7 +49,7 @@
 
 ## 2. Поточний Стан Проблем
 
-### 2.1. Критичні (P0) - Блокують Production Quality
+### 2.1. Критичні (P0) — блокують production-якість
 
 | ID       | Проблема                       | Файлів         | Поточний Прогрес       |
 | -------- | ------------------------------ | -------------- | ---------------------- |
@@ -58,7 +58,7 @@
 | **P0-3** | Mobile flaky tests             | 2 тести        | 1 з 3 виправлено       |
 | **P0-4** | Mobile APM відсутній           | 0% coverage    | Не почато              |
 
-### 2.2. Високі (P1) - Значний Tech Debt
+### 2.2. Високі (P1) — значний tech-debt
 
 | ID       | Проблема                       | Деталі           | Статус          |
 | -------- | ------------------------------ | ---------------- | --------------- |
@@ -68,7 +68,7 @@
 | **P1-4** | Prompt cache не активовано     | $$ waste         | Ready to enable |
 | **P1-5** | Немає distributed tracing      | Debug складність | Не почато       |
 
-### 2.3. Середні (P2) - DX Improvements
+### 2.3. Середні (P2) — DX-покращення
 
 | ID       | Проблема                    | Деталі               |
 | -------- | --------------------------- | -------------------- |
@@ -113,11 +113,11 @@ EFFORT                  │                   EFFORT
 
 ## 4. Детальний План по Спринтах
 
-### Sprint 1 (Тиждень 1-2): Стабілізація
+### Спринт 1 (тижні 1–2): стабілізація
 
 **Мета:** Усунути критичні блокери, стабілізувати CI
 
-#### Task 1.1: TypeScript Strict Phase 2-3
+#### Завдання 1.1: TypeScript strict, фази 2–3
 
 **Scope:** `apps/web/src/core/**`
 
@@ -153,7 +153,7 @@ Estimated TS errors by module:
 
 ---
 
-#### Task 1.2: localStorage Migration (Batch 1)
+#### Завдання 1.2: міграція localStorage (батч 1)
 
 **Scope:** Top-10 найкритичніших файлів
 
@@ -197,7 +197,7 @@ const store = typedStore("myFeature", schema, defaults);
 
 ---
 
-#### Task 1.3: Fix Mobile Flaky Tests
+#### Завдання 1.3: фікс flaky-тестів на mobile
 
 **Scope:** 2 залишкові flaky тести
 
@@ -231,7 +231,7 @@ jest.mock("react-native", () => ({
 
 ---
 
-#### Task 1.4: Decompose ProfilePage.tsx
+#### Завдання 1.4: розбити ProfilePage.tsx
 
 **Scope:** `apps/web/src/core/ProfilePage.tsx` (1060 LOC)
 
@@ -256,9 +256,9 @@ apps/web/src/core/profile/
 
 ---
 
-### Sprint 2 (Тиждень 3-4): Tech Debt Reduction
+### Спринт 2 (тижні 3–4): зменшення tech-debt
 
-#### Task 2.1: localStorage Migration (Batch 2)
+#### Завдання 2.1: міграція localStorage (батч 2)
 
 **Scope:** Наступні 20 файлів із allowlist
 
@@ -276,7 +276,7 @@ apps/web/src/core/profile/
 
 ---
 
-#### Task 2.2: Decompose HubDashboard.tsx
+#### Завдання 2.2: розбити HubDashboard.tsx
 
 **Scope:** `apps/web/src/core/hub/HubDashboard.tsx` (902 LOC)
 
@@ -296,7 +296,7 @@ apps/web/src/core/hub/
 
 ---
 
-#### Task 2.3: Tests for HubReports.tsx
+#### Завдання 2.3: тести для HubReports.tsx
 
 **Scope:** `apps/web/src/core/hub/HubReports.tsx` (638 LOC)
 
@@ -333,7 +333,7 @@ describe("HubReports", () => {
 
 ---
 
-#### Task 2.4: Mobile-shell Boundary Tests
+#### Завдання 2.4: boundary-тести mobile-shell
 
 **Scope:** `apps/mobile-shell` (Capacitor wrapper)
 
@@ -363,9 +363,9 @@ describe("Capacitor Boundary Tests", () => {
 
 ---
 
-### Sprint 3 (Тиждень 5-6): Optimization
+### Спринт 3 (тижні 5–6): оптимізація
 
-#### Task 3.1: localStorage Migration (Final Batch)
+#### Завдання 3.1: міграція localStorage (фінальний батч)
 
 **Scope:** Залишкові 22 файли
 
@@ -376,7 +376,7 @@ describe("Capacitor Boundary Tests", () => {
 
 ---
 
-#### Task 3.2: Remove Code Duplication (Backend)
+#### Завдання 3.2: прибрати дублювання коду (backend)
 
 **Scope:** `apps/server/src/`
 
@@ -391,7 +391,7 @@ describe("Capacitor Boundary Tests", () => {
 
 ---
 
-#### Task 3.3: Migrate `as unknown as X` Patterns
+#### Завдання 3.3: переписати патерни `as unknown as X`
 
 **Scope:** 9 файлів у ESLint allowlist
 
@@ -405,7 +405,7 @@ describe("Capacitor Boundary Tests", () => {
 
 ---
 
-#### Task 3.4: Decompose Large Files (Batch 2)
+#### Завдання 3.4: розбити великі файли (батч 2)
 
 **Файли:**
 
@@ -419,9 +419,9 @@ describe("Capacitor Boundary Tests", () => {
 
 ---
 
-### Sprint 4+ (Ongoing): Continuous Improvement
+### Спринт 4+ (continuous): постійне покращення
 
-#### Task 4.1: Enable Prompt Cache
+#### Завдання 4.1: увімкнути prompt-cache
 
 **Scope:** HubChat SYSTEM_PREFIX
 
@@ -446,7 +446,7 @@ const response = await anthropic.messages.create({
 
 ---
 
-#### Task 4.2: Add Sentry Integration
+#### Завдання 4.2: додати Sentry-інтеграцію
 
 **Scope:** `apps/web`, `apps/mobile`
 
@@ -470,7 +470,7 @@ Sentry.init({
 
 ---
 
-#### Task 4.3: Mobile APM Setup
+#### Завдання 4.3: налаштувати APM на mobile
 
 **Scope:** `apps/mobile`
 
@@ -489,7 +489,7 @@ Sentry.init({
 
 ---
 
-#### Task 4.4: Bundle Size Optimization
+#### Завдання 4.4: оптимізація розміру bundle-у
 
 **Current:** 615 KB (brotli)
 **Target:** 550 KB (brotli)
@@ -505,7 +505,7 @@ Sentry.init({
 
 ---
 
-#### Task 4.5: Lighthouse CI Integration
+#### Завдання 4.5: інтеграція Lighthouse CI
 
 **Implementation:**
 
@@ -526,9 +526,9 @@ jobs:
 
 ---
 
-## 5. Технічні Специфікації Виправлень
+## 5. Технічні специфікації виправлень
 
-### 5.1. TypeScript Strict Migration Pattern
+### 5.1. Патерн міграції на TypeScript strict
 
 ```typescript
 // Step 1: Identify nullable types
@@ -555,7 +555,7 @@ const userName = user.name;
 const userName = getUser(id)?.name ?? "Unknown";
 ```
 
-### 5.2. localStorage Safe Wrapper Pattern
+### 5.2. Патерн safe-wrapper-а навколо localStorage
 
 ```typescript
 // packages/shared/src/storage/safeStorage.ts
@@ -597,7 +597,7 @@ export function safeWriteLS<T>(key: string, value: T): boolean {
 }
 ```
 
-### 5.3. Component Decomposition Pattern
+### 5.3. Патерн декомпозиції компонентів
 
 ```typescript
 // BEFORE: Monolithic component
@@ -662,7 +662,7 @@ graph TD
 
 ## 7. Метрики Успіху
 
-### 7.1. Sprint 1 Completion Criteria
+### 7.1. Критерії завершення Спринту 1
 
 | Метрика                | Поточне | Ціль |
 | ---------------------- | ------- | ---- |
@@ -671,7 +671,7 @@ graph TD
 | Flaky tests            | 2       | 0    |
 | ProfilePage LOC        | 1060    | <200 |
 
-### 7.2. Sprint 2 Completion Criteria
+### 7.2. Критерії завершення Спринту 2
 
 | Метрика                  | Поточне | Ціль |
 | ------------------------ | ------- | ---- |
@@ -680,7 +680,7 @@ graph TD
 | HubReports test coverage | 0%      | 80%  |
 | Capacitor boundary tests | 0       | 10+  |
 
-### 7.3. Sprint 3 Completion Criteria
+### 7.3. Критерії завершення Спринту 3
 
 | Метрика                | Поточне    | Ціль |
 | ---------------------- | ---------- | ---- |
@@ -689,7 +689,7 @@ graph TD
 | Backend duplicate code | 4 patterns | 0    |
 | Large files (>600 LOC) | 25         | 15   |
 
-### 7.4. Sprint 4+ Success Metrics
+### 7.4. Метрики успіху Спринту 4+
 
 | Метрика              | Поточне | Ціль       |
 | -------------------- | ------- | ---------- |
@@ -702,7 +702,7 @@ graph TD
 
 ## 8. Ризики та Мітігації
 
-### 8.1. TypeScript Migration Risks
+### 8.1. Ризики міграції TypeScript
 
 | Ризик                       | Ймовірність | Вплив  | Мітігація                      |
 | --------------------------- | ----------- | ------ | ------------------------------ |
@@ -710,7 +710,7 @@ graph TD
 | CI slowdown                 | Low         | Medium | Incremental adoption           |
 | Developer productivity drop | Medium      | Medium | Phased rollout, training       |
 
-### 8.2. localStorage Migration Risks
+### 8.2. Ризики міграції localStorage
 
 | Ризик                      | Ймовірність | Вплив    | Мітігація                  |
 | -------------------------- | ----------- | -------- | -------------------------- |
@@ -718,7 +718,7 @@ graph TD
 | Quota issues               | Medium      | Medium   | Cleanup utilities          |
 | Breaking existing features | Medium      | High     | Feature flags              |
 
-### 8.3. Mobile Stability Risks
+### 8.3. Ризики стабільності mobile
 
 | Ризик                      | Ймовірність | Вплив  | Мітігація                |
 | -------------------------- | ----------- | ------ | ------------------------ |
@@ -728,9 +728,9 @@ graph TD
 
 ---
 
-## Appendix A: File Inventory for Migration
+## Додаток A: інвентар файлів для міграції
 
-### localStorage Files (52 total)
+### Файли з localStorage (всього 52)
 
 <details>
 <summary>Click to expand full list</summary>
@@ -772,7 +772,7 @@ apps/web/src/routine/
 
 </details>
 
-### Large Files (>600 LOC)
+### Великі файли (>600 LOC)
 
 <details>
 <summary>Click to expand full list</summary>
@@ -795,7 +795,7 @@ apps/web/src/routine/
 
 ---
 
-## Appendix B: Commands Reference
+## Додаток B: довідник команд
 
 ```bash
 # TypeScript checking

@@ -210,7 +210,29 @@ export function handleRoutineAction(
       reminders.sort();
       habits[hIdx] = { ...habits[hIdx], reminderTimes: reminders };
       lsSet("hub_routine_v1", { ...state, habits });
-      return `Нагадування ${normTime} додано до "${habits[hIdx].name || id}"`;
+      const habitName = habits[hIdx].name || id;
+      return {
+        result: `Нагадування ${normTime} додано до "${habitName}"`,
+        undo: () => {
+          const cur = ls<{
+            habits?: Array<{
+              id: string;
+              name?: string;
+              reminderTimes?: string[];
+            }>;
+          }>("hub_routine_v1", {});
+          const curHabits = Array.isArray(cur.habits) ? cur.habits.slice() : [];
+          const i = curHabits.findIndex((h) => h.id === id);
+          if (i < 0) return;
+          const list = Array.isArray(curHabits[i].reminderTimes)
+            ? (curHabits[i].reminderTimes as string[]).filter(
+                (x) => x !== normTime,
+              )
+            : [];
+          curHabits[i] = { ...curHabits[i], reminderTimes: list };
+          lsSet("hub_routine_v1", { ...cur, habits: curHabits });
+        },
+      };
     }
     case "complete_habit_for_date": {
       const { habit_id, date, completed } = (
@@ -232,17 +254,51 @@ export function handleRoutineAction(
       const completions: Record<string, string[]> = {
         ...(state.completions || {}),
       };
-      const cur = Array.isArray(completions[id]) ? completions[id].slice() : [];
+      const prevList = Array.isArray(completions[id])
+        ? completions[id].slice()
+        : [];
+      const cur = prevList.slice();
       const has = cur.includes(d);
+      let mutated = false;
       if (doComplete) {
-        if (!has) cur.push(d);
-      } else {
+        if (!has) {
+          cur.push(d);
+          mutated = true;
+        }
+      } else if (has) {
         const idx = cur.indexOf(d);
-        if (idx >= 0) cur.splice(idx, 1);
+        if (idx >= 0) {
+          cur.splice(idx, 1);
+          mutated = true;
+        }
       }
       completions[id] = cur.sort();
       lsSet("hub_routine_v1", { ...state, completions });
-      return `Звичку "${habit.name || id}" ${doComplete ? "відмічено" : "знято з позначки"} на ${d}`;
+      const result = `Звичку "${habit.name || id}" ${doComplete ? "відмічено" : "знято з позначки"} на ${d}`;
+      if (!mutated) return result;
+      // Undo відновлює лише свою зміну (додав d → видаляє d;
+      // видалив d → возвращає d), а не переписує повний snapshot —
+      // інакше паралельні mark/unmark інших дат втратяться.
+      return {
+        result,
+        undo: () => {
+          const c = ls<{
+            completions?: Record<string, string[]>;
+          }>("hub_routine_v1", {});
+          const cc = { ...(c.completions || {}) };
+          const list = Array.isArray(cc[id]) ? cc[id].slice() : [];
+          if (doComplete) {
+            const next = list.filter((x) => x !== d);
+            if (next.length === 0) delete cc[id];
+            else cc[id] = next;
+          } else {
+            if (!list.includes(d)) {
+              cc[id] = [...list, d].sort();
+            }
+          }
+          lsSet("hub_routine_v1", { ...c, completions: cc });
+        },
+      };
     }
     case "archive_habit": {
       const { habit_id, archived } = (action as ArchiveHabitAction).input;

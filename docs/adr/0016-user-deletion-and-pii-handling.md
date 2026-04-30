@@ -73,7 +73,7 @@ accepted.
 
 ### Decision
 
-**Default flow: soft-delete з automated 30-day hard-delete cron.**
+**Дефолтний flow: soft-delete + автоматизований 30-денний hard-delete cron.**
 
 ```sql
 -- Phase 2 migration: 011_user_soft_delete.sql

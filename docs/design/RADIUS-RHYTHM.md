@@ -1,111 +1,83 @@
-# Border-radius rhythm
+# Ритм border-radius
 
 > **Last validated:** 2026-04-28 by @Skords-01. **Next review:** 2026-07-27.
 > **Status:** Active
 
-> **Audience:** anyone writing UI in `apps/web` or `apps/mobile`.
-> **Goal:** prevent border-radius drift — pick the right radius from a small,
-> size-driven scale instead of inventing a one-off value.
+> **Аудиторія:** усі, хто пише UI у `apps/web` або `apps/mobile`.
+> **Ціль:** уникати дрейфу border-radius — обирати правильний радіус із короткої, орієнтованої на розмір шкали, а не вигадувати разові значення.
 
-Sergeant uses a **size-driven** radius scale: bigger element = bigger
-radius. The scale is already encoded in shared components
-(`Button`, `Card`, `Modal`, …) — you almost never need to write
-`rounded-*` directly. When you do, pick from this table.
+Sergeant використовує **size-driven** шкалу радіусів: чим більший елемент — тим більший радіус. Шкала вже зашита у спільні компоненти (`Button`, `Card`, `Modal`, …), тож писати `rounded-*` напряму майже ніколи не треба. Якщо все ж треба — обирайте з цієї таблиці.
 
-## The scale
+## Шкала
 
-| Token                   | Tailwind class | px    | Where to use                                                                                         |
-| ----------------------- | -------------- | ----- | ---------------------------------------------------------------------------------------------------- |
-| **Swatch**              | `rounded-sm`   | 2 px  | Tiny coloured markers (heatmap cells, chart legend dots, macro-pie swatches).                        |
-| **Marker**              | `rounded-md`   | 6 px  | 5 × 5 / 6 × 6 px elements (checkbox squares, badge chips, in-place pill labels).                     |
-| **Control (sm)**        | `rounded-xl`   | 12 px | `Button` size `xs`/`sm`; icon-buttons `≤ 40 px`; small input chips; `IconButton` rail.               |
-| **Card / Control (md)** | `rounded-2xl`  | 16 px | `Button` size `md`/`lg`; `Card` `radius="lg"` (default content surfaces); `IconButton` ≥ 44 px.      |
-| **Hero / Control (xl)** | `rounded-3xl`  | 24 px | `Button` size `xl`; `Card` `radius="xl"` (hero / module-branded); `Modal` shell; bottom-sheet shell. |
-| **Pill**                | `rounded-full` | ∞     | FAB; circular avatars; status dots; module-bento tile gradients; toggle pills.                       |
+| Токен                   | Tailwind-клас  | px    | Де використовувати                                                                                     |
+| ----------------------- | -------------- | ----- | ------------------------------------------------------------------------------------------------------ |
+| **Swatch**              | `rounded-sm`   | 2 px  | Крихітні кольорові маркери (heatmap-клітинки, точки в легенді чарта, swatch-и macro-pie).              |
+| **Marker**              | `rounded-md`   | 6 px  | Елементи 5 × 5 / 6 × 6 px (квадратики чекбоксів, badge-чипи, in-place pill-лейбли).                    |
+| **Control (sm)**        | `rounded-xl`   | 12 px | `Button` size `xs`/`sm`; icon-кнопки `≤ 40 px`; малі input-чипи; рейл `IconButton`.                    |
+| **Card / Control (md)** | `rounded-2xl`  | 16 px | `Button` size `md`/`lg`; `Card` `radius="lg"` (типові контентні поверхні); `IconButton` ≥ 44 px.       |
+| **Hero / Control (xl)** | `rounded-3xl`  | 24 px | `Button` size `xl`; `Card` `radius="xl"` (hero / module-branded); shell `Modal`; shell bottom-sheet-у. |
+| **Pill**                | `rounded-full` | ∞     | FAB; кругові аватари; status-точки; градієнти module-bento-тайлів; toggle-pill-и.                      |
 
-There is **no** semantic alias layer (`rounded-card` / `rounded-control`).
-Tailwind already gives you the right primitive — adding aliases just
-creates two names for the same thing, which causes more drift, not less.
+Шару семантичних аліасів (`rounded-card` / `rounded-control`) **немає**. Tailwind уже дає правильний примітив — додавати аліаси означає мати два імені для однієї речі, що тільки збільшує дрейф.
 
-## The rules
+## Правила
 
-1. **Prefer the component, not the class.** If a `Button`/`Card`/`Modal`
-   already exists, use it with the appropriate size/variant. Don't
-   re-create one with raw `<div className="bg-panel rounded-2xl …">`.
+1. **Перевага компоненту, а не класу.** Якщо `Button`/`Card`/`Modal` уже існує — використайте його з потрібним size/variant. Не відтворюйте його через сирий `<div className="bg-panel rounded-2xl …">`.
 
-2. **Match the size to the element.** A 48 × 48 px icon-button uses
-   `rounded-2xl`, not `rounded-xl` (too sharp for that footprint) and
-   not `rounded-3xl` (over-rounded — it starts looking like a pill).
-   A 32 × 32 icon-button uses `rounded-xl`, not `rounded-2xl`.
+2. **Радіус має відповідати розміру елемента.** Icon-кнопка 48 × 48 px використовує `rounded-2xl`, а не `rounded-xl` (надто гострий для такого footprint-а) і не `rounded-3xl` (надто округлий — починає виглядати як pill). Icon-кнопка 32 × 32 використовує `rounded-xl`, а не `rounded-2xl`.
 
-3. **Don't introduce `rounded-lg` (8 px)** — it sits between Marker and
-   Control with no clear semantic role. The 53 existing usages are a
-   legacy of pre-rhythm code; new code should round up to `rounded-xl`
-   or down to `rounded-md` based on the element's footprint.
+3. **Не вводьте `rounded-lg` (8 px)** — він живе між Marker і Control без чіткої семантичної ролі. 53 наявні використання — це легасі дорадіусних часів; новий код має округлятися вгору до `rounded-xl` або вниз до `rounded-md` залежно від footprint-а елемента.
 
-4. **Don't introduce `rounded-4xl` / `rounded-5xl`** — those tokens
-   exist in the Tailwind preset for one-off illustration uses (e.g.
-   onboarding hero blob). They are **not** part of the regular rhythm.
+4. **Не вводьте `rounded-4xl` / `rounded-5xl`** — ці токени є в Tailwind-preset-і для разових ілюстрацій (наприклад, onboarding-hero blob). Вони **не** є частиною звичайного ритму.
 
-5. **`rounded-full` is reserved for circles, FABs, and pills.** Don't
-   use it on rectangular surfaces "to look modern" — that's a different
-   visual language (Memoji-iOS) and clashes with Sergeant's bento.
+5. **`rounded-full` зарезервований для кіл, FAB-ів і pill-ів.** Не вживайте його на прямокутних поверхнях «щоб виглядало модерно» — це інша візуальна мова (Memoji-iOS), яка не вʼяжеться з bento Sergeant-а.
 
-## Anti-patterns
+## Анти-патерни
 
 ```tsx
-// ❌ Hardcoded `rounded-md` on a 48-px icon-button — too sharp,
-// looks like a chunky checkbox.
+// ❌ Хардкоднутий `rounded-md` на 48 px icon-кнопці — занадто гострий,
+// виглядає як товстий чекбокс.
 <button className="w-12 h-12 rounded-md …" />
 
-// ✅ 48-px → `rounded-2xl` (matches Card / Button size=md).
+// ✅ 48 px → `rounded-2xl` (співпадає з Card / Button size=md).
 <button className="w-12 h-12 rounded-2xl …" />
 ```
 
 ```tsx
-// ❌ Inline 12-px button with `rounded-3xl` — over-rounded; reads as
-// a pill, conflicts with the Button component's xl size mapping.
+// ❌ Inline 12 px кнопка з `rounded-3xl` — over-rounded; читається як
+// pill і конфліктує з мапінгом xl-розміру у компоненті Button.
 <button className="h-9 px-3 rounded-3xl …" />
 
-// ✅ Use the existing Button.
+// ✅ Використайте наявний Button.
 <Button size="sm">…</Button>
 ```
 
 ```tsx
-// ❌ Ad-hoc rounded-lg for an inline chip — sits between Marker and
-// Control with no clear role.
+// ❌ Ad-hoc rounded-lg для inline-чипа — сидить між Marker і Control
+// без чіткої ролі.
 <span className="px-1.5 py-0.5 rounded-lg bg-brand-500/10 …" />
 
-// ✅ Marker (`rounded-md`) for chip-sized labels.
+// ✅ Marker (`rounded-md`) для чипів розміру лейбла.
 <span className="px-1.5 py-0.5 rounded-md bg-brand-500/10 …" />
 ```
 
-## How this is enforced
+## Як це enforce-иться
 
-Today: code review + this doc. There is no lint rule yet.
+Сьогодні: code review + цей документ. Lint-правила поки немає.
 
-If radius drift becomes a problem in the future, candidate rules:
+Якщо дрейф радіусів стане проблемою — кандидати на правило:
 
-- Disallow `rounded-lg` outside of `packages/design-tokens` migration
-  paths.
-- Warn when raw `rounded-2xl` / `rounded-3xl` is used instead of
-  `<Card>` / `<Button>` for 100 × 100+ surfaces.
-- Disallow `rounded-4xl` / `rounded-5xl` outside of
-  `apps/web/src/core/onboarding/**`.
+- Заборонити `rounded-lg` поза міграційними path-ами `packages/design-tokens`.
+- Ворнити, коли сирий `rounded-2xl` / `rounded-3xl` використовується замість `<Card>` / `<Button>` для поверхонь 100 × 100+.
+- Заборонити `rounded-4xl` / `rounded-5xl` поза `apps/web/src/core/onboarding/**`.
 
-## Why no semantic aliases?
+## Чому без семантичних аліасів?
 
-We considered adding `rounded-control` / `rounded-card` / `rounded-pill`
-in the Tailwind preset. We chose **not** to:
+Ми розглядали додавання `rounded-control` / `rounded-card` / `rounded-pill` у Tailwind-preset. Ми вирішили **не** додавати:
 
-- Aliases create two names for the same primitive (`rounded-card` and
-  `rounded-2xl`). New contributors search for one or the other and end
-  up with mixed usage — actively worse than the status quo.
-- The radius scale is already short (5 active steps); naming it twice
-  doesn't reduce cognitive load.
-- The component layer (`Card`, `Button`, `Modal`) already provides the
-  semantic indirection: `<Card radius="lg">` not
-  `<Card radius="rounded-2xl">`. That's where naming should live.
+- Аліаси створюють два імені для одного примітиву (`rounded-card` і `rounded-2xl`). Нові контрибʼютори шукають одне або інше — і отримують змішане використання, що активно гірше за поточний статус-кво.
+- Шкала радіусів і так коротка (5 активних кроків); називати її двічі не зменшує когнітивне навантаження.
+- Шар компонентів (`Card`, `Button`, `Modal`) уже дає семантичну індирекцію: `<Card radius="lg">`, а не `<Card radius="rounded-2xl">`. Іменувати треба саме там.
 
-If a future shape changes (e.g. all cards become 18 px instead of 16 px),
-the change happens in the component, not at the token level.
+Якщо в майбутньому форма зміниться (наприклад, усі card-и стануть 18 px замість 16 px), зміна станеться в компоненті, а не на рівні токена.

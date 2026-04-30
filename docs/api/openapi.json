@@ -862,9 +862,30 @@
     "/api/nutrition/backup-download": {
       "post": {
         "summary": "Отримати останній зашифрований backup nutrition-blob",
-        "description": "Token-authenticated через header `x-token`. Повертає 404, якщо для наданого токена бекапів ще немає.",
+        "description": "Token-authenticated через header `x-token`. Повертає 404, якщо для наданого токена бекапів ще немає. Роут під `requireSession()` — потрібна активна сесія ЧИ Bearer-токен НА ДОДАЧУ до запитуваного `x-token`.",
         "tags": [
           "nutrition"
+        ],
+        "security": [
+          {
+            "cookieAuth": []
+          },
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "header",
+            "name": "x-token",
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Опаковий токен, який хешується для формування імені файлу бекапу."
+            },
+            "required": true,
+            "description": "Опаковий токен, який хешується для формування імені файлу бекапу."
+          }
         ],
         "responses": {
           "200": {
@@ -875,6 +896,16 @@
                   "type": "object",
                   "properties": {},
                   "additionalProperties": {}
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — потрібна активна сесія.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
                 }
               }
             }
@@ -2028,13 +2059,43 @@
                 "format": "binary"
               }
             },
+            "audio/m4a": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            },
             "audio/mpeg": {
               "schema": {
                 "type": "string",
                 "format": "binary"
               }
             },
+            "audio/mp3": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            },
             "audio/wav": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            },
+            "audio/x-wav": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            },
+            "audio/wave": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            },
+            "audio/flac": {
               "schema": {
                 "type": "string",
                 "format": "binary"
@@ -4273,36 +4334,68 @@
             "maxItems": 10,
             "type": "array",
             "items": {
-              "type": "object",
-              "properties": {
-                "name": {
-                  "type": "string",
-                  "enum": [
-                    "LCP",
-                    "INP",
-                    "FCP",
-                    "TTFB",
-                    "CLS"
+              "oneOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "const": "CLS"
+                    },
+                    "value": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 10
+                    },
+                    "rating": {
+                      "type": "string",
+                      "enum": [
+                        "good",
+                        "needs-improvement",
+                        "poor"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "value",
+                    "rating"
                   ]
                 },
-                "value": {
-                  "type": "number",
-                  "minimum": 0
-                },
-                "rating": {
-                  "type": "string",
-                  "enum": [
-                    "good",
-                    "needs-improvement",
-                    "poor"
+                {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "enum": [
+                        "LCP",
+                        "INP",
+                        "FCP",
+                        "TTFB"
+                      ]
+                    },
+                    "value": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 120000
+                    },
+                    "rating": {
+                      "type": "string",
+                      "enum": [
+                        "good",
+                        "needs-improvement",
+                        "poor"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "value",
+                    "rating"
                   ]
                 }
-              },
-              "required": [
-                "name",
-                "value",
-                "rating"
-              ]
+              ],
+              "type": "object"
             }
           }
         },

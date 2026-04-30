@@ -3,34 +3,34 @@ import { useSyncStatus } from "../cloudSync/useCloudSync";
 import { pluralUa } from "@sergeant/shared";
 
 /**
- * Офлайн-банер у шапці. Раніше показував лише статичне "Немає
- * підключення до інтернету". Тепер підтягує `useSyncStatus`, щоб
- * користувач одразу бачив, скільки дій стоїть у черзі — це закриває
- * головну тривогу ("чи збережеться витрата, якщо я без мережі?").
+ * Subtle offline indicator — a small floating pill in the top-right
+ * corner instead of a full-width warning banner. For a PWA designed to
+ * work offline, screaming "NO INTERNET!" felt like a critical error.
  *
- * Шрифт/кольори не змінюємо, щоб не зміщувати layout у залежності від
- * кількості елементів у черзі (висота банера константна).
+ * Shows a compact wifi-off icon + short label. When items are queued
+ * for sync, the pending count is displayed so the user knows their
+ * data is safe and waiting.
  */
 export function OfflineBanner() {
   const { queuedCount, dirtyCount } = useSyncStatus();
   const pending = Math.max(queuedCount, dirtyCount);
   const label =
     pending > 0
-      ? `Немає підключення · ${pending} ${pluralUa(pending, {
-          one: "дія чекає",
-          few: "дії чекають",
-          many: "дій чекають",
-        })} синхронізації`
-      : "Немає підключення до інтернету";
+      ? `Офлайн · ${pending} ${pluralUa(pending, {
+          one: "в черзі",
+          few: "в черзі",
+          many: "в черзі",
+        })}`
+      : "Офлайн";
 
   return (
     <div
       role="status"
       aria-live="polite"
-      className="fixed top-0 left-0 right-0 z-[300] flex items-center justify-center gap-2 px-4 py-2 bg-warning-strong text-white text-xs font-semibold safe-area-pt shadow-soft"
+      className="fixed top-3 right-3 z-[300] flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-panel/90 border border-line text-muted text-xs font-medium shadow-soft backdrop-blur-sm safe-area-pt motion-safe:animate-fade-in"
     >
-      <Icon name="wifi-off" size={14} strokeWidth={2.5} aria-hidden />
-      <span className="truncate max-w-[min(92vw,40rem)]">{label}</span>
+      <Icon name="wifi-off" size={12} strokeWidth={2.5} aria-hidden />
+      <span>{label}</span>
     </div>
   );
 }

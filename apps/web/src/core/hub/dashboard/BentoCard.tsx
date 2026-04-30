@@ -41,6 +41,13 @@ export interface BentoCardProps {
   editMode?: boolean;
   handleRef?: (node: HTMLButtonElement | null) => void;
   handleProps?: Record<string, unknown>;
+  /**
+   * Set on the single card the adaptive-bento engine has lifted to the top
+   * for the current context (signal × time of day). Renders a small
+   * "Зараз" pill with the reason so the reorder is explainable, not magic.
+   * `null`/`undefined` = not lifted.
+   */
+  adaptiveReason?: string | null;
 }
 
 /**
@@ -63,6 +70,7 @@ export const BentoCard = memo(function BentoCard({
   editMode,
   handleRef,
   handleProps,
+  adaptiveReason,
 }: BentoCardProps) {
   const preview = config.getPreview();
   const showProgress =
@@ -141,6 +149,20 @@ export const BentoCard = memo(function BentoCard({
         >
           {config.emoji} {config.label}
         </span>
+
+        {adaptiveReason && !inactive && (
+          <span
+            className={cn(
+              "mt-1 inline-flex items-center gap-1 self-start",
+              "rounded-full border border-line bg-panel/80 px-1.5 py-0.5",
+              "text-2xs font-medium text-muted",
+            )}
+            title={`Підняли в топ: ${adaptiveReason}`}
+          >
+            <span aria-hidden>✦</span>
+            <span className="truncate max-w-[12ch]">{adaptiveReason}</span>
+          </span>
+        )}
 
         {inactive ? (
           <span className="text-2xs text-muted mt-1 leading-snug">
@@ -235,6 +257,10 @@ export interface SortableCardProps {
    * to the module, while drag is gated to the explicit grip affordance.
    */
   editMode?: boolean;
+  /**
+   * Forwarded to `BentoCard` — adaptive-bento "lifted" reason chip.
+   */
+  adaptiveReason?: string | null;
 }
 
 /**
@@ -248,6 +274,7 @@ export const SortableCard = memo(function SortableCard({
   quickAdd,
   inactive,
   editMode,
+  adaptiveReason,
 }: SortableCardProps) {
   const {
     attributes,
@@ -297,6 +324,7 @@ export const SortableCard = memo(function SortableCard({
         isDragging={isDragging}
         inactive={inactive}
         editMode={editMode}
+        adaptiveReason={adaptiveReason}
       />
     </div>
   );

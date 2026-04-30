@@ -7,12 +7,14 @@ import {
 } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { cn } from "@shared/lib/cn";
+import { safeWriteLS } from "@shared/lib/storage";
 import { SkipLink } from "@shared/components/ui/SkipLink";
 import ModuleErrorBoundary from "./ModuleErrorBoundary";
 import { useDarkMode } from "@shared/hooks/useDarkMode";
 import { useOnlineStatus } from "@shared/hooks/useOnlineStatus";
 import { ToastProvider, useToast } from "@shared/hooks/useToast";
 import { ToastContainer } from "@shared/components/ui/Toast";
+import { ScreenReaderAnnouncerProvider } from "@shared/components/ui/ScreenReaderAnnouncer";
 import { HUB_OPEN_MODULE_EVENT } from "@shared/lib/hubNav";
 import { ApiClientProvider } from "@sergeant/api-client/react";
 import { apiClient } from "@shared/api";
@@ -60,9 +62,6 @@ const ResetPasswordPage = lazy(() =>
 const DesignShowcase = lazy(() =>
   import("./DesignShowcase").then((m) => ({ default: m.DesignShowcase })),
 );
-const ProfilePage = lazy(() =>
-  import("./profile/ProfilePage").then((m) => ({ default: m.ProfilePage })),
-);
 const AssistantCataloguePage = lazy(() =>
   import("./AssistantCataloguePage").then((m) => ({
     default: m.AssistantCataloguePage,
@@ -78,25 +77,33 @@ interface ModuleAppProps {
   onOpenModule?: (module: string) => void;
 }
 
-const FinykApp = lazy(
+const FinykApp = lazy<ComponentType<ModuleAppProps>>(
   () => import("../modules/finyk/FinykApp"),
-) as unknown as ComponentType<ModuleAppProps>;
+);
 const FizrukApp = lazy(() => import("../modules/fizruk/FizrukApp"));
-const NutritionApp = lazy(
+const NutritionApp = lazy<ComponentType<ModuleAppProps>>(
   () => import("../modules/nutrition/NutritionApp"),
-) as unknown as ComponentType<ModuleAppProps>;
+);
 // Routine раніше імпортувалось синхронно — це зобов'язувало тягнути
 // весь модуль у main chunk навіть для користувачів, що сидять у Фінікові.
 // Ліниве завантаження збігається з іншими модулями (Suspense fallback
 // та ModuleErrorBoundary уже огортають цей слот).
-const RoutineApp = lazy(
+const RoutineApp = lazy<ComponentType<ModuleAppProps>>(
   () => import("../modules/routine/RoutineApp"),
-) as unknown as ComponentType<ModuleAppProps>;
+);
 
 export default function App() {
   return (
     <ToastProvider>
       <ToastContainer />
+      {/*
+        Screen reader announcer: mounts two `aria-live` regions
+        (polite + assertive) at the app root. Any descendant can call
+        `useAnnounce()` to surface dynamic state changes (toggles,
+        expand/collapse, training completion, etc.) to assistive
+        tech. Lives outside ApiClientProvider/AuthProvider so even
+        unauthenticated screens (sign-in, onboarding) can announce.
+      */}
       {/* Capacitor deep-link bridge: монтуємо ВСЕРЕДИНІ роутера (App
           рендериться під <BrowserRouter>), але поза AppInner, щоб
           bridge переживав ранні return-и в AppInner (/sign-in,
@@ -109,11 +116,13 @@ export default function App() {
           `/reset-password`) — без цього onboarding / auth funnels
           у PostHog були б сліпими перед login-ом. */}
       <PageviewTracker />
-      <ApiClientProvider client={apiClient}>
-        <AuthProvider>
-          <AppInner />
-        </AuthProvider>
-      </ApiClientProvider>
+      <ScreenReaderAnnouncerProvider>
+        <ApiClientProvider client={apiClient}>
+          <AuthProvider>
+            <AppInner />
+          </AuthProvider>
+        </ApiClientProvider>
+      </ScreenReaderAnnouncerProvider>
     </ToastProvider>
   );
 }
@@ -157,7 +166,6 @@ function AppInner() {
   const onSignInRoute = location.pathname === SIGN_IN_PATH;
   const onWelcomeRoute = location.pathname === WELCOME_PATH;
   const onResetPasswordRoute = location.pathname === RESET_PASSWORD_PATH;
-  const onProfileRoute = location.pathname === PROFILE_PATH;
   const onAssistantRoute = location.pathname === ASSISTANT_PATH;
 
   const openAuth = useCallback(() => {
@@ -200,7 +208,7 @@ function AppInner() {
   const { visible: iosVisible, dismiss: iosDismiss } = useIosInstallBanner();
   const online = useOnlineStatus();
   const { updateAvailable, applyUpdate } = useSWUpdate();
-  const { user, isLoading: authLoading, logout } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const sync = useCloudSync(user);
   const toast = useToast();
   useSyncErrorToast(sync.syncErrorDetail, toast, sync.pushAll);
@@ -213,6 +221,16 @@ function AppInner() {
     }, 2000); // 2s delay to prioritize initial render
     return () => clearTimeout(timer);
   }, []);
+
+  // If the user signs out while the «Профіль» tab is active, bounce the
+  // hub back to the dashboard — the tab itself disappears from the
+  // bottom nav (gated on `user`), and without this the main content
+  // area would render nothing for the `profile` view.
+  useEffect(() => {
+    if (!user && ui.hubView === "profile") {
+      ui.setHubView("dashboard");
+    }
+  }, [user, ui]);
 
   useEffect(() => {
     const onMessage = (event: MessageEvent) => {
@@ -274,11 +292,7 @@ function AppInner() {
         ).detail || {};
       const { module, hash, action } = detail;
       if (action && validActions.has(action)) {
-        try {
-          localStorage.setItem(PWA_ACTION_KEY, action);
-        } catch {
-          /* noop */
-        }
+        safeWriteLS(PWA_ACTION_KEY, action);
         setPwaAction(action);
       }
       openModule(module, hash ? { hash } : undefined);
@@ -352,20 +366,19 @@ function AppInner() {
     );
   }
 
-  if (onProfileRoute) {
+  // `/profile` is a legacy deep-link target — profile actions now live
+  // behind the bottom-nav `Профіль` tab inside the hub. Redirect to
+  // the hub with the `profile` tab pre-activated so old links keep
+  // working (and so the back button still pops the entry off history
+  // instead of bouncing the user back here).
+  if (location.pathname === PROFILE_PATH) {
     if (authLoading) {
       return <PageLoader />;
     }
     if (!user) {
       return <RedirectTo to={SIGN_IN_PATH} />;
     }
-    return (
-      <Suspense fallback={<PageLoader />}>
-        <div className="page-enter">
-          <ProfilePage />
-        </div>
-      </Suspense>
-    );
+    return <RedirectTo to="/?tab=profile" />;
   }
 
   if (location.pathname === "/design") {
@@ -440,11 +453,6 @@ function AppInner() {
         <HubHeader
           onOpenSearch={() => ui.setSearchOpen(true)}
           user={user}
-          syncing={sync.syncing}
-          lastSync={sync.lastSync}
-          onSync={sync.pushAll}
-          onPull={sync.pullAll}
-          onLogout={logout}
           authLoading={authLoading}
           onShowAuth={openAuth}
           dark={dark}
@@ -479,6 +487,11 @@ function AppInner() {
           // потім стер дані — повертаємо його на дашборд, щоб не
           // лишався на неіснуючому табі.
           showReports={hasAnyRealEntry()}
+          // «Профіль» tab is gated on being signed in — a guest tapping
+          // it would just bounce through `/sign-in`, which clutters the
+          // FTUX strip. The header still exposes a "Sign in" button
+          // for anonymous visitors.
+          showProfile={!!user}
         />
 
         {/* Thumb-reach entry to the AI assistant. Always visible so the

@@ -3,7 +3,11 @@ import { useQueryClient } from "@tanstack/react-query";
 import { ApiError, chatApi, isApiError } from "@shared/api";
 import { cn } from "@shared/lib/cn";
 import { Icon } from "@shared/components/ui/Icon";
-import { Popover } from "@shared/components/ui/Popover";
+import {
+  Popover,
+  PopoverItem,
+  PopoverDivider,
+} from "@shared/components/ui/Popover";
 import { Tooltip } from "@shared/components/ui/Tooltip";
 import { perfMark, perfEnd } from "@shared/lib/perf";
 import { useOnlineStatus } from "@shared/hooks/useOnlineStatus";
@@ -110,6 +114,9 @@ function HubChat({
     () => initialSessionsRef.current!.activeId,
   );
   const [historyOpen, setHistoryOpen] = useState(false);
+  // Header "Деталі" popover — controlled so item actions (open
+  // history drawer, minimize) can dismiss it after the click.
+  const [detailsOpen, setDetailsOpen] = useState(false);
 
   const [messages, setMessages] = useState(() => {
     const initial = initialSessionsRef.current!;
@@ -720,141 +727,140 @@ function HubChat({
           <div className="w-10 h-1 bg-line rounded-full" />
         </div>
 
-        {/* Header — compact: avatar + title + 1-line subtitle.
-            Context status, history counters, and the privacy
-            disclaimer collapse into the "Деталі" popover so the header
-            stays single-row on narrow phones. */}
-        <div className="flex items-center justify-between gap-3 px-4 pb-3 shrink-0 border-b border-line">
-          <div className="flex items-center gap-3 min-w-0">
-            <div
-              className={cn(
-                "relative w-10 h-10 rounded-xl bg-brand-500/10 flex items-center justify-center shrink-0",
-                contextState.status === "building" &&
-                  "motion-safe:animate-pulse",
-              )}
-              aria-hidden
-            >
-              <Icon name="sparkle" size={18} className="text-brand-500" />
-              {/* Context-status dot anchored on the avatar — replaces the
-                  full pill that used to live below the title. */}
+        {/* Header — single-row, ChatGPT-style:
+            avatar + "Асистент ▾" trigger (popover with status, всі
+            бесіди, згорнути, privacy) | + Нова pill | ✕.
+            All secondary affordances (info, history list, minimize,
+            module subtitle, Mono warning) collapse into the "Деталі"
+            popover behind the title. */}
+        <div className="flex items-center justify-between gap-2 px-3 pb-3 shrink-0 border-b border-line">
+          <Popover
+            placement="bottom-start"
+            open={detailsOpen}
+            onOpenChange={setDetailsOpen}
+            wrapperClassName="min-w-0 flex-1"
+            className="!min-w-[280px] p-1.5"
+            trigger={
               <span
-                className={cn(
-                  "absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full ring-2 ring-bg",
-                  contextState.status === "ready"
-                    ? "bg-brand-500"
-                    : contextState.status === "building"
-                      ? "bg-warning"
-                      : "bg-line",
-                )}
-                aria-hidden
-              />
-            </div>
-            <div className="min-w-0">
-              <div
-                id="hub-chat-title"
-                className="text-[15px] font-bold text-text leading-snug"
+                aria-label="Деталі асистента"
+                className="flex items-center gap-2.5 min-w-0 w-full px-1.5 py-1 -mx-1.5 rounded-xl hover:bg-panelHi transition-colors cursor-pointer select-none"
               >
-                Асистент
-              </div>
-              <div
-                className={cn(
-                  "text-2xs leading-snug truncate",
-                  hasData ? "text-subtle" : "text-warning",
-                )}
-              >
-                {hasData
-                  ? "Фінік · Фізрук · Рутина · Харчування"
-                  : "Mono не підключено"}
-              </div>
-            </div>
-          </div>
-          <div className="flex items-center gap-0.5 shrink-0">
-            <Popover
-              placement="bottom-end"
-              className="!min-w-[260px] p-3"
-              trigger={
-                <Tooltip content="Деталі контексту" placement="bottom-center">
-                  <button
-                    type="button"
-                    className="w-9 h-9 flex items-center justify-center rounded-xl text-muted hover:text-text hover:bg-panelHi transition-colors"
-                    aria-label="Деталі контексту"
-                  >
-                    <Icon name="info" size={16} />
-                  </button>
-                </Tooltip>
-              }
-            >
-              <div
-                role="status"
-                className="space-y-2 text-left"
-                id="hub-chat-privacy"
-              >
-                <div className="flex items-center gap-2 text-xs text-text">
+                <span
+                  className={cn(
+                    "relative w-9 h-9 rounded-xl bg-brand-500/10 flex items-center justify-center shrink-0",
+                    contextState.status === "building" &&
+                      "motion-safe:animate-pulse",
+                  )}
+                  aria-hidden
+                >
+                  <Icon name="sparkle" size={16} className="text-brand-500" />
                   <span
                     className={cn(
-                      "inline-block w-2 h-2 rounded-full",
+                      "absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full ring-2 ring-bg",
                       contextState.status === "ready"
                         ? "bg-brand-500"
                         : contextState.status === "building"
-                          ? "bg-warning motion-safe:animate-pulse"
-                          : "bg-line",
+                          ? "bg-warning"
+                          : !hasData
+                            ? "bg-warning"
+                            : "bg-line",
                     )}
                     aria-hidden
                   />
-                  <span className="font-semibold">
-                    {contextState.status === "building"
-                      ? "Готую контекст…"
-                      : contextState.status === "ready"
-                        ? "Контекст готовий"
-                        : "Очікую"}
+                </span>
+                <span className="flex items-center gap-1 min-w-0">
+                  <span
+                    id="hub-chat-title"
+                    className="text-[15px] font-bold text-text leading-snug truncate"
+                  >
+                    Асистент
                   </span>
-                </div>
-                <p className="text-2xs text-subtle leading-snug">
-                  В контексті: {sessionInfo.historyCount} з останніх 10
-                  повідомлень · ~{Math.round(sessionInfo.chars / 100) / 10}k
-                  символів.
-                </p>
-                <p className="text-2xs text-muted leading-snug">
-                  Контекст (фінанси, тренування, звички, харчування)
-                  відправляється до AI.
-                </p>
+                  <Icon
+                    name="chevron-down"
+                    size={14}
+                    className={cn(
+                      "text-muted shrink-0 transition-transform duration-150",
+                      detailsOpen && "rotate-180",
+                    )}
+                  />
+                </span>
+              </span>
+            }
+          >
+            <div
+              role="status"
+              id="hub-chat-privacy"
+              className="space-y-2 px-2 pt-2 pb-1"
+            >
+              <div className="flex items-center gap-2 text-xs text-text">
+                <span
+                  className={cn(
+                    "inline-block w-2 h-2 rounded-full",
+                    contextState.status === "ready"
+                      ? "bg-brand-500"
+                      : contextState.status === "building"
+                        ? "bg-warning motion-safe:animate-pulse"
+                        : "bg-line",
+                  )}
+                  aria-hidden
+                />
+                <span className="font-semibold">
+                  {contextState.status === "building"
+                    ? "Готую контекст…"
+                    : contextState.status === "ready"
+                      ? "Контекст готовий"
+                      : "Очікую"}
+                </span>
               </div>
-            </Popover>
-            <Tooltip content="Усі бесіди" placement="bottom-center">
-              <button
-                type="button"
-                onClick={() => setHistoryOpen(true)}
-                className="w-9 h-9 flex items-center justify-center rounded-xl text-muted hover:text-text hover:bg-panelHi transition-colors"
-                aria-label={`Відкрити список бесід (${sessions.length})`}
-                aria-haspopup="dialog"
-                aria-expanded={historyOpen}
+              {!hasData && (
+                <div className="px-2.5 py-2 bg-warning/10 border border-warning/30 rounded-xl text-2xs text-warning leading-snug">
+                  Mono не підключено — фінансовий контекст обмежений.
+                </div>
+              )}
+              <p className="text-2xs text-subtle leading-snug">
+                В контексті: {sessionInfo.historyCount} з останніх 10
+                повідомлень · ~{Math.round(sessionInfo.chars / 100) / 10}k
+                символів.
+              </p>
+              <p className="text-2xs text-muted leading-snug">
+                Контекст (фінанси, тренування, звички, харчування)
+                відправляється до AI.
+              </p>
+            </div>
+            <PopoverDivider />
+            <PopoverItem
+              icon={<Icon name="list" size={14} />}
+              onClick={() => {
+                setDetailsOpen(false);
+                setHistoryOpen(true);
+              }}
+            >
+              Усі бесіди ({sessions.length})
+            </PopoverItem>
+            {onMinimize && (
+              <PopoverItem
+                icon={<Icon name="minus" size={14} />}
+                onClick={() => {
+                  setDetailsOpen(false);
+                  onMinimize();
+                }}
               >
-                <Icon name="list" size={15} />
-              </button>
-            </Tooltip>
+                Згорнути в FAB
+              </PopoverItem>
+            )}
+          </Popover>
+          <div className="flex items-center gap-1 shrink-0">
             <Tooltip content="Почати нову бесіду" placement="bottom-center">
               <button
                 type="button"
                 onClick={clearChat}
-                className="h-9 px-2.5 flex items-center gap-1.5 rounded-xl text-muted hover:text-text hover:bg-panelHi transition-colors text-2xs font-semibold"
+                className="h-9 px-3 flex items-center gap-1.5 rounded-xl bg-brand-soft text-brand-strong dark:text-brand border border-brand-soft-border/50 hover:bg-brand-soft-hover transition-colors text-xs font-semibold outline-none focus-visible:ring-2 focus-visible:ring-brand-500/45"
                 aria-label="Нова бесіда"
               >
                 <Icon name="plus" size={14} />
                 Нова
               </button>
             </Tooltip>
-            {onMinimize && (
-              <Tooltip content="Згорнути в FAB" placement="bottom-center">
-                <button
-                  type="button"
-                  onClick={onMinimize}
-                  className="w-9 h-9 flex items-center justify-center rounded-xl text-muted hover:text-text hover:bg-panelHi transition-colors"
-                  aria-label="Згорнути асистента"
-                >
-                  <Icon name="minus" size={16} />
-                </button>
-              </Tooltip>
-            )}
             <button
               type="button"
               onClick={onClose}

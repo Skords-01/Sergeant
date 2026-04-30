@@ -1,30 +1,30 @@
-# Audit Exceptions
+# Audit-винятки
 
 > **Last validated:** 2026-04-28 by @Skords-01. **Next review:** 2026-07-27.
 > **Status:** Active
 
-> Tracked vulnerabilities that are temporarily accepted via the `audit-exception` PR label.
+> Відстежені вразливості, які тимчасово допускаються через PR-лейбл `audit-exception`.
 
-## How this file works
+## Як цей файл працює
 
-When `pnpm audit --audit-level=high` reports a vulnerability that cannot be fixed immediately (e.g. no patch available, upstream issue), document it here so the team has visibility. Add the `audit-exception` label to the PR to bypass the blocking audit step in CI.
+Якщо `pnpm audit --audit-level=high` репортить про вразливість, яку не можна виправити одразу (наприклад, нема патчу, проблема upstream), задокументуй її тут, щоб команда мала видимість. Додай до PR лейбл `audit-exception`, щоб обійти блокуючий audit-step у CI.
 
-Each entry must include:
+Кожен запис має містити:
 
-| Field          | Description                                                     |
-| -------------- | --------------------------------------------------------------- |
-| **Advisory**   | Link to the npm/GitHub advisory                                 |
-| **Package**    | Affected package name and installed version                     |
-| **Severity**   | `high` or `critical`                                            |
-| **Reason**     | Why it cannot be fixed right now                                |
-| **Mitigation** | What reduces the risk (e.g. not used in prod, input validation) |
-| **Due date**   | When the exception must be re-evaluated or resolved             |
-| **Owner**      | Who is responsible for tracking the fix                         |
+| Поле           | Опис                                                                     |
+| -------------- | ------------------------------------------------------------------------ |
+| **Advisory**   | Посилання на npm/GitHub-advisory                                         |
+| **Package**    | Назва враженого пакета й встановлена версія                              |
+| **Severity**   | `high` або `critical`                                                    |
+| **Reason**     | Чому зараз не можна виправити                                            |
+| **Mitigation** | Що знижує ризик (наприклад, не використовується в prod, input-валідація) |
+| **Due date**   | Коли виняток має бути переоцінений або закритий                          |
+| **Owner**      | Хто відповідальний за трек фіксу                                         |
 
-## Current exceptions
+## Поточні винятки
 
-> `pnpm audit --audit-level=high` (prod + full tree) — passes cleanly. The
-> entry below is a `moderate` from the nightly full report (`pnpm audit` без
+> `pnpm audit --audit-level=high` (prod + full tree) — проходить чисто.
+> Запис нижче — `moderate` зі щоночного full-репорту (`pnpm audit` без
 > `--audit-level=high` + OSV-Scanner SARIF), записаний для трекінгу, не як
 > blocker для CI.
 
@@ -34,7 +34,7 @@ Each entry must include:
 | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Advisory   | https://github.com/advisories/GHSA-2g4f-4pwh-qvx6 (CVE-2025-69873)                                                                                                                                                                   |
 | Package    | `ajv@8.11.0` (vulnerable range `>=7.0.0-alpha.0 <8.18.0`; patched in `8.18.0`)                                                                                                                                                       |
-| Severity   | moderate (CVSS 5.3) — ReDoS through the `$data` option only                                                                                                                                                                          |
+| Severity   | moderate (CVSS 5.3) — ReDoS лише через опцію `$data`                                                                                                                                                                                 |
 | Path       | `apps/mobile > expo-dev-client@5.0.20 > expo-dev-launcher@5.0.35 > ajv@8.11.0`                                                                                                                                                       |
 | Reason     | Transitive dev-only dependency of `expo-dev-client`. Upstream `expo-dev-launcher` ще не bump-нув `ajv` (трекаємо expo SDK release cadence — fix очікується разом із наступним SDK 53/54 minor).                                      |
 | Mitigation | `expo-dev-client` входить лише в `apps/mobile` dev-build (debug-launcher), не входить у production-bundle (`expo prebuild --release` його викидає). У production app-і ajv `8.11.0` фізично відсутній. Production-tree audit чистий. |

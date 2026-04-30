@@ -25,7 +25,11 @@ import { usePhotoAnalysis } from "./hooks/usePhotoAnalysis";
 import { useShoppingList } from "./hooks/useShoppingList";
 import { useNutritionUiState } from "./hooks/useNutritionUiState";
 import { useNutritionHashRoute } from "./hooks/useNutritionHashRoute";
-import type { NutritionPage } from "./lib/nutritionRouter";
+import type {
+  NutritionPage,
+  PantrySubTab,
+  MenuSubTab,
+} from "./lib/nutritionRouter";
 import { useNutritionReminders } from "./hooks/useNutritionReminders";
 import { usePantryBarcodeScan } from "./hooks/usePantryBarcodeScan";
 import { useNutritionCloudBackup } from "./hooks/useNutritionCloudBackup";
@@ -53,13 +57,14 @@ export default function NutritionApp({
   const [err, setErr] = useState("");
   const [statusText, setStatusText] = useState("");
 
-  const { activePage, setActivePageAndHash } = useNutritionHashRoute();
-
-  // Sub-tab state for merged pages (pantry = Склад + Покупки,
-  // menu = План + Рецепти). Lives in component state because deep-linking
-  // into sub-tabs wasn't part of the old router either.
-  const [pantrySubTab, setPantrySubTab] = useState("items");
-  const [menuSubTab, setMenuSubTab] = useState("plan");
+  const {
+    activePage,
+    setActivePageAndHash,
+    pantrySubTab,
+    menuSubTab,
+    setPantrySubTab,
+    setMenuSubTab,
+  } = useNutritionHashRoute();
 
   const pantry = useNutritionPantries({ setBusy, setErr, setStatusText });
   const log = useNutritionLog();
@@ -380,7 +385,6 @@ export default function NutritionApp({
                   prefs={prefs}
                   onGoToLog={() => setActivePageAndHash("log")}
                   onGoToDailyPlan={() => {
-                    setMenuSubTab("plan");
                     setActivePageAndHash("menu");
                   }}
                   onFetchDayHint={fetchDayHint}
@@ -437,7 +441,7 @@ export default function NutritionApp({
               <>
                 <SubTabs
                   value={pantrySubTab}
-                  onChange={setPantrySubTab}
+                  onChange={(id) => setPantrySubTab(id as PantrySubTab)}
                   tabs={[
                     { id: "items", label: "Склад" },
                     { id: "shopping", label: "Покупки" },
@@ -535,7 +539,7 @@ export default function NutritionApp({
               <>
                 <SubTabs
                   value={menuSubTab}
-                  onChange={setMenuSubTab}
+                  onChange={(id) => setMenuSubTab(id as MenuSubTab)}
                   tabs={[
                     { id: "plan", label: "План на день" },
                     { id: "recipes", label: "Рецепти" },

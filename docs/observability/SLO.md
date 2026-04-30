@@ -1,4 +1,4 @@
-# Service Level Objectives & Burn-Rate Alerts
+# Service Level Objectives й Burn-rate-алерти
 
 > **Last validated:** 2026-04-27 by @Skords-01. **Next review:** 2026-07-26.
 > **Status:** Active
@@ -146,7 +146,7 @@ sum(rate(external_http_requests_total{upstream="X"}[w]))
 
 ---
 
-## Burn-rate математика (коротко)
+## Burn-rate-математика (коротко)
 
 Для SLO з бюджетом `B = 1 - SLO` (напр. B=0.01 для 99 %):
 
@@ -164,7 +164,7 @@ ratio пульсує.
 
 ---
 
-## 8. Frontend Core Web Vitals (baseline збір)
+## 8. Frontend Core Web Vitals (baseline-збір)
 
 **SLI** (per-metric): частка "good"-вимірів по CWV порогах Google.
 

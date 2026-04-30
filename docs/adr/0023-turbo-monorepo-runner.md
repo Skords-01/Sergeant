@@ -105,7 +105,7 @@ Task-граф у `turbo.json`:
 Не через turbo (свідомо):
 
 - `pnpm lint` — це **ланцюжок** з turbo + Node-скриптів:
-  `turbo run lint && node scripts/check-imports.mjs && node scripts/check-tsconfig-strict.mjs && pnpm lint:plugins && pnpm lint:tech-debt-freshness`.
+  `turbo run lint && node scripts/check-imports.mjs && node tools/tsconfig-guard/check.mjs && pnpm lint:plugins && pnpm lint:tech-debt-freshness`.
   Custom-скрипти живуть у `scripts/` і не вписуються в задачний-граф (вони
   глобальні, перевіряють крос-пакетні інваріанти).
 - `pnpm format` / `pnpm format:check` — Prettier на всю repo, не per-package.

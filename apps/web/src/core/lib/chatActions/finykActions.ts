@@ -285,7 +285,15 @@ export function handleFinykAction(
       };
       debts.push(newDebt);
       lsSet("finyk_debts", debts);
-      return `Борг "${name}" на ${amount} грн створено (id:${newDebt.id})`;
+      const debtId = newDebt.id;
+      return {
+        result: `Борг "${name}" на ${amount} грн створено (id:${debtId})`,
+        undo: () => {
+          const cur = ls<Debt[]>("finyk_debts", []);
+          const next = cur.filter((d) => d.id !== debtId);
+          if (next.length !== cur.length) lsSet("finyk_debts", next);
+        },
+      };
     }
     case "create_receivable": {
       const { name, amount } = (action as CreateReceivableAction).input;
@@ -298,7 +306,15 @@ export function handleFinykAction(
       };
       recv.push(newRecv);
       lsSet("finyk_recv", recv);
-      return `Дебіторку "${name}" на ${amount} грн додано (id:${newRecv.id})`;
+      const recvId = newRecv.id;
+      return {
+        result: `Дебіторку "${name}" на ${amount} грн додано (id:${recvId})`,
+        undo: () => {
+          const cur = ls<Receivable[]>("finyk_recv", []);
+          const next = cur.filter((r) => r.id !== recvId);
+          if (next.length !== cur.length) lsSet("finyk_recv", next);
+        },
+      };
     }
     case "hide_transaction": {
       const { tx_id } = (action as HideTransactionAction).input;
@@ -551,12 +567,42 @@ export function handleFinykAction(
       const cur =
         (currency && String(currency).trim().slice(0, 3).toUpperCase()) ||
         "UAH";
-      const assets = ls<
-        Array<{ name: string; amount: number | string; currency?: string }>
-      >("finyk_assets", []);
-      assets.push({ name: trimmed, amount: amt, currency: cur });
-      lsSet("finyk_assets", assets);
-      return `Актив "${trimmed}" додано: ${amt} ${cur}`;
+      type AssetEntry = {
+        name: string;
+        amount: number | string;
+        currency?: string;
+      };
+      const prevAssets = ls<AssetEntry[]>("finyk_assets", []);
+      const newEntry: AssetEntry = {
+        name: trimmed,
+        amount: amt,
+        currency: cur,
+      };
+      lsSet("finyk_assets", [...prevAssets, newEntry]);
+      // У `finyk_assets` немає id-поля; тримаємо посилання на щойно
+      // додану entry (referential equality в pure-JS після lsSet не
+      // тримається, тож порівнюємо за повним shape). Undo прибирає
+      // _одну_ перший попавшийся matching item з кінця — досить для
+      // human-rate-у undo (5 c вікно), без переписання снапшоту.
+      return {
+        result: `Актив "${trimmed}" додано: ${amt} ${cur}`,
+        undo: () => {
+          const list = ls<AssetEntry[]>("finyk_assets", []);
+          for (let i = list.length - 1; i >= 0; i--) {
+            const e = list[i];
+            if (
+              e.name === newEntry.name &&
+              Number(e.amount) === Number(newEntry.amount) &&
+              (e.currency || "UAH") === (newEntry.currency || "UAH")
+            ) {
+              const next = list.slice();
+              next.splice(i, 1);
+              lsSet("finyk_assets", next);
+              return;
+            }
+          }
+        },
+      };
     }
     case "import_monobank_range": {
       const { from, to } = (action as ImportMonobankRangeAction).input;

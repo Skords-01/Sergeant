@@ -39,7 +39,7 @@ apps/mobile/
 
 ## 🔴 P0: Критичні покращення
 
-### 1. Dark Mode Implementation
+### 1. Реалізація Dark Mode
 
 #### 1.1 Оновити ColorSchemeBridge.tsx
 
@@ -148,7 +148,7 @@ function ThemeToggle() {
 
 ---
 
-### 2. Unified BackButton Component
+### 2. Уніфікований компонент BackButton
 
 ```tsx
 // apps/mobile/src/components/ui/BackButton.tsx
@@ -249,7 +249,7 @@ export default BackButton;
 
 ---
 
-### 3. Sheet Gesture Dismiss
+### 3. Жест закриття Sheet
 
 ```tsx
 // Оновлення apps/mobile/src/components/ui/Sheet.tsx
@@ -326,7 +326,7 @@ export function Sheet({} /* props */ : SheetProps) {
 
 ## 🟠 P1: Важливі покращення
 
-### 4. Input Helper Icons
+### 4. Іконки-підказки в інпутах
 
 ```tsx
 // Оновлення apps/mobile/src/components/ui/Input.tsx
@@ -365,7 +365,7 @@ export interface InputProps /* ... */ {
 
 ---
 
-### 5. All Module Tab Badges
+### 5. Бейджі на всіх табах модулів
 
 ```tsx
 // Оновлення apps/mobile/src/hooks/useTabBadges.ts
@@ -445,7 +445,7 @@ export function useTabBadges(): TabBadges {
 
 ---
 
-### 6. EmptyState Semantic Tokens
+### 6. Семантичні токени для EmptyState
 
 ```tsx
 // Оновлення apps/mobile/src/components/ui/EmptyState.tsx
@@ -546,7 +546,7 @@ export function EmptyState({
 
 ## 🟡 P2: Середні покращення
 
-### 7. Settings Page Grouping
+### 7. Групування сторінки Settings
 
 ```tsx
 // Оновлення apps/mobile/src/core/settings/HubSettingsPage.tsx
@@ -636,7 +636,7 @@ export function HubSettingsPage() {
 
 ---
 
-### 8. Toast Safe Area Fix
+### 8. Фікс safe-area для Toast
 
 ```tsx
 // Оновлення apps/mobile/src/components/ui/Toast.tsx
@@ -667,7 +667,7 @@ export function ToastContainer({ className }: ToastContainerProps) {
 
 ---
 
-### 9. Forgot Password Screen
+### 9. Екран Forgot Password
 
 ```tsx
 // apps/mobile/app/(auth)/forgot-password.tsx
@@ -775,7 +775,7 @@ export default function ForgotPasswordScreen() {
 
 ## 📊 Чеклист впровадження
 
-### Phase 1 (Weeks 1-4)
+### Фаза 1 (тижні 1–4)
 
 - [ ] **Week 1**
   - [ ] Імплементувати `ColorSchemeBridge` з theme toggle
@@ -784,7 +784,7 @@ export default function ForgotPasswordScreen() {
   - [ ] Замінити всі ← текстові кнопки на `BackButton`
 
 - [ ] **Week 2**
-  - [ ] Додати gesture dismiss в `Sheet`
+  - [x] Додати gesture dismiss в `Sheet` _(web — done у [#1181](https://github.com/Skords-01/Sergeant/pull/1181) через `useSwipeToDismiss`; також застосовано в `ConfirmDialog` і `ModuleSettingsDrawer`. Mobile RN-частина — pending.)_
   - [ ] Встановити `react-native-reanimated` якщо ще не встановлено
   - [ ] Тестувати на iOS та Android
 
@@ -798,7 +798,7 @@ export default function ForgotPasswordScreen() {
   - [ ] Створити `forgot-password.tsx` маршрут
   - [ ] E2E тести для нових flows
 
-### Phase 2 (Weeks 5-8)
+### Фаза 2 (тижні 5–8)
 
 - [ ] **Week 5**
   - [ ] Створити хуки для badge counts (всі модулі)
@@ -817,7 +817,7 @@ export default function ForgotPasswordScreen() {
 
 ## 🧪 Тестування
 
-### Unit Tests
+### Unit-тести
 
 ```tsx
 // __tests__/BackButton.test.tsx
@@ -836,7 +836,7 @@ describe("Sheet gesture dismiss", () => {
 });
 ```
 
-### E2E Tests (Detox)
+### E2E-тести (Detox)
 
 ```tsx
 // e2e/dark-mode.e2e.ts

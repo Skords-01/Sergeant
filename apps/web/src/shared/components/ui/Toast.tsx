@@ -39,7 +39,9 @@ export function ToastContainer() {
           key={t.id}
           className={cn(
             "pointer-events-auto w-full px-4 py-3 rounded-2xl text-sm font-semibold shadow-float flex items-center gap-2.5",
-            "motion-safe:animate-toast-enter",
+            t.leaving
+              ? "motion-safe:animate-toast-exit"
+              : "motion-safe:animate-toast-enter",
             VARIANT[t.type] || VARIANT.info,
           )}
           role="alert"

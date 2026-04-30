@@ -28,6 +28,7 @@
 - **Щотижневий дайджест** (`WeeklyDigestCard`, `useWeeklyDigest`) — AI-зведення тижня по всіх модулях
 - **AI-порада дня** (`AssistantAdviceCard`, `useCoachInsight`, `/api/coach`) — короткі персональні поради на основі даних модулів
 - **Рекомендаційний рушій** (`TodayFocusCard`, `recommendationEngine`) — крос-модульні підказки без AI API
+- **Адаптивний bento** (`adaptiveSort`, `HubDashboard`) — м'яко піднімає в топ 1 модуль за контекстом (час доби × активний сигнал); ручний порядок зберігається, можна вимкнути в Налаштуваннях → Дашборд → «Адаптивний порядок»
 - **Голосовий ввід** (`VoiceMicButton`, `speechParsers`, `useSpeech`) — Web Speech API в Харчуванні, Фізруку та Фінікові
 - **AI-чат** (`HubChat`) — модульний чат з контекстом усіх даних, розбитий на `hubChatContext` / `hubChatActions` / `hubChatUtils` / `hubChatSpeech`
 - **PWA shortcuts** — 3 ярлики на головному екрані (нова витрата, почати тренування, додати їжу)

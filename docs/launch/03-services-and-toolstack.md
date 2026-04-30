@@ -372,7 +372,7 @@ GOOGLE_PLAY_SERVICE_ACCOUNT=     # JSON credentials для EAS Submit
 
 ---
 
-## 6. Monthly cost projection
+## 6. Прогноз місячних витрат
 
 ```
                     Pre-launch   Launch       Growth       Scale
@@ -432,7 +432,7 @@ Breakeven subs      ---          ~30 Pro      ~100 Pro     profitable
 
 ---
 
-## 7. Week-by-week roadmap
+## 7. Роадмеп по тижнях
 
 ```
 WEEK 1: Payments foundation
@@ -490,7 +490,7 @@ TOTAL FIXED      ~$13/mo  (infrastructure already paid)
 
 ---
 
-## Pointers
+## Посилання
 
 - Бізнес-модель, тіри, payment provider порівняння -> [01-monetization-and-pricing.md](./01-monetization-and-pricing.md)
 - Маркетингові канали, growth engine, partnerships -> [02-go-to-market.md](./02-go-to-market.md)

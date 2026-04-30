@@ -5,7 +5,6 @@ import { Tooltip } from "@shared/components/ui/Tooltip";
 import { useScrollHeader } from "@shared/hooks/useScrollHeader";
 import { BrandLogo } from "./BrandLogo";
 import { DarkModeToggle } from "./DarkModeToggle";
-import { UserMenuButton } from "./UserMenuButton";
 import type { User } from "@sergeant/shared";
 
 // WCAG 2.5.5 AAA «Target Size (Enhanced)» рекомендує ≥44×44 пкс для hit-areas;
@@ -48,11 +47,6 @@ function formatUkrainianDate(): string {
 interface HubHeaderProps {
   onOpenSearch: () => void;
   user: User | null;
-  syncing?: boolean;
-  lastSync?: string | Date | null;
-  onSync?: () => void;
-  onPull?: () => void;
-  onLogout?: () => void;
   authLoading?: boolean;
   onShowAuth?: () => void;
   dark?: boolean;
@@ -63,11 +57,6 @@ interface HubHeaderProps {
 export function HubHeader({
   onOpenSearch,
   user,
-  syncing,
-  lastSync,
-  onSync,
-  onPull,
-  onLogout,
   authLoading,
   onShowAuth,
   dark,
@@ -130,41 +119,28 @@ export function HubHeader({
             </button>
           </Tooltip>
 
-          {user && onSync && onPull && onLogout && onToggleDark ? (
-            <UserMenuButton
-              user={user}
-              syncing={syncing ?? false}
-              lastSync={
-                lastSync instanceof Date
-                  ? lastSync
-                  : lastSync
-                    ? new Date(lastSync)
-                    : null
-              }
-              onSync={onSync}
-              onPull={onPull}
-              onLogout={onLogout}
-              dark={dark ?? false}
-              onToggleDark={onToggleDark}
-            />
-          ) : (
-            <>
-              {dark !== undefined && onToggleDark && (
-                <DarkModeToggle dark={dark} onToggle={onToggleDark} />
-              )}
-              {!authLoading && !hideAuthButton && onShowAuth && (
-                <Tooltip content="Увійти" placement="bottom-center">
-                  <button
-                    type="button"
-                    onClick={onShowAuth}
-                    aria-label="Увійти в акаунт"
-                    className={ICON_BUTTON_CLS}
-                  >
-                    <Icon name="user" size={20} />
-                  </button>
-                </Tooltip>
-              )}
-            </>
+          {/* Dark-mode toggle: surfaced as a single-tap header affordance for
+              both signed-in and guest users. Previously buried inside the
+              `UserMenuButton` dropdown (3-tap path); profile actions now
+              live behind the bottom-nav `Профіль` tab, so the dropdown
+              was retired. */}
+          {dark !== undefined && onToggleDark && (
+            <DarkModeToggle dark={dark} onToggle={onToggleDark} />
+          )}
+
+          {/* Sign-in entry-point for guests only. Signed-in users reach
+              their account via the `Профіль` bottom-nav tab. */}
+          {!user && !authLoading && !hideAuthButton && onShowAuth && (
+            <Tooltip content="Увійти" placement="bottom-center">
+              <button
+                type="button"
+                onClick={onShowAuth}
+                aria-label="Увійти в акаунт"
+                className={ICON_BUTTON_CLS}
+              >
+                <Icon name="user" size={20} />
+              </button>
+            </Tooltip>
           )}
         </div>
       </div>

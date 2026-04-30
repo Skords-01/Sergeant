@@ -1,12 +1,18 @@
 import { useCallback, useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 
-export type HubView = "dashboard" | "reports" | "settings";
+export type HubView = "dashboard" | "reports" | "profile" | "settings";
 
-const VALID_VIEWS = new Set<string>(["dashboard", "reports", "settings"]);
+const VALID_VIEWS = new Set<string>([
+  "dashboard",
+  "reports",
+  "profile",
+  "settings",
+]);
 
-function readViewFromURL(): HubView {
+function readViewFromSearch(search: string): HubView {
   try {
-    const param = new URLSearchParams(window.location.search).get("tab");
+    const param = new URLSearchParams(search).get("tab");
     if (param && VALID_VIEWS.has(param)) return param as HubView;
   } catch {
     /* SSR / non-browser */
@@ -63,7 +69,10 @@ export function useHubUIState(): HubUIState {
   );
   const [chatAutoSend, setChatAutoSend] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
-  const [hubView, setHubViewRaw] = useState<HubView>(readViewFromURL);
+  const location = useLocation();
+  const [hubView, setHubViewRaw] = useState<HubView>(() =>
+    readViewFromSearch(location.search),
+  );
 
   const setHubView = useCallback((view: HubView) => {
     setHubViewRaw(view);
@@ -81,14 +90,18 @@ export function useHubUIState(): HubUIState {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
-  // Listen for back/forward navigation.
+  // Re-sync `hubView` whenever the URL search params change, regardless of
+  // how the change was triggered — this covers (a) browser back/forward
+  // (popstate, picked up by react-router and reflected in `useLocation()`),
+  // (b) react-router `navigate()` calls that update the search string
+  // without going through `setHubView` (e.g. the `/profile → /?tab=profile`
+  // legacy redirect in `App.tsx`), and (c) any other code path that mutates
+  // `window.history` outside this hook. Without this, an external
+  // `navigate()` to `/?tab=profile` would change the address bar but leave
+  // `hubView` stuck on its initial value (typically `"dashboard"`).
   useEffect(() => {
-    const onPopState = () => {
-      setHubViewRaw(readViewFromURL());
-    };
-    window.addEventListener("popstate", onPopState);
-    return () => window.removeEventListener("popstate", onPopState);
-  }, []);
+    setHubViewRaw(readViewFromSearch(location.search));
+  }, [location.search]);
 
   const openChat = useCallback(
     (message: string | null = null, options: OpenChatOptions = {}) => {

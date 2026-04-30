@@ -955,16 +955,27 @@ export type WebVitalsMetricRating = z.infer<typeof WebVitalsMetricRatingSchema>;
 // мс, upper-bound 120_000 (2 хв — будь-що більше це зламаний клієнтський
 // таймер). Окремий upper-bound для CLS не дає анонімному endpoint-у інфлейтити
 // `web_vitals_cls_sum`, що зробило б `avg = _sum / _count` беззмістовним.
-export const WebVitalsMetricSchema = z
-  .object({
-    name: WebVitalsMetricNameSchema,
-    value: z.number().finite().min(0),
-    rating: WebVitalsMetricRatingSchema,
-  })
-  .refine((m) => (m.name === "CLS" ? m.value <= 10 : m.value <= 120_000), {
-    message: "value out of range for metric",
-    path: ["value"],
-  });
+//
+// Розбито на дискримінований union по `name` замість `.refine()` так, щоб межі
+// `value` для CLS (≤10) і таймінгів (≤120_000) переживали серіалізацію в
+// OpenAPI: кастомні `.refine()`-предикати у `docs/api/openapi.json` не
+// потрапляють, і генерований контракт мовчки втрачав би верхні межі.
+const WebVitalsClsMetricSchema = z.object({
+  name: z.literal("CLS"),
+  value: z.number().finite().min(0).max(10),
+  rating: WebVitalsMetricRatingSchema,
+});
+
+const WebVitalsTimingMetricSchema = z.object({
+  name: z.enum(["LCP", "INP", "FCP", "TTFB"]),
+  value: z.number().finite().min(0).max(120_000),
+  rating: WebVitalsMetricRatingSchema,
+});
+
+export const WebVitalsMetricSchema = z.discriminatedUnion("name", [
+  WebVitalsClsMetricSchema,
+  WebVitalsTimingMetricSchema,
+]);
 export type WebVitalsMetric = z.infer<typeof WebVitalsMetricSchema>;
 
 export const WebVitalsPayloadSchema = z.object({

@@ -32,7 +32,7 @@ export const MAX_BATCH = 10;
 interface WebVitalReport {
   name: WebVitalsMetricName;
   value: number;
-  rating?: WebVitalsMetricRating;
+  rating: WebVitalsMetricRating;
 }
 
 const buffer: WebVitalReport[] = [];
@@ -148,14 +148,16 @@ export function enqueue(metric: MetricInput | null | undefined) {
     typeof metric.value !== "number" ||
     !Number.isFinite(metric.value) ||
     metric.value < 0 ||
-    !isSupportedName(metric.name)
+    !isSupportedName(metric.name) ||
+    !metric.rating ||
+    !isSupportedRating(metric.rating)
   ) {
+    // SSOT `WebVitalsPayloadSchema` робить `rating` обов'язковим. Якщо
+    // буферити запис без рейтингу, server safeParse відкине ВЕСЬ батч —
+    // і кілька валідних метрик мовчки втрачаються разом з невалідним.
+    // Тому метрики без розпізнаного рейтингу drop'аємо тут, до буфера.
     return;
   }
-  const rating =
-    metric.rating && isSupportedRating(metric.rating)
-      ? metric.rating
-      : undefined;
   buffer.push({
     name: metric.name,
     value:
@@ -163,7 +165,7 @@ export function enqueue(metric: MetricInput | null | undefined) {
       metric.name === "CLS"
         ? Number(metric.value.toFixed(4))
         : Math.round(metric.value),
-    rating,
+    rating: metric.rating,
   });
   if (buffer.length >= MAX_BATCH) {
     flush();

@@ -1,5 +1,6 @@
 import { cn } from "@shared/lib/cn";
 import { hapticTap } from "@shared/lib/haptic";
+import { useAnnounce } from "@shared/components/ui/ScreenReaderAnnouncer";
 import type { ChangeEvent } from "react";
 
 export interface SwitchProps {
@@ -8,6 +9,13 @@ export interface SwitchProps {
   disabled?: boolean;
   label?: string;
   className?: string;
+  /**
+   * Custom screen-reader announcement on toggle. Receives the new
+   * `checked` value. Defaults to a Ukrainian "{label} увімкнено / вимкнено"
+   * message when `label` is provided. Pass an explicit empty string to
+   * suppress announcements.
+   */
+  announceText?: (checked: boolean) => string;
 }
 
 /**
@@ -26,11 +34,24 @@ export function Switch({
   disabled = false,
   label,
   className,
+  announceText,
 }: SwitchProps) {
+  const { announce } = useAnnounce();
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (disabled) return;
     hapticTap();
-    onChange(e.target.checked);
+    const next = e.target.checked;
+    onChange(next);
+    // Visual checked state already conveys this to sighted users; the
+    // aria-live announcement closes the gap for screen readers, who
+    // otherwise only hear "checkbox, checked/not checked" with no
+    // context about *what* was toggled.
+    const text = announceText
+      ? announceText(next)
+      : label
+        ? `${label} ${next ? "увімкнено" : "вимкнено"}`
+        : "";
+    if (text) announce(text);
   };
 
   return (

@@ -23,7 +23,7 @@
     "build:analyze": "pnpm --filter @sergeant/web build:analyze",
     "build:check-size": "node scripts/check-bundle-size.mjs",
     "preview": "pnpm --filter @sergeant/web preview",
-    "lint": "turbo run lint && node scripts/check-imports.mjs && node scripts/check-tsconfig-strict.mjs && pnpm lint:plugins && pnpm lint:tech-debt-freshness && pnpm api:check-openapi",
+    "lint": "turbo run lint && node scripts/check-imports.mjs && node tools/tsconfig-guard/check.mjs && pnpm lint:plugins && pnpm lint:tech-debt-freshness && pnpm api:check-openapi",
     "lint:imports": "node scripts/check-imports.mjs",
     "lint:migrations": "node scripts/lint-migrations.mjs",
     "ops:n8n:validate": "node scripts/ops/validate-n8n-workflows.mjs",
@@ -58,7 +58,12 @@
     "docs:check-links": "node scripts/docs/check-markdown-links.mjs",
     "docs:gen-playbook-index": "node scripts/docs/generate-playbook-index.mjs",
     "docs:check-playbook-index": "node scripts/docs/generate-playbook-index.mjs --check",
+    "docs:check-playbook-schema": "node scripts/docs/check-playbook-schema.mjs",
+    "docs:check-freshness-coverage": "node scripts/docs/check-freshness.mjs --check-coverage",
+    "docs:check-adr-graph": "node scripts/docs/check-adr-graph.mjs",
     "docs:freshness-dashboard": "node scripts/docs/generate-freshness-dashboard.mjs",
+    "lint:ai-legacy": "node scripts/check-ai-legacy.mjs --check",
+    "ai-legacy:dashboard": "node scripts/check-ai-legacy.mjs --dashboard dist/ai-legacy-dashboard.html",
     "ci:validate-pr-body": "node scripts/ci/validate-pr-body.mjs"
   },
   "devDependencies": {
@@ -88,7 +93,11 @@
       "eslint --fix --max-warnings=0",
       "prettier --write"
     ],
-    "*.{json,md,css,html,yml,yaml}": [
+    "*.md": [
+      "node scripts/docs/bump-last-validated.mjs",
+      "prettier --write"
+    ],
+    "*.{json,css,html,yml,yaml}": [
       "prettier --write"
     ]
   },

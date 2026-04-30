@@ -14,9 +14,7 @@ import {
   normalizeDashboardDensity,
   STORAGE_KEYS,
   getActiveModules,
-  getHideInactiveModules,
   setActiveModules,
-  setHideInactiveModules,
   type DashboardDensity,
   type DashboardModuleId,
 } from "@sergeant/shared";
@@ -90,6 +88,10 @@ function ModuleReorderList({ order, onMove }: ModuleReorderListProps) {
 export function DashboardSection() {
   const [orderReset, setOrderReset] = useState(false);
   const [showHints, setShowHints] = useHubPref<boolean>("showHints", true);
+  const [adaptiveBento, setAdaptiveBento] = useHubPref<boolean>(
+    "adaptiveBento",
+    true,
+  );
   const [density, setDensityState] = useState<DashboardDensity>(() => {
     const raw = safeReadStringLS(STORAGE_KEYS.DASHBOARD_DENSITY);
     return raw === null
@@ -108,9 +110,6 @@ export function DashboardSection() {
   const [activeModules, setActiveModulesState] = useState<DashboardModuleId[]>(
     () => getActiveModules(webKVStore),
   );
-  const [hideInactive, setHideInactiveState] = useState(() =>
-    getHideInactiveModules(webKVStore),
-  );
   const toggleActive = useCallback(
     (id: DashboardModuleId) => {
       setActiveModulesState((prev) => {
@@ -128,10 +127,6 @@ export function DashboardSection() {
     },
     [toast],
   );
-  const toggleHideInactive = useCallback((next: boolean) => {
-    setHideInactiveState(next);
-    setHideInactiveModules(webKVStore, next);
-  }, []);
 
   const handleMove = useCallback((index: number, direction: -1 | 1) => {
     setOrder((prev) => {
@@ -159,6 +154,12 @@ export function DashboardSection() {
           description="Короткі підказки в моменті (без спаму)."
           checked={showHints !== false}
           onChange={setShowHints}
+        />
+        <ToggleRow
+          label="Адаптивний порядок"
+          description="Піднімає в топ модуль, актуальний зараз — за часом дня та сигналами. Ваш порядок зберігається."
+          checked={adaptiveBento !== false}
+          onChange={setAdaptiveBento}
         />
         <div className="space-y-2">
           <p className="text-xs text-subtle leading-snug">
@@ -219,12 +220,6 @@ export function DashboardSection() {
             );
           })}
         </ul>
-        <ToggleRow
-          label="Приховати неактивні модулі"
-          description="Повністю ховає неактивні плитки з дашборду."
-          checked={hideInactive}
-          onChange={toggleHideInactive}
-        />
         <div className="space-y-2 pt-2 border-t border-line/40">
           <p className="text-xs text-subtle leading-snug">
             Порядок модулів у списку «Сьогодні» на дашборді.

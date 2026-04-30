@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, startTransition } from "react";
 import type { ModuleAccent } from "@sergeant/design-tokens";
 import { cn } from "@shared/lib/cn";
 import { Icon } from "@shared/components/ui/Icon";
@@ -398,8 +398,14 @@ export function HubSearch({ onClose, onOpenModule }: HubSearchProps) {
     }
     const timer = setTimeout(() => {
       const next = performSearch(query);
-      setResults(next);
-      setActiveIdx(0);
+      // Wrap state updates in startTransition so the heavy localStorage
+      // parse + scoring work doesn't block the input from accepting the
+      // next keystroke. React can interrupt this low-priority update if
+      // new input arrives.
+      startTransition(() => {
+        setResults(next);
+        setActiveIdx(0);
+      });
     }, 120);
     return () => clearTimeout(timer);
   }, [query]);

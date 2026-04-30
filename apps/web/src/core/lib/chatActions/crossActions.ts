@@ -523,7 +523,22 @@ export function handleCrossAction(
       };
       notes.unshift(note);
       lsSet("hub_notes_v1", notes);
-      return `Нотатку збережено: "${trimmed.slice(0, 50)}${trimmed.length > 50 ? "\u2026" : ""}" [${note.tag}] (id:${note.id})`;
+      const noteId = note.id;
+      return {
+        result: `Нотатку збережено: "${trimmed.slice(0, 50)}${trimmed.length > 50 ? "\u2026" : ""}" [${note.tag}] (id:${noteId})`,
+        undo: () => {
+          const cur = ls<
+            Array<{
+              id: string;
+              text: string;
+              tag: string;
+              createdAt: string;
+            }>
+          >("hub_notes_v1", []);
+          const next = cur.filter((n) => n.id !== noteId);
+          if (next.length !== cur.length) lsSet("hub_notes_v1", next);
+        },
+      };
     }
     case "list_notes": {
       const { tag, limit } = (action as ListNotesAction).input || {};
@@ -552,15 +567,36 @@ export function handleCrossAction(
     case "remember": {
       const { fact, category } = (action as RememberAction).input || {};
       try {
+        const prevEntries = readMemoryEntries();
         const result = upsertMemoryFact(
-          readMemoryEntries(),
+          prevEntries,
           typeof fact === "string" ? fact : "",
           typeof category === "string" ? category : undefined,
         );
         writeMemoryEntries(result.entries);
         const meta = CATEGORY_META[result.entry.category];
         const label = meta?.label ?? result.entry.category;
-        return `${result.created ? "Запам'ятав" : "Оновив"}: ${result.entry.fact} (${label}, id:${result.entry.id})`;
+        const resultStr = `${result.created ? "Запам'ятав" : "Оновив"}: ${result.entry.fact} (${label}, id:${result.entry.id})`;
+        const entryId = result.entry.id;
+        // Undo:
+        // - якщо був created — просто видаляємо факт;
+        // - якщо був updated — відновлюємо попередній entry з prevEntries.
+        return {
+          result: resultStr,
+          undo: () => {
+            if (result.created) {
+              const cur = readMemoryEntries();
+              const removed = removeMemoryEntry(cur, entryId);
+              if (removed.removed) writeMemoryEntries(removed.entries);
+              return;
+            }
+            const prev = prevEntries.find((e) => e.id === entryId);
+            if (!prev) return;
+            const cur = readMemoryEntries();
+            const next = cur.map((e) => (e.id === entryId ? prev : e));
+            writeMemoryEntries(next);
+          },
+        };
       } catch (error) {
         return error instanceof Error
           ? error.message

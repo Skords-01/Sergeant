@@ -166,6 +166,15 @@ export default function App({
   // Свайп між вкладками (без pull-to-refresh: скрол живе всередині сторінок, зовнішній scrollTop завжди 0)
   const touchStartX = useRef(null);
   const touchStartY = useRef(null);
+  // Live drag offset for visual feedback. While the user is dragging
+  // we translate the page wrapper horizontally (clamped to ±SWIPE_DRAG_LIMIT)
+  // and surface a thin progress bar at the bottom — without this,
+  // the only feedback was the abrupt page swap on release, which
+  // many users interpreted as a missed gesture.
+  const SWIPE_THRESHOLD_PX = 60;
+  const SWIPE_DRAG_LIMIT_PX = 120;
+  const [swipeDx, setSwipeDx] = useState(0);
+  const swipeActiveRef = useRef(false);
 
   // Ascend from the touch target and bail out if any ancestor is marked as
   // a horizontal scroller (e.g. the category filter strip on Operations) or
@@ -205,18 +214,55 @@ export default function App({
     }
     touchStartX.current = e.touches[0].clientX;
     touchStartY.current = e.touches[0].clientY;
+    swipeActiveRef.current = false;
+    setSwipeDx(0);
+  };
+  const handleTouchMove = (e) => {
+    if (touchStartX.current === null || touchStartY.current === null) return;
+    const rawDx = e.touches[0].clientX - touchStartX.current; // sign: +right, -left
+    const rawDy = e.touches[0].clientY - touchStartY.current;
+    // Stay quiet until the gesture is unambiguously horizontal. We
+    // need the same dominance check as touchEnd (|dx| ≥ 1.5·|dy|) so
+    // vertical scrolls inside nested lists never start tugging the
+    // page sideways.
+    if (Math.abs(rawDx) < 12) return;
+    if (Math.abs(rawDx) < Math.abs(rawDy) * 1.5) return;
+    swipeActiveRef.current = true;
+    const curIdx = NAV_IDS.indexOf(page);
+    // Cancel feedback at the ends of the tab list so the user doesn't
+    // get a "fake" drag that goes nowhere when they're already on
+    // overview / analytics.
+    if (curIdx === 0 && rawDx > 0) {
+      setSwipeDx(0);
+      return;
+    }
+    if (curIdx === NAV_IDS.length - 1 && rawDx < 0) {
+      setSwipeDx(0);
+      return;
+    }
+    const clamped = Math.max(
+      -SWIPE_DRAG_LIMIT_PX,
+      Math.min(SWIPE_DRAG_LIMIT_PX, rawDx),
+    );
+    setSwipeDx(clamped);
   };
   const handleTouchEnd = (e) => {
-    if (touchStartX.current === null || touchStartY.current === null) return;
+    if (touchStartX.current === null || touchStartY.current === null) {
+      setSwipeDx(0);
+      return;
+    }
     const dx = touchStartX.current - e.changedTouches[0].clientX;
     const dy = touchStartY.current - e.changedTouches[0].clientY;
     touchStartX.current = null;
     touchStartY.current = null;
+    swipeActiveRef.current = false;
+    setSwipeDx(0);
 
     // Require a clearly horizontal swipe so vertical scrolls in nested lists
     // (transactions, budgets) never trigger tab switches: |dx| must exceed
     // both a comfortable threshold (60px) AND ~1.5× the vertical travel.
-    if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+    if (Math.abs(dx) < SWIPE_THRESHOLD_PX || Math.abs(dx) < Math.abs(dy) * 1.5)
+      return;
     const curIdx = NAV_IDS.indexOf(page);
     if (curIdx === -1) return;
     const next = curIdx + (dx > 0 ? 1 : -1);
@@ -340,13 +386,58 @@ export default function App({
 
       {/* Page content */}
       <div
-        className="flex-1 overflow-hidden flex flex-col min-h-0 touch-pan-y"
+        className="flex-1 overflow-hidden flex flex-col min-h-0 touch-pan-y relative"
         onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
+        {/*
+          Swipe progress bar — surfaces an in-progress tab swipe so
+          the gesture isn't a black box anymore. Sits at the top of
+          the page wrapper, fills toward the threshold (60 px), then
+          tints fully on commit. Hidden when the user isn't dragging
+          to keep the chrome clean.
+        */}
+        {swipeDx !== 0 && (
+          <div
+            aria-hidden
+            className="pointer-events-none absolute top-0 inset-x-0 h-0.5 z-20 overflow-hidden"
+          >
+            <div
+              className={cn(
+                "h-full",
+                Math.abs(swipeDx) >= SWIPE_THRESHOLD_PX
+                  ? "bg-finyk"
+                  : "bg-finyk/40",
+              )}
+              style={{
+                width: `${Math.min(100, (Math.abs(swipeDx) / SWIPE_THRESHOLD_PX) * 100)}%`,
+                marginLeft: swipeDx < 0 ? "auto" : 0,
+                transition: "background-color 120ms linear",
+              }}
+            />
+          </div>
+        )}
         <div
           key={`page-${page}`}
           className="flex-1 overflow-hidden flex flex-col min-h-0 motion-safe:animate-fade-in"
+          style={
+            swipeDx !== 0
+              ? {
+                  // 0.45 follow-coefficient mirrors iOS' "rubber band"
+                  // feel — the page tracks the finger but lags behind
+                  // it, so the dominant motion stays in the user's
+                  // hand, not the screen. No transition while dragging
+                  // so there's no rubber-banding lag.
+                  transform: `translate3d(${swipeDx * 0.45}px, 0, 0)`,
+                  transition: "none",
+                  willChange: "transform",
+                }
+              : {
+                  transform: "translate3d(0, 0, 0)",
+                  transition: "transform 200ms cubic-bezier(0.32, 0.72, 0, 1)",
+                }
+          }
         >
           {page === "overview" && (
             <SectionErrorBoundary

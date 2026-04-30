@@ -6,10 +6,13 @@ import { ToastProvider } from "@shared/hooks/useToast";
 
 const STORAGE_KEY = "sergeant.hub.reportsTabRevealedAt";
 
+type TestHubView = "dashboard" | "reports" | "profile" | "settings";
+
 function renderNav(props: {
-  hubView?: "dashboard" | "reports" | "settings";
+  hubView?: TestHubView;
   showReports?: boolean;
-  onChange?: (v: "dashboard" | "reports" | "settings") => void;
+  showProfile?: boolean;
+  onChange?: (v: TestHubView) => void;
 }) {
   const onChange = props.onChange ?? vi.fn();
   return {
@@ -20,6 +23,7 @@ function renderNav(props: {
           hubView={props.hubView ?? "dashboard"}
           onChange={onChange}
           showReports={props.showReports ?? true}
+          showProfile={props.showProfile}
         />
       </ToastProvider>,
     ),
@@ -47,6 +51,22 @@ describe("HubBottomNav", () => {
   it("ховає «Звіти» коли showReports=false", () => {
     renderNav({ showReports: false });
     expect(screen.queryByRole("tab", { name: /Звіти/ })).toBeNull();
+  });
+
+  it("ховає «Профіль» за замовчуванням (гість)", () => {
+    renderNav({});
+    expect(screen.queryByRole("tab", { name: /Профіль/ })).toBeNull();
+  });
+
+  it("показує «Профіль» коли showProfile=true (залогінений)", () => {
+    renderNav({ showProfile: true });
+    expect(screen.getByRole("tab", { name: /Профіль/ })).toBeInTheDocument();
+  });
+
+  it("виклик onChange при кліку на «Профіль»", () => {
+    const { onChange } = renderNav({ showProfile: true });
+    fireEvent.click(screen.getByRole("tab", { name: /Профіль/ }));
+    expect(onChange).toHaveBeenCalledWith("profile");
   });
 
   it("активний таб має aria-selected=true", () => {

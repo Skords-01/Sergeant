@@ -7,6 +7,7 @@ import { ErrorBoundary } from "../ErrorBoundary";
 import { HubDashboard } from "../hub/HubDashboard";
 import { HubReports } from "../hub/HubReports";
 import { HubSettingsPage } from "../hub/HubSettingsPage";
+import { ProfilePage } from "../profile/ProfilePage";
 import type { OpenModuleOptions } from "../hooks/useHubNavigation";
 import type { HubView } from "../hooks/useHubUIState";
 import { IOSInstallBanner } from "./IOSInstallBanner";
@@ -201,6 +202,14 @@ export const HubMainContent = memo(function HubMainContent({
           <ErrorBoundary key="reports" fallback={HubSectionFallback}>
             <div className="pt-2">
               <HubReports />
+            </div>
+          </ErrorBoundary>
+        )}
+
+        {hubView === "profile" && (
+          <ErrorBoundary key="profile" fallback={HubSectionFallback}>
+            <div className="pt-2">
+              <ProfilePage />
             </div>
           </ErrorBoundary>
         )}

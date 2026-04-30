@@ -1,6 +1,6 @@
 # Sergeant Design System
 
-> **Last validated:** 2026-04-29 by @devin-ai. **Next review:** 2026-07-29.
+> **Last validated:** 2026-04-30 by @devin-ai. **Next review:** 2026-07-30.
 > **Status:** Active
 
 Єдина візуальна мова для хаба з 4 модулями: **ФІНІК**, **ФІЗРУК**, **Рутина**,
@@ -700,7 +700,136 @@ Mutator-handler-и в `apps/web/src/core/lib/chatActions/` повертають
 
 ---
 
-## 16. Що далі
+## 16. Gestures & a11y (2026-04, batch 3)
+
+Третій batch UX-покращень додав три горизонтальні примітиви: dismiss-by-drag для
+overlay-ів, headless-сповіщення для скрін-рідерів, і live-feedback для tab-swipe.
+
+### Sheet — swipe-to-dismiss
+
+`Sheet` (bottom sheet) і `ConfirmDialog` (модалка) тепер закриваються
+свайпом униз. Жест прив'язаний до **handle pill + header** (Sheet) або до
+всього контейнера (ConfirmDialog), щоб не конфліктувати зі скролом /
+текстовими інпутами в body.
+
+- Поріг: `80px` (`useSwipeToDismiss` default).
+- Snap-back: `200ms cubic-bezier(0.32, 0.72, 0, 1)` через `translate3d`.
+- Coercion: на `ConfirmDialog` dismiss = "cancel" (не "confirm").
+
+Жест працює і на тач-скрінах, і на трекпадах через **Pointer Events** з
+`setPointerCapture`. Зворотну сумісність із кнопкою `×` / Escape
+збережено.
+
+### ModuleSettingsDrawer — swipe-right-to-dismiss
+
+`ModuleSettingsDrawer` (правий side-drawer) використовує той самий хук
+з `direction: "right"`. Жест прив'язаний **тільки до header** —
+налаштування в body часто містять інпути / списки, які не мають
+"крастися" вбік під час скролу.
+
+### `useSwipeToDismiss` — спільний headless хук
+
+```tsx
+import { useSwipeToDismiss } from "@shared/hooks";
+
+const swipe = useSwipeToDismiss({
+  threshold: 80, // default 80px
+  direction: "down", // "down" | "right"
+  overshootResistance: 1, // 1 = no resistance, >1 = rubber-band
+  enabled: open,
+  onDismiss: onClose,
+});
+
+return (
+  <div
+    {...swipe.bind}
+    style={{
+      // Consumer reapplies the same axis it passed in options.
+      transform: `translate3d(0, ${swipe.dragOffset}px, 0)`,
+      transition: swipe.dragging
+        ? "none"
+        : "transform 200ms cubic-bezier(0.32, 0.72, 0, 1)",
+    }}
+  />
+);
+```
+
+**Контракт:**
+
+| Поле         | Тип                                      | Призначення                               |
+| ------------ | ---------------------------------------- | ----------------------------------------- |
+| `bind`       | `{ onPointerDown / Move / Up / Cancel }` | Розпаковуй у елемент-ручку через `{...}`  |
+| `dragOffset` | `number` (≥ 0)                           | Поточний offset уздовж осі для transform  |
+| `dragging`   | `boolean`                                | true в момент drag — вимикай `transition` |
+
+**Не біндь жест на body зі скролом / інпутами** — handle/header only,
+інакше pointer events перехоплюються до scroll-у.
+
+### `ScreenReaderAnnouncerProvider` + `useAnnounce`
+
+Глобальний headless-об'явник, змонтований **в `App.tsx` над
+`ApiClientProvider` / `AuthProvider`**, рендерить два невидимі
+`aria-live` регіони (`polite` + `assertive`). `useAnnounce()`
+повертає імперативний `announce(message, options?)`, який AT
+(NVDA / JAWS / VoiceOver / TalkBack) озвучить у наступному циклі.
+
+```tsx
+import { useAnnounce } from "@shared/components/ui";
+
+const { announce } = useAnnounce();
+
+// Polite — для нейтральних подій
+announce("Тренування збережено.");
+
+// Assertive — для помилок / критичних змін
+announce("Не вдалось зберегти. Спробуй ще раз.", { assertive: true });
+```
+
+Викликай `announce()`:
+
+- При відкритті будь-якого `Sheet` (озвучує `title`).
+- При тоглі `Switch` (через проп `announceText`, див. нижче).
+- При завершенні мутації, яку користувач ініціював, але результат не
+  показує одразу візуально (workout finish, save settings, …).
+
+**Не дублюй `aria-live`** на сторінках — провайдер уже один на весь
+застосунок. Це особливо важливо для мобільних read-режимів, де AT
+читають кожен live-регіон окремо.
+
+### `Switch` — `announceText`
+
+```tsx
+<Switch
+  checked={pushOn}
+  onChange={setPushOn}
+  label="Push-сповіщення"
+  announceText={(checked) =>
+    checked ? "Push-сповіщення увімкнено" : "Push-сповіщення вимкнено"
+  }
+/>
+```
+
+Якщо `announceText` не передано і `label` задано — `Switch` все одно
+озвучить дефолтне `"{label} увімкнено / вимкнено"`. Без `label` — нічого
+не озвучується. Щоб явно придушити озвучення при заданому `label`,
+передай `() => ""`. Колбек отримує **новий** стан після toggle.
+
+### Finyk swipe-between-tabs — visual feedback
+
+`FinykApp` тепер показує two-channel feedback при горизонтальному
+свайпі між табами:
+
+- **Live drag follow** — page wrapper рухається разом із пальцем
+  (`translate3d(dx * 0.45, 0, 0)`) для тактильного відгуку.
+- **Top progress bar** — тонка `bg-finyk` смужка згори, що заповнюється
+  до 60px threshold (повільний `0–100%` фейд) і темнішає на коміті.
+
+Цей патерн поки локальний для Finyk; якщо buyer-у потрібно перенести в
+інші модулі — обгорни в `useSwipeBetweenTabs` хук і документуй тут.
+
+---
+
+## 17. Що далі
 
 - Догнати всі модулі (ФІНІК / ФІЗРУК / Рутина / Харчування) під єдині
   примітиви — окремими PR'ами, по модулю.

@@ -54,34 +54,34 @@ accepted.
 
 Industry-стандартні підходи:
 
-1. **URL prefix (`/api/v1/...`).** GitHub, Stripe (legacy), most public APIs.
-   Pros: видно у network-tab, curl-friendly, route-based proxying / caching.
-   Cons: URL шум; "major version" embedded у path.
+1. **URL prefix (`/api/v1/...`).** GitHub, Stripe (legacy), більшість публічних API.
+   Плюси: видно у network-tab, зручно для curl, route-based proxying / caching.
+   Мінуси: URL-шум; «major version» вбудована у path.
 
 2. **Header-based (`Accept: application/vnd.sergeant.v1+json`).** GitHub
-   (новіше), Microsoft Graph. Pros: clean URLs; technically purer ("the URL
-   identifies the resource, the header identifies the representation"). Cons:
+   (новіше), Microsoft Graph. Плюси: чисті URL-и; технічно пуристіше («the URL
+   identifies the resource, the header identifies the representation»). Мінуси:
    важче debug-ити (curl потребує `-H`); не cache-friendly без custom Vary;
    mobile network logs не показують version.
 
-3. **Query-param (`?api-version=2024-01-01`).** Azure REST. Pros: explicit,
-   defaultable. Cons: misuse-prone (forget query-param → silent fallback на default).
+3. **Query-param (`?api-version=2024-01-01`).** Azure REST. Плюси: явний,
+   піддається default-ом. Мінуси: misuse-prone (забув query-param → silent fallback на default).
 
-4. **Date-based (`/api/2024-01-01/`).** Stripe new API. Pros: clear timeline;
-   pinning specific date. Cons: complexity для small API; вимагає version
+4. **Date-based (`/api/2024-01-01/`).** Stripe new API. Плюси: чіткий таймлайн;
+   pinning конкретної дати. Мінуси: завелика complexity для малого API; потребує version
    negotiation infra.
 
 ### Decision
 
 **URL prefix `/api/v1/...` — формат вибраний.**
 
-Ground rules:
+Базові правила:
 
-- `v1`, `v2`, `v3` — major versions only. No `v1.1` / `v1.2`.
-- Minor backward-compatible changes (additive поля, нові endpoints) — у тій
-  самій версії. Кліент має бути толерантним до unknown полів (стандарт
-  RESTful).
-- `v2` починається лише при breaking change. Detail у ADR-8.4.
+- `v1`, `v2`, `v3` — лише major-версії. Жодних `v1.1` / `v1.2`.
+- Minor backward-compatible зміни (additive поля, нові endpoints) — у тій
+  самій версії. Клієнт має бути толерантним до unknown-полів (стандартний
+  RESTful-підхід).
+- `v2` починається лише при breaking change. Деталі — у ADR-8.4.
 
 ### Consequences
 
@@ -102,10 +102,10 @@ Ground rules:
 
 ### Alternatives considered
 
-- **Header-based:** відкинуто за debug-friendliness.
+- **Header-based:** відкинуто через гіршу debug-friendliness.
 - **No versioning at all:** з мобільним long-tail (юзер не оновлює
-  додаток рік) це фейл-ньою-у-фіксі. Версія обов'язкова для mobile.
-- **Date-based:** overkill.
+  додаток рік) це «fail-як-не-вирішив». Версія обов'язкова для mobile.
+- **Date-based:** overkill для нашого масштабу.
 
 ---
 

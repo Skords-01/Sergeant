@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { SectionHeading } from "@shared/components/ui/SectionHeading";
+import { CollapsibleSection } from "@shared/components/ui/CollapsibleSection";
 import { Icon } from "@shared/components/ui/Icon";
 import { cn } from "@shared/lib/cn";
 import {
@@ -60,6 +61,12 @@ import {
 import { type ModuleId } from "./dashboard/moduleConfigs";
 import { SortableCard } from "./dashboard/BentoCard";
 import {
+  applyAdaptiveLift,
+  pickAdaptiveLift,
+  pickStrongestSeverity,
+} from "./dashboard/adaptiveSort";
+import { useHubPref } from "../settings/hubPrefs";
+import {
   MotivationalFooter,
   StaggerChild,
   StreakIndicator,
@@ -74,6 +81,18 @@ export {
   saveDashboardOrder,
   resetDashboardOrder,
 } from "./dashboard/dashboardStore";
+
+// Ukrainian 1 / 2-4 / 5+ plural. Inline because this file is the only
+// current consumer; `AssistantCataloguePage` has its own copy with a
+// slightly different (tuple-based) signature. Kept intentionally small;
+// if a third call-site appears, promote to `@shared/lib/pluralize`.
+function pluralize(n: number, one: string, few: string, many: string): string {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return one;
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return few;
+  return many;
+}
 
 interface HubDashboardProps {
   onOpenModule: (module: string) => void;
@@ -199,6 +218,70 @@ export function HubDashboard({
     }
     return set;
   }, [focus, rest]);
+
+  // Adaptive bento — soft re-ordering of the 2x2 grid based on context
+  // (active rec signals × time of day). Off in editMode and when the
+  // user has flipped the `adaptiveBento` pref off (default ON).
+  const [adaptivePref] = useHubPref<boolean>("adaptiveBento", true);
+
+  const severityByModule = useMemo(() => {
+    const all = focus ? [focus, ...rest] : rest;
+    const map: Partial<Record<ModuleId, "danger" | "warning" | undefined>> = {};
+    for (const r of all) {
+      if (!r.module || r.module === "hub") continue;
+      const id = r.module as ModuleId;
+      const sev =
+        r.severity === "danger" || r.severity === "warning"
+          ? r.severity
+          : undefined;
+      map[id] = pickStrongestSeverity([map[id], sev]);
+    }
+    return map;
+  }, [focus, rest]);
+
+  // Re-evaluate every minute so time-of-day windows (breakfast / lunch /
+  // evening close-out) flip on the right side of their boundaries without
+  // a manual reload.
+  const [adaptiveNow, setAdaptiveNow] = useState(() => new Date());
+  useEffect(() => {
+    const id = setInterval(() => setAdaptiveNow(new Date()), 60_000);
+    return () => clearInterval(id);
+  }, []);
+
+  const activeSet = useMemo(
+    () => new Set<string>(activeModules),
+    [activeModules],
+  );
+
+  const adaptive = useMemo(() => {
+    if (!adaptivePref || editMode) {
+      return {
+        liftedId: null as ModuleId | null,
+        reason: null as string | null,
+      };
+    }
+    const result = pickAdaptiveLift({
+      order: visibleOrder as ModuleId[],
+      modulesWithSignal,
+      severityByModule,
+      activeModules: activeSet,
+      now: adaptiveNow,
+    });
+    return { liftedId: result.liftedId, reason: result.reason };
+  }, [
+    adaptivePref,
+    editMode,
+    visibleOrder,
+    modulesWithSignal,
+    severityByModule,
+    activeSet,
+    adaptiveNow,
+  ]);
+
+  const displayOrder = useMemo(
+    () => applyAdaptiveLift(visibleOrder as ModuleId[], adaptive.liftedId),
+    [visibleOrder, adaptive.liftedId],
+  );
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -354,12 +437,23 @@ export function HubDashboard({
           {/* «Підказки» секція: AssistantAdvice + DailyNudge — обидві
            * картки показували пораду на день, але рендерились як два
            * незалежних блоки з різним візуальним chrome. Обʼєднання
-           * під одним SectionHeading знижує card-density (#1130). */}
+           * під одним SectionHeading знижує card-density (#1130).
+           * Collapsible so users with many modules can reduce scroll depth. */}
           <StaggerChild index={si++}>
-            <section className="space-y-2">
-              <SectionHeading as="h2" size="xs" className="!px-0">
-                Підказки
-              </SectionHeading>
+            <CollapsibleSection
+              storageKey="sergeant:hub.hints.open"
+              title="Підказки"
+              collapsedIcon="lightbulb"
+              collapsedSubtitle={
+                coachLoading
+                  ? "Готую AI-пораду…"
+                  : coachError
+                    ? "Не вдалось отримати AI-пораду"
+                    : activeNudge && !reengagement.show
+                      ? "AI-порада + нагадування"
+                      : "AI-порада на день"
+              }
+            >
               <AssistantAdviceCard
                 insight={coachInsightText}
                 loading={coachLoading}
@@ -373,7 +467,7 @@ export function HubDashboard({
                   onDismiss={() => setNudgeDismissed(true)}
                 />
               )}
-            </section>
+            </CollapsibleSection>
           </StaggerChild>
         </>
       )}
@@ -413,11 +507,11 @@ export function HubDashboard({
             onDragEnd={handleDragEnd}
           >
             <SortableContext
-              items={visibleOrder}
+              items={displayOrder}
               strategy={rectSortingStrategy}
             >
-              <div className="grid grid-cols-2 gap-3">
-                {visibleOrder.map((id) => (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                {displayOrder.map((id) => (
                   <SortableCard
                     key={id}
                     id={id as ModuleId}
@@ -425,6 +519,9 @@ export function HubDashboard({
                     quickAdd={quickAddByModule[id] || null}
                     inactive={!isActiveModule(activeModules, id)}
                     editMode={editMode}
+                    adaptiveReason={
+                      id === adaptive.liftedId ? adaptive.reason : null
+                    }
                   />
                 ))}
               </div>
@@ -448,14 +545,26 @@ export function HubDashboard({
       {/* «Аналітика» секція (FTUX-гейт): insights-panel + weekly-digest —
        * обидва data-driven блоки на історії. До першого реального запису
        * insights пусті, а digest промовляє «нічого не було за тиждень».
-       * Гейтимо за hasRealEntry. SectionHeading з #1130 знижує
-       * card-density, а гейт — FTUX-noise. */}
+       * Гейтимо за hasRealEntry. Collapsible per UX audit — users who
+       * check analytics weekly can collapse the section to cut scroll depth. */}
       {hasRealEntry && (
         <StaggerChild index={si++}>
-          <section className="space-y-2">
-            <SectionHeading as="h2" size="xs" className="!px-0">
-              Аналітика
-            </SectionHeading>
+          <CollapsibleSection
+            storageKey="sergeant:hub.analytics.open"
+            title="Аналітика"
+            collapsedIcon="bar-chart"
+            collapsedSubtitle={
+              rest.length > 0
+                ? `${rest.length} ${pluralize(rest.length, "інсайт", "інсайти", "інсайтів")}${
+                    digestFresh ? " · свіжий дайджест" : ""
+                  }`
+                : digestFresh
+                  ? "Свіжий щотижневий дайджест"
+                  : showDigestFooter
+                    ? "Щотижневий дайджест"
+                    : "Без нових інсайтів"
+            }
+          >
             <HubInsightsPanel
               items={rest}
               onOpenModule={openInsightTarget}
@@ -470,7 +579,7 @@ export function HubDashboard({
                 onExpand={() => setDigestExpanded(true)}
               />
             ) : null}
-          </section>
+          </CollapsibleSection>
         </StaggerChild>
       )}
 

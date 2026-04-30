@@ -20,7 +20,7 @@ import preset from "@sergeant/design-tokens/tailwind-preset.js";
 export default { presets: [preset] /* … */ };
 ```
 
-## Hard rules
+## Hard-rules
 
 - **Opacity scale:** тільки зареєстровані кроки (0, 5, 8, 10, 15, …, 100). Інші — silently dropped Tailwind. Див. [AGENTS.md #8](../../AGENTS.md).
 - **`-strong` companion:** насичені brand fills під `text-white` мають використовувати `-strong` варіант. Див. [AGENTS.md #9](../../AGENTS.md).

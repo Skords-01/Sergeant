@@ -41,7 +41,7 @@
 
 ## 1. Розробка (DX, день-у-день)
 
-### 1.1. Local dev environment
+### 1.1. Локальне dev-середовище
 
 | Tool                       | What                               | Cost | Effort | Tier |
 | -------------------------- | ---------------------------------- | ---- | ------ | ---- |
@@ -52,7 +52,7 @@
 | **Lefthook**               | Faster pre-commit (Go)             | $0   | 1 год  | nice |
 | **Turbo remote cache**     | CI build cache (5 → 1 хв)          | $0   | 1 год  | must |
 
-#### Turbo remote cache — setup guide
+#### Turbo remote cache — інструкція з налаштування
 
 CI already passes `TURBO_TOKEN` / `TURBO_TEAM` env vars to every turbo
 invocation. When the secrets are absent turbo silently falls back to
@@ -88,7 +88,7 @@ read & write the shared cache.
 - Локальний Postgres вже піднімається через кореневий `docker-compose.yml` (`postgres:16-alpine`, `docker compose up -d` → `DATABASE_URL=postgresql://hub:hub@localhost:5432/hub`). Залишковий win — `pnpm dev:db` shortcut + seed-script, але інфраструктура вже на місці; пропозицію «додати docker-compose» прибрано як виконану.
 - Volta або mise треба, бо `package.json` зараз має `engines.node` але без enforcement.
 
-### 1.2. CLI quality of life
+### 1.2. CLI quality-of-life
 
 | Tool                                                                 | What                                | Cost |
 | -------------------------------------------------------------------- | ----------------------------------- | ---- |
@@ -105,7 +105,7 @@ read & write the shared cache.
 
 ## 2. Створення коду (генератори, codegen)
 
-### 2.1. Code generators
+### 2.1. Генератори коду
 
 | Tool          | Use case                                         | Effort to setup |
 | ------------- | ------------------------------------------------ | --------------- |
@@ -120,7 +120,7 @@ read & write the shared cache.
 - `plop endpoint <method> <path>` — Express handler + zod schema + test
 - `plop migration <name>` — `apps/server/src/migrations/<NNN>_<name>.sql`
 
-### 2.2. Type-safe API contract
+### 2.2. Type-safe API-контракт
 
 Це **найбільша зміна архітектури**, але вирішує клас регресій типу #708 (bigint as string).
 
@@ -133,7 +133,7 @@ read & write the shared cache.
 
 **Рекомендую zod-to-openapi** — мінімальна інвазивна зміна, найбільший win.
 
-### 2.3. UI scaffolding
+### 2.3. UI-scaffolding
 
 | Tool                               | What                                |
 | ---------------------------------- | ----------------------------------- |
@@ -146,7 +146,7 @@ read & write the shared cache.
 
 ---
 
-## 3. Якість коду (static analysis)
+## 3. Якість коду (static-аналіз)
 
 ### 3.1. Must-have
 
@@ -200,7 +200,7 @@ pnpm --filter @sergeant/web build:analyze
 | **ts-prune**           | Find dead exports (overlap with Knip)          | $0           |
 | **madge**              | Find circular dependencies                     | $0           |
 
-### 3.3. Custom ESLint rules
+### 3.3. Кастомні ESLint-rule-и
 
 У вас вже `packages/eslint-plugin-sergeant-design/`. Кандидати на нові правила:
 
@@ -215,7 +215,7 @@ pnpm --filter @sergeant/web build:analyze
 
 Окрема секція в `docs/planning/ai-coding-improvements.md` (#711) містить деталі по Vitest, Playwright, Argos, Storybook, snapshot tests. Тут — додаткові тулзи.
 
-### 4.1. Test infrastructure
+### 4.1. Тестова інфраструктура
 
 | Tool                          | What                                     | Effort | Tier | Статус                                                         |
 | ----------------------------- | ---------------------------------------- | ------ | ---- | -------------------------------------------------------------- |
@@ -229,7 +229,7 @@ pnpm --filter @sergeant/web build:analyze
 
 **Sergeant-priority:** Testcontainers. Зараз у server tests `queryMock.mockResolvedValueOnce(...)` — це не ловить SQL-помилки. Реальний PG ловить.
 
-### 4.2. E2E і visual
+### 4.2. E2E та visual-тести
 
 | Tool           | What                                                                         | Cost                  |
 | -------------- | ---------------------------------------------------------------------------- | --------------------- |
@@ -240,7 +240,7 @@ pnpm --filter @sergeant/web build:analyze
 | **Chromatic**  | Storybook-integrated visual testing                                          | $149/міс              |
 | **Lost Pixel** | Self-hosted visual testing                                                   | $0                    |
 
-### 4.3. Performance і load
+### 4.3. Performance та load-тести
 
 | Tool              | What                     | Cost         |
 | ----------------- | ------------------------ | ------------ |
@@ -250,7 +250,7 @@ pnpm --filter @sergeant/web build:analyze
 | **WebPageTest**   | Real-device RUM          | Free quota   |
 | **Stryker**       | Mutation testing         | $0           |
 
-### 4.4. Coverage
+### 4.4. Покриття тестами
 
 | Tool              | What                            |
 | ----------------- | ------------------------------- |
@@ -264,7 +264,7 @@ CI gate: `vitest --coverage` + threshold (наприклад 70% lines) на cri
 
 ## 5. CI/CD
 
-### 5.1. Pipeline optimization
+### 5.1. Оптимізація pipeline-у
 
 | Practice                     | What                                                              | Effort           |
 | ---------------------------- | ----------------------------------------------------------------- | ---------------- |
@@ -275,7 +275,7 @@ CI gate: `vitest --coverage` + threshold (наприклад 70% lines) на cri
 | **Cached pnpm store**        | Окремо від node_modules                                           | 30 хв            |
 | **Required checks rules**    | Branch protection: lint + typecheck + test required               | 30 хв            |
 
-### 5.2. Tools
+### 5.2. Інструменти
 
 | Tool                        | What                                           | Cost      |
 | --------------------------- | ---------------------------------------------- | --------- |
@@ -288,7 +288,7 @@ CI gate: `vitest --coverage` + threshold (наприклад 70% lines) на cri
 
 **Sergeant-priority:** Renovate (Dependabot тут не справляється з pnpm workspace правильно).
 
-### 5.3. Preview environments
+### 5.3. Preview-середовища
 
 | Service                         | Pros               | Cons               | Cost        |
 | ------------------------------- | ------------------ | ------------------ | ----------- |
@@ -299,7 +299,7 @@ CI gate: `vitest --coverage` + threshold (наприклад 70% lines) на cri
 
 **Sergeant-priority:** Vercel Pro (без preview AI-валідація сильно слабша).
 
-### 5.4. Bots і AI review
+### 5.4. Боти і AI-review
 
 | Tool                | What                          | Cost     |
 | ------------------- | ----------------------------- | -------- |
@@ -310,9 +310,9 @@ CI gate: `vitest --coverage` + threshold (наприклад 70% lines) на cri
 
 ---
 
-## 6. Production / Observability
+## 6. Production / observability
 
-### 6.1. Error tracking
+### 6.1. Error-tracking
 
 | Tool                       | What                                           | Cost            |
 | -------------------------- | ---------------------------------------------- | --------------- |
@@ -335,7 +335,7 @@ CI gate: `vitest --coverage` + threshold (наприклад 70% lines) на cri
 | **OpenTelemetry SDK** | Vendor-agnostic instrumentation      | $0 (just SDK)   |
 | **Honeycomb**         | Best-in-class for distributed traces | $0 starter      |
 
-### 6.3. Logs
+### 6.3. Логи
 
 | Tool                       | What                                 |
 | -------------------------- | ------------------------------------ |
@@ -347,7 +347,7 @@ CI gate: `vitest --coverage` + threshold (наприклад 70% lines) на cri
 
 **Sergeant:** ✅ done у [#738](https://github.com/Skords-01/Sergeant/pull/738). `apps/server/src/obs/logger.ts` тепер на pino + `pino-http` middleware, JSON-формат у проді (Railway), pretty-print у dev. Sentry/PostHog stream підключаться без зміни коду.
 
-### 6.4. Uptime і health
+### 6.4. Uptime і health-checkи
 
 | Tool                    | What                        | Cost         |
 | ----------------------- | --------------------------- | ------------ |
@@ -358,7 +358,7 @@ CI gate: `vitest --coverage` + threshold (наприклад 70% lines) на cri
 
 **Sergeant priority:** UptimeRobot на `/health` — настройти за 5 хв.
 
-### 6.5. Product analytics
+### 6.5. Продуктова аналітика
 
 | Tool          | What                                             | Cost         |
 | ------------- | ------------------------------------------------ | ------------ |
@@ -381,9 +381,9 @@ CI gate: `vitest --coverage` + threshold (наприклад 70% lines) на cri
 
 ---
 
-## 7. Database
+## 7. База даних
 
-### 7.1. Postgres tools
+### 7.1. Postgres-інструменти
 
 | Tool                   | What                            | Cost           |
 | ---------------------- | ------------------------------- | -------------- |
@@ -403,7 +403,7 @@ CI gate: `vitest --coverage` + threshold (наприклад 70% lines) на cri
 - **pg_stat_statements** на проді — знайти повільні queries (за 1 день логів зазвичай 5+ кандидатів).
 - **Drizzle** як step-up з raw SQL — поетапно, не одразу.
 
-### 7.2. Backups і recovery
+### 7.2. Бекапи і recovery
 
 | Practice                        | What                                                    |
 | ------------------------------- | ------------------------------------------------------- |
@@ -412,7 +412,7 @@ CI gate: `vitest --coverage` + threshold (наприклад 70% lines) на cri
 | **wal-e / wal-g**               | Continuous archiving (для self-hosted)                  |
 | **pgBackRest**                  | Same                                                    |
 
-### 7.3. Migrations safety patterns
+### 7.3. Безпечні патерни міграцій
 
 - **Backwards-compatible deploys**: спочатку додай column nullable, потім backfill, потім зроби NOT NULL у наступному релізі.
 - **Locks-aware migrations**: ніколи `ALTER TABLE ADD COLUMN NOT NULL` на великих таблицях без default.
@@ -449,7 +449,7 @@ CI gate: `vitest --coverage` + threshold (наприклад 70% lines) на cri
 | **Doppler**       | Centralized secrets             | $0 / $7/user/міс |
 | **Infisical**     | Open-source Doppler alternative | $0 / $9/user/міс |
 
-### 8.3. Audits
+### 8.3. Аудити
 
 - Раз на півроку — security audit (manual review або external).
 - Раз на квартал — `pnpm audit` review + critical CVE patches.
@@ -482,7 +482,7 @@ CI gate: `vitest --coverage` + threshold (наприклад 70% lines) на cri
 | **node --prof** | Native CPU profiling         |
 | **0x**          | Flamegraph generator         |
 
-### 9.3. Network
+### 9.3. Мережа
 
 | Tool                   | What                                         |
 | ---------------------- | -------------------------------------------- |
@@ -493,9 +493,9 @@ CI gate: `vitest --coverage` + threshold (наприклад 70% lines) на cri
 
 ---
 
-## 10. Documentation
+## 10. Документація
 
-### 10.1. Repo docs
+### 10.1. Репо-доки
 
 | Practice                                | Tool                |
 | --------------------------------------- | ------------------- |
@@ -505,7 +505,7 @@ CI gate: `vitest --coverage` + threshold (наприклад 70% lines) на cri
 | **ADR** (Architecture Decision Records) | adr-tools / madr    |
 | **Postmortems folder**                  | `docs/postmortems/` |
 
-### 10.2. Generated docs
+### 10.2. Генеровані доки
 
 | Tool                | What                    |
 | ------------------- | ----------------------- |
@@ -518,7 +518,7 @@ CI gate: `vitest --coverage` + threshold (наприклад 70% lines) на cri
 
 **Sergeant priority:** README quickstart перш за все. Зараз новий розробник буде довго стикатись.
 
-### 10.3. Diagrams
+### 10.3. Діаграми
 
 | Tool                   | What                            |
 | ---------------------- | ------------------------------- |
@@ -531,7 +531,7 @@ CI gate: `vitest --coverage` + threshold (наприклад 70% lines) на cri
 
 ## 11. Команда / процеси
 
-### 11.1. Tooling
+### 11.1. Інструменти
 
 | Tool                            | What                     | Cost           |
 | ------------------------------- | ------------------------ | -------------- |
@@ -541,7 +541,7 @@ CI gate: `vitest --coverage` + threshold (наприклад 70% lines) на cri
 | **GitHub Projects**             | Free якщо вже на GitHub  | $0             |
 | **Slack** + GitHub integrations | Comms                    | $7/user/міс    |
 
-### 11.2. Practices
+### 11.2. Практики
 
 - **Async stand-ups** замість дзвінків (Slack thread + PR-ди).
 - **PR template** з блоком "How tested" (з #711).
@@ -550,7 +550,7 @@ CI gate: `vitest --coverage` + threshold (наприклад 70% lines) на cri
 - **Postmortems на all production incidents** — folder `docs/postmortems/YYYY-MM-DD-*.md`.
 - **Onboarding doc** для нових — крок за кроком 1-й тиждень.
 
-### 11.3. Knowledge sharing
+### 11.3. Обмін знаннями
 
 - **Tech-talks 1 раз/міс** — 30 хв, slack-recording.
 - **Brown-bag sessions** — обід + презентація (для офлайн).
@@ -559,7 +559,7 @@ CI gate: `vitest --coverage` + threshold (наприклад 70% lines) на cri
 
 ---
 
-## 12. Cost optimization
+## 12. Оптимізація витрат
 
 | Practice                                | Saves                 |
 | --------------------------------------- | --------------------- |
@@ -573,7 +573,7 @@ CI gate: `vitest --coverage` + threshold (наприклад 70% lines) на cri
 
 ---
 
-## Implementation order (по тижнях)
+## Порядок впровадження (по тижнях)
 
 ### Тиждень 1 — швидкі wins ($46/міс новий cost)
 
@@ -615,7 +615,7 @@ CI gate: `vitest --coverage` + threshold (наприклад 70% lines) на cri
 - [ ] Devcontainer для local dev (docker-compose вже на місці — кореневий `docker-compose.yml`)
 - [ ] Drizzle migration POC (один модуль)
 
-### Maintenance (continuous)
+### Підтримка (неперервно)
 
 - [ ] Quarterly security audit
 - [ ] Quarterly recovery drill (DB backup restore)
@@ -658,7 +658,7 @@ CI gate: `vitest --coverage` + threshold (наприклад 70% lines) на cri
 
 ---
 
-## Session log
+## Журнал сесій
 
 ### 2026-04-25 — інфра-спринт
 

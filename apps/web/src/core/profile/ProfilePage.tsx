@@ -1,5 +1,4 @@
-import { useNavigate } from "react-router-dom";
-import { Button } from "@shared/components/ui/Button";
+import { CollapsibleSection } from "@shared/components/ui/CollapsibleSection";
 import { Icon } from "@shared/components/ui/Icon";
 import { useOnlineStatus } from "@shared/hooks/useOnlineStatus";
 import { useAuth } from "../auth/AuthContext";
@@ -9,8 +8,12 @@ import { MemoryBankSection } from "./MemoryBankSection";
 import { PersonalInfoSection } from "./PersonalInfoSection";
 import { SessionsSection } from "./SessionsSection";
 
+// ProfilePage is always rendered inside the hub as a bottom-nav tab — the
+// hub owns the header + bottom-nav chrome and the main scroll container,
+// so this component just renders the section stack. The standalone
+// `/profile` route was retired; deep-links to `/profile` redirect to the
+// hub with the `profile` tab pre-activated (`/?tab=profile`).
 export function ProfilePage() {
-  const navigate = useNavigate();
   const { user, logout, refresh } = useAuth();
   const online = useOnlineStatus();
 
@@ -18,53 +21,75 @@ export function ProfilePage() {
     return null;
   }
 
+  // Each section is wrapped in a `CollapsibleSection` so the page reads as
+  // a stack of single-line entry-points by default and the user opens only
+  // what they need. `Особиста інформація` defaults to open because it is
+  // the identity preview (avatar + name + email + verification banner) —
+  // the section a user opening Profile most often wants to glance at. The
+  // remaining four sections — Memory, Password, Sessions, Danger zone —
+  // default to collapsed; their open/closed state is persisted per
+  // `storageKey` so the user's preference survives reload. Multiple
+  // sections can be open simultaneously (non-mutually-exclusive).
   return (
-    <div
-      className="min-h-dvh bg-bg"
-      style={{
-        paddingTop: "max(0px, env(safe-area-inset-top))",
-        paddingBottom: "max(1.5rem, env(safe-area-inset-bottom))",
-      }}
-    >
-      {/* Top nav bar */}
-      <div className="sticky top-0 z-10 bg-bg/80 backdrop-blur-md border-b border-line/60">
-        <div className="max-w-lg mx-auto px-5 h-14 flex items-center gap-3">
-          <Button
-            variant="ghost"
-            size="sm"
-            iconOnly
-            onClick={() => navigate(-1)}
-            aria-label="Назад"
-          >
-            <Icon name="chevron-left" size={20} />
-          </Button>
-          <span className="text-sm font-semibold text-text">Профіль</span>
+    <div className="max-w-lg mx-auto px-5 pb-10 space-y-2 pt-6">
+      {!online && (
+        <div className="flex items-center gap-2 rounded-xl bg-warning/10 border border-warning/30 px-4 py-3 mb-2">
+          <Icon name="wifi-off" size={16} className="text-warning shrink-0" />
+          <p className="text-sm text-warning font-medium">
+            Ви офлайн — редагування профілю тимчасово недоступне
+          </p>
         </div>
-      </div>
+      )}
 
-      <div className="max-w-lg mx-auto px-5 pb-10 space-y-3 pt-6">
-        {!online && (
-          <div className="flex items-center gap-2 rounded-xl bg-warning/10 border border-warning/30 px-4 py-3">
-            <Icon name="wifi-off" size={16} className="text-warning shrink-0" />
-            <p className="text-sm text-warning font-medium">
-              Ви офлайн — редагування профілю тимчасово недоступне
-            </p>
-          </div>
-        )}
-
+      <CollapsibleSection
+        storageKey="sergeant.profile.personalInfo.open"
+        title="Особиста інформація"
+        defaultOpen
+        collapsedIcon="user"
+        collapsedSubtitle={user.email ?? user.name ?? undefined}
+      >
         <PersonalInfoSection user={user} online={online} onRefresh={refresh} />
+      </CollapsibleSection>
 
-        {/* Section label */}
-        <p className="text-eyebrow text-muted/60 px-1 pt-2">Пам&apos;ять</p>
+      <CollapsibleSection
+        storageKey="sergeant.profile.memory.open"
+        title="Пам'ять"
+        defaultOpen={false}
+        collapsedIcon="brain"
+        collapsedSubtitle="Що асистент знає про тебе"
+      >
         <MemoryBankSection />
+      </CollapsibleSection>
 
-        <p className="text-eyebrow text-muted/60 px-1 pt-2">Безпека</p>
+      <CollapsibleSection
+        storageKey="sergeant.profile.password.open"
+        title="Пароль"
+        defaultOpen={false}
+        collapsedIcon="lock"
+        collapsedSubtitle="Зміна пароля"
+      >
         <ChangePasswordSection online={online} />
-        <SessionsSection online={online} />
+      </CollapsibleSection>
 
-        <p className="text-eyebrow text-muted/60 px-1 pt-2">Акаунт</p>
+      <CollapsibleSection
+        storageKey="sergeant.profile.sessions.open"
+        title="Активні сесії"
+        defaultOpen={false}
+        collapsedIcon="monitor"
+        collapsedSubtitle="Пристрої з доступом до акаунта"
+      >
+        <SessionsSection online={online} />
+      </CollapsibleSection>
+
+      <CollapsibleSection
+        storageKey="sergeant.profile.danger.open"
+        title="Видалення акаунта"
+        defaultOpen={false}
+        collapsedIcon="alert-triangle"
+        collapsedSubtitle="Незворотні дії"
+      >
         <DangerZoneSection online={online} onLogout={logout} />
-      </div>
+      </CollapsibleSection>
     </div>
   );
 }

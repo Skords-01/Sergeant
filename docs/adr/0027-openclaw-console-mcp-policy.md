@@ -1,29 +1,29 @@
-# ADR-0027: OpenClaw, Console, and MCP Policy
+# ADR-0027: політика OpenClaw, Console та MCP
 
-- **Status:** accepted
-- **Date:** 2026-04-27
-- **Reviewers:** @Skords-01
-- **Supersedes:** —
-- **Related:** —
+- **Статус:** accepted
+- **Дата:** 2026-04-27
+- **Рецензенти:** @Skords-01
+- **Замінює:** —
+- **Пов'язане:** —
 
 ---
 
-## Context
+## Контекст
 
-OpenClaw started as launch prose, while `apps/console` now exists as an internal Telegram admin tool. Without a policy, every AI or MCP-related PR has to re-decide whether the console is a product surface, which tools can mutate data, and how prompt changes are versioned.
+OpenClaw починався як launch-проза, а `apps/console` зараз існує як внутрішній адмін-інструмент у Telegram. Без політики кожен AI- або MCP-PR має наново вирішувати, чи console — це продуктовий surface, які інструменти можуть мутувати дані та як версіонувати зміни промптів.
 
-## Decision
+## Рішення
 
-Phase 1 ships `apps/console` as an internal admin tool, not a user-facing product.
+Phase 1 випускає `apps/console` як внутрішній адмін-інструмент, не як user-facing продукт.
 
-- The console is allowlisted by Telegram user id. Production must fail closed when `ALLOWED_USER_IDS` is empty.
-- Agent output is treated as untrusted text and escaped before Telegram Markdown rendering.
-- Read-only tools are allowed by default for diagnostics and summaries.
-- Mutating tools require explicit human approval and must log the requested action, actor, target, and result.
-- MCP configuration must start from a read-only policy. Write scopes are separate, narrow, and disabled unless an operator enables them for a specific task.
-- Prompt files are versioned in git. Prompt changes go through PR review and must include the behavioral reason for the change.
-- MCC or deterministic category rules take precedence over AI categorization. AI categorization can fill gaps or propose candidates, but it must not silently override deterministic rules.
+- Console — allowlist по Telegram user id. У продакшні має fail-closed, якщо `ALLOWED_USER_IDS` порожній.
+- Вивід агента вважається untrusted-текстом і екранується перед рендером у Telegram Markdown.
+- Read-only інструменти дозволені за замовчуванням — для діагностики і самарі.
+- Мутуючі інструменти потребують явного human approval і мають логувати запитану дію, актора, ціль і результат.
+- Конфіг MCP стартує з read-only-політики. Write-скоупи — окремі, вузькі та вимкнені, доки оператор не ввімкне їх для конкретного завдання.
+- Файли промптів версіонуються в git. Зміни промптів проходять PR-рев'ю та мають містити поведінкову причину зміни.
+- MCC або детерміновані правила категорій мають пріоритет над AI-категоризацією. AI-категоризація може заповнити прогалини або запропонувати кандидатів, але не може мовчки перезаписувати детерміновані правила.
 
-## Consequences
+## Наслідки
 
-Future console and OpenClaw PRs can point to one policy instead of reopening the architecture discussion. Expansion into more agents should first add tests, audit logging, and narrowly scoped tool permissions.
+Майбутні PR-и для console та OpenClaw можуть посилатися на одну політику, замість того щоб щоразу відкривати архітектурну дискусію. Розширення до більшої кількості агентів спочатку має додавати тести, audit-логування та вузько обмежені дозволи інструментів.

@@ -1,28 +1,28 @@
-# ADR-0026: n8n Workflow Source of Truth
+# ADR-0026: n8n — джерело істини для воркфлоу
 
-- **Status:** accepted
-- **Date:** 2026-04-27
-- **Reviewers:** @Skords-01
-- **Supersedes:** —
-- **Related:** —
+- **Статус:** accepted
+- **Дата:** 2026-04-27
+- **Рецензенти:** @Skords-01
+- **Замінює:** —
+- **Пов'язане:** —
 
 ---
 
-## Context
+## Контекст
 
-Sergeant keeps operational automations in n8n. Several workflows are now security-sensitive because they receive third-party webhooks, call internal APIs, or send alerts. Manual UI-only edits make it hard to review risk, required secrets, credentials, and production readiness.
+Sergeant тримає операційні автоматизації в n8n. Декілька воркфлоу зараз чутливі з точки зору безпеки, бо приймають вебхуки від третіх сторін, викликають внутрішні API або шлють алерти. Ручні правки виключно через UI ускладнюють перегляд ризиків, потрібних секретів, креденшелів і готовності до продакшну.
 
-## Decision
+## Рішення
 
-Git is the source of truth for n8n workflows.
+Git — джерело істини для n8n-воркфлоу.
 
-- Workflow JSON lives in `ops/n8n-workflows/`.
-- `ops/n8n-workflows/manifest.json` records owner, status, risk tier, required env vars, and required credentials.
-- CI must run `pnpm ops:n8n:validate`.
-- Production workflows stay inactive in git by default. Activation is an environment operation after credentials and secrets are verified.
-- UI edits are temporary. Any UI change that should survive must be exported back to git with `pnpm n8n:export`.
-- Imports should use `pnpm n8n:import -- --dry-run` before mutating a live n8n instance.
+- JSON воркфлоу живе в `ops/n8n-workflows/`.
+- `ops/n8n-workflows/manifest.json` фіксує власника, статус, рівень ризику, потрібні env-змінні та потрібні credentials.
+- CI обовʼязково запускає `pnpm ops:n8n:validate`.
+- Прод-воркфлоу за замовчуванням лежать у git як inactive. Активація — це окрема операція в середовищі після перевірки credentials та секретів.
+- Правки через UI — тимчасові. Будь-яку UI-зміну, яка має зберегтися, треба експортнути назад у git через `pnpm n8n:export`.
+- Імпорти варто запускати з `pnpm n8n:import -- --dry-run` перед мутаціями живого n8n-інстансу.
 
-## Consequences
+## Наслідки
 
-Reviewers can reason about workflow drift in pull requests. The manifest becomes the checklist for deployment readiness, and the validator blocks obvious unsafe states such as active workflow JSON, missing manifest entries, orphaned connections, or public Mono webhook ownership in n8n.
+Рецензенти можуть міркувати про дрейф воркфлоу прямо в pull request-ах. Маніфест стає чеклистом готовності до деплою, а валідатор блокує очевидно небезпечні стани: активний JSON воркфлоу, відсутні записи в маніфесті, осиротілі connections або публічного власника Mono-вебхука в n8n.
