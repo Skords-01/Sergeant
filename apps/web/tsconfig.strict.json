@@ -18,7 +18,8 @@
     "src/core/profile/**/*",
     "src/core/settings/**/*",
     "src/core/onboarding/**/*",
-    "src/modules/nutrition/**/*"
+    "src/modules/nutrition/**/*",
+    "src/modules/routine/**/*"
   ],
   "exclude": ["node_modules", "dist"]
 }
