@@ -191,6 +191,25 @@ function sliceHardRulesSection(text) {
   return after < 0 ? text.slice(start) : text.slice(start, after);
 }
 
+// CONTRIBUTING.md has multiple unrelated `N. **bold**` numbered lists
+// ("Audit exception workflow", "Очікування до Pull Request-а", and the
+// actual "Hard rules (з AGENTS.md)" section). Without slicing, those
+// other lists overlap rule ids 1..6 and silently mask a real removal
+// from the Hard Rules section. Anchor on the H3 "Hard rules" heading
+// and stop at the next H2 or H3.
+function sliceContribHardRulesSection(text) {
+  const re = /^### .*Hard rules.*$/m;
+  const match = re.exec(text);
+  if (!match) return "";
+  const start = match.index;
+  const tail = text.slice(start + match[0].length);
+  const h2 = tail.indexOf("\n## ");
+  const h3 = tail.indexOf("\n### ");
+  const candidates = [h2, h3].filter((i) => i >= 0);
+  if (candidates.length === 0) return text.slice(start);
+  return text.slice(start, start + match[0].length + Math.min(...candidates));
+}
+
 // ── Main ─────────────────────────────────────────────────────────────────────
 
 function main() {
@@ -274,7 +293,9 @@ function main() {
   }
 
   // 4. CONTRIBUTING.md mirror
-  const contribRules = parseContribRules(contribContent);
+  const contribRules = parseContribRules(
+    sliceContribHardRulesSection(contribContent),
+  );
   if (Array.isArray(registry.rules)) {
     for (const r of registry.rules) {
       if (!r || !Number.isInteger(r.id)) continue;

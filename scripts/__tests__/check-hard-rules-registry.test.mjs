@@ -34,7 +34,12 @@ const SCHEMA_PATH = resolve(
 );
 const SCHEMA_SRC = readFileSync(SCHEMA_PATH, "utf-8");
 
-function buildFixture({ registry, agentsRules, contribRules }) {
+function buildFixture({
+  registry,
+  agentsRules,
+  contribRules,
+  contribOverride,
+}) {
   const dir = mkdtempSync(join(tmpdir(), "hard-rules-test-"));
   const root = join(dir, "repo");
   mkdirSync(join(root, "scripts"), { recursive: true });
@@ -58,9 +63,13 @@ function buildFixture({ registry, agentsRules, contribRules }) {
     "\n## Soft rules\n\nsomething.\n";
   writeFileSync(join(root, "AGENTS.md"), agentsBody);
 
-  const contribBody = contribRules
-    .map((r) => `${r.id}. **${r.title}**\n\nbody.\n`)
-    .join("\n");
+  const contribBody =
+    contribOverride !== undefined
+      ? contribOverride
+      : "### Hard rules (з `AGENTS.md`)\n\n" +
+        contribRules
+          .map((r) => `${r.id}. **${r.title}**\n\nbody.\n`)
+          .join("\n");
   writeFileSync(join(root, "CONTRIBUTING.md"), contribBody);
 
   return {
@@ -228,6 +237,57 @@ test("schema violation (unknown enforced_by.kind) fails with schema error", () =
     assert.ok(
       r.json.errors.some((e) => /schema.*kind/.test(e) || /not one of/.test(e)),
       `expected schema enum error, got: ${JSON.stringify(r.json.errors)}`,
+    );
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+// Regression: parseContribRules must be section-scoped to the H3 "Hard rules"
+// heading. CONTRIBUTING.md has multiple unrelated numbered bold-text lists
+// ("Audit exception workflow", "Очікування до Pull Request-а"); without slicing,
+// those lists silently mask a real removal of rules 1..6 from the Hard rules
+// section because the regex matches there too and the Map stores the last value.
+test("contrib-sync detects missing rule even when an unrelated numbered list shadows the id", () => {
+  const { dir, scriptDest } = buildFixture({
+    registry: {
+      version: 1,
+      source: "AGENTS.md",
+      rules: [minimalRule(1, "Real Rule One"), minimalRule(2, "Real Rule Two")],
+    },
+    agentsRules: [
+      { id: 1, title: "Real Rule One" },
+      { id: 2, title: "Real Rule Two" },
+    ],
+    // CONTRIBUTING.md fixture: a non-Hard-Rules numbered list (Audit exception
+    // workflow) defines `2. **Decoy**`, then the actual Hard rules section
+    // OMITS rule #2. Without section-slicing the script would think rule #2
+    // exists (matching the decoy entry) and silently pass.
+    contribOverride: [
+      "## Audit exception workflow",
+      "",
+      "1. **Decoy one**",
+      "",
+      "2. **Decoy two**",
+      "",
+      "### Hard rules (з `AGENTS.md`)",
+      "",
+      "1. **Real Rule One**",
+      "",
+      // rule #2 deliberately missing here
+      "",
+    ].join("\n"),
+  });
+  try {
+    const r = run(scriptDest);
+    assert.equal(
+      r.status,
+      1,
+      `expected exit 1 due to missing rule #2, got ${r.status}; stderr: ${r.stderr}`,
+    );
+    assert.ok(
+      r.json.errors.some((e) => /contrib-sync.*#2/.test(e)),
+      `expected contrib-sync error for rule #2, got: ${JSON.stringify(r.json.errors)}`,
     );
   } finally {
     rmSync(dir, { recursive: true, force: true });
