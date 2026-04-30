@@ -127,6 +127,10 @@
       "severity": "blocker",
       "enforced_by": [
         {
+          "kind": "eslint-rule",
+          "ref": "sergeant-design/no-low-contrast-text-on-fill (error)"
+        },
+        {
           "kind": "doc",
           "ref": "docs/design/BRANDBOOK.md § WCAG-AA -strong Tier"
         }
@@ -187,7 +191,7 @@
       "enforced_by": [
         {
           "kind": "eslint-rule",
-          "ref": "sergeant-design/module-accent-containment (error)"
+          "ref": "sergeant-design/no-foreign-module-accent (error)"
         }
       ],
       "links": [{ "type": "agents", "ref": "#12" }]
@@ -200,7 +204,7 @@
       "enforced_by": [
         {
           "kind": "eslint-rule",
-          "ref": "sergeant-design/no-raw-palette-pairs (error)"
+          "ref": "sergeant-design/no-raw-dark-palette (error)"
         }
       ],
       "links": [{ "type": "agents", "ref": "#13" }]
@@ -213,7 +217,7 @@
       "enforced_by": [
         {
           "kind": "eslint-rule",
-          "ref": "sergeant-design/focus-visible-not-focus (error)"
+          "ref": "sergeant-design/prefer-focus-visible (error)"
         }
       ],
       "links": [{ "type": "agents", "ref": "#14" }]
