@@ -32,6 +32,7 @@ pnpm docs:check-playbook-index     # CI: fail if INDEX.md is stale
 pnpm docs:freshness-dashboard      # Build dist/freshness-dashboard.html
 pnpm lint:ai-legacy                # CI gate: fail on expired/malformed `// AI-LEGACY: expires …` markers
 pnpm ai-legacy:dashboard           # Build dist/ai-legacy-dashboard.html
+pnpm lint:codeowners               # CI gate: fail if required path is missing from .github/CODEOWNERS
 ```
 
 ## Before you write code
