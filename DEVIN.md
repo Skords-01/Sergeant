@@ -39,6 +39,11 @@ pnpm hard-rules:generate           # Regenerate docs/governance/hard-rules-matri
 pnpm hard-rules:check              # CI gate: fail if hard-rules-matrix.md is stale
 pnpm hard-rules:list               # Plain-text dump of every Hard Rule (for code-review / triage)
 pnpm lint:codeowners               # CI gate: fail if required path is missing from .github/CODEOWNERS
+pnpm n8n:export                    # Export n8n workflows from live instance to ops/n8n-workflows/
+pnpm n8n:import                    # Import ops/n8n-workflows/ into live n8n instance
+pnpm ops:n8n:validate              # CI gate: validates n8n workflow JSON + manifest consistency
+pnpm lint:governance-sync          # CI: Hard Rules sync, Status badge coverage, dangling source refs
+pnpm lint:governance-sync --strict # Treat dangling refs as errors (for new PRs — no new broken refs)
 ```
 
 ## Before you write code
@@ -59,6 +64,7 @@ pnpm lint:codeowners               # CI gate: fail if required path is missing f
 Use the in-repo SKILL.md library when relevant. Skills auto-load from [`.agents/skills/`](.agents/skills/) at session start.
 
 **Project-specific skills (prefer these first):**
+
 - `sergeant-design-system` — Tailwind tokens, brand palettes, WCAG-AA rules, module-accent containment (Hard Rules #8, #9, #11, #12, #13, #14)
 - `sergeant-api-patterns` — bigint coercion, api-client sync, RQ key factories (Hard Rules #1, #2, #3)
 - `sergeant-hubchat-tool` — adding/modifying HubChat AI assistant tools
@@ -66,6 +72,7 @@ Use the in-repo SKILL.md library when relevant. Skills auto-load from [`.agents/
 - `sergeant-postgres` — PostgreSQL patterns with raw `pg` driver
 
 **Community skills:**
+
 - `better-auth-best-practices` — Better Auth integration guide
 - `vercel-react-best-practices` — React performance (note: Next.js/RSC sections do not apply, Sergeant uses Vite)
 - `vercel-react-native-skills` — React Native / Expo best practices
