@@ -39,6 +39,7 @@ function buildFixture({
   agentsRules,
   contribRules,
   contribOverride,
+  eslintPluginRules,
 }) {
   const dir = mkdtempSync(join(tmpdir(), "hard-rules-test-"));
   const root = join(dir, "repo");
@@ -71,6 +72,22 @@ function buildFixture({
           .map((r) => `${r.id}. **${r.title}**\n\nbody.\n`)
           .join("\n");
   writeFileSync(join(root, "CONTRIBUTING.md"), contribBody);
+
+  // Optional fake plugin file so the eslint-rule-ref check has something to
+  // diff against. Shape mirrors `packages/eslint-plugin-sergeant-design/index.js`
+  // — only the `const plugin = { rules: { ... } }` block is parsed.
+  if (eslintPluginRules !== undefined) {
+    mkdirSync(join(root, "packages", "eslint-plugin-sergeant-design"), {
+      recursive: true,
+    });
+    const ruleEntries = eslintPluginRules
+      .map((name) => `    "${name}": {},`)
+      .join("\n");
+    writeFileSync(
+      join(root, "packages", "eslint-plugin-sergeant-design", "index.js"),
+      `const plugin = {\n  rules: {\n${ruleEntries}\n  },\n};\nexport default plugin;\n`,
+    );
+  }
 
   return {
     dir,
@@ -318,6 +335,110 @@ test("AGENTS.md has rule the registry forgot fails with agents-sync error", () =
         /agents-sync.*Hard Rule #2.*registry does not/.test(e),
       ),
       `expected agents-sync forgotten-rule error, got: ${JSON.stringify(r.json.errors)}`,
+    );
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+// Regression: registry's enforced_by[].kind === 'eslint-rule' must name a real
+// rule in packages/eslint-plugin-sergeant-design. Devin Review caught that
+// rules 12, 13, 14 cited rule names that didn't exist in the plugin (the
+// registry described itself as a 'machine-readable enforcement map' but the
+// refs were stale). The registry checker now parses the plugin's rule keys
+// and fails when an enforced_by ref points at a non-existent rule.
+test("eslint-rule-ref: cites a non-existent plugin rule fails with eslint-rule-ref error", () => {
+  const eslintRule = (name) => ({
+    id: 1,
+    title: "First",
+    scope: ["**/*"],
+    severity: "blocker",
+    enforced_by: [
+      { kind: "eslint-rule", ref: `sergeant-design/${name} (error)` },
+    ],
+  });
+  const { dir, scriptDest } = buildFixture({
+    registry: {
+      version: 1,
+      source: "AGENTS.md",
+      rules: [eslintRule("does-not-exist")],
+    },
+    agentsRules: [{ id: 1, title: "First" }],
+    contribRules: [{ id: 1, title: "First" }],
+    eslintPluginRules: ["real-rule-one", "real-rule-two"],
+  });
+  try {
+    const r = run(scriptDest);
+    assert.equal(r.status, 1);
+    assert.ok(
+      r.json.errors.some((e) =>
+        /eslint-rule-ref.*does-not-exist.*plugin has no such rule/.test(e),
+      ),
+      `expected eslint-rule-ref mismatch error, got: ${JSON.stringify(r.json.errors)}`,
+    );
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("eslint-rule-ref: cites a real plugin rule passes", () => {
+  const eslintRule = (name) => ({
+    id: 1,
+    title: "First",
+    scope: ["**/*"],
+    severity: "blocker",
+    enforced_by: [
+      { kind: "eslint-rule", ref: `sergeant-design/${name} (error)` },
+    ],
+  });
+  const { dir, scriptDest } = buildFixture({
+    registry: {
+      version: 1,
+      source: "AGENTS.md",
+      rules: [eslintRule("real-rule-one")],
+    },
+    agentsRules: [{ id: 1, title: "First" }],
+    contribRules: [{ id: 1, title: "First" }],
+    eslintPluginRules: ["real-rule-one", "real-rule-two"],
+  });
+  try {
+    const r = run(scriptDest);
+    assert.equal(
+      r.status,
+      0,
+      `expected exit 0, got ${r.status}; errors: ${JSON.stringify(r.json?.errors)}`,
+    );
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("eslint-rule-ref: malformed ref (not 'sergeant-design/<name>') fails", () => {
+  const eslintRule = () => ({
+    id: 1,
+    title: "First",
+    scope: ["**/*"],
+    severity: "blocker",
+    enforced_by: [
+      { kind: "eslint-rule", ref: "some/other-plugin/rule (error)" },
+    ],
+  });
+  const { dir, scriptDest } = buildFixture({
+    registry: {
+      version: 1,
+      source: "AGENTS.md",
+      rules: [eslintRule()],
+    },
+    agentsRules: [{ id: 1, title: "First" }],
+    contribRules: [{ id: 1, title: "First" }],
+    eslintPluginRules: ["real-rule-one"],
+  });
+  try {
+    const r = run(scriptDest);
+    assert.equal(r.status, 1);
+    assert.ok(
+      r.json.errors.some((e) => /eslint-rule-ref.*not in.*shape/.test(e)),
+      `expected ref-shape error, got: ${JSON.stringify(r.json.errors)}`,
     );
   } finally {
     rmSync(dir, { recursive: true, force: true });

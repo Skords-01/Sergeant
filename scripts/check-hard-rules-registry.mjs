@@ -43,6 +43,10 @@ const REGISTRY_PATH = resolve(ROOT, "docs/governance/hard-rules.json");
 const SCHEMA_PATH = resolve(ROOT, "docs/governance/hard-rules.schema.json");
 const AGENTS_PATH = resolve(ROOT, "AGENTS.md");
 const CONTRIB_PATH = resolve(ROOT, "CONTRIBUTING.md");
+const ESLINT_PLUGIN_PATH = resolve(
+  ROOT,
+  "packages/eslint-plugin-sergeant-design/index.js",
+);
 
 // ── Minimal JSON Schema validator (Draft-07 subset) ──────────────────────────
 //
@@ -191,6 +195,49 @@ function sliceHardRulesSection(text) {
   return after < 0 ? text.slice(start) : text.slice(start, after);
 }
 
+// Parse the rule-name map exported by `packages/eslint-plugin-sergeant-design`
+// without importing the plugin (it pulls in TypeScript-eslint deps that aren't
+// guaranteed to resolve in every node-only context the script is run from).
+// We only need the keys of the `rules: { ... }` object literal at the bottom
+// of the file. Returns a Set of rule names like "no-foreign-module-accent".
+//
+// Returns null when the plugin file is missing (e.g. test fixtures that don't
+// ship a real plugin). The caller treats null as "skip this check entirely".
+function parseEslintRuleNames(pluginPath) {
+  if (!existsSync(pluginPath)) return null;
+  const src = readFileSync(pluginPath, "utf-8");
+  // Anchor on the literal `rules: {` declaration inside the `plugin` const.
+  // The plugin file has multiple `rules:` keys (every rule's `meta.docs.…`
+  // also has `docs:` etc.), but only the plugin-level one is at column 2 of
+  // an object spread directly after `const plugin = {`.
+  const idx = src.indexOf("const plugin = {");
+  if (idx < 0) return new Set();
+  const rulesIdx = src.indexOf("rules: {", idx);
+  if (rulesIdx < 0) return new Set();
+  // Find matching closing brace for that block.
+  let depth = 0;
+  let end = -1;
+  for (let i = src.indexOf("{", rulesIdx); i < src.length; i++) {
+    if (src[i] === "{") depth++;
+    else if (src[i] === "}") {
+      depth--;
+      if (depth === 0) {
+        end = i;
+        break;
+      }
+    }
+  }
+  if (end < 0) return new Set();
+  const body = src.slice(rulesIdx, end);
+  const names = new Set();
+  const re = /["']([a-z][a-z0-9-]+)["']\s*:/g;
+  let m;
+  while ((m = re.exec(body)) !== null) {
+    names.add(m[1]);
+  }
+  return names;
+}
+
 // CONTRIBUTING.md has multiple unrelated `N. **bold**` numbered lists
 // ("Audit exception workflow", "Очікування до Pull Request-а", and the
 // actual "Hard rules (з AGENTS.md)" section). Without slicing, those
@@ -303,6 +350,36 @@ function main() {
         errors.push(
           `contrib-sync: rule #${r.id} ('${r.title}') is missing from CONTRIBUTING.md § Hard rules`,
         );
+      }
+    }
+  }
+
+  // 5. eslint-rule refs name a real plugin rule
+  //
+  // Catches a class of bug where the registry says rule N is enforced by
+  // 'sergeant-design/foo' but the actual rule is named 'sergeant-design/bar'.
+  // Future tooling that resolves enforced_by.ref → real rule would silently
+  // miss the rule. Parses the rule name map out of the plugin source so we
+  // don't have to dynamically import the plugin (which pulls in eslint).
+  const eslintRuleNames = parseEslintRuleNames(ESLINT_PLUGIN_PATH);
+  if (eslintRuleNames !== null && Array.isArray(registry.rules)) {
+    for (const r of registry.rules) {
+      if (!Array.isArray(r?.enforced_by)) continue;
+      for (const e of r.enforced_by) {
+        if (e?.kind !== "eslint-rule" || typeof e.ref !== "string") continue;
+        // Refs look like "sergeant-design/<name> (severity)". Pull <name> out.
+        const m = e.ref.match(/^sergeant-design\/([a-z0-9-]+)/);
+        if (!m) {
+          errors.push(
+            `eslint-rule-ref: rule #${r.id} enforced_by ref '${e.ref}' is not in 'sergeant-design/<rule>' shape`,
+          );
+          continue;
+        }
+        if (!eslintRuleNames.has(m[1])) {
+          errors.push(
+            `eslint-rule-ref: rule #${r.id} cites ESLint rule 'sergeant-design/${m[1]}' but plugin has no such rule`,
+          );
+        }
       }
     }
   }
