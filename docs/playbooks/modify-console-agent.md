@@ -1,6 +1,6 @@
 # Playbook: Modify or Add a Console Agent
 
-> **Last validated:** 2026-04-30 by @devin-ai-integration[bot]. **Next review:** 2026-07-29.
+> **Last validated:** 2026-04-30 by @Skords-01. **Next review:** 2026-07-29.
 > **Status:** Active
 
 **Trigger:** «Додай нового агента в Telegram бот» / «Зміни системний промпт ops/marketing агента» / «Додай tool для агента» / зміна в `apps/console/src/agents/`.
