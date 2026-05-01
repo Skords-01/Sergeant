@@ -243,6 +243,13 @@ function ProgressChart({ points, label, unit, color }) {
   );
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type HistoryEntry = { workout: any; item: any };
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Set = any;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Point = any;
+
 export function Exercise({ exerciseId }) {
   const { exercises, musclesUk } = useExerciseCatalog();
   const { workouts } = useWorkouts();
@@ -253,7 +260,7 @@ export function Exercise({ exerciseId }) {
   );
 
   const history = useMemo(() => {
-    const out = [];
+    const out: HistoryEntry[] = [];
     for (const w of workouts || []) {
       for (const it of w.items || []) {
         if (it.exerciseId !== exerciseId) continue;
@@ -267,10 +274,10 @@ export function Exercise({ exerciseId }) {
 
   const best = useMemo(() => {
     let best1rm = 0;
-    let bestSet = null;
-    let lastTopSet = null;
+    let bestSet: Set | null = null;
+    let lastTopSet: Set | null = null;
     let lastTopEst = 0;
-    let lastWorkoutId = null;
+    let lastWorkoutId: string | null = null;
     let lastWorkoutBest1rm = 0;
     let priorBest1rm = 0;
 
@@ -359,8 +366,8 @@ export function Exercise({ exerciseId }) {
   }, [history]);
 
   const cardioData = useMemo(() => {
-    const pacePoints = [];
-    const distPoints = [];
+    const pacePoints: Point[] = [];
+    const distPoints: Point[] = [];
     for (const { workout, item } of [...history].reverse()) {
       if (item?.type !== "distance" || !workout?.startedAt) continue;
       const dist = Number(item.distanceM) || 0;

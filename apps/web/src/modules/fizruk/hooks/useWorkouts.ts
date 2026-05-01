@@ -5,6 +5,9 @@ import {
   WORKOUTS_STORAGE_KEY,
 } from "../lib/fizrukStorage";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Workout = any;
+
 /**
  * Window event fired when persisting workouts to `localStorage` throws
  * (quota exceeded, Safari private mode, etc.). `FizrukApp` listens for this
@@ -114,7 +117,7 @@ export function makeDefaultCooldown() {
  * }}
  */
 export function useWorkouts() {
-  const [workouts, setWorkouts] = useState([]);
+  const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -213,7 +216,7 @@ export function useWorkouts() {
   const endWorkout = useCallback(
     (id) => {
       const nowIso = new Date().toISOString();
-      let ended = null;
+      let ended: Workout | null = null;
       persist((prev) =>
         prev.map((w) => {
           if (w.id !== id) return w;

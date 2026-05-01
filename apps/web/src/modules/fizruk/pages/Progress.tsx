@@ -396,13 +396,13 @@ export function Progress() {
                   <span
                     className={cn(
                       "font-semibold",
-                      meas.delta("weightKg") > 0
+                      meas.delta("weightKg")! > 0
                         ? "text-warning"
                         : "text-success",
                     )}
                   >
-                    {meas.delta("weightKg") > 0 ? "+" : ""}
-                    {meas.delta("weightKg").toFixed(1)} кг
+                    {meas.delta("weightKg")! > 0 ? "+" : ""}
+                    {meas.delta("weightKg")!.toFixed(1)} кг
                   </span>
                 )
               }
@@ -423,13 +423,13 @@ export function Progress() {
                   <span
                     className={cn(
                       "font-semibold",
-                      meas.delta("bodyFatPct") > 0
+                      meas.delta("bodyFatPct")! > 0
                         ? "text-warning"
                         : "text-success",
                     )}
                   >
-                    {meas.delta("bodyFatPct") > 0 ? "+" : ""}
-                    {meas.delta("bodyFatPct").toFixed(1)}%
+                    {meas.delta("bodyFatPct")! > 0 ? "+" : ""}
+                    {meas.delta("bodyFatPct")!.toFixed(1)}%
                   </span>
                 )
               }
@@ -515,7 +515,11 @@ export function Progress() {
         {/* PR Board */}
         {(() => {
           const muscleGroups = [
-            ...new Set(prs.map((p) => p.muscleGroup).filter(Boolean)),
+            ...new Set(
+              prs
+                .map((p) => p.muscleGroup)
+                .filter((g): g is string => Boolean(g)),
+            ),
           ].sort();
           const filtered =
             prFilter === "all"
