@@ -39,6 +39,7 @@ import { CelebrationModal } from "../onboarding/CelebrationModal";
 import { DailyNudge } from "../onboarding/DailyNudge";
 import { ReEngagementCard } from "../onboarding/ReEngagementCard";
 import { ModuleChecklist } from "../onboarding/ModuleChecklist";
+import { OnboardingProgress } from "../onboarding/OnboardingProgress";
 import {
   DndContext,
   PointerSensor,
@@ -339,14 +340,18 @@ export function HubDashboard({
   const isMondayOrTuesday = now.getDay() === 1 || now.getDay() === 2;
   const showDigestFooter = digestFresh || isMondayOrTuesday;
 
-  // Show checklist for first active module (only if user has no real entry yet)
+  // Show checklist for first active module (only if user has no real entry yet).
+  // Suppressed while `FirstActionHeroCard` is the hero — both surfaces enumerate
+  // module-specific next steps, so stacking them split user attention 1:1 and
+  // the FTUX hero already covers the same ground with a single primary CTA.
   const primaryModule = activeModules[0] as
     | "finyk"
     | "fizruk"
     | "routine"
     | "nutrition"
     | undefined;
-  const showChecklist = primaryModule && !hasRealEntry && sessionDays <= 7;
+  const showChecklist =
+    primaryModule && !hasRealEntry && !firstActionVisible && sessionDays <= 7;
 
   // ONE-HERO RULE
   let hero: React.ReactNode;
@@ -423,6 +428,13 @@ export function HubDashboard({
                     );
                   }}
                 />
+              )}
+              {/* Activation progress — visible only before the first real
+               * entry. Once the user crosses the FTUX gate the bar would
+               * read 100% indefinitely, so we drop it instead of pinning
+               * a perpetual «4/4 модулів» chrome above the bento grid. */}
+              {!hasRealEntry && (
+                <OnboardingProgress activeModules={activeModules} />
               )}
             </>
           )}

@@ -195,17 +195,33 @@ export const BentoCard = memo(function BentoCard({
             )}
           </>
         ) : onQuickAdd && !editMode ? (
-          <span
-            className={cn(
-              "mt-1 inline-flex items-center gap-1",
-              "text-xs font-medium",
-              config.accentClass.replace("bg-", "text-"),
-              "opacity-80 group-hover:opacity-100 transition-opacity",
-            )}
-          >
-            <Icon name="plus" size="xs" strokeWidth={2.5} aria-hidden />
-            {config.emptyLabel}
-          </span>
+          // Empty-state CTA — promoted from a single inline pill (icon + label
+          // glyph) to a two-row layout with a tinted leading icon-box and an
+          // explicit «Натисни, щоб почати» helper. The richer treatment makes
+          // the card read as an *invitation* (clear affordance + verb) instead
+          // of a generic «+ Почни тут →» eyebrow that the eye skipped past.
+          <div className="mt-1.5 flex flex-col gap-1">
+            <div className="flex items-center gap-1.5">
+              <span
+                className={cn(
+                  "w-5 h-5 rounded-md flex items-center justify-center",
+                  config.iconClass,
+                  "opacity-60",
+                )}
+              >
+                <Icon name="plus" size="xs" strokeWidth={2.5} aria-hidden />
+              </span>
+              <span
+                className={cn(
+                  "text-xs font-semibold",
+                  config.accentClass.replace("bg-", "text-"),
+                )}
+              >
+                {config.emptyLabel}
+              </span>
+            </div>
+            <span className="text-2xs text-subtle">Натисни, щоб почати</span>
+          </div>
         ) : (
           <span className="text-xs text-muted mt-1">{config.emptyLabel}</span>
         )}
