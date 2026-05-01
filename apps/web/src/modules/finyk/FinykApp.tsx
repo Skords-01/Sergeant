@@ -17,7 +17,7 @@ import { tryShowCrossModulePrompt } from "@shared/lib/crossModulePrompt";
 import { openHubModuleWithAction } from "@shared/lib/hubNav";
 import { Overview } from "./pages/Overview";
 import { Transactions } from "./pages/transactions";
-import { Budgets } from "./pages/Budgets";
+import { Budgets } from "./pages/budgets";
 import { Assets } from "./pages/Assets";
 import { Analytics } from "./pages/Analytics";
 import { ManualExpenseSheet } from "./components/ManualExpenseSheet";
