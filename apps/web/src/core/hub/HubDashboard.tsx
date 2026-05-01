@@ -457,7 +457,7 @@ export function HubDashboard({
               onClick={toggleEditMode}
               aria-pressed={editMode}
               className={cn(
-                "inline-flex items-center gap-1.5 text-2xs font-medium rounded-lg px-2 py-1 transition-colors",
+                "inline-flex items-center gap-1.5 text-2xs font-medium rounded-xl px-2 py-1 transition-colors",
                 "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60",
                 editMode
                   ? "bg-primary text-bg"

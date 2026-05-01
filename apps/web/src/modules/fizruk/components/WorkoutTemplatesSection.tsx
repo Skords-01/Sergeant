@@ -202,7 +202,7 @@ export function WorkoutTemplatesSection({
               {orderIds.length >= 2 && !groupSelectMode && (
                 <button
                   type="button"
-                  className="text-xs px-2 py-1 rounded-lg border border-line text-subtle hover:text-text hover:bg-panelHi transition-colors"
+                  className="text-xs px-2 py-1 rounded-xl border border-line text-subtle hover:text-text hover:bg-panelHi transition-colors"
                   onClick={() => {
                     setGroupSelectMode(true);
                     setGroupSelected(new Set());
@@ -215,7 +215,7 @@ export function WorkoutTemplatesSection({
                 <div className="flex gap-1">
                   <button
                     type="button"
-                    className="text-xs px-2 py-1 rounded-lg border border-success/40 text-success disabled:opacity-40"
+                    className="text-xs px-2 py-1 rounded-xl border border-success/40 text-success disabled:opacity-40"
                     disabled={groupSelected.size < 2 || groupSelected.size > 3}
                     onClick={() => handleCreateGroup("superset")}
                     title="Обери 2-3 вправи"
@@ -224,7 +224,7 @@ export function WorkoutTemplatesSection({
                   </button>
                   <button
                     type="button"
-                    className="text-xs px-2 py-1 rounded-lg border border-fizruk/40 text-fizruk disabled:opacity-40"
+                    className="text-xs px-2 py-1 rounded-xl border border-fizruk/40 text-fizruk disabled:opacity-40"
                     disabled={groupSelected.size < 2 || groupSelected.size > 3}
                     onClick={() => handleCreateGroup("circuit")}
                     title="Обери 2-3 вправи"
@@ -233,7 +233,7 @@ export function WorkoutTemplatesSection({
                   </button>
                   <button
                     type="button"
-                    className="text-xs px-2 py-1 rounded-lg border border-line text-subtle"
+                    className="text-xs px-2 py-1 rounded-xl border border-line text-subtle"
                     onClick={() => {
                       setGroupSelectMode(false);
                       setGroupSelected(new Set());
@@ -262,7 +262,7 @@ export function WorkoutTemplatesSection({
                       {groupSelectMode && (
                         <button
                           type="button"
-                          className={`w-5 h-5 rounded-md border flex items-center justify-center flex-shrink-0 transition-colors ${isSelected ? "bg-success-strong border-success-strong text-white" : "border-line bg-bg"}`}
+                          className={`w-5 h-5 rounded-xl border flex items-center justify-center flex-shrink-0 transition-colors ${isSelected ? "bg-success-strong border-success-strong text-white" : "border-line bg-bg"}`}
                           onClick={() => handleToggleGroupSelect(id)}
                         >
                           {isSelected && (

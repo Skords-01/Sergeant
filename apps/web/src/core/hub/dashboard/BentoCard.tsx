@@ -204,7 +204,7 @@ export const BentoCard = memo(function BentoCard({
             <div className="flex items-center gap-1.5">
               <span
                 className={cn(
-                  "w-5 h-5 rounded-md flex items-center justify-center",
+                  "w-5 h-5 rounded-xl flex items-center justify-center",
                   config.iconClass,
                   "opacity-60",
                 )}
@@ -254,7 +254,10 @@ export const BentoCard = memo(function BentoCard({
           className={cn(
             "absolute top-3.5 right-3.5 [@media(pointer:coarse)]:top-4 [@media(pointer:coarse)]:right-4",
             "w-7 h-7 [@media(pointer:coarse)]:w-9 [@media(pointer:coarse)]:h-9",
-            "rounded-lg flex items-center justify-center",
+            // CONTROL tier (12 px) — quick-add icon-button is a small control,
+            // matching Button iconSizes.xs/sm. Was `rounded-xl` (8 px), which
+            // is forbidden by the 3-tier radius system in `tailwind-preset.js`.
+            "rounded-xl flex items-center justify-center",
             "text-text bg-panel/80 hover:bg-primary hover:text-bg",
             "transition-colors active:scale-95",
             "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-1",
@@ -274,7 +277,8 @@ export const BentoCard = memo(function BentoCard({
           className={cn(
             "absolute top-3.5 right-3.5 [@media(pointer:coarse)]:top-4 [@media(pointer:coarse)]:right-4",
             "w-7 h-7 [@media(pointer:coarse)]:w-9 [@media(pointer:coarse)]:h-9",
-            "rounded-lg flex items-center justify-center",
+            // CONTROL tier (12 px) — see quick-add button above.
+            "rounded-xl flex items-center justify-center",
             "text-muted bg-panel/90 hover:text-text hover:bg-panelHi",
             "transition-colors cursor-grab active:cursor-grabbing touch-none",
             "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-1",

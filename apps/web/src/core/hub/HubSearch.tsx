@@ -787,7 +787,7 @@ export function HubSearch({ onClose, onOpenModule }: HubSearchProps) {
         <button
           type="button"
           onClick={onClose}
-          className="shrink-0 text-sm text-muted hover:text-text transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/45 rounded-lg px-2 py-1"
+          className="shrink-0 text-sm text-muted hover:text-text transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/45 rounded-xl px-2 py-1"
         >
           Скасувати
         </button>
@@ -819,7 +819,7 @@ export function HubSearch({ onClose, onOpenModule }: HubSearchProps) {
                   clearRecentQueries();
                   setRecents([]);
                 }}
-                className="text-xs text-muted hover:text-text transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/45 rounded-lg px-1.5 py-0.5"
+                className="text-xs text-muted hover:text-text transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/45 rounded-xl px-1.5 py-0.5"
               >
                 Очистити
               </button>

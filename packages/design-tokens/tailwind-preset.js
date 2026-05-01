@@ -281,21 +281,30 @@ const preset = {
       },
 
       // ═══════════════════════════════════════════════════════════════════
-      // BORDER RADIUS — size-driven rhythm (see docs/design/RADIUS-RHYTHM.md)
+      // BORDER RADIUS — 3 semantic tiers (see docs/design/RADIUS-RHYTHM.md)
       //
-      // The active scale is intentionally short:
-      //   sm   →  2 px   swatch  (heatmap cells, chart legend dots)
-      //   md   →  6 px   marker  (checkbox squares, badge chips, <kbd>)
-      //   xl   → 12 px   control sm (Button xs/sm, icon-buttons ≤ 40 px)
-      //   2xl  → 16 px   control md / card (Button md/lg, Card default)
-      //   3xl  → 24 px   hero / sheet (Button xl, Card xl, Modal, sheets)
-      //   full →  ∞       pill (FAB, avatars, status dots)
+      //   CONTROL  (12 px, rounded-xl)   — buttons, inputs, badges, chips,
+      //                                    icon-buttons, segmented controls
+      //   CARD     (16 px, rounded-2xl)  — cards, panels, list items,
+      //                                    dropdowns, sticky banners
+      //   HERO     (24 px, rounded-3xl)  — modals, sheets, hero cards,
+      //                                    module bento tiles
+      //
+      //   PILL     (9999 px, rounded-full) — FAB, avatars, status dots, tags
+      //   SWATCH   (2 px, rounded-sm)      — heatmap cells, chart legend dots
       //
       // 4xl / 5xl exist for one-off illustration surfaces (onboarding
       // hero blob); they are NOT part of the regular rhythm.
       //
-      // Avoid `rounded-lg` (8 px) in new code — it sits between marker
-      // and control with no clear semantic role.
+      // Forbidden in new code:
+      //   `rounded-lg` (8 px)  — sits between CONTROL and CARD with no role
+      //   `rounded-md` (6 px)  — folded into CONTROL; reach for `rounded-xl`
+      //   `rounded` / `rounded-DEFAULT` (4 px) — no semantic slot at all
+      //
+      // Lint: see `eslint-plugin-sergeant-design`. The design-system audit
+      // sweeps remaining call sites incrementally — when touching a file
+      // you usually want `rounded-xl` for ≤ 40 px controls and `rounded-2xl`
+      // for surfaces ≥ 48 px tall.
       // ═══════════════════════════════════════════════════════════════════
       borderRadius: {
         "2xl": "16px",

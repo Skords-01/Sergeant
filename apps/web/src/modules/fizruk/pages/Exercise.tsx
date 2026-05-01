@@ -75,7 +75,7 @@ function LoadCalculator({ oneRM }) {
                 return (
                   <div
                     key={pct}
-                    className="text-center bg-panel/60 rounded-lg py-1.5 px-1"
+                    className="text-center bg-panel/60 rounded-xl py-1.5 px-1"
                   >
                     <div className="text-2xs text-subtle leading-none mb-0.5">
                       {pct}%

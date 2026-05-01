@@ -284,7 +284,7 @@ export function HabitDetailSheet({
             <button
               type="button"
               onClick={() => goCalMonth(-1)}
-              className="w-8 h-8 rounded-lg border border-line text-muted hover:text-text flex items-center justify-center text-sm"
+              className="w-8 h-8 rounded-xl border border-line text-muted hover:text-text flex items-center justify-center text-sm"
               aria-label="Попередній місяць"
             >
               ‹
@@ -295,7 +295,7 @@ export function HabitDetailSheet({
             <button
               type="button"
               onClick={() => goCalMonth(1)}
-              className="w-8 h-8 rounded-lg border border-line text-muted hover:text-text flex items-center justify-center text-sm"
+              className="w-8 h-8 rounded-xl border border-line text-muted hover:text-text flex items-center justify-center text-sm"
               aria-label="Наступний місяць"
             >
               ›
@@ -321,7 +321,7 @@ export function HabitDetailSheet({
               <div
                 key={dk}
                 className={cn(
-                  "aspect-square flex items-center justify-center rounded-lg text-xs font-medium transition-colors",
+                  "aspect-square flex items-center justify-center rounded-xl text-xs font-medium transition-colors",
                   done
                     ? "bg-routine-surface2 dark:bg-routine-surface-dark/15 text-routine-strong dark:text-routine border border-routine-ring/40 dark:border-routine-border-dark/30 font-bold"
                     : scheduled
