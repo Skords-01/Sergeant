@@ -128,7 +128,11 @@ export function createCategorizeInternalRouter(): Router {
     "/api/internal/categorize",
     asyncHandler(async (req, res) => {
       const body = req.body as CategorizeArgs;
-      if (!body?.description) {
+      // `.trim()`-перевірка дзеркалить інваріант `categorizeTransaction`
+      // (якщо description порожній після trim — функція throw-ить, який
+      // catch-блок нижче прикриє як 502 "AI service error"). Робимо це
+      // тут, щоб whitespace-only payload отримав 400, а не misleading 502.
+      if (!body?.description?.trim()) {
         res.status(400).json({ error: "description is required" });
         return;
       }
