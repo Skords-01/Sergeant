@@ -498,6 +498,26 @@ All interactive elements must clear **WCAG 2.5.5** / Apple HIG **≥44×44px** o
 
 The `Button` component handles the common case automatically; reach for `touch-target` only when you cannot use `Button` (e.g. absolutely-positioned siblings, drag activators, custom-styled toggles). Refer to `BentoCard` for the canonical "small visible glyph + 44 px hit area" pattern.
 
+### 16. Animation budget — max 2 concurrent, 3 tiers
+
+> Why a hard rule? Unconstrained animations create visual noise and harm users with vestibular disorders. Past audits found confetti firing on every checkbox tick and stagger delays compounding to 350 ms+, both violating the WCAG 2.3 (Animation from Interactions) guideline.
+
+Three animation tiers — every animation in the codebase belongs to exactly one:
+
+| Tier          | Examples                                                       | Constraint                                                                                            |
+| ------------- | -------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| **AMBIENT**   | `shimmer`, `pulse-soft`, `wiggle`                              | Looped; always behind `motion-safe:`; `prefers-reduced-motion` collapses to opacity-only              |
+| **RESPONSE**  | `fade-in`, `slide-up`, `scale-in`, `press-scale`, `hover-lift` | One-shot, 150–300 ms, `ease-out`; fires once per user action                                          |
+| **CELEBRATE** | `check-pop`, `bounce-in`, `success-pulse`, confetti burst      | Milestones only: first entry, streak 7/30/100/365, weekly goal hit. **Not** every checkbox completion |
+
+Rules:
+
+- Max **1 AMBIENT + 1 RESPONSE** running simultaneously on screen.
+- A stagger group counts as **1 RESPONSE** regardless of child count.
+- Stagger timing: **max 30 ms between children**, total delay cap **≤ 150 ms** (`Math.min(index * 30, 150)`).
+- Never wrap a component that has its own internal entry animation in `StaggerChild` (double-animation).
+- `showConfetti` on `AnimatedCheckbox` / `HabitCheckbox` must only be `true` at streak milestones (7, 30, 100, 365) — never on every tick.
+
 ## AI markers
 
 Structured comments for AI-agent context. Enforced by ESLint rule `sergeant-design/ai-marker-syntax` (warn).
