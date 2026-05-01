@@ -24,8 +24,8 @@ export const baseVitestConfig = {
  * native deps. We deliberately do NOT set thresholds here: per-package floors
  * are set in individual vitest.config files so each package can raise its own
  * bar independently without breaking packages that haven't reached a given
- * level yet. Recommended starting floor: lines/functions/statements 60,
- * branches 55.
+ * level yet. Recommended starting floor: lines/functions/statements >= 60,
+ * branches >= 55. See `packages/insights/vitest.config.ts` for an example.
  */
 export const baseCoverageConfig = {
   provider: /** @type {const} */ ("v8"),
