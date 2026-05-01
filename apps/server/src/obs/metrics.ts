@@ -91,7 +91,23 @@ export const dbPoolWaiting = new client.Gauge({
 export const aiTokensTotal = new client.Counter({
   name: "ai_tokens_total",
   help: "AI tokens consumed",
-  labelNames: ["provider", "model", "kind"], // kind=prompt|completion|cache_write|cache_read
+  // endpoint=analyze-photo|refine-photo|chat|coach|day-plan|...
+  // kind=prompt|completion|cache_write|cache_read
+  labelNames: ["provider", "model", "endpoint", "kind"],
+  registers: [register],
+});
+
+// Cost-attribution gauge для AI-викликів. Counter (а не Gauge), бо ми
+// акумулюємо $-витрати по кожному endpoint × model. Per-endpoint breakdown
+// потрібен щоб у Grafana (і в weekly cost-аудиті) видно було, котрий endpoint
+// "з'їдає" бюджет — `chat` vs `coach` vs `analyze-photo`. Pricing-таблиця
+// у `lib/anthropic.ts::ANTHROPIC_PRICING_USD_PER_MTOK`. На unknown-моделі
+// counter не інкрементується (щоб не давати fake-нулі), тому сума `rate(...)`
+// у Prometheus = «впевнена нижня межа» витрат.
+export const aiCostEstimateUsd = new client.Counter({
+  name: "ai_cost_estimate_usd_total",
+  help: "Estimated AI provider cost in USD, accumulated per endpoint × model",
+  labelNames: ["provider", "model", "endpoint"],
   registers: [register],
 });
 
@@ -282,7 +298,10 @@ export const aiRequestsTotal = new client.Counter({
 export const aiRequestDurationMs = new client.Histogram({
   name: "ai_request_duration_ms",
   help: "AI request duration in ms",
-  labelNames: ["provider", "model", "endpoint"],
+  // outcome=ok|rate_limited|timeout|error|bad_response — дзеркалить
+  // `aiRequestsTotal`, щоб у Grafana можна було обчислити p95 latency окремо
+  // для error-шляхів (раніше latency error-шляху "розбавляла" ok-латенцію).
+  labelNames: ["provider", "model", "endpoint", "outcome"],
   buckets: [100, 250, 500, 1000, 2500, 5000, 10000, 20000, 30000, 60000],
   registers: [register],
 });
@@ -373,6 +392,36 @@ export const monoWebhookDurationMs = new client.Histogram({
   help: "Monobank webhook handler duration in ms",
   labelNames: ["status"],
   buckets: [1, 5, 25, 50, 100, 250, 500, 1000],
+  registers: [register],
+});
+
+// ───────────────────────── Mono enrichment worker ─────────────
+// Polling-worker для `mono_ai_enrichment_queue`. Раніше outbox-таблиця
+// існувала (міграція 013), але жоден консьюмер її не читав — n8n flow
+// `06-mono-webhook-enrichment.json` слухав окремий webhook, не БД.
+// Метрики мінімальні (4 серії), щоб мати зір на:
+//   * затримку enrichment-у (pending count = depth черги),
+//   * пропускну здатність (processed_total{outcome=ok|failed}),
+//   * latency на одну транзакцію.
+export const monoEnrichmentQueueDepth = new client.Gauge({
+  name: "mono_enrichment_queue_depth",
+  help: "mono_ai_enrichment_queue rows by status",
+  labelNames: ["status"], // pending|processing|done|failed
+  registers: [register],
+});
+
+export const monoEnrichmentProcessedTotal = new client.Counter({
+  name: "mono_enrichment_processed_total",
+  help: "Mono AI enrichment outcomes",
+  labelNames: ["outcome"], // ok|failed|skipped|missing_tx
+  registers: [register],
+});
+
+export const monoEnrichmentDurationMs = new client.Histogram({
+  name: "mono_enrichment_duration_ms",
+  help: "Per-transaction enrichment duration (ms): DB → Anthropic → write-back",
+  labelNames: ["outcome"], // ok|failed
+  buckets: [50, 100, 250, 500, 1000, 2500, 5000, 10000, 20000],
   registers: [register],
 });
 

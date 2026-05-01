@@ -1,6 +1,6 @@
 # Backend Tech Debt Inventory
 
-> **Last validated:** 2026-04-30 by @Skords-01. **Next review:** 2026-07-29.
+> **Last validated:** 2026-05-01 by @devin-ai. **Next review:** 2026-07-30.
 > **Status:** Active
 
 > Scope: **`apps/server/src/`** (Node.js 20 ESM, Express 4, PostgreSQL, Better Auth, Anthropic, Monobank/Privat, web-push, Pino, Prometheus, Sentry). У тексті нижче історично згадувався tree `server/*.js` — той самий продукт після переносу в monorepo; нові PR мають посилатися лише на `apps/server/src/**/*.ts`.
@@ -192,7 +192,7 @@
 - `elapsedMs(start)` → винести в спільний util (зараз повторюється в 4+ файлах `apps/server/src`).
 - ~~`pantry items → prompt string`~~ → **DONE 2026-04-28**:
   `apps/server/src/lib/pantryFormat.ts` + `pantryFormat.test.ts`.
-- OFF/USDA normalizers → уніфікувати між `modules/nutrition/barcode.ts` і `modules/nutrition/food-search.ts` (shared `apps/server/src/lib/foodNormalize.ts`).
+- OFF/USDA normalizers → уніфікувати між `modules/nutrition/barcode.ts` і `modules/nutrition/food-search.ts` (shared shapes у `apps/server/src/lib/normalizers/{off,usda,upcitemdb}.ts` з `index.ts` re-export-ами).
 - ~~`FNV-1a safeKeyFromToken`~~ → **DONE 2026-04-28**:
   `apps/server/src/lib/backupKey.ts` + `backupKey.test.ts`.
 
@@ -277,7 +277,7 @@ Webhook-based server-side integration added in PR2. Key components:
 
 ### Міграції (`apps/server/src/migrations/`)
 
-На момент оновлення інвентарю — **8** файлів міграцій (lex order): `001_noop.sql`, `002_ai_usage_daily.sql`, `003_baseline_schema.sql`, `004_ai_usage_daily_tool_bucket.sql`, `005_backend_hardening.sql`, `006_push_devices.sql` (+ `.down.sql`), `007_module_data_user_fk.sql`. Перші три — як у попередньому аудиті; `004+` — tool-bucket для AI-квот, hardening, push_devices, FK на `module_data`.
+На момент оновлення інвентарю — **21** файл міграцій (lex order, без `.down.sql`-компаньйонів): `001_noop.sql`, `002_ai_usage_daily.sql`, `003_baseline_schema.sql`, `004_ai_usage_daily_tool_bucket.sql`, `005_backend_hardening.sql`, `006_push_devices.sql`, `007_module_data_user_fk.sql`, `008_mono_integration.sql`, `009_waitlist.sql`, `010_mono_mcc_categorization.sql`, `011_webhook_events.sql`, `012_ai_usage_token_counters.sql`, `013_mono_ai_enrichment_queue.sql`, `014_mono_ai_category_fields.sql`, `015_n8n_failure_events.sql`, `016_constraints_and_query_plan_notes.sql`, `017_mono_webhook_secret_hash.sql`, `018_seo_tables.sql`, `019_growth_tables.sql`, `020_marketing_tables.sql`, `021_governance_audit.sql`. Більшість має `.down.sql` companion для local rollback (production runner у `apps/server/migrate.mjs` ніколи не виконує down-міграції).
 
 ### Індекси — по реальних query-патернах
 

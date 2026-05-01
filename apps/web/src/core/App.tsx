@@ -16,6 +16,7 @@ import { ToastProvider, useToast } from "@shared/hooks/useToast";
 import { ToastContainer } from "@shared/components/ui/Toast";
 import { ScreenReaderAnnouncerProvider } from "@shared/components/ui/ScreenReaderAnnouncer";
 import { HUB_OPEN_MODULE_EVENT } from "@shared/lib/hubNav";
+import { onHubBus } from "@shared/lib/hubBus";
 import { ApiClientProvider } from "@sergeant/api-client/react";
 import { apiClient } from "@shared/api";
 import { AuthProvider, useAuth } from "./auth/AuthContext";
@@ -213,12 +214,24 @@ function AppInner() {
   const toast = useToast();
   useSyncErrorToast(sync.syncErrorDetail, toast, sync.pushAll);
 
-  // Prefetch critical module chunks on idle after initial render
+  // Prefetch critical module chunks once the main thread is free.
+  // Previously hard-coded to `setTimeout(2000)`, which over-paid on fast
+  // devices (idle by 200 ms) and under-paid on slow ones (still hydrating
+  // at 2 s). `requestIdleCallback` lets the browser fire whenever the
+  // initial-render burst is genuinely done; the 4 s `timeout` cap stops
+  // a permanently-busy main thread from starving the prefetch entirely.
+  // Safari ≤ 16 has no `requestIdleCallback`, so we keep the original
+  // 2 s fallback for it.
   useEffect(() => {
-    // Wait for initial paint, then prefetch modules
+    if ("requestIdleCallback" in window) {
+      const id = requestIdleCallback(() => prefetchCriticalModules(), {
+        timeout: 4000,
+      });
+      return () => cancelIdleCallback(id);
+    }
     const timer = setTimeout(() => {
       prefetchCriticalModules();
-    }, 2000); // 2s delay to prioritize initial render
+    }, 2000);
     return () => clearTimeout(timer);
   }, []);
 
@@ -245,40 +258,32 @@ function AppInner() {
     }
   }, [openModule]);
 
-  // Global event to open chat from any page (e.g. ProfilePage memory bank,
-  // AssistantCataloguePage). Detail accepts either a plain string (legacy:
-  // prefill input) or `{message, autoSend}` (new: optional auto-send) so
-  // existing emitters keep working without modification.
+  // Global signal to open chat from any page (e.g. ProfilePage memory bank,
+  // AssistantCataloguePage, hint toasts). Routed through the typed
+  // `hubBus` rather than `window.dispatchEvent` so the payload shape is
+  // enforced at the type level (see `HubBusEvents.openChat`).
   const openChatStable = ui.openChat;
-  useEffect(() => {
-    const handler = (e: Event) => {
-      const detail = (e as CustomEvent).detail as
-        | string
-        | null
-        | { message: string; autoSend?: boolean };
-      navigate("/", { replace: true });
-      requestAnimationFrame(() => {
-        if (detail && typeof detail === "object" && "message" in detail) {
+  useEffect(
+    () =>
+      onHubBus("openChat", (detail) => {
+        navigate("/", { replace: true });
+        requestAnimationFrame(() => {
           openChatStable(detail.message, { autoSend: detail.autoSend });
-        } else {
-          openChatStable(detail as string | null);
-        }
-      });
-    };
-    window.addEventListener("hub:openChat", handler);
-    return () => window.removeEventListener("hub:openChat", handler);
-  }, [openChatStable, navigate]);
+        });
+      }),
+    [openChatStable, navigate],
+  );
 
-  // Global event to open HubSearch from any surface (used by hint toasts).
-  // Mirrors the existing `hub:openChat` event contract.
-  useEffect(() => {
-    const handler = () => {
-      ui.setSearchOpen(true);
-    };
-    window.addEventListener("hub:openSearch", handler as EventListener);
-    return () =>
-      window.removeEventListener("hub:openSearch", handler as EventListener);
-  }, [ui]);
+  // Global signal to open HubSearch from any surface (used by hint
+  // toasts). Mirrors the typed `openChat` contract on the same bus.
+  const setSearchOpenStable = ui.setSearchOpen;
+  useEffect(
+    () =>
+      onHubBus("openSearch", () => {
+        setSearchOpenStable(true);
+      }),
+    [setSearchOpenStable],
+  );
 
   useEffect(() => {
     const onHubOpen = (ev: Event) => {

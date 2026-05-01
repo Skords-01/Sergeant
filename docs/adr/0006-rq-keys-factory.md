@@ -125,14 +125,14 @@ accepted.
 Mono-token, push-endpoint, AI-API-key — секрети, які могли б природно стати частиною ключа (`["finyk", "mono", "client-info", monoToken]` — кожен токен → свій кеш). Але `queryKey` потрапляє в:
 
 - React Query devtools (видимий локально, але потенційно у скрін-шейрі при дебагу).
-- Sentry breadcrumbs через `query.state.error` + key-логування (`apps/server/src/sentry.ts` стрипає body, але не key).
+- Sentry breadcrumbs через `query.state.error` + key-логування (`apps/web/src/core/observability/sentry.ts` стрипає body, але не key).
 - Pino-логи серверних end-point-ів через `req.query` (deprecated шлях; зараз ми передаємо токен в Authorization header, але історично було).
 
 Витік Mono-токена у логи — security-incident.
 
 ### Decision
 
-**Будь-який секрет перед потраплянням у `queryKey` хешується через `hashToken(token: string): string`** (перші 8 символів SHA-256 — достатньо для cache-isolation, замало для відновлення оригіналу). Реалізація — у `apps/web/src/shared/lib/hashToken.ts`. Фабрика приймає `tokenHash`, не `token`:
+**Будь-який секрет перед потраплянням у `queryKey` хешується через `hashToken(token: string): string`** (перші 8 символів SHA-256 — достатньо для cache-isolation, замало для відновлення оригіналу). Реалізація — інлайном у [`apps/web/src/shared/lib/queryKeys.ts`](../../apps/web/src/shared/lib/queryKeys.ts) (ре-експорт через `apps/web/src/shared/lib/index.ts`); раніше планувався окремий файл `hashToken.ts` — відмовились від нього заради локальності до фабрики. Фабрика приймає `tokenHash`, не `token`:
 
 ```ts
 // ✅ GOOD — хеш у ключі
@@ -217,7 +217,7 @@ Cross-domain key (наприклад, hub читає preview від finyk) → �
 
 - ✅ `queryKeys.ts` — централізовано всі чинні ключі finyk/nutrition/hub/coach/digest/push.
 - ✅ ESLint `rq-keys-only-from-factory` ([#869](https://github.com/Skords-01/Sergeant/pull/869)) — `error`-rule у `eslint.config.js`.
-- ✅ `hashToken()` живе у `apps/web/src/shared/lib/hashToken.ts`.
+- ✅ `hashToken()` інлайн у `apps/web/src/shared/lib/queryKeys.ts` (експорт через `apps/web/src/shared/lib/index.ts` як `hashToken`).
 - ✅ Module ownership map у `AGENTS.md` фіксує власника фабрики.
 - ⏳ Mobile (`apps/mobile/**`) поки локальні keys; мігруємо при першій крос-модульній інвалідації.
 - ⏳ Можлива розбивка `queryKeys.ts` по доменах при перевищенні 800 LOC.

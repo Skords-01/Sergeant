@@ -3,6 +3,7 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { cn } from "@shared/lib/cn";
 import { Icon } from "@shared/components/ui/Icon";
+import { getModulePrefetchProps } from "../../lib/intentPrefetch";
 import {
   MODULE_CONFIGS,
   type ModuleConfig,
@@ -153,14 +154,26 @@ export const BentoCard = memo(function BentoCard({
         {adaptiveReason && !inactive && (
           <span
             className={cn(
-              "mt-1 inline-flex items-center gap-1 self-start",
-              "rounded-full border border-line bg-panel/80 px-1.5 py-0.5",
+              "mt-1 inline-flex items-start gap-1 self-start",
+              "rounded-full border border-line bg-panel/80 px-2 py-0.5",
               "text-2xs font-medium text-muted",
+              // Soft entry animation so the lifted card visibly *animates*
+              // its reason chip in, instead of the previous instant-pop
+              // that made the adaptive reorder feel like layout jitter.
+              "motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-top-1 motion-safe:duration-300",
             )}
-            title={`Підняли в топ: ${adaptiveReason}`}
+            title={adaptiveReason}
           >
-            <span aria-hidden>✦</span>
-            <span className="truncate max-w-[12ch]">{adaptiveReason}</span>
+            <span aria-hidden className="leading-none mt-px">
+              ✦
+            </span>
+            {/* Render the full reason instead of a 12-char truncated tail —
+             * the reason is what makes the adaptive reorder explainable
+             * (e.g. "ранкова кава" / "вечірня вечеря"); chopping it to
+             * "ранкова кав…" gave the lift an air of mystery without
+             * actually saving meaningful horizontal space (cards already
+             * accommodate the chip on a second visual line). */}
+            <span className="leading-snug">{adaptiveReason}</span>
           </span>
         )}
 
@@ -190,7 +203,7 @@ export const BentoCard = memo(function BentoCard({
               "opacity-80 group-hover:opacity-100 transition-opacity",
             )}
           >
-            <Icon name="plus" size={11} strokeWidth={2.5} aria-hidden />
+            <Icon name="plus" size="xs" strokeWidth={2.5} aria-hidden />
             {config.emptyLabel}
           </span>
         ) : (
@@ -231,7 +244,7 @@ export const BentoCard = memo(function BentoCard({
             "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-1",
           )}
         >
-          <Icon name="plus" size={13} strokeWidth={2.5} />
+          <Icon name="plus" size="sm" strokeWidth={2.5} />
         </button>
       )}
 
@@ -251,7 +264,7 @@ export const BentoCard = memo(function BentoCard({
             "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-1",
           )}
         >
-          <Icon name="grip-vertical" size={14} strokeWidth={2} />
+          <Icon name="grip-vertical" size="sm" strokeWidth={2} />
         </button>
       )}
     </div>
@@ -313,9 +326,24 @@ export const SortableCard = memo(function SortableCard({
   // primary `<button>` — both fail axe a11y rules.
   // In edit mode the same listeners move to the visible grip handle so
   // accidental drags from the card body don't fight the explicit handle.
+  // We also fold in `getModulePrefetchProps(id)` (intent-prefetch on hover/
+  // focus) when not editing — the same primary button is the user's "I'm
+  // about to open this module" affordance, so warming its chunk on hover
+  // shaves the next dynamic-import RTT off the click handler. Suppressed
+  // in edit mode because hovers there are about reordering, not opening.
   const dndProps = useMemo(
     () => ({ ...attributes, ...listeners }),
     [attributes, listeners],
+  );
+
+  const intentProps = useMemo(
+    () => (editMode ? null : getModulePrefetchProps(id)),
+    [editMode, id],
+  );
+
+  const primaryProps = useMemo(
+    () => (editMode ? undefined : { ...dndProps, ...intentProps }),
+    [editMode, dndProps, intentProps],
   );
 
   const handleClick = useCallback(() => onOpenModule(id), [onOpenModule, id]);
@@ -330,7 +358,7 @@ export const SortableCard = memo(function SortableCard({
         onClick={handleClick}
         onQuickAdd={quickAdd}
         primaryRef={editMode ? undefined : setActivatorNodeRef}
-        primaryProps={editMode ? undefined : dndProps}
+        primaryProps={primaryProps}
         handleRef={editMode ? setActivatorNodeRef : undefined}
         handleProps={editMode ? dndProps : undefined}
         isDragging={isDragging}
