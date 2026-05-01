@@ -429,6 +429,18 @@ const preset = {
       // ═══════════════════════════════════════════════════════════════════
       // ANIMATIONS — Smooth, delightful, Duolingo-inspired
       // ═══════════════════════════════════════════════════════════════════
+      //
+      // ANIMATION BUDGET — 3 tiers, max 2 concurrent on-screen:
+      //
+      //   AMBIENT   — background, looped: shimmer, pulse-soft, wiggle
+      //               → Always gated by motion-safe:, reduced to opacity-only in prefers-reduced-motion
+      //   RESPONSE  — user-initiated, one-shot: fade-in, slide-up, scale-in, press-scale, hover-lift
+      //               → 150–300ms, ease-out. Fires once per interaction.
+      //   CELEBRATE — milestone, rare: check-pop, bounce-in, success-pulse, confetti
+      //               → Only for: first entry, streak ≥7, weekly goal hit. NOT every checkbox.
+      //
+      // RULE: A screen should never run more than 1 AMBIENT + 1 RESPONSE simultaneously.
+      // Stagger animations count as 1 RESPONSE regardless of child count.
       animation: {
         // Entry animations
         "fade-in": "fadeIn 0.2s ease-out",
@@ -585,7 +597,41 @@ const preset = {
       },
     },
   },
-  plugins: [],
+  plugins: [
+    // ═══════════════════════════════════════════════════════════════════════
+    // TOUCH TARGETS — WCAG 2.5.5 / Apple HIG ≥44×44px on coarse pointers
+    //
+    // `.touch-target`     — 44×44 floor on `(pointer: coarse)` (default).
+    // `.touch-target-48`  — 48×48 floor for primary nav / FAB-class targets.
+    //
+    // Both are no-ops on `(pointer: fine)` — desktop keeps its compact
+    // sizing. Use as a min sizing utility on interactive elements that
+    // are visually smaller than 44px on touch (icon buttons, chips,
+    // small toggles). The `Button` component already enforces the floor
+    // for `xs` / `sm` / `iconOnly`, so prefer `touch-target` only for
+    // bespoke interactive elements outside the `Button` shell.
+    //
+    // To intentionally render a smaller target (e.g. heatmap cells, dense
+    // data grids), opt out by setting `data-compact` on the element —
+    // see the safety-net rule in `apps/web/src/index.css`.
+    // ═══════════════════════════════════════════════════════════════════════
+    function ({ addUtilities }) {
+      addUtilities({
+        ".touch-target": {
+          "@media (pointer: coarse)": {
+            minHeight: "44px",
+            minWidth: "44px",
+          },
+        },
+        ".touch-target-48": {
+          "@media (pointer: coarse)": {
+            minHeight: "48px",
+            minWidth: "48px",
+          },
+        },
+      });
+    },
+  ],
 };
 
 export default preset;

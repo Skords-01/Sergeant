@@ -299,7 +299,13 @@ export default [
       // `safeReadLS` / `useLocalStorageState` / `createModuleStorage`
       // and remove the entry below.
       "apps/web/src/core/insights/AssistantAdviceCard.tsx",
-      "apps/web/src/core/hub/HubSearch.tsx",
+      // HubSearch was split into apps/web/src/core/hub/search/* — the
+      // localStorage parsers (`safeParseLS` + the Fizruk parsers) live
+      // in `searchCache.ts` and are called from `searchSources.ts`.
+      // Both inherit the original ignore until the migration to
+      // `safeReadLS` lands.
+      "apps/web/src/core/hub/search/searchCache.ts",
+      "apps/web/src/core/hub/search/searchSources.ts",
       "apps/web/src/core/insights/TodayFocusCard.tsx",
       "apps/web/src/core/observability/analytics.ts",
 
@@ -320,17 +326,10 @@ export default [
       "apps/web/src/core/insights/useCoachInsight.ts",
       "apps/web/src/core/insights/useWeeklyDigest.ts",
       "apps/web/src/modules/finyk/pages/Overview.tsx",
-      "apps/web/src/modules/fizruk/components/TodayPlanCard.tsx",
-      "apps/web/src/modules/fizruk/hooks/useExerciseCatalog.ts",
-      "apps/web/src/modules/fizruk/hooks/useFizrukProgramStart.ts",
-      "apps/web/src/modules/fizruk/hooks/useFizrukWorkoutReminder.ts",
-      "apps/web/src/modules/fizruk/hooks/useMonthlyPlan.ts",
-      "apps/web/src/modules/fizruk/hooks/useTrainingProgram.ts",
+      // useWorkouts.ts: intentional direct-storage access — dispatches
+      // FIZRUK_WORKOUTS_STORAGE_ERROR custom event on quota failure so the
+      // UI can show a banner. safeWriteLS swallows the error silently.
       "apps/web/src/modules/fizruk/hooks/useWorkouts.ts",
-      "apps/web/src/modules/fizruk/pages/Body.tsx",
-      "apps/web/src/modules/fizruk/pages/Dashboard.tsx",
-      "apps/web/src/modules/fizruk/pages/Progress.tsx",
-      "apps/web/src/modules/fizruk/pages/Workouts.tsx",
       "apps/web/src/modules/nutrition/hooks/useNutritionReminders.ts",
       "apps/web/src/modules/routine/components/RoutineCalendarPanel.tsx",
       "apps/web/src/modules/routine/hooks/useRoutineReminders.ts",
