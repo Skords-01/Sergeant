@@ -34,6 +34,7 @@ import {
 import {
   runEnrichmentTick,
   sampleEnrichmentQueueDepth,
+  startMonoEnrichmentWorker,
 } from "./enrichmentWorker.js";
 
 const categorize = _categorize as unknown as Mock;
@@ -375,5 +376,80 @@ describe("sampleEnrichmentQueueDepth", () => {
     await expect(
       sampleEnrichmentQueueDepth(pool as unknown as Pool),
     ).resolves.toBeUndefined();
+  });
+});
+
+// Регресія для бага, який Devin Review знайшов у PR #1251:
+// `setInterval` пере-затирав `inflight` під час повільного tick-у, і stop()
+// awaitив тільки ОСТАННЮ promise. Тепер scheduling зроблено через self-
+// scheduling `setTimeout`-loop, який гарантовано не overlap-ить.
+describe("startMonoEnrichmentWorker — non-overlapping ticks + graceful stop", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.useFakeTimers();
+  });
+
+  it("не запускає наступний tick поки попередній не завершився, і stop() ловить in-flight tick", async () => {
+    const pool = makePool() as unknown as MockPool;
+    // Розрізняємо два запити одного `pool.query`-mock-а:
+    //  - PICK (runEnrichmentTick): WITH next_batch AS … FOR UPDATE SKIP LOCKED.
+    //  - SAMPLE (sampleEnrichmentQueueDepth): GROUP BY status.
+    // PICK ми затримуємо (контрольовано через `releasePick`); SAMPLE віддає
+    // одразу, щоб не плутати лічильник.
+    let releasePick: (() => void) | null = null;
+    let pickCallCount = 0;
+    pool.query.mockImplementation((sql: string) => {
+      if (typeof sql === "string" && sql.includes("GROUP BY status")) {
+        return Promise.resolve({ rows: [] });
+      }
+      pickCallCount += 1;
+      return new Promise((resolve) => {
+        releasePick = () => resolve({ rows: [] });
+      });
+    });
+
+    const worker = startMonoEnrichmentWorker(pool as unknown as Pool, {
+      intervalMs: 1_000,
+    });
+
+    // Перший прогін стартує одразу. Чекаємо microtask flush, щоб
+    // pool.query був викликаний.
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(pickCallCount).toBe(1);
+
+    // Прокручуємо далеко вперед — якби це був setInterval, він би вистрелив
+    // 10 разів і pickCallCount став би 11. З self-scheduling setTimeout-ом
+    // НАСТУПНИЙ tick зашедулиться тільки після завершення попереднього,
+    // тож рахунок має лишитися 1.
+    await vi.advanceTimersByTimeAsync(10_000);
+    expect(pickCallCount).toBe(1);
+
+    // Завершуємо повільний tick — далі scheduleTick() поставить таймер на
+    // intervalMs.
+    if (!releasePick) throw new Error("releasePick not captured");
+    (releasePick as () => void)();
+    // Дочекатись fulfillment + scheduleTick.
+    await vi.advanceTimersByTimeAsync(0);
+    await vi.advanceTimersByTimeAsync(1_000);
+    // Тепер вистрілив другий tick.
+    expect(pickCallCount).toBe(2);
+
+    // Робимо третій pick «in-flight» і викликаємо stop() — він має дочекатись.
+    let stopResolved = false;
+    const stopPromise = worker.stop().then(() => {
+      stopResolved = true;
+    });
+    // stop() стрімить inflightTick → поки його не зарелізнуто, stop не resolve.
+    await vi.advanceTimersByTimeAsync(0);
+    expect(stopResolved).toBe(false);
+
+    if (!releasePick) throw new Error("releasePick not captured");
+    (releasePick as () => void)();
+    await vi.advanceTimersByTimeAsync(0);
+    await stopPromise;
+    expect(stopResolved).toBe(true);
+
+    vi.useRealTimers();
   });
 });

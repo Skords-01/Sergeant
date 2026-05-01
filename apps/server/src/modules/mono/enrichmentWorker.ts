@@ -310,9 +310,16 @@ export function startMonoEnrichmentWorker(
   const depthIntervalMs = 30_000;
 
   let stopping = false;
-  let inflight: Promise<unknown> = Promise.resolve();
+  let tickTimeout: NodeJS.Timeout | null = null;
+  let sampleTimeout: NodeJS.Timeout | null = null;
+  // Тримаємо ОСТАННЮ inflight-операцію кожного циклу (tick / sample). Цикли
+  // self-scheduling (див. нижче), тож одночасно у польоті може бути
+  // максимум 1 tick + 1 sample. Зберігаємо обидві promise-и, щоб stop()
+  // дочекався їх обох перед `pool.end()`.
+  let inflightTick: Promise<unknown> = Promise.resolve();
+  let inflightSample: Promise<unknown> = Promise.resolve();
 
-  const tick = async (): Promise<void> => {
+  const runTick = async (): Promise<void> => {
     if (stopping) return;
     try {
       await runEnrichmentTick(pool, opts);
@@ -325,23 +332,62 @@ export function startMonoEnrichmentWorker(
     }
   };
 
-  const sample = async (): Promise<void> => {
+  const runSample = async (): Promise<void> => {
     if (stopping) return;
-    await sampleEnrichmentQueueDepth(pool);
+    try {
+      await sampleEnrichmentQueueDepth(pool);
+    } catch {
+      /* sampleEnrichmentQueueDepth ловить помилки сам — тут лише safety */
+    }
   };
 
-  const tickHandle = setInterval(() => {
-    inflight = tick();
-  }, intervalMs);
-  if (typeof tickHandle.unref === "function") tickHandle.unref();
+  /**
+   * Self-scheduling loop замість `setInterval`:
+   * - `setInterval` стріляв би кожні `intervalMs` НЕЗАЛЕЖНО від того,
+   *   завершився попередній tick чи ні. Для нашого Anthropic-flow одна
+   *   ітерація може зайняти 75+ секунд (5 row × 15 s timeout), і
+   *   setInterval встиг би пере-затерти `inflight` 15 разів. Stop() тоді
+   *   awaitить лише ОСТАННІЙ tick, а попередні 14 — abandoned, і коли
+   *   index.ts викличе pool.end() одразу після stop(), ці tick-и
+   *   отримають ECONNRESET → queue.row застрягне у status='processing'
+   *   назавжди (Devin Review знайшов це у PR #1251).
+   * - `setTimeout`-loop запускає НАСТУПНИЙ tick тільки після завершення
+   *   попереднього. Гарантовано non-overlap, гарантовано stop() ловить
+   *   справжній in-flight, без extra book-keeping (Set<Promise>).
+   */
+  const scheduleTick = (): void => {
+    if (stopping) return;
+    tickTimeout = setTimeout(() => {
+      tickTimeout = null;
+      inflightTick = runTick().finally(() => {
+        scheduleTick();
+      });
+    }, intervalMs);
+    if (tickTimeout && typeof tickTimeout.unref === "function") {
+      tickTimeout.unref();
+    }
+  };
 
-  const sampleHandle = setInterval(() => {
-    void sample();
-  }, depthIntervalMs);
-  if (typeof sampleHandle.unref === "function") sampleHandle.unref();
+  const scheduleSample = (): void => {
+    if (stopping) return;
+    sampleTimeout = setTimeout(() => {
+      sampleTimeout = null;
+      inflightSample = runSample().finally(() => {
+        scheduleSample();
+      });
+    }, depthIntervalMs);
+    if (sampleTimeout && typeof sampleTimeout.unref === "function") {
+      sampleTimeout.unref();
+    }
+  };
 
   // Перший прогін одразу, щоб не чекати першого інтервалу.
-  inflight = Promise.all([tick(), sample()]);
+  inflightTick = runTick().finally(() => {
+    scheduleTick();
+  });
+  inflightSample = runSample().finally(() => {
+    scheduleSample();
+  });
 
   logger.info({
     msg: "mono_enrichment_worker_started",
@@ -352,12 +398,21 @@ export function startMonoEnrichmentWorker(
   return {
     async stop() {
       stopping = true;
-      clearInterval(tickHandle);
-      clearInterval(sampleHandle);
+      if (tickTimeout) {
+        clearTimeout(tickTimeout);
+        tickTimeout = null;
+      }
+      if (sampleTimeout) {
+        clearTimeout(sampleTimeout);
+        sampleTimeout = null;
+      }
+      // Чекаємо ОБИДВІ inflight-операції — і tick, і sample. Без цього
+      // sample, який ходить раз на 30с, може опинитися посеред pool.end()
+      // → ECONNRESET у логах при graceful shutdown.
       try {
-        await inflight;
+        await Promise.allSettled([inflightTick, inflightSample]);
       } catch {
-        /* swallow */
+        /* swallow — allSettled не throw-ить, але про всяк */
       }
       logger.info({ msg: "mono_enrichment_worker_stopped" });
     },
