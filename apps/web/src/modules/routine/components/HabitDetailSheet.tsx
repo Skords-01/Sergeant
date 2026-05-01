@@ -306,7 +306,7 @@ export function HabitDetailSheet({
           {WEEKDAY_LABELS.map((wd) => (
             <div
               key={wd}
-              className="text-center text-3xs text-subtle font-medium pb-1"
+              className="text-center text-2xs text-subtle font-medium pb-1"
             >
               {wd}
             </div>
@@ -343,7 +343,7 @@ export function HabitDetailSheet({
             );
           })}
         </div>
-        <div className="flex items-center gap-3 mt-2 text-3xs text-subtle">
+        <div className="flex items-center gap-3 mt-2 text-2xs text-subtle">
           <span className="flex items-center gap-1">
             <span className="inline-block w-3 h-3 rounded bg-routine-surface2 dark:bg-routine-surface-dark/15 border border-routine-ring/40 dark:border-routine-border-dark/30" />
             Виконано

@@ -387,7 +387,7 @@ function ScoreButton({ value, selected, onClick, label }) {
       <span className="text-base leading-none">{value}</span>
       <span
         className={cn(
-          "text-3xs leading-none truncate max-w-full px-1",
+          "text-2xs leading-none truncate max-w-full px-1",
           selected ? "text-white/80" : "text-muted",
         )}
       >

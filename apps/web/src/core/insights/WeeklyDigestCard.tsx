@@ -475,7 +475,7 @@ export function WeeklyDigestCard({ onCollapse }: WeeklyDigestCardProps = {}) {
               >
                 {h.weekRange}
                 {h.weekKey === currentWeekKey && (
-                  <span className="ml-1 text-3xs opacity-70">поточний</span>
+                  <span className="ml-1 text-2xs opacity-70">поточний</span>
                 )}
               </button>
             ))}

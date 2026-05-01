@@ -398,8 +398,15 @@ const preset = {
       // ═══════════════════════════════════════════════════════════════════
       // TYPOGRAPHY — Readable, friendly, clear hierarchy
       // ═══════════════════════════════════════════════════════════════════
+      // ─── Type-size scale ────────────────────────────────────────────────
+      // Floor: `text-2xs` (10px). `text-3xs` (9px) was retired — it
+      // never met readable-body contrast and we had no auditable use
+      // case for sub-10px outside chart axis ticks. Use one of the
+      // semantic `.text-style-*` utilities (defined in `plugins`)
+      // whenever a slot has a documented role (hero, title, body,
+      // label, caption, overline) — fall back to the raw scale only
+      // for one-off measurements.
       fontSize: {
-        "3xs": ["9px", { lineHeight: "12px" }],
         "2xs": ["10px", { lineHeight: "14px" }],
         xs: ["12px", { lineHeight: "16px" }],
         sm: ["14px", { lineHeight: "20px" }],
@@ -585,7 +592,68 @@ const preset = {
       },
     },
   },
-  plugins: [],
+  // ═══════════════════════════════════════════════════════════════════
+  // PLUGINS — Semantic typography utilities
+  //
+  // The `.text-style-*` utilities below are the canonical way to apply
+  // a typographic role. They bundle font-size, line-height, weight,
+  // letter-spacing, and casing into a single class so layouts can't
+  // drift on any one axis (e.g. shipping the hero size with the wrong
+  // weight). Prefer these over re-deriving the values from the raw
+  // `text-xs / text-sm / …` scale whenever a slot has a documented
+  // role:
+  //
+  //   .text-style-hero      — page H1s and hero stat numbers
+  //   .text-style-title     — section headings, card titles
+  //   .text-style-body      — main body copy
+  //   .text-style-label     — form labels, button text
+  //   .text-style-caption   — metadata, timestamps, helper text
+  //   .text-style-overline  — uppercase section kickers / eyebrows
+  //
+  // Minimum text size in the design system is 12px (`text-style-caption`);
+  // `text-2xs` (10px) is reserved for chart ticks and decorative
+  // metadata badges.
+  // ═══════════════════════════════════════════════════════════════════
+  plugins: [
+    function semanticTypography({ addUtilities }) {
+      addUtilities({
+        ".text-style-hero": {
+          fontSize: "26px",
+          lineHeight: "32px",
+          fontWeight: "700",
+          letterSpacing: "-0.02em",
+        },
+        ".text-style-title": {
+          fontSize: "20px",
+          lineHeight: "28px",
+          fontWeight: "600",
+          letterSpacing: "-0.01em",
+        },
+        ".text-style-body": {
+          fontSize: "16px",
+          lineHeight: "24px",
+          fontWeight: "400",
+        },
+        ".text-style-label": {
+          fontSize: "14px",
+          lineHeight: "20px",
+          fontWeight: "500",
+        },
+        ".text-style-caption": {
+          fontSize: "12px",
+          lineHeight: "16px",
+          fontWeight: "400",
+        },
+        ".text-style-overline": {
+          fontSize: "12px",
+          lineHeight: "16px",
+          fontWeight: "600",
+          letterSpacing: "0.06em",
+          textTransform: "uppercase",
+        },
+      });
+    },
+  ],
 };
 
 export default preset;

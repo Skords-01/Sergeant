@@ -83,7 +83,7 @@ function LoadCalculator({ oneRM }) {
                     <div className="text-sm font-bold text-text tabular-nums leading-tight">
                       {kg > 0 ? `${kg}` : "—"}
                     </div>
-                    <div className="text-3xs text-muted leading-none">кг</div>
+                    <div className="text-2xs text-muted leading-none">кг</div>
                   </div>
                 );
               })}
@@ -91,7 +91,7 @@ function LoadCalculator({ oneRM }) {
           </div>
         ))}
       </div>
-      <p className="text-3xs text-muted mt-2 text-center">
+      <p className="text-2xs text-muted mt-2 text-center">
         Ваги округлені до найближчих 2.5 кг
       </p>
     </Card>

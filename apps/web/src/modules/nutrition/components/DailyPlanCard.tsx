@@ -112,7 +112,7 @@ function MacroRatioBar({ prefs }: { prefs: NutritionPrefs }) {
       <div className="flex rounded-lg overflow-hidden h-5">
         {pctP > 0 && (
           <div
-            className="bg-blue-500 flex items-center justify-center text-3xs font-bold text-white"
+            className="bg-blue-500 flex items-center justify-center text-2xs font-bold text-white"
             style={{ width: `${pctP}%` }}
           >
             {pctP}%
@@ -120,7 +120,7 @@ function MacroRatioBar({ prefs }: { prefs: NutritionPrefs }) {
         )}
         {pctF > 0 && (
           <div
-            className="bg-yellow-500 flex items-center justify-center text-3xs font-bold text-white"
+            className="bg-yellow-500 flex items-center justify-center text-2xs font-bold text-white"
             style={{ width: `${pctF}%` }}
           >
             {pctF}%
@@ -128,7 +128,7 @@ function MacroRatioBar({ prefs }: { prefs: NutritionPrefs }) {
         )}
         {pctC > 0 && (
           <div
-            className="bg-green-500 flex items-center justify-center text-3xs font-bold text-white"
+            className="bg-green-500 flex items-center justify-center text-2xs font-bold text-white"
             style={{ width: `${pctC}%` }}
           >
             {pctC}%

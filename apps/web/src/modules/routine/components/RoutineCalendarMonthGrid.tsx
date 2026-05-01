@@ -129,7 +129,7 @@ export function RoutineCalendarMonthGrid({
                   <span className="flex items-center gap-0.5" aria-hidden>
                     <span className={cn("w-1.5 h-1.5 rounded-full", C.dot)} />
                     {n > 1 && (
-                      <span className="text-3xs text-subtle tabular-nums">
+                      <span className="text-2xs text-subtle tabular-nums">
                         {n}
                       </span>
                     )}
