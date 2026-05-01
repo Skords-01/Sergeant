@@ -14,11 +14,15 @@ import { WorkoutJournalSection } from "../components/workouts/WorkoutJournalSect
 import { WorkoutCatalogSection } from "../components/workouts/WorkoutCatalogSection";
 import { QuickStartSheet } from "../components/workouts/QuickStartSheet";
 import { useExerciseCatalog } from "../hooks/useExerciseCatalog";
-import { useFizrukRestSound } from "../hooks/useFizrukRestSound";
+import {
+  useFizrukRestSound,
+  type RestTimerState,
+} from "../hooks/useFizrukRestSound";
 import { useRecovery } from "../hooks/useRecovery";
 import { useWorkoutTemplates } from "../hooks/useWorkoutTemplates";
 import { useWorkouts } from "../hooks/useWorkouts";
 import { recoveryConflictsForExercise } from "@sergeant/fizruk-domain";
+import type { RawExerciseDef } from "@sergeant/fizruk-domain/data";
 import {
   ACTIVE_WORKOUT_KEY,
   summarizeWorkoutForFinish,
@@ -79,8 +83,7 @@ export function Workouts() {
   const templateApi = useWorkoutTemplates();
   const [q, setQ] = useState("");
   const [equipmentFilter, setEquipmentFilter] = useState<string[]>([]);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [selected, setSelected] = useState<any>(null);
+  const [selected, setSelected] = useState<RawExerciseDef | null>(null);
   const [open, setOpen] = useState(() => ({}));
   const [addOpen, setAddOpen] = useState(false);
   // `view` drives the page chrome:
@@ -96,8 +99,7 @@ export function Workouts() {
   // "catalog" vs "log" (exercise-in-list click handler, `ExerciseDetailSheet`,
   // `WorkoutCatalogSection`). Kept in sync with `view` for those subviews.
   const mode = view === "templates" || view === "home" ? "catalog" : view;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [restTimer, setRestTimer] = useState<any>(null);
+  const [restTimer, setRestTimer] = useState<RestTimerState | null>(null);
   const [activeWorkoutId, setActiveWorkoutId] = useState(() => {
     try {
       return localStorage.getItem(ACTIVE_WORKOUT_KEY) || null;

@@ -1,12 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import type { Workout } from "@sergeant/fizruk-domain/domain";
 import {
   parseWorkoutsFromStorage,
   serializeWorkoutsToStorage,
   WORKOUTS_STORAGE_KEY,
 } from "../lib/fizrukStorage";
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type Workout = any;
 
 /**
  * Window event fired when persisting workouts to `localStorage` throws
@@ -124,7 +122,11 @@ export function useWorkouts() {
     try {
       const raw = localStorage.getItem(WORKOUTS_STORAGE_KEY);
       const parsed = parseWorkoutsFromStorage(raw);
-      if (Array.isArray(parsed)) setWorkouts(parsed);
+      // Storage parser returns `unknown[]` (the persisted blob is loose):
+      // it's the boundary between untyped JSON and typed runtime state, so
+      // we trust the shape here. Each consumer already guards optional
+      // fields (`w.items || []`, `w.endedAt`, etc.).
+      if (Array.isArray(parsed)) setWorkouts(parsed as Workout[]);
     } catch {}
     setLoaded(true);
   }, []);

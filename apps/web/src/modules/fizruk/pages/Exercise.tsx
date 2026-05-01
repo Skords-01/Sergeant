@@ -5,6 +5,7 @@ import { EmptyState } from "@shared/components/ui/EmptyState";
 import { useExerciseCatalog } from "../hooks/useExerciseCatalog";
 import { useWorkouts } from "../hooks/useWorkouts";
 import { epley1rm, suggestNextSet } from "@sergeant/fizruk-domain";
+import type { WorkoutSet } from "@sergeant/fizruk-domain/domain";
 import { Card } from "@shared/components/ui/Card";
 
 function fmt(n, digits = 0) {
@@ -245,8 +246,10 @@ function ProgressChart({ points, label, unit, color }) {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type HistoryEntry = { workout: any; item: any };
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type Set = any;
+// Best/last sets carry an extra `_at` annotation that's not part of the
+// canonical `WorkoutSet`, so we extend the domain type instead of
+// shadowing the global `Set<T>` with `type Set = any`.
+type WorkoutSetWithMeta = WorkoutSet & { _at?: string };
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Point = any;
 
@@ -274,8 +277,8 @@ export function Exercise({ exerciseId }) {
 
   const best = useMemo(() => {
     let best1rm = 0;
-    let bestSet: Set | null = null;
-    let lastTopSet: Set | null = null;
+    let bestSet: WorkoutSetWithMeta | null = null;
+    let lastTopSet: WorkoutSetWithMeta | null = null;
     let lastTopEst = 0;
     let lastWorkoutId: string | null = null;
     let lastWorkoutBest1rm = 0;

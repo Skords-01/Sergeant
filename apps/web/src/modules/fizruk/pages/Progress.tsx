@@ -248,8 +248,10 @@ export function Progress() {
       ],
     ];
     for (const w of workouts || []) {
-      const we = w.wellbeing?.energy ?? "";
-      const wm = w.wellbeing?.mood ?? "";
+      // CSV cells are stringified downstream — coerce here so the typed
+      // `rows: string[][]` doesn't accept a `string | number` union.
+      const we = w.wellbeing?.energy != null ? String(w.wellbeing.energy) : "";
+      const wm = w.wellbeing?.mood != null ? String(w.wellbeing.mood) : "";
       for (const it of w.items || []) {
         let detail = "";
         if (it.type === "strength")
