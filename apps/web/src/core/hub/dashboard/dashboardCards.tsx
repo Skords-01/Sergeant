@@ -136,9 +136,12 @@ export function StreakIndicator() {
 }
 
 /**
- * Wraps each row of the dashboard in a fade-up animation with an
- * incremental delay so the layout reveals itself top-down on mount
- * rather than snapping into existence.
+ * Wraps a dashboard *group* in a fade-up animation. The hub uses three
+ * stable groups — Hero / Modules / Insights — and each `index` maps to
+ * a fixed delay (`index * 80ms`) instead of the per-element ramp we used
+ * before. Grouping keeps the reveal under ~250ms so users don't see a
+ * long staircase of fades on slower devices, and prevents the index
+ * counter from drifting whenever a section toggles in or out.
  */
 export function StaggerChild({
   index,
@@ -148,7 +151,7 @@ export function StaggerChild({
   children: ReactNode;
 }) {
   const style: CSSProperties = {
-    animationDelay: `${index * 50}ms`,
+    animationDelay: `${index * 80}ms`,
   };
   return (
     <div className="motion-safe:animate-stagger-in" style={style}>
