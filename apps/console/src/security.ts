@@ -42,7 +42,17 @@ export class FixedWindowRateLimiter {
     private readonly limit: number,
     private readonly windowMs = 60_000,
     private readonly now = () => Date.now(),
-  ) {}
+  ) {
+    // Prune stale buckets periodically to prevent unbounded memory growth.
+    const pruner = setInterval(() => {
+      const current = this.now();
+      for (const [key, bucket] of this.buckets) {
+        if (bucket.resetAt <= current) this.buckets.delete(key);
+      }
+    }, windowMs);
+    // Allow Node to exit even if this limiter is still alive.
+    if (typeof pruner === "object") pruner.unref();
+  }
 
   allow(key: string): boolean {
     const current = this.now();

@@ -21,14 +21,22 @@ export const baseVitestConfig = {
 /**
  * Shared coverage configuration. Each package merges this into its own
  * `test.coverage` block. v8 provider is fast and ships with Node — no extra
- * native deps. We deliberately do NOT set thresholds here yet: this PR
- * establishes the baseline. A follow-up will lock per-package floors so
- * future PRs cannot decrease coverage.
+ * native deps.
+ *
+ * Baseline thresholds (lines/functions/branches): packages that fall below
+ * these floors will fail CI. Individual packages may raise (not lower) these
+ * in their own vitest.config to enforce stricter per-package contracts.
  */
 export const baseCoverageConfig = {
   provider: /** @type {const} */ ("v8"),
   reporter: /** @type {const} */ (["text", "html", "json-summary", "lcov"]),
   reportsDirectory: "./coverage",
+  thresholds: {
+    lines: 60,
+    functions: 60,
+    branches: 55,
+    statements: 60,
+  },
   exclude: [
     "**/node_modules/**",
     "**/dist/**",
