@@ -10,11 +10,16 @@ import { localStorageStore } from "./dashboardStore";
 
 const PILL_MODULES: ModuleId[] = ["finyk", "routine", "nutrition", "fizruk"];
 
+// AI-CONTEXT: Pill numbers render as bold text on the cream `bg-panel`
+// surface. The saturated `text-{module}` shades only clear ~2.4–3.1:1
+// against cream; switch to the `-strong` companion in light mode and
+// keep the saturated tone in dark mode where it clears AA on the
+// charcoal panel. See docs/design/BRANDBOOK.md → "WCAG-AA `-strong` Tier".
 const PILL_ACCENT: Record<ModuleId, string> = {
-  finyk: "text-finyk",
-  fizruk: "text-fizruk",
-  routine: "text-routine",
-  nutrition: "text-nutrition",
+  finyk: "text-finyk-strong dark:text-finyk",
+  fizruk: "text-fizruk-strong dark:text-fizruk",
+  routine: "text-routine-strong dark:text-routine",
+  nutrition: "text-nutrition-strong dark:text-nutrition",
 };
 
 /**
