@@ -16,7 +16,7 @@ import { useToast } from "@shared/hooks/useToast";
 import { tryShowCrossModulePrompt } from "@shared/lib/crossModulePrompt";
 import { openHubModuleWithAction } from "@shared/lib/hubNav";
 import { Overview } from "./pages/Overview";
-import { Transactions } from "./pages/Transactions";
+import { Transactions } from "./pages/transactions";
 import { Budgets } from "./pages/Budgets";
 import { Assets } from "./pages/Assets";
 import { Analytics } from "./pages/Analytics";
