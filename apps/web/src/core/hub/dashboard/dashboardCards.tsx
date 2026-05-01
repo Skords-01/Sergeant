@@ -151,7 +151,11 @@ export function StaggerChild({
   children: ReactNode;
 }) {
   const style: CSSProperties = {
-    animationDelay: `${index * 80}ms`,
+    // Hard Rule #17 (Animation budget): stagger ≤ 30 ms between children,
+    // total delay cap ≤ 150 ms. Three fixed groups (Hero / Modules /
+    // Insights) map to indices 0–2, so the cap rarely bites — but keep the
+    // `Math.min` so any future fourth group still respects the rule.
+    animationDelay: `${Math.min(index * 30, 150)}ms`,
   };
   return (
     <div className="motion-safe:animate-stagger-in" style={style}>
