@@ -1,4 +1,5 @@
 import { Queue, Worker, type Job } from "bullmq";
+import type { Redis as IORedisClient } from "ioredis";
 
 import { logger, serializeError } from "../../obs/logger.js";
 import {
@@ -71,6 +72,12 @@ interface AuthMailDispatcher {
 interface AuthMailModuleState {
   queue: Queue<AuthMailJobData> | null;
   worker: Worker<AuthMailJobData> | null;
+  // BullMQ ДОКУМЕНТОВАНО НЕ закриває connection-и, які були передані
+  // як `{ connection }` (від disconnects лише свої внутрішні duplicate-и).
+  // Тримаємо ref-и самі і quit()-имо їх у closeAuthMailModule(), інакше
+  // вони висять open handles до `process.exit()`.
+  queueConnection: IORedisClient | null;
+  workerConnection: IORedisClient | null;
   dispatcher: AuthMailDispatcher | null;
   inflightFallbacks: Set<Promise<void>>;
 }
@@ -78,6 +85,8 @@ interface AuthMailModuleState {
 const state: AuthMailModuleState = {
   queue: null,
   worker: null,
+  queueConnection: null,
+  workerConnection: null,
   dispatcher: null,
   inflightFallbacks: new Set(),
 };
@@ -99,6 +108,7 @@ function getOrCreateAuthMailQueue(): Queue<AuthMailJobData> | null {
 
   const connection = createBullConnection("auth-mail-queue");
   if (!connection) return null;
+  state.queueConnection = connection;
 
   state.queue = new Queue<AuthMailJobData>(AUTH_MAIL_QUEUE_NAME, {
     connection,
@@ -244,6 +254,7 @@ export function startAuthMailWorker(): StartedAuthMailWorker | null {
 
   const connection = createBullConnection("auth-mail-worker");
   if (!connection) return null;
+  state.workerConnection = connection;
 
   state.worker = new Worker<AuthMailJobData>(
     AUTH_MAIL_QUEUE_NAME,
@@ -326,6 +337,38 @@ async function closeAuthMailModule(): Promise<void> {
     }
     state.queue = null;
   }
+
+  // BullMQ.close() НЕ закриває externally-provided ioredis-connection-и
+  // (які ми самі створили через createBullConnection). Без quit() вони
+  // висіли б open handles до самого process.exit() (vitest-handle-leak +
+  // брудний shutdown на Railway).
+  await closeBullConnection(state.workerConnection, "auth-mail-worker");
+  state.workerConnection = null;
+  await closeBullConnection(state.queueConnection, "auth-mail-queue");
+  state.queueConnection = null;
+}
+
+async function closeBullConnection(
+  connection: IORedisClient | null,
+  name: string,
+): Promise<void> {
+  if (!connection) return;
+  try {
+    // quit() відправляє QUIT-команду і чекає ack-у. Якщо Redis вже
+    // недоступний або сокет порваний — quit() режектить, є fallback
+    // на disconnect() (форсує close без graceful-handshake-у).
+    await connection.quit();
+  } catch {
+    try {
+      connection.disconnect();
+    } catch (err) {
+      logger.warn({
+        msg: "auth_mail_connection_close_error",
+        connection: name,
+        err: serializeError(err, { includeStack: false }),
+      });
+    }
+  }
 }
 
 /**
@@ -335,6 +378,8 @@ async function closeAuthMailModule(): Promise<void> {
 export function __resetAuthMailQueueForTesting(): void {
   state.queue = null;
   state.worker = null;
+  state.queueConnection = null;
+  state.workerConnection = null;
   state.dispatcher = null;
   state.inflightFallbacks.clear();
 }
