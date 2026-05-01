@@ -833,6 +833,7 @@
 - [tempy@0.7.1](https://github.com/sindresorhus/tempy#readme) - MIT
 - [terminal-link@2.1.1](https://github.com/sindresorhus/terminal-link#readme) - MIT
 - [terser@5.46.1](https://terser.org) - BSD-2-Clause
+- [terser@5.46.2](https://terser.org) - BSD-2-Clause
 - [test-exclude@6.0.0](https://istanbul.js.org/) - ISC
 - [thenify@3.3.1](https://github.com/thenables/thenify#readme) - MIT
 - [thenify-all@1.6.0](https://github.com/thenables/thenify-all#readme) - MIT
