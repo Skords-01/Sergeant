@@ -87,7 +87,9 @@ async function main() {
   });
 
   bot.catch((err) => {
-    console.error("Bot error:", err);
+    console.error("Bot error:", err.error, {
+      updateId: err.ctx?.update?.update_id,
+    });
   });
 
   console.log("Sergeant Console starting…");
