@@ -1,9 +1,9 @@
-# Voyage AI + pgvector — AI memory (foundation + ingestion)
+# Voyage AI + pgvector — AI memory
 
-> **Last validated:** 2026-05-02 by @Skords-01. **Next review:** 2026-07-31.
-> **Status:** Active (foundation + ingestion; retrieval — у PR3)
+> **Last validated:** 2026-05-02 by @Skords-01. **Next review:** 2026-08-01.
+> **Status:** Active (foundation + ingestion + retrieval; повний цикл готовий)
 
-Foundation + ingestion layer AI memory підсистеми. ADR — [`0028-pgvector-ai-memory.md`](../adr/0028-pgvector-ai-memory.md).
+AI memory підсистема. ADR — [`0028-pgvector-ai-memory.md`](../adr/0028-pgvector-ai-memory.md).
 
 ## Що це таке
 
@@ -20,7 +20,7 @@ Server-side семантичний memory для Anthropic-асистента. �
 ```
 ┌────────────────┐
 │ caller         │  PR2: ingestion-hooks (finyk/nutrition/fizruk/journal)
-│ (PR2/PR3)      │  PR3: HubChat tool `recall_memory`, `/api/chat` RAG
+│ (PR2/PR3)      │  PR3: HubChat tool `recall_memory`, `/api/chat` RAG-injection
 └───────┬────────┘
         │
         ▼  apps/server/src/modules/ai-memory/index.ts
@@ -69,7 +69,7 @@ Server-side семантичний memory для Anthropic-асистента. �
 | `content`            | `TEXT`                                     | оригінальний текст для re-embed + human-debug                                          |
 | `embedding`          | `HALFVEC(1024)`                            | 16-bit float vector (50% памʼяті vs `vector(1024)`)                                    |
 | `embedding_provider` | `TEXT`                                     | `"voyage"` (для re-embed batch-у)                                                      |
-| `embedding_model`    | `TEXT`                                     | `"voyage-3-lite"`                                                                      |
+| `embedding_model`    | `TEXT`                                     | `"voyage-3.5-lite"`                                                                    |
 | `embedding_version`  | `TEXT`                                     | internal semver (`"1"` → `"2"` при зміні prompt-template)                              |
 | `metadata`           | `JSONB`                                    | structured facts (amount, mcc, date, ...)                                              |
 | `created_at`         | `TIMESTAMPTZ`                              | для time-window post-filter-ів                                                         |
@@ -80,24 +80,25 @@ Server-side семантичний memory для Anthropic-асистента. �
 
 Усі прапорці у `apps/server/src/env.ts` + `.env.example`:
 
-| Env var                       | Default         | Призначення                                                   |
-| ----------------------------- | --------------- | ------------------------------------------------------------- |
-| `AI_MEMORY_ENABLED`           | `false`         | Master flag; foundation-PR залишає off, PR2 вмикає            |
-| `VOYAGE_API_KEY`              | —               | Без ключа — `MissingVoyageApiKeyError` при будь-якому виклику |
-| `VOYAGE_EMBEDDING_MODEL`      | `voyage-3-lite` | Зміна → re-embed усіх row-ів                                  |
-| `VOYAGE_EMBEDDING_DIM`        | `1024`          | Має співпадати з `HALFVEC(N)` у міграції                      |
-| `AI_MEMORY_EMBEDDING_VERSION` | `1`             | Internal semver; ⇈ при зміні prompt-template без зміни моделі |
-| `VOYAGE_TIMEOUT_MS`           | `15_000`        | HTTP timeout                                                  |
-| `VOYAGE_MAX_RETRIES`          | `2`             | Retry на 5xx/408/429; не ретраїмо 4xx                         |
-| `VOYAGE_BATCH_SIZE`           | `32`            | Скільки текстів у одному запиті                               |
-| `AI_MEMORY_HNSW_EF_SEARCH`    | `40`            | Search-time recall/latency-trade-off                          |
-| `AI_MEMORY_TOP_K`             | `8`             | Default для `recall()` (overridable per-query)                |
+| Env var                       | Default           | Призначення                                                                                         |
+| ----------------------------- | ----------------- | --------------------------------------------------------------------------------------------------- |
+| `AI_MEMORY_ENABLED`           | `false`           | Master flag; foundation-PR залишає off, PR2 вмикає                                                  |
+| `VOYAGE_API_KEY`              | —                 | Без ключа — `MissingVoyageApiKeyError` при будь-якому виклику                                       |
+| `VOYAGE_EMBEDDING_MODEL`      | `voyage-3.5-lite` | Зміна → re-embed усіх row-ів. НЕ використовувати `voyage-3-lite` (512d, несумісно з HALFVEC(1024)). |
+| `VOYAGE_EMBEDDING_DIM`        | `1024`            | Має співпадати з `HALFVEC(N)` у міграції                                                            |
+| `AI_MEMORY_EMBEDDING_VERSION` | `1`               | Internal semver; ⇈ при зміні prompt-template без зміни моделі                                       |
+| `VOYAGE_TIMEOUT_MS`           | `15_000`          | HTTP timeout                                                                                        |
+| `VOYAGE_MAX_RETRIES`          | `2`               | Retry на 5xx/408/429; не ретраїмо 4xx                                                               |
+| `VOYAGE_BATCH_SIZE`           | `32`              | Скільки текстів у одному запиті                                                                     |
+| `AI_MEMORY_HNSW_EF_SEARCH`    | `40`              | Search-time recall/latency-trade-off                                                                |
+| `AI_MEMORY_TOP_K`             | `8`               | Default для `recall()` (overridable per-query)                                                      |
+| `AI_MEMORY_RAG_TOP_K`         | `4`               | Default top-K для RAG-injection у `/api/chat` (PR3)                                                 |
 
 ## Lifecycle прапора `AI_MEMORY_ENABLED`
 
 Foundation PR — `false` (default). `remember()` / `recall()` no-op-и (без виклику Voyage / БД).
-PR2 (ingestion, цей doc) — додає producer-и + worker. Master-flag залишається керівником: `AI_MEMORY_ENABLED=false` і ingestion-payload-и просто скіпаються (`mode=disabled` метрика).
-PR3 (retrieval) — використовує `recall()` з `/api/chat` і HubChat tool `recall_memory`.
+PR2 (ingestion) — додає producer-и + worker. Master-flag залишається керівником: `AI_MEMORY_ENABLED=false` і ingestion-payload-и просто скіпаються (`mode=disabled` метрика).
+PR3 (retrieval) — використовує `recall()` з двох сторін: HubChat tool `recall_memory` (explicit query від асистента) і RAG-injection у `/api/chat` (implicit augmentation на першому турі). При `AI_MEMORY_ENABLED=false` обидві гілки no-op-лять без HTTP-викликів до Voyage/БД.
 
 `forgetUser()` / `forgetSource()` працюють незалежно від прапора — це GDPR escape-hatch.
 
@@ -185,6 +186,66 @@ Backoff: 30s → 2min → 8min → 32min → 2h. Сумарно ~2.5h, дост�
 
 Дозволені source-и: `chat`, `fizruk`, `nutrition`, `routine`, `journal` (НЕ `finyk`/`digest` — server-side hooks).
 
+## Retrieval (PR3)
+
+Дві гілки використання `aiMemory.recall()` у chat-flow:
+
+```
+┌─ Anthropic-tool-call ────────────────┐    ┌─ /api/chat first turn ───┐
+│ HubChat tool `recall_memory`         │    │ ragContext.buildRagContext│
+│  (explicit, асистент сам вирішує)    │    │  (implicit, automatic)    │
+└─────────────┬────────────────────────┘    └─────────┬────────────────┘
+              │                                       │
+              ▼                                       ▼
+   POST /api/ai-memory/recall          aiMemory.recall(top_k=AI_MEMORY_RAG_TOP_K)
+   (sync, ~300ms Voyage + ~10ms pg)    додається у system prompt як [Релевантні спогади:]
+              │                                       │
+              ▼                                       ▼
+        aiMemory.recall(top_k=AI_MEMORY_TOP_K)
+        повертає top-K MemoryQueryResult
+```
+
+### HubChat tool `recall_memory`
+
+Server-визначення: [`apps/server/src/modules/chat/toolDefs/memory.ts → MEMORY_TOOLS`](../../apps/server/src/modules/chat/toolDefs/memory.ts).
+Клієнт-executor: [`apps/web/src/core/lib/chatActions/serverActions.ts → handleRecallMemoryAction()`](../../apps/web/src/core/lib/chatActions/serverActions.ts) (async, через окремий dispatcher `ASYNC_CHAT_ACTION_NAMES`).
+Capability registry: `recall_memory` додано у `ASSISTANT_CAPABILITIES` (`packages/shared/src/lib/assistantCatalogue.ts`) → автоматично потрапляє у "Пам'ять"-список SYSTEM_PROMPT.
+
+Async-tool execution: `recall_memory` — єдиний поки async tool, `ASYNC_CHAT_ACTION_NAMES` whitelist дозволяє server-call без ламання sync-тестів інших tool-ів.
+
+### POST /api/ai-memory/recall
+
+Sync read-path (на відміну від async ingestion). Блокує handler на ≤Voyage timeout (`VOYAGE_TIMEOUT_MS=15s`) + pgvector query (~10ms).
+
+```json
+{
+  "query": "коли я востаннє був у спортзалі?",
+  "top_k": 8,
+  "sources": ["fizruk", "chat"]
+}
+```
+
+- 401 без сесії
+- 503 коли `AI_MEMORY_ENABLED=false` або `MissingVoyageApiKeyError` / `VoyageHttpError(5xx)` (graceful)
+- 400 для empty query / oversized query / `top_k > 50` / unknown source / unknown keys
+- 200 happy path: `{ memories: MemoryQueryResult[] }`
+
+### RAG-injection у /api/chat
+
+Implicit augmentation на **першому турі** (НЕ на tool-result-турі — щоб не дублювати context між Anthropic-стрім-iter-аціями). Реалізація — [`ragContext.ts → buildRagContext()`](../../apps/server/src/modules/ai-memory/ragContext.ts).
+
+Failure mode: будь-яка помилка / timeout (`AI_MEMORY_RAG_TIMEOUT_MS=1500ms`) → no-op, повертаємо `baseContext` без інжекту і логуємо `warn`. Anthropic-call ніколи не валиться через RAG.
+
+Short-circuit умови:
+
+- `AI_MEMORY_ENABLED=false`
+- `AI_MEMORY_RAG_TOP_K=0`
+- `userId == null` (anonymous chat)
+- last-user-message коротше за 6 символів (нема сенсу embed-ити)
+- немає user-messages у history (наприклад, виклик з system-only payload)
+
+Smaller top-K (4) ніж explicit tool-call (8) — баланс між context-relevance і token-cost у Anthropic-context-і.
+
 ## GDPR
 
 `ai_memories.user_id` — FK з `ON DELETE CASCADE` до `"user"(id)`. Better Auth `DELETE /api/me` автоматично purge-ить vector rows. Додатковий queue-job не потрібен.
@@ -197,7 +258,7 @@ Backoff: 30s → 2min → 8min → 32min → 2h. Сумарно ~2.5h, дост�
 
 ## Cost / scaling notes
 
-Embedding-bill для 10k активних × 500 memories/міс × 200 tokens ≈ 1B tokens/міс ≈ **$20/міс** (Voyage `voyage-3-lite` ~ $0.02/1M tokens).
+Embedding-bill для 10k активних × 500 memories/міс × 200 tokens ≈ 1B tokens/міс ≈ **$20/міс** (Voyage `voyage-3.5-lite` ~ $0.02/1M tokens).
 
 Storage:
 

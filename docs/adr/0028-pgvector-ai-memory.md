@@ -1,12 +1,12 @@
 # ADR-0028: pgvector + Voyage embeddings for AI semantic memory
 
 - **Status:** Accepted
-- **Date:** 2026-05-01
+- **Date:** 2026-05-01 (PR3 retrieval landed: 2026-05-02)
 - **Deciders:** @Skords-01
 - **Supersedes:** —
 - **Related:**
   - [`apps/server/src/migrations/025_ai_memories_pgvector.sql`](../../apps/server/src/migrations/025_ai_memories_pgvector.sql) — таблиця `ai_memories` (HALFVEC(1024) + HNSW + hash partitioning).
-  - [`apps/server/src/modules/ai-memory/`](../../apps/server/src/modules/ai-memory/) — `types.ts`, `vectorStore.ts`, `embeddings.ts`, `service.ts`, `bootstrap.ts`, `ingestQueue.ts` (PR2), `ingestRoute.ts` (PR2).
+  - [`apps/server/src/modules/ai-memory/`](../../apps/server/src/modules/ai-memory/) — `types.ts`, `vectorStore.ts`, `embeddings.ts`, `service.ts`, `bootstrap.ts`, `ingestQueue.ts` (PR2), `ingestRoute.ts` (PR2), `recallRoute.ts` (PR3), `ragContext.ts` (PR3).
   - [ADR-0021 — Memory Bank](./0021-memory-bank.md) — окрема (local-first) система user-fact-ів; pgvector — server-side **семантична** memory по транзакціях/тренуваннях/харчуванню.
   - [ADR-0014 — bigint→number policy](./0014-bigint-to-number-policy.md) — `BIGSERIAL` у `ai_memories.id` коерситься у `Number` у serializer.
   - [ADR-0016 — User deletion and PII handling](./0016-user-deletion-and-pii-handling.md) — `ON DELETE CASCADE` у foundation покриває GDPR-vector-deletion.
@@ -49,13 +49,13 @@ Anthropic-асистент (`/api/chat` + HubChat tools) не пам'ятає н
    - `user_id` FK → `"user"(id) ON DELETE CASCADE` — GDPR cascade без додаткового queue-job-у.
 3. **Hash-партиціонування `PARTITION BY HASH (user_id)` на 32 партиції** — pre-filter по `user_id` тривіальний, ANN-запит торкається лише однієї партиції; уникаємо post-filter latency-розривів на популярних користувачах.
 4. **HNSW index per partition** з параметрами `m=16, ef_construction=64`. Search-time `ef_search` через env `AI_MEMORY_HNSW_EF_SEARCH=40`.
-5. **Voyage AI як embedding-провайдер** (model `voyage-3-lite`, 1024-вимірний, multilingual — добре підтримує українську). Власний fetch-клієнт замість `voyageai` SDK (axios + python-style API → лишній dep).
+5. **Voyage AI як embedding-провайдер** (model `voyage-3.5-lite`, 1024-вимірний, multilingual — добре підтримує українську). Власний fetch-клієнт замість `voyageai` SDK (axios + python-style API → лишній dep). ВАЖЛИВО (виявлено на activation 2026-05-02): попередник `voyage-3-lite` підтримує **тільки 512d** і несумісний з `HALFVEC(1024)`. Default переведено на `voyage-3.5-lite` (lite-tier-наступник, нативно 1024d, той самий ціновий тір ~$0.02/1M tokens).
 6. **Vector-store-agnostic інтерфейс** (`apps/server/src/modules/ai-memory/types.ts → VectorStore`) — `pgVectorStore` — конкретна реалізація; майбутня заміна на `turbopufferStore` обмежується dep-ін'єкцією, без зачеплення callers.
 7. **Service facade** (`AiMemoryService`) — єдиний entry-point: `remember(inputs)`, `recall(input)`, `forgetUser(userId)`, `forgetSource(...)`. Caller-и (PR2 ingestion, PR3 retrieval) ніколи не торкаються `embeddings.ts` / `vectorStore.ts` напряму.
 8. **Master-flag `AI_MEMORY_ENABLED=false`** у foundation-PR. `remember()` / `recall()` no-op-и, поки PR2 не вмикає прапор разом з ingestion-hook-ами. Foundation не зачіпає поточний `/api/chat` flow.
 
-**PR2 (ingestion, наступний крок)**: BullMQ queue `ai_memory_embed_queue` + hooks з finyk/nutrition/fizruk/journal-domain-ів.
-**PR3 (retrieval)**: інтеграція у `/api/chat` (query-paraphrasing + RAG-context), HubChat tool `recall_memory`.
+**PR2 (ingestion)**: BullMQ queue `sergeant:ai-memory-ingest` + hooks з finyk/nutrition/fizruk/journal-domain-ів. Merged 2026-05-01.
+**PR3 (retrieval, landed 2026-05-02)**: інтеграція у `/api/chat` (RAG-injection через `ragContext.buildRagContext()`) + HubChat tool `recall_memory` (async client-executor через `ASYNC_CHAT_ACTION_NAMES` whitelist) + `POST /api/ai-memory/recall` route (sync read-path).
 
 ## Rationale
 
@@ -66,9 +66,9 @@ Anthropic-асистент (`/api/chat` + HubChat tools) не пам'ятає н
 - $0 incremental cost — extension, не окремий сервіс. На горизонті <100k юзерів — economically dominated.
 - Vendor lock-in мінімальний: інтерфейс `VectorStore` дозволяє swap без зачеплення callers. Migration recipe записаний у [сcaling notes](#scaling-thresholds).
 
-**Чому Voyage `voyage-3-lite`, не OpenAI / Cohere:**
+**Чому Voyage `voyage-3.5-lite`, не OpenAI / Cohere:**
 
-- Найдешевший multilingual embedding на момент рішення (~$0.02/1M tokens). На 10k активних × 500 memories/міс × 200 tokens = 1B tokens/міс ≈ $20/міс.
+- Найдешевший multilingual embedding літе-тіру (~$0.02/1M tokens). На 10k активних × 500 memories/міс × 200 tokens = 1B tokens/міс ≈ $20/міс.
 - Українська якість відчутно краща за `text-embedding-3-small` від OpenAI на наших internal-eval-ах (chat-context UA + transactional opis-и UA + EN суміш).
 - Cohere `embed-multilingual-v3` — alternative; дорожче, нативно 1024d (співпадає). Тримаємо як fallback у `embeddings.ts → createCohereEmbeddings()` (PR2).
 
@@ -100,7 +100,7 @@ Anthropic-асистент (`/api/chat` + HubChat tools) не пам'ятає н
 
 - pgvector + HNSW запис повільніший за чистий INSERT — через partial-update H-graph-у. Очікуваний throughput ~hundreds inserts/sec на партицію; на наших write-rate-ах (BullMQ queue з batch-розміром 32, інтервал 5 сек) — non-issue. Вимірюємо `recordExternalHttp("voyage", ...)` + queue-throughput у Prometheus.
 - Voyage rate-limit (`429`) → ретраї з exponential backoff (`[0, 250, 750, 2000]` ms). Якщо breaker відкрився, `ai_memory_embed_queue` тимчасово park-ить items, не валить системи. Worst-case: ingestion lag на хвилини.
-- `voyage-3-lite` зміна (Voyage сам колись deprecate-не) → треба rebuild всіх векторів. Mitigation: `embedding_version` + batch re-embed worker (буде у PR2.1, окремо).
+- `voyage-3.5-lite` зміна (Voyage сам колись deprecate-не) → треба rebuild всіх векторів. Mitigation: `embedding_version` + batch re-embed worker (буде у PR2.1, окремо).
 - Postgres `shared_buffers` має тримати hot-partition HNSW-index у RAM, інакше latency розривається на cold-cache. На Railway Postgres Pro (16 GB) — комфортно до ~200 GB-індексу разом, тобто ~30M-векторів.
 
 ### Neutral

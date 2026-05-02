@@ -16,6 +16,20 @@
 
 ### Fixed
 
+- **AI memory: default `VOYAGE_EMBEDDING_MODEL` переведено з `voyage-3-lite` на
+  `voyage-3.5-lite`.** Виявлено на activation 2026-05-02: Voyage API для
+  `voyage-3-lite` повертає **тільки 512-вимірні** embeddings, тоді як наша
+  схема `ai_memories.embedding HALFVEC(1024)` (міграція 025) і `VOYAGE_EMBEDDING_DIM=1024`
+  очікують 1024d → перший же `remember()` валився б на `400 — Value '1024' supplied
+for argument 'output_dimension' is not valid`. Воно не було помітно поки прапор
+  `AI_MEMORY_ENABLED=false`, але блокувало production rollout. Перевірив: 1024d
+  нативно підтримують `voyage-3.5-lite` (lite-наступник, той самий ціновий тір
+  ~$0.02/1M tokens), `voyage-3`, `voyage-3.5`, `voyage-3-large`. Default
+  переведено на `voyage-3.5-lite` у `apps/server/src/env.ts`, `.env.example`
+  отримав warning, ADR-0028 / integrations doc / runbook / SQL-коментарі / тести
+  оновлено. Production Railway env уже override-ить через `VOYAGE_EMBEDDING_MODEL=voyage-3.5-lite`
+  — цей PR робить дефолт self-consistent для свіжих deploy-ів і dev-environment-ів.
+
 - **CI: baseline-failures cluster (n8n / pgvector / Argos / iOS / Popover).** На
   main одночасно червоніли 5 чеків — жоден не блокувався gating-required, але
   усі ламали `git_pr_checks` для будь-якого PR.
@@ -64,6 +78,7 @@ metrics/web-vitals}` — а API серверу не було, vite сипав
     реальний production-патерн (споживач Popover-у дає неінтерактивний
     зміст, аріа-семантику дає сам Popover).
 
+>>>>>>> origin/main
 - **Web: відновлено strict-pipeline (`tsc -p tsconfig.strict.json`) — два regression-блокери після PR #1330.**
   Pull-to-refresh feature злетів зі strict-null pipeline: 3 помилки на двох
   файлах ламали Phase 1–3 typecheck.
@@ -115,6 +130,27 @@ metrics/web-vitals}` — а API серверу не було, vite сипав
   паролем бачив «Невірний формат email.».
 
 ### Added
+
+- **AI memory: retrieval layer (PR3 of ADR-0028).** Завершує цикл pgvector
+  AI memory після foundation (PR1) і ingestion (PR2). Додає три entry-points:
+  (a) HubChat tool `recall_memory` — Anthropic-асистент може explicit-but
+  попросити top-K схожих memories через нову async-action гілку
+  (`ASYNC_CHAT_ACTION_NAMES` whitelist у
+  `apps/web/src/core/lib/chatActions/serverActions.ts` — щоб не ламати sync-tests
+  інших tool-ів). (b) `POST /api/ai-memory/recall` — sync read-path
+  (`apps/server/src/modules/ai-memory/recallRoute.ts`), 401 без сесії, 503 при
+  `AI_MEMORY_ENABLED=false` / `MissingVoyageApiKeyError` / `VoyageHttpError(5xx)`,
+  400 на невалідний payload (empty query, oversized, top_k>50, unknown source).
+  (c) RAG-injection у `/api/chat` (`ragContext.buildRagContext()`) — implicit
+  augmentation на першому турі (НЕ на tool-result-турі) з top-K
+  `AI_MEMORY_RAG_TOP_K=4`, timeout 1500ms, graceful no-op на будь-яку помилку
+  щоб Anthropic-call ніколи не валився через RAG. Master-flag `AI_MEMORY_ENABLED`
+  лишається керівником: при `false` обидві гілки no-op-лять без HTTP-викликів
+  до Voyage/БД. `recall_memory` додано у `ASSISTANT_CAPABILITIES` (єдиний
+  source-of-truth для tool-ів) → автоматично потрапляє у "Пам'ять"-список
+  SYSTEM_PROMPT, тому `SYSTEM_PROMPT_VERSION` піднято з `v6` до `v7`. Доку оновлено
+  у [`docs/integrations/voyage-pgvector.md`](./docs/integrations/voyage-pgvector.md)
+  і [`docs/adr/0028-pgvector-ai-memory.md`](./docs/adr/0028-pgvector-ai-memory.md).
 
 - **CI: container image scan (Trivy).** Новий workflow
   `.github/workflows/container-scan.yml` збирає `Dockerfile.api` і

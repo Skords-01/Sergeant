@@ -1,6 +1,6 @@
 # Sergeant Design System
 
-> **Last validated:** 2026-05-02 by @Skords-01. **Next review:** 2026-07-31.
+> **Last validated:** 2026-05-02 by @Codex. **Next review:** 2026-07-31.
 > **Status:** Active
 
 Єдина візуальна мова для хаба з 4 модулями: **ФІНІК**, **ФІЗРУК**, **Рутина**,
@@ -26,8 +26,9 @@
 2. **Темна тема — first-class.** Всі токени живуть у CSS-змінних
    `:root` та `.dark`; теми перемикаються класом без перезапису стилів.
    Парні `dark:` override з сирою палітрою (`bg-teal-100 dark:bg-teal-900/30`)
-   — це міграційний борг: [`DARK-MODE-AUDIT.md`](./DARK-MODE-AUDIT.md)
-   ведe інвентар 28 таких сайтів і план переносу в семантичні токени.
+   — заборонений анти-патерн. [`DARK-MODE-AUDIT.md`](./DARK-MODE-AUDIT.md)
+   збережений як історія міграції; поточний guardrail —
+   `sergeant-design/no-raw-dark-palette` на рівні `error` для `apps/web`.
 3. **Модулі діляться токенами, а не стилями.** `bg-finyk-surface`,
    `text-fizruk`, `border-routine/30` — це семантичні аксенти; вся базова
    типографіка, spacing, радіуси одні для всіх. Всередині
@@ -146,6 +147,28 @@ weight, letter-spacing і casing. Перевага — над "ручним" к�
 | `.text-style-caption`  | 12 / 16 / 400                  | Helper text, metadata, timestamps |
 | `.text-style-overline` | 12 / 16 / 600 / 0.06em / UPPER | Section kicker / eyebrow          |
 
+### Канонічна `.text-*` шкала (tier-2 — окремі утиліти)
+
+Поряд з `text-style-*` живе ще один шар — окремі семантичні утиліти, які
+закривають дрібніші, нижчі та більші розміри, що не мають своєї
+семантичної ролі в `text-style-*`. Усі вони визначені в
+`apps/web/src/index.css`:
+
+| Утиліта              | Контракт                                   | Коли використовувати                                                                                                             |
+| -------------------- | ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------- |
+| `.text-display`      | 36 / none / 700 / tabular / -tracking      | Hero stat (₴ 12 400)                                                                                                             |
+| `.text-display-stat` | **40** / tight / 700 / tabular / -tracking | Найбільша цифра на екрані (HeroCard сума, AssetsTable)                                                                           |
+| `.text-display-hero` | **44** / none / 900 / tabular / -tracking  | Story / digest "celebration"-цифра (kcal, спалена сума)                                                                          |
+| `.text-h1`           | 24 / tight / 700 / -tracking               | Page / screen title                                                                                                              |
+| `.text-h2`           | 18 / snug / 600 / -0.01em                  | Section heading                                                                                                                  |
+| `.text-h3`           | 15 / snug / 600                            | Card title, subsection label                                                                                                     |
+| `.text-body`         | 15 / relaxed / 400                         | Default prose                                                                                                                    |
+| `.text-body-sm`      | 13 / relaxed / 400                         | Secondary text, descriptions                                                                                                     |
+| `.text-caption`      | 12 / snug / 400 / 0.01em                   | Labels, timestamps, meta copy                                                                                                    |
+| `.text-eyebrow`      | 11 / none / 600 / 0.08em / UPPER           | Overline / section prefix ("ФІНІК", "СЬОГОДНІ")                                                                                  |
+| `.text-meta`         | **11** / snug / 500                        | Compact lowercase labels (KPI hints, "Monobank", "USD")                                                                          |
+| `.text-micro`        | **10** / tight / 500                       | Aux glyph labels (icon-overlay numbers, ring centre, axis ticks). **Floor — нижче не використовувати, навіть на світлих фонах.** |
+
 Вага:
 
 - `font-medium` (500) — секундарний акцент
@@ -154,6 +177,20 @@ weight, letter-spacing і casing. Перевага — над "ручним" к�
 - `font-black` (900) — лише для великих цифр / промо
 
 Числа завжди з `tabular-nums` у таблицях / статистиках.
+
+### Заборонено: arbitrary `text-[Npx]` / `text-[Nrem]`
+
+Ad-hoc `text-[12px]` / `text-[40px]` / `text-[2.5rem]` обходять і tier-1
+(`text-style-*`), і tier-2 (`text-display`/`text-h*`/`text-meta`/...) —
+це призводить до vertical-rhythm-дрифту і регресій типу 8 px підпису
+поверх coral-фону (нижче WCAG-комфорту). Лінт правило
+[`sergeant-design/no-arbitrary-text-size`](../../packages/eslint-plugin-sergeant-design/README.md#sergeant-designno-arbitrary-text-size)
+ловить будь-яке `text-[N(px|rem|em)]` як `error`.
+
+DS-примітиви, які власне визначають raw-px-токени (`Button`, `Input`,
+`Badge`, `Stat`, `SectionHeading`, `Label`, `Toast`, `Skeleton`, `Tabs`,
+`Segmented`, `Card`), звільнено від правила, бо вони — джерело істини
+для самих утиліт.
 
 ---
 
