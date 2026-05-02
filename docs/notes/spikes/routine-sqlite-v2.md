@@ -1,5 +1,8 @@
 # SPIKE — Routine module on SQLite v2
 
+> **Last validated:** 2026-05-02 by @Skords-01. **Next review:** 2026-05-16.
+> **Status:** Active
+
 > **Owner:** @Skords-01 · **Created:** 2026-05-02 ·
 > **Roadmap reference:** [`docs/planning/storage-roadmap.md` PR #022](../../planning/storage-roadmap.md#stage-3--spike-на-routine) ·
 > **Branch:** `devin/1777743313-spike-routine-sqlite-v2` ·
