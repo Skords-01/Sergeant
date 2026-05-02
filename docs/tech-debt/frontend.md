@@ -373,31 +373,23 @@ Custom DS-rule пригнічується 25 разів. Усі з обґрун�
 **Phase 4 (TODO):** увімкнути `strict: true` у головному `tsconfig.json`,
 видалити `allowJs`, виправити всі залишкові помилки.
 
-- **Заміряний скоуп (2026-05-02, post-PR2 на `786f066d`):**
-  **249 помилок у 43 файлах** (повний `strict: true` + `allowJs: false`
+- **Заміряний скоуп (2026-05-02, post-PR3):**
+  **194 помилки** (повний `strict: true` + `allowJs: false`
   без жодних змін у коді, через діагностичний `tsconfig.strict-full.json`).
   Стартовий baseline був 419 помилок; PR1 #1388 закрив `sw.ts` (−27) і
   `core/onboarding/presetApply.ts` (−23) = −50; PR2 #1391 закрив 5 fizruk
   components (−99 на стартовому baseline; на чистому main −101 завдяки
-  ripple-у з типізованих props у викликах). Сумарно −170 (~41 % від
-  стартового скоупу).
-  Розподіл за кодами (post-PR2): `TS7006` (parameter implicit-any) — 111,
-  `TS7031` (binding element implicit-any) — 62, `TS7053` (element
-  implicit-any) — 20, `TS2345` (argument type) — 17, `TS7005` (var without
-  type) — 12, `TS2322` (type assignability) — 12, `TS7034` (var
-  implicit-any) — 3, `TS2783`/`TS2722`/`TS2430`/`TS18048`/`TS18047`
-  (по 2 кожен) — 10, інші — 2.
-- **Залишкові топ-блокери (post-PR2):**
-  `modules/fizruk/pages/Workouts.tsx` (19),
-  `modules/fizruk/pages/Exercise.tsx` (18),
-  `core/insights/WeeklyDigestCard.tsx` (15),
+  ripple-у з типізованих props у викликах); PR3 закрив `Workouts.tsx`
+  (19) + `Exercise.tsx` (18) + `WeeklyDigestCard.tsx` (15) + ripple = −55.
+  Сумарно −225 (~54 % від стартового скоупу).
+- **Залишкові топ-блокери (post-PR3):**
   `modules/fizruk/components/MiniLineChart.tsx` (13),
   `modules/fizruk/pages/Programs.tsx` (11),
   `modules/fizruk/pages/Body.tsx` (9),
   `modules/fizruk/components/workouts/WorkoutFinishSheets.tsx` (9),
   `modules/fizruk/components/workouts/QuickStartSheet.tsx` (9),
   `core/onboarding/PresetSheet.tsx` (9). Решта помилок розпорошені по
-  `~34` файлах fizruk/onboarding/insights/test-fixtures.
+  fizruk/onboarding/insights/test-fixtures.
 - **Закриті топ-блокери (Phase 4 progress):**
   PR1 [#1388](https://github.com/Skords-01/Sergeant/pull/1388) (merged):
   `sw.ts` (27), `core/onboarding/presetApply.ts` (23). PR2
@@ -407,6 +399,10 @@ Custom DS-rule пригнічується 25 разів. Усі з обґрун�
   `modules/fizruk/components/workouts/WorkoutItemCard.tsx` (20),
   `modules/fizruk/components/workouts/WorkoutCatalogSection.tsx` (20),
   `modules/fizruk/components/workouts/ExerciseDetailSheet.tsx` (19).
+  PR3 (in flight, fizruk pages + insights):
+  `modules/fizruk/pages/Workouts.tsx` (19),
+  `modules/fizruk/pages/Exercise.tsx` (18),
+  `core/insights/WeeklyDigestCard.tsx` (15).
 - **Закриті топ-блокери:**
   `modules/finyk/hooks/useStorage.ts` (було 71),
   `modules/finyk/pages/AssetsTxPickerView.tsx` (було 30),
