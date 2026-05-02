@@ -1,6 +1,6 @@
 # Changelog
 
-> **Last validated:** 2026-04-29 by @devin-ai. **Next review:** 2026-07-29.
+> **Last validated:** 2026-05-02 by @claude. **Next review:** 2026-07-31.
 > **Status:** Active
 
 Усі помітні зміни проєкту документуються тут.
@@ -13,6 +13,41 @@
 > (наприклад, `changesets` або `conventional-changelog-cli`).
 
 ## [Unreleased]
+
+### Fixed
+
+- **Railway: hub-api Docker-build падав на `Could not resolve "@sergeant/db-schema/pg"`.**
+  Після того як `apps/server` отримав залежність від workspace-пакета
+  `@sergeant/db-schema` (Drizzle ORM wiring), `Dockerfile.api` залишився
+  без оновлення: ні `packages/db-schema/package.json`, ні самих джерел
+  не копіювалось у builder-стейдж, у `pnpm install` не було
+  `--filter @sergeant/db-schema...`, а `tsc -p tsconfig.build.json`
+  для db-schema не виконувався до серверного `pnpm build`. Як
+  наслідок, кожен Railway-deploy main-гілки падав на esbuild-resolve
+  в `apps/server/src/modules/waitlist/waitlistService.ts:5`. Старий
+  образ продовжував обслуговувати трафік, нові міграції/код — ні,
+  а юзер на `/sign-in` отримував 5xx (тепер рендериться як
+  «Сервер тимчасово недоступний» завдяки фіксу translateAuthError).
+  Тепер builder копіює `packages/db-schema` повністю, ставить його
+  у `pnpm install --filter`, виконує `pnpm --filter @sergeant/db-schema build`
+  до `pnpm build` сервера; runtime отримує лише `package.json`-маніфест
+  (esbuild bundle уже містить db-schema).
+- **Auth: «Помилка входу» без деталей при rate-limit / 5xx.** На сторінці
+  входу після кількох невдалих спроб (або 500-серверної помилки) юзер
+  бачив generic рядок `Помилка входу` замість осмисленого повідомлення.
+  Корінь — два бекенд-респонси (`apps/server/src/http/errorHandler.ts`
+  і `apps/server/src/http/rateLimit.ts`) повертали тільки поле `error`,
+  тоді як Better Auth client (`better-fetch`) читає `message` при
+  десеріалізації не-2xx body, тож на фронт приходило
+  `result.error.message === undefined`. Тепер обидва респонси дублюють
+  значення в полях `error` **та** `message` (back-compat). Паралельно
+  переписав `translateAuthError` у `apps/web/src/core/auth/AuthContext.tsx`
+  — тепер мапимо за стабільним Better Auth `error.code`
+  (`INVALID_EMAIL_OR_PASSWORD`, `USER_ALREADY_EXISTS`, `RATE_LIMIT`,
+  `INTERNAL`, …), а не парсимо англійський `message` regex-ами. Це
+  заодно виправило фальш-збіг `/invalid email/i` усередині
+  `"Invalid email or password"`, через який юзер з неправильним
+  паролем бачив «Невірний формат email.».
 
 ### Added
 

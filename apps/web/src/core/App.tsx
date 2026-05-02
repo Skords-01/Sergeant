@@ -1,10 +1,5 @@
-import {
-  useCallback,
-  useEffect,
-  lazy,
-  Suspense,
-  type ComponentType,
-} from "react";
+import { useCallback, useEffect, Suspense } from "react";
+import { lazyDefault, lazyImport } from "./lib/lazyImport";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { cn } from "@shared/lib/cn";
 import { safeWriteLS } from "@shared/lib/storage";
@@ -34,11 +29,11 @@ import { PWA_ACTION_KEY } from "./app/pwaAction";
 import { HubHeader } from "./app/HubHeader";
 import { HubBottomNav } from "./app/HubBottomNav";
 import { HubMainContent } from "./app/HubMainContent";
-import { HubFloatingActions } from "./app/HubFloatingActions";
 import { HubModals } from "./app/HubModals";
 import { ActiveWorkoutBanner } from "./app/ActiveWorkoutBanner";
 import { WelcomeScreen } from "./app/WelcomeScreen";
 import { shouldShowOnboarding } from "./onboarding/OnboardingWizard";
+import { ModuleFirstRunGoalSheet } from "./onboarding/ModuleFirstRunGoalSheet";
 import { isFirstRealEntryDone } from "./onboarding/vibePicks";
 import { hasAnyRealEntry } from "./onboarding/firstRealEntry";
 import { useHubNavigation } from "./hooks/useHubNavigation";
@@ -53,46 +48,34 @@ import {
 } from "@shared/components/ui/KeyboardShortcutsModal";
 import { prefetchCriticalModules } from "./lib/useRoutePrefetch";
 
-const AuthPage = lazy(() =>
-  import("./auth/AuthPage").then((m) => ({ default: m.AuthPage })),
+const AuthPage = lazyImport(() => import("./auth/AuthPage"), "AuthPage");
+const ResetPasswordPage = lazyImport(
+  () => import("./auth/ResetPasswordPage"),
+  "ResetPasswordPage",
 );
-const ResetPasswordPage = lazy(() =>
-  import("./auth/ResetPasswordPage").then((m) => ({
-    default: m.ResetPasswordPage,
-  })),
+const DesignShowcase = lazyImport(
+  () => import("./DesignShowcase"),
+  "DesignShowcase",
 );
-const DesignShowcase = lazy(() =>
-  import("./DesignShowcase").then((m) => ({ default: m.DesignShowcase })),
+const AssistantCataloguePage = lazyImport(
+  () => import("./AssistantCataloguePage"),
+  "AssistantCataloguePage",
 );
-const AssistantCataloguePage = lazy(() =>
-  import("./AssistantCataloguePage").then((m) => ({
-    default: m.AssistantCataloguePage,
-  })),
+const PricingPage = lazyImport(() => import("./PricingPage"), "PricingPage");
+const HubChatPage = lazyImport(
+  () => import("./hub/HubChatPage"),
+  "HubChatPage",
 );
-const PricingPage = lazy(() =>
-  import("./PricingPage").then((m) => ({ default: m.PricingPage })),
-);
-interface ModuleAppProps {
-  onBackToHub: () => void;
-  pwaAction: PwaAction | null;
-  onPwaActionConsumed: () => void;
-  onOpenModule?: (module: string) => void;
-}
-
-const FinykApp = lazy<ComponentType<ModuleAppProps>>(
-  () => import("../modules/finyk/FinykApp"),
-);
-const FizrukApp = lazy(() => import("../modules/fizruk/FizrukApp"));
-const NutritionApp = lazy<ComponentType<ModuleAppProps>>(
+const FinykApp = lazyDefault(() => import("../modules/finyk/FinykApp"));
+const FizrukApp = lazyDefault(() => import("../modules/fizruk/FizrukApp"));
+const NutritionApp = lazyDefault(
   () => import("../modules/nutrition/NutritionApp"),
 );
 // Routine раніше імпортувалось синхронно — це зобов'язувало тягнути
 // весь модуль у main chunk навіть для користувачів, що сидять у Фінікові.
 // Ліниве завантаження збігається з іншими модулями (Suspense fallback
 // та ModuleErrorBoundary уже огортають цей слот).
-const RoutineApp = lazy<ComponentType<ModuleAppProps>>(
-  () => import("../modules/routine/RoutineApp"),
-);
+const RoutineApp = lazyDefault(() => import("../modules/routine/RoutineApp"));
 
 export default function App() {
   return (
@@ -141,6 +124,11 @@ const SIGN_IN_PATH = "/sign-in";
 // chat input all converge here). URL-addressable so it survives reload
 // and can be deep-linked from notifications / docs.
 const ASSISTANT_PATH = "/assistant";
+// Dedicated AI chat route. Replaces the fullscreen modal that used to
+// slam over the dashboard. Reads `?q=` and `?autoSend=1` so launcher
+// hand-offs (`AnswerRail`, `ai-handoff`, capability `Try in chat` CTA)
+// and external deep links share one URL shape.
+const CHAT_PATH = "/chat";
 // URL-addressable cold-start splash. Having a real route (not just a
 // modal overlay on `/`) means the splash can be deep-linked, shows the
 // right title in history/back navigation, and — crucially — renders the
@@ -169,6 +157,7 @@ function AppInner() {
   const onWelcomeRoute = location.pathname === WELCOME_PATH;
   const onResetPasswordRoute = location.pathname === RESET_PASSWORD_PATH;
   const onAssistantRoute = location.pathname === ASSISTANT_PATH;
+  const onChatRoute = location.pathname === CHAT_PATH;
 
   const openAuth = useCallback(() => {
     navigate(SIGN_IN_PATH);
@@ -259,20 +248,21 @@ function AppInner() {
     }
   }, [openModule]);
 
-  // Global signal to open chat from any page (e.g. ProfilePage memory bank,
-  // AssistantCataloguePage, hint toasts). Routed through the typed
-  // `hubBus` rather than `window.dispatchEvent` so the payload shape is
-  // enforced at the type level (see `HubBusEvents.openChat`).
-  const openChatStable = ui.openChat;
+  // Global signal to open chat from any page (e.g. ProfilePage memory
+  // bank, AssistantCataloguePage, hint toasts). Now routes to the
+  // dedicated `/chat` route — replaces the previous fullscreen-modal
+  // overlay. The `?q=` / `?autoSend=` URL shape is the single source of
+  // truth; `HubChatPage` reads those params on mount.
   useEffect(
     () =>
       onHubBus("openChat", (detail) => {
-        navigate("/", { replace: true });
-        requestAnimationFrame(() => {
-          openChatStable(detail.message, { autoSend: detail.autoSend });
-        });
+        const params = new URLSearchParams();
+        if (detail.message) params.set("q", detail.message);
+        if (detail.autoSend) params.set("autoSend", "1");
+        const search = params.toString();
+        navigate(search ? `${CHAT_PATH}?${search}` : CHAT_PATH);
       }),
-    [openChatStable, navigate],
+    [navigate],
   );
 
   // Global signal to open HubSearch from any surface (used by hint
@@ -418,6 +408,14 @@ function AppInner() {
     );
   }
 
+  if (onChatRoute) {
+    return (
+      <Suspense fallback={<PageLoader />}>
+        <HubChatPage />
+      </Suspense>
+    );
+  }
+
   // `/welcome` is the cold-start surface. A returning user who somehow
   // lands here (stale link, auto-complete, shared URL) bounces back to
   // the dashboard instead of being asked to re-onboard.
@@ -475,7 +473,6 @@ function AppInner() {
           iosVisible={iosVisible}
           onDismissIos={iosDismiss}
           hubView={ui.hubView}
-          onOpenChat={ui.openChat}
           syncing={sync.syncing}
           onSync={sync.pushAll}
           onPull={sync.pullAll}
@@ -496,12 +493,6 @@ function AppInner() {
           onShowAuth={!user ? openAuth : undefined}
         />
 
-        {/* Thumb-reach entry to the AI assistant. Always visible so the
-            user can reach the assistant from anywhere on the hub. The
-            `compact` variant is used here so the FAB offsets above the
-            hub bottom nav identically to the module bottom nav. */}
-        <HubFloatingActions onOpenChat={ui.openChat} compact />
-
         {/* Persistent shortcut back to an in-progress Fizruk workout.
             Hidden during FTUX so the splash stays single-CTA; otherwise
             visible whenever `fizruk_active_workout_id_v1` is set, so the
@@ -509,19 +500,6 @@ function AppInner() {
         <ActiveWorkoutBanner hidden={inFtuxSession} />
 
         <HubModals
-          chatOpen={ui.chatOpen}
-          chatMinimized={ui.chatMinimized}
-          chatUnseenCount={ui.chatUnseenCount}
-          onCloseChat={ui.closeChat}
-          onMinimizeChat={ui.minimizeChat}
-          onRestoreChat={ui.restoreChat}
-          onUnseenChange={ui.setChatUnseenCount}
-          chatInitialMessage={ui.chatInitialMessage}
-          chatAutoSend={ui.chatAutoSend}
-          onOpenCatalogue={() => {
-            ui.closeChat();
-            navigate(ASSISTANT_PATH);
-          }}
           searchOpen={ui.searchOpen}
           onCloseSearch={ui.closeSearch}
           onOpenModule={openModule}
@@ -610,24 +588,7 @@ function AppInner() {
           );
         })()}
       </SuspenseWithMinDelay>
-      {/* Assistant FAB — available in all module views so the user can
-          reach the AI chat without navigating back to the hub first.
-          Compact mode uses a small icon-only button to minimize overlap. */}
-      <HubFloatingActions onOpenChat={ui.openChat} compact />
       <HubModals
-        chatOpen={ui.chatOpen}
-        chatMinimized={ui.chatMinimized}
-        chatUnseenCount={ui.chatUnseenCount}
-        onCloseChat={ui.closeChat}
-        onMinimizeChat={ui.minimizeChat}
-        onRestoreChat={ui.restoreChat}
-        onUnseenChange={ui.setChatUnseenCount}
-        chatInitialMessage={ui.chatInitialMessage}
-        chatAutoSend={ui.chatAutoSend}
-        onOpenCatalogue={() => {
-          ui.closeChat();
-          navigate(ASSISTANT_PATH);
-        }}
         searchOpen={ui.searchOpen}
         onCloseSearch={ui.closeSearch}
         onOpenModule={openModule}
@@ -636,6 +597,7 @@ function AppInner() {
         open={keyboardShortcuts.open}
         onClose={keyboardShortcuts.onClose}
       />
+      <ModuleFirstRunGoalSheet moduleId={activeModule} />
     </div>
   );
 }

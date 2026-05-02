@@ -44,7 +44,7 @@ export function TransactionFilters({
             key={f.id}
             onClick={() => onChangeFilter(f.id)}
             className={cn(
-              "text-style-caption px-4 py-2 rounded-full border transition-colors min-h-[36px]",
+              "shrink-0 text-style-caption px-4 py-2 rounded-full border transition-colors min-h-[36px]",
               filter === f.id
                 ? "bg-primary border-primary text-bg shadow-sm"
                 : "bg-panelHi border-line text-text hover:border-muted",

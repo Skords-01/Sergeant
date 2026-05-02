@@ -1,5 +1,6 @@
 /// <reference types="vite-plugin-pwa/client" />
-import { lazy, Suspense } from "react";
+import { Suspense } from "react";
+import { lazyImport } from "./core/lib/lazyImport";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
@@ -44,10 +45,9 @@ const persistOptions = createWebPersistOptions();
 // them out of the production bundle entirely — the tree-shaker can drop the
 // import expression when `import.meta.env.DEV` is statically `false`.
 const ReactQueryDevtools = import.meta.env.DEV
-  ? lazy(() =>
-      import("@tanstack/react-query-devtools").then((m) => ({
-        default: m.ReactQueryDevtools,
-      })),
+  ? lazyImport(
+      () => import("@tanstack/react-query-devtools"),
+      "ReactQueryDevtools",
     )
   : null;
 
@@ -74,7 +74,7 @@ interface ErrorFallbackProps {
 function ErrorFallback({ error, resetError }: ErrorFallbackProps) {
   return (
     <div className="p-8 font-sans">
-      <h2 className="text-lg font-semibold text-text">Щось пішло не так</h2>
+      <h2 className="text-style-title text-text">Щось пішло не так</h2>
       <pre className="text-xs text-danger whitespace-pre-wrap mt-2">
         {error?.message}
       </pre>
@@ -84,7 +84,7 @@ function ErrorFallback({ error, resetError }: ErrorFallbackProps) {
           resetError?.();
           window.location.reload();
         }}
-        className="mt-4 px-4 py-2 rounded-xl border border-line bg-panel text-sm font-medium text-text"
+        className="mt-4 px-4 py-2 rounded-xl border border-line bg-panel text-style-label text-text"
       >
         Перезавантажити
       </button>
