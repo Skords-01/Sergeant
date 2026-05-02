@@ -96,7 +96,7 @@ export function InlineAiRail({
               <SectionHeading as="p" size="sm" variant="muted">
                 {STATUS_LABEL[state.status]}
               </SectionHeading>
-              <div className="text-sm text-text font-medium truncate">
+              <div className="text-style-label text-text truncate">
                 {question}
               </div>
             </div>
@@ -146,7 +146,7 @@ export function InlineAiRail({
                 type="button"
                 onClick={() => onOpenInChat(state.question)}
                 className={cn(
-                  "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium",
+                  "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-style-label",
                   "bg-brand-soft text-brand-strong dark:text-brand-300",
                   "border border-brand-soft-border/50 hover:bg-brand-soft-hover",
                   "focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500",
@@ -156,12 +156,12 @@ export function InlineAiRail({
                 Відкрити в чаті
               </button>
               {state.hasToolCalls && (
-                <span className="text-[11px] text-muted">
+                <span className="text-meta text-muted">
                   Дія потребує підтвердження в чаті
                 </span>
               )}
               {state.truncated && !state.hasToolCalls && (
-                <span className="text-[11px] text-muted">
+                <span className="text-meta text-muted">
                   Повна відповідь — у чаті
                 </span>
               )}
@@ -201,7 +201,7 @@ export function InlineAiRail({
                 type="button"
                 onClick={() => onRetry(state.question)}
                 className={cn(
-                  "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium",
+                  "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-style-label",
                   "bg-panel border border-line text-text hover:bg-panelHi",
                   "focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500",
                 )}
@@ -213,7 +213,7 @@ export function InlineAiRail({
                 type="button"
                 onClick={() => onOpenInChat(state.question)}
                 className={cn(
-                  "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium",
+                  "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-style-label",
                   "bg-brand-soft text-brand-strong dark:text-brand-300",
                   "border border-brand-soft-border/50 hover:bg-brand-soft-hover",
                   "focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500",
