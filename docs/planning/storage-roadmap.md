@@ -390,13 +390,16 @@ payload_size, conflict, created_at)`. Запис у `syncPushAll`/`syncPullAll`
 
 ### Stage 3 — SPIKE на routine
 
-#### **PR #022 — `feat(spike): routine module on SQLite — proof of concept`** ⏳ IN-PROGRESS (DRAFT, time-boxed 2 weeks)
+#### **PR #022 — `feat(spike): routine module on SQLite — proof of concept`** ⏳ IN-PROGRESS (closure PR відкрито 2026-05-02)
 
-> **Статус:** PR відкрито 2026-05-02 у гілці `devin/1777743313-spike-routine-sqlite-v2`.
-> Поточний стан — бібліотечний шар повністю готовий і покритий тестами,
-> dev-UI panel і інтеграція в `RoutineApp` лишилися як follow-up частина
-> цього ж SPIKE-у. Декізіон-гейт перевірятиметься після того, як UI
-> підключений хоча б одній платформі.
+> **Статус (2026-05-02):** library + dev panels + automated decision-gate
+> measurements landed. Closure PR — `devin/1777755997-close-routine-sqlite-spike`.
+> SPIKE pre-decision: **conditionally GO** — bundle delta = 0 KB і local
+> build-time proxy ≈ 19 s обидва PASS із запасом; лишилося три
+> hardware-pending перевірки (first-open latency, OPFS на iOS Safari 16.4+,
+> multi-device toggle), для яких dev panel уже виставляє всі
+> метрики — потрібен лише operator pass. Деталі та operator runbook
+> у [`docs/notes/spikes/routine-sqlite-v2.md`](../notes/spikes/routine-sqlite-v2.md#decision-gate-metrics).
 
 - **Goal.** Один модуль повністю на SQLite на обох платформах. Demo:
   toggle звички з web + mobile паралельно → обидва девайси у sync без
@@ -453,11 +456,48 @@ payload_size, conflict, created_at)`. Запис у `syncPushAll`/`syncPullAll`
 
 #### **Routine** (3 тижні)
 
-##### **PR #023 — `feat(routine): Drizzle schema + SQLite migration files`**
+##### **PR #023 — `feat(routine): Drizzle schema + SQLite migration files`** ⏳ IN-PROGRESS
+
+> **Статус (2026-05-02):** PR відкрито у гілці
+> `devin/1777757976-routine-sqlite-pr-023-schema`. Скоп — pure schema
+> promotion: SQLite Drizzle-схеми (`routineEntries`, `routineStreaks`,
+> `syncOpOutbox`, `syncOpCursor`) і inline міграцію вже залендили в
+> Stage 2 (PR #018) і живили SPIKE з PR #022. Цей PR промоутить їх з
+> SPIKE-only naming у production source-of-truth: додає neutral
+> `ROUTINE_CLIENT_MIGRATIONS` / `ROUTINE_MIGRATIONS_TABLE` exports
+> (попередні `ROUTINE_SPIKE_*` лишаються як `@deprecated` aliases для
+> back-compat зі SPIKE library), додає SQLite snapshot test парний до
+> існуючого `pg-routine-snapshot.test.ts` і прибирає stale «Stage 3
+> SPIKE» формулювання з коментарів. **Без SPIKE-pass dependency** —
+> production routine module на цей шар ще не сів (це PR #024
+> dual-write); за feature flag нічого не активується.
 
 - Додати таблиці у `packages/db-schema/sqlite/routine.ts`. Postgres-таблиці
   вже існують (PR #020). Migration scripts.
-- **Dep.** PR #022 (SPIKE pass).
+- **Артефакти.**
+  - `packages/db-schema/src/sqlite/migrations/index.ts` — нові
+    `ROUTINE_CLIENT_MIGRATIONS` + `ROUTINE_MIGRATIONS_TABLE`; стара пара
+    `ROUTINE_SPIKE_*` тримається як `@deprecated` alias на ту саму
+    `MigrationFile[]` й ту саму ledger-table (Hard Rule: SPIKE library
+    не змінюється).
+  - `packages/db-schema/src/sqlite/index.ts` — re-export нових констант
+    поряд із Drizzle-схемами; SPIKE-named aliases теж re-export-ються
+    щоб ніщо в споживачах не зламалось.
+  - `packages/db-schema/src/__tests__/sqlite-routine-snapshot.test.ts`
+    — snapshot тест на column types, defaults, indexes (включно з
+    partial-index `WHERE` clauses) і enum-кортежі для `op` / `status`.
+    Парний до `pg-routine-snapshot.test.ts`.
+- **AC.** `pnpm --filter @sergeant/db-schema test` — passes; новий тест
+  виявить будь-яку drift між Drizzle-схемою і inline-DDL. SPIKE library
+  тести (`apps/{web,mobile}/.../sqliteSpike/__tests__/`) проходять без
+  змін бо `_SPIKE_*` aliases вказують на ті ж масиви/рядки.
+- **Out-of-scope (відкладено).** Жодних змін у production routine
+  module (`apps/{web,mobile}/src/modules/routine/{hooks,components}/`),
+  жодного видалення SPIKE library, жодних feature-flag-ів — це PR #024.
+- **Dep.** PR #022 (SPIKE pass) — _м'яка_ залежність: schema-promotion
+  не блокується hardware-gate замірами, бо за відсутністю dual-write
+  prod routine module ще читає з LS і ці схеми залишаються off-path до
+  PR #024.
 
 ##### **PR #024 — `feat(routine): dual-write LS↔SQLite behind feature flag`**
 
@@ -663,7 +703,11 @@ payload_size, conflict, created_at)`. Запис у `syncPushAll`/`syncPullAll`
    з фіксованими decision criteria для SPIKE.~~
 5. ~~**Тиждень 8-9:** Stage 2 (Foundation) — найризикованіша частина в плані
    bundle/CORP/iOS-compat.~~ ✅ **Stage 2 завершено (2026-05-02).** Усі 8 PR-ів (#014–#021) landed.
-6. **Тиждень 10-11:** SPIKE. Hard decision gate. ← **НАСТУПНИЙ КРОК**
+6. **Тиждень 10-11:** SPIKE. Hard decision gate. ← **ЗАКРИВАЄТЬСЯ ЗАРАЗ.**
+   Library + dev panels + automated gates landed; залишився operator
+   pass на real hardware (iOS Safari 16.4+, multi-device toggle vs
+   staging) перед фінальним go/no-go. Деталі — у
+   [`docs/notes/spikes/routine-sqlite-v2.md`](../notes/spikes/routine-sqlite-v2.md#decision-gate-metrics).
 
 ---
 
