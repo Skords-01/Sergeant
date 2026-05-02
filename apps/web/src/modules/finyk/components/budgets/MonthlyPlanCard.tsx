@@ -2,6 +2,7 @@ import { memo, useState } from "react";
 import { cn } from "@shared/lib/cn";
 import { Icon } from "@shared/components/ui/Icon";
 import { Input } from "@shared/components/ui/Input";
+import { formatMoney } from "@sergeant/shared";
 
 // Unified monthly-plan block: Plan/Fact/Δ table for income, expense and
 // savings, progress bar + safe-to-spend hint and an inline edit mode for
@@ -32,8 +33,9 @@ function MonthlyPlanCardComponent({
   const expenseDelta = totalExpenseFact - planExpense;
   const savingsDelta = factSavings - planSavings;
 
-  const fmt = (n) => n.toLocaleString("uk-UA", { maximumFractionDigits: 0 });
-  const fmtSigned = (n) => `${n >= 0 ? "+" : "−"}${fmt(Math.abs(n))} ₴`;
+  const fmt = (n: number) => formatMoney(n);
+  const fmtSigned = (n: number) =>
+    `${n >= 0 ? "+" : "−"}${formatMoney(Math.abs(n))}`;
 
   return (
     <div
@@ -52,9 +54,7 @@ function MonthlyPlanCardComponent({
           <span className="text-muted" aria-hidden>
             <Icon name="calendar" size={16} />
           </span>
-          <span className="text-sm font-semibold text-text">
-            Фінплан на місяць
-          </span>
+          <span className="text-style-label text-text">Фінплан на місяць</span>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           {hasPlan && !open && (
@@ -65,10 +65,10 @@ function MonthlyPlanCardComponent({
               )}
             >
               {isOver
-                ? `−${(totalExpenseFact - planExpense).toLocaleString("uk-UA")} ₴`
+                ? `−${formatMoney(totalExpenseFact - planExpense)}`
                 : planExpense > 0
-                  ? `${pctExpense}% · ${remaining.toLocaleString("uk-UA")} ₴`
-                  : `+${planIncome.toLocaleString("uk-UA")} ₴`}
+                  ? `${pctExpense}% · ${formatMoney(remaining)}`
+                  : `+${formatMoney(planIncome)}`}
             </span>
           )}
           {!hasPlan && !open && (
@@ -178,13 +178,12 @@ function MonthlyPlanCardComponent({
                 <span>{pctExpense}% витрачено</span>
                 {safePerDay > 0 && daysLeft > 0 && !isOver && (
                   <span className="tabular-nums">
-                    {safePerDay.toLocaleString("uk-UA")} ₴/день · {daysLeft} дн.
+                    {formatMoney(safePerDay)}/день · {daysLeft} дн.
                   </span>
                 )}
                 {isOver && (
                   <span className="text-danger font-semibold tabular-nums">
-                    −{(totalExpenseFact - planExpense).toLocaleString("uk-UA")}{" "}
-                    ₴
+                    −{formatMoney(totalExpenseFact - planExpense)}
                   </span>
                 )}
               </div>

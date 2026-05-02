@@ -2,6 +2,7 @@ import { memo } from "react";
 import { Button } from "@shared/components/ui/Button";
 import { Card } from "@shared/components/ui/Card";
 import { Input } from "@shared/components/ui/Input";
+import { formatMoney } from "@sergeant/shared";
 
 // Картка цілі накопичення — детерміновані пропси, memo дозволяє не
 // перераховувати розмітку при перерендерах сторінки Budgets.
@@ -45,13 +46,12 @@ function GoalBudgetCardComponent({
       ) : (
         <>
           <div className="flex justify-between items-center mb-2">
-            <span className="text-sm font-semibold">
+            <span className="text-style-label">
               {budget.emoji} {budget.name}
             </span>
             <div className="flex items-center gap-2">
               <span className="text-xs text-muted">
-                {saved.toLocaleString("uk-UA")} /{" "}
-                {budget.targetAmount.toLocaleString("uk-UA")} ₴
+                {formatMoney(saved)} / {formatMoney(budget.targetAmount)}
               </span>
               <button
                 type="button"
