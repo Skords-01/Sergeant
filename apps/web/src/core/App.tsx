@@ -1,4 +1,4 @@
-import { useCallback, useEffect, Suspense } from "react";
+import { useCallback, useEffect, useState, Suspense } from "react";
 import { lazyDefault, lazyImport } from "./lib/lazyImport";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { cn } from "@shared/lib/cn";
@@ -6,12 +6,15 @@ import { safeWriteLS } from "@shared/lib/storage";
 import { SkipLink } from "@shared/components/ui/SkipLink";
 import ModuleErrorBoundary from "./ModuleErrorBoundary";
 import { useDarkMode } from "@shared/hooks/useDarkMode";
-import { useOnlineStatus } from "@shared/hooks/useOnlineStatus";
 import { ToastProvider, useToast } from "@shared/hooks/useToast";
 import { ToastContainer } from "@shared/components/ui/Toast";
 import { ScreenReaderAnnouncerProvider } from "@shared/components/ui/ScreenReaderAnnouncer";
 import { HUB_OPEN_MODULE_EVENT } from "@shared/lib/hubNav";
 import { onHubBus } from "@shared/lib/hubBus";
+import {
+  REQUEST_PULL_EVENT,
+  emitCloudPullComplete,
+} from "@shared/lib/cloudPullRequest";
 import { ApiClientProvider } from "@sergeant/api-client/react";
 import { apiClient } from "@shared/api";
 import { AuthProvider, useAuth } from "./auth/AuthContext";
@@ -37,6 +40,7 @@ import { ModuleFirstRunGoalSheet } from "./onboarding/ModuleFirstRunGoalSheet";
 import { isFirstRealEntryDone } from "./onboarding/vibePicks";
 import { hasAnyRealEntry } from "./onboarding/firstRealEntry";
 import { useHubNavigation } from "./hooks/useHubNavigation";
+import { useHubKeyboardShortcuts } from "./hooks/useHubKeyboardShortcuts";
 import { useHubUIState } from "./hooks/useHubUIState";
 import { usePwaActions, type PwaAction } from "./hooks/usePwaActions";
 import { ShellDeepLinkBridge } from "./app/ShellDeepLinkBridge";
@@ -127,8 +131,9 @@ const SIGN_IN_PATH = "/sign-in";
 const ASSISTANT_PATH = "/assistant";
 // Dedicated AI chat route. Replaces the fullscreen modal that used to
 // slam over the dashboard. Reads `?q=` and `?autoSend=1` so launcher
-// hand-offs (`AnswerRail`, `ai-handoff`, capability `Try in chat` CTA)
-// and external deep links share one URL shape.
+// hand-offs (`InlineAiRail`'s "Open in chat" escalation, `ai-handoff`
+// fallback, capability `Try in chat` CTA) and external deep links
+// share one URL shape.
 const CHAT_PATH = "/chat";
 // URL-addressable cold-start splash. Having a real route (not just a
 // modal overlay on `/`) means the splash can be deep-linked, shows the
@@ -206,13 +211,13 @@ function AppInner() {
   const { activeModule, openModule, goToHub, moduleAnimClass } =
     useHubNavigation();
   const ui = useHubUIState();
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const { pwaAction, setPwaAction, clearPwaAction, validActions } =
     usePwaActions(searchParams);
   const { dark, toggle: toggleDark } = useDarkMode();
   const keyboardShortcuts = useKeyboardShortcutsModal();
   const { canInstall, install, dismiss } = usePwaInstall();
   const { visible: iosVisible, dismiss: iosDismiss } = useIosInstallBanner();
-  const online = useOnlineStatus();
   const { updateAvailable, applyUpdate } = useSWUpdate();
   const { user, isLoading: authLoading } = useAuth();
   const sync = useCloudSync(user);
@@ -263,6 +268,27 @@ function AppInner() {
     }
   }, [openModule]);
 
+  // Bridge module-level pull-to-refresh gestures to the App-level
+  // cloud-sync engine. Modules dispatch `REQUEST_PULL_EVENT` and we run
+  // `sync.pullAll()` on their behalf, then emit a completion event so
+  // the requesting component can resolve its spinner. See
+  // `shared/lib/cloudPullRequest.ts` for the contract.
+  useEffect(() => {
+    const handler = async () => {
+      try {
+        await sync.pullAll();
+      } catch {
+        // Errors are surfaced via `useSyncErrorToast`; the requester
+        // only cares that we settled, so swallow here and emit the
+        // completion event regardless.
+      } finally {
+        emitCloudPullComplete();
+      }
+    };
+    window.addEventListener(REQUEST_PULL_EVENT, handler);
+    return () => window.removeEventListener(REQUEST_PULL_EVENT, handler);
+  }, [sync]);
+
   // Global signal to open chat from any page (e.g. ProfilePage memory
   // bank, AssistantCataloguePage, hint toasts). Now routes to the
   // dedicated `/chat` route — replaces the previous fullscreen-modal
@@ -312,27 +338,19 @@ function AppInner() {
     return () => window.removeEventListener(HUB_OPEN_MODULE_EVENT, onHubOpen);
   }, [openModule, setPwaAction, validActions]);
 
-  // Глобальний shortcut ⌘K / Ctrl+K → відкрити HubSearch. Ставимо
-  // `preventDefault`, щоб не спрацював нативний focus-address-bar у
-  // браузера. Не реагуємо, якщо пошук вже відкритий або фокус у
-  // input/textarea — тоді ⌘K не має перехоплювати typing.
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      const mod = e.metaKey || e.ctrlKey;
-      if (!mod || (e.key !== "k" && e.key !== "K")) return;
-      const target = e.target as HTMLElement | null;
-      const tag = target?.tagName;
-      const inEditable =
-        tag === "INPUT" ||
-        tag === "TEXTAREA" ||
-        (target && target.isContentEditable);
-      if (inEditable) return;
-      e.preventDefault();
-      ui.setSearchOpen(true);
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [ui]);
+  const openSearchFromShortcut = useCallback(() => {
+    if (activeModule) {
+      goToHub();
+      requestAnimationFrame(() => ui.setSearchOpen(true));
+      return;
+    }
+    ui.setSearchOpen(true);
+  }, [activeModule, goToHub, ui]);
+
+  useHubKeyboardShortcuts({
+    onOpenSearch: openSearchFromShortcut,
+    onOpenShortcuts: () => setShortcutsOpen(true),
+  });
 
   if (sync.migrationPending) {
     return (
@@ -475,7 +493,7 @@ function AppInner() {
           inFtuxSession={inFtuxSession}
           hasFirstRealEntry={hasFirstRealEntry}
         />
-        {!online && <OfflineBanner />}
+        <OfflineBanner />
 
         <HubHeader
           onOpenSearch={() => ui.setSearchOpen(true)}
@@ -529,8 +547,8 @@ function AppInner() {
           onOpenModule={openModule}
         />
         <KeyboardShortcutsModal
-          open={keyboardShortcuts.open}
-          onClose={keyboardShortcuts.onClose}
+          open={shortcutsOpen}
+          onClose={() => setShortcutsOpen(false)}
         />
       </div>
     );
@@ -539,7 +557,7 @@ function AppInner() {
   return (
     <div className="h-dvh flex flex-col bg-bg text-text overflow-hidden">
       <SkipLink />
-      {!online && <OfflineBanner />}
+      <OfflineBanner />
       {/* Persistent "resume workout" shortcut — rendered in Finyk,
           Routine, Nutrition (but not inside Fizruk itself, where the
           in-module ActiveWorkoutPanel is already the primary surface).

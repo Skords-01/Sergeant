@@ -114,7 +114,7 @@ export const ConfirmDialog = memo(function ConfirmDialog({
       >
         <h2
           id="confirm-title"
-          className="text-[17px] font-bold text-text mb-2 leading-snug"
+          className="text-style-title text-text mb-2 leading-snug"
         >
           {title}
         </h2>

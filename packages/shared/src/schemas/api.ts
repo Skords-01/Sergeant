@@ -60,6 +60,53 @@ export const ChatRequestSchema = z.object({
   stream: z.boolean().optional(),
 });
 
+/**
+ * Допустимі `source`-фільтри для `POST /api/ai-memory/recall`. Дзеркалить
+ * `ALLOWED_MEMORY_SOURCES` у server-side `types.ts`. Тримаємо строкові
+ * літерали тут (а не enum-import з server-only модуля), щоб
+ * `@sergeant/shared` лишився edge-runtime-friendly без deps на Postgres.
+ */
+const RECALL_MEMORY_SOURCES = [
+  "chat",
+  "finyk",
+  "fizruk",
+  "nutrition",
+  "routine",
+  "journal",
+  "digest",
+] as const;
+
+/** POST /api/ai-memory/recall — semantic memory retrieval. */
+export const RecallMemoryRequestSchema = z
+  .object({
+    query: z.string().min(1).max(1000),
+    topK: z.number().int().min(1).max(50).optional(),
+    sources: z.array(z.enum(RECALL_MEMORY_SOURCES)).max(10).optional(),
+  })
+  .strict();
+
+/** Один результат у відповіді `/api/ai-memory/recall`. */
+export const RecallMemoryResultSchema = z.object({
+  /** ID запису. Number, не bigint (rule #1, AGENTS.md). */
+  id: z.number().int(),
+  source: z.enum(RECALL_MEMORY_SOURCES),
+  sourceRef: z.string().nullable(),
+  content: z.string(),
+  /** Cosine similarity у [0, 1]. Більше — ближче. */
+  score: z.number().min(0).max(1),
+  /** ISO-8601 timestamp. */
+  createdAt: z.string(),
+  metadata: z.record(z.string(), z.unknown()),
+});
+
+/** Response для `POST /api/ai-memory/recall`. */
+export const RecallMemoryResponseSchema = z.object({
+  memories: z.array(RecallMemoryResultSchema),
+});
+export type RecallMemoryRequest = z.infer<typeof RecallMemoryRequestSchema>;
+export type RecallMemoryResult = z.infer<typeof RecallMemoryResultSchema>;
+export type RecallMemoryResponse = z.infer<typeof RecallMemoryResponseSchema>;
+
 /** /api/nutrition/analyze-photo */
 export const AnalyzePhotoSchema = z.object({
   image_base64: z
@@ -502,6 +549,85 @@ export const SyncPushAllSchema = z.object({
     }),
   ),
 });
+
+// ────────────────────── Sync v2 (op-log) ──────────────────────
+// Stage 2 / PR #021 із `docs/planning/storage-roadmap.md`. v2 — per-row
+// op-log замість whole-blob LWW v1. Ці схеми валідують HTTP-payload
+// до того, як handler звертається до `sync_op_log`. Серверний whitelist
+// дозволених `table` живе в `apps/server/src/modules/sync/syncV2.ts`
+// (`OP_LOG_TABLE_REGISTRY`); тут перевіряється тільки формат.
+
+/** Hard cap на op-payload, узгоджений із документацією PR #021. */
+export const SYNC_V2_MAX_OPS_PER_PUSH = 200;
+export const SYNC_V2_MAX_ROW_BYTES = 256 * 1024;
+export const SYNC_V2_MAX_TABLE_NAME_LEN = 64;
+export const SYNC_V2_MAX_IDEMPOTENCY_KEY_LEN = 64;
+export const SYNC_V2_PULL_DEFAULT_LIMIT = 100;
+export const SYNC_V2_PULL_MAX_LIMIT = 500;
+
+const SyncV2OpKindEnum = z.enum(["insert", "update", "delete"]);
+
+/**
+ * Один запис op-log-а. `row` — JSON-payload (PK + поля); серверний
+ * apply-шлях знає shape per-table і не валідує тут. Розмір payload-а
+ * обмежено окремим refine-ом (256 KB), щоб не платити за safeParse-инг
+ * мегабайтних об'єктів.
+ *
+ * `client_ts` приймається як ISO-8601 рядок з offset-ом; пізніше
+ * сервер відхилить значення з clock skew > 1 година.
+ */
+const SyncV2OpSchema = z.object({
+  table: z.string().trim().min(1).max(SYNC_V2_MAX_TABLE_NAME_LEN),
+  op: SyncV2OpKindEnum,
+  row: z.record(z.string(), z.unknown()).refine(
+    (v) => {
+      // Обмежуємо розмір per-row payload-а на серверному boundary.
+      // 256 KB — щедро для UI-row-у і захищає від PG `data too large`
+      // помилок усередині транзакції.
+      try {
+        return JSON.stringify(v).length <= SYNC_V2_MAX_ROW_BYTES;
+      } catch {
+        return false;
+      }
+    },
+    { message: "row_too_large" },
+  ),
+  client_ts: z.string().datetime({ offset: true }),
+  idempotency_key: z
+    .string()
+    .min(1)
+    .max(SYNC_V2_MAX_IDEMPOTENCY_KEY_LEN)
+    // ULID/UUID — alphanum + `-`/`_`. Тримаємо мінімально-вузький
+    // pattern, щоб клієнти могли використовувати власну схему ключів,
+    // але не leak-али шлях для smuggle через NULL/keep-alive.
+    .regex(/^[A-Za-z0-9_-]+$/, "invalid_idempotency_key"),
+});
+
+export const SyncV2PushSchema = z.object({
+  ops: z.array(SyncV2OpSchema).min(1).max(SYNC_V2_MAX_OPS_PER_PUSH),
+});
+export type SyncV2PushRequest = z.infer<typeof SyncV2PushSchema>;
+export type SyncV2Op = z.infer<typeof SyncV2OpSchema>;
+
+/**
+ * Pull — cursor-based по `id`. `since=0` означає "з самого початку";
+ * `limit` за замовчуванням 100, до 500.
+ *
+ * Query-парам-и приходять як рядки, тож використовуємо `z.coerce.number`
+ * — `.int().nonnegative()` і `.min(1).max(500)` уже після coerce,
+ * щоб `?since=foo` падав 400-кою на schema-етапі.
+ */
+export const SyncV2PullSchema = z.object({
+  since: z.coerce.number().int().nonnegative().optional().default(0),
+  limit: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(SYNC_V2_PULL_MAX_LIMIT)
+    .optional()
+    .default(SYNC_V2_PULL_DEFAULT_LIMIT),
+});
+export type SyncV2PullRequest = z.infer<typeof SyncV2PullSchema>;
 
 // ────────────────────── Bank proxies (query validation) ──────────────────────
 // `path` перевіряється ще raw-regex-ом в handler-ах (whitelist), тут тільки

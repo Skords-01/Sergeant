@@ -194,6 +194,16 @@ export default [
       // Replace (text-sm font-medium) with text-style-label etc.
       // See docs/design/design-system.md § Typography.
       "sergeant-design/prefer-text-style": "warn",
+      // `no-arbitrary-text-size` — ban Tailwind arbitrary `text-[Npx]` /
+      // `text-[Nrem]` literals; route every call-site through a named
+      // utility from index.css (`text-display`, `text-h1..h3`,
+      // `text-body`, `text-body-sm`, `text-caption`, `text-eyebrow`,
+      // `text-meta`, `text-micro`, `text-display-stat`,
+      // `text-display-hero`, `text-style-*`) or a Tailwind preset
+      // (`text-xs..text-5xl`). Closes the vertical-rhythm drift +
+      // sub-WCAG 8 px regression family.
+      // See docs/design/design-system.md § Typography.
+      "sergeant-design/no-arbitrary-text-size": "error",
     },
   },
   // DS primitives that legitimately define the eyebrow treatment.
@@ -239,6 +249,7 @@ export default [
       "sergeant-design/no-rounded-lg": "off",
       "sergeant-design/no-bare-empty-text": "off",
       "sergeant-design/prefer-text-style": "off",
+      "sergeant-design/no-arbitrary-text-size": "off",
     },
   },
   // Jest setup / test files need jest globals.
@@ -315,6 +326,10 @@ export default [
       // `safeReadLS` / `useLocalStorageState` / `createModuleStorage`
       // and remove the entry below.
       "apps/web/src/core/insights/AssistantAdviceCard.tsx",
+      "apps/web/src/core/insights/TodayFocusCard.tsx",
+      "apps/web/src/core/observability/analytics.ts",
+
+      "apps/web/src/core/hints/HintsOrchestrator.tsx",
       // HubSearch was split into apps/web/src/core/hub/search/* — the
       // localStorage parsers (`safeParseLS` + the Fizruk parsers) live
       // in `searchCache.ts` and are called from `searchSources.ts`.
@@ -322,23 +337,14 @@ export default [
       // `safeReadLS` lands.
       "apps/web/src/core/hub/search/searchCache.ts",
       "apps/web/src/core/hub/search/searchSources.ts",
-      "apps/web/src/core/insights/TodayFocusCard.tsx",
-      "apps/web/src/core/observability/analytics.ts",
 
-      "apps/web/src/core/hints/HintsOrchestrator.tsx",
       "apps/web/src/core/hub/hubBackup.ts",
       "apps/web/src/core/hub/hubSearchEngine.ts",
-      "apps/web/src/core/onboarding/presetApply.ts",
-      "apps/web/src/core/insights/useCoachInsight.ts",
       "apps/web/src/core/insights/useWeeklyDigest.ts",
-      "apps/web/src/modules/finyk/pages/Overview.tsx",
       // useWorkouts.ts: intentional direct-storage access — dispatches
       // FIZRUK_WORKOUTS_STORAGE_ERROR custom event on quota failure so the
       // UI can show a banner. safeWriteLS swallows the error silently.
       "apps/web/src/modules/fizruk/hooks/useWorkouts.ts",
-      "apps/web/src/modules/nutrition/hooks/useNutritionReminders.ts",
-      "apps/web/src/modules/routine/components/RoutineCalendarPanel.tsx",
-      "apps/web/src/modules/routine/hooks/useRoutineReminders.ts",
     ],
     rules: {
       "sergeant-design/no-raw-local-storage": "error",

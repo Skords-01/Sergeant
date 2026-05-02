@@ -4,6 +4,30 @@ import { Card } from "@shared/components/ui/Card";
 import { Input } from "@shared/components/ui/Input";
 import { formatMoney } from "@sergeant/shared";
 
+interface GoalBudgetInput {
+  id: string;
+  type?: "goal" | "limit";
+  emoji?: string;
+  name?: string;
+  targetAmount: number;
+  savedAmount?: number;
+  targetDate?: string;
+  [extra: string]: unknown;
+}
+
+interface GoalBudgetCardProps {
+  budget: GoalBudgetInput;
+  saved: number;
+  pct: number;
+  daysLeft: number | null;
+  monthlyLabel?: string | null;
+  isEditing: boolean;
+  onBeginEdit: () => void;
+  onChangeSaved?: (next: number) => void;
+  onSave: () => void;
+  onDelete: () => void;
+}
+
 // Картка цілі накопичення — детерміновані пропси, memo дозволяє не
 // перераховувати розмітку при перерендерах сторінки Budgets.
 function GoalBudgetCardComponent({
@@ -17,7 +41,7 @@ function GoalBudgetCardComponent({
   onChangeSaved,
   onSave,
   onDelete,
-}) {
+}: GoalBudgetCardProps) {
   return (
     <Card radius="lg" padding="lg">
       {isEditing ? (

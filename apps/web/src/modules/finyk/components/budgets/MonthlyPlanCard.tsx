@@ -1,8 +1,31 @@
 import { memo, useState } from "react";
+import type { Dispatch, SetStateAction } from "react";
 import { cn } from "@shared/lib/cn";
 import { Icon } from "@shared/components/ui/Icon";
 import { Input } from "@shared/components/ui/Input";
 import { formatMoney } from "@sergeant/shared";
+
+type MonthlyPlanInput = {
+  income?: number | string;
+  expense?: number | string;
+  savings?: number | string;
+};
+
+interface MonthlyPlanCardProps {
+  monthlyPlan: MonthlyPlanInput | null | undefined;
+  onChangeMonthlyPlan: Dispatch<SetStateAction<MonthlyPlanInput>>;
+  planIncome: number;
+  planExpense: number;
+  planSavings: number;
+  totalExpenseFact: number;
+  factIncome: number;
+  factSavings: number;
+  remaining: number;
+  safePerDay: number;
+  pctExpense: number;
+  isOver: boolean;
+  daysLeft: number;
+}
 
 // Unified monthly-plan block: Plan/Fact/Δ table for income, expense and
 // savings, progress bar + safe-to-spend hint and an inline edit mode for
@@ -24,7 +47,7 @@ function MonthlyPlanCardComponent({
   pctExpense,
   isOver,
   daysLeft,
-}) {
+}: MonthlyPlanCardProps) {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(false);
   const hasPlan = planIncome > 0 || planExpense > 0 || planSavings > 0;

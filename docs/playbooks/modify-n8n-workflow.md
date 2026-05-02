@@ -29,8 +29,8 @@
 ### 2. Онови workflow artifact і metadata разом
 
 - JSON workflow
-- `manifest.json`
-- owner, status, risk tier, required env, required credentials
+- `manifest.json` — owner, status, risk tier, required env, required credentials
+- [`ops/n8n-workflows/REPORTING-MATRIX.md`](../../ops/n8n-workflows/REPORTING-MATRIX.md) — рядок workflow → topic → cadence → owner → escalation. **Hard rule:** matrix і `manifest.json.riskTier` повинні мати ідентичний tier; mismatch блокує merge (Hard Rule #15).
 
 ### 3. Перевір safe import path
 

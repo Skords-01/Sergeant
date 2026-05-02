@@ -1,5 +1,6 @@
-import { Card } from "@shared/components/ui/Card";
+import { useCallback } from "react";
 import { useToast } from "@shared/hooks/useToast";
+import { requestCloudPull } from "@shared/lib/cloudPullRequest";
 import { TransactionsHeader } from "./TransactionsHeader";
 import { TransactionsBatchToolbar } from "./TransactionsBatchToolbar";
 import { TransactionFilters } from "./TransactionFilters";
@@ -47,12 +48,12 @@ export function Transactions({
     realTx,
     loadingTx,
     lastUpdated,
-    refresh,
     syncState,
     accounts,
     fetchMonth,
     historyTx,
     loadingHistory,
+    refresh: monoRefresh,
   } = mono;
   const {
     hiddenTxIds,
@@ -86,6 +87,18 @@ export function Transactions({
     categoryFilter,
     onClearCategoryFilter,
   });
+
+  // PTR refresh runs the bank-side refetch (Mono + Privat, via the
+  // unified `mergedRefresh`) **and** asks the App-level cloud-sync
+  // engine to pull the latest queue/dirty state from the server. The
+  // cloud-pull is awaited with a short timeout so the spinner never
+  // sticks longer than the longest reasonable network hop.
+  const handlePullRefresh = useCallback(async () => {
+    await Promise.allSettled([
+      typeof monoRefresh === "function" ? monoRefresh() : Promise.resolve(),
+      requestCloudPull(2500),
+    ]);
+  }, [monoRefresh]);
 
   const selection = useTransactionSelection({
     hiddenTxIds,
@@ -127,14 +140,9 @@ export function Transactions({
       onHideTx={selection.stableHideTx}
       onCatChange={selection.stableOverrideCategory}
       onSplitChange={selection.stableSetSplitTx}
+      onRefresh={handlePullRefresh}
       header={
-        <Card
-          as="section"
-          radius="lg"
-          padding="sm"
-          aria-label="Керування операціями"
-          className="mb-4 space-y-2.5"
-        >
+        <section aria-label="Керування операціями" className="mb-4 space-y-2.5">
           <TransactionsHeader
             monthLabel={filters.monthLabel}
             isCurrentMonth={filters.isCurrentMonth}
@@ -145,8 +153,6 @@ export function Transactions({
             showHidden={filters.showHidden}
             setShowHidden={filters.setShowHidden}
             hiddenCount={hiddenTxIds.length}
-            refresh={refresh}
-            loading={filters.activeLoading}
           />
           <TransactionSyncPill
             syncState={syncState}
@@ -158,7 +164,7 @@ export function Transactions({
             hasCreditAccounts={filters.creditAccIds.size > 0}
             catSpends={filters.catSpends}
           />
-        </Card>
+        </section>
       }
       trailing={
         filters.activeLoading && filters.activeTx.length > 0 ? (

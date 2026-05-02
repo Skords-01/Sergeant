@@ -260,7 +260,7 @@ payload_size, conflict, created_at)`. Запис у `syncPushAll`/`syncPullAll`
 
 ### Stage 2 — Foundation для SQLite
 
-#### **PR #014 — `feat: add Drizzle ORM as cross-platform schema source of truth`** ✅ IN PROGRESS
+#### **PR #014 — `feat: add Drizzle ORM as cross-platform schema source of truth`** ✅ LANDED — [#1290](https://github.com/Skords-01/Sergeant/pull/1290)
 
 - **Scope.**
   - `packages/db-schema/` — новий package, експортує Drizzle table definitions.
@@ -278,7 +278,7 @@ payload_size, conflict, created_at)`. Запис у `syncPushAll`/`syncPullAll`
   що Drizzle generates same SQL для існуючої схеми.
 - **Dep.** None.
 
-#### **PR #015 — `feat(web): integrate sqlite-wasm with OPFS-VFS, lazy-loaded`**
+#### **PR #015 — `feat(web): integrate sqlite-wasm with OPFS-VFS, lazy-loaded`** ✅ LANDED — [#1310](https://github.com/Skords-01/Sergeant/pull/1310)
 
 - **Scope.**
   - Додати `@sqlite.org/sqlite-wasm` як dep.
@@ -293,7 +293,7 @@ payload_size, conflict, created_at)`. Запис у `syncPushAll`/`syncPullAll`
   у реальному Chromium.
 - **Dep.** PR #014.
 
-#### **PR #016 — `feat(infra): add COOP/COEP headers on /app routes for OPFS-cross-origin-isolation`**
+#### **PR #016 — `feat(web): add COOP/COEP headers on app routes for OPFS cross-origin isolation`** ✅ LANDED — [#1354](https://github.com/Skords-01/Sergeant/pull/1354)
 
 - **Scope.** `vercel.json` — додати:
   ```json
@@ -316,7 +316,7 @@ payload_size, conflict, created_at)`. Запис у `syncPushAll`/`syncPullAll`
   правил — test заздалегідь.
 - **Dep.** PR #017.
 
-#### **PR #017 — `chore(web): self-host Google Fonts via fontsource`**
+#### **PR #017 — `chore(web): self-host Google Fonts via fontsource`** ✅ LANDED — [#1297](https://github.com/Skords-01/Sergeant/pull/1297)
 
 - **Scope.** Перейти з Google Fonts CDN на `@fontsource/{family}`.
   Service Worker `CacheFirst` правило для шрифтів стає простіше (same-origin).
@@ -324,7 +324,7 @@ payload_size, conflict, created_at)`. Запис у `syncPushAll`/`syncPullAll`
   Playwright тестом.
 - **Dep.** None.
 
-#### **PR #018 — `feat(mobile): integrate expo-sqlite v15 with Drizzle adapter`**
+#### **PR #018 — `feat(mobile): integrate expo-sqlite v15 with Drizzle adapter`** ✅ LANDED — [#1307](https://github.com/Skords-01/Sergeant/pull/1307)
 
 - **Scope.**
   - Додати `expo-sqlite` (SDK 52 first-class). Drizzle через
@@ -337,7 +337,7 @@ payload_size, conflict, created_at)`. Запис у `syncPushAll`/`syncPullAll`
 - **AC.** Detox e2e: insert/select/migrate.
 - **Dep.** PR #014.
 
-#### **PR #019 — `feat: schema migration runner (cross-platform)`**
+#### **PR #019 — `feat: schema migration runner (cross-platform)`** ✅ LANDED — [#1333](https://github.com/Skords-01/Sergeant/pull/1333)
 
 - **Scope.** `packages/db-schema/migrate.ts` — runner що читає
   `*.sql` з `migrations/` і застосовує послідовно з трекінгом у
@@ -347,7 +347,7 @@ payload_size, conflict, created_at)`. Запис у `syncPushAll`/`syncPullAll`
   rollback на середині міграції залишає БД у consistent state.
 - **Dep.** PR #014.
 
-#### **PR #020 — `feat(server): create normalized routine_* tables (target shape)`**
+#### **PR #020 — `feat(server): create normalized routine_* tables (target shape)`** ✅ LANDED — [#1332](https://github.com/Skords-01/Sergeant/pull/1332)
 
 - **Scope.** `026_routine_tables.{sql,down.sql}`:
   - `routine_entries (id UUID, user_id, name, completed_at, created_at, updated_at, deleted_at)`
@@ -359,19 +359,28 @@ payload_size, conflict, created_at)`. Запис у `syncPushAll`/`syncPullAll`
 - **AC.** Backfill коректний на staging; spot-check на 100 юзерах.
 - **Dep.** PR #014, #019.
 
-#### **PR #021 — `feat(server): /v2/sync/push + /v2/sync/pull endpoints (op-log based)`**
+#### **PR #021 — `feat(server): /v2/sync/push + /v2/sync/pull endpoints (op-log based)`** ✅ LANDED — [#1355](https://github.com/Skords-01/Sergeant/pull/1355)
 
 - **Scope.**
   - `POST /v2/sync/push` — приймає масив op-log entries
     `[{ table, op, row, client_ts, idempotency_key }]`. Apply у транзакції,
-    повертає `{ accepted, last_op_id }`.
+    повертає `{ accepted, last_op_id, results }`.
   - `GET /v2/sync/pull?since=<op_id>&limit=` — повертає op-log entries
-    від інших девайсів того ж юзера. Pagination.
+    від інших девайсів того ж юзера. Pagination через `next_cursor`.
   - Idempotency: `(user_id, idempotency_key)` UNIQUE, повторний push
-    повертає cached result.
-  - Метрики (rebuild на існуючому RED-наборі).
+    повертає cached result; повтор не виконує DML.
+  - Whitelist-таблиці на цьому етапі — `routine_entries`, `routine_streaks`
+    (`OP_LOG_TABLE_REGISTRY` у `apps/server/src/modules/sync/syncV2.ts`).
+  - LWW per-row через `client_ts` vs `updated_at` рядка; clock-skew
+    `client_ts > server+1h` reject-нуто з `reason='clock_skew'`.
+  - Метрики (`syncOperationsTotal{op="v2_push"|"v2_pull"}`) і
+    audit-log (`sync_audit_log{module='syncV2'}`) — без нових інфра-
+    компонентів, ділять існуючий RED-набір.
+  - Опціональний `X-Origin-Device-Id` хедер виключає ops того ж пристрою
+    при `pull` (replay-safety без додаткового state на клієнті).
 - **AC.** Replay-safe (one client пуляє pull → applies; potem той самий
-  push → no-op). Conflict-free на routine smoke test.
+  push → no-op). Conflict-free на routine smoke test. v1 sync без
+  регресій. Migration `027_sync_op_log.{sql,down.sql}` round-trip clean.
 - **Dep.** PR #019, #020.
 
 ---

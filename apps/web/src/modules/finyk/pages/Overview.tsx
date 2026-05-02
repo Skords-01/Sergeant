@@ -10,6 +10,18 @@ import {
   calcFinykSpendingTotal,
   getMonoTotals,
 } from "../utils";
+import type { useStorage } from "../hooks/useStorage";
+import type { useUnifiedFinanceData } from "../hooks/useUnifiedFinanceData";
+
+type StorageLike = ReturnType<typeof useStorage>;
+type MergedMonoLike = ReturnType<typeof useUnifiedFinanceData>["mergedMono"];
+
+interface OverviewProps {
+  mono: MergedMonoLike;
+  storage: StorageLike;
+  onNavigate?: (page: string) => void;
+  showBalance?: boolean;
+}
 
 import { getSubscriptionAmountMeta } from "@sergeant/finyk-domain/domain/subscriptionUtils";
 import { getMonthlySummary } from "@sergeant/finyk-domain/domain/selectors";
@@ -20,6 +32,7 @@ import {
 } from "@sergeant/finyk-domain/domain/budget";
 import { filterStatTransactions } from "@sergeant/finyk-domain/domain/transactions";
 import { Skeleton } from "@shared/components/ui/Skeleton";
+import { safeReadStringLS, safeWriteLS } from "@shared/lib/storage";
 import { THEME_HEX } from "@shared/lib/themeHex";
 import { SyncStatusBadge } from "../components/SyncStatusBadge";
 
@@ -30,17 +43,17 @@ import { NetworthSection } from "./overview/NetworthSection";
 import { BudgetAlertsList } from "./overview/BudgetAlertsList";
 import { PlannedFlowsCard } from "./overview/PlannedFlowsCard";
 
-const parseLocalDate = (isoDate) => {
+const parseLocalDate = (isoDate: string | null | undefined): Date => {
   const [y, m, d] = (isoDate || "").split("-").map(Number);
   return new Date(y, (m || 1) - 1, d || 1);
 };
-const formatDaysLeft = (days) => {
+const formatDaysLeft = (days: number): string => {
   if (days === 0) return "сьогодні";
   if (days === 1) return "завтра";
   if (days <= 3) return `через ${days} дн`;
   return `через ${days} дн`;
 };
-const getNextBillingDate = (billingDay, now) => {
+const getNextBillingDate = (billingDay: number, now: Date): Date => {
   const y = now.getFullYear(),
     m = now.getMonth();
   let d = new Date(y, m, Math.min(billingDay, new Date(y, m + 1, 0).getDate()));
@@ -53,7 +66,12 @@ const getNextBillingDate = (billingDay, now) => {
   return d;
 };
 
-export function Overview({ mono, storage, onNavigate, showBalance = true }) {
+export function Overview({
+  mono,
+  storage,
+  onNavigate,
+  showBalance = true,
+}: OverviewProps) {
   const {
     realTx,
     loadingTx,
@@ -105,20 +123,30 @@ export function Overview({ mono, storage, onNavigate, showBalance = true }) {
     daysPassed > 0 ? (spent / daysPassed) * daysInMonth : 0;
 
   const { balance: monoOnlyTotal, debt: monoTotalDebt } = useMemo(
-    () => getMonoTotals(accounts, hiddenAccounts),
+    () =>
+      getMonoTotals(
+        accounts.filter(
+          (a): a is Extract<typeof a, { _source: "monobank" }> =>
+            a._source === "monobank",
+        ),
+        hiddenAccounts,
+      ),
     [accounts, hiddenAccounts],
   );
   const monoTotal = monoOnlyTotal + privatTotal;
   const manualDebtTotal = useMemo(
     () =>
-      manualDebts.reduce((s, d) => s + calcDebtRemaining(d, transactions), 0),
+      manualDebts.reduce(
+        (s: number, d) => s + calcDebtRemaining(d, transactions),
+        0,
+      ),
     [manualDebts, transactions],
   );
   const totalDebt = monoTotalDebt + manualDebtTotal;
   const totalReceivable = useMemo(
     () =>
       receivables.reduce(
-        (s, r) => s + calcReceivableRemaining(r, transactions),
+        (s: number, r) => s + calcReceivableRemaining(r, transactions),
         0,
       ),
     [receivables, transactions],
@@ -127,7 +155,7 @@ export function Overview({ mono, storage, onNavigate, showBalance = true }) {
     () =>
       (manualAssets || [])
         .filter((a) => a.currency === "UAH")
-        .reduce((s, a) => s + Number(a.amount), 0),
+        .reduce((s: number, a) => s + Number(a.amount), 0),
     [manualAssets],
   );
   const networth = monoTotal + manualAssetTotal + totalReceivable - totalDebt;
@@ -154,13 +182,9 @@ export function Overview({ mono, storage, onNavigate, showBalance = true }) {
   // sees the Overview with any real data (manual expense or bank tx).
   // Dismissing it (✕ or CTA) sets the flag so we never show it again.
   const hasAnyData = manualExpenses.length > 0 || realTx.length > 0;
-  const [showFirstInsight, setShowFirstInsight] = useState(() => {
-    try {
-      return !localStorage.getItem("finyk_first_insight_seen_v1");
-    } catch {
-      return false;
-    }
-  });
+  const [showFirstInsight, setShowFirstInsight] = useState(
+    () => safeReadStringLS("finyk_first_insight_seen_v1", null) === null,
+  );
   // Ref guard — `manualExpenses.length` is in the dep array (to satisfy
   // exhaustive-deps and to initially trigger once data lands), but we only
   // ever want to fire the event on the *first* time the banner becomes
@@ -171,11 +195,10 @@ export function Overview({ mono, storage, onNavigate, showBalance = true }) {
     if (insightFiredRef.current) return;
     if (!showFirstInsight || !hasAnyData) return;
     insightFiredRef.current = true;
-    try {
-      localStorage.setItem("finyk_first_insight_seen_v1", "1");
-    } catch {
-      /* noop */
-    }
+    // `safeWriteLS` keeps raw strings as-is (no JSON.stringify), so the
+    // stored byte-for-byte value matches the legacy
+    // `localStorage.setItem(_, "1")` call that other read-sites compare.
+    safeWriteLS("finyk_first_insight_seen_v1", "1");
     trackEvent(ANALYTICS_EVENTS.FIRST_INSIGHT_SEEN, {
       source: manualExpenses.length > 0 ? "manual" : "bank",
     });
@@ -216,7 +239,7 @@ export function Overview({ mono, storage, onNavigate, showBalance = true }) {
           sub,
           transactions,
         );
-        const dueDate = getNextBillingDate(sub.billingDay, now);
+        const dueDate = getNextBillingDate(Number(sub.billingDay) || 1, now);
         const daysLeft = Math.ceil(
           (dueDate.getTime() - todayStart.getTime()) / 86400000,
         );
@@ -346,11 +369,6 @@ export function Overview({ mono, storage, onNavigate, showBalance = true }) {
     expenseTarget - spent - recurringOutThisMonth + recurringInThisMonth;
   const dayBudget = expenseLeft / remainingDays;
 
-  const monthBalance = income - spent;
-  const spendPct = income > 0 ? (spent / income) * 100 : 0;
-  const spendBarPct = Math.min(100, spendPct);
-  const expenseFromIncomeBarClass =
-    spendPct > 75 ? "bg-danger" : spendPct > 50 ? "bg-warning" : "bg-success";
   const showMonthForecast = showBalance && daysPassed > 0 && projectedSpend > 0;
   const forecastTrendPct = showMonthForecast
     ? Math.min(100, Math.round((spent / projectedSpend) * 100))
@@ -365,10 +383,6 @@ export function Overview({ mono, storage, onNavigate, showBalance = true }) {
   const spendPlanRatio = expenseTarget > 0 ? spent / expenseTarget : 0;
   const hasExpensePlan = expenseTarget > 0;
 
-  const firstName =
-    clientInfo?.name?.split(" ")[1] ||
-    clientInfo?.name?.split(" ")[0] ||
-    "друже";
   const dateLabel = now.toLocaleDateString("uk-UA", {
     day: "numeric",
     month: "long",
@@ -401,37 +415,27 @@ export function Overview({ mono, storage, onNavigate, showBalance = true }) {
           networth={networth}
           monoTotal={monoTotal}
           totalDebt={totalDebt}
-          monthBalance={monthBalance}
-          firstName={firstName}
-          dateLabel={dateLabel}
-          showBalance={showBalance}
+          daysInMonth={daysInMonth}
+          daysPassed={daysPassed}
           dayBudget={dayBudget}
+          hasExpensePlan={hasExpensePlan}
           spendPlanRatio={spendPlanRatio}
+          showBalance={showBalance}
         />
-
-        <p className="text-xs text-subtle px-1 -mt-1 leading-relaxed">
-          Огляд, категорії та бюджети на цій сторінці — у гривні (UAH). Інші
-          валюти рахунків у загальному балансі не конвертуються автоматично.
-        </p>
 
         <MonthPulseCard
           dateLabel={dateLabel}
-          daysInMonth={daysInMonth}
           daysPassed={daysPassed}
           spent={spent}
           income={income}
           showBalance={showBalance}
           showMonthForecast={showMonthForecast}
           projectedSpend={projectedSpend}
-          spendPct={spendPct}
-          spendBarPct={spendBarPct}
-          expenseFromIncomeBarClass={expenseFromIncomeBarClass}
+          hasExpensePlan={hasExpensePlan}
+          spendPlanRatio={spendPlanRatio}
+          planExpense={planExpense}
           forecastTrendPct={forecastTrendPct}
           forecastBarClass={forecastBarClass}
-          dayBudget={dayBudget}
-          monthBalance={monthBalance}
-          spendPlanRatio={spendPlanRatio}
-          hasExpensePlan={hasExpensePlan}
           recurringOutThisMonth={recurringOutThisMonth}
           recurringInThisMonth={recurringInThisMonth}
           unknownOutCount={unknownOutCount}
