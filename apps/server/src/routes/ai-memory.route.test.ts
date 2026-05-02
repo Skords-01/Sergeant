@@ -194,12 +194,10 @@ describe("POST /api/ai-memory/ingest — happy path", () => {
 
   it("→ 202 з sourceRef=null коли клієнт його не передав (chat without stable id)", async () => {
     const app = createApp();
-    const res = await request(app)
-      .post("/api/ai-memory/ingest")
-      .send({
-        source: "chat",
-        content: "Я хочу запам'ятати: книга — 'Atomic habits'",
-      });
+    const res = await request(app).post("/api/ai-memory/ingest").send({
+      source: "chat",
+      content: "Я хочу запам'ятати: книга — 'Atomic habits'",
+    });
     expect(res.status).toBe(202);
     expect(enqueueMemoryIngestMock).toHaveBeenCalledWith(
       expect.objectContaining({
