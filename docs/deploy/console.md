@@ -1,6 +1,7 @@
 # Deploy `apps/console` (sergeant-hubchat)
 
-> **Останнє оновлення:** 2026-05-02. **Власник:** `sergeant-hubchat`.
+> **Last validated:** 2026-05-02 by @Skords-01. **Next review:** 2026-08-02.
+> **Власник:** `sergeant-hubchat`.
 
 ## Що це
 
