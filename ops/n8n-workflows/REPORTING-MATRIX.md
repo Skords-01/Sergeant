@@ -1,7 +1,14 @@
 # n8n Reporting Matrix
 
-> **Last validated:** 2026-05-02 by @claude. **Next review:** 2026-08-01.
-> **Status:** Active
+> **Last validated:** 2026-05-02 by @Skords-01. **Next review:** 2026-08-01.
+> **Status:** Active. Live since 2026-05-02 — supergroup `Sergeant Ops` (chat
+> id `-1003924852082`) у Forum mode, 7 канонічних топіків створені, кожен
+> workflow JSON шле через `={{ $env.TELEGRAM_TOPIC_* }}` expression на
+> правильний `message_thread_id` (див. розділ "Telegram topic env vars"
+> нижче). Канонічні Ukrainian-topic-назви: `🔴 Інциденти`, `💰 Виторг`,
+> `⚙️ Контрол-план`, `🟡 Опс`, `🛠️ Інженерія`, `🚀 Зростання`,
+> `📊 Дайджести`. У кожному топіку pinned-меседж описує область
+> відповідальності.
 
 Single source of truth for **who hears what, where, how often, and what to do
 when** for every active n8n workflow. Канал-, цикл-, escalation- та власник-
@@ -41,16 +48,16 @@ Auto-ack workflow — у roadmap, див. розділ "Future" нижче.
 push-ноти (WF-07/09/10) **не йдуть в supergroup**, а летять окремо до
 кінцевих юзерів через `/api/push/send`.
 
-| Topic                    | Audience                  | Default tier | Призначення                                                                   |
-| ------------------------ | ------------------------- | ------------ | ----------------------------------------------------------------------------- |
-| 🔴 **`#incidents`**      | on-call (зараз = founder) | P0           | Production breakage: 5xx сплески, deploy fail, security audit failure         |
-| 💰 **`#revenue`**        | founder                   | P0           | Subscription create/fail, бюджет перевищений, mono enrichment alerts          |
-| ⚙️ **`#meta`**           | on-call                   | P0           | n8n control plane: WF-98 dead-letters, WF-99 heartbeat, intra-pipeline errors |
-| 🟡 **`#ops`**            | founder                   | P1           | Бекапи, deploy success, DB health, Railway-side housekeeping                  |
-| 🛠️ **`#engineering`**    | founder                   | P1           | Renovate PRs (review-needed), stale PRs, repo hygiene                         |
-| 🚀 **`#growth`**         | growth lead (=founder)    | P2           | PostHog daily, growth funnel, acquisition channels                            |
-| 📊 **`#digest`**         | founder                   | P2           | Тижневі/місячні фінансові, продуктові, операційні дайджести                   |
-| 📤 **`(DM, not topic)`** | end users                 | P2           | User-facing push: WF-07 ранковий брифінг, WF-09 streak, WF-10 борги           |
+| Topic (UI label)       | Env var                      | Audience                  | Default tier | Призначення                                                                   |
+| ---------------------- | ---------------------------- | ------------------------- | ------------ | ----------------------------------------------------------------------------- |
+| 🔴 **Інциденти**       | `TELEGRAM_TOPIC_INCIDENTS`   | on-call (зараз = founder) | P0           | Production breakage: 5xx сплески, deploy fail, security audit failure         |
+| 💰 **Виторг**          | `TELEGRAM_TOPIC_REVENUE`     | founder                   | P0           | Subscription create/fail, бюджет перевищений, mono enrichment alerts          |
+| ⚙️ **Контрол-план**    | `TELEGRAM_TOPIC_META`        | on-call                   | P0           | n8n control plane: WF-98 dead-letters, WF-99 heartbeat, intra-pipeline errors |
+| 🟡 **Опс**             | `TELEGRAM_TOPIC_OPS`         | founder                   | P1           | Бекапи, deploy success, DB health, Railway-side housekeeping                  |
+| 🛠️ **Інженерія**       | `TELEGRAM_TOPIC_ENGINEERING` | founder                   | P1           | Renovate PRs (review-needed), stale PRs, repo hygiene                         |
+| 🚀 **Зростання**       | `TELEGRAM_TOPIC_GROWTH`      | growth lead (=founder)    | P2           | PostHog daily, growth funnel, acquisition channels                            |
+| 📊 **Дайджести**       | `TELEGRAM_TOPIC_DIGEST`      | founder                   | P2           | Тижневі/місячні фінансові, продуктові, операційні дайджести                   |
+| 📤 **(DM, not topic)** | _(N/A — `/api/push/send`)_   | end users                 | P2           | User-facing push: WF-07 ранковий брифінг, WF-09 streak, WF-10 борги           |
 
 ## Workflow → topic matrix
 
@@ -79,7 +86,10 @@ push-ноти (WF-07/09/10) **не йдуть в supergroup**, а летять �
 | **98** | `98-error-handler.json`               | `#meta`            | **P0** | n8n error trigger  | ops      | _none_ (anti-loop, no `errorWorkflow`) |
 | **99** | `99-heartbeat.json`                   | `#meta`            | **P0** | Cron \*/3h         | ops      | Email fallback (Resend)                |
 
-⁽²⁾ Якщо deploy `failed` — WF-15 шле в `#incidents` (через окремий path у workflow). На сьогодні роутинг живе в `Format` node; оновлення робити там, не у matrix.
+⁽²⁾ Якщо deploy `failed` — WF-15 шле в `#incidents` (через тернарне
+expression у `message_thread_id`: `{{ $json.ok ? $env.TELEGRAM_TOPIC_OPS :
+$env.TELEGRAM_TOPIC_INCIDENTS }}`). Вкажи обидва топіки в env vars,
+оновлення робити там, не у matrix.
 
 ⁽³⁾ WF-18 шле в `#incidents` тільки коли GitHub Actions audit job має `conclusion=failure`. Success runs мовчать.
 
