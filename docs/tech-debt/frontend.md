@@ -8,10 +8,12 @@
 > **Оновлено 2026-05-02.** Sync з реальним станом коду після кількох wave-ів decomposition:
 > Розділ 2 (localStorage burndown) — TODO-allowlist у `eslint.config.js` скорочено з 41 до **17 файлів**
 > (нові хвилі міграцій у `routine`/`finyk`/`onboarding`/`chatActions`/`insights`/`recommendations`).
-> Розділ 4 (великі файли) — у `apps/web/src` залишилось **21 файл >600 LOC** (раніше 22);
+> Розділ 4 (великі файли) — у `apps/web/src` залишилось **20 файлів >600 LOC** (раніше 22);
 > декомпозовано `Transactions.tsx`, `HubSearch.tsx`, `Budgets.tsx`, `Overview.tsx`, `DesignShowcase.tsx`,
 > `ActiveWorkoutPanel.tsx`, `core/App.tsx` (645 → 224 LOC, винесено
-> `app/{appPaths,RedirectTo,useAppEffects,StandaloneRoutes,HubHomeView,ActiveModuleView}.{ts,tsx}`);
+> `app/{appPaths,RedirectTo,useAppEffects,StandaloneRoutes,HubHomeView,ActiveModuleView}.{ts,tsx}`),
+> `core/onboarding/seedDemoData.ts` (897 → 131 LOC, винесено
+> `seedDemoData/{keys,utils,seedFinyk,seedFizruk,seedRoutine,seedNutrition,seedHubQuickStats}.ts`);
 > водночас виросли нові: `VoiceMicButton.tsx` (852).
 > Розділ 9 (`any` типи) — production тепер містить **10 файлів** із `: any`
 > (7 у finyk sub-pages + `BudgetsGoalsSection.tsx` + 2 нові у fizruk після decomposition).
@@ -159,6 +161,19 @@ Codemod ідемпотентний: повторний запуск дасть `
 > (132 — active-module shell з лінивими `FinykApp`/`FizrukApp`/`RoutineApp`/
 > `NutritionApp`). Усі < 200 LOC. Count 22 → 21.
 >
+> `core/onboarding/seedDemoData.ts` (раніше 897 рядків) декомпозовано на
+> `seedDemoData.ts` (131 — публічна обгортка: `SEEDED_KEYS` + `seedDemoData()` +
+> `resetDemoData()` + `runDemoSeedFromUrl()`),
+> `seedDemoData/keys.ts` (31 — всі localStorage-ключі),
+> `seedDemoData/utils.ts` (100 — write/remove helpers + `dateKey`/`daysAgo`/
+> `shortId`/`buildMonoTx` + `MonoTx`/`ManualExpense` types),
+> `seedDemoData/seedFinyk.ts` (282 — Finyk фікстура: 23 Mono tx + 4 manual
+> expenses + monthly plan), `seedDemoData/seedFizruk.ts` (120 — 2 workouts +
+> 1 measurement), `seedDemoData/seedRoutine.ts` (100 — 5 habits + 14-day
+> completion grid + pushup plan), `seedDemoData/seedNutrition.ts` (140 —
+> meals/water/prefs за 2 дні), `seedDemoData/seedHubQuickStats.ts` (43 —
+> hub status-row preview-payload). Count 21 → 20.
+>
 > **Скоуп таблиці нижче** — лише `apps/web/src`. Mobile (`apps/mobile/src/modules/finyk/pages/Transactions/TransactionsPage.tsx` 1215),
 > packages (`packages/shared/src/lib/assistantCatalogue.ts` 1133, `schemas/api.ts` 986,
 > `openapi/routes.ts` 837), server (`modules/chat/chat.ts` 783) — трекаються окремо
@@ -166,7 +181,6 @@ Codemod ідемпотентний: повторний запуск дасть `
 
 | Рядків | Файл                                                  |
 | ------ | ----------------------------------------------------- |
-| 897    | `core/onboarding/seedDemoData.ts`                     |
 | 852    | `shared/components/ui/VoiceMicButton.tsx`             |
 | 788    | `core/lib/chatActions/crossActions.ts`                |
 | 774    | `modules/fizruk/pages/Body.tsx`                       |
