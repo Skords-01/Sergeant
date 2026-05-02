@@ -1,17 +1,18 @@
 # Frontend Tech Debt — Sergeant Web
 
-> **Last validated:** 2026-05-02 by @Skords-01. **Next review:** 2026-07-31.
+> **Last validated:** 2026-05-02 by @claude. **Next review:** 2026-07-31.
 > **Status:** Active
 
 Аналіз кодової бази `apps/web/src` (434 source файли, 87k рядків).
 
-> **Оновлено 2026-05-01.** Sync з реальним станом коду після кількох wave-ів decomposition:
+> **Оновлено 2026-05-02.** Sync з реальним станом коду після кількох wave-ів decomposition:
 > Розділ 2 (localStorage burndown) — TODO-allowlist у `eslint.config.js` скорочено з 41 до **17 файлів**
 > (нові хвилі міграцій у `routine`/`finyk`/`onboarding`/`chatActions`/`insights`/`recommendations`).
-> Розділ 4 (великі файли) — у `apps/web/src` залишилось **21 файл >600 LOC** (раніше 24);
-> декомпозовано `Transactions.tsx`, `HubSearch.tsx`, `Budgets.tsx`, `Overview.tsx`.
-> Розділ 9 (`any` типи) — переоцінено: production тепер містить **7 файлів** із `: any`
-> (всі у двох finyk sub-pages після decomposition `Transactions`/`Budgets`); тестові — без змін.
+> Розділ 4 (великі файли) — у `apps/web/src` залишилось **22 файли >600 LOC** (раніше 24);
+> декомпозовано `Transactions.tsx`, `HubSearch.tsx`, `Budgets.tsx`, `Overview.tsx`, `DesignShowcase.tsx`,
+> `ActiveWorkoutPanel.tsx`; водночас виросли нові: `VoiceMicButton.tsx` (852), `core/App.tsx` (645).
+> Розділ 9 (`any` типи) — production тепер містить **10 файлів** із `: any`
+> (7 у finyk sub-pages + `BudgetsGoalsSection.tsx` + 2 нові у fizruk після decomposition).
 > `no-strict-bypass` — allowlist на 9 production-файлів **обнулено**: усі call-сайти мігровані,
 > правило `error` тепер працює без винятків на `apps/server/src/**` + `apps/web/src/**`.
 
@@ -121,7 +122,7 @@ Codemod ідемпотентний: повторний запуск дасть `
 
 ---
 
-### 4. Великі файли (>600 рядків) — 21 файл (тільки `apps/web/src`)
+### 4. Великі файли (>600 рядків) — 22 файли (тільки `apps/web/src`)
 
 > `finyk/pages/Assets.tsx` (раніше 1147 рядків) декомпозовано на
 > `useAssetsState.ts` (259), `AssetsForm.tsx` (376), `AssetsTable.tsx` (511),
@@ -150,31 +151,30 @@ Codemod ідемпотентний: повторний запуск дасть `
 > `openapi/routes.ts` 837), server (`modules/chat/chat.ts` 783) — трекаються окремо
 > (mobile tracker — TODO, див. `docs/audits/2026-04-28-sergeant-comprehensive-audit.md` P2-3).
 
-| Рядків   | Файл                                                |
-| -------- | --------------------------------------------------- |
-| ~~1614~~ | ~~`nutrition/lib/foodDb/seedFoodsUk.ts`~~           |
-| 1064     | `core/DesignShowcase.tsx`                           |
-| ~~1060~~ | ~~`core/ProfilePage.tsx`~~                          |
-| 949      | `fizruk/components/workouts/ActiveWorkoutPanel.tsx` |
-| 907      | `core/onboarding/seedDemoData.ts`                   |
-| 902      | `core/hub/HubDashboard.tsx`                         |
-| 894      | `fizruk/pages/Workouts.tsx`                         |
-| 827      | `finyk/pages/Transactions.tsx`                      |
-| 824      | `routine/components/RoutineCalendarPanel.tsx`       |
-| 824      | `finyk/FinykApp.tsx`                                |
-| 694      | `core/OnboardingWizard.tsx`                         |
-| 692      | `fizruk/pages/Progress.tsx`                         |
-| 688      | `core/lib/chatActions/fizrukActions.ts`             |
-| 686      | `core/lib/hubChatContext.ts`                        |
-| 671      | `routine/RoutineApp.tsx`                            |
-| 669      | `nutrition/components/LogCard.tsx`                  |
-| 662      | `core/hub/HubChat.tsx`                              |
-| 642      | `sw.js`                                             |
-| 638      | `core/hub/HubReports.tsx`                           |
-| 637      | `fizruk/pages/Exercise.tsx`                         |
-| 631      | `fizruk/pages/Body.tsx`                             |
-| 610      | `nutrition/NutritionApp.tsx`                        |
-| 610      | `core/hub/HubSearch.tsx`                            |
+| Рядків | Файл                                                  |
+| ------ | ----------------------------------------------------- |
+| 897    | `core/onboarding/seedDemoData.ts`                     |
+| 852    | `shared/components/ui/VoiceMicButton.tsx`             |
+| 788    | `core/lib/chatActions/crossActions.ts`                |
+| 774    | `modules/fizruk/pages/Body.tsx`                       |
+| 758    | `core/lib/chatActions/finykActions.ts`                |
+| 733    | `modules/nutrition/components/LogCard.tsx`            |
+| 732    | `modules/routine/RoutineApp.tsx`                      |
+| 697    | `modules/fizruk/pages/Progress.tsx`                   |
+| 685    | `modules/finyk/hooks/useStorage.ts`                   |
+| 679    | `core/lib/hubChatContext.ts`                          |
+| 676    | `core/hub/HubDashboard.tsx`                           |
+| 672    | `core/lib/chatActions/types.ts`                       |
+| 668    | `core/lib/chatActions/fizrukActions.ts`               |
+| 667    | `modules/finyk/pages/AssetsTable.tsx`                 |
+| 666    | `modules/fizruk/pages/Workouts.tsx`                   |
+| 663    | `modules/nutrition/components/DailyPlanCard.tsx`      |
+| 660    | `shared/components/ui/Icon.tsx`                       |
+| 651    | `modules/nutrition/NutritionApp.tsx`                  |
+| 647    | `modules/fizruk/pages/Exercise.tsx`                   |
+| 645    | `core/App.tsx`                                        |
+| 612    | `sw.ts`                                               |
+| 602    | `modules/routine/components/RoutineCalendarPanel.tsx` |
 
 **Імпакт:** повільніший code review, важче тестувати окремі частини, можливі
 circular deps.
@@ -248,12 +248,12 @@ Custom DS-rule пригнічується 25 разів. Усі з обґрун�
 
 ---
 
-### 9. `any` типи — 7 production-файлів + кілька тестів
+### 9. `any` типи — 10 production-файлів + кілька тестів
 
-**Production (нове, 2026-05-01):** після decomposition `Transactions.tsx` /
+**Production (оновлено 2026-05-02):** після decomposition `Transactions.tsx` /
 `Budgets.tsx` у `apps/web/src/modules/finyk/pages/{transactions,budgets}/**`
-з'явилися 7 файлів із `: any` у локальних типах sortable-полів /
-filter-предикатів:
+з'явилися `: any` у локальних типах sortable-полів / filter-предикатів;
+додатково знайдено нові в fizruk після відповідного decomposition:
 
 | Файл                                                          |
 | ------------------------------------------------------------- |
@@ -262,8 +262,11 @@ filter-предикатів:
 | `modules/finyk/pages/transactions/useTransactionSelection.ts` |
 | `modules/finyk/pages/transactions/useTransactionFilters.ts`   |
 | `modules/finyk/pages/budgets/Budgets.tsx`                     |
+| `modules/finyk/pages/budgets/BudgetsGoalsSection.tsx`         |
 | `modules/finyk/pages/budgets/BudgetsLimitsSection.tsx`        |
 | `modules/finyk/pages/budgets/useProactiveAdvice.ts`           |
+| `modules/fizruk/components/workouts/QuickStartSheet.tsx`      |
+| `modules/fizruk/pages/Exercise.tsx`                           |
 
 **Fix recipe:** замінити `: any` на explicit union (`SortField`/`FilterKey`)
 або `unknown` + type-guard. Окремий PR.
