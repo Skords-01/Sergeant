@@ -1,7 +1,6 @@
 import "dotenv/config";
 import { Bot } from "grammy";
 import Anthropic from "@anthropic-ai/sdk";
-import { runOpenClawCommand } from "./agents/openclaw.js";
 import { parseCommand, dispatchToAgent } from "./agents/router.js";
 import {
   escapeTelegramMarkdownV2,
@@ -10,6 +9,17 @@ import {
   parseRateLimitPerMinute,
   splitTelegramMessage,
 } from "./security.js";
+import { attachOpenClawHandlers } from "./openclaw/index.js";
+
+const DEFAULT_OPENCLAW_MAX_ITERATIONS = 8;
+
+function parseOpenClawMaxIterations(value: string | undefined): number {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return DEFAULT_OPENCLAW_MAX_ITERATIONS;
+  }
+  return Math.floor(parsed);
+}
 
 const HELP_TEXT = [
   "*Sergeant Console* - Telegram control surface for ops, marketing, and AI agents",
@@ -31,9 +41,20 @@ const HELP_TEXT = [
   "_Version: Telegram control plane + n8n dispatcher_",
 ].join("\n");
 
-function createConsoleBot(botToken: string, anthropicKey: string): Bot {
-  const bot = new Bot(botToken);
+async function main() {
+  const botToken = process.env.CONSOLE_BOT_TOKEN;
+  if (!botToken) {
+    console.error("CONSOLE_BOT_TOKEN is not set");
+    process.exit(1);
+  }
+  const anthropicKey = process.env.ANTHROPIC_API_KEY;
+  if (!anthropicKey) {
+    console.error("ANTHROPIC_API_KEY is not set");
+    process.exit(1);
+  }
+
   const anthropic = new Anthropic({ apiKey: anthropicKey });
+  const bot = new Bot(botToken);
   const limiter = new FixedWindowRateLimiter(
     parseRateLimitPerMinute(process.env.CONSOLE_RATE_LIMIT_PER_MIN),
   );
@@ -86,93 +107,51 @@ function createConsoleBot(botToken: string, anthropicKey: string): Bot {
   });
 
   bot.catch((err) => {
-    console.error("Console bot error:", err.error, {
+    console.error("Bot error:", err.error, {
       updateId: err.ctx?.update?.update_id,
     });
   });
 
-  return bot;
-}
+  console.log("Sergeant Console starting…");
+  const consolePromise = bot.start();
 
-function createOpenClawBot(botToken: string): Bot {
-  const bot = new Bot(botToken);
-  const limiter = new FixedWindowRateLimiter(
-    parseRateLimitPerMinute(process.env.CONSOLE_RATE_LIMIT_PER_MIN),
-  );
+  // OpenClaw — DM-only co-founder bot (ADR-0031). Fail-closed якщо env-и не
+  // налаштовані — main bot стартує далі, OpenClaw тихо вимкнений з warning-ом.
+  const openclawToken = process.env.OPENCLAW_BOT_TOKEN;
+  const founderUserId = process.env.OPENCLAW_FOUNDER_USER_ID;
+  const serverUrl = process.env.SERVER_INTERNAL_URL ?? "http://localhost:3000";
+  const internalApiKey = process.env.INTERNAL_API_KEY ?? "";
 
-  bot.command("start", async (ctx) => {
-    const reply = await runOpenClawCommand({
-      text: "status openclaw",
-      chatType: ctx.chat?.type ?? "unknown",
-      telegramUserId: ctx.from?.id,
-      telegramChatId: ctx.chat.id,
-      messageId: ctx.message?.message_id ?? 0,
+  let openclawPromise: Promise<void> | undefined;
+  if (!openclawToken) {
+    console.warn(
+      "OpenClaw not started: OPENCLAW_BOT_TOKEN is not set (Phase 1 fail-closed).",
+    );
+  } else if (!founderUserId) {
+    console.warn("OpenClaw not started: OPENCLAW_FOUNDER_USER_ID is not set.");
+  } else if (!internalApiKey) {
+    console.warn(
+      "OpenClaw not started: INTERNAL_API_KEY is not set (server tools unreachable).",
+    );
+  } else {
+    const openclawBot = new Bot(openclawToken);
+    attachOpenClawHandlers({
+      bot: openclawBot,
+      anthropic,
+      serverUrl,
+      internalApiKey,
+      founderUserId,
+      maxIterations: parseOpenClawMaxIterations(
+        process.env.OPENCLAW_MAX_ITERATIONS,
+      ),
     });
-    await ctx.reply(escapeTelegramMarkdownV2(reply), {
-      parse_mode: "MarkdownV2",
-    });
-  });
-
-  bot.on("message:text", async (ctx) => {
-    const rateLimitKey = `openclaw:${ctx.from?.id ?? ctx.chat.id}`;
-    if (!limiter.allow(rateLimitKey)) {
-      await ctx.reply("Rate limit exceeded. Try again in a minute.");
-      return;
-    }
-
-    await ctx.replyWithChatAction("typing");
-
-    try {
-      const reply = await runOpenClawCommand({
-        text: ctx.message.text,
-        chatType: ctx.chat.type,
-        telegramUserId: ctx.from?.id,
-        telegramChatId: ctx.chat.id,
-        messageId: ctx.message.message_id,
-      });
-      const safeReply = escapeTelegramMarkdownV2(reply);
-      for (const chunk of splitTelegramMessage(safeReply)) {
-        await ctx.reply(chunk, { parse_mode: "MarkdownV2" });
-      }
-    } catch (err) {
-      console.error("OpenClaw error:", err);
-      await ctx.reply("OpenClaw error. Try again.");
-    }
-  });
-
-  bot.catch((err) => {
-    console.error("OpenClaw bot error:", err.error, {
-      updateId: err.ctx?.update?.update_id,
-    });
-  });
-
-  return bot;
-}
-
-async function main() {
-  const botToken = process.env.CONSOLE_BOT_TOKEN;
-  const openClawToken = process.env.OPENCLAW_BOT_TOKEN;
-  if (!botToken && !openClawToken) {
-    console.error("CONSOLE_BOT_TOKEN or OPENCLAW_BOT_TOKEN is required");
-    process.exit(1);
-  }
-  const anthropicKey = process.env.ANTHROPIC_API_KEY;
-  if (botToken && !anthropicKey) {
-    console.error("ANTHROPIC_API_KEY is not set");
-    process.exit(1);
+    console.log("OpenClaw starting…");
+    openclawPromise = openclawBot.start();
   }
 
-  const bots: Array<Promise<void>> = [];
-
-  if (botToken && anthropicKey) {
-    console.log("Sergeant Console starting…");
-    bots.push(createConsoleBot(botToken, anthropicKey).start());
-  }
-  if (openClawToken) {
-    console.log("OpenClaw founder bot starting…");
-    bots.push(createOpenClawBot(openClawToken).start());
-  }
-  await Promise.all(bots);
+  await (openclawPromise
+    ? Promise.all([consolePromise, openclawPromise])
+    : consolePromise);
 }
 
 main().catch((err) => {

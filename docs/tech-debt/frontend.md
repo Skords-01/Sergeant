@@ -373,19 +373,39 @@ Custom DS-rule пригнічується 25 разів. Усі з обґрун�
 **Phase 4 (TODO):** увімкнути `strict: true` у головному `tsconfig.json`,
 видалити `allowJs`, виправити всі залишкові помилки.
 
-- **Заміряний скоуп (2026-05-02):** **768 помилок у 69 файлах** (повний
-  `strict: true` + `allowJs: false` без жодних змін у коді). Розподіл
-  за кодами: `TS7006` (parameter implicitly any) — 431, `TS7031`
-  (binding element implicitly any) — 289, `TS7053` (element implicitly
-  any) — 21, `TS7005` (var without type) — 12, `TS18046` (`error` is
-  of type `unknown`) — 10, інші — 5.
+- **Заміряний скоуп (2026-05-02 re-measure після `12fea1d5` + `d9c76ac8`):**
+  **403 помилки у 47 файлах** (повний `strict: true` + `allowJs: false`
+  без жодних змін у коді, через діагностичний `tsconfig.strict-full.json`).
+  Розподіл за кодами: `TS7006` (parameter implicitly any) — 179, `TS7031`
+  (binding element implicitly any) — 126, `TS7053` (element implicitly any)
+  — 23, `TS2345` (argument type) — 17, `TS2339` (property does not exist)
+  — 15, `TS2322` (type assignability) — 10, `TS7005` (var without type)
+  — 9, `TS2307` (cannot find module) — 7, `TS7034` — 6, інші — 11.
 - **Топ-блокери** (одиничний фікс розблокує найбільше):
-  `modules/finyk/hooks/useStorage.ts` (71), `modules/fizruk/hooks/useWorkouts.ts`
-  (35), `modules/fizruk/components/workouts/WorkoutJournalSection.tsx` (31),
-  `modules/finyk/pages/AssetsTxPickerView.tsx` (30),
   `modules/fizruk/components/workouts/ActiveWorkoutPanel.tsx` (29),
-  `modules/finyk/pages/AssetsTable.tsx` (26), `modules/finyk/hooks/usePrivatbank.ts`
-  (26). Решта помилок розпорошені по `~50` файлах finyk/fizruk/onboarding/insights.
+  `sw.ts` (27),
+  `core/onboarding/presetApply.ts` (23),
+  `modules/fizruk/components/workouts/AddExerciseSheet.tsx` (21),
+  `modules/fizruk/components/WorkoutTemplatesSection.tsx` (21),
+  `modules/fizruk/components/workouts/WorkoutItemCard.tsx` (20),
+  `modules/fizruk/components/workouts/WorkoutCatalogSection.tsx` (20),
+  `modules/fizruk/components/workouts/ExerciseDetailSheet.tsx` (19),
+  `modules/fizruk/pages/Workouts.tsx` (18),
+  `modules/fizruk/pages/Exercise.tsx` (18). Решта помилок розпорошені
+  по `~37` файлах fizruk/onboarding/insights.
+- **Закриті топ-блокери:**
+  `modules/finyk/hooks/useStorage.ts` (було 71),
+  `modules/finyk/pages/AssetsTxPickerView.tsx` (було 30),
+  `modules/finyk/pages/AssetsTable.tsx` (було 26),
+  `modules/finyk/hooks/usePrivatbank.ts` (було 26) — закриті у
+  `b5e47360 fix(web): eliminate implicit-any in modules/finyk`;
+  `modules/fizruk/hooks/useWorkouts.ts` (було 35) — закрито у
+  `12fea1d5 fix(web): eliminate implicit-any in modules/fizruk/hooks/useWorkouts`;
+  `modules/fizruk/components/workouts/WorkoutJournalSection.tsx` (було 31)
+  — закрито в поточному PR через явні типи `Workout`/`WorkoutItem`/
+  `WorkoutFinishSummary`/`RestTimerState` на props та callback-ах
+  (плюс `FinishFlashState` для UI-state, `WorkoutsView` для навігації).
+  Загальне зниження з 768 до 403 (-365) без жодних runtime-змін.
 - **Чому Phase 4 не дробиться через `tsconfig.noimplicitany.json`-include:**
   TypeScript застосовує `noImplicitAny` ко всій програмі (всі transitively
   reached файли), не тільки до `include`-списку. Спроба додати

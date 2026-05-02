@@ -1,144 +1,92 @@
-import { describe, expect, it, vi } from "vitest";
-import {
-  createOpenClawTask,
-  isOpenClawFounderAllowed,
-  isOpenClawPrivateChat,
-  runOpenClawCommand,
-} from "./openclaw.js";
+import { describe, expect, it } from "vitest";
+import { buildSystemPromptInline, selectToneMode } from "./openclaw.js";
 
-describe("OpenClaw Telegram surface", () => {
-  it("fails closed when founder Telegram id is not configured", () => {
-    expect(
-      isOpenClawFounderAllowed(123, {
-        OPENCLAW_FOUNDER_TG_USER_ID: "",
-        NODE_ENV: "production",
-      }),
-    ).toBe(false);
+describe("OpenClaw selectToneMode", () => {
+  it("defaults to diplomatic for vague messages", () => {
+    expect(selectToneMode("Що думаєш про це?")).toBe("diplomatic");
+    expect(selectToneMode("hi")).toBe("diplomatic");
   });
 
-  it("allows only the configured founder Telegram id", () => {
-    const env = { OPENCLAW_FOUNDER_TG_USER_ID: "123" };
-
-    expect(isOpenClawFounderAllowed(123, env)).toBe(true);
-    expect(isOpenClawFounderAllowed(999, env)).toBe(false);
+  it("picks direct mode for incident keywords", () => {
+    expect(selectToneMode("у нас 5xx у проді")).toBe("direct");
+    expect(selectToneMode("CI впав, треба rollback")).toBe("direct");
+    expect(selectToneMode("incident у білінгу")).toBe("direct");
+    expect(selectToneMode("error у webhook")).toBe("direct");
   });
 
-  it("runs only in private Telegram chats", () => {
-    expect(isOpenClawPrivateChat("private")).toBe(true);
-    expect(isOpenClawPrivateChat("supergroup")).toBe(false);
-    expect(isOpenClawPrivateChat("group")).toBe(false);
+  it("picks diplomatic for strategy keywords", () => {
+    expect(selectToneMode("давай розглянути стратегію OpenClaw")).toBe(
+      "diplomatic",
+    );
+    expect(selectToneMode("які варіанти є для нашого OKR?")).toBe("diplomatic");
+    expect(selectToneMode("vision for product Q3")).toBe("diplomatic");
   });
 
-  it("creates an OpenClaw dispatcher payload from natural language", () => {
-    expect(
-      createOpenClawTask({
-        text: "перевір CI і дай план",
-        telegramUserId: 123,
-        telegramChatId: 123,
-        messageId: 88,
-      }),
-    ).toMatchObject({
-      source: "openclaw",
-      commandText: "review перевір CI і дай план",
-      action: "review",
-      specialist: "qa-release",
-      mode: "read-only",
-      requiresApproval: false,
-      telegram: {
-        userId: 123,
-        chatId: 123,
-        messageId: 88,
-      },
+  it("prefers direct over diplomatic when both keywords present", () => {
+    // Real-world: "стратегія по реакції на інцидент" — це incident-context.
+    expect(selectToneMode("стратегія по incident response")).toBe("direct");
+  });
+
+  it("is case-insensitive", () => {
+    expect(selectToneMode("INCIDENT")).toBe("direct");
+    expect(selectToneMode("STRATEGY")).toBe("diplomatic");
+  });
+});
+
+describe("OpenClaw buildSystemPromptInline", () => {
+  it("includes namespace + allowlist directives", () => {
+    const p = buildSystemPromptInline({
+      toneMode: "diplomatic",
+      maxIterations: 8,
+      founderHandle: "@sergeant",
+      trigger: "dm",
     });
+    expect(p).toContain("source='cofounder'");
+    expect(p).toContain("subscriptions");
+    expect(p).toContain("payments");
+    expect(p).toContain("ai_memories"); // listed under forbidden examples
+    expect(p).toContain("docs/strategy/");
+    expect(p).toContain("docs/decisions/");
   });
 
-  it("asks for approval before mutating OpenClaw tasks", async () => {
-    const dispatch = vi.fn();
-
-    const reply = await runOpenClawCommand(
-      {
-        text: "задеплой production",
-        chatType: "private",
-        telegramUserId: 123,
-        telegramChatId: 123,
-        messageId: 89,
-      },
-      {
-        env: { OPENCLAW_FOUNDER_TG_USER_ID: "123" },
-        dispatch,
-      },
-    );
-
-    expect(dispatch).not.toHaveBeenCalled();
-    expect(reply).toContain("Approval required.");
-    expect(reply).toContain("Source: openclaw");
-    expect(reply).toContain("/approve run задеплой production");
+  it("interpolates max-iter cap", () => {
+    const p = buildSystemPromptInline({
+      toneMode: "direct",
+      maxIterations: 12,
+      founderHandle: "@x",
+      trigger: "dm",
+    });
+    expect(p).toContain("12 Plan→Act→Reflect");
   });
 
-  it("dispatches approved OpenClaw tasks to n8n", async () => {
-    const dispatch = vi.fn().mockResolvedValue("accepted");
-
-    await expect(
-      runOpenClawCommand(
-        {
-          text: "/approve run задеплой production",
-          chatType: "private",
-          telegramUserId: 123,
-          telegramChatId: 123,
-          messageId: 90,
-        },
-        {
-          env: { OPENCLAW_FOUNDER_TG_USER_ID: "123" },
-          dispatch,
-        },
-      ),
-    ).resolves.toBe("accepted");
-
-    expect(dispatch).toHaveBeenCalledWith(
-      expect.objectContaining({
-        source: "openclaw",
-        action: "approve",
-        commandText: "approve run задеплой production",
-      }),
-      expect.any(Object),
-    );
+  it("uses different body for direct vs diplomatic", () => {
+    const direct = buildSystemPromptInline({
+      toneMode: "direct",
+      maxIterations: 8,
+      founderHandle: "@x",
+      trigger: "dm",
+    });
+    const diplomatic = buildSystemPromptInline({
+      toneMode: "diplomatic",
+      maxIterations: 8,
+      founderHandle: "@x",
+      trigger: "dm",
+    });
+    expect(direct).toContain("ops-mode");
+    expect(direct).toContain("Cut to the chase");
+    expect(diplomatic).toContain("Diplomatic, exploratory");
+    expect(direct).not.toContain("Diplomatic, exploratory");
   });
 
-  it("blocks unauthorized users and group chats before dispatch", async () => {
-    const dispatch = vi.fn();
-
-    await expect(
-      runOpenClawCommand(
-        {
-          text: "status agents",
-          chatType: "private",
-          telegramUserId: 999,
-          telegramChatId: 999,
-          messageId: 91,
-        },
-        {
-          env: { OPENCLAW_FOUNDER_TG_USER_ID: "123" },
-          dispatch,
-        },
-      ),
-    ).resolves.toBe("Access denied.");
-
-    await expect(
-      runOpenClawCommand(
-        {
-          text: "status agents",
-          chatType: "supergroup",
-          telegramUserId: 123,
-          telegramChatId: -100,
-          messageId: 92,
-        },
-        {
-          env: { OPENCLAW_FOUNDER_TG_USER_ID: "123" },
-          dispatch,
-        },
-      ),
-    ).resolves.toBe("OpenClaw is available only in a private founder DM.");
-
-    expect(dispatch).not.toHaveBeenCalled();
+  it("emits founder + trigger + tone metadata at the end", () => {
+    const p = buildSystemPromptInline({
+      toneMode: "direct",
+      maxIterations: 8,
+      founderHandle: "@dmytro",
+      trigger: "morning_ritual",
+    });
+    expect(p).toContain("FOUNDER: @dmytro");
+    expect(p).toContain("TRIGGER: morning_ritual");
+    expect(p).toContain("TONE_MODE: direct");
   });
 });
