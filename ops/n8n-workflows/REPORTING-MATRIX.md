@@ -81,6 +81,8 @@ push-ноти (WF-07/09/10) **не йдуть в supergroup**, а летять �
 | **17** | `17-github-pr-stale-alert.json`       | `#engineering`     | **P2** | Cron Mo–Fr 10:00   | devex    | WF-98 → `#meta` (no email)             |
 | **18** | `18-nightly-security-audit.json`      | `#incidents` ⁽³⁾   | **P1** | Cron 04:00 UTC     | security | WF-98 → `#meta` + email                |
 | **19** | `19-db-health-report.json`            | `#ops`             | **P1** | Cron Mon 07:00     | ops      | WF-98 → `#meta` (no email)             |
+| **20** | `20-agent-dispatcher.json`            | `#engineering`     | **P1** | Console webhook    | agents   | WF-98 → `#meta` (no email)             |
+| **30** | `30-ai-memory-daily-digest.json`      | `#digest`          | **P2** | Cron 09:05 Kyiv    | ops      | WF-98 → `#meta` (no email)             |
 | **60** | `60-growth-funnel-snapshot.json`      | `#growth`          | **P2** | Cron 02:30 Kyiv    | growth   | WF-98 → `#meta` (no email)             |
 | **63** | `63-growth-acquisition-snapshot.json` | `#growth`          | **P2** | Cron 02:35 Kyiv    | growth   | WF-98 → `#meta` (no email)             |
 | **98** | `98-error-handler.json`               | `#meta`            | **P0** | n8n error trigger  | ops      | _none_ (anti-loop, no `errorWorkflow`) |
