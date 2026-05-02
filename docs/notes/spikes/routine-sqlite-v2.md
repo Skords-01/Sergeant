@@ -102,12 +102,12 @@ layer below the typed Drizzle client.
 
 ## Tests (this PR)
 
-| Suite                                                            | Count | Coverage                                                                                                                                   |
-| ---------------------------------------------------------------- | ----- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| `packages/db-schema` schema-roundtrip (vitest)                   | 3     | Migration runs idempotently; tables present; outbox UNIQUE on `idempotency_key`.                                                           |
-| `apps/web/.../sqliteSpike/__tests__/repo.test.ts` (vitest)       | 9     | upsert / soft-delete / list lifecycle, outbox enqueue+pop+reject, cursor, LWW conflict guard, malformed payload rejection.                 |
-| `apps/web/.../sqliteSpike/__tests__/syncEngine.test.ts` (vitest) | 6     | push drain, push reject triage, pull apply + cursor persist, origin-device echo filter, multi-device end-to-end, LWW with stale pulled op. |
-| `apps/mobile/.../sqliteSpike/__tests__/repo.test.ts` (jest)      | 6     | Mirror of the web repo tests + the `createExpoSqliteRawClient` adapter forwarder.                                                          |
+| Suite                                                                                | Count | Coverage                                                                                                                                   |
+| ------------------------------------------------------------------------------------ | ----- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `packages/db-schema` schema-roundtrip (vitest)                                       | 3     | Migration runs idempotently; tables present; outbox UNIQUE on `idempotency_key`.                                                           |
+| `apps/web/src/modules/routine/lib/sqliteSpike/__tests__/repo.test.ts` (vitest)       | 9     | upsert / soft-delete / list lifecycle, outbox enqueue+pop+reject, cursor, LWW conflict guard, malformed payload rejection.                 |
+| `apps/web/src/modules/routine/lib/sqliteSpike/__tests__/syncEngine.test.ts` (vitest) | 6     | push drain, push reject triage, pull apply + cursor persist, origin-device echo filter, multi-device end-to-end, LWW with stale pulled op. |
+| `apps/mobile/src/modules/routine/lib/sqliteSpike/__tests__/repo.test.ts` (jest)      | 6     | Mirror of the web repo tests + the `createExpoSqliteRawClient` adapter forwarder.                                                          |
 
 All 24 tests pass locally on Node 22.12 / pnpm 9.15. Total runtime
 ≈3.5 s.
@@ -142,7 +142,7 @@ Recording method (planned):
 - **iOS Safari.** Test on a real device running iOS 16.4+ and on
   Capacitor mobile-shell (WKWebView). Existing OPFS-SAH detection
   fallback to `kvvfs` already covers older iOS — see
-  `apps/web/src/core/db/sqliteWasm.ts`.
+  `apps/web/src/core/db/sqlite.ts`.
 - **Multi-device.** Run two browser tabs (with distinct `originDeviceId`)
   - one mobile build pointing at the same staging account; toggle a
     habit on each; confirm `pullSince` converges and no manual conflict

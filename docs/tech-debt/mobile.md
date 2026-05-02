@@ -1,9 +1,9 @@
 # Mobile Tech Debt — Sergeant Mobile (Expo + Capacitor)
 
-> **Last validated:** 2026-05-02 by @claude. **Next review:** 2026-07-31.
+> **Last validated:** 2026-05-02 by @Skords-01. **Next review:** 2026-07-31.
 > **Status:** Active
 
-> **Оновлено 2026-05-01.** Перша версія registry: інвентаризація mobile-частини
+> **Оновлено 2026-05-02.** Перша версія registry: інвентаризація mobile-частини
 > монорепо, що раніше трекалась лише фрагментарно у `frontend.md` та audit-у
 > `docs/audits/2026-04-28-sergeant-comprehensive-audit.md`. Цей файл — living
 > burndown для `apps/mobile/**` (Expo 52 + RN 0.76) та `apps/mobile-shell/**`
@@ -56,7 +56,7 @@
 | Великі файли (>600 LOC)                  | **Середній**            | 5 production-файлів >600 LOC у mobile (`TransactionsPage` 1215, `CelebrationModal` 671, `PlanCalendar` 670, `Calendar` 628, `OnboardingWizard` 623). `TransactionsPage` — пріоритет 1.                 |
 | TODO/FIXME маркери                       | **Низький**             | 5 маркерів, усі типу `TODO(mobile-migration, Phase X)` / `TODO(phase-N)` — план відомий, чекає черги.                                                                                                  |
 | Observability (Sentry RN)                | **Середній**            | `apps/mobile/src/lib/observability.ts` готовий, `Sentry.init` гейтується `EXPO_PUBLIC_SENTRY_DSN`. Без DSN — runtime no-op. На staging/prod DSN ще не підключено.                                      |
-| Tests — Jest                             | **OK**                  | 94 test-файли, Jest 29. Skipped/`xit`/`xdescribe` — 0. Приклад flaky tests-у не виявлено у quick-grep (детальний test-stability audit — окремий PR).                                                   |
+| Tests — Jest                             | **OK**                  | 98 test-файлів, Jest 29. Skipped/`xit`/`xdescribe` — 0. Приклад flaky tests-у не виявлено у quick-grep (детальний test-stability audit — окремий PR).                                                  |
 | Capacitor coverage                       | **Середній**            | `apps/mobile-shell` має 5 unit-тестів (deepLink, parseDeepLink, platform, index, auth-storage). Boundary-/integration-тестів для нативних мостів (`pushNative`, `barcodeNative`) — 0.                  |
 | TypeScript-version drift                 | **Середній**            | `apps/mobile`: `typescript ~5.9.0`. `apps/web` + `apps/server`: `^6.0.3`. `apps/console`: `^5.7.2`. Mobile блокує bump через RN/Expo type compatibility — план: дочекатись Expo SDK 53.                |
 
@@ -203,7 +203,7 @@ forward-error у Sentry — закривається тим самим DSN-PR (�
 
 ## Tests — coverage & flakiness
 
-- **94 test-файли** у `apps/mobile` (Jest 29 + `jest-expo` preset).
+- **98 test-файлів** у `apps/mobile` (Jest 29 + `jest-expo` preset).
 - **Skipped tests:** 0 (`grep '\b(it|test|describe)\.skip\b\|\b(xit|xdescribe|xtest)\b'` → 0 matches).
 - **`AI-LEGACY:` у тестах:** 0.
 
