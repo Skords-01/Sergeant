@@ -1,11 +1,11 @@
 # Frontend Tech Debt — Sergeant Web
 
-> **Last validated:** 2026-05-03 by @Skords-01 (Phase 5 strict TS clean-up: `noImplicitOverride` + explicit `allowJs: false` on web/console + видалено redundant `apps/web/tsconfig.strict.json` / `tsconfig.noimplicitany.json`; `pnpm strict:coverage` = 13/13 пакетів = 100%). **Next review:** 2026-08-03.
+> **Last validated:** 2026-05-03 by @Skords-01 (Phase 5c: `allowJs` flipped to `false` у `packages/config/tsconfig.base.json` + explicit на всіх 4 апах + 8 пакетах — стрікт-coverage `allowJs` колонка тепер `—` для всіх 13 пакетів; PR [#1454](https://github.com/Skords-01/Sergeant/pull/1454)). Phase 5 (commit `a7a31703`) + Phase 5b (PR [#1448](https://github.com/Skords-01/Sergeant/pull/1448)) + Phase 5a finyk-pages `: any` cleanup (PR [#1452](https://github.com/Skords-01/Sergeant/pull/1452)) уже за плечима. `pnpm strict:coverage` = 13/13 пакетів = 100%. **Next review:** 2026-08-03.
 > **Status:** Active
 
 Аналіз кодової бази `apps/web/src` (649 source файлів, ~102k рядків — без тестів і `__tests__/`; 2026-05-03 re-audit).
 
-> **Оновлено 2026-05-02.** Sync з реальним станом коду після кількох wave-ів decomposition:
+> **Оновлено 2026-05-03.** Sync з реальним станом коду після кількох wave-ів decomposition:
 > Розділ 2 (localStorage burndown) — TODO-allowlist у `eslint.config.js` скорочено з 41 до **17 файлів**
 > (нові хвилі міграцій у `routine`/`finyk`/`onboarding`/`chatActions`/`insights`/`recommendations`).
 > Розділ 4 (великі файли) — у `apps/web/src` залишилось **17 файлів >600 LOC** (раніше 22);
@@ -116,7 +116,7 @@ greppable в одному місці.
 плутало IDE auto-imports і нових контриб'юторів.
 
 **Зараз:** виконано codemod
-[`scripts/strip-js-extensions.mjs`](../../scripts/strip-js-extensions.mjs) —
+[`scripts/codemods/strip-js-extensions/script.mjs`](../../scripts/codemods/strip-js-extensions/script.mjs) —
 видалив `.js`/`.jsx` з 436 first-party-імпортів у 180 файлах. Зачіпає тільки
 шляхи, що починаються з `.`, `@shared/`, `@finyk/`, `@fizruk/`, `@routine/`,
 `@nutrition/` або `@sergeant/`. Зовнішні пакети (`@zxing/...`) спеціально
@@ -233,10 +233,10 @@ Codemod ідемпотентний: повторний запуск дасть `
 > (43 — попередній вміст рядка статусу хаба). Усі < 200 LOC. Серед seeded об'єктів всі
 > промарковані `demo: true`, щоб `cleanupDemoData` коректно стрипнув їх на first-boot. Count 18 → 17.
 >
-> **Скоуп таблиці нижче** — лише `apps/web/src`. Mobile (`apps/mobile/src/modules/finyk/pages/Transactions/TransactionsPage.tsx` 1215),
+> **Скоуп таблиці нижче** — лише `apps/web/src`. Mobile (`apps/mobile/src/components/ui/CelebrationModal.tsx` 671 — найбільший після [#1453](https://github.com/Skords-01/Sergeant/pull/1453); раніше тут лідирував `TransactionsPage.tsx` 1215, тепер декомпозовано на 14 модулів, max 523 LOC),
 > packages (`packages/shared/src/lib/assistantCatalogue.ts` 1133, `schemas/api.ts` 986,
 > `openapi/routes.ts` 837), server (`modules/chat/chat.ts` 783) — трекаються окремо
-> (mobile tracker — TODO, див. `docs/audits/2026-04-28-sergeant-comprehensive-audit.md` P2-3).
+> (mobile tracker — `docs/tech-debt/mobile.md`).
 
 | Рядків | Файл                                                  |
 | ------ | ----------------------------------------------------- |
@@ -281,9 +281,9 @@ PR на кожен файл; великі data-файли (`seedFoodsUk.ts`) —
 
 ---
 
-### 6. Тестове покриття — 160 test файлів на 649 source
+### 6. Тестове покриття — 174 test файлів на 649 source
 
-~25% файлів мають тести (re-audit 2026-05-03). Критичні модулі без тестів / з тонким покриттям
+~27% файлів мають тести (re-audit 2026-05-03 → інкремент). Критичні модулі без тестів / з тонким покриттям
 (актуально):
 
 - `HubReports.tsx` (638 рядків, складна агрегація)
@@ -294,8 +294,17 @@ PR на кожен файл; великі data-файли (`seedFoodsUk.ts`) —
 (`HubDashboard.test.tsx`: module previews / empty states, inactive modules,
 quick actions, callback routing, weekly digest footer).
 
-**Fix:** пріоритетно додати тести на recommendation engine, reports
-aggregation, cloud sync flows.
+**Зроблено 2026-05-03:** додано unit-тести для cloud-sync pure utilities
+(`errorNormalizer`, `conflict/parseDate`, `conflict/pushSuccess`,
+`engine/buildPayload`, `engine/retryAsync`, `queue/collectQueued`,
+`state/{versions,migration,events,moduleData}`) і для
+`recommendations/financeContext` (LS shapes, `thisMonthTx` filtering,
+`categorySpend` legacy + canonical, manual expenses, splits, budgets/limits).
++88 cloud-sync + 21 financeContext = +109 тестів у 11 нових файлах.
+
+**Fix:** додати тести на reports aggregation (`HubReports.tsx` UI),
+залишок recommendation engine (`useCoachInsight`, `useWeeklyDigest`),
+а також engine/{pull,upload,replay} cloud-sync wrappers.
 
 ---
 
@@ -409,7 +418,7 @@ production surface. Phase 4 (PR4) флипнув `strict: true` і видали�
 
 **Phase 1 деталі (PR-6.A):**
 
-- Додано `apps/web/tsconfig.strict.json` — extends основний tsconfig,
+- Додано `tsconfig.strict.json` у `apps/web/` — extends основний tsconfig,
   додає `strictNullChecks: true`, includes тільки `src/shared/**`.
 - Typecheck script оновлено: `tsc -p tsconfig.strict.json --noEmit` додано
   до pipeline.
@@ -587,13 +596,43 @@ modules/fizruk/components/workouts/WorkoutJournalSection`;
   до увімкнення `noImplicitOverride` через свою власну природу
   (10 викликів `handle.client.all<…>()` обернуто в `await`, бо
   `SqliteMigrationClient.all()` має сигнатуру `R[] | Promise<R[]>`).
-* `apps/server/tsconfig.json` (`allowJs: true`) і
+* ~~`apps/server/tsconfig.json` (`allowJs: true`) і
   `apps/mobile-shell/tsconfig.json` (наслідує `true`) залишено as-is —
-  вони навмисно тримають JS-файли (`migrate.mjs`, build helpers).
+  вони навмисно тримають JS-файли (`migrate.mjs`, build helpers).~~
+  **Закрито у Phase 5c (PR #1454):** обидва тепер на `allowJs: false`.
+  `apps/server/tsconfig.json` має `migrate.mjs` у `include`, але під
+  `allowJs: false` `.mjs`-файли не обробляються `tsc` (тільки `.ts`),
+  тож build-helper не ламається — `pnpm --filter @sergeant/server typecheck`
+  зелений. Build-pipeline не торкається — `migrate.mjs` запускається
+  напряму через node, без TS-toolchain-у.
+
+**Phase 5c — `allowJs` workspace-wide flip ([PR #1454](https://github.com/Skords-01/Sergeant/pull/1454), 2026-05-03):**
+
+- `packages/config/tsconfig.base.json` — `allowJs: true → false`
+  (single source of truth). Раніше base дозволяв JS-файлам неявно
+  потрапляти у TS-pipeline через успадкування — `pnpm strict:coverage`
+  на цьому показував `allowJs: ⚠️` для всіх пакетів окрім `apps/web`
+  / `apps/console`. Тепер base стрімкий.
+- Explicit `allowJs: false` + `checkJs: false` додано на всі 12
+  app/package tsconfig-и (`apps/server`, `apps/mobile`, `apps/mobile-shell`,
+  `packages/{api-client,shared,db-schema,insights,finyk-domain,fizruk-domain,
+nutrition-domain,routine-domain}`). Для `apps/server` — це flip з
+  `true → false`; для решти — додавання прапора, бо вони раніше
+  наслідували `true` з base.
+- `apps/mobile/tsconfig.json` — додано 2 нові `paths` mappings:
+  `@sergeant/design-tokens/tokens` → `index.d.ts`, `@sergeant/design-tokens/mobile`
+  → `mobile.d.ts`. Раніше legacy glob `@sergeant/design-tokens/*` мапив
+  ці subpath-імпорти на runtime `tokens.js`/`mobile.js`-файли, які під
+  `allowJs: true` мовчки типувалися як `any`. Під `allowJs: false`
+  TS падав з TS7016 (Could not find a declaration file). Path-mapping
+  на `.d.ts` дає типи без зайвої магії.
+- Регресія unblocked: `pnpm strict:coverage` тепер показує колонку
+  `allowJs: —` (тобто прапор не виставлений у `true`) для всіх 13
+  пакетів. 100 % strict-coverage без жодного `⚠️`.
 
 **Phase 5 cleanup — діагностичні tsconfig-и видалено (2026-05-03):**
 
-- `apps/web/tsconfig.strict.json` і `apps/web/tsconfig.noimplicitany.json` —
+- `tsconfig.strict.json` і `tsconfig.noimplicitany.json` (обидва у `apps/web/`) —
   обидва extends-или main `tsconfig.json` (який тепер уже `strict: true`)
   і додавали `strictNullChecks: true` / `noImplicitAny: true` лише на
   суб-набір директорій. Після Phase 4 ці прапори вже глобально активні
@@ -629,6 +668,40 @@ in-place перед initiation Phase 4:
   явно, зливаємо через `cn()`, проброс `onBlur` окремо. Це і `TS2783`-фікс,
   і реальний стилевий регрес — інпути пароля втрачали базові стилі при
   validation-error.
+
+---
+
+### 11.1 Що ще лишилось до «ідеального» стрікту
+
+Канонічний `strict: true` + `noImplicitOverride` + `allowJs: false` —
+13/13 (100 %), enforced. Але «ідеально» — ні. Backlog opt-in-прапорів
+та залишкових `as unknown as`-каст:
+
+| #   | Прапор / патерн                                                                                                                  | Очікуваний impact                                                                                                             | Статус     |
+| --- | -------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| 1   | `noUncheckedIndexedAccess` (`arr[i]` стає `T \| undefined`)                                                                      | 100–300 нових помилок (baseline-experiment у плані як окремий PR (b))                                                         | 🟡 next    |
+| 2   | `exactOptionalPropertyTypes` (`?:` не дозволяє явний `\| undefined`)                                                             | ~50–150 помилок (зокрема `MonoAccount.balance?: number` після Phase 5b повинен залишитись валідним)                           | ⏳ pending |
+| 3   | `noImplicitReturns` + `noFallthroughCasesInSwitch`                                                                               | ~10–30 помилок, переважно у chat-actions handler-ах                                                                           | ⏳ pending |
+| 4   | `noPropertyAccessFromIndexSignature` (`.foo` на index-signature → `["foo"]`)                                                     | ~50 помилок, переважно у `Record<string, X>`-сервісах                                                                         | ⏳ pending |
+| 5   | `noUnusedLocals` / `noUnusedParameters` (зараз ESLint-enforced, не TS-enforced)                                                  | низький — ESLint вже ловить, перенести у TS дає uniformity                                                                    | ⏳ pending |
+| 6   | `as unknown as X` у тестах (~50 файлів — mock-каст `vi.fn()`, fake `PointerEvent`, тощо)                                         | mid — нормально для test-коду, але формально strict-violation. Потенційно — типізовані mock-helper-и + `vitest-mock-extended` | ⏳ pending |
+| 7   | `: any` у тест-only allowlisted файлах (e.g. `apps/web/src/core/lib/lazyImport.ts:33-39 type AnyComponent = ComponentType<any>`) | low — навмисно з коментарем, але формально lint-vio                                                                           | ⏳ pending |
+
+**Послідовність розгортання (план):**
+
+- **Phase 6a (наступний PR (b)):** baseline-experiment з `noUncheckedIndexedAccess`.
+  Флипнути в base, виміряти error count, документувати у tech-debt §11.1
+  - сформувати per-module roll-out план (як для Phase 4). Ймовірно
+    вийде 3–5 PR-ів rollout (per-module).
+- **Phase 6b:** `exactOptionalPropertyTypes` baseline (схожа стратегія).
+- **Phase 6c:** discrete `noImplicitReturns` + `noFallthroughCasesInSwitch`
+  - `noPropertyAccessFromIndexSignature` — менший impact, можна разом.
+- **Phase 6d:** `noUnusedLocals`/`noUnusedParameters` flip (тривіально
+  — ESLint вже ловить).
+- **Phase 7 (опційно):** mock-helper-и + `vitest-mock-extended` для
+  закриття `as unknown as` у тестах.
+
+Кожна фаза = окремий PR з baseline-метрикою у описі.
 
 ---
 
