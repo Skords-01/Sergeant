@@ -929,7 +929,7 @@
     "/api/nutrition/backup-download": {
       "post": {
         "summary": "Отримати останній зашифрований backup nutrition-blob",
-        "description": "Token-authenticated через header `x-token`. Повертає 404, якщо для наданого токена бекапів ще немає. Роут під `requireSession()` — потрібна активна сесія ЧИ Bearer-токен НА ДОДАЧУ до запитуваного `x-token`.",
+        "description": "Роут під `requireSession()` — потрібна активна сесія або Bearer-токен. Storage key bind-иться до `req.user.id` через HMAC-SHA256(`NUTRITION_BACKUP_KEY_SECRET`, `userId|x-token`), тому `x-token` лише namespace-ить кілька бекапів одного юзера (наприклад, по пристроях) і НЕ використовується для авторизації. Повертає 404, якщо для пари (userId, x-token) бекапів ще немає.",
         "tags": [
           "nutrition"
         ],
@@ -948,10 +948,10 @@
             "schema": {
               "type": "string",
               "minLength": 1,
-              "description": "Опаковий токен, який хешується для формування імені файлу бекапу."
+              "description": "Опаковий namespace-токен для розрізнення кількох бекапів одного юзера (наприклад, per device)."
             },
             "required": true,
-            "description": "Опаковий токен, який хешується для формування імені файлу бекапу."
+            "description": "Опаковий namespace-токен для розрізнення кількох бекапів одного юзера (наприклад, per device)."
           }
         ],
         "responses": {
@@ -1953,6 +1953,44 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/MonoBackfillResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — потрібна активна сесія.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/mono/backfill-progress": {
+      "get": {
+        "summary": "Поточний стан per-user backfill job-а (для UI індикатора)",
+        "tags": [
+          "mono"
+        ],
+        "security": [
+          {
+            "cookieAuth": []
+          },
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Snapshot поточного стану backfill-у (idle/running/completed/failed).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MonoBackfillProgress"
                 }
               }
             }
@@ -5275,6 +5313,87 @@
         ],
         "additionalProperties": false,
         "description": "Відповідь POST /api/mono/backfill — `status: 'started'` literal."
+      },
+      "MonoBackfillProgress": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "idle",
+              "running",
+              "completed",
+              "failed"
+            ]
+          },
+          "startedAt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "completedAt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "accountsTotal": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "accountsProcessed": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "currentAccountId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "transactionsProcessed": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "lastError": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "status",
+          "startedAt",
+          "completedAt",
+          "accountsTotal",
+          "accountsProcessed",
+          "currentAccountId",
+          "transactionsProcessed",
+          "lastError"
+        ],
+        "additionalProperties": false,
+        "description": "Відповідь GET /api/mono/backfill-progress — поточний стан per-user backfill job."
       },
       "WaitlistSubmitResponse": {
         "type": "object",
