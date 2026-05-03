@@ -230,7 +230,7 @@ CREATE INDEX idx_tg_alert_acks_unacked
 - TLS-cert на Railway — already provided via Railway edge.
 - Telegram retry-contract: must respond 200 за <60s, ідеально <1s. Mitigation: grammy `webhookCallback("http")` повертає 200 одразу після диспатчу update-у в bot middleware (`ApprovalStore` writes — fire-and-forget).
 - Single-active-webhook constraint: тільки один URL за токеном; на long-poll-фолбек boot робить `deleteWebhook` defensively.
-- **Initial migration race (one-shot):** при першому переході long-poll → webhook старий контейнер у graceful-shutdown зробив один `getUpdates`, який неявно очистив webhook на Telegram-side, попри те що новий контейнер вже відзвітував успішний `setWebhook`. Workaround — повторний `setWebhook` curl-ом + redeploy. Подальші webhook → webhook redeploy-и стабільні. Деталі — ADR-0041 §5. Hardening winесений у W4.1 нижче.
+- **Initial migration race (one-shot):** при першому переході long-poll → webhook старий контейнер у graceful-shutdown зробив один `getUpdates`, який неявно очистив webhook на Telegram-side, попри те що новий контейнер вже відзвітував успішний `setWebhook`. Workaround — повторний `setWebhook` curl-ом + redeploy. Подальші webhook → webhook redeploy-и стабільні. Деталі — ADR-0041 §5. Hardening винесений у W4.1 нижче.
 
 **Acceptance (verified):**
 
