@@ -8,7 +8,7 @@
 > **Оновлено 2026-05-03.** Sync з реальним станом коду після кількох wave-ів decomposition:
 > Розділ 2 (localStorage burndown) — TODO-allowlist у `eslint.config.js` скорочено з 41 до **17 файлів**
 > (нові хвилі міграцій у `routine`/`finyk`/`onboarding`/`chatActions`/`insights`/`recommendations`).
-> Розділ 4 (великі файли) — у `apps/web/src` залишилось **17 файлів >600 LOC** (раніше 22);
+> Розділ 4 (великі файли) — у `apps/web/src` залишилось **16 файлів >600 LOC** (раніше 22; lookup-таблиця нижче синхронізована з `wc -l` 2026-05-03);
 > декомпозовано `Transactions.tsx`, `HubSearch.tsx`, `Budgets.tsx`, `Overview.tsx`, `DesignShowcase.tsx`,
 > `ActiveWorkoutPanel.tsx`, `core/App.tsx` (645 → 224 LOC, винесено
 > `app/{appPaths,RedirectTo,useAppEffects,StandaloneRoutes,HubHomeView,ActiveModuleView}.{ts,tsx}`),
@@ -139,7 +139,7 @@ Codemod ідемпотентний: повторний запуск дасть `
 
 ---
 
-### 4. Великі файли (>600 рядків) — 17 файлів (тільки `apps/web/src`)
+### 4. Великі файли (>600 рядків) — 16 файлів (тільки `apps/web/src`)
 
 > `finyk/pages/Assets.tsx` (раніше 1147 рядків) декомпозовано на
 > `useAssetsState.ts` (259), `AssetsForm.tsx` (376), `AssetsTable.tsx` (511),
@@ -363,24 +363,29 @@ legitimate (calendar headers / hero kickers, з обґрунтуванням), �
 
 ---
 
-### 9. `any` типи — 1 trackable production-файл + 3 by-design loose
+### 9. `any` типи — ✅ 0 trackable production-`any` + 3 by-design loose
 
 **Production (оновлено 2026-05-03):** попередня таблиця з 10 файлів
 (`modules/finyk/pages/{transactions,budgets}/**` + 2 fizruk-decomposition
 leftovers) **повністю закрита** Phase 5a finyk-pages cleanup-ом
 ([PR #1452](https://github.com/Skords-01/Sergeant/pull/1452), commit
 `25cc4c05`). Перевірити можна `rg ": any\b|<any>" apps/web/src/modules/finyk/pages`
-— нуль матчів. Аналогічно по `apps/web/src/modules/fizruk`. Останній
-залишковий `any` у finyk-аналітиці —
-`apps/web/src/modules/finyk/hooks/useAnalytics.ts` — також знятий
-(`AnyTx → Transaction / TxSplitsMap / Category` через канонічні типи з
-`@sergeant/finyk-domain/domain/types`); див. цей PR.
+— нуль матчів. Аналогічно по `apps/web/src/modules/fizruk`. Залишкові
+`any` у finyk-hooks — `useAnalytics.ts` (PR #1475: `AnyTx → Transaction
+/ TxSplitsMap / Category`) і `usePrivatbank.ts` (цей PR: `PrivatTx →
+PrivatTransaction / PrivatAccount` + явний `PrivatTxApiRow` interface) —
+**закриті**.
 
-**Trackable follow-up (1 файл):**
+> Поточний стан: `rg "type \w+ = any|: any\b|as any" apps/web/src
+--glob '!*.test.*' --glob '!*.stories.*'` → лише навмисні
+> `Record<string, any>` із обґрунтуваннями (див. таблицю нижче)
+> та `ComponentType<any>` у `core/lib/lazyImport.ts`.
 
-| Файл                                         | Що залишилось                        | Чому ще `any`                                                                                                                                                                                                                                                                                                                                             |
-| -------------------------------------------- | ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `modules/finyk/hooks/usePrivatbank.ts:65–66` | `type PrivatTx = any;` (cache shape) | PrivatBank API повертає 10+ полів (`SUM`/`TRANDATE`/`OSND`/`AUT_CNTR_NAM`/`REF`/`DOC_NUMBER`/`AUT_MY_ACC`/…) — частково задокументовано лише на сайті PB. Правильний фікс — описати інтерфейс `PrivatTxApiRow` поряд з `normalizePrivatTransaction(...)` (там вже є частковий `Record<string, unknown> &` shape) і прибрати `PrivatTx`-alias. Окремий PR. |
+**Trackable follow-up:** немає. Якщо новий `any` з'явиться у
+production-сурфейсі — додати ESLint-правило `@typescript-eslint/no-explicit-any`
+з error-severity у `apps/web/src/modules/**` і `apps/web/src/core/**` буде
+тривіальним наступним кроком (зараз правило warn, бо by-design loose
+patterns нижче приховували signal від real production drift).
 
 **By-design loose `Record<string, any>` (3 файли, з in-line обґрунтуваннями):**
 
