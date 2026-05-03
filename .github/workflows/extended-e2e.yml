@@ -50,6 +50,11 @@ jobs:
           --health-retries 5
 
     env:
+      # NODE_ENV=test is mandatory: the server hard-blocks startup if
+      # AI_QUOTA_DISABLED is truthy alongside NODE_ENV=production /
+      # RAILWAY_*. Without this var the workflow would fail to boot the
+      # API server (see assertStartupEnv in apps/server/src/env/env.ts).
+      NODE_ENV: test
       DATABASE_URL: postgresql://hub:hub@127.0.0.1:5432/hub
       BETTER_AUTH_SECRET: smoke_test_better_auth_secret_32_chars_min
       AI_QUOTA_DISABLED: "1"
@@ -61,7 +66,7 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
 
       # pnpm/action-setup v6.0.3 (SHA-pinned for supply-chain hardening)
-      - uses: pnpm/action-setup@903f9c1a6ebcba6cf41d87230be49611ac97822e
+      - uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d
 
       # actions/setup-node v6.4.0 (SHA-pinned for supply-chain hardening)
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
