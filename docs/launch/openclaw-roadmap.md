@@ -392,14 +392,22 @@ interception (`createOpenClawToolExecutor` детектить write-tool name �
 - Approval expired (>10 min) / unknown id → callback handler відповідає
   "Approval expired or unknown" і видаляє кнопки.
 
-**Phase 4.5 (deferred):**
+**Phase 4.5 (shipped — ADR-0037):**
 
-- DB-persistent `openclaw_write_audit` table — щоб approve/reject не
-  зник при рестарті console-у. Зараз — `console.log("[openclaw]
-write-tool executed/rejected", ...)` як audit-trail.
+- `openclaw_write_audit` DB-таблиця — append-only лог approve/reject/executed
+  transitions, переживає рестарт console-у. Console callback handler пише
+  через `POST /api/internal/openclaw/write-audit/log`.
+- `/audit [tool] [action] [limit]` slash-команда у DM — останні 20 (default)
+  write-actions з опційними фільтрами по tool-name + action.
+- Persona stamping: записуємо `persona` (cofounder | ops | growth | eng |
+  finance) у audit-row для post-mortem queries за specialist-у.
+
+**Phase 4.5 follow-ups (deferred):**
+
 - "Approve all" мета-кнопка для batch-approval-у одного turn-у.
 - Diff-preview для `commit_to_strategy_doc` (зараз — тільки path + summary
   у card-body).
+- DB-persistence pending approvals (Phase 5 multi-operator).
 
 ---
 
