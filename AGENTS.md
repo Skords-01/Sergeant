@@ -82,14 +82,14 @@ Snapshot tests in `apps/server/src/modules/*` lock the shapes — if the snapsho
 
 ### 2. RQ keys: only via centralized factories
 
-All `useQuery`/`useMutation` keys come from `apps/web/src/shared/lib/queryKeys.ts`. Factories: `finykKeys`, `nutritionKeys`, `hubKeys`, `coachKeys`, `digestKeys`, `pushKeys`.
+All `useQuery`/`useMutation` keys come from `apps/web/src/shared/lib/api/queryKeys.ts`. Factories: `finykKeys`, `nutritionKeys`, `hubKeys`, `coachKeys`, `digestKeys`, `pushKeys`.
 
 ```ts
 // ❌ BAD — drift; impossible to bulk-invalidate; typos compile
 useQuery({ queryKey: ["finyk", "transactions", accountId], ... });
 
 // ✅ GOOD — typed factory, supports bulk invalidate via `finykKeys.all`
-import { finykKeys } from "@shared/lib/queryKeys";
+import { finykKeys } from "@shared/lib/api/queryKeys";
 useQuery({
   queryKey: finykKeys.monoTransactionsDb(from, to, accountId),
   ...
