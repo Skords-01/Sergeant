@@ -80,7 +80,7 @@
 
 **Status:** roadmapped (Phase 2.A в [openclaw-roadmap.md §3 Phase 2](./openclaw-roadmap.md)).
 **Pain закриває:** P1.
-**ADR-кандидат:** ADR-0038 ("OpenClaw proactive cron-rituals").
+**ADR-кандидат:** ADR-0039 ("OpenClaw proactive cron-rituals").
 
 **Що:** новий cron (Railway scheduler або n8n WF-101) → `POST /api/internal/openclaw/ritual/morning` → console DM-постить 5-8 рядків:
 
@@ -110,9 +110,9 @@
 
 ### 3.2. Acknowledge-кнопка на P0/P1 alert-ах + 15-min escalation
 
-**Status:** new (не в roadmap-і).
+**Status:** **ack-button + escalation cron live** (Wave 3 PR-1 + PR-2). PR-1 = ADR-0038 + `tg_alert_acks` + 4 endpoint-и live. PR-2 = WF-04 wired як reference (Build alert payload → `/api/internal/alerts/post` → 3-кнопковий inline-keyboard) + WF-104 callback router + WF-103 5-min escalation cron. Решта 17 broadcast workflows (WF-03/15/18/22/...) дотягують ack-row у mechanical follow-up sub-PR-у — pattern зафіксований у WF-04. OpenClaw `/alerts pending` slash залишається у W3 PR-3.
 **Pain закриває:** P2.
-**ADR-кандидат:** ADR-0040 ("Alert acknowledgement + escalation").
+**ADR-кандидат:** [ADR-0038](../adr/0038-tg-alert-acks-and-escalation.md) ("Alert acknowledgement + escalation").
 
 **Що:** WF-03 / WF-15 / WF-18 / WF-22 шлють alert у топік → `@Sergeant_alert_bot` додає inline-keyboard:
 
@@ -240,8 +240,8 @@ CREATE INDEX idx_tg_alert_acks_unacked
 
 | ID   | Ідея                                                               | Pain | Effort | ADR  | Wave  |
 | ---- | ------------------------------------------------------------------ | ---- | ------ | ---- | ----- |
-| A.1  | Phase 2.B: Friday weekly + monthly OKR (бродкаст у `📊 Дайджести`) | P1   | M      | 0038 | W3    |
-| A.2  | Phase 3: `/plan`, `/analyze`, `/okr` strategic primitives          | —    | L      | 0039 | Later |
+| A.1  | Phase 2.B: Friday weekly + monthly OKR (бродкаст у `📊 Дайджести`) | P1   | M      | 0039 | W3    |
+| A.2  | Phase 3: `/plan`, `/analyze`, `/okr` strategic primitives          | —    | L      | 0040 | Later |
 | A.3  | "Approve all" мета-кнопка для batch-turn approvals                 | —    | M      | —    | Later |
 | A.4  | Diff-preview для `commit_to_strategy_doc`                          | —    | M      | —    | Later |
 | A.5  | Voice notes input (Whisper transcription)                          | —    | M      | —    | Later |
@@ -281,22 +281,22 @@ CREATE INDEX idx_tg_alert_acks_unacked
 
 ## 5. Wave-based PR plan
 
-| Wave  | PR  | Item(s)                                                   | Effort | ADR       |
-| ----- | --- | --------------------------------------------------------- | ------ | --------- |
-| W1    | (a) | §3.3 (`/audit since=` + `--csv`)                          | S      | —         |
-| W1    | (b) | §3.4 (WF-15 Bad request fix)                              | S      | —         |
-| W2    | (c) | §3.1 (Phase 2.A morning ritual)                           | M      | 0038      |
-| W2    | (d) | C.2 (Sentry breadcrumbs у tool-calls)                     | XS     | —         |
-| W3    | (e) | §3.2 (alert ack-button + escalation)                      | M      | 0040      |
-| W3    | (f) | A.1 (Phase 2.B Friday weekly + OKR)                       | M      | 0038      |
-| W3    | (g) | B.1 (alert dedup / occurrence-counter)                    | M      | —         |
-| W4    | (h) | §3.5 (webhook delivery)                                   | M      | 0041      |
-| W4    | (i) | A.6 + A.7 (`/help` + persona quick-row)                   | S      | —         |
-| Later | …   | A.2 (Phase 3), A.3, A.4, A.5, A.8, A.10, A.11, A.12, A.13 | varies | 0039+     |
-| Later | …   | B.2..B.8                                                  | varies | varies    |
-| Later | …   | C.1, C.3, C.4, C.5                                        | varies | 0042/0043 |
+| Wave  | PR  | Item(s)                                                                | Effort | ADR       |
+| ----- | --- | ---------------------------------------------------------------------- | ------ | --------- |
+| W1    | (a) | §3.3 (`/audit since=` + `--csv`)                                       | S      | —         |
+| W1    | (b) | §3.4 (WF-15 Bad request fix)                                           | S      | —         |
+| W2    | (c) | §3.1 (Phase 2.A morning ritual)                                        | M      | 0039      |
+| W2    | (d) | C.2 (Sentry breadcrumbs у tool-calls)                                  | XS     | —         |
+| W3    | (e) | §3.2 (alert ack-button + escalation) — foundation + WF-04/103/104 live | M      | 0038      |
+| W3    | (f) | A.1 (Phase 2.B Friday weekly + OKR)                                    | M      | 0039      |
+| W3    | (g) | B.1 (alert dedup / occurrence-counter)                                 | M      | —         |
+| W4    | (h) | §3.5 (webhook delivery)                                                | M      | 0041      |
+| W4    | (i) | A.6 + A.7 (`/help` + persona quick-row)                                | S      | —         |
+| Later | …   | A.2 (Phase 3), A.3, A.4, A.5, A.8, A.10, A.11, A.12, A.13              | varies | 0040+     |
+| Later | …   | B.2..B.8                                                               | varies | varies    |
+| Later | …   | C.1, C.3, C.4, C.5                                                     | varies | 0042/0043 |
 
-**Total для топ-4 хвиль:** ~12 робочих днів, 9 PR-ів, 3 нові ADR-и (0038, 0040, 0041).
+**Total для топ-4 хвиль:** ~12 робочих днів, 9 PR-ів, 3 нові ADR-и (0038, 0039, 0041).
 
 ---
 

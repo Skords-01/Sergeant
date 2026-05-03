@@ -319,10 +319,11 @@ export default [
     },
   },
   // Mobile cloud-sync guardrail — `useLocalStorage` must not be called
-  // with a key tracked in `apps/mobile/src/sync/config.ts → SYNC_MODULES`,
-  // because MMKV writes bypass JS and would silently break cloud sync.
-  // The fix is to call `useSyncedStorage` from `@/sync/useSyncedStorage`
-  // instead, which mirrors the write into the sync queue.
+  // with a key tracked in `packages/shared/src/sync/modules.ts → SYNC_MODULES`
+  // (the cross-platform registry, PR #007), because MMKV writes bypass
+  // JS and would silently break cloud sync. The fix is to call
+  // `useSyncedStorage` from `@/sync/useSyncedStorage` instead, which
+  // mirrors the write into the sync queue.
   {
     files: ["apps/mobile/**/*.{js,jsx,ts,tsx}"],
     ignores: [
@@ -354,13 +355,13 @@ export default [
       "apps/web/src/**/__tests__/**",
       // Storage primitives — these are the wrappers everyone else
       // should call into.
-      "apps/web/src/shared/lib/storage.ts",
-      "apps/web/src/shared/lib/storageManager.ts",
-      "apps/web/src/shared/lib/storageQuota.ts",
-      "apps/web/src/shared/lib/typedStore.ts",
-      "apps/web/src/shared/lib/createModuleStorage.ts",
-      "apps/web/src/shared/lib/weeklyDigestStorage.ts",
-      "apps/web/src/shared/lib/perf.ts",
+      "apps/web/src/shared/lib/storage/storage.ts",
+      "apps/web/src/shared/lib/storage/storageManager.ts",
+      "apps/web/src/shared/lib/storage/storageQuota.ts",
+      "apps/web/src/shared/lib/storage/typedStore.ts",
+      "apps/web/src/shared/lib/storage/createModuleStorage.ts",
+      "apps/web/src/shared/lib/storage/weeklyDigestStorage.ts",
+      "apps/web/src/shared/lib/ui/perf.ts",
       "apps/web/src/shared/hooks/useLocalStorageState.ts",
       "apps/web/src/shared/hooks/useDarkMode.ts",
       "apps/web/src/shared/hooks/usePushNotifications.ts",
@@ -500,13 +501,13 @@ export default [
   },
   // React Query keys factory guardrail — AGENTS.md hard rule #2: all
   // `queryKey` / `mutationKey` values must come from the centralized
-  // factory in `apps/web/src/shared/lib/queryKeys.ts`. Inline array
+  // factory in `apps/web/src/shared/lib/api/queryKeys.ts`. Inline array
   // literals break bulk invalidation and let typos compile silently.
   // The factory file itself is exempt (it defines the arrays).
   {
     files: ["apps/web/src/**/*.{ts,tsx}"],
     ignores: [
-      "apps/web/src/shared/lib/queryKeys.ts",
+      "apps/web/src/shared/lib/api/queryKeys.ts",
       "apps/web/src/**/*.test.{ts,tsx}",
       "apps/web/src/**/__tests__/**",
     ],

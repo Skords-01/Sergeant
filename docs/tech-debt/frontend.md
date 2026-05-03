@@ -22,8 +22,14 @@
 > `Body/{storage,trendUtils,ScoreButton,CollapsibleTrendCard,JournalEntryCard,JournalSection}`),
 > `core/onboarding/seedDemoData.ts` (897 → 131 LOC, винесено
 > `seedDemoData/{keys,utils,seedFinyk,seedFizruk,seedRoutine,seedNutrition,seedHubQuickStats}.ts`).
-> Розділ 9 (`any` типи) — production тепер містить **10 файлів** із `: any`
-> (7 у finyk sub-pages + `BudgetsGoalsSection.tsx` + 2 нові у fizruk після decomposition).
+> Розділ 9 (`any` типи) — попередня таблиця з 10 файлів **повністю закрита**
+> (Phase 5a finyk-pages [#1452](https://github.com/Skords-01/Sergeant/pull/1452)
+> зачистила 8 sub-page-ів `transactions/` + `budgets/`; fizruk-decomposition
+> leftovers нормалізовано через локальні interface-и). Залишилось **1**
+> production-файл як trackable follow-up (`modules/finyk/hooks/usePrivatbank.ts` —
+> зовнішній PrivatBank API без зафіксованої схеми) + **3** свідомо
+> залишених `Record<string, any>` патерни з in-line обґрунтуваннями
+> (legacy localStorage shape-и + `ComponentType<any>` для `lazyImport`).
 > `no-strict-bypass` — allowlist на 9 production-файлів **обнулено**: усі call-сайти мігровані,
 > правило `error` тепер працює без винятків на `apps/server/src/**` + `apps/web/src/**`.
 
@@ -233,7 +239,7 @@ Codemod ідемпотентний: повторний запуск дасть `
 > (43 — попередній вміст рядка статусу хаба). Усі < 200 LOC. Серед seeded об'єктів всі
 > промарковані `demo: true`, щоб `cleanupDemoData` коректно стрипнув їх на first-boot. Count 18 → 17.
 >
-> **Скоуп таблиці нижче** — лише `apps/web/src`. Mobile (`apps/mobile/src/components/ui/CelebrationModal.tsx` 671 — найбільший після [#1453](https://github.com/Skords-01/Sergeant/pull/1453); раніше тут лідирував `TransactionsPage.tsx` 1215, тепер декомпозовано на 14 модулів, max 523 LOC),
+> **Скоуп таблиці нижче** — лише `apps/web/src`. Mobile (CelebrationModal 671 LOC декомпозовано на оркестратор + confetti/hooks/types — max 297 LOC; раніше тут лідирував `TransactionsPage.tsx` 1215, теж декомпозовано на 14 модулів, max 523 LOC),
 > packages (`packages/shared/src/lib/assistantCatalogue.ts` 1133, `schemas/api.ts` 986,
 > `openapi/routes.ts` 837), server (`modules/chat/chat.ts` 783) — трекаються окремо
 > (mobile tracker — `docs/tech-debt/mobile.md`).
@@ -357,28 +363,38 @@ legitimate (calendar headers / hero kickers, з обґрунтуванням), �
 
 ---
 
-### 9. `any` типи — 10 production-файлів + кілька тестів
+### 9. `any` типи — 1 trackable production-файл + 3 by-design loose
 
-**Production (оновлено 2026-05-02):** після decomposition `Transactions.tsx` /
-`Budgets.tsx` у `apps/web/src/modules/finyk/pages/{transactions,budgets}/**`
-з'явилися `: any` у локальних типах sortable-полів / filter-предикатів;
-додатково знайдено нові в fizruk після відповідного decomposition:
+**Production (оновлено 2026-05-03):** попередня таблиця з 10 файлів
+(`modules/finyk/pages/{transactions,budgets}/**` + 2 fizruk-decomposition
+leftovers) **повністю закрита** Phase 5a finyk-pages cleanup-ом
+([PR #1452](https://github.com/Skords-01/Sergeant/pull/1452), commit
+`25cc4c05`). Перевірити можна `rg ": any\b|<any>" apps/web/src/modules/finyk/pages`
+— нуль матчів. Аналогічно по `apps/web/src/modules/fizruk`. Останній
+залишковий `any` у finyk-аналітиці —
+`apps/web/src/modules/finyk/hooks/useAnalytics.ts` — також знятий
+(`AnyTx → Transaction / TxSplitsMap / Category` через канонічні типи з
+`@sergeant/finyk-domain/domain/types`); див. цей PR.
 
-| Файл                                                          |
-| ------------------------------------------------------------- |
-| `modules/finyk/pages/transactions/Transactions.tsx`           |
-| `modules/finyk/pages/transactions/TransactionList.tsx`        |
-| `modules/finyk/pages/transactions/useTransactionSelection.ts` |
-| `modules/finyk/pages/transactions/useTransactionFilters.ts`   |
-| `modules/finyk/pages/budgets/Budgets.tsx`                     |
-| `modules/finyk/pages/budgets/BudgetsGoalsSection.tsx`         |
-| `modules/finyk/pages/budgets/BudgetsLimitsSection.tsx`        |
-| `modules/finyk/pages/budgets/useProactiveAdvice.ts`           |
-| `modules/fizruk/components/workouts/QuickStartSheet.tsx`      |
-| `modules/fizruk/pages/Exercise.tsx`                           |
+**Trackable follow-up (1 файл):**
 
-**Fix recipe:** замінити `: any` на explicit union (`SortField`/`FilterKey`)
-або `unknown` + type-guard. Окремий PR.
+| Файл                                         | Що залишилось                        | Чому ще `any`                                                                                                                                                                                                                                                                                                                                             |
+| -------------------------------------------- | ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `modules/finyk/hooks/usePrivatbank.ts:65–66` | `type PrivatTx = any;` (cache shape) | PrivatBank API повертає 10+ полів (`SUM`/`TRANDATE`/`OSND`/`AUT_CNTR_NAM`/`REF`/`DOC_NUMBER`/`AUT_MY_ACC`/…) — частково задокументовано лише на сайті PB. Правильний фікс — описати інтерфейс `PrivatTxApiRow` поряд з `normalizePrivatTransaction(...)` (там вже є частковий `Record<string, unknown> &` shape) і прибрати `PrivatTx`-alias. Окремий PR. |
+
+**By-design loose `Record<string, any>` (3 файли, з in-line обґрунтуваннями):**
+
+| Файл                                  | Pattern                          | Обґрунтування                                                                                                                                                                                                    |
+| ------------------------------------- | -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `shared/lib/parseFizrukWorkouts.ts:8` | `Record<string, any>[]`          | Парсер для обох legacy-форматів (`[{...}]` і `{ workouts: [...] }`) із fizruk localStorage. Свідомо loose, бо персистовані payload-и старіші за поточну shape; type-guard у consumer-і.                          |
+| `core/hub/search/searchCache.ts:54`   | `type LooseRecord = Record<…,…>` | Той самий fizruk-shape для `searchCache` — спільний alias для `parseFizrukWorkouts` / `parseFizrukCustomExercises`, які бачать у HubSearch на гарячому шляху.                                                    |
+| `core/lib/lazyImport.ts:39`           | `ComponentType<any>`             | Свідомий вибір над `unknown` — пояснено у коментарі (lines 33–37): callers мають точну сигнатуру через `(typeof import(...)).Foo`, тут `any` потрібен щоби вирівняти всі `lazy(() => …)`-callsites під один тип. |
+
+**Fix recipe для нових випадків:** замінити `: any` на explicit union, на
+тип з `@sergeant/finyk-domain/domain/types` (`Transaction`, `TxSplitsMap`,
+`Category`, …) або на `unknown` + type-guard. Якщо shape реально гібридний
+(легасі-localStorage payload), додати `eslint-disable-next-line` з
+обґрунтуванням і занести у by-design таблицю вище.
 
 **Tests (без змін):**
 
