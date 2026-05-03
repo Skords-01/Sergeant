@@ -9,6 +9,7 @@ export function seedRoutine(): void {
   const habits = [
     {
       id: shortId("demo_h", 1),
+      demo: true,
       name: "Випити 2 л води",
       emoji: "💧",
       recurrence: "daily",
@@ -18,6 +19,7 @@ export function seedRoutine(): void {
     },
     {
       id: shortId("demo_h", 2),
+      demo: true,
       name: "Читати 20 хвилин",
       emoji: "📚",
       recurrence: "daily",
@@ -27,6 +29,7 @@ export function seedRoutine(): void {
     },
     {
       id: shortId("demo_h", 3),
+      demo: true,
       name: "Медитація",
       emoji: "🧘",
       recurrence: "daily",
@@ -36,6 +39,7 @@ export function seedRoutine(): void {
     },
     {
       id: shortId("demo_h", 4),
+      demo: true,
       name: "10 000 кроків",
       emoji: "🚶",
       recurrence: "daily",
@@ -45,6 +49,7 @@ export function seedRoutine(): void {
     },
     {
       id: shortId("demo_h", 5),
+      demo: true,
       name: "Без цукру",
       emoji: "🍬",
       recurrence: "daily",

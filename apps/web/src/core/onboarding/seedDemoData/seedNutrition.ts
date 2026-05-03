@@ -21,6 +21,7 @@ export function seedNutrition(): void {
     mealType: "breakfast" | "lunch" | "dinner" | "snack",
   ) => ({
     id: shortId("demo_meal", seed),
+    demo: true,
     name,
     time,
     mealType,

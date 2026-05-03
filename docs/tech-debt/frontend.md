@@ -1,6 +1,6 @@
 # Frontend Tech Debt — Sergeant Web
 
-> **Last validated:** 2026-05-02 by @sonher468. **Next review:** 2026-07-31.
+> **Last validated:** 2026-05-03 by @Skords-01. **Next review:** 2026-08-01.
 > **Status:** Active
 
 Аналіз кодової бази `apps/web/src` (434 source файли, 87k рядків).
@@ -129,7 +129,7 @@ Codemod ідемпотентний: повторний запуск дасть `
 
 ---
 
-### 4. Великі файли (>600 рядків) — 19 файлів (тільки `apps/web/src`)
+### 4. Великі файли (>600 рядків) — 18 файлів (тільки `apps/web/src`)
 
 > `finyk/pages/Assets.tsx` (раніше 1147 рядків) декомпозовано на
 > `useAssetsState.ts` (259), `AssetsForm.tsx` (376), `AssetsTable.tsx` (511),
@@ -195,12 +195,12 @@ Codemod ідемпотентний: повторний запуск дасть `
 > `seedDemoData/keys.ts` (31 — всі localStorage-ключі),
 > `seedDemoData/utils.ts` (100 — write/remove helpers + `dateKey`/`daysAgo`/
 > `shortId`/`buildMonoTx` + `MonoTx`/`ManualExpense` types),
-> `seedDemoData/seedFinyk.ts` (282 — Finyk фікстура: 23 Mono tx + 4 manual
-> expenses + monthly plan), `seedDemoData/seedFizruk.ts` (120 — 2 workouts +
-> 1 measurement), `seedDemoData/seedRoutine.ts` (100 — 5 habits + 14-day
-> completion grid + pushup plan), `seedDemoData/seedNutrition.ts` (140 —
-> meals/water/prefs за 2 дні), `seedDemoData/seedHubQuickStats.ts` (43 —
-> hub status-row preview-payload). Count 19 → 18.
+> `seedDemoData/seedFinyk.ts` (282 — фікстура для Finyk: 23 Mono-транзакції + 4 ручні
+> витрати + місячний план), `seedDemoData/seedFizruk.ts` (120 — 2 тренування +
+> 1 вимір), `seedDemoData/seedRoutine.ts` (100 — 5 звичок + сітка
+> виконань на 14 днів + план віджимань), `seedDemoData/seedNutrition.ts` (140 —
+> прийоми їжі / вода / преференції за 2 дні), `seedDemoData/seedHubQuickStats.ts`
+> (43 — попередній вміст рядка статусу хаба). Count 19 → 18.
 >
 > **Скоуп таблиці нижче** — лише `apps/web/src`. Mobile (`apps/mobile/src/modules/finyk/pages/Transactions/TransactionsPage.tsx` 1215),
 > packages (`packages/shared/src/lib/assistantCatalogue.ts` 1133, `schemas/api.ts` 986,
