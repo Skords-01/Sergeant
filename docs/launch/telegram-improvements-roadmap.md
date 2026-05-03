@@ -59,18 +59,18 @@
 
 ## 2. Pain points — що зараз слабко
 
-| #   | Pain                                                                                  | Surface                                | Frequency      | Severity |
-| --- | ------------------------------------------------------------------------------------- | -------------------------------------- | -------------- | -------- |
-| P1  | OpenClaw 100% reactive — не починає розмову, founder мусить йти питати                | OpenClaw DM                            | щодня          | high     |
-| P2  | Алерти у супергрупі без accountability — нема трекінгу хто бачив, коли                | `Sergeant_ops` (всі топіки)            | щодня          | high     |
-| P3  | WF-15 Railway deploy — повторюваний `Bad request` (3+/24h) шумить у `⚙️ Контрол-план` | `Sergeant_ops/⚙️ Контрол-план`         | 3×/добу        | medium   |
-| P4  | Approval-кнопки повільні — long-poll latency 1-3с на callback                         | OpenClaw DM (write-tools)              | при approval   | medium   |
-| P5  | Alert-storm-и (Sentry spike, Railway flap) flood-ять топік без dedup-у                | `Sergeant_ops`                         | епізодично     | medium   |
-| P6  | `/audit` показує тільки 20 row-ів без time-window або CSV-export                      | OpenClaw DM                            | при post-mortem | low      |
-| P7  | Нема `/help` discovery — нові оператори не знатимуть command-set                       | OpenClaw DM                            | при onboarding | low      |
-| P8  | `read_telegram_topic_history` — Phase 1 stub, повертає empty                          | OpenClaw → tool-call                   | при tool-use   | low      |
-| P9  | Бот падає → 6+ хв backoff retry без leader-election                                   | OpenClaw DM                            | епізодично     | low      |
-| P10 | Console-service на Railway досі `sergeant-hubchat` (legacy ім'я per ADR-0032)         | Railway / DevOps                       | постійно       | very low |
+| #   | Pain                                                                                  | Surface                        | Frequency       | Severity |
+| --- | ------------------------------------------------------------------------------------- | ------------------------------ | --------------- | -------- |
+| P1  | OpenClaw 100% reactive — не починає розмову, founder мусить йти питати                | OpenClaw DM                    | щодня           | high     |
+| P2  | Алерти у супергрупі без accountability — нема трекінгу хто бачив, коли                | `Sergeant_ops` (всі топіки)    | щодня           | high     |
+| P3  | WF-15 Railway deploy — повторюваний `Bad request` (3+/24h) шумить у `⚙️ Контрол-план` | `Sergeant_ops/⚙️ Контрол-план` | 3×/добу         | medium   |
+| P4  | Approval-кнопки повільні — long-poll latency 1-3с на callback                         | OpenClaw DM (write-tools)      | при approval    | medium   |
+| P5  | Alert-storm-и (Sentry spike, Railway flap) flood-ять топік без dedup-у                | `Sergeant_ops`                 | епізодично      | medium   |
+| P6  | `/audit` показує тільки 20 row-ів без time-window або CSV-export                      | OpenClaw DM                    | при post-mortem | low      |
+| P7  | Нема `/help` discovery — нові оператори не знатимуть command-set                      | OpenClaw DM                    | при onboarding  | low      |
+| P8  | `read_telegram_topic_history` — Phase 1 stub, повертає empty                          | OpenClaw → tool-call           | при tool-use    | low      |
+| P9  | Бот падає → 6+ хв backoff retry без leader-election                                   | OpenClaw DM                    | епізодично      | low      |
+| P10 | Console-service на Railway досі `sergeant-hubchat` (legacy ім'я per ADR-0032)         | Railway / DevOps               | постійно        | very low |
 
 ---
 
@@ -190,20 +190,18 @@ CREATE INDEX idx_tg_alert_acks_unacked
 
 ### 3.4. WF-15 Bad request — payload-schema fix
 
-**Status:** known issue (live звіт 2026-05-03).
+**Status:** **shipped** (Wave 1, PR за цим розділом). Root-cause був НЕ schema-drift, а Telegram Markdown-parser, що ламається на `*` / `_` / `` ` `` у commit-message-і — `parse_mode: Markdown` (legacy) не підтримує backslash-escape. Switched to `parse_mode: HTML` + `htmlEscape()` у parser-node.
 **Pain закриває:** P3.
 **ADR-кандидат:** none (bug-fix у workflow JSON).
 
-**Що:** витягти останній failed-execution payload з `n8n_API` (`/api/v1/executions?status=error&workflowId=<WF-15>`) → знайти changed-field у Railway webhook v2 → оновити WF-15 JSON.
+**Що зроблено:** витягнули останні 5 failed executions з `n8n_API` (`/api/v1/executions?status=error&workflowId=CygZ4vLxTm2ltuRW`) → у всіх Telegram повертав `Bad Request: can't parse entities: Can't find end of the entity starting at byte offset N` (наприклад на commit-message-і `feat(...): cut over fizruk reads to SQLite, add server applyFizruk* (#1449)` — unmatched `*`). Перевели `15-railway-deployment-notify.json` на HTML-mode + `<b>`/`<code>` шаблон, додали `*Html` варіанти у `Parse Railway payload` node.
 
-**Чому:** 3+ false-alarms/добу зараз. Класичний "крик вовка" — справжній alert пропустиш бо звик ігнорувати noise.
-
-**Effort:** S (~1 день): debug + n8n PR через `ops:n8n` flow.
+**Effort:** S (~½ дня): debug + workflow JSON edit + `15-railway-deployment-notify.README.md` payload-schema doc.
 
 **Acceptance:**
 
-- 0 `Bad request` errors у WF-15 за 7-day window після merge.
-- Railway webhook payload-schema задокументовано у `ops/n8n-workflows/WF-15/README.md`.
+- 0 `Bad request` errors у WF-15 за 7-day window після merge — track через `n8n_API` `/executions?status=error&workflowId=CygZ4vLxTm2ltuRW`.
+- Railway webhook payload-schema задокументовано у [`ops/n8n-workflows/15-railway-deployment-notify.README.md`](../../ops/n8n-workflows/15-railway-deployment-notify.README.md).
 
 **Bundle з §3.7 alert dedup** для повного fix story (без dedup нова правильна версія може теж spam-нути).
 
@@ -238,63 +236,63 @@ CREATE INDEX idx_tg_alert_acks_unacked
 
 ### 4.1. OpenClaw DM bot
 
-| ID    | Ідея                                                           | Pain | Effort | ADR    | Wave |
-| ----- | -------------------------------------------------------------- | ---- | ------ | ------ | ---- |
-| A.1   | Phase 2.B: Friday weekly + monthly OKR (бродкаст у `📊 Дайджести`) | P1   | M      | 0038   | W3   |
-| A.2   | Phase 3: `/plan`, `/analyze`, `/okr` strategic primitives      | —    | L      | 0039   | Later |
-| A.3   | "Approve all" мета-кнопка для batch-turn approvals             | —    | M      | —      | Later |
-| A.4   | Diff-preview для `commit_to_strategy_doc`                      | —    | M      | —      | Later |
-| A.5   | Voice notes input (Whisper transcription)                      | —    | M      | —      | Later |
-| A.6   | `/help` discovery + inline keyboard                            | P7   | XS     | —      | W4   |
-| A.7   | Persona quick-switch row у boot-message-і дня                  | —    | S      | —      | W4   |
-| A.8   | `/forget {topic}` — memory-write з approval                    | —    | M      | —      | Later |
-| A.9   | Pinned context = long-term focus injection                     | —    | S      | —      | Later |
-| A.10  | Edit message → re-run loop                                     | —    | S      | —      | Later |
-| A.11  | Reply threading (Telegram `reply_to_message_id`)               | —    | M      | —      | Later |
-| A.12  | Nightly self-summary (02:00 Kyiv)                              | —    | S      | —      | Later |
-| A.13  | Error-budget visualization (`/budget`)                         | —    | XS     | —      | Later |
+| ID   | Ідея                                                               | Pain | Effort | ADR  | Wave  |
+| ---- | ------------------------------------------------------------------ | ---- | ------ | ---- | ----- |
+| A.1  | Phase 2.B: Friday weekly + monthly OKR (бродкаст у `📊 Дайджести`) | P1   | M      | 0038 | W3    |
+| A.2  | Phase 3: `/plan`, `/analyze`, `/okr` strategic primitives          | —    | L      | 0039 | Later |
+| A.3  | "Approve all" мета-кнопка для batch-turn approvals                 | —    | M      | —    | Later |
+| A.4  | Diff-preview для `commit_to_strategy_doc`                          | —    | M      | —    | Later |
+| A.5  | Voice notes input (Whisper transcription)                          | —    | M      | —    | Later |
+| A.6  | `/help` discovery + inline keyboard                                | P7   | XS     | —    | W4    |
+| A.7  | Persona quick-switch row у boot-message-і дня                      | —    | S      | —    | W4    |
+| A.8  | `/forget {topic}` — memory-write з approval                        | —    | M      | —    | Later |
+| A.9  | Pinned context = long-term focus injection                         | —    | S      | —    | Later |
+| A.10 | Edit message → re-run loop                                         | —    | S      | —    | Later |
+| A.11 | Reply threading (Telegram `reply_to_message_id`)                   | —    | M      | —    | Later |
+| A.12 | Nightly self-summary (02:00 Kyiv)                                  | —    | S      | —    | Later |
+| A.13 | Error-budget visualization (`/budget`)                             | —    | XS     | —    | Later |
 
 ### 4.2. Sergeant_alert_bot supergroup
 
-| ID    | Ідея                                                       | Pain | Effort | ADR    | Wave |
-| ----- | ---------------------------------------------------------- | ---- | ------ | ------ | ---- |
-| B.1   | Alert dedup / occurrence-counter (10-min window)           | P5   | M      | —      | W3   |
-| B.2   | `/silence WF-15 30m` topic command                          | —    | M      | —      | Later |
-| B.3   | "Recovered" reaction-detection (`message_reaction` update) | —    | S      | —      | Later |
-| B.4   | Daily P0/P1/P2 counts pinned message у `⚙️ Контрол-план`   | —    | M      | —      | Later |
-| B.5   | Topic permissions/structure cron-validator                 | —    | S      | —      | Later |
-| B.6   | Bot status topic (8-й) — heartbeat для обох ботів          | —    | S      | —      | Later |
-| B.7   | WF-XX: Mono fraud signal у `💰 Виторг`                     | —    | L      | —      | Later |
-| B.8   | WF-XX: PostHog conversion-drop alert                       | —    | M      | —      | Later |
+| ID  | Ідея                                                       | Pain | Effort | ADR | Wave  |
+| --- | ---------------------------------------------------------- | ---- | ------ | --- | ----- |
+| B.1 | Alert dedup / occurrence-counter (10-min window)           | P5   | M      | —   | W3    |
+| B.2 | `/silence WF-15 30m` topic command                         | —    | M      | —   | Later |
+| B.3 | "Recovered" reaction-detection (`message_reaction` update) | —    | S      | —   | Later |
+| B.4 | Daily P0/P1/P2 counts pinned message у `⚙️ Контрол-план`   | —    | M      | —   | Later |
+| B.5 | Topic permissions/structure cron-validator                 | —    | S      | —   | Later |
+| B.6 | Bot status topic (8-й) — heartbeat для обох ботів          | —    | S      | —   | Later |
+| B.7 | WF-XX: Mono fraud signal у `💰 Виторг`                     | —    | L      | —   | Later |
+| B.8 | WF-XX: PostHog conversion-drop alert                       | —    | M      | —   | Later |
 
 ### 4.3. Cross-bot / infra
 
-| ID    | Ідея                                                  | Pain | Effort | ADR    | Wave |
-| ----- | ----------------------------------------------------- | ---- | ------ | ------ | ---- |
-| C.1   | Multi-instance fail-over / Postgres advisory leader   | P9   | L      | 0042   | Later |
-| C.2   | Sentry breadcrumbs у tool-calls                       | —    | XS     | —      | W2   |
-| C.3   | Bot token rotation policy + drain-period env vars     | —    | M      | 0043   | Later |
-| C.4   | Alert-on-bot-failure heartbeat (WF-104)               | P9   | S      | —      | Later |
-| C.5   | Console-service rename `sergeant-hubchat → sergeant-openclaw` (per ADR-0032) | P10 | XS | — | Later |
+| ID  | Ідея                                                                         | Pain | Effort | ADR  | Wave  |
+| --- | ---------------------------------------------------------------------------- | ---- | ------ | ---- | ----- |
+| C.1 | Multi-instance fail-over / Postgres advisory leader                          | P9   | L      | 0042 | Later |
+| C.2 | Sentry breadcrumbs у tool-calls                                              | —    | XS     | —    | W2    |
+| C.3 | Bot token rotation policy + drain-period env vars                            | —    | M      | 0043 | Later |
+| C.4 | Alert-on-bot-failure heartbeat (WF-104)                                      | P9   | S      | —    | Later |
+| C.5 | Console-service rename `sergeant-hubchat → sergeant-openclaw` (per ADR-0032) | P10  | XS     | —    | Later |
 
 ---
 
 ## 5. Wave-based PR plan
 
-| Wave | PR  | Item(s)                               | Effort | ADR    |
-| ---- | --- | ------------------------------------- | ------ | ------ |
-| W1   | (a) | §3.3 (`/audit since=` + `--csv`)      | S      | —      |
-| W1   | (b) | §3.4 (WF-15 Bad request fix)          | S      | —      |
-| W2   | (c) | §3.1 (Phase 2.A morning ritual)       | M      | 0038   |
-| W2   | (d) | C.2 (Sentry breadcrumbs у tool-calls) | XS     | —      |
-| W3   | (e) | §3.2 (alert ack-button + escalation)  | M      | 0040   |
-| W3   | (f) | A.1 (Phase 2.B Friday weekly + OKR)   | M      | 0038   |
-| W3   | (g) | B.1 (alert dedup / occurrence-counter) | M     | —      |
-| W4   | (h) | §3.5 (webhook delivery)               | M      | 0041   |
-| W4   | (i) | A.6 + A.7 (`/help` + persona quick-row) | S    | —      |
-| Later | …  | A.2 (Phase 3), A.3, A.4, A.5, A.8, A.10, A.11, A.12, A.13 | varies | 0039+ |
-| Later | …  | B.2..B.8                              | varies | varies |
-| Later | …  | C.1, C.3, C.4, C.5                    | varies | 0042/0043 |
+| Wave  | PR  | Item(s)                                                   | Effort | ADR       |
+| ----- | --- | --------------------------------------------------------- | ------ | --------- |
+| W1    | (a) | §3.3 (`/audit since=` + `--csv`)                          | S      | —         |
+| W1    | (b) | §3.4 (WF-15 Bad request fix)                              | S      | —         |
+| W2    | (c) | §3.1 (Phase 2.A morning ritual)                           | M      | 0038      |
+| W2    | (d) | C.2 (Sentry breadcrumbs у tool-calls)                     | XS     | —         |
+| W3    | (e) | §3.2 (alert ack-button + escalation)                      | M      | 0040      |
+| W3    | (f) | A.1 (Phase 2.B Friday weekly + OKR)                       | M      | 0038      |
+| W3    | (g) | B.1 (alert dedup / occurrence-counter)                    | M      | —         |
+| W4    | (h) | §3.5 (webhook delivery)                                   | M      | 0041      |
+| W4    | (i) | A.6 + A.7 (`/help` + persona quick-row)                   | S      | —         |
+| Later | …   | A.2 (Phase 3), A.3, A.4, A.5, A.8, A.10, A.11, A.12, A.13 | varies | 0039+     |
+| Later | …   | B.2..B.8                                                  | varies | varies    |
+| Later | …   | C.1, C.3, C.4, C.5                                        | varies | 0042/0043 |
 
 **Total для топ-4 хвиль:** ~12 робочих днів, 9 PR-ів, 3 нові ADR-и (0038, 0040, 0041).
 
