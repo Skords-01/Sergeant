@@ -235,6 +235,24 @@ export default [
       "sergeant-design/no-flat-shared-lib": "error",
     },
   },
+  // Mobile-shell sunset guardrail — initiative 0002 (mobile platform
+  // decision). `apps/mobile-shell/` is on the locked-in deprecation
+  // schedule defined in ADR-0010 § Sunset schedule (T₀ 2026-09-01,
+  // T₁ 2026-11-30, T₂ 2026-12-30). To make that deprecation real,
+  // we forbid net-new files in `apps/mobile-shell/src/**` — any new
+  // feature should grow inside `apps/mobile/src/**` (RN) or
+  // `apps/web/src/**` (web) instead. The rule itself owns the
+  // allowlist of existing shell-glue files (snapshot 2026-05-03);
+  // adding a *legitimate* new shim requires updating the
+  // SHELL_GLUE_ALLOWLIST in
+  // `packages/eslint-plugin-sergeant-design/index.js` together with
+  // an ADR-0010 / initiative 0002 outcome reference.
+  {
+    files: ["apps/mobile-shell/src/**/*.{ts,tsx}"],
+    rules: {
+      "sergeant-design/forbid-shell-only-feature": "error",
+    },
+  },
   // Import-extension hygiene — bans `.js`/`.jsx`/`.ts`/`.tsx`/`.mjs`/`.cjs`
   // suffixes in import specifiers for the bundler-fed frontend apps. Codemod
   // #3 stripped 436 historical extension-suffixed imports in `apps/web/src`
@@ -705,6 +723,70 @@ export default [
             "Direct access to the retired `STORAGE_KEYS.FIZRUK_*` cloud-sync keys is forbidden (PR #030, storage-roadmap). Use the canonical fizruk hooks (`useFizrukWorkouts`, `useMeasurements`, `useWorkoutTemplates`, …) from `apps/{web,mobile}/src/modules/fizruk/hooks` — they handle the SQLite overlay transparently.",
         },
       ],
+    },
+  },
+  // Module-size guardrail (initiative 0001) — `max-lines: [error, 600]`
+  // for `apps/web/src/**/*.{ts,tsx}`. Enforces decomposition discipline:
+  // a single TS/TSX file in the web bundle must not exceed 600 LOC
+  // (skipBlankLines + skipComments). New violations fail CI; existing
+  // monoliths are explicitly allowlisted with a deadline TODO so the
+  // queue stays visible. See `docs/initiatives/0001-module-decomposition.md`.
+  //
+  // Scope rationale:
+  // - Limited to `apps/web/src/**` — the audit's red-flag table flagged
+  //   web-only monoliths; `apps/server/src/modules/chat/agent.ts` was
+  //   already decomposed (handlers / tools / cache) and is the precedent.
+  //   `apps/mobile/**` is out of scope (initiative 0002 owns that surface).
+  // - `**/__tests__/**` and `*.{test,spec}.{ts,tsx}` are exempt — large
+  //   fixture files and snapshot-style suites are legitimate.
+  // - Generated files (`apps/web/src/generated/**`) are exempt for the
+  //   same reason — they are regenerated and never hand-edited.
+  {
+    files: ["apps/web/src/**/*.{ts,tsx}"],
+    ignores: [
+      "apps/web/src/**/*.test.{ts,tsx}",
+      "apps/web/src/**/*.spec.{ts,tsx}",
+      "apps/web/src/**/__tests__/**",
+      "apps/web/src/generated/**",
+    ],
+    rules: {
+      "max-lines": [
+        "error",
+        { max: 600, skipBlankLines: true, skipComments: true },
+      ],
+    },
+  },
+  // Allowlist for existing >600 LOC monoliths in `apps/web/src/**`.
+  // Each entry MUST stay paired with a Phase 2 PR in
+  // `docs/initiatives/0001-module-decomposition.md`. When a file is
+  // decomposed below 600 LOC, drop its entry from this list — the
+  // top-level rule above will then enforce it going forward.
+  //
+  // TODO(0001-module-decomposition): deadline 2026-06-15 — drop entries
+  // as the matching PR (decomp-routine-app, decomp-finyk-storage, etc.)
+  // ships. The allowlist is intentionally explicit (not a glob) so each
+  // file shows up in `git blame` / `git log` against this rule.
+  {
+    files: [
+      "apps/web/src/modules/routine/RoutineApp.tsx",
+      "apps/web/src/modules/nutrition/components/LogCard.tsx",
+      "apps/web/src/modules/fizruk/pages/Workouts.tsx",
+      "apps/web/src/modules/fizruk/pages/Progress.tsx",
+      "apps/web/src/modules/nutrition/NutritionApp.tsx",
+      "apps/web/src/modules/finyk/hooks/useStorage.ts",
+      "apps/web/src/core/lib/hubChatContext.ts",
+      "apps/web/src/core/hub/HubDashboard.tsx",
+      "apps/web/src/modules/nutrition/components/DailyPlanCard.tsx",
+      "apps/web/src/core/lib/chatActions/types.ts",
+      "apps/web/src/core/lib/chatActions/fizrukActions.ts",
+      "apps/web/src/modules/fizruk/pages/Exercise.tsx",
+      "apps/web/src/modules/finyk/pages/AssetsTable.tsx",
+      "apps/web/src/shared/components/ui/Icon.tsx",
+      "apps/web/src/sw.ts",
+      "apps/web/src/modules/routine/components/RoutineCalendarPanel.tsx",
+    ],
+    rules: {
+      "max-lines": "off",
     },
   },
   eslintConfigPrettier,
