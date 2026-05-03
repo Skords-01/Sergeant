@@ -665,28 +665,18 @@ export function createOpenClawInternalRouter({ pool }: { pool: Pool }): Router {
     asyncHandler(async (req, res) => {
       const parsed = validateBody(WriteAuditListBody, req, res);
       if (!parsed.ok) return;
-      // ISO-string → Date (Zod already enforced parseable shape with the
-      // `.datetime({ offset: true })` validator above; defensive NaN-check
-      // here protects future schema changes).
-      let recordedAfter: Date | undefined;
-      if (parsed.data.recordedAfterIso) {
-        const d = new Date(parsed.data.recordedAfterIso);
-        if (Number.isNaN(d.getTime())) {
-          res.status(400).json({
-            error: "invalid_recorded_after",
-            message: "recordedAfterIso must be a parseable ISO-8601 datetime",
-          });
-          return;
-        }
-        recordedAfter = d;
-      }
+      // Zod's `.datetime({ offset: true })` validator already rejects any
+      // non-ISO input with 400 above, so `new Date(...)` is safe to call
+      // unguarded here. Coerce inline to keep this branch shallow.
       const audits = await listRecentWriteAudits(pool, {
         founderUserId: parsed.data.founderUserId,
         limit: parsed.data.limit,
         tool: parsed.data.tool,
         action: parsed.data.action,
         persona: parsed.data.persona,
-        recordedAfter,
+        recordedAfter: parsed.data.recordedAfterIso
+          ? new Date(parsed.data.recordedAfterIso)
+          : undefined,
       });
       res.json({ audits });
     }),
