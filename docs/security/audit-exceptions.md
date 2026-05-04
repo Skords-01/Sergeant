@@ -107,6 +107,79 @@ fixture у тесті), задокументуй тут перед викори�
 
 -->
 
+## CodeQL alert exceptions (I1)
+
+> See [`./codeql.md`](./codeql.md) and
+> [`./hardening/I1-codeql-workflow.md`](./hardening/I1-codeql-workflow.md).
+> CodeQL запускається на every PR, every push до `main`, і щотижня
+> по понеділках о 06:00 UTC через
+> [`.github/workflows/codeql.yml`](../../.github/workflows/codeql.yml).
+> Перший scheduled-run буде у понеділок після merge — baseline
+> інвентаризується тут одразу після його завершення згідно з
+> verification-критерієм аудиту I1 ("≤ 5 alerts; кожен триажований").
+>
+> Доки список порожній. Принцип триажу див. у
+> [`./codeql.md`](./codeql.md) → "Триаж знахідок".
+
+<!-- Template для CodeQL alert exception:
+
+### <YYYY-MM-DD> — <Query name> at <path>:<line>
+
+| Field        | Value                                                       |
+| ------------ | ----------------------------------------------------------- |
+| Date         | 2026-05-12                                                  |
+| Query        | js/sql-injection (security-extended)                        |
+| Path         | apps/server/src/modules/<module>/<file>.ts:42               |
+| Severity     | High / Medium / Low / Note                                  |
+| Reason       | False positive — input validated by Zod schema upstream     |
+| Mitigation   | Coverage by integration test apps/server/src/.../store.test.ts |
+| Alert        | https://github.com/Skords-01/Sergeant/security/code-scanning/<id> |
+| Owner        | @Skords-01                                                  |
+
+-->
+
+## SAST baseline warnings (M11 — `eslint-plugin-security`)
+
+> See [`./hardening/M11-eslint-plugin-security.md`](./hardening/M11-eslint-plugin-security.md).
+> The plugin is wired in `eslint.config.js` for `apps/server/src/**`
+> and `apps/console/src/**`. `security/detect-eval-with-expression`
+> ships at **error** (zero call-sites). The other two rules and the
+> custom `no-restricted-syntax` selector for templated `pool.query`
+> ship at **warn** for the existing baseline so CI is not blocked on
+> intentional dynamic-by-design call-sites listed below. New
+> regressions surface as warnings in PR lint output (review-time
+> signal). The `eslint-security-rules.test.mjs` plugin test asserts
+> all four rules fire programmatically — they cannot silently be
+> unwired.
+
+### Baseline inventory (2026-05-04 — 26 warnings, all reviewed)
+
+| Rule                                            | Path                                                                 | Reason                                                                                                                                        |
+| ----------------------------------------------- | -------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `security/detect-non-literal-fs-filename`       | `apps/server/src/db.ts:257`                                          | `readFile(<envSslPath>)` — TLS CA bundle path comes from validated env (`PG_SSL_CA_PATH`).                                                    |
+| `security/detect-non-literal-fs-filename`       | `apps/server/src/routes/frontend.ts:27`                              | `existsSync(distPath)` — function parameter, never user-controlled (passed by server bootstrap).                                              |
+| `security/detect-non-literal-fs-filename`       | `apps/server/src/routes/internal/prompts.ts:41`                      | `readFile(<promptDir>/<safeId>.md)` — id is allowlisted via Zod enum before path construction.                                                |
+| `security/detect-non-literal-fs-filename`       | `apps/server/src/modules/nutrition/backup-{up,down}load.ts` (3 hits) | User-id-keyed backup blobs — id pre-validated as integer; path joins via `path.join` against a constant root.                                 |
+| `security/detect-non-literal-fs-filename`       | `apps/server/src/modules/openclaw/tools.ts` (3 hits)                 | OpenClaw doc-search helpers — paths constrained to `docs/**` allowlist (`isPathInsideRoot` guard).                                            |
+| `security/detect-non-literal-regexp`            | `apps/server/src/http/cors.ts:62`                                    | `new RegExp(<envOrigin>)` — origin pattern from validated env, normalised at boot (see `betterAuthEnv.ts`).                                   |
+| `security/detect-non-literal-regexp`            | `apps/console/src/agents/router.ts:48`                               | `new RegExp(<personaSlug>)` — slug enum validated at construction.                                                                            |
+| `no-restricted-syntax` (templated `pool.query`) | `apps/server/src/modules/ai-memory/vectorStore.ts:173`               | `SET LOCAL hnsw.ef_search = ${Math.floor(...)}` — Postgres `SET` does not accept `$1` placeholders; value is `Math.floor`-clamped to integer. |
+| `no-restricted-syntax` (templated `pool.query`) | `apps/server/src/modules/alerts/store.ts:250`                        | `WHERE ${conditions.join(" AND ")}` — `conditions` built only from a closed enum of column predicates with `$N` placeholders for values.      |
+| `no-restricted-syntax` (templated `pool.query`) | `apps/server/src/modules/openclaw/store.ts:425`                      | Dynamic `WHERE` over an allowlisted column set; values via `$N`.                                                                              |
+| `no-restricted-syntax` (templated `pool.query`) | `apps/server/src/modules/sync/audit.ts:176`                          | Dynamic `ORDER BY` over an allowlisted enum; values via `$N`.                                                                                 |
+| `no-restricted-syntax` (templated `pool.query`) | `apps/server/src/modules/sync/syncV2.ts` (12 hits)                   | Sync engine builds dynamic upsert/select statements with column allowlists per resource; values flow through `$N`.                            |
+| `no-restricted-syntax` (templated `pool.query`) | `apps/server/src/routes/internal/seo.ts` (7 hits)                    | Internal SEO ingest with allowlisted column-set; values via `$N`.                                                                             |
+| `no-restricted-syntax` (templated `pool.query`) | `apps/server/src/routes/internal/users.ts:41`                        | Dynamic UPDATE-SET over an allowlisted column-set; values via `$N`.                                                                           |
+| `no-restricted-syntax` (templated `pool.query`) | `apps/server/src/scripts/migrate-routine-from-blob.ts` (3 hits)      | One-shot migration script over a fixed table; values via `$N`.                                                                                |
+
+These are **intentional dynamic-by-design** patterns. Each one
+constructs SQL fragments from a closed enum (column allowlist, fixed
+literal, env-validated value) and routes user-controlled data through
+`$N` placeholders. Promotion plan: tackle the longest tail
+(`syncV2.ts` — 12 hits) in a focused refactor PR that introduces a
+typed `buildDynamicSelect(columns, predicates)` helper, then promote
+all three rules to `error` as a follow-up under M11.
+
 ## Secret-leak incidents
 
 Якщо секрет реально потрапив у git history (push-protection не зловив,

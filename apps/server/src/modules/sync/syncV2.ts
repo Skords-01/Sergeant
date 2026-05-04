@@ -59,9 +59,117 @@ type SyncV2Outcome =
   | "unauthorized"
   | "error";
 
+/**
+ * Закритий enum причин відхилення, які повертають apply-функції.
+ * Дзеркалить allowlist у `docs/observability/metrics.md` §4
+ * (`sync_op_log_apply_total{reason}`) + `docs/observability/dashboards/sync.json`
+ * (top-10 reject reasons panel).
+ *
+ * Експортуємо як `as const`-масив, аби однакові літерали слугували
+ * і compile-time union-ом (`ApplyRejectReason`), і runtime
+ * introspection-джерелом для regression-тесту в
+ * `apps/server/src/obs/metrics.test.ts`. Розширення/перейменування
+ * причини потребує синхронного апдейту:
+ *   1. `docs/observability/metrics.md` §4 (cardinality budget),
+ *   2. `docs/observability/dashboards/sync.json` (top-10 reject panel),
+ *   3. цього `as const`-масиву.
+ *
+ * Категорії:
+ *   - **CRDT-інваріанти** (`lww_conflict`, `tombstoned`, `not_found`,
+ *     `delete_not_supported`) — очікувані відмови per Stage 5 op-log контракту.
+ *   - **Authorization** (`user_id_mismatch`, `fk_violation`) — payload не
+ *     належить session user.
+ *   - **`missing_*`** — обов'язкові payload-поля відсутні.
+ *   - **`invalid_*`** — поле не парситься у domain тип
+ *     (date / int / float у валідному діапазоні).
+ */
+export const APPLY_REJECT_REASONS = [
+  // CRDT / per-row state invariants
+  "lww_conflict",
+  "tombstoned",
+  "not_found",
+  "delete_not_supported",
+  // Authorization
+  "user_id_mismatch",
+  "fk_violation",
+  // Required payload fields
+  "missing_id",
+  "missing_name",
+  "missing_name_uk",
+  "missing_ext_id",
+  "missing_tx_id",
+  "missing_category_id",
+  "missing_data_json",
+  "missing_exercise_id",
+  "missing_workout_id",
+  "missing_workout_item_id",
+  "missing_pantry_id",
+  // Field validation — timestamps
+  "invalid_completed_at",
+  "invalid_deleted_at",
+  "invalid_created_at",
+  "invalid_started_at",
+  "invalid_ended_at",
+  "invalid_last_completed_at",
+  "invalid_measured_at",
+  "invalid_eaten_at",
+  // Field validation — anthropometry
+  "invalid_weight_kg",
+  "invalid_waist_cm",
+  "invalid_chest_cm",
+  "invalid_hips_cm",
+  "invalid_bicep_cm",
+  "invalid_sleep_hours",
+  "invalid_networth",
+  // Field validation — nutrition
+  "invalid_kcal",
+  "invalid_protein_g",
+  "invalid_fat_g",
+  "invalid_carbs_g",
+  "invalid_amount_g",
+  "invalid_qty",
+  // Field validation — wellbeing / mood
+  "invalid_mood",
+  "invalid_energy_level",
+  // Field validation — workout metrics
+  "invalid_distance_m",
+  "invalid_duration_sec",
+  "invalid_reps",
+  "invalid_rpe",
+  // Field validation — calendar
+  "invalid_month",
+] as const;
+
+export type ApplyRejectReason = (typeof APPLY_REJECT_REASONS)[number];
+
+/**
+ * Engine-level причини відхилення, які виставляє `syncV2Push`
+ * **без** виклику apply-функції (clock guard, whitelist, savepoint
+ * exception, idempotent replay). Об'єднання з `ApplyRejectReason`
+ * дає повний всесвіт `reject_reason` колонки у `sync_op_log` —
+ * жоден інший літерал не має туди потрапити.
+ */
+export const ENGINE_REJECT_REASONS = [
+  "clock_skew",
+  "table_not_allowed",
+  "apply_failed",
+  "duplicate",
+] as const;
+
+export type EngineRejectReason = (typeof ENGINE_REJECT_REASONS)[number];
+
+/**
+ * Повний всесвіт `reject_reason` для `sync_op_log` + метрика
+ * `sync_op_log_apply_total{reason}`. Всі колл-сайти всередині
+ * `syncV2Push` мають вживати літерали з цього об'єднання — TS
+ * відмовить компіляцію на typo, що раніше тихо потрапляло у
+ * Prometheus із unbounded cardinality.
+ */
+export type RejectReason = ApplyRejectReason | EngineRejectReason;
+
 type AppliedStatus =
   | { status: "applied" }
-  | { status: "rejected"; reason: string };
+  | { status: "rejected"; reason: ApplyRejectReason };
 
 type ApplyFn = (
   client: PoolClient,
@@ -1402,8 +1510,12 @@ async function applyNutritionPantries(
     return { status: "rejected", reason: "user_id_mismatch" };
   }
 
-  const existing = await client.query<{ user_id: string; updated_at: Date }>(
-    `SELECT user_id, updated_at FROM nutrition_pantries WHERE id = $1`,
+  const existing = await client.query<{
+    user_id: string;
+    updated_at: Date;
+    deleted_at: Date | null;
+  }>(
+    `SELECT user_id, updated_at, deleted_at FROM nutrition_pantries WHERE id = $1`,
     [id],
   );
   if (existing.rows.length > 0) {
@@ -1412,6 +1524,10 @@ async function applyNutritionPantries(
     }
     if (existing.rows[0].updated_at.getTime() >= clientTs.getTime()) {
       return { status: "rejected", reason: "lww_conflict" };
+    }
+    // Tombstone-resurrection guard — див. PR #043 (`applyNutritionMeals`).
+    if (existing.rows[0].deleted_at !== null && op.op !== "delete") {
+      return { status: "rejected", reason: "tombstoned" };
     }
   }
 
@@ -1486,8 +1602,12 @@ async function applyNutritionPantryItems(
     return { status: "rejected", reason: "user_id_mismatch" };
   }
 
-  const existing = await client.query<{ user_id: string; updated_at: Date }>(
-    `SELECT user_id, updated_at FROM nutrition_pantry_items WHERE id = $1`,
+  const existing = await client.query<{
+    user_id: string;
+    updated_at: Date;
+    deleted_at: Date | null;
+  }>(
+    `SELECT user_id, updated_at, deleted_at FROM nutrition_pantry_items WHERE id = $1`,
     [id],
   );
   if (existing.rows.length > 0) {
@@ -1496,6 +1616,10 @@ async function applyNutritionPantryItems(
     }
     if (existing.rows[0].updated_at.getTime() >= clientTs.getTime()) {
       return { status: "rejected", reason: "lww_conflict" };
+    }
+    // Tombstone-resurrection guard — див. PR #043 (`applyNutritionMeals`).
+    if (existing.rows[0].deleted_at !== null && op.op !== "delete") {
+      return { status: "rejected", reason: "tombstoned" };
     }
   }
 
@@ -1659,8 +1783,12 @@ async function applyNutritionRecipes(
     return { status: "rejected", reason: "user_id_mismatch" };
   }
 
-  const existing = await client.query<{ user_id: string; updated_at: Date }>(
-    `SELECT user_id, updated_at FROM nutrition_recipes WHERE id = $1`,
+  const existing = await client.query<{
+    user_id: string;
+    updated_at: Date;
+    deleted_at: Date | null;
+  }>(
+    `SELECT user_id, updated_at, deleted_at FROM nutrition_recipes WHERE id = $1`,
     [id],
   );
   if (existing.rows.length > 0) {
@@ -1669,6 +1797,10 @@ async function applyNutritionRecipes(
     }
     if (existing.rows[0].updated_at.getTime() >= clientTs.getTime()) {
       return { status: "rejected", reason: "lww_conflict" };
+    }
+    // Tombstone-resurrection guard — див. PR #043 (`applyNutritionMeals`).
+    if (existing.rows[0].deleted_at !== null && op.op !== "delete") {
+      return { status: "rejected", reason: "tombstoned" };
     }
   }
 
@@ -1784,13 +1916,20 @@ async function applyFinykTombstone(
     return { status: "rejected", reason: "user_id_mismatch" };
   }
 
-  const existing = await client.query<{ updated_at: Date }>(
-    `SELECT updated_at FROM ${table} WHERE user_id = $1 AND ${extColumn} = $2`,
+  const existing = await client.query<{
+    updated_at: Date;
+    deleted_at: Date | null;
+  }>(
+    `SELECT updated_at, deleted_at FROM ${table} WHERE user_id = $1 AND ${extColumn} = $2`,
     [userId, extId],
   );
   if (existing.rows.length > 0) {
     if (existing.rows[0].updated_at.getTime() >= clientTs.getTime()) {
       return { status: "rejected", reason: "lww_conflict" };
+    }
+    // Tombstone-resurrection guard — див. PR #043 (`applyNutritionMeals`).
+    if (existing.rows[0].deleted_at !== null && op.op !== "delete") {
+      return { status: "rejected", reason: "tombstoned" };
     }
   }
 
@@ -1889,16 +2028,23 @@ async function applyFinykPerRowBlob(
     return { status: "rejected", reason: "user_id_mismatch" };
   }
 
-  const existing = await client.query<{ user_id: string; updated_at: Date }>(
-    `SELECT user_id, updated_at FROM ${table} WHERE id = $1`,
-    [id],
-  );
+  const existing = await client.query<{
+    user_id: string;
+    updated_at: Date;
+    deleted_at: Date | null;
+  }>(`SELECT user_id, updated_at, deleted_at FROM ${table} WHERE id = $1`, [
+    id,
+  ]);
   if (existing.rows.length > 0) {
     if (existing.rows[0].user_id !== userId) {
       return { status: "rejected", reason: "fk_violation" };
     }
     if (existing.rows[0].updated_at.getTime() >= clientTs.getTime()) {
       return { status: "rejected", reason: "lww_conflict" };
+    }
+    // Tombstone-resurrection guard — див. PR #043 (`applyNutritionMeals`).
+    if (existing.rows[0].deleted_at !== null && op.op !== "delete") {
+      return { status: "rejected", reason: "tombstoned" };
     }
   }
 
@@ -2427,7 +2573,7 @@ export async function syncV2Push(req: Request, res: Response): Promise<void> {
       // 2. Validate client_ts vs server clock.
       const clientTs = new Date(op.client_ts);
       let status: "applied" | "rejected" = "applied";
-      let reason: string | null = null;
+      let reason: RejectReason | null = null;
 
       const skewMs = clientTs.getTime() - Date.now();
       if (skewMs > CLOCK_SKEW_FORWARD_MS) {
