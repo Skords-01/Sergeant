@@ -49,7 +49,7 @@ jobs:
       fail-fast: false
       matrix:
         # `javascript-typescript` покриває обидва React (JSX/TSX) на
-        # apps/web + Node на apps/server, tools/console, apps/mobile.
+        # apps/web + Node на apps/server, apps/console, apps/mobile.
         language: ["javascript-typescript"]
 
     steps:
