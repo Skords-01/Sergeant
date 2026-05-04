@@ -8,7 +8,7 @@
 ## Owner surface
 
 - Primary surface: `apps/web/src/modules`, `apps/web/src/core/pages`
-- Coupled surface: `apps/web/src/App.tsx` (route registration)
+- Coupled surface: `apps/web/src/core/App.tsx` (route registration)
 - Governing skill: `sergeant-web-ui`
 
 ---
