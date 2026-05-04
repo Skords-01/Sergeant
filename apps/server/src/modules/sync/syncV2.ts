@@ -13,6 +13,7 @@ import {
   syncOperationsTotal,
   syncPayloadBytes,
 } from "../../obs/metrics.js";
+import { notifySyncV2OpsApplied, type SyncV2StreamOp } from "./syncV2Stream.js";
 
 /**
  * v2 op-log sync — Stage 2 / PR #021 із `docs/planning/storage-roadmap.md`.
@@ -68,6 +69,7 @@ type ApplyFn = (
 
 interface SyncOpLogInsertRow {
   id: string;
+  server_ts: Date;
 }
 
 interface SyncOpLogDuplicateRow {
@@ -2274,6 +2276,11 @@ export async function syncV2Push(req: Request, res: Response): Promise<void> {
   let lastOpId = 0;
   let appliedCount = 0;
   let rejectedCount = 0;
+  // Stage 5 / PR #041: applied ops accumulator — фен-аутиться в SSE
+  // стрім після успішного COMMIT-у. Заповнюється тільки на щойно-
+  // applied (НЕ на duplicate-replay), щоб клієнт не отримував double-
+  // emit-у при offline-replay-і.
+  const newlyAppliedForStream: SyncV2StreamOp[] = [];
 
   const client = await pool.connect();
   try {
@@ -2376,7 +2383,7 @@ export async function syncV2Push(req: Request, res: Response): Promise<void> {
            (user_id, idempotency_key, table_name, op, row, client_ts,
             origin_device_id, status, reject_reason)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-         RETURNING id`,
+         RETURNING id, server_ts`,
         [
           user.id,
           op.idempotency_key,
@@ -2389,7 +2396,8 @@ export async function syncV2Push(req: Request, res: Response): Promise<void> {
           reason,
         ],
       );
-      const insertedId = Number(inserted.rows[0].id);
+      const insertedRow = inserted.rows[0];
+      const insertedId = Number(insertedRow.id);
       if (insertedId > lastOpId) lastOpId = insertedId;
 
       if (status === "applied") {
@@ -2398,6 +2406,15 @@ export async function syncV2Push(req: Request, res: Response): Promise<void> {
         results.push({
           idempotency_key: op.idempotency_key,
           status: "applied",
+        });
+        newlyAppliedForStream.push({
+          id: insertedId,
+          table: op.table,
+          op: op.op,
+          row: op.row,
+          client_ts: clientTs.toISOString(),
+          server_ts: insertedRow.server_ts.toISOString(),
+          origin_device_id: originDeviceId,
         });
       } else {
         rejectedCount++;
@@ -2425,6 +2442,11 @@ export async function syncV2Push(req: Request, res: Response): Promise<void> {
   } finally {
     client.release();
   }
+
+  // Stage 5 / PR #041: фен-аут applied-ops у SSE-стрім ПІСЛЯ COMMIT-у —
+  // listener-и побачать тільки durable-зміни. На failed-COMMIT
+  // (catch above) ми сюди не доходимо, тому ризику ghost-emit-а немає.
+  notifySyncV2OpsApplied(user.id, newlyAppliedForStream);
 
   // Outcome класифікація: усі applied → ok; жодного applied →
   // conflict (всі ops відхилено); змішаний — partial.
