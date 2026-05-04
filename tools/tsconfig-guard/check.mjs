@@ -23,6 +23,10 @@ const GUARDED_OPTIONS = [
   "noImplicitAny",
   "strictNullChecks",
   "noUncheckedIndexedAccess",
+  "noImplicitReturns",
+  "noFallthroughCasesInSwitch",
+  "noUnusedLocals",
+  "noUnusedParameters",
 ];
 
 const PACKAGE_ALIAS_MAP = {
