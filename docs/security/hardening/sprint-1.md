@@ -1,7 +1,7 @@
 # Sprint 1 — Critical + найгірші High
 
 > **Last validated:** 2026-05-04 by @steppupa. **Next review:** 2026-08-04.
-> **Status:** Active (in flight — H2 closed, C2 Phase 1 closed, C1 + H1 still open)
+> **Status:** Active (in flight — H2 closed, C2 Phase 1 closed, **C1 Phase 1 closed (2026-05-04)**, H1 still open; Phase 2 рестрейк для C1 pending Monobank coordination)
 
 **Тривалість:** 1–2 тижні (target close: 2026-05-17).
 **Сумарний effort:** ~2.5 person-days.

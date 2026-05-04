@@ -1,6 +1,6 @@
 # Security Hardening Backlog
 
-> **Last validated:** 2026-05-04 by @Skords-01. **Next review:** 2026-08-04.
+> **Last validated:** 2026-05-04 by @steppupa. **Next review:** 2026-08-04.
 > **Status:** Active
 
 Беклог посилення безпеки (security hardening) — структурований список знахідок із внутрішнього security-review від 2026-05-03. Кожна знахідка живе у власному файлі-картці (`<id>-<slug>.md`), згрупована у спринти за пріоритетом усунення.
@@ -44,7 +44,7 @@
 
 | ID                                       | Title                                       | Status                              | Sprint                    |
 | ---------------------------------------- | ------------------------------------------- | ----------------------------------- | ------------------------- |
-| [C1](./C1-mono-webhook-secret-in-url.md) | Monobank webhook secret leaks via URL path  | Open                                | [Sprint 1](./sprint-1.md) |
+| [C1](./C1-mono-webhook-secret-in-url.md) | Monobank webhook secret leaks via URL path  | In progress (Phase 1 shipped 05-04) | [Sprint 1](./sprint-1.md) |
 | [C2](./C2-frontend-csp.md)               | Frontend SPA не має Content-Security-Policy | In progress (Phase 1 shipped 05-04) | [Sprint 1](./sprint-1.md) |
 
 ### High
