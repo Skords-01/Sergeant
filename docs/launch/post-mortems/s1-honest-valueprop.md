@@ -11,13 +11,13 @@
 
 ## 1. Шкала виконання
 
-| PR-id    | Назва                                                | Статус  | Дата       | Нотатка                                                                                                         |
-| -------- | ---------------------------------------------------- | ------- | ---------- | --------------------------------------------------------------------------------------------------------------- |
-| **S1.3** | refactor(onboarding): remove wizard-confetti         | ✅ DONE | 2026-05-04 | Мобільний parity вже був виконаний раніше — мобільний wizard з минулого спринту без CelebrationModal на finish. |
-| **S1.4** | feat(welcome): peek backdrop disclaimer              | ✅ DONE | 2026-05-04 | Web-only. Mobile-wizard на сьогодні без peek-backdrop, тому disclaimer не потрібен у мобільній збірці.          |
-| **S1.1** | feat(onboarding): rewrite hero copy (benefit-driven) | ❌ TODO | —          | Заблокований copy-reviewer-ом (founder-friend / маркетолог / ЦА).                                               |
-| **S1.2** | feat(onboarding): outcome CTA on welcome             | ❌ TODO | —          | Залежить від S1.1.                                                                                              |
-| **S1.5** | refactor(onboarding): rename "Налаштувати модулі"    | ❌ TODO | —          | Без deps і без copy-reviewer-а (фіксована copy у specs) — наступний кандидат у роботу.                          |
+| PR-id    | Назва                                                | Статус  | Дата       | Нотатка                                                                                                                                |
+| -------- | ---------------------------------------------------- | ------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| **S1.3** | refactor(onboarding): remove wizard-confetti         | ✅ DONE | 2026-05-04 | [PR #1609](https://github.com/Skords-01/Sergeant/pull/1609). Mobile parity була раніше — mobile-wizard без CelebrationModal на finish. |
+| **S1.4** | feat(welcome): peek backdrop disclaimer              | ✅ DONE | 2026-05-04 | [PR #1610](https://github.com/Skords-01/Sergeant/pull/1610). Web-only — mobile-wizard без peek-backdrop.                               |
+| **S1.1** | feat(onboarding): rewrite hero copy (benefit-driven) | ❌ TODO | —          | Заблокований copy-reviewer-ом (founder-friend / маркетолог / ЦА).                                                                      |
+| **S1.2** | feat(onboarding): outcome CTA on welcome             | ❌ TODO | —          | Залежить від S1.1.                                                                                                                     |
+| **S1.5** | refactor(onboarding): rename "Налаштувати модулі"    | ❌ TODO | —          | Без deps і без copy-reviewer-а (фіксована copy у specs) — наступний кандидат у роботу.                                                 |
 
 **Виконано:** 2/5. Активне працювання — S1.3 + S1.4 (cleanup-ланка), решта чекає copy-reviewer-а або має одного-два item-и роботи.
 
@@ -82,8 +82,7 @@ Mobile-wizard сьогодні без peek-backdrop (single-splash без бен
 
 ## 5. Open follow-ups
 
-- [ ] Відкрити PR-и для S1.3 і S1.4 у GitHub (наразі заблоковано Bad credentials у `git_pr` тулі — branch-і запушені, посилання у §1 актуальні).
-- [ ] Створити PR-и для post-mortem-а і docs status апдейту після того, як auth відновиться.
+- [x] Відкрити PR-и для S1.3 ([#1609](https://github.com/Skords-01/Sergeant/pull/1609)), S1.4 ([#1610](https://github.com/Skords-01/Sergeant/pull/1610)) і docs writeback ([#1611](https://github.com/Skords-01/Sergeant/pull/1611)).
 - [ ] Підняти copy-reviewer-а для S1.1 (founder-friend / маркетолог / ЦА).
 - [ ] Узяти S1.5 у роботу — без блокерів.
 - [ ] Дочекатись post-S0 cohort report-у (PostHog) і додати before/after метрики для S1.3 і S1.4 (поки що — якісний impact, кількісний — після).
