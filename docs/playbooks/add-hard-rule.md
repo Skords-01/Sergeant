@@ -1,9 +1,15 @@
 # Playbook: Add a Hard Rule
 
-> **Last validated:** 2026-04-30 by @devin-ai-integration. **Next review:** 2026-07-29.
+> **Last validated:** 2026-05-04 by @Skords-01. **Next review:** 2026-08-02.
 > **Status:** Active
 
 **Trigger:** "Add a new Hard Rule" / "Add a new mandatory convention" / any rule that should be enforced across all contributors and AI agents.
+
+## Owner surface
+
+- Primary surface: `docs/governance/hard-rules.json`
+- Coupled surface: `AGENTS.md`, `CONTRIBUTING.md`, `docs/governance/hard-rules-matrix.md`
+- Governing skill: `sergeant-review-and-merge`
 
 ---
 
