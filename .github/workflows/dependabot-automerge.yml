@@ -53,7 +53,7 @@ jobs:
       - name: Fetch Dependabot metadata
         id: meta
         # dependabot/fetch-metadata v2.4.0 (SHA-pinned for supply-chain hardening)
-        uses: dependabot/fetch-metadata@08eff52bf64351f401fb50d4972fa95b9f2c2d1b
+        uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98
         with:
           # `compat` would attach a "compatibility score" comment on every
           # PR which clutters the timeline for grouped patch bumps.
