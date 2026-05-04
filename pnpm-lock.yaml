@@ -332,34 +332,34 @@ importers:
         version: 7.1.6
       '@capacitor-mlkit/barcode-scanning':
         specifier: ^7.5.0
-        version: 7.5.0(@capacitor/core@7.6.2)
+        version: 7.5.0(@capacitor/core@8.3.1)
       '@capacitor/android':
         specifier: ^7.6.2
-        version: 7.6.2(@capacitor/core@7.6.2)
+        version: 7.6.2(@capacitor/core@8.3.1)
       '@capacitor/app':
         specifier: ^7.1.2
-        version: 7.1.2(@capacitor/core@7.6.2)
+        version: 7.1.2(@capacitor/core@8.3.1)
       '@capacitor/core':
-        specifier: ^7.6.2
-        version: 7.6.2
+        specifier: ^8.3.1
+        version: 8.3.1
       '@capacitor/ios':
         specifier: ^7.6.2
-        version: 7.6.2(@capacitor/core@7.6.2)
+        version: 7.6.2(@capacitor/core@8.3.1)
       '@capacitor/keyboard':
         specifier: ^7.0.6
-        version: 7.0.6(@capacitor/core@7.6.2)
+        version: 7.0.6(@capacitor/core@8.3.1)
       '@capacitor/preferences':
         specifier: ^7.0.4
-        version: 7.0.4(@capacitor/core@7.6.2)
+        version: 7.0.4(@capacitor/core@8.3.1)
       '@capacitor/push-notifications':
         specifier: ^7.0.6
-        version: 7.0.6(@capacitor/core@7.6.2)
+        version: 7.0.6(@capacitor/core@8.3.1)
       '@capacitor/splash-screen':
         specifier: ^7.0.5
-        version: 7.0.5(@capacitor/core@7.6.2)
+        version: 7.0.5(@capacitor/core@8.3.1)
       '@capacitor/status-bar':
         specifier: ^7.0.6
-        version: 7.0.6(@capacitor/core@7.6.2)
+        version: 7.0.6(@capacitor/core@8.3.1)
     devDependencies:
       '@capacitor/cli':
         specifier: ^8.3.1
@@ -1862,6 +1862,9 @@ packages:
 
   '@capacitor/core@7.6.2':
     resolution: {integrity: sha512-8HRKEUlYpCOeRec8bCHZwEA4o/E2q5dhHSd0v/Cr6+ume08fZY/gniF+ZCKF+6DO0T/nRaBeNRQn6Up+45J1mg==}
+
+  '@capacitor/core@8.3.1':
+    resolution: {integrity: sha512-UF8ItlHguU1Z6GXfPTeT2gakf+ctNI8pAS1kwSBQlsJMlfD4OPoto/SmKnOxKCQvnF4WRcdWeg6C0zREUNaAQg==}
 
   '@capacitor/ios@7.6.2':
     resolution: {integrity: sha512-TZOXn7ZSEMsetrIEb8EHT4X9Nwsed1itqMwe+z5QOCDvm9XZ7i2YsjnrinUC1ZOIgva9IE2l+azus7qOpQ0aCg==}
@@ -13813,17 +13816,25 @@ snapshots:
     dependencies:
       css-tree: 3.2.1
 
-  '@capacitor-mlkit/barcode-scanning@7.5.0(@capacitor/core@7.6.2)':
+  '@capacitor-mlkit/barcode-scanning@7.5.0(@capacitor/core@8.3.1)':
     dependencies:
-      '@capacitor/core': 7.6.2
+      '@capacitor/core': 8.3.1
 
   '@capacitor/android@7.6.2(@capacitor/core@7.6.2)':
     dependencies:
       '@capacitor/core': 7.6.2
 
+  '@capacitor/android@7.6.2(@capacitor/core@8.3.1)':
+    dependencies:
+      '@capacitor/core': 8.3.1
+
   '@capacitor/app@7.1.2(@capacitor/core@7.6.2)':
     dependencies:
       '@capacitor/core': 7.6.2
+
+  '@capacitor/app@7.1.2(@capacitor/core@8.3.1)':
+    dependencies:
+      '@capacitor/core': 8.3.1
 
   '@capacitor/cli@8.3.1':
     dependencies:
@@ -13851,29 +13862,37 @@ snapshots:
     dependencies:
       tslib: 2.8.1
 
+  '@capacitor/core@8.3.1':
+    dependencies:
+      tslib: 2.8.1
+
   '@capacitor/ios@7.6.2(@capacitor/core@7.6.2)':
     dependencies:
       '@capacitor/core': 7.6.2
 
-  '@capacitor/keyboard@7.0.6(@capacitor/core@7.6.2)':
+  '@capacitor/ios@7.6.2(@capacitor/core@8.3.1)':
     dependencies:
-      '@capacitor/core': 7.6.2
+      '@capacitor/core': 8.3.1
 
-  '@capacitor/preferences@7.0.4(@capacitor/core@7.6.2)':
+  '@capacitor/keyboard@7.0.6(@capacitor/core@8.3.1)':
     dependencies:
-      '@capacitor/core': 7.6.2
+      '@capacitor/core': 8.3.1
 
-  '@capacitor/push-notifications@7.0.6(@capacitor/core@7.6.2)':
+  '@capacitor/preferences@7.0.4(@capacitor/core@8.3.1)':
     dependencies:
-      '@capacitor/core': 7.6.2
+      '@capacitor/core': 8.3.1
 
-  '@capacitor/splash-screen@7.0.5(@capacitor/core@7.6.2)':
+  '@capacitor/push-notifications@7.0.6(@capacitor/core@8.3.1)':
     dependencies:
-      '@capacitor/core': 7.6.2
+      '@capacitor/core': 8.3.1
 
-  '@capacitor/status-bar@7.0.6(@capacitor/core@7.6.2)':
+  '@capacitor/splash-screen@7.0.5(@capacitor/core@8.3.1)':
     dependencies:
-      '@capacitor/core': 7.6.2
+      '@capacitor/core': 8.3.1
+
+  '@capacitor/status-bar@7.0.6(@capacitor/core@8.3.1)':
+    dependencies:
+      '@capacitor/core': 8.3.1
 
   '@colors/colors@1.6.0': {}
 
