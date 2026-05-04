@@ -1,6 +1,6 @@
 # Storage & Sync — Roadmap до production-ready
 
-> **Last validated:** 2026-05-04 by Devin — **Stage 1 COMPLETE, Stage 4 Finyk read-overlay in CI.** Stage 1: all 8/8 PRs landed (PR #008 `ff217246`, PR #010 [#1543](https://github.com/Skords-01/Sergeant/pull/1543), PR #013 via 4 sub-PRs). Stage 4 Fizruk: 5/5 PRs merged (PR #027–#030 + #029a). Stage 4 Nutrition: PR #031 / #032 / #033 LANDED ([#1574](https://github.com/Skords-01/Sergeant/pull/1574)), PR #034 LANDED ([#1636](https://github.com/Skords-01/Sergeant/pull/1636)). Stage 4 Finyk: PR #035 LANDED ([#1667](https://github.com/Skords-01/Sergeant/pull/1667) — schema + apply-fns), PR #036 LANDED ([#1680](https://github.com/Skords-01/Sergeant/pull/1680) — dual-write web + mobile), PR #037 IN CI (read-overlay web + mobile under `feature.finyk.sqlite_v2.read_sqlite`, default off). Stage 0: PR #003 LANDED ([#1497](https://github.com/Skords-01/Sergeant/pull/1497)). Boot-wiring follow-up для `register{Routine,Fizruk,Nutrition}DualWriteContext` ще не залендили. **Next review:** 2026-08-01.
+> **Last validated:** 2026-05-04 by Devin — **Stage 1 COMPLETE, Stage 4 Finyk read-overlay in CI, Stage 5 PR #040 LANDED.** Stage 1: all 8/8 PRs landed (PR #008 `ff217246`, PR #010 [#1543](https://github.com/Skords-01/Sergeant/pull/1543), PR #013 via 4 sub-PRs). Stage 4 Fizruk: 5/5 PRs merged (PR #027–#030 + #029a). Stage 4 Nutrition: PR #031 / #032 / #033 LANDED ([#1574](https://github.com/Skords-01/Sergeant/pull/1574)), PR #034 LANDED ([#1636](https://github.com/Skords-01/Sergeant/pull/1636)). Stage 4 Finyk: PR #035 LANDED ([#1667](https://github.com/Skords-01/Sergeant/pull/1667) — schema + apply-fns), PR #036 LANDED ([#1680](https://github.com/Skords-01/Sergeant/pull/1680) — dual-write web + mobile), PR #037 IN CI (read-overlay web + mobile under `feature.finyk.sqlite_v2.read_sqlite`, default off), PR #039 LANDED ([#1711](https://github.com/Skords-01/Sergeant/pull/1711) — drop module_data.finyk + ESLint guard). Stage 5: PR #040 LANDED ([#1712](https://github.com/Skords-01/Sergeant/pull/1712) — persistent op-log retry policy with dead-letter store). Stage 0: PR #003 LANDED ([#1497](https://github.com/Skords-01/Sergeant/pull/1497)). Boot-wiring follow-up для `register{Routine,Fizruk,Nutrition}DualWriteContext` ще не залендили. **Next review:** 2026-08-01.
 > **Status:** Active
 
 > Зріз: 2026-05-02. Базується на storage-аудиті + поточний стек:
@@ -1133,7 +1133,7 @@ show_balance, updated_at, deleted_at)` — об'єднує
 - **Dep.** PR #035 (schema pattern), PR #036 (dual-write
   registration-pattern як референс).
 
-##### **PR #039 — `chore(finyk-domain): drop module_data.finyk cloud-sync wiring + ESLint guard`** ⏳ DRAFT
+##### **PR #039 — `chore(shared): drop module_data.finyk cloud-sync wiring + ESLint guard`** ✅ DONE — landed [#1711](https://github.com/Skords-01/Sergeant/pull/1711) (2026-05-04)
 
 - Mirror PR #030 (fizruk cloud-sync drop) і PR #034 (nutrition
   cloud-sync drop). Знімає `finyk` з `SYNC_MODULES`
@@ -1156,11 +1156,32 @@ show_balance, updated_at, deleted_at)` — об'єднує
 
 ### Stage 5 — Sync engine v2 hardening
 
-#### **PR #040 — `feat(sync): persistent op-log in SQLite with retry policy`**
+#### **PR #040 — `feat(shared): persistent op-log retry policy with dead-letter store`** ✅ DONE — landed [#1712](https://github.com/Skords-01/Sergeant/pull/1712) (2026-05-04)
 
-- Scope. Op-log живе в SQLite (зараз in-memory). Retry з exponential
-  backoff, dead-letter після N=10 failures.
+- Scope. Op-log retry policy: dead-letter store + per-entry attempt
+  tracking. Op-log уже жив у durable storage (IDB на web з PR #009,
+  MMKV на mobile) — цей PR закриває retry-частину Stage 5.
+  - `MAX_QUEUE_ATTEMPTS = 10` константа в `@sergeant/shared`.
+  - `QueuePushEntry` отримує `attemptCount` / `lastError` /
+    `lastAttemptAt` (web + mobile, parity).
+  - Новий `recordReplayBatchFailure()` helper у both-side queues,
+    замикається з `replay.ts` catch-блока.
+  - Новий dead-letter store: `SYNC_META_KEYS.DEAD_LETTER_QUEUE`
+    (web, IDB) + `MOBILE_SYNC_DEAD_LETTER_QUEUE` (mobile, MMKV).
+    `getDeadLetterEntries` / `getDeadLetterCount` / `clearDeadLetters`
+    експортуються з public sync barrels.
+  - Coalesce-on-enqueue зберігає `attemptCount`; нормалізація
+    stranded push-entries бере MAX щоб dead-letter pressure не
+    скидався multi-tab гонками.
 - AC. Crash recovery: kill app → restart → unsent ops дойдуть.
+  Покрито vitest-набором `apps/web/src/core/cloudSync/__tests__/offlineQueue.deadLetter.test.ts`
+  (10 сценаріїв) і парним jest-набором
+  `apps/mobile/src/sync/__tests__/deadLetter.test.ts` (process-restart
+  через `jest.resetModules()` + reread MMKV/IDB).
+- **Не входить.** Manual replay-from-dead-letter helper (shape
+  готова — окремий follow-up PR). SQLite-backed op-log — у PR #040
+  написано «in SQLite (зараз in-memory)», але web уже з PR #009 на
+  IDB, mobile на MMKV; AC покривається без міграції на SQLite.
 
 #### **PR #041 — `feat(sync): real-time pull via Server-Sent Events`**
 
