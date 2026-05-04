@@ -683,6 +683,7 @@ export function HubDashboard({
         open={celebration.open}
         onClose={celebration.close}
         ttvMs={celebration.ttvMs}
+        moduleId={celebration.moduleId}
       />
     </div>
   );
