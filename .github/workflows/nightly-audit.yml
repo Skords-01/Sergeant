@@ -59,7 +59,7 @@ jobs:
       - name: Upload audit report
         if: ${{ !cancelled() }}
         # actions/upload-artifact v4.4.3 (SHA-pinned)
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: pnpm-audit-report
           path: pnpm-audit.json
@@ -104,7 +104,7 @@ jobs:
       - name: Upload SARIF artifact
         if: ${{ !cancelled() }}
         # actions/upload-artifact v4.4.3 (SHA-pinned)
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: osv-scanner-sarif
           path: osv-scanner.sarif
@@ -170,7 +170,7 @@ jobs:
       - name: Upload Snyk report
         if: ${{ env.SNYK_TOKEN != '' && !cancelled() }}
         # actions/upload-artifact v4.4.3 (SHA-pinned)
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: snyk-report
           path: snyk-report.json
