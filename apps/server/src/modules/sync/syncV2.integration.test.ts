@@ -2395,3 +2395,1313 @@ describe("syncV2Push — finyk apply-функції (PR #035)", () => {
     TIMEOUT_MS,
   );
 });
+
+// ---------------------------------------------------------------------
+// Tombstone-resurrection guard — Stage 5 follow-up до PR #043 (G-set
+// CRDT для `nutrition_meals`). Той самий інваріант поширюється на
+// інші soft-delete apply-шляхи: routine_entries + 5 fizruk_* таблиць.
+//
+// Кожен тест проганяє послідовність insert(t1) → delete(t2) →
+// update(t3, t3 > t2). Без guard-а raw LWW дозволив би update
+// перезаписати рядок (deleted_at скинеться у null із payload-у), що
+// фактично воскрешає видалений ряд. З guard-ом — update reject-нуто
+// з `reason='tombstoned'`, ряд лишається soft-deleted.
+// ---------------------------------------------------------------------
+describe("syncV2Push — tombstone resurrection guard (Stage 5)", () => {
+  it(
+    "routine_entries: update після soft-delete із новішим client_ts відхилено як tombstoned",
+    async (ctx) => {
+      if (!dockerAvailable || !testPool) return ctx.skip();
+      await ensureUser("u-rt-tomb");
+
+      const id = "30000000-0000-4000-8000-000000000001";
+      const t1 = isoNow(-10_000);
+      const t2 = isoNow(-5_000);
+      const t3 = isoNow();
+
+      await syncV2Push(
+        makeReq({
+          userId: "u-rt-tomb",
+          body: {
+            ops: [
+              {
+                table: "routine_entries",
+                op: "insert" as const,
+                row: {
+                  id,
+                  user_id: "u-rt-tomb",
+                  name: "before-delete",
+                  completed_at: t1,
+                },
+                client_ts: t1,
+                idempotency_key: "rt-tomb-insert",
+              },
+            ],
+          },
+        }),
+        makeRes(),
+      );
+
+      await syncV2Push(
+        makeReq({
+          userId: "u-rt-tomb",
+          body: {
+            ops: [
+              {
+                table: "routine_entries",
+                op: "delete" as const,
+                row: { id, user_id: "u-rt-tomb" },
+                client_ts: t2,
+                idempotency_key: "rt-tomb-delete",
+              },
+            ],
+          },
+        }),
+        makeRes(),
+      );
+
+      const r3 = makeRes();
+      await syncV2Push(
+        makeReq({
+          userId: "u-rt-tomb",
+          body: {
+            ops: [
+              {
+                table: "routine_entries",
+                op: "update" as const,
+                row: {
+                  id,
+                  user_id: "u-rt-tomb",
+                  name: "resurrected",
+                  completed_at: t3,
+                },
+                client_ts: t3,
+                idempotency_key: "rt-tomb-resurrect",
+              },
+            ],
+          },
+        }),
+        r3,
+      );
+      const body = r3.body as {
+        accepted: number;
+        results: Array<{ status: string; reason?: string }>;
+      };
+      expect(body.accepted).toBe(0);
+      expect(body.results[0].reason).toBe("tombstoned");
+
+      const finalRow = await testPool.query<{
+        deleted_at: Date | null;
+        name: string;
+      }>(`SELECT deleted_at, name FROM routine_entries WHERE id = $1`, [id]);
+      expect(finalRow.rows[0].deleted_at).not.toBeNull();
+      expect(finalRow.rows[0].name).toBe("before-delete");
+    },
+    TIMEOUT_MS,
+  );
+
+  it(
+    "fizruk_workouts: update після soft-delete відхилено як tombstoned",
+    async (ctx) => {
+      if (!dockerAvailable || !testPool) return ctx.skip();
+      await ensureUser("u-fz-w-tomb");
+
+      const id = "30000000-0000-4000-8000-000000000010";
+      const t1 = isoNow(-10_000);
+      const t2 = isoNow(-5_000);
+      const t3 = isoNow();
+
+      await syncV2Push(
+        makeReq({
+          userId: "u-fz-w-tomb",
+          body: {
+            ops: [
+              {
+                table: "fizruk_workouts",
+                op: "insert" as const,
+                row: {
+                  id,
+                  user_id: "u-fz-w-tomb",
+                  started_at: t1,
+                  note: "before-delete",
+                },
+                client_ts: t1,
+                idempotency_key: "fz-w-tomb-insert",
+              },
+            ],
+          },
+        }),
+        makeRes(),
+      );
+
+      await syncV2Push(
+        makeReq({
+          userId: "u-fz-w-tomb",
+          body: {
+            ops: [
+              {
+                table: "fizruk_workouts",
+                op: "delete" as const,
+                row: { id, user_id: "u-fz-w-tomb" },
+                client_ts: t2,
+                idempotency_key: "fz-w-tomb-delete",
+              },
+            ],
+          },
+        }),
+        makeRes(),
+      );
+
+      const r3 = makeRes();
+      await syncV2Push(
+        makeReq({
+          userId: "u-fz-w-tomb",
+          body: {
+            ops: [
+              {
+                table: "fizruk_workouts",
+                op: "update" as const,
+                row: {
+                  id,
+                  user_id: "u-fz-w-tomb",
+                  started_at: t1,
+                  note: "resurrected",
+                },
+                client_ts: t3,
+                idempotency_key: "fz-w-tomb-resurrect",
+              },
+            ],
+          },
+        }),
+        r3,
+      );
+      const body = r3.body as {
+        accepted: number;
+        results: Array<{ status: string; reason?: string }>;
+      };
+      expect(body.accepted).toBe(0);
+      expect(body.results[0].reason).toBe("tombstoned");
+
+      const finalRow = await testPool.query<{
+        deleted_at: Date | null;
+        note: string;
+      }>(`SELECT deleted_at, note FROM fizruk_workouts WHERE id = $1`, [id]);
+      expect(finalRow.rows[0].deleted_at).not.toBeNull();
+      expect(finalRow.rows[0].note).toBe("before-delete");
+    },
+    TIMEOUT_MS,
+  );
+
+  it(
+    "fizruk_workout_items: update після soft-delete відхилено як tombstoned",
+    async (ctx) => {
+      if (!dockerAvailable || !testPool) return ctx.skip();
+      await ensureUser("u-fz-i-tomb");
+
+      const workoutId = "30000000-0000-4000-8000-000000000020";
+      const itemId = "30000000-0000-4000-8000-000000000021";
+      const t1 = isoNow(-10_000);
+      const t2 = isoNow(-5_000);
+      const t3 = isoNow();
+
+      await syncV2Push(
+        makeReq({
+          userId: "u-fz-i-tomb",
+          body: {
+            ops: [
+              {
+                table: "fizruk_workouts",
+                op: "insert" as const,
+                row: {
+                  id: workoutId,
+                  user_id: "u-fz-i-tomb",
+                  started_at: t1,
+                },
+                client_ts: t1,
+                idempotency_key: "fz-i-tomb-w",
+              },
+              {
+                table: "fizruk_workout_items",
+                op: "insert" as const,
+                row: {
+                  id: itemId,
+                  workout_id: workoutId,
+                  user_id: "u-fz-i-tomb",
+                  exercise_id: "ex-1",
+                  name_uk: "Присідання",
+                  primary_group: "legs",
+                  type: "strength",
+                  sort_order: 0,
+                },
+                client_ts: t1,
+                idempotency_key: "fz-i-tomb-insert",
+              },
+            ],
+          },
+        }),
+        makeRes(),
+      );
+
+      await syncV2Push(
+        makeReq({
+          userId: "u-fz-i-tomb",
+          body: {
+            ops: [
+              {
+                table: "fizruk_workout_items",
+                op: "delete" as const,
+                row: { id: itemId, user_id: "u-fz-i-tomb" },
+                client_ts: t2,
+                idempotency_key: "fz-i-tomb-delete",
+              },
+            ],
+          },
+        }),
+        makeRes(),
+      );
+
+      const r3 = makeRes();
+      await syncV2Push(
+        makeReq({
+          userId: "u-fz-i-tomb",
+          body: {
+            ops: [
+              {
+                table: "fizruk_workout_items",
+                op: "update" as const,
+                row: {
+                  id: itemId,
+                  workout_id: workoutId,
+                  user_id: "u-fz-i-tomb",
+                  exercise_id: "ex-1",
+                  name_uk: "Resurrected",
+                  primary_group: "legs",
+                  type: "strength",
+                  sort_order: 0,
+                },
+                client_ts: t3,
+                idempotency_key: "fz-i-tomb-resurrect",
+              },
+            ],
+          },
+        }),
+        r3,
+      );
+      const body = r3.body as {
+        accepted: number;
+        results: Array<{ status: string; reason?: string }>;
+      };
+      expect(body.accepted).toBe(0);
+      expect(body.results[0].reason).toBe("tombstoned");
+
+      const finalRow = await testPool.query<{
+        deleted_at: Date | null;
+        name_uk: string;
+      }>(`SELECT deleted_at, name_uk FROM fizruk_workout_items WHERE id = $1`, [
+        itemId,
+      ]);
+      expect(finalRow.rows[0].deleted_at).not.toBeNull();
+      expect(finalRow.rows[0].name_uk).toBe("Присідання");
+    },
+    TIMEOUT_MS,
+  );
+
+  it(
+    "fizruk_workout_sets: update після soft-delete відхилено як tombstoned",
+    async (ctx) => {
+      if (!dockerAvailable || !testPool) return ctx.skip();
+      await ensureUser("u-fz-s-tomb");
+
+      const workoutId = "30000000-0000-4000-8000-000000000030";
+      const itemId = "30000000-0000-4000-8000-000000000031";
+      const setId = "30000000-0000-4000-8000-000000000032";
+      const t1 = isoNow(-10_000);
+      const t2 = isoNow(-5_000);
+      const t3 = isoNow();
+
+      await syncV2Push(
+        makeReq({
+          userId: "u-fz-s-tomb",
+          body: {
+            ops: [
+              {
+                table: "fizruk_workouts",
+                op: "insert" as const,
+                row: {
+                  id: workoutId,
+                  user_id: "u-fz-s-tomb",
+                  started_at: t1,
+                },
+                client_ts: t1,
+                idempotency_key: "fz-s-tomb-w",
+              },
+              {
+                table: "fizruk_workout_items",
+                op: "insert" as const,
+                row: {
+                  id: itemId,
+                  workout_id: workoutId,
+                  user_id: "u-fz-s-tomb",
+                  exercise_id: "ex-1",
+                  name_uk: "Присідання",
+                  primary_group: "legs",
+                  type: "strength",
+                  sort_order: 0,
+                },
+                client_ts: t1,
+                idempotency_key: "fz-s-tomb-i",
+              },
+              {
+                table: "fizruk_workout_sets",
+                op: "insert" as const,
+                row: {
+                  id: setId,
+                  workout_item_id: itemId,
+                  user_id: "u-fz-s-tomb",
+                  weight_kg: 80,
+                  reps: 5,
+                  sort_order: 0,
+                },
+                client_ts: t1,
+                idempotency_key: "fz-s-tomb-insert",
+              },
+            ],
+          },
+        }),
+        makeRes(),
+      );
+
+      await syncV2Push(
+        makeReq({
+          userId: "u-fz-s-tomb",
+          body: {
+            ops: [
+              {
+                table: "fizruk_workout_sets",
+                op: "delete" as const,
+                row: { id: setId, user_id: "u-fz-s-tomb" },
+                client_ts: t2,
+                idempotency_key: "fz-s-tomb-delete",
+              },
+            ],
+          },
+        }),
+        makeRes(),
+      );
+
+      const r3 = makeRes();
+      await syncV2Push(
+        makeReq({
+          userId: "u-fz-s-tomb",
+          body: {
+            ops: [
+              {
+                table: "fizruk_workout_sets",
+                op: "update" as const,
+                row: {
+                  id: setId,
+                  workout_item_id: itemId,
+                  user_id: "u-fz-s-tomb",
+                  weight_kg: 999,
+                  reps: 1,
+                  sort_order: 0,
+                },
+                client_ts: t3,
+                idempotency_key: "fz-s-tomb-resurrect",
+              },
+            ],
+          },
+        }),
+        r3,
+      );
+      const body = r3.body as {
+        accepted: number;
+        results: Array<{ status: string; reason?: string }>;
+      };
+      expect(body.accepted).toBe(0);
+      expect(body.results[0].reason).toBe("tombstoned");
+
+      const finalRow = await testPool.query<{
+        deleted_at: Date | null;
+        weight_kg: number;
+      }>(
+        `SELECT deleted_at, weight_kg FROM fizruk_workout_sets WHERE id = $1`,
+        [setId],
+      );
+      expect(finalRow.rows[0].deleted_at).not.toBeNull();
+      expect(Number(finalRow.rows[0].weight_kg)).toBe(80);
+    },
+    TIMEOUT_MS,
+  );
+
+  it(
+    "fizruk_custom_exercises: update після soft-delete відхилено як tombstoned",
+    async (ctx) => {
+      if (!dockerAvailable || !testPool) return ctx.skip();
+      await ensureUser("u-fz-ce-tomb");
+
+      const id = "30000000-0000-4000-8000-000000000040";
+      const t1 = isoNow(-10_000);
+      const t2 = isoNow(-5_000);
+      const t3 = isoNow();
+
+      await syncV2Push(
+        makeReq({
+          userId: "u-fz-ce-tomb",
+          body: {
+            ops: [
+              {
+                table: "fizruk_custom_exercises",
+                op: "insert" as const,
+                row: {
+                  id,
+                  user_id: "u-fz-ce-tomb",
+                  data_json: { name: "before-delete" },
+                },
+                client_ts: t1,
+                idempotency_key: "fz-ce-tomb-insert",
+              },
+            ],
+          },
+        }),
+        makeRes(),
+      );
+
+      await syncV2Push(
+        makeReq({
+          userId: "u-fz-ce-tomb",
+          body: {
+            ops: [
+              {
+                table: "fizruk_custom_exercises",
+                op: "delete" as const,
+                row: { id, user_id: "u-fz-ce-tomb" },
+                client_ts: t2,
+                idempotency_key: "fz-ce-tomb-delete",
+              },
+            ],
+          },
+        }),
+        makeRes(),
+      );
+
+      const r3 = makeRes();
+      await syncV2Push(
+        makeReq({
+          userId: "u-fz-ce-tomb",
+          body: {
+            ops: [
+              {
+                table: "fizruk_custom_exercises",
+                op: "update" as const,
+                row: {
+                  id,
+                  user_id: "u-fz-ce-tomb",
+                  data_json: { name: "resurrected" },
+                },
+                client_ts: t3,
+                idempotency_key: "fz-ce-tomb-resurrect",
+              },
+            ],
+          },
+        }),
+        r3,
+      );
+      const body = r3.body as {
+        accepted: number;
+        results: Array<{ status: string; reason?: string }>;
+      };
+      expect(body.accepted).toBe(0);
+      expect(body.results[0].reason).toBe("tombstoned");
+
+      const finalRow = await testPool.query<{
+        deleted_at: Date | null;
+        data_json: { name: string };
+      }>(
+        `SELECT deleted_at, data_json FROM fizruk_custom_exercises WHERE id = $1`,
+        [id],
+      );
+      expect(finalRow.rows[0].deleted_at).not.toBeNull();
+      expect(finalRow.rows[0].data_json.name).toBe("before-delete");
+    },
+    TIMEOUT_MS,
+  );
+
+  it(
+    "fizruk_measurements: update після soft-delete відхилено як tombstoned",
+    async (ctx) => {
+      if (!dockerAvailable || !testPool) return ctx.skip();
+      await ensureUser("u-fz-m-tomb");
+
+      const id = "30000000-0000-4000-8000-000000000050";
+      const t1 = isoNow(-10_000);
+      const t2 = isoNow(-5_000);
+      const t3 = isoNow();
+
+      await syncV2Push(
+        makeReq({
+          userId: "u-fz-m-tomb",
+          body: {
+            ops: [
+              {
+                table: "fizruk_measurements",
+                op: "insert" as const,
+                row: {
+                  id,
+                  user_id: "u-fz-m-tomb",
+                  measured_at: t1,
+                  weight_kg: 80,
+                },
+                client_ts: t1,
+                idempotency_key: "fz-m-tomb-insert",
+              },
+            ],
+          },
+        }),
+        makeRes(),
+      );
+
+      await syncV2Push(
+        makeReq({
+          userId: "u-fz-m-tomb",
+          body: {
+            ops: [
+              {
+                table: "fizruk_measurements",
+                op: "delete" as const,
+                row: { id, user_id: "u-fz-m-tomb" },
+                client_ts: t2,
+                idempotency_key: "fz-m-tomb-delete",
+              },
+            ],
+          },
+        }),
+        makeRes(),
+      );
+
+      const r3 = makeRes();
+      await syncV2Push(
+        makeReq({
+          userId: "u-fz-m-tomb",
+          body: {
+            ops: [
+              {
+                table: "fizruk_measurements",
+                op: "update" as const,
+                row: {
+                  id,
+                  user_id: "u-fz-m-tomb",
+                  measured_at: t1,
+                  weight_kg: 120,
+                },
+                client_ts: t3,
+                idempotency_key: "fz-m-tomb-resurrect",
+              },
+            ],
+          },
+        }),
+        r3,
+      );
+      const body = r3.body as {
+        accepted: number;
+        results: Array<{ status: string; reason?: string }>;
+      };
+      expect(body.accepted).toBe(0);
+      expect(body.results[0].reason).toBe("tombstoned");
+
+      const finalRow = await testPool.query<{
+        deleted_at: Date | null;
+        weight_kg: number;
+      }>(
+        `SELECT deleted_at, weight_kg FROM fizruk_measurements WHERE id = $1`,
+        [id],
+      );
+      expect(finalRow.rows[0].deleted_at).not.toBeNull();
+      expect(Number(finalRow.rows[0].weight_kg)).toBe(80);
+    },
+    TIMEOUT_MS,
+  );
+});
+
+// ---------------------------------------------------------------------
+// Stage 5 — tombstone-resurrection guard для nutrition non-meals + finyk
+// soft-delete shapes. Дзеркалить інваріант з PR #043 (`applyNutritionMeals`)
+// та PR-A (routine + fizruk) на 3 nutrition apply-фн і 2 finyk хелпери,
+// які покривають усі 10 finyk soft-delete таблиць (`applyFinykTombstone` —
+// 2 composite-PK, `applyFinykPerRowBlob` — 8 per-row+JSONB).
+// Інваріант: після soft-delete `op='insert'/'update'` із новішим
+// `client_ts` відхиляється з `reason='tombstoned'`. `op='delete'`
+// лишається ідемпотентним (re-stamp).
+// ---------------------------------------------------------------------
+describe("syncV2Push — nutrition + finyk tombstone resurrection guard (Stage 5)", () => {
+  it(
+    "nutrition_pantries: update після soft-delete із новішим client_ts відхилено як tombstoned",
+    async (ctx) => {
+      if (!dockerAvailable || !testPool) return ctx.skip();
+      await ensureUser("u-np-tomb");
+
+      const id = "60000000-0000-4000-8000-000000000001";
+      const t1 = isoNow(-10_000);
+      const t2 = isoNow(-5_000);
+      const t3 = isoNow();
+
+      await syncV2Push(
+        makeReq({
+          userId: "u-np-tomb",
+          body: {
+            ops: [
+              {
+                table: "nutrition_pantries",
+                op: "insert" as const,
+                row: {
+                  id,
+                  user_id: "u-np-tomb",
+                  name: "before-delete",
+                  text: "v1",
+                },
+                client_ts: t1,
+                idempotency_key: "np-tomb-insert",
+              },
+            ],
+          },
+        }),
+        makeRes(),
+      );
+
+      await syncV2Push(
+        makeReq({
+          userId: "u-np-tomb",
+          body: {
+            ops: [
+              {
+                table: "nutrition_pantries",
+                op: "delete" as const,
+                row: { id, user_id: "u-np-tomb" },
+                client_ts: t2,
+                idempotency_key: "np-tomb-delete",
+              },
+            ],
+          },
+        }),
+        makeRes(),
+      );
+
+      const r3 = makeRes();
+      await syncV2Push(
+        makeReq({
+          userId: "u-np-tomb",
+          body: {
+            ops: [
+              {
+                table: "nutrition_pantries",
+                op: "update" as const,
+                row: {
+                  id,
+                  user_id: "u-np-tomb",
+                  name: "resurrected",
+                  text: "v2",
+                },
+                client_ts: t3,
+                idempotency_key: "np-tomb-resurrect",
+              },
+            ],
+          },
+        }),
+        r3,
+      );
+      const body = r3.body as {
+        accepted: number;
+        results: Array<{ status: string; reason?: string }>;
+      };
+      expect(body.accepted).toBe(0);
+      expect(body.results[0].reason).toBe("tombstoned");
+
+      const finalRow = await testPool.query<{
+        deleted_at: Date | null;
+        name: string;
+        text: string;
+      }>(
+        `SELECT deleted_at, name, text FROM nutrition_pantries WHERE id = $1`,
+        [id],
+      );
+      expect(finalRow.rows[0].deleted_at).not.toBeNull();
+      expect(finalRow.rows[0].name).toBe("before-delete");
+      expect(finalRow.rows[0].text).toBe("v1");
+    },
+    TIMEOUT_MS,
+  );
+
+  it(
+    "nutrition_pantry_items: update після soft-delete відхилено як tombstoned",
+    async (ctx) => {
+      if (!dockerAvailable || !testPool) return ctx.skip();
+      await ensureUser("u-npi-tomb");
+
+      const pantryId = "60000000-0000-4000-8000-000000000010";
+      const itemId = "60000000-0000-4000-8000-000000000011";
+      const t0 = isoNow(-15_000);
+      const t1 = isoNow(-10_000);
+      const t2 = isoNow(-5_000);
+      const t3 = isoNow();
+
+      await syncV2Push(
+        makeReq({
+          userId: "u-npi-tomb",
+          body: {
+            ops: [
+              {
+                table: "nutrition_pantries",
+                op: "insert" as const,
+                row: {
+                  id: pantryId,
+                  user_id: "u-npi-tomb",
+                  name: "parent",
+                  text: "",
+                },
+                client_ts: t0,
+                idempotency_key: "npi-tomb-pantry",
+              },
+            ],
+          },
+        }),
+        makeRes(),
+      );
+
+      await syncV2Push(
+        makeReq({
+          userId: "u-npi-tomb",
+          body: {
+            ops: [
+              {
+                table: "nutrition_pantry_items",
+                op: "insert" as const,
+                row: {
+                  id: itemId,
+                  user_id: "u-npi-tomb",
+                  pantry_id: pantryId,
+                  name: "milk",
+                  qty: 1,
+                },
+                client_ts: t1,
+                idempotency_key: "npi-tomb-insert",
+              },
+            ],
+          },
+        }),
+        makeRes(),
+      );
+
+      await syncV2Push(
+        makeReq({
+          userId: "u-npi-tomb",
+          body: {
+            ops: [
+              {
+                table: "nutrition_pantry_items",
+                op: "delete" as const,
+                row: { id: itemId, user_id: "u-npi-tomb" },
+                client_ts: t2,
+                idempotency_key: "npi-tomb-delete",
+              },
+            ],
+          },
+        }),
+        makeRes(),
+      );
+
+      const r3 = makeRes();
+      await syncV2Push(
+        makeReq({
+          userId: "u-npi-tomb",
+          body: {
+            ops: [
+              {
+                table: "nutrition_pantry_items",
+                op: "update" as const,
+                row: {
+                  id: itemId,
+                  user_id: "u-npi-tomb",
+                  pantry_id: pantryId,
+                  name: "resurrected",
+                  qty: 99,
+                },
+                client_ts: t3,
+                idempotency_key: "npi-tomb-resurrect",
+              },
+            ],
+          },
+        }),
+        r3,
+      );
+      const body = r3.body as {
+        accepted: number;
+        results: Array<{ status: string; reason?: string }>;
+      };
+      expect(body.accepted).toBe(0);
+      expect(body.results[0].reason).toBe("tombstoned");
+
+      const finalRow = await testPool.query<{
+        deleted_at: Date | null;
+        name: string;
+      }>(`SELECT deleted_at, name FROM nutrition_pantry_items WHERE id = $1`, [
+        itemId,
+      ]);
+      expect(finalRow.rows[0].deleted_at).not.toBeNull();
+      expect(finalRow.rows[0].name).toBe("milk");
+    },
+    TIMEOUT_MS,
+  );
+
+  it(
+    "nutrition_recipes: update після soft-delete відхилено як tombstoned",
+    async (ctx) => {
+      if (!dockerAvailable || !testPool) return ctx.skip();
+      await ensureUser("u-nr-tomb");
+
+      const id = "60000000-0000-4000-8000-000000000020";
+      const t1 = isoNow(-10_000);
+      const t2 = isoNow(-5_000);
+      const t3 = isoNow();
+
+      await syncV2Push(
+        makeReq({
+          userId: "u-nr-tomb",
+          body: {
+            ops: [
+              {
+                table: "nutrition_recipes",
+                op: "insert" as const,
+                row: {
+                  id,
+                  user_id: "u-nr-tomb",
+                  name: "Борщ",
+                  data_json: { servings: 4, ingredients: [] },
+                },
+                client_ts: t1,
+                idempotency_key: "nr-tomb-insert",
+              },
+            ],
+          },
+        }),
+        makeRes(),
+      );
+
+      await syncV2Push(
+        makeReq({
+          userId: "u-nr-tomb",
+          body: {
+            ops: [
+              {
+                table: "nutrition_recipes",
+                op: "delete" as const,
+                row: { id, user_id: "u-nr-tomb" },
+                client_ts: t2,
+                idempotency_key: "nr-tomb-delete",
+              },
+            ],
+          },
+        }),
+        makeRes(),
+      );
+
+      const r3 = makeRes();
+      await syncV2Push(
+        makeReq({
+          userId: "u-nr-tomb",
+          body: {
+            ops: [
+              {
+                table: "nutrition_recipes",
+                op: "update" as const,
+                row: {
+                  id,
+                  user_id: "u-nr-tomb",
+                  name: "resurrected",
+                  data_json: { servings: 8, ingredients: [] },
+                },
+                client_ts: t3,
+                idempotency_key: "nr-tomb-resurrect",
+              },
+            ],
+          },
+        }),
+        r3,
+      );
+      const body = r3.body as {
+        accepted: number;
+        results: Array<{ status: string; reason?: string }>;
+      };
+      expect(body.accepted).toBe(0);
+      expect(body.results[0].reason).toBe("tombstoned");
+
+      const finalRow = await testPool.query<{
+        deleted_at: Date | null;
+        name: string;
+        data_json: { servings: number };
+      }>(
+        `SELECT deleted_at, name, data_json FROM nutrition_recipes WHERE id = $1`,
+        [id],
+      );
+      expect(finalRow.rows[0].deleted_at).not.toBeNull();
+      expect(finalRow.rows[0].name).toBe("Борщ");
+      expect(finalRow.rows[0].data_json.servings).toBe(4);
+    },
+    TIMEOUT_MS,
+  );
+
+  it(
+    "finyk_hidden_accounts: update після soft-delete відхилено як tombstoned (applyFinykTombstone shape)",
+    async (ctx) => {
+      if (!dockerAvailable || !testPool) return ctx.skip();
+      await ensureUser("u-fha-tomb");
+
+      const accountId = "mono-acc-tomb-1";
+      const t1 = isoNow(-10_000);
+      const t2 = isoNow(-5_000);
+      const t3 = isoNow();
+
+      await syncV2Push(
+        makeReq({
+          userId: "u-fha-tomb",
+          body: {
+            ops: [
+              {
+                table: "finyk_hidden_accounts",
+                op: "insert" as const,
+                row: { user_id: "u-fha-tomb", account_id: accountId },
+                client_ts: t1,
+                idempotency_key: "fha-tomb-insert",
+              },
+            ],
+          },
+        }),
+        makeRes(),
+      );
+
+      await syncV2Push(
+        makeReq({
+          userId: "u-fha-tomb",
+          body: {
+            ops: [
+              {
+                table: "finyk_hidden_accounts",
+                op: "delete" as const,
+                row: { user_id: "u-fha-tomb", account_id: accountId },
+                client_ts: t2,
+                idempotency_key: "fha-tomb-delete",
+              },
+            ],
+          },
+        }),
+        makeRes(),
+      );
+
+      const r3 = makeRes();
+      await syncV2Push(
+        makeReq({
+          userId: "u-fha-tomb",
+          body: {
+            ops: [
+              {
+                table: "finyk_hidden_accounts",
+                op: "update" as const,
+                row: { user_id: "u-fha-tomb", account_id: accountId },
+                client_ts: t3,
+                idempotency_key: "fha-tomb-resurrect",
+              },
+            ],
+          },
+        }),
+        r3,
+      );
+      const body = r3.body as {
+        accepted: number;
+        results: Array<{ status: string; reason?: string }>;
+      };
+      expect(body.accepted).toBe(0);
+      expect(body.results[0].reason).toBe("tombstoned");
+
+      const finalRow = await testPool.query<{ deleted_at: Date | null }>(
+        `SELECT deleted_at FROM finyk_hidden_accounts
+           WHERE user_id = $1 AND account_id = $2`,
+        ["u-fha-tomb", accountId],
+      );
+      expect(finalRow.rows[0].deleted_at).not.toBeNull();
+    },
+    TIMEOUT_MS,
+  );
+
+  it(
+    "finyk_hidden_transactions: update після soft-delete відхилено як tombstoned (applyFinykTombstone shape)",
+    async (ctx) => {
+      if (!dockerAvailable || !testPool) return ctx.skip();
+      await ensureUser("u-fht-tomb");
+
+      const txId = "mono-tx-tomb-1";
+      const t1 = isoNow(-10_000);
+      const t2 = isoNow(-5_000);
+      const t3 = isoNow();
+
+      await syncV2Push(
+        makeReq({
+          userId: "u-fht-tomb",
+          body: {
+            ops: [
+              {
+                table: "finyk_hidden_transactions",
+                op: "insert" as const,
+                row: {
+                  user_id: "u-fht-tomb",
+                  transaction_id: txId,
+                },
+                client_ts: t1,
+                idempotency_key: "fht-tomb-insert",
+              },
+            ],
+          },
+        }),
+        makeRes(),
+      );
+
+      await syncV2Push(
+        makeReq({
+          userId: "u-fht-tomb",
+          body: {
+            ops: [
+              {
+                table: "finyk_hidden_transactions",
+                op: "delete" as const,
+                row: {
+                  user_id: "u-fht-tomb",
+                  transaction_id: txId,
+                },
+                client_ts: t2,
+                idempotency_key: "fht-tomb-delete",
+              },
+            ],
+          },
+        }),
+        makeRes(),
+      );
+
+      const r3 = makeRes();
+      await syncV2Push(
+        makeReq({
+          userId: "u-fht-tomb",
+          body: {
+            ops: [
+              {
+                table: "finyk_hidden_transactions",
+                op: "update" as const,
+                row: {
+                  user_id: "u-fht-tomb",
+                  transaction_id: txId,
+                },
+                client_ts: t3,
+                idempotency_key: "fht-tomb-resurrect",
+              },
+            ],
+          },
+        }),
+        r3,
+      );
+      const body = r3.body as {
+        accepted: number;
+        results: Array<{ status: string; reason?: string }>;
+      };
+      expect(body.accepted).toBe(0);
+      expect(body.results[0].reason).toBe("tombstoned");
+
+      const finalRow = await testPool.query<{ deleted_at: Date | null }>(
+        `SELECT deleted_at FROM finyk_hidden_transactions
+           WHERE user_id = $1 AND transaction_id = $2`,
+        ["u-fht-tomb", txId],
+      );
+      expect(finalRow.rows[0].deleted_at).not.toBeNull();
+    },
+    TIMEOUT_MS,
+  );
+
+  it(
+    "finyk_budgets: update після soft-delete відхилено як tombstoned (applyFinykPerRowBlob shape)",
+    async (ctx) => {
+      if (!dockerAvailable || !testPool) return ctx.skip();
+      await ensureUser("u-fb-tomb");
+
+      const id = "70000000-0000-4000-8000-000000000001";
+      const t1 = isoNow(-10_000);
+      const t2 = isoNow(-5_000);
+      const t3 = isoNow();
+
+      await syncV2Push(
+        makeReq({
+          userId: "u-fb-tomb",
+          body: {
+            ops: [
+              {
+                table: "finyk_budgets",
+                op: "insert" as const,
+                row: {
+                  id,
+                  user_id: "u-fb-tomb",
+                  data_json: { categoryId: "food", limit: 1000 },
+                },
+                client_ts: t1,
+                idempotency_key: "fb-tomb-insert",
+              },
+            ],
+          },
+        }),
+        makeRes(),
+      );
+
+      await syncV2Push(
+        makeReq({
+          userId: "u-fb-tomb",
+          body: {
+            ops: [
+              {
+                table: "finyk_budgets",
+                op: "delete" as const,
+                row: { id, user_id: "u-fb-tomb" },
+                client_ts: t2,
+                idempotency_key: "fb-tomb-delete",
+              },
+            ],
+          },
+        }),
+        makeRes(),
+      );
+
+      const r3 = makeRes();
+      await syncV2Push(
+        makeReq({
+          userId: "u-fb-tomb",
+          body: {
+            ops: [
+              {
+                table: "finyk_budgets",
+                op: "update" as const,
+                row: {
+                  id,
+                  user_id: "u-fb-tomb",
+                  data_json: { categoryId: "food", limit: 9999 },
+                },
+                client_ts: t3,
+                idempotency_key: "fb-tomb-resurrect",
+              },
+            ],
+          },
+        }),
+        r3,
+      );
+      const body = r3.body as {
+        accepted: number;
+        results: Array<{ status: string; reason?: string }>;
+      };
+      expect(body.accepted).toBe(0);
+      expect(body.results[0].reason).toBe("tombstoned");
+
+      const finalRow = await testPool.query<{
+        deleted_at: Date | null;
+        data_json: { limit: number };
+      }>(`SELECT deleted_at, data_json FROM finyk_budgets WHERE id = $1`, [id]);
+      expect(finalRow.rows[0].deleted_at).not.toBeNull();
+      expect(finalRow.rows[0].data_json.limit).toBe(1000);
+    },
+    TIMEOUT_MS,
+  );
+
+  it(
+    "finyk_subscriptions: update після soft-delete відхилено як tombstoned (applyFinykPerRowBlob shape, інша таблиця)",
+    async (ctx) => {
+      if (!dockerAvailable || !testPool) return ctx.skip();
+      await ensureUser("u-fs-tomb");
+
+      const id = "70000000-0000-4000-8000-000000000002";
+      const t1 = isoNow(-10_000);
+      const t2 = isoNow(-5_000);
+      const t3 = isoNow();
+
+      await syncV2Push(
+        makeReq({
+          userId: "u-fs-tomb",
+          body: {
+            ops: [
+              {
+                table: "finyk_subscriptions",
+                op: "insert" as const,
+                row: {
+                  id,
+                  user_id: "u-fs-tomb",
+                  data_json: { name: "Spotify", monthly: 199 },
+                },
+                client_ts: t1,
+                idempotency_key: "fs-tomb-insert",
+              },
+            ],
+          },
+        }),
+        makeRes(),
+      );
+
+      await syncV2Push(
+        makeReq({
+          userId: "u-fs-tomb",
+          body: {
+            ops: [
+              {
+                table: "finyk_subscriptions",
+                op: "delete" as const,
+                row: { id, user_id: "u-fs-tomb" },
+                client_ts: t2,
+                idempotency_key: "fs-tomb-delete",
+              },
+            ],
+          },
+        }),
+        makeRes(),
+      );
+
+      const r3 = makeRes();
+      await syncV2Push(
+        makeReq({
+          userId: "u-fs-tomb",
+          body: {
+            ops: [
+              {
+                table: "finyk_subscriptions",
+                op: "update" as const,
+                row: {
+                  id,
+                  user_id: "u-fs-tomb",
+                  data_json: { name: "Spotify", monthly: 999 },
+                },
+                client_ts: t3,
+                idempotency_key: "fs-tomb-resurrect",
+              },
+            ],
+          },
+        }),
+        r3,
+      );
+      const body = r3.body as {
+        accepted: number;
+        results: Array<{ status: string; reason?: string }>;
+      };
+      expect(body.accepted).toBe(0);
+      expect(body.results[0].reason).toBe("tombstoned");
+
+      const finalRow = await testPool.query<{
+        deleted_at: Date | null;
+        data_json: { monthly: number };
+      }>(
+        `SELECT deleted_at, data_json FROM finyk_subscriptions WHERE id = $1`,
+        [id],
+      );
+      expect(finalRow.rows[0].deleted_at).not.toBeNull();
+      expect(finalRow.rows[0].data_json.monthly).toBe(199);
+    },
+    TIMEOUT_MS,
+  );
+});
