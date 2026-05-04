@@ -322,7 +322,7 @@ OK.
 
 **Cost / impact.** 1 день роботи, перманентно покращує context-onboarding для будь-кого нового (агент чи людина).
 
-> **Update 2026-05-04 (#PR_PLACEHOLDER_C4):** done. `docs/architecture/diagrams/` додано:
+> **Update 2026-05-04 ([#1602](https://github.com/Skords-01/Sergeant/pull/1602)):** done. `docs/architecture/diagrams/` додано:
 >
 > - **C1** — [`c1-system-context.md`](../../architecture/diagrams/c1-system-context.md): User ↔ Web/Mobile/Mobile-Shell ↔ Server ↔ Postgres/Redis/Anthropic/Sentry/n8n/Mono/SMTP/APNs/FCM/Telegram.
 > - **C2** — [`c2-containers.md`](../../architecture/diagrams/c2-containers.md): deploy-топологія Vercel ↔ Railway (Server + n8n + Console + Postgres + Redis), BullMQ workers in-process, network boundaries.
