@@ -1,7 +1,7 @@
 # 0011 — Foundation adoption + process discipline (post-launch sweep)
 
 > **Last validated:** 2026-05-04 by @Skords-01. **Next review:** 2026-08-02.
-> **Status:** Proposed (Phase 1 freeze-compatible — старт 2026-05-05; Phases 2–4 заплановані пост-0010-launch ≥ 2026-06-01)
+> **Status:** Phase 1 ~70% done (1.1/1.2/1.3 merged; 1.4 pending). Phase 2 in flight: 2.2 merged (#1696); 2.4 (#1703) + 2.5 (#1709) opened 2026-05-04 (DataState consumer adoption — finyk + fizruk).
 > **Priority:** P1 (subordinate to 0010-revenue-first-launch scope-freeze)
 > **Owner:** `@Skords-01`
 > **ETA:** 7 тижнів (Phase 1 — паралельно з 0010 freeze; Phases 2–4 — після 0010 launch)
@@ -126,13 +126,15 @@
 
 Цільові 15 файлів — top-of-funnel high-traffic екрани. Розбиваємо по доменах:
 
-| PR  | Назва                                                          | Файли (приклад)                                      | ETA    |
-| --- | -------------------------------------------------------------- | ---------------------------------------------------- | ------ |
-| 2.4 | `refactor(web): adopt <DataState> in finyk Mono panels`        | MonoTransactionsPanel, BudgetPanel, MonoAccountsList | +3 дні |
-| 2.5 | `refactor(web): adopt <DataState> in fizruk panels`            | WorkoutHistoryPanel, BiometricsPanel                 | +3 дні |
-| 2.6 | `refactor(web): adopt <DataState> in nutrition panels`         | NutritionMealsPanel, BarcodeScannerPanel             | +3 дні |
-| 2.7 | `refactor(web): adopt <DataState> in routine panels`           | RoutineList, StreakCalendarPanel                     | +3 дні |
-| 2.8 | `refactor(web): adopt <DataState> in HubChat / coach / digest` | HubChatHistoryPanel, CoachInsightsPanel, DigestPanel | +3 дні |
+| PR  | Назва                                                          | Файли (фактичні споживачі)                                                                               | Status                                                                           |
+| --- | -------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| 2.4 | `refactor(web): adopt <DataState> in finyk Mono panels`        | `Overview.tsx`, `budgets/Budgets.tsx`, `transactions/TransactionList.tsx` (+ `TransactionList.test.tsx`) | **Opened 2026-05-04 — [#1703](https://github.com/Skords-01/Sergeant/pull/1703)** |
+| 2.5 | `refactor(web): adopt <DataState> in fizruk Workouts journal`  | `pages/Workouts.tsx` (єдина Skeleton-based loading site у fizruk модулі)                                 | **Opened 2026-05-04 — [#1709](https://github.com/Skords-01/Sergeant/pull/1709)** |
+| 2.6 | `refactor(web): adopt <DataState> in nutrition panels`         | NutritionMealsPanel, BarcodeScannerPanel                                                                 | +3 дні                                                                           |
+| 2.7 | `refactor(web): adopt <DataState> in routine panels`           | RoutineList, StreakCalendarPanel                                                                         | +3 дні                                                                           |
+| 2.8 | `refactor(web): adopt <DataState> in HubChat / coach / digest` | HubChatHistoryPanel, CoachInsightsPanel, DigestPanel                                                     | +3 дні                                                                           |
+
+> **Note (2026-05-04):** Файли в колонці «Файли» для 2.4/2.5 — actual landed targets, а не initial guess. Початкові приклади (`MonoTransactionsPanel`, `BudgetPanel`, `MonoAccountsList`, `WorkoutHistoryPanel`, `BiometricsPanel`) виявилися застарілими — fізичних компонентів з такими іменами в репі немає. Замість того ми мігрували реальні Skeleton-based loading sites: усі три finyk-сторінки з `if (loadingTx && realTx.length === 0)` патерном (PR 2.4) і `view === "log" && !workoutsLoaded` guard у `Workouts.tsx` (PR 2.5 — у fizruk саме одне таке місце; інші pages працюють синхронно з local-first MMKV-web даними).
 
 > **Кожен PR — 1 child-Devin-сесія максимум.** Скоуп = 2–4 файли, ~150–300 LOC change. Поведінка не змінюється — той самий empty-state, той самий error-state, той самий retry. Лише уніфікований wrapper.
 
