@@ -1,6 +1,6 @@
 # Contributing to Sergeant
 
-> **Last validated:** 2026-05-04 by @Skords-01. **Next review:** 2026-08-02.
+> **Last validated:** 2026-05-05 by @Skords-01. **Next review:** 2026-08-03.
 > **Status:** Active
 
 `CONTRIBUTING.md` - канонічний manual для людей. Repo policy і hard rules описані в [AGENTS.md](./AGENTS.md), а repeatable execution recipes - у [docs/playbooks/README.md](./docs/playbooks/README.md).
@@ -143,6 +143,7 @@ pnpm gen migration      # apps/server/src/migrations/<NNN>_<name>.sql + .down.sq
 pnpm gen rq-hook        # apps/web/src/modules/<module>/hooks/use<Name>.ts
 pnpm gen hubchat-tool   # server toolDef stub + web action stub
 pnpm gen endpoint       # server handler + test + api-client stub
+pnpm gen new-package    # packages/<slug>/{src,package.json,tsconfig.json,vitest.config.ts,README.md} + CODEOWNERS entry
 ```
 
 `new-skill` і `new-playbook` за замовчуванням генерують UA-текст (Hard Rule #15). Якщо матеріал свідомо англомовний (зовнішній/user-facing), вибери `lang: en` у промпті — генератор додасть `lang: en` у frontmatter і linter візьме файл у allowlist.
