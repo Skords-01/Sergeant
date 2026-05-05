@@ -60,7 +60,7 @@
     },
     {
       "pattern": "^https?://node-postgres\\.com/api/pool",
-      "reason": "Cited в docs/planning/stack-pulse-2026-05/pr-13-postgres-pool-sizing.md як reference на pg.Pool API at time of planning (2026-05). node-postgres docs site reorganized in 2025 — API surface unchanged, URL path moved to /apis/pool. Historical citation."
+      "reason": "Cited в docs/initiatives/stack-pulse-2026-05/pr-13-postgres-pool-sizing.md як reference на pg.Pool API at time of planning (2026-05). node-postgres docs site reorganized in 2025 — API surface unchanged, URL path moved to /apis/pool. Historical citation."
     },
     {
       "pattern": "^https?://(www\\.)?npmjs\\.com/package/",
