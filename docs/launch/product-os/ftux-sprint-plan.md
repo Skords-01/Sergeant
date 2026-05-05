@@ -62,11 +62,11 @@
 
 Перевірив код у `main` після перших спроб взяти S0.1 — частина S0 уже зроблена попередніми PR-ами. Після [PR #1570](https://github.com/Skords-01/Sergeant/pull/1570) (S0.5), [PR #1582](https://github.com/Skords-01/Sergeant/pull/1582) (S0.4) і [PR #1704](https://github.com/Skords-01/Sergeant/pull/1704) (S0.3 mobile parity) Sprint 0 повністю закритий. Рекалібрував статус нижче, щоб не дублювати роботу:
 
-- **PostHog SDK уже вмонтовано** у web ([`apps/web/src/core/observability/posthog.ts`](../../apps/web/src/core/observability/posthog.ts)) з lazy `import("posthog-js")`, queue до завершення init, `sanitize_properties`, `identified_only` profiles, EU host default.
-- `posthog-js@^1.372.3` у `apps/web/package.json`, `initPostHog()` викликається з [`apps/web/src/main.tsx`](../../apps/web/src/main.tsx) через `requestIdleCallback`.
-- `identifyPostHogUser` / `resetPostHog` викликаються з [`AuthContext.tsx`](../../apps/web/src/core/auth/AuthContext.tsx) на login/logout з `buildIdentifyTraits` (`vibe`, `plan`, `locale`, `signup_date`).
+- **PostHog SDK уже вмонтовано** у web ([`apps/web/src/core/observability/posthog.ts`](../../../apps/web/src/core/observability/posthog.ts)) з lazy `import("posthog-js")`, queue до завершення init, `sanitize_properties`, `identified_only` profiles, EU host default.
+- `posthog-js@^1.372.3` у `apps/web/package.json`, `initPostHog()` викликається з [`apps/web/src/main.tsx`](../../../apps/web/src/main.tsx) через `requestIdleCallback`.
+- `identifyPostHogUser` / `resetPostHog` викликаються з [`AuthContext.tsx`](../../../apps/web/src/core/auth/AuthContext.tsx) на login/logout з `buildIdentifyTraits` (`vibe`, `plan`, `locale`, `signup_date`).
 - Super-properties (`platform`, `is_capacitor`) реєструються через `posthog.register` всередині `initPostHog`.
-- `<PageviewTracker />` змонтований у [`App.tsx`](../../apps/web/src/core/App.tsx) з `sanitizeUrl()` для magic-link токенів.
+- `<PageviewTracker />` змонтований у [`App.tsx`](../../../apps/web/src/core/App.tsx) з `sanitizeUrl()` для magic-link токенів.
 - `.env.example` (root) має закоментовані `VITE_POSTHOG_KEY` / `VITE_POSTHOG_HOST`; setup задокументований у [`docs/observability/frontend.md`](../../observability/frontend.md).
 - CI workflow `.github/workflows/posthog-release-annotation.yml` уже постить annotation на release.
 
