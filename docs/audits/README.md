@@ -13,6 +13,18 @@ freshness-маркером (див. `scripts/check-tech-debt-freshness.mjs`).
 - **Closed** — оцінка завершена, fixes винесені у tracker (зазвичай — `*-implementation-roadmap.md` або `2026-04-28-ux-improvement-plan.md`); сам документ лишається як historical record.
 - **Archived** — аудит застарів і фізично переміщений у `docs/audits/archive/`. Канонічні правила тепер живуть у `docs/design/*` або `docs/governance/*`.
 
+## Жанри під одним парасольником
+
+З 2026-05-05 `docs/audits/` об'єднує два типи документів — раніше був окремий каталог `docs/diagnostics/`, який злито сюди як піджанр (`*-deep-dive/`-директорії).
+
+|             | Generalні аудити (`YYYY-MM-DD-<scope>-audit.md`)                                             | Deep-dive прожарки (`YYYY-MM-DD-<scope>-deep-dive/`)                          |
+| ----------- | -------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| Періодичні? | Регулярні (квартальні / напівщорічні)                                                        | Ad-hoc, на запит                                                              |
+| Скоуп       | Вся система чи весь домен                                                                    | Тонкий зріз з sub-секціями (frontend / architecture / backend / security ...) |
+| Структура   | Один файл                                                                                    | Директорія з `00-overview.md` + `01-...md` ... + опційний `round-NN-*.md`     |
+| Lifecycle   | Active / Closed / Archived                                                                   | Active / Superseded                                                           |
+| Приклад     | [`2026-04-28-sergeant-comprehensive-audit.md`](./2026-04-28-sergeant-comprehensive-audit.md) | [`2026-05-03-web-deep-dive/`](./2026-05-03-web-deep-dive/)                    |
+
 ## Як читати таблицю
 
 `Implemented` / `Outstanding` — coarse-grain лічильники recommended-items
@@ -38,16 +50,13 @@ freshness-маркером (див. `scripts/check-tech-debt-freshness.mjs`).
 | [`2026-05-05-dead-code-and-stale-links-audit.md`](./2026-05-05-dead-code-and-stale-links-audit.md) | Dead-code & stale-links прохід (knip / docs:check-links) | Active   | 5/5         | 6 ≈         | embedded §3 (unused deps + exports + duplicate exports for follow-up PRs)        |
 | [`archive/ux-audit-2025.md`](./archive/ux-audit-2025.md)                                           | UX-аудит 2025                                            | Archived | n/a         | n/a         | superseded by [`2026-04-28-ux-ui-audit.md`](./2026-04-28-ux-ui-audit.md)         |
 
-## Diagnostics (ad-hoc deep-dives)
+## Deep-dive прожарки
 
-Окремий жанр від періодичних аудитів — `docs/diagnostics/` тримає
-точкові «прожарки», які роблять fresh second opinion на конкретний
-зріз системи й завершуються коротким roadmap'ом. Лінкаються звідси,
-бо часто породжують нові tracker-items для активних аудитів.
+Точкові ad-hoc прожарки на конкретний зріз системи з власним internal roadmap (sub-файли + sprint-burndown файли). Часто породжують нові tracker-items, які вливаються у `*-implementation-roadmap.md`.
 
-| Документ                                                                               | Опис                                                                          | Status | Implemented | Outstanding |
-| -------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- | ------ | ----------- | ----------- |
-| [`../diagnostics/2026-05-03-web-deep-dive/`](../diagnostics/2026-05-03-web-deep-dive/) | Web deep-dive — 18-item roadmap (forms, state, security, observability, DevX) | Active | 5/18        | 13          |
+| Документ                                                   | Опис                                                                          | Status | Implemented | Outstanding |
+| ---------------------------------------------------------- | ----------------------------------------------------------------------------- | ------ | ----------- | ----------- |
+| [`2026-05-03-web-deep-dive/`](./2026-05-03-web-deep-dive/) | Web deep-dive — 18-item roadmap (forms, state, security, observability, DevX) | Active | 5/18        | 13          |
 
 ## Process
 

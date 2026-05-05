@@ -130,7 +130,7 @@ Override — не sin, це signaling механізм. Якщо за 4 тижн
 
 - `docs/audits/`, `docs/initiatives/`, `docs/playbooks/`, `docs/adr/` — це місця, куди легко додати «ще один аудит» / «ще одна ініціатива», і де темп зростання випередив темп viability.
 - `docs/launch/`, `docs/observability/`, `docs/integrations/`, `docs/architecture/`, `docs/design/`, `docs/agents/`, **не** заморожуються — це функціональна документація, що часто синкається з shipped code.
-- `docs/diagnostics/` теж не заморожується — diagnostics створюються per-incident, не за роадмапом.
+- `*-deep-dive/` піджанр в `docs/audits/` (раніше — окремий `docs/diagnostics/`) **не** заморожується — deep-dives створюються per-incident / на запит, не за роадмапом.
 - `AGENTS.md` під обмеженням «розширення без enforcement» — це найбільший read-tax файл.
 
 ---

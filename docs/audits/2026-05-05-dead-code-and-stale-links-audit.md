@@ -173,4 +173,4 @@ pnpm knip --reporter=json | tee dist/knip-snapshot-$(date +%F).json
 - [`AGENTS.md` → Hard Rule #10](../../AGENTS.md) — лайфциклові маркери (`@scaffolded` / `@deprecated` / `@experimental`) як умова для dead-code:files гарду.
 - [`scripts/codemods/README.md`](../../scripts/codemods/README.md) — каталог одноразових міграційних скриптів.
 - [`docs/tech-debt/frontend.md`](../tech-debt/frontend.md) — outstanding tech-debt по `apps/web`, на яке посилаються initiatives 0006/0007.
-- [`docs/diagnostics/2026-05-03-web-deep-dive/02-architecture-and-state.md`](../diagnostics/2026-05-03-web-deep-dive/02-architecture-and-state.md) — джерело `@scaffolded` маркерів для `useApiForm` барелу та storage-roadmap PR-ів.
+- [`do./2026-05-03-web-deep-dive/02-architecture-and-state.md`](./2026-05-03-web-deep-dive/02-architecture-and-state.md) — джерело `@scaffolded` маркерів для `useApiForm` барелу та storage-roadmap PR-ів.
