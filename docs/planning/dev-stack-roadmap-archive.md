@@ -1,5 +1,6 @@
 # Dev stack roadmap — архів історичних журналів сесій
 
+> **Last validated:** 2026-05-05 by Devin. **Next review:** ніколи (read-only архів).
 > **Created:** 2026-05-05.
 > **Source:** [`dev-stack-roadmap.md`](./dev-stack-roadmap.md) §«Журнал сесій».
 > **Purpose:** зберегти хронологію early-spring 2026 «інфра-спринтів» (PR-и #714 — #743), не захаращуючи живий роадмап.
