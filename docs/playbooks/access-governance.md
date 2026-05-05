@@ -1,35 +1,35 @@
-# Playbook: Access governance
+# Playbook: Управління привілейованим доступом
 
-> **Last validated:** 2026-05-04 by @Skords-01. **Next review:** 2026-08-02.
+> **Last validated:** 2026-05-05 by @Skords-01. **Next review:** 2026-08-03.
 > **Status:** Active
 
-**Trigger:** any privileged-access governance event in Sergeant — granting new privileged access, revoking it, running a periodic Tier 0/1 access review, or responding to a suspected account or credential compromise.
+**Trigger:** «Видай / забери доступ» / governance-подія привілейованого доступу в Sergeant — видача нового доступу, відкликання, періодичний review Tier 0/1, або реакція на підозру компрометації акаунта чи токена.
 
 ## Owner surface
 
-- Primary surface: privileged access governance and security incident response
-- Coupled surfaces: Tier 0/1 vendor consoles, machine credentials, secrets register
+- Primary surface: privileged access governance і реагування на security-інциденти
+- Coupled surfaces: Tier 0/1 vendor-консолі, machine credentials, secrets register
 - Governing skill: `sergeant-review-and-merge`
-- Secondary skill: `sergeant-deploy-and-observability` (for the compromise-response branch)
+- Secondary skill: `sergeant-deploy-and-observability` (для гілки compromise-response)
 
 ## Required context
 
-- Start with `sergeant-start-here`, then load `sergeant-review-and-merge` (default) or `sergeant-deploy-and-observability` (when responding to a suspected compromise).
-- Review [access-policy.md](../security/access-policy.md), [access-matrix.md](../security/access-matrix.md), and [secret-ownership-register.md](../security/secret-ownership-register.md).
-- For compromise events, also review [security-incident-policy.md](../governance/security-incident-policy.md) and keep [rotate-secrets.md](./rotate-secrets.md) ready.
+- Стартуй з `sergeant-start-here`, тоді завантаж `sergeant-review-and-merge` (за замовчуванням) або `sergeant-deploy-and-observability` (коли реагуєш на підозру компрометації).
+- Перечитай [access-policy.md](../security/access-policy.md), [access-matrix.md](../security/access-matrix.md) і [secret-ownership-register.md](../security/secret-ownership-register.md).
+- Для compromise-подій також перечитай [security-incident-policy.md](../governance/security-incident-policy.md) і тримай напоготові [rotate-secrets.md](./rotate-secrets.md).
 
-## Decision tree — which access event are you handling?
+## Дерево рішень — який тип access-події?
 
 ```mermaid
 flowchart TD
-    Q1{"Q1: What kind of access event is this?"}
-    Q1 -- "Granting new privileged access" --> GRANT["§ Grant privileged access"]
-    Q1 -- "Removing or reducing existing access" --> Q2{"Q2: Is compromise suspected?"}
-    Q1 -- "Periodic Tier 0/1 review or governance sweep" --> REVIEW["§ Periodic access review"]
-    Q1 -- "Suspicious admin/vendor activity or leak" --> COMP["§ Suspected account compromise"]
+    Q1{"Q1: Який це тип access-події?"}
+    Q1 -- "Видача нового привілейованого доступу" --> GRANT["§ Видача доступу"]
+    Q1 -- "Зняття або зменшення наявного доступу" --> Q2{"Q2: Чи є підозра компрометації?"}
+    Q1 -- "Періодичний review Tier 0/1 або governance-sweep" --> REVIEW["§ Періодичний access review"]
+    Q1 -- "Підозріла активність admin/vendor або витік" --> COMP["§ Підозра компрометації"]
 
-    Q2 -- "No, normal offboarding/role change" --> REVOKE["§ Revoke privileged access"]
-    Q2 -- "Yes" --> COMP
+    Q2 -- "Ні, штатний offboarding/зміна ролі" --> REVOKE["§ Відкликання доступу"]
+    Q2 -- "Так" --> COMP
 
     GRANT --> VERIFY["Verification"]
     REVOKE --> VERIFY
@@ -37,132 +37,132 @@ flowchart TD
     COMP --> VERIFY
 ```
 
-If the event is purely runtime degradation with no access angle, this playbook does not apply — use [investigate-alert.md](./investigate-alert.md) or [hotfix-prod-regression.md](./hotfix-prod-regression.md).
+Якщо подія — суто рантайм-деградація без access-кута, цей playbook не застосовний — використай [investigate-alert.md](./investigate-alert.md) або [hotfix-prod-regression.md](./hotfix-prod-regression.md).
 
-## 1. Grant privileged access
+## 1. Видача привілейованого доступу
 
-For granting new privileged access to a documented Sergeant surface.
+Для видачі нового привілейованого доступу до задокументованої поверхні Sergeant.
 
-### 1.1 Confirm the request is valid
+### 1.1 Підтверди валідність запиту
 
-- Name the exact surface.
-- Name the requested access tier.
-- Record the business reason.
-- Confirm a lower tier cannot solve the need.
+- Назви точну поверхню.
+- Назви запитаний tier доступу.
+- Зафіксуй бізнес-причину.
+- Підтверди, що нижчий tier не вирішує задачу.
 
-### 1.2 Confirm holder type and ownership
+### 1.2 Підтверди тип holder-а і ownership
 
-- Classify the holder: founder, core engineer, temporary contractor, or machine account.
-- Confirm the surface owner approves the grant.
-- If temporary, set explicit expiry before access is granted.
+- Класифікуй holder-а: founder, core-engineer, тимчасовий контрактор або machine-account.
+- Підтверди, що owner поверхні погоджує видачу.
+- Якщо доступ тимчасовий — встанови явний expiry **до** видачі.
 
-### 1.3 Grant the minimum viable access
+### 1.3 Видай мінімально-достатній доступ
 
-- Use the vendor role or credential scope that matches the minimum tier.
-- Avoid personal admin escalation when read-only or scoped project access is enough.
-- Do not create undocumented shared accounts.
+- Використовуй vendor-роль або credential-scope, що відповідає мінімальному tier-у.
+- Уникни персональної admin-ескалації, коли read-only або scoped project access достатньо.
+- Не створюй незадокументованих shared-акаунтів.
 
-### 1.4 Record the grant
+### 1.4 Зафіксуй видачу
 
-- Update the access note, ticket, or PR with: surface, holder, tier, owner, reason, expiry if temporary.
+- Онови access-нотатку, тікет або PR, додавши: поверхня, holder, tier, owner, причина, expiry (якщо тимчасовий).
 
-## 2. Revoke privileged access
+## 2. Відкликання привілейованого доступу
 
-For offboarding, role reduction, expired contractor access, or a decision that an actor no longer needs privileged access.
+Для offboarding-у, зменшення ролі, expired contractor-доступу або рішення, що актор більше не потребує привілейованого доступу.
 
-### 2.1 Identify all affected surfaces
+### 2.1 Виявь усі зачеплені поверхні
 
-- List every vendor, environment, and machine credential touched by the actor.
-- Confirm whether any access was indirect through shared project membership or release tooling.
+- Перерахуй кожен vendor, environment і machine-credential, до яких актор торкався.
+- Підтверди, чи був доступ непрямим — через shared project membership або release-тулінг.
 
-### 2.2 Revoke vendor access first
+### 2.2 Спершу — vendor-доступ
 
-- Remove membership, role, or token access on the documented surfaces.
-- Prefer immediate removal to "we will clean it later".
+- Зніми membership, роль або token-доступ на задокументованих поверхнях.
+- Віддай перевагу негайному видаленню перед «приберемо потім».
 
-### 2.3 Rotate if needed
+### 2.3 Зроби rotate, якщо треба
 
-- If the actor had access to shared credentials, recovery mailboxes, or exportable secrets, rotate the impacted secret groups using [rotate-secrets.md](./rotate-secrets.md).
+- Якщо актор мав доступ до shared-credentials, recovery-mailbox-ів або експортованих секретів — обертай уражені secret-групи через [rotate-secrets.md](./rotate-secrets.md).
 
-### 2.4 Verify recovery paths remain valid
+### 2.4 Перевір, що recovery-шляхи лишаються валідні
 
-- Confirm the documented owner still exists for each affected surface.
-- Confirm at least one legitimate maintainer can still recover the system.
+- Підтверди, що задокументований owner існує для кожної зачепленої поверхні.
+- Підтверди, що принаймні один легітимний maintainer ще може відновити систему.
 
-## 3. Periodic access review
+## 3. Періодичний access review
 
-For periodic access review of Tier 0 and Tier 1 systems, or a governance sweep after staffing, vendor, or infra changes.
+Для періодичного review Tier 0 і Tier 1 систем або governance-sweep-у після зміни складу команди, vendor-ів або інфраструктури.
 
-### 3.1 Review Tier 0 surfaces
+### 3.1 Review Tier 0 поверхонь
 
-- Verify owner is still correct.
-- Verify holder list is still justified.
-- Remove any stale, redundant, or undocumented access.
+- Перевір, що owner ще валідний.
+- Перевір, що список holder-ів ще обґрунтований.
+- Видали будь-який stale, надлишковий або незадокументований доступ.
 
-### 3.2 Review Tier 1 surfaces
+### 3.2 Review Tier 1 поверхонь
 
-- Look for over-privileged roles where read-only would be enough.
-- Look for stale contractors or machine credentials without a clear purpose.
-- Confirm every surface still has one owner.
+- Шукай over-privileged ролі, де read-only було б достатньо.
+- Шукай stale контракторів або machine-credentials без чіткої мети.
+- Підтверди, що кожна поверхня досі має одного owner-а.
 
-### 3.3 Record actions
+### 3.3 Зафіксуй дії
 
-- Open revoke follow-ups for stale access (use § Revoke privileged access).
-- Open rotation follow-ups for ambiguous shared credentials.
-- Update the matrix or ownership register if a new surface appeared.
+- Відкрий revoke-follow-up-и для stale-доступу (використовуй § Відкликання доступу).
+- Відкрий rotation-follow-up-и для неоднозначних shared-credentials.
+- Онови матрицю або ownership-register, якщо з'явилася нова поверхня.
 
-## 4. Suspected account compromise
+## 4. Підозра компрометації акаунта
 
-For suspicious admin login, leaked maintainer session, suspicious vendor-console activity, or any sign that a privileged account or machine credential may be compromised.
+Для підозрілого admin-логіну, витоку maintainer-сесії, підозрілої активності в vendor-консолі або будь-якого знаку, що привілейований акаунт чи machine-credential може бути скомпрометований.
 
-### 4.1 Classify and freeze
+### 4.1 Класифікуй і заморозь
 
-- Name the affected privileged surface.
-- Estimate severity using [security-incident-policy.md](../governance/security-incident-policy.md).
-- Disable or sign out the suspected account or token first if the platform allows it.
+- Назви уражену привілейовану поверхню.
+- Оціни severity за [security-incident-policy.md](../governance/security-incident-policy.md).
+- Спершу вимкни або примусово sign-out підозрюваний акаунт чи token, якщо платформа дозволяє.
 
-### 4.2 Inventory blast radius
+### 4.2 Інвентаризуй blast radius
 
-- Identify what systems the account or credential could touch.
-- Capture timestamps, vendor audit logs, and any suspicious actions.
+- Виявь, до яких систем акаунт або credential могли торкатися.
+- Захопи timestamps, vendor audit logs і будь-які підозрілі дії.
 
-### 4.3 Revoke and rotate
+### 4.3 Відклич і rotate
 
-- Remove the compromised or suspicious access (see § Revoke privileged access for the mechanical steps).
-- Rotate any secret or token that may have been exposed via [rotate-secrets.md](./rotate-secrets.md).
-- If multiple surfaces are linked, coordinate the order explicitly.
+- Зніми скомпрометований чи підозрілий доступ (механічні кроки — у § Відкликання доступу).
+- Обертай будь-який секрет чи token, який міг бути експонований — через [rotate-secrets.md](./rotate-secrets.md).
+- Якщо зачеплено кілька поверхонь — координуй порядок явно.
 
-### 4.4 Open the incident log
+### 4.4 Відкрий incident log
 
-- Record severity, affected surfaces, mitigation path, and verification steps.
-- If user, billing, or auth impact is plausible, note the notification decision.
+- Зафіксуй severity, уражені поверхні, шлях мітигації і кроки верифікації.
+- Якщо вплив на користувача, billing або auth можливий — занотуй рішення про notification.
 
-### 4.5 Verify recovery
+### 4.5 Перевір recovery
 
-- Confirm least-privilege state is restored.
-- Confirm service owners and recovery paths remain valid.
-- Route to [write-postmortem.md](./write-postmortem.md) when required.
+- Підтверди, що стан least-privilege відновлено.
+- Підтверди, що service-owner-и і recovery-шляхи лишаються валідні.
+- Якщо потрібно — направ у [write-postmortem.md](./write-postmortem.md).
 
 ## Verification
 
-- [ ] Affected surface(s) named explicitly
-- [ ] Tier and owner approval recorded (grant) or all linked surfaces enumerated (revoke / compromise)
-- [ ] Expiry recorded for any temporary access
-- [ ] Vendor access removed where required (revoke / compromise)
-- [ ] Secret rotation triggered for shared credentials touched by the change
-- [ ] For compromise: incident log opened with severity and affected surfaces
-- [ ] Recovery ownership still valid after the change
+- [ ] Зачеплені поверхні названо явно
+- [ ] Tier і owner-approval зафіксовано (grant) або всі звʼязані поверхні перераховано (revoke / compromise)
+- [ ] Expiry зафіксовано для будь-якого тимчасового доступу
+- [ ] Vendor-доступ знято, де потрібно (revoke / compromise)
+- [ ] Запущено rotate секретів для shared-credentials, зачеплених зміною
+- [ ] Для compromise: incident log відкрито з severity і ураженими поверхнями
+- [ ] Ownership recovery лишається валідним після зміни
 
-## When not to use this playbook
+## Коли цей playbook **не** застосовний
 
-- The change is purely rotating a secret for an existing owner → [rotate-secrets.md](./rotate-secrets.md).
-- The event is purely runtime degradation with no access-compromise angle → [investigate-alert.md](./investigate-alert.md).
+- Зміна — суто rotate існуючого секрета без зміни owner-а → [rotate-secrets.md](./rotate-secrets.md).
+- Подія — суто рантайм-деградація без access-compromise кута → [investigate-alert.md](./investigate-alert.md).
 
-## Related playbooks and skills
+## Суміжні playbook'и і скіли
 
 - [rotate-secrets.md](./rotate-secrets.md)
 - [declare-incident.md](./declare-incident.md)
 - [write-postmortem.md](./write-postmortem.md)
 - [run-weekly-operator-digest.md](./run-weekly-operator-digest.md)
 - Skill: `sergeant-review-and-merge`
-- Skill: `sergeant-deploy-and-observability` (compromise branch)
+- Skill: `sergeant-deploy-and-observability` (compromise-гілка)
