@@ -31,7 +31,7 @@ export function traceMiddleware(
   const traceparent = req.headers["traceparent"];
   if (typeof traceparent === "string") {
     const m = TRACEPARENT_RE.exec(traceparent);
-    if (m) traceId = m[1].toLowerCase();
+    if (m) traceId = m[1]!.toLowerCase();
   }
 
   if (!traceId) {

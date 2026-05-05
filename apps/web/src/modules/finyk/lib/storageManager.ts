@@ -47,11 +47,11 @@ baseStorageManager.register({
       ["finto_tx_splits", "finyk_tx_splits"],
     ]) {
       try {
-        const old = localStorage.getItem(oldKey);
-        if (old !== null && localStorage.getItem(newKey) === null) {
-          localStorage.setItem(newKey, old);
+        const old = localStorage.getItem(oldKey!);
+        if (old !== null && localStorage.getItem(newKey!) === null) {
+          localStorage.setItem(newKey!, old);
         }
-        if (old !== null) localStorage.removeItem(oldKey);
+        if (old !== null) localStorage.removeItem(oldKey!);
       } catch {
         /* ignore migration item errors */
       }

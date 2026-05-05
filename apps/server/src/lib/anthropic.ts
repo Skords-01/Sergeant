@@ -11,21 +11,21 @@ import {
 const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
 
 export interface AnthropicCallOptions {
-  timeoutMs?: number;
-  endpoint?: string;
+  timeoutMs?: number | undefined;
+  endpoint?: string | undefined;
   /**
    * Зовнішній AbortSignal (зазвичай — client-disconnect на Express `req`).
    * Комбінується з внутрішнім timeout-signal через `AbortSignal.any`, тому
    * спрацьовує що завгодно: таймаут, клієнт закрив вкладку, або зовнішній
    * caller вирішив перервати.
    */
-  signal?: AbortSignal;
+  signal?: AbortSignal | undefined;
   /**
    * Версія system prompt (SYSTEM_PROMPT_VERSION). Якщо передано, `recordUsage`
    * інкрементує `anthropic_prompt_cache_hit_total{version, outcome}` —
    * per-request лічильник cache hit/miss.
    */
-  promptVersion?: string;
+  promptVersion?: string | undefined;
 }
 
 /**
@@ -322,7 +322,7 @@ export async function anthropicMessages(
 ): Promise<AnthropicMessagesResult> {
   const maxAttempts = 3;
   const retryDelayMs = [0, 250, 750];
-  const model = (payload?.model as string) || "unknown";
+  const model = (payload?.["model"] as string) || "unknown";
   const overallStart = process.hrtime.bigint();
 
   let lastResponse: Response | null = null;
@@ -341,7 +341,7 @@ export async function anthropicMessages(
     const signal = composeSignal(controller, externalSignal);
     try {
       if (retryDelayMs[attempt - 1]) {
-        await sleep(retryDelayMs[attempt - 1]);
+        await sleep(retryDelayMs[attempt - 1]!);
       }
 
       const response = await fetch(ANTHROPIC_URL, {
@@ -416,7 +416,7 @@ export async function anthropicMessagesStream(
     signal: externalSignal,
   }: AnthropicCallOptions = {},
 ): Promise<AnthropicStreamResult> {
-  const model = (payload?.model as string) || "unknown";
+  const model = (payload?.["model"] as string) || "unknown";
   const start = process.hrtime.bigint();
   const controller = new AbortController();
   const t = setTimeout(() => controller.abort(), timeoutMs);
