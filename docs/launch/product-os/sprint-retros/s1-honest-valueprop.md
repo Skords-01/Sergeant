@@ -137,7 +137,7 @@ Oпосередкована: «вже все робоче out-of-the-box, ти �
 ## 8. Reference
 
 - Sprint plan: [`docs/launch/ftux-sprint-plan.md` §3](../ftux-sprint-plan.md#3-sprint-1--честний-value-prop-2-тижні)
-- Audit джерело: [`docs/audits/2026-05-03-ftux-onboarding-roast.md`](../../audits/2026-05-03-ftux-onboarding-roast.md) (P0 рекомендації для S1)
+- Audit джерело: [`docs/audits/2026-05-03-ftux-onboarding-roast.md`](../../../audits/2026-05-03-ftux-onboarding-roast.md) (P0 рекомендації для S1)
 - Funnel definitions: [`docs/launch/04-launch-readiness.md` §4.2](../04-launch-readiness.md)
 - Sister post-mortem (S3 reward moments): [`s3-reward-moments.md`](./s3-reward-moments.md) — S3.4/3.5/3.1/3.2 деталі
 - Activation baseline: [`docs/launch/01-monetization-and-pricing.md` §7](../01-monetization-and-pricing.md#7-activation-метрики)
