@@ -3,32 +3,32 @@ name: sergeant-deploy-and-observability
 description: Use when a Sergeant change touches deploy config, env vars, Railway/Vercel, health checks, Sentry, n8n, or production verification; UA: деплой, env, Railway, Vercel, Sentry, n8n.
 ---
 
-# Sergeant Deploy and Observability
+# Деплой і обсервабіліті в Sergeant
 
-Production-facing changes in Sergeant are not done when the code compiles. They are done when deploy wiring, docs, and runtime verification still match Railway, Vercel, Sentry, and n8n expectations.
+Production-facing зміни в Sergeant не вважаються завершеними, коли код збирається. Вони завершені, коли deploy-обвʼязка, доки і runtime-верифікація все ще відповідають очікуванням Railway, Vercel, Sentry і n8n.
 
-## Covers
+## Що покриває
 
-- `railway.toml`, `vercel.json`, deploy docs, health endpoints
-- env var changes across web/server
-- Sentry, readiness/liveness, alert routing, release verification
-- operator-facing docs for deployment or incident response
+- `railway.toml`, `vercel.json`, deploy-доки, health-endpoints
+- env-зміни через web/server
+- Sentry, readiness/liveness, маршрутизація алертів, release-верифікація
+- operator-facing доки для деплою або реакції на інцидент
 
-## Hard Rules
+## Жорсткі правила
 
-- Treat env var changes as product changes: update the canonical docs.
-- Distinguish `livez` from `readyz`; readiness can depend on Postgres.
-- If API or auth deployment behavior changes, re-check same-origin proxy assumptions through Vercel `/api/*`.
-- Do not close deploy work without a concrete verification path.
+- Зміни env-vars трактуй як продуктові зміни: онови canonical-доки.
+- Розрізняй `livez` і `readyz`; readiness може залежати від Postgres.
+- Якщо змінюється поведінка деплою API або auth-у — перевір припущення same-origin proxy через Vercel `/api/*`.
+- Не закривай deploy-роботу без конкретного шляху верифікації.
 
-## Verify
+## Верифікація
 
-- relevant local build or test command
-- target endpoint or healthcheck still matches docs
-- env docs updated in `docs/integrations/railway-vercel.md` or related runbook
-- alerting or Sentry assumptions still hold when the change touches observability
+- релевантна локальна build- або test-команда
+- цільовий endpoint або healthcheck усе ще збігається з доками
+- env-доки оновлено у `docs/integrations/railway-vercel.md` або відповідному runbook
+- припущення алертингу або Sentry усе ще тримаються, коли зміна торкається обсервабіліті
 
-## Useful Docs
+## Корисні доки
 
 - [docs/integrations/railway-vercel.md](../../../docs/integrations/railway-vercel.md)
 - [docs/observability/README.md](../../../docs/observability/README.md)
