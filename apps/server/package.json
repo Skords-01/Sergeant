@@ -28,7 +28,7 @@
     "@opentelemetry/sdk-trace-base": "^1.30.0",
     "@opentelemetry/semantic-conventions": "^1.28.0",
     "@parse/node-apn": "^8.1.0",
-    "@sentry/node": "^8.55.1",
+    "@sentry/node": "^10.51.0",
     "@sergeant/db-schema": "workspace:^",
     "@sergeant/finyk-domain": "workspace:*",
     "@sergeant/shared": "workspace:*",
