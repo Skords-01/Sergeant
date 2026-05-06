@@ -3418,6 +3418,202 @@ const preferDataState = {
   },
 };
 
+// ─── no-raw-request-in-logger ───────────────────────────────────────────
+//
+// Stack-pulse PR-16 (Pino redaction policy). Pino has a comprehensive
+// redact-paths list (`apps/server/src/obs/logger.ts:redactPaths`) that
+// masks Authorization/Cookie headers, password/token/email/phone
+// fields, and webhook secrets — but only when they live under
+// canonical paths like `req.headers.authorization` or `req.body.email`.
+// If a callsite spreads or re-assigns those fields to a different
+// shape, the redact-list does not see them and the secret leaks into
+// Railway/Loki as plaintext.
+//
+// Most common leak vectors:
+//   - logger.info(req)             — whole Request, no key (no `req`-serializer at root).
+//   - logger.info({ ...req })      — keys spread to root, bypassing `req.*` paths.
+//   - logger.info({ ...req.body }) — spreads body to root.
+//   - logger.info({ body: req.body })    — body re-keyed at root.
+//   - logger.info({ headers: req.headers }) — headers re-keyed at root.
+//   - logger.error(err, req)        — second-arg req with no key.
+//
+// Allowed shapes (forward-defense friendly):
+//   - logger.info({ req })          — uses pino-http req-serializer + redactPaths.
+//   - logger.info({ method: req.method, url: req.originalUrl })  — explicit fields.
+//   - logger.info({ requestId, userId })                          — sanitized.
+//
+// Rule is scoped to `apps/server/**` in eslint.config.js. The
+// `logger.ts` itself is exempt (it constructs the very serializer
+// being defended). Callsites that genuinely need to log a whole
+// `req` / `res` (e.g. test fixtures, monitoring smoke-tests) can
+// silence the rule with an inline `// eslint-disable-next-line
+// sergeant-design/no-raw-request-in-logger` and a justification
+// comment — same convention as other Hard-Rule guards.
+
+const RAW_REQUEST_IDENTIFIERS = new Set(["req", "request", "res", "response"]);
+
+const RAW_REQUEST_RE_KEYED_PARTS = new Set([
+  "body",
+  "headers",
+  "cookies",
+  "rawHeaders",
+]);
+
+const NO_RAW_REQUEST_IN_LOGGER_MESSAGE_DIRECT =
+  "Do not pass raw `{{name}}` to `logger.{{method}}` — Pino redaction only covers canonical paths (`req.headers.authorization`, `req.body.password`). Wrap as `{ {{name}} }` (uses pino-http serializer + redactPaths) or destructure explicit fields. PR-16 (logging redaction policy).";
+
+const NO_RAW_REQUEST_IN_LOGGER_MESSAGE_SPREAD =
+  "Do not spread `{{source}}` into a logger context — keys land at the log root and bypass `{{source}}.*` redact-paths, so secrets leak as plaintext. Pass `{ req }` (canonical) or destructure explicit fields. PR-16 (logging redaction policy).";
+
+const NO_RAW_REQUEST_IN_LOGGER_MESSAGE_REKEY =
+  "Do not re-key `req.{{part}}` / `res.{{part}}` under another property — Pino redaction is path-based and won't follow the new shape, so secrets leak as plaintext. Use `{ req }` (canonical) or destructure explicit fields. PR-16 (logging redaction policy).";
+
+const LOGGER_FILE_PATH_RE =
+  /(?:^|\/)apps\/server\/src\/obs\/logger(?:\.test)?\.ts$/;
+
+function isLoggerLikeCall(callee) {
+  if (callee.type !== "MemberExpression" || callee.computed) return null;
+  if (callee.property.type !== "Identifier") return null;
+  if (!LOGGER_METHODS.has(callee.property.name)) return null;
+  // Accept `logger.x(...)`, `log.x(...)`, `pino.x(...)`,
+  // `req.log.x(...)` (pino-http child), `child.x(...)` from `logger.child(...)`.
+  const obj = callee.object;
+  if (obj.type === "Identifier") {
+    if (LOGGER_OBJECTS.has(obj.name)) return callee.property.name;
+    // `requestLogger` / `routeLogger` / `childLogger` — common variable
+    // names for pino child loggers. Heuristic — names ending in `Logger`
+    // (camelCase suffix) or `_logger` (snake_case) — keeps false-positive
+    // surface to the realm of "obvious logger variables".
+    if (/(?:Logger$|_logger$|_log$)/.test(obj.name))
+      return callee.property.name;
+    return null;
+  }
+  if (
+    obj.type === "MemberExpression" &&
+    !obj.computed &&
+    obj.property.type === "Identifier" &&
+    LOGGER_OBJECTS.has(obj.property.name)
+  ) {
+    // `req.log.info(...)` / `something.logger.info(...)`
+    return callee.property.name;
+  }
+  return null;
+}
+
+function rawRequestIdentName(node) {
+  if (node.type !== "Identifier") return null;
+  return RAW_REQUEST_IDENTIFIERS.has(node.name) ? node.name : null;
+}
+
+// Returns the source name (`req` / `res` / `req.body`-like) when `node`
+// is a SpreadElement that fans out a Request/Response (or its body /
+// headers / cookies) into the surrounding object literal.
+function spreadOfRawRequest(node) {
+  if (
+    node.type !== "SpreadElement" &&
+    node.type !== "ExperimentalSpreadProperty"
+  )
+    return null;
+  const arg = node.argument;
+  if (!arg) return null;
+  if (arg.type === "Identifier" && RAW_REQUEST_IDENTIFIERS.has(arg.name)) {
+    return arg.name;
+  }
+  if (
+    arg.type === "MemberExpression" &&
+    !arg.computed &&
+    arg.property.type === "Identifier" &&
+    arg.object.type === "Identifier" &&
+    RAW_REQUEST_IDENTIFIERS.has(arg.object.name) &&
+    RAW_REQUEST_RE_KEYED_PARTS.has(arg.property.name)
+  ) {
+    return `${arg.object.name}.${arg.property.name}`;
+  }
+  return null;
+}
+
+// Returns the offending `req.body` / `res.headers`-style part name when
+// `prop` is `{ body: req.body }` / `{ headers: req.headers }` / etc.
+function reKeyedRequestPart(prop) {
+  if (prop.type !== "Property") return null;
+  if (prop.shorthand) return null; // `{ req }` is canonical.
+  const value = prop.value;
+  if (
+    value.type !== "MemberExpression" ||
+    value.computed ||
+    value.property.type !== "Identifier"
+  )
+    return null;
+  if (
+    value.object.type !== "Identifier" ||
+    !RAW_REQUEST_IDENTIFIERS.has(value.object.name)
+  )
+    return null;
+  if (!RAW_REQUEST_RE_KEYED_PARTS.has(value.property.name)) return null;
+  // `{ body: req.body }` and friends — bypasses redact-paths (root-level body).
+  return value.property.name;
+}
+
+const noRawRequestInLogger = {
+  meta: {
+    type: "problem",
+    docs: {
+      description:
+        "Forbid passing raw Express `req` / `res` (or spreading its body/headers) into `logger.*` calls — Pino redact-paths are path-based and only cover canonical shapes. PR-16 (logging redaction policy).",
+    },
+    schema: [],
+    messages: {
+      direct: NO_RAW_REQUEST_IN_LOGGER_MESSAGE_DIRECT,
+      spread: NO_RAW_REQUEST_IN_LOGGER_MESSAGE_SPREAD,
+      rekey: NO_RAW_REQUEST_IN_LOGGER_MESSAGE_REKEY,
+    },
+  },
+  create(context) {
+    const filename = context.filename ?? context.getFilename?.() ?? "";
+    const norm = filename.replace(/\\/g, "/");
+    if (LOGGER_FILE_PATH_RE.test(norm)) return {};
+    return {
+      CallExpression(node) {
+        const method = isLoggerLikeCall(node.callee);
+        if (!method) return;
+        for (const arg of node.arguments) {
+          // Direct: logger.info(req)
+          const directName = rawRequestIdentName(arg);
+          if (directName) {
+            context.report({
+              node: arg,
+              messageId: "direct",
+              data: { name: directName, method },
+            });
+            continue;
+          }
+          if (arg.type === "ObjectExpression") {
+            for (const prop of arg.properties) {
+              const spreadSource = spreadOfRawRequest(prop);
+              if (spreadSource) {
+                context.report({
+                  node: prop,
+                  messageId: "spread",
+                  data: { source: spreadSource },
+                });
+                continue;
+              }
+              const rekeyPart = reKeyedRequestPart(prop);
+              if (rekeyPart) {
+                context.report({
+                  node: prop,
+                  messageId: "rekey",
+                  data: { part: rekeyPart },
+                });
+              }
+            }
+          }
+        }
+      },
+    };
+  },
+};
+
 const plugin = {
   rules: {
     "no-eyebrow-drift": noEyebrowDrift,
@@ -3447,6 +3643,7 @@ const plugin = {
     "no-legacy-telegram-parse-mode": noLegacyTelegramParseMode,
     "require-stories-for-ui-components": requireStoriesForUiComponents,
     "prefer-data-state": preferDataState,
+    "no-raw-request-in-logger": noRawRequestInLogger,
   },
 };
 

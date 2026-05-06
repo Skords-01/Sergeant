@@ -515,6 +515,49 @@
           "ref": "#20"
         }
       ]
+    },
+    {
+      "id": 21,
+      "title": "Logging redaction policy — pino-paths, sentry-keys, lint guard",
+      "scope": [
+        "apps/server/src/**",
+        "apps/server/src/obs/logger.ts",
+        "apps/server/src/sentry.ts"
+      ],
+      "severity": "blocker",
+      "category": "blocker-invariant",
+      "enforced_by": [
+        {
+          "kind": "eslint-rule",
+          "ref": "sergeant-design/no-raw-request-in-logger (error)"
+        },
+        {
+          "kind": "test",
+          "ref": "apps/server/src/obs/logger.test.ts (redactPaths + redactKeyNames coverage)"
+        },
+        {
+          "kind": "convention",
+          "ref": "apps/server/src/obs/logger.ts → single source of truth for redactPaths + redactKeyNames; apps/server/src/sentry.ts → applyBeforeSend imports redactKeyNames"
+        },
+        {
+          "kind": "doc",
+          "ref": "docs/security/logging-redaction-policy.md"
+        }
+      ],
+      "links": [
+        {
+          "type": "doc",
+          "ref": "docs/initiatives/stack-pulse-2026-05/pr-16-pino-redaction-policy.md"
+        },
+        {
+          "type": "doc",
+          "ref": "docs/security/hardening/M3-pino-redact-paths.md"
+        },
+        {
+          "type": "agents",
+          "ref": "#21"
+        }
+      ]
     }
   ]
 }

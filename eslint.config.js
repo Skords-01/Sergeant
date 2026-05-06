@@ -760,6 +760,24 @@ export default [
       "sergeant-design/no-anthropic-key-in-logs": "error",
     },
   },
+  // Logging redaction guardrail — stack-pulse PR-16. Pino's redact-paths
+  // (`apps/server/src/obs/logger.ts`) are path-based — they cover
+  // `req.headers.authorization` / `req.body.password` / etc. but not
+  // arbitrary spreads or re-keyed shapes (`{ body: req.body }`). The
+  // rule blocks those vectors at lint-time so secrets cannot leak to
+  // Railway/Loki. The logger module itself is exempt (it constructs
+  // the very redaction list being defended). See
+  // `docs/security/logging-redaction-policy.md`.
+  {
+    files: ["apps/server/src/**/*.{js,ts}"],
+    ignores: [
+      "apps/server/src/**/*.test.{js,ts}",
+      "apps/server/src/**/__tests__/**",
+    ],
+    rules: {
+      "sergeant-design/no-raw-request-in-logger": "error",
+    },
+  },
   // Type-safety bypass guardrail — PR-6.E: forbid new `@ts-expect-error`,
   // `@ts-ignore`, `as any`, and `as unknown as X` in production code.
   // These patterns erode type safety and make refactoring dangerous.

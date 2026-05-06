@@ -488,6 +488,31 @@ Tracked у [Initiative 0012 — Perfect TS strictness rollout](./docs/initiative
 
 Procedure для ротації / емержансі — [`docs/playbooks/rotate-openclaw-credentials.md`](./docs/playbooks/rotate-openclaw-credentials.md). Migration-план — [`docs/initiatives/stack-pulse-2026-05/pr-06-openclaw-github-app.md`](./docs/initiatives/stack-pulse-2026-05/pr-06-openclaw-github-app.md).
 
+### 21. Logging redaction policy — pino-paths, sentry-keys, lint guard
+
+> Why a hard rule? Pino-redaction матчить **літеральні шляхи** (`req.headers.authorization`, `req.body.password`) або wildcard-шляхи фіксованої глибини (`*.password`). Якщо логер отримує payload з іншою формою — `logger.info(req)`, `{ ...req }`, `{ body: req.body }` — шляхи не збігаються і секрет тече plaintext-ом у Railway/Loki/Grafana. Один inline-патерн у hot-path-і = continuous secret leak до моменту, коли хтось помітить аномалію в access-логах. Sentry-payload-и мають інший shape (`event.extra/contexts/breadcrumbs.data`), тому потребують свого scrubber-а — і обидва списки повинні залишатись синхронізованими.
+
+**Rule.** Будь-який callsite на `apps/server/src/**`, що логує запит/відповідь, повинен:
+
+1. Використовувати канонічний `logger.info({ req })` (pino-http stdSerializer розгортає у `{method, url, headers, query}` під префіксом `req.*`, і `redactPaths` спрацьовує) — **або** робити явний destructure (`{ method: req.method, url: req.originalUrl }`).
+2. **Не** передавати `req` / `res` напряму, не спредити (`...req`), не міняти shape (`{ body: req.body }`).
+3. Будь-яке нове чутливе поле додається **одночасно** у `redactPaths` (Pino) і `redactKeyNames` (Sentry-`applyBeforeSend`) — обидва списки експортуються з [`apps/server/src/obs/logger.ts`](./apps/server/src/obs/logger.ts) і це єдине джерело істини.
+
+**Що блокує:**
+
+- `logger.info(req)` / `logger.info(res)` — direct raw request/response.
+- `logger.info({ ...req })` / `logger.info({ ...req.body })` / `logger.info({ ...req.headers })` — spread, який піднімає ключі у root логу повз `req.*` redact-paths.
+- `logger.info({ body: req.body })` / `logger.info({ headers: req.headers })` — re-key, який міняє shape payload-у; `body.password` ≠ `req.body.password`.
+
+**What this rule does NOT block:**
+
+- `logger.info({ req })` — канонічна shorthand-форма, pino-http stdSerializer покриває.
+- Явний destructure без secret-полів: `logger.info({ method: req.method, url: req.originalUrl, status: res.statusCode })`.
+- Сам `apps/server/src/obs/logger.ts` (там визначається список) і `*.test.ts` файли (фіктури).
+- `apps/web/src/**` / `apps/mobile/src/**` — окрема surface, покрита іншими rule-ами (`no-anthropic-key-in-logs` defense-in-depth).
+
+Повний контракт + as-of redaction-list + тестування — [`docs/security/logging-redaction-policy.md`](./docs/security/logging-redaction-policy.md). Migration-план — [`docs/initiatives/stack-pulse-2026-05/pr-16-pino-redaction-policy.md`](./docs/initiatives/stack-pulse-2026-05/pr-16-pino-redaction-policy.md).
+
 ## Lint-enforced design conventions
 
 > Дизайн-конвенції з механічним enforcement: винесено зі списку Hard Rules, щоб повернути вагу терміну «hard rule». `id` стабільні (зберігаються в [`docs/governance/hard-rules.json`](./docs/governance/hard-rules.json) із `category: lint-enforced-convention`), номери у заголовках лишаються тими ж, на які посилаються старі PR-описи. CI-правила, що ловлять порушення, ті самі — `pnpm lint:plugins` (custom ESLint plugin) + governance-sync. Категорійна семантика — у [`docs/adr/0045-hard-rules-taxonomy.md`](./docs/adr/0045-hard-rules-taxonomy.md), повна enforcement-матриця — у [`docs/governance/hard-rules-matrix.md`](./docs/governance/hard-rules-matrix.md).
