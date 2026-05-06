@@ -2755,6 +2755,7 @@ value JSON)`)». Та редакція об'єднувала **дві** орто
   `apps/{web,mobile}/src/core/lib/featureFlags.ts` (рядки
   `feature.routine.sqlite_v2.dual_write`).
 - Implementation branch: `codex/routine-dual-write-default-on`.
+- Draft PR: [#2133](https://github.com/Skords-01/Sergeant/pull/2133).
 - Telemetry: `routine.sqlite.dualwrite.error_rate` (Sentry tag) +
   parity counter `routine.sqlite.dualwrite.parity` (web side у
   `triggerRoutineDualWrite` finally-block).
@@ -2770,6 +2771,7 @@ value JSON)`)». Та редакція об'єднувала **дві** орто
   `apps/{web,mobile}/src/modules/routine/lib/sqliteReader.ts` з
   LS-overlay-fallback на cache miss.
 - Implementation branch: `codex/routine-read-sqlite-default-on`.
+- Draft PR: [#2136](https://github.com/Skords-01/Sergeant/pull/2136).
 - Mobile wiring includes `apps/mobile/src/modules/routine/lib/sqliteReadBoot.ts`
   and `apps/mobile/src/modules/routine/hooks/useSqliteReadBoot.ts`.
 - Telemetry: `routine.sqlite.read.fallback` (counter, must be 0
