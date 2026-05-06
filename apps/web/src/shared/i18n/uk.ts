@@ -49,7 +49,7 @@ export const messages = {
   },
 
   sync: {
-    // User-facing copy (рендериться в `useSyncErrorToast.ts`). Цикл:
+    // Reserved legacy sync error copy. Historical retry cycle:
     //   network                → перевір з'єднання
     //   server retryable       → 5xx → invite-retry
     //   server non-retryable   → 4xx / parse → no-retry, ask to check input
@@ -62,7 +62,7 @@ export const messages = {
 
     // Reserved для майбутніх migration-round-ів — narrative-strings, які
     // ще живуть inline у `cloudSync/**`. Поточний baseline (round 14) —
-    // лише п'ять рядків вище (`useSyncErrorToast.ts`).
+    // above; no current renderer should revive CloudSync v1 toast plumbing.
     conflictResolved: "Конфлікт автоматично вирішено.",
     pushFailed: "Не вдалося синхронізувати. Спробуємо ще раз.",
     offlineQueueRecovered: "Відновлено з офлайн-черги.",
@@ -267,6 +267,29 @@ export const messages = {
     // (`Завантаження сторінки`) щоб не плутати з inline-spinner-ом
     // (`status.loading` = `Завантаження…`).
     pageLoading: "Завантаження сторінки",
+  },
+
+  loadingActions: {
+    // Round 17 — first-person singular для transient action-button busy
+    // states. Уніфікує раніше inconsistent inline-копію («Зачекайте…»,
+    // «Виходимо…», «Підключення…»), зводячи voice до «що *я* зараз
+    // роблю» замість passive 3rd-person plural («ми…») або noun-form
+    // («Підключення…»).
+    //
+    // Відрізняється від `status.loading` (= "Завантаження…", noun-form
+    // для generic-spinner-ів без action-context). Якщо у тебе кнопка
+    // з `loading={isSubmitting}` і ти знаєш дієслово — клади тут;
+    // якщо просто spinner у пустому section-і — там `status.loading`.
+    //
+    // PR-30 / §C5 з docs/audits/2026-05-06-ux-roast-pr-plan.md.
+    exiting: "Виходжу…",
+    signingIn: "Входжу…",
+    registering: "Реєструю…",
+    connecting: "Підключаюсь…",
+    // Module-/surface-specific варіації (поки що використовуються лише
+    // в одному місці кожна, але живуть тут заради unified voice).
+    loadingTransactions: "Завантажую транзакції…",
+    loadingWorkouts: "Завантажую тренування",
   },
 
   // Module-specific groups. Сюди потрапляють labels, що домінантно живуть

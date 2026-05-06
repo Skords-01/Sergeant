@@ -143,7 +143,13 @@ function BarChart({
                 style={{
                   height: `${pct}%`,
                   minHeight: v > 0 ? "2px" : "0",
-                  animationDelay: `${i * 30}ms`,
+                  // Cap at 600ms so the 30-day chart's last bar starts
+                  // by ~600ms (vs 870ms uncapped). Below 21 bars (week
+                  // & 14-day views) the cap never bites — Hard Rule #17
+                  // already requires total ≤ ~150ms there via stagger
+                  // budget, but bar-grow lives outside that budget
+                  // because each bar's anim is its own discrete reveal.
+                  animationDelay: `${Math.min(i * 30, 600)}ms`,
                 }}
               />
             </button>
@@ -183,13 +189,28 @@ function Delta({ cur, prev, higherIsBetter = true }: DeltaProps) {
   const pct = Math.round((diff / prev) * 100);
   const positive = higherIsBetter ? diff >= 0 : diff <= 0;
   const sign = diff >= 0 ? "+" : "";
+  const trendingUp = diff >= 0;
   return (
     <span
       className={cn(
-        "text-style-caption",
+        "text-style-caption inline-flex items-center gap-0.5",
         positive ? "text-success" : "text-danger",
       )}
     >
+      <svg
+        width="10"
+        height="10"
+        viewBox="0 0 24 24"
+        fill="currentColor"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden
+        className="shrink-0"
+      >
+        {trendingUp ? <path d="M12 5l7 9H5z" /> : <path d="M12 19l-7-9h14z" />}
+      </svg>
       {sign}
       {pct}%
     </span>
