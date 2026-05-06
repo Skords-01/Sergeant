@@ -7,14 +7,11 @@ import { useStorage } from "./hooks/useStorage";
 import { readRaw, writeRaw } from "./lib/finykStorage";
 import { FINYK_MANUAL_ONLY_KEY, enableFinykManualOnly } from "./lib/demoData";
 import { ModuleBottomNav } from "@shared/components/ui/ModuleBottomNav";
-import {
-  ModuleAccentProvider,
-  ModuleHeader,
-  ModuleHeaderAssistantButton,
-  ModuleHeaderBackButton,
-} from "@shared/components/layout";
+import { ModuleAccentProvider } from "@shared/components/layout";
 import { NoBankBanner } from "./components/NoBankBanner";
 import { FinykManualExpenseConflictBanner } from "./components/FinykManualExpenseConflictBanner";
+import { FinykHeader } from "./components/FinykHeader";
+import { FinykAuthErrorBanner } from "./components/FinykAuthErrorBanner";
 import { SectionErrorBoundary } from "@shared/components/ui/SectionErrorBoundary";
 import { cn } from "@shared/lib/ui/cn";
 import { useToast } from "@shared/hooks/useToast";
@@ -227,95 +224,11 @@ export default function App({
   // ── Main app ──────────────────────────────────────────────────────────
   return (
     <ModuleAccentProvider module="finyk" asShellRoot>
-      <ModuleHeader
-        module="finyk"
-        left={
-          typeof onBackToHub === "function" ? (
-            <ModuleHeaderBackButton onClick={onBackToHub} />
-          ) : (
-            <div
-              className="shrink-0 w-10 h-10 rounded-xl bg-success/10 flex items-center justify-center text-success-strong dark:text-success border border-success/15"
-              aria-hidden
-            >
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <rect x="2" y="5" width="20" height="14" rx="2" />
-                <line x1="2" y1="10" x2="22" y2="10" />
-              </svg>
-            </div>
-          )
-        }
-        title="ФІНІК"
-        subtitle="Monobank · бюджети"
-        right={
-          <div className="flex items-center gap-2">
-            <div
-              className={cn(
-                "flex items-center gap-1.5 select-none",
-                "text-style-caption px-2 py-0.5 rounded-full border",
-                "transition-colors duration-200",
-                syncTone.pill,
-              )}
-              aria-label={`Стан синхронізації: ${syncTone.text}`}
-            >
-              <span
-                className={cn(
-                  "w-1.5 h-1.5 rounded-full shrink-0",
-                  syncTone.dot,
-                )}
-              />
-              <span className="hidden sm:inline">{syncTone.text}</span>
-            </div>
-            <button
-              type="button"
-              onClick={() => setShowBalance((v) => !v)}
-              className="focus-ring w-11 h-11 flex items-center justify-center rounded-xl text-subtle hover:text-text hover:bg-panelHi transition-colors"
-              aria-label={showBalance ? "Приховати суми" : "Показати суми"}
-              title={showBalance ? "Приховати суми" : "Показати суми"}
-            >
-              {showBalance ? (
-                <svg
-                  width="22"
-                  height="22"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden
-                >
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                  <circle cx="12" cy="12" r="3" />
-                </svg>
-              ) : (
-                <svg
-                  width="22"
-                  height="22"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden
-                >
-                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
-                  <line x1="1" y1="1" x2="23" y2="23" />
-                </svg>
-              )}
-            </button>
-            <ModuleHeaderAssistantButton />
-          </div>
-        }
+      <FinykHeader
+        onBackToHub={onBackToHub}
+        syncTone={syncTone}
+        showBalance={showBalance}
+        onToggleBalance={() => setShowBalance((v) => !v)}
       />
 
       {showNoBankBanner && (
@@ -479,32 +392,11 @@ export default function App({
       )}
 
       {mono.authError && (
-        <div className="fixed top-[calc(56px+env(safe-area-inset-top,0)+8px)] left-4 right-4 z-50 max-w-lg mx-auto">
-          <div className="bg-warning/15 border border-warning/40 rounded-2xl px-4 py-3 flex items-start gap-3 shadow-card">
-            <span className="text-lg shrink-0 mt-0.5">⚠️</span>
-            <div className="flex-1 min-w-0">
-              <p className="text-style-label text-text">
-                Токен потребує оновлення
-              </p>
-              <p className="text-xs text-muted mt-0.5">{mono.authError}</p>
-              {onBackToHub && (
-                <button
-                  onClick={onBackToHub}
-                  className="text-xs font-semibold text-primary mt-2 hover:underline"
-                >
-                  Оновити токен у Налаштуваннях Hub
-                </button>
-              )}
-            </div>
-            <button
-              onClick={() => mono.setAuthError("")}
-              className="text-muted hover:text-text transition-colors shrink-0"
-              aria-label="Закрити"
-            >
-              ✕
-            </button>
-          </div>
-        </div>
+        <FinykAuthErrorBanner
+          authError={mono.authError}
+          onBackToHub={onBackToHub}
+          onDismiss={() => mono.setAuthError("")}
+        />
       )}
 
       <ManualExpenseSheet

@@ -1,6 +1,6 @@
 # 0001 — Module decomposition + `max-lines` guard
 
-> **Last validated:** 2026-05-05 by @Skords-01. **Next review:** 2026-08-03.
+> **Last validated:** 2026-05-06 by @Skords-01. **Next review:** 2026-08-04.
 > **Status:** Done (Phase 1 + Phase 2 + Phase 3) — closed 2026-05-04
 > **Priority:** P0 (Sprint 1)
 > **Owner:** `@Skords-01`
@@ -232,22 +232,24 @@ API — `contextOrFilename.getFilename is not a function`). Phase 2 неможл
 
 Що **НЕ** зроблено в межах 0001 (carry-over → successor initiative):
 
-| Файл                                                               | LOC  | Походження                                                                              | Куди передаємо                                                              |
-| ------------------------------------------------------------------ | ---- | --------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
-| `apps/web/src/modules/finyk/FinykApp.tsx`                          | 559  | Top-7 #6 у Phase 2 plan, де-приоритезовано як «найбільший ризик регресії після Routine» | [0013-module-decomposition-round-2](./0013-module-decomposition-round-2.md) |
-| `apps/web/src/modules/fizruk/pages/Workouts.tsx`                   | 717  | Top-7 #7 (з `LogCard` парою)                                                            | same                                                                        |
-| `apps/web/src/modules/nutrition/components/LogCard.tsx`            | 580  | Top-7 #7 (пара з `Workouts`)                                                            | same                                                                        |
-| `apps/web/src/modules/nutrition/NutritionApp.tsx`                  | ≥600 | Drift: створений вже у час Phase 1 → потрапив в allowlist при follow-up                 | same                                                                        |
-| `apps/web/src/core/lib/hubChatContext.ts`                          | ≥600 | Drift                                                                                   | same                                                                        |
-| `apps/web/src/modules/finyk/pages/Cards.tsx`                       | ≥600 | Drift                                                                                   | same                                                                        |
-| `apps/web/src/modules/finyk/pages/Subscriptions.tsx`               | ≥600 | Drift                                                                                   | same                                                                        |
-| `apps/web/src/core/lib/chatActions/fizrukActions.ts`               | ≥600 | Drift                                                                                   | same                                                                        |
-| `apps/web/src/modules/fizruk/pages/Exercise.tsx`                   | ≥600 | Drift                                                                                   | same                                                                        |
-| `apps/web/src/modules/fizruk/pages/Progress.tsx`                   | ≥600 | Drift                                                                                   | same                                                                        |
-| `apps/web/src/modules/finyk/pages/AssetsTable.tsx`                 | ≥600 | Drift                                                                                   | same                                                                        |
-| `apps/web/src/modules/routine/components/RoutineCalendarPanel.tsx` | ≥600 | Drift                                                                                   | same                                                                        |
+| Файл                                                               | LOC  | Походження                                                                              | Куди передаємо                                                              | Status                                                                  |
+| ------------------------------------------------------------------ | ---- | --------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| `apps/web/src/modules/finyk/FinykApp.tsx`                          | 559  | Top-7 #6 у Phase 2 plan, де-приоритезовано як «найбільший ризик регресії після Routine» | [0013-module-decomposition-round-2](./0013-module-decomposition-round-2.md) | **Done** (0013 sprint 1 — see Outcome у 0013) — 607 → 498 LOC entry     |
+| `apps/web/src/modules/fizruk/pages/Workouts.tsx`                   | 717  | Top-7 #7 (з `LogCard` парою)                                                            | same                                                                        | **Done** (0013 sprint 1) — 745 → 405 LOC entry, +useWorkoutsPageState   |
+| `apps/web/src/modules/nutrition/components/LogCard.tsx`            | 580  | Top-7 #7 (пара з `Workouts`)                                                            | same                                                                        | **Done** (0013 sprint 1) — 737 → 532 LOC entry, +LogStatsCard/WeekTable |
+| `apps/web/src/modules/nutrition/NutritionApp.tsx`                  | ≥600 | Drift: створений вже у час Phase 1 → потрапив в allowlist при follow-up                 | same                                                                        | Pending (0013 sprint 2)                                                 |
+| `apps/web/src/core/lib/hubChatContext.ts`                          | ≥600 | Drift                                                                                   | same                                                                        | Pending (0013 sprint 2)                                                 |
+| `apps/web/src/modules/finyk/pages/Cards.tsx`                       | ≥600 | Drift                                                                                   | same                                                                        | Pending (0013 sprint 2)                                                 |
+| `apps/web/src/modules/finyk/pages/Subscriptions.tsx`               | ≥600 | Drift                                                                                   | same                                                                        | Pending (0013 sprint 2)                                                 |
+| `apps/web/src/core/lib/chatActions/fizrukActions.ts`               | ≥600 | Drift                                                                                   | same                                                                        | Pending (0013 sprint 2)                                                 |
+| `apps/web/src/modules/fizruk/pages/Exercise.tsx`                   | ≥600 | Drift                                                                                   | same                                                                        | Pending (0013 sprint 1 — Top-priority drain)                            |
+| `apps/web/src/modules/fizruk/pages/Progress.tsx`                   | ≥600 | Drift                                                                                   | same                                                                        | Pending (0013 sprint 3)                                                 |
+| `apps/web/src/modules/finyk/pages/AssetsTable.tsx`                 | ≥600 | Drift                                                                                   | same                                                                        | Pending (0013 sprint 3)                                                 |
+| `apps/web/src/modules/routine/components/RoutineCalendarPanel.tsx` | ≥600 | Drift                                                                                   | same                                                                        | Pending (0013 sprint 3)                                                 |
 
 Ці 11 файлів (12 під час закриття 0001 → −1 після додаткового drop у `eslint.config.js`) **залишаються** в allowlist із збереженим коментарем-deadline'ом — `pnpm lint` не червоніє через них, але CI job `lint:tech-debt-freshness` періодично нагадуватиме про потрібну декомпозицію. Hard Rule #18 продовжує блокувати будь-який **новий** ≥ 600 LOC файл.
+
+> **Update 2026-05-06:** перші 3 файли з таблиці (`Workouts.tsx`, `LogCard.tsx`, `FinykApp.tsx` — Top-7 #6 + #7) задекомпоновано у межах 0013 sprint 1 одним PR `decomp-r2-finyk-fizruk-nutrition`. `Workouts.tsx` і `LogCard.tsx` прибрано з `eslint.config.js` allowlist. `FinykApp.tsx` ніколи не входив у allowlist (entry був 559 LOC), декомп зроблений як drift-prevention. Деталі — у [Outcome 0013](./0013-module-decomposition-round-2.md#outcome).
 
 **Done criteria — фінальна звірка:**
 

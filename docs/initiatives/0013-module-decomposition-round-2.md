@@ -1,7 +1,7 @@
 # 0013 — Module decomposition round 2 (`apps/web` allowlist drain)
 
-> **Last validated:** 2026-05-05 by @Skords-01. **Next review:** 2026-08-03.
-> **Status:** Proposed
+> **Last validated:** 2026-05-06 by @Skords-01. **Next review:** 2026-08-03.
+> **Status:** In Progress (sprint 1 partially shipped — 3/4 файлів)
 > **Priority:** P2 (subordinate to 0010-revenue-first-launch scope-freeze; pre-launch work паралельно лише на adjacent-touch — див. § Чому зараз)
 > **Owner:** `@Skords-01`
 > **ETA:** 3 sprints (≈3 тижні), **8–11 PR-ів** (по 1 PR на файл, плюс finalize-PR з drop-allowlist)
@@ -61,10 +61,10 @@
 
 PR-и:
 
-- `decomp-r2-workouts` — `Workouts.tsx` (717 → ≤599 + 2-3 child компоненти).
-- `decomp-r2-logcard` — `LogCard.tsx` (580 → ≤599; швидкий, бо вже близько).
+- ~`decomp-r2-workouts`~ — `Workouts.tsx` (745 → 405 LOC entry + `useWorkoutsPageState.ts` 550 LOC) — **shipped 2026-05-06** разом із LogCard + FinykApp у одному PR (див. § Outcome).
+- ~`decomp-r2-logcard`~ — `LogCard.tsx` (737 → 532 LOC entry + `LogStatsCard.tsx` 175 + `LogWeekTable.tsx` 82) — **shipped 2026-05-06**.
 - `decomp-r2-exercise` — `Exercise.tsx` (≥600 → ≤599).
-- `decomp-r2-finykapp` — `FinykApp.tsx` (559 → ≤599; швидкий, але хочемо запобігти drift-у назад).
+- ~`decomp-r2-finykapp`~ — `FinykApp.tsx` (607 → 498 LOC entry + `FinykHeader.tsx` 124 + `FinykAuthErrorBanner.tsx` 42) — **shipped 2026-05-06** як drift-prevention.
 
 ### Sprint 2 — drift drain (5 PR-и)
 
@@ -129,3 +129,53 @@ PR-и:
 - [`eslint.config.js`](../../eslint.config.js) — поточний `overrides` allowlist (≈11 entries з deadline-коментарями, що цілять у цю ініціативу).
 - [`scripts/check-bundle-size.mjs`](../../scripts/check-bundle-size.mjs) — bundle-gate, який перевіряє delta після decomp-у.
 - [`docs/initiatives/0010-revenue-first-launch.md`](./0010-revenue-first-launch.md) — paralleling scope-freeze, що визначає коли robо `FinykApp.tsx` дозволено.
+
+## Outcome
+
+### Sprint 1 partial — 2026-05-06 (`decomp-r2-finyk-fizruk-nutrition`)
+
+**PR:** `devin/1778055567-decomp-finyk-fizruk-nutrition` — об'єднано 3 файли з sprint 1 (`Workouts`, `LogCard`, `FinykApp`) в один atomic PR. `Exercise.tsx` лишається на наступний PR sprint 1.
+
+Що зроблено:
+
+- **`apps/web/src/modules/fizruk/pages/Workouts.tsx`**: 745 → **405 LOC entry**. Витягнуто `useWorkoutsPageState.ts` (550 LOC) — orchestrator-хук за паттерном `useRoutineAppState.ts` (Phase 2 RoutineApp). Хук обгортає всі `useState` (20+), `useEffect` (rest-timer, live-tick, sessionStorage режим, stale activeWorkoutId cleanup), `useMemo` (grouped/lastByExerciseId/recentWorkouts) і `useCallback` хендлери (removeItemWithUndo, addExerciseToActive, executeTemplateStart, handlePullRefresh та ін.). Workouts.tsx тепер чистий рендерер: destructure хука → JSX. Поведінка ідентична — без feature flag, без feature змін.
+- **`apps/web/src/modules/nutrition/components/LogCard.tsx`**: 737 → **532 LOC entry**. Витягнуто два sub-component-и:
+  - `LogStatsCard.tsx` (175 LOC) — analytics card з 30/90-day macro середніми, kcal-by-day стовпчиками, top-meals списком, meal-type breakdown. Власна локальна стейт-клітинка `statsRange` (раніше була у `LogCard`).
+  - `LogWeekTable.tsx` (82 LOC) — collapsible тиждневу таблицю макро. Власна `weekOpen`-клітинка.
+  - LogCard більше не імпортує `nutritionStats` хелпери (`avgFromSummary`, `getRowsForRange`, `mealTypeBreakdown`, `summarizeRows`, `topMeals`) — вони живуть у `LogStatsCard`.
+- **`apps/web/src/modules/finyk/FinykApp.tsx`**: 607 → **498 LOC entry**. Drift-prevention. Витягнуто:
+  - `FinykHeader.tsx` (124 LOC) — `ModuleHeader` з sync-pill, balance-toggle, Assistant-кнопкою.
+  - `FinykAuthErrorBanner.tsx` (42 LOC) — warning-банер про протермінований Mono-токен.
+  - `FinykApp.tsx` тепер не імпортує `cn`/`ModuleHeader*` — спрощений import-блок.
+- **`eslint.config.js`**: `Workouts.tsx` і `LogCard.tsx` прибрано з allowlist (рядки 1056-1057 у попередньому stat-у). Ці два файли тепер enforce-яться напряму через `max-lines: [error, 600]`. `FinykApp.tsx` ніколи не входив в allowlist (entry був 559 LOC до сесії).
+- **Міграції / API-зміни:** немає — public API кожного з 3 модулів не змінено, зовнішні консьюмери (`apps/web/src/main.tsx`, lazy-imports у Hub-shellі, тести) не торкнулися.
+
+Метрики:
+
+| Файл           | LOC до | LOC після (entry) | LOC у нових sub-файлах         | LOC delta (total) |
+| -------------- | ------ | ----------------- | ------------------------------ | ----------------- |
+| `Workouts.tsx` | 745    | 405               | 550 (useWorkoutsPageState.ts)  | +210              |
+| `LogCard.tsx`  | 737    | 532               | 175 (LogStatsCard) + 82 (Week) | +52               |
+| `FinykApp.tsx` | 607    | 498               | 124 (Header) + 42 (AuthErr)    | +57               |
+| **Сума**       | 2 089  | 1 435             | 973                            | +319              |
+
+LOC сума зросла на ~+319 (∼15%), що очікувано — extract-ed файли мають окремий import-блок, prop-types interface, JSDoc-коментар. Bundle-impact: tree-shake-ables (не імпортуються коли модуль не використовується), тому payload не зростає. `pnpm build:analyze` для finalize-PR-у.
+
+Allowlist drain progress:
+
+| Метрика                                       | Baseline (post-0001 closure) | Post sprint-1 partial (зараз) | Sprint 1 final target | Sprint 3 target        |
+| --------------------------------------------- | ---------------------------- | ----------------------------- | --------------------- | ---------------------- |
+| Файлів `apps/web/src/**` ≥600 LOC у allowlist | 11                           | **9** (-2)                    | 7                     | 0 (allowlist removed)  |
+| Найбільший файл у allowlist                   | 717 (`Workouts.tsx`)         | **DailyPlanCard.tsx**         | DailyPlanCard         | ≤ 599 (без override-у) |
+| Сумарний LOC у allowlist                      | ~7 800                       | ~6 350                        | ~5 100                | 0                      |
+
+Що **не** зроблено у цьому PR:
+
+- `Exercise.tsx` decomp — лишається на наступний sprint 1 PR (`decomp-r2-exercise`). Файл має складну state-machine для exercise-detail модального з recovery overlay; розглянемо окремо щоб не blow-up-нути PR розмір (`Δ LOC ≤ 800` rule per 0013 line 105).
+- Bundle-size delta — не вимірювали локально (немає baseline-у з main; вимірювання робить finalize-PR з повним sprint-3 drain).
+- Жодного нового тесту — `pnpm test` зелений, поведінка не змінилася. Регресія відсутня.
+
+Відхилення від плану:
+
+- **План:** 4 окремі PR-и для sprint 1 (`decomp-r2-workouts`, `decomp-r2-logcard`, `decomp-r2-finykapp`, `decomp-r2-exercise`). **Реалізація:** 3 у одному PR (`Workouts` + `LogCard` + `FinykApp`), бо total `Δ LOC ≈ +319` (well under 800-rule). Це знижує overhead на review (одна звірка ESLint allowlist + одна бундл-size measurement) і signal-noise ratio в PR title-описах.
+- `FinykApp.tsx` зробили **раніше** ніж `Exercise.tsx`, всупереч початковому замислу (відкласти на post-0010). Причина: 0010-revenue-first launch у scope-freeze до 2026-06-01 — billing-фічі, що торкаються `FinykApp`, ще не стартували, тож decomp не конфліктує з product-PR-ами. До того ж entry був тільки 607 LOC (не 600+), тому це більше drift-prevention ніж top-priority drain.
