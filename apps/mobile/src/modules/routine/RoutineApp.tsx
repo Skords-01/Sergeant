@@ -65,6 +65,7 @@ import {
 } from "./components/RoutineBottomNav";
 import { useRoutineDualWriteBoot } from "./hooks/useRoutineDualWriteBoot";
 import { useRoutineReminders } from "./hooks/useRoutineReminders";
+import { useSqliteReadBoot } from "./hooks/useSqliteReadBoot";
 import { useRoutineStore } from "./lib/routineStore";
 import { Calendar } from "./pages/Calendar";
 import { HabitsPage } from "./pages/Habits/HabitsPage";
@@ -118,6 +119,7 @@ function RoutineShell() {
   // at the `isRoutineDualWriteRegistered()` check and SQLite stays
   // empty even with the flag flipped.
   useRoutineDualWriteBoot();
+  useSqliteReadBoot();
 
   // Subscribe to the routine store so the reminder scheduler sees
   // live habit edits without us re-reading MMKV on every change.

@@ -12,7 +12,7 @@
  * to render toggle rows; `useFlag(id)` is the read-side helper for
  * components that want to react to an individual flag.
  */
-import { useLocalStorage } from "@/lib/storage";
+import { safeReadLS, useLocalStorage } from "@/lib/storage";
 
 export interface FlagDefinition {
   /** Flag identifier — string, dotted-namespace allowed. */
@@ -65,8 +65,8 @@ export const EXPERIMENTAL_FLAGS: readonly FlagDefinition[] = [
     id: "feature.routine.sqlite_v2.read_sqlite",
     label: "Routine — read completions from SQLite",
     description:
-      "Completions читаються з локальної SQLite (`routine_entries`) замість MMKV blob. MMKV-write залишається як safety net. Stage 4 PR #025 storage-roadmap. Потребує увімкненого dual-write. Default: off.",
-    defaultValue: false,
+      "Completions читаються з локальної SQLite (`routine_entries`) замість MMKV blob. MMKV-write залишається як safety net. Stage 8 PR #055r2 storage-roadmap — default-on rollout. Потребує увімкненого dual-write. Default: on.",
+    defaultValue: true,
   },
   {
     id: "feature.fizruk.sqlite_v2.dual_write",
@@ -139,6 +139,21 @@ export function useFlag(id: string): boolean {
   const [flags] = useLocalStorage<FlagValues>(FLAGS_KEY, DEFAULTS);
   const stored = flags[id];
   if (typeof stored === "boolean") return stored;
+  const def = EXPERIMENTAL_FLAGS.find((f) => f.id === id);
+  return def ? def.defaultValue : false;
+}
+
+/**
+ * Synchronous flag read for non-React boot code. Mirrors the web
+ * `getFlag()` helper: persisted user overrides win, otherwise the
+ * registry default is used. Unknown ids stay false.
+ */
+export function getFlag(id: string): boolean {
+  const stored = safeReadLS<FlagValues>(FLAGS_KEY, null);
+  if (stored && typeof stored === "object") {
+    const value = stored[id];
+    if (typeof value === "boolean") return value;
+  }
   const def = EXPERIMENTAL_FLAGS.find((f) => f.id === id);
   return def ? def.defaultValue : false;
 }

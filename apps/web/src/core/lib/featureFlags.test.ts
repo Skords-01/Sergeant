@@ -42,6 +42,14 @@ describe("featureFlags", () => {
     expect(getFlag("feature.routine.sqlite_v2.dual_write")).toBe(false);
   });
 
+  it("Routine SQLite reads увімкнені за замовчуванням і можуть бути вимкнені користувачем", async () => {
+    const { getFlag, setFlag } = await loadFresh();
+    expect(getFlag("feature.routine.sqlite_v2.read_sqlite")).toBe(true);
+
+    expect(setFlag("feature.routine.sqlite_v2.read_sqlite", false)).toBe(true);
+    expect(getFlag("feature.routine.sqlite_v2.read_sqlite")).toBe(false);
+  });
+
   it("setFlag зберігає boolean і getFlag його повертає", async () => {
     const { getFlag, setFlag } = await loadFresh();
     expect(setFlag("finyk_subscriptions_category", true)).toBe(true);

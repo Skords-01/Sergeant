@@ -2764,11 +2764,14 @@ value JSON)`)». Та редакція об'єднувала **дві** орто
   Експериментальне.
 - **Dep.** PR #024 (boot wiring) — landed.
 
-##### **PR #055r2 — `feat(routine): default-on feature.routine.sqlite_v2.read_sqlite`** 📋 ROADMAP
+##### **PR #055r2 — `feat(routine): default-on feature.routine.sqlite_v2.read_sqlite`** 🚧 ACTIVE
 
 - Flip read-flag default-on. Reads ідуть з SQLite через
   `apps/{web,mobile}/src/modules/routine/lib/sqliteReader.ts` з
   LS-overlay-fallback на cache miss.
+- Implementation branch: `codex/routine-read-sqlite-default-on`.
+- Mobile wiring includes `apps/mobile/src/modules/routine/lib/sqliteReadBoot.ts`
+  and `apps/mobile/src/modules/routine/hooks/useSqliteReadBoot.ts`.
 - Telemetry: `routine.sqlite.read.fallback` (counter, must be 0
   steady state).
 - **Done criteria.** 14 днів без `read.fallback`. UI smoke
@@ -2783,6 +2786,10 @@ value JSON)`)». Та редакція об'єднувала **дві** орто
 saveRoutineState`. Drop `triggerRoutineDualWrite` шар повністю
   (вже unconditional default-on).
 - Drop `feature.routine.sqlite_v2.dual_write` у featureFlags.
+- Current blocker before implementation: Routine SQLite stores completions in
+  `routine_entries`; habits/tags/categories/prefs/notes still need LS/MMKV as
+  the state source until a follow-up schema/KV slice covers the remaining
+  Routine state.
 - **Done criteria.** Жодних `routine.ls.write` breadcrumbs у
   Sentry за 14 днів post-merge. Bundle drop ~3 KB.
 - **Dep.** PR #055r2 (read default-on, ≥ 14 днів стабільно).
