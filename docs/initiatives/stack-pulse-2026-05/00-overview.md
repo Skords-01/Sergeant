@@ -58,7 +58,7 @@
 | H7  | PG pool size 10 — undersized для AI ingestion    | [PR-13](./pr-13-postgres-pool-sizing.md)         | Planned                                                                  |
 | H8  | Vercel COEP `require-corp` — broad blast radius  | [PR-14](./pr-14-vercel-coep-review.md)           | **Closed** — M21 + Vercel compatibility matrix                           |
 | H9  | `AI_QUOTA_DISABLED=1` ризик у production         | [PR-15](./pr-15-ai-quota-disabled-hardblock.md)  | **In review** ([#1567](https://github.com/Skords-01/Sergeant/pull/1567)) |
-| H10 | Pino без enforced redaction policy               | [PR-16](./pr-16-pino-redaction-policy.md)        | Planned                                                                  |
+| H10 | Pino без enforced redaction policy               | [PR-16](./pr-16-pino-redaction-policy.md)        | **In review** ([#2088](https://github.com/Skords-01/Sergeant/pull/2088)) |
 
 ### Medium (без окремих PR-плані поки не призначений owner)
 

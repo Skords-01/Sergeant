@@ -1,12 +1,12 @@
 # PR-16: Pino redaction policy + ESLint guard
 
-> **Last validated:** 2026-05-03 by Devin. **Next review:** 2026-08-03.
-> **Status:** Planned
+> **Last validated:** 2026-05-06 by Devin. **Next review:** 2026-08-04.
+> **Status:** In review — [#2088](https://github.com/Skords-01/Sergeant/pull/2088)
 
 |              |                                                                |
 | ------------ | -------------------------------------------------------------- |
 | **Severity** | High (H10)                                                     |
-| **Owner**    | TBD                                                            |
+| **Owner**    | @Skords-01                                                     |
 | **Effort**   | 1 день                                                         |
 | **Risk**     | Low (additive: захищає, не ламає існуюче)                      |
 | **Touches**  | `apps/server/src/obs/logger.ts`, ESLint config, кожен callsite |
@@ -97,12 +97,18 @@ export const logger = pino({
 
 ## Acceptance criteria (DoD)
 
-- [ ] `apps/server/src/obs/logger.ts` має enforced `redact:` config з ≥15 paths.
-- [ ] Pino unit-test: `logger.info({ password: "x" })` → output має `[REDACTED]`, не `"x"`.
-- [ ] ESLint rule active + 0 warnings у server-tree.
-- [ ] `docs/security/logging-redaction-policy.md` описаний.
-- [ ] Hard rule зареєстрований.
-- [ ] Sentry `beforeSend` синхронізований.
+- [x] `apps/server/src/obs/logger.ts` має enforced `redact:` config з ≥15 paths (наразі ~60 paths + 30 key-names — single source of truth).
+- [x] Pino unit-test: `logger.info({ password: "x" })` → output має `[redacted]`, не `"x"`. Перевірено у `apps/server/src/obs/logger.test.ts` (45/45 passing).
+- [x] ESLint rule active + 0 violations у server-tree (`pnpm --filter @sergeant/server lint` → 0 errors, 4 pre-existing warns).
+- [x] `docs/security/logging-redaction-policy.md` описаний.
+- [x] Hard rule зареєстрований — Hard Rule #21 у `AGENTS.md` + `CONTRIBUTING.md` + `docs/governance/hard-rules.json`.
+- [x] Sentry `beforeSend` синхронізований — `applyBeforeSend` імпортує `redactKeyNames` з `logger.ts` (no drift).
+
+## Outcome
+
+- ESLint rule `sergeant-design/no-raw-request-in-logger` ловить три патерни (direct `logger.info(req)`, spread `{ ...req }`, re-key `{ body: req.body }`) — 34 unit-тестів.
+- Existing Pino redaction (60+ paths) зафіксовано як hard contract; нові поля додаються одночасно у `redactPaths` (Pino) і `redactKeyNames` (Sentry-`applyBeforeSend`).
+- Single-page reference: [`docs/security/logging-redaction-policy.md`](../../security/logging-redaction-policy.md).
 
 ## Тести
 
