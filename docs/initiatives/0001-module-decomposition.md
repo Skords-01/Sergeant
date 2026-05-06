@@ -1,13 +1,14 @@
 # 0001 — Module decomposition + `max-lines` guard
 
-> **Last validated:** 2026-05-05 by @Skords-01. **Next review:** 2026-08-03.
-> **Status:** Done (Phase 1 + Phase 2 + Phase 3) — closed 2026-05-04
+> **Last validated:** 2026-05-06 by @Skords-01. **Next review:** 2026-08-03.
+> **Status:** Done (Phase 1 + Phase 2 + Phase 3) — closed 2026-05-04, follow-up Phase 2 #6/#7 closed 2026-05-06
 > **Priority:** P0 (Sprint 1)
 > **Owner:** `@Skords-01`
 > **ETA:** 2 weeks (5 PRs) — _delivered on schedule_
 > **Phase 1 PR:** [#1555](https://github.com/Skords-01/Sergeant/pull/1555) — merged 2026-05-03
 > **Phase 2 PRs:** [#1592](https://github.com/Skords-01/Sergeant/pull/1592) (eslint pin pre-req), [#1593](https://github.com/Skords-01/Sergeant/pull/1593), [#1594](https://github.com/Skords-01/Sergeant/pull/1594), [#1596](https://github.com/Skords-01/Sergeant/pull/1596), [#1597](https://github.com/Skords-01/Sergeant/pull/1597), [#1603](https://github.com/Skords-01/Sergeant/pull/1603) — opened 2026-05-04
-> **Phase 3 PR:** `decomp-finalize` (this) — opens together with the closure
+> **Phase 2 #6/#7 follow-up PR:** `decomp-finyk-workouts-finalize` — opened 2026-05-06
+> **Phase 3 PR:** `decomp-finalize` — opened together with the closure
 > **Sources:** Design Review 2026-05-03 §2.1, §3.1, §12; [`docs/tech-debt/frontend.md`](../tech-debt/frontend.md)
 
 ## TL;DR
@@ -232,46 +233,82 @@ API — `contextOrFilename.getFilename is not a function`). Phase 2 неможл
 
 Що **НЕ** зроблено в межах 0001 (carry-over → successor initiative):
 
-| Файл                                                               | LOC  | Походження                                                                              | Куди передаємо                                                              |
-| ------------------------------------------------------------------ | ---- | --------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
-| `apps/web/src/modules/finyk/FinykApp.tsx`                          | 559  | Top-7 #6 у Phase 2 plan, де-приоритезовано як «найбільший ризик регресії після Routine» | [0013-module-decomposition-round-2](./0013-module-decomposition-round-2.md) |
-| `apps/web/src/modules/fizruk/pages/Workouts.tsx`                   | 717  | Top-7 #7 (з `LogCard` парою)                                                            | same                                                                        |
-| `apps/web/src/modules/nutrition/components/LogCard.tsx`            | 580  | Top-7 #7 (пара з `Workouts`)                                                            | same                                                                        |
-| `apps/web/src/modules/nutrition/NutritionApp.tsx`                  | ≥600 | Drift: створений вже у час Phase 1 → потрапив в allowlist при follow-up                 | same                                                                        |
-| `apps/web/src/core/lib/hubChatContext.ts`                          | ≥600 | Drift                                                                                   | same                                                                        |
-| `apps/web/src/modules/finyk/pages/Cards.tsx`                       | ≥600 | Drift                                                                                   | same                                                                        |
-| `apps/web/src/modules/finyk/pages/Subscriptions.tsx`               | ≥600 | Drift                                                                                   | same                                                                        |
-| `apps/web/src/core/lib/chatActions/fizrukActions.ts`               | ≥600 | Drift                                                                                   | same                                                                        |
-| `apps/web/src/modules/fizruk/pages/Exercise.tsx`                   | ≥600 | Drift                                                                                   | same                                                                        |
-| `apps/web/src/modules/fizruk/pages/Progress.tsx`                   | ≥600 | Drift                                                                                   | same                                                                        |
-| `apps/web/src/modules/finyk/pages/AssetsTable.tsx`                 | ≥600 | Drift                                                                                   | same                                                                        |
-| `apps/web/src/modules/routine/components/RoutineCalendarPanel.tsx` | ≥600 | Drift                                                                                   | same                                                                        |
+| Файл                                                               | LOC  | Походження                                                              | Куди передаємо                                                              |
+| ------------------------------------------------------------------ | ---- | ----------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| `apps/web/src/modules/nutrition/NutritionApp.tsx`                  | ≥600 | Drift: створений вже у час Phase 1 → потрапив в allowlist при follow-up | [0013-module-decomposition-round-2](./0013-module-decomposition-round-2.md) |
+| `apps/web/src/core/lib/hubChatContext.ts`                          | ≥600 | Drift                                                                   | same                                                                        |
+| `apps/web/src/core/hub/HubDashboard.tsx`                           | ≥600 | Drift                                                                   | same                                                                        |
+| `apps/web/src/modules/nutrition/components/DailyPlanCard.tsx`      | ≥600 | Drift                                                                   | same                                                                        |
+| `apps/web/src/core/lib/chatActions/fizrukActions.ts`               | ≥600 | Drift                                                                   | same                                                                        |
+| `apps/web/src/modules/fizruk/pages/Exercise.tsx`                   | ≥600 | Drift                                                                   | same                                                                        |
+| `apps/web/src/modules/fizruk/pages/Progress.tsx`                   | ≥600 | Drift                                                                   | same                                                                        |
+| `apps/web/src/modules/finyk/pages/AssetsTable.tsx`                 | ≥600 | Drift                                                                   | same                                                                        |
+| `apps/web/src/modules/routine/components/RoutineCalendarPanel.tsx` | ≥600 | Drift                                                                   | same                                                                        |
 
-Ці 11 файлів (12 під час закриття 0001 → −1 після додаткового drop у `eslint.config.js`) **залишаються** в allowlist із збереженим коментарем-deadline'ом — `pnpm lint` не червоніє через них, але CI job `lint:tech-debt-freshness` періодично нагадуватиме про потрібну декомпозицію. Hard Rule #18 продовжує блокувати будь-який **новий** ≥ 600 LOC файл.
+Після follow-up PR `decomp-finyk-workouts-finalize` (2026-05-06) у allowlist лишилось **9 файлів**
+(Top-7 пункти #6 — `FinykApp.tsx` — і #7 — `Workouts.tsx` + `LogCard.tsx` — закриті, див. секцію
+«Phase 2 — items 6/7 follow-up» нижче). Решта **залишається** в allowlist із збереженим
+коментарем-deadline'ом — `pnpm lint` не червоніє через них, але CI job
+`lint:tech-debt-freshness` періодично нагадуватиме про потрібну декомпозицію.
+Hard Rule #18 продовжує блокувати будь-який **новий** ≥ 600 LOC файл.
 
 **Done criteria — фінальна звірка:**
 
 - [x] `pnpm lint` падає на будь-якому новому файлі ≥600 LOC у `apps/web/src/**/*.tsx` — primary deliverable.
-- [ ] У `apps/web/src/**` лишається ≤2 файли в allowlist — **не виконано**: 11 файлів (12 на час закриття 0001, −1 після наступного drop у `eslint.config.js`). Carry-over до [0013-module-decomposition-round-2](./0013-module-decomposition-round-2.md).
+- [ ] У `apps/web/src/**` лишається ≤2 файли в allowlist — **не виконано**: 9 файлів після follow-up `decomp-finyk-workouts-finalize` (було 11 на час закриття 0001 → −2 після drop `Workouts.tsx` і `LogCard.tsx`; `FinykApp.tsx` поза allowlist із моменту decomp). Carry-over до [0013-module-decomposition-round-2](./0013-module-decomposition-round-2.md).
 - [x] Декомпонований `RoutineApp` не має `any`-типів та використовує `useReducer`/state-machine для головного потоку — `useRoutineTimeState.ts`.
 - [x] Декомпонований `Icon.tsx` — `pnpm build:analyze` показує −22 KB у `shared` chunk-і (PR #1596 measurement).
 - [x] CI job `lint:tech-debt-freshness` пройшов і `LARGE_FILES` зник з `frontend.md` watching-листа (тепер посилається сюди).
 - [x] У `AGENTS.md` додано Hard Rule #18 (`max-lines`) з прикладом і покликанням сюди.
 
-5 з 6 критеріїв виконано. **Критерій №2** (allowlist ≤ 2) переноситься як scope наступної ініціативи — це чітко окремий sprint роботи (≈11 файлів × ~200 LOC мережево), і змішувати його з фінально-документаційним PR було б неконструктивно.
+5 з 6 критеріїв виконано. **Критерій №2** (allowlist ≤ 2) переноситься як scope наступної ініціативи — це чітко окремий sprint роботи (≈9 файлів × ~200 LOC мережево), і змішувати його з фінально-документаційним PR було б неконструктивно.
 
 **Метрики Phase 3 (final):**
 
-| Метрика                                       | Baseline (2026-05-03) | Phase 1 (post-#1555) | Phase 2 (post-#1597)       | Phase 3 (post-#1603 + finalize) | Target (2026-06-15) |
-| --------------------------------------------- | --------------------- | -------------------- | -------------------------- | ------------------------------- | ------------------- |
-| Файлів `apps/web/src/**` ≥600 LOC у allowlist | 0 (правило off)       | 7                    | 4 (видалено 4 з 5 Phase 2) | 12 (3 з Top-7 + 9 drift)        | ≤ 2                 |
-| Найбільший файл у allowlist                   | 745                   | 745                  | 745 (RoutineApp)           | ~717 (Workouts.tsx)             | ≤ 600               |
-| Сумарний LOC у allowlist                      | ~12 200               | ~4 500               | ~3 100                     | ~7 800                          | ≤ 1 500             |
-| Найбільший новий файл, що пропускає CI        | n/a                   | 599                  | 599                        | **599**                         | ≤ 599               |
+| Метрика                                       | Baseline (2026-05-03) | Phase 1 (post-#1555) | Phase 2 (post-#1597)       | Phase 3 (post-#1603 + finalize) | Phase 2 #6/#7 follow-up (post-2026-05-06) | Target (2026-06-15) |
+| --------------------------------------------- | --------------------- | -------------------- | -------------------------- | ------------------------------- | ----------------------------------------- | ------------------- |
+| Файлів `apps/web/src/**` ≥600 LOC у allowlist | 0 (правило off)       | 7                    | 4 (видалено 4 з 5 Phase 2) | 11 (2 з Top-7 + 9 drift)        | **9** (0 з Top-7 + 9 drift)               | ≤ 2                 |
+| Найбільший файл у allowlist                   | 745                   | 745                  | 745 (RoutineApp)           | 744 (Workouts.tsx)              | ~700 (`Progress.tsx` / `Exercise.tsx`)    | ≤ 600               |
+| Сумарний LOC у allowlist                      | ~12 200               | ~4 500               | ~3 100                     | ~7 800                          | ~5 700                                    | ≤ 1 500             |
+| Найбільший новий файл, що пропускає CI        | n/a                   | 599                  | 599                        | **599**                         | **599**                                   | ≤ 599               |
 
-**Висновок:** Lint guard працює на 100% — жоден новий ≥ 600 LOC файл не може потрапити на main. Декомпозиція 5 з оригінально-обраних 5 топ-1 файлів (RoutineApp 745, useStorage 685, chatActions/types 672, Icon 660, sw 643) — суттєво зменшила «гарячий» LOC monolithically (з ~3 405 → ~828 у entry-файлах). Решта (3 з Top-7 + drift) — окремий scope, окрема ініціатива.
+**Висновок:** Lint guard працює на 100% — жоден новий ≥ 600 LOC файл не може потрапити на main. Декомпозиція 5 з оригінально-обраних 5 топ-1 файлів (RoutineApp 745, useStorage 685, chatActions/types 672, Icon 660, sw 643) — суттєво зменшила «гарячий» LOC monolithically (з ~3 405 → ~828 у entry-файлах). Follow-up `decomp-finyk-workouts-finalize` додає Top-7 #6 (`FinykApp.tsx` 606 → 223) і #7 (`Workouts.tsx` 744 → 251, `LogCard.tsx` 736 → 188). Решта (drift, ≈9 файлів) — окремий scope, окрема ініціатива.
 
 Відхилення від плану:
 
 - **Послідовність:** план казав робити PRs у порядку 1→7. Реалізував у порядку складності-в-зворотному (685→672→660→643), бо `useStorage.ts` був найбільш self-contained і дав калібрування паттерну для решти. `RoutineApp.tsx` (#1, найбільший) лишив на потім свідомо — у нього найбільший behavioral-risk surface.
 - **Pre-req PR:** додав #1592 (eslint pin), бо без нього не можна було комітити без `--no-verify`. Phase-2 план цього не передбачав, але AGENTS.md Hard Rule #7 ("if a hook is broken, fix it in the same PR") вимагав це.
+- **Phase 2 #6 і #7:** після первинного закриття 0001 (2026-05-04) ці пункти стали carry-over до 0013, але follow-up PR `decomp-finyk-workouts-finalize` (2026-05-06) їх дотиснув у межах 0001 — пункти Top-7 виконані 7/7, замість попередніх 5/7. Див. секцію «Phase 2 — items 6/7 follow-up» нижче.
+
+### Фаза 2 — items 6/7 follow-up (DONE — 2026-05-06)
+
+**PR:** `decomp-finyk-workouts-finalize`
+
+Після закриття 0001 пункти Top-7 #6 (`FinykApp.tsx`) і #7 (`Workouts.tsx` + `LogCard.tsx`)
+спочатку були carry-over до [0013-module-decomposition-round-2](./0013-module-decomposition-round-2.md).
+Цей follow-up закриває їх у межах 0001 — паттерн вже відкалібрований на Routine /
+Finyk-storage / Icon / SW / chatActions, повторне застосування дешевше за окрему ініціативу.
+
+| Файл                                                    | LOC до | Розклали на                                                                                                                                                                                                | LOC після entry | Найбільший shard |
+| ------------------------------------------------------- | -----: | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------- | ---------------- |
+| `apps/web/src/modules/finyk/FinykApp.tsx`               |    606 | composition root + `useFinykAppState.ts` (291) + `FinykApp.helpers.ts` (68) + `FinykAppHeader.tsx` (119) + `FinykPageRouter.tsx` (123)                                                                     | **223**         | 291              |
+| `apps/web/src/modules/fizruk/pages/Workouts.tsx`        |    744 | composition root + `useWorkoutsPageState.ts` (554, orchestrator) + `Workouts.helpers.ts` (99)                                                                                                              | **251**         | 554              |
+| `apps/web/src/modules/nutrition/components/LogCard.tsx` |    737 | composition root + `LogCard.helpers.ts` (34) + `LogCardSearch.tsx` (132) + `LogCardWeekTable.tsx` (73) + `LogCardStats.tsx` (165) + `MealRow.tsx` (123, includes `MealThumb`) + `VirtualMealList.tsx` (89) | **188**         | 165              |
+
+**Public API stability:** `FinykApp` default export + `FinykAppProps`, `Workouts` default
+export, `LogCard` default export + props — без змін. Жоден консьюмер (App-shell, lazy router,
+tests, hub-chat actions) не оновлював імпорти.
+
+**Behavior identity:** `pnpm typecheck` зелений; `pnpm lint` 0 errors (61 warnings — всі —
+pre-existing `sergeant-design/no-cyrillic-jsx-literal` рядки, перенесені verbatim із оригіналу,
+трекаються в `docs/i18n/readiness.md`); `vitest` зелений на всіх тестах, що стосуються
+декомпонованих модулів (4 fail на main = pre-existing import resolve для `@sergeant/db-schema/sqlite`,
+не залежить від decomp).
+
+**Lint cleanup:** `useWorkoutsPageState.ts` має 1 warning `react-hooks/set-state-in-effect`
+на `setNow(Date.now())` всередині `setInterval` — це рендер-незалежний таймер для
+рест-часу, з обґрунтуванням inline.
+
+**Drop allowlist:** прибрано `LogCard.tsx`, `Workouts.tsx` із `eslint.config.js` overrides;
+`FinykApp.tsx` ніколи не був в allowlist (розміру 606 LOC бракувало кількох рядків
+до порушення на момент Phase 1, зріс пізніше).
