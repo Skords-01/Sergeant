@@ -41,7 +41,7 @@
     "@dnd-kit/utilities": "^3.2.2",
     "@fontsource-variable/dm-sans": "^5.2.8",
     "@hookform/resolvers": "^5.2.2",
-    "@sentry/react": "^8.55.1",
+    "@sentry/react": "^10.51.0",
     "@sergeant/api-client": "workspace:*",
     "@sergeant/design-tokens": "workspace:*",
     "@sergeant/finyk-domain": "workspace:*",
