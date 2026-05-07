@@ -60,7 +60,7 @@
     "expo-sharing": "~13.0.1",
     "expo-splash-screen": "~0.29.24",
     "expo-sqlite": "~15.1.4",
-    "expo-status-bar": "~2.0.1",
+    "expo-status-bar": "~55.0.6",
     "expo-web-browser": "~14.0.2",
     "lucide-react-native": "^1.11.0",
     "nativewind": "^4.1.23",
