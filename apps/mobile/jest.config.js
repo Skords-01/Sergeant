@@ -30,6 +30,8 @@ module.exports = {
     "^@sergeant/db-schema$": "<rootDir>/../../packages/db-schema/src/index.ts",
     // `migrate/pg` and `migrate/sqlite` are single files, not directories;
     // map them explicitly before the catch-all that appends `/index.ts`.
+    "^@sergeant/db-schema/migrate/runner$":
+      "<rootDir>/../../packages/db-schema/src/migrate/runner.ts",
     "^@sergeant/db-schema/migrate/pg$":
       "<rootDir>/../../packages/db-schema/src/migrate/pg.ts",
     "^@sergeant/db-schema/migrate/sqlite$":

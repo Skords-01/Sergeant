@@ -38,7 +38,7 @@ import {
   createSqliteAdapter,
   type SqliteMigrationClient,
 } from "@sergeant/db-schema/migrate/sqlite";
-import { runMigrations } from "@sergeant/db-schema/migrate";
+import { runMigrations } from "@sergeant/db-schema/migrate/runner";
 import type {
   BroadcastChannelLike,
   KVStore,
