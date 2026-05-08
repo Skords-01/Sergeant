@@ -320,8 +320,8 @@ importers:
         specifier: ^7.6.2
         version: 7.6.2(@capacitor/core@7.6.2)
       '@capacitor/keyboard':
-        specifier: ^7.0.6
-        version: 7.0.6(@capacitor/core@7.6.2)
+        specifier: ^8.0.3
+        version: 8.0.3(@capacitor/core@7.6.2)
       '@capacitor/preferences':
         specifier: ^7.0.4
         version: 7.0.4(@capacitor/core@7.6.2)
@@ -1931,10 +1931,10 @@ packages:
     peerDependencies:
       '@capacitor/core': ^7.6.0
 
-  '@capacitor/keyboard@7.0.6':
-    resolution: {integrity: sha512-mH9EHo4EnBA9zJAi6domGVB/PdEkcm0h27nJDHG4Y3fd2oKsheCxDRXlYrbgj8hcyQPe0cGWqAfzfwKzkWQoFQ==}
+  '@capacitor/keyboard@8.0.3':
+    resolution: {integrity: sha512-27Bv5/2w1Ss2njguBgTS98O0Bb8DRJhAARyzXYib0JlT/n6BrJw/EZ0CokM4C8GFUjFDjJnEKF1Ie01buTMEXQ==}
     peerDependencies:
-      '@capacitor/core': '>=7.0.0'
+      '@capacitor/core': '>=8.0.0'
 
   '@capacitor/preferences@7.0.4':
     resolution: {integrity: sha512-TJhkwaI2RCs/iDC9PjNczZV4h6JM4gUtTuKMeFdy0OwGgFEHf4TrtW2mFMc1TnPDalYQ91p9NT+UKgiJs9/xtg==}
@@ -14501,7 +14501,7 @@ snapshots:
     dependencies:
       '@capacitor/core': 7.6.2
 
-  '@capacitor/keyboard@7.0.6(@capacitor/core@7.6.2)':
+  '@capacitor/keyboard@8.0.3(@capacitor/core@7.6.2)':
     dependencies:
       '@capacitor/core': 7.6.2
 
