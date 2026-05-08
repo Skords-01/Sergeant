@@ -12,7 +12,12 @@ import { act, renderHook, waitFor } from "@testing-library/react";
 import { IDBFactory } from "fake-indexeddb";
 
 // Mock the posthog transport so tests don't need a real PostHog key.
-const capturePostHogEvent = vi.fn();
+// `vi.hoisted` keeps the spy available BEFORE `vi.mock()` is hoisted to the
+// top of the file — without it, the factory crashes with a TDZ ReferenceError
+// ("Cannot access 'capturePostHogEvent' before initialization").
+const { capturePostHogEvent } = vi.hoisted(() => ({
+  capturePostHogEvent: vi.fn(),
+}));
 vi.mock("../observability/posthog", () => ({
   capturePostHogEvent,
 }));
@@ -91,7 +96,7 @@ describe("useAppLock", () => {
     act(() => result.current.startSetup());
     act(() => result.current.finishSetup());
     const completedCall = capturePostHogEvent.mock.calls.find(
-      ([name]: [string]) => name === "app_lock_setup_completed",
+      (call: unknown[]) => call[0] === "app_lock_setup_completed",
     );
     expect(completedCall?.[1]).toEqual({ mode: "setup" });
   });
@@ -101,7 +106,7 @@ describe("useAppLock", () => {
     act(() => result.current.startChange());
     act(() => result.current.finishSetup());
     const completedCall = capturePostHogEvent.mock.calls.find(
-      ([name]: [string]) => name === "app_lock_setup_completed",
+      (call: unknown[]) => call[0] === "app_lock_setup_completed",
     );
     expect(completedCall?.[1]).toEqual({ mode: "change" });
   });
