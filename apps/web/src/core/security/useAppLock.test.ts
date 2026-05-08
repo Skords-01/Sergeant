@@ -96,7 +96,7 @@ describe("useAppLock", () => {
     act(() => result.current.startSetup());
     act(() => result.current.finishSetup());
     const completedCall = capturePostHogEvent.mock.calls.find(
-      (call: unknown[]) => call[0] === "app_lock_setup_completed",
+      ([name]) => name === "app_lock_setup_completed",
     );
     expect(completedCall?.[1]).toEqual({ mode: "setup" });
   });
@@ -106,7 +106,7 @@ describe("useAppLock", () => {
     act(() => result.current.startChange());
     act(() => result.current.finishSetup());
     const completedCall = capturePostHogEvent.mock.calls.find(
-      (call: unknown[]) => call[0] === "app_lock_setup_completed",
+      ([name]) => name === "app_lock_setup_completed",
     );
     expect(completedCall?.[1]).toEqual({ mode: "change" });
   });

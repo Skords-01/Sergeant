@@ -1,13 +1,12 @@
 import { EXPERIMENTAL_FLAGS } from "./featureFlags";
 
 describe("mobile featureFlags", () => {
-  it("keeps Routine dual-write default-on for Stage 8 PR #055r1", () => {
+  it("Stage 8 PR #056r drop: feature.routine.sqlite_v2.dual_write більше не існує у реєстрі", () => {
     const flag = EXPERIMENTAL_FLAGS.find(
       (item) => item.id === "feature.routine.sqlite_v2.dual_write",
     );
 
-    expect(flag).toBeDefined();
-    expect(flag?.defaultValue).toBe(true);
+    expect(flag).toBeUndefined();
   });
 
   it("keeps Fizruk dual-write default-on for Stage 8 PR #055f1", () => {
@@ -55,30 +54,30 @@ describe("mobile featureFlags", () => {
     expect(flag?.defaultValue).toBe(true);
   });
 
-  it("keeps Fizruk sqlite reads default-off while Stage 8 read rollout is paused", () => {
+  it("flips Fizruk sqlite reads default-on for Stage 8 PR #055f2 re-rollout", () => {
     const flag = EXPERIMENTAL_FLAGS.find(
       (item) => item.id === "feature.fizruk.sqlite_v2.read_sqlite",
     );
 
     expect(flag).toBeDefined();
-    expect(flag?.defaultValue).toBe(false);
+    expect(flag?.defaultValue).toBe(true);
   });
 
-  it("keeps Nutrition sqlite reads default-off while Stage 8 read rollout is paused", () => {
+  it("flips Nutrition sqlite reads default-on for Stage 8 PR #055n2 re-rollout", () => {
     const flag = EXPERIMENTAL_FLAGS.find(
       (item) => item.id === "feature.nutrition.sqlite_v2.read_sqlite",
     );
 
     expect(flag).toBeDefined();
-    expect(flag?.defaultValue).toBe(false);
+    expect(flag?.defaultValue).toBe(true);
   });
 
-  it("keeps Finyk sqlite reads default-off while Stage 8 read rollout is paused", () => {
+  it("flips Finyk sqlite reads default-on for Stage 8 PR #055k2 re-rollout", () => {
     const flag = EXPERIMENTAL_FLAGS.find(
       (item) => item.id === "feature.finyk.sqlite_v2.read_sqlite",
     );
 
     expect(flag).toBeDefined();
-    expect(flag?.defaultValue).toBe(false);
+    expect(flag?.defaultValue).toBe(true);
   });
 });
