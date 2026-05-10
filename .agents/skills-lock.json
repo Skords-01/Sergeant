@@ -9,7 +9,7 @@
     "sergeant-bugfix-and-regression": {
       "source": "local",
       "sourceType": "local",
-      "computedHash": "4dc17be0c2aeceac5d106c0f221c2d7bbd69899c6e6b41cccfb7c94b6ed48d33"
+      "computedHash": "3c75c5dd1fbc5a4e678fb86bd5f1400db5a7e67e8d4f76f21865dc483f445721"
     },
     "sergeant-data-and-migrations": {
       "source": "local",
@@ -44,7 +44,7 @@
     "sergeant-review-and-merge": {
       "source": "local",
       "sourceType": "local",
-      "computedHash": "d389acbcdbeb10e49b77384a79423cf0600d6361a818ec3fac3a8eb202fa4b10"
+      "computedHash": "e06e37df9907477f6881635635023859ff907c05a9bc12728bbb4be8a63b4277"
     },
     "sergeant-server-api": {
       "source": "local",
