@@ -3,7 +3,8 @@
 > **Last validated:** 2026-05-10 by @Skords-01 / Devin. **Next review:** 2026-08-08.
 > **Status:** Active
 
-- **Status:** accepted (sub-decisions 11.1 / 11.2 / 11.5); **partially superseded** (11.3 / 11.4 — див. amendment нижче).
+- **Status:** accepted <!-- sub-decisions 11.1 / 11.2 / 11.5 active; 11.3 / 11.4 partially superseded by ADR-0047 (per-module → per-row op-log) — див. amendment 2026-05-10 нижче -->
+- **Supersession scope:** partial — 11.1 / 11.2 / 11.5 lишаються в силі; 11.3 (per-module LWW worldview engine) і 11.4 (whole-module blob wire) замінено [ADR-0047 — CloudSync v1 — T₀ executed (410 Gone)](./0047-cloudsync-v1-410-gone.md) + Storage roadmap §Stage 7. Деталі — у [Amendment 2026-05-10](#amendment-2026-05-10--local-first-контракт-збережений-blob-sync-engine-замінений) нижче.
 - **Date:** 2026-04-27 (амендмент: 2026-05-10)
 - **Reviewers:** @Skords-01
 - **Supersedes:** —
