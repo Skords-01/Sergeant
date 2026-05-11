@@ -1,7 +1,7 @@
 # ADR-0055: OpenClaw External Gateway — Phase 0 infra + Phase 7 cutover
 
-> **Last validated:** 2026-05-11 by claude/review-openclaw-migration-HSeEx. **Next review:** 2026-08-11.
-> **Status:** Active
+> **Last validated:** 2026-05-11 by Devin. **Next review:** 2026-06-08 (Locked #17 reminder check — grammy decom go/no-go +28 днів від cutover-day).
+> **Status:** Active — cutover виконано 2026-05-11
 
 - **Status:** Accepted
 - **Date:** 2026-05-11
@@ -81,9 +81,24 @@ The single-stage Docker image is possible because `openclaw.plugin.json` sets `"
 - `docs/playbooks/rotate-openclaw-credentials.md` updated with `OPENCLAW_GATEWAY_BOT_TOKEN` rotation section.
 - ADR-0031, ADR-0036, ADR-0041 marked `Superseded by ADR-0055`.
 
+## Implementation status
+
+**Cutover executed 2026-05-11.** Manual / operational steps that were called out as out-of-PR-scope in PR-F have all been performed:
+
+- Railway service `sergeant-openclaw-gateway` provisioned in the `apps/server` project with a 5 GB persistent volume on `~/.openclaw`.
+- BotFather identity `@OpenClaw_sergeant_v2_bot` created; `OPENCLAW_GATEWAY_BOT_TOKEN` set in the Railway service env (separate namespace from `sergeant-openclaw`).
+- `@sergeant/openclaw-plugin` installed via `openclaw plugin install` during container entrypoint; plugin registers under the `sergeant` namespace.
+- Telegram webhook paired: v2_bot → Gateway public URL on Railway.
+- Phase 6.5 parity-window ran with both bots live; founder switched the primary DM surface to `@OpenClaw_sergeant_v2_bot`. Legacy grammy bot `@OpenClaw_sergeant_bot` on `sergeant-openclaw` remains running as fallback per Locked decision #17.
+- Anthropic / `INTERNAL_API_KEY` / GitHub App credentials (`OPENCLAW_GITHUB_APP_*`) are configured in Railway env. **No `OPENCLAW_GITHUB_PAT` / `Git_PAT` / `GITHUB_TOKEN`** is set on the Gateway service — Hard Rule #20 holds.
+
+Follow-up runtime fixes against the real OpenClaw 5.7 API shipped same-day in PRs [#2425](https://github.com/Skords-01/Sergeant/pull/2425), [#2428](https://github.com/Skords-01/Sergeant/pull/2428), [#2429](https://github.com/Skords-01/Sergeant/pull/2429), [#2431](https://github.com/Skords-01/Sergeant/pull/2431), [#2432](https://github.com/Skords-01/Sergeant/pull/2432), [#2433](https://github.com/Skords-01/Sergeant/pull/2433), [#2434](https://github.com/Skords-01/Sergeant/pull/2434) (api.logger adoption, defensive `messaging`, entrypoint-time plugin install, env-var fallbacks, runtime pin alignment).
+
+**Locked #17 reminder** is anchored to 2026-06-08 (`cutover-day + 28 днів`), assigned to `/Артем`: assess Gateway stability and either open a separate cleanup initiative for `tools/console/src/openclaw/` + `OPENCLAW_BOT_TOKEN` + the `sergeant-openclaw` Railway service, or extend the fallback window.
+
 ## Links
 
-- [PR-F](https://github.com/Skords-01/Sergeant/pulls) — this ADR ships in PR-F.
+- [#2420](https://github.com/Skords-01/Sergeant/pull/2420) PR-F — this ADR shipped in PR-F.
 - [#2382](https://github.com/Skords-01/Sergeant/pull/2382) PR-A — migration plan v3.1 + 18 locked decisions.
 - [#2385](https://github.com/Skords-01/Sergeant/pull/2385) PR-B — Phase 0.5 PoC spike.
 - [#2419](https://github.com/Skords-01/Sergeant/pull/2419) PR review/fix — morning-digest skill, cheap-router externalisation, rollback section update.

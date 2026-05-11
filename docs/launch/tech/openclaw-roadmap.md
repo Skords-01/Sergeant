@@ -1,17 +1,26 @@
 # OpenClaw — roadmap до v0 і далі
 
-> **Last validated:** 2026-05-05 by @Skords-01. **Next review:** 2026-08-03.
-> **Status:** Active
+> **Last validated:** 2026-05-11 by Devin. **Next review:** 2026-08-09.
+> **Status:** Active — v0 milestones shipped; surface переїхав на Gateway 2026-05-11
+
+> ⚠️ **Update 2026-05-11 — Gateway cutover виконано.** Primary DM-surface тепер `@OpenClaw_sergeant_v2_bot`
+> на Railway service `sergeant-openclaw-gateway` (зовнішній OpenClaw runtime + `@sergeant/openclaw-plugin`).
+> Старий grammy-бот `@OpenClaw_sergeant_bot` на service `sergeant-openclaw` лишається як fallback per Locked #17
+> (reminder go/no-go decom 2026-06-08). Архітектурний baseline для всіх подальших OpenClaw-PR —
+> [ADR-0055](../../adr/0055-openclaw-external-gateway.md) + [`docs/planning/openclaw-migration-plan.md`](../../planning/openclaw-migration-plan.md).
+> Цей файл описує v0→v4 агентну візію (read-only/write tools, persona, council),
+> яка вже реалізована як `@sergeant/openclaw-plugin` поверх зовнішнього OpenClaw runtime.
 
 > Поетапний план побудови OpenClaw — AI-партнера для founder-а Sergeant-у.
 > **Не assistant** і **не metrics dashboard**. Це co-founder-режим: разом
 > плануємо продукт, оспорюємо рішення, тримаємо priorities, шукаємо blind
 > spots, аналізуємо що працює і що ні. Сурфейс — Telegram DM з окремим
-> ботом (`@OpenClaw_sergeant_bot`, id `8614051263`). Web HubChat **не**
+> ботом. Станом на 2026-05-11: primary — `@OpenClaw_sergeant_v2_bot` (Gateway),
+> fallback — `@OpenClaw_sergeant_bot` (grammy, id `8614051263`). Web HubChat **не**
 > використовується (він для end-користувачів додатку).
 >
 > Source-of-truth для майбутніх PR-ів які торкаються OpenClaw — завжди
-> звіряти з цим файлом і з ADR-ами нижче.
+> звіряти з ADR-0055, migration plan і ADR-ами нижче.
 >
 > Пов'язане: [ADR-0027](../../adr/0027-openclaw-console-mcp-policy.md) (політика console / MCP),
 > [ADR-0028](../../adr/0028-pgvector-ai-memory.md) (pgvector AI memory),
