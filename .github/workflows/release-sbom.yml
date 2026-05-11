@@ -78,7 +78,7 @@ jobs:
 
       # pnpm/action-setup v6.0.3 (SHA-pinned for supply-chain hardening)
       - name: Setup pnpm
-        uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d
+        uses: pnpm/action-setup@91ab88e2619ed1f46221f0ba42d1492c02baf788
 
       # actions/setup-node v6.4.0 (SHA-pinned for supply-chain hardening)
       - name: Setup Node 20
