@@ -7,7 +7,7 @@
 # зібрала б arm64-image, який локально проходить smoke, але на Railway
 # падає з "exec format error". На amd64-хостах buildx ігнорує цей рядок
 # (image нативний), тож overhead нульовий.
-FROM --platform=linux/amd64 node:20.20.2-alpine AS builder
+FROM --platform=linux/amd64 node:26.1.0-alpine AS builder
 WORKDIR /app
 
 RUN corepack enable && corepack prepare pnpm@9.15.1 --activate
@@ -52,7 +52,7 @@ RUN pnpm build
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Runtime image
-FROM --platform=linux/amd64 node:20.20.2-alpine AS runtime
+FROM --platform=linux/amd64 node:26.1.0-alpine AS runtime
 WORKDIR /app
 
 ENV NODE_ENV=production
