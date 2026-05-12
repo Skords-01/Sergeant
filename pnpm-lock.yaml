@@ -290,7 +290,7 @@ importers:
         specifier: 18.3.1
         version: 18.3.1(react@18.3.1)
       sucrase:
-        specifier: ^3.35.0
+        specifier: ^3.35.1
         version: 3.35.1
       tailwindcss:
         specifier: ^4.2.4
