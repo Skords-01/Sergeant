@@ -10,6 +10,9 @@ export function calculate1rm(action: Calculate1rmAction): ChatActionResult {
   if (r === 1) {
     return `1RM${exercise_name ? ` (${exercise_name})` : ""}: ${w} кг (1 повторення = вже максимум)`;
   }
+  if (r >= 37) {
+    return "Для оцінки 1RM кількість повторень має бути в діапазоні 1..36.";
+  }
   const epley = Math.round(w * (1 + r / 30) * 10) / 10;
   const brzycki = Math.round(((w * 36) / (37 - r)) * 10) / 10;
   const avg1rm = Math.round(((epley + brzycki) / 2) * 10) / 10;

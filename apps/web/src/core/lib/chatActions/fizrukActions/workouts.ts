@@ -26,7 +26,11 @@ export function planWorkout(action: PlanWorkoutAction): ChatActionResult {
     time && /^\d{1,2}:\d{2}$/.test(String(time).trim())
       ? String(time).trim().padStart(5, "0")
       : "09:00";
-  const startedAt = new Date(`${targetDate}T${timeStr}:00`).toISOString();
+  const startedAtTs = Date.parse(`${targetDate}T${timeStr}:00`);
+  if (!Number.isFinite(startedAtTs)) {
+    return "Некоректна дата або час.";
+  }
+  const startedAt = new Date(startedAtTs).toISOString();
   const wid = `w_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
   const items: WorkoutItem[] = Array.isArray(exercises)
     ? exercises
@@ -183,7 +187,11 @@ export function startWorkout(action: StartWorkoutAction): ChatActionResult {
     time && /^\d{1,2}:\d{2}$/.test(String(time).trim())
       ? String(time).trim().padStart(5, "0")
       : `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
-  const startedAt = new Date(`${targetDate}T${timeStr}:00`).toISOString();
+  const startedAtTs = Date.parse(`${targetDate}T${timeStr}:00`);
+  if (!Number.isFinite(startedAtTs)) {
+    return "Некоректна дата або час.";
+  }
+  const startedAt = new Date(startedAtTs).toISOString();
   const existingActiveId = safeReadStringLS(
     "fizruk_active_workout_id_v1",
     null,
@@ -267,6 +275,11 @@ export function copyWorkout(action: CopyWorkoutAction): ChatActionResult {
     String(now.getDate()).padStart(2, "0"),
   ].join("-");
   const targetDate = date && /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : today;
+  const copyTimeStr = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+  const copyStartedAtTs = Date.parse(`${targetDate}T${copyTimeStr}:00`);
+  if (!Number.isFinite(copyStartedAtTs)) {
+    return "Некоректна дата.";
+  }
   const wid = `w_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
   const copiedItems: WorkoutItem[] = source.items.map((item, i) => ({
     ...item,
@@ -275,9 +288,7 @@ export function copyWorkout(action: CopyWorkoutAction): ChatActionResult {
   }));
   const newW: Workout = {
     id: wid,
-    startedAt: new Date(
-      `${targetDate}T${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}:00`,
-    ).toISOString(),
+    startedAt: new Date(copyStartedAtTs).toISOString(),
     endedAt: null,
     items: copiedItems,
     groups: [],

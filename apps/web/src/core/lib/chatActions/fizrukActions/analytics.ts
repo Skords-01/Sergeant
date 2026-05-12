@@ -59,7 +59,8 @@ export function compareProgress(
   action: CompareProgressAction,
 ): ChatActionResult {
   const { exercise_name, muscle_group, period_days } = action.input || {};
-  const days = Number(period_days) || 30;
+  const rawDays = Number(period_days);
+  const days = Number.isFinite(rawDays) && rawDays > 0 ? rawDays : 30;
   const workouts = readWorkouts();
   const completed = workouts.filter((w) => w.endedAt);
   if (completed.length === 0) return "Немає завершених тренувань для аналізу.";
@@ -132,7 +133,8 @@ export function compareProgress(
 
 export function weightChart(action: WeightChartAction): ChatActionResult {
   const { period_days } = action.input || {};
-  const days = Number(period_days) || 30;
+  const rawDays = Number(period_days);
+  const days = Number.isFinite(rawDays) && rawDays > 0 ? rawDays : 30;
   const log = ls<Array<{ at?: string; weightKg?: number | null }>>(
     "fizruk_daily_log_v1",
     [],
@@ -140,7 +142,11 @@ export function weightChart(action: WeightChartAction): ChatActionResult {
   const cutoff = Date.now() - days * 86400000;
   const entries = log
     .filter(
-      (e) => e.weightKg != null && e.at && new Date(e.at).getTime() >= cutoff,
+      (e) =>
+        e.at &&
+        e.weightKg != null &&
+        Number.isFinite(Number(e.weightKg)) &&
+        new Date(e.at).getTime() >= cutoff,
     )
     .sort((a, b) => new Date(a.at!).getTime() - new Date(b.at!).getTime());
   if (entries.length === 0)
