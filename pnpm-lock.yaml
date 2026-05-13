@@ -339,8 +339,8 @@ importers:
         version: link:../../packages/shared
     devDependencies:
       '@capacitor/cli':
-        specifier: ^7.6.2
-        version: 7.6.2
+        specifier: ^8.3.4
+        version: 8.3.4
       '@sergeant/config':
         specifier: workspace:*
         version: link:../../packages/config
@@ -1918,9 +1918,9 @@ packages:
     peerDependencies:
       '@capacitor/core': '>=7.0.0'
 
-  '@capacitor/cli@7.6.2':
-    resolution: {integrity: sha512-uPm+GDVhdWrM/DBWZ/L6c8uBVaEcge4MAXhqrIJWSkwad/9vNoVfUjtHaVgXxPE1g399PhlGm4kU8U7Qdfmwow==}
-    engines: {node: '>=20.0.0'}
+  '@capacitor/cli@8.3.4':
+    resolution: {integrity: sha512-QEmyNdiDDVNYl0Mahm7YTVA/3t2tKcy7FWYDapeKGavS6HDNHZSjyTVwQpUXQbDZrrs/PS2Wau3Aii+LIFwm/A==}
+    engines: {node: '>=22.0.0'}
     hasBin: true
 
   '@capacitor/core@7.6.2':
@@ -14471,7 +14471,7 @@ snapshots:
     dependencies:
       '@capacitor/core': 7.6.2
 
-  '@capacitor/cli@7.6.2':
+  '@capacitor/cli@8.3.4':
     dependencies:
       '@ionic/cli-framework-output': 2.2.8
       '@ionic/utils-subprocess': 3.0.1
