@@ -69,6 +69,9 @@
 | [`2026-05-13-ftux-onboarding-roast.md`](./2026-05-13-ftux-onboarding-roast.md)                               | FTUX onboarding day 0-7 roast (прожарка #1/10)                                          | Active   | 3/3 P0      | 3 P1 + 3 P2 | [`docs/launch/product-os/ftux-master-tracker.md`](../launch/product-os/ftux-master-tracker.md) |
 | [`2026-05-13-security-observability-roast.md`](./2026-05-13-security-observability-roast.md)                 | Security & observability roast — CSP, secrets, Sentry/OTel/web-vitals, audit logs                                              | Active   | 1/9              | 8             | embedded §Прогрес-виконання + §P0/P1/P2                                                        |
 | [`2026-05-13-backend-performance-roast.md`](./2026-05-13-backend-performance-roast.md)                       | Backend/performance прожарка #4/10 — error handling, validation, observability, env     | Active   | 6/14 ≈      | 8 ≈         | embedded "Прогрес виконання" + cross-refs                                                      |
+<<<<<<< HEAD
+
+>>>>>>> abebe967 (fix(docs): clean stray conflict markers in audits README)
 | [`2026-05-13-documentation-hygiene-roast.md`](./2026-05-13-documentation-hygiene-roast.md)                   | Doc-hygiene прожарка #8/10 — links/freshness/playbook-catalog, post-archive-move regression fix                                | Active   | 4/4 P0           | 3 P1 / 2 P2   | embedded §Progress                                                                             |
 <<<<<<< HEAD
 
