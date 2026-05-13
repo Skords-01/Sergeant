@@ -710,14 +710,243 @@ import { Popover, PopoverItem, PopoverDivider } from "@shared/components/ui";
 
 ### EmptyState
 
-- `icon` · `title` · `description` · `action`.
-- `compact` режим для in-card плейсхолдерів.
-- Використовуй для всіх «немає да��их» станів — не роби ad-hoc.
+Канонічний примітив для **порожніх станів і дрібних error/empty карток**
+
+- повноекранних error-сторінок (`/404`, `/500`, `/offline`). Один
+  компонент тримає три розміри (`sm` / `md` / `lg`), п'ять варіантів
+  (`neutral` / `info` / `success` / `warning` / `danger`) і чотири
+  module-accent override-и (`finyk` / `fizruk` / `routine` / `nutrition`)
+  — тож кожна порожня панель в апці пропускається через ту саму tone-
+  палітру, той самий focus-контракт і той самий SR-announce
+  (`role="status"`, `aria-live="polite"`).
+
+**Слоти** (всі необов'язкові, окрім `title`):
+
+- `illustration` — куратований SVG із `apps/web/src/assets/illustrations/`
+  (всі використовують `currentColor` + design-token utilities; жодного
+  inline hex — Hard Rule #11). Якщо `illustration` не задано — fallback
+  на `icon` у бордерованому box-і з tone-фоном.
+- `eyebrow` — короткий caps-чип над title-ом ("404", "OFFLINE", "ERROR").
+- `title` — короткий заголовок (масштабується розміром).
+- `description` — повний абзац підтримки.
+- `primaryAction` / `secondaryAction` — два слоти для CTA-кнопок
+  (зазвичай `<Button variant="primary">` + `<Button variant="secondary">`).
+- `tertiaryLink` — текстовий link під CTA (наприклад, "докладніше у
+  довідці").
+- `hint` — підказка-tip із lightbulb-іконкою (тон `text-subtle`).
+- `examplePreview` — слот для inline-моку реальних даних (показуємо
+  "як це виглядатиме, коли заповниш модуль").
+- `action` (backward-compat alias до `primaryAction`).
+
+**Розміри**:
+
+| size | Коли                                                                                                               |
+| ---- | ------------------------------------------------------------------------------------------------------------------ |
+| `sm` | In-card / in-list плейсхолдери (порожній transactions list, no-results filter). Padding ≈ 16 px, без illustration. |
+| `md` | Sub-page рівень (порожня вкладка, dialog body). Дефолт.                                                            |
+| `lg` | Повноекранні error-сторінки (404 / 500 / offline), top-level empty states.                                         |
+
+**Варіанти** використовують tone-палітру з §3 — `-soft` фон + `-strong`
+текст (Hard Rule #9 для контрасту ≥ 4.5 : 1). Module-accent (якщо
+заданий) **перекриває** variant — модульна семантика сильніша за
+загальну (порожній стан у `/finyk` завжди має finyk-tint, навіть якщо
+лежить у error-state).
+
+**Tone of voice** (з [`docs/design/brandbook.md`](./brandbook.md)):
+
+| Контекст              | Що писати                                                                          | Чого уникати                        |
+| --------------------- | ---------------------------------------------------------------------------------- | ----------------------------------- |
+| Empty list            | "Тут поки нічого немає. Додай першу транзакцію — і Фінік усе порахує."             | "No data."                          |
+| No search results     | "Нічого не знайшли за «{query}». Спробуй інший фільтр."                            | "Empty result set."                 |
+| Offline               | "Немає зʼєднання, але дані не загубляться — синхронізуємо, коли воно повернеться." | "Network error: ENOTCONN."          |
+| 500 / server          | "Щось пішло не так. Спробуй оновити сторінку — зазвичай це допомагає."             | "Internal Server Error (HTTP 500)." |
+| 404 / not found       | "Сторінку не знайдено. Перевір посилання або повернись на головну."                | "Page does not exist."              |
+| Success / celebration | "Готово! +5 KM до тижневого балансу" (емодзі дозволені тут на знак)                | "Operation completed successfully." |
+
+Дві правила-черевики:
+
+1. **Завжди давай шлях назад.** Кожен EmptyState (окрім `sm`-in-card
+   плейсхолдерів) має мати **primaryAction** — кнопку, що повертає
+   користувача в робочий потік. "На головну", "Спробувати ще",
+   "Додати першу транзакцію" — три найчастіші формулювання.
+2. **Уникай blamefulness.** "Ти ввів неправильне посилання" — погано;
+   "Здається, ця адреса вже не існує" — добре. Помилка — це факт
+   стану системи, а не звинувачення користувача.
+
+**Приклади**:
+
+```tsx
+// In-card порожній стан (sm)
+<EmptyState
+  size="sm"
+  icon={<Icon name="receipt" size={20} />}
+  title="Транзакцій немає"
+  description="Підключи картку або додай вручну."
+  primaryAction={<Button size="sm">Додати</Button>}
+/>
+
+// Full-page error (lg + danger variant)
+<EmptyState
+  size="lg"
+  variant="danger"
+  eyebrow="500"
+  illustration={<ServerErrorIllustration size={200} />}
+  title="Щось пішло не так"
+  description="Сервер тимчасово не зміг обробити запит."
+  primaryAction={
+    <Button variant="primary" size="lg" onClick={reload}>
+      <Icon name="refresh-cw" size={16} />
+      Оновити сторінку
+    </Button>
+  }
+/>
+
+// Module-accent (override variant)
+<ModuleEmptyState
+  module="finyk"
+  variant="default"
+  onAction={openCreate}
+/>
+```
+
+**Three canonical error pages** (`apps/web/src/core/errors/`):
+
+| Сторінка              | Variant   | Illustration              | CTA                    |
+| --------------------- | --------- | ------------------------- | ---------------------- |
+| `NotFoundPage` 404    | `info`    | `NotFoundIllustration`    | "На головну" + "Назад" |
+| `ServerErrorPage` 500 | `danger`  | `ServerErrorIllustration` | "Оновити сторінку"     |
+| `OfflinePage`         | `warning` | `OfflineIllustration`     | "Спробувати ще"        |
+
+Всі три — composition над `<EmptyState size="lg">`, тож focus-контракт,
+motion-budget і SR-announce ідентичні. Жодного inline-стилю,
+жодного hex — все через tokens.
+
+**Ілюстрації** (`apps/web/src/assets/illustrations/`):
+`EmptyListIllustration`, `NoResultsIllustration`, `OfflineIllustration`,
+`ServerErrorIllustration`, `NotFoundIllustration`,
+`SuccessCelebrationIllustration` — кожна побудована тільки на
+`currentColor` + token-utility класах (`fill-panelHi`, `stroke-line`,
+`fill-danger-soft`, …), тож автоматично перефарбовується для світлої/
+темної теми та інтегрується в module-accent overrides без додаткового
+коду.
 
 ### Spinner
 
 Канонічний індикатор завантаження (4 розміри). Використовується всередині
 `Button loading`, інлайн-фетчі, skeleton overlay.
+
+### Switch
+
+Token-styled iOS-style pill-тогл. `<button role="switch">` з повним
+WAI-ARIA-контрактом: `aria-checked` відбиває стан, `aria-labelledby` /
+`aria-describedby` відсилають на видиму мітку та опис,
+`focus-visible:ring-2 ring-brand-500/45` (Hard Rule #14).
+
+- **Sizes**: `sm` 36×20 · `md` 44×26 (дефолт — мінімум-touch-target).
+- **States**: `disabled`, `error` (додає `aria-invalid` + danger ring).
+- **Controlled**: `checked` + `onChange`. **Uncontrolled**: `defaultChecked`.
+- **Keyboard**: Space / Enter (native button), додатково ArrowLeft / ArrowRight
+  за патерном WAI-ARIA Switch.
+- **A11y**: зміна стану викликає `hapticTap()` + screen-reader announce
+  `{label} увімкнено / вимкнено` (override через `announceText`).
+
+```tsx
+<Switch
+  size="md"
+  checked={pushOn}
+  onChange={setPushOn}
+  label="Push-сповіщення"
+  description="Надсилати нагадування про звички"
+/>
+```
+
+### Slider
+
+Token-styled слайдер з власними тумбами `role="slider"`. Підтримує
+single-значення та range (дві тумби), тіки, валю-tooltip при drag/focus,
+вертикальну орієнтацію (опційно).
+
+- **Sizes**: `sm` (трек 4 px) · `md` (6 px).
+- **Orientation**: `horizontal` (дефолт) / `vertical` (знизу вгору).
+- **Keyboard** (кожна тумба):
+  - `→` / `↑` — +1 step, `←` / `↓` — −1 step
+  - `Shift` + арров — ×10 step
+  - `PageUp` / `PageDown` — ±10 % діапазону
+  - `Home` / `End` — min / max
+- **Range**: дві тумби; значення не можуть перехрещуватися (вбудований
+  clamp).
+- **Drag**: pointer capture на track — працює з мишею/тачем/stylus.
+- **A11y**: `aria-valuemin/max/now`, `aria-valuetext`, `aria-orientation`,
+  звуження range через динамічний `aria-valuemax`/`aria-valuemin` на
+  сусідній тумбі.
+
+```tsx
+<Slider
+  aria-label="Гучність"
+  value={volume}
+  onChange={setVolume}
+  ticks={[0, 25, 50, 75, 100]}
+  showTooltip
+  formatValue={(n) => `${n}%`}
+/>
+```
+
+### ProgressBar
+
+Лінійний індикатор прогресу. Determinate та indeterminate. Цвітові
+філли — `*-strong` компаньйони (Hard Rule #9) для білого внутрішнього
+тексту.
+
+- **Sizes**: `xs` 2 px · `sm` 6 px · `md` 8 px · `lg` 12 px (h-1/1.5/2/3).
+- **Variants**: `brand` / `success` / `warning` / `danger`.
+- **Indeterminate**: обмежений бар летає треком (1.4 s loop). Під
+  `prefers-reduced-motion: reduce` фол-бек на повноширокий
+  `pulse-soft` (WCAG 2.3.3).
+- **A11y**: `role="progressbar"` + `aria-valuenow/max/min`, `aria-busy`
+  коли indeterminate. Опційний inner-label (`labelPlacement="inside"`) або
+  outside.
+
+```tsx
+<ProgressBar value={65} size="lg" variant="success" label="65%" />
+<ProgressBar indeterminate aria-label="Синхронізація" />
+```
+
+### ProgressCircle
+
+Радіальний індикатор з тими ж статус-варіантами. Determinate —
+stroke-dasharray; indeterminate — чверть-дуга, яка обертається.
+
+- **Sizes**: `xs` 28 / `sm` 44 / `md` 64 / `lg` 96 px.
+- **Variants**: `brand` / `success` / `warning` / `danger` — stroke з
+  `text-{c}-strong` (AA на кремі).
+- Під reduced-motion — обертання вимикається, натомість `pulse-soft`.
+- `ProgressCircle` — коли потрібно progress-примітив без module-tint.
+  Для KPI-тайлів (`finyk` / `fizruk` / `routine` / `nutrition` акценти) —
+  продовжуй використовувати `ProgressRing`.
+
+### Skeleton
+
+Плейсхолдери завантаження. Стандартна анімація — `motion-safe:animate-pulse`;
+режим `shimmer` — token-driven `motion-safe:animate-shimmer`. Під
+`prefers-reduced-motion: reduce` обидва режими колапсяться до
+статичного muted-блоку.
+
+- **Variants** (`variant` props або окремі компоненти):
+  - `rect` (дефолт) — гнучкий блок; розмір через `className`.
+  - `text` (`<SkeletonText lines={N} />`) — багаторядковий текст з
+    детерміновано варіативними ширинами (останній рядок коротший).
+  - `avatar` (`<SkeletonAvatar />`) — круг.
+  - `card` (`<SkeletonCardBlock />`) — повна картка з avatar +
+    назва/субтитр + три рядки тексту.
+- **Shape-aware variants** (`SkeletonTransactionRow`, `SkeletonHabitRow`,
+  `SkeletonWorkoutSet`, `SkeletonMealCard`) — для відповідних модулів;
+  див. «Скелети» в § Мотион.
+
+```tsx
+<SkeletonText lines={4} shimmer />
+<SkeletonAvatar className="w-12 h-12" />
+<SkeletonCardBlock />
+```
 
 ---
 
