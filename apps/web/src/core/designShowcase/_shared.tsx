@@ -16,6 +16,7 @@ export const NAV_SECTIONS = [
   { id: "celebration", label: "Святкування" },
   { id: "onboarding", label: "Онбординг" },
   { id: "motion", label: "Motion" },
+  { id: "a11y", label: "A11y / States" },
 ] as const;
 
 export function Sec({
@@ -29,7 +30,7 @@ export function Sec({
 }) {
   return (
     <section id={id} className="scroll-mt-16">
-      <h2 className="text-xl font-extrabold text-text mb-6 pb-3 border-b border-line">
+      <h2 className="text-xl font-extrabold text-text mb-6 pb-3 border-b border-divider-strong">
         {title}
       </h2>
       <div className="space-y-8">{children}</div>
@@ -69,7 +70,7 @@ export function ColorSwatch({
     <div className="flex flex-col items-center gap-1.5">
       <div
         className={cn(
-          "w-14 h-14 rounded-2xl border border-line shadow-card",
+          "w-14 h-14 rounded-2xl border border-divider shadow-card",
           className,
         )}
       />

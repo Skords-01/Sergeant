@@ -180,7 +180,10 @@ export function Sheet({
             {...swipe.bind}
             role="presentation"
           >
-            <div className="w-12 h-sheet-handle bg-line/70 rounded-full" aria-hidden />
+            <div
+              className="w-12 h-sheet-handle bg-line/70 rounded-full"
+              aria-hidden
+            />
           </div>
         )}
         <div
@@ -207,7 +210,7 @@ export function Sheet({
               className={cn(
                 "flex items-center justify-center w-11 h-11 min-w-[44px] min-h-[44px] rounded-full",
                 "bg-panelHi text-muted hover:text-text transition-colors",
-                "focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/45 focus-visible:ring-offset-2 focus-visible:ring-offset-panel",
+                "focus:outline-none focus-visible:ring-2 focus-visible:ring-focus/45 focus-visible:ring-offset-2 focus-visible:ring-offset-panel",
               )}
             >
               <svg

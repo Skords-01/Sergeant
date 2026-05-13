@@ -259,7 +259,7 @@ export function WelcomeScreen({ onDone, onOpenAuth }: WelcomeScreenProps) {
               "h-11 min-h-[44px] rounded-2xl border border-line bg-panel/60",
               "text-style-label text-text",
               "hover:bg-panelHi hover:border-brand-500/40 transition-colors",
-              "focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/45",
+              "focus:outline-none focus-visible:ring-2 focus-visible:ring-focus/45",
             )}
           >
             <Icon name="user" size={16} strokeWidth={2} aria-hidden />

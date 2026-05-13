@@ -75,7 +75,7 @@ export const Switch = memo(function Switch({
           className={cn(
             "block w-[44px] h-[26px] rounded-full transition-colors duration-200",
             "bg-line peer-checked:bg-brand-500",
-            "peer-focus-visible:ring-2 peer-focus-visible:ring-brand-500/45 peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-bg",
+            "peer-focus-visible:ring-2 peer-focus-visible:ring-focus/45 peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-bg",
           )}
         />
         <span

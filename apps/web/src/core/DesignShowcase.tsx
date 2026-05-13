@@ -14,6 +14,7 @@ import { FeedbackSection } from "./designShowcase/sections/Feedback";
 import { CelebrationSection } from "./designShowcase/sections/Celebration";
 import { OnboardingSection } from "./designShowcase/sections/Onboarding";
 import { MotionSection } from "./designShowcase/sections/Motion";
+import { A11yStatesSection } from "./designShowcase/sections/A11yStates";
 
 export function DesignShowcase() {
   const { dark, toggle: toggleDark } = useDarkMode();
@@ -21,7 +22,7 @@ export function DesignShowcase() {
   return (
     <div className="min-h-dvh bg-bg">
       {/* ── Sticky nav ──────────────────────────────────────────── */}
-      <header className="sticky top-0 z-100 bg-panel/90 backdrop-blur-md border-b border-line">
+      <header className="sticky top-0 z-100 bg-panel/90 backdrop-blur-md border-b border-divider">
         <div className="max-w-3xl mx-auto px-5 h-12 flex items-center gap-4">
           <h1 className="font-extrabold text-text text-sm shrink-0">
             Design System
@@ -66,6 +67,7 @@ export function DesignShowcase() {
         <CelebrationSection />
         <OnboardingSection />
         <MotionSection />
+        <A11yStatesSection />
       </main>
     </div>
   );

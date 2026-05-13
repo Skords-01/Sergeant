@@ -49,7 +49,7 @@ export function PasswordVisibilityToggle({
       type="button"
       onClick={onToggle}
       aria-label={visible ? "Приховати пароль" : "Показати пароль"}
-      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-text transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/45 rounded"
+      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-text transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-focus/45 rounded"
     >
       {visible ? (
         <svg

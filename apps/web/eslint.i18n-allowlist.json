@@ -20,6 +20,7 @@
   "apps/web/src/core/components/ChatInput.tsx",
   "apps/web/src/core/components/ChatMessage.tsx",
   "apps/web/src/core/components/PushNotificationToggle.tsx",
+  "apps/web/src/core/designShowcase/sections/A11yStates.tsx",
   "apps/web/src/core/designShowcase/sections/Badges.tsx",
   "apps/web/src/core/designShowcase/sections/Buttons.tsx",
   "apps/web/src/core/designShowcase/sections/Cards.tsx",
