@@ -72,7 +72,7 @@
 
 ## P1 — закрити в найближчий квартал
 
-### S4 — Pino redact wildcard depth (audit §6.5 carry-over) ✅ Closed in #PR_NUMBER
+### S4 — Pino redact wildcard depth (audit §6.5 carry-over) ✅ Closed in #2749
 
 - **Change:** `apps/server/src/obs/logger.ts:155-169` — `*.password`, `*.*.password` зараз вкриває 1+2 рівні; додати генератор, що розширює до 5 (рідкісно глибше). Або (краще): свій `redactor`-helper, що ловить ключі за іменем рекурсивно.
 - **Why:** Sentry-scrubber ходить рекурсивно через `REDACT_KEY_NAMES` (тепер shared), Pino — ні. У Loki access-логи проходять тільки через Pino. Витік `req.body.nested.user.password` (3 рівні) — теоретично можливий через axios `err.config.data` capture.
