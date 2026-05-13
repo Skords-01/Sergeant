@@ -129,6 +129,7 @@ export type {
   PopoverItemProps,
   PopoverPlacement,
   PopoverProps,
+  PopoverRole,
 } from "./Popover";
 
 export { ProgressRing } from "./ProgressRing";
@@ -179,7 +180,7 @@ export type {
 export { ToastContainer } from "./Toast";
 
 export { Tooltip } from "./Tooltip";
-export type { TooltipPlacement, TooltipProps } from "./Tooltip";
+export type { TooltipPlacement, TooltipProps, TooltipSize } from "./Tooltip";
 
 export type { FormVariant, SmallMediumLarge } from "./types";
 
@@ -250,3 +251,25 @@ export {
   ScreenReaderAnnouncerProvider,
   useAnnounce,
 } from "./ScreenReaderAnnouncer";
+
+export { DropdownMenu } from "./DropdownMenu";
+export type {
+  DropdownMenuEntry,
+  DropdownMenuHandle,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuPlacement,
+  DropdownMenuProps,
+  DropdownMenuSeparator,
+  DropdownMenuSubmenuEntry,
+} from "./DropdownMenu";
+
+export {
+  CommandPalette,
+  CommandPaletteProvider,
+  useCommandPalette,
+  useCommandPaletteControls,
+  useCommandPaletteHotkey,
+  useRegisterCommand,
+} from "./CommandPalette";
+export type { PaletteCommand } from "./CommandPalette";
