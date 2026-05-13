@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Request, Response as ExpressResponse } from "express";
 import {
   stableId,
+  hasErrorName,
   normalizeOFFProduct,
   normalizeUSDAProduct,
 } from "./food-search.js";
@@ -84,6 +85,15 @@ describe("stableId", () => {
   it("returns a short, url-safe suffix", () => {
     const id = stableId("off", ["Name", "Brand"]);
     expect(id).toMatch(/^off_[0-9a-z]+$/);
+  });
+});
+
+describe("hasErrorName", () => {
+  it("matches object errors by name and rejects non-objects", () => {
+    expect(hasErrorName({ name: "TimeoutError" }, "TimeoutError")).toBe(true);
+    expect(hasErrorName({ name: "AbortError" }, "TimeoutError")).toBe(false);
+    expect(hasErrorName(null, "TimeoutError")).toBe(false);
+    expect(hasErrorName("TimeoutError", "TimeoutError")).toBe(false);
   });
 });
 
@@ -393,5 +403,32 @@ describe("food-search handler", () => {
 
     expect(res.statusCode).toBe(200);
     expect(res.body).toEqual({ products: [] });
+  });
+
+  it("skips English fallback sources when the query is not translatable", async () => {
+    const fetchMock = vi.mocked(global.fetch);
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse(true, {
+        products: [
+          {
+            product_name: "zz crackers",
+            nutriments: { "energy-kcal_100g": 120 },
+          },
+        ],
+      }),
+    );
+
+    const res = mockRes();
+    await handler(asReq({ q: "zz", limit: "3" }), res);
+
+    expect(res.statusCode).toBe(200);
+    expect(products(res.body)).toEqual([
+      expect.objectContaining({
+        name: "zz crackers",
+        source: "off",
+      }),
+    ]);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(String(fetchMock.mock.calls[0]?.[0])).toContain("lc=uk");
   });
 });
