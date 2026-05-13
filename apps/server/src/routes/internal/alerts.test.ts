@@ -18,8 +18,11 @@ const {
   markAlertSentryWarnedMock,
   markAlertSnoozedMock,
   listPendingAlertsMock,
+  getAlertHistoryStatsMock,
   postOrEditDedupedAlertMock,
   sentryCaptureMessageMock,
+  sentryAddBreadcrumbMock,
+  isFounderMutedMock,
 } = vi.hoisted(() => ({
   recordAlertPostMock: vi.fn(),
   recordAlertAckMock: vi.fn(),
@@ -28,8 +31,15 @@ const {
   markAlertSentryWarnedMock: vi.fn(),
   markAlertSnoozedMock: vi.fn(),
   listPendingAlertsMock: vi.fn(),
+  getAlertHistoryStatsMock: vi.fn(),
   postOrEditDedupedAlertMock: vi.fn(),
   sentryCaptureMessageMock: vi.fn(),
+  sentryAddBreadcrumbMock: vi.fn(),
+  isFounderMutedMock: vi.fn().mockResolvedValue({
+    muted: false,
+    mutedUntilIso: null,
+    reason: null,
+  }),
 }));
 
 vi.mock("../../modules/alerts/index.js", async (importOriginal) => {
@@ -44,6 +54,7 @@ vi.mock("../../modules/alerts/index.js", async (importOriginal) => {
     markAlertSentryWarned: markAlertSentryWarnedMock,
     markAlertSnoozed: markAlertSnoozedMock,
     listPendingAlerts: listPendingAlertsMock,
+    getAlertHistoryStats: getAlertHistoryStatsMock,
     postOrEditDedupedAlert: postOrEditDedupedAlertMock,
   };
 });
@@ -51,8 +62,18 @@ vi.mock("../../modules/alerts/index.js", async (importOriginal) => {
 vi.mock("../../sentry.js", () => ({
   Sentry: {
     captureMessage: sentryCaptureMessageMock,
+    addBreadcrumb: sentryAddBreadcrumbMock,
   },
 }));
+
+vi.mock("../../modules/openclaw/index.js", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("../../modules/openclaw/index.js")>();
+  return {
+    ...actual,
+    isFounderMuted: isFounderMutedMock,
+  };
+});
 
 async function makeApp(options?: {
   telegramClient?: import("../../modules/alerts/index.js").TelegramApiClient;
@@ -251,6 +272,104 @@ describe("/api/internal/alerts/pending", () => {
     expect(res.status).toBe(200);
     expect(res.body.alerts).toHaveLength(1);
     expect(res.body.alerts[0].alert_id).toBe("wf-15:1");
+  });
+});
+
+describe("/api/internal/alerts/history", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    getAlertHistoryStatsMock.mockResolvedValue({
+      workflows: [],
+      summary: {
+        daysBack: 7,
+        total: 0,
+        acked: 0,
+        escalated: 0,
+        repeated: 0,
+        sentryWarned: 0,
+        ackRatePct: 0,
+        avgTtaMinutes: null,
+        workflowCount: 0,
+      },
+    });
+  });
+
+  it("forwards default body (empty) to store with no overrides", async () => {
+    const app = await makeApp();
+    const res = await request(app)
+      .post("/api/internal/alerts/history")
+      .send({});
+    expect(res.status).toBe(200);
+    expect(getAlertHistoryStatsMock).toHaveBeenCalledWith(
+      expect.anything(),
+      {},
+    );
+  });
+
+  it("forwards days + limit overrides", async () => {
+    const app = await makeApp();
+    const res = await request(app)
+      .post("/api/internal/alerts/history")
+      .send({ days: 14, limit: 5 });
+    expect(res.status).toBe(200);
+    expect(getAlertHistoryStatsMock).toHaveBeenCalledWith(expect.anything(), {
+      daysBack: 14,
+      limit: 5,
+    });
+  });
+
+  it("returns 400 when days exceeds 30", async () => {
+    const app = await makeApp();
+    const res = await request(app)
+      .post("/api/internal/alerts/history")
+      .send({ days: 60 });
+    expect(res.status).toBe(400);
+    expect(getAlertHistoryStatsMock).not.toHaveBeenCalled();
+  });
+
+  it("returns 400 when limit exceeds 50", async () => {
+    const app = await makeApp();
+    const res = await request(app)
+      .post("/api/internal/alerts/history")
+      .send({ limit: 100 });
+    expect(res.status).toBe(400);
+    expect(getAlertHistoryStatsMock).not.toHaveBeenCalled();
+  });
+
+  it("returns the store payload verbatim", async () => {
+    getAlertHistoryStatsMock.mockResolvedValueOnce({
+      workflows: [
+        {
+          workflowId: "wf-15",
+          total: 3,
+          acked: 2,
+          escalated: 1,
+          repeated: 0,
+          sentryWarned: 0,
+          ackRatePct: 67,
+          avgTtaMinutes: 5.0,
+        },
+      ],
+      summary: {
+        daysBack: 7,
+        total: 3,
+        acked: 2,
+        escalated: 1,
+        repeated: 0,
+        sentryWarned: 0,
+        ackRatePct: 67,
+        avgTtaMinutes: 5,
+        workflowCount: 1,
+      },
+    });
+    const app = await makeApp();
+    const res = await request(app)
+      .post("/api/internal/alerts/history")
+      .send({});
+    expect(res.status).toBe(200);
+    expect(res.body.workflows).toHaveLength(1);
+    expect(res.body.workflows[0].workflowId).toBe("wf-15");
+    expect(res.body.summary.workflowCount).toBe(1);
   });
 });
 
@@ -612,5 +731,91 @@ describe("/api/internal/alerts/send", () => {
       windowMs: 500, // < 60_000 мінімум
     });
     expect(res.status).toBe(400);
+  });
+
+  // PR /mute (Phase 5b) — mute-gate integration.
+
+  it("skips non-P0 alerts when founder is muted and emits breadcrumb", async () => {
+    isFounderMutedMock.mockResolvedValueOnce({
+      muted: true,
+      mutedUntilIso: "2026-05-14T06:00:00.000Z",
+      reason: "sleep",
+    });
+    const app = await makeApp({ telegramClient: noopTelegramClient() });
+    const res = await request(app).post("/api/internal/alerts/send").send({
+      alertId: "wf-15:42",
+      topic: "incidents",
+      severity: "P1",
+      chatId: -1001,
+      text: "⚠️ boom",
+      founderUserId: "user-1",
+    });
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({
+      action: "skipped_muted",
+      alertId: "wf-15:42",
+      mutedUntilIso: "2026-05-14T06:00:00.000Z",
+    });
+    expect(postOrEditDedupedAlertMock).not.toHaveBeenCalled();
+    expect(sentryAddBreadcrumbMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        category: "openclaw.mute",
+        message: "openclaw-muted-skip",
+      }),
+    );
+  });
+
+  it("P0 alerts bypass mute and emit override-critical breadcrumb", async () => {
+    isFounderMutedMock.mockResolvedValueOnce({
+      muted: true,
+      mutedUntilIso: "2026-05-14T06:00:00.000Z",
+      reason: "sleep",
+    });
+    postOrEditDedupedAlertMock.mockResolvedValueOnce({
+      action: "sent",
+      alertId: "wf-15:critical",
+      messageId: 42,
+      occurrenceCount: 1,
+      alreadyPosted: false,
+    });
+    const app = await makeApp({ telegramClient: noopTelegramClient() });
+    const res = await request(app).post("/api/internal/alerts/send").send({
+      alertId: "wf-15:critical",
+      topic: "incidents",
+      severity: "P0",
+      chatId: -1001,
+      text: "🚨 DB down",
+      founderUserId: "user-1",
+    });
+    expect(res.status).toBe(200);
+    expect(res.body.action).toBe("sent");
+    expect(postOrEditDedupedAlertMock).toHaveBeenCalledTimes(1);
+    expect(sentryAddBreadcrumbMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        category: "openclaw.mute",
+        message: "openclaw-muted-override-critical",
+      }),
+    );
+  });
+
+  it("does not call isFounderMuted when founderUserId is omitted (topic-channel callers)", async () => {
+    postOrEditDedupedAlertMock.mockResolvedValueOnce({
+      action: "sent",
+      alertId: "wf-15:topic",
+      messageId: 7,
+      occurrenceCount: 1,
+      alreadyPosted: false,
+    });
+    const app = await makeApp({ telegramClient: noopTelegramClient() });
+    const res = await request(app).post("/api/internal/alerts/send").send({
+      alertId: "wf-15:topic",
+      topic: "ops",
+      severity: "P2",
+      chatId: -1002,
+      text: "ops chatter",
+    });
+    expect(res.status).toBe(200);
+    expect(isFounderMutedMock).not.toHaveBeenCalled();
+    expect(postOrEditDedupedAlertMock).toHaveBeenCalledTimes(1);
   });
 });

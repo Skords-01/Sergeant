@@ -184,6 +184,36 @@ export {
   buildMorningBriefing,
   assembleMorningBriefing,
 } from "./briefing/index.js";
+
+// O3 (Phase 2.B): Friday weekly review template + orchestrator.
+export {
+  buildWeeklyReview,
+  assembleWeeklyReview,
+} from "./weekly-review/index.js";
+export type {
+  AssembleWeeklyReviewInput,
+  AssembleWeeklyReviewOptions,
+  WeeklyReviewData,
+  WeeklyReviewResponse,
+} from "./weekly-review/index.js";
+
+// O3 (Phase 2.B): Monthly OKR review.
+export {
+  buildMonthlyOkrReview,
+  assembleMonthlyOkrReview,
+  INTERIM_OKRS,
+  krProgressPct,
+} from "./monthly-okr/index.js";
+export type {
+  AssembleMonthlyOkrInput,
+  AssembleMonthlyOkrOptions,
+  KeyResult,
+  MonthlyOkrData,
+  MonthlyOkrResponse,
+  Okr,
+  OkrSource,
+} from "./monthly-okr/index.js";
+
 export type {
   AlertsBriefingSection,
   AssembleMorningBriefingInput,
@@ -214,3 +244,12 @@ export type {
   ListDueOptions,
   ListFounderRemindersOptions,
 } from "./reminders.js";
+
+// PR /mute (Phase 5b): founder DM "do not disturb" mute-state.
+export {
+  setFounderMute,
+  clearFounderMute,
+  getFounderMute,
+  isFounderMuted,
+} from "./mute-state.js";
+export type { MuteState, MuteCheckResult } from "./mute-state.js";

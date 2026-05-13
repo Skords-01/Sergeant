@@ -20,10 +20,13 @@ import { buildAuditCsvFilename, renderWriteAuditCsv } from "./audit-csv.js";
 import { parseDuration } from "./duration.js";
 import { parseFounderTgUserId } from "./security.js";
 import {
+  formatHistoryReply,
   formatPendingReply,
   parseAlertsCommand,
+  type HistoryReplyPayload,
   type PendingAlertItem,
 } from "./alerts-format.js";
+import { executeMuteCommand } from "./mute-runner.js";
 import { executeRitualCommand } from "./ritual-runner.js";
 import { executeOpenclawStatusCommand } from "./status-runner.js";
 import type { HandlerContext } from "./handler-context.js";
@@ -303,13 +306,19 @@ export function registerInfoCommands(ctx: HandlerContext): void {
     if (parsed.subcommand === "help") {
       await c.reply(
         [
-          "<b>Usage:</b> <code>/alerts pending [filters]</code>",
+          "<b>Usage:</b>",
+          "  <code>/alerts pending [filters]</code> — unacked queue",
+          "  <code>/alerts history [days] [limit=N]</code> — past-N-days stats",
           "",
-          "Filters:",
+          "<b>Pending filters:</b>",
           "  • <code>p0</code>/<code>p1</code>/<code>p2</code>/<code>p3</code> — severity",
           "  • <code>since=15m|24h|7d</code> — лише старші за вказаний інтервал",
           "  • число (1..50) — limit (default 20)",
           "  • будь-який інший токен — topic-key",
+          "",
+          "<b>History args:</b>",
+          "  • число (1..30) — days look-back (default 7)",
+          "  • <code>limit=&lt;N&gt;</code> — top-N noisy workflows (1..50, default 10)",
         ].join("\n"),
         { parse_mode: "HTML" },
       );
@@ -345,6 +354,62 @@ export function registerInfoCommands(ctx: HandlerContext): void {
     );
     const invocationId = openRes.data?.invocationId;
 
+    const finalizeError = async (errorMessage: string): Promise<void> => {
+      if (!invocationId) return;
+      await postJson(
+        `${serverUrl}/api/internal/openclaw/invocations/finalize`,
+        internalApiKey,
+        {
+          invocationId,
+          status: "error",
+          assistantResponse: null,
+          errorMessage,
+          inputTokens: 0,
+          outputTokens: 0,
+        },
+      );
+    };
+    const finalizeSuccess = async (
+      assistantResponse: string,
+    ): Promise<void> => {
+      if (!invocationId) return;
+      await postJson(
+        `${serverUrl}/api/internal/openclaw/invocations/finalize`,
+        internalApiKey,
+        {
+          invocationId,
+          status: "success",
+          assistantResponse,
+          errorMessage: null,
+          inputTokens: 0,
+          outputTokens: 0,
+        },
+      );
+    };
+
+    if (parsed.subcommand === "history") {
+      // History defaults are pre-clamped by the parser, but the route also
+      // clamps to keep server-side safety.
+      const historyFilters = parsed.historyFilters ?? { days: 7, limit: 10 };
+      const r = await postJson<HistoryReplyPayload>(
+        `${serverUrl}/api/internal/alerts/history`,
+        internalApiKey,
+        {
+          days: historyFilters.days,
+          limit: historyFilters.limit,
+        },
+      );
+      if (!r.ok || !r.data) {
+        await finalizeError(`alerts history HTTP ${r.status}`);
+        await c.reply(`Не зміг прочитати alerts history (HTTP ${r.status}).`);
+        return;
+      }
+      const reply = formatHistoryReply(r.data);
+      await finalizeSuccess(reply);
+      await c.reply(reply);
+      return;
+    }
+
     const r = await postJson<{ alerts: PendingAlertItem[] }>(
       `${serverUrl}/api/internal/alerts/pending`,
       internalApiKey,
@@ -360,20 +425,7 @@ export function registerInfoCommands(ctx: HandlerContext): void {
       },
     );
     if (!r.ok || !r.data) {
-      if (invocationId) {
-        await postJson(
-          `${serverUrl}/api/internal/openclaw/invocations/finalize`,
-          internalApiKey,
-          {
-            invocationId,
-            status: "error",
-            assistantResponse: null,
-            errorMessage: `alerts HTTP ${r.status}`,
-            inputTokens: 0,
-            outputTokens: 0,
-          },
-        );
-      }
+      await finalizeError(`alerts HTTP ${r.status}`);
       await c.reply(`Не зміг прочитати alerts (HTTP ${r.status}).`);
       return;
     }
@@ -383,23 +435,7 @@ export function registerInfoCommands(ctx: HandlerContext): void {
       sinceLabel: parsed.sinceLabel,
       filters: parsed.filters,
     });
-
-    // O5: finalize audit row with success.
-    if (invocationId) {
-      await postJson(
-        `${serverUrl}/api/internal/openclaw/invocations/finalize`,
-        internalApiKey,
-        {
-          invocationId,
-          status: "success",
-          assistantResponse: reply,
-          errorMessage: null,
-          inputTokens: 0,
-          outputTokens: 0,
-        },
-      );
-    }
-
+    await finalizeSuccess(reply);
     await c.reply(reply);
   });
 
@@ -545,6 +581,100 @@ export function registerInfoCommands(ctx: HandlerContext): void {
             `${serverUrl}/api/internal/openclaw/metrics/sentry`,
             internalApiKey,
             { level: "error", limit: 5 },
+          );
+          return { ok: r.ok, status: r.status, data: r.data };
+        },
+        async openInvocation(input) {
+          const r = await postJson<OpenInvocationResponse>(
+            `${serverUrl}/api/internal/openclaw/invocations/open`,
+            internalApiKey,
+            input,
+          );
+          return {
+            ok: r.ok,
+            status: r.status,
+            invocationId: r.data?.invocationId ?? null,
+          };
+        },
+        async finalizeInvocation(input) {
+          const r = await postJson(
+            `${serverUrl}/api/internal/openclaw/invocations/finalize`,
+            internalApiKey,
+            input,
+          );
+          return { ok: r.ok, status: r.status };
+        },
+      },
+      addBreadcrumb: (b) => Sentry.addBreadcrumb(b),
+    });
+
+    await c.reply(result.reply, { parse_mode: "HTML" });
+  });
+
+  // PR-/mute (Phase 5b): "do not disturb" — пауза вихідних bot pings
+  // (alerts, ranok briefing, /ritual digests) на N часу без env-var
+  // змін. Critical alerts (severity=P0) bypass-аються; gate-логіка
+  // (skip vs override) живе в `apps/server/src/routes/internal/alerts.ts`.
+  //
+  // Implementation: pure orchestrator `executeMuteCommand` (mute-runner.ts);
+  // handler — thin shim, що мапить fetcher на postJson + Sentry breadcrumb.
+  bot.command("mute", async (c) => {
+    if (!isAllowedDmContext(c)) return;
+    if (!rateLimiter.allow(String(c.from?.id))) {
+      await c.reply("Rate limit exceeded. Спробуй за хвилину.");
+      return;
+    }
+
+    const argument = (c.match ?? "").toString();
+    const founderTgUserId =
+      parseFounderTgUserId(process.env["OPENCLAW_FOUNDER_TG_USER_ID"]) ??
+      c.from?.id ??
+      0;
+
+    const result = await executeMuteCommand({
+      rawArgument: argument,
+      founderUserId,
+      founderTgUserId,
+      ...(c.chat?.id !== undefined ? { telegramChatId: c.chat.id } : {}),
+      fetcher: {
+        async postMuteSet(input) {
+          const r = await postJson<{
+            founderUserId: string;
+            mutedUntilIso: string | null;
+            setAtIso: string;
+            reason: string | null;
+          }>(
+            `${serverUrl}/api/internal/openclaw/mute/set`,
+            internalApiKey,
+            input,
+          );
+          return { ok: r.ok, status: r.status, data: r.data };
+        },
+        async postMuteClear(input) {
+          const r = await postJson<{
+            founderUserId: string;
+            mutedUntilIso: string | null;
+            setAtIso: string;
+            reason: string | null;
+          }>(
+            `${serverUrl}/api/internal/openclaw/mute/clear`,
+            internalApiKey,
+            input,
+          );
+          return { ok: r.ok, status: r.status, data: r.data };
+        },
+        async postMuteStatus(input) {
+          const r = await postJson<{
+            state: {
+              founderUserId: string;
+              mutedUntilIso: string | null;
+              setAtIso: string;
+              reason: string | null;
+            } | null;
+          }>(
+            `${serverUrl}/api/internal/openclaw/mute/status`,
+            internalApiKey,
+            input,
           );
           return { ok: r.ok, status: r.status, data: r.data };
         },

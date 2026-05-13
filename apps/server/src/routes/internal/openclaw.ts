@@ -32,6 +32,16 @@ import { asyncHandler } from "../../http/index.js";
 import { validateBody } from "../../http/validate.js";
 import { logger } from "../../obs/logger.js";
 import {
+  cancelForget,
+  confirmForget,
+  forgetById,
+  forgetByTopic,
+  forgetSince,
+  previewForget,
+  ForgetRateLimitError,
+  ForgetTokenError,
+} from "../../modules/ai-memory/forget.js";
+import {
   buildAiCostSummary,
   checkDailyBudget,
   finalizeInvocation,
@@ -57,6 +67,9 @@ import {
   getGithubReleases,
   // PR-26: morning briefing template assembly (no-LLM hardcoded sections).
   assembleMorningBriefing,
+  // O3 (Phase 2.B): Friday weekly + monthly OKR rituals.
+  assembleWeeklyReview,
+  assembleMonthlyOkrReview,
   // ADR-0036 (Phase 4): write-tools — invoked only after console-side approval.
   commitToStrategyDoc,
   createGithubIssue,
@@ -86,6 +99,11 @@ import {
   seoGscQuery,
   seoPsiAudit,
   seoSerpLookup,
+  // PR /mute (Phase 5b): founder DM mute-state CRUD + guard.
+  setFounderMute,
+  clearFounderMute,
+  getFounderMute,
+  isFounderMuted,
   // PR-C1b: reminder store + FSM helpers.
   setReminder,
   listDueReminders,
@@ -138,6 +156,57 @@ const RecallBody = z.object({
   query: z.string().min(1).max(2000),
   topK: z.number().int().min(1).max(50).optional(),
 });
+
+// ─── /forget slash-команда (PR-23) ───────────────────────────────────────
+// Single endpoint, mode-dispatched. Зміна mode — без routing reshuffle.
+const ForgetBody = z
+  .object({
+    founderUserId: z.string().min(1),
+    founderTgUserId: z.number().int(),
+    rawCommand: z.string().min(1).max(500),
+  })
+  .and(
+    z.discriminatedUnion("mode", [
+      z.object({
+        mode: z.literal("byId"),
+        memoryId: z.number().int().positive(),
+      }),
+      z.object({
+        mode: z.literal("byTopic"),
+        topic: z.string().min(1).max(200),
+      }),
+      z.object({
+        mode: z.literal("since"),
+        sinceDate: z
+          .string()
+          .regex(
+            /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2})?(\.\d+)?(Z|[+-]\d{2}:\d{2})?)?$/,
+            "sinceDate must be ISO8601 (YYYY-MM-DD or full timestamp)",
+          ),
+      }),
+      z.object({
+        mode: z.literal("previewQuery"),
+        query: z.string().min(1).max(2000),
+        topK: z.number().int().min(1).max(20).optional(),
+      }),
+    ]),
+  );
+
+const ForgetConfirmBody = z
+  .object({
+    founderUserId: z.string().min(1),
+    founderTgUserId: z.number().int(),
+    rawCommand: z.string().min(1).max(500),
+    token: z.string().uuid(),
+  })
+  .strict();
+
+const ForgetCancelBody = z
+  .object({
+    founderUserId: z.string().min(1),
+    token: z.string().uuid(),
+  })
+  .strict();
 
 const StrategyBody = z.object({
   path: z.string().min(1).max(500),
@@ -223,6 +292,18 @@ const ListBody = z.object({
   limit: z.number().int().min(1).max(100).optional(),
 });
 
+// PR /mute (Phase 5b): founder DM "do not disturb" mute schemas.
+// `mutedUntil` приймається ISO 8601 (`2026-05-13T22:00:00Z`); null/omit
+// ≡ "/mute off". `reason` — необов'язковий free-text label.
+const MuteSetBody = z.object({
+  founderUserId: z.string().min(1),
+  mutedUntilIso: z.string().datetime({ offset: true }).nullable().optional(),
+  reason: z.string().min(1).max(200).nullable().optional(),
+});
+const MuteFounderBody = z.object({
+  founderUserId: z.string().min(1),
+});
+
 // ADR-0032: ports of Sergeant Console (ADR-0027) ops/marketing tool I/O
 // schemas. Validation is intentionally loose — the upstream APIs (Stripe,
 // Sentry, PostHog, GitHub) define richer responses than we need; we keep
@@ -260,6 +341,38 @@ const MorningBriefingBody = z
     sentryLimit: z.number().int().min(1).max(20).optional(),
     prLimit: z.number().int().min(1).max(30).optional(),
     includeProposals: z.boolean().optional(),
+    /**
+     * PR /mute (Phase 5b): якщо передано, server додає `mute` блок у
+     * response (`{ muted, mutedUntilIso }`) — n8n WF-25 читає його і
+     * short-circuit-ує `sendMessage` коли `muted=true`. Briefing markdown
+     * рендериться завжди (cost-free аудит для post-mortem на `mute`-period).
+     */
+    founderUserId: z.string().min(1).max(128).optional(),
+  })
+  .strict();
+
+// O3 (Phase 2.B): Friday weekly review payload — всі поля optional.
+// Консумер — n8n WF-28 (`0 18 * * FRI` Europe/Kyiv) → DM founder.
+const WeeklyReviewBody = z
+  .object({
+    windowDays: z.number().int().min(1).max(30).optional(),
+    staleDays: z.number().int().min(1).max(60).optional(),
+    githubRepo: z.string().min(3).max(140).optional(),
+    sentryLimit: z.number().int().min(1).max(20).optional(),
+    prLimit: z.number().int().min(1).max(30).optional(),
+  })
+  .strict();
+
+// O3 (Phase 2.B): Monthly OKR review payload — всі поля optional.
+// Консумер — n8n WF-27 (`0 9 1 * *` Europe/Kyiv) → DM founder. Hardcoded
+// interim OKR-список — fallback (PR-34 strategic_goals DB-table merged,
+// follow-up може замінити константу на DB-query).
+const MonthlyOkrReviewBody = z
+  .object({
+    githubRepo: z.string().min(3).max(140).optional(),
+    prLimit: z.number().int().min(1).max(30).optional(),
+    staleDays: z.number().int().min(1).max(120).optional(),
+    sentryLevel: z.enum(["fatal", "error", "warning"]).optional(),
   })
   .strict();
 
@@ -543,6 +656,123 @@ export function createOpenClawInternalRouter({ pool }: { pool: Pool }): Router {
         topK: parsed.data.topK,
       });
       res.json(result);
+    }),
+  );
+
+  // ---- forget_memory (PR-23 / /forget slash) ----
+  // Single mode-dispatch endpoint:
+  //   byId        → soft-delete one row by ai_memories.id
+  //   byTopic     → soft-delete all rows for founder × topic
+  //   since       → soft-delete all rows created on/after date
+  //   previewQuery → semantic search, return token+preview (no delete)
+  // Rate-limited: 3 deletes/hour/founder. previewQuery NOT rate-limited.
+  r.post(
+    "/api/internal/openclaw/forget",
+    asyncHandler(async (req, res) => {
+      const parsed = validateBody(ForgetBody, req, res);
+      if (!parsed.ok) return;
+      const body = parsed.data;
+      try {
+        if (body.mode === "byId") {
+          const result = await forgetById(pool, {
+            founderUserId: body.founderUserId,
+            founderTgUserId: body.founderTgUserId,
+            rawCommand: body.rawCommand,
+            memoryId: body.memoryId,
+          });
+          res.json(result);
+          return;
+        }
+        if (body.mode === "byTopic") {
+          const result = await forgetByTopic(pool, {
+            founderUserId: body.founderUserId,
+            founderTgUserId: body.founderTgUserId,
+            rawCommand: body.rawCommand,
+            topic: body.topic,
+          });
+          res.json(result);
+          return;
+        }
+        if (body.mode === "since") {
+          const result = await forgetSince(pool, {
+            founderUserId: body.founderUserId,
+            founderTgUserId: body.founderTgUserId,
+            rawCommand: body.rawCommand,
+            sinceDate: body.sinceDate,
+          });
+          res.json(result);
+          return;
+        }
+        // previewQuery
+        const result = await previewForget({
+          founderUserId: body.founderUserId,
+          founderTgUserId: body.founderTgUserId,
+          rawCommand: body.rawCommand,
+          query: body.query,
+          topK: body.topK,
+        });
+        res.json(result);
+      } catch (err) {
+        if (err instanceof ForgetRateLimitError) {
+          res.status(429).json({
+            error: "rate_limited",
+            message: err.message,
+            retryAfterSec: err.retryAfterSec,
+          });
+          return;
+        }
+        throw err;
+      }
+    }),
+  );
+
+  // ---- forget_memory_confirm (PR-23 / preview confirm) ----
+  r.post(
+    "/api/internal/openclaw/forget/confirm",
+    asyncHandler(async (req, res) => {
+      const parsed = validateBody(ForgetConfirmBody, req, res);
+      if (!parsed.ok) return;
+      try {
+        const result = await confirmForget(pool, {
+          founderUserId: parsed.data.founderUserId,
+          founderTgUserId: parsed.data.founderTgUserId,
+          rawCommand: parsed.data.rawCommand,
+          token: parsed.data.token,
+        });
+        res.json(result);
+      } catch (err) {
+        if (err instanceof ForgetRateLimitError) {
+          res.status(429).json({
+            error: "rate_limited",
+            message: err.message,
+            retryAfterSec: err.retryAfterSec,
+          });
+          return;
+        }
+        if (err instanceof ForgetTokenError) {
+          res.status(410).json({
+            error: "token_invalid",
+            reason: err.reason,
+            message: err.message,
+          });
+          return;
+        }
+        throw err;
+      }
+    }),
+  );
+
+  // ---- forget_memory_cancel (PR-23 / preview cancel) ----
+  r.post(
+    "/api/internal/openclaw/forget/cancel",
+    asyncHandler(async (req, res) => {
+      const parsed = validateBody(ForgetCancelBody, req, res);
+      if (!parsed.ok) return;
+      const cancelled = cancelForget(
+        parsed.data.token,
+        parsed.data.founderUserId,
+      );
+      res.json({ cancelled });
     }),
   );
 
@@ -862,6 +1092,73 @@ export function createOpenClawInternalRouter({ pool }: { pool: Pool }): Router {
       if (parsed.data.includeProposals !== undefined)
         input.includeProposals = parsed.data.includeProposals;
       const result = await assembleMorningBriefing(input);
+      // PR /mute (Phase 5b): augment response з mute-state коли caller
+      // передав founderUserId. n8n WF-25 cron консумер читає `mute.muted`
+      // і short-circuit-ує `sendMessage`. Briefing markdown усе одно
+      // зберігається (cost-free аудит).
+      if (parsed.data.founderUserId) {
+        const mute = await isFounderMuted(pool, {
+          founderUserId: parsed.data.founderUserId,
+        });
+        res.json({ ...result, mute });
+        return;
+      }
+      res.json(result);
+    }),
+  );
+
+  // ---- O3 (Phase 2.B): Friday weekly review ritual ----
+  //
+  // POST /api/internal/openclaw/ritual/weekly → { markdown, data }.
+  // Викликає n8n WF-26 (cron `0 18 * * FRI Europe/Kyiv`) — після
+  // отримання markdown WF постить його у founder-DM. Fail-soft: будь-яка
+  // джерельна subsystem (GitHub / Stripe / PostHog / Sentry / LLM) недо-
+  // ступна → секція з `notConfigured` або `note`, але endpoint все одно
+  // повертає 200 з частковими даними. LLM narrative — через `LLMProvider`
+  // абстракцію (PR-23) з StubProvider fallback (PR-25 паттерн).
+  r.post(
+    "/api/internal/openclaw/ritual/weekly",
+    asyncHandler(async (req, res) => {
+      const parsed = validateBody(WeeklyReviewBody, req, res);
+      if (!parsed.ok) return;
+      const input: Parameters<typeof assembleWeeklyReview>[0] = {};
+      if (parsed.data.windowDays !== undefined)
+        input.windowDays = parsed.data.windowDays;
+      if (parsed.data.staleDays !== undefined)
+        input.staleDays = parsed.data.staleDays;
+      if (parsed.data.githubRepo !== undefined)
+        input.githubRepo = parsed.data.githubRepo;
+      if (parsed.data.sentryLimit !== undefined)
+        input.sentryLimit = parsed.data.sentryLimit;
+      if (parsed.data.prLimit !== undefined)
+        input.prLimit = parsed.data.prLimit;
+      const result = await assembleWeeklyReview(input);
+      res.json(result);
+    }),
+  );
+
+  // ---- O3 (Phase 2.B): Monthly OKR review ritual ----
+  //
+  // POST /api/internal/openclaw/ritual/monthly → { markdown, data }.
+  // Викликає n8n WF-27 (cron `0 9 1 * *` Europe/Kyiv) — 1-го числа місяця
+  // о 09:00 Kyiv. OKR-список читається з `INTERIM_OKRS` (hardcoded, поки
+  // PR-34 strategic_goals DB-table не merged). Wins/risks збираються з
+  // GitHub + Sentry. Narrative — LLM з template fallback.
+  r.post(
+    "/api/internal/openclaw/ritual/monthly",
+    asyncHandler(async (req, res) => {
+      const parsed = validateBody(MonthlyOkrReviewBody, req, res);
+      if (!parsed.ok) return;
+      const input: Parameters<typeof assembleMonthlyOkrReview>[0] = {};
+      if (parsed.data.githubRepo !== undefined)
+        input.githubRepo = parsed.data.githubRepo;
+      if (parsed.data.prLimit !== undefined)
+        input.prLimit = parsed.data.prLimit;
+      if (parsed.data.staleDays !== undefined)
+        input.staleDays = parsed.data.staleDays;
+      if (parsed.data.sentryLevel !== undefined)
+        input.sentryLevel = parsed.data.sentryLevel;
+      const result = await assembleMonthlyOkrReview(input);
       res.json(result);
     }),
   );
@@ -1153,6 +1450,76 @@ export function createOpenClawInternalRouter({ pool }: { pool: Pool }): Router {
         parsed.data.limit ?? 50,
       );
       res.json({ invocations: result });
+    }),
+  );
+
+  // ─── PR /mute (Phase 5b): founder DM "do not disturb" ─────────────────
+  //
+  // Чотири endpoints: `set`, `clear`, `status`, `check`. Slash `/mute`
+  // (handler — `tools/openclaw/.../handler-info-commands.ts`) обертає
+  // duration → ISO timestamp → POST /mute/set; `/mute off` → /mute/clear;
+  // `/mute status` → /mute/status. `/mute/check` — read-only guard для
+  // outbound channels (alerts shipper, briefing endpoint, ranok-cron).
+  //
+  // Critical-override: цей endpoint НЕ перевіряє severity — повертає
+  // raw state. Caller (alerts shipper) сам приймає рішення про bypass
+  // на P0 alerts. Це дозволяє кожному channel-у мати свій override-
+  // criterion без перевантаженого guard-API.
+
+  // ---- mute/set ----
+  r.post(
+    "/api/internal/openclaw/mute/set",
+    asyncHandler(async (req, res) => {
+      const parsed = validateBody(MuteSetBody, req, res);
+      if (!parsed.ok) return;
+      const mutedUntil = parsed.data.mutedUntilIso
+        ? new Date(parsed.data.mutedUntilIso)
+        : null;
+      const state = await setFounderMute(pool, {
+        founderUserId: parsed.data.founderUserId,
+        mutedUntil,
+        reason: parsed.data.reason ?? null,
+      });
+      res.json(state);
+    }),
+  );
+
+  // ---- mute/clear ("/mute off") ----
+  r.post(
+    "/api/internal/openclaw/mute/clear",
+    asyncHandler(async (req, res) => {
+      const parsed = validateBody(MuteFounderBody, req, res);
+      if (!parsed.ok) return;
+      const state = await clearFounderMute(pool, {
+        founderUserId: parsed.data.founderUserId,
+      });
+      res.json(state);
+    }),
+  );
+
+  // ---- mute/status ("/mute status" reply payload) ----
+  r.post(
+    "/api/internal/openclaw/mute/status",
+    asyncHandler(async (req, res) => {
+      const parsed = validateBody(MuteFounderBody, req, res);
+      if (!parsed.ok) return;
+      const state = await getFounderMute(pool, {
+        founderUserId: parsed.data.founderUserId,
+      });
+      res.json({ state });
+    }),
+  );
+
+  // ---- mute/check (runtime guard for outbound channels) ----
+  r.post(
+    "/api/internal/openclaw/mute/check",
+    asyncHandler(async (req, res) => {
+      const parsed = validateBody(MuteFounderBody, req, res);
+      if (!parsed.ok) return;
+      const result = await isFounderMuted(pool, {
+        founderUserId: parsed.data.founderUserId,
+      });
+      res.json(result);
     }),
   );
 

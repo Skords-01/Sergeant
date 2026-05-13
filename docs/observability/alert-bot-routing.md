@@ -1,6 +1,7 @@
 # Alert-bot routing — n8n broadcast workflows → `tg_alert_acks`
 
-> **Status:** Active. **Owner:** ops. **Last refreshed:** 2026-05-13 (O9 batch).
+> **Last validated:** 2026-05-13 by Devin. **Next review:** 2026-08-11.
+> **Status:** Active. **Owner:** ops.
 > **Spec:** [`docs/adr/0038-tg-alert-acks-and-escalation.md`](../adr/0038-tg-alert-acks-and-escalation.md)
 > §3.2; reporting matrix footnote 5 in
 > [`ops/n8n-workflows/REPORTING-MATRIX.md`](../../ops/n8n-workflows/REPORTING-MATRIX.md).
@@ -186,6 +187,14 @@ double-repeat / double-Sentry-event.
 The same `/alerts/pending` endpoint powers the `/alerts pending` slash-command
 (O5 / PR #2507), which calls без filter prefs і renders усі open ack-rows у
 founder DM.
+
+For post-mortem debugging, `/alerts history [<days>] [limit=<N>]` (this PR)
+hits the sibling `POST /api/internal/alerts/history` endpoint. It runs two
+SQL aggregates against `tg_alert_acks` — top-N noisiest workflows (grouped by
+`split_part(alert_id, ':', 1)`) plus a window-wide summary (totals, ack-rate,
+avg time-to-ack, tier counts). Defaults: 7d look-back, top-10 workflows.
+Same founder-only allowlist + 3/min rate-limit + `openclaw_invocations`
+audit row as `/alerts pending`.
 
 ## T2 repeat-ping inline keyboard
 

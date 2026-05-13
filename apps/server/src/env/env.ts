@@ -605,6 +605,30 @@ const envSchema = z.object({
   // ── Internal / machine-to-machine ──────────────────────────────────
   /** Bearer token for `/api/internal/*` (n8n workflows). */
   INTERNAL_API_KEY: stringWithDefault(""),
+  /**
+   * HMAC-SHA256 shared secret for `/api/internal/*` webhook signing
+   * (PR-48 follow-up). n8n side computes
+   * `hex(hmac_sha256(secret, "<timestamp>.<rawBody>"))` and sends it in
+   * the `X-Signature` header alongside `X-Timestamp` (UNIX seconds).
+   * Server verifies both. Empty string disables the feature (bearer-only).
+   */
+  WEBHOOK_HMAC_SECRET: stringWithDefault(""),
+  /**
+   * Enforce HMAC signatures on `/api/internal/*`. Default `false` ships a
+   * 30-day grace window: server logs `webhook_hmac_mismatch` (warn) but
+   * still accepts the request, so n8n workflows can be rolled out one at
+   * a time. Flip to `true` once the manifest reports `hmac_signed: true`
+   * for all 17 wired workflows.
+   */
+  WEBHOOK_HMAC_REQUIRED: boolFromEnv(false),
+  /**
+   * Replay-window in seconds — requests with `X-Timestamp` older than
+   * (now - WEBHOOK_HMAC_TS_TOLERANCE_SEC) or further in the future
+   * than that window are rejected when WEBHOOK_HMAC_REQUIRED=true (and
+   * warn-logged otherwise). 5min is the OWASP-recommended default and
+   * matches Stripe / GitHub / Slack webhook signatures.
+   */
+  WEBHOOK_HMAC_TS_TOLERANCE_SEC: intFromEnv(300),
   /** Monobank user-token (legacy single-tenant integration; webhook prefers `/api/mono/connect`). */
   MONO_TOKEN: stringWithDefault(""),
 
@@ -839,6 +863,30 @@ const envSchema = z.object({
   /** Інтервал в мілісекундах для retention-cleanup tick-у. Default 1h; 0 → off. */
   WEBHOOK_EVENTS_RETENTION_POLL_INTERVAL_MS: intFromEnv(60 * 60 * 1000),
 
+  // ── Log retention archive (`apps/server/src/modules/logRetention`) ──
+  /**
+   * Opt-in master switch для GCS-архіватора `openclaw_invocations` /
+   * `tg_alert_acks` / `n8n_webhook_events`. Default `false`, тож existing
+   * deploy-и не вмикаються автоматично — для увімкнення треба явно
+   * `LOG_ARCHIVE_ENABLED=true` + сетити `GCS_LOG_ARCHIVE_BUCKET`.
+   */
+  LOG_ARCHIVE_ENABLED: boolFromEnv(false),
+  /**
+   * Скільки днів зберігати audit-rows у live DB перед archive+DELETE.
+   * Default 30. 0 → archiver не виконує ніяких DELETE-ів (зберігаємо
+   * все назавжди — корисно для compliance freeze).
+   */
+  LOG_RETENTION_DAYS: intFromEnv(30),
+  /** Інтервал в мілісекундах. Default 1h; 0 → off. */
+  LOG_ARCHIVE_POLL_INTERVAL_MS: intFromEnv(60 * 60 * 1000),
+  /** Скільки рядків брати у батч на таблицю на tick. Default 1000. */
+  LOG_ARCHIVE_BATCH_SIZE: intFromEnv(1000),
+  /**
+   * Цільовий GCS-бакет. Пусто → poller лоґує warning і пропускає
+   * batches (rows залишаються в DB).
+   */
+  GCS_LOG_ARCHIVE_BUCKET: stringWithDefault(""),
+
   // ── PR-33 — Cost monitoring dashboard ──────────────────────────────
   /** Railway infra subscription monthly cost (USD). 0/empty → не репортимо. */
   RAILWAY_MONTHLY_COST_USD: floatFromEnv(0),
@@ -917,6 +965,23 @@ const envSchema = z.object({
    * alert лишиться).
    */
   VOYAGE_DAILY_BUDGET_USD_SOFT: floatFromEnv(1),
+  /**
+   * Voyage **hard** daily-usage cap (USD). Аналогічний `ANTHROPIC_BUDGET_HARD_USD`
+   * (PR-14): коли today-spend ≥ cap — emit Sentry **error**-level alert
+   * (`error_signature='voyage-daily-budget-hard'`) і взводимо in-process
+   * прапор `isVoyageBudgetHardExceeded()`. Не-критичні шляхи (`remember()`
+   * background ingestion) самозатягують горло — skip embed-call ще до
+   * `embedBatch()`, бо повторно генерувати soft-warning + витрачати
+   * Voyage-квоту після hard-breach-у вже немає сенсу.
+   *
+   * Soft (`VOYAGE_DAILY_BUDGET_USD_SOFT`) лишається первинним сигналом
+   * (warning + skip non-critical у `embeddings.ts`). Hard — додатковий
+   * сигнал (error + pause-ingestion гейт у `service.ts::remember`).
+   *
+   * Default `5` USD — same ratio як Anthropic ($3 soft / $5 hard).
+   * Set `0` щоб вимкнути hard-gate (тоді тільки soft).
+   */
+  VOYAGE_DAILY_BUDGET_USD_HARD: floatFromEnv(5),
 });
 
 export type Env = z.infer<typeof envSchema>;
