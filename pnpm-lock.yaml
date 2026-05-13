@@ -561,8 +561,8 @@ importers:
         specifier: ^2.0.1
         version: 2.0.1(react@18.3.1)
       '@zxing/browser':
-        specifier: ^0.1.5
-        version: 0.1.5(@zxing/library@0.21.3)
+        specifier: ^0.2.0
+        version: 0.2.0(@zxing/library@0.21.3)
       '@zxing/library':
         specifier: ^0.21.3
         version: 0.21.3
@@ -6068,10 +6068,10 @@ packages:
   '@xtuc/long@4.2.2':
     resolution: {integrity: sha512-NuHqBY1PB/D8xU6s/thBgOAiAP7HOYDQ32+BFZILJ8ivkUkAHQnWfn6WhL79Owj1qmUnoN/YPhktdIoucipkAQ==}
 
-  '@zxing/browser@0.1.5':
-    resolution: {integrity: sha512-4Lmrn/il4+UNb87Gk8h1iWnhj39TASEHpd91CwwSJtY5u+wa0iH9qS0wNLAWbNVYXR66WmT5uiMhZ7oVTrKfxw==}
+  '@zxing/browser@0.2.0':
+    resolution: {integrity: sha512-+ORhrLva0vm6ck74NDCmvYNW3XLoAG81Mu90qfcssN1PBKJjQadxZGeMCcIk+BdJbD/zEAjjHDXOwEK1QCmRtw==}
     peerDependencies:
-      '@zxing/library': ^0.21.0
+      '@zxing/library': ^0.22.0
 
   '@zxing/library@0.21.3':
     resolution: {integrity: sha512-hZHqFe2JyH/ZxviJZosZjV+2s6EDSY0O24R+FQmlWZBZXP9IqMo7S3nb3+2LBWxodJQkSurdQGnqE7KXqrYgow==}
@@ -19599,7 +19599,7 @@ snapshots:
 
   '@xtuc/long@4.2.2': {}
 
-  '@zxing/browser@0.1.5(@zxing/library@0.21.3)':
+  '@zxing/browser@0.2.0(@zxing/library@0.21.3)':
     dependencies:
       '@zxing/library': 0.21.3
     optionalDependencies:
