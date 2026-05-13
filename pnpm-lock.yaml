@@ -449,7 +449,7 @@ importers:
         specifier: ^3.6.7
         version: 3.6.7
       zod:
-        specifier: ^4.3.6
+        specifier: ^4.4.3
         version: 4.4.3
     devDependencies:
       '@sergeant/config':
@@ -624,7 +624,7 @@ importers:
         specifier: ^7.4.0
         version: 7.4.1
       zod:
-        specifier: ^4.3.6
+        specifier: ^4.4.3
         version: 4.4.3
     devDependencies:
       '@argos-ci/playwright':
@@ -898,7 +898,7 @@ importers:
   packages/openclaw-plugin:
     dependencies:
       zod:
-        specifier: ^4.3.6
+        specifier: ^4.4.3
         version: 4.4.3
     devDependencies:
       '@sergeant/config':
@@ -941,7 +941,7 @@ importers:
         specifier: workspace:*
         version: link:../design-tokens
       zod:
-        specifier: ^4.3.6
+        specifier: ^4.4.3
         version: 4.4.3
       zod-openapi:
         specifier: ^5.4.6
