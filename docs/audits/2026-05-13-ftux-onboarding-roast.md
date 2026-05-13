@@ -144,7 +144,7 @@ events працюють, dashboards задокументовані, retention-co
 - **Дія (наступний спринт):** P1 PR відновлює focus management + double-submit guard + Escape→onSecondaryAction wiring; знімає `it.skip` маркери; коротка регресія у `apps/web/src/core/onboarding/useOnboardingWizardState.ts` (додати `submitted` ref + early-return) + `useAutoFocus(headingRef)` у `OnboardingWizard.tsx`. Розмір очікуваний < 60 LOC.
 - **Власник:** TBD (Web Frontend); ризик — медіум (a11y + double-fire analytics).
 
-### P1-4. PR-08 — archive stale audits + delete `.replit` — ✅ Closed in this PR
+### P1-4. PR-08 — archive stale audits + delete `.replit` — ✅ Closed in #2768
 
 - **Файли:**
   - `docs/audits/2026-04-28-implementation-roadmap.md` → archive
@@ -203,7 +203,7 @@ Outstanding (не у scope цього PR, лишається у master tracker):
 - ⏳ S6.3 (P2-15 CelebrationModal CTA promise) — у scope master tracker §2.2,
   ROUTING piece (P2-1 вище) ще open.
 - ⏳ S6.8, S6.10, S6.11, S6.12, S6.13 — Sprint 6 carryover.
-- ✅ PR-08 (cleanup .replit + archive stale audits) — закрито у цьому PR (P1-4).
+- ✅ PR-08 (cleanup .replit + archive stale audits) — закрито у #2768 (P1-4).
 - ⏳ PR-09 (cold-start outcome-card, замінить `OnboardingProgress`).
 - ⏳ PR-10 (empty-state A/B).
 - ⏳ PR-13 (goal-first wizard A/B, S5.1).
