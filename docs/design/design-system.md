@@ -1,6 +1,6 @@
 # Sergeant Design System
 
-> **Last validated:** 2026-05-05 by @Skords-01. **Next review:** 2026-08-03.
+> **Last validated:** 2026-05-13 by @Skords-01. **Next review:** 2026-08-11.
 > **Status:** Active
 
 Єдина візуальна мова для хаба з 4 модулями: **ФІНІК**, **ФІЗРУК**, **Рутина**,
@@ -121,47 +121,98 @@ Back-compat: старі токени `panel` / `panelHi` / `line` продовж
 
 ## 3. Типографічна шкала
 
-Всі розміри — в `tailwind.config.js` під `fontSize`. Мінімальний
-розмір — **10px (`text-2xs`)**. `text-3xs` (9px) було видалено зі
-шкали — його контраст не проходив читабельність на мобільних, а
-бібліотека чартів вже використовує власні axis-ticks.
+### Семантичні `.text-style-*` ютиліті (tier-1, fluid)
 
-| Клас        | Size / line-height | Використання                              |
-| ----------- | ------------------ | ----------------------------------------- |
-| `text-2xs`  | 10 / 14            | Декоративні мета-бейджі, chart axis ticks |
-| `text-xs`   | 12 / 16            | Метадата, timestamp, secondary captions   |
-| `text-sm`   | 14 / 20            | Вторинний текст, кнопки `sm`              |
-| `text-base` | 16 / 24            | Базовий body                              |
-| `text-lg`   | 18 / 28            | Заголовок картки                          |
-| `text-xl`   | 20 / 28            | Section heading `md`                      |
-| `text-2xl`  | 24 / 32            | Page heading mobile                       |
-| `text-hero` | 26 / 32            | Hero stat numbers                         |
-| `text-3xl`  | 30 / 36            | Hero heading                              |
-| `text-4xl`  | 36 / 40            | Landing hero                              |
-| `text-5xl`  | 48 / 1             | Рідкісні великі промо-цифри               |
+Дванадцять канонічних слотів — це **єдине правильне джерело істини**
+для типографіки. Кожна утиліта зашиває `font-size` (fluid через
+`clamp()`), `line-height`, `font-weight`, `letter-spacing` та casing
+як один атомарний контракт. Розміри плавно зростають від 320 px до
+1280 px вьюпорту — без media-query-стрибків, без drift-у між кейсами.
 
-### Семантичні `.text-style-*` ютиліті
+**Hard Rule #16 — 12px floor.** Жоден семантичний слот не опускається
+нижче 12px (caption / overline). `text-2xs` (10px) лишається для
+chart axis-ticks і декоративних бейджів — це не `text-style-*` слот.
 
-Кожна виконує одну роль і одночасно зашиває font-size, line-height,
-weight, letter-spacing і casing. Перевага — над "ручним" комбо
-`text-* font-* tracking-*`, бо неможливо змішати hero-розмір з
-неправильною вагою:
+Реєстр живе у [`packages/design-tokens/tailwind-preset.js`](../../packages/design-tokens/tailwind-preset.js)
+→ `plugins.semanticTypography`. Lint `sergeant-design/prefer-text-style`
+заохочує семантичні утиліти замість ручних `text-* font-* tracking-*`
+комбо; `sergeant-design/no-arbitrary-text-size` забороняє
+`text-[Npx]` / `text-[Nrem]`.
 
-| Утиліта                | Контракт                       | Використання                      |
-| ---------------------- | ------------------------------ | --------------------------------- |
-| `.text-style-hero`     | 26 / 32 / 700 / -0.02em        | Page H1, hero stat number         |
-| `.text-style-title`    | 20 / 28 / 600 / -0.01em        | Section heading, card title       |
-| `.text-style-body`     | 16 / 24 / 400                  | Основний body                     |
-| `.text-style-label`    | 14 / 20 / 500                  | Form label, button text           |
-| `.text-style-caption`  | 12 / 16 / 400                  | Helper text, metadata, timestamps |
-| `.text-style-overline` | 12 / 16 / 600 / 0.06em / UPPER | Section kicker / eyebrow          |
+| Утиліта                | Розмір (clamp)    | Lh   | Weight | Tracking | Роль                                   |
+| ---------------------- | ----------------- | ---- | ------ | -------- | -------------------------------------- |
+| `.text-style-display`  | 32 → 56 px        | 1.05 | 700    | -0.025em | Landing hero / splash heading          |
+| `.text-style-headline` | 26 → 36 px        | 1.15 | 700    | -0.02em  | Page H1, hero stat number              |
+| `.text-style-title-lg` | 22 → 28 px        | 1.25 | 600    | -0.015em | Велике секційне заголовкове            |
+| `.text-style-title`    | 18 → 22 px        | 1.3  | 600    | -0.01em  | Section heading, card title            |
+| `.text-style-subtitle` | 16 → 18 px        | 1.4  | 500    | -0.005em | Sub-heading                            |
+| `.text-style-body-lg`  | 16 → 18 px        | 1.55 | 400    | 0        | Acцентований body (intro, lead-абзаци) |
+| `.text-style-body`     | 15 → 16 px        | 1.55 | 400    | 0        | Дефолтний body                         |
+| `.text-style-body-sm`  | 13 → 14 px        | 1.55 | 400    | 0        | Secondary body, descriptions           |
+| `.text-style-label`    | 13 → 14 px        | 1.4  | 500    | 0.005em  | Form label, button text                |
+| `.text-style-caption`  | **12 px** (floor) | 1.4  | 400    | 0.005em  | Helper text, metadata, timestamps      |
+| `.text-style-overline` | **12 px** (floor) | 1.4  | 600    | 0.08em   | UPPER section kicker / eyebrow         |
+| `.text-style-code`     | 13 → 14 px / mono | 1.5  | 500    | 0        | Inline `code`, monospace stats         |
+
+**Back-compat.** `.text-style-hero` лишається аліасом на `headline`
+(той самий fluid контракт) — існуючі call-site-и не вимагають міграції.
+Нове code-author writes `.text-style-headline` напряму.
+
+### Line-height & letter-spacing — за роллю, а не за розміром
+
+- **Display / headline** — `line-height: 1.05–1.15`, негативний
+  `letter-spacing` (≈ -0.02em). Великі літери "слипаються" і
+  виглядають композиційніше.
+- **Title / title-lg** — `line-height: 1.25–1.3`, легке негативне
+  трекінг (-0.01em / -0.015em).
+- **Body / body-lg / body-sm** — `line-height: 1.55` (loose),
+  трекінг 0. Це найважливіше — body для довгого читання має
+  «дихати», навіть на mobile.
+- **Label / caption** — `line-height: 1.4`, мінімальний позитивний
+  трекінг (0.005em) для читабельності на дрібних розмірах.
+- **Overline** — `line-height: 1.4`, **великий all-caps трекінг
+  0.08em** (стандарт для capslock-кікерів — без трекінгу
+  капітал-літери виглядають перевантажено).
+- **Code** — `line-height: 1.5`, monospace.
+
+### Font-feature defaults
+
+На рівні `html` глобально вмикаються OpenType-фічі:
+
+```css
+font-feature-settings:
+  "kern" 1,
+  /* кернінг          */ "liga" 1,
+  /* common ligatures */ "calt" 1,
+  /* contextual alts  */ "ss01" 1; /* DM Sans stylistic set 01 */
+font-kerning: normal;
+text-rendering: optimizeLegibility;
+```
+
+Це підв'язує всі екрани до однакових базових гліфів. Якщо потрібно
+відключити для специфічного блоку (наприклад, ASCII-арт або суворо
+літеральні гліфи) — `font-feature-settings: normal` на елементі.
+
+### Tabular nums — `.tnum`
+
+Числові колонки (таблиці, статистики, hero-цифри) **обов'язково**
+вмикають `font-variant-numeric: tabular-nums` — інакше пропорційний
+шрифт стрибає на ±2 px у пропорційних 5/6/7. Утиліта:
+
+```html
+<td class="tnum text-right">12 400</td>
+```
+
+`.tnum` живе в `tailwind-preset.js` поряд з `.text-style-*`.
+Старий `.tabular-nums` (визначений у `apps/web/src/styles/base.css`)
+лишається back-compat-аліасом.
 
 ### Канонічна `.text-*` шкала (tier-2 — окремі утиліти)
 
 Поряд з `text-style-*` живе ще один шар — окремі семантичні утиліти, які
 закривають дрібніші, нижчі та більші розміри, що не мають своєї
 семантичної ролі в `text-style-*`. Усі вони визначені в
-`apps/web/src/index.css`:
+`apps/web/src/styles/utilities.css`:
 
 | Утиліта              | Контракт                                   | Коли використовувати                                                                                                             |
 | -------------------- | ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------- |
@@ -200,6 +251,57 @@ DS-примітиви, які власне визначають raw-px-токе�
 `Badge`, `Stat`, `SectionHeading`, `Label`, `Toast`, `Skeleton`, `Tabs`,
 `Segmented`, `Card`), звільнено від правила, бо вони — джерело істини
 для самих утиліт.
+
+### Prose — `@shared/components/ui/Prose`
+
+Для довгого rich-text-у (онбординг кроки, статті у Coach, markdown
+з асистента, документація-в-екрані) використовуй компонент `Prose`.
+Він застосовує семантичну шкалу до всіх дочірніх HTML-тегів
+(h1..h4, p, ul, ol, li, blockquote, code, pre, hr, a, table),
+тримає вимірення (`measure`) у комфортних ≤70ch через токен
+`--max-line-length` і має два варіанти:
+
+| Variant   | Base    | Spacing rhythm | Коли використовувати                                   |
+| --------- | ------- | -------------- | ------------------------------------------------------ |
+| `default` | body    | 1.0× (relaxed) | Статті, довгі описи, articles, blog-style preview      |
+| `compact` | body-sm | 0.6× (tight)   | Шіти, сайдбари, in-card prose, дрібні onboarding-блоки |
+
+```tsx
+import { Prose } from "@shared/components/ui";
+
+<Prose>
+  <h2>Заголовок</h2>
+  <p>Абзац з <a href="#">посиланням</a> і <code>inline-кодом</code>.</p>
+  <ul><li>Bullet</li></ul>
+</Prose>
+
+<Prose variant="compact">…</Prose>
+```
+
+Перевизначити кеп рядка можна локально через CSS-змінну:
+
+```tsx
+<Prose style={{ "--max-line-length": "60ch" } as React.CSSProperties}>…</Prose>
+```
+
+### Do / Don't — гайдлайни ієрархії
+
+- ✅ **Do** — використовуй один `display` або `headline` на екран.
+  Hero — це фокусна точка; два хедлайни змагаються між собою.
+- ✅ **Do** — body / body-lg для абзаців; body-sm — лише для
+  допоміжного підпису під полем або secondary description.
+- ✅ **Do** — overline (UPPER + 0.08em tracking) як кікер, не як body.
+- ❌ **Don't** — не пар `text-style-display` з `text-style-body-sm`
+  в одному hero. Дисплейний розмір потребує body-lg як супутника
+  (контраст у вазі і ритмі).
+- ❌ **Don't** — не дублюй `text-style-title` всередині `Prose` —
+  `<h3>` всередині блоку вже отримує `title-lg` автоматично.
+- ❌ **Don't** — `text-2xs` (10 px) — це не "тиха caption". Це чарт-axis
+  або декоративний бейдж. Для будь-якого тексту, який користувач
+  має прочитати, щоб діяти — мінімум `caption` (12 px).
+- ❌ **Don't** — не комбінуй `text-style-overline` з body-розмірним
+  фоном (наприклад, на `bg-finyk-soft` з 12 px без weight 600 текст
+  «втопиться» — overline передбачає контрастний weight + tracking).
 
 ---
 
