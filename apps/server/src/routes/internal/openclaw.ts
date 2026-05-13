@@ -266,7 +266,7 @@ const MorningBriefingBody = z
   .strict();
 
 // O3 (Phase 2.B): Friday weekly review payload — всі поля optional.
-// Консумер — n8n WF-26 (`0 18 * * FRI` Europe/Kyiv) → DM founder.
+// Консумер — n8n WF-28 (`0 18 * * FRI` Europe/Kyiv) → DM founder.
 const WeeklyReviewBody = z
   .object({
     windowDays: z.number().int().min(1).max(30).optional(),
@@ -279,7 +279,8 @@ const WeeklyReviewBody = z
 
 // O3 (Phase 2.B): Monthly OKR review payload — всі поля optional.
 // Консумер — n8n WF-27 (`0 9 1 * *` Europe/Kyiv) → DM founder. Hardcoded
-// interim OKR-список доки PR-34 strategic_goals не merged.
+// interim OKR-список — fallback (PR-34 strategic_goals DB-table merged,
+// follow-up може замінити константу на DB-query).
 const MonthlyOkrReviewBody = z
   .object({
     githubRepo: z.string().min(3).max(140).optional(),
