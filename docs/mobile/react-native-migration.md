@@ -221,17 +221,19 @@ NativeWind + RN-core. Поверх — додаткові примітиви в 
   [#460](https://github.com/Skords-01/Sergeant/pull/460),
   [#467](https://github.com/Skords-01/Sergeant/pull/467),
   [#474](https://github.com/Skords-01/Sergeant/pull/474),
-  [#477](https://github.com/Skords-01/Sergeant/pull/477)). Detox iOS-сьют
-  `finyk-manual-expense.e2e.ts`
-  ([#490](https://github.com/Skords-01/Sergeant/pull/490)) + Android CI
-  лейн
+  [#477](https://github.com/Skords-01/Sergeant/pull/477)). Detox iOS-сьюти
+  smoke (`finyk-manual-expense.e2e.ts`, `finyk-transactions.e2e.ts`
+  з period-filter — prev/next-month chevrons + custom date-range sheet —
+  `routine-smoke.e2e.ts`, `hub-ux-smoke.e2e.ts`) + full sign-in→module
+  →sign-out (`routine-full.e2e.ts`, `fizruk-full.e2e.ts`,
+  `finyk-full.e2e.ts`, `nutrition-full.e2e.ts`) під
+  `EXPO_PUBLIC_E2E_REAL_AUTH=1` (mock-fetch interceptor у
+  `apps/mobile/src/auth/e2eAuthMock.ts`). Android CI лейн
   ([`.github/workflows/detox-android.yml`](../../.github/workflows/detox-android.yml),
   `ubuntu-latest` + `reactivecircus/android-emulator-runner` на API 34
   `google_apis`, nightly cron + per-PR на `apps/mobile/**`,
-  `apps/mobile-shell/**`, mobile-shared packages). Suite-и:
-  `finyk-manual-expense`, `finyk-transactions` (period-filter:
-  prev/next-month chevrons + custom date-range sheet),
-  `routine-smoke`, `hub-ux-smoke` — усі зелені на обох платформах.
+  `apps/mobile-shell/**`, mobile-shared packages): smoke-build зелений,
+  full-сьюти follow-up.
 - **Рутина** (`apps/mobile/src/modules/routine/*`): весь функціонал
   портовано — shell + 3-tab nav, pure-домен у
   `@sergeant/routine-domain`, habits-редактор з drag-reorder, heatmap,
@@ -505,10 +507,21 @@ Per module — які файли `apps/web` переносяться і в що 
 - **Pantry / Shopping (Done):** `useNutritionPantries` + `Pantry.tsx`,
   `useShoppingList` + `Shopping.tsx`. Доменні мутації — з
   `@sergeant/nutrition-domain` (`mergeItems` / `parseLoosePantryText`
-  / `groupItemsByCategory`). AI-розбір списку через
-  `apiClient.nutrition.parsePantry`.
-- **TODO:** AI-генерація shopping-list з рецептів / плану як на web
-  (наразі тільки розбір власноруч-введеного списку).
+  / `groupItemsByCategory` / `normalizeShoppingList`). AI-розбір списку
+  через `apiClient.nutrition.parsePantry`.
+- **AI shopping-list (Done):** `Shopping.tsx` має кнопку
+  «Згенерувати зі рецептів», що збирає payload із збережених рецептів
+  (`useSavedRecipesList`) + активної комори (`useNutritionPantries`) і
+  викликає `apiClient.nutrition.shoppingList` (той самий endpoint, що
+  на web — `POST /api/nutrition/shopping-list`). Категорії пропускає
+  через `useShoppingList.setGeneratedList` → `normalizeShoppingList`,
+  тож рерун ідемпотентний. Помилки `402`/`429` → інлайн «Перевищено
+  AI-квоту», `network` → «Немає звʼязку». Тести —
+  `apps/mobile/src/modules/nutrition/pages/__tests__/Shopping.generate.test.tsx`.
+- **TODO:** weekplan-джерело для shopping-list — мобільний клієнт ще
+  не зберігає `weekPlan` локально (web-only `useNutritionUiState`).
+  Доки week-plan не персиститься в MMKV/SQLite, у UI лишається
+  disabled-перемикач «Тижневий план» з підказкою «поки тільки на web».
 
 ## 6. Cross-cutting concerns
 
@@ -705,9 +718,18 @@ Android — локальний config-плагін
   клієнтів.
 - `apps/mobile` — Jest (`jest-expo`) + `@testing-library/react-native`
   для unit / component.
-- E2E — **Detox** (Q8). Перший сьют — Фінік
-  (`finyk-manual-expense.e2e.ts`). Підготовка дев-білду —
-  `EXPO_PUBLIC_E2E=1` auth-bypass у `app/(tabs)/_layout.tsx`.
+- E2E — **Detox** (Q8). Smoke-сьюти —
+  `finyk-manual-expense.e2e.ts`, `finyk-transactions.e2e.ts`,
+  `routine-smoke.e2e.ts`, `hub-ux-smoke.e2e.ts` (auth-bypass через
+  `EXPO_PUBLIC_E2E=1` у `app/(tabs)/_layout.tsx`). Full sign-in→module
+  →sign-out (✅) — `routine-full.e2e.ts`, `fizruk-full.e2e.ts`,
+  `finyk-full.e2e.ts`, `nutrition-full.e2e.ts`. Last two групи
+  ганяють real Better Auth client через mock-fetch interceptor
+  (`apps/mobile/src/auth/e2eAuthMock.ts`) під прапором
+  `EXPO_PUBLIC_E2E_REAL_AUTH=1` — синтетичний тестовий обліковий запис
+  (`e2e-detox@sergeant.test` / `detox-pass-2026`, переоверридується
+  через `EXPO_PUBLIC_E2E_USER_EMAIL` / `_PASSWORD`). Деталі — у
+  `apps/mobile/e2e/README.md`.
 - Ручне smoke-тестування — Expo Dev Client на фізичному пристрої
   (iOS + Android) перед кожним merge у master після Phase 4.
 

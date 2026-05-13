@@ -42,7 +42,12 @@ export { Avatar } from "./Avatar";
 export type { AvatarProps, AvatarSize, AvatarStatus } from "./Avatar";
 
 export { EmptyState, ModuleEmptyState } from "./EmptyState";
-export type { EmptyStateProps, ModuleEmptyStateProps } from "./EmptyState";
+export type {
+  EmptyStateProps,
+  EmptyStateSize,
+  EmptyStateVariant,
+  ModuleEmptyStateProps,
+} from "./EmptyState";
 
 export {
   FeatureSpotlight,
@@ -210,6 +215,9 @@ export { ToastContainer } from "./Toast";
 
 export { Tooltip } from "./Tooltip";
 export type { TooltipPlacement, TooltipProps, TooltipSize } from "./Tooltip";
+
+export { ThemeSwitcher } from "./ThemeSwitcher";
+export type { ThemeSwitcherProps } from "./ThemeSwitcher";
 
 export type { FormVariant, SmallMediumLarge } from "./types";
 
