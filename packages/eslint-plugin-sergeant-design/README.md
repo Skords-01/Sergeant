@@ -232,6 +232,67 @@ console.error("ANTHROPIC_API_KEY is not set");
 console.log(requestId);
 ```
 
+### `sergeant-design/no-console-pii`
+
+Забороняє виклики `console.{log,error,warn,info,debug}`, чиї аргументи реферують PII-форму. Audit-джерело: [`docs/audits/2026-05-13-security-observability-roast.md`](../../docs/audits/2026-05-13-security-observability-roast.md) §S2. `console.*` у браузері просочує payload через три незалежні канали одночасно: DevTools console buffer (видно при screen-share), Sentry breadcrumbs (`console`-integration увімкнено за замовчуванням у `@sentry/react`) і Logpipe-style розширення браузера. Pino redact-paths і `applyWebBeforeSend` (server + web Sentry SDK) не закривають жоден із цих каналів, бо breadcrumb-стрибок відбувається до того, як `beforeSend` отримає event.
+
+Severity: **error** (скоуп: `apps/server/src/**/*.{js,ts}` + `apps/web/src/**/*.{ts,tsx}`; ігнорує `*.test.*` і `__tests__/`).
+
+#### Детекція
+
+- **String / template literals (case a):** аргумент є string-літералом або template-літералом, чий quasi-cooked текст матчиться під `/\b(email|phone|password|token|secret|cookie|authorization|bearer)\b/i`.
+- **Identifier / MemberExpression (case b):** ім'я ідентифікатора або property name матчиться під `/\b(email|phone|password|token|secret)\b/i`. Вужче за `cookie`/`authorization`/`bearer` свідомо — на key-name вони з'являються переважно як `req.headers.cookie`, що redact-нутий Pino-шаром (Hard Rule #21).
+- **Descent:** правило заглиблюється у `ObjectExpression.properties` (`{ email: x }`), `MemberExpression.object` (`user.email.toLowerCase()`), `CallExpression.callee` (transform-wrapper над PII-property), і у template-`expressions` (`` `pw=${user.password}` ``).
+
+#### Опції
+
+```json
+{
+  "sergeant-design/no-console-pii": [
+    "error",
+    {
+      "allow": ["^\"\\[debug:dev-only\\]\"", "analytics-debug"]
+    }
+  ]
+}
+```
+
+| Опція   | Тип        | Default | Опис                                                                                                                                                                                                                          |
+| ------- | ---------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `allow` | `string[]` | `[]`    | Список regex-патернів. Якщо source-text БУДЬ-ЯКОГО аргумента матчиться під regex, увесь call вважається allowlist-ованим. Escape-hatch для dev-only діагностики на кшталт `console.log("[debug:dev-only]", scrubbedPayload)`. |
+
+#### Приклади
+
+```ts
+// ❌ BAD — string literal містить PII-keyword
+console.log("user email", value);
+
+// ❌ BAD — template quasi містить PII-keyword
+console.warn(`password mismatch for ${userId}`);
+
+// ❌ BAD — identifier name матчиться під PII-regex
+console.error(user.email);
+console.debug({ token, secret });
+
+// ❌ BAD — descent у CallExpression.callee
+console.log(user.email.toLowerCase());
+
+// ✅ GOOD — payload без PII-imeni
+console.log("auth attempt", { userId: user.id });
+
+// ✅ GOOD — Pino з staged redact-paths (Hard Rule #21)
+import { logger } from "@sergeant/server/obs/logger";
+logger.error({ event: "auth.fail", userId }, "auth attempt");
+
+// ✅ GOOD — wrap через @sergeant/shared scrubPII
+import { scrubPII } from "@sergeant/shared";
+console.debug("payload", scrubPII(payload));
+
+// ✅ GOOD (with allow option) — dev-only діагностика
+//   eslint.config.js: rules: { "sergeant-design/no-console-pii": ["error", { allow: ["debug-dev"] }] }
+console.log("[debug-dev]", { email: user.email });
+```
+
 ### `sergeant-design/no-strict-bypass`
 
 Забороняє type-safety-bypass-и в продакшн-коді (PR-6.E). Ловить чотири патерни:

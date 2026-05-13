@@ -669,6 +669,36 @@ export default [
       "sergeant-design/no-anthropic-key-in-logs": "error",
     },
   },
+  // `no-console-pii` (audit `2026-05-13-security-observability-roast.md`
+  // §S2, P0) — blocks `console.log/error/warn/info/debug` calls that
+  // reference PII-shaped strings (`email`, `password`, `token`, …) or
+  // identifiers/members with those names. The audit captured the specific
+  // shape that keeps slipping in despite the Pino redact-paths and
+  // `applyWebBeforeSend` Sentry scrubber: a raw `console.*` from a UI
+  // handler reaches DevTools (screen-share leak), Sentry breadcrumbs
+  // (the `console`-integration is on by default in `@sentry/react`) and
+  // Logpipe-style browser extensions — all three before Pino or the
+  // Sentry `beforeSend` get a chance to scrub anything.
+  //
+  // Scoped to both server (defense-in-depth — `req.body.email` in a
+  // server-side `console.*` would still bypass Pino redact) and web. The
+  // dev-only diagnostic `console.log("[analytics]", event)` in
+  // `apps/web/src/core/observability/analytics.ts` does NOT reference any
+  // PII-named identifier (`event` is generic), so it is not flagged; if
+  // the contract changes, add the tag to `options.allow` rather than
+  // suppressing inline.
+  {
+    files: ["apps/server/src/**/*.{js,ts}", "apps/web/src/**/*.{ts,tsx}"],
+    ignores: [
+      "apps/server/src/**/*.test.{js,ts}",
+      "apps/server/src/**/__tests__/**",
+      "apps/web/src/**/*.test.{ts,tsx}",
+      "apps/web/src/**/__tests__/**",
+    ],
+    rules: {
+      "sergeant-design/no-console-pii": ["error", { allow: [] }],
+    },
+  },
   // Type-safety bypass guardrail — PR-6.E: forbid new `@ts-expect-error`,
   // `@ts-ignore`, `as any`, and `as unknown as X` in production code.
   // These patterns erode type safety and make refactoring dangerous.

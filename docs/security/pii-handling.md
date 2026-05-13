@@ -1,6 +1,6 @@
 # PII handling — single source of truth
 
-> **Last validated:** 2026-05-13 by Devin (child session). **Next review:** 2026-08-11.
+> **Last validated:** 2026-05-13 by Devin (child session — додано `sergeant-design/no-console-pii` lint-guard для DevTools/Sentry-breadcrumb leak vector). **Next review:** 2026-08-11.
 > **Status:** Active.
 > **Scope:** Server logs (Pino), Sentry payloads (server **and** web SDK),
 > Loki/Grafana retention, in-process error captures. Mobile/web log buffers — see
@@ -14,6 +14,16 @@
 > editing **one** file. Audit
 > [`docs/audits/2026-05-13-security-observability-roast.md`](../audits/2026-05-13-security-observability-roast.md) §P0-S1
 > captures the rationale for the consolidation.
+>
+> **Static-analysis guard (since 2026-05-13, audit §P0-S2):**
+> [`sergeant-design/no-console-pii`](../../packages/eslint-plugin-sergeant-design/README.md#sergeant-designno-console-pii)
+> — ESLint rule that fails CI on `console.{log,error,warn,info,debug}`
+> calls whose arguments reference PII-shaped strings or identifiers
+> (`email`, `phone`, `password`, `token`, `secret`, `cookie`, `authorization`,
+> `bearer`). Closes the breadcrumb-leak loop that `applyWebBeforeSend`
+> alone cannot — the `console`-integration in `@sentry/react` captures
+> the payload BEFORE `beforeSend` runs, so the static guard catches
+> the call-site instead.
 
 ## Чому цей документ існує
 

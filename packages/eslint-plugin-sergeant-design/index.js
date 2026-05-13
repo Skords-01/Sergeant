@@ -1288,6 +1288,229 @@ const noAnthropicKeyInLogs = {
   },
 };
 
+// ─── no-console-pii ─────────────────────────────────────────────────────
+//
+// Audit `docs/audits/2026-05-13-security-observability-roast.md` §S2 (P0).
+//
+// Flags `console.log/error/warn/info/debug` calls whose arguments reference
+// PII-shaped strings or identifiers. Browser `console.*` writes leak through
+// three independent channels at once:
+//
+//   1. DevTools console buffer — visible on any screen-share, recording or
+//      shoulder-surf;
+//   2. Sentry breadcrumbs — the `console`-integration is ON by default in
+//      `@sentry/react`, so the message survives into ingested events even
+//      after `applyWebBeforeSend` scrubs the request payload;
+//   3. Logpipe / vendor browser extensions — capture anything printed to
+//      the page console.
+//
+// The rule is purely syntactic — it cannot see runtime payload shapes — so
+// it focuses on the two patterns audit §6.5 keeps catching in code review:
+//
+//   a) Pre-formatted strings ("user email", `password is ${x}`, etc.) where
+//      the PII keyword is literally in the message;
+//   b) References whose IDENTIFIER name reveals PII shape (`email`,
+//      `event.password`, `user.token`, `{ token: …, secret: … }`).
+//
+// `options.allow` is a list of regex strings — if ANY argument's source text
+// matches one of them, the whole call is treated as an opt-out (rare:
+// dev-only diagnostic logs or analytics tags whose payload shape is already
+// scrubbed). Prefer wrapping the payload in `scrubPII(...)` from
+// `@sergeant/shared/lib/pii.ts` over adding to `allow`.
+//
+// BAD:
+//   console.log(`auth attempt for ${user.email}`);
+//   console.warn("password mismatch", payload);
+//   console.error({ token, secret });
+//   console.debug("authorization header:", req.headers.authorization);
+//
+// GOOD:
+//   console.log("auth attempt", { userId: user.id });
+//   console.warn("password mismatch");                  // no PII reference
+//   logger.error({ event: "auth.fail" }, "auth attempt");  // Pino + redact
+//   import { scrubPII } from "@sergeant/shared";
+//   console.debug("payload", scrubPII(payload));
+
+const PII_STRING_RE =
+  /\b(email|phone|password|token|secret|cookie|authorization|bearer)\b/i;
+// Identifier shapes — narrower than the string regex on purpose: a literal
+// "cookie" or "authorization" in a message is suspicious, but the same name
+// on an Express request (`req.cookies`, `req.headers.authorization`) is
+// already redacted by Pino and we don't want to double-flag every
+// helper that touches `req.cookies`.
+const PII_IDENT_RE = /\b(email|phone|password|token|secret)\b/i;
+
+const NO_CONSOLE_PII_MESSAGE =
+  "console.{log,error,warn,info,debug}() реферує PII-форму ({{matched}} у `{{snippet}}`). DevTools, Sentry console-breadcrumbs і Logpipe-екстеншни захоплюють ці аргументи навіть якщо backend redact-и їх викидають. Винеси payload через `scrubPII(...)` (`@sergeant/shared/lib/pii.ts`) або переключи на `logger.*` зі staged redact-paths. Якщо це справді dev-only діагностика — додай рядок у `options.allow` правила в `eslint.config.js`.";
+
+function isConsoleCallForPiiRule(callee) {
+  // Mirror of isConsoleLogCall above — duplicated locally so the rule stays
+  // self-contained if the surrounding helper is renamed/moved.
+  if (callee.type !== "MemberExpression" || callee.computed) return false;
+  if (
+    callee.property.type !== "Identifier" ||
+    !CONSOLE_METHODS.has(callee.property.name)
+  ) {
+    return false;
+  }
+  return (
+    callee.object.type === "Identifier" && callee.object.name === "console"
+  );
+}
+
+function getMemberPropName(node) {
+  if (!node || node.type !== "MemberExpression") return null;
+  if (node.computed) {
+    if (
+      node.property.type === "Literal" &&
+      typeof node.property.value === "string"
+    ) {
+      return node.property.value;
+    }
+    return null;
+  }
+  if (node.property.type === "Identifier") return node.property.name;
+  return null;
+}
+
+function findPiiInExpression(node, sourceCode) {
+  if (!node) return null;
+  if (node.type === "Identifier") {
+    const m = node.name.match(PII_IDENT_RE);
+    if (m) return { matched: m[0], snippet: sourceCode.getText(node) };
+    return null;
+  }
+  if (node.type === "MemberExpression") {
+    const prop = getMemberPropName(node);
+    if (prop) {
+      const m = prop.match(PII_IDENT_RE);
+      if (m) return { matched: m[0], snippet: sourceCode.getText(node) };
+    }
+    // Recurse into the object — `user.email.toLowerCase()` should still
+    // flag on `user.email` even though the outermost MemberExpression is
+    // `.toLowerCase`.
+    return findPiiInExpression(node.object, sourceCode);
+  }
+  if (node.type === "ObjectExpression") {
+    for (const prop of node.properties) {
+      if (prop.type !== "Property" || prop.computed) continue;
+      let keyName = null;
+      if (prop.key.type === "Identifier") keyName = prop.key.name;
+      else if (
+        prop.key.type === "Literal" &&
+        typeof prop.key.value === "string"
+      ) {
+        keyName = prop.key.value;
+      }
+      if (keyName) {
+        const m = keyName.match(PII_IDENT_RE);
+        if (m) return { matched: m[0], snippet: sourceCode.getText(prop) };
+      }
+    }
+    return null;
+  }
+  if (node.type === "CallExpression") {
+    // `user.email.toLowerCase()` — descend into the callee chain so the
+    // PII `email` member is still flagged when wrapped in a transform.
+    return findPiiInExpression(node.callee, sourceCode);
+  }
+  return null;
+}
+
+function findPiiInArgument(arg, sourceCode) {
+  if (!arg) return null;
+  // 1. Plain string literal
+  if (arg.type === "Literal" && typeof arg.value === "string") {
+    const m = arg.value.match(PII_STRING_RE);
+    if (m) return { matched: m[0], snippet: sourceCode.getText(arg) };
+    return null;
+  }
+  // 2. Template literal — scan both the static quasis and the
+  //    interpolated expressions.
+  if (arg.type === "TemplateLiteral") {
+    for (const quasi of arg.quasis) {
+      const cooked = quasi.value && quasi.value.cooked;
+      if (typeof cooked === "string") {
+        const m = cooked.match(PII_STRING_RE);
+        if (m) return { matched: m[0], snippet: sourceCode.getText(arg) };
+      }
+    }
+    for (const expr of arg.expressions) {
+      const found = findPiiInExpression(expr, sourceCode);
+      if (found) return found;
+    }
+    return null;
+  }
+  // 3. Identifier / member expression / object expression.
+  return findPiiInExpression(arg, sourceCode);
+}
+
+const noConsolePii = {
+  meta: {
+    type: "problem",
+    docs: {
+      description:
+        "Forbid console.{log,error,warn,info,debug}() arguments that reference PII-shaped strings or identifiers (email, phone, password, token, secret, cookie, authorization, bearer). Leaks via DevTools, Sentry console breadcrumbs and logger extensions.",
+    },
+    schema: [
+      {
+        type: "object",
+        properties: {
+          allow: {
+            type: "array",
+            items: { type: "string" },
+            uniqueItems: true,
+          },
+        },
+        additionalProperties: false,
+      },
+    ],
+    messages: { piiLeak: NO_CONSOLE_PII_MESSAGE },
+  },
+  create(context) {
+    const options = context.options[0] || {};
+    const allowPatterns = (options.allow || []).map((s) => new RegExp(s));
+
+    function argTextMatchesAllow(text) {
+      return allowPatterns.some((rx) => rx.test(text));
+    }
+
+    return {
+      CallExpression(node) {
+        if (!isConsoleCallForPiiRule(node.callee)) return;
+        if (!node.arguments || node.arguments.length === 0) return;
+
+        const sourceCode = context.sourceCode ?? context.getSourceCode();
+
+        // Call-level allow: if any argument's source text matches one of
+        // the regexes, treat the whole call as an opt-out marker. Keeps
+        // configuration small — one `^\[debug:dev-only\]` covers a whole
+        // file's logging tag without per-line eslint-disable comments.
+        for (const arg of node.arguments) {
+          const text = sourceCode.getText(arg);
+          if (argTextMatchesAllow(text)) return;
+        }
+
+        for (const arg of node.arguments) {
+          const found = findPiiInArgument(arg, sourceCode);
+          if (found) {
+            const snippet =
+              found.snippet.length > 80
+                ? found.snippet.slice(0, 77) + "..."
+                : found.snippet;
+            context.report({
+              node: arg,
+              messageId: "piiLeak",
+              data: { matched: found.matched, snippet },
+            });
+            return; // one report per call keeps output focused on the leak
+          }
+        }
+      },
+    };
+  },
+};
+
 // ─── no-strict-bypass ───────────────────────────────────────────────────
 //
 // PR-6.E — forbid new type-safety bypasses in production code:
@@ -3880,6 +4103,7 @@ const plugin = {
     "no-bigint-string": noBigintString,
     "rq-keys-only-from-factory": rqKeysOnlyFromFactory,
     "no-anthropic-key-in-logs": noAnthropicKeyInLogs,
+    "no-console-pii": noConsolePii,
     "no-raw-req-in-pino-log": noRawReqInPinoLog,
     "no-strict-bypass": noStrictBypass,
     "no-raw-dark-palette": noRawDarkPalette,
