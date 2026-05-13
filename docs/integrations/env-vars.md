@@ -550,6 +550,29 @@ PostHog для mobile FTUX activation funnel (парний до web — той �
 
 ---
 
+## 23. Telegram alert shipper (O4 / B.1)
+
+> Server-side env, читається у `apps/server/src/routes/internal/alerts.ts` лениво всередині `/api/internal/alerts/send` endpoint-у. Якщо не задано — endpoint повертає `503 telegram_not_configured`; решта `/alerts/*` ендпоінтів продовжує працювати (n8n flow OK).
+
+### `SERGEANT_ALERT_BOT_TOKEN` _(optional, required for `/alerts/send`)_
+
+Telegram bot-token для alert-бота. Той самий env-var, що його використовує OpenClaw broadcast (`apps/server/src/modules/openclaw/write-tools.ts`); єдиний bot обслуговує і операторні алерти, і broadcast-и. Format: `123456:ABC-DEF…`.
+
+Без цього env-var-а:
+
+- `/alerts/post` / `/alerts/ack` / `/alerts/escalate` / `/alerts/pending` — продовжують працювати (DB-only).
+- `/alerts/send` (O4 / B.1 dedup-шипер) — повертає `503 { error: "telegram_not_configured" }`.
+
+Виставляти на Railway prod-environment-і. У dev НЕ обовʼязково — n8n WF-и шлють alert-и напряму через `sendMessage`-HTTP-node-и, dedup pipeline увімкнеться лише після того, як n8n WF мігрують на `/api/internal/alerts/send`.
+
+### Dedup behaviour (server-side)
+
+Endpoint `/api/internal/alerts/send` приймає `dedupSignature` (stable hash, e.g. `wf-15:railway-deploy-failed:api`). Якщо в межах вікна (`windowMs`, default `600_000` ms = 10 хв) уже існує row з тим самим `(topic, dedup_signature)` — викликається `editMessageText` із counter-prefix `🔁 N× за 10 хв:\n<original>`. Інакше — фрешевий `sendMessage` + INSERT into `tg_alert_acks`. Fail-open: будь-яка DB/Telegram-помилка логуються `level=warn` через Pino + сесія fallback-ить на `sendMessage` (нове повідомлення замість edit-у). Edit-failure (e.g. `message_not_found`) → response action=`sent_after_edit_failure`.
+
+Реалізація: [`apps/server/src/modules/alerts/telegramShipper.ts`](../../apps/server/src/modules/alerts/telegramShipper.ts) + міграція [`060_tg_alert_acks_dedup_signature.sql`](../../apps/server/src/migrations/060_tg_alert_acks_dedup_signature.sql). Roadmap-контекст: [`docs/launch/tech/telegram-improvements-roadmap.md` §4.2](../launch/tech/telegram-improvements-roadmap.md), [`docs/planning/sprint-roadmap-q2q3-2026.md` §1.2 B.1](../planning/sprint-roadmap-q2q3-2026.md).
+
+---
+
 ## See also
 
 - [`/.env.example`](../../.env.example) — мінімальний `.env` для `pnpm dev`.
