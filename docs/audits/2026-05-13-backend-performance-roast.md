@@ -1,6 +1,6 @@
 # Прожарка #4/10: Backend & Performance (2026-05-13)
 
-> **Last validated:** 2026-05-13 by Devin (child session). **Next review:** 2026-08-11. **Status:** Active
+> **Last validated:** 2026-05-13 by Devin (P2-1 closed у follow-up PR: push env reads → env.ts, runtime getters, env-single-source budget 105 → 98). **Next review:** 2026-08-11. **Status:** Active
 
 ## Контекст
 
@@ -149,14 +149,23 @@ migration), поза скоупом цієї прожарки.
 
 ## P2 (DX, тести, документація)
 
-### P2-1. `push.ts` / `routes/push.ts` `process.env` reads (P2 з 2026-05-07-app-audit) ❌ Не в цьому PR
+### P2-1. `push.ts` / `routes/push.ts` `process.env` reads (P2 з 2026-05-07-app-audit) ✅ Closed (follow-up PR)
 
-- **Files:** [`apps/server/src/modules/push/push.ts:36-49,268-273`](../../apps/server/src/modules/push/push.ts), [`apps/server/src/routes/push.ts:87`](../../apps/server/src/routes/push.ts#L87).
-- **Why виносимо:** module-load-time const-reads (`VAPID_PUBLIC`,
-  `VAPID_PRIVATE`) — будь-яке переписування на `env`-import зачіпає 15+
-  testів, які паттерн-патчать `process.env["VAPID_*"]` між it-блоками.
-  Запропоновано як окрема прожарка (`refactor(server): centralize push
-env reads through env.ts`).
+- **Files:** [`apps/server/src/modules/push/push.ts`](../../apps/server/src/modules/push/push.ts), [`apps/server/src/routes/push.ts`](../../apps/server/src/routes/push.ts), [`apps/server/src/env/env.ts`](../../apps/server/src/env/env.ts).
+- **Resolution:** module-load const-и `VAPID_PUBLIC` / `VAPID_PRIVATE`
+  замінено на runtime-getter-и (`isVapidReady()`, `ensureVapidConfigured()`,
+  `resolveVapidEmail()`), які читають Zod-валідований `env`-singleton.
+  `webpush.setVapidDetails(...)` тепер lazy + memoized per triplet, тож
+  test-патчі `process.env.VAPID_*` + `vi.resetModules()` (або direct
+  `Object.defineProperty(env, ...)` через `patchEnv` pattern) працюють
+  без module-load latch-у. `PUSH_SEND_TARGET_LIMIT` /
+  `PUSH_SEND_TARGET_WINDOW_MS` / `PUSH_INTERNAL_ALLOWED_IPS` додано у
+  Zod-схему (positive int з `.catch(default)` toleration для legacy
+  invalid-string semantic). `tech-debt/env-single-source-budget.json`
+  опущено `105 → 98` (-7 reads). Tests у
+  `apps/server/src/modules/push/push.test.ts` — `resolveVapidEmail`
+  describe тепер ресет-ить модулі у `beforeEach` (handler-describe вже
+  робив це).
 
 ### P2-2. `obs/tracing.ts` `process.env` reads (через дефолтний argument) ❌ Тут не торкаємось
 
@@ -208,25 +217,31 @@ env reads through env.ts`).
 
 ## Прогрес виконання (закрито в цьому PR)
 
-| Тег  | Опис                                                           | Файли                                                                        | Δ LOC    |
-| ---- | -------------------------------------------------------------- | ---------------------------------------------------------------------------- | -------- |
-| P1-1 | `parseBody`/`parseQuery` throw-based validation helpers        | `apps/server/src/http/validate.ts`, `http/index.ts`, `http/validate.test.ts` | ~80      |
-| P1-2 | `errorHandler` surfaces `cause.details` для 4xx                | `apps/server/src/http/errorHandler.ts`, `http/errorHandler.test.ts`          | ~50      |
-| P1-3 | `GET /metrics` token-check → `safeStringEqual` (constant-time) | `apps/server/src/obs/metrics.ts`, `obs/metrics.test.ts`                      | ~50      |
-| P1-4 | Route registry — 3 нові інваріантні тести                      | `apps/server/src/routes/registerRoutes.test.ts`                              | ~50      |
-| P1-5 | Документація `app_build_info` у metrics.md §15a                | `docs/observability/metrics.md`                                              | ~40      |
-| P1-6 | `obs/metrics.ts` мігровано на `env.ts` reads + нові env-keys   | `apps/server/src/env/env.ts`, `obs/metrics.ts`                               | ~25      |
-|      |                                                                | **Всього**                                                                   | **~295** |
+| Тег  | Опис                                                                                    | Файли                                                                                                                                                                                           | Δ LOC    |
+| ---- | --------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| P1-1 | `parseBody`/`parseQuery` throw-based validation helpers                                 | `apps/server/src/http/validate.ts`, `http/index.ts`, `http/validate.test.ts`                                                                                                                    | ~80      |
+| P1-2 | `errorHandler` surfaces `cause.details` для 4xx                                         | `apps/server/src/http/errorHandler.ts`, `http/errorHandler.test.ts`                                                                                                                             | ~50      |
+| P1-3 | `GET /metrics` token-check → `safeStringEqual` (constant-time)                          | `apps/server/src/obs/metrics.ts`, `obs/metrics.test.ts`                                                                                                                                         | ~50      |
+| P1-4 | Route registry — 3 нові інваріантні тести                                               | `apps/server/src/routes/registerRoutes.test.ts`                                                                                                                                                 | ~50      |
+| P1-5 | Документація `app_build_info` у metrics.md §15a                                         | `docs/observability/metrics.md`                                                                                                                                                                 | ~40      |
+| P1-6 | `obs/metrics.ts` мігровано на `env.ts` reads + нові env-keys                            | `apps/server/src/env/env.ts`, `obs/metrics.ts`                                                                                                                                                  | ~25      |
+| P2-1 | `push.ts` / `routes/push.ts` → `env.ts` (runtime getters + lazy webpush) — follow-up PR | `apps/server/src/modules/push/push.ts`, `apps/server/src/routes/push.ts`, `apps/server/src/env/env.ts`, `apps/server/src/modules/push/push.test.ts`, `.tech-debt/env-single-source-budget.json` | ~60      |
+|      |                                                                                         | **Всього**                                                                                                                                                                                      | **~355** |
 
-Файлів змінено: **9** (`apps/server/src/http/{validate,index,validate.test,errorHandler,errorHandler.test}.ts`,
+Файлів змінено: **9** у первинному PR (`apps/server/src/http/{validate,index,validate.test,errorHandler,errorHandler.test}.ts`,
 `apps/server/src/obs/{metrics,metrics.test}.ts`,
 `apps/server/src/env/env.ts`, `apps/server/src/routes/registerRoutes.test.ts`,
-`docs/observability/metrics.md`, `docs/audits/README.md` + цей файл).
+`docs/observability/metrics.md`, `docs/audits/README.md` + цей файл) +
+**5** у follow-up PR для P2-1 (`apps/server/src/modules/push/push.ts`,
+`apps/server/src/routes/push.ts`, `apps/server/src/env/env.ts`,
+`apps/server/src/modules/push/push.test.ts`,
+`.tech-debt/env-single-source-budget.json` + оновлення цього доку
+
+- `docs/audits/README.md`).
 
 ## Все, що НЕ зайшло в PR (виноситься у наступну прожарку)
 
 - **P0+** `chore(db-schema): drop umbrella ./migrate export` — потрібен у mobile-фокусній прожарці.
-- **P2** Migration `push.ts` / `routes/push.ts` `process.env` reads → `env.ts` — окремий PR через 15+ test-патчів.
 - **P2** `obs/tracing.ts` env-injection refactor — обговорюємо, чи лишити DI-pattern.
 - **P2** SQLite `sync_op_outbox` no-such-table fix — Stage 8/9 (інша ініціатива).
 - **P2** Documentation gap у `metrics.md` §6 (AI-token join-pattern) — окремий cosmetic PR.

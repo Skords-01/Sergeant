@@ -26,6 +26,12 @@ describe("resolveVapidEmail", () => {
   const originalEnv = { ...process.env };
 
   beforeEach(() => {
+    // `push.ts` тепер читає `env.VAPID_*` / `env.NODE_ENV` через
+    // Zod-валідований singleton (`apps/server/src/env/env.ts`), а не
+    // `process.env` напряму. Щоб кожен it-блок отримав свіжий env-snapshot,
+    // ресет-имо модулі — наступний `await import("./push.js")` пере-evaluates
+    // і env.ts, який пере-parsить `process.env` із поточними патчами.
+    vi.resetModules();
     loggerMock.error.mockReset();
     process.env = { ...originalEnv };
   });

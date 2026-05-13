@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import webpush from "web-push";
 import pool from "../../db.js";
+import { env } from "../../env.js";
 import { sendWebPush } from "../../lib/webpushSend.js";
 import { logger } from "../../obs/logger.js";
 import { pushSendsTotal } from "../../obs/metrics.js";
@@ -33,20 +34,22 @@ function recordDomainOutcome(outcome: string): void {
   }
 }
 
-const VAPID_PUBLIC = process.env["VAPID_PUBLIC_KEY"];
-const VAPID_PRIVATE = process.env["VAPID_PRIVATE_KEY"];
-
 /**
  * Resolve the VAPID contact. Some push services downgrade or drop requests
  * from unroutable addresses (example.com), so in production we require a
  * real `VAPID_EMAIL` rather than silently shipping a bogus default. In
  * non-prod we keep the placeholder to avoid breaking local dev when only
  * the keys are configured.
+ *
+ * Reads through the Zod-validated `env` singleton (PR-01 phase 2 burn-down,
+ * `2026-05-13-backend-performance-roast.md` § P2-1). Runtime call so tests
+ * can patch `env.VAPID_EMAIL` / `env.NODE_ENV` (or `process.env` + a module
+ * reset) between it-блоками without a module-load latch.
  */
 export function resolveVapidEmail(): string | null {
-  const raw = process.env["VAPID_EMAIL"]?.trim();
+  const raw = env.VAPID_EMAIL?.trim();
   if (raw) return raw.startsWith("mailto:") ? raw : `mailto:${raw}`;
-  if (process.env["NODE_ENV"] === "production") {
+  if (env.NODE_ENV === "production") {
     logger.error({
       msg: "vapid_email_missing",
       hint: "Set VAPID_EMAIL (e.g. mailto:admin@your-domain) to avoid push deliverability issues",
@@ -56,25 +59,52 @@ export function resolveVapidEmail(): string | null {
   return "mailto:admin@example.com";
 }
 
-const VAPID_EMAIL = resolveVapidEmail();
+/**
+ * All three pieces (public, private, contact) must be present for webpush
+ * to work. Any handler that would otherwise touch `webpush.*` must
+ * short-circuit on this getter — otherwise `sendNotification` throws deep
+ * inside the library and push sends silently fail with `outcome: "error"`.
+ *
+ * Implemented as a runtime function (not a module-load const) so the same
+ * push module survives env mutations between vitest it-блоками: tests
+ * either swap `env.VAPID_*` via `Object.defineProperty` (the established
+ * `patchEnv` pattern in `apps/server/src`) or reset modules and re-import.
+ */
+export function isVapidReady(): boolean {
+  return Boolean(
+    env.VAPID_PUBLIC_KEY && env.VAPID_PRIVATE_KEY && resolveVapidEmail(),
+  );
+}
 
-// All three pieces must be present for webpush to work. Any handler that
-// would otherwise touch `webpush.*` must short-circuit on this flag,
-// otherwise `sendNotification` throws deep inside the library and push
-// sends silently fail with `outcome: "error"`.
-const vapidReady = Boolean(VAPID_PUBLIC && VAPID_PRIVATE && VAPID_EMAIL);
-
-if (vapidReady) {
-  webpush.setVapidDetails(VAPID_EMAIL!, VAPID_PUBLIC!, VAPID_PRIVATE!);
+/**
+ * `web-push` stores VAPID details in module-level state. We configure
+ * lazily (first time a handler observes a ready triplet) instead of at
+ * module-load so env-overrides applied after the import — including
+ * test patches — propagate without forcing every caller to reset
+ * modules. Memoized per triplet so repeated handler calls do not redo
+ * the library-internal validation work.
+ */
+let vapidConfiguredFor: string | null = null;
+function ensureVapidConfigured(): boolean {
+  const pub = env.VAPID_PUBLIC_KEY;
+  const priv = env.VAPID_PRIVATE_KEY;
+  const email = resolveVapidEmail();
+  if (!pub || !priv || !email) return false;
+  const key = `${email}\u0000${pub}\u0000${priv}`;
+  if (vapidConfiguredFor !== key) {
+    webpush.setVapidDetails(email, pub, priv);
+    vapidConfiguredFor = key;
+  }
+  return true;
 }
 
 /** GET /api/push/vapid-public — повертає публічний VAPID ключ для підписки. */
 export async function vapidPublic(_req: Request, res: Response): Promise<void> {
-  if (!vapidReady) {
+  if (!ensureVapidConfigured()) {
     res.status(503).json({ error: "Push not configured" });
     return;
   }
-  res.json({ publicKey: VAPID_PUBLIC });
+  res.json({ publicKey: env.VAPID_PUBLIC_KEY });
 }
 
 /**
@@ -91,7 +121,7 @@ export async function vapidPublic(_req: Request, res: Response): Promise<void> {
  * deploy-у session-4c (коли метрика legacy-виклику спаде до 0).
  */
 export async function subscribe(req: Request, res: Response): Promise<void> {
-  if (!vapidReady) {
+  if (!ensureVapidConfigured()) {
     res.status(503).json({ error: "Push not configured" });
     return;
   }
@@ -145,7 +175,7 @@ export async function register(req: Request, res: Response): Promise<void> {
   const data = parsed.data;
 
   if (data.platform === "web") {
-    if (!vapidReady) {
+    if (!ensureVapidConfigured()) {
       res.status(503).json({ error: "Push not configured" });
       return;
     }
@@ -264,17 +294,16 @@ interface PushSubscriptionRow {
  * incident response (raise during a legitimate broadcast, lower during
  * abuse), but the defaults match the hardening spec.
  */
-const PUSH_SEND_TARGET_LIMIT = (() => {
-  const raw = Number.parseInt(process.env["PUSH_SEND_TARGET_LIMIT"] ?? "", 10);
-  return Number.isFinite(raw) && raw > 0 ? raw : 10;
-})();
-const PUSH_SEND_TARGET_WINDOW_MS = (() => {
-  const raw = Number.parseInt(
-    process.env["PUSH_SEND_TARGET_WINDOW_MS"] ?? "",
-    10,
-  );
-  return Number.isFinite(raw) && raw > 0 ? raw : 60_000;
-})();
+// `env.PUSH_SEND_TARGET_*` уже валідовані Zod-схемою (positive int з
+// `.catch()` на legacy-лояльний fallback до default-у). Тримаємо їх як
+// геттери, а не module-load const-и, щоб vitest-патчі `env` між
+// it-блоками не залишали стейл-значення на handler-call-сайті.
+function pushSendTargetLimit(): number {
+  return env.PUSH_SEND_TARGET_LIMIT;
+}
+function pushSendTargetWindowMs(): number {
+  return env.PUSH_SEND_TARGET_WINDOW_MS;
+}
 
 /**
  * POST /api/push/send — надіслати push конкретному користувачу (внутрішній API).
@@ -298,7 +327,7 @@ const PUSH_SEND_TARGET_WINDOW_MS = (() => {
  *      itself races the response.
  */
 export async function sendPush(req: Request, res: Response): Promise<void> {
-  if (!vapidReady) {
+  if (!ensureVapidConfigured()) {
     res.status(503).json({ error: "Push not configured" });
     return;
   }
@@ -312,8 +341,8 @@ export async function sendPush(req: Request, res: Response): Promise<void> {
   // `push:target:<userId>` is independent of the per-caller `api:push`
   // bucket attached on the router.
   const rl = await getPerTargetRateLimit("push:target", userId, {
-    limit: PUSH_SEND_TARGET_LIMIT,
-    windowMs: PUSH_SEND_TARGET_WINDOW_MS,
+    limit: pushSendTargetLimit(),
+    windowMs: pushSendTargetWindowMs(),
   });
   if (!rl.ok) {
     try {

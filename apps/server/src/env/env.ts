@@ -471,6 +471,33 @@ const envSchema = z.object({
   VAPID_PUBLIC_KEY: z.string().optional(),
   VAPID_PRIVATE_KEY: z.string().optional(),
   VAPID_EMAIL: z.string().optional(),
+  /**
+   * Per-target rate limit для `/api/push/send` (hardening item M14).
+   * Кеп `N` повідомлень на recipient у вікні `PUSH_SEND_TARGET_WINDOW_MS`
+   * навіть для валідних внутрішніх caller-ів, щоб скомпрометований worker
+   * не міг закрутити одного юзера у notification-флуд. `.catch(10)`
+   * толерує "0"/"-5"/"foo" як invalid → fallback на default (legacy
+   * semantic з inline IIFE у push.ts).
+   */
+  PUSH_SEND_TARGET_LIMIT: z.coerce
+    .number()
+    .int()
+    .positive()
+    .catch(10)
+    .default(10),
+  PUSH_SEND_TARGET_WINDOW_MS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .catch(60_000)
+    .default(60_000),
+  /**
+   * Operator-supplied CIDR/IP allowlist для `/api/push/send`
+   * (hardening item M14). Comma-or-newline-separated. Loopback
+   * включається implicit-но усередині `requireInternalIp` — порожнє
+   * значення fail-open у non-prod і fail-closed у production.
+   */
+  PUSH_INTERNAL_ALLOWED_IPS: stringWithDefault(""),
   /** Base64-encoded APNs .p8 key file content. */
   APNS_P8_KEY: z.string().optional(),
   APNS_KEY_ID: z.string().optional(),
