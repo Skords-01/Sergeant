@@ -26,6 +26,7 @@ import {
   APPLY_REJECT_REASONS,
   ENGINE_REJECT_REASONS,
 } from "../modules/sync/syncV2.js";
+import { env } from "../env/env.js";
 
 describe("metrics registry — `app_build_info` gauge", () => {
   it("реєструється у спільному `register`-і з ім'ям `app_build_info`", () => {
@@ -265,3 +266,4 @@ describe("metricsHandler — bearer token (T2 audit #4)", () => {
     );
   });
 });
+
