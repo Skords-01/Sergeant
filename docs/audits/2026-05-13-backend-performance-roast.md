@@ -1,6 +1,7 @@
 # Прожарка #4/10: Backend & Performance (2026-05-13)
 
-> **Last validated:** 2026-05-13 by Devin (P2-1 closed у follow-up PR: push env reads → env.ts, runtime getters, env-single-source budget 105 → 98). **Next review:** 2026-08-11. **Status:** Active
+> **Last validated:** 2026-05-13 by Devin (P2-1 closed у follow-up PR: push env reads → env.ts, runtime getters, env-single-source budget 105 → 98). **Next review:** 2026-08-11.
+> **Status:** Active
 
 ## Контекст
 

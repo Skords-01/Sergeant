@@ -1,6 +1,6 @@
 # Sergeant — Спринтовий роадмап Q2–Q3 2026
 
-> **Last validated:** 2026-05-13 19:30 UTC by Devin (T2/T3/T6/T10/O6/O7 закриті). **Next review:** 2026-07-01.
+> **Last validated:** 2026-05-13 by Devin (child session — T5 closed: `.github/workflows/lighthouse-ci.yml` shipped; T2/T3/T6/T10/O6/O7 закриті раніше). **Next review:** 2026-07-01.
 > **Status:** Active — усі Wave-2/3 задачи верифіковані на предмет залежностей та PR-статусу
 
 > Єдиний спринтовий трекер платформи Sergeant: продуктові фічі + технічний борг.
@@ -27,17 +27,17 @@
 
 Повний контекст і деталі реалізації — у [`2026-04-28-implementation-roadmap.md`](../audits/2026-04-28-implementation-roadmap.md).
 
-**Останнє оновлення:** 2026-05-13 19:30 UTC — синхронізовано з main після T2/T3/T6/T10/O6/O7 close-out.
+**Останнє оновлення:** 2026-05-13 — T5 closed (Lighthouse CI workflow shipped); раніше в цей день синхронізовано з main після T2/T3/T6/T10/O6/O7 close-out.
 
-| ID  | Задача                             | Деталь                                                                     | Статус                                                                                                                                                                        |
-| --- | ---------------------------------- | -------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| T1  | HubDashboard decomposition         | `HubDashboard.tsx` 837 → 115 LOC                                           | ✅ Done ([`61e0093f`](https://github.com/Skords-01/Sergeant/commit/61e0093f), Sprint 5)                                                                                       |
-| T2  | Capacitor boundary tests           | 0 тестів → 10+ у `apps/mobile-shell`                                       | ❌ Не почато (Sprint 7)                                                                                                                                                       |
-| T3  | Великі файли (батч 3)              | `Workouts.tsx` 744→213, `LogCard.tsx` 736→216, `NutritionApp.tsx` 728→<250 | ✅ Done ([`52624c67`](https://github.com/Skords-01/Sergeant/commit/52624c67) NutritionApp; [PR #2530](https://github.com/Skords-01/Sergeant/pull/2530) Workouts+LogCard)      |
-| T4  | Bundle size                        | 856 KB (brotli) → 870 KB ceiling; eager-only 374→342 kB (T4-A+B)           | 🚧 T4-A shipped (lazy WelcomeScreen+OnboardingWizard, `onboardingGate` thin barrel). T4-B partial: react-markdown → inline parser (−30 kB total). Continued cuts → Sprint 10. |
-| T5  | Lighthouse CI                      | LCP < 2.0s у CI, error на LCP > 3.0s                                       | 🚧 First pass shipped (warn-only) — `.github/workflows/lighthouse-ci.yml` (planned workflow file). Tightening → error follow-up.                                              |
-| T6  | Backend dedup verification         | `pantry → prompt-builders.ts` consolidation                                | ⏳ Очікує Sprint 8                                                                                                                                                            |
-| T7  | Mobile flaky tests CI verification | `isReduceMotionEnabled` pattern fixed (PR #2453)                           | 🚧 Verification job shipped — [`.github/workflows/mobile-flaky-verify.yml`](../../.github/workflows/mobile-flaky-verify.yml). Baseline: чекає на перший 20-run pass.          |
+| ID  | Задача                             | Деталь                                                                     | Статус                                                                                                                                                                                                      |
+| --- | ---------------------------------- | -------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| T1  | HubDashboard decomposition         | `HubDashboard.tsx` 837 → 115 LOC                                           | ✅ Done ([`61e0093f`](https://github.com/Skords-01/Sergeant/commit/61e0093f), Sprint 5)                                                                                                                     |
+| T2  | Capacitor boundary tests           | 0 тестів → 10+ у `apps/mobile-shell`                                       | ❌ Не почато (Sprint 7)                                                                                                                                                                                     |
+| T3  | Великі файли (батч 3)              | `Workouts.tsx` 744→213, `LogCard.tsx` 736→216, `NutritionApp.tsx` 728→<250 | ✅ Done ([`52624c67`](https://github.com/Skords-01/Sergeant/commit/52624c67) NutritionApp; [PR #2530](https://github.com/Skords-01/Sergeant/pull/2530) Workouts+LogCard)                                    |
+| T4  | Bundle size                        | 856 KB (brotli) → 870 KB ceiling; eager-only 374→342 kB (T4-A+B)           | 🚧 T4-A shipped (lazy WelcomeScreen+OnboardingWizard, `onboardingGate` thin barrel). T4-B partial: react-markdown → inline parser (−30 kB total). Continued cuts → Sprint 10.                               |
+| T5  | Lighthouse CI                      | LCP < 2.0s у CI, error на LCP > 3.0s                                       | ✅ First pass shipped (warn-only) — [`.github/workflows/lighthouse-ci.yml`](../../.github/workflows/lighthouse-ci.yml) (2026-05-13). Tightening LCP `warn` → `error` 3000 ms — baseline-gathered follow-up. |
+| T6  | Backend dedup verification         | `pantry → prompt-builders.ts` consolidation                                | ⏳ Очікує Sprint 8                                                                                                                                                                                          |
+| T7  | Mobile flaky tests CI verification | `isReduceMotionEnabled` pattern fixed (PR #2453)                           | 🚧 Verification job shipped — [`.github/workflows/mobile-flaky-verify.yml`](../../.github/workflows/mobile-flaky-verify.yml). Baseline: чекає на перший 20-run pass.                                        |
 
 ### 1.2. Продуктові задачі (відкриті)
 
@@ -47,7 +47,7 @@
 | --- | ------------------------------------------------------------- | ---------------------- | ----- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | O1  | Phase 2.A: Ранкова повістка 08:30 Kyiv                        | openclaw §Phase 2      | W2    | M      | 🚧 Partial — cron live (Stage 5d, [`b187bfaf`](https://github.com/Skords-01/Sergeant/commit/b187bfaf)); повний LLM-ritual з MRR/signups/PR-queue/proposal — не зашиплено |
 | O2  | C.2: Sentry breadcrumbs у tool-calls                          | tg-improvements §4.3   | W2    | XS     | ✅ Done ([PR #2504](https://github.com/Skords-01/Sergeant/pull/2504), `284cf7cd`, Sprint 5)                                                                              |
-| O3  | Phase 2.B: Friday weekly + monthly OKR                        | openclaw §Phase 2      | W3    | M      | ⏳ Очікує Sprint 6                                                                                                                                                       |
+| O3  | Phase 2.B: Friday weekly + monthly OKR                        | openclaw §Phase 2      | W3    | M      | 🚧 First pass shipped — endpoints + n8n WF-27/28 готові, активуй cron-и після OPENCLAW_BOT_TOKEN на n8n Railway                                                          |
 | O4  | B.1: Alert dedup / occurrence-counter (10-min window)         | tg-improvements §4.2   | W3    | M      | ⏳ Очікує Sprint 6                                                                                                                                                       |
 | O5  | W3 PR-3: `/alerts pending` slash-команда                      | tg-improvements §3.2   | W3    | S      | ✅ Done ([PR #2507](https://github.com/Skords-01/Sergeant/pull/2507), `9ad0e272`, Sprint 5)                                                                              |
 | O6  | W4.1: bootstrap setWebhook poll-and-retry hardening           | tg-improvements §3.5.1 | W4    | XS     | ✅ Done ([PR #2531](https://github.com/Skords-01/Sergeant/pull/2531), `49d5c846`)                                                                                        |
@@ -175,7 +175,7 @@
 
 ### Задачі
 
-#### O3: Friday weekly review + monthly OKR (Phase 2.B) `Продукт` `M`
+#### O3: Friday weekly review + monthly OKR (Phase 2.B) `Продукт` `M` 🚧 First pass shipped
 
 **Що:**
 
@@ -185,11 +185,19 @@
 
 **Acceptance:**
 
-- [ ] П'ятниця 18:00 — DM weekly review
-- [ ] 1-го числа 09:00 — DM monthly OKR review
-- [ ] Broadcast у `📊 Дайджести` при weekly і monthly review
+- [x] П'ятниця 18:00 — DM weekly review (endpoint `POST /api/internal/openclaw/ritual/weekly` + n8n WF-28 cron `0 18 * * 5 Europe/Kyiv`; markdown via LLMProvider claude-sonnet-4-6 з StubProvider fallback)
+- [x] 1-го числа 09:00 — DM monthly OKR review (endpoint `POST /api/internal/openclaw/ritual/monthly` + n8n WF-27 cron `0 9 1 * * Europe/Kyiv`; INTERIM_OKRS hardcoded як fallback — PR-34 strategic_goals DB-table merged, follow-up може замінити на DB-query)
+- [ ] Broadcast у `📊 Дайджести` topic (зараз — DM founder; topic broadcast — окремий follow-up)
+- [ ] Активація на n8n Railway після `OPENCLAW_BOT_TOKEN` + `OPENCLAW_FOUNDER_TG_USER_ID` + `LLM_DIGEST_PROVIDER` сетапу
 
-**Пов'язане:** [openclaw-roadmap §Phase 2](../launch/tech/openclaw-roadmap.md), ADR-0039
+**Реалізація:**
+
+- Server endpoints: `apps/server/src/modules/openclaw/weekly-review/` + `monthly-okr/`.
+- n8n workflows: `ops/n8n-workflows/28-weekly-review-cron.json` + `27-monthly-okr-cron.json` (slot 26 зайняв PR-34 strategic_weekly cron).
+- Hardcoded OKRs: `apps/server/src/modules/openclaw/monthly-okr/okrs.ts` (3 quarters: foundation-Q2-2026, reliability-Q2-2026, growth-Q3-2026). Treat as interim while PR-34 strategic_goals DB-table is in flight.
+- Тести: weekly-review 21 unit tests (template + builder); monthly-okr 21 unit tests.
+
+**Пов'язане:** [openclaw-roadmap §Phase 2](../launch/tech/openclaw-roadmap.md), ADR-0039, PR-26 (morning briefing reference), PR-23 LLMProvider, PR-25 StubProvider fallback pattern
 
 ---
 
@@ -398,18 +406,19 @@ apps/web/src/core/hub/
 
 ---
 
-#### T5: Lighthouse CI `Tech` `S` 🚧 First pass shipped
+#### T5: Lighthouse CI `Tech` `S` ✅ First pass shipped
 
 **Що:**
 
 - Config: [`apps/web/lighthouserc.json`](../../apps/web/lighthouserc.json)
-- Workflow: `.github/workflows/lighthouse-ci.yml` (planned workflow file; без `treosh/lighthouse-ci-action`; прямо `@lhci/cli` як devDep в `apps/web` — уникаємо додаткового SHA-pin-у).
+- Workflow: [`.github/workflows/lighthouse-ci.yml`](../../.github/workflows/lighthouse-ci.yml) (додано 2026-05-13 через follow-up child Devin session; без `treosh/lighthouse-ci-action`; прямо `@lhci/cli` як devDep в `apps/web` — уникаємо додаткового SHA-pin-у).
 - Routes аудитуються: `/`, `/finyk`, `/fizruk`, `/routine`, `/nutrition` (`/` = Hub; окремого `/hub` немає).
 - 3 runs/URL, median-run aggregation.
 
 **Acceptance:**
 
 - [x] First pass shipped: warn-only assertions (LCP ≤2000, FCP ≤1500, TBT ≤200).
+- [x] Workflow-файл приземлений у `.github/workflows/lighthouse-ci.yml` (P1.2 з `docs/audits/2026-05-13-dead-code-hard-rules-roast.md`).
 - [ ] Baseline gathered (≥2 PR-runs в `temporary-public-storage`) → tighten LCP до `error` на 3000 ms.
 - [ ] PR блокується якщо LCP > 3.0s (після tightening + branch-protection flip).
 

@@ -8,6 +8,7 @@
       "riskTier": "P0",
       "telegramTopic": "revenue",
       "audienceTier": "P0",
+      "hmacSigned": false,
       "requiredEnv": [
         "TELEGRAM_ALERT_CHAT_ID",
         "TELEGRAM_TOPIC_REVENUE",
@@ -26,6 +27,7 @@
       "riskTier": "P0",
       "telegramTopic": "revenue",
       "audienceTier": "P0",
+      "hmacSigned": false,
       "requiredEnv": [
         "TELEGRAM_ALERT_CHAT_ID",
         "TELEGRAM_TOPIC_REVENUE",
@@ -45,6 +47,7 @@
       "riskTier": "P1",
       "telegramTopic": "incidents",
       "audienceTier": "P1",
+      "hmacSigned": false,
       "requiredEnv": [
         "TELEGRAM_ALERT_CHAT_ID",
         "TELEGRAM_TOPIC_INCIDENTS",
@@ -60,6 +63,7 @@
       "riskTier": "P1",
       "telegramTopic": "ops",
       "audienceTier": "P1",
+      "hmacSigned": false,
       "requiredEnv": [
         "RAILWAY_TOKEN",
         "RAILWAY_PROJECT_ID",
@@ -81,6 +85,7 @@
       "riskTier": "P1",
       "telegramTopic": "engineering",
       "audienceTier": "P1",
+      "hmacSigned": false,
       "requiredEnv": [
         "GITHUB_TOKEN",
         "TELEGRAM_ALERT_CHAT_ID",
@@ -97,6 +102,7 @@
       "riskTier": "P1",
       "telegramTopic": "revenue",
       "audienceTier": "P1",
+      "hmacSigned": false,
       "requiredEnv": [
         "TELEGRAM_ALERT_CHAT_ID",
         "TELEGRAM_TOPIC_REVENUE",
@@ -126,6 +132,7 @@
       "riskTier": "P2",
       "telegramTopic": "digest",
       "audienceTier": "P2",
+      "hmacSigned": false,
       "requiredEnv": [
         "TELEGRAM_ALERT_CHAT_ID",
         "TELEGRAM_TOPIC_DIGEST",
@@ -173,6 +180,7 @@
       "riskTier": "P2",
       "telegramTopic": "ops|incidents",
       "audienceTier": "P2",
+      "hmacSigned": false,
       "requiredEnv": [
         "TELEGRAM_ALERT_CHAT_ID",
         "TELEGRAM_TOPIC_OPS",
@@ -189,6 +197,7 @@
       "riskTier": "P2",
       "telegramTopic": "growth",
       "audienceTier": "P2",
+      "hmacSigned": false,
       "requiredEnv": [
         "POSTHOG_PROJECT_ID",
         "POSTHOG_API_KEY",
@@ -207,6 +216,7 @@
       "riskTier": "P2",
       "telegramTopic": "engineering",
       "audienceTier": "P2",
+      "hmacSigned": false,
       "requiredEnv": [
         "GITHUB_PAT",
         "TELEGRAM_ALERT_CHAT_ID",
@@ -223,6 +233,7 @@
       "riskTier": "P1",
       "telegramTopic": "incidents",
       "audienceTier": "P1",
+      "hmacSigned": false,
       "requiredEnv": [
         "GITHUB_PAT",
         "TELEGRAM_ALERT_CHAT_ID",
@@ -239,6 +250,7 @@
       "riskTier": "P1",
       "telegramTopic": "ops",
       "audienceTier": "P1",
+      "hmacSigned": false,
       "requiredEnv": [
         "TELEGRAM_ALERT_CHAT_ID",
         "TELEGRAM_TOPIC_OPS",
@@ -267,6 +279,7 @@
       "riskTier": "P2",
       "telegramTopic": "dm",
       "audienceTier": "P2",
+      "hmacSigned": false,
       "requiredEnv": [
         "PUBLIC_API_BASE_URL",
         "INTERNAL_API_KEY",
@@ -282,6 +295,7 @@
       "riskTier": "P2",
       "telegramTopic": "dm",
       "audienceTier": "P2",
+      "hmacSigned": false,
       "requiredEnv": [
         "PUBLIC_API_BASE_URL",
         "INTERNAL_API_KEY",
@@ -290,12 +304,45 @@
       "requiredCredentials": [],
       "notes": "PR-34 (pr-plan-2026-05) strategic mode skeleton. Weekly Mon 09:00 Kyiv → fan-out across 4 personas (finyk/fizruk/nutrition/routine) → POST /api/internal/strategic/weekly-checkin для кожної; кожен запит INSERT-ить placeholder-goal у `strategic_goals` (migration 062). Поки що — лише datalayer marker, без LLM conversation. Activate after STRATEGIC_FOUNDER_USER_ID set on n8n Railway (Better Auth opaque founder ID). PR-35+ replace placeholder з real planning conversation."
     },
+    "27-monthly-okr-cron.json": {
+      "owner": "ops",
+      "status": "experimental",
+      "riskTier": "P2",
+      "telegramTopic": "dm",
+      "audienceTier": "P2",
+      "hmacSigned": false,
+      "requiredEnv": [
+        "PUBLIC_API_BASE_URL",
+        "INTERNAL_API_KEY",
+        "OPENCLAW_BOT_TOKEN",
+        "OPENCLAW_FOUNDER_TG_USER_ID"
+      ],
+      "requiredCredentials": [],
+      "notes": "1st of month 09:00 Kyiv → POST /api/internal/openclaw/ritual/monthly (O3 Phase 2.B; 4 sections: narrative / OKR progress per KR / monthly wins / risks & blockers) → POST /api/internal/webhook-events/record + DM founder. Reporting month = previous calendar month. OKR-список — INTERIM_OKRS hardcoded (apps/server/src/modules/openclaw/monthly-okr/okrs.ts) як fallback; PR-34 strategic_goals DB-table (migration 062) merged — наступний follow-up може замінити INTERIM_OKRS на DB-query. Wins/risks через GitHub closed PRs (30d window) + Sentry unresolved + stale open PRs (>30d). LLM narrative — claude-sonnet-4-6 з StubProvider fallback."
+    },
+    "28-weekly-review-cron.json": {
+      "owner": "ops",
+      "status": "experimental",
+      "riskTier": "P2",
+      "telegramTopic": "dm",
+      "audienceTier": "P2",
+      "hmacSigned": false,
+      "requiredEnv": [
+        "PUBLIC_API_BASE_URL",
+        "INTERNAL_API_KEY",
+        "OPENCLAW_BOT_TOKEN",
+        "OPENCLAW_FOUNDER_TG_USER_ID"
+      ],
+      "requiredCredentials": [],
+      "notes": "Friday 18:00 Kyiv → POST /api/internal/openclaw/ritual/weekly (O3 Phase 2.B; 5 sections: narrative / shipped / metrics with delta vs prev week / open commitments / Sentry alerts) → POST /api/internal/webhook-events/record + DM founder via @OpenClaw_sergeant_bot. LLM narrative — claude-sonnet-4-6 via LLMProvider (PR-23), StubProvider fallback (PR-25 pattern). Endpoint 200 з graceful-degrade на missing env-vars (sections рендерять notConfigured-hint). Активуй після OPENCLAW_BOT_TOKEN + OPENCLAW_FOUNDER_TG_USER_ID + LLM_DIGEST_PROVIDER на n8n Railway. Slot 28 — slot 26 зайняв PR-34 strategic_weekly cron (Mon 09:00 per-persona DB writes); 27 — місячний OKR ritual нижче."
+    },
     "30-ai-memory-daily-digest.json": {
       "owner": "ops",
       "status": "prod-ready",
       "riskTier": "P2",
       "telegramTopic": "digest",
       "audienceTier": "P2",
+      "hmacSigned": false,
       "requiredEnv": [
         "TELEGRAM_ALERT_CHAT_ID",
         "TELEGRAM_TOPIC_DIGEST",
@@ -315,6 +362,7 @@
       "riskTier": "P2",
       "telegramTopic": "growth",
       "audienceTier": "P2",
+      "hmacSigned": false,
       "requiredEnv": [
         "POSTHOG_PROJECT_ID",
         "POSTHOG_API_KEY",
@@ -333,6 +381,7 @@
       "riskTier": "P2",
       "telegramTopic": "growth",
       "audienceTier": "P2",
+      "hmacSigned": false,
       "requiredEnv": [
         "POSTHOG_PROJECT_ID",
         "POSTHOG_API_KEY",
@@ -351,6 +400,7 @@
       "riskTier": "P0",
       "telegramTopic": "meta",
       "audienceTier": "P0",
+      "hmacSigned": false,
       "requiredEnv": [
         "TELEGRAM_ALERT_CHAT_ID",
         "OPS_ALERT_EMAIL",
@@ -371,6 +421,7 @@
       "riskTier": "P0",
       "telegramTopic": "meta",
       "audienceTier": "P0",
+      "hmacSigned": false,
       "requiredEnv": [
         "TELEGRAM_ALERT_CHAT_ID",
         "OPS_ALERT_EMAIL",
@@ -390,6 +441,7 @@
       "riskTier": "P1",
       "telegramTopic": "dm",
       "audienceTier": "P1",
+      "hmacSigned": false,
       "requiredEnv": [
         "PUBLIC_API_BASE_URL",
         "INTERNAL_API_KEY",
@@ -405,6 +457,7 @@
       "riskTier": "P1",
       "telegramTopic": "incidents",
       "audienceTier": "P1",
+      "hmacSigned": false,
       "requiredEnv": [
         "PUBLIC_API_BASE_URL",
         "INTERNAL_API_KEY",
@@ -419,6 +472,7 @@
       "riskTier": "P1",
       "telegramTopic": "incidents",
       "audienceTier": "P1",
+      "hmacSigned": false,
       "requiredEnv": [
         "PUBLIC_API_BASE_URL",
         "INTERNAL_API_KEY",
@@ -433,6 +487,7 @@
       "riskTier": "P1",
       "telegramTopic": "—",
       "audienceTier": "P1",
+      "hmacSigned": false,
       "requiredEnv": ["PUBLIC_API_BASE_URL", "INTERNAL_API_KEY"],
       "requiredCredentials": [],
       "notes": "Tier 3 escalation cron — */15 min → POST /api/internal/alerts/pending (olderThanMinutes=120, notYetSentryWarned=true, notSnoozed=true) → for each: POST /alerts/sentry-warn (server-side `Sentry.captureMessage(level=warning, tags.kind=unacked-alert-escalation)` + marks `sentry_warned_at`). No Telegram side-effect — Sentry dashboard + email is the off-channel signal when founder is offline. Migration 063 додає `sentry_warned_at` колонку."
