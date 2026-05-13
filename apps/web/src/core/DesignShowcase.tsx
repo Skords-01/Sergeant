@@ -18,6 +18,7 @@ import { CelebrationSection } from "./designShowcase/sections/Celebration";
 import { OnboardingSection } from "./designShowcase/sections/Onboarding";
 import { MotionSection } from "./designShowcase/sections/Motion";
 import { A11yStatesSection } from "./designShowcase/sections/A11yStates";
+import { EmptyStatesSection } from "./designShowcase/sections/EmptyStates";
 
 export function DesignShowcase() {
   const { dark, toggle: toggleDark } = useDarkMode();
@@ -74,6 +75,7 @@ export function DesignShowcase() {
         <OnboardingSection />
         <MotionSection />
         <A11yStatesSection />
+        <EmptyStatesSection />
       </main>
     </div>
   );

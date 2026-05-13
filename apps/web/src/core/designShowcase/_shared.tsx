@@ -20,6 +20,7 @@ export const NAV_SECTIONS = [
   { id: "onboarding", label: "Онбординг" },
   { id: "motion", label: "Motion" },
   { id: "a11y", label: "A11y / States" },
+  { id: "empty-states", label: "EmptyState" },
 ] as const;
 
 export function Sec({
