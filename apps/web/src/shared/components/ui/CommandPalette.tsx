@@ -175,18 +175,26 @@ export function useRegisterCommand(
   commands: ReadonlyArray<PaletteCommand>,
 ): void {
   const ctx = useContext(CommandPaletteContext);
+  // AI-CONTEXT: depend on the stable `register` / `unregister` callbacks
+  // (both wrapped in `useCallback([])` in the provider) instead of `ctx`
+  // itself — `ctx` is a fresh memo on every `revision` tick (which fires
+  // synchronously from inside `register` / `unregister`), so depending on
+  // it caused the cleanup → re-register cycle to re-fire infinitely and
+  // exhausted React's update-depth budget (see Sergeant#…).
+  const register = ctx?.register;
+  const unregister = ctx?.unregister;
   useEffect(() => {
-    if (!ctx) return;
+    if (!register || !unregister) return;
     if (commands.length === 0) {
-      ctx.unregister(registrationId);
-      return () => ctx.unregister(registrationId);
+      unregister(registrationId);
+      return () => unregister(registrationId);
     }
-    ctx.register({ id: registrationId, commands });
-    return () => ctx.unregister(registrationId);
+    register({ id: registrationId, commands });
+    return () => unregister(registrationId);
     // Intentionally omit `commands` from the deps — callers pass a
     // memoized list and we re-register only on id / context change.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ctx, registrationId]);
+  }, [register, unregister, registrationId]);
 }
 
 /**
@@ -197,8 +205,13 @@ export function useRegisterCommand(
  */
 export function useCommandPaletteHotkey(enabled: boolean = true): void {
   const ctx = useContext(CommandPaletteContext);
+  // Same rationale as `useRegisterCommand`: `togglePalette` is a stable
+  // `useCallback([])` in the provider, so depending on it (rather than the
+  // whole `ctx` memo, which churns on every `revision` tick) keeps the
+  // listener attached for the lifetime of the consumer.
+  const togglePalette = ctx?.togglePalette;
   useEffect(() => {
-    if (!enabled || !ctx) return;
+    if (!enabled || !togglePalette) return;
     const handler = (event: KeyboardEvent) => {
       const mod = event.metaKey || event.ctrlKey;
       if (!mod) return;
@@ -209,11 +222,11 @@ export function useCommandPaletteHotkey(enabled: boolean = true): void {
       // beyond `select line`. Other shortcuts (like Cmd+S) remain free.
       if (target?.isContentEditable && event.altKey) return;
       event.preventDefault();
-      ctx.togglePalette();
+      togglePalette();
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [enabled, ctx]);
+  }, [enabled, togglePalette]);
 }
 
 // ─── UI ──────────────────────────────────────────────────────────────────
