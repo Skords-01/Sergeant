@@ -23,6 +23,7 @@ const {
   activateN8nWorkflowMock,
   refreshBusinessSnapshotMock,
   classifyMessageMock,
+  mockEnvOverrides,
 } = vi.hoisted(() => ({
   listRecentWriteAuditsMock: vi.fn(),
   recordWriteAuditMock: vi.fn(),
@@ -33,6 +34,12 @@ const {
   activateN8nWorkflowMock: vi.fn(),
   refreshBusinessSnapshotMock: vi.fn(),
   classifyMessageMock: vi.fn(),
+  // Mutable overlay of env keys consumed by openclaw.ts (currently only
+  // `ANTHROPIC_API_KEY` — captured once at module load via
+  // `import { env } from "../../env.js"`). Tests assign to / delete from
+  // this object instead of mutating `process.env`, because the env-module
+  // is parsed once and would not pick up runtime `process.env` changes.
+  mockEnvOverrides: {} as Record<string, string | undefined>,
 }));
 
 vi.mock("../../modules/openclaw/index.js", async (importOriginal) => {
@@ -49,6 +56,31 @@ vi.mock("../../modules/openclaw/index.js", async (importOriginal) => {
     activateN8nWorkflow: activateN8nWorkflowMock,
     refreshBusinessSnapshot: refreshBusinessSnapshotMock,
     classifyMessage: classifyMessageMock,
+  };
+});
+
+// Overlay `env.ANTHROPIC_API_KEY` (and any other key in `mockEnvOverrides`)
+// onto the real parsed env so the classify route (which reads
+// `env.ANTHROPIC_API_KEY` once at module load — see PR #2627 migration)
+// can be exercised in three states: configured / unconfigured / changed.
+// Other env reads delegate to the real env so unrelated chains (logger,
+// metrics, ai-memory, etc.) keep working.
+vi.mock("../../env/env.js", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../../env/env.js")>();
+  const realEnv = actual.env as Record<string | symbol, unknown>;
+  return {
+    ...actual,
+    env: new Proxy(
+      {},
+      {
+        get(_target, prop) {
+          if (typeof prop === "string" && prop in mockEnvOverrides) {
+            return mockEnvOverrides[prop];
+          }
+          return realEnv[prop];
+        },
+      },
+    ),
   };
 });
 
@@ -437,19 +469,13 @@ describe("/api/internal/openclaw/snapshot/refresh", () => {
 // повертає classification JSON. 503 коли ANTHROPIC_API_KEY відсутній;
 // 502 коли Haiku фейлить — щоб plugin escalates до Layer 2 fail-closed.
 describe("/api/internal/openclaw/classify", () => {
-  const originalKey = process.env["ANTHROPIC_API_KEY"];
-
   beforeEach(() => {
     vi.clearAllMocks();
-    process.env["ANTHROPIC_API_KEY"] = "test-key";
+    mockEnvOverrides["ANTHROPIC_API_KEY"] = "test-key";
   });
 
   afterEach(() => {
-    if (originalKey === undefined) {
-      delete process.env["ANTHROPIC_API_KEY"];
-    } else {
-      process.env["ANTHROPIC_API_KEY"] = originalKey;
-    }
+    delete mockEnvOverrides["ANTHROPIC_API_KEY"];
   });
 
   it("returns classification JSON for a routine_metrics question", async () => {
@@ -500,7 +526,7 @@ describe("/api/internal/openclaw/classify", () => {
   });
 
   it("returns 503 when ANTHROPIC_API_KEY is not configured", async () => {
-    delete process.env["ANTHROPIC_API_KEY"];
+    mockEnvOverrides["ANTHROPIC_API_KEY"] = undefined;
     const app = await makeApp();
     const res = await request(app)
       .post("/api/internal/openclaw/classify")

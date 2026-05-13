@@ -21,6 +21,10 @@ vi.mock("../../obs/logger.js", () => ({
     warn: vi.fn(),
     error: vi.fn(),
   },
+  // sentry.ts (imported transitively via voyageBudget.ts → ai-memory chain)
+  // reads `redactKeyNames` at module load to build its PII scrubber set.
+  // Stub it as an empty list — the scrubber is not exercised by these tests.
+  redactKeyNames: [],
 }));
 
 vi.mock("../../obs/metrics.js", () => ({
