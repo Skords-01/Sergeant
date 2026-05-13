@@ -151,47 +151,98 @@ Back-compat: старі токени `panel` / `panelHi` / `line` продовж
 
 ## 3. Типографічна шкала
 
-Всі розміри — в `tailwind.config.js` під `fontSize`. Мінімальний
-розмір — **10px (`text-2xs`)**. `text-3xs` (9px) було видалено зі
-шкали — його контраст не проходив читабельність на мобільних, а
-бібліотека чартів вже використовує власні axis-ticks.
+### Семантичні `.text-style-*` ютиліті (tier-1, fluid)
 
-| Клас        | Size / line-height | Використання                              |
-| ----------- | ------------------ | ----------------------------------------- |
-| `text-2xs`  | 10 / 14            | Декоративні мета-бейджі, chart axis ticks |
-| `text-xs`   | 12 / 16            | Метадата, timestamp, secondary captions   |
-| `text-sm`   | 14 / 20            | Вторинний текст, кнопки `sm`              |
-| `text-base` | 16 / 24            | Базовий body                              |
-| `text-lg`   | 18 / 28            | Заголовок картки                          |
-| `text-xl`   | 20 / 28            | Section heading `md`                      |
-| `text-2xl`  | 24 / 32            | Page heading mobile                       |
-| `text-hero` | 26 / 32            | Hero stat numbers                         |
-| `text-3xl`  | 30 / 36            | Hero heading                              |
-| `text-4xl`  | 36 / 40            | Landing hero                              |
-| `text-5xl`  | 48 / 1             | Рідкісні великі промо-цифри               |
+Дванадцять канонічних слотів — це **єдине правильне джерело істини**
+для типографіки. Кожна утиліта зашиває `font-size` (fluid через
+`clamp()`), `line-height`, `font-weight`, `letter-spacing` та casing
+як один атомарний контракт. Розміри плавно зростають від 320 px до
+1280 px вьюпорту — без media-query-стрибків, без drift-у між кейсами.
 
-### Семантичні `.text-style-*` ютиліті
+**Hard Rule #16 — 12px floor.** Жоден семантичний слот не опускається
+нижче 12px (caption / overline). `text-2xs` (10px) лишається для
+chart axis-ticks і декоративних бейджів — це не `text-style-*` слот.
 
-Кожна виконує одну роль і одночасно зашиває font-size, line-height,
-weight, letter-spacing і casing. Перевага — над "ручним" комбо
-`text-* font-* tracking-*`, бо неможливо змішати hero-розмір з
-неправильною вагою:
+Реєстр живе у [`packages/design-tokens/tailwind-preset.js`](../../packages/design-tokens/tailwind-preset.js)
+→ `plugins.semanticTypography`. Lint `sergeant-design/prefer-text-style`
+заохочує семантичні утиліти замість ручних `text-* font-* tracking-*`
+комбо; `sergeant-design/no-arbitrary-text-size` забороняє
+`text-[Npx]` / `text-[Nrem]`.
 
-| Утиліта                | Контракт                       | Використання                      |
-| ---------------------- | ------------------------------ | --------------------------------- |
-| `.text-style-hero`     | 26 / 32 / 700 / -0.02em        | Page H1, hero stat number         |
-| `.text-style-title`    | 20 / 28 / 600 / -0.01em        | Section heading, card title       |
-| `.text-style-body`     | 16 / 24 / 400                  | Основний body                     |
-| `.text-style-label`    | 14 / 20 / 500                  | Form label, button text           |
-| `.text-style-caption`  | 12 / 16 / 400                  | Helper text, metadata, timestamps |
-| `.text-style-overline` | 12 / 16 / 600 / 0.06em / UPPER | Section kicker / eyebrow          |
+| Утиліта                | Розмір (clamp)    | Lh   | Weight | Tracking | Роль                                   |
+| ---------------------- | ----------------- | ---- | ------ | -------- | -------------------------------------- |
+| `.text-style-display`  | 32 → 56 px        | 1.05 | 700    | -0.025em | Landing hero / splash heading          |
+| `.text-style-headline` | 26 → 36 px        | 1.15 | 700    | -0.02em  | Page H1, hero stat number              |
+| `.text-style-title-lg` | 22 → 28 px        | 1.25 | 600    | -0.015em | Велике секційне заголовкове            |
+| `.text-style-title`    | 18 → 22 px        | 1.3  | 600    | -0.01em  | Section heading, card title            |
+| `.text-style-subtitle` | 16 → 18 px        | 1.4  | 500    | -0.005em | Sub-heading                            |
+| `.text-style-body-lg`  | 16 → 18 px        | 1.55 | 400    | 0        | Acцентований body (intro, lead-абзаци) |
+| `.text-style-body`     | 15 → 16 px        | 1.55 | 400    | 0        | Дефолтний body                         |
+| `.text-style-body-sm`  | 13 → 14 px        | 1.55 | 400    | 0        | Secondary body, descriptions           |
+| `.text-style-label`    | 13 → 14 px        | 1.4  | 500    | 0.005em  | Form label, button text                |
+| `.text-style-caption`  | **12 px** (floor) | 1.4  | 400    | 0.005em  | Helper text, metadata, timestamps      |
+| `.text-style-overline` | **12 px** (floor) | 1.4  | 600    | 0.08em   | UPPER section kicker / eyebrow         |
+| `.text-style-code`     | 13 → 14 px / mono | 1.5  | 500    | 0        | Inline `code`, monospace stats         |
+
+**Back-compat.** `.text-style-hero` лишається аліасом на `headline`
+(той самий fluid контракт) — існуючі call-site-и не вимагають міграції.
+Нове code-author writes `.text-style-headline` напряму.
+
+### Line-height & letter-spacing — за роллю, а не за розміром
+
+- **Display / headline** — `line-height: 1.05–1.15`, негативний
+  `letter-spacing` (≈ -0.02em). Великі літери "слипаються" і
+  виглядають композиційніше.
+- **Title / title-lg** — `line-height: 1.25–1.3`, легке негативне
+  трекінг (-0.01em / -0.015em).
+- **Body / body-lg / body-sm** — `line-height: 1.55` (loose),
+  трекінг 0. Це найважливіше — body для довгого читання має
+  «дихати», навіть на mobile.
+- **Label / caption** — `line-height: 1.4`, мінімальний позитивний
+  трекінг (0.005em) для читабельності на дрібних розмірах.
+- **Overline** — `line-height: 1.4`, **великий all-caps трекінг
+  0.08em** (стандарт для capslock-кікерів — без трекінгу
+  капітал-літери виглядають перевантажено).
+- **Code** — `line-height: 1.5`, monospace.
+
+### Font-feature defaults
+
+На рівні `html` глобально вмикаються OpenType-фічі:
+
+```css
+font-feature-settings:
+  "kern" 1,
+  /* кернінг          */ "liga" 1,
+  /* common ligatures */ "calt" 1,
+  /* contextual alts  */ "ss01" 1; /* DM Sans stylistic set 01 */
+font-kerning: normal;
+text-rendering: optimizeLegibility;
+```
+
+Це підв'язує всі екрани до однакових базових гліфів. Якщо потрібно
+відключити для специфічного блоку (наприклад, ASCII-арт або суворо
+літеральні гліфи) — `font-feature-settings: normal` на елементі.
+
+### Tabular nums — `.tnum`
+
+Числові колонки (таблиці, статистики, hero-цифри) **обов'язково**
+вмикають `font-variant-numeric: tabular-nums` — інакше пропорційний
+шрифт стрибає на ±2 px у пропорційних 5/6/7. Утиліта:
+
+```html
+<td class="tnum text-right">12 400</td>
+```
+
+`.tnum` живе в `tailwind-preset.js` поряд з `.text-style-*`.
+Старий `.tabular-nums` (визначений у `apps/web/src/styles/base.css`)
+лишається back-compat-аліасом.
 
 ### Канонічна `.text-*` шкала (tier-2 — окремі утиліти)
 
 Поряд з `text-style-*` живе ще один шар — окремі семантичні утиліти, які
 закривають дрібніші, нижчі та більші розміри, що не мають своєї
 семантичної ролі в `text-style-*`. Усі вони визначені в
-`apps/web/src/index.css`:
+`apps/web/src/styles/utilities.css`:
 
 | Утиліта              | Контракт                                   | Коли використовувати                                                                                                             |
 | -------------------- | ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------- |
@@ -231,6 +282,57 @@ DS-примітиви, які власне визначають raw-px-токе�
 `Segmented`, `Card`), звільнено від правила, бо вони — джерело істини
 для самих утиліт.
 
+### Prose — `@shared/components/ui/Prose`
+
+Для довгого rich-text-у (онбординг кроки, статті у Coach, markdown
+з асистента, документація-в-екрані) використовуй компонент `Prose`.
+Він застосовує семантичну шкалу до всіх дочірніх HTML-тегів
+(h1..h4, p, ul, ol, li, blockquote, code, pre, hr, a, table),
+тримає вимірення (`measure`) у комфортних ≤70ch через токен
+`--max-line-length` і має два варіанти:
+
+| Variant   | Base    | Spacing rhythm | Коли використовувати                                   |
+| --------- | ------- | -------------- | ------------------------------------------------------ |
+| `default` | body    | 1.0× (relaxed) | Статті, довгі описи, articles, blog-style preview      |
+| `compact` | body-sm | 0.6× (tight)   | Шіти, сайдбари, in-card prose, дрібні onboarding-блоки |
+
+```tsx
+import { Prose } from "@shared/components/ui";
+
+<Prose>
+  <h2>Заголовок</h2>
+  <p>Абзац з <a href="#">посиланням</a> і <code>inline-кодом</code>.</p>
+  <ul><li>Bullet</li></ul>
+</Prose>
+
+<Prose variant="compact">…</Prose>
+```
+
+Перевизначити кеп рядка можна локально через CSS-змінну:
+
+```tsx
+<Prose style={{ "--max-line-length": "60ch" } as React.CSSProperties}>…</Prose>
+```
+
+### Do / Don't — гайдлайни ієрархії
+
+- ✅ **Do** — використовуй один `display` або `headline` на екран.
+  Hero — це фокусна точка; два хедлайни змагаються між собою.
+- ✅ **Do** — body / body-lg для абзаців; body-sm — лише для
+  допоміжного підпису під полем або secondary description.
+- ✅ **Do** — overline (UPPER + 0.08em tracking) як кікер, не як body.
+- ❌ **Don't** — не пар `text-style-display` з `text-style-body-sm`
+  в одному hero. Дисплейний розмір потребує body-lg як супутника
+  (контраст у вазі і ритмі).
+- ❌ **Don't** — не дублюй `text-style-title` всередині `Prose` —
+  `<h3>` всередині блоку вже отримує `title-lg` автоматично.
+- ❌ **Don't** — `text-2xs` (10 px) — це не "тиха caption". Це чарт-axis
+  або декоративний бейдж. Для будь-якого тексту, який користувач
+  має прочитати, щоб діяти — мінімум `caption` (12 px).
+- ❌ **Don't** — не комбінуй `text-style-overline` з body-розмірним
+  фоном (наприклад, на `bg-finyk-soft` з 12 px без weight 600 текст
+  «втопиться» — overline передбачає контрастний weight + tracking).
+
 ---
 
 ## 4. Spacing, радіуси, тіні
@@ -257,16 +359,73 @@ Tailwind `spacing` (базова шкала 4px) + кастомні:
 Правило: **одна картка — один радіус**. Не змішуй `rounded-xl`
 header + `rounded-2xl` body.
 
-### Тіні
+### Тіні (елеваційна шкала e0..e5)
 
-| Клас           | Джерело                   | Коли                     |
-| -------------- | ------------------------- | ------------------------ |
-| `shadow-soft`  | `--shadow-soft`           | Фонова підсвітка блоку   |
-| `shadow-card`  | `--shadow-card`           | Дефолт для `Card`        |
-| `shadow-float` | `--shadow-float`          | Hover, плаваючі елементи |
-| `shadow-glow`  | Tailwind (брендовий blur) | CTA, акценти, фокуси     |
+Семантична шкала єдине джерело правди для глибини. Розподіл рівнів —
+в [`packages/design-tokens/tokens.js`](../../packages/design-tokens/tokens.js) →
+`elevation`; CSS-змінні лежать в
+[`apps/web/src/styles/theme.css`](../../apps/web/src/styles/theme.css)
+і автоматично перемикаються в `.dark` — ніяких `dark:shadow-*`
+(Hard Rule #13).
 
-Темна тема має власні значення змінних — не додавай `dark:shadow-*`.
+| Клас        | Рівень      | Коли                                     | Z-tier       |
+| ----------- | ----------- | ---------------------------------------- | ------------ |
+| `shadow-e0` | Flat        | Фон сторінки, секції, інпути             | `z-base`     |
+| `shadow-e1` | Raised      | Дефолт `Card`, рядки списку, панелі      | `z-base`     |
+| `shadow-e2` | Interactive | Hover підйом карток / pressables         | `z-base`     |
+| `shadow-e3` | Overlay     | Popover, dropdown, tooltip, menu         | `z-dropdown` |
+| `shadow-e4` | Modal       | `<Modal>`, `<Sheet>`, drawer             | `z-modal`    |
+| `shadow-e5` | Toast       | `<Toast>`, snackbar (top-most ephemeral) | `z-toast`    |
+
+Парний z-index тір (`zTier` в токенах):
+
+| Семантика  | Клас         | Значення | Призначення                               |
+| ---------- | ------------ | -------- | ----------------------------------------- |
+| `base`     | `z-base`     | `0`      | Контент сторінки, картки, кнопки (e0..e2) |
+| `dropdown` | `z-dropdown` | `50`     | Попапи, меню, tooltip (e3)                |
+| `sticky`   | `z-sticky`   | `100`    | Sticky header / toolbar                   |
+| `overlay`  | `z-overlay`  | `150`    | Non-modal overlays, scrim під модалкою    |
+| `modal`    | `z-modal`    | `200`    | Modal, Sheet, drawer (e4)                 |
+| `toast`    | `z-toast`    | `300`    | Toast, snackbar (e5)                      |
+
+Правило: **рівень елевації рухається в парі з z-tier**. Якщо піднімаєш
+shadow до e4 — бери `z-modal`. Їх розсинхронізація = popover під модалкою
+або toast під drawer-ом.
+
+#### ДО ї НЕ ТРЕБА
+
+**ДО** — вибирай найменший рівень, який передає роль елемента. Дефолтний Card — e1.
+
+```tsx
+<Card prominence="interactive">  {/* shadow-e1, hover → shadow-e2 */}
+  <Stat label="Баланс" value="₴12 345" />
+</Card>
+
+<Modal>                            {/* shadow-e4 + z-modal */}
+  <CelebrationCopy />
+</Modal>
+
+<Toast>                            {/* shadow-e5 + z-toast */}
+  Запис збережено.
+</Toast>
+```
+
+**НЕ ТРЕБА** — не додавай `dark:shadow-*`, не копіюй raw `boxShadow` в inline-style,
+не бери `shadow-e4` для плоскої картки "щоб було popping". Що більший рівень —
+тим вище має бути z-tier.
+
+```tsx
+/* ⛔ НЕ ТРЕБА — вибиває візуальну ієрархію */
+<Card className="shadow-e4" />                          /* картка не має важити як Modal */
+<div className="shadow-card dark:shadow-2xl" />         /* парні dark: — Hard Rule #13 */
+<div className="shadow-e3 z-toast" />                   /* попап на toast тірі — розсинхрон з e3 */
+```
+
+#### Legacy aliases
+
+Наявні класи `shadow-soft / shadow-card / shadow-float / shadow-glow` продовжують
+працювати — вони внутрішньо мапляться на нову шкалу (`card → e1`,
+`float → e3`, `soft → e4`). Новий код має вживати явний `shadow-eN`.
 
 ---
 
@@ -455,16 +614,369 @@ Home/End, `role="tablist"`.
 `text-nutrition/90` драфту — усі branded eyebrow'и нормалізовані до
 `/70`.
 
+### Tooltip
+
+Доступний замінник native `title="..."` (який не читається скрін-рідерами і
+не дотискається з клавіатури). Хінт для контролів, у яких іконка/коротка
+лейба не дає повного контексту: «зберегти», «синхронізувати»,
+«дізнатися більше».
+
+```tsx
+import { Tooltip } from "@shared/components/ui";
+
+<Tooltip content="Зберегти зміни (Ctrl+S)" placement="top">
+  <Button variant="primary" iconOnly aria-label="Зберегти">
+    <Icon name="save" />
+  </Button>
+</Tooltip>;
+```
+
+**Контракт:**
+
+- **Тригер** — рівно один React-елемент. Має форвардити
+  `onMouseEnter` / `onMouseLeave` / `onFocus` / `onBlur` /
+  `aria-describedby` (Sergeant `Button` / `IconButton` / `Badge` — ок).
+- **Розкривається** на `mouseenter` АБО `focus-visible` після
+  `openDelay` (typ. 150 мс).
+- **Закривається** на `mouseleave` / `focusout` / `Escape` / outside-click.
+- **`role="tooltip"`** на панелі, `aria-describedby` — на тригері (автоматично).
+- **`size`** — `sm` (дефолт, compact caption) або `md` (multi-line copy).
+- **`placement`** — 12-точкова решітка:
+  `top|right|bottom|left` + `*-start|*-end`. Legacy-аліаси
+  (`top-center`, …) теж приймаються — нормалізуються всередині.
+- **Portaled to `document.body`** — панель не клипається transformed /
+  `overflow: hidden`-ancestor-ами (containing-block-фікс; той самий мотив, що
+  в Modal — PR #2227).
+- **`motion-safe:animate-fade-in`** — реагує на `prefers-reduced-motion: reduce`.
+- **Toggle off:** `disabled` — тригер далі рендериться, але tooltip
+  ніколи не з'являється.
+
+**Do:**
+
+- Використовуй для icon-only кнопок без візуальної лейби.
+- Тримай copy ≤ 1–2 рядки в `sm`; для довшого пояснення — `size="md"`.
+
+**Don't:**
+
+- Не клади інтерактивний контент (кнопки, лінки) у tooltip — це не
+  модал. Для інтерактиву потрібен `Popover`.
+- Не дублюй native `title="..."` — призводить до подвійних спливаючих хінтів.
+- Не привʼязуй критично-важливу інфу лише до tooltip — користувачі
+  на тач-пристроях можуть не побачити hover-стан.
+
+### Popover
+
+Click-driven floating-surface для меню, фільтрів, info-карток і форм-у-
+попапі. На мобільному (< md) — використовуй `Sheet` замість Popover-а.
+
+```tsx
+import { Popover, PopoverItem, PopoverDivider } from "@shared/components/ui";
+
+// Меню дій
+<Popover trigger={<Button>Опції</Button>}>
+  <PopoverItem onClick={onEdit}>Редагувати</PopoverItem>
+  <PopoverDivider />
+  <PopoverItem destructive onClick={onDelete}>
+    Видалити
+  </PopoverItem>
+</Popover>;
+
+// Форма-в-попапі — header + body + footer слоти
+<Popover
+  trigger={<Button>Фільтри</Button>}
+  header="Фільтри транзакцій"
+  footer={<ActionButtons />}
+>
+  <FilterForm />
+</Popover>;
+```
+
+**Контракт:**
+
+- **Click-toggle** на тригер; ESC + outside-click + Tab-trap, коли відкритий.
+  Focus повертається на тригер при закритті (`useDialogFocusTrap`).
+- **ARIA**: `aria-haspopup="true"`, `aria-expanded`, `aria-controls` на
+  тригер-обгортці; коли передаєш `header` — додатково `aria-labelledby`
+  на панель + автоматичний `role="dialog"` (інакше `role="menu"` для
+  класичних item-меню).
+- **Portaled to `document.body`** — той самий containing-block-фікс, що й
+  у Tooltip / Modal.
+- **`placement`** — та сама 12-точкова решітка (`top|right|bottom|left`
+  - `*-start|*-end`). Дефолт — `bottom-start`.
+- **Слоти**: `header` (string | JSX) і `footer` (JSX) додають візуальні
+  розділювачі + padding; без них panel — компактна menu-смуга з `py-1.5`.
+- **Sub-components**: `PopoverItem` (`role="menuitem"` + arrow-нав з parent)
+  і `PopoverDivider` (`<hr>`).
+- **Controlled mode**: `open` + `onOpenChange` (як на формі-в-попапі, де
+  треба «Apply → закрити»).
+- **`motion-safe:animate-fade-in`** на панелі.
+
+**Keyboard:**
+
+| Клавіша           | Дія                                                       |
+| ----------------- | --------------------------------------------------------- |
+| `Enter` / `Space` | Toggle на тригері                                         |
+| `Tab`             | Cycle всередині панелі (focus-trap)                       |
+| `ArrowDown / Up`  | Roving focus між `PopoverItem`-ами (тільки `role="menu"`) |
+| `Home / End`      | Перший / останній item у menu-режимі                      |
+| `Escape`          | Закрити панель + повернути фокус на тригер                |
+
+**Do:**
+
+- Використовуй для меню дій з 3-7 опцій, info-карток, фільтрів і легких
+  форм (1-3 поля).
+- Для меню — `PopoverItem` + `PopoverDivider` (підхоплять стрілкову
+  навігацію + `role="menuitem"`).
+- Для info-card / form — `header` / `footer` слоти; роль панелі автоматично
+  перейде у `"dialog"`.
+
+**Don't:**
+
+- Не клади важкі форми (> 4-5 полів) — це Sheet/Modal.
+- Не вкладай `Popover` всередину `Popover` без сильного юзкейса — кілька
+  трапів конфліктують.
+- Не запихай destructive multi-step дії — попап може закритися outside-click-ом
+  до підтвердження. Для destructive → `ConfirmDialog`.
+
 ### EmptyState
 
-- `icon` · `title` · `description` · `action`.
-- `compact` режим для in-card плейсхолдерів.
-- Використовуй для всіх «немає да��их» станів — не роби ad-hoc.
+Канонічний примітив для **порожніх станів і дрібних error/empty карток**
+
+- повноекранних error-сторінок (`/404`, `/500`, `/offline`). Один
+  компонент тримає три розміри (`sm` / `md` / `lg`), п'ять варіантів
+  (`neutral` / `info` / `success` / `warning` / `danger`) і чотири
+  module-accent override-и (`finyk` / `fizruk` / `routine` / `nutrition`)
+  — тож кожна порожня панель в апці пропускається через ту саму tone-
+  палітру, той самий focus-контракт і той самий SR-announce
+  (`role="status"`, `aria-live="polite"`).
+
+**Слоти** (всі необов'язкові, окрім `title`):
+
+- `illustration` — куратований SVG із `apps/web/src/assets/illustrations/`
+  (всі використовують `currentColor` + design-token utilities; жодного
+  inline hex — Hard Rule #11). Якщо `illustration` не задано — fallback
+  на `icon` у бордерованому box-і з tone-фоном.
+- `eyebrow` — короткий caps-чип над title-ом ("404", "OFFLINE", "ERROR").
+- `title` — короткий заголовок (масштабується розміром).
+- `description` — повний абзац підтримки.
+- `primaryAction` / `secondaryAction` — два слоти для CTA-кнопок
+  (зазвичай `<Button variant="primary">` + `<Button variant="secondary">`).
+- `tertiaryLink` — текстовий link під CTA (наприклад, "докладніше у
+  довідці").
+- `hint` — підказка-tip із lightbulb-іконкою (тон `text-subtle`).
+- `examplePreview` — слот для inline-моку реальних даних (показуємо
+  "як це виглядатиме, коли заповниш модуль").
+- `action` (backward-compat alias до `primaryAction`).
+
+**Розміри**:
+
+| size | Коли                                                                                                               |
+| ---- | ------------------------------------------------------------------------------------------------------------------ |
+| `sm` | In-card / in-list плейсхолдери (порожній transactions list, no-results filter). Padding ≈ 16 px, без illustration. |
+| `md` | Sub-page рівень (порожня вкладка, dialog body). Дефолт.                                                            |
+| `lg` | Повноекранні error-сторінки (404 / 500 / offline), top-level empty states.                                         |
+
+**Варіанти** використовують tone-палітру з §3 — `-soft` фон + `-strong`
+текст (Hard Rule #9 для контрасту ≥ 4.5 : 1). Module-accent (якщо
+заданий) **перекриває** variant — модульна семантика сильніша за
+загальну (порожній стан у `/finyk` завжди має finyk-tint, навіть якщо
+лежить у error-state).
+
+**Tone of voice** (з [`docs/design/brandbook.md`](./brandbook.md)):
+
+| Контекст              | Що писати                                                                          | Чого уникати                        |
+| --------------------- | ---------------------------------------------------------------------------------- | ----------------------------------- |
+| Empty list            | "Тут поки нічого немає. Додай першу транзакцію — і Фінік усе порахує."             | "No data."                          |
+| No search results     | "Нічого не знайшли за «{query}». Спробуй інший фільтр."                            | "Empty result set."                 |
+| Offline               | "Немає зʼєднання, але дані не загубляться — синхронізуємо, коли воно повернеться." | "Network error: ENOTCONN."          |
+| 500 / server          | "Щось пішло не так. Спробуй оновити сторінку — зазвичай це допомагає."             | "Internal Server Error (HTTP 500)." |
+| 404 / not found       | "Сторінку не знайдено. Перевір посилання або повернись на головну."                | "Page does not exist."              |
+| Success / celebration | "Готово! +5 KM до тижневого балансу" (емодзі дозволені тут на знак)                | "Operation completed successfully." |
+
+Дві правила-черевики:
+
+1. **Завжди давай шлях назад.** Кожен EmptyState (окрім `sm`-in-card
+   плейсхолдерів) має мати **primaryAction** — кнопку, що повертає
+   користувача в робочий потік. "На головну", "Спробувати ще",
+   "Додати першу транзакцію" — три найчастіші формулювання.
+2. **Уникай blamefulness.** "Ти ввів неправильне посилання" — погано;
+   "Здається, ця адреса вже не існує" — добре. Помилка — це факт
+   стану системи, а не звинувачення користувача.
+
+**Приклади**:
+
+```tsx
+// In-card порожній стан (sm)
+<EmptyState
+  size="sm"
+  icon={<Icon name="receipt" size={20} />}
+  title="Транзакцій немає"
+  description="Підключи картку або додай вручну."
+  primaryAction={<Button size="sm">Додати</Button>}
+/>
+
+// Full-page error (lg + danger variant)
+<EmptyState
+  size="lg"
+  variant="danger"
+  eyebrow="500"
+  illustration={<ServerErrorIllustration size={200} />}
+  title="Щось пішло не так"
+  description="Сервер тимчасово не зміг обробити запит."
+  primaryAction={
+    <Button variant="primary" size="lg" onClick={reload}>
+      <Icon name="refresh-cw" size={16} />
+      Оновити сторінку
+    </Button>
+  }
+/>
+
+// Module-accent (override variant)
+<ModuleEmptyState
+  module="finyk"
+  variant="default"
+  onAction={openCreate}
+/>
+```
+
+**Three canonical error pages** (`apps/web/src/core/errors/`):
+
+| Сторінка              | Variant   | Illustration              | CTA                    |
+| --------------------- | --------- | ------------------------- | ---------------------- |
+| `NotFoundPage` 404    | `info`    | `NotFoundIllustration`    | "На головну" + "Назад" |
+| `ServerErrorPage` 500 | `danger`  | `ServerErrorIllustration` | "Оновити сторінку"     |
+| `OfflinePage`         | `warning` | `OfflineIllustration`     | "Спробувати ще"        |
+
+Всі три — composition над `<EmptyState size="lg">`, тож focus-контракт,
+motion-budget і SR-announce ідентичні. Жодного inline-стилю,
+жодного hex — все через tokens.
+
+**Ілюстрації** (`apps/web/src/assets/illustrations/`):
+`EmptyListIllustration`, `NoResultsIllustration`, `OfflineIllustration`,
+`ServerErrorIllustration`, `NotFoundIllustration`,
+`SuccessCelebrationIllustration` — кожна побудована тільки на
+`currentColor` + token-utility класах (`fill-panelHi`, `stroke-line`,
+`fill-danger-soft`, …), тож автоматично перефарбовується для світлої/
+темної теми та інтегрується в module-accent overrides без додаткового
+коду.
 
 ### Spinner
 
 Канонічний індикатор завантаження (4 розміри). Використовується всередині
 `Button loading`, інлайн-фетчі, skeleton overlay.
+
+### Switch
+
+Token-styled iOS-style pill-тогл. `<button role="switch">` з повним
+WAI-ARIA-контрактом: `aria-checked` відбиває стан, `aria-labelledby` /
+`aria-describedby` відсилають на видиму мітку та опис,
+`focus-visible:ring-2 ring-brand-500/45` (Hard Rule #14).
+
+- **Sizes**: `sm` 36×20 · `md` 44×26 (дефолт — мінімум-touch-target).
+- **States**: `disabled`, `error` (додає `aria-invalid` + danger ring).
+- **Controlled**: `checked` + `onChange`. **Uncontrolled**: `defaultChecked`.
+- **Keyboard**: Space / Enter (native button), додатково ArrowLeft / ArrowRight
+  за патерном WAI-ARIA Switch.
+- **A11y**: зміна стану викликає `hapticTap()` + screen-reader announce
+  `{label} увімкнено / вимкнено` (override через `announceText`).
+
+```tsx
+<Switch
+  size="md"
+  checked={pushOn}
+  onChange={setPushOn}
+  label="Push-сповіщення"
+  description="Надсилати нагадування про звички"
+/>
+```
+
+### Slider
+
+Token-styled слайдер з власними тумбами `role="slider"`. Підтримує
+single-значення та range (дві тумби), тіки, валю-tooltip при drag/focus,
+вертикальну орієнтацію (опційно).
+
+- **Sizes**: `sm` (трек 4 px) · `md` (6 px).
+- **Orientation**: `horizontal` (дефолт) / `vertical` (знизу вгору).
+- **Keyboard** (кожна тумба):
+  - `→` / `↑` — +1 step, `←` / `↓` — −1 step
+  - `Shift` + арров — ×10 step
+  - `PageUp` / `PageDown` — ±10 % діапазону
+  - `Home` / `End` — min / max
+- **Range**: дві тумби; значення не можуть перехрещуватися (вбудований
+  clamp).
+- **Drag**: pointer capture на track — працює з мишею/тачем/stylus.
+- **A11y**: `aria-valuemin/max/now`, `aria-valuetext`, `aria-orientation`,
+  звуження range через динамічний `aria-valuemax`/`aria-valuemin` на
+  сусідній тумбі.
+
+```tsx
+<Slider
+  aria-label="Гучність"
+  value={volume}
+  onChange={setVolume}
+  ticks={[0, 25, 50, 75, 100]}
+  showTooltip
+  formatValue={(n) => `${n}%`}
+/>
+```
+
+### ProgressBar
+
+Лінійний індикатор прогресу. Determinate та indeterminate. Цвітові
+філли — `*-strong` компаньйони (Hard Rule #9) для білого внутрішнього
+тексту.
+
+- **Sizes**: `xs` 2 px · `sm` 6 px · `md` 8 px · `lg` 12 px (h-1/1.5/2/3).
+- **Variants**: `brand` / `success` / `warning` / `danger`.
+- **Indeterminate**: обмежений бар летає треком (1.4 s loop). Під
+  `prefers-reduced-motion: reduce` фол-бек на повноширокий
+  `pulse-soft` (WCAG 2.3.3).
+- **A11y**: `role="progressbar"` + `aria-valuenow/max/min`, `aria-busy`
+  коли indeterminate. Опційний inner-label (`labelPlacement="inside"`) або
+  outside.
+
+```tsx
+<ProgressBar value={65} size="lg" variant="success" label="65%" />
+<ProgressBar indeterminate aria-label="Синхронізація" />
+```
+
+### ProgressCircle
+
+Радіальний індикатор з тими ж статус-варіантами. Determinate —
+stroke-dasharray; indeterminate — чверть-дуга, яка обертається.
+
+- **Sizes**: `xs` 28 / `sm` 44 / `md` 64 / `lg` 96 px.
+- **Variants**: `brand` / `success` / `warning` / `danger` — stroke з
+  `text-{c}-strong` (AA на кремі).
+- Під reduced-motion — обертання вимикається, натомість `pulse-soft`.
+- `ProgressCircle` — коли потрібно progress-примітив без module-tint.
+  Для KPI-тайлів (`finyk` / `fizruk` / `routine` / `nutrition` акценти) —
+  продовжуй використовувати `ProgressRing`.
+
+### Skeleton
+
+Плейсхолдери завантаження. Стандартна анімація — `motion-safe:animate-pulse`;
+режим `shimmer` — token-driven `motion-safe:animate-shimmer`. Під
+`prefers-reduced-motion: reduce` обидва режими колапсяться до
+статичного muted-блоку.
+
+- **Variants** (`variant` props або окремі компоненти):
+  - `rect` (дефолт) — гнучкий блок; розмір через `className`.
+  - `text` (`<SkeletonText lines={N} />`) — багаторядковий текст з
+    детерміновано варіативними ширинами (останній рядок коротший).
+  - `avatar` (`<SkeletonAvatar />`) — круг.
+  - `card` (`<SkeletonCardBlock />`) — повна картка з avatar +
+    назва/субтитр + три рядки тексту.
+- **Shape-aware variants** (`SkeletonTransactionRow`, `SkeletonHabitRow`,
+  `SkeletonWorkoutSet`, `SkeletonMealCard`) — для відповідних модулів;
+  див. «Скелети» в § Мотион.
+
+```tsx
+<SkeletonText lines={4} shimmer />
+<SkeletonAvatar className="w-12 h-12" />
+<SkeletonCardBlock />
+```
 
 ---
 
@@ -498,10 +1010,98 @@ Home/End, `role="tablist"`.
 
 ---
 
-## 8. Темна тема
+## 8. Темна тема + High Contrast
 
-Увімкнення — клас `dark` на `<html>`. Всі кольори резолвяться через CSS-
-змінні `--c-*`, тож додавати `dark:bg-...` більшості разів **НЕ треба**:
+### 8.1 4-режимний state-machine (`useTheme`)
+
+З Track 9 (Design-System polish, PR-#057) у нас один уніфікований
+контролер теми — `apps/web/src/shared/hooks/useTheme.ts`. Стан:
+
+| Choice   | Що робить                                                                                                                 |
+| -------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `light`  | Жодного theme-класу на `<html>` (дефолт).                                                                                 |
+| `dark`   | `<html class="dark">` — повна dark-палітра.                                                                               |
+| `system` | Клас `dark` реактивно слідує за `window.matchMedia('(prefers-color-scheme: dark)')`. OS-level зміна підхоплюється в live. |
+| `hc`     | `<html class="hc">` (+ `dark` якщо OS — dark). HC-режим залишається світлим/темним за системою, але токени бампають AAA.  |
+
+Контракт-точки:
+
+- **Bootstrap** — `useTheme()` викликається один раз у `core/App.tsx` і
+  володіє класами на `<html>`. Не клич `useTheme` повторно у дочірніх
+  компонентах для side-effect-ів — використовуй `<ThemeSwitcher />` (він
+  читає тих самий hook).
+- **Persistence** — вибір зберігається в `hub_theme_v2` (`localStorage`,
+  через `@shared/storage`). Старі ключі (`hub_dark_mode_v1`,
+  `hub_dark_mode_schedule_v1`) мігруються автоматично — fall-back на
+  `system` коли запис відсутній.
+- **Cross-tab sync** — `webKVStore.onChange(hub_theme_v2)` ловить DOM
+  `storage`-event (LS-fallback) АБО `BroadcastChannel("kv-store")`
+  (SQLite-warm-cache). Зміна теми в одній вкладці прокидається в інші
+  у живому часі.
+- **`prefers-color-scheme`** — підписка на media-query робить `system` і
+  `hc` справді живими. OS-level toggle відбивається без перезавантаження.
+
+### 8.2 High-Contrast контракт
+
+`html.hc { ... }` у `apps/web/src/styles/theme.css` — це AAA-leaning
+оверлей семантичних токенів поверх resolved-light/dark base-у. Контракт:
+
+1. **Text vs. bg ≥ 7:1** — WCAG AAA «Contrast (Enhanced)». `--c-text`
+   йде в pure `#000000` (HC-світла) і `#ffffff` (HC-темна).
+2. **Дільники ≥ 4.5:1** — `--c-line` бампається на near-black/near-white.
+   Карти, інпути, таблиці отримують видимий edge без shadow-залежності.
+3. **Focus-ring 3px** — `--ring-width-hc: 3px;` і
+   `--focus-ring-width: var(--ring-width-hc);` Усі примітиви, які
+   читають `--focus-ring-width`, автоматично отримують ширший фокус-
+   індикатор. Колір — `brand-strong` на світлій, `amber-300` на темній
+   (≥ 3:1 проти власного bg).
+4. **Жодних low-opacity surfaces** — soft-варіанти
+   (`success-soft`, `brand-soft`, `finyk-soft`, …) фліпаються на
+   full-strength fill, щоб banner / badge / pill читалися на 7:1.
+
+#### Аудит токенів у HC
+
+| Token              | Light → HC-light              | Dark → HC-dark                | Контраст vs `--c-bg` |
+| ------------------ | ----------------------------- | ----------------------------- | -------------------- |
+| `--c-text`         | `#1c1917` → `#000000`         | `#faf7f1` → `#ffffff`         | ≥ 18 : 1             |
+| `--c-muted`        | `#57534e` → `#1f1c19`         | `#b4aea9` → `#e6e0da`         | ≥ 14 : 1             |
+| `--c-subtle`       | `#6b645d` → `#332e29`         | `#878079` → `#cfc7bf`         | ≥ 9 : 1              |
+| `--c-line`         | `#ebe4da` → `#574b3c`         | `#524a41` → `#a89c8e`         | ≥ 4.7 : 1            |
+| `--c-border`       | = `--c-line`                  | = `--c-line`                  | ≥ 4.7 : 1            |
+| `--c-success-soft` | `emerald-100` → `emerald-200` | `emerald-900` → `emerald-700` | ≥ 4.6 : 1            |
+| `--c-danger-soft`  | `red-100` → `red-200`         | `red-900` → `red-700`         | ≥ 4.6 : 1            |
+| `--c-brand-soft`   | `emerald-100` → `emerald-200` | `emerald-900` → `emerald-700` | ≥ 4.6 : 1            |
+
+> ⚠ Додаючи новий semantic-token, дзеркаль override у `html.hc { ... }`
+> _і_ `html.hc.dark { ... }`. Скоупні preview-блоки
+> (`[data-theme-preview="…"]` в тому ж файлі) — copy/paste тих самих
+> values для side-by-side у `DesignShowcase`.
+
+### 8.3 UX-контракт `<ThemeSwitcher />`
+
+```tsx
+import { ThemeSwitcher } from "@shared/components/ui";
+
+// Compact — header chrome, dense rows. 4 IconButton-и (sun/moon/monitor/contrast)
+// згруповані як radiogroup.
+<ThemeSwitcher />;
+
+// Dropdown — Settings, DesignShowcase, verbose surfaces. Триггер-кнопка
+// + меню з лейблами та описом кожного режиму.
+<ThemeSwitcher variant="dropdown" />;
+```
+
+- Token-only стилізація (Hard Rules #11, #13). Жодного `bg-[#...]` —
+  все через `bg-panel`, `bg-brand-soft`, `border-line`.
+- `focus-visible:ring-2 ring-brand-500/45` (Hard Rule #14).
+- Кожен radio-item має `aria-label` (Ukrainian) + `aria-checked`.
+- Dropdown — `role="menu"` + `aria-haspopup="menu"`, ESC закриває,
+  фокус повертається на тригер.
+
+### 8.4 Не пиши `dark:` пар
+
+Усі кольори резолвяться через CSS-змінні `--c-*`, тож додавати
+`dark:bg-...` більшості разів **НЕ треба**:
 
 ```tsx
 // ❌ НЕ пиши
@@ -1086,7 +1686,146 @@ const swipe = useSwipeNavigation({
 
 ---
 
-## 17. Що далі
+## 18. DropdownMenu та Command Palette (2026-05, Track 5)
+
+Дві keyboard-first примітиви, які витягують продукт зі стану «це просто
+вебсайт». DropdownMenu — для контекстних дій на конкретному елементі;
+Command Palette — глобальний ⌘K / Ctrl+K surface для cross-cutting
+команд (навігація, налаштування, темa, AI).
+
+### 18.1 DropdownMenu
+
+```tsx
+import { DropdownMenu, Icon, Button } from "@shared/components/ui";
+import type { DropdownMenuEntry } from "@shared/components/ui";
+
+const items: DropdownMenuEntry[] = [
+  { type: "label", label: "Профіль" },
+  {
+    type: "item",
+    id: "edit",
+    label: "Редагувати",
+    icon: <Icon name="edit" />,
+    shortcut: "⌘ E",
+  },
+  {
+    type: "item",
+    id: "share",
+    label: "Поділитись",
+    description: "Згенерувати посилання",
+  },
+  { type: "separator" },
+  {
+    type: "submenu",
+    id: "more",
+    label: "Більше",
+    items: [
+      { type: "item", id: "archive", label: "Архівувати" },
+      { type: "item", id: "delete", label: "Видалити", destructive: true },
+    ],
+  },
+];
+
+<DropdownMenu
+  ariaLabel="Дії з елементом"
+  items={items}
+  trigger={
+    <Button variant="secondary">
+      Меню <Icon name="chevron-down" />
+    </Button>
+  }
+/>;
+```
+
+**Entry types:** `item` · `submenu` · `separator` · `label`.
+
+**Клавіатурна навігація:**
+
+| Клавіша                 | Дія                                                 |
+| ----------------------- | --------------------------------------------------- |
+| `ArrowDown` / `ArrowUp` | Перейти на наступний / попередній item (wrap).      |
+| `Home` / `End`          | Перший / останній focusable item.                   |
+| `Enter` / `Space`       | Активувати item або відкрити підменю.               |
+| `ArrowRight`            | Відкрити підменю (на submenu-row).                  |
+| `ArrowLeft`             | Закрити підменю.                                    |
+| `Escape`                | Закрити меню, фокус повертається на trigger.        |
+| `Tab`                   | Закрити меню, природна tab-навігація продовжується. |
+| `a…z` / `0…9`           | Type-ahead (буфер очищується через 500 мс).         |
+
+**ARIA:** `aria-haspopup="menu"` + `aria-expanded` на trigger;
+`role="menu"` на панелі; `role="menuitem"` + `aria-disabled` на рядках;
+підменю — `aria-haspopup="menu"` + `aria-expanded`.
+
+**Стилі:** виключно semantic tokens (`bg-panel`, `border-line`,
+`text-text`, `text-danger`, `bg-panelHi` для фокусу).
+`focus-visible:ring-brand-500/45` — клавіатурне кільце; pointer-hover
+ділить ту саму `bg-panelHi`-підсвітку.
+
+### 18.2 CommandPalette
+
+```tsx
+// 1. У app shell — раз:
+import {
+  CommandPalette,
+  CommandPaletteProvider,
+  useCommandPaletteHotkey,
+} from "@shared/components/ui";
+
+<CommandPaletteProvider>
+  <CommandPalette />
+  <RestOfApp />
+</CommandPaletteProvider>;
+
+// 2. В будь-якому компоненті — реєструємо команди:
+useRegisterCommand("hub.nav", [
+  {
+    id: "hub.go-home",
+    title: "Перейти на головну",
+    group: "Навігація",
+    icon: <Icon name="home" />,
+    keywords: ["hub", "home", "головна"],
+    run: () => navigate("/"),
+  },
+]);
+```
+
+⌘K / Ctrl+K привʼязується через `useCommandPaletteHotkey(enabled)` — у
+Sergeant це гейтнуте feature-flag-ом `hub_command_palette`, тож існуючий
+Hub-search ⌘K не зламається до моменту увімкнення.
+
+**Клавіатура у відкритій палітрі:** `ArrowUp/Down` — навігація по
+плоскому списку (через групи), `Home/End` — перший / останній,
+`Enter` — виконати, `Escape` — закрити.
+
+**ARIA:** `role="dialog"` + `aria-modal` + `aria-labelledby`;
+`role="listbox"` для результатів, `role="option"` + `aria-selected` для
+рядків. `aria-activedescendant` оновлюється на input разом з
+`activeIndex` — screen reader озвучує активну команду, поки фокус
+лишається в інпуті.
+
+**Recent commands:** зберігаються у `localStorage` (до 6 останніх ID)
+через `createTypedStore` з версією і zod-схемою — впишеться в існуючий
+storage-allowlist.
+
+**Стилі:** `bg-panel`, `border-line`, `shadow-float`, `bg-black/50` для
+backdrop. Фокусне кільце — `focus-visible:ring-brand-500/45` з
+`ring-offset-panel` (узгоджено з `Button`).
+
+### 18.3 Анатомія підказок
+
+Shortcut-hint і footer hint-и використовують `<kbd>` з токенами:
+`bg-surface-muted border border-line text-muted text-2xs font-mono`.
+Це уніфікує вигляд cmd-keys на overlays, modals, palette і inline-help.
+
+### 18.4 Status
+
+`DropdownMenu`, `CommandPalette` — Active (Track 5). Demo команди в
+`useDemoCommands` — Scaffolded: реальні handlers приходять follow-up
+PR-ами per-модуль. `console.log` + toast «WIP» — навмисна заглушка.
+
+---
+
+## 19. Що далі
 
 - Догнати всі модулі (ФІНІК / ФІЗРУК / Рутина / Харчування) під єдині
   примітиви — окремими PR'ами, по модулю.

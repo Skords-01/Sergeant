@@ -379,6 +379,42 @@ WHERE inserted_at >= now() - interval '7 days';
 - **Master `true`, sub-flag `false`:** intentional selective kill. Метрика `mode="source_disabled"` росте, `mode="queued"`=0. Підтверди у Railway, що sub-flag навмисно вимкнено.
 - **Spike у `mode="enqueue_error"`:** Redis incident або invalid source enum. Подивись pino-лог `ai_memory_ingest_enqueue_failed` / `ai_memory_ingest_invalid_source`.
 
+## WF-30 AI memory daily digest (PR-21)
+
+> **Owner:** `@Skords-01` (manifest owner `ops`). **Scope:** n8n workflow (server-side flag-canonical у `env.ts`). **Last validated:** 2026-05-13 by Devin (PR-21). **Related:** [`ops/n8n-workflows/30-ai-memory-daily-digest.json`](../../ops/n8n-workflows/30-ai-memory-daily-digest.json), [`docs/integrations/env-vars.md § MONO_AI_MEMORY_DIGEST_ENABLED`](../integrations/env-vars.md#mono_ai_memory_digest_enabled-optional-default-false--prod-required), [PR-19 AI memory ingest](#ai-memory-activation--day-30-decision-point).
+
+### Контекст
+
+WF-30 — щоденний 09:05 Kyiv n8n workflow, що SELECT-ить агрегати з `ai_memories` (24h totals + per-source breakdown + lifetime + rough Voyage cost) і шле короткий summary у Telegram `#digest`. Aggregated-only payload (без `user_id` у тексті). Призначення — founder-DM-style daily-pulse поверх AI memory ingestion: бачити чи ingest працює (PR-19) без читання Grafana.
+
+### Activation procedure
+
+1. **Pre-flight:** `AI_MEMORY_ENABLED=true` (master) і `MONO_AI_MEMORY_INGEST_ENABLED=true` (PR-19) уже виставлені у Railway. Без цього `ai_memories` порожня → digest буде слати «За добу нічого не записано».
+2. **n8n Railway env:** виставити `MONO_AI_MEMORY_DIGEST_ENABLED=true` у self-hosted n8n service (Settings → Environment Variables). Це canonical-toggle (parsed у `apps/server/src/env/env.ts` для парності з ingest-flag-ом).
+3. **n8n UI:** flip toggle workflow `30 — AI Memory Daily Digest` в active. Hard-rule [`validate-n8n-workflows.mjs`](../../scripts/n8n/validate-n8n-workflows.mjs) тримає JSON `active=false` у git, тож активація — manual у UI.
+4. **Verification (T+24h):** наступний ранок о 09:05 Kyiv → перевір канал Telegram `#digest`, має зʼявитись повідомлення `🧠 AI Memory — <дата>`.
+
+### Що моніторити
+
+| Сигнал                                     | Норма                         | Action при відхиленні                                                                                                                                                                    |
+| ------------------------------------------ | ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Telegram `#digest` daily post              | щоранку 09:05 Kyiv            | Якщо пропущений день — перевір `n8n.executions` для `30-ai-memory-daily-digest` (success/error). Sentry breadcrumb `n8n.workflow.failed` тригерить #incidents через WF-98 error-handler. |
+| n8n exec count `30-ai-memory-daily-digest` | 1/day                         | > 1/day → cron-schedule drift або manual re-trigger; = 0/day → workflow toggle off у n8n UI.                                                                                             |
+| `ai_memories` 24h count у digest body      | > 0 після activation pre-reqs | 0 декілька днів поспіль → ingest (PR-19) зламаний; перевір [`§ AI memory activation`](#ai-memory-activation--day-30-decision-point) монiтори.                                            |
+| Voyage cost у digest body (`💸`)           | < $0.50/добу при ~100 mem-ів  | > $1/добу sustained → перевір `AI_MEMORY_INGEST_MAX_CONTENT_LEN` cap; great content-length у Mono enrichment або chat sources.                                                           |
+
+### Failure modes
+
+- **Postgres node fails** (`onError=continueRegularOutput` → empty row): Format Code node graceful degrades до `0` агрегатів, Telegram пост все одно йде з нулями. Sentry breadcrumb у WF-98 error-handler.
+- **Telegram API fails** (rate-limit / token revoked): n8n exec marked `error`; WF-98 шле в `#meta` Telegram alert.
+- **`MONO_AI_MEMORY_DIGEST_ENABLED` missing на n8n Railway env**: workflow toggle у n8n UI просто не активується операторами per activation runbook. Если ж випадково активований без env — workflow все одно бігає (n8n не валідує env), але operator-intent документований як must-have у `docs/integrations/env-vars.md`.
+
+### Kill procedure
+
+1. **Швидкий kill (≤30s):** flip workflow toggle у n8n UI в inactive. Cron перестає тригерити node-chain негайно.
+2. **Permanent disable:** виставити `MONO_AI_MEMORY_DIGEST_ENABLED=false` у n8n Railway env (для документації operator-intent-у) + manifest status `prod-ready → experimental` у новому PR (signals deprecation).
+3. **Code-side:** видалити `MONO_AI_MEMORY_DIGEST_ENABLED` з `env.ts` тільки після успішних 30 днів без digest-у і прийнятого decision-point на kill всього AI memory модуля ([`§ AI memory activation & Day-30 decision-point`](#ai-memory-activation--day-30-decision-point)).
+
 ## Як обробити Renovate PR із breaking change
 
 Per [ADR-0044](../adr/0044-renovate-vs-dependabot.md), Renovate — primary tool для regular weekly bumps. Більшість PR-ів — devDep patches з auto-merge. Для **нон-trivial** PR-ів:
@@ -423,10 +459,13 @@ SBOM (Software Bill of Materials) — це machine-readable список **вс�
 
 **Що горить**: weekly `.github/workflows/rag-quality-gate.yml` зафіксував
 mean `recall@4` < `warn_threshold` (default `0.5`), але ≥ `kill_threshold`
-(default `0.4`). Eval-harness — synthetic golden-set
+(default `0.4`). Eval-harness — 50-query golden-set
 [`apps/server/src/__fixtures__/rag-eval/golden.json`](../../apps/server/src/__fixtures__/rag-eval/golden.json)
-(50 queries, 7 domains). PR-20 замінить його на real-data golden-set;
-contract сторгнутий через `apps/server/src/lib/ragEval/golden.ts`.
+(8 domains, `expected_memory_ids` рефи). PR-21 ввімкне `--mode=live`
+(real Voyage + pgvector retrieval); contract — `apps/server/src/lib/ragEval/
+golden.ts`. Повна документація харнесу +
+metric формули (recall@K / P@1 / MRR) + baseline-comparison: [`docs/
+architecture/rag-eval.md`](../architecture/rag-eval.md).
 
 **Рівень**: warn — RAG залишається ON, але є early-warning regression.
 
@@ -488,7 +527,7 @@ https://<server>/health/workers` — `ai-memory-ingest` має бути `stopped
 6. Після root-cause fix → запусти eval manually:
    ```bash
    gh workflow run rag-quality-gate.yml \
-     -f mode=mock  # або 'live' коли PR-20 зашиплений
+     -f mode=mock  # або 'live' коли PR-21 зашиплений
    ```
    Якщо `status=pass` → revert kill-switch (`AI_MEMORY_ENABLED=true`)
    - close issue.
@@ -559,3 +598,69 @@ A: Sentry web tracing і OTel server tracing — окремі трекери. Se
 
 **Q: Anthropic-spans порожні (немає tokens, prompt_cache_hit).**
 A: `aiSpan` отримує meta з `[result, meta]` tuple inner-функції. Якщо upstream API повернув error до того як `usage` був доступний — meta порожній. Перевірити `error.message` у span-status — там буде причина.
+
+## WF-25 — Morning briefing cron (07:00 Kyiv → founder DM)
+
+**Що це.** n8n cron-workflow [`25-morning-briefing-cron.json`](../../ops/n8n-workflows/25-morning-briefing-cron.json) щоранку о 07:00 Kyiv (`0 7 * * *`, `settings.timezone="Europe/Kyiv"`) дергає server endpoint [`POST /api/internal/openclaw/briefing/morning`](../runbooks/openclaw-morning-briefing.md) (PR-26), парсить `{markdown, data}`, паралельно запускає (а) запис у `n8n_webhook_events` через [`POST /api/internal/webhook-events/record`](../../apps/server/src/routes/internal/webhook-events.ts) і (b) DM founder-у через raw HTTP до `api.telegram.org/bot{OPENCLAW_BOT_TOKEN}/sendMessage`. LLM-summarization ще НЕ підключено — cron шле raw hardcoded-template markdown.
+
+**Як monitorити.**
+
+- **Healthy:** один Telegram DM від `@OpenClaw_sergeant_bot` щоранку ~07:00 Kyiv. Усі 5 секцій або `notConfigured: true` (env-var unset на API side) або з реальними даними.
+- **Stuck pending:** `SELECT COUNT(*) FROM n8n_webhook_events WHERE workflow_id='25-morning-briefing-cron' AND processed_at IS NULL AND error IS NULL AND received_at < NOW() - INTERVAL '15 minutes';` — `> 0` означає, що `recordWebhookEvent` помітив запис, але PR-29 retention/replay-CLI ще не відмітив його як processed. На сьогодні `processed_at` для cron-ів ніколи не set — це експлуатаційний baseline; alert тільки коли `error IS NOT NULL`.
+- **Telegram delivery fail:** перевір `error` рядок у `n8n_webhook_events`: якщо `OPENCLAW_BOT_TOKEN`/`OPENCLAW_FOUNDER_TG_USER_ID` не виставлені на n8n Railway → Telegram-нода поверне 401/400 (workflow продовжує завдяки `onError: continueRegularOutput`, але DM не дійшов). Аудит-row однакою INSERT-ний, видно у `SELECT * FROM n8n_webhook_events WHERE workflow_id='25-morning-briefing-cron' ORDER BY received_at DESC LIMIT 5;`.
+- **Heartbeat:** WF-99 `*/3h` heartbeat дасть знати, що n8n живий навіть якщо WF-25 silent. WF-98 error-handler ловить runtime errors WF-25 через `errorWorkflow=iC82EFJzqBny9kxI` і ескалит у `#meta`.
+
+**Як disable.**
+
+- **На день/тиждень:** у n8n UI (`Sergeant Ops n8n`) → відкрий workflow `25 — Morning Briefing Cron (07:00 Kyiv → founder DM)` → toggle `Active` → OFF. Git-version залишає `active: false` для всіх workflow-ів, тому це не perdana — наступний `n8n:import` не reactivate-нe її.
+- **Назавжди:** змінити `status` у `ops/n8n-workflows/manifest.json` з `"experimental"` на `"draft"` (або вилучити рядок) і видалити з `REPORTING-MATRIX.md`. У n8n UI workflow залишиться, але `pnpm n8n:export` напише `active: false` в git і `pnpm n8n:import` deactivate-нe.
+- **Hot-disable без UI:** на n8n Railway встанови `OPENCLAW_FOUNDER_TG_USER_ID=""` — endpoint-call і audit-INSERT все ще пройдуть, але raw Telegram HTTP-call отримає `Bad Request: chat not found` і повідомлення тихо не доставиться. Audit-row у `n8n_webhook_events` лишиться, тому ти бачиш intentional-disable у логах.
+
+**Env-vars на n8n Railway.**
+
+| Var                           | Призначення                                                          |
+| ----------------------------- | -------------------------------------------------------------------- |
+| `PUBLIC_API_BASE_URL`         | Base URL до Sergeant API (`https://api.sergeant.app` / staging URL). |
+| `INTERNAL_API_KEY`            | Bearer для `/api/internal/*` routes. Mathing з server-side env.      |
+| `OPENCLAW_BOT_TOKEN`          | Token для `@OpenClaw_sergeant_bot` (cofounder bot, не alert bot).    |
+| `OPENCLAW_FOUNDER_TG_USER_ID` | Telegram user_id founder-а (private DM target).                      |
+
+API-side env-vars для briefing-секцій (Stripe / PostHog / GitHub / n8n / Sentry) — у [`docs/runbooks/openclaw-morning-briefing.md`](../runbooks/openclaw-morning-briefing.md). Якщо API-side env-var missing — briefing рендерить `notConfigured: true` hint у відповідній секції, cron виконується успішно.
+
+## Alert-bot escalation ladder (T1 → T2 → T3)
+
+**Що це.** Trois-tier ladder для unACKed alerts на `tg_alert_acks`, кожен рівень — окремий n8n cron + idempotency-stamp у DB. ADR-0038 §3.2 ladder, перші колонки — `escalated_at` (T1, PR-O9), решта — `repeated_at` / `sentry_warned_at` / `snoozed_until_at` (Sprint 6 alert-escalation; migration `063_tg_alert_acks_escalation_tiers.sql`).
+
+| Tier   | Trigger                                                                                           | Action                                                                                                                                                                                                         | Marker column      | n8n workflow                                                                                              |
+| ------ | ------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ | --------------------------------------------------------------------------------------------------------- |
+| **T1** | `posted_at < NOW() - 15 min` AND `ack_at IS NULL` AND `escalated_at IS NULL`                      | DM founder via `@OpenClaw_sergeant_bot` (raw HTTP)                                                                                                                                                             | `escalated_at`     | [`103-alert-escalation-cron.json`](../../ops/n8n-workflows/103-alert-escalation-cron.json) (`*/5 min`)    |
+| **T2** | `posted_at < NOW() - 60 min` AND `ack_at IS NULL` AND `repeated_at IS NULL` AND not-snoozed       | Re-post original alert у same topic з prefix `⚠ REPEAT (Nхв без ack)` + inline keyboard (✅ Прочитав / 🕐 Snooze 1h / 🕓 Snooze 4h)                                                                            | `repeated_at`      | [`105-alert-repeat-ping-cron.json`](../../ops/n8n-workflows/105-alert-repeat-ping-cron.json) (`*/15 min`) |
+| **T3** | `posted_at < NOW() - 120 min` AND `ack_at IS NULL` AND `sentry_warned_at IS NULL` AND not-snoozed | Server-side `Sentry.captureMessage("unacked-alert-escalation:<id>", level=warning, tags.kind=unacked-alert-escalation)` — Sentry dashboard + email є off-channel fallback коли founder offline / Telegram down | `sentry_warned_at` | [`106-alert-sentry-warn-cron.json`](../../ops/n8n-workflows/106-alert-sentry-warn-cron.json) (`*/15 min`) |
+
+**Snooze (operator-driven cancel).** Кнопка `🕐 Snooze 1h` / `🕓 Snooze 4h` у T2 keyboard викликає `POST /api/internal/alerts/snooze` → `snoozed_until_at = NOW() + N min`. Latest-write-wins (натискання іншої кнопки просто overwrite). WF-105 і WF-106 фільтрують `snoozed_until_at IS NULL OR snoozed_until_at < NOW()` — тимчасово пригнічує обидва (T1 НЕ фільтрується по snooze, бо T1 вже пройшов до того як юзер бачить T2-keyboard). Manual `UPDATE tg_alert_acks SET snoozed_until_at = NOW() + INTERVAL '12 hours' WHERE alert_id = '<id>'` — emergency operator tool.
+
+**Idempotency invariant.** Усі три mark-функції (`markAlertEscalated`, `markAlertRepeated`, `markAlertSentryWarned`) використовують патерн `UPDATE … SET <col> = NOW() WHERE alert_id = $1 AND <col> IS NULL` + `RETURNING id` → `rowCount=1` означає "перша cron-ітерація для цього alert"; cron може safely retry без double-fire. Partial indexes `tg_alert_acks_repeat_due_idx` / `tg_alert_acks_sentry_due_idx` `WHERE ack_at IS NULL AND <col> IS NULL` забезпечують швидкий cron-query.
+
+**Як monitorити.**
+
+- **Healthy:** `SELECT severity, COUNT(*) FROM tg_alert_acks WHERE ack_at IS NULL AND posted_at > NOW() - INTERVAL '4 hours' GROUP BY 1` — більшість unACKed має `escalated_at IS NOT NULL` (T1 спрацював), деякі мають `repeated_at IS NOT NULL` (60min пройшло), `sentry_warned_at` — рідко (120min — це аномалія).
+- **T2 backlog:** `SELECT alert_id, posted_at, repeated_at FROM tg_alert_acks WHERE ack_at IS NULL AND posted_at < NOW() - INTERVAL '60 minutes' AND repeated_at IS NULL ORDER BY posted_at LIMIT 20` — рядки тут довше ~20хв = WF-105 cron не біжить (n8n Railway down або workflow inactive).
+- **T3 fire-rate:** Sentry → filter `tags.kind=unacked-alert-escalation` — < 1 event/day = healthy. > 5/day = founder offline весь день АБО Telegram-bot broken (T1 DMs не доставлено).
+
+**Як disable / зменшити noise.**
+
+- **Snooze "all noisy ones" одним SQL:** `UPDATE tg_alert_acks SET snoozed_until_at = NOW() + INTERVAL '8 hours' WHERE ack_at IS NULL AND posted_at > NOW() - INTERVAL '24 hours'`. T1 вже зробив DM-и, T2/T3 заглухнуть на 8h.
+- **Disable T2 (repeat-ping):** n8n UI → `105 — Alert Repeat Ping Cron` → toggle Active → OFF. T1 (DM) і T3 (Sentry) продовжать працювати.
+- **Disable T3 (Sentry-warn):** n8n UI → `106 — Alert Sentry Warn Cron` → Active → OFF. T1 + T2 продовжать працювати. АБО на n8n Railway встанови `PUBLIC_API_BASE_URL=""` → cron виконається але HTTP-нода зафейлиться (errorWorkflow ловить).
+- **Hot-mute one workflow з n8n side:** `UPDATE tg_alert_acks SET snoozed_until_at = NOW() + INTERVAL '24 hours' WHERE alert_id LIKE 'wf-15:%' AND ack_at IS NULL` — заглушити всі ноізнуті unACKed від WF-15 на 24h.
+- **Reduce Sentry noise:** на Sentry side → `Settings → Inbound Filters` додати rule "ignore events з tag `kind=unacked-alert-escalation` де `level=warning`" якщо T3 спам надто гучний (НЕ рекомендовано — це повний-stop off-channel-fallback).
+
+**Env-vars на n8n Railway** (доповнення до `OPENCLAW_*` з WF-103):
+
+| Var                        | Workflow      | Призначення                                                                        |
+| -------------------------- | ------------- | ---------------------------------------------------------------------------------- |
+| `SERGEANT_ALERT_BOT_TOKEN` | WF-104/WF-105 | Raw token `@Sergeant_alert_bot` для `editMessageText` + repeat-ping `sendMessage`. |
+| `PUBLIC_API_BASE_URL`      | WF-105/WF-106 | `POST /api/internal/alerts/repeat` + `/alerts/sentry-warn`.                        |
+| `INTERNAL_API_KEY`         | WF-105/WF-106 | Bearer для `/api/internal/*`.                                                      |
+
+API-side: Sentry capture для T3 — той самий `Sentry` SDK що server-side `apps/server/src/sentry.ts`. SENTRY_DSN мусить бути виставлений (інакше capture тихо noop-ує). Якщо `SENTRY_DSN` empty → T3 marker `sentry_warned_at` все одно stamped (idempotency-paper-trail зберігається), але off-channel-signal не доставиться.

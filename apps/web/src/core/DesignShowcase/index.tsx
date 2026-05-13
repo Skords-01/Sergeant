@@ -17,6 +17,9 @@ import { OverlaysSection } from "./sections/Overlays";
 import { ThemingSection } from "./sections/Theming";
 import { A11ySection } from "./sections/A11y";
 import { ModuleAccentsSection } from "./sections/ModuleAccents";
+import { MenusSection } from "./sections/Menus";
+import { PrimitivesSection } from "./sections/Primitives";
+import { EmptyStatesSection } from "./sections/EmptyStates";
 
 /**
  * DesignShowcase 2.0 — navigable internal styleguide.
@@ -111,6 +114,9 @@ function ShowcaseShell() {
           <ThemingSection />
           <A11ySection />
           <ModuleAccentsSection />
+          <MenusSection />
+          <PrimitivesSection />
+          <EmptyStatesSection />
         </main>
       </div>
     </div>
