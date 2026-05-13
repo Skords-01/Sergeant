@@ -751,6 +751,16 @@ const envSchema = z.object({
   /** Скільки reminder-ів брати за один poll (batch). */
   OPENCLAW_REMINDER_POLL_BATCH: intFromEnv(20),
 
+  // ── PR-28 — n8n_webhook_events retention ───────────────────────────
+  /**
+   * Скільки днів зберігати рядки в `n8n_webhook_events` перед `DELETE`.
+   * Default 30. 0 → retention-poller не запускається (зберігаємо все
+   * назавжди — корисно у dev / тестах).
+   */
+  WEBHOOK_EVENTS_RETENTION_DAYS: intFromEnv(30),
+  /** Інтервал в мілісекундах для retention-cleanup tick-у. Default 1h; 0 → off. */
+  WEBHOOK_EVENTS_RETENTION_POLL_INTERVAL_MS: intFromEnv(60 * 60 * 1000),
+
   // ── PR-33 — Cost monitoring dashboard ──────────────────────────────
   /** Railway infra subscription monthly cost (USD). 0/empty → не репортимо. */
   RAILWAY_MONTHLY_COST_USD: floatFromEnv(0),
@@ -905,6 +915,22 @@ export function assertStartupEnv(): void {
     warnings.push(
       "NUTRITION_BACKUP_KEY_SECRET is not set — /api/nutrition/backup-{upload,download} will return 503.",
     );
+  }
+
+  // T2 audit finding #1 — Stripe webhook secret enforcement. If billing is
+  // wired (STRIPE_SECRET_KEY is set) then STRIPE_WEBHOOK_SECRET MUST also
+  // be set in production; otherwise `verifyStripeSignature` had no secret
+  // to compare against and the legacy non-prod fall-back was returning
+  // `true` (accept-all) — every staging / preview deploy was effectively
+  // an open billing-state write endpoint. Hard-fail at boot so the
+  // misconfig surfaces immediately instead of silently mutating
+  // subscription rows weeks later.
+  if (isProduction && process.env["STRIPE_SECRET_KEY"]) {
+    if (!process.env["STRIPE_WEBHOOK_SECRET"]) {
+      throw new Error(
+        "STRIPE_WEBHOOK_SECRET is required in production when STRIPE_SECRET_KEY is set. Without it the Stripe webhook endpoint cannot verify signatures and any caller can mutate billing state. Set the value from Stripe Dashboard → Developers → Webhooks → Signing secret.",
+      );
+    }
   }
 
   // H9: AI_QUOTA_DISABLED is a billing kill-switch — fine in CI/test where e2e
