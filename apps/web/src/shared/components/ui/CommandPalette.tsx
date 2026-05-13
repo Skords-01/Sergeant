@@ -175,18 +175,26 @@ export function useRegisterCommand(
   commands: ReadonlyArray<PaletteCommand>,
 ): void {
   const ctx = useContext(CommandPaletteContext);
+  // Depend on the stable `register` / `unregister` callbacks rather
+  // than `ctx` as a whole — the provider's context value is
+  // re-memoized on every `revision` bump (which `register` itself
+  // schedules), so a `ctx`-dep would re-run this effect on every
+  // registration, re-call `register`, bump revision again and trip
+  // React's "Maximum update depth exceeded" guard. The callbacks
+  // themselves are `useCallback([])`-stable, so the effect only
+  // re-runs when the `id` or the memoized `commands` list actually
+  // changes.
+  const register = ctx?.register;
+  const unregister = ctx?.unregister;
   useEffect(() => {
-    if (!ctx) return;
+    if (!register || !unregister) return;
     if (commands.length === 0) {
-      ctx.unregister(registrationId);
-      return () => ctx.unregister(registrationId);
+      unregister(registrationId);
+      return () => unregister(registrationId);
     }
-    ctx.register({ id: registrationId, commands });
-    return () => ctx.unregister(registrationId);
-    // Intentionally omit `commands` from the deps — callers pass a
-    // memoized list and we re-register only on id / context change.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ctx, registrationId]);
+    register({ id: registrationId, commands });
+    return () => unregister(registrationId);
+  }, [register, unregister, registrationId, commands]);
 }
 
 /**
