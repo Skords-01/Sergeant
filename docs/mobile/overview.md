@@ -1,6 +1,6 @@
 # Mobile client — API contract
 
-> **Last validated:** 2026-04-28 by @Skords-01. **Next review:** 2026-07-27.
+> **Last validated:** 2026-05-13 by @Skords-01. **Next review:** 2026-08-11.
 > **Status:** Active
 
 Референс для Expo/React Native клієнта Sergeant. Сервер уже підготовлений
@@ -27,6 +27,7 @@
 | Scheme                             | Куди веде                                           |
 | ---------------------------------- | --------------------------------------------------- |
 | `sergeant://`                      | Головний хаб (equivalent to tab root)               |
+| `sergeant://hub-chat`              | AI-асистент чат (HubChat, modal route `/hub-chat`)  |
 | `sergeant://workout/{id}`          | Екран конкретного тренування (fizruk)               |
 | `sergeant://workout/new`           | Створення тренування                                |
 | `sergeant://food/log`              | Щоденник їжі (nutrition, поточний день)             |
