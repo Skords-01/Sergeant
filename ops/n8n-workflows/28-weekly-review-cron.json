@@ -1,5 +1,5 @@
 {
-  "name": "26 — Weekly Review Cron (Friday 18:00 Kyiv → founder DM)",
+  "name": "28 — Weekly Review Cron (Friday 18:00 Kyiv → founder DM)",
   "nodes": [
     {
       "parameters": {
@@ -83,7 +83,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"workflowId\": \"26-weekly-review-cron\",\n  \"source\": \"cron\",\n  \"payload\": {{ JSON.stringify({ markdown: $json.markdown, data: $json.data, hadError: $json.hadError, dateStr: $json.dateStr }) }},\n  \"headers\": {\n    \"x-n8n-execution-id\": \"{{ $execution.id }}\",\n    \"x-n8n-workflow-id\": \"26-weekly-review-cron\"\n  }\n}",
+        "jsonBody": "={\n  \"workflowId\": \"28-weekly-review-cron\",\n  \"source\": \"cron\",\n  \"payload\": {{ JSON.stringify({ markdown: $json.markdown, data: $json.data, hadError: $json.hadError, dateStr: $json.dateStr }) }},\n  \"headers\": {\n    \"x-n8n-execution-id\": \"{{ $execution.id }}\",\n    \"x-n8n-workflow-id\": \"28-weekly-review-cron\"\n  }\n}",
         "options": {
           "response": {
             "response": {

@@ -47,13 +47,13 @@
 | --- | ------------------------------------------------------------- | ---------------------- | ----- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | O1  | Phase 2.A: Ранкова повістка 08:30 Kyiv                        | openclaw §Phase 2      | W2    | M      | 🚧 Partial — cron live (Stage 5d, [`b187bfaf`](https://github.com/Skords-01/Sergeant/commit/b187bfaf)); повний LLM-ritual з MRR/signups/PR-queue/proposal — не зашиплено |
 | O2  | C.2: Sentry breadcrumbs у tool-calls                          | tg-improvements §4.3   | W2    | XS     | ✅ Done ([PR #2504](https://github.com/Skords-01/Sergeant/pull/2504), `284cf7cd`, Sprint 5)                                                                              |
-| O3  | Phase 2.B: Friday weekly + monthly OKR                        | openclaw §Phase 2      | W3    | M      | 🚧 First pass shipped — endpoints + n8n WF-26/27 готові, активуй cron-и після OPENCLAW_BOT_TOKEN на n8n Railway                                                          |
+| O3  | Phase 2.B: Friday weekly + monthly OKR                        | openclaw §Phase 2      | W3    | M      | 🚧 First pass shipped — endpoints + n8n WF-27/28 готові, активуй cron-и після OPENCLAW_BOT_TOKEN на n8n Railway                                                          |
 | O4  | B.1: Alert dedup / occurrence-counter (10-min window)         | tg-improvements §4.2   | W3    | M      | ⏳ Очікує Sprint 6                                                                                                                                                       |
 | O5  | W3 PR-3: `/alerts pending` slash-команда                      | tg-improvements §3.2   | W3    | S      | ✅ Done ([PR #2507](https://github.com/Skords-01/Sergeant/pull/2507), `9ad0e272`, Sprint 5)                                                                              |
 | O6  | W4.1: bootstrap setWebhook poll-and-retry hardening           | tg-improvements §3.5.1 | W4    | XS     | ✅ Done ([PR #2531](https://github.com/Skords-01/Sergeant/pull/2531), `49d5c846`)                                                                                        |
 | O7  | A.6+A.7: `/help` discovery + persona quick-row                | tg-improvements §4.1   | W4    | S      | ✅ Done ([PR #2534](https://github.com/Skords-01/Sergeant/pull/2534), `6ee444d3`)                                                                                        |
 | O8  | Phase 3: `/plan`, `/analyze`, `/okr`                          | openclaw §Phase 3      | Later | L      | ✅ Done за founder підтвердженням 2026-05-13 — Stage 5b PR-1..PR-4 + persona allowlist Stage 5a                                                                          |
-| O9  | Alert-bot: 17 workflow ACK-wirings (W3 follow-up від W3 PR-2) | tg-improvements §3.2   | W3+   | M      | ⏳ В очікуванні (Sprint 6)                                                                                                                                               |
+| O9  | Alert-bot: 17 workflow ACK-wirings (W3 follow-up від W3 PR-2) | tg-improvements §3.2   | W3+   | M      | ✅ Done (W3 PR-4: 8 wirings — WF-08/15/16/30/60/63/98/99 — закривають 17-workflow set; routing map: `docs/observability/alert-bot-routing.md`)                           |
 
 ### 1.3. Вже зроблено (довідка)
 
@@ -185,15 +185,15 @@
 
 **Acceptance:**
 
-- [x] П'ятниця 18:00 — DM weekly review (endpoint `POST /api/internal/openclaw/ritual/weekly` + n8n WF-26 cron `0 18 * * 5 Europe/Kyiv`; markdown via LLMProvider claude-sonnet-4-6 з StubProvider fallback)
-- [x] 1-го числа 09:00 — DM monthly OKR review (endpoint `POST /api/internal/openclaw/ritual/monthly` + n8n WF-27 cron `0 9 1 * * Europe/Kyiv`; INTERIM_OKRS hardcoded поки PR-34 strategic_goals DB-table не merged)
+- [x] П'ятниця 18:00 — DM weekly review (endpoint `POST /api/internal/openclaw/ritual/weekly` + n8n WF-28 cron `0 18 * * 5 Europe/Kyiv`; markdown via LLMProvider claude-sonnet-4-6 з StubProvider fallback)
+- [x] 1-го числа 09:00 — DM monthly OKR review (endpoint `POST /api/internal/openclaw/ritual/monthly` + n8n WF-27 cron `0 9 1 * * Europe/Kyiv`; INTERIM_OKRS hardcoded як fallback — PR-34 strategic_goals DB-table merged, follow-up може замінити на DB-query)
 - [ ] Broadcast у `📊 Дайджести` topic (зараз — DM founder; topic broadcast — окремий follow-up)
 - [ ] Активація на n8n Railway після `OPENCLAW_BOT_TOKEN` + `OPENCLAW_FOUNDER_TG_USER_ID` + `LLM_DIGEST_PROVIDER` сетапу
 
 **Реалізація:**
 
 - Server endpoints: `apps/server/src/modules/openclaw/weekly-review/` + `monthly-okr/`.
-- n8n workflows: `ops/n8n-workflows/26-weekly-review-cron.json` + `27-monthly-okr-cron.json`.
+- n8n workflows: `ops/n8n-workflows/28-weekly-review-cron.json` + `27-monthly-okr-cron.json` (slot 26 зайняв PR-34 strategic_weekly cron).
 - Hardcoded OKRs: `apps/server/src/modules/openclaw/monthly-okr/okrs.ts` (3 quarters: foundation-Q2-2026, reliability-Q2-2026, growth-Q3-2026). Treat as interim while PR-34 strategic_goals DB-table is in flight.
 - Тести: weekly-review 21 unit tests (template + builder); monthly-okr 21 unit tests.
 
@@ -221,23 +221,26 @@ ALTER TABLE tg_alert_acks ADD COLUMN IF NOT EXISTS last_occurrence_at TIMESTAMPT
 
 ---
 
-#### O9: 17 workflow ACK-wirings `Продукт` `M`
+#### O9: 17 workflow ACK-wirings `Продукт` `M` — ✅ Done (W3 PR-4)
 
-**Що:** дотягнути pattern із WF-04 (reference wiring з W3 PR-2 [#1480](https://github.com/Skords-01/Sergeant/pull/1480)) до решти broadcast workflows. Кожен WF що шле P0/P1 alert має:
+**Що:** дотягнули pattern із WF-04 (reference wiring з W3 PR-2 [#1480](https://github.com/Skords-01/Sergeant/pull/1480)) до решти 16 broadcast workflows. Кожен WF що шле alert має:
 
 1. Формувати payload через `POST /api/internal/alerts/post`
 2. Отримувати inline-keyboard `[ ✅ Прочитав | 🔄 Розбираю | 🔕 Замутити 30хв ]`
 
-**Пріоритет wirings:**
+**Послідовність wirings:**
 
-1. WF-03 (Sentry P0), WF-18 (Railway crash), WF-22 (DB alerts) — критичні
-2. WF-01/02/05..14/16/17/19..21 — решта
+1. W3 PR-2 [#1480](https://github.com/Skords-01/Sergeant/pull/1480) — WF-04 reference
+2. W3 PR-3 batch 1 [#1503](https://github.com/Skords-01/Sergeant/pull/1503) — WF-03 (P0+P1), WF-18 (P1)
+3. W3 PR-3 batch 2 — WF-01, WF-02, WF-05, WF-06, WF-17, WF-19
+4. W3 PR-4 (O9) — WF-08, WF-15 (dynamic ops/incidents), WF-16, WF-30, WF-60, WF-63, WF-98 (alertId за `error_signature`), WF-99 (silent heartbeat)
 
 **Acceptance:**
 
-- [ ] Всі P0/P1 workflows мають 3-кнопковий row при нових alert-ах
-- [ ] WF-103 (escalation cron) коректно знаходить unacked-и від всіх wired workflows
-- [ ] `ops/n8n-workflows/` JSON оновлені у git (`"active": false` → staging → prod toggle)
+- [x] Всі 17 broadcast workflows мають 3-кнопковий row при нових alert-ах
+- [x] WF-103 (escalation cron) коректно знаходить unacked-и від всіх wired workflows (uniform `alertId` shape per workflow)
+- [x] `ops/n8n-workflows/` JSON оновлені у git (`"active": false` — staging → prod toggle лишається UI-only step)
+- [x] Routing map зафіксована в `docs/observability/alert-bot-routing.md` (workflow → topic/severity/alertId)
 
 ---
 
