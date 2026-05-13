@@ -107,6 +107,9 @@ export type {
   TextareaProps,
 } from "./Input";
 
+export { Prose } from "./Prose";
+export type { ProseProps, ProseVariant } from "./Prose";
+
 export { SectionHeader, SectionHeading } from "./SectionHeading";
 export type {
   SectionHeadingProps,
@@ -131,7 +134,22 @@ export type {
   PopoverItemProps,
   PopoverPlacement,
   PopoverProps,
+  PopoverRole,
 } from "./Popover";
+
+export { ProgressBar } from "./ProgressBar";
+export type {
+  ProgressBarProps,
+  ProgressBarSize,
+  ProgressBarVariant,
+} from "./ProgressBar";
+
+export { ProgressCircle } from "./ProgressCircle";
+export type {
+  ProgressCircleProps,
+  ProgressCircleSize,
+  ProgressCircleVariant,
+} from "./ProgressCircle";
 
 export { ProgressRing } from "./ProgressRing";
 export type {
@@ -143,13 +161,28 @@ export type {
 export {
   Skeleton,
   SkeletonText,
+  SkeletonAvatar,
+  SkeletonCardBlock,
   SkeletonTransactionRow,
   SkeletonBudgetBar,
   SkeletonHabitRow,
   SkeletonWorkoutSet,
   SkeletonMealCard,
 } from "./Skeleton";
-export type { SkeletonProps } from "./Skeleton";
+export type {
+  SkeletonProps,
+  SkeletonTextProps,
+  SkeletonVariant,
+} from "./Skeleton";
+
+export { Slider } from "./Slider";
+export type {
+  SliderProps,
+  SliderSize,
+  SliderOrientation,
+  SingleSliderProps,
+  RangeSliderProps,
+} from "./Slider";
 
 export { SkeletonCard, SkeletonList } from "./SkeletonCard";
 export type { SkeletonCardProps, SkeletonListProps } from "./SkeletonCard";
@@ -164,7 +197,7 @@ export { Spinner } from "./Spinner";
 export type { SpinnerProps, SpinnerSize } from "./Spinner";
 
 export { Switch } from "./Switch";
-export type { SwitchProps } from "./Switch";
+export type { SwitchProps, SwitchSize } from "./Switch";
 
 export { Stat } from "./Stat";
 export type { StatProps, StatSize, StatVariant } from "./Stat";
@@ -181,7 +214,7 @@ export type {
 export { ToastContainer } from "./Toast";
 
 export { Tooltip } from "./Tooltip";
-export type { TooltipPlacement, TooltipProps } from "./Tooltip";
+export type { TooltipPlacement, TooltipProps, TooltipSize } from "./Tooltip";
 
 export type { FormVariant, SmallMediumLarge } from "./types";
 
@@ -252,3 +285,25 @@ export {
   ScreenReaderAnnouncerProvider,
   useAnnounce,
 } from "./ScreenReaderAnnouncer";
+
+export { DropdownMenu } from "./DropdownMenu";
+export type {
+  DropdownMenuEntry,
+  DropdownMenuHandle,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuPlacement,
+  DropdownMenuProps,
+  DropdownMenuSeparator,
+  DropdownMenuSubmenuEntry,
+} from "./DropdownMenu";
+
+export {
+  CommandPalette,
+  CommandPaletteProvider,
+  useCommandPalette,
+  useCommandPaletteControls,
+  useCommandPaletteHotkey,
+  useRegisterCommand,
+} from "./CommandPalette";
+export type { PaletteCommand } from "./CommandPalette";

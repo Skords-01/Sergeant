@@ -1,8 +1,15 @@
 # Mobile Tech Debt — Sergeant Mobile (Expo + Capacitor)
 
-> **Last validated:** 2026-05-12 by Codex (mobile onboarding debt burn-down: `OnboardingWizard.tsx` 805 → 390 LOC, extracted focused step/state/hooks/style modules under `core/onboarding`; current >600 LOC inventory revalidated as `fizruk/lib/dualWrite/adapter.ts` 737 + `PlanCalendar.tsx` 616). **Next review:** 2026-08-10.
+> **Last validated:** 2026-05-13 by Devin (mobile reliability/UX roast: wired `core/ModuleErrorBoundary.tsx` to `captureError`, dropped stale `useRoutineReminders.ts` allowlist entry, re-counted >600 LOC inventory — 4 files current, up from 2). **Next review:** 2026-08-11.
 > **Status:** Active
 
+> **Оновлено 2026-05-13 (roast #10).** Registry revalidated alongside `docs/audits/2026-05-13-mobile-reliability-ux-roast.md`:
+> ModuleErrorBoundary TODO(phase-10) closed — `componentDidCatch` now forwards via `captureError` (no DSN required for the call itself; gating remains inside `lib/observability.ts`). `useRoutineReminders.ts` no longer holds a stale entry in the mobile `no-strict-bypass` allowlist. Large-file inventory drifted: `fizruk/lib/dualWrite/adapter.ts` 737 → 804 (+67), `PlanCalendar.tsx` 616 → 661 (+45), plus two newly-over-600 files — `fizruk/lib/dualWrite/diff.ts` 633 and `routine/pages/Calendar.tsx` 628.
+>
+> **Оновлено 2026-05-13 (T7 verification job).** Додано T7 verification job: `.github/workflows/mobile-flaky-verify.yml`
+> гонить mobile jest-suite 20 разів поспіль (workflow_dispatch + weekly Monday 05:00 UTC cron) і
+> фейлить на першому fail-і — baseline для зняття «⏳ flaky» tag-у з roadmap T7.
+>
 > **Оновлено 2026-05-12.** Registry revalidated after mobile onboarding decomposition:
 > `OnboardingWizard.tsx` is now a thin 390-LOC shell, with `wizardState`, `useReduceMotion`,
 > `StepIndicator`, `WelcomeStep`, `ModulesStep`, `GoalsStep`, and shared onboarding style helpers
@@ -52,19 +59,19 @@
 
 ## Summary — per-category
 
-| Категорія                                | Статус                  | Короткий висновок                                                                                                                                                                                                                                                      |
-| ---------------------------------------- | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| ESLint guardrails                        | ~~Блокер~~ → **OK**     | ✅ [PR #1277](https://github.com/Skords-01/Sergeant/pull/1277). `no-raw-local-storage` + `no-strict-bypass` тепер активні на `apps/mobile/src` + `apps/mobile/app`.                                                                                                    |
-| Type-safety bypasses (`as unknown as X`) | **Високий**             | 7 production файлів у allowlist. Усі — adapter-и між domain-shape та локальними view-model-ями (RN-specific). Migration plan: 6 — domain-alignment, 1 — Expo SDK 52 type-update.                                                                                       |
-| `: any` types у production               | ~~Високий~~ → **OK**    | ✅ [PR #1461](https://github.com/Skords-01/Sergeant/pull/1461). 0 production-файлів з `: any`. `TxRow.tsx` + `TxListItem.tsx` переведено на `(tx: TxRowTx) => void` (mirror веб-twin shape-а), `eslint-disable @typescript-eslint/no-explicit-any` директиви прибрано. |
-| Storage migration                        | **OK** (guardrail-only) | RN не має `localStorage`; усі persist-операції через `safeReadLS`/`safeWriteLS` adapter над MMKV. Прямих `localStorage.*` у коді — 0 (усі згадки у JSDoc-коментарях, що документують web→mobile порт).                                                                 |
-| Cloud-sync invariants                    | **Середній**            | `useLocalStorage` ↔ `useSyncedStorage` дисципліна тримається `sergeant-design/no-raw-tracked-storage` — це окреме правило, статус OK.                                                                                                                                  |
-| Великі файли (>600 LOC)                  | **Середній**            | **2** production-файли >600 LOC у mobile: `fizruk/lib/dualWrite/adapter.ts` 737 і `PlanCalendar.tsx` 616. `OnboardingWizard.tsx` після повторного росту до 805 LOC декомпозовано до 390 LOC + focused modules under `core/onboarding`.                                 |
-| TODO/FIXME маркери                       | **Низький**             | 5 маркерів, усі типу `TODO(mobile-migration, Phase X)` / `TODO(phase-N)` — план відомий, чекає черги.                                                                                                                                                                  |
-| Observability (Sentry RN)                | **Середній**            | `apps/mobile/src/lib/observability.ts` готовий, `Sentry.init` гейтується `EXPO_PUBLIC_SENTRY_DSN`. Без DSN — runtime no-op. На staging/prod DSN ще не підключено.                                                                                                      |
-| Tests — Jest                             | **OK**                  | 98 test-файлів, Jest 29. Skipped/`xit`/`xdescribe` — 0. Приклад flaky tests-у не виявлено у quick-grep (детальний test-stability audit — окремий PR).                                                                                                                  |
-| Capacitor coverage                       | ~~Середній~~ → **OK**   | ✅ [PR #1415](https://github.com/Skords-01/Sergeant/pull/1415). `apps/mobile-shell` має 7 test-файлів (deepLinkBridge, parseDeepLink, platform, index, auth-storage + `barcodeNative` / `pushNative` boundary-suites — 30 тестів на нативні мости).                    |
-| TypeScript-version drift                 | **Середній**            | `apps/mobile`: `typescript ~5.9.0`. `apps/web` + `apps/server`: `^6.0.3`. `tools/console`: `^5.7.2`. Mobile блокує bump через RN/Expo type compatibility — план: дочекатись Expo SDK 53.                                                                               |
+| Категорія                                | Статус                  | Короткий висновок                                                                                                                                                                                                                                                                                                                    |
+| ---------------------------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| ESLint guardrails                        | ~~Блокер~~ → **OK**     | ✅ [PR #1277](https://github.com/Skords-01/Sergeant/pull/1277). `no-raw-local-storage` + `no-strict-bypass` тепер активні на `apps/mobile/src` + `apps/mobile/app`.                                                                                                                                                                  |
+| Type-safety bypasses (`as unknown as X`) | **Високий**             | 7 production файлів у allowlist. Усі — adapter-и між domain-shape та локальними view-model-ями (RN-specific). Migration plan: 6 — domain-alignment, 1 — Expo SDK 52 type-update.                                                                                                                                                     |
+| `: any` types у production               | ~~Високий~~ → **OK**    | ✅ [PR #1461](https://github.com/Skords-01/Sergeant/pull/1461). 0 production-файлів з `: any`. `TxRow.tsx` + `TxListItem.tsx` переведено на `(tx: TxRowTx) => void` (mirror веб-twin shape-а), `eslint-disable @typescript-eslint/no-explicit-any` директиви прибрано.                                                               |
+| Storage migration                        | **OK** (guardrail-only) | RN не має `localStorage`; усі persist-операції через `safeReadLS`/`safeWriteLS` adapter над MMKV. Прямих `localStorage.*` у коді — 0 (усі згадки у JSDoc-коментарях, що документують web→mobile порт).                                                                                                                               |
+| Cloud-sync invariants                    | **Середній**            | `useLocalStorage` ↔ `useSyncedStorage` дисципліна тримається `sergeant-design/no-raw-tracked-storage` — це окреме правило, статус OK.                                                                                                                                                                                                |
+| Великі файли (>600 LOC)                  | **Середній**            | **4** production-файли >600 LOC у mobile (re-count 2026-05-13): `fizruk/lib/dualWrite/adapter.ts` 804 (was 737), `fizruk/lib/dualWrite/diff.ts` 633 (newly over threshold), `routine/pages/Calendar.tsx` 628 (newly over threshold), `PlanCalendar.tsx` 661 (was 616). `OnboardingWizard.tsx` лишається у 390 LOC.                   |
+| TODO/FIXME маркери                       | **Низький**             | 5 маркерів, усі типу `TODO(mobile-migration, Phase X)` / `TODO(phase-N)` — план відомий, чекає черги.                                                                                                                                                                                                                                |
+| Observability (Sentry RN)                | **Середній**            | `apps/mobile/src/lib/observability.ts` готовий, `Sentry.init` гейтується `EXPO_PUBLIC_SENTRY_DSN`. Без DSN — runtime no-op. На staging/prod DSN ще не підключено. **2026-05-13:** `core/ModuleErrorBoundary.tsx` `componentDidCatch` тепер форвардить помилки через `captureError({ moduleName, source })` — TODO(phase-10) закрито. |
+| Tests — Jest                             | **OK**                  | 98 test-файлів, Jest 29. Skipped/`xit`/`xdescribe` — 0. Приклад flaky tests-у не виявлено у quick-grep (детальний test-stability audit — окремий PR).                                                                                                                                                                                |
+| Capacitor coverage                       | ~~Середній~~ → **OK**   | ✅ [PR #1415](https://github.com/Skords-01/Sergeant/pull/1415) + [PR #2538](https://github.com/Skords-01/Sergeant/pull/2538). `apps/mobile-shell` має 8 test-файлів включно з `boundary.test.ts` (23 тести: Web Compatibility, Native Bridge, Deep Links).                                                                           |
+| TypeScript-version drift                 | **Середній**            | `apps/mobile`: `typescript ~5.9.0`. `apps/web` + `apps/server`: `^6.0.3`. `tools/console`: `^5.7.2`. Mobile блокує bump через RN/Expo type compatibility — план: дочекатись Expo SDK 53.                                                                                                                                             |
 
 ---
 
@@ -151,12 +158,14 @@ allowlist на 1 файл (`useSyncedStorage.ts` сам), 0 інших пору�
 
 ## Великі файли (>600 LOC)
 
-2 production-файли у `apps/mobile/` (поточний re-count 2026-05-12 через `Get-ChildItem apps/mobile/src,apps/mobile/app ... Measure-Object -Line`; `OnboardingWizard` декомпозовано нижче порогу — див. нижче):
+4 production-файли у `apps/mobile/` (поточний re-count 2026-05-13 через `find apps/mobile/src apps/mobile/app -name '*.ts*' ! -name '*.test.*' | xargs wc -l | sort -nr`; `OnboardingWizard` лишається декомпозованим — див. нижче):
 
-| Файл                                                      | LOC | Пріорит��т | Нотатка                                                                                                                                                 |
-| --------------------------------------------------------- | --- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `apps/mobile/src/modules/fizruk/lib/dualWrite/adapter.ts` | 737 | P2         | SQLite dual-write adapter. Розбити за operation-family (`workouts`, `dailyLog`, `templates`, `wellbeing`, `activeWorkout`) без зміни SQL/LWW semantics. |
-| `apps/mobile/src/modules/fizruk/pages/PlanCalendar.tsx`   | 616 | P2         | Workout-planning календар. Можна винести `PlanCalendarHeader`, `WeekRow`, `DaySheet` як sub-components.                                                 |
+| Файл                                                      | LOC | Пріоритет | Нотатка                                                                                                                                                                           |
+| --------------------------------------------------------- | --- | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `apps/mobile/src/modules/fizruk/lib/dualWrite/adapter.ts` | 804 | P2        | SQLite dual-write adapter (виріс із 737 за 10 днів). Розбити за operation-family (`workouts`, `dailyLog`, `templates`, `wellbeing`, `activeWorkout`) без зміни SQL/LWW semantics. |
+| `apps/mobile/src/modules/fizruk/pages/PlanCalendar.tsx`   | 661 | P2        | Workout-planning календар (виріс із 616). Можна винести `PlanCalendarHeader`, `WeekRow`, `DaySheet` як sub-components.                                                            |
+| `apps/mobile/src/modules/fizruk/lib/dualWrite/diff.ts`    | 633 | P2        | **Новий** >600 LOC entry (2026-05-13). Diff-utilities для fizruk dual-write — потенційно split на per-shape diff-helpers (`workoutsDiff`, `dailyLogDiff`, …).                     |
+| `apps/mobile/src/modules/routine/pages/Calendar.tsx`      | 628 | P2        | **Новий** >600 LOC entry (2026-05-13). Routine calendar page — кандидати на винесення: `DayCell`, `WeekHeader`, completion-aggregator hook.                                       |
 
 > **2026-05-03 sync:** `TransactionsPage.tsx` (1215 LOC, найбільший файл у репо)
 > декомпозовано у [#1453](https://github.com/Skords-01/Sergeant/pull/1453) на 14
@@ -201,13 +210,10 @@ presentational pieces → `components/*.tsx`. Орекстратор трима�
 
 | Файл                                                         | Маркер                                                                     |
 | ------------------------------------------------------------ | -------------------------------------------------------------------------- |
-| `apps/mobile/src/core/settings/ExperimentalSection.tsx:31`   | `// TODO(mobile-migration): replace with a shared FLAG_REGISTRY once …`    |
-| `apps/mobile/src/core/settings/ExperimentalSection.tsx:53`   | `// envelope). See TODO above.`                                            |
 | `apps/mobile/src/core/settings/NotificationsSection.tsx:239` | `{/* TODO(mobile-migration, Phase 6): wire to useMonthlyPlan once … */}`   |
 | `apps/mobile/src/core/settings/RoutineSection.tsx:28`        | `// TODO(mobile-migration): swap for the canonical routine-module storage` |
-| `apps/mobile/src/core/ModuleErrorBoundary.tsx:232`           | `// TODO(phase-10): forward via @sentry/react-native once mobile …`        |
 
-`AI-LEGACY:` маркерів — 0. `FIXME` / `HACK` / `XXX` — 0.
+**2026-05-13 update:** `core/ModuleErrorBoundary.tsx` TODO(phase-10) закрито у роасті `docs/audits/2026-05-13-mobile-reliability-ux-roast.md` — `componentDidCatch` тепер форвардить через `captureError`. `ExperimentalSection.tsx` markers щезли у попередньому settings sweep — реальний quick-grep видає тільки 2 живих TODO. `AI-LEGACY:` маркерів — 0. `FIXME` / `HACK` / `XXX` — 0.
 
 ---
 
@@ -230,9 +236,8 @@ Sentry для mobile та виставити `EXPO_PUBLIC_SENTRY_DSN` у Expo bu
 (Expo EAS Secrets або CI env). Жодного коду більше дописувати не треба —
 Phase 12 scaffold уже готовий.
 
-`apps/mobile/src/core/ModuleErrorBoundary.tsx:232` має `TODO(phase-10)`
-forward-error у Sentry — закривається тим самим DSN-PR (одна додаткова
-змінна, не код).
+`apps/mobile/src/core/ModuleErrorBoundary.tsx` TODO(phase-10) — **closed**
+2026-05-13. `componentDidCatch` тепер викликає `captureError(error, { moduleName, source: "mobile.ModuleErrorBoundary" })` через `@/lib/observability`. До провіжнінгу DSN це лишається лог-у-консоль (як і раніше), але код-сайт уже готовий — DSN-PR більше не вимагає правок цього файла.
 
 ---
 
@@ -261,7 +266,7 @@ forward-error у Sentry — закривається тим самим DSN-PR (�
 
 ## Tests — coverage & flakiness
 
-- **98 test-файлів** у `apps/mobile` (Jest 29 + `jest-expo` preset).
+- **111 test-файлів** у `apps/mobile` (Jest 29 + `jest-expo` preset).
 - **Skipped tests:** 0 (`grep '\b(it|test|describe)\.skip\b\|\b(xit|xdescribe|xtest)\b'` → 0 matches).
 - **`AI-LEGACY:` у тестах:** 0.
 
@@ -269,6 +274,24 @@ Detailed test-stability audit (timing-sensitive, snapshot-drift) — окрем�
 Quick-grep flaky-індикаторів (`flaky`, `unstable`, `retries`, `setTimeout` всередині
 `it`) виявив 2 файли, що використовують `jest.useFakeTimers()` — це норма для
 hook-тестів з `useEffect` cleanup, не сигнал flaky.
+
+**T7 verification gate ([sprint-roadmap §1.1](../planning/sprint-roadmap-q2q3-2026.md#11-tech-борг)).**
+Гіпотеза «mobile suite є flaky через `isReduceMotionEnabled` mock» закрита у
+PR [#2453](https://github.com/Skords-01/Sergeant/pull/2453) (commit
+[`53853e00`](https://github.com/Skords-01/Sergeant/commit/53853e00) для
+OnboardingWizard + [`f11c1f49`](https://github.com/Skords-01/Sergeant/commit/f11c1f49)
+для WeeklyDigestFooter / HubSettingsPage). Verification:
+[`.github/workflows/mobile-flaky-verify.yml`](../../.github/workflows/mobile-flaky-verify.yml)
+— manual `workflow_dispatch` (+weekly cron) job, який гонить `pnpm --filter
+@sergeant/mobile test` 20 разів поспіль і фейлить на першій помилці. Baseline-rule:
+20/20 green поспіль за останній місяць → знімаємо flag «⏳ Очікує 20-run CI verification»
+з roadmap-у. Якщо < 20/20 — fail-rate (X/20) логується у цьому файлі як baseline
+і застосовуємо OnboardingWizard fix-pattern (`mockResolvedValue(false)` замість
+never-resolving Promise).
+
+| Дата      | Run number | Result | Notes                                                                                                                               |
+| --------- | ---------- | ------ | ----------------------------------------------------------------------------------------------------------------------------------- |
+| _pending_ | —          | —      | Initial 20-run baseline ще не запускалось. Після merge T7 PR — actions → «Mobile flaky-tests verification (20-run)» → Run workflow. |
 
 ---
 
@@ -297,7 +320,7 @@ hook-тестів з `useEffect` cleanup, не сигнал flaky.
 | `apps/web`          | `^6.0.3`           |
 | `apps/server`       | `^6.0.3`           |
 | `apps/mobile`       | `~5.9.0`           |
-| `tools/console`     | `^5.7.2`           |
+| `tools/openclaw`    | `^5.7.2`           |
 | `apps/mobile-shell` | (наслідує root)    |
 
 Web/server рухаються на bleeding-edge TS 6, mobile тримається на 5.9 (RN/Expo
@@ -323,8 +346,8 @@ type-compatibility), console відстає до 5.7. Дрифт сам по с�
 | M5  | `expo-notifications` SDK 52 type alignment         | `useRoutineReminders.ts` — drop `as unknown as Notifications.NotificationTriggerInput`.                | S (1h)    | done — drop cast, build typed `WeeklyTriggerInput` inline (PR pending)                             |
 | M6  | Decompose `TransactionsPage.tsx` (1215 LOC)        | Mirror web's `pages/transactions/**` split.                                                            | L (1d)    | done — ✅ [#1453](https://github.com/Skords-01/Sergeant/pull/1453)                                 |
 | M6b | Decompose `CelebrationModal.tsx` (671 LOC)         | Розбити на orchestrator + `confetti/` + `haptics.ts` + `hooks/` + `constants.ts` + `types.ts`.         | M (3-4h)  | done — ✅ [#1465](https://github.com/Skords-01/Sergeant/pull/1465)                                 |
-| M7  | Sentry RN DSN provisioning                         | Створити Sentry project, виставити `EXPO_PUBLIC_SENTRY_DSN` в Expo EAS Secrets.                        | XS (0.5h) | TODO                                                                                               |
-| M8  | Capacitor native-bridge integration tests          | Mock Capacitor plugins + JS-API контракт-тести для `pushNative`, `barcodeNative`.                      | M (3-4h)  | TODO                                                                                               |
+| M7  | Sentry RN DSN provisioning                         | Створити Sentry project, виставити `EXPO_PUBLIC_SENTRY_DSN` в Expo EAS Secrets.                        | XS (0.5h) | TODO (code-sites ready — `ModuleErrorBoundary` forwarding closed 2026-05-13)                       |
+| M8  | Capacitor native-bridge integration tests          | Mock Capacitor plugins + JS-API контракт-тести для `pushNative`, `barcodeNative`.                      | M (3-4h)  | ✅ done — [PR #2538](https://github.com/Skords-01/Sergeant/pull/2538) (23 boundary tests)          |
 | M9  | TS 6 bump для mobile + console (після Expo SDK 53) | `apps/mobile`, `tools/console` → `^6.x`.                                                               | M-L       | BLOCKED on Expo SDK 53                                                                             |
 
 Кожен PR — ізольований, тестується окремо `pnpm lint` + (де доречно)
