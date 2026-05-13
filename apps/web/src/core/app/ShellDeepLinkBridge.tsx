@@ -53,6 +53,7 @@ const ALLOWED_PATH_PREFIXES: readonly string[] = [
   "/profile",
   "/design",
   "/pricing",
+  "/status",
   "/assistant",
   "/chat",
   "/help",
