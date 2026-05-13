@@ -2,6 +2,9 @@ import type { Request, Response } from "express";
 import client from "prom-client";
 import type { Pool } from "pg";
 
+import { env } from "../env/env.js";
+import { safeStringEqual } from "../http/safeCompare.js";
+
 /**
  * Prometheus-реєстр з default-метриками (event loop lag, RSS, heap, GC)
  * плюс HTTP-RED, Postgres-USE і domain-лічильники. Експортується через
@@ -564,6 +567,31 @@ export const syncOpLogApplyTotal = new client.Counter({
 });
 
 /**
+ * Counter for `sync_op_log` inserts where `origin_device_id` came in as
+ * NULL on the client side (i.e. the client did not forward
+ * `X-Origin-Device-Id`). The pull/SSE filter rejects every NULL-origin
+ * row when called with a NULL header (`NULL IS DISTINCT FROM NULL`
+ * evaluates to `FALSE` in PG), so a sustained non-zero rate here is a
+ * data-integrity regression: multi-device convergence is silently
+ * broken for the affected user(s).
+ *
+ * Labels:
+ *   - `module` is always `"v2"` for label-uniformity with the other
+ *     sync_* metrics — the dimension exists so a future op-log dialect
+ *     can be tagged without breaking dashboards.
+ *
+ * Alert: `rate(sync_op_log_null_origin_device_id_total[15m]) > 0` for
+ * 30m. Expected resting value post-fix: 0. Spikes during canary rollout
+ * are expected for clients that have not yet picked up the new bundle.
+ */
+export const syncOpLogNullOriginDeviceIdTotal = new client.Counter({
+  name: "sync_op_log_null_origin_device_id_total",
+  help: "Inserts into sync_op_log where origin_device_id arrived as NULL (client did not forward X-Origin-Device-Id). Sustained non-zero = multi-device convergence broken.",
+  labelNames: ["module"],
+  registers: [register],
+});
+
+/**
  * Pull-lag (queue-staleness) гістограма для v2 sync (PR #048, RED-stack
  * "Latency"). На кожному `GET /v2/sync/pull` із непорожньою відповіддю
  * спостерігаємо `now - server_ts(newest_op_returned)` — це проксі
@@ -732,18 +760,15 @@ export const appBuildInfo = new client.Gauge({
 
 appBuildInfo
   .labels({
-    version: process.env["npm_package_version"] || "unknown",
+    version: env.npm_package_version || "unknown",
     commit: (
-      process.env["RAILWAY_GIT_COMMIT_SHA"] ||
-      process.env["GIT_COMMIT"] ||
-      process.env["VERCEL_GIT_COMMIT_SHA"] ||
+      env.RAILWAY_GIT_COMMIT_SHA ||
+      env.GIT_COMMIT ||
+      env.VERCEL_GIT_COMMIT_SHA ||
       "unknown"
     ).slice(0, 12),
-    release:
-      process.env["SENTRY_RELEASE"] ||
-      process.env["RAILWAY_GIT_COMMIT_SHA"] ||
-      "unknown",
-    env: process.env["NODE_ENV"] || "development",
+    release: env.SENTRY_RELEASE || env.RAILWAY_GIT_COMMIT_SHA || "unknown",
+    env: env.NODE_ENV || "development",
     node_version: process.version,
   })
   .set(1);
@@ -1017,14 +1042,20 @@ export function startPoolSampler(
 
 /**
  * Express handler для `GET /metrics`. Якщо задано `METRICS_TOKEN` — вимагає
- * `Authorization: Bearer <token>`. У dev/локально можна не ставити токен.
+ * `Authorization: Bearer <token>`. У dev/локально можна не ставити токен
+ * (production хард-фейлить у `assertStartupEnv` — див. T2 audit #4).
+ *
+ * Токен-compare використовує `safeStringEqual` (поверх
+ * `crypto.timingSafeEqual`) замість наївного `!==`, щоб не лікати
+ * позицію першої розбіжності через CPU branch-timing — мережевий
+ * атакуючий міг би статистично відновити токен побайтово.
  */
 export function metricsHandler(req: Request, res: Response): void {
-  const expected = process.env["METRICS_TOKEN"];
+  const expected = env.METRICS_TOKEN;
   if (expected) {
     const auth = req.get("authorization") || "";
     const got = auth.startsWith("Bearer ") ? auth.slice(7) : "";
-    if (got !== expected) {
+    if (!safeStringEqual(got, expected)) {
       res.status(401).type("text/plain").send("unauthorized");
       return;
     }

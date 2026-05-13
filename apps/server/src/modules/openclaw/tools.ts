@@ -1,7 +1,7 @@
 /**
  * Server-side implementations OpenClaw tool-ів (ADR-0031 §5).
  *
- * Чому tool-implementations тут на сервері, а не у `tools/console`:
+ * Чому tool-implementations тут на сервері, а не у `tools/openclaw`:
  *   1) Tool-execution потребує Postgres + filesystem-access у repo +
  *      внутрішні API. Все це є на сервері; виносити у console — duplicate
  *      DI + risk дрейф конфігурації.
@@ -977,7 +977,7 @@ export interface GetServerStatsOutput {
  *     touching tool code.
  */
 export async function getServerStats(): Promise<GetServerStatsOutput> {
-  const port = process.env["PORT"] ?? "3000";
+  const port = String(env.PORT);
   const baseUrl =
     process.env["SERVER_INTERNAL_URL"] ?? `http://localhost:${port}`;
   const res = await fetch(`${baseUrl.replace(/\/+$/, "")}/healthz`, {
