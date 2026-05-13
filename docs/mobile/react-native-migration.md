@@ -1,6 +1,6 @@
 # Міграція на React Native (Expo)
 
-> **Last validated:** 2026-05-06 by @Skords-01. **Next review:** 2026-08-04.
+> **Last validated:** 2026-05-13 by @Skords-01. **Next review:** 2026-08-11.
 > **Status:** Active
 
 > Source-of-truth трекер по перенесенню Sergeant із PWA-клієнта (`apps/web`,
@@ -41,7 +41,7 @@
 | 3    | CloudSync v1 → Sync v2 (op-log + outbox) | 🔵 In progress | v1 client cut-over ([#2010](https://github.com/Skords-01/Sergeant/pull/2010)) + mobile engine drop ([`20793ad`](https://github.com/Skords-01/Sergeant/commit/20793adb)) + сервер `module_data` / v1 handlers видалено ([`75dcdd5`](https://github.com/Skords-01/Sergeant/commit/75dcdd5c)). Mobile writer-wiring трекає [plan 2026-05-06](../superpowers/plans/2026-05-06-sync-engine-writer-wiring.md). Деталі — Q13 + storage-roadmap Stage 5–7 |
 | 4    | Модуль Фінік + Detox E2E                 | 🔵 In progress | усі 5 сторінок портовано, Detox iOS зелений; Android CI follow-up                                                                                                                                                                                                                                                                                                                                                                                 |
 | 5    | Модуль Рутина                            | 🔵 In progress | весь функціонал портовано; чекає stabilization на real device                                                                                                                                                                                                                                                                                                                                                                                     |
-| 6    | Модуль Фізрук                            | 🔵 In progress | усі основні сторінки портовано; залишився `WorkoutTemplates` drawer                                                                                                                                                                                                                                                                                                                                                                               |
+| 6    | Модуль Фізрук                            | ✅ Done        | усі основні сторінки + `WorkoutTemplates` drawer портовано (§ 5.3)                                                                                                                                                                                                                                                                                                                                                                                |
 | 7    | Модуль Харчування                        | 🔵 In progress | shell + Dashboard / Log / Water / Pantry / Shopping / Recipe + barcode + photo-аналіз                                                                                                                                                                                                                                                                                                                                                             |
 | 8    | AI-шар (HubChat / Coach / Digest)        | ⏸ Not started  | —                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | 9    | Hub-пошук + звіти                        | ⏸ Not started  | —                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
@@ -251,7 +251,7 @@ NativeWind + RN-core. Поверх — додаткові примітиви в 
   `Dashboard` ([#493](https://github.com/Skords-01/Sergeant/pull/493)),
   `Exercise` detail
   ([#500](https://github.com/Skords-01/Sergeant/pull/500)). Залишився
-  `WorkoutTemplates` drawer; фото-прогрес тіла свідомо виключено
+  фото-прогрес тіла свідомо виключено
   ([#468](https://github.com/Skords-01/Sergeant/pull/468)).
 - **Харчування** (`apps/mobile/src/modules/nutrition/*`) — Phase 7
   активна: `NutritionApp` shell + bottom-nav, сторінки `Dashboard`,
@@ -348,7 +348,7 @@ sergeant/
 | 3   | CloudSync + офлайн-черга                   | 🔵 In progress | 1                            | RN-аналог `core/cloudSync/useCloudSync.ts`: MMKV + NetInfo + React Query persist; LWW-резолвер незмінний (на сервері). `useSyncedStorage` + ESLint-правило проти raw-tracked storage.                                        |
 | 4   | Порт модуля Фінік + перші Detox E2E        | 🔵 In progress | 1, 3                         | Усі 5 сторінок портовано. Detox iOS зелений, Android CI follow-up.                                                                                                                                                           |
 | 5   | Порт модуля Рутина                         | 🔵 In progress | 1, 3                         | Весь функціонал портовано. Stabilization + інтеграційні тести на real device через Expo Dev Client.                                                                                                                          |
-| 6   | Порт модуля Фізрук                         | 🔵 In progress | 1, 3                         | Усі сторінки портовано. Залишився `WorkoutTemplates` drawer.                                                                                                                                                                 |
+| 6   | Порт модуля Фізрук                         | ✅ Done        | 1, 3                         | Усі сторінки + `WorkoutTemplates` drawer портовано (§ 5.3).                                                                                                                                                                  |
 | 7   | Порт модуля Харчування                     | 🔵 In progress | 1, 3, 6                      | shell + 8 сторінок + barcode-сканер + photo-аналіз; чекає AI-генерація shopping-list.                                                                                                                                        |
 | 8   | AI-шар (HubChat / Coach / Digest)          | ⏸ Not started  | 2, 4–7                       | RN-сумісний стримінг (fetch ReadableStream у RN 0.76 ОК). Speech → `expo-speech-recognition` або server-side fallback (Whisper).                                                                                             |
 | 9   | Hub-пошук + звіти                          | ⏸ Not started  | 2, 4–7                       | `HubSearch` + `HubReports`. Pure-агрегатори вже у `@sergeant/insights`.                                                                                                                                                      |
@@ -400,7 +400,7 @@ Per module — які файли `apps/web` переносяться і в що 
 - Detox iOS-сьют `finyk-manual-expense.e2e.ts`. Android CI workflow +
   `finyk-transactions.e2e.ts` period-filter сьют — in-flight.
 
-### 5.3 `modules/fizruk` — ✅ Майже всі сторінки портовано
+### 5.3 `modules/fizruk` — ✅ Весь функціонал портовано
 
 - `FizrukApp.tsx` + 9 route-сторінок у stack-навігаторі
   (`apps/mobile/app/(tabs)/fizruk/*`): `index` (Dashboard), `workouts`,
@@ -427,12 +427,22 @@ Per module — які файли `apps/web` переносяться і в що 
 - `useRecovery` + `useExerciseCatalog` + `useDailyLog` — на mobile
   (MMKV + cloud-sync); Atlas / Body підключені до реальних даних
   відновлення.
-- **`WorkoutTemplates` drawer** — у scope Phase 6, але ще не реалізовано
-  на mobile. Mobile-хук `useWorkoutTemplates` уже існує (MMKV +
-  CloudSync, mirror web LS-shape під ключем `STORAGE_KEYS.FIZRUK_TEMPLATES`),
-  залишилось перенести UI з `apps/web/src/modules/fizruk/components/WorkoutTemplatesSection.tsx`
-  - узгодити тип `WorkoutTemplateGroup` з web-shape. Templates SQLite
-    cut-over — окрема follow-up серія, ще не у Stage 4 storage-roadmap.
+- **`WorkoutTemplates` drawer** — ✅ Done.
+  Mobile-хук `useWorkoutTemplates` уже існував (SQLite warm cache +
+  dual-write via `triggerFizrukDualWrite`, Stage 12 PR #070f-mobile-dualwrite);
+  у цьому PR-і ([feat(mobile,fizruk): port WorkoutTemplates drawer to RN
+  (Phase 6 closure)](https://github.com/Skords-01/Sergeant/pulls?q=is%3Apr+port+WorkoutTemplates))
+  додано UI-обгортку `WorkoutTemplatesSheet` (RN `Sheet`-bottom-sheet
+  з `WorkoutTemplateRow` + `WorkoutTemplateEditor`) і тригер у Fizruk
+  Workouts page (`apps/mobile/src/modules/fizruk/pages/Workouts.tsx`,
+  card «Шаблони» поруч із «Каталог вправ»). Apply-template-flow
+  створює нове тренування й заповнює його вправами шаблону через
+  існуючий `useFizrukWorkouts` + `useActiveFizrukWorkout`. Templates
+  superset / circuit-grouping editor — свідомо не портовано
+  (mobile-UI відкладено; hook round-tripить existing `groups`-поле
+  незмінним, тож web-шаблони з групами лишаються коректними після
+  редагування на mobile). Templates SQLite read cut-over — окрема
+  follow-up серія, ще не у Stage 4 storage-roadmap.
 - **Не мігруємо:** фото-прогрес тіла (виключено з плану,
   [#468](https://github.com/Skords-01/Sergeant/pull/468)).
 
