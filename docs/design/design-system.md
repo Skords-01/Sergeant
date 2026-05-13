@@ -1,6 +1,6 @@
 # Sergeant Design System
 
-> **Last validated:** 2026-05-13 by @Skords-01. **Next review:** 2026-08-11.
+> **Last validated:** 2026-05-13 by @Skords-01 / Devin. **Next review:** 2026-08-11.
 > **Status:** Active
 
 Єдина візуальна мова для хаба з 4 модулями: **ФІНІК**, **ФІЗРУК**, **Рутина**,
@@ -12,6 +12,36 @@
 > (`bg-surface`, `text-fg`, `border-border`). Ніколи не додавай hex-коди в
 > `className`, не створюй «ще одну кастомну картку», і не пиши
 > `text-gray-500` / `bg-white`.
+
+## Живий styleguide
+
+Дзеркало цього контракту — навігабельний styleguide
+[`apps/web/src/core/DesignShowcase`](../../apps/web/src/core/DesignShowcase).
+Сторінка `/design-showcase` (dev / preview-only) має sticky-сайдбар на 11
+розділів, тогли theme / density / direction / reduced-motion, у кожному
+розділі: live demo, copy-paste snippet, do/don't пари, badge-list із
+Hard Rules + ESLint rules.
+
+Якорі та maturity на 2026-05-13:
+
+| Розділ         | Якір          | Maturity   | Що демонструє                                       |
+| -------------- | ------------- | ---------- | --------------------------------------------------- |
+| Кольори        | `#colors`     | **stable** | semantic surfaces, brand, statuses, data-viz, alpha |
+| Типографіка    | `#typography` | **stable** | `text-style-*` шкала, eyebrow рамки, ellipsis       |
+| Spacing        | `#spacing`    | **stable** | spacing scale + canonical radii                     |
+| Elevation      | `#elevation`  | **stable** | shadows, card variants, hero accent, z-layers       |
+| Motion         | `#motion`     | **stable** | Ambient / Response / Celebrate бюджети              |
+| Форми          | `#forms`      | **stable** | Button, Input, FormField, Select, Switch matrix     |
+| Фідбек         | `#feedback`   | **stable** | Badge, Spinner, Skeleton, Avatar, ProgressRing      |
+| Overlays       | `#overlays`   | **stable** | Modal, Sheet, ConfirmDialog                         |
+| Theming        | `#theming`    | **beta**   | Light / Dark / HC матриця + поточний switcher       |
+| A11y           | `#a11y`       | **stable** | focus-visible, touch targets, contrast, motion      |
+| Module accents | `#accents`    | **stable** | finyk / fizruk / routine / nutrition tokens         |
+
+> Maturity:
+> **stable** — API публічний, lint-захищений, безпечний для нового UI.
+> **beta** — API може ще зрушити (theming switcher і HC-режим у міграції).
+> **experimental** — поки що нічого; зарезервовано під майбутні density tokens.
 
 ---
 
