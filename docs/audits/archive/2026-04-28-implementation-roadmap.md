@@ -1,7 +1,7 @@
 # Sergeant - Детальний План Реалізації Покращень
 
-> **Last validated:** 2026-05-05 by Devin AI. **Next review:** 2026-08-01.
-> **Status:** Active
+> **Last validated:** 2026-05-13 by Devin (child session). **Next review:** 2026-08-11.
+> **Status:** Archived (superseded — консолідовано у [`docs/launch/product-os/ftux-master-tracker.md`](../../launch/product-os/ftux-master-tracker.md); архівовано у PR-08, frozen reference). Outstanding tech-debt items відстежуються у [`docs/tech-debt/`](../../tech-debt/README.md) та [`docs/planning/sprint-roadmap-q2q3-2026.md`](../../planning/sprint-roadmap-q2q3-2026.md).
 
 > **Update 2026-05-05 (full refresh):** Документ оновлено за актуальним станом кодової бази.
 > Основні зміни від останнього ревʼю:

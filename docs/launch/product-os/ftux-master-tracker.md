@@ -46,7 +46,7 @@
 
 ## 1. TL;DR
 
-> **PR-status (snapshot 2026-05-06 09:00 UTC):** PR-00, PR-01, PR-02 + status-bump #1939, PR-03 (`pnpm bootstrap` #1943), PR-04 (`disciplined hero copy` #1944), **PR-05 (`demo mode as first-class CTA` #1986), PR-06 (`canonical Cyrillic naming sweep` #1998), PR-07 (`pwa install prompt banner` #2011)**, PR-17 (license auto-gen — `pnpm licenses:check` у CI, [#516](https://github.com/Skords-01/Sergeant/pull/516) / [#517](https://github.com/Skords-01/Sergeant/pull/517) / [#518](https://github.com/Skords-01/Sergeant/pull/518)) — merged. PR-18 (whats-new modal) — 🚧 in flight. PR-19 (paywall UX placement sketch → [`paywall-ux-placement.md`](./paywall-ux-placement.md)) — у роботі (#1989). PR-20 plan ([`paywall-implementation-plan.md`](./paywall-implementation-plan.md)) — у цьому PR; impl-кодинг розбитий на 4 sub-PR (20a/b/c/d ~510 LOC) і чекає 0010 phase 3 (`usePlan()` RQ-hook). З Wave 1 залишається лише PR-08 (cleanup — archive stale audits + delete `.replit`). Детально — §3 PR-план.
+> **PR-status (snapshot 2026-05-06 09:00 UTC):** PR-00, PR-01, PR-02 + status-bump #1939, PR-03 (`pnpm bootstrap` #1943), PR-04 (`disciplined hero copy` #1944), **PR-05 (`demo mode as first-class CTA` #1986), PR-06 (`canonical Cyrillic naming sweep` #1998), PR-07 (`pwa install prompt banner` #2011)**, PR-17 (license auto-gen — `pnpm licenses:check` у CI, [#516](https://github.com/Skords-01/Sergeant/pull/516) / [#517](https://github.com/Skords-01/Sergeant/pull/517) / [#518](https://github.com/Skords-01/Sergeant/pull/518)) — merged. PR-18 (whats-new modal) — 🚧 in flight. PR-19 (paywall UX placement sketch → [`paywall-ux-placement.md`](./paywall-ux-placement.md)) — у роботі (#1989). PR-20 plan ([`paywall-implementation-plan.md`](./paywall-implementation-plan.md)) — у цьому PR; impl-кодинг розбитий на 4 sub-PR (20a/b/c/d ~510 LOC) і чекає 0010 phase 3 (`usePlan()` RQ-hook). Wave 1 закрита (PR-08 cleanup — archive stale audits + delete `.replit` — closed; closes ftux-roast P1-4). Детально — §3 PR-план.
 >
 > **Module-readiness update 2026-05-05:** Fizruk shipped progress charts + exercise catalog + workout notes ([PR #19](https://github.com/Skords-01/Sergeant/pull/19)) і Workouts/Dashboard refactor + journal pagination ([PR #20](https://github.com/Skords-01/Sergeant/pull/20)) — інкорпоровано у §3.5 (FTUX-relevant infra) + §5.3 / §5.4 (Fizruk visual references); §4.1 розширено 6 hero copy variants для наступної ротації + §4.2 selection rubric.
 >
@@ -131,7 +131,7 @@
 | **PR-05** | feat(welcome): demo mode as first-class CTA                  | ~60          | PR-04 | Demo share-of-traffic ≥ 15%                                | ✅ [Merged #1986](https://github.com/Skords-01/Sergeant/pull/1986)                                   |
 | **PR-06** | feat(brand): canonical Cyrillic naming sweep                 | ~150         | —     | UI label uniformity (Фінік / Фізрук / Рутина / Харчування) | ✅ [Merged #1998](https://github.com/Skords-01/Sergeant/pull/1998)                                   |
 | **PR-07** | feat(pwa): install prompt banner                             | ~140         | —     | `pwa_installed / first_real_entry ≥ 8%`                    | ✅ [Merged #2011](https://github.com/Skords-01/Sergeant/pull/2011)                                   |
-| **PR-08** | chore(docs): cleanup — archive stale audits + delete .replit | -2200        | —     | `find docs/audits -maxdepth 1 -name '*.md'` ≤ 6            | ⏳ Wave 1                                                                                            |
+| **PR-08** | chore(docs): cleanup — archive stale audits + delete .replit | -2200        | —     | `find docs/audits -maxdepth 1 -name '*.md'` ≤ 6            | ✅ Closed (PR-08 closes ftux-roast P1-4)                                                             |
 
 ### 3.2. Хвиля 2 — Product UX (Week 2-3, 6 PR)
 
@@ -430,8 +430,8 @@ slos:
 ### Документація
 
 - **`THIRD_PARTY_LICENSES.md`:** ✅ автогенерація через `pnpm licenses:gen` / drift-check через `pnpm licenses:check` у CI ([PR-17 #516](https://github.com/Skords-01/Sergeant/pull/516) + [#517](https://github.com/Skords-01/Sergeant/pull/517) + [#518](https://github.com/Skords-01/Sergeant/pull/518); allowlist + dev-dependency filter живуть у `scripts/generate-licenses.mjs`).
-- **Архів стейл audit-tracker-ів:** `2026-04-28-ux-ui-audit.md`, `2026-04-28-ux-improvement-plan.md`, `2026-04-28-implementation-roadmap.md` → `docs/audits/archive/` (PR-08).
-- **`.replit`:** видалити (PR-08).
+- **Архів стейл audit-tracker-ів:** `2026-04-28-ux-ui-audit.md`, `2026-04-28-ux-improvement-plan.md`, `2026-04-28-implementation-roadmap.md` → `docs/audits/archive/` — ✅ PR-08 (closes ftux-roast P1-4).
+- **`.replit`:** видалено — ✅ PR-08.
 - **What's new:** 🚧 `docs/whats-new/` (markdown changelog) + `apps/web/src/core/whatsNew/` (`<WhatsNewModal />` + `useWhatsNew` + `releases.ts` + tests; PR-18 in flight). Auto-show гейт — `hasFirstRealEntry && !inFtuxSession`, persist через `sergeant.whatsNew.lastSeenId.v1` LS. Drift-check: `releases.test.ts` валідовує що для кожного TS-запису є matching markdown у `docs/whats-new/<id>.md`.
 
 ### Метрики

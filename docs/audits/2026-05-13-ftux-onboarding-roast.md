@@ -6,7 +6,7 @@
 >
 > **Cross-refs:**
 > [`docs/audits/archive/2026-05-03-ftux-onboarding-roast.md`](./archive/2026-05-03-ftux-onboarding-roast.md) — оригінальна прожарка (frozen reference) ·
-> [`docs/audits/2026-04-28-ux-improvement-plan.md`](./2026-04-28-ux-improvement-plan.md) — попередній технічний UX-план ·
+> [`docs/audits/archive/2026-04-28-ux-improvement-plan.md`](./archive/2026-04-28-ux-improvement-plan.md) — попередній технічний UX-план (archived, frozen) ·
 > [`docs/audits/2026-05-06-ux-roast.md`](./2026-05-06-ux-roast.md) — post-onboarding UX-прожарка (day 0-7) ·
 > [`docs/audits/2026-05-06-ux-roast-pr-plan.md`](./2026-05-06-ux-roast-pr-plan.md) — виконавчий план UX-прожарки ·
 > [`docs/launch/product-os/ftux-master-tracker.md`](../launch/product-os/ftux-master-tracker.md) — поточний SSOT FTUX-стану ·
@@ -36,7 +36,7 @@ events працюють, dashboards задокументовані, retention-co
 2. **FTUX SLO відсутні** — declarative `ftux-slo.yml` потрібен як
    контракт між роботою команди й алертом — закрито у цьому PR.
 3. **PR-08 — застарілі audit-tracker-и у `docs/audits/`** засмічують
-   індекс (3 з 2026-04-28). У scope master-tracker-а, ⏳ open.
+   індекс (3 з 2026-04-28) — ✅ закрито у PR-08 (P1-4 цього доку).
 4. **CelebrationModal CTA не маршрутизує** — copy обіцяє «Записати ще
    витрату», але клік дише модалку, а не відкриває add-sheet. P3,
    тримати у скоупі PR-12 orchestrator-а.
@@ -144,17 +144,26 @@ events працюють, dashboards задокументовані, retention-co
 - **Дія (наступний спринт):** P1 PR відновлює focus management + double-submit guard + Escape→onSecondaryAction wiring; знімає `it.skip` маркери; коротка регресія у `apps/web/src/core/onboarding/useOnboardingWizardState.ts` (додати `submitted` ref + early-return) + `useAutoFocus(headingRef)` у `OnboardingWizard.tsx`. Розмір очікуваний < 60 LOC.
 - **Власник:** TBD (Web Frontend); ризик — медіум (a11y + double-fire analytics).
 
-### P1-4. PR-08 — archive stale audits + delete `.replit`
+### P1-4. PR-08 — archive stale audits + delete `.replit` — ✅ Закрито у цьому PR
 
 - **Файли:**
-  - `docs/audits/2026-04-28-implementation-roadmap.md` → archive
-  - `docs/audits/2026-04-28-ux-improvement-plan.md` → archive (вже консолідовано в master tracker)
-  - `docs/audits/2026-04-28-ux-ui-audit.md` (вже archived)
-  - `.replit` → delete (Replit-deploy більше не активний шлях)
+  - `docs/audits/2026-04-28-implementation-roadmap.md` → archive — ✅ перенесено
+  - `docs/audits/2026-04-28-ux-improvement-plan.md` → archive (вже консолідовано в master tracker) — ✅ перенесено
+  - `docs/audits/2026-04-28-ux-ui-audit.md` (вже archived) — no-op
+  - `.replit` → delete (Replit-deploy більше не активний шлях) — ✅ видалено
 - **Проблема:** `docs/audits/` indexed (per README.md status table) і
   Sergeant founder-а тікає чек ока на stale-tracker-и при кожному
-  pre-roast scan-і. PR-08 у scope master tracker-а §3.1, статус ⏳.
-- **Дія:** не в скоупі цієї прожарки — окремий PR-08.
+  pre-roast scan-і.
+- **Дія:** обидва файли перенесені у `docs/audits/archive/` зі статусом
+  `Status: Archived` у заголовку і виправленими relative-paths
+  (`../X` → `../../X`, `./archive/X` → `./X`). `.replit` видалено;
+  orphaned `pnpm start:replit` скрипти (root + `apps/server`) залишені
+  без змін (поза скоупом P1-4 — жодних активних споживачів `.replit`
+  немає). `docs/audits/README.md` рядки перенесені у archive-секцію,
+  лічильник прожарки бампнуто, `Last validated` оновлено. Master tracker
+  §1 / §3.1 PR-08 → ✅, §8.4 синхронізовано. Усі dependent markdown-links
+  (sprint-roadmap, stack-pulse, security/hardening, archive cross-refs)
+  оновлені — `pnpm docs:check-links` чистий.
 
 ## P2 (постлоунч / якщо є час)
 
@@ -193,6 +202,16 @@ events працюють, dashboards задокументовані, retention-co
   - regex-guard блокує regression до «продовжуй додавати записи / кількох днів отримаєш»
   - regex-guard блокує regression до generic «Продовжити» CTA для known modules + distinctness invariant
 
+Закрито у наступному PR (поточний PR-08 / P1-4):
+
+- ✅ **P1-4 / PR-08** — `2026-04-28-implementation-roadmap.md` і
+  `2026-04-28-ux-improvement-plan.md` перенесені у `docs/audits/archive/`
+  зі `Status: Archived` headers і виправленими relative-paths;
+  `.replit` видалено (Replit-deploy більше не активний шлях);
+  `docs/audits/README.md` counter + Last validated, ftux-master-tracker.md
+  §1 / §3.1 синхронізовані; усі dependent markdown-links оновлені
+  (`pnpm docs:check-links` чистий).
+
 Status bump у master tracker:
 
 - Master tracker §8.4 M-10 → `✅ Closed`.
@@ -203,7 +222,7 @@ Outstanding (не у scope цього PR, лишається у master tracker):
 - ⏳ S6.3 (P2-15 CelebrationModal CTA promise) — у scope master tracker §2.2,
   ROUTING piece (P2-1 вище) ще open.
 - ⏳ S6.8, S6.10, S6.11, S6.12, S6.13 — Sprint 6 carryover.
-- ⏳ PR-08 (cleanup .replit + archive stale audits).
+- ✅ PR-08 (cleanup .replit + archive stale audits) — закрито цим PR (P1-4).
 - ⏳ PR-09 (cold-start outcome-card, замінить `OnboardingProgress`).
 - ⏳ PR-10 (empty-state A/B).
 - ⏳ PR-13 (goal-first wizard A/B, S5.1).
