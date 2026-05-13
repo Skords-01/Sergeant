@@ -39,6 +39,13 @@ export {
   getPostHogStats,
   getGithubReleases,
 } from "./tools.js";
+
+// T2 audit #3 — repo allowlist for OpenClaw GitHub-touching tools.
+export {
+  assertOpenClawRepoAllowed,
+  __resetOpenClawRepoAllowlistForTests,
+  __getOpenClawRepoAllowlistForTests,
+} from "./repoAllowlist.js";
 export { selectToneMode, buildSystemPrompt } from "./prompts.js";
 
 // Stage 4c (PR-Stage4c): Layer 1 cheap-router classifier (Haiku JSON).
@@ -148,6 +155,22 @@ export type {
   SeoSerpLookupOutput,
   SeoSerpResult,
 } from "./seo-tools.js";
+
+// PR-26: morning briefing template + orchestrator (no LLM).
+export {
+  buildMorningBriefing,
+  assembleMorningBriefing,
+} from "./briefing/index.js";
+export type {
+  AlertsBriefingSection,
+  AssembleMorningBriefingInput,
+  MorningBriefingData,
+  MorningBriefingResponse,
+  PrQueueBriefingSection,
+  SignupsBriefingSection,
+  StripeBriefingSection,
+  WorkflowsBriefingSection,
+} from "./briefing/index.js";
 
 // PR-C1b: reminder store + state transitions.
 export {

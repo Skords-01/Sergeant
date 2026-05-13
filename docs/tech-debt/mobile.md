@@ -3,6 +3,10 @@
 > **Last validated:** 2026-05-12 by Codex (mobile onboarding debt burn-down: `OnboardingWizard.tsx` 805 → 390 LOC, extracted focused step/state/hooks/style modules under `core/onboarding`; current >600 LOC inventory revalidated as `fizruk/lib/dualWrite/adapter.ts` 737 + `PlanCalendar.tsx` 616). **Next review:** 2026-08-10.
 > **Status:** Active
 
+> **Оновлено 2026-05-13.** Додано T7 verification job: `.github/workflows/mobile-flaky-verify.yml`
+> гонить mobile jest-suite 20 разів поспіль (workflow_dispatch + weekly Monday 05:00 UTC cron) і
+> фейлить на першому fail-і — baseline для зняття «⏳ flaky» tag-у з roadmap T7.
+>
 > **Оновлено 2026-05-12.** Registry revalidated after mobile onboarding decomposition:
 > `OnboardingWizard.tsx` is now a thin 390-LOC shell, with `wizardState`, `useReduceMotion`,
 > `StepIndicator`, `WelcomeStep`, `ModulesStep`, `GoalsStep`, and shared onboarding style helpers
@@ -63,7 +67,7 @@
 | TODO/FIXME маркери                       | **Низький**             | 5 маркерів, усі типу `TODO(mobile-migration, Phase X)` / `TODO(phase-N)` — план відомий, чекає черги.                                                                                                                                                                  |
 | Observability (Sentry RN)                | **Середній**            | `apps/mobile/src/lib/observability.ts` готовий, `Sentry.init` гейтується `EXPO_PUBLIC_SENTRY_DSN`. Без DSN — runtime no-op. На staging/prod DSN ще не підключено.                                                                                                      |
 | Tests — Jest                             | **OK**                  | 98 test-файлів, Jest 29. Skipped/`xit`/`xdescribe` — 0. Приклад flaky tests-у не виявлено у quick-grep (детальний test-stability audit — окремий PR).                                                                                                                  |
-| Capacitor coverage                       | ~~Середній~~ → **OK**   | ✅ [PR #1415](https://github.com/Skords-01/Sergeant/pull/1415). `apps/mobile-shell` має 7 test-файлів (deepLinkBridge, parseDeepLink, platform, index, auth-storage + `barcodeNative` / `pushNative` boundary-suites — 30 тестів на нативні мости).                    |
+| Capacitor coverage                       | ~~Середній~~ → **OK**   | ✅ [PR #1415](https://github.com/Skords-01/Sergeant/pull/1415) + [PR #2538](https://github.com/Skords-01/Sergeant/pull/2538). `apps/mobile-shell` має 8 test-файлів включно з `boundary.test.ts` (23 тести: Web Compatibility, Native Bridge, Deep Links).             |
 | TypeScript-version drift                 | **Середній**            | `apps/mobile`: `typescript ~5.9.0`. `apps/web` + `apps/server`: `^6.0.3`. `tools/console`: `^5.7.2`. Mobile блокує bump через RN/Expo type compatibility — план: дочекатись Expo SDK 53.                                                                               |
 
 ---
@@ -261,7 +265,7 @@ forward-error у Sentry — закривається тим самим DSN-PR (�
 
 ## Tests — coverage & flakiness
 
-- **98 test-файлів** у `apps/mobile` (Jest 29 + `jest-expo` preset).
+- **111 test-файлів** у `apps/mobile` (Jest 29 + `jest-expo` preset).
 - **Skipped tests:** 0 (`grep '\b(it|test|describe)\.skip\b\|\b(xit|xdescribe|xtest)\b'` → 0 matches).
 - **`AI-LEGACY:` у тестах:** 0.
 
@@ -269,6 +273,24 @@ Detailed test-stability audit (timing-sensitive, snapshot-drift) — окрем�
 Quick-grep flaky-індикаторів (`flaky`, `unstable`, `retries`, `setTimeout` всередині
 `it`) виявив 2 файли, що використовують `jest.useFakeTimers()` — це норма для
 hook-тестів з `useEffect` cleanup, не сигнал flaky.
+
+**T7 verification gate ([sprint-roadmap §1.1](../planning/sprint-roadmap-q2q3-2026.md#11-tech-борг)).**
+Гіпотеза «mobile suite є flaky через `isReduceMotionEnabled` mock» закрита у
+PR [#2453](https://github.com/Skords-01/Sergeant/pull/2453) (commit
+[`53853e00`](https://github.com/Skords-01/Sergeant/commit/53853e00) для
+OnboardingWizard + [`f11c1f49`](https://github.com/Skords-01/Sergeant/commit/f11c1f49)
+для WeeklyDigestFooter / HubSettingsPage). Verification:
+[`.github/workflows/mobile-flaky-verify.yml`](../../.github/workflows/mobile-flaky-verify.yml)
+— manual `workflow_dispatch` (+weekly cron) job, який гонить `pnpm --filter
+@sergeant/mobile test` 20 разів поспіль і фейлить на першій помилці. Baseline-rule:
+20/20 green поспіль за останній місяць → знімаємо flag «⏳ Очікує 20-run CI verification»
+з roadmap-у. Якщо < 20/20 — fail-rate (X/20) логується у цьому файлі як baseline
+і застосовуємо OnboardingWizard fix-pattern (`mockResolvedValue(false)` замість
+never-resolving Promise).
+
+| Дата      | Run number | Result | Notes                                                                                                                               |
+| --------- | ---------- | ------ | ----------------------------------------------------------------------------------------------------------------------------------- |
+| _pending_ | —          | —      | Initial 20-run baseline ще не запускалось. Після merge T7 PR — actions → «Mobile flaky-tests verification (20-run)» → Run workflow. |
 
 ---
 
@@ -297,7 +319,7 @@ hook-тестів з `useEffect` cleanup, не сигнал flaky.
 | `apps/web`          | `^6.0.3`           |
 | `apps/server`       | `^6.0.3`           |
 | `apps/mobile`       | `~5.9.0`           |
-| `tools/console`     | `^5.7.2`           |
+| `tools/openclaw`    | `^5.7.2`           |
 | `apps/mobile-shell` | (наслідує root)    |
 
 Web/server рухаються на bleeding-edge TS 6, mobile тримається на 5.9 (RN/Expo
@@ -324,7 +346,7 @@ type-compatibility), console відстає до 5.7. Дрифт сам по с�
 | M6  | Decompose `TransactionsPage.tsx` (1215 LOC)        | Mirror web's `pages/transactions/**` split.                                                            | L (1d)    | done — ✅ [#1453](https://github.com/Skords-01/Sergeant/pull/1453)                                 |
 | M6b | Decompose `CelebrationModal.tsx` (671 LOC)         | Розбити на orchestrator + `confetti/` + `haptics.ts` + `hooks/` + `constants.ts` + `types.ts`.         | M (3-4h)  | done — ✅ [#1465](https://github.com/Skords-01/Sergeant/pull/1465)                                 |
 | M7  | Sentry RN DSN provisioning                         | Створити Sentry project, виставити `EXPO_PUBLIC_SENTRY_DSN` в Expo EAS Secrets.                        | XS (0.5h) | TODO                                                                                               |
-| M8  | Capacitor native-bridge integration tests          | Mock Capacitor plugins + JS-API контракт-тести для `pushNative`, `barcodeNative`.                      | M (3-4h)  | TODO                                                                                               |
+| M8  | Capacitor native-bridge integration tests          | Mock Capacitor plugins + JS-API контракт-тести для `pushNative`, `barcodeNative`.                      | M (3-4h)  | ✅ done — [PR #2538](https://github.com/Skords-01/Sergeant/pull/2538) (23 boundary tests)          |
 | M9  | TS 6 bump для mobile + console (після Expo SDK 53) | `apps/mobile`, `tools/console` → `^6.x`.                                                               | M-L       | BLOCKED on Expo SDK 53                                                                             |
 
 Кожен PR — ізольований, тестується окремо `pnpm lint` + (де доречно)

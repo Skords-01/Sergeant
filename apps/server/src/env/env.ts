@@ -352,6 +352,22 @@ const envSchema = z.object({
   LLM_PROVIDER: z
     .enum(["anthropic", "openrouter", "stub"])
     .default("anthropic"),
+  /**
+   * PR-24 — окремий provider для read-only OpenClaw paths (зараз: `before_dispatch`
+   * classify; пізніше — інші read-only flows). Дозволяє перемкнути саме classifier
+   * у `stub`-mode (повертає plausible default `{"class":"chat"}`) НЕ зачіпаючи
+   * головний `LLM_PROVIDER`, який обслуговує chat/coach/nutrition.
+   *
+   * Use-cases:
+   * - Anthropic-incident: `LLM_READONLY_PROVIDER=stub` тимчасово; chat-flow
+   *   обслуговується головним provider-ом окремо (PR-25 wires weekly-digest).
+   * - Local-dev без `ANTHROPIC_API_KEY` — class-detection деградує у `chat`,
+   *   решта endpoints працює як раніше.
+   * - E2E-тести — детермінований шлях без витрат токенів.
+   */
+  LLM_READONLY_PROVIDER: z
+    .enum(["anthropic", "openrouter", "stub"])
+    .default("anthropic"),
   /** AI request timeout (мс). */
   AI_TIMEOUT_MS: intFromEnv(180_000),
   /** Max AI retries on transient errors. */
@@ -559,10 +575,16 @@ const envSchema = z.object({
   RATE_LIMIT_MAX: intFromEnv(100),
   /** Global rate limit: window size in seconds. */
   RATE_LIMIT_WINDOW_SEC: intFromEnv(60),
-  /** Auth rate limit: attempts per window. */
+  /**
+   * Auth rate limit (sign-in / sign-up / forget-password / reset-password):
+   * attempts per IP per window. Default 5 spec-ed у `docs/security/better-auth-audit-2026-05.md`
+   * — closely matches OWASP ASVS V11.1.3 (5–10 за хвилину для credential flow).
+   * Реєстр `config/rateLimit.ts` бере цей default; ops може дополнити через env
+   * без redeploy-у.
+   */
   AUTH_RATE_LIMIT_MAX: intFromEnv(5),
-  /** Auth rate limit: window size in seconds. */
-  AUTH_RATE_LIMIT_WINDOW_SEC: intFromEnv(900),
+  /** Auth rate limit: window size in seconds (default 60). */
+  AUTH_RATE_LIMIT_WINDOW_SEC: intFromEnv(60),
 
   // ── Sync audit (PR #005 / Stage 0) ─────────────────────────────────
   /** Comma-separated allow-list of `user.id` для cross-user `/api/sync/audit` запитів. */
@@ -691,6 +713,14 @@ const envSchema = z.object({
   OPENCLAW_GITHUB_APP_INSTALLATION_ID: stringWithDefault(""),
   /** Repo target для decision PR-ів. */
   OPENCLAW_GITHUB_REPO: stringWithDefault("Skords-01/Sergeant"),
+  /**
+   * Comma-separated allowlist of `owner/repo` strings that OpenClaw
+   * read/write GitHub tools may target. Empty (default) collapses to
+   * just `OPENCLAW_GITHUB_REPO`, so the default config is the
+   * single-repo behaviour callers expect. T2 audit finding #3 — the
+   * console used to pass through whatever `repo` the LLM picked.
+   */
+  OPENCLAW_GITHUB_REPO_ALLOWLIST: stringWithDefault(""),
   /** Default branch у repo (для decision PR-ів). */
   OPENCLAW_GITHUB_BASE_BRANCH: stringWithDefault("main"),
   /**
@@ -901,7 +931,20 @@ export function assertStartupEnv(): void {
     );
   }
 
+  // T2 audit finding #4 — `/metrics` exposure. Without `METRICS_TOKEN`
+  // the endpoint is publicly reachable AND the `@opentelemetry/exporter-
+  // prometheus` stack has a HIGH-severity advisory ("process crash via
+  // malformed HTTP") — an unauthenticated attacker can therefore both
+  // scrape the full Prometheus registry (route latencies, queue depth,
+  // circuit-breaker state, AI cost histograms) and remotely crash the
+  // Node process. Hard-fail at boot in production so the misconfig
+  // surfaces immediately instead of silently shipping with the legacy
+  // warning. Dev/staging still accept the missing token (warning only).
   if (isProduction && !env.METRICS_TOKEN) {
+    throw new Error(
+      "METRICS_TOKEN is required in production. Without it `GET /metrics` is publicly reachable, leaking route latency, AI cost, and circuit-breaker telemetry — and the OTel Prometheus exporter has a HIGH-severity crash advisory exploitable from the same surface. Generate one with `openssl rand -hex 32` and set it on the deployment.",
+    );
+  } else if (!env.METRICS_TOKEN) {
     warnings.push(
       "METRICS_TOKEN is not set — /metrics endpoint is unprotected.",
     );

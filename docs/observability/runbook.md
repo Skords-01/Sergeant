@@ -455,6 +455,89 @@ SBOM (Software Bill of Materials) — це machine-readable список **вс�
 
 **Compliance use-case:** аудитор просить SBOM → надсилаєш SPDX-файл з GitHub Release. Sigstore-signing буде Phase 3 ([I3-sbom-generation.md](../security/hardening/I3-sbom-generation.md) Phase 3 Open).
 
+## RagQualityGateDegraded
+
+**Що горить**: weekly `.github/workflows/rag-quality-gate.yml` зафіксував
+mean `recall@4` < `warn_threshold` (default `0.5`), але ≥ `kill_threshold`
+(default `0.4`). Eval-harness — synthetic golden-set
+[`apps/server/src/__fixtures__/rag-eval/golden.json`](../../apps/server/src/__fixtures__/rag-eval/golden.json)
+(50 queries, 7 domains). PR-20 замінить його на real-data golden-set;
+contract сторгнутий через `apps/server/src/lib/ragEval/golden.ts`.
+
+**Рівень**: warn — RAG залишається ON, але є early-warning regression.
+
+**Реакція**:
+
+1. Відкрий artifact `rag-eval-summary` із workflow run-у. JSON містить
+   `perDomain` breakdown і per-query recall. Знайди, де `mean` найнижчий
+   (наприклад, `finyk: 0.32` vs `chat: 0.85` → проблема саме у finyk-
+   ingestion).
+2. Звір з `git log apps/server/src/modules/ai-memory/` за останні 7 днів:
+   чи були changes у embeddings.ts / vectorStore.ts / `voyageEmbedProvider`?
+   Bump `VOYAGE_EMBEDDING_MODEL` без re-embed-у — найчастіша причина drop-у
+   (vector-spaces несумісні).
+3. Перевір upstream Voyage status: https://status.voyageai.com.
+4. Якщо ingestion-pipeline здоровий (логи Pino `level=info src.module=ai-memory`
+   без spike-ів `level=error`) → це поступова деградація. Відкрий follow-up
+   PR з тегом `ai-memory` для root-cause investigation.
+5. Якщо metric не повертається у `pass` за 2 weekly run-и поспіль —
+   ескалуй до `RagQualityGateKillSwitch` (нижче) до планового
+   decision-point Day 60 (`pr-plan-2026-05.md`).
+6. Якщо це **false-positive** через regression-у самого harness (наприклад,
+   PR-20 змінив golden-set і expected-refs тепер невалідні) — close issue
+   з labels `false-positive` + посилання на root-cause PR.
+
+## RagQualityGateKillSwitch
+
+**Що горить**: weekly eval зафіксував `recall@4` < `kill_threshold`
+(default `0.4`). Це **decision-point Day 60** з
+[`pr-plan-2026-05.md`](../planning/pr-plan-2026-05.md) — RAG потрібно
+вимкнути до того, як це впливає на користувачів.
+
+**Рівень**: critical — RAG injection у chat може повертати irrelevant
+context-и, що деградує AI-відповіді.
+
+**Реакція (immediate, <30 хв)**:
+
+1. **Зараз же** — `AI_MEMORY_ENABLED=false` на Railway dashboard →
+   redeploy. Це master kill-switch (`apps/server/src/env/env.ts:586`);
+   після redeploy:
+   - retrieval повертає `[]` без виклику Voyage/pgvector
+     ([`apps/server/src/modules/ai-memory/service.ts`](../../apps/server/src/modules/ai-memory/service.ts));
+   - ingestion-worker no-op-ує (BullMQ-jobs минають processing);
+   - `/api/chat` працює без RAG-injection (`AI_MEMORY_RAG_TOP_K`
+     ефективно стає `0`).
+2. Перевір що kill-switch застосувався: `curl
+https://<server>/health/workers` — `ai-memory-ingest` має бути `stopped`.
+3. Створи incident-thread у `#alerts` (Telegram) з посиланням на issue
+   - workflow run.
+4. Артефакт `rag-eval-summary` → glance: чи це global regression (mean
+   ↓ у всіх domain-ах) чи localized (один domain провалився)?
+5. **Root-cause investigation** (<24h):
+   - Чи був embedding-model bump (`VOYAGE_EMBEDDING_MODEL`) без
+     re-embed-batch-у? → revert env + re-embed.
+   - Чи був schema-зміна у `ai_memories` (CHECK-constraint, нова
+     source)? → rollback міграції.
+   - Чи був ingestion-change, що писав malformed content (e.g.,
+     prompt-templates з placeholder-ами замість real text)? →
+     revert ingestion PR.
+6. Після root-cause fix → запусти eval manually:
+   ```bash
+   gh workflow run rag-quality-gate.yml \
+     -f mode=mock  # або 'live' коли PR-20 зашиплений
+   ```
+   Якщо `status=pass` → revert kill-switch (`AI_MEMORY_ENABLED=true`)
+   - close issue.
+7. Якщо протягом 7 днів root-cause не знайдено / fix не закриває
+   issue → формальне Day 60 рішення `kill module` (видалити PR-19/22
+   pipeline, відкотити schema-changes; див. `pr-plan-2026-05.md`
+   § Day 60 milestone).
+
+**False-positive triage**: weekly eval у mock-mode завжди має mean=1.0.
+Якщо в `mock`-mode прийшов `kill` — це bug у harness або у CLI math,
+**не** у RAG-pipeline. Виправити harness першочергово, kill-switch не
+вмикати.
+
 ## OpenTelemetry traces (server-side OTLP)
 
 **Звідки:** [ADR-0035](../adr/0035-distributed-tracing-opentelemetry.md) shipped 2026-05-05 (initiative [0004 Phase 2 + 4](../initiatives/archive/_0004-server-observability.md)). Server `apps/server/src/obs/{tracing,spans,sampler}.ts` — NodeSDK + auto-instrumentation для `http`, `express`, `pg`, `redis`, `undici`. Web `packages/api-client/src/httpClient.ts` додає `traceparent` header у кожний fetch.
@@ -512,3 +595,31 @@ A: Sentry web tracing і OTel server tracing — окремі трекери. Se
 
 **Q: Anthropic-spans порожні (немає tokens, prompt_cache_hit).**
 A: `aiSpan` отримує meta з `[result, meta]` tuple inner-функції. Якщо upstream API повернув error до того як `usage` був доступний — meta порожній. Перевірити `error.message` у span-status — там буде причина.
+
+## WF-25 — Morning briefing cron (07:00 Kyiv → founder DM)
+
+**Що це.** n8n cron-workflow [`25-morning-briefing-cron.json`](../../ops/n8n-workflows/25-morning-briefing-cron.json) щоранку о 07:00 Kyiv (`0 7 * * *`, `settings.timezone="Europe/Kyiv"`) дергає server endpoint [`POST /api/internal/openclaw/briefing/morning`](../runbooks/openclaw-morning-briefing.md) (PR-26), парсить `{markdown, data}`, паралельно запускає (а) запис у `n8n_webhook_events` через [`POST /api/internal/webhook-events/record`](../../apps/server/src/routes/internal/webhook-events.ts) і (b) DM founder-у через raw HTTP до `api.telegram.org/bot{OPENCLAW_BOT_TOKEN}/sendMessage`. LLM-summarization ще НЕ підключено — cron шле raw hardcoded-template markdown.
+
+**Як monitorити.**
+
+- **Healthy:** один Telegram DM від `@OpenClaw_sergeant_bot` щоранку ~07:00 Kyiv. Усі 5 секцій або `notConfigured: true` (env-var unset на API side) або з реальними даними.
+- **Stuck pending:** `SELECT COUNT(*) FROM n8n_webhook_events WHERE workflow_id='25-morning-briefing-cron' AND processed_at IS NULL AND error IS NULL AND received_at < NOW() - INTERVAL '15 minutes';` — `> 0` означає, що `recordWebhookEvent` помітив запис, але PR-29 retention/replay-CLI ще не відмітив його як processed. На сьогодні `processed_at` для cron-ів ніколи не set — це експлуатаційний baseline; alert тільки коли `error IS NOT NULL`.
+- **Telegram delivery fail:** перевір `error` рядок у `n8n_webhook_events`: якщо `OPENCLAW_BOT_TOKEN`/`OPENCLAW_FOUNDER_TG_USER_ID` не виставлені на n8n Railway → Telegram-нода поверне 401/400 (workflow продовжує завдяки `onError: continueRegularOutput`, але DM не дійшов). Аудит-row однакою INSERT-ний, видно у `SELECT * FROM n8n_webhook_events WHERE workflow_id='25-morning-briefing-cron' ORDER BY received_at DESC LIMIT 5;`.
+- **Heartbeat:** WF-99 `*/3h` heartbeat дасть знати, що n8n живий навіть якщо WF-25 silent. WF-98 error-handler ловить runtime errors WF-25 через `errorWorkflow=iC82EFJzqBny9kxI` і ескалит у `#meta`.
+
+**Як disable.**
+
+- **На день/тиждень:** у n8n UI (`Sergeant Ops n8n`) → відкрий workflow `25 — Morning Briefing Cron (07:00 Kyiv → founder DM)` → toggle `Active` → OFF. Git-version залишає `active: false` для всіх workflow-ів, тому це не perdana — наступний `n8n:import` не reactivate-нe її.
+- **Назавжди:** змінити `status` у `ops/n8n-workflows/manifest.json` з `"experimental"` на `"draft"` (або вилучити рядок) і видалити з `REPORTING-MATRIX.md`. У n8n UI workflow залишиться, але `pnpm n8n:export` напише `active: false` в git і `pnpm n8n:import` deactivate-нe.
+- **Hot-disable без UI:** на n8n Railway встанови `OPENCLAW_FOUNDER_TG_USER_ID=""` — endpoint-call і audit-INSERT все ще пройдуть, але raw Telegram HTTP-call отримає `Bad Request: chat not found` і повідомлення тихо не доставиться. Audit-row у `n8n_webhook_events` лишиться, тому ти бачиш intentional-disable у логах.
+
+**Env-vars на n8n Railway.**
+
+| Var                           | Призначення                                                          |
+| ----------------------------- | -------------------------------------------------------------------- |
+| `PUBLIC_API_BASE_URL`         | Base URL до Sergeant API (`https://api.sergeant.app` / staging URL). |
+| `INTERNAL_API_KEY`            | Bearer для `/api/internal/*` routes. Mathing з server-side env.      |
+| `OPENCLAW_BOT_TOKEN`          | Token для `@OpenClaw_sergeant_bot` (cofounder bot, не alert bot).    |
+| `OPENCLAW_FOUNDER_TG_USER_ID` | Telegram user_id founder-а (private DM target).                      |
+
+API-side env-vars для briefing-секцій (Stripe / PostHog / GitHub / n8n / Sentry) — у [`docs/runbooks/openclaw-morning-briefing.md`](../runbooks/openclaw-morning-briefing.md). Якщо API-side env-var missing — briefing рендерить `notConfigured: true` hint у відповідній секції, cron виконується успішно.

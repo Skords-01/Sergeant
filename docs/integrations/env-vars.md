@@ -119,7 +119,22 @@ Tool-use квота (окремий bucket у `ai_usage_daily`). Кожен ви
 - `stub` — `StubProvider`, no-op повертає `{"ok":true,"stub":true}` JSON. Призначення: e2e-тести без real-Anthropic-калькування, локальний dev без ключа, інцидент-recovery під час Anthropic-outage (read-only OpenClaw paths-ів).
 - `openrouter` — зарезервовано під майбутню імплементацію (OpenRouter fallback). Поки що деградує у `stub`, щоб неочікуваний env не валив app.
 
-Wire-up call-sites — окремі PR-24 (OpenClaw `classify`) і PR-25 (`weekly-digest`). Інші Anthropic-call-sites (chat, coach, nutrition) поки що працюють напряму через `anthropicMessages()`, як і раніше.
+PR-25 (`weekly-digest`) — наступний wire-up. Інші Anthropic-call-sites (chat, coach, nutrition) поки що працюють напряму через `anthropicMessages()`, як і раніше.
+
+### `LLM_READONLY_PROVIDER` _(optional, default `anthropic`)_
+
+**PR-24** — окремий provider для read-only OpenClaw paths (зараз: `before_dispatch` cheap-router classifier у [`apps/server/src/modules/openclaw/classify.ts`](../../apps/server/src/modules/openclaw/classify.ts); пізніше — інші read-only flows). Дозволяє перемкнути саме classifier у fallback-режим, **не зачіпаючи** основний `LLM_PROVIDER`, який обслуговує chat/coach/nutrition.
+
+Значення такі самі, як у `LLM_PROVIDER`:
+
+- `anthropic` (default) — повний шлях через `anthropicMessages()`.
+- `stub` — повертає plausible default `{"class":"chat"}` без HTTP-callu. Idey для:
+  - **Anthropic-outage:** classifier деградує у `chat`-default, чат-flow продовжує працювати окремо (Layer 2 повний agent).
+  - **Local-dev без `ANTHROPIC_API_KEY`:** не падає на classify-розі.
+  - **E2E-тести:** детермінований, безкоштовний шлях без витрат токенів.
+- `openrouter` — зарезервовано, поки що деградує у stub (PR-26+).
+
+**Спостережуваність (PR-24).** Кожен виклик `LLMProvider.generate()` через обгортку [`invokeLLM()`](../../apps/server/src/lib/llm/provider.ts) інкрементує Prom-counter `llm_provider_invocations_total{provider,endpoint,outcome}` (outcome: `ok|error|missing_api_key|rate_limited|timeout`) + кладе Sentry breadcrumb `category=llm.provider, level=info|warning` з provider/endpoint/outcome/model. Дашборд `ai-cost` (PR-13) використовує цей counter для розщеплення runtime-distribution між Anthropic vs stub-режимами.
 
 ### `AI_TIMEOUT_MS`, `AI_MAX_RETRIES`, `AI_CIRCUIT_BREAKER_THRESHOLD`, `AI_CIRCUIT_BREAKER_RESET_MS` _(optional)_
 
@@ -134,9 +149,9 @@ Wire-up call-sites — окремі PR-24 (OpenClaw `classify`) і PR-25 (`weekl
 
 Console → n8n dispatcher webhook для Telegram-controlled AI agents. Скопіюйте production webhook URL з workflow 20 після імпорту в n8n. Приклад: `https://n8n.your-domain.com/webhook/agent-dispatcher`.
 
-### `ANTHROPIC_PROMPT_CACHE` _(optional, default off — `tools/console` only)_
+### `ANTHROPIC_PROMPT_CACHE` _(optional, default off — `tools/openclaw` only)_
 
-Опт-ін для prompt caching у `tools/console` agent-loop (PR-39, ADR-0057). Truthy values: `1`, `true`, `yes` (case-insensitive). Коли увімкнено, `tools/console/src/agents/run-agent-loop.ts` додає `cache_control: { type: "ephemeral" }` на (a) system prompt і (b) останній tool у `tools[]`. Cache TTL — 5 хвилин; net-cost-win починається з ≥2 викликів у вікні (tool-use loop або кілька slash-команд підряд). Affects лише `tools/console` (Telegram-bot процес у окремому Railway service); не впливає на `apps/server` Anthropic-клієнт.
+Опт-ін для prompt caching у `tools/openclaw` agent-loop (PR-39, ADR-0057). Truthy values: `1`, `true`, `yes` (case-insensitive). Коли увімкнено, `tools/openclaw/src/agents/run-agent-loop.ts` додає `cache_control: { type: "ephemeral" }` на (a) system prompt і (b) останній tool у `tools[]`. Cache TTL — 5 хвилин; net-cost-win починається з ≥2 викликів у вікні (tool-use loop або кілька slash-команд підряд). Affects лише `tools/openclaw` (Telegram-bot процес у окремому Railway service); не впливає на `apps/server` Anthropic-клієнт.
 
 ---
 
@@ -481,11 +496,11 @@ TTL in-memory дедуп-кешу для ідентичних GET-ів (key = up
 
 ## 20. OpenClaw v0 — Telegram-only co-founder bot (ADR-0031)
 
-> Server-side env. Token + Telegram allowlist живуть у `tools/console` (бот працює там). Сервер відповідає за tool execution + audit log.
+> Server-side env. Token + Telegram allowlist живуть у `tools/openclaw` (бот працює там). Сервер відповідає за tool execution + audit log.
 
 ### `OPENCLAW_FOUNDER_USER_ID` _(required for OpenClaw)_
 
-Better Auth `user.id` founder-а (для join-у з `ai_memories.user_id`, який партиціонується по `hash(user_id)`). Окремий від `OPENCLAW_FOUNDER_TG_USER_ID` (Telegram numeric `user_id`, у `tools/console/.env`).
+Better Auth `user.id` founder-а (для join-у з `ai_memories.user_id`, який партиціонується по `hash(user_id)`). Окремий від `OPENCLAW_FOUNDER_TG_USER_ID` (Telegram numeric `user_id`, у `tools/openclaw/.env`).
 
 ### `OPENCLAW_DAILY_USD_BUDGET` _(optional)_
 

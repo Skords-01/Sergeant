@@ -35,7 +35,7 @@ Surface-scoped quick references (commands, gotchas, specialist skill pointer) li
 ## Repo overview
 
 - **pnpm 9** + **Turborepo** monorepo, **Node 20**, **TypeScript 6**.
-- 5 apps (`apps/web`, `apps/server`, `apps/mobile`, `apps/mobile-shell`, `tools/console`) + 12 packages (`@sergeant/*`, `eslint-plugin-sergeant-design`, 4 domain packages).
+- 5 apps (`apps/web`, `apps/server`, `apps/mobile`, `apps/mobile-shell`, `tools/openclaw`) + 12 packages (`@sergeant/*`, `eslint-plugin-sergeant-design`, 4 domain packages).
 - Pre-commit: **Husky** runs `lint-staged` — ESLint --fix + Prettier for code, `staged-typecheck.mjs` for staged TS/TSX, `bump-last-validated.mjs` for `.md`. Pipeline matrix: [`CONTRIBUTING.md § Pre-commit hooks`](./CONTRIBUTING.md#pre-commit-hooks).
 - Deep tech-stack matrix (per-app stack, per-package purpose, build/deploy outputs): [`docs/architecture/repo-map.md`](./docs/architecture/repo-map.md).
 
@@ -48,7 +48,7 @@ Per-app owner + secondary reviewer for the bus-factor contract (Stack-pulse PR-0
 | `apps/web/**`                            | `@Skords-01` | TBD (frontend-engineer) | [`module-ownership.md § Apps`](./docs/architecture/module-ownership.md#apps)                 |
 | `apps/server/**`                         | `@Skords-01` | TBD (backend-engineer)  | [`module-ownership.md § Apps`](./docs/architecture/module-ownership.md#apps)                 |
 | `apps/mobile/**`, `apps/mobile-shell/**` | `@Skords-01` | TBD (mobile-engineer)   | [`module-ownership.md § Apps`](./docs/architecture/module-ownership.md#apps)                 |
-| `tools/console/**`                       | `@Skords-01` | TBD (backend-engineer)  | [`module-ownership.md § Apps`](./docs/architecture/module-ownership.md#apps)                 |
+| `tools/openclaw/**`                      | `@Skords-01` | TBD (backend-engineer)  | [`module-ownership.md § Apps`](./docs/architecture/module-ownership.md#apps)                 |
 | `packages/**`                            | `@Skords-01` | TBD (any-engineer)      | [`module-ownership.md § Packages`](./docs/architecture/module-ownership.md#packages)         |
 | `ops/**`, `tools/**`, `scripts/**`       | `@Skords-01` | TBD (any-engineer)      | [`module-ownership.md § Ops surfaces`](./docs/architecture/module-ownership.md#ops-surfaces) |
 
@@ -118,7 +118,7 @@ CI gates fail on regression. Numbers come from `apps/web/package.json` → `"siz
 
 | Metric                                      | Budget                                                                   | Where enforced                                                              |
 | ------------------------------------------- | ------------------------------------------------------------------------ | --------------------------------------------------------------------------- |
-| `apps/web` JS total (brotli)                | **≤ 820 kB**                                                             | `pnpm --filter @sergeant/web exec size-limit` in CI                         |
+| `apps/web` JS total (brotli)                | **≤ 900 kB**                                                             | `pnpm --filter @sergeant/web exec size-limit` in CI                         |
 | `apps/web` CSS (brotli)                     | **≤ 28 kB**                                                              | same                                                                        |
 | `apps/web` LCP (median, 5 top-level routes) | **≤ 2000 ms** (warn; **`error` at > 3000 ms** after baseline tightening) | `.github/workflows/lighthouse-ci.yml` — config `apps/web/lighthouserc.json` |
 | `apps/web` FCP (median, 5 top-level routes) | **≤ 1500 ms** (warn)                                                     | same                                                                        |
@@ -138,7 +138,7 @@ If you legitimately need to raise a limit (e.g. a major new dependency), bump th
 
 ## Commit and PR conventions
 
-Conventional Commits with **explicit scope** (Hard Rule #5). Scope enum: `web`, `server`, `mobile`, `mobile-shell`, `console`, `shared`, `api-client`, `finyk-domain`, `fizruk-domain`, `nutrition-domain`, `routine-domain`, `insights`, `design-tokens`, `config`, `db-schema`, `eslint-plugins`, `openclaw-plugin`, `migrations`, `agents`, `deps`, `docs`, `ci`, `root` — canonical list in [`commitlint.config.js`](./commitlint.config.js). The `commit-msg` Husky hook + commitlint CI gate block invalid scopes.
+Conventional Commits with **explicit scope** (Hard Rule #5). Scope enum: `web`, `server`, `mobile`, `mobile-shell`, `console` (deprecated alias — PR-47 phase 2 removes once `Dockerfile.console` / `railway.console.toml` are also renamed), `openclaw`, `shared`, `api-client`, `finyk-domain`, `fizruk-domain`, `nutrition-domain`, `routine-domain`, `insights`, `design-tokens`, `config`, `db-schema`, `eslint-plugins`, `openclaw-plugin`, `migrations`, `agents`, `deps`, `docs`, `ci`, `root` — canonical list in [`commitlint.config.js`](./commitlint.config.js). The `commit-msg` Husky hook + commitlint CI gate block invalid scopes.
 
 Example commit subjects (= squash-merge PR titles):
 
