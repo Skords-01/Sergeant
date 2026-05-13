@@ -53,13 +53,7 @@
 | [`2026-05-13-web-frontend-ergonomics-roast.md`](./2026-05-13-web-frontend-ergonomics-roast.md)               | Прожарка #2/10 Web Frontend Ergonomics — toast policy, shortcuts, modal a11y, PWA defer                                        | Active   | 2/7              | 5             | self                                                                                           |
 
 | [`2026-05-13-dead-code-hard-rules-roast.md`](./2026-05-13-dead-code-hard-rules-roast.md)                     | Dead code + hard-rules roast #9/10 (knip / dead-code:files / docs:check-links)                                                 | Active   | 11/13            | 2 ≈           | embedded §6 (knip Unlisted/Unresolved sweep + lighthouse-ci.yml workflow file)                 |
-<<<<<<< HEAD
-||||||| parent of c983237d (fix(docs): clean stray conflict markers in audits README)
-<<<<<<< HEAD
-||||||| parent of b761d86a (docs(docs): dead code & hard rules roast (2026-05-13))
-=======
-<<<<<<< HEAD
->>>>>>> c983237d (fix(docs): clean stray conflict markers in audits README)
+
 
 | [`archive/2026-04-26-sergeant-audit-devin.md`](./archive/2026-04-26-sergeant-audit-devin.md)                 | Незалежний аудит Devin (historical record)                                                                                     | Archived | 30/31            | 1             | embedded таблиця у самому файлі                                                                |
 | [`archive/2026-04-28-sergeant-comprehensive-audit.md`](./archive/2026-04-28-sergeant-comprehensive-audit.md) | Комплексний генеральний аудит                                                                                                  | Archived | 12/18 ≈          | 6 ≈           | [`2026-04-28-implementation-roadmap.md`](./2026-04-28-implementation-roadmap.md)               |
