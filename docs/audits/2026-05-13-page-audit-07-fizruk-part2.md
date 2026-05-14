@@ -26,8 +26,9 @@ Cтатичний аудит Fizruk Part 2 виявив **6 high-severity** і *
 
 - Critical: **0**
 - High: **6**
-- Medium: **22**
-- Low: **15**
+- Medium: **25**
+- Low: **19**
+- **Total: 50**
 
 ---
 
