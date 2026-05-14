@@ -76,7 +76,12 @@ const authClient = createAuthClient({
   baseURL: getAuthBaseURL(),
   fetchOptions,
 }) as ReturnType<typeof createAuthClient> & {
-  forgetPassword: (args: {
+  // Better Auth 1.6+ renamed the email/password endpoint from
+  // `/forget-password` to `/request-password-reset`. The React-client
+  // Proxy resolves method names by kebab-casing them, so we must call
+  // `requestPasswordReset` — `forgetPassword` would 404 against the
+  // current server. See `node_modules/better-auth/dist/api/routes/password.mjs`.
+  requestPasswordReset: (args: {
     email: string;
     redirectTo?: string;
   }) => Promise<AuthResult>;
@@ -120,11 +125,12 @@ type PasswordResetResult = {
 };
 
 // The React auth-client's static TypeScript surface doesn't advertise
-// `forgetPassword` / `resetPassword` — Better Auth resolves them at runtime via
-// a Proxy over the email/password plugin endpoints. We extend the type here so
-// consumers can keep destructuring them; runtime behaviour is unchanged.
+// `requestPasswordReset` / `resetPassword` — Better Auth resolves them at
+// runtime via a Proxy over the email/password plugin endpoints. We extend the
+// type here so consumers can keep destructuring them; runtime behaviour is
+// unchanged.
 const typedAuthClient = authClient as typeof authClient & {
-  forgetPassword: (args: {
+  requestPasswordReset: (args: {
     email: string;
     redirectTo?: string;
   }) => Promise<PasswordResetResult>;
@@ -145,7 +151,11 @@ const {
   signUp,
   signOut: rawSignOut,
   getSession,
-  forgetPassword,
+  // Better Auth 1.6+ exposes `/request-password-reset` (no longer
+  // `/forget-password`). We keep the historical `forgetPassword` export
+  // name so consumers (AuthContext, tests) don't need to churn — only the
+  // wire path is updated to the supported endpoint.
+  requestPasswordReset: forgetPassword,
   resetPassword,
   updateUser,
   changePassword,
