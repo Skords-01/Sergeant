@@ -59,6 +59,14 @@ export const FLAG_REGISTRY: readonly FlagDefinition[] = [
     defaultValue: false,
     experimental: true,
   },
+  {
+    id: "dashboard_outcome_card_v1",
+    label: "Cold-start outcome card на дашборді",
+    description:
+      "Замінює бар «N/4 розділів готові» на promise-картку з outcome-копією й CTA в перший action до того, як зашиплено перший запис. PR-09, master tracker §5.",
+    defaultValue: false,
+    experimental: true,
+  },
   // Stage 13 PR #078: `feature.finyk.sqlite_v2.mono_mirror` retired.
   // Previously defaultValue: true, experimental: true. Mono mirror now
   // triggers unconditionally — see monoMirrorBoot.ts / monoMirrorGate.ts.

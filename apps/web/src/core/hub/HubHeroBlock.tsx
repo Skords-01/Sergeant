@@ -15,7 +15,9 @@ import { ReEngagementCard } from "../onboarding/ReEngagementCard";
 import { ModuleChecklist } from "../onboarding/ModuleChecklist";
 import { OnboardingProgress } from "../onboarding/OnboardingProgress";
 import { ValueProgressBar } from "./ValueProgressBar";
+import { HeroPromiseCard } from "./HeroPromiseCard";
 import { StreakIndicator } from "./dashboard/dashboardCards";
+import { useFlag } from "../lib/featureFlags";
 import type { DashboardModuleId, User } from "./hub.types";
 import type { useOnboardingState } from "../onboarding/useOnboardingState";
 import type { Rec } from "@sergeant/shared";
@@ -61,6 +63,17 @@ export function HubHeroBlock({
   hasValueBar,
 }: HubHeroBlockProps) {
   const reengagementIsHero = reengagement.show;
+  // PR-09 — gate the cold-start outcome-card behind a local FF so the
+  // legacy `<OnboardingProgress />` scaffold stays the default until
+  // copy review + A/B telemetry are in place. The flag lives in
+  // `featureFlags.ts` (id: `dashboard_outcome_card_v1`) and is opt-in
+  // through Settings → Експериментальне.
+  const outcomeCardFlag = useFlag("dashboard_outcome_card_v1");
+  const showOutcomeCard =
+    outcomeCardFlag &&
+    !hasRealEntry &&
+    Boolean(primaryModule) &&
+    !onboardingState.showFirstAction;
 
   let hero: React.ReactNode;
   if (onboardingState.showFirstAction) {
@@ -115,7 +128,11 @@ export function HubHeroBlock({
           }}
         />
       )}
-      {!hasRealEntry &&
+      {showOutcomeCard && primaryModule && (
+        <HeroPromiseCard moduleId={primaryModule} />
+      )}
+      {!showOutcomeCard &&
+        !hasRealEntry &&
         (hasValueBar ? (
           <ValueProgressBar activeModules={activeModules} goals={goals} />
         ) : (

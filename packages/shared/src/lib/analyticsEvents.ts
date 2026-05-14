@@ -357,6 +357,19 @@ export const ANALYTICS_EVENTS = Object.freeze({
   WHATS_NEW_SHOWN: "whats_new_shown",
   WHATS_NEW_DISMISSED: "whats_new_dismissed",
   WHATS_NEW_CTA_CLICKED: "whats_new_cta_clicked",
+
+  // Cold-start HeroPromiseCard (PR-09).
+  //
+  //   HERO_PROMISE_SHOWN { module: DashboardModuleId }
+  //   HERO_PROMISE_CTA   { module: DashboardModuleId, action: string }
+  //
+  // Fires once per cold-start render (no `first_real_entry` yet) when
+  // the `dashboard_outcome_card_v1` flag is enabled. The CTA event
+  // mirrors `FIRST_ACTION_PICKED` semantics but for the dashboard
+  // surface so PostHog can compare hero-promise CTR against the legacy
+  // `<OnboardingProgress />` fallback during the FF rollout.
+  HERO_PROMISE_SHOWN: "hero_promise_shown",
+  HERO_PROMISE_CTA: "hero_promise_cta",
 } as const);
 
 export type AnalyticsEventName =
