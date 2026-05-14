@@ -103,6 +103,79 @@ export const ROUTES = [
     target: "docs/governance/hard-rules-matrix.md",
   },
 
+  // ── New agent: specialist skills reachable from the catalog ──────────────
+  //
+  // Catalog row drift (link removed / path renamed without updating the
+  // catalog) is the most common way a specialist skill becomes invisible to
+  // a fresh agent. One row per skill so the failure message points at the
+  // exact entry that broke.
+  {
+    role: "new-agent",
+    reason: "specialist skill: feature delivery",
+    entrypoints: ["AGENTS.md"],
+    target: ".agents/skills/sergeant-feature-delivery/SKILL.md",
+  },
+  {
+    role: "new-agent",
+    reason: "specialist skill: bugfix and regression",
+    entrypoints: ["AGENTS.md"],
+    target: ".agents/skills/sergeant-bugfix-and-regression/SKILL.md",
+  },
+  {
+    role: "new-agent",
+    reason: "specialist skill: apps/web surface",
+    entrypoints: ["AGENTS.md"],
+    target: ".agents/skills/sergeant-web-ui/SKILL.md",
+  },
+  {
+    role: "new-agent",
+    reason: "specialist skill: apps/server + api-client surface",
+    entrypoints: ["AGENTS.md"],
+    target: ".agents/skills/sergeant-server-api/SKILL.md",
+  },
+  {
+    role: "new-agent",
+    reason: "specialist skill: data and migrations",
+    entrypoints: ["AGENTS.md"],
+    target: ".agents/skills/sergeant-data-and-migrations/SKILL.md",
+  },
+  {
+    role: "new-agent",
+    reason: "specialist skill: apps/mobile + mobile-shell surface",
+    entrypoints: ["AGENTS.md"],
+    target: ".agents/skills/sergeant-mobile-expo/SKILL.md",
+  },
+  {
+    role: "new-agent",
+    reason: "specialist skill: HubChat tools and executors",
+    entrypoints: ["AGENTS.md"],
+    target: ".agents/skills/sergeant-hubchat/SKILL.md",
+  },
+  {
+    role: "new-agent",
+    reason: "specialist skill: monorepo boundaries (app vs package)",
+    entrypoints: ["AGENTS.md"],
+    target: ".agents/skills/sergeant-monorepo-boundaries/SKILL.md",
+  },
+  {
+    role: "new-agent",
+    reason: "specialist skill: deploy and observability",
+    entrypoints: ["AGENTS.md"],
+    target: ".agents/skills/sergeant-deploy-and-observability/SKILL.md",
+  },
+  {
+    role: "new-agent",
+    reason: "specialist skill: writing-and-editing skills",
+    entrypoints: ["AGENTS.md"],
+    target: ".agents/skills/sergeant-writing-skills/SKILL.md",
+  },
+  {
+    role: "new-agent",
+    reason: "specialist skill: Better Auth best practices",
+    entrypoints: ["AGENTS.md"],
+    target: ".agents/skills/better-auth-best-practices/SKILL.md",
+  },
+
   // ── New human contributor landing on the repo ────────────────────────────
   {
     role: "new-contributor",
@@ -127,6 +200,12 @@ export const ROUTES = [
     reason: "doc index",
     entrypoints: ["README.md"],
     target: "docs/README.md",
+  },
+  {
+    role: "new-contributor",
+    reason: "active multi-PR initiatives index",
+    entrypoints: ["README.md"],
+    target: "docs/initiatives/README.md",
   },
 
   // ── On-call: hot-path playbooks reachable from any landing page ──────────
@@ -173,6 +252,12 @@ export const ROUTES = [
     reason: "review-and-merge skill",
     entrypoints: ["AGENTS.md"],
     target: ".agents/skills/sergeant-review-and-merge/SKILL.md",
+  },
+  {
+    role: "reviewer",
+    reason: "governance policy review cadence",
+    entrypoints: ["AGENTS.md", "README.md", "CONTRIBUTING.md"],
+    target: "docs/governance/policy-review.md",
   },
 ];
 

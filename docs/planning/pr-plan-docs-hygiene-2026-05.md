@@ -104,6 +104,8 @@ Doc-hygiene roast від 2026-05-13 закрив 4 P0-items одним PR-ом (
 
 ## PR-04 — Expand discoverability ROUTES (writing-skills, mobile, hubchat, better-auth) ✦ Discoverability
 
+> **Status:** In progress — see open PR for the ROUTES expansion + new-contributor initiatives + reviewer policy-review rows. Skills-evolution-roadmap row stays out of scope here.
+
 - **Group:** 2) discoverability gaps.
 - **Trigger:** [`scripts/check-discoverability.mjs ROUTES`](../../scripts/check-discoverability.mjs) сьогодні enforce-ить ≤2 hops до `start-here` + `review-and-merge` + on-call playbooks. Решта 8 Sergeant specialist-skill-ів (writing-skills, mobile-expo, hubchat, web-ui, server-api, data-and-migrations, bugfix-and-regression, monorepo-boundaries) + better-auth-best-practices, + new agent skills evolution (`docs/agents/skills-evolution-roadmap.md`) — НЕ покриті, тому drift у роутингу не ловиться. Аналогічно немає row-а для `docs/initiatives/README.md` (новий contributor не знаходить активних ініціатив).
 - **Action:** ~10 нових rows у `ROUTES` array (`role: new-agent` / `role: reviewer` / `role: on-call`):
