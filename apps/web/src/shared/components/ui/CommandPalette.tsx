@@ -175,18 +175,35 @@ export function useRegisterCommand(
   commands: ReadonlyArray<PaletteCommand>,
 ): void {
   const ctx = useContext(CommandPaletteContext);
+  // Hold the context in a ref so `register`/`unregister` calls during
+  // mount don't loop: `ctx.register()` bumps `revision`, which causes
+  // the provider's `useMemo` to return a new value object → `ctx`
+  // reference changes → if we listed `ctx` in deps, the effect would
+  // re-run → unregister + register → bump revision → ∞. Setters
+  // are stable across the provider's lifetime (the underlying
+  // `useCallback`s have `[]` deps), so reading them through the ref
+  // is safe.
+  const ctxRef = useRef(ctx);
+  ctxRef.current = ctx;
   useEffect(() => {
-    if (!ctx) return;
+    const current = ctxRef.current;
+    if (!current) return;
     if (commands.length === 0) {
-      ctx.unregister(registrationId);
-      return () => ctx.unregister(registrationId);
+      current.unregister(registrationId);
+      return () => {
+        const c = ctxRef.current;
+        if (c) c.unregister(registrationId);
+      };
     }
-    ctx.register({ id: registrationId, commands });
-    return () => ctx.unregister(registrationId);
+    current.register({ id: registrationId, commands });
+    return () => {
+      const c = ctxRef.current;
+      if (c) c.unregister(registrationId);
+    };
     // Intentionally omit `commands` from the deps — callers pass a
-    // memoized list and we re-register only on id / context change.
+    // memoized list and we re-register only on id change.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ctx, registrationId]);
+  }, [registrationId]);
 }
 
 /**
