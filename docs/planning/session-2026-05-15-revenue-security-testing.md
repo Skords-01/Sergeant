@@ -81,5 +81,44 @@ security exposure, dependency unblocking, and effort-to-impact.
 - `pnpm --filter @sergeant/shared mutation:utils` — mutation score `85.48%`
 - `pnpm --filter eslint-plugin-sergeant-design test -- no-console-pii.test.mjs`
 
+## Follow-Up Top 5 Implementation
+
+The five newly selected cards above were implemented in the same PR branch:
+
+1. **Revenue PR-5: Activation v2 web-side capture**
+   - Activation boot now counts created budgets from the warmed Finyk SQLite cache,
+     with web KV/localStorage fallback, so `ACTIVATION_V2_HIT` can include real
+     `budgets_created` signal instead of the previous placeholder zero.
+
+2. **FTUX PR-C: cold-start outcome-card behind FF**
+   - Added the `ftux_outcome_card_v1` feature flag and a cold-start `OutcomeCard`
+     for the hub empty state, including keyboard-accessible module actions and
+     focused tests.
+
+3. **Security S5: OTel attribute denylist parity test**
+   - Added an exported OTel attribute denylist and parity tests against shared PII
+     redaction keys plus denied headers.
+
+4. **Security S8: web-vitals / analytics PII guard**
+   - Analytics events now clone and scrub payloads before local storage, PostHog,
+     debug console output, and in-memory mirrors see them.
+
+5. **Revenue PR-6: landing page scaffold + email capture**
+   - Added a landing-page waitlist capture block with `source=landing`, generated
+     OpenAPI/API-client schema updates, and covered the capture analytics hook.
+
+## Additional Validation
+
+- `pnpm --filter @sergeant/web test -- LandingPage.test.tsx OutcomeCard.test.tsx analytics.test.ts useActivationV2.test.tsx`
+- `pnpm --filter @sergeant/server test -- tracing.test.ts`
+- `pnpm --filter @sergeant/web typecheck`
+- `pnpm --filter @sergeant/server typecheck`
+- `pnpm --filter @sergeant/shared typecheck`
+- `pnpm --filter @sergeant/api-client typecheck`
+- `pnpm api:generate-openapi`
+- `pnpm api:check-openapi`
+- `pnpm api:generate-openapi-types`
+- `pnpm api:check-openapi-types`
+
 Note: local runs used Node `v25.9.0`; the repository declares Node `20.x`, so CI
 is the authoritative environment for Node-version parity.
