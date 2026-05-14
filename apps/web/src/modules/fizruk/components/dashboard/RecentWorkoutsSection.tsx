@@ -3,6 +3,7 @@
  * Status: Active
  */
 /**
+ *
  * `RecentWorkoutsSection` — bottom-of-dashboard list of the last few
  * completed workouts. Uses the pure `listRecentCompletedWorkouts`
  * selector from `@sergeant/fizruk-domain/domain/dashboard` so ordering,

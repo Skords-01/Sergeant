@@ -30,9 +30,9 @@ const CALC_ZONES = [
   },
   {
     goal: "Витривалість",
-    color: "text-blue-500",
-    bgColor: "bg-blue-500/10",
-    borderColor: "border-blue-500/20",
+    color: "text-info",
+    bgColor: "bg-info/10",
+    borderColor: "border-info/20",
     percents: [65, 60, 55, 50],
     desc: "50–65% від 1RM",
   },
