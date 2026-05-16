@@ -5,7 +5,7 @@ import type { Request, Response } from "express";
 // підставляє Express-type у віддалені від HTTP-ендпоінту місця.
 type FetchResponse = globalThis.Response;
 import { env } from "../../env.js";
-import { validateBody } from "../../http/validate.js";
+import { parseBody } from "../../http/validate.js";
 import { ChatRequestSchema } from "../../http/schemas.js";
 import {
   anthropicMessages,
@@ -25,6 +25,13 @@ import { getSessionUser } from "../../auth.js";
 import { buildRagContext } from "../ai-memory/ragContext.js";
 
 type WithAnthropicKey = Request & { anthropicKey?: string };
+
+/**
+ * Timeout budget for Anthropic chat tool-result + chat completion calls.
+ * Aligned with the longest expected tool-aided round-trip; covers both the
+ * `chat-tool-result` continuation and the main `chat` endpoint.
+ */
+const CHAT_TOOL_TIMEOUT_MS = 30_000;
 
 /**
  * Anthropic prompt-caching, дві кажові точки (cache breakpoints):
@@ -345,16 +352,13 @@ export default async function handler(
     });
   }
 
-  const parsed = validateBody(ChatRequestSchema, req, res);
-  if (!parsed.ok) return;
-
   const {
     context = "",
     messages = [],
     tool_results,
     tool_calls_raw,
     stream,
-  } = parsed.data;
+  } = parseBody(ChatRequestSchema, req);
 
   // Другий крок: клієнт виконав tool calls і повертає результати
   if (tool_results && tool_calls_raw) {
@@ -449,7 +453,7 @@ export default async function handler(
         apiKey,
         payload,
         {
-          timeoutMs: 30000,
+          timeoutMs: CHAT_TOOL_TIMEOUT_MS,
           endpoint: "chat-tool-result",
           signal: clientAbort.signal,
           promptVersion: SYSTEM_PROMPT_VERSION,
@@ -507,7 +511,7 @@ export default async function handler(
         messages: cleaned,
       },
       {
-        timeoutMs: 30000,
+        timeoutMs: CHAT_TOOL_TIMEOUT_MS,
         endpoint: "chat",
         signal: clientAbort.signal,
         promptVersion: SYSTEM_PROMPT_VERSION,

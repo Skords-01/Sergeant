@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import { extractJsonFromText } from "../../http/jsonSafe.js";
-import { validateBody } from "../../http/validate.js";
+import { parseBody } from "../../http/validate.js";
 import { ShoppingListSchema } from "../../http/schemas.js";
 import { ValidationError, ExternalServiceError } from "../../obs/errors.js";
 import {
@@ -8,6 +8,7 @@ import {
   extractAnthropicText,
 } from "../../lib/anthropic.js";
 import { pantryPromptSection } from "../../lib/prompt-builders.js";
+import { NUTRITION_AI_TIMEOUTS_MS } from "./timeouts.js";
 
 type AnthropicErrorPayload = { error?: { message?: string } };
 type WithAnthropicKey = Request & { anthropicKey?: string };
@@ -67,9 +68,10 @@ export default async function handler(
 ): Promise<void> {
   const apiKey = (req as WithAnthropicKey).anthropicKey as string;
 
-  const parsed = validateBody(ShoppingListSchema, req, res);
-  if (!parsed.ok) return;
-  const { recipes, weekPlan, pantryItems, locale } = parsed.data;
+  const { recipes, weekPlan, pantryItems, locale } = parseBody(
+    ShoppingListSchema,
+    req,
+  );
   const loc = String(locale || "uk-UA");
 
   const pantrySec = pantryPromptSection({
@@ -126,7 +128,7 @@ ${ingredientsList}
   };
 
   const { response, data } = await anthropicMessages(apiKey, payload, {
-    timeoutMs: 25000,
+    timeoutMs: NUTRITION_AI_TIMEOUTS_MS.shoppingList,
     endpoint: "shopping-list",
   });
   if (!response || !response.ok) {

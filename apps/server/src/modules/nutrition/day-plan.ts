@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import { extractJsonFromText } from "../../http/jsonSafe.js";
-import { validateBody } from "../../http/validate.js";
+import { parseBody } from "../../http/validate.js";
 import { DayPlanSchema } from "../../http/schemas.js";
 import { ExternalServiceError } from "../../obs/errors.js";
 import {
@@ -8,6 +8,7 @@ import {
   extractAnthropicText,
 } from "../../lib/anthropic.js";
 import { pantryPromptSection } from "../../lib/prompt-builders.js";
+import { NUTRITION_AI_TIMEOUTS_MS } from "./timeouts.js";
 
 type AnthropicErrorPayload = { error?: { message?: string } };
 type WithAnthropicKey = Request & { anthropicKey?: string };
@@ -129,9 +130,12 @@ export default async function handler(
 ): Promise<void> {
   const apiKey = (req as WithAnthropicKey).anthropicKey as string;
 
-  const parsed = validateBody(DayPlanSchema, req, res);
-  if (!parsed.ok) return;
-  const { pantry: pantryIn, targets, regenerateMealType, locale } = parsed.data;
+  const {
+    pantry: pantryIn,
+    targets,
+    regenerateMealType,
+    locale,
+  } = parseBody(DayPlanSchema, req);
   const loc = String(locale || "uk-UA");
 
   const tgt = targets || {};
@@ -171,7 +175,7 @@ ${regenStr}`;
   };
 
   const { response, data } = await anthropicMessages(apiKey, payload, {
-    timeoutMs: 30000,
+    timeoutMs: NUTRITION_AI_TIMEOUTS_MS.dayPlan,
     endpoint: "day-plan",
   });
   if (!response || !response.ok) {

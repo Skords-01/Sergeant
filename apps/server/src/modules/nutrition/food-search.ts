@@ -4,13 +4,14 @@ import {
   type FoodSearchProduct,
 } from "@sergeant/shared/schemas";
 import { FoodSearchQuerySchema } from "../../http/schemas.js";
-import { validateQuery } from "../../http/validate.js";
+import { parseQuery } from "../../http/validate.js";
 import {
   normalizeOFFSearch,
   normalizeUSDASearch,
   type OFFSearchProduct,
   type USDASearchFood,
 } from "../../lib/normalizers/index.js";
+import { NUTRITION_AI_TIMEOUTS_MS } from "./timeouts.js";
 
 const OFF_SEARCH = "https://world.openfoodfacts.org/api/v2/search";
 const OFF_FIELDS =
@@ -218,11 +219,9 @@ export default async function handler(
   req: Request,
   res: Response,
 ): Promise<void> {
-  const parsed = validateQuery(FoodSearchQuerySchema, req, res);
-  if (!parsed.ok) return;
-  const { q: query, limit } = parsed.data;
+  const { q: query, limit } = parseQuery(FoodSearchQuerySchema, req);
 
-  const signal = AbortSignal.timeout(8000);
+  const signal = AbortSignal.timeout(NUTRITION_AI_TIMEOUTS_MS.foodSearch);
 
   try {
     const enTerm = translateFirstToken(query);

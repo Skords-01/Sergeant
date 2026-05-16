@@ -40,7 +40,14 @@ lang-reason: Agent-runtime SKILL — body kept EN to maximize tool-calling stabi
 | Незрозуміло, де саме код має жити в монорепо                     | `sergeant-monorepo-boundaries`     |
 | Деплой, env-vars, health checks, Sentry, Railway/Vercel, n8n     | `sergeant-deploy-and-observability`|
 | Логін/сесія/кукі/account lifecycle                               | `better-auth-best-practices`       |
+| Playwright / E2E тести / smoke test / accessibility automation    | `sergeant-e2e-testing`             |
+| Security review, аудит вразливостей, pnpm audit, PAT safety       | `sergeant-security-audit`          |
+| Технічний борг, dead code, ESLint baseline, module-size refactor  | `sergeant-tech-debt`               |
 | Створення / редагування `.agents/skills/**/SKILL.md`             | `sergeant-writing-skills`          |
+| PR review що торкається 3+ governed surfaces                     | `sergeant-review-squad`            |
+| Фіча через 2+ surfaces з contract dependencies (DB→server→web)  | `sergeant-deliver-squad`           |
+| Повний QA по всіх surfaces паралельно                            | `sergeant-qa-squad`                |
+| Валідація ідеї / рішення з кількох точок зору, «гублюсь»        | `sergeant-council`                 |
 
 ## Політика generic-skill-ів
 

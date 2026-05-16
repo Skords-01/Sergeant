@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import { extractJsonFromText } from "../../http/jsonSafe.js";
-import { validateBody } from "../../http/validate.js";
+import { parseBody } from "../../http/validate.js";
 import { RecommendRecipesSchema } from "../../http/schemas.js";
 import { ExternalServiceError } from "../../obs/errors.js";
 import {
@@ -9,6 +9,7 @@ import {
 } from "../../lib/anthropic.js";
 import { pantryPromptSection } from "../../lib/prompt-builders.js";
 import { normalizeRecipes } from "../../lib/nutritionResponse.js";
+import { NUTRITION_AI_TIMEOUTS_MS } from "./timeouts.js";
 
 type AnthropicErrorPayload = { error?: { message?: string } };
 type WithAnthropicKey = Request & { anthropicKey?: string };
@@ -47,9 +48,10 @@ export default async function handler(
 ): Promise<void> {
   const apiKey = (req as WithAnthropicKey).anthropicKey as string;
 
-  const parsed = validateBody(RecommendRecipesSchema, req, res);
-  if (!parsed.ok) return;
-  const { pantry: pantryIn, preferences } = parsed.data;
+  const { pantry: pantryIn, preferences } = parseBody(
+    RecommendRecipesSchema,
+    req,
+  );
 
   const prefs = preferences || {};
   const goal = String(prefs.goal || "balanced");
@@ -87,7 +89,7 @@ ${pantrySec}
   };
 
   const { response, data } = await anthropicMessages(apiKey, payload, {
-    timeoutMs: 45000,
+    timeoutMs: NUTRITION_AI_TIMEOUTS_MS.recommendRecipes,
     endpoint: "recommend-recipes",
   });
   if (!response || !response.ok) {
