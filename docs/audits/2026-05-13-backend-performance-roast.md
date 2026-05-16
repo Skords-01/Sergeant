@@ -206,11 +206,21 @@ migration), поза скоупом цієї прожарки.
   присутні; синхронізовано audit-рядок із фактичним станом без зміни
   runtime-логіки.
 
-### P2-7. Sentry SENTRY_SAMPLING_RULES — admin=1.0 для `/api/internal/*` ⚠️ Open
+### P2-7. Sentry SENTRY_SAMPLING_RULES — admin=1.0 для `/api/internal/*` ✅ Closed by local diff
 
 - **File:** [`apps/server/src/sentry.ts`](../../apps/server/src/sentry.ts)
-- **Why open:** перевірити, що n8n-webhook spike-и не б'ють Sentry-quota.
-  Потрібно власне виміряти rate-і, виносимо у моніторинг-прожарку.
+- **Explorer:** поточні `SENTRY_SAMPLING_RULES` не мають широкого
+  `/api/internal/` правила. 100% sampling застосований тільки до вузького
+  `/api/internal/openclaw/write/`; інші internal/n8n/cron/read routes падають
+  у fallback `0.05`.
+- **Implementer:** local diff додав test guardrail, який фіксує fallback для
+  representative `/api/internal/*` routes і забороняє широке full-rate правило.
+  Поведінка sampler-а не змінювалась, щоб не рухати production quota.
+- **Reviewer:** порядок правил лишився longest-prefix-first; quota-ризик не
+  збільшений, бо нових non-zero/high-rate правил не додано.
+- **Docs:** `docs/observability/sentry-sampling.md` пояснює, чому broad
+  `/api/internal/` 1.0 не додаємо і чому виняток лишається тільки для
+  OpenClaw write mutations.
 
 ### P2-8. `docs/observability/metrics.md` §Відкриті питання — застаріле ⚠️ Cosmetic
 
@@ -240,7 +250,8 @@ migration), поза скоупом цієї прожарки.
 - **P2** `obs/tracing.ts` env-injection refactor — обговорюємо, чи лишити DI-pattern.
 - **P2** SQLite `sync_op_outbox` no-such-table fix — Stage 8/9 (інша ініціатива).
 - **P2** Documentation gap у `metrics.md` §6 (AI-token join-pattern) — окремий cosmetic PR.
-- **P2** Sentry sampling для `/api/internal/*` — потрібен власний моніторинг.
+- **P2** Sentry sampling для `/api/internal/*` — закрито local diff у P2-7
+  (broad 1.0 відсутній, guardrail-тести додані).
 
 ## Methodology notes
 
