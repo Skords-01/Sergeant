@@ -115,53 +115,79 @@ Sergeant — це багатомодульний застосунок life manag
 
 **Sticky footer CTA**: Intersection Observer після hero → scroll до `#waitlist` anchor (не друга форма).
 
-## Form anatomy (canonical)
+## Form anatomy (canonical — 1 field MVP)
 
-**2 поля, не 1:**
+**Submit flow: 1 поле (email) → success card з optional module-interest poll.**
 
 ```
 [ Email                                     ]
-[ Що цікавить найбільше? ]
-   [Фінанси] [Тренування] [Звички] [Харчування]   ← pill chips, 44px touch
 [ Отримати early access →                  ]
    "Без спаму · 847 людей вже чекають"
 ```
 
-- Module chips, не radio inputs. Tap-friendly 44px (Hard Rule).
-- На 360px поля вертикально, chips wrap 2×2 grid.
-- Conversion tradeoff: ~10% CR (2 fields) vs ~12% (1 field) — варто заради segmentation для personalized drip.
+Submit → inline success card на тій самій сторінці (no redirect):
+
+```
+✓ Ти в списку!
+"Sergeant готується — ти дізнаєшся першим. Лист протягом 5 хвилин."
+
+3-крок timeline: запрошення → онбординг → повний доступ
+
+— Розкажи нам більше (optional) —
+[ Що цікавить найбільше? ]
+   [Фінанси] [Тренування] [Звички] [Харчування]   ← pill chips, 44px touch
+
+[ Запросити друга → отримати priority access ]
+```
+
+**Чому 1 поле, не 2 (Round 2 resolution):**
+- Cold traffic 1-field CR ~12% vs 2-field ~10% — 2% втрата реальна
+- Module-interest ловимо post-submit як optional quick-poll (юзер вже підписаний, ризику відмови нема)
+- Якщо пропустить poll → fallback опенер у Day 5 email = generic Hub-level value
+
+**Tradeoff визнаний:** ~30-40% юзерів не дадуть module-interest → Email 2 для них буде generic. Це OK для MVP, можна tune later.
 
 ## Post-signup flow
 
-**Inline reveal на тій самій сторінці (no redirect — зберігає UTM у URL):**
+**Inline reveal на тій самій сторінці (no redirect — зберігає UTM у URL).** Success card містить:
+1. Confirmation message + email timeline expectation
+2. 3-step visual timeline (запрошення → онбординг → повний доступ)
+3. Optional module-interest pill chips quick-poll (writes to Airtable async)
+4. Secondary referral CTA з ref-link одразу
 
-> "Ти в списку! Sergeant готується — ти дізнаєшся першим. Очікуй листа протягом 5 хвилин."
+**Окрема `/thank-you` сторінка не потрібна.**
 
-3-крок timeline (отримаєш запрошення → онбординг → повний доступ) + secondary referral CTA. **Окрема `/thank-you` сторінка не потрібна.**
-
-## Email drip — 5 листів (canonical)
+## Email drip — 4 листи (canonical)
 
 **Tone rules:**
 1. Прогрес, не тиск — ніколи "ти ще не зробив".
 2. Конкретика замість обіцянок — "побачиш, куди пішли ₴1 200" > "зміни майбутнє".
 3. Один CTA на лист.
+4. **Forward-looking value only** — без порівняння з минулим («знаєш скільки витрачаєш...»), без "здивує/дізнаєшся скільки".
 
 **Табу:** "нарешті", "вже давно час", "ексклюзивно для вас", "скільки можна".
+
+**Unsubscribe footer**: обов'язково з Email 1, не пізніше.
 
 | # | День | Мета | Opener | CTA |
 |---|---|---|---|---|
 | 1 | 0 | Welcome | «Твоє місце в Sergeant заброньовано — ти дізнаєшся про запуск першим.» | Розкажи другу (м'який seed) |
-| 2 | 2 | Value hit (per module, branched в n8n) | Finyk: «Цікаво, куди пішли ₴1 200 минулого тижня? Finyk покаже — без ручного введення.» / Fizruk / Routine / Nutrition — окремі opener per module | Слідкуй у Telegram |
-| 3 | 7 | Social proof | «Цього тижня до Sergeant приєднались ще [N] людей — хтось точно схожий на тебе.» | Запроси друга |
-| 4 | 14 | Referral | «Маєш когось, хто теж хоче навести лад у витратах або тренуваннях?» | Надішли [ref_link] |
-| 5 | 21 | Pre-launch teaser | «Перші 500 отримують доступ — ти вже серед них. Залишилось небагато.» | Підтверди email (відповісти на лист) |
+| 2 | 5 | Value hit (per module, branched в n8n) | Finyk: «Фінансова картина за тиждень — одна хвилина на день.» / Fizruk / Routine / Nutrition — окремі opener per module | Слідкуй у Telegram |
+| 3 | 14 | Referral | «Маєш когось, хто теж хоче навести лад у витратах або тренуваннях?» | Надішли [ref_link] |
+| 4 | 21 | Pre-launch teaser | «Перші 500 отримують доступ — ти вже серед них. Залишилось небагато.» | Підтверди email (відповісти на лист) |
 
-**Email 2 — per-module opener bank** (потрібен у Phase 1 launch):
+**Чому Day 5, не Day 2** (Round 2 decision): Day 2 — занадто щільно після welcome, ризик spam fatigue. Day 5 = "встиг забути, нагадай чим це корисно".
 
-- Finyk: «Цікаво, куди пішли ₴1 200 минулого тижня? Finyk покаже — без ручного введення.»
-- Fizruk: «Останнє тренування було? Fizruk пам'ятає кожен підхід — щоб ти бачив прогрес.»
-- Routine: «Одна звичка щодня. За 21 день — побачиш різницю. Routine рахує тихо.»
-- Nutrition: «Що ти їв учора? Nutrition зберігає просто, без суджень.»
+**Чому 4 emails, не 5**: видалений Day 7 social-proof email — milestone celebration виноситься у Telegram-канал (social-growth pillar), не дублюється у email. Email сегмент тримає функціональну послідовність welcome → value → referral → teaser, без soft-touch padding.
+
+**Якщо module-interest не зібрано на post-submit poll** (~30-40% юзерів): Email 2 fallback = generic Hub-level value «Sergeant — твій персональний хаб життя. Чотири модулі, одна звичка щодня.»
+
+**Email 2 — per-module opener bank (фінальні, brand-voice approved, forward-looking):**
+
+- **Finyk**: «Фінансова картина за тиждень — одна хвилина на день.»
+- **Fizruk**: «Sergeant Fizruk запам'ятовує твої тренування — ти бачиш прогрес, а не здогадуєшся.»
+- **Routine**: «Sergeant Routine тримає звички поряд — ти вирішуєш темп, він нагадує тихо.»
+- **Nutrition**: «Sergeant Nutrition рахує макроси за тебе — одна страва, секунда часу.»
 
 ## Content pillars (5)
 
@@ -245,7 +271,9 @@ Top targets per module:
 
 ### Stack
 
-**Astro (static) + React island (~2KB gzip) + n8n webhook + Airtable (CRM) + Google Sheet (live counter).** Tally.so як fallback якщо Astro overhead.
+**Astro (static) + native React island form (~2KB gzip) + fetch() → n8n webhook + Airtable (CRM) + Google Sheet (live counter).**
+
+**Чому native form, не Tally** (Round 2 decision): Tally iframe додає ~40KB JS зайвого bundle + меншe контролю над UX (особливо success card з pill chips quick-poll). Native island дає (1) повний контроль над поведінкою, (2) нуль зайвого JS, (3) inline error handling. **Tally — Plan B** якщо solo dev wants ship за день без коду форми.
 
 ### UTM tracking
 
@@ -290,8 +318,8 @@ CTA copy: «Увійди в перших 500» / «Спробуй першим �
 
 ### Waitlist + funnel (4)
 
-1. **Signup → CRM**: Webhook → parse UTM body (localStorage-збережені) + module_interest → Airtable create (email, module, utm_*, ref_code=nanoid(8), invited_by=?ref) → confirmation email Day 0.
-2. **Drip scheduler**: Airtable trigger (new record) → Wait nodes (Day 2/7/14/21) → branch per `module_interest` → per-module email template.
+1. **Signup → CRM**: Webhook → parse UTM body (localStorage-збережені) → Airtable create (email, utm_*, ref_code=nanoid(8), invited_by=?ref, module_interest=null) → confirmation email Day 0. **Second async webhook** для post-submit module-interest poll → Airtable update by email → fills module_interest column.
+2. **Drip scheduler**: Airtable trigger (new record) → Wait nodes (Day 5/14/21) → branch per `module_interest` (з fallback generic Hub-value якщо null) → per-module email template.
 3. **Referral attribution**: Webhook `/signup?ref=CODE` → Airtable lookup ref_code → increment invite_count → if ≥3 → priority email до інвайтера.
 4. **Weekly stats digest**: Cron Monday 9:00 Kyiv → Airtable aggregate + Google Sheet read → Telegram до засновника.
 
@@ -328,7 +356,8 @@ CTA copy: «Увійди в перших 500» / «Спробуй першим �
 | # | Task | Effort |
 |---|---|---|
 | 1.1 | Landing IA build: hero + problem bar + module showcase (tabbed/carousel) + how-it-works + value props + waitlist form + FAQ + footer | M |
-| 1.2 | Waitlist form: email + 4 module pill chips → n8n webhook | S |
+| 1.2 | Waitlist form: email only → n8n webhook (single field MVP) | S |
+| 1.2a | Post-submit success card з optional module-interest pill chips (async secondary webhook) | S |
 | 1.3 | Sticky footer CTA (Intersection Observer → scroll to `#waitlist`) | XS |
 | 1.4 | Inline success state (no redirect, 3-step timeline + referral CTA) | S |
 | 1.5 | UTM `localStorage` capture | XS |
@@ -445,7 +474,7 @@ Phase 5 — Launch transition (depends on App Store approval — exogenous)
 ## Open questions / decisions deferred
 
 - **Hero H1 final**: «Усе про себе — в одному місці» (intrigue) vs «Один застосунок. Чотири модулі. Уся картина.» (proof). **Рекомендація: ship intrigue, A/B test після 200 signups.**
-- **Tally.so vs custom Astro form**: solo dev — Tally швидше до ship, custom — кращий SEO/perf. **Рекомендація: start Tally embedded, swap на custom якщо form CR <8% або bundle penalty заважає.**
+- **Tally.so vs custom Astro form**: **Round 2 decision: native Astro form island.** ~40KB Tally bundle penalty не варто заради 1-day ship convenience. Tally — Plan B only якщо solo dev hits unblocked-by-code wall.
 - **Invite-only з position number** vs simple waitlist email: складніша реферальна mechanics. **Рекомендація: simple waitlist MVP; pivot на position-bump якщо K-factor < 0.3 за 30 днів.**
 - **Telegram-канал vs group**: канал до launch. **Decision threshold: 500+ waitlist OR 50+ DAU**.
 - **Discord**: skip permanently (over-engineered для UA productivity).
