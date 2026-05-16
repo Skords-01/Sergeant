@@ -351,6 +351,14 @@ PR-розкладка по решті open / Partial / Follow-up / Backlog items
 
 ## PR-09 — `refactor(server): migrate validateBody→parseBody (batch 1 — nutrition)`
 
+> **Rollout 2026-05-15 (3 sub-PR-и):**
+>
+> - **Phase 1 pilot ✅ merged (#2917):** 2 файли — `analyze-photo.ts`, `refine-photo.ts`. Розширило існуючий ApiError schema/emission drift на 2 nutrition routes; знято в prerequisite-фіксі.
+> - **Prerequisite ✅ merged (#2919):** `fix(shared): align ApiError schema with errorHandler canonical emission`. `packages/shared/src/openapi/registry.ts:246` тепер віддає `{error, message, code, requestId?, details?}` замість `{error, details?}` — match-ить `apps/server/src/http/errorHandler.ts:107-113`. Drift існував pre-pilot (auth-401, rate-limit-429, всі AppError-routes), знятий централізовано.
+> - **Phase 2 (поточний PR):** решта 7 nutrition handlers — `backup-upload`, `day-hint`, `day-plan`, `parse-pantry`, `recommend-recipes`, `shopping-list`, `week-plan` + матчені test-кейси адаптовані під `parseBody → throw ValidationError` замість `validateBody → res.status(400).json(...)` sentinel.
+>
+> ⚠️ Acceptance criterion **"response shape не змінилась"** (рядок нижче) виявився хибним: shape МІНЯЄТЬСЯ з `{error, details?}` (validateBody sentinel) на `{error, message, code, requestId?, details?}` (errorHandler canonical). У phase 1+2 правильна перевірка — `response shape match-ить ApiError schema у registry.ts ПІСЛЯ prerequisite-фіксу`.
+
 **Surface**
 
 - `apps/server/src/modules/nutrition/*.ts` (11 файлів — `analyze-photo`, `backup-upload`, `barcode`, `day-hint`, `day-plan`, `food-search`, `parse-pantry`, `recommend-recipes`, `refine-photo`, `shopping-list`, `week-plan`). Усі по 2 callsites = ~22 заміни.
@@ -388,7 +396,7 @@ PR-розкладка по решті open / Partial / Follow-up / Backlog items
 - [ ] `grep -c "validateBody\|validateQuery" apps/server/src/modules/nutrition/*.ts` → 0.
 - [ ] Усі nutrition route-и обгорнуті `asyncHandler` (якщо не були).
 - [ ] `pnpm --filter @sergeant/server test nutrition` зелений.
-- [ ] `pnpm api:check-openapi-types` зелений (response shape не змінилась).
+- [ ] `pnpm api:check-openapi-types` зелений (ApiError schema у registry.ts уже match-ить errorHandler canonical emission після prerequisite-фіксу — див. блок rollout).
 - [ ] Sample request у production → response body має ту саму форму (manual smoke у staging — рекомендовано).
 
 **Risks / mitigations**
@@ -401,6 +409,19 @@ PR-розкладка по решті open / Partial / Follow-up / Backlog items
 ---
 
 ## PR-10 — `refactor(server): migrate validateBody→parseBody (batch 2 — sync/chat/internal/решта)`
+
+> **Rollout 2026-05-15 (split 2a + 2b):**
+>
+> Plan-card originally estimated L (~700 LOC). Actual audit показав **24 файли, 128 callsites** (з них `routes/internal/openclaw.ts` сам — 56). Розбито на 2 PR-и за surface boundary:
+>
+> - **PR-10a ✅ merged (#2921, modules/):** 14 файлів — `modules/sync/{syncV2,syncV2Stream}.ts`, `modules/chat/{chat,coach}.ts`, `modules/ai-memory/{ingestRoute,recallRoute,eventSyncRoute}.ts`, `modules/digest/weekly-digest.ts`, `modules/transcribe/transcribe.ts`, `modules/mono/{privat,read}.ts`, `modules/push/push.ts`, `modules/nutrition/{barcode,food-search}.ts` (validateQuery leftover з PR-09). ~36 callsites.
+> - **PR-10b (поточний PR, routes/):** 10 файлів — `routes/{billing,waitlist}.ts` + `routes/internal/*.ts` (8 файлів, включно з 56-callsite `openclaw.ts`). ~92 callsites. (Зауваж: `routes/push.ts` не має `validateBody`/`Query` — push-handler-и живуть у `modules/push/push.ts`, мігровано у PR-10a.)
+>
+> Special handling у PR-10a:
+>
+> - `sync/syncV2.{ts,Stream.ts}` — обгорнули `parseQuery/parseBody` у try/catch для збереження `recordSyncV2("..", "invalid", ...)` / `syncOperationsTotal{outcome: "invalid"}` метрик (інакше errorHandler не знає про сінк-семантику).
+> - `chat.ts` — `parseBody` throws BEFORE будь-якого `res.write()`/SSE-handshake, тому stream-handle leak неможливий (verified — validation на лінії 355, streaming setup лінії 754+).
+> - 12 validation-тестів адаптовано на `await expect(...).rejects.toMatchObject({name: "ValidationError"})` (PR-09 phase 2 pattern).
 
 **Surface**
 
