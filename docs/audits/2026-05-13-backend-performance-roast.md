@@ -194,12 +194,17 @@ migration), поза скоупом цієї прожарки.
   rejection (helper never throws), already-aborted external signal —
   у [`apps/server/src/lib/poolShutdown.test.ts`](../../apps/server/src/lib/poolShutdown.test.ts).
 
-### P2-6. Health-endpoint p95 не алертимо в Grafana ⚠️ Open
+### P2-6. Health-endpoint p95 не алертимо в Grafana ✅ Closed (`local diff`)
 
-- **Files:** AGENTS.md §Performance budgets каже "Backend `/health` p95
-  < 100 ms (informal SLO)", але немає Alertmanager-правила.
-- **Why open:** інформативно, не блокер; додати в alerts.yml у
-  наступному observability-PR.
+- **Files:** AGENTS.md §Performance budgets і `apps/server/AGENTS.md` тепер
+  посилаються на формальний SLO: `docs/observability/SLO.md` §2.1.
+  Фактичний стан: recording rule `job:health_p95_5m` у
+  `docs/observability/prometheus/recording_rules.yml`, alert
+  `BackendHealthP95High` у `docs/observability/prometheus/alert_rules.yml`
+  (`severity=ticket`, `for: 5m`) і runbook `#backendhealthp95high`.
+- **Closure note:** закрито локально (`local diff`): alert/doc/runbook уже
+  присутні; синхронізовано audit-рядок із фактичним станом без зміни
+  runtime-логіки.
 
 ### P2-7. Sentry SENTRY_SAMPLING_RULES — admin=1.0 для `/api/internal/*` ⚠️ Open
 
@@ -235,7 +240,6 @@ migration), поза скоупом цієї прожарки.
 - **P2** `obs/tracing.ts` env-injection refactor — обговорюємо, чи лишити DI-pattern.
 - **P2** SQLite `sync_op_outbox` no-such-table fix — Stage 8/9 (інша ініціатива).
 - **P2** Documentation gap у `metrics.md` §6 (AI-token join-pattern) — окремий cosmetic PR.
-- **P2** Health p95 Alertmanager rule — observability-PR.
 - **P2** Sentry sampling для `/api/internal/*` — потрібен власний моніторинг.
 
 ## Methodology notes
