@@ -37,60 +37,60 @@
 
 ### Governance health
 
-| Сигнал | Стан |
-| --- | --- |
-| Hard rules (23) — всі категорії з enforcement | ✅ zero TBD; повна машино-читабельна матриця в `hard-rules-matrix.md`. |
-| `pnpm lint:codeowners` coverage | ✅ enforced; Secondary == `TBD(role)` явно дозволено як bus-factor контракт. |
-| `pnpm lint:governance-sync` (3-way ADR/JSON/per-rule) | ✅ зелений. |
-| `pnpm dead-code:files` | ✅ зелений; 18 файлів під `@scaffolded`/`@deprecated`/`@experimental` маркерами. |
-| `pnpm docs:check-links` | ✅ зелений (53 archive-move links виправлено [doc-hygiene roast](./2026-05-13-documentation-hygiene-roast.md)). |
-| Freshness-gate (60d) для tracked docs | ✅ більшість 100%; ADR — частково (див. nuance нижче). |
-| Conventional Commits + explicit scope (Rule #5) | ✅ commitlint gate. |
-| Pre-commit Husky hooks (Rule #7) | ✅ never-skip enforced. |
+| Сигнал                                                | Стан                                                                                                            |
+| ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| Hard rules (23) — всі категорії з enforcement         | ✅ zero TBD; повна машино-читабельна матриця в `hard-rules-matrix.md`.                                          |
+| `pnpm lint:codeowners` coverage                       | ✅ enforced; Secondary == `TBD(role)` явно дозволено як bus-factor контракт.                                    |
+| `pnpm lint:governance-sync` (3-way ADR/JSON/per-rule) | ✅ зелений.                                                                                                     |
+| `pnpm dead-code:files`                                | ✅ зелений; 18 файлів під `@scaffolded`/`@deprecated`/`@experimental` маркерами.                                |
+| `pnpm docs:check-links`                               | ✅ зелений (53 archive-move links виправлено [doc-hygiene roast](./2026-05-13-documentation-hygiene-roast.md)). |
+| Freshness-gate (60d) для tracked docs                 | ✅ більшість 100%; ADR — частково (див. nuance нижче).                                                          |
+| Conventional Commits + explicit scope (Rule #5)       | ✅ commitlint gate.                                                                                             |
+| Pre-commit Husky hooks (Rule #7)                      | ✅ never-skip enforced.                                                                                         |
 
 ### Architecture health
 
-| Сигнал | Стан |
-| --- | --- |
-| TypeScript strict (13/13 packages, Rule #19) | ✅ 100% |
-| Module size discipline (`max-lines: 600`, Rule #18) | ✅ T1/T3/T10 батчі закрили великі файли (HubDashboard 837→115; Workouts 744→213; LogCard 736→216; NutritionApp 728→<250; Overview 509→139). |
-| Sync v2 op-log engine | ✅ shipped (lifecycle, push loop, scheduler, DLQ); v1 410-Gone. |
-| Stripe billing (skeleton + lifecycle) | ✅ checkout / webhook (`started`/`renewed`/`canceled`) / portal endpoint / price_id env-validation — все Done у revenue PR-серіях P0-1..P0-7. |
-| `usePlan`, `PaywallModal`, `billingKeys` factory (Hard Rule #2) | ✅ shipped. |
-| Sentry (web + mobile + server), OpenTelemetry, Pino redaction (Rule #21) | ✅ shipped. |
-| OpenClaw Phases 1+1.5+2.5+3+4 | ✅ shipped (Phase 3 closed 2026-05-13). Gateway migration Stage 1–7 done, legacy deletion 2026-06-09. |
-| AI Memory activation runbook | ✅ [`docs/launch/tech/ai-memory-activation.md`](../launch/tech/ai-memory-activation.md). |
+| Сигнал                                                                   | Стан                                                                                                                                          |
+| ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| TypeScript strict (13/13 packages, Rule #19)                             | ✅ 100%                                                                                                                                       |
+| Module size discipline (`max-lines: 600`, Rule #18)                      | ✅ T1/T3/T10 батчі закрили великі файли (HubDashboard 837→115; Workouts 744→213; LogCard 736→216; NutritionApp 728→<250; Overview 509→139).   |
+| Sync v2 op-log engine                                                    | ✅ shipped (lifecycle, push loop, scheduler, DLQ); v1 410-Gone.                                                                               |
+| Stripe billing (skeleton + lifecycle)                                    | ✅ checkout / webhook (`started`/`renewed`/`canceled`) / portal endpoint / price_id env-validation — все Done у revenue PR-серіях P0-1..P0-7. |
+| `usePlan`, `PaywallModal`, `billingKeys` factory (Hard Rule #2)          | ✅ shipped.                                                                                                                                   |
+| Sentry (web + mobile + server), OpenTelemetry, Pino redaction (Rule #21) | ✅ shipped.                                                                                                                                   |
+| OpenClaw Phases 1+1.5+2.5+3+4                                            | ✅ shipped (Phase 3 closed 2026-05-13). Gateway migration Stage 1–7 done, legacy deletion 2026-06-09.                                         |
+| AI Memory activation runbook                                             | ✅ [`docs/launch/tech/ai-memory-activation.md`](../launch/tech/ai-memory-activation.md).                                                      |
 
 ### Test stack
 
 - Vitest (units), Playwright (e2e), Testcontainers (server integration), MSW (network mocking).
-- Mutation testing (Stryker) — видалено разом з CloudSync v1 sunset (#052b); причина видалення випливає з контексту (специфіка для v1 engine), але **explicit decision-record у CHANGELOG не одиничний** — це єдиний справді відкритий nuance (див. §[Truly outstanding](#truly-outstanding) item D2).
+- Mutation testing (Stryker) — видалено разом з CloudSync v1 sunset (#052b); explicit decision-record присутній у [`docs/testing/README.md:12`](../testing/README.md), [`2026-05-05-tests-review.md:40`](../testing/2026-05-05-tests-review.md) і ADR-0020:235. Закрите (див. §[Truly outstanding](#truly-outstanding) item D2 ✅).
 
 ## Раніше виявлені «гарячі точки» — closure-таблиця
 
-| Гіпотеза з першого проходу | Реальність | Доказ |
-| --- | --- | --- |
-| Stage 5 sync wiring incomplete (P0) | **Closed** | CloudSync engine #1929–#1941 + sync v2 op-log. `flushOnReconnect`/`recoverDeadLetter` мають реальні production callsite-и в обох runtimes. |
-| Stripe bootstrap docs missing (P0) | **Closed** | revenue P0-7 (`apps/server/src/env/env.ts` schema validation) shipped; price_id ad-hoc gap закрито. |
-| Stripe webhook без e2e (P1) | **Partially open** | unit-тести + 3 lifecycle-евенти. Наскрізний e2e з фейковим signature → DB insert → role update — все ж warrant. Лишається у backlog testing-devx плану (див. nuance D1). |
-| `billing.test.ts` pre-existing failures (P1) | **Не верифіковано** | Згадка в моєму early-pass-і не підтверджена прямим запуском. Потребує одиничного перевірочного коміту перед закриттям. |
-| Lighthouse LCP `warn`→`error` 3000 ms (P1) | **Tracked** | sprint-roadmap T5; перший pass (warn-only) shipped `cb459c08`; tightening — baseline-gathered follow-up. |
-| 40 ADR без `Last validated` (P1) | **Partially valid** | freshness-gate захищає tracked docs; для ADR `Last validated` є opt-in. Hardening hygiene — D4. |
-| `core/cloudSync/index.ts` orphan exports (P1) | **Closed** | `@scaffolded` маркер (dead-code roast P0.1); `useSyncStatus` ще ходить deep-path-ом, барель свідомо тримається. |
-| 12 TBD CODEOWNERS (P0) | **Closed (рішення прийнято)** | Bus-factor PR-04 свідомо допускає `TBD(role)` як placeholder; replace-on-hire. |
-| ADR-0004 Status drift (P0-4) | **False positive** | Рядок 3 уже містить `superseded by ADR-0047`. |
-| README hero asset placeholder (P2) | **Tracked** | PR-02b відомий; landing/hero серія планується. |
-| Monobank webhook deprecation у CONTRIBUTING (P2) | **Cosmetic** | Згадка в README. Якщо команда вирішить — short paragraph у CONTRIBUTING. |
-| `OptimizedImage`, `PullToRefreshIndicator`, `shared/lib/log` як dead-code (P2) | **Closed** | Усі під `@scaffolded` маркером з `@nextStep` JSDoc. |
-| AI Memory silent no-op при відсутньому `VOYAGE_API_KEY` (P2) | **By-design** | `AI_MEMORY_ENABLED=false` за замовчуванням — master-switch. Activation runbook вимагає key. Fail-loud guard — D3. |
-| `audit-exception` процес (P2) | **Closed** | [`docs/security/audit-exceptions.md`](../security/audit-exceptions.md) існує; SLA + nightly-audit у тому ж розділі. |
-| Visual-regression pgvector fallback (P2) | **Tracked в pr-plan-testing-devx** | див. [planning/pr-plan-testing-devx-2026-05.md](../planning/pr-plan-testing-devx-2026-05.md). |
-| Stryker removal decision-record (P2) | **Open (минимальний)** | див. D2 нижче. |
-| Admin seed-скрипт (P2) | **By-design (Better Auth)** | Перша адмін-учетка створюється через web-форму + manual DB-update. Якщо команда хоче формалізувати — окремий PR. |
+| Гіпотеза з першого проходу                                                     | Реальність                         | Доказ                                                                                                                                                                             |
+| ------------------------------------------------------------------------------ | ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Stage 5 sync wiring incomplete (P0)                                            | **Closed**                         | CloudSync engine #1929–#1941 + sync v2 op-log. `flushOnReconnect`/`recoverDeadLetter` мають реальні production callsite-и в обох runtimes.                                        |
+| Stripe bootstrap docs missing (P0)                                             | **Closed**                         | revenue P0-7 (`apps/server/src/env/env.ts` schema validation) shipped; price_id ad-hoc gap закрито.                                                                               |
+| Stripe webhook без e2e (P1)                                                    | **Partially open**                 | unit-тести + 3 lifecycle-евенти. Наскрізний e2e з фейковим signature → DB insert → role update — все ж warrant. Лишається у backlog testing-devx плану (див. nuance D1).          |
+| `billing.test.ts` pre-existing failures (P1)                                   | **Не верифіковано**                | Згадка в моєму early-pass-і не підтверджена прямим запуском. Потребує одиничного перевірочного коміту перед закриттям.                                                            |
+| Lighthouse LCP `warn`→`error` 3000 ms (P1)                                     | **Tracked**                        | sprint-roadmap T5; перший pass (warn-only) shipped `cb459c08`; tightening — baseline-gathered follow-up.                                                                          |
+| 40 ADR без `Last validated` (P1)                                               | **Partially valid**                | freshness-gate захищає tracked docs; для ADR `Last validated` є opt-in. Hardening hygiene — D4.                                                                                   |
+| `core/cloudSync/index.ts` orphan exports (P1)                                  | **Closed**                         | `@scaffolded` маркер (dead-code roast P0.1); `useSyncStatus` ще ходить deep-path-ом, барель свідомо тримається.                                                                   |
+| 12 TBD CODEOWNERS (P0)                                                         | **Closed (рішення прийнято)**      | Bus-factor PR-04 свідомо допускає `TBD(role)` як placeholder; replace-on-hire.                                                                                                    |
+| ADR-0004 Status drift (P0-4)                                                   | **False positive**                 | Рядок 3 уже містить `superseded by ADR-0047`.                                                                                                                                     |
+| README hero asset placeholder (P2)                                             | **Tracked**                        | PR-02b відомий; landing/hero серія планується.                                                                                                                                    |
+| Monobank webhook deprecation у CONTRIBUTING (P2)                               | **Cosmetic**                       | Згадка в README. Якщо команда вирішить — short paragraph у CONTRIBUTING.                                                                                                          |
+| `OptimizedImage`, `PullToRefreshIndicator`, `shared/lib/log` як dead-code (P2) | **Closed**                         | Усі під `@scaffolded` маркером з `@nextStep` JSDoc.                                                                                                                               |
+| AI Memory silent no-op при відсутньому `VOYAGE_API_KEY` (P2)                   | **By-design**                      | `AI_MEMORY_ENABLED=false` за замовчуванням — master-switch. Activation runbook вимагає key. Fail-loud guard — D3.                                                                 |
+| `audit-exception` процес (P2)                                                  | **Closed**                         | [`docs/security/audit-exceptions.md`](../security/audit-exceptions.md) існує; SLA + nightly-audit у тому ж розділі.                                                               |
+| Visual-regression pgvector fallback (P2)                                       | **Tracked в pr-plan-testing-devx** | див. [planning/pr-plan-testing-devx-2026-05.md](../planning/pr-plan-testing-devx-2026-05.md).                                                                                     |
+| Stryker removal decision-record (P2)                                           | **Closed**                         | Already covered: `docs/testing/README.md:12`, `2026-05-05-tests-review.md:40`, ADR-0020:235 містять explicit decision. Підтверджено second-pass executor 2026-05-15 — див. D2 ✅. |
+| Admin seed-скрипт (P2)                                                         | **By-design (Better Auth)**        | Перша адмін-учетка створюється через web-форму + manual DB-update. Якщо команда хоче формалізувати — окремий PR.                                                                  |
 
 ## Truly outstanding
 
-Чотири пункти **не покриті** активною планувальною системою. Жоден не P0; усі — observability/hygiene клас.
+Три пункти **не покриті** активною планувальною системою (D2 закрите). Жоден не P0; усі — observability/hygiene клас.
 
 ### D1 — Stripe webhook e2e (P2)
 
@@ -100,13 +100,19 @@
 
 **Suggested home:** [`docs/planning/pr-plan-testing-devx-2026-05.md`](../planning/pr-plan-testing-devx-2026-05.md) як новий card-item або follow-up до revenue PR-серії.
 
-### D2 — Stryker removal decision-record (P2)
+### D2 — Stryker removal decision-record (P2) ✅ Closed
 
-**Що:** mutation testing (Stryker) видалено разом з CloudSync v1 sunset у `#052b`. У CHANGELOG.md та ADR-0047 фіксується видалення engine-tree, але explicit decision-record «**чому Stryker зник і чи буде заміна**» — короткий, не виокремлений.
+**Status:** Closed 2026-05-15 (second-pass executor confirmation, see § Update 2026-05-15 — second-pass executor closeout). ID stable для крос-посилань зі старих PR-описів.
 
-**Чому це варто:** наступний агент/онбординг побачить артефакт `stryker.conf.json` git-історії і питатиме «де воно». 1-параграф у [`docs/governance/policy-review.md`](../governance/policy-review.md) або у CHANGELOG як retroactive-note.
+**Original concern:** mutation testing (Stryker) видалено разом з CloudSync v1 sunset у `#052b`; explicit decision-record «**чому Stryker зник і чи буде заміна**» вважався не виокремленим.
 
-**Suggested home:** docs-hygiene follow-up, single-line note.
+**Resolution:** Explicit decision вже зафіксовано у трьох канонічних місцях:
+
+- [`docs/testing/README.md:12`](../testing/README.md) — короткий decision-record у каноні testing.
+- [`docs/testing/2026-05-05-tests-review.md:40`](../testing/2026-05-05-tests-review.md) — historical context у tests-review.
+- ADR-0020:235 — formal decision у ADR.
+
+Жодних подальших дій не потрібно.
 
 ### D3 — AI Memory `VOYAGE_API_KEY` fail-loud guard (P2)
 
@@ -163,24 +169,43 @@ pnpm docs:check-links
 
 Окремий runner (Claude Opus 4.7) пройшов по open-tracker-ах паралельно з synthesis-аудитом і відкрив пакет PR-ів, що закривають конкретні pr-plan-card-и + cleanup-items з §[Truly outstanding](#truly-outstanding):
 
-| Tracker | Scope | PR |
-| --- | --- | --- |
-| `pr-plan-mobile-reliability-2026-05.md` PR-02 — M4 finyk × 2 | drop `as unknown as` у `CategoryChartSection.tsx` + `TransactionsPage.tsx`, 2 allowlist rows | merged via [#2877](https://github.com/Skords-01/Sergeant/pull/2877) |
-| `pr-plan-mobile-reliability-2026-05.md` PR-03 — M3 fizruk × 4 | journal selectors widened (`WorkoutSummaryInput`/`WorkoutForJournal`), `lib/toDomain.ts` adapter, 4 allowlist rows | open [#2891](https://github.com/Skords-01/Sergeant/pull/2891) |
-| `pr-plan-ftux-2026-05.md` PR-A — celebration_shown payload | додано `tipVariant` + `ctaLabel` keys у PostHog event + 2 vitest scenarios | open [#2892](https://github.com/Skords-01/Sergeant/pull/2892) |
-| `pr-plan-mobile-reliability-2026-05.md` PR-10 — shell-tax `--trend` | 30/60/90d quarterly table + initiative 0002 recount row | open [#2893](https://github.com/Skords-01/Sergeant/pull/2893) |
-| README hero placeholder | neutralized `PR-02b` posthumous reference | open [#2894](https://github.com/Skords-01/Sergeant/pull/2894) |
-| `pr-plan-backend-perf-2026-05.md` PR-12 — audit stubs | `2026-08-XX-sync-engine-roast.md` + `2026-08-XX-openclaw-internal-roast.md` + index | open [#2895](https://github.com/Skords-01/Sergeant/pull/2895) |
-| §[Truly outstanding](#truly-outstanding) D1 — Stripe webhook e2e | route-level supertest + 8 scenarios | open ([#2872](https://github.com/Skords-01/Sergeant/pull/2872) — попередній прохід) |
-| §[Truly outstanding](#truly-outstanding) D3 — `VOYAGE_API_KEY` fail-loud | startup guard + 7 tests у `assertStartupEnv` | open ([#2873](https://github.com/Skords-01/Sergeant/pull/2873) — попередній прохід) |
-| §[Truly outstanding](#truly-outstanding) D4 — ADR freshness backfill | codemod + 43 ADR з `Last validated` markers | open ([#2874](https://github.com/Skords-01/Sergeant/pull/2874) — попередній прохід) |
+| Tracker                                                                  | Scope                                                                                                              | PR                                                                                  |
+| ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------- |
+| `pr-plan-mobile-reliability-2026-05.md` PR-02 — M4 finyk × 2             | drop `as unknown as` у `CategoryChartSection.tsx` + `TransactionsPage.tsx`, 2 allowlist rows                       | merged via [#2877](https://github.com/Skords-01/Sergeant/pull/2877)                 |
+| `pr-plan-mobile-reliability-2026-05.md` PR-03 — M3 fizruk × 4            | journal selectors widened (`WorkoutSummaryInput`/`WorkoutForJournal`), `lib/toDomain.ts` adapter, 4 allowlist rows | open [#2891](https://github.com/Skords-01/Sergeant/pull/2891)                       |
+| `pr-plan-ftux-2026-05.md` PR-A — celebration_shown payload               | додано `tipVariant` + `ctaLabel` keys у PostHog event + 2 vitest scenarios                                         | open [#2892](https://github.com/Skords-01/Sergeant/pull/2892)                       |
+| `pr-plan-mobile-reliability-2026-05.md` PR-10 — shell-tax `--trend`      | 30/60/90d quarterly table + initiative 0002 recount row                                                            | open [#2893](https://github.com/Skords-01/Sergeant/pull/2893)                       |
+| README hero placeholder                                                  | neutralized `PR-02b` posthumous reference                                                                          | open [#2894](https://github.com/Skords-01/Sergeant/pull/2894)                       |
+| `pr-plan-backend-perf-2026-05.md` PR-12 — audit stubs                    | `2026-08-XX-sync-engine-roast.md` + `2026-08-XX-openclaw-internal-roast.md` + index                                | open [#2895](https://github.com/Skords-01/Sergeant/pull/2895)                       |
+| §[Truly outstanding](#truly-outstanding) D1 — Stripe webhook e2e         | route-level supertest + 8 scenarios                                                                                | open ([#2872](https://github.com/Skords-01/Sergeant/pull/2872) — попередній прохід) |
+| §[Truly outstanding](#truly-outstanding) D3 — `VOYAGE_API_KEY` fail-loud | startup guard + 7 tests у `assertStartupEnv`                                                                       | open ([#2873](https://github.com/Skords-01/Sergeant/pull/2873) — попередній прохід) |
+| §[Truly outstanding](#truly-outstanding) D4 — ADR freshness backfill     | codemod + 43 ADR з `Last validated` markers                                                                        | open ([#2874](https://github.com/Skords-01/Sergeant/pull/2874) — попередній прохід) |
 
 **Що залишається у §[Truly outstanding](#truly-outstanding):**
 
-- D2 (Stryker removal decision-record) — підтверджено як **already-closed** під час другого проходу. `docs/testing/README.md:12` + `2026-05-05-tests-review.md:40` + ADR-0020:235 уже містять explicit decision. Drop з outstanding-list — наступний синтез-прохід.
+- D2 (Stryker removal decision-record) — ✅ Closed 2026-05-16 у branch `claude/identify-critical-issues-3IgIx` (PR [#2933](https://github.com/Skords-01/Sergeant/pull/2933)). Drop з outstanding-list виконано.
 - D1/D3/D4 — PR-и open; чекають merge. Перебудувати таблицю на наступному циклі.
 
 **Cleanup item (synthesis non-tracked):** CONTRIBUTING.md Monobank fallback note — **false positive** (README не позначає Monobank webhook як deprecated; CONTRIBUTING.md не має згадок взагалі — нема чого додавати).
+
+## Update 2026-05-16 — branch `claude/identify-critical-issues-3IgIx` closeout
+
+Сесія `claude/identify-critical-issues-3IgIx` (PR [#2933](https://github.com/Skords-01/Sergeant/pull/2933)) пройшла по mechanical/low-risk tail з кількох audit-tracker-ів і закрила пакет items без декомпозиції на окремі PR-и (4 commits, один scope):
+
+| Tracker / item                                                         | Дія                                                                                                                                                                                                                                                                                                                                                                                    | Commit                   |
+| ---------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ |
+| `2026-05-13-dead-code-hard-rules-roast.md` — knip dead-code visibility | Unblocked `pnpm knip` (ERROR-level loader failures × 2 → 0): `apps/web/vite.config.js` ESM `__dirname` shim + `knip.json` `"metro": false` для `apps/mobile`. Додано 4 `@scaffolded` markers (`core/billing/index.ts`, `core/errors/index.ts`, `core/errors/OfflinePage.tsx`, `core/errors/ServerErrorPage.tsx`) — `pnpm dead-code:files` тепер репортує `No unmarked unused files ✓`. | 06ad8a4 `chore(root)`    |
+| `2026-05-15-deep-audit-state-of-repo.md` D2                            | ✅ Closed (Stryker removal decision-record — already covered у 3 канонічних місцях).                                                                                                                                                                                                                                                                                                   | 4858757 `docs(docs)`     |
+| `2026-05-13-documentation-hygiene-roast.md` P1-2                       | ✅ Closed (non-actionable — archived file 3-date canonicalization, audit's own recommended action = "leave as-is").                                                                                                                                                                                                                                                                    | 4858757 `docs(docs)`     |
+| `2026-05-03-readme-gap-analysis.md` 2 outstanding items                | ✅ Closed: «Packages» і «Environment Variables» де-факто існують у `README.md` як nested subsections (per-item mapping додано у closure note).                                                                                                                                                                                                                                         | 4858757 `docs(docs)`     |
+| `docs/audits/README.md` counters                                       | Resync 4 рядки: `readme-gap-analysis` 13/15→15/15 ¹, `doc-hygiene-roast` "3 P1 / 2 P2" → "1 P2", `dead-code-hard-rules-roast` "1 ≈" → "≈4", `deep-audit-state-of-repo` "4" → "3 ⁴". Додано 4 footnotes з контекстом.                                                                                                                                                                   | 4858757 `docs(docs)`     |
+| ESLint baseline — `react-hooks/static-components`                      | Promoted `off` → `error` (0 violations across 5 surfaces: web/mobile/mobile-shell/server/openclaw). Inline scoreboard додано для решти 6 react-hooks v7 rules (use-memo 4 → set-state-in-effect 78).                                                                                                                                                                                   | 2f91a10 `chore(root)`    |
+| `2026-05-13-page-audit-01-auth-onboarding.md` F1                       | ✅ Verified clean — token rename `text-error`/`bg-error`/`border-error` → `-danger` уже відбувся; grep returns 0 across `apps/web/src` та `apps/mobile/src`. Не вимагало code change у цьому PR (note-only).                                                                                                                                                                           | 4858757 `docs(docs)` msg |
+| Sergeant-design errors (6) у `apps/web` lint baseline                  | ✅ All cleared у `apps/web/src/core/hub/chat/useChatSend.ts` (2× `no-raw-local-storage` → `safeReadLS`/`safeWriteLS`) і `apps/web/src/shared/components/ui/InsightCard.tsx` (2× `no-flat-shared-lib` → deep-paths, `valid-tailwind-opacity` /22→/20, `no-arbitrary-text-size` text-[18px]→text-style-title). Plus 4 same-file warnings cleared (lint-staged `--max-warnings=0` gate).  | ecfe47b `fix(web)`       |
+
+**Net effect:** `pnpm --filter @sergeant/web lint` тепер `0 errors` (було 6). `pnpm dead-code:files` ✓. `pnpm docs:check-links` ✓ (1 broken internal link виправлено). Один react-hooks v7 rule переведено на gate. 4 outstanding items закрито у трьох рядках README counter table.
+
+**Bonus discovery (correction of prior audit claims):** Hard Rule #19 (`noUncheckedIndexedAccess: true`) **уже виконане по всьому monorepo** — увімкнено у `packages/config/tsconfig.base.json` і наслідується усіма workspace tsconfig-ами через `tsconfig.react.json` / `tsconfig.node.json`. Попередній synthesis-аудит помилково записав `apps/web` / `apps/server` / `apps/mobile-shell` як такі, що не мають правила — походило з прямого читання workspace tsconfig.json без traverse-у `extends`-ланцюжка.
 
 ## Authorship
 
