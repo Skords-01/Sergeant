@@ -1,7 +1,7 @@
 # Sergeant v2 Redesign
 
-> **Last validated:** 2026-05-15 by @Skords-01. **Next review:** 2026-08-13.
-> **Status:** Active (rollout in PR-0..PR-8)
+> **Last validated:** 2026-05-17 by @Skords-01 (PR-0..PR-8 foundation shipped; post-foundation polish tracked у `execution-plan.md` + `execution-status.md`). **Next review:** 2026-08-15.
+> **Status:** Active (foundation PR-0..PR-8 ✅ shipped; post-foundation Phase 0+1 ✅ shipped — see `execution-status.md`)
 
 ## Контекст
 
@@ -77,7 +77,7 @@
 | PR-7b | M | 🔍 [#2911](https://github.com/Skords-01/Sergeant/pull/2911) | Wire AIPill into HubHomeView + 4 module shells |
 | **PR-8** | M | 🔄 цей PR | Storybook stories для AIPill/InsightCard + polish backlog doc + status closure |
 
-**Polish backlog** (under-page glass treatments, ChatSheet modal-route, insight backlog wiring, DM Sans retire) — див. [`redesign-v2-backlog.md`](./backlog.md).
+**Post-foundation polish** (Phase 0–7) — окремий cycle після PR-8 foundation close. Канонічна послідовність — [`execution-plan.md`](./execution-plan.md), live progress — [`execution-status.md`](./execution-status.md), orchestration contract — [`execution-brief.md`](./execution-brief.md), canvas mockups + locked decisions з 2026-05-17 — [`handoff-package/`](./handoff-package/). Raw polish items — [`backlog.md`](./backlog.md).
 
 ## HC contract — новий внесок (хендоф не покривав)
 
@@ -139,7 +139,13 @@ Sergeant має AAA-leaning HC mode (`html.hc { … }`). Для v2 tokens:
 
 ## Refs
 
-- Локальний plan: `C:\Users\dmytr\.claude\plans\d-zip-refactored-starlight.md`
-- Хендоф: `D:\_unzipped\handoff\` (особливо `01-tokens-diff.md`, `04-pr-sequence.md`)
+- Post-foundation execution plan: [`execution-plan.md`](./execution-plan.md)
+- Live progress + divergences: [`execution-status.md`](./execution-status.md)
+- Orchestration contract (toolkit dispatch, acceptance gates): [`execution-brief.md`](./execution-brief.md)
+- Canvas mockups + locked decisions (2026-05-17): [`handoff-package/`](./handoff-package/)
+- Polish backlog: [`backlog.md`](./backlog.md)
+- BEFORE/AFTER patterns: [`migration.md`](./migration.md)
+- Локальний plan (initial foundation): `C:\Users\dmytr\.claude\plans\d-zip-refactored-starlight.md`
+- Хендоф (initial foundation): `D:\_unzipped\handoff\` (особливо `01-tokens-diff.md`, `04-pr-sequence.md`)
 - Існуючий design system: `docs/design/design-system.md`, `docs/design/brandbook.md`, `docs/design/module-accent.md`
-- Pull requests: PR-0 ([#2902](https://github.com/Skords-01/Sergeant/pull/2902))
+- Pull requests: PR-0 ([#2902](https://github.com/Skords-01/Sergeant/pull/2902)) … PR-8 (foundation closure); post-foundation Phase 0 ([#2952](https://github.com/Skords-01/Sergeant/pull/2952)), Phase 1 ([#2953](https://github.com/Skords-01/Sergeant/pull/2953))

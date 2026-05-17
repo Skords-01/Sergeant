@@ -1,9 +1,9 @@
 # Sergeant v2 — Execution Plan (post-foundation polish + UX layer)
 
-> **Last validated:** 2026-05-16 by @Skords-01 (UX + DS council audit).
+> **Last validated:** 2026-05-17 by @Skords-01 (Phase 0+1 shipped + 2026-05-17 handoff-package audit applied).
 > **Next review:** 2026-08-14.
-> **Status:** Ready to execute.
-> **Companion docs:** [`redesign-v2.md`](./governance.md) (governance) · [`redesign-v2-backlog.md`](./backlog.md) (raw polish items) · [`redesign-v2-migration.md`](./migration.md) (BEFORE/AFTER patterns) · [`design-system.md`](../design-system.md) (canonical contract).
+> **Status:** Ready to execute (Phase 0+1 ✅ shipped, Phase 2+ next).
+> **Companion docs:** [`governance.md`](./governance.md) (governance) · [`execution-status.md`](./execution-status.md) (live progress) · [`execution-brief.md`](./execution-brief.md) (orchestration contract) · [`backlog.md`](./backlog.md) (raw polish items) · [`migration.md`](./migration.md) (BEFORE/AFTER patterns) · [`handoff-package/`](./handoff-package/) (canvas mockups + locked decisions) · [`design-system.md`](../design-system.md) (canonical contract).
 
 ## How to use this document
 
@@ -43,7 +43,7 @@ Foundation v2 змерджено через PR-0…PR-7b (mesh, glass, Manrope, 
 
 | # | Gap | Evidence | Fix |
 |---|---|---|---|
-| T1 | `text-style-display` / `text-style-headline` мають `fontWeight: 700` (preset комент каже 800). Manrope-800 неможливий через token → wow-typography заблокована. | `apps/web/tailwind-preset.js` | Patch `text-style-display → 800` АБО додати `text-style-display-hero` (40px+, Manrope 800, leading-tight). Рекомендую **додати окремий `text-style-display-hero`** — не зачіпає existing consumer'ів. |
+| T1 | `text-style-display` / `text-style-headline` мають `fontWeight: 700` (preset комент каже 800). Manrope-800 неможливий через token → wow-typography заблокована. | `packages/design-tokens/tailwind-preset.js` (corrected 2026-05-17 — preset живе у monorepo package, не `apps/web/tailwind-preset.js`) | Patch `text-style-display → 800` АБО додати `text-style-display-hero` (40px+, Manrope 800, leading-tight). Рекомендую **додати окремий `text-style-display-hero`** — не зачіпає existing consumer'ів. |
 | T2 | `--c-chart-{module}` CSS vars відсутні. Tailwind utility є, але не доступне з inline `style` (Recharts SVG fill потребує CSS var). | `apps/web/src/styles/theme.css` | Додати 4 змінні у `:root` що дзеркалять preset values. Light + dark + HC окремо. |
 | T3 | `Sheet.tsx` не має `variant="glass"`. Всі майбутні sheets default на v1 `bg-panel`. | `apps/web/src/shared/components/ui/Sheet.tsx` | Додати `variant: 'default' \| 'glass'` prop analog `Card prominence`. Glass = `bg-surface-glass backdrop-blur-md border-t border-surface-line shadow-nav rounded-t-r-2xl`. |
 | T4 | `--gradient-*` (v1 pastel) + `--hero-grad-*` (v2 bright) обидва active без `@deprecated`. Новий код може взяти будь-який. | `apps/web/src/styles/theme.css :root` | JSDoc `@deprecated` коментар над v1 vars + custom ESLint rule `sergeant-design/no-v1-gradient`. |
@@ -154,11 +154,12 @@ Primitives існують. Wire layer відсутній.
 - 1.6 M3 `motion-safe:backdrop-blur-md/xl` на nav
 - 1.7 inline close-SVG → `<Icon name="close">` у Sheet + Modal
 
-### Phase 2 — Polish migration (3-4 PR)
-- **2.1 Hub CRITICAL**: C1+C2+C5 (BentoCard + HubReports + HubSettings tile body) — ~3 файли
-- **2.2 Module Hero**: C3+C4 (Finyk Overview HeroCard + Fizruk Dashboard hero) — ~2 файли, зберегти `pulseStyle`
+### Phase 2 — Polish migration (4-5 PR)
+- **2.1 Hub CRITICAL**: C1+C2+C5 (BentoCard + HubReports + HubSettings tile body) + extension `dashboardCards.tsx` + Storybook stories cleanup (`PullToRefresh.stories.tsx` v1 wraps + `AssistantAdviceCard` + `TodayFocusCard`, per 2026-05-17 audit) — ~6 файлів
+- **2.2 Module Hero**: C3+C4 + Routine V1 + Nutrition V2 (4 паралельних sub-PR — locked у [`handoff-package/Handoff for Claude Code.md`](./handoff-package/Handoff%20for%20Claude%20Code.md) §2). Finyk Overview hero — 2-storey default + single-storey behind PostHog flag `finyk.hero.single-storey` через TweaksPanel A/B (locked decision 2026-05-17).
 - **2.3 Module lists codemod**: усі MAJOR з Polish gaps section — ~15 файлів
 - **2.4 Onboarding cards**: CrossModulePreview + WeeklyDigest + ReEngagement + FirstAction + DailyNudge — ~6 файлів
+- **2.5 ModuleBottomNav v2 full migration** (NEW PR, locked 2026-05-17) — shared `ModuleBottomNav.tsx` + 4 module wires (`finykNav` / `fizrukNav` / `RoutineBottomNav` / `NutritionBottomNav`) + Storybook + оновити [`unified-bottom-nav.md`](../unified-bottom-nav.md) (застаріле твердження про «однакову форму»). **Routine special-case:** center FAB як sibling, не nested. **Не chrome-lift** — full v2 glass-pill shape з module-tinted active pill (`bg-{module}-strong`). Розмір M.
 
 ### Phase 3 — Friction removal (5 PR, паралельно можна)
 - 3.1 F1 — Nutrition AddMealSheet skip step
@@ -183,8 +184,23 @@ Primitives існують. Wire layer відсутній.
 - 6.1 Category-tinted icon pill на Finyk transaction rows
 - 6.2 ManualExpenseSheet big amount hero (`text-style-display-hero` від T1 + JetBrains Mono)
 - 6.3 Inline AI suggestion у ManualExpenseSheet: `<Badge variant="soft-module" dismissible animate>` recipe (NOT новий primitive — `Badge` + animation покриває)
+- 6.4 **AI-source tag на tx/meal rows** (cherry-pick з 2026-05-17 handoff) — `<Badge soft module>AI · {category}</Badge>` на auto-categorized Finyk tx-rows + photo-imported Nutrition meals. Extension `Badge` recipe із 6.3, wiring-only. **Розмір:** XS-S.
+- 6.5 **W6 StreakFlame wiring (Routine hero)** (cherry-pick з 2026-05-17 handoff) — Coral radial-glow + streak counter у правому верхньому куті Routine hero. Motion-safe AMBIENT slot. Primitive existing, потрібен `useStreakFlame(streakDays)` hook + integration. **Розмір:** XS.
 
-### Phase 7 — Mobile RN parity (out of scope)
+### Phase 7 — Polish v2.1 (deferred bucket, post-v2-close)
+Свідомо відкладено за межі v2 close (locked 2026-05-17). Окремий cycle після retro v2. Зокрема:
+
+- **6.5b** Outcome copy на partial-progress macros (Nutrition) — замість «Білки 42 / 90 г» → «Білки · 12 г до цілі»; «Жири 48 / 65 г» → «Жири · 17 г запас». Reuse `getGoalAwareDesc` з `FirstActionHeroCard`.
+- **6.6** Quick-add inline chips на Nutrition hero (pantry-aware) — pre-AddMealSheet shortcut. Один tap = log meal з default-portion. Закриває частину F1.
+- **6.7** PR badge на Fizruk Dashboard hero — persistent caching-індикатор останнього great-PR (preview W2 pattern, mounted не одноразовий toast).
+- **Finyk single-storey hero promotion** — promote з A/B variant у TweaksPanel до default якщо PostHog data positive.
+- **AuthPage v2** — login/register screen migration (low-traffic але touchpoint).
+- **PaywallModal v2** — окремий "Premium v2" цикл.
+- **HubChat modal-route restructure** (L) — `/chat` з full-screen route → bottom-sheet з `state.background` pattern.
+- **Form controls glass audit** — `Input` / `Select` / `Switch` / `Slider` на glass-card parents (Input `bg-panelHi` "пливе" на glass).
+- **WelcomeScreen first-time experience** — v1 → v2.
+
+### Phase 8 — Mobile RN parity (out of scope)
 Свідомо відкладено. Окремий стратегічний цикл коли продукт ready.
 
 ## Dependency tree
