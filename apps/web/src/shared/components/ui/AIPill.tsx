@@ -2,7 +2,7 @@
  * Sergeant Design System — `AIPill` (PR-7a).
  *
  * @lifecycle experimental (introduced 2026-05; promoted to active after PR-8)
- * @see docs/design/redesign-v2.md § AI surfaces
+ * @see docs/design/redesign-v2/governance.md § AI surfaces
  *
  * Persistent AI affordance що сидить НАД bottom-nav (z-sticky tier).
  * Двi окремi кнопки в одному visual pill:
@@ -91,8 +91,7 @@ export function AIPill({
   className,
 }: AIPillProps) {
   const navigate = useNavigate();
-  const placeholderText =
-    placeholder ?? DEFAULT_PLACEHOLDER[module ?? "hub"];
+  const placeholderText = placeholder ?? DEFAULT_PLACEHOLDER[module ?? "hub"];
 
   const openChat = () => {
     hapticTap();
@@ -156,7 +155,7 @@ export function AIPill({
       <button
         type="button"
         onClick={handleMic}
-        aria-label="Голосовий ввід"
+        aria-label={messages.nav.voiceInput}
         className={cn(
           "w-7 h-7 rounded-full shrink-0",
           "flex items-center justify-center",

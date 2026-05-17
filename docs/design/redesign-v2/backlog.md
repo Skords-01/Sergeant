@@ -1,6 +1,6 @@
 # Sergeant v2 — Полірувальний backlog (PR-8 follow-ups)
 
-> **Last validated:** 2026-05-15 by @Skords-01. **Next review:** 2026-08-13.
+> **Last validated:** 2026-05-17 by @codex. **Next review:** 2026-08-15.
 > **Status:** Active
 
 ## Контекст
@@ -79,6 +79,7 @@ Sergeant v2 редизайн (governance: `redesign-v2.md`) поставив **f
 ## Verification (фінал)
 
 Перед closure всього v2 rollout:
+
 - `pnpm check` clean
 - `pnpm size-limit` ≤ 900kB JS / 28kB CSS brotli
 - Playwright snapshots × 5 top routes мають візуальний паритет з handoff `screens/Part-*.html`
@@ -88,6 +89,6 @@ Sergeant v2 редизайн (governance: `redesign-v2.md`) поставив **f
 
 ## Refs
 
-- `docs/design/redesign-v2.md` — adapter strategy + governance
+- `docs/design/redesign-v2/governance.md` — adapter strategy + governance
 - Handoff: `D:\_unzipped\handoff\screens\` + `final/`
 - PR-0..PR-8: див. `redesign-v2.md § PR sequence` для merged PR-URLs

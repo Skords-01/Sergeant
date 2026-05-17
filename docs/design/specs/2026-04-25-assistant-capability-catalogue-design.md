@@ -1,6 +1,6 @@
 # Assistant Capability Catalogue — дизайн-спек
 
-> **Last validated:** 2026-05-13 by @Skords-01. **Next review:** 2026-11-09.
+> **Last validated:** 2026-05-17 by @codex. **Next review:** 2026-08-15.
 > **Status:** shipped (PR [#795](https://github.com/Skords-01/Sergeant/pull/795) +
 > follow-ups [#798](https://github.com/Skords-01/Sergeant/pull/798),
 > [#799](https://github.com/Skords-01/Sergeant/pull/799),
@@ -512,7 +512,7 @@ E2E (Playwright smoke):
 
 ## See also
 
-- [`docs/design/specs/2026-04-24-assistant-quick-actions-v1-design.md`](./2026-04-24-assistant-quick-actions-v1-design.md) — попередній етап (chips), на якому будується catalogue
+- [`docs/design/specs/archive/2026-04-24-assistant-quick-actions-v1-design.md`](./archive/2026-04-24-assistant-quick-actions-v1-design.md) — попередній етап (chips), на якому будується catalogue
 - [`docs/playbooks/add-hubchat-tool.md`](../../playbooks/add-hubchat-tool.md) — оновити після PR 1: додавання tool вимагає catalogue entry
 - [`docs/playbooks/tune-system-prompt.md`](../../playbooks/tune-system-prompt.md) — оновити після PR 2: токен-cost через `buildToolList()`
 - [`AGENTS.md`](../../../AGENTS.md) — секція «Architecture: AI tool execution path» (без змін у v1; в PR 2 додамо ноту про реджистр як SSOT)

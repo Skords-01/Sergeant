@@ -1,6 +1,6 @@
 # Design specs
 
-> **Last validated:** 2026-05-13 by @Skords-01. **Next review:** 2026-08-11.
+> **Last validated:** 2026-05-17 by @codex. **Next review:** 2026-08-11.
 > **Status:** Active
 
 Design-специ для нетривіальних product-side фіч (раніше `agents/specs/`).
@@ -20,11 +20,18 @@ Design-специ для нетривіальних product-side фіч (ран�
 
 ## Реєстр
 
-| Дата       | Спек                                                                                                           | Статус                                            | Successor                                                                                                      |
-| ---------- | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| 2026-04-24 | [`2026-04-24-assistant-quick-actions-v1-design.md`](./2026-04-24-assistant-quick-actions-v1-design.md)         | Shipped (PR #743) — superseded                    | [`2026-04-25-assistant-capability-catalogue-design.md`](./2026-04-25-assistant-capability-catalogue-design.md) |
-| 2026-04-25 | [`2026-04-25-assistant-capability-catalogue-design.md`](./2026-04-25-assistant-capability-catalogue-design.md) | Shipped (PR #795 + #798/#799/#800/#805/#812/#839) | —                                                                                                              |
-| 2026-05-06 | [`2026-05-06-sync-engine-writer-wiring-design.md`](./2026-05-06-sync-engine-writer-wiring-design.md)           | Active                                            | —                                                                                                              |
+| Дата       | Спек                                                                                                           | Статус                                            | Successor |
+| ---------- | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- | --------- |
+| 2026-04-25 | [`2026-04-25-assistant-capability-catalogue-design.md`](./2026-04-25-assistant-capability-catalogue-design.md) | Shipped (PR #795 + #798/#799/#800/#805/#812/#839) | —         |
+| 2026-05-06 | [`2026-05-06-sync-engine-writer-wiring-design.md`](./2026-05-06-sync-engine-writer-wiring-design.md)           | Active                                            | —         |
+
+### Архів superseded спеків
+
+Повний індекс — у [`archive/README.md`](./archive/README.md).
+
+| Дата       | Спек                                                                                                                   | Статус                         | Successor                                                                                                      |
+| ---------- | ---------------------------------------------------------------------------------------------------------------------- | ------------------------------ | -------------------------------------------------------------------------------------------------------------- |
+| 2026-04-24 | [`archive/2026-04-24-assistant-quick-actions-v1-design.md`](./archive/2026-04-24-assistant-quick-actions-v1-design.md) | Shipped (PR #743) → Superseded | [`2026-04-25-assistant-capability-catalogue-design.md`](./2026-04-25-assistant-capability-catalogue-design.md) |
 
 ## Іменування нових спеків
 
