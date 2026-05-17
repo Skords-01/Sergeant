@@ -13,6 +13,8 @@
 4. Якщо під задачу є playbook у [docs/playbooks/](./docs/playbooks/README.md) — виконуй його як canonical recipe.
 5. Перший раз у репо? Прогонись по [`docs/agents/onboarding.md`](./docs/agents/onboarding.md) — секрети, БД, hard-rule навігація, plop-генератори.
 
+**Daily entry point — "що зараз НЕ доробленого?"** → [`docs/open-work.md`](./docs/open-work.md). Auto-generated rollup активних документів з 7 trackers (initiatives / planning / launch / audits / security hardening / tech-debt / superpowers). Source = `> **Status:**` headers (Rule #10), регенерація `pnpm docs:gen-open-work`, drift gate `pnpm docs:check-open-work` у CI. **Не редагуй вручну** — це source-of-truth для відповіді на «що в процесі».
+
 ## Sub-agents — активне залучення
 
 Не соромся запускати sub-agents. Це знижує час виконання та захищає головний контекст від зайвого шуму.
@@ -61,5 +63,5 @@
 - Для review/merge tasks звіряйся з [docs/governance/review-checklist.md](./docs/governance/review-checklist.md).
 - **OpenClaw Gateway:** якщо задача торкається Telegram-бота, console agent або `@sergeant/openclaw-plugin` — завантажуй `sergeant-openclaw` скіл (не `sergeant-hubchat`). Дивись [docs/adr/0055-openclaw-external-gateway.md](./docs/adr/0055-openclaw-external-gateway.md).
 - **Перед будь-якою зміною SKILL.md** — прочитай `sergeant-writing-skills` скіл. Після змін обов'язково: `pnpm lint:skills && pnpm skills:lock`. CI падає без оновленого lock.
-- **ADR directory:** `docs/adr/` містить 23+ ADR-ів (останній — 0057, 2026-05-11). Читай перед зміною infrastructure, auth або billing.
+- **ADR directory:** `docs/adr/` містить 58+ ADR-ів (останній — 0061, 2026-05-15). Читай перед зміною infrastructure, auth або billing.
 - **TypeScript:** `noUncheckedIndexedAccess: true` активний — враховуй при генерації коду з index-доступом до масивів/об'єктів.
