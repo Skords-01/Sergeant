@@ -61,6 +61,16 @@ export interface SheetProps {
   panelClassName?: string;
   /** Optional className on the scroll region. */
   bodyClassName?: string;
+  /**
+   * Sergeant v2 — surface prominence. `default` keeps the legacy
+   * opaque `bg-panel` + `shadow-e4` shell; `glass` opts into the v2
+   * translucent floating-glass shell (alpha-baked `bg-surface-glass`
+   * + `backdrop-blur-md` + `shadow-nav` + `rounded-t-r-2xl`) so the
+   * mesh / hero gradient underneath reads through. Choose `glass`
+   * for any v2 sheet that sits above a `MeshBackground` shell.
+   * Default stays `default` so existing call-sites are unchanged.
+   */
+  variant?: "default" | "glass";
 }
 
 export function Sheet({
@@ -77,6 +87,7 @@ export function Sheet({
   closeLabel = "Закрити",
   panelClassName,
   bodyClassName,
+  variant = "default",
 }: SheetProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
@@ -177,9 +188,10 @@ export function Sheet({
           // mobile/coarse-pointer counterpart of Modal; they share the
           // same z-modal stacking tier so a Sheet over a popover
           // always reads as the higher surface.
-          "relative w-full max-w-lg bg-panel border-t border-line rounded-t-3xl shadow-e4",
-          "flex flex-col max-h-[90vh]",
-          "motion-safe:animate-slide-up",
+          "relative w-full max-w-lg flex flex-col max-h-[90vh] motion-safe:animate-slide-up",
+          variant === "glass"
+            ? "bg-surface-glass motion-safe:backdrop-blur-md border-t border-surface-line rounded-t-r-2xl shadow-nav"
+            : "bg-panel border-t border-line rounded-t-3xl shadow-e4",
           panelClassName,
         )}
       >
