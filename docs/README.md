@@ -5,13 +5,23 @@
 
 Main documentation index for Sergeant.
 
+## Daily entry — «що зараз у роботі?»
+
+Три дашборди, що тримають тебе в курсі без чтення всього `docs/` дерева:
+
+| Питання                                  | Документ                                                                                                                                                                                  |
+| ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Що НЕ доробленого по всіх trackers?**  | [`open-work.md`](./open-work.md) — auto-rollup усіх `Status: Active / Draft / In progress / Phase *` документів з 7 trackers. Regen `pnpm docs:gen-open-work`; drift gate в CI.           |
+| **Чи документи свіжі?**                  | [`governance/freshness-dashboard.html`](./governance/freshness-dashboard.html) — `Last validated` / `Next review` по всьому tracked-set.                                                  |
+| **Що шипнули у whats-new?**              | [`whats-new/`](./whats-new/README.md) — markdown side; canonical source = `apps/web/src/core/whatsNew/releases.ts` (drift caught by `releases.test.ts`).                                  |
+
+> Чому довіряти: `open-work.md` парсить `> **Status:**` headers (Rule #10) програмно — будь-який drift падає в CI через `pnpm docs:check-open-work`. Якщо документ показується тут зі статусом `Active`, значить його джерело справді у такому стані.
+
 ## Quick start
 
 - Repo overview: [README.md](../README.md)
 - Contributor manual: [CONTRIBUTING.md](../CONTRIBUTING.md)
 - Repo contract and hard rules: [AGENTS.md](../AGENTS.md)
-- **Відкрита робота — єдиний дашборд:** [open-work.md](./open-work.md) — автозведення активних документів з усіх tracker-ів; відповідь на "що зараз НЕ доробленого?"
-- **Свіжість документації:** [governance/freshness-dashboard.html](./governance/freshness-dashboard.html) — автозведення `Last validated` / `Next review` по відстежуваних документах.
 - Agent skills catalog: [agents/agent-skills-catalog.md](./agents/agent-skills-catalog.md)
 - Playbook catalog: [playbooks/playbook-catalog.md](./playbooks/playbook-catalog.md)
 - Service catalog: [architecture/service-catalog.md](./architecture/service-catalog.md)
