@@ -881,11 +881,16 @@
   background-attachment: fixed;
 }
 
-/* iOS WKWebView (Capacitor) ignores background-attachment:fixed on scrollable containers,
- * causing mesh to stutter during scroll. Detect via -webkit-overflow-scrolling CSS feature
- * (iOS-only, CSS-only — no JS runtime detection needed). */
-@supports (-webkit-overflow-scrolling: touch) {
-  .bg-mesh { background-attachment: scroll; }
+/* iOS WKWebView (Capacitor) ignores `background-attachment: fixed` on
+ * scrollable containers, causing the mesh to stutter during scroll.
+ * The legacy `@supports (-webkit-overflow-scrolling: touch)` detector
+ * regressed to no-op on iOS 13+, so detection now happens at runtime
+ * in `apps/web/src/main.tsx` (Capacitor bridge → set
+ * `html[data-ios-capacitor="true"]`). This selector consumes that
+ * flag and falls back to `fixed` everywhere else (where it works).
+ * Sergeant v2 redesign Phase 1 (M1). */
+html[data-ios-capacitor="true"] .bg-mesh {
+  background-attachment: scroll;
 }
 
 @media (prefers-reduced-motion: reduce) {

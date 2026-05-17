@@ -10,6 +10,7 @@ import { cn } from "../../lib/ui/cn";
 import { useDialogFocusTrap } from "../../hooks/useDialogFocusTrap";
 import { useSwipeToDismiss } from "../../hooks/useSwipeToDismiss";
 import { useAnnounce } from "./ScreenReaderAnnouncer";
+import { Icon } from "./Icon";
 
 /**
  * Sergeant Design System — Sheet (bottom sheet / modal)
@@ -241,19 +242,7 @@ export function Sheet({
                 "focus:outline-none focus-visible:ring-2 focus-visible:ring-focus/45 focus-visible:ring-offset-2 focus-visible:ring-offset-panel",
               )}
             >
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.2"
-                strokeLinecap="round"
-                aria-hidden
-              >
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
+              <Icon name="close" size={16} aria-hidden />
             </button>
           </div>
         </div>
