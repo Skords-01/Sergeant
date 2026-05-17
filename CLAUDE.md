@@ -1,6 +1,6 @@
 # Claude in Sergeant
 
-> **Last validated:** 2026-05-15 by @Skords-01. **Next review:** 2026-08-13.
+> **Last validated:** 2026-05-17 by @Skords-01. **Next review:** 2026-08-15.
 > **Status:** Active
 
 > **Single source of truth → [AGENTS.md](./AGENTS.md).** Цей файл — тонкий вказівник із кількома Claude-specific нотатками. Уся repo policy, hard rules, routing catalog і playbook-індекс живуть там і в `docs/`.

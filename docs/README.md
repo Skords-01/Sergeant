@@ -1,6 +1,6 @@
 # Sergeant Documentation
 
-> **Last validated:** 2026-05-14 by @codex. **Next review:** 2026-08-12.
+> **Last validated:** 2026-05-17 by @Skords-01. **Next review:** 2026-08-15.
 > **Status:** Active
 
 Main documentation index for Sergeant.
