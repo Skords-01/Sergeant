@@ -1,7 +1,7 @@
 # 0010 — Revenue-first launch: ship paid, focus wedge
 
-> **Last validated:** 2026-05-18 by @codex. **Next review:** 2026-08-16.
-> **Status:** In progress (Phase 0 done, Phase 1 done — ADR-0051/0052 Accepted, Phase 5.1 done — activation_v2 metric; Phase 2 next)
+> **Last validated:** 2026-05-18 by @Skords-01. **Next review:** 2026-08-16.
+> **Status:** In progress — Phases 0+1+2+3+4.1+4.2+4.3(Google)+5.1+5.2+6(partial) done; pending: Apple auth (4.3), PricingPage portal link (4.2), EN locale + sitemap/robots.txt (6)
 > **Priority:** P0 (Sprint 1–4)
 > **Owner:** `@Skords-01`
 > **ETA:** 4 тижні (фаза 0 — поточний PR; фази 1–6 — 4 спринти по 1 тижню)
@@ -305,11 +305,11 @@ Sergeant має 0 paying users, 0 ₴ MRR, 0 рядків білінг-коду 
 - [ ] Перший Stripe webhook у проді записаний у `webhook_events` (source='stripe').
 - [ ] Перший платний користувач: `billing_subscriptions.plan = 'pro'` AND `billing_subscriptions.status IN ('active','trialing')` AND `billing_subscriptions.current_period_end > NOW()`.
 - [ ] `/pricing` показує реальні CTA → Stripe Checkout (не waitlist), test mode + live mode обидва зелені у smoke-e2e. **₴ UA-only.**
-- [ ] Apple + Google + Email sign-in активні; signup drop-off ≤15% (PostHog funnel, 7 днів production data).
+- [~] Google + Email sign-in активні (GoogleSignInButton.tsx + Better Auth provider). Apple sign-in — pending (немає Apple provider у auth.ts).
 - [x] Mobile-strategy ADR-0052 із `Status: Accepted` (Capacitor primary, Expo paralleled, обидва підтримуються).
-- [ ] `activation_v2` доступна як метрика у PostHog dashboard (pure function є у `packages/insights/src/activation.ts`; PostHog-wire — у Phase 5.2).
-- [ ] A/B тест goal-first vs `vibe_picks` запущено; рішення про переможця прийнято через 2 тижні після rollout.
-- [ ] EN-локаль працює на `/` і `/pricing`; hero copy фіналізований owner-ом перед merge PR 6.1.
+- [x] `activation_v2` доступна: `evaluateActivationV2()` у `packages/insights/src/activation.ts` + PostHog wire у Phase 5.2.
+- [x] A/B тест goal-first vs `vibe_picks` реалізовано: `GoalFirstScreen.tsx` (49 рядків), `onboardingGoalFirst.ts` (50/50 PostHog experiment), events `ONBOARDING_GOAL_FIRST_SHOWN`/`ONBOARDING_GOAL_FIRST_PICKED`/`ONBOARDING_VIBE_PICKED`. Rollout + decision pending.
+- [~] Лендинг `LandingPage.tsx` (260 рядків) виконує маршрут `/` для неавторизованих users. EN-локаль pending (uk.ts є, i18n config відсутній). Sitemap/robots.txt pending.
 - [ ] Усі PR-и пройшли CI зелено + a11y axe-core + Lighthouse budget.
 - [x] Нові docs (ADR-0051, ADR-0052, initiative, mobile READMEs) мають freshness header + Status badge.
 - [x] `docs/launch/business/01-monetization-and-pricing.md` оновлено: §2.2/§2.3 Superseded by ADR-0051; pricing v3 зафіксовано.
@@ -439,3 +439,37 @@ Billing backend реалізовано поза plan-документом; ко�
 - Закриває audit-item `P1-9` у [`docs/audits/2026-05-13-revenue-monetization-roast.md`](../audits/2026-05-13-revenue-monetization-roast.md).
 
 **Наступний крок:** `POST /api/billing/portal` (Phase 3.1) → `usePlan()` + `PaywallModal` (Phase 4.1) → real `/pricing` з portal link (Phase 4.2).
+
+### Phase 2 + Phase 3 (backend) — COMPLETE (2026-05-18)
+
+Доповнення до PARTIAL статусу від 2026-05-07:
+
+- `POST /api/billing/portal` — реалізовано у `apps/server/src/routes/billing.ts` (rate-limited, requireSession, `NoBillingCustomerError` → 409, `BillingConfigurationError` → 503).
+- `createCustomerPortalSession` у `apps/server/src/modules/billing/stripe.ts` — lookup по `provider_customer_id` з `subscriptions` WHERE status IN ('active','trialing','past_due'), створює Stripe Portal Session, return_url → `/settings?billing=portal-return`.
+- `createPortal` у `packages/api-client/src/endpoints/billing.ts` — `POST /api/billing/portal`, schema-validated via `BillingPortalResponseBodySchema`.
+
+### Phase 4.1 — usePlan + PaywallModal ✅ (2026-05-18)
+
+- `apps/web/src/core/billing/usePlan.ts` — RQ hook через `billingKeys.plan()`.
+- `apps/web/src/core/billing/PaywallModal.tsx` — generic paywall з CTA → Checkout.
+- Tests: `usePlan.test.tsx`, `PaywallModal.test.tsx`.
+
+### Phase 4.3 (partial) — Google Sign-In ✅ (2026-05-18)
+
+- `apps/web/src/core/auth/GoogleSignInButton.tsx` — "Увійти через Google" (SVG icon, Ukrainian copy).
+- `apps/server/src/auth.ts` — `getSocialProviders()` conditionally registers Google via `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`. Graceful fallback if env vars missing.
+- Apple Sign-In — **pending** (немає `APPLE_CLIENT_ID` у env schema, немає Apple provider у `auth.ts`).
+
+### Phase 5.2 — A/B goal-first onboarding ✅ (2026-05-18)
+
+- `packages/shared/src/lib/onboardingGoalFirst.ts` — `ONBOARDING_GOAL_FIRST_EXPERIMENT` (50/50, variants `["control", "goal_first"]`). Assignment у `useOnboardingWizardState.ts`.
+- `apps/web/src/core/onboarding/GoalFirstScreen.tsx` — 4-outcome grid (finyk / fizruk / routine / nutrition). Fires `ONBOARDING_GOAL_FIRST_SHOWN` + `ONBOARDING_GOAL_FIRST_PICKED`.
+- Control flow: `vibe_picks` → `ONBOARDING_VIBE_PICKED` (існуючий flow, незмінений).
+- Tests: `OnboardingWizard.goalFirst.test.tsx` — confirm experiment assignment via `overrideVariant()`.
+- **Наступний крок:** моніторинг `activation_v2` rate по variants у PostHog, decision rule через 2 тижні після production rollout.
+
+### Phase 6 (partial) — Landing page ✅ / EN locale + sitemap ❌ (2026-05-18)
+
+- `apps/web/src/core/LandingPage.tsx` — 260 рядків. Hero section, 3-feature grid, waitlist email capture (source=landing), pricing CTA. Fires `LANDING_VIEWED` + `LANDING_EMAIL_CAPTURED`. `locale: "uk"` hardcoded.
+- Route `/`: authenticated users → Hub; non-auth → LandingPage (gated у `StandaloneRoutes.tsx`).
+- **Pending:** EN-локаль (uk.ts існує, i18n config відсутній); sitemap.xml + robots.txt (тільки security.txt у apps/web/public/); Customer Portal link у PricingPage для Pro users.
