@@ -28,4 +28,3 @@ _Жодного документа не пропустило `Next review:` да
 - [`governance/freshness-dashboard.html`](./governance/freshness-dashboard.html) — повний freshness огляд
 - [`AGENTS.md`](../AGENTS.md) — repo policy + hard rules + routing
 - [`README.md`](./README.md) — docs index (genre-grouped)
-

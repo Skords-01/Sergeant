@@ -1,6 +1,6 @@
 # Playbooks — Trigger Index
 
-> **Last validated:** 2026-05-18 by @codex. **Next review:** 2026-08-16.
+> **Last validated:** 2026-05-18 by @Skords-01. **Next review:** 2026-08-16.
 > **Status:** Active
 
 > **Auto-generated** by `scripts/docs/generate-playbook-index.mjs`.
@@ -23,6 +23,7 @@ Lookup table for agents and humans: find the playbook that matches a user reques
 | [`add-react-query-hook.md`](./add-react-query-hook.md)                             | Add React Query Hook                                       | «Дай хук який тягне X з API» / новий useQuery або useMutation у `apps/web` / нова server-state дата.                                                                                                                                  |
 | [`add-sql-migration.md`](./add-sql-migration.md)                                   | Add SQL Migration                                          | "Додати нове поле або таблицю в БД" / зміна PostgreSQL schema / новий індекс, constraint або rollout, що вимагає migration file.                                                                                                      |
 | [`bump-dep-safely.md`](./bump-dep-safely.md)                                       | Bump Dependency Safely                                     | "Оновити X до версії Y" / Renovate PR з major-bump / security advisory на залежність.                                                                                                                                                 |
+| [`cleanup-codex-branch-after-pr.md`](./cleanup-codex-branch-after-pr.md)           | Cleanup Codex branch after PR                              | PR merged / "онови main" / "видали гілку" / "поверни local dirty files" після Codex-гілки.                                                                                                                                            |
 | [`cleanup-dead-code.md`](./cleanup-dead-code.md)                                   | Прибирання dead code                                       | «Видали X і всі його використання» / видалення застарілого модуля, компонента, утиліти або feature flag.                                                                                                                              |
 | [`cutover-openclaw-gateway.md`](./cutover-openclaw-gateway.md)                     | Cutover OpenClaw на зовнішній Gateway (Stage 7)            | Stage 6b parallel-run завершений або пропущений (fast-forward), паритет Gateway з grammy підтверджено. Перемикання production-трафіку з `@OpenClaw_sergeant_bot` (grammy) на `@kOPENCLAW_GATEWAY_BOT` (Gateway).                      |
 | [`debug-chat-tool.md`](./debug-chat-tool.md)                                       | Debug HubChat Tool                                         | «Асистент каже що зробив, але нічого не сталось» / «Натиснув кнопку quick action — нема ефекту» / tool call повернувся текстом замість дії / `Невідома дія: …` у відповіді.                                                           |
