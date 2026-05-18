@@ -1,6 +1,6 @@
 # Sergeant v2 — Полірувальний backlog (PR-8 follow-ups)
 
-> **Last validated:** 2026-05-17 by @Skords-01 (extended with 2026-05-17 handoff-package audit). **Next review:** 2026-08-13.
+> **Last validated:** 2026-05-18 by council-v4 (alignment audit additions). **Next review:** 2026-08-13.
 > **Status:** Active
 
 ## Контекст
@@ -8,6 +8,53 @@
 Sergeant v2 редизайн (governance: `redesign-v2.md`) поставив **foundation** через 9 PR (PR-0..PR-8). Це backlog **підстраничного полірування** яке доставило б 100% візуального паритету з handoff мокапами, але було свідомо відкладено зі скоп v2 rollout щоб не блокувати landing.
 
 Кожен пункт нижче — окремий micro-PR (~30 хв роботи). Можна виконувати в будь-якому порядку: вони незалежні.
+
+## Audit-2026-05-18 additions
+
+Знайдено council-v4 alignment audit ([`alignment-audit-2026-05-18.md`](./alignment-audit-2026-05-18.md)).
+
+### Critical (block Wave 2 / chrome incoherence)
+
+- [x] ~~Fizruk shell migration~~ **(Q1 resolved 2026-05-18 — not a gap)**. PR #2908 diff read показав, що `ModuleShell.tsx` сам internally wraps content у `<MeshBackground>` (line 62-78). Fizruk через ModuleShell отримує mesh background. Функціонально еквівалентно іншим трьом модулям (які використовують direct `<MeshBackground>` через Path A migration). Залишилася **architectural inconsistency low-priority** — 3 modules direct vs 1 via ModuleShell — але це не coverage gap і не blocking. R2 ризик знято до **low**. Якщо хочеш delete `ModuleShell` цілком — тоді треба мігрувати Fizruk на Path A; інакше leave as-is. Деталі: [`alignment-audit-2026-05-18.md`](./alignment-audit-2026-05-18.md) §Q1 resolved.
+
+- [x] ~~NutritionDashboard `chartHex` → CSS var migration~~ **(D7 resolved 2026-05-18 as audit misclassification)**. `chartHex` (per `packages/design-tokens/tokens.js:294`) — це окремий **macro-nutrient palette** (kcal/protein/fat/carbs — 4 кольори по макросу), не bypass для `--c-chart-nutrition` (один-колір-на-модуль). Заміна втратила б differentiation між макросами. Якщо у dogfooding виявиться dark-mode saturation issue → створити нову задачу «macro contrast pivot» з `--c-macro-{kcal,protein,fat,carbs}` × 4 theme scopes. Деталі: [`alignment-audit-2026-05-18.md`](./alignment-audit-2026-05-18.md) §D7 resolved.
+
+- [x] ~~flows/shared.css broken imports fix~~ **(Q11 resolved у PR #2991 — 2026-05-18)**. 3 flow mockups мігровані до `../_shared/tokens.css`.
+
+### Q6 speculative gaps verified (2026-05-18)
+
+- [ ] **`Popover.tsx:242` v1 chrome** (Q6 #14b verified). `bg-panel border border-line rounded-2xl shadow-float` — real v1 surface, рендериться над v2 mesh hub. Migrate до `bg-surface-glass backdrop-blur-md`. **Розмір:** XS-S.
+
+Inші speculative items з `handoff-package/Hidden tech-debt audit.md` verified як: 4 Phase 7 deferred (WelcomeScreen, AuthPage, Input/Form controls), 2 low-priority (OfflineBanner has blur — works visually; Banner has transparency), 1 false alarm (Tooltip uses inverted colors `bg-fg text-surface` — works on any parent), 1 unconfirmed (Toast — grep no hits). Деталі: audit doc §Q6.
+
+### Acceptance criteria template (D9)
+
+Phases 3, 5, 6 у `execution-plan.md` мають zero acceptance criteria. Якщо беретесь за task з цих фаз — спочатку додайте acceptance criteria у форматі:
+
+- **F-task (Phase 3 Friction):** step-count before/after | undo-availability TTL | user-visible confirm state
+- **P-task / V-task / W-task (Phase 4):** primitive existing? | wiring file path | motion budget compliance (Hard Rule #17)
+- **Phase 5 (Insights):** trigger ID | value-framed copy text | activation rate target (per insight)
+- **Phase 6 (Expensa delights):** visual reference (mockup or screenshot) | wiring file path | A/B flag? (PostHog)
+
+Без acceptance criteria — task не actionable і має бути reject'нутий під час PR review.
+
+### Post-launch design-ready (mockup exists, no v2 commitment)
+
+5 поверхонь з production-fidelity мокапами у `mockups/product/` без phase-owner у v2 plan. Reject'нуто як wave 2 scope. Wire після v2 close coordinated cycle. **Не дублювати** — якщо беретесь за один з цих surfaces, спочатку прочитайте відповідний `mockups/product/<name>/index.html`.
+
+- [ ] **`mockups/product/nudges/`** — anti-nag cross-module toast system з fatigue-pip counter. Найбільш elaborated novel surface. Refs: `docs/design/cross-module-prompts.md`.
+- [ ] **`mockups/product/push/`** — push notification lock-screen templates (streak reminder / AI nudge / paywall re-engagement / weekly digest). Refs: `docs/launch/tech/telegram-improvements-roadmap.md`.
+- [ ] **`mockups/product/states/`** — empty/error/zero-data system, 5 surfaces (4 modules + hub). Refs: `docs/design/empty-states.md`.
+- [ ] **`mockups/product/responsive.html`** — tablet/desktop hub layout (sidebar nav + bento grid). Жодна phase не торкається tablet/desktop breakpoints.
+- [ ] **`mockups/product/details-pattern.html`** — deep-screen nav pattern (transaction detail, workout detail, meal detail). Absent з module mockups.
+
+### Surface decisions
+
+- [ ] **`quick-add` (Hub FAB → bottom-sheet)** — moved до Phase 4 (Q2 resolution, audit 2026-05-18). Prototype comparison: [`mockups/product/quick-add/comparison-vs-quick-actions.html`](../../../mockups/product/quick-add/comparison-vs-quick-actions.html). PLAN-state mockup (2 тапи: модуль → режим) — implementation target. AI-парсинг (REC-state) — post-launch.
+- [ ] **`QuickActionsMenu` per-item wiring (Phase 5/6)** (Q2 resolution). Code існує у `apps/web/src/shared/components/ui/QuickActionsMenu.tsx` (0 consumers). Wire у per-item long-press для 4 модулів: Фінік transactions, Фізрук exercises, Харч meals, Рутина habits. 4-5 PRs (по 1 на модуль). **Розмір:** S × 4-5.
+- [ ] **`InsightCard` wire у Phase 5** (Q8 resolution). Code існує у `apps/web/src/shared/components/ui/InsightCard.tsx` (0 consumers поза index.ts). Wire у `HubInsightsBlock` per Phase 5 insight triggers. **Розмір:** S.
+- [x] ~~CelebrationModal dual-file consolidate~~ **(Q8 resolved 2026-05-18 — renamed, not consolidated)**. Двa файли — РІЗНІ компоненти з однаковим іменем: `shared/ui/CelebrationModal.tsx` = multi-variant celebration system (6 types, used by AuthPage/RegisterForm). `core/onboarding/CelebrationModal.tsx` = first-entry celebration (specific). Не дублі — рішення rename specific-варіант на `FirstEntryCelebrationModal` щоб усунути name collision. Зроблено у cleanup PR.
+- [x] ~~Deprecate-кандидати~~ **(Q8 resolved 2026-05-18 — deleted)**: `FeatureSpotlight` + `SpotlightQueue`, `StreakProtection`, `StreakCelebration` — видалено у cleanup PR. `StreakFlame.StreakBadge` (used у `dashboardCards.tsx:14`) залишається canonical для streak-visualization потреби.
 
 ## Hidden tech-debt gaps (audit 2026-05-17 — handoff-package)
 
@@ -108,6 +155,7 @@ Sergeant v2 редизайн (governance: `redesign-v2.md`) поставив **f
 ## Verification (фінал)
 
 Перед closure всього v2 rollout:
+
 - `pnpm check` clean
 - `pnpm size-limit` ≤ 900kB JS / 28kB CSS brotli
 - Playwright snapshots × 5 top routes мають візуальний паритет з handoff `screens/Part-*.html`
