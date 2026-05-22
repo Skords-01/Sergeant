@@ -6,13 +6,22 @@ import { useMemo, useEffect, useRef } from "react";
 import { InsightCard } from "@shared/components/ui/InsightCard";
 import { useProteinLowInsight } from "../hooks/useProteinLowInsight";
 import { useStreakSevenDaysInsight } from "../hooks/useStreakSevenDaysInsight";
+import {
+  useNutritionQuickChips,
+  type QuickChip,
+} from "../hooks/useNutritionQuickChips";
+import { QuickAddChips } from "./QuickAddChips";
 import { Card } from "@shared/components/ui/Card";
 import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { ProgressRing } from "@shared/components/ui/ProgressRing";
 import { MacroBarRow } from "@shared/components/ui/MacroBarRow";
 import { cn } from "@shared/lib/ui/cn";
 import { pluralUa } from "@sergeant/shared";
-import type { NutritionLog, NutritionPrefs } from "@sergeant/nutrition-domain";
+import type {
+  NutritionLog,
+  NutritionPrefs,
+  PantryItem,
+} from "@sergeant/nutrition-domain";
 import {
   getDayMacros,
   getDaySummary,
@@ -28,6 +37,40 @@ type WeekRow = MacrosRow;
 
 function todayISO(): string {
   return toLocalISODate(new Date());
+}
+
+/**
+ * Outcome-framed sub-label for macro stats. Replaces neutral "X / Y г"
+ * with gap- or surplus-aware text on the Nutrition hero. Returns only
+ * the right-hand outcome portion — the macro name is rendered separately
+ * by MacroBarRow's `label` slot. Bands mirror the Phase 4.2 onboarding
+ * outcome-copy heuristic but stay Nutrition-local.
+ *
+ * Bands:
+ *  - hit window: consumed ∈ [goal, goal*1.05]  → "ціль виконано"
+ *  - overshoot:  consumed > goal*1.05          → "+N г понад ціль"
+ *  - on-track:   consumed >= goal*0.6          → "N г запас"
+ *  - lagging:    else                           → "N г до цілі"
+ *
+ * Returns `undefined` when goal is not set so the primitive falls back
+ * to its default "value / max" rendering.
+ */
+function formatMacroOutcome(
+  consumed: number,
+  goal: number,
+): string | undefined {
+  if (goal <= 0) return undefined;
+  if (consumed >= goal && consumed <= goal * 1.05) {
+    return "ціль виконано";
+  }
+  if (consumed > goal * 1.05) {
+    return `+${Math.round(consumed - goal)} г понад ціль`;
+  }
+  const gap = goal - consumed;
+  if (consumed >= goal * 0.6) {
+    return `${Math.round(gap)} г запас`;
+  }
+  return `${Math.round(gap)} г до цілі`;
 }
 
 function MiniBar({
@@ -87,6 +130,16 @@ interface NutritionDashboardProps {
   onFetchDayHint?: () => void | Promise<void>;
   dayHintText?: string;
   dayHintBusy?: boolean;
+  /**
+   * Pantry items for chip dedupe — meals whose normalized name matches a
+   * stocked pantry item are tagged as `source: "pantry"` and surfaced first.
+   */
+  pantryItems?: readonly PantryItem[];
+  /**
+   * Phase 6.6 — one-tap add for a quick-chip. The parent owns the storage
+   * write (reuse the same path `AddMealSheet` calls on submit).
+   */
+  onQuickAddMeal?: (chip: QuickChip) => void;
 }
 
 export function NutritionDashboard({
@@ -98,6 +151,8 @@ export function NutritionDashboard({
   onFetchDayHint,
   dayHintText,
   dayHintBusy,
+  pantryItems,
+  onQuickAddMeal,
 }: NutritionDashboardProps) {
   const today = todayISO();
 
@@ -147,6 +202,11 @@ export function NutritionDashboard({
     goal: prefs.dailyTargetCarbs_g || 0,
   };
 
+  // Phase 6.6 — pantry-aware quick-add chips. Hook returns `[]` when no
+  // candidates exist (zero recent meals with macros), so we render `null`
+  // for first-time users via QuickAddChips' own empty guard.
+  const quickChips = useNutritionQuickChips(log, pantryItems ?? []);
+
   // Phase 5d — nutrition insight triggers.
   // Both hooks return null when their condition is not met; InsightCard
   // additionally checks the dismissal LS key so dismissed cards stay gone.
@@ -189,6 +249,12 @@ export function NutritionDashboard({
             </button>
           </div>
 
+          {onQuickAddMeal && quickChips.length > 0 && (
+            <div className="mb-3">
+              <QuickAddChips chips={quickChips} onTap={onQuickAddMeal} />
+            </div>
+          )}
+
           {hasGoal ? (
             <div className="flex flex-col gap-4">
               <div className="flex items-center justify-center">
@@ -218,6 +284,10 @@ export function NutritionDashboard({
                     max: protein.goal,
                     accent: "nutrition",
                     unit: "г",
+                    valueDisplay: formatMacroOutcome(
+                      protein.consumed,
+                      protein.goal,
+                    ),
                   },
                   {
                     label: "Жири",
@@ -225,6 +295,10 @@ export function NutritionDashboard({
                     max: fat.goal,
                     accent: "warning",
                     unit: "г",
+                    valueDisplay: formatMacroOutcome(
+                      fat.consumed,
+                      fat.goal,
+                    ),
                   },
                   {
                     label: "Вугл.",
@@ -232,6 +306,10 @@ export function NutritionDashboard({
                     max: carbs.goal,
                     accent: "routine",
                     unit: "г",
+                    valueDisplay: formatMacroOutcome(
+                      carbs.consumed,
+                      carbs.goal,
+                    ),
                   },
                 ]}
               />
