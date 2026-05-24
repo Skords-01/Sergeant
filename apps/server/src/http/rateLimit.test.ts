@@ -43,7 +43,9 @@ import {
   checkRateLimitRedis,
   checkRateLimitPg,
   rateLimitExpress,
+  rateLimitSubjects,
   resolveRateLimitCost,
+  SECONDARY_IP_LIMIT_PER_MIN,
   __resetRateLimitPgWarnForTests,
 } from "./rateLimit.js";
 import { getRedis } from "../lib/redis.js";
@@ -1000,5 +1002,353 @@ describe("rateLimitExpress — fail-closed mode", () => {
 
     expect(next).toHaveBeenCalledOnce();
     expect(status).not.toHaveBeenCalledWith(503);
+  });
+});
+
+// ───────────────────────── M9: per-IP secondary overlay ─────────────────────────
+//
+// Closes `docs/security/hardening/M9-per-ip-secondary-rate-limit.md`. The
+// attack: N free accounts from one machine get N separate per-user buckets,
+// linearly multiplying the effective rate by N. The fix: every authed
+// request also charges a per-IP overlay bucket capped at
+// SECONDARY_IP_LIMIT_PER_MIN; whichever bucket exhausts first wins.
+
+describe("rateLimitSubjects (M9 — dual-subject)", () => {
+  function authedReq(userId: string, ip: string): Request {
+    return {
+      ip,
+      headers: {},
+      user: { id: userId },
+    } as unknown as Request;
+  }
+
+  it("returns [u:<id>, ip:<ip>] for authed requests with a real IP", () => {
+    const [primary, secondary] = rateLimitSubjects(authedReq("alice", "1.2.3.4"));
+    expect(primary).toBe("u:alice");
+    expect(secondary).toBe("ip:1.2.3.4");
+  });
+
+  it("returns [ip:<ip>, null] for anon requests (no double-charge)", () => {
+    // Regression: anon requests must NOT charge the same `ip:` bucket
+    // twice (once as primary, once as secondary) — that would halve the
+    // effective public-route limit silently.
+    const [primary, secondary] = rateLimitSubjects({
+      ip: "5.6.7.8",
+      headers: {},
+    } as unknown as Request);
+    expect(primary).toBe("ip:5.6.7.8");
+    expect(secondary).toBeNull();
+  });
+
+  it("returns [u:<id>, null] when authed request has no resolvable IP", () => {
+    // Test stubs with no socket → `getIp` returns "unknown". We skip the
+    // secondary in that case so every IPless caller doesn't collide on
+    // one tight shared `ip:unknown` bucket.
+    const [primary, secondary] = rateLimitSubjects({
+      headers: {},
+      user: { id: "bob" },
+    } as unknown as Request);
+    expect(primary).toBe("u:bob");
+    expect(secondary).toBeNull();
+  });
+});
+
+describe("checkRateLimit — M9 dual-bucket (in-memory)", () => {
+  function authedReq(userId: string, ip: string): Request {
+    return {
+      ip,
+      headers: {},
+      user: { id: userId },
+    } as unknown as Request;
+  }
+
+  beforeEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("5 authed users × 50 r/min from one IP — IP cap (100/min) fires first", () => {
+    // The headline M9 scenario. Without the secondary bucket:
+    //   5 users × per-user-limit(50) = 250 r/min effective per IP.
+    // With the secondary bucket capped at SECONDARY_IP_LIMIT_PER_MIN (100):
+    //   the 101st request from that IP gets 429, no matter which user
+    //   sent it, before any individual user has consumed their 50.
+    const key = `m9_main_${Math.random().toString(36).slice(2)}`;
+    const ip = "203.0.113.42";
+    const perUserLimit = 50;
+    const userIds = ["u1", "u2", "u3", "u4", "u5"];
+
+    let allowed = 0;
+    let blockedBySecondary = false;
+    // Interleave round-robin so the secondary bucket fills uniformly
+    // across users — matches a realistic distributed-attack pattern
+    // (compromised credential set, not one heavy user).
+    for (let round = 0; round < perUserLimit; round++) {
+      for (const userId of userIds) {
+        const r = checkRateLimit(authedReq(userId, ip), {
+          key,
+          limit: perUserLimit,
+          windowMs: 60_000,
+        });
+        if (r.ok) {
+          allowed++;
+        } else {
+          // No individual user should have exhausted their own 50-bucket
+          // by the time the IP bucket trips at 100 — assert this is a
+          // secondary-bucket trip.
+          blockedBySecondary = true;
+          break;
+        }
+      }
+      if (blockedBySecondary) break;
+    }
+
+    // Exactly SECONDARY_IP_LIMIT_PER_MIN should have passed before the
+    // 101st request 429-ed on the secondary bucket. Individual users
+    // each saw ~20 of their 50-token allowance — well clear of the
+    // per-user cap.
+    expect(blockedBySecondary).toBe(true);
+    expect(allowed).toBe(SECONDARY_IP_LIMIT_PER_MIN);
+  });
+
+  it("isolates the per-IP overlay across different IPs", () => {
+    // Same user (impossible in practice, but isolates the keying logic),
+    // two IPs: each IP must have its own 100/min budget. If the
+    // secondary bucket were globally keyed instead of per-IP, the second
+    // IP's first request would already see a saturated bucket.
+    const key = `m9_iso_ip_${Math.random().toString(36).slice(2)}`;
+    // Burn the secondary for ip A.
+    for (let i = 0; i < SECONDARY_IP_LIMIT_PER_MIN; i++) {
+      const r = checkRateLimit(authedReq(`u_a_${i % 5}`, "10.10.10.1"), {
+        key,
+        limit: 200,
+        windowMs: 60_000,
+      });
+      expect(r.ok).toBe(true);
+    }
+    const overA = checkRateLimit(authedReq("u_a_0", "10.10.10.1"), {
+      key,
+      limit: 200,
+      windowMs: 60_000,
+    });
+    expect(overA.ok).toBe(false);
+
+    // ip B must still be fresh.
+    const firstB = checkRateLimit(authedReq("u_b", "10.10.10.2"), {
+      key,
+      limit: 200,
+      windowMs: 60_000,
+    });
+    expect(firstB.ok).toBe(true);
+  });
+
+  it("primary bucket still fires when one user burns their own per-user limit", () => {
+    // Sanity: the per-user bucket isn't bypassed by the existence of
+    // the secondary overlay. A single user hitting their own small
+    // limit must 429 even though the IP bucket is wide open.
+    const key = `m9_primary_${Math.random().toString(36).slice(2)}`;
+    const ip = "198.51.100.20";
+    // Per-user limit 3; secondary is 100 — primary will fire first.
+    for (let i = 0; i < 3; i++) {
+      const r = checkRateLimit(authedReq("solo", ip), {
+        key,
+        limit: 3,
+        windowMs: 60_000,
+      });
+      expect(r.ok).toBe(true);
+    }
+    const blocked = checkRateLimit(authedReq("solo", ip), {
+      key,
+      limit: 3,
+      windowMs: 60_000,
+    });
+    expect(blocked.ok).toBe(false);
+
+    // Different user from the same IP must still have room — the per-IP
+    // bucket is at 4/100, nowhere near saturation, and the new user's
+    // own primary bucket is fresh.
+    const otherUser = checkRateLimit(authedReq("fresh", ip), {
+      key,
+      limit: 3,
+      windowMs: 60_000,
+    });
+    expect(otherUser.ok).toBe(true);
+  });
+
+  it("anon requests do not charge a secondary bucket (no double-billing)", () => {
+    // Regression for the anon-double-charge edge case: an anon request
+    // is keyed `ip:<ip>` as primary; we must NOT also charge a secondary
+    // `ip:<ip>` bucket — that would silently halve the effective public
+    // limit.
+    const key = `m9_anon_${Math.random().toString(36).slice(2)}`;
+    const ip = "192.0.2.200";
+    for (let i = 0; i < 100; i++) {
+      const r = checkRateLimit(
+        { ip, headers: {} } as unknown as Request,
+        { key, limit: 100, windowMs: 60_000 },
+      );
+      expect(r.ok).toBe(true);
+    }
+    // 101st must block on the primary (no double-charge means we get
+    // exactly the configured 100, not 50).
+    const blocked = checkRateLimit(
+      { ip, headers: {} } as unknown as Request,
+      { key, limit: 100, windowMs: 60_000 },
+    );
+    expect(blocked.ok).toBe(false);
+  });
+});
+
+describe("checkRateLimitRedis — M9 dual-bucket Lua eval", () => {
+  function authedReq(userId: string, ip: string): Request {
+    return {
+      ip,
+      headers: {},
+      user: { id: userId },
+    } as unknown as Request;
+  }
+
+  it("calls the dual-bucket Lua with both keys + both limits when authed+IP present", async () => {
+    // Mock returns "both buckets healthy" — primary count 1, secondary
+    // count 1, no winner. Asserts the eval shape rather than the
+    // accept/reject decision (which is exercised in the in-memory tests).
+    const evalMock = vi
+      .fn()
+      .mockResolvedValue([1, 60_000, 1, 60_000, ""]);
+    const fakRedis = { eval: evalMock } as never;
+
+    const result = await checkRateLimitRedis(
+      fakRedis,
+      authedReq("alice", "1.2.3.4"),
+      { key: "m9:redis", limit: 50, windowMs: 60_000 },
+    );
+
+    expect(result.ok).toBe(true);
+    // 2 keys passed (primary + secondary), both with proper prefix.
+    const args = evalMock.mock.calls[0] as unknown[];
+    expect(args[1]).toBe(2); // numkeys
+    expect(args[2]).toBe("rl:m9:redis:u:alice");
+    expect(args[3]).toBe("rl:m9:redis:ip:1.2.3.4");
+    // ARGV: primaryWindow, secondaryWindow, cost, primaryLimit, secondaryLimit.
+    expect(args[6]).toBe("1"); // cost defaults to 1
+    expect(args[7]).toBe("50"); // primary limit
+    expect(args[8]).toBe(String(SECONDARY_IP_LIMIT_PER_MIN));
+  });
+
+  it("returns 429 with the secondary bucket's PTTL when secondary wins", async () => {
+    // Secondary fired (M9 mass-account-abuse path) — its PTTL is the
+    // truthful Retry-After, since the primary still has room.
+    const evalMock = vi
+      .fn()
+      .mockResolvedValue([3, 40_000, 101, 55_000, "secondary"]);
+    const fakRedis = { eval: evalMock } as never;
+
+    const result = await checkRateLimitRedis(
+      fakRedis,
+      authedReq("alice", "1.2.3.4"),
+      { key: "m9:redis:sec", limit: 50, windowMs: 60_000 },
+    );
+
+    expect(result.ok).toBe(false);
+    expect(result.remaining).toBe(0);
+    expect(result.resetMs).toBe(55_000);
+    expect(result.retryAfterSec).toBe(55);
+  });
+
+  it("falls back to single-bucket eval when no secondary subject", async () => {
+    // Anon path: rateLimitSubjects returns [ip:..., null] so we should
+    // hit the legacy single-bucket Lua, not the dual one.
+    const evalMock = vi.fn().mockResolvedValue([1, 60_000]);
+    const fakRedis = { eval: evalMock } as never;
+
+    await checkRateLimitRedis(
+      fakRedis,
+      { ip: "9.9.9.9", headers: {} } as unknown as Request,
+      { key: "m9:redis:anon", limit: 50, windowMs: 60_000 },
+    );
+
+    const args = evalMock.mock.calls[0] as unknown[];
+    // Single-bucket Lua signature: numkeys=1, one key, then windowSecs + cost.
+    expect(args[1]).toBe(1);
+    expect(args[2]).toBe("rl:m9:redis:anon:ip:9.9.9.9");
+  });
+});
+
+describe("checkRateLimitPg — M9 dual-bucket (sequential UPSERTs)", () => {
+  function authedReq(userId: string, ip: string): Request {
+    return {
+      ip,
+      headers: {},
+      user: { id: userId },
+    } as unknown as Request;
+  }
+
+  beforeEach(() => {
+    pgQueryMock.mockReset();
+  });
+
+  it("runs two sequential UPSERTs (primary then secondary) with the IP cap on the secondary", async () => {
+    pgQueryMock
+      .mockResolvedValueOnce({ rows: [{ count: 1, elapsed_ms: "0" }] })
+      .mockResolvedValueOnce({ rows: [{ count: 1, elapsed_ms: "0" }] });
+
+    const result = await checkRateLimitPg(authedReq("alice", "1.2.3.4"), {
+      key: "m9:pg",
+      limit: 50,
+      windowMs: 60_000,
+    });
+
+    expect(result.ok).toBe(true);
+    expect(pgQueryMock).toHaveBeenCalledTimes(2);
+
+    // First call: primary (`u:alice`) with the route's own limit/window.
+    const firstArgs = pgQueryMock.mock.calls[0]?.[1] as unknown[];
+    expect(firstArgs?.[0]).toBe("m9:pg");
+    expect(firstArgs?.[1]).toBe("u:alice");
+    expect(firstArgs?.[2]).toBe("60000"); // primary windowMs
+
+    // Second call: secondary (`ip:1.2.3.4`) with the M9 cap + 60s window.
+    const secondArgs = pgQueryMock.mock.calls[1]?.[1] as unknown[];
+    expect(secondArgs?.[0]).toBe("m9:pg");
+    expect(secondArgs?.[1]).toBe("ip:1.2.3.4");
+    expect(secondArgs?.[2]).toBe("60000"); // SECONDARY_IP_WINDOW_MS
+  });
+
+  it("blocks when the secondary bucket goes over even if primary still has room", async () => {
+    // Primary count 5 of 50 — healthy. Secondary count 101 of 100 — over.
+    // Result must be a 429 driven by the secondary's reset window.
+    pgQueryMock
+      .mockResolvedValueOnce({ rows: [{ count: 5, elapsed_ms: "2000" }] })
+      .mockResolvedValueOnce({
+        rows: [{ count: 101, elapsed_ms: "10000" }],
+      });
+
+    const result = await checkRateLimitPg(authedReq("alice", "1.2.3.4"), {
+      key: "m9:pg:sec",
+      limit: 50,
+      windowMs: 60_000,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.remaining).toBe(0);
+    // Secondary's resetMs = 60_000 - 10_000 = 50_000.
+    expect(result.resetMs).toBe(50_000);
+  });
+
+  it("skips the secondary call for anon requests", async () => {
+    // Anon → secondary subject is null → only one UPSERT runs (the
+    // primary, which is already keyed by IP).
+    pgQueryMock.mockResolvedValueOnce({
+      rows: [{ count: 1, elapsed_ms: "0" }],
+    });
+
+    const result = await checkRateLimitPg(
+      { ip: "9.9.9.9", headers: {} } as unknown as Request,
+      { key: "m9:pg:anon", limit: 50, windowMs: 60_000 },
+    );
+
+    expect(result.ok).toBe(true);
+    expect(pgQueryMock).toHaveBeenCalledTimes(1);
+    const args = pgQueryMock.mock.calls[0]?.[1] as unknown[];
+    expect(args?.[1]).toBe("ip:9.9.9.9");
   });
 });

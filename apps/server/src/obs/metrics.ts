@@ -484,6 +484,31 @@ export const rateLimitDegradedTotal = new client.Counter({
   registers: [register],
 });
 
+/**
+ * Which bucket fired when a request was blocked
+ * (`docs/security/hardening/M9-per-ip-secondary-rate-limit.md`).
+ *
+ * - `primary`   — per-caller bucket (`u:<id>` for authed, `ip:<ip>` for anon).
+ *                  The normal case: one user / one IP burning through their
+ *                  per-route limit.
+ * - `secondary` — per-IP overlay bucket. M9 signal: this fires when N authed
+ *                  accounts from the same IP collectively exceed the per-IP
+ *                  cap before any individual user hits their per-user cap —
+ *                  i.e. mass-account abuse.
+ *
+ * Separated from `rate_limit_hits_total` (with its `outcome=blocked`) so the
+ * existing dashboards keep working unchanged, while a new alert can fire on
+ *   rate(rate_limit_blocked_by_total{bucket="secondary"}[5m]) > 0
+ * to catch credential-stuffing / multi-account abuse without false-positive
+ * noise from regular per-user rate-limit pressure.
+ */
+export const rateLimitBlockedByTotal = new client.Counter({
+  name: "rate_limit_blocked_by_total",
+  help: "Which bucket caused a 429 — primary (per-caller) or secondary (per-IP, M9 mass-account abuse signal)",
+  labelNames: ["key", "bucket"], // bucket=primary|secondary
+  registers: [register],
+});
+
 // ───────────────────────── Circuit Breaker ────────────────────
 export const circuitBreakerState = new client.Gauge({
   name: "circuit_breaker_state",

@@ -1,7 +1,7 @@
 # M9 — Mass-account abuse can scale per-user rate-limits linearly
 
-> **Last validated:** 2026-05-13 by @Skords-01. **Next review:** 2026-08-11.
-> **Status:** Open
+> **Last validated:** 2026-05-24 by @Skords-01. **Next review:** 2026-08-22.
+> **Status:** Closed
 
 | Field          | Value                           |
 | -------------- | ------------------------------- |
@@ -9,8 +9,9 @@
 | **Sprint**     | [Sprint 3](./sprint-3.md)       |
 | **Owner**      | backend                         |
 | **Effort**     | 0.5 person-day                  |
-| **Status**     | Open                            |
+| **Status**     | Closed                          |
 | **Discovered** | 2026-05-03 deep security review |
+| **Closed**     | 2026-05-24                      |
 
 ## Summary
 

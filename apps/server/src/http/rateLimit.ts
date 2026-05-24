@@ -3,6 +3,7 @@ import type Redis from "ioredis";
 import { pool } from "../db.js";
 import { logger } from "../obs/logger.js";
 import {
+  rateLimitBlockedByTotal,
   rateLimitCostTotal,
   rateLimitDegradedTotal,
   rateLimitHitsTotal,
@@ -14,6 +15,17 @@ type Outcome = "allowed" | "blocked";
 function recordRateLimit(key: string, outcome: Outcome): void {
   try {
     rateLimitHitsTotal.inc({ key, outcome });
+  } catch {
+    /* metrics must never break a request */
+  }
+}
+
+function recordRateLimitBlockedBy(
+  key: string,
+  bucket: "primary" | "secondary",
+): void {
+  try {
+    rateLimitBlockedByTotal.inc({ key, bucket });
   } catch {
     /* metrics must never break a request */
   }
@@ -208,10 +220,67 @@ function sweepBuckets(now: number): void {
  * корелювати по одному subject.
  */
 export function rateLimitSubject(req: Request): string {
+  const [primary] = rateLimitSubjects(req);
+  return primary;
+}
+
+/**
+ * Per-IP secondary bucket cap (хіти/window). Окрема константа щоб не
+ * захардкодити магічне число у двох місцях (limiter + тести). Значення —
+ * консервативне: середній authed-юзер на типовому HTTP-роуті робить
+ * 30-60 req/min; обмеження на 100 req/min на IP дає room для двох
+ * легітимних активних сесій з одного NAT-а (сім'я, офіс), але різко
+ * ріже mass-account abuse (N акаунтів × 50 req/user = 100 req на IP-rate
+ * перевищується на третьому юзері).
+ *
+ * Hard cap. НЕ конфігурується per-route — це security floor проти
+ * mass-account abuse (M9), а не tuning-кнопка. Якщо треба більший
+ * legitimate trust для конкретного IP (corporate proxy) — це окрема
+ * allowlist-механіка, не зміна цього числа.
+ */
+export const SECONDARY_IP_LIMIT_PER_MIN = 100;
+const SECONDARY_IP_WINDOW_MS = 60_000;
+
+/**
+ * Resolves the **pair** of rate-limit subjects for a request:
+ *   `[primary, secondary]`
+ *
+ * `primary` is the per-caller bucket — `u:<id>` for authed, `ip:<ip>` for
+ * anonymous. Used as the main bucket against the route's `limit/windowMs`.
+ *
+ * `secondary` is the per-IP overlay (M9). For authed requests it is
+ * `ip:<ip>` so N accounts from one machine cannot linearly multiply the
+ * effective rate by N — whichever bucket (primary OR secondary) exhausts
+ * first wins. Anonymous requests already key by IP at the primary slot, so
+ * `secondary` is `null` for those — adding a duplicate would just charge
+ * the same bucket twice and halve the effective limit.
+ *
+ * `(IP, ASN)` keying for anon traffic is recommended in the M9 doc to
+ * keep a single bad actor from DDoS-ing a small CGNAT pool. ASN lookup
+ * needs a geoip data file (`maxmind` or `ip-asn-lite`) — not currently
+ * a server dep. **TODO(security/M9):** when an ASN resolver is added,
+ * extend `secondary` to `asn:<n>:<ip>` for anon requests so the bucket
+ * scales per-network rather than per-IP. Falling back to bare IP is the
+ * conservative interim: it under-distributes (one bad CGNAT member
+ * affects the whole NAT) but never spoof-able by a fake IP.
+ *
+ * For tests / synthetic requests with no IP, `secondary` is `null` —
+ * `getIp` already collapses these to `"unknown"`, and we don't want
+ * every IPless caller to share one tight secondary bucket.
+ */
+export function rateLimitSubjects(
+  req: Request,
+): readonly [string, string | null] {
   const user = (req as Request & { user?: { id?: unknown } }).user;
   const id = user && typeof user.id === "string" ? user.id : "";
-  if (id) return `u:${id}`;
-  return `ip:${getIp(req)}`;
+  const ip = getIp(req);
+  if (id) {
+    const secondary = ip && ip !== "unknown" ? `ip:${ip}` : null;
+    return [`u:${id}`, secondary];
+  }
+  // Anonymous: primary already === ip:<ip>; secondary would double-charge
+  // the same bucket. Return null and let the caller skip the second leg.
+  return [`ip:${ip}`, null];
 }
 
 // Lua script: atomically INCRBY cost, set EXPIRE on first hit, return
@@ -228,6 +297,70 @@ if c == cost then
 end
 local ttl = redis.call('PTTL', KEYS[1])
 return {c, ttl}
+`;
+
+// Lua script for M9 dual-bucket check: atomically increment **both**
+// primary (KEYS[1]) and secondary (KEYS[2]) buckets, then check each
+// against its own (limit, windowSecs). Returns
+//   [primaryCount, primaryPttl, secondaryCount, secondaryPttl, winner]
+// where `winner` is "primary", "secondary", or "" (both passed).
+//
+// Why increment-then-check (not check-then-increment): the latter is two
+// round-trips per bucket and inherently racey across the increment of
+// the other bucket. Increment-first is one round-trip and fully atomic
+// inside the Lua eval — every concurrent caller sees its INCRBY land
+// before any limit comparison runs.
+//
+// If a request is blocked it has still consumed tokens from one or both
+// buckets. That is **intentional**: charging the bucket is the rate
+// limiter doing its job — if we rolled back on every 429, an attacker
+// could pin the bucket at `limit` forever by alternating successful
+// and failing requests at the boundary. Fixed-window limiters always
+// over-count slightly at the edge; that is by design.
+//
+// `winner` lets the caller surface which bucket fired in obs without
+// re-comparing on the JS side. "secondary" specifically marks an M9
+// hit so dashboards can alert on mass-account-abuse spikes separately
+// from regular per-user rate-limit pressure.
+const LUA_INCRBY_EXPIRE_DUAL = `
+local cost = tonumber(ARGV[3])
+local primaryWindow = ARGV[1]
+local secondaryWindow = ARGV[2]
+local primaryLimit = tonumber(ARGV[4])
+local secondaryLimit = tonumber(ARGV[5])
+
+local p = redis.call('INCRBY', KEYS[1], cost)
+if p == cost then
+  redis.call('EXPIRE', KEYS[1], primaryWindow)
+end
+local pttl = redis.call('PTTL', KEYS[1])
+
+local s = redis.call('INCRBY', KEYS[2], cost)
+if s == cost then
+  redis.call('EXPIRE', KEYS[2], secondaryWindow)
+end
+local sttl = redis.call('PTTL', KEYS[2])
+
+local winner = ''
+local pOver = p > primaryLimit
+local sOver = s > secondaryLimit
+if pOver and sOver then
+  -- Both tripped this request. Surface whichever expires later as the
+  -- effective retry-after — clients should not retry until the slower
+  -- bucket has room. Tie-breaks to primary so the obs label matches
+  -- the user-visible cause.
+  if sttl > pttl then
+    winner = 'secondary'
+  else
+    winner = 'primary'
+  end
+elseif pOver then
+  winner = 'primary'
+elseif sOver then
+  winner = 'secondary'
+end
+
+return {p, pttl, s, sttl, winner}
 `;
 
 /**
@@ -277,6 +410,98 @@ async function checkRateLimitRedisBySubject(
 }
 
 /**
+ * Dual-bucket Redis primitive (M9). Atomically increments primary AND
+ * secondary buckets inside a single Lua eval; whichever exhausts first
+ * wins. Used when the request has a per-IP overlay subject (authed user
+ * from a real IP) — the call collapses back to the single-bucket path
+ * when `secondarySubject` is null (anon, or test request with no IP).
+ *
+ * Cost is charged to **both** buckets. That is intentional: a heavy AI
+ * request that consumes cost=10 from the per-user bucket should also
+ * burn 10 from the per-IP overlay — otherwise an attacker with N
+ * accounts could route all heavy traffic per-user (where the small
+ * limit clamps fast) and still bombard upstream Anthropic via the
+ * per-IP bucket (which would see only 1 token per call and never fire).
+ */
+async function checkRateLimitRedisDual(
+  redis: Redis,
+  primarySubject: string,
+  secondarySubject: string,
+  { key, limit, windowMs }: { key: string; limit: number; windowMs: number },
+  cost: number,
+): Promise<RateLimitResult> {
+  const primaryKey = `rl:${key}:${primarySubject}`;
+  const secondaryKey = `rl:${key}:${secondarySubject}`;
+  const primaryWindowSecs = Math.max(1, Math.ceil(windowMs / 1000));
+  const secondaryWindowSecs = Math.max(
+    1,
+    Math.ceil(SECONDARY_IP_WINDOW_MS / 1000),
+  );
+
+  const result = (await redis.eval(
+    LUA_INCRBY_EXPIRE_DUAL,
+    2,
+    primaryKey,
+    secondaryKey,
+    String(primaryWindowSecs),
+    String(secondaryWindowSecs),
+    String(cost),
+    String(limit),
+    String(SECONDARY_IP_LIMIT_PER_MIN),
+  )) as [number, number, number, number, string];
+
+  const primaryCount = result[0];
+  const primaryPttlMs = Math.max(0, result[1]);
+  const secondaryCount = result[2];
+  const secondaryPttlMs = Math.max(0, result[3]);
+  const winner = result[4];
+
+  if (winner === "primary") {
+    recordRateLimit(key, "blocked");
+    recordRateLimitBlockedBy(key, "primary");
+    return {
+      ok: false,
+      remaining: 0,
+      resetMs: primaryPttlMs,
+      retryAfterSec: Math.max(1, Math.ceil(primaryPttlMs / 1000)),
+    };
+  }
+  if (winner === "secondary") {
+    recordRateLimit(key, "blocked");
+    recordRateLimitBlockedBy(key, "secondary");
+    return {
+      ok: false,
+      remaining: 0,
+      resetMs: secondaryPttlMs,
+      retryAfterSec: Math.max(1, Math.ceil(secondaryPttlMs / 1000)),
+    };
+  }
+
+  recordRateLimit(key, "allowed");
+  recordRateLimitCost(key, cost);
+  // `remaining` is the tighter of the two — whichever bucket would block
+  // first on the next call is the one the client should see in the
+  // RateLimit-Remaining header. Otherwise a `u:` bucket with 49 left
+  // would advertise 49 while the `ip:` bucket is at 1 and the next call
+  // is about to 429.
+  const primaryRemaining = Math.max(0, limit - primaryCount);
+  const secondaryRemaining = Math.max(
+    0,
+    SECONDARY_IP_LIMIT_PER_MIN - secondaryCount,
+  );
+  const tighterRemaining = Math.min(primaryRemaining, secondaryRemaining);
+  // Reset shows the tighter window too — the one that will release
+  // first determines when the client gets capacity back.
+  const tighterResetMs = Math.min(primaryPttlMs || windowMs, secondaryPttlMs);
+  return {
+    ok: true,
+    remaining: tighterRemaining,
+    resetMs: tighterResetMs,
+    retryAfterSec: Math.max(1, Math.ceil(tighterResetMs / 1000)),
+  };
+}
+
+/**
  * Fixed-window rate-limit check backed by Redis (global across replicas).
  * Falls back to in-memory via {@link checkRateLimit} if Redis throws.
  */
@@ -285,9 +510,12 @@ export async function checkRateLimitRedis(
   req: Request,
   options: RateLimitOptions,
 ): Promise<RateLimitResult> {
-  const subject = rateLimitSubject(req);
+  const [primary, secondary] = rateLimitSubjects(req);
   const cost = resolveRateLimitCost(req, { cost: options.cost });
-  return checkRateLimitRedisBySubject(redis, subject, options, cost);
+  if (secondary) {
+    return checkRateLimitRedisDual(redis, primary, secondary, options, cost);
+  }
+  return checkRateLimitRedisBySubject(redis, primary, options, cost);
 }
 
 /**
@@ -317,9 +545,77 @@ export async function checkRateLimitPg(
   req: Request,
   options: RateLimitOptions,
 ): Promise<RateLimitResult> {
-  const subject = rateLimitSubject(req);
+  const [primary, secondary] = rateLimitSubjects(req);
   const cost = resolveRateLimitCost(req, { cost: options.cost });
-  return checkRateLimitPgBySubject(subject, options, cost);
+  if (secondary) {
+    return checkRateLimitPgDual(primary, secondary, options, cost);
+  }
+  return checkRateLimitPgBySubject(primary, options, cost);
+}
+
+/**
+ * Dual-bucket Postgres primitive (M9). Two sequential row-locked
+ * INSERT … ON CONFLICT calls — primary first, then secondary. The pair
+ * is not in a single transaction by design: each call is already atomic
+ * over its `(rl_key, subject)` row, and wrapping them in a transaction
+ * would double the pool round-trips on the hot path without changing
+ * the fixed-window edge-over-count behavior the limiter inherits anyway.
+ *
+ * Whichever bucket goes over first wins. If both increment past their
+ * limit on the same call, the call is rejected and we surface the
+ * secondary as the winner (M9 attack signal) — primary saturation in
+ * isolation is a normal per-user 429, secondary saturation indicates
+ * mass-account abuse and deserves separate visibility.
+ *
+ * Cost charged to both: see {@link checkRateLimitRedisDual} for the
+ * rationale (otherwise heavy AI calls bypass the per-IP overlay).
+ */
+async function checkRateLimitPgDual(
+  primarySubject: string,
+  secondarySubject: string,
+  options: { key: string; limit: number; windowMs: number },
+  cost: number,
+): Promise<RateLimitResult> {
+  const primary = await checkRateLimitPgBySubject(
+    primarySubject,
+    options,
+    cost,
+  );
+  const secondaryOptions = {
+    key: options.key,
+    limit: SECONDARY_IP_LIMIT_PER_MIN,
+    windowMs: SECONDARY_IP_WINDOW_MS,
+  };
+  const secondary = await checkRateLimitPgBySubject(
+    secondarySubject,
+    secondaryOptions,
+    cost,
+  );
+
+  if (!primary.ok && !secondary.ok) {
+    recordRateLimitBlockedBy(options.key, "secondary");
+    // Pick the later-recovering bucket so the Retry-After tells the
+    // truth — retrying earlier won't help.
+    return primary.resetMs >= secondary.resetMs ? primary : secondary;
+  }
+  if (!secondary.ok) {
+    recordRateLimitBlockedBy(options.key, "secondary");
+    return secondary;
+  }
+  if (!primary.ok) {
+    recordRateLimitBlockedBy(options.key, "primary");
+    return primary;
+  }
+  // Both passed — report the tighter remaining/reset, same logic as the
+  // Redis dual path.
+  const tighterRemaining = Math.min(primary.remaining, secondary.remaining);
+  const tighterResetMs = Math.min(primary.resetMs, secondary.resetMs);
+  return {
+    ok: true,
+    remaining: tighterRemaining,
+    resetMs: tighterResetMs,
+    retryAfterSec: Math.max(1, Math.ceil(tighterResetMs / 1000)),
+  };
 }
 
 /**
@@ -470,9 +766,63 @@ export function checkRateLimit(
   req: Request,
   options: RateLimitOptions,
 ): RateLimitResult {
-  const subject = rateLimitSubject(req);
+  const [primary, secondary] = rateLimitSubjects(req);
   const cost = resolveRateLimitCost(req, { cost: options.cost });
-  return checkRateLimitBySubject(subject, options, cost);
+  if (secondary) {
+    return checkRateLimitDualInMemory(primary, secondary, options, cost);
+  }
+  return checkRateLimitBySubject(primary, options, cost);
+}
+
+/**
+ * Dual-bucket in-memory primitive (M9). Mirrors {@link checkRateLimitPgDual}
+ * semantics on the per-process fallback path. Same edge-over-count caveat
+ * applies (and on this path is amplified per-replica), but that is the
+ * pre-existing fail-open contract — see `RateLimitOptions.failMode`.
+ *
+ * The dual variant runs both single-bucket checks back-to-back. If either
+ * blocks, the call is rejected and the appropriate metric label fires.
+ * If both block on the same call, the secondary wins (M9 signal) and
+ * Retry-After surfaces the later-recovering bucket.
+ */
+function checkRateLimitDualInMemory(
+  primarySubject: string,
+  secondarySubject: string,
+  options: RateLimitOptions,
+  cost: number,
+): RateLimitResult {
+  const primary = checkRateLimitBySubject(primarySubject, options, cost);
+  const secondaryOptions = {
+    key: options.key,
+    limit: SECONDARY_IP_LIMIT_PER_MIN,
+    windowMs: SECONDARY_IP_WINDOW_MS,
+  };
+  const secondary = checkRateLimitBySubject(
+    secondarySubject,
+    secondaryOptions,
+    cost,
+  );
+
+  if (!primary.ok && !secondary.ok) {
+    recordRateLimitBlockedBy(options.key, "secondary");
+    return primary.resetMs >= secondary.resetMs ? primary : secondary;
+  }
+  if (!secondary.ok) {
+    recordRateLimitBlockedBy(options.key, "secondary");
+    return secondary;
+  }
+  if (!primary.ok) {
+    recordRateLimitBlockedBy(options.key, "primary");
+    return primary;
+  }
+  const tighterRemaining = Math.min(primary.remaining, secondary.remaining);
+  const tighterResetMs = Math.min(primary.resetMs, secondary.resetMs);
+  return {
+    ok: true,
+    remaining: tighterRemaining,
+    resetMs: tighterResetMs,
+    retryAfterSec: Math.max(1, Math.ceil(tighterResetMs / 1000)),
+  };
 }
 
 /**
