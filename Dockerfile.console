@@ -27,7 +27,7 @@
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Stage 1: builder
-FROM --platform=linux/amd64 node:20.20.2-alpine AS builder
+FROM --platform=linux/amd64 node:26.2.0-alpine AS builder
 WORKDIR /app
 
 RUN corepack enable && corepack prepare pnpm@9.15.1 --activate
@@ -60,7 +60,7 @@ RUN pnpm build
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Stage 2: deps — production-only deps + CVE-cleanup
-FROM --platform=linux/amd64 node:20.20.2-alpine AS deps
+FROM --platform=linux/amd64 node:26.2.0-alpine AS deps
 WORKDIR /app
 
 RUN corepack enable && corepack prepare pnpm@9.15.1 --activate

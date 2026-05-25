@@ -12,7 +12,7 @@
 #   2. runtime — node:24-alpine with the global openclaw CLI, the built plugin, ops
 #      config-as-code, and the entrypoint script. node 22+ is required by openclaw.
 
-FROM --platform=linux/amd64 node:24-alpine AS plugin-builder
+FROM --platform=linux/amd64 node:26-alpine AS plugin-builder
 WORKDIR /build
 
 # Enable pnpm via corepack (lockfile pinned in repo root).
@@ -46,7 +46,7 @@ COPY packages/openclaw-plugin ./packages/openclaw-plugin
 RUN pnpm --filter @sergeant/openclaw-plugin build
 
 # ---- Runtime stage -----------------------------------------------------------
-FROM --platform=linux/amd64 node:24-alpine
+FROM --platform=linux/amd64 node:26-alpine
 WORKDIR /app
 
 # Bump via Renovate PR (Locked decision #2 — no auto-merge).
