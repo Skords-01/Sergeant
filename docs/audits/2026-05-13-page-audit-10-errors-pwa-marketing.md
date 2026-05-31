@@ -523,6 +523,8 @@ useEffect(() => {
 
 ### F20 — `useSyncStatus` reads singleton at mount-time only; runtime changes are missed [severity: medium] [perspective: bug]
 
+> ✅ **Closed 2026-05-31** — `apps/web/src/core/cloudSync/hook/useSyncStatus.ts` (L87–L103) уже використовує React Query з `refetchInterval: SYNC_STATUS_POLL_MS = 30_000` + `refetchOnWindowFocus: true`. Mount-only useState+useEffect патерн, описаний в аудиті, замінений; doctrine-блок усередині hook посилається на закриття audit P2-D. Закриваю без змін у коді.
+
 **Page:** Sync engine
 **File:** `apps/web/src/core/cloudSync/hook/useSyncStatus.ts`
 **Lines:** L37–L75
@@ -565,6 +567,8 @@ Either (a) buffer tag-sets in `sentry.ts` until init resolves and replay onto th
 ---
 
 ### F22 — `main.tsx` `document.getElementById("root")!` non-null assertion [severity: low] [perspective: ts]
+
+> ✅ **Closed 2026-05-31** — `apps/web/src/main.tsx` (L186–L191) уже реалізує рекомендований патерн: `const rootEl = document.getElementById("root"); if (!rootEl) { document.body.innerHTML = "…"; throw new Error("missing #root element"); } ReactDOM.createRoot(rootEl).render(...)`. Non-null assertion прибрано. Закриваю без змін у коді.
 
 **Page:** App shell
 **File:** `apps/web/src/main.tsx`
@@ -631,6 +635,8 @@ For files that are unambiguously Deprecated (e.g., `apps/web/src/core/NotFoundPa
 ---
 
 ### F24 — `apps/web/src/core/NotFoundPage.tsx` shim has no expiry / sunset date [severity: low] [perspective: lifecycle]
+
+> ✅ **Closed 2026-05-31** — shim-файл `apps/web/src/core/NotFoundPage.tsx` уже видалено у PR [#3078](https://github.com/Skords-01/sergeant/pull/3078) (commit `a61d9366`). Канонічний `apps/web/src/core/errors/NotFoundPage.tsx` залишається. Sunset-дата більше не потрібна — fixed by removal.
 
 **Page:** 404 shim
 **File:** `apps/web/src/core/NotFoundPage.tsx`
