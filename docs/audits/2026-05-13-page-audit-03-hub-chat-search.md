@@ -267,6 +267,8 @@ target.title.startsWith("Бесіда ") || target.title === "Нова бесі�
 
 **Recommendation.** Add a `MAX_STREAM_BYTES` (e.g. 256 KB total, 8 KB per chunk) and abort the controller / reject the promise once exceeded. Surface a friendly "Відповідь занадто довга" message.
 
+> ✅ **Closed 2026-05-31** — `consumeHubChatSse` тепер тримає `totalBytes` лічильник (cap 256 КБ) і обриває потік `reader.cancel()` + кидає `Error("Відповідь занадто довга")` при перевищенні. Окремо: якщо `buf` росте >8 КБ без `\n` (runaway-server без переносів) — той самий abort. `friendlyChatError` піднімає це на UI як `Помилка: Відповідь занадто довга`.
+
 ---
 
 ### F16 — `searchSources.performSearch` re-scans `finyk_tx_cache` synchronously on every keystroke after 120 ms debounce [severity: medium] [perspective: perf]
