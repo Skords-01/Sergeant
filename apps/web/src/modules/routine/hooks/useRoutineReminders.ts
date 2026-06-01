@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { logger } from "@shared/lib";
-import { getKyivDateParts } from "@shared/lib/time/kyivTime";
+import { getKyivDateParts, getKyivDayKey } from "@shared/lib/time/kyivTime";
 import {
   safeListLSKeys,
   safeReadStringLS,
@@ -17,9 +17,12 @@ import type { RoutineState } from "../lib/types";
 export const ROUTINE_NOTIFY_PREFIX = "routine_notify_";
 
 export function cleanupStaleRoutineNotifyKeys(maxAgeDays = 45): void {
-  const cutoff = new Date();
-  cutoff.setDate(cutoff.getDate() - maxAgeDays);
-  const cutoffKey = cutoff.toISOString().slice(0, 10);
+  // Notify-keys стораться як Kyiv day-keys (`routine_notify_…-YYYY-MM-DD`),
+  // тож cutoff теж рахуємо в Europe/Kyiv — `toISOString().slice(0, 10)` дав би
+  // UTC-дату й біля півночі за київським часом зрізав би не той день
+  // (page-audit-09 F21). Epoch-арифметика уникає host-local `getDate()`.
+  const cutoff = new Date(Date.now() - maxAgeDays * 24 * 60 * 60 * 1000);
+  const cutoffKey = getKyivDayKey(cutoff);
   for (const k of safeListLSKeys()) {
     if (!k.startsWith(ROUTINE_NOTIFY_PREFIX)) continue;
     const m = k.match(/(\d{4}-\d{2}-\d{2})$/);
@@ -219,8 +222,12 @@ export function useRoutineReminders(routine: RoutineState): void {
     const scheduleNext = () => {
       if (disposed) return;
       const now = new Date();
+      // Sub-minute timer tick: секунди TZ-інваріантні (Kyiv-offset — ціла
+      // кількість хвилин), тож host-local read тут не day-boundary bug.
+      // eslint-disable-next-line sergeant-design/prefer-kyiv-time -- sub-minute scheduling, not a day key
+      const secondsIntoMinute = now.getSeconds();
       const msToNextMinute =
-        (60 - now.getSeconds()) * 1000 - now.getMilliseconds() + 50;
+        (60 - secondsIntoMinute) * 1000 - now.getMilliseconds() + 50;
       timerId = setTimeout(fireAndSchedule, msToNextMinute);
     };
 
