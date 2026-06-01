@@ -20,9 +20,13 @@ export function cleanupStaleRoutineNotifyKeys(maxAgeDays = 45): void {
   // Notify-keys стораться як Kyiv day-keys (`routine_notify_…-YYYY-MM-DD`),
   // тож cutoff теж рахуємо в Europe/Kyiv — `toISOString().slice(0, 10)` дав би
   // UTC-дату й біля півночі за київським часом зрізав би не той день
-  // (page-audit-09 F21). Epoch-арифметика уникає host-local `getDate()`.
-  const cutoff = new Date(Date.now() - maxAgeDays * 24 * 60 * 60 * 1000);
-  const cutoffKey = getKyivDayKey(cutoff);
+  // (page-audit-09 F21). Віднімаємо `maxAgeDays` календарних днів від київської
+  // civil-дати (а не фіксовані 24h-мілісекунди) — `Date.UTC` нормалізує
+  // overflow, тож DST-перехід у вікні не зсуває cutoff на день.
+  const { year, month, day } = getKyivDateParts(Date.now());
+  const cutoffKey = getKyivDayKey(
+    new Date(Date.UTC(year, month - 1, day - maxAgeDays, 12, 0, 0)),
+  );
   for (const k of safeListLSKeys()) {
     if (!k.startsWith(ROUTINE_NOTIFY_PREFIX)) continue;
     const m = k.match(/(\d{4}-\d{2}-\d{2})$/);
