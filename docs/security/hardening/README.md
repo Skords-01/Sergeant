@@ -42,10 +42,10 @@
 
 ### Critical
 
-| ID                                       | Title                                       | Status                              | Sprint                    |
-| ---------------------------------------- | ------------------------------------------- | ----------------------------------- | ------------------------- |
-| [C1](./C1-mono-webhook-secret-in-url.md) | Monobank webhook secret leaks via URL path  | In progress (Phase 1 shipped 05-04) | [Sprint 1](./sprint-1.md) |
-| [C2](./C2-frontend-csp.md)               | Frontend SPA не має Content-Security-Policy | In progress (Phase 1 shipped 05-04) | [Sprint 1](./sprint-1.md) |
+| ID                                       | Title                                       | Status                               | Sprint                    |
+| ---------------------------------------- | ------------------------------------------- | ------------------------------------ | ------------------------- |
+| [C1](./C1-mono-webhook-secret-in-url.md) | Monobank webhook secret leaks via URL path  | Closed (2026-06-01, mitigated-final) | [Sprint 1](./sprint-1.md) |
+| [C2](./C2-frontend-csp.md)               | Frontend SPA не має Content-Security-Policy | In progress (Phase 1 shipped 05-04)  | [Sprint 1](./sprint-1.md) |
 
 ### High
 
@@ -69,7 +69,7 @@
 
 | ID                                             | Title                                                   | Status                                                                                                                                       | Sprint                    |
 | ---------------------------------------------- | ------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- |
-| [M9](./M9-per-ip-secondary-rate-limit.md)       | Mass-account abuse can scale rate-limit linearly        | Closed (2026-06-01) — PR `fix(server): add secondary per-IP rate-limit bucket (M9)`                                                          | [Sprint 3](./sprint-3.md) |
+| [M9](./M9-per-ip-secondary-rate-limit.md)      | Mass-account abuse can scale rate-limit linearly        | Closed (2026-06-01) — PR `fix(server): add secondary per-IP rate-limit bucket (M9)`                                                          | [Sprint 3](./sprint-3.md) |
 | [M2](./M2-trust-proxy-parameterize.md)         | `trust proxy = 1` hard-coded                            | Closed (2026-05-04) — PR [#1682](https://github.com/Skords-01/Sergeant/pull/1682)                                                            | [Sprint 3](./sprint-3.md) |
 | [M4](./M4-groq-model-allowlist.md)             | `GROQ_TRANSCRIBE_MODEL` env-injectable, no allowlist    | Closed (2026-05-04) — batched M4 + M5 + M13 hardening PR                                                                                     | [Sprint 3](./sprint-3.md) |
 | [M5](./M5-audio-mime-normalize.md)             | Audio MIME aliases without normalization                | Closed (2026-05-04) — batched M4 + M5 + M13 hardening PR                                                                                     | [Sprint 3](./sprint-3.md) |
