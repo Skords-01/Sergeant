@@ -1,6 +1,6 @@
 # Security Events — Операційний Playbook
 
-> **Last validated:** 2026-06-01 by @Skords-01. **Next review:** 2026-08-30.
+> **Last validated:** 2026-06-01 by @claude. **Next review:** 2026-08-30.
 > **Status:** Active
 
 ## Загальна архітектура
@@ -12,7 +12,7 @@ security-релевантний стан. Сигнали:
 1. Логуються через Pino на відповідному рівні (таблиця нижче).
 2. Пушаться у Telegram (`SERGEANT_OPS_CHAT_ID`) через `SERGEANT_ALERT_BOT_TOKEN`.
 
-Rate limit: **макс. 10 подій на тип події на 60-секундний вікно** — подавлені
+Rate limit: **макс. 10 подій на тип події на 60-секундне вікно** — подавлені
 події фіксуються у `security_event_rate_limited` Pino warn-ах.
 
 ---
@@ -154,7 +154,7 @@ hardening). Запит відхилено з HTTP 402.
 блоків `tool_result` в одному запиті. Це або:
 
 - Маніпульований / деформований client payload (найімовірніше — зловживання).
-- Баг на стороні клієнта, де вивід виконання tool був задублений.
+- Баг на стороні клієнта, де вивід виконання tool був продубльований.
 
 **`boundary=anthropic_response`** — модель Anthropic повернула більше
 `MAX_TOOL_ITERATIONS` блоків `tool_use` в одній відповіді (runaway model loop).
