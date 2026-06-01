@@ -1,6 +1,6 @@
 # PR-план: Backend & Performance follow-up (з прожарки 2026-05-13)
 
-> **Last validated:** 2026-05-13 by Devin. **Next review:** 2026-08-11.
+> **Last validated:** 2026-06-01 by server-agent. **Next review:** 2026-08-11.
 > **Status:** Active
 
 PR-розкладка по решті open / Partial / Follow-up / Backlog items із прожарки
@@ -463,6 +463,8 @@ PR-розкладка по решті open / Partial / Follow-up / Backlog items
 
 ## PR-11 — `feat(governance): eslint rule prefer-parseBody for new server handlers`
 
+> **Статус 2026-06-01:** ✅ Закрито в робочому дереві (claude/planning-15-tasks). Додано rule `prefer-parse-body-over-validate-body` у `packages/eslint-plugin-sergeant-design/index.js` (severity `warn`, scope `apps/server/src/**`). Виключення: `apps/server/src/http/validate.ts` та `*.test.*`. Підключено у `eslint.config.js` з коментарем про rollout (`warn` → `error` через 1 sprint). Тести: `__tests__/prefer-parse-body-over-validate-body.test.mjs` (11/11 зелені). Canonical docs: `docs/governance/rules/27-prefer-parse-body.md`. `pnpm --filter @sergeant/server typecheck` ✅ clean; `pnpm --filter @sergeant/server lint` ✅ (0 errors, 3 pre-existing security warnings не стосуються цього PR).
+
 **Surface**
 
 - `packages/eslint-plugin-sergeant-design/` (нова rule `prefer-parse-body-over-validate-body`).
@@ -482,10 +484,10 @@ PR-розкладка по решті open / Partial / Follow-up / Backlog items
 
 **Acceptance criteria**
 
-- [ ] Rule `prefer-parse-body-over-validate-body` екзистує у plugin-і + має BAD/GOOD приклад у `docs/governance/rules/`.
-- [ ] `pnpm --filter eslint-plugin-sergeant-design test` зелений.
-- [ ] `pnpm lint` на `apps/server/src` не падає (бо PR-09 + PR-10 уже мігрували callsites; rule = warn).
-- [ ] PR-description описує rollout plan: `warn` тепер → `error` через 1 sprint.
+- [x] Rule `prefer-parse-body-over-validate-body` екзистує у plugin-і + має BAD/GOOD приклад у `docs/governance/rules/27-prefer-parse-body.md`.
+- [x] `pnpm --filter eslint-plugin-sergeant-design test` зелений (11/11 тестів).
+- [x] `pnpm lint` на `apps/server/src` не падає (0 errors; rule = warn; PR-09 + PR-10 уже мігрували всі callsite-и).
+- [x] Rollout plan задокументовано: `warn` зараз → `error` через 1 sprint у `eslint.config.js` та `docs/governance/rules/27-prefer-parse-body.md`.
 
 **Risks / mitigations**
 
