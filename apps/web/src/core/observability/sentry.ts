@@ -371,7 +371,11 @@ export async function initSentry() {
   // in production yet. Additive; no behaviour change.
   mod.setTag(
     "cspMode",
-    import.meta.env["VITE_CSP_REPORT_ONLY"] ? "report-only" : "enforce",
+    ["1", "true"].includes(
+      String(import.meta.env["VITE_CSP_REPORT_ONLY"] ?? "").toLowerCase(),
+    )
+      ? "report-only"
+      : "enforce",
   );
   // Security audit S9: web-vitals collection tag — mirrors the guard in
   // `webVitals.ts` (VITE_WEB_VITALS_ENDPOINT === "0" → disabled; Capacitor

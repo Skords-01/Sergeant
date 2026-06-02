@@ -22,6 +22,7 @@ import { ExpirationPlugin } from "workbox-expiration";
 import { CacheableResponsePlugin } from "workbox-cacheable-response";
 import { CACHE_NAMES } from "./version";
 import { shouldUseRuntimeCache } from "./cachePolicy";
+import { isNavigationRequest, resolveOfflineShell } from "./offlineFallback";
 
 declare const self: ServiceWorkerGlobalScope & {
   __WB_MANIFEST: Array<{ url: string; revision: string | null }>;
@@ -140,18 +141,16 @@ export function setupCacheRoutes(): void {
     "GET",
   );
 
-  // Offline navigation fallback (audit F28 / Item 4). When a navigation
-  // request fails (network down, no cached page) serve the precached
-  // `/offline` document so the user sees the branded offline page instead
-  // of the browser's default "No internet" screen. `matchPrecache` looks
-  // the URL up in the Workbox precache — Vite-PWA injects `/offline` into
-  // `__WB_MANIFEST` when the route is registered in the Vite config.
-  // Non-navigation failures (API, assets) are not caught here; those fail
-  // silently and let the app's own error boundaries handle them.
+  // Offline navigation fallback (page-audit-10 F1). `setCatchHandler` only
+  // runs when a matched route's handler *throws* — i.e. the navigation
+  // NetworkFirst above already tried network (3s) and missed the cache while
+  // offline. The success path and every non-navigation request are untouched;
+  // if no shell is precached we return the default error (no behaviour change
+  // vs today), so the blast radius is exactly the already-broken offline-miss.
   setCatchHandler(async ({ request }) => {
-    if (request.destination === "document") {
-      const cached = await matchPrecache("/offline");
-      if (cached) return cached;
+    if (isNavigationRequest(request.mode)) {
+      const shell = await resolveOfflineShell((url) => matchPrecache(url));
+      if (shell) return shell;
     }
     return Response.error();
   });

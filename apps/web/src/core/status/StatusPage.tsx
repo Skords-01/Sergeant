@@ -68,21 +68,21 @@ export function StatusPage(): JSX.Element {
     const controller = new AbortController();
     void load(controller.signal);
     const id = window.setInterval(() => {
-      if (document.visibilityState !== "visible") return;
+      // Don't poll a backgrounded tab — wasteful network/CPU on a status
+      // page nobody is looking at (page-audit-10 F26).
+      if (document.visibilityState === "hidden") return;
       void load();
     }, STATUS_POLL_INTERVAL_MS);
-
-    function handleVisibilityChange(): void {
-      if (document.visibilityState === "visible") {
-        void load();
-      }
-    }
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-
+    // Refresh immediately on return to foreground so a user who tabs back
+    // doesn't stare at stale status until the next interval.
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void load();
+    };
+    document.addEventListener("visibilitychange", onVisible);
     return () => {
       controller.abort();
       window.clearInterval(id);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      document.removeEventListener("visibilitychange", onVisible);
     };
   }, [load]);
 

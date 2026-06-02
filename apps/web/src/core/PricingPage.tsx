@@ -156,15 +156,16 @@ export function PricingPage() {
   const t = messages.pricing;
   const tiers = useMemo(() => buildTiers(t), [t]);
 
-  // Pageview-аналітика. `searchParams` (з useSearchParams) парситься щоб ми
-  // могли розрізнити "user натиснув CTA з paywall" vs "user сам зайшов на
-  // /pricing". `searchParams` додається до deps щоб ефект перезапускався при
-  // in-app ре-навігації (audit F25: `window.location.search` з `[]` deps
-  // залишався stale при SPA-навігації).
+  // Pageview-аналітика. `source` (з useSearchParams) дозволяє розрізнити
+  // "user натиснув CTA з paywall" vs "user сам зайшов на /pricing". Залежимо
+  // саме від похідного `viewSource`-рядка, а не від усього `searchParams`-
+  // обʼєкта: інакше чистка `?checkout=...` нижче (setSearchParams) міняла б
+  // референс і повторно слала б PRICING_VIEWED з тим самим source (audit F25
+  // + cubic: дубль pageview при поверненні зі Stripe).
+  const viewSource = searchParams.get("source") ?? "direct";
   useEffect(() => {
-    const source = searchParams.get("source") ?? "direct";
-    trackEvent(ANALYTICS_EVENTS.PRICING_VIEWED, { source });
-  }, [searchParams]);
+    trackEvent(ANALYTICS_EVENTS.PRICING_VIEWED, { source: viewSource });
+  }, [viewSource]);
 
   // Stripe Checkout повертає юзера на `/pricing?checkout=success` (success_url)
   // або `/pricing?checkout=cancel|cancelled` (cancel_url). `success` означає, що

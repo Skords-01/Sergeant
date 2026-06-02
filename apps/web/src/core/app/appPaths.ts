@@ -42,11 +42,6 @@ export const PRICING_PATH = "/pricing";
 // trust surface, must be reachable without a session).
 export const STATUS_PATH = "/status";
 
-// SW offline fallback (`/offline`). Served by the service worker catch
-// handler when a navigation request fails and no cached page is available.
-// Also mountable as a standalone route for dev/test and SW-swap scenarios.
-export const OFFLINE_PATH = "/offline";
-
 // All URL paths the app handles. Anything outside this set **and** not
 // owned by a path-based module (`isPathBasedModulePath`) gets a 404
 // instead of silently falling through to the dashboard.
@@ -58,7 +53,6 @@ export const KNOWN_PATHS: ReadonlySet<string> = new Set([
   DESIGN_PATH,
   PRICING_PATH,
   STATUS_PATH,
-  OFFLINE_PATH,
   ASSISTANT_PATH,
   CHAT_PATH,
   WELCOME_PATH,

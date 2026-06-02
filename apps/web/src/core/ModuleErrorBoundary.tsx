@@ -62,15 +62,21 @@ export default class ModuleErrorBoundary extends Component<
     const id = extractRequestId(this.state.error);
     if (!id) return;
     const finish = makeCopyDoneCallback((update) => this.setState(update));
-    copyRequestIdToClipboard(id, finish);
-    try {
-      trackEvent(ANALYTICS_EVENTS.ERROR_BOUNDARY_REQUEST_ID_COPIED, {
-        scope: "module",
-        request_id: id,
-      });
-    } catch {
-      /* analytics must not break error recovery UI */
-    }
+    // Fire the COPIED event from the copy-completion callback (not
+    // synchronously before the async clipboard write resolves) so the
+    // analytics signal tracks an actually-completed copy + the
+    // "Скопійовано" flash, rather than every button press (cubic review).
+    copyRequestIdToClipboard(id, () => {
+      finish();
+      try {
+        trackEvent(ANALYTICS_EVENTS.ERROR_BOUNDARY_REQUEST_ID_COPIED, {
+          scope: "module",
+          request_id: id,
+        });
+      } catch {
+        /* analytics must not break error recovery UI */
+      }
+    });
   };
 
   override render() {

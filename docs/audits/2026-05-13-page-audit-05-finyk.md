@@ -728,6 +728,8 @@ area to ≥44 px (the global safety-net does this automatically without
 
 ### F13 — Filter pill list lacks tablist semantics [severity: medium] [perspective: a11y]
 
+> ✅ **Closed 2026-06-01** — `TransactionFilters` is now a WAI-ARIA **toolbar**: `role="toolbar"` + `aria-label` (`messages.finyk.transactionsFilterLabel`) + `aria-orientation="horizontal"`, a single Tab stop via **roving `tabindex`** (only the active pill is `tabindex={0}`, with a fallback to the first pill when the active filter isn't rendered), and ←/→/Home/End move focus between pills. Selection stays on `aria-pressed` (these pills filter one list in place — `role="toolbar"` is correct; `tablist` would falsely imply tab panels). Backed by `TransactionFilters.test.tsx` (6 cases: toolbar role, roving tabindex, fallback, arrow-wrap, Home/End, click→onChangeFilter).
+
 **Page:** `transactions`
 **File:** `apps/web/src/modules/finyk/pages/transactions/TransactionFilters.tsx`
 **Lines:** L40–L58
@@ -875,6 +877,8 @@ This is a multi-file refactor — track as a separate code PR.
 
 ### F16 — Per-render `new Date()` + `todayStart` cause unnecessary cascading recomputes [severity: medium] [perspective: perf]
 
+> ✅ **Closed 2026-06-01** — resolved by the F6 refactor. `useTransactionFilters` no longer holds a module-load/per-render `new Date()`; `kyivNowMonth()` is a cheap `getKyivDateParts()` call and `todayDayKey` is `useMemo([])`. All heavy aggregates (`catSpends`/`filtered`/`groupedByDate`/`daySummaries`) are properly `useMemo`-gated — no cascading recompute from a per-render date.
+
 **Page:** `overview`
 **File:** `apps/web/src/modules/finyk/pages/overview/useOverviewData.ts`
 **Lines:** L99, L214–L267
@@ -965,6 +969,8 @@ onto the `AssetsForm` and the Active card itself.
 ---
 
 ### F18 — `useTransactionFilters` storage-event listener doesn't diff state [severity: medium] [perspective: bug]
+
+> ✅ **Closed 2026-06-01** — the `DAY_COLLAPSE_KEY` storage listener now diffs before committing: `setDayOverrides((prev) => JSON.stringify(prev) === JSON.stringify(next) ? prev : next)`. A cross-tab event that doesn't actually change our overrides returns the same reference, so React bails out of the re-render.
 
 **Page:** `transactions`
 **File:** `apps/web/src/modules/finyk/pages/transactions/useTransactionFilters.ts`

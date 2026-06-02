@@ -283,13 +283,11 @@ export function useTransactionFilters({
     function onStorage(e: StorageEvent) {
       if (e.key !== DAY_COLLAPSE_KEY) return;
       const next = readDayCollapse();
-      // Shallow-diff guard: skip setState when the parsed value is
-      // structurally identical to the current state to avoid a redundant
-      // re-render on every cross-tab write that touches a different key.
-      setDayOverrides((prev) => {
-        if (JSON.stringify(prev) === JSON.stringify(next)) return prev;
-        return next;
-      });
+      // Diff before committing — a cross-tab event that doesn't actually
+      // change our overrides shouldn't force a re-render (page-audit-05 F18).
+      setDayOverrides((prev) =>
+        JSON.stringify(prev) === JSON.stringify(next) ? prev : next,
+      );
     }
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);

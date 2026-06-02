@@ -101,17 +101,8 @@ export function useOverviewData({
     manualExpenses = [],
   } = storage;
 
-  // Memoized so that repeated renders within the same mount cycle do not
-  // produce a fresh Date object (and thus a new todayStart identity) on
-  // every call. Empty deps preserves the existing per-mount semantics —
-  // subscriptionFlows / debtOutFlows already depend on todayStart.getTime()
-  // as a primitive, so a day-boundary change correctly re-derives via
-  // React's reconciliation when the component remounts or data refreshes.
-  const now = useMemo(() => new Date(), []);
-  const { daysInMonth, daysPassed } = useMemo(
-    () => getCurrentMonthContext(now),
-    [now],
-  );
+  const now = new Date();
+  const { daysInMonth, daysPassed } = getCurrentMonthContext(now);
 
   const statTx = useMemo(
     () => filterStatTransactions(realTx, excludedTxIds),
@@ -237,10 +228,7 @@ export function useOverviewData({
     [limitBudgets, statTx, txCategories, txSplits, customCategories],
   );
 
-  const todayStart = useMemo(
-    () => new Date(now.getFullYear(), now.getMonth(), now.getDate()),
-    [now],
-  );
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
   const subscriptionFlows = useMemo(
     () =>
