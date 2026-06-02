@@ -282,7 +282,14 @@ export function useTransactionFilters({
   useEffect(() => {
     function onStorage(e: StorageEvent) {
       if (e.key !== DAY_COLLAPSE_KEY) return;
-      setDayOverrides(readDayCollapse());
+      const next = readDayCollapse();
+      // Shallow-diff guard: skip setState when the parsed value is
+      // structurally identical to the current state to avoid a redundant
+      // re-render on every cross-tab write that touches a different key.
+      setDayOverrides((prev) => {
+        if (JSON.stringify(prev) === JSON.stringify(next)) return prev;
+        return next;
+      });
     }
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);

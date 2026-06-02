@@ -43,13 +43,21 @@ export function TransactionFilters({
 
   return (
     <div data-no-swipe className="-mx-3 px-3 overflow-x-auto no-scrollbar">
-      <div className="flex gap-1 whitespace-nowrap">
+      {/* role="radiogroup" gives assistive technology single-select group
+          semantics that match the mutually-exclusive pill behaviour.
+          aria-label provides an accessible name for the group. */}
+      <div
+        role="radiogroup"
+        aria-label="Фільтр транзакцій"
+        className="flex gap-1 whitespace-nowrap"
+      >
         {filters.map((f) => (
           <button
             key={f.id}
             data-compact
+            role="radio"
+            aria-checked={filter === f.id}
             onClick={() => onChangeFilter(f.id)}
-            aria-pressed={filter === f.id}
             className={cn(
               // Audit 05 F12: keep the compact `h-7` visual on fine
               // pointers (mouse) but extend the touch-target floor on
