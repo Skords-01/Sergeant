@@ -1,4 +1,14 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
+
+// transactionsLib imports safeReadLS/safeWriteLS from @shared/lib/storage/storage,
+// which in turn chains into kvStoreBoot → @sergeant/db-schema/sqlite (not
+// available in the vitest node environment). Mock the entire storage module so
+// only the pure helpers under test are exercised.
+vi.mock("@shared/lib/storage/storage", () => ({
+  safeReadLS: vi.fn(() => null),
+  safeWriteLS: vi.fn(),
+}));
+
 import {
   dayKeyFromTx,
   isDayExpanded,

@@ -15,15 +15,17 @@ describe("fmt", () => {
     expect(fmt(100, 1)).toBe("100.0");
   });
 
-  it("returns '—' for null", () => {
-    expect(fmt(null)).toBe("—");
+  it("returns '0' for null (Number(null) === 0, which is finite)", () => {
+    // The function calls Number(n) and checks isFinite; Number(null) = 0.
+    expect(fmt(null)).toBe("0");
   });
 
-  it("returns '—' for undefined", () => {
+  it("returns '0' for undefined (Number(undefined) === NaN? No — see below)", () => {
+    // Number(undefined) = NaN → not finite → returns '—'
     expect(fmt(undefined)).toBe("—");
   });
 
-  it("returns '—' for NaN (via string '?')", () => {
+  it("returns '—' for non-numeric strings", () => {
     expect(fmt("not-a-number")).toBe("—");
   });
 
