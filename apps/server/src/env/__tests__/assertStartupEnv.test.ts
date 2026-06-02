@@ -522,3 +522,89 @@ describe("assertStartupEnv — AI_MEMORY_ENABLED requires VOYAGE_API_KEY (D3)", 
     expect(() => assertStartupEnv()).not.toThrow();
   });
 });
+
+describe("assertStartupEnv — VAPID key-pair hard-fail (PR-01 stack-pulse-2026-05)", () => {
+  // PR-01 acceptance: `assertStartupEnv()` in production throws when only
+  // ONE of the two VAPID keys is set. When NEITHER is set push is simply
+  // not configured (warn-only). When BOTH are set — no error.
+  //
+  // The PROD_BASELINE intentionally omits VAPID keys so the existing
+  // positive cases stay valid (neither key → no error, push degrades
+  // gracefully to 503 per-request).
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.resetModules();
+  });
+
+  const VAPID_BASE = {
+    ...PROD_BASELINE,
+    OPENCLAW_GITHUB_PAT: "",
+    Git_PAT: "",
+  };
+
+  it("throws in production when VAPID_PUBLIC_KEY is set but VAPID_PRIVATE_KEY is missing", async () => {
+    const assertStartupEnv = await loadAssertStartupEnv({
+      ...VAPID_BASE,
+      VAPID_PUBLIC_KEY: "BPUB",
+      VAPID_PRIVATE_KEY: "",
+    });
+    expect(() => assertStartupEnv()).toThrow(/VAPID_PRIVATE_KEY/);
+  });
+
+  it("throws in production when VAPID_PRIVATE_KEY is set but VAPID_PUBLIC_KEY is missing", async () => {
+    const assertStartupEnv = await loadAssertStartupEnv({
+      ...VAPID_BASE,
+      VAPID_PUBLIC_KEY: "",
+      VAPID_PRIVATE_KEY: "BPRIV",
+    });
+    expect(() => assertStartupEnv()).toThrow(/VAPID_PUBLIC_KEY/);
+  });
+
+  it("throws under Railway prod (RAILWAY_ENVIRONMENT) without NODE_ENV=production", async () => {
+    const assertStartupEnv = await loadAssertStartupEnv({
+      ...VAPID_BASE,
+      NODE_ENV: "test",
+      RAILWAY_ENVIRONMENT: "production",
+      VAPID_PUBLIC_KEY: "BPUB",
+      VAPID_PRIVATE_KEY: "",
+    });
+    expect(() => assertStartupEnv()).toThrow(/VAPID_PRIVATE_KEY/);
+  });
+
+  it("does NOT throw in production when BOTH VAPID keys are set", async () => {
+    const assertStartupEnv = await loadAssertStartupEnv({
+      ...VAPID_BASE,
+      VAPID_PUBLIC_KEY: "BPUB",
+      VAPID_PRIVATE_KEY: "BPRIV",
+    });
+    expect(() => assertStartupEnv()).not.toThrow();
+  });
+
+  it("does NOT throw in production when NEITHER VAPID key is set (push not configured)", async () => {
+    const assertStartupEnv = await loadAssertStartupEnv({
+      ...VAPID_BASE,
+      VAPID_PUBLIC_KEY: "",
+      VAPID_PRIVATE_KEY: "",
+    });
+    expect(() => assertStartupEnv()).not.toThrow();
+  });
+
+  it("does NOT throw in NODE_ENV=development with partial VAPID config (warning only)", async () => {
+    const assertStartupEnv = await loadAssertStartupEnv({
+      NODE_ENV: "development",
+      VAPID_PUBLIC_KEY: "BPUB",
+      VAPID_PRIVATE_KEY: "",
+    });
+    expect(() => assertStartupEnv()).not.toThrow();
+  });
+
+  it("does NOT throw in NODE_ENV=test with partial VAPID config (CI)", async () => {
+    const assertStartupEnv = await loadAssertStartupEnv({
+      NODE_ENV: "test",
+      VAPID_PUBLIC_KEY: "BPUB",
+      VAPID_PRIVATE_KEY: "",
+    });
+    expect(() => assertStartupEnv()).not.toThrow();
+  });
+});

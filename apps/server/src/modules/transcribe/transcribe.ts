@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 import { TranscribeQuerySchema } from "@sergeant/shared";
+import { env } from "../../env.js";
 import { parseQuery } from "../../http/validate.js";
 import { transcribeAudio, GroqTranscribeError } from "../../lib/groq.js";
 import { logger } from "../../obs/logger.js";
@@ -16,16 +17,24 @@ type WithGroqKey = Request & { groqKey?: string };
  * Resolved once at module load (fail-fast on boot) — `assertStartupEnv`
  * surfaces the throw before the HTTP server starts accepting traffic.
  * See `docs/security/hardening/M4-groq-model-allowlist.md`.
+ *
+ * Env-single-source: reads Zod-validated `env.GROQ_TRANSCRIBE_MODEL`, not raw
+ * `process.env`. Tests that exercise the allowlist logic use `vi.stubEnv()` +
+ * `vi.resetModules()` + dynamic import so `env.ts` re-parses with the stubbed
+ * value (canonical pattern — see HR-2 in docs/planning/pr-plan-dead-code-hard-rules-2026-05.md).
  */
 const ALLOWED_GROQ_MODELS = new Set([
   "whisper-large-v3-turbo",
   "whisper-large-v3",
 ]);
-const DEFAULT_GROQ_MODEL = "whisper-large-v3-turbo";
 
 function resolveGroqModel(): string {
-  const raw = process.env["GROQ_TRANSCRIBE_MODEL"];
-  const requested = raw && raw.length > 0 ? raw : DEFAULT_GROQ_MODEL;
+  // `env.GROQ_TRANSCRIBE_MODEL` is Zod-validated at module load: the schema
+  // uses `.enum(["whisper-large-v3-turbo", "whisper-large-v3"]).default(…)`,
+  // so invalid values are rejected at startup (fail-fast) and the value is
+  // always a member of ALLOWED_GROQ_MODELS — the set-check below is
+  // belt-and-suspenders for defence-in-depth only.
+  const requested = env.GROQ_TRANSCRIBE_MODEL;
   if (!ALLOWED_GROQ_MODELS.has(requested)) {
     throw new Error(
       `Unsupported GROQ_TRANSCRIBE_MODEL: ${requested}. Allowed: ${[
