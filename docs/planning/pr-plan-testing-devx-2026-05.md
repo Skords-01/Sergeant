@@ -223,6 +223,7 @@
 
 ### T-8 · Property-based tests (fast-check) — macros / date / speech
 
+- **Status:** ✅ Виконано — `fast-check` devDep у `@sergeant/shared` + 3 suite-и (seed-pinned 42, `FAST_CHECK_NUM_RUNS` override): `macros.property.test.ts` (totals завжди ≥0 finite, idempotency, passthrough), `date.property.test.ts` (`toLocalISODate` завжди `YYYY-MM-DD`, fallback, stability), `speechParsers.property.test.ts` (`normalizeUaNumbers` idempotency + whitespace-normalised, `parseUaNumber` null|finite). 14 property-тестів зелені. `docs/testing/README.md` отримав «Property-based» layer. NB: фактичні функції відрізнялись від картки (date → `toLocalISODate`, не Kyiv-roundtrip; speech → `speechParsers`); properties підлаштовано під реальні контракти.
 - **Items covered:** P2-4 з прожарки + T-35 у tests-pr-plan.
 - **Priority:** P2 · **Size:** M (~250 LoC + 1 dep) · **Owner:** `@Skords-01`
 - **Skill:** `sergeant-server-api` (shared utils surface).

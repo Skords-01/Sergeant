@@ -13,16 +13,17 @@ Meta-документація на тестову стратегію Sergeant �
 
 ## Тестові шари — як вони лежать
 
-| Шар               | Локація                                              | Тулінг                          |
-| ----------------- | ---------------------------------------------------- | ------------------------------- |
-| Unit              | `apps/{web,server,mobile}/src/**/*.test.ts(x)?`      | Vitest                          |
-| Integration       | `apps/server/src/**/*.integration.test.ts`           | Vitest + testcontainers         |
-| E2E (web)         | `apps/web/e2e/`                                      | Playwright                      |
-| E2E (mobile)      | `apps/mobile/e2e/`                                   | Detox                           |
-| Critical-flow CI  | `apps/web/e2e/` + `playwright.smoke.config.ts`       | Playwright (canary on every PR) |
-| Visual regression | `apps/web/e2e/visual/`                               | Argos + Playwright              |
-| Mutation          | `packages/shared/stryker.utils.conf.json`            | Stryker + vitest-runner         |
-| Performance       | `tests/perf/` (Lighthouse CI у `.github/workflows/`) | Lighthouse, web-vitals          |
+| Шар               | Локація                                              | Тулінг                                          |
+| ----------------- | ---------------------------------------------------- | ----------------------------------------------- |
+| Unit              | `apps/{web,server,mobile}/src/**/*.test.ts(x)?`      | Vitest                                          |
+| Integration       | `apps/server/src/**/*.integration.test.ts`           | Vitest + testcontainers                         |
+| E2E (web)         | `apps/web/e2e/`                                      | Playwright                                      |
+| E2E (mobile)      | `apps/mobile/e2e/`                                   | Detox                                           |
+| Critical-flow CI  | `apps/web/e2e/` + `playwright.smoke.config.ts`       | Playwright (canary on every PR)                 |
+| Visual regression | `apps/web/e2e/visual/`                               | Argos + Playwright                              |
+| Mutation          | `packages/shared/stryker.utils.conf.json`            | Stryker + vitest-runner                         |
+| Property-based    | `packages/shared/src/**/*.property.test.ts`          | fast-check (seed-pinned, `FAST_CHECK_NUM_RUNS`) |
+| Performance       | `tests/perf/` (Lighthouse CI у `.github/workflows/`) | Lighthouse, web-vitals                          |
 
 ## Cross-links
 
