@@ -139,7 +139,7 @@ describe("contract @ POST /api/nutrition/parse-pantry", () => {
       .uponReceiving(
         "a POST /api/nutrition/parse-pantry request with quantity-free items",
       )
-      .withRequest("POST", "/api/nutrition/parse-pantry", (req) => {
+      .withRequest("POST", "/api/v1/nutrition/parse-pantry", (req) => {
         req.headers({
           accept: "application/json",
           "content-type": "application/json",
