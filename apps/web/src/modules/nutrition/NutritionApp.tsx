@@ -3,6 +3,7 @@ import type { Meal } from "@sergeant/nutrition-domain";
 import { MEAL_TYPES } from "@sergeant/nutrition-domain";
 import type { QuickChip } from "./hooks/useNutritionQuickChips";
 import { currentTime } from "./components/meal-sheet/mealFormUtils";
+import { getKyivDateParts } from "@shared/lib/time/kyivTime";
 import {
   SkeletonMealCard,
   SkeletonText,
@@ -153,6 +154,7 @@ export default function NutritionApp({
   // page they were on. Skipped when a `pwaAction` is already routing
   // the user (e.g. `add_meal`, `add_meal_photo`) so the action target
   // wins (audit F19).
+  // AI-CONTEXT: one-shot first-run gate — routes new users to DailyPlanCard; ref prevents re-routing mid-session if pwaAction already controls navigation
   const firstRunJumpDoneRef = useRef(false);
   useEffect(() => {
     if (firstRunJumpDoneRef.current) return;
@@ -371,7 +373,7 @@ export default function NutritionApp({
   // delete uses, keeping behaviour symmetric with the rest of Nutrition.
   const handleQuickAddMealFromChip = useCallback(
     (chip: QuickChip) => {
-      const hour = new Date().getHours();
+      const hour = getKyivDateParts().hour;
       const mealTypeId =
         hour >= 5 && hour < 11
           ? "breakfast"
