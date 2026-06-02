@@ -7,8 +7,16 @@
  * лишається коротким composition root-ом.
  */
 
-import { precacheAndRoute, cleanupOutdatedCaches } from "workbox-precaching";
-import { registerRoute, NavigationRoute } from "workbox-routing";
+import {
+  precacheAndRoute,
+  cleanupOutdatedCaches,
+  matchPrecache,
+} from "workbox-precaching";
+import {
+  registerRoute,
+  NavigationRoute,
+  setCatchHandler,
+} from "workbox-routing";
 import { NetworkFirst } from "workbox-strategies";
 import { ExpirationPlugin } from "workbox-expiration";
 import { CacheableResponsePlugin } from "workbox-cacheable-response";
@@ -131,6 +139,22 @@ export function setupCacheRoutes(): void {
     }),
     "GET",
   );
+
+  // Offline navigation fallback (audit F28 / Item 4). When a navigation
+  // request fails (network down, no cached page) serve the precached
+  // `/offline` document so the user sees the branded offline page instead
+  // of the browser's default "No internet" screen. `matchPrecache` looks
+  // the URL up in the Workbox precache — Vite-PWA injects `/offline` into
+  // `__WB_MANIFEST` when the route is registered in the Vite config.
+  // Non-navigation failures (API, assets) are not caught here; those fail
+  // silently and let the app's own error boundaries handle them.
+  setCatchHandler(async ({ request }) => {
+    if (request.destination === "document") {
+      const cached = await matchPrecache("/offline");
+      if (cached) return cached;
+    }
+    return Response.error();
+  });
 }
 
 export async function cacheEntryCount(

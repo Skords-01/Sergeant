@@ -8,6 +8,7 @@ import {
   CHAT_PATH,
   DESIGN_PATH,
   KNOWN_PATHS,
+  OFFLINE_PATH,
   PRICING_PATH,
   STATUS_PATH,
   PROFILE_PATH,
@@ -55,6 +56,10 @@ const HubChatPage = lazyImport(
 const NotFoundPage = lazyImport(
   () => import("../errors/NotFoundPage"),
   "NotFoundPage",
+);
+const OfflinePage = lazyImport(
+  () => import("../errors/OfflinePage"),
+  "OfflinePage",
 );
 
 export interface StandaloneRouteArgs {
@@ -223,6 +228,22 @@ const STANDALONE_ROUTES: ReadonlyArray<StandaloneRoute> = [
     render: () => (
       <Suspense fallback={<PageLoader />}>
         <HubChatPage />
+      </Suspense>
+    ),
+  },
+
+  // `/offline` — SW navigation-fallback target (audit F28 / Item 4).
+  // The service worker `setCatchHandler` returns this precached document
+  // when a navigation request fails offline and no cached page is
+  // available. Also reachable as a normal route for dev/test and for the
+  // case where the SW swaps it in without a React-Router route change
+  // (e.g. hard reload while offline). Anonymous: no auth required since
+  // the page must be accessible before any network connectivity.
+  {
+    paths: [OFFLINE_PATH],
+    render: () => (
+      <Suspense fallback={<PageLoader />}>
+        <OfflinePage />
       </Suspense>
     ),
   },

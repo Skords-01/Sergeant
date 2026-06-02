@@ -68,11 +68,21 @@ export function StatusPage(): JSX.Element {
     const controller = new AbortController();
     void load(controller.signal);
     const id = window.setInterval(() => {
+      if (document.visibilityState !== "visible") return;
       void load();
     }, STATUS_POLL_INTERVAL_MS);
+
+    function handleVisibilityChange(): void {
+      if (document.visibilityState === "visible") {
+        void load();
+      }
+    }
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
     return () => {
       controller.abort();
       window.clearInterval(id);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [load]);
 
