@@ -198,6 +198,8 @@ PR detection (Epley 1RM) — це канонічна формула для пр�
 
 ### F6 — Програма стартує сесію через non-null assertion на можливо-відсутній sessionKey [severity: high] [perspective: bug]
 
+> **Closure note (2026-06-02, fizruk-part2-quick-wins):** - [x] Виправлено. `Programs.tsx` "Розпочати сьогодні" handler тепер робить `const session = prog.sessions[todaySession.sessionKey]; if (!session) { captureException(...); return; }` — non-null `!` прибрано (Hard Rule #19); silent schedule↔sessions drift логується у Sentry замість runtime-крешу в дочірньому компоненті.
+
 **Page:** `Programs`
 **File:** `apps/web/src/modules/fizruk/pages/Programs.tsx`
 **Lines:** L142–L146
@@ -232,6 +234,8 @@ onStartWorkout(session, prog);
 ---
 
 ### F7 — PR filter pills нижче WCAG 2.5.5 touch-target floor [severity: medium] [perspective: a11y]
+
+> **Closure note (2026-06-02, fizruk-part2-quick-wins):** - [x] Виправлено. Обидві PR-filter pills у `Progress.tsx` (`Всі` + per-muscle) тепер `min-h-[44px]` замість `h-7` (28px) — WCAG 2.5.5 touch-target floor.
 
 **Page:** `Progress`
 **File:** `apps/web/src/modules/fizruk/pages/Progress.tsx`
@@ -467,6 +471,8 @@ PR-card як `<button className="w-full text-left border border-line rounded-2xl
 
 ### F16 — Програма "сьогодні відпочинок" / day-strip без screen-reader summary [severity: medium] [perspective: a11y]
 
+> **Closure note (2026-06-02, fizruk-part2-quick-wins):** - [x] Виправлено. Day-strip контейнер у `Programs.tsx` тепер `role="img"` + `aria-label` зі списком тренувальних днів програми (напр. "Розклад програми …: Пн, Чт — тренування, інші дні відпочинок").
+
 **Page:** `Programs`
 **File:** `apps/web/src/modules/fizruk/pages/Programs.tsx`
 **Lines:** L103–L125
@@ -512,6 +518,8 @@ className={cn("flex-1 text-center rounded py-1 text-2xs font-bold transition-col
 ---
 
 ### F18 — Progress PR filter втрачає state на back-nav та не reset-ить на стейл group [severity: medium] [perspective: ux]
+
+> **Closure note (2026-06-02, fizruk-part2-quick-wins):** - [x] Виправлено (стейл-group частина). Додано `useEffect` у `Progress.tsx`, який скидає `prFilter` → `"all"`, коли поточна група мʼязів зникла з `prs` (напр. видалили всі chest-сети у Workouts) — більше немає застряглого порожнього стану. URL-search-params persistence (back-nav share-link) лишається окремим follow-up.
 
 **Page:** `Progress`
 **File:** `apps/web/src/modules/fizruk/pages/Progress.tsx`
