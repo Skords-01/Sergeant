@@ -22,7 +22,7 @@
     "e2e:test:android:ci": "detox test --configuration android.emu.debug --headless --record-logs all"
   },
   "dependencies": {
-    "@better-auth/expo": "^1.6.5",
+    "@better-auth/expo": "^1.6.13",
     "@expo/metro-runtime": "~4.0.1",
     "@react-native-async-storage/async-storage": "1.23.1",
     "@react-native-community/netinfo": "11.4.1",
