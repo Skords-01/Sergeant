@@ -39,7 +39,7 @@ describe("contract @ POST /api/nutrition/parse-pantry", () => {
       .uponReceiving(
         "a POST /api/nutrition/parse-pantry request with two-item free text",
       )
-      .withRequest("POST", "/api/nutrition/parse-pantry", (req) => {
+      .withRequest("POST", "/api/v1/nutrition/parse-pantry", (req) => {
         req.headers({
           accept: "application/json",
           "content-type": "application/json",
@@ -100,7 +100,7 @@ describe("contract @ POST /api/nutrition/parse-pantry", () => {
       .uponReceiving(
         "a POST /api/nutrition/parse-pantry request with unparseable input",
       )
-      .withRequest("POST", "/api/nutrition/parse-pantry", (req) => {
+      .withRequest("POST", "/api/v1/nutrition/parse-pantry", (req) => {
         req.headers({
           accept: "application/json",
           "content-type": "application/json",

@@ -1,4 +1,36 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+
+// ─── Dependency mocks ─────────────────────────────────────────────────────────
+//
+// budgetsLib.ts → @shared/api → @shared/lib (barrel) → @shared/lib/storage/storage
+//              → kvStoreBoot.ts → @sergeant/db-schema/sqlite
+// None of that is available in the Node test environment. We mock every
+// import that causes the chain to break before the actual module loads.
+//
+// Both mocks below are used explicitly in the test body (readJSON/writeJSON
+// are exercised; chatApi is referenced so linting treats the mock as active).
+
+// 1. Block the SQLite chain by replacing storage.ts's problematic transitive
+//    dependencies at the level where budgetsLib.ts itself would pull them in.
+vi.mock("@shared/api", () => ({
+  chatApi: {
+    send: vi.fn().mockResolvedValue({ text: null }),
+  },
+}));
+
+// 2. Replace the localStorage layer with a simple in-memory store.
+const _store: Record<string, unknown> = {};
+vi.mock("../../lib/finykStorage", () => ({
+  readJSON: (key: string, fallback: unknown = null): unknown =>
+    key in _store ? _store[key] : fallback,
+  writeJSON: (key: string, value: unknown): boolean => {
+    _store[key] = value;
+    return true;
+  },
+}));
+
+// Import the module under test AFTER mocks are registered (vi.mock hoists,
+// but the explicit import here makes the dependency order readable).
 import {
   proactiveCacheKey,
   PROACTIVE_CACHE_TTL,
@@ -6,25 +38,13 @@ import {
   saveProactiveAdviceToLS,
 } from "./budgetsLib";
 
-// Mock the finykStorage readJSON / writeJSON used inside budgetsLib
-vi.mock("../../lib/finykStorage", () => {
-  const store: Record<string, unknown> = {};
-  return {
-    readJSON: (key: string, fallback: unknown = null) =>
-      key in store ? store[key] : fallback,
-    writeJSON: (key: string, value: unknown) => {
-      store[key] = value;
-      return true;
-    },
-    __store: store,
-  };
-});
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
-// Access the in-memory store the mock exposes so we can seed/inspect it
-async function getStore(): Promise<Record<string, unknown>> {
-  const mod = await import("../../lib/finykStorage");
-  return (mod as unknown as { __store: Record<string, unknown> }).__store;
+function clearStore(): void {
+  Object.keys(_store).forEach((k) => delete _store[k]);
 }
+
+// ─── Tests ────────────────────────────────────────────────────────────────────
 
 describe("proactiveCacheKey", () => {
   it("includes both categoryId and monthKey in the output", () => {
@@ -53,72 +73,55 @@ describe("PROACTIVE_CACHE_TTL", () => {
 });
 
 describe("loadProactiveAdviceFromLS", () => {
-  beforeEach(async () => {
-    const store = await getStore();
-    Object.keys(store).forEach((k) => delete store[k]);
-  });
-
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
+  beforeEach(() => clearStore());
+  afterEach(() => vi.restoreAllMocks());
 
   it("returns null when cache is empty", () => {
-    const result = loadProactiveAdviceFromLS("food", "2026-05");
-    expect(result).toBeNull();
+    expect(loadProactiveAdviceFromLS("food", "2026-05")).toBeNull();
   });
 
-  it("returns cached text when within TTL", async () => {
-    const store = await getStore();
+  it("returns cached text when within TTL", () => {
     const key = proactiveCacheKey("food", "2026-05");
-    store[key] = { text: "Buy less coffee", ts: Date.now() };
+    _store[key] = { text: "Buy less coffee", ts: Date.now() };
 
     const result = loadProactiveAdviceFromLS("food", "2026-05");
     expect(result).not.toBeNull();
     expect(result?.text).toBe("Buy less coffee");
   });
 
-  it("returns null when cache is expired (older than TTL)", async () => {
-    const store = await getStore();
+  it("returns null when cache is expired (older than TTL)", () => {
     const key = proactiveCacheKey("food", "2026-05");
-    // Set timestamp older than TTL
-    store[key] = {
+    _store[key] = {
       text: "Old advice",
       ts: Date.now() - PROACTIVE_CACHE_TTL - 1,
     };
 
-    const result = loadProactiveAdviceFromLS("food", "2026-05");
-    expect(result).toBeNull();
+    expect(loadProactiveAdviceFromLS("food", "2026-05")).toBeNull();
   });
 
-  it("returns null for malformed cache (no text field)", async () => {
-    const store = await getStore();
+  it("returns null for malformed cache (no text field)", () => {
     const key = proactiveCacheKey("food", "2026-05");
-    store[key] = { ts: Date.now() };
+    _store[key] = { ts: Date.now() };
 
-    const result = loadProactiveAdviceFromLS("food", "2026-05");
-    expect(result).toBeNull();
+    expect(loadProactiveAdviceFromLS("food", "2026-05")).toBeNull();
   });
 
-  it("returns null for malformed cache (no ts field)", async () => {
-    const store = await getStore();
+  it("returns null for malformed cache (no ts field)", () => {
     const key = proactiveCacheKey("food", "2026-05");
-    store[key] = { text: "Some advice" };
+    _store[key] = { text: "Some advice" };
 
-    const result = loadProactiveAdviceFromLS("food", "2026-05");
-    expect(result).toBeNull();
+    expect(loadProactiveAdviceFromLS("food", "2026-05")).toBeNull();
   });
 });
 
 describe("saveProactiveAdviceToLS", () => {
-  beforeEach(async () => {
-    const store = await getStore();
-    Object.keys(store).forEach((k) => delete store[k]);
-  });
+  beforeEach(() => clearStore());
 
   it("saves and makes loadable within TTL", () => {
     saveProactiveAdviceToLS("food", "2026-05", "Spend less on snacks");
-    const result = loadProactiveAdviceFromLS("food", "2026-05");
-    expect(result?.text).toBe("Spend less on snacks");
+    expect(loadProactiveAdviceFromLS("food", "2026-05")?.text).toBe(
+      "Spend less on snacks",
+    );
   });
 
   it("scopes cache by category and month", () => {
