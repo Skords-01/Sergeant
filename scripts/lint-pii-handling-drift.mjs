@@ -1,215 +1,133 @@
 #!/usr/bin/env node
 // scripts/lint-pii-handling-drift.mjs
 //
-// Drift-guard: keeps the machine-readable key list in
-// `docs/security/pii-handling.md` in sync with the canonical
-// `REDACT_KEY_NAMES` exported from `packages/shared/src/lib/pii.ts`.
+// Guard against drift between the canonical redacted-key list in
+// `packages/shared/src/lib/pii.ts` (`REDACT_KEY_NAMES`) and the
+// machine-readable mirror in `docs/security/pii-handling.md`
+// (between `<!-- pii-keys-start -->` and `<!-- pii-keys-end -->`).
 //
-// Why this exists (card S10, pr-plan-security-obs-2026-05):
-//   STRIDE-I — Information disclosure through documentation drift. If someone
-//   adds a new redacted key to the shared module but the doc still lists the
-//   old set, another engineer may reverse-add an API without redaction
-//   ("it wasn't in the list yet"). The reverse drift (key documented but not
-//   enforced) gives false confidence that a field is masked. Both directions
-//   fail this gate.
+// Why: a stale doc list misleads engineers — someone adds a new redacted
+// key in shared but the doc shows the old list; another dev re-adds an API
+// surface without redaction "because it wasn't in the list yet" (STRIDE:
+// Information disclosure). See docs/planning/pr-plan-security-obs-2026-05.md S10.
 //
-// What it compares:
-//   - SOURCE OF TRUTH: the string literals inside the `REDACT_KEY_NAMES`
-//     array in `packages/shared/src/lib/pii.ts`.
-//   - DOC MIRROR: `` `key` `` entries between the
-//     `<!-- pii-keys-start -->` and `<!-- pii-keys-end -->` markers in
-//     `docs/security/pii-handling.md`.
-//   Comparison is case-insensitive and order-independent (set equality),
-//   mirroring `REDACT_KEY_SET` in pii.ts which lowercases at match time.
+// Modes:
+//   default → exit 1 on drift (used by `pnpm lint:pii-handling-drift`).
+//   --json  → emit machine-readable JSON instead of human output.
 //
-// Usage:
-//   node scripts/lint-pii-handling-drift.mjs
-//
-// Exit code 1 on any drift (missing-in-doc, extra-in-doc, parse failure).
+// The comparison is set-based (order-independent, case-sensitive — the
+// source list is the canonical casing).
 
 import { readFileSync } from "node:fs";
-import { resolve, dirname } from "node:path";
+import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const ROOT = resolve(__dirname, "..");
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const REPO_ROOT = resolve(__dirname, "..");
 
-export const SHARED_PII_PATH = "packages/shared/src/lib/pii.ts";
+export const SOURCE_PATH = "packages/shared/src/lib/pii.ts";
 export const DOC_PATH = "docs/security/pii-handling.md";
-export const DOC_MARKER_START = "<!-- pii-keys-start -->";
-export const DOC_MARKER_END = "<!-- pii-keys-end -->";
-
-// ── Parsers ──────────────────────────────────────────────────────────────────
+export const DOC_START = "<!-- pii-keys-start -->";
+export const DOC_END = "<!-- pii-keys-end -->";
 
 /**
- * Extract the string literals from the `REDACT_KEY_NAMES` array in pii.ts.
- * Returns the keys in source order (deduped later via set comparison).
- * Throws if the array declaration cannot be located.
+ * Extract the `REDACT_KEY_NAMES` string-array literal from pii.ts source.
+ * @param {string} source
+ * @returns {string[]}
  */
-export function parseSharedKeys(source) {
-  const declRe = /REDACT_KEY_NAMES[^=]*=\s*\[/;
-  const declMatch = declRe.exec(source);
-  if (!declMatch) {
+export function extractSourceKeys(source) {
+  const match = source.match(
+    /REDACT_KEY_NAMES:\s*readonly\s+string\[\]\s*=\s*\[([\s\S]*?)\];/,
+  );
+  if (!match) {
     throw new Error(
-      `could not find the \`REDACT_KEY_NAMES = [\` declaration in ${SHARED_PII_PATH}`,
+      `Could not locate REDACT_KEY_NAMES array literal in ${SOURCE_PATH}.`,
     );
   }
-  const start = declMatch.index + declMatch[0].length;
-  const end = source.indexOf("]", start);
-  if (end === -1) {
-    throw new Error(
-      `could not find the closing \`]\` of \`REDACT_KEY_NAMES\` in ${SHARED_PII_PATH}`,
-    );
-  }
-  const body = source.slice(start, end);
-  // Strip line comments so a commented-out `// "foo",` is never counted.
-  const withoutComments = body.replace(/\/\/[^\n]*/g, "");
-  const keys = [];
-  const strRe = /["'`]([^"'`]+)["'`]/g;
-  let m;
-  while ((m = strRe.exec(withoutComments)) !== null) {
-    keys.push(m[1]);
-  }
-  return keys;
+  return [...match[1].matchAll(/"([^"]+)"/g)].map((m) => m[1]);
 }
 
 /**
- * Extract the documented keys from the marker-delimited block in
- * pii-handling.md. Each key is an inline-code span (`` `key` ``) on its own
- * bullet line. Throws if the markers are missing or empty.
+ * Extract the backtick-wrapped key tokens from the machine-readable block in
+ * pii-handling.md (between DOC_START and DOC_END markers).
+ * @param {string} doc
+ * @returns {string[]}
  */
-export function parseDocKeys(doc) {
-  const startIdx = doc.indexOf(DOC_MARKER_START);
-  const endIdx = doc.indexOf(DOC_MARKER_END);
-  if (startIdx === -1 || endIdx === -1) {
+export function extractDocKeys(doc) {
+  const start = doc.indexOf(DOC_START);
+  const end = doc.indexOf(DOC_END);
+  if (start === -1 || end === -1 || end < start) {
     throw new Error(
-      `could not find the \`${DOC_MARKER_START}\` … \`${DOC_MARKER_END}\` block in ${DOC_PATH}`,
+      `Could not locate the ${DOC_START} … ${DOC_END} block in ${DOC_PATH}.`,
     );
   }
-  if (endIdx < startIdx) {
-    throw new Error(
-      `\`${DOC_MARKER_END}\` appears before \`${DOC_MARKER_START}\` in ${DOC_PATH}`,
-    );
-  }
-  const block = doc.slice(startIdx + DOC_MARKER_START.length, endIdx);
-  const keys = [];
-  const codeRe = /`([^`]+)`/g;
-  let m;
-  while ((m = codeRe.exec(block)) !== null) {
-    keys.push(m[1]);
-  }
-  return keys;
+  // Strip nested HTML comments (e.g. the AUTO-CHECKED note) so their
+  // backtick-wrapped references (`REDACT_KEY_NAMES`, file paths) are not
+  // mistaken for key tokens.
+  const block = doc
+    .slice(start + DOC_START.length, end)
+    .replace(/<!--[\s\S]*?-->/g, "");
+  return [...block.matchAll(/`([^`]+)`/g)].map((m) => m[1]);
 }
 
 /**
- * Compare two key lists as case-insensitive sets. Returns
- * `{ ok, missingInDoc, extraInDoc }` where the diff arrays carry the
- * canonical (source) casing where available, else the doc casing.
+ * Compare the source list against the doc list (set-based).
+ * @param {string[]} sourceKeys
+ * @param {string[]} docKeys
+ * @returns {{ ok: boolean, missingInDoc: string[], extraInDoc: string[] }}
  */
-export function diffKeys(sharedKeys, docKeys) {
-  const norm = (k) => k.toLowerCase();
-  const sharedByNorm = new Map(sharedKeys.map((k) => [norm(k), k]));
-  const docByNorm = new Map(docKeys.map((k) => [norm(k), k]));
-
-  const missingInDoc = [];
-  for (const [n, original] of sharedByNorm) {
-    if (!docByNorm.has(n)) missingInDoc.push(original);
-  }
-  const extraInDoc = [];
-  for (const [n, original] of docByNorm) {
-    if (!sharedByNorm.has(n)) extraInDoc.push(original);
-  }
+export function diffKeys(sourceKeys, docKeys) {
+  const sourceSet = new Set(sourceKeys);
+  const docSet = new Set(docKeys);
+  const missingInDoc = sourceKeys.filter((k) => !docSet.has(k));
+  const extraInDoc = docKeys.filter((k) => !sourceSet.has(k));
   return {
     ok: missingInDoc.length === 0 && extraInDoc.length === 0,
-    missingInDoc,
-    extraInDoc,
+    missingInDoc: [...new Set(missingInDoc)],
+    extraInDoc: [...new Set(extraInDoc)],
   };
 }
 
-// ── Runner (fs injectable for tests) ─────────────────────────────────────────
+function main() {
+  const json = process.argv.includes("--json");
+  const source = readFileSync(resolve(REPO_ROOT, SOURCE_PATH), "utf8");
+  const doc = readFileSync(resolve(REPO_ROOT, DOC_PATH), "utf8");
 
-/**
- * @param {object} [opts]
- * @param {(relPath: string) => string} [opts.read] reads a repo-relative file.
- * @returns {{ ok: boolean, error: string|null, missingInDoc: string[],
- *             extraInDoc: string[], sharedCount: number, docCount: number }}
- */
-export function run(opts = {}) {
-  const read =
-    opts.read ?? ((relPath) => readFileSync(resolve(ROOT, relPath), "utf8"));
+  const sourceKeys = extractSourceKeys(source);
+  const docKeys = extractDocKeys(doc);
+  const result = diffKeys(sourceKeys, docKeys);
 
-  let sharedKeys;
-  let docKeys;
-  try {
-    sharedKeys = parseSharedKeys(read(SHARED_PII_PATH));
-    docKeys = parseDocKeys(read(DOC_PATH));
-  } catch (err) {
-    return {
-      ok: false,
-      error: err.message,
-      missingInDoc: [],
-      extraInDoc: [],
-      sharedCount: 0,
-      docCount: 0,
-    };
+  if (json) {
+    console.log(JSON.stringify(result, null, 2));
+    process.exit(result.ok ? 0 : 1);
   }
 
-  const { ok, missingInDoc, extraInDoc } = diffKeys(sharedKeys, docKeys);
-  return {
-    ok,
-    error: null,
-    missingInDoc,
-    extraInDoc,
-    sharedCount: sharedKeys.length,
-    docCount: docKeys.length,
-  };
-}
-
-export function formatReport(result) {
-  const lines = [];
-  if (result.error) {
-    lines.push(`❌ pii-handling drift-guard could not run: ${result.error}`);
-    return lines.join("\n");
-  }
   if (result.ok) {
-    lines.push(
-      `✅ pii-handling.md mirrors all ${result.sharedCount} \`REDACT_KEY_NAMES\` ` +
-        `from ${SHARED_PII_PATH}.`,
+    console.log(
+      `[lint:pii-handling-drift] OK — ${sourceKeys.length} redacted key(s) in ${SOURCE_PATH} match ${DOC_PATH}.`,
     );
-    return lines.join("\n");
+    process.exit(0);
   }
-  lines.push(
-    `❌ ${DOC_PATH} has drifted from \`REDACT_KEY_NAMES\` in ${SHARED_PII_PATH}.`,
+
+  console.error(
+    `[lint:pii-handling-drift] DRIFT between ${SOURCE_PATH} and ${DOC_PATH}:`,
   );
   if (result.missingInDoc.length > 0) {
-    lines.push(
-      `   Keys in shared but NOT documented (add them to the ` +
-        `${DOC_MARKER_START} block): ${result.missingInDoc.join(", ")}`,
+    console.error(
+      `  • In source but missing from doc: ${result.missingInDoc.join(", ")}`,
     );
   }
   if (result.extraInDoc.length > 0) {
-    lines.push(
-      `   Keys documented but NOT in shared (remove them, or re-add to ` +
-        `REDACT_KEY_NAMES): ${result.extraInDoc.join(", ")}`,
+    console.error(
+      `  • In doc but not in source: ${result.extraInDoc.join(", ")}`,
     );
   }
-  lines.push(
-    "   The shared module is the single source of truth — edit it, then " +
-      "mirror the change into the marker block in the same PR.",
+  console.error(
+    `\nUpdate the ${DOC_START} … ${DOC_END} block in ${DOC_PATH} to mirror REDACT_KEY_NAMES.`,
   );
-  return lines.join("\n");
+  process.exit(1);
 }
 
-// ── Entry point ──────────────────────────────────────────────────────────────
-
-if (process.argv[1] === __filename) {
-  const result = run();
-  const report = formatReport(result);
-  if (result.ok) {
-    console.log(report);
-  } else {
-    console.error(report);
-    process.exit(1);
-  }
+if (import.meta.url === `file://${process.argv[1]}`) {
+  main();
 }

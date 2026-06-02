@@ -1,6 +1,6 @@
 # Flow — HubChat tool-use cycle
 
-> **Last validated:** 2026-05-13 by @Skords-01. **Next review:** 2026-08-11.
+> **Last validated:** 2026-06-02 by @claude. **Next review:** 2026-08-11.
 > **Status:** Active
 
 Один цикл tool-use всередині chat-сесії. Користувач задає питання, що вимагає читання локальних даних (наприклад «скільки я витратив на кафе цього тижня?»), Claude емітує `tool_use`, клієнт виконує handler і повертає результат.
@@ -67,7 +67,7 @@ Handler-и НЕ викликають мережу. Усі data reads — лок�
 1. Додай Zod-схему вхідних параметрів.
 2. Додай handler у `apps/web/src/core/lib/chatActions/handlers/<domain>.ts` із тією ж назвою (`<domain>.<action>`).
 3. Додай happy-path + error-path тест.
-4. Якщо handler торкається cloud-sync slice — викликай `dirtyMap.mark()` після write.
+4. Якщо handler пише у SQLite domain-таблицю — використовуй domain write helper (він автоматично enqueue-ює op у `sync_op_outbox`). CloudSync v1 `dirtyMap` видалено (ADR-0047).
 
 ## Помилки в циклі
 

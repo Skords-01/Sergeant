@@ -1,6 +1,6 @@
 # Flow — Reminder fire (n8n morning briefing push)
 
-> **Last validated:** 2026-05-13 by @Skords-01. **Next review:** 2026-08-11.
+> **Last validated:** 2026-06-02 by @claude. **Next review:** 2026-08-11.
 > **Status:** Active
 
 n8n cron спрацьовує о 07:30 за Києвом, читає підписників з Postgres, дзвонить у server `/api/push/send`. Server відправляє push через APNs / FCM / Web Push на пристрій.
@@ -29,7 +29,7 @@ sequenceDiagram
             Server->>APNs: HTTP/2 push
             APNs-->>Device: notification
         and
-            Server->>FCM: HTTP push (legacy)
+            Server->>FCM: HTTP v1 push
             FCM-->>Device: notification
         end
 
@@ -60,7 +60,7 @@ Trade-off — ще одна movable частина у production. Пом'якш�
 | `data`                 | `Record<string, string>` | deep-link payload. Наприклад `{ "module": "finyk", "tab": "today" }`. |
 | `dedupeKey` (optional) | `string`                 | Якщо вже надсилали з тим же ключем за останні 30 хв — не повторюємо.  |
 
-Auth: `X-Api-Secret` header проти `INTERNAL_PUSH_SHARED_SECRET` env. **НЕ** Better Auth cookie — це service-to-service.
+Auth: `X-Api-Secret` header проти `API_SECRET` env. **НЕ** Better Auth cookie — це service-to-service.
 
 ## Платформи
 

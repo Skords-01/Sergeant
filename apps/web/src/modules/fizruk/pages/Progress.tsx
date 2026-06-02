@@ -26,6 +26,10 @@ function weekStartMs(d: number | string | Date) {
   return getKyivWeekStart(ts).getTime();
 }
 
+// F36: minimum bar width (%) so the smallest muscle-volume bar stays
+// visible and tap-able even when its value is a tiny fraction of the max.
+const MIN_BAR_WIDTH_PCT = 6;
+
 interface ProgressProps {
   /**
    * Path-based navigation injected by `FizrukRouter`. The PRs list at the
@@ -58,7 +62,7 @@ export function Progress({ onNavigate }: ProgressProps) {
 
   const weightTrend = useMemo(() => {
     return [...(entries || [])]
-      .sort((a, b) => a.at.localeCompare(b.at))
+      .sort((a, b) => Date.parse(a.at) - Date.parse(b.at))
       .slice(-8)
       .map((e) => ({
         value:
@@ -74,7 +78,7 @@ export function Progress({ onNavigate }: ProgressProps) {
 
   const fatTrend = useMemo(() => {
     return [...(entries || [])]
-      .sort((a, b) => a.at.localeCompare(b.at))
+      .sort((a, b) => Date.parse(a.at) - Date.parse(b.at))
       .slice(-8)
       .map((e) => ({
         value:
@@ -226,11 +230,6 @@ export function Progress({ onNavigate }: ProgressProps) {
       }));
   }, [workouts]);
 
-  // Backup / CSV / "Скинути всі дані" controls used to live in this
-  // page's "Дані" card. They were duplicated by the hub-wide Settings
-  // screen (single source of truth for cross-module backup), so the
-  // page now focuses on analytics only — the user explicitly flagged
-  // the duplicated buttons as confusing on round-12.
   const [prFilter, setPrFilter] = useState("all");
 
   const hasAny = (workouts?.length || 0) > 0 || (entries?.length || 0) > 0;
@@ -326,62 +325,67 @@ export function Progress({ onNavigate }: ProgressProps) {
         )}
 
         {/* Weight + fat cards */}
-        <div className="grid grid-cols-2 gap-3">
-          <Card radius="lg">
-            <Stat
-              label="Вага"
-              value={
-                meas.latest?.["weightKg"] != null
-                  ? `${meas.latest["weightKg"]} кг`
-                  : "—"
-              }
-              sublabel={
-                meas.delta("weightKg") == null ? (
-                  "Немає порівняння"
-                ) : (
-                  <span
-                    className={cn(
-                      "font-semibold",
-                      meas.delta("weightKg")! > 0
-                        ? "text-warning"
-                        : "text-success",
-                    )}
-                  >
-                    {meas.delta("weightKg")! > 0 ? "+" : ""}
-                    {meas.delta("weightKg")!.toFixed(1)} кг
-                  </span>
-                )
-              }
-            />
-          </Card>
-          <Card radius="lg">
-            <Stat
-              label="% жиру"
-              value={
-                meas.latest?.["bodyFatPct"] != null
-                  ? `${meas.latest["bodyFatPct"]}%`
-                  : "—"
-              }
-              sublabel={
-                meas.delta("bodyFatPct") == null ? (
-                  "—"
-                ) : (
-                  <span
-                    className={cn(
-                      "font-semibold",
-                      meas.delta("bodyFatPct")! > 0
-                        ? "text-warning"
-                        : "text-success",
-                    )}
-                  >
-                    {meas.delta("bodyFatPct")! > 0 ? "+" : ""}
-                    {meas.delta("bodyFatPct")!.toFixed(1)}%
-                  </span>
-                )
-              }
-            />
-          </Card>
-        </div>
+        {(() => {
+          // F19: hoist per-render delta values to avoid calling meas.delta()
+          // 3–4 times per field in the same render (each call recomputes the
+          // arithmetic and the non-null assertions).
+          const weightDelta = meas.delta("weightKg");
+          const fatDelta = meas.delta("bodyFatPct");
+          return (
+            <div className="grid grid-cols-2 gap-3">
+              <Card radius="lg">
+                <Stat
+                  label="Вага"
+                  value={
+                    meas.latest?.["weightKg"] != null
+                      ? `${meas.latest["weightKg"]} кг`
+                      : "—"
+                  }
+                  sublabel={
+                    weightDelta == null ? (
+                      "Немає порівняння"
+                    ) : (
+                      <span
+                        className={cn(
+                          "font-semibold",
+                          weightDelta > 0 ? "text-warning" : "text-success",
+                        )}
+                      >
+                        {weightDelta > 0 ? "+" : ""}
+                        {weightDelta.toFixed(1)} кг
+                      </span>
+                    )
+                  }
+                />
+              </Card>
+              <Card radius="lg">
+                <Stat
+                  label="% жиру"
+                  value={
+                    meas.latest?.["bodyFatPct"] != null
+                      ? `${meas.latest["bodyFatPct"]}%`
+                      : "—"
+                  }
+                  sublabel={
+                    fatDelta == null ? (
+                      "—"
+                    ) : (
+                      <span
+                        className={cn(
+                          "font-semibold",
+                          fatDelta > 0 ? "text-warning" : "text-success",
+                        )}
+                      >
+                        {fatDelta > 0 ? "+" : ""}
+                        {fatDelta.toFixed(1)}%
+                      </span>
+                    )
+                  }
+                />
+              </Card>
+            </div>
+          );
+        })()}
 
         {/* Weight trend chart */}
         {weightTrend.filter((d) => d.value != null).length >= 2 && (
@@ -448,7 +452,7 @@ export function Progress({ onNavigate }: ProgressProps) {
                     <div
                       className="h-full bg-success/70"
                       style={{
-                        width: `${Math.max(6, (m.value / weeklyByMuscle.max) * 100)}%`,
+                        width: `${Math.max(MIN_BAR_WIDTH_PCT, (m.value / weeklyByMuscle.max) * 100)}%`,
                       }}
                     />
                   </div>
@@ -491,6 +495,7 @@ export function Progress({ onNavigate }: ProgressProps) {
                   <button
                     type="button"
                     onClick={() => setPrFilter("all")}
+                    aria-pressed={prFilter === "all"}
                     className={cn(
                       "shrink-0 px-3 h-7 rounded-full text-style-caption transition-colors border",
                       prFilter === "all"
@@ -505,6 +510,7 @@ export function Progress({ onNavigate }: ProgressProps) {
                       key={g}
                       type="button"
                       onClick={() => setPrFilter(g === prFilter ? "all" : g)}
+                      aria-pressed={prFilter === g}
                       className={cn(
                         "shrink-0 px-3 h-7 rounded-full text-style-caption transition-colors border whitespace-nowrap",
                         prFilter === g
@@ -544,7 +550,7 @@ export function Progress({ onNavigate }: ProgressProps) {
                       <button
                         key={p.id}
                         type="button"
-                        className="w-full text-left border border-line rounded-2xl p-3 bg-bg hover:bg-panelHi transition-colors"
+                        className="focus-ring w-full text-left border border-line rounded-2xl p-3 bg-bg hover:bg-panelHi transition-colors"
                         onClick={() => {
                           onNavigate(`exercise/${p.id}`);
                         }}

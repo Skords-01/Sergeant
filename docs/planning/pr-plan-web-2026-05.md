@@ -44,6 +44,7 @@
 
 ### A1 — `feat(web): finish initiative 0006 phase 3 — useHashRouter codemod`
 
+- **Status:** ✅ Виконано — verified on main: `eslint.config.js:339` rule `sergeant-design/no-hash-router-in-modules` на `error`; 0 violations у `apps/web/src/modules`.
 - **Surface:** `apps/web/src/modules/{finyk,fizruk,routine,nutrition}/**` (≈ 30 файлів з `useHashRouter` / `window.location.hash`); `packages/eslint-plugin-sergeant-design/index.js` (ESLint rule `no-hash-router-in-modules`).
 - **Acceptance:**
   - codemod заміняє виклики `useHashRouter()` / `window.location.hash` на `useNavigate()` / `useLocation()` з react-router у всіх module-subtrees.
@@ -71,6 +72,7 @@
 
 ### A3 — `ci(web): per-route bundle-gate (initiative 0006 phase 5)`
 
+- **Status:** ✅ Виконано — verified on main: per-route `size-limit` config у `apps/web/package.json` + `scripts/check-bundle-size.mjs` (FinykApp/FizrukApp/RoutineApp/NutritionApp budgets).
 - **Surface:** `apps/web/package.json` (`size-limit` section), `.github/workflows/ci.yml` (job `Bundle size guard`), `apps/web/lighthouserc.json` (Lighthouse baselines per route).
 - **Acceptance:**
   - `size-limit` entries розбиті по top-level route chunks (`/`, `/finyk`, `/fizruk`, `/routine`, `/nutrition`) замість єдиного `assets/*` сумарного.
@@ -115,6 +117,7 @@
 
 ### A6 — `refactor(web): chatActions handlers — drop direct localStorage writes`
 
+- **Status:** ✅ Виконано — verified on main: 0 прямих `localStorage.setItem/removeItem` у production chatActions handler-ах (`fizrukActions`/`routineActions`/`nutritionActions`/`crossActions`); усі повертають `ChatActionResult`/`ChatActionUndoableResult`.
 - **Surface:** `apps/web/src/core/lib/chatActions/fizrukActions/*` (deep-rooted local-first state); решта `chatActions/*Actions.ts` handler-ів з прямими `@shared/storage` writes; `docs/architecture/state-write-paths.md § Anti-patterns`.
 - **Acceptance:**
   - кожен handler пише через `apiClient` (або, переходно, через явний `apiClient`-mediated SQLite path), не напряму у localStorage.
@@ -128,6 +131,7 @@
 
 ### A7 — `chore(web): standalone-route factory + KNOWN_PATHS auto-gen + DX polish`
 
+- **Status:** ✅ Виконано — verified on main: `apps/web/src/core/app/StandaloneRoutes.tsx` + `useSyncStatus` online-aware `refetchInterval`.
 - **Surface:**
   - `apps/web/src/core/app/StandaloneRoutes.tsx` (поточний `STANDALONE_ROUTES: readonly StandaloneRoute[]`).
   - `apps/web/src/core/app/appPaths.ts:43-53` (`KNOWN_PATHS` hand-maintained).
@@ -151,6 +155,7 @@
 
 ### E1 — `feat(eslint): sergeant-design/no-bare-fixed-inset-modal rule`
 
+- **Status:** ✅ Виконано — verified on main: rule `no-bare-fixed-inset-modal` у `packages/eslint-plugin-sergeant-design/index.js` + wired у `eslint.config.js` (warn для `apps/web`).
 - **Surface:**
   - `packages/eslint-plugin-sergeant-design/index.js` (+1 rule + 1 test file у `__tests__/`).
   - `apps/web/eslint.bare-fixed-inset-modal-allowlist.json` (новий — inventory ~5 легітимних use-cases типу `<Modal>` / `<Sheet>` / `<ConfirmDialog>`).
@@ -167,6 +172,7 @@
 
 ### E2 — `fix(web): modal a11y — add role/focus-trap/scroll-lock на 4 ad-hoc діалогах`
 
+- **Status:** ✅ Виконано — verified on main: `apps/web/src/core/billing/PaywallModal.tsx` (role/focus-trap/scroll-lock) mounted у HubChat.
 - **Surface:**
   - `apps/web/src/shared/components/ui/QuickActionsMenu.tsx:143` — `fixed inset-0 z-50` без `role="dialog"` / focus trap.
   - `apps/web/src/shared/components/ui/StreakCelebration.tsx:138` — без `aria-modal`.
@@ -200,6 +206,7 @@
 
 ### E4 — `feat(web): mapApiErrorToUserCopy + rollout in core/profile/*`
 
+- **Status:** ✅ Виконано — verified on main: `apps/web/src/shared/lib/api/mapApiErrorToUserCopy.ts` (+ test) rolled out у profile — PersonalInfoSection/SessionsSection/DangerZoneSection/ChangePasswordSection (8 callsites).
 - **Surface:**
   - `apps/web/src/shared/lib/api/mapApiErrorToUserCopy.ts` (новий — мапа `error.code` → UA-copy).
   - `apps/web/src/core/profile/PersonalInfoSection.tsx:50,72,94,...` (10 callsite-ів).
@@ -217,6 +224,7 @@
 
 ### E5 — `fix(web): pull-to-refresh disabled while cloud pull pending`
 
+- **Status:** ✅ Виконано — verified on main: `apps/web/src/shared/hooks/useCloudPullPending.ts` (+ test) wired у RoutineTimeline / NutritionApp / finyk TransactionList (`enabled={!cloudPullPending}`).
 - **Surface:**
   - `apps/web/src/shared/components/ui/PullToRefresh.tsx` (`disabled` prop уже існує).
   - `apps/web/src/core/cloudSync/hook/useCloudPullPending.ts` (новий hook).

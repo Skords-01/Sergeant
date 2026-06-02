@@ -439,9 +439,16 @@ const envSchema = z.object({
    * fail-fast). Див.
    * `docs/security/hardening/M4-groq-model-allowlist.md`.
    */
-  GROQ_TRANSCRIBE_MODEL: z
-    .enum(["whisper-large-v3-turbo", "whisper-large-v3"])
-    .default("whisper-large-v3-turbo"),
+  GROQ_TRANSCRIBE_MODEL: z.preprocess(
+    // Treat empty-string env (`GROQ_TRANSCRIBE_MODEL=""`) as "unset" so the
+    // `.default()` applies — matches the legacy `process.env[…] || default`
+    // semantics that lived in transcribe.ts before HR-2. An unknown model
+    // still fails the enum → boot fail-fast at env parse (M4 allowlist).
+    (v) => (v === "" ? undefined : v),
+    z
+      .enum(["whisper-large-v3-turbo", "whisper-large-v3"])
+      .default("whisper-large-v3-turbo"),
+  ),
   /**
    * Killer-switch для AI-квоти: при `true` `assertAiQuota()` стає no-op і всі
    * AI-роути проходять без декременту лічильника `ai_usage_daily`. Призначений
@@ -1313,41 +1320,19 @@ export function assertStartupEnv(): void {
     );
   }
 
-  // PR-01 (stack-pulse-2026-05): VAPID key-pair hard-fail for production.
-  // Mirrors the Stripe "wired-without-secret" pattern: if the operator
-  // sets ONE of the two required VAPID keys but not the other, the push
-  // module silently degrades to 503 on every `/api/push/*` request (the
-  // `vapidReady` flag in push.ts is false). That's a silent misconfiguration
-  // — the ops team sets `VAPID_PUBLIC_KEY` in Railway but forgets
-  // `VAPID_PRIVATE_KEY`, and `/api/push/vapid-public` 503s with no
-  // boot-time signal. Hard-fail at startup so the misconfig surfaces in
-  // deploy logs, not in user-facing push failures.
-  //
-  // When NEITHER key is set: push simply isn't configured — warn only,
-  // because many dev/staging deploys intentionally skip push.
-  // When BOTH keys are set: fine — no check needed here
-  // (`assertStartupEnv` for VAPID_EMAIL behaviour lives in push.ts).
-  if (isProduction) {
-    const hasPub = Boolean(env.VAPID_PUBLIC_KEY);
-    const hasPriv = Boolean(env.VAPID_PRIVATE_KEY);
-    if (hasPub && !hasPriv) {
-      throw new Error(
-        "VAPID_PRIVATE_KEY is required in production when VAPID_PUBLIC_KEY is set. Without the private key `webpush.setVapidDetails` is skipped and all push sends silently return 503. Set the matching private key (URL-safe base64) or remove both VAPID keys to disable push.",
-      );
-    }
-    if (hasPriv && !hasPub) {
-      throw new Error(
-        "VAPID_PUBLIC_KEY is required in production when VAPID_PRIVATE_KEY is set. Without the public key the client cannot subscribe and push sends silently return 503. Set the matching public key (URL-safe base64) or remove both VAPID keys to disable push.",
-      );
-    }
-  } else {
-    // Dev / test: just warn when a partial VAPID config is present so the
-    // developer sees a clear message instead of a silent 503.
-    if (Boolean(env.VAPID_PUBLIC_KEY) !== Boolean(env.VAPID_PRIVATE_KEY)) {
-      warnings.push(
-        "VAPID key-pair is incomplete (only one of VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY is set). Push notifications will return 503 until both keys are configured.",
-      );
-    }
+  // backend-perf PR-01 — VAPID keypair enforcement. Without both keys
+  // `/api/push/*` silently degrades to 503 at request time (a misconfigured
+  // prod deploy looks healthy until a push is attempted). Hard-fail at boot
+  // in production so the misconfiguration surfaces before traffic; warn-only
+  // outside production so local dev without push keys still boots.
+  if (isProduction && (!env.VAPID_PUBLIC_KEY || !env.VAPID_PRIVATE_KEY)) {
+    throw new Error(
+      "VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY are required in production. Without them /api/push/* silently returns 503. Generate a keypair with `npx web-push generate-vapid-keys`.",
+    );
+  } else if (!env.VAPID_PUBLIC_KEY || !env.VAPID_PRIVATE_KEY) {
+    warnings.push(
+      "VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY not set — web push is unavailable (/api/push/* → 503).",
+    );
   }
 
   // T2 audit finding #1 — Stripe webhook secret enforcement. If billing is

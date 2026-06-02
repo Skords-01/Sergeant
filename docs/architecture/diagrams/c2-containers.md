@@ -1,6 +1,6 @@
 # C2 — Containers
 
-> **Last validated:** 2026-05-13 by @Skords-01. **Next review:** 2026-08-11.
+> **Last validated:** 2026-06-02 by @claude. **Next review:** 2026-08-11.
 > **Status:** Active
 
 Деплоймент-топологія Sergeant. Кожен контейнер — окремий процес або deploy target.
@@ -94,15 +94,15 @@ flowchart TB
 
 Усі розміщені у `apps/server/src/modules/`:
 
-| Module          | Endpoint prefix                      | Опис                                                                                  |
-| --------------- | ------------------------------------ | ------------------------------------------------------------------------------------- |
-| `billing`       | `/api/billing/*`                     | Stripe checkout + subscription state. `subscriptions` table (056) — canonical; legacy `billing_subscriptions` (047) orphan.            |
-| `transcribe`    | `/api/transcribe`                    | Whisper audio → text з USD-cap per user/day (bucket `transcribe:<model>`, fixed 049). |
-| `waitlist`      | `/api/waitlist`                      | Waitlist sign-up і management.                                                        |
-| `openclaw`      | internal (console bot)               | GitHub App-flow авторизація (Hard Rule #20) + tools для co-founder bot.               |
-| `topic-archive` | internal                             | `tg_topic_archive` — append-only history для Sergeant_ops supergroup topics (048).    |
-| `alerts`        | `/api/csp-report`, `/api/web-vitals` | CSP report endpoint + web-vitals ingestion.                                           |
-| `observability` | internal                             | Server-side observability helpers: prom-client metrics, store wrappers.               |
+| Module          | Endpoint prefix                      | Опис                                                                                                                        |
+| --------------- | ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------- |
+| `billing`       | `/api/billing/*`                     | Stripe checkout + subscription state. `subscriptions` table (056) — canonical; legacy `billing_subscriptions` (047) orphan. |
+| `transcribe`    | `/api/transcribe`                    | Whisper audio → text з USD-cap per user/day (bucket `transcribe:<model>`, fixed 049).                                       |
+| `waitlist`      | `/api/waitlist`                      | Waitlist sign-up і management.                                                                                              |
+| `openclaw`      | internal (console bot)               | GitHub App-flow авторизація (Hard Rule #20) + tools для co-founder bot.                                                     |
+| `topic-archive` | internal                             | `tg_topic_archive` — append-only history для Sergeant_ops supergroup topics (048).                                          |
+| `alerts`        | `/api/csp-report`, `/api/web-vitals` | CSP report endpoint + web-vitals ingestion.                                                                                 |
+| `observability` | internal                             | Server-side observability helpers: prom-client metrics, store wrappers.                                                     |
 
 ## Зовнішні залежності, з яких є SLA-ризик
 
@@ -115,7 +115,7 @@ flowchart TB
 
 - `User → Web/Mobile/Shell`: HTTPS (Vercel cert / app store).
 - `Web/Mobile → Server`: HTTPS through Vercel proxy → Railway internal HTTP. CSP заблокує усе нелисловане (див. `helmet` setup).
-- `n8n → Server`: same Railway VPC, але запит проходить публічний URL із **internal token** (`SERGEANT_INTERNAL_TOKEN`).
+- `n8n → Server`: same Railway VPC, але запит проходить публічний URL із **internal token** (`INTERNAL_API_KEY`).
 - `Server → Postgres / Redis`: Railway internal network, `*.railway.internal` DNS.
 
 ## Деталі деплоя

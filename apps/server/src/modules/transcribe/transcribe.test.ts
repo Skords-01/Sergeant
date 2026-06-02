@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import type { Request, Response } from "express";
 import type { Mock } from "vitest";
 import { EventEmitter } from "node:events";
@@ -215,59 +215,16 @@ describe("transcribeHandler", () => {
   });
 });
 
-// M4 — boot-time allowlist for GROQ_TRANSCRIBE_MODEL.
-// See docs/security/hardening/M4-groq-model-allowlist.md.
-//
-// `resolveGroqModel()` now reads Zod-validated `env.GROQ_TRANSCRIBE_MODEL`
-// (env-single-source HR-2). Because `env.ts` is parsed once at module-eval
-// time, each test that exercises a different model value must:
-//   1. vi.stubEnv("GROQ_TRANSCRIBE_MODEL", <value>)
-//   2. vi.resetModules()                  ← clears the module registry
-//   3. dynamic import of transcribe.js    ← re-evaluates env.ts + the module
-//
-// afterEach vi.unstubAllEnvs() + vi.resetModules() keep state clean.
+// M4 — Groq Whisper model allowlist. HR-2 moved enforcement to the env
+// single-source-of-truth: `GROQ_TRANSCRIBE_MODEL` is a `z.enum` + default in
+// `apps/server/src/env/env.ts`, so an unknown model fails the enum → boot
+// fail-fast at env parse. Full default / empty-string / unknown-rejection
+// semantics now live in `apps/server/src/env/groqTranscribeModel.test.ts`;
+// here we only smoke that resolveGroqModel routes through the validated env.
 describe("M4: GROQ_TRANSCRIBE_MODEL allowlist", () => {
-  afterEach(() => {
-    vi.unstubAllEnvs();
-    vi.resetModules();
-  });
-
-  it("accepts default (env unset)", async () => {
-    // No stub — Zod schema defaults to "whisper-large-v3-turbo" when unset.
-    vi.resetModules();
-    const mod = await import("./transcribe.js");
-    expect(mod.__testing.resolveGroqModel()).toBe("whisper-large-v3-turbo");
-  });
-
-  it("accepts allowlisted alternative model", async () => {
-    vi.stubEnv("GROQ_TRANSCRIBE_MODEL", "whisper-large-v3");
-    vi.resetModules();
-    const mod = await import("./transcribe.js");
-    expect(mod.__testing.resolveGroqModel()).toBe("whisper-large-v3");
-  });
-
-  // Note: Zod schema is `.enum([...])` — an invalid value causes a Zod
-  // parse error at `env.ts` module load (before `resolveGroqModel` is called).
-  // The test therefore expects a throw on dynamic import itself.
-  it("throws on unknown / experimental model", async () => {
-    vi.stubEnv("GROQ_TRANSCRIBE_MODEL", "whisper-evil-experimental");
-    vi.resetModules();
-    await expect(import("./transcribe.js")).rejects.toThrow();
-  });
-
-  it("treats unset env as default (Zod .default())", async () => {
-    // Explicitly delete to confirm default path (same as "accepts default").
-    vi.unstubAllEnvs();
-    vi.resetModules();
-    const mod = await import("./transcribe.js");
-    expect(mod.__testing.resolveGroqModel()).toBe("whisper-large-v3-turbo");
-  });
-
-  it("exposes the allowlist set", () => {
-    expect(__testing.ALLOWED_GROQ_MODELS.has("whisper-large-v3-turbo")).toBe(
-      true,
+  it("resolveGroqModel returns the env-resolved, allowlisted model", () => {
+    expect(["whisper-large-v3-turbo", "whisper-large-v3"]).toContain(
+      __testing.resolveGroqModel(),
     );
-    expect(__testing.ALLOWED_GROQ_MODELS.has("whisper-large-v3")).toBe(true);
-    expect(__testing.ALLOWED_GROQ_MODELS.has("whisper-evil")).toBe(false);
   });
 });
