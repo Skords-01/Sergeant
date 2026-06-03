@@ -9,6 +9,8 @@
 
 > **Мета freeze-у.** Дати product-cycle 4 тижні майже-без-нової-документації, щоб PR-flow зосередився на shippable code. Через 4 тижні — review: чи дійсно стало тісно (extend), чи навпаки темп пришвидшився (release).
 
+> **Retired 2026-06-03 (release).** Freeze-вікно завершилося 2026-06-02. Гейт знято: видалено `.github/workflows/audit-freeze.yml` (мав внутрішній date-guard і після дедлайну вже був no-op) і прибрано секцію `## Audit-freeze` з `.github/PULL_REQUEST_TEMPLATE.md`. Цей файл лишається як історичний запис рішення й результатів огляду нижче.
+
 ---
 
 ## Період
