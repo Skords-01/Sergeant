@@ -451,7 +451,15 @@ describe("HubDashboard", () => {
   it("marks inactive modules and persists the hide-inactive toggle", () => {
     localStorage.setItem(VIBE_PICKS_KEY, JSON.stringify(["finyk"]));
     const { container } = render(
-      <HubDashboard user={null} onOpenModule={vi.fn()} onShowAuth={vi.fn()} />,
+      <MemoryRouter>
+        <ToastProvider>
+          <HubDashboard
+            user={null}
+            onOpenModule={vi.fn()}
+            onShowAuth={vi.fn()}
+          />
+        </ToastProvider>
+      </MemoryRouter>,
     );
 
     expect(container.querySelectorAll('[data-inactive="true"]')).toHaveLength(
