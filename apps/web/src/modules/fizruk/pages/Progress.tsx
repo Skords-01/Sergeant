@@ -14,6 +14,7 @@ import { MiniLineChart } from "../components/MiniLineChart";
 import { WellbeingChart } from "../components/WellbeingChart";
 import { WeeklyVolumeChart } from "../components/WeeklyVolumeChart";
 import { epley1rm, weeklyVolumeSeriesNow } from "@sergeant/fizruk-domain";
+import { statusColors } from "@shared/charts";
 import { Card } from "@shared/components/ui/Card";
 import { SectionHeading } from "@shared/components/ui/SectionHeading";
 import { Stat } from "@shared/components/ui/Stat";
@@ -103,7 +104,8 @@ export function Progress({ onNavigate }: ProgressProps) {
       if (!Number.isFinite(t) || t < cutoff) continue;
       const wk = weekStartMs(t);
       if (!weeks.has(wk)) weeks.set(wk, {});
-      const bucket = weeks.get(wk)!;
+      const bucket = weeks.get(wk);
+      if (!bucket) continue;
       for (const it of w.items || []) {
         const primary = it.musclesPrimary || [];
         const secondary = it.musclesSecondary || [];
@@ -406,7 +408,7 @@ export function Progress({ onNavigate }: ProgressProps) {
             <MiniLineChart
               data={weightTrend}
               unit="кг"
-              color="rgb(22 163 74)"
+              color={statusColors.success}
               metricLabel="вагу тіла"
             />
           </Card>
@@ -421,7 +423,7 @@ export function Progress({ onNavigate }: ProgressProps) {
             <MiniLineChart
               data={fatTrend}
               unit="%"
-              color="rgb(234 179 8)"
+              color={statusColors.warning}
               metricLabel="відсоток жиру"
             />
           </Card>
@@ -507,7 +509,7 @@ export function Progress({ onNavigate }: ProgressProps) {
                     onClick={() => setPrFilter("all")}
                     aria-pressed={prFilter === "all"}
                     className={cn(
-                      "shrink-0 px-3 min-h-[44px] rounded-full text-style-caption transition-colors border",
+                      "focus-ring shrink-0 px-3 min-h-[44px] rounded-full text-style-caption transition-colors border",
                       prFilter === "all"
                         ? "bg-fizruk-strong text-white border-fizruk-strong"
                         : "bg-panel border-line text-subtle hover:text-text",
@@ -522,7 +524,7 @@ export function Progress({ onNavigate }: ProgressProps) {
                       onClick={() => setPrFilter(g === prFilter ? "all" : g)}
                       aria-pressed={prFilter === g}
                       className={cn(
-                        "shrink-0 px-3 min-h-[44px] rounded-full text-style-caption transition-colors border whitespace-nowrap",
+                        "focus-ring shrink-0 px-3 min-h-[44px] rounded-full text-style-caption transition-colors border whitespace-nowrap",
                         prFilter === g
                           ? "bg-fizruk-strong text-white border-fizruk-strong"
                           : "bg-panel border-line text-subtle hover:text-text",
