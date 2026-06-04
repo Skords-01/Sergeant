@@ -299,7 +299,10 @@ export async function assertAiQuota(
     }
     try {
       const subjectType = sessionUser ? "user" : "anon";
-      aiCostConsumedTotal.inc({ subject_type: subjectType, bucket_type: "default" }, cost);
+      aiCostConsumedTotal.inc(
+        { subject_type: subjectType, bucket_type: "default" },
+        cost,
+      );
     } catch {
       /* ignore */
     }
@@ -357,7 +360,10 @@ export async function consumeToolQuota(
   }
   if (limit === 0) {
     try {
-      aiQuotaBlocksTotal.inc({ reason: "tool_disabled", cost: String(toolCost()) });
+      aiQuotaBlocksTotal.inc({
+        reason: "tool_disabled",
+        cost: String(toolCost()),
+      });
     } catch {
       /* ignore */
     }
@@ -400,7 +406,10 @@ export async function consumeToolQuota(
         /* ignore */
       }
       try {
-        aiQuotaBlocksTotal.inc({ reason: "tool_limit", cost: String(toolCost()) });
+        aiQuotaBlocksTotal.inc({
+          reason: "tool_limit",
+          cost: String(toolCost()),
+        });
       } catch {
         /* ignore */
       }
@@ -409,7 +418,10 @@ export async function consumeToolQuota(
     try {
       const sessionUser2 = await safeSessionUser(req);
       const subjectType2 = sessionUser2 ? "user" : "anon";
-      aiCostConsumedTotal.inc({ subject_type: subjectType2, bucket_type: "tool" }, toolCost());
+      aiCostConsumedTotal.inc(
+        { subject_type: subjectType2, bucket_type: "tool" },
+        toolCost(),
+      );
     } catch {
       /* ignore */
     }

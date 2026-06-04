@@ -29,9 +29,7 @@ const KYIV_THURSDAY = new Date("2026-06-04T09:00:00Z");
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
-function mkTimeState(
-  overrides: Partial<TimeState> = {},
-): TimeState {
+function mkTimeState(overrides: Partial<TimeState> = {}): TimeState {
   return {
     timeMode: "today",
     monthCursor: { y: 2026, m: 5 }, // June (0-indexed)
@@ -72,7 +70,9 @@ describe("useRoutineDerivedData", () => {
   describe("range derivation — today mode", () => {
     it("range.startKey === range.endKey === '2026-06-04'", () => {
       const { result } = renderHook(() =>
-        useRoutineDerivedData(buildParams({ timeState: mkTimeState({ timeMode: "today" }) })),
+        useRoutineDerivedData(
+          buildParams({ timeState: mkTimeState({ timeMode: "today" }) }),
+        ),
       );
       expect(result.current.range.startKey).toBe("2026-06-04");
       expect(result.current.range.endKey).toBe("2026-06-04");
@@ -96,7 +96,10 @@ describe("useRoutineDerivedData", () => {
       const { result } = renderHook(() =>
         useRoutineDerivedData(
           buildParams({
-            timeState: mkTimeState({ timeMode: "day", selectedDay: "2026-06-10" }),
+            timeState: mkTimeState({
+              timeMode: "day",
+              selectedDay: "2026-06-10",
+            }),
           }),
         ),
       );
@@ -152,7 +155,9 @@ describe("useRoutineDerivedData", () => {
   describe("rangeLabel", () => {
     it("'today' mode → 'Сьогодні'", () => {
       const { result } = renderHook(() =>
-        useRoutineDerivedData(buildParams({ timeState: mkTimeState({ timeMode: "today" }) })),
+        useRoutineDerivedData(
+          buildParams({ timeState: mkTimeState({ timeMode: "today" }) }),
+        ),
       );
       expect(result.current.rangeLabel).toBe("Сьогодні");
     });
@@ -169,18 +174,14 @@ describe("useRoutineDerivedData", () => {
 
   describe("todayKey", () => {
     it("equals the Kyiv date key for the frozen clock", () => {
-      const { result } = renderHook(() =>
-        useRoutineDerivedData(buildParams()),
-      );
+      const { result } = renderHook(() => useRoutineDerivedData(buildParams()));
       expect(result.current.todayKey).toBe("2026-06-04");
     });
   });
 
   describe("hasNoHabits / activeHabitsCount", () => {
     it("hasNoHabits=true when no habits", () => {
-      const { result } = renderHook(() =>
-        useRoutineDerivedData(buildParams()),
-      );
+      const { result } = renderHook(() => useRoutineDerivedData(buildParams()));
       expect(result.current.hasNoHabits).toBe(true);
       expect(result.current.activeHabitsCount).toBe(0);
     });
@@ -212,9 +213,7 @@ describe("useRoutineDerivedData", () => {
 
   describe("hasListFilter / listIsEmpty", () => {
     it("hasListFilter=false when tagFilter=null and listQuery is empty", () => {
-      const { result } = renderHook(() =>
-        useRoutineDerivedData(buildParams()),
-      );
+      const { result } = renderHook(() => useRoutineDerivedData(buildParams()));
       expect(result.current.hasListFilter).toBe(false);
     });
 
@@ -233,9 +232,7 @@ describe("useRoutineDerivedData", () => {
     });
 
     it("listIsEmpty=true when no habits (no events)", () => {
-      const { result } = renderHook(() =>
-        useRoutineDerivedData(buildParams()),
-      );
+      const { result } = renderHook(() => useRoutineDerivedData(buildParams()));
       expect(result.current.listIsEmpty).toBe(true);
     });
   });
@@ -255,18 +252,14 @@ describe("useRoutineDerivedData", () => {
     });
 
     it("returns empty array when routine has no tags", () => {
-      const { result } = renderHook(() =>
-        useRoutineDerivedData(buildParams()),
-      );
+      const { result } = renderHook(() => useRoutineDerivedData(buildParams()));
       expect(result.current.tagChips).toEqual([]);
     });
   });
 
   describe("canBulkMark", () => {
     it("is false when no habits exist", () => {
-      const { result } = renderHook(() =>
-        useRoutineDerivedData(buildParams()),
-      );
+      const { result } = renderHook(() => useRoutineDerivedData(buildParams()));
       expect(result.current.canBulkMark).toBe(false);
     });
 
@@ -292,16 +285,12 @@ describe("useRoutineDerivedData", () => {
 
   describe("cells (month grid)", () => {
     it("returns an array whose length is a multiple of 7", () => {
-      const { result } = renderHook(() =>
-        useRoutineDerivedData(buildParams()),
-      );
+      const { result } = renderHook(() => useRoutineDerivedData(buildParams()));
       expect(result.current.cells.length % 7).toBe(0);
     });
 
     it("non-null cells count equals 30 for June 2026", () => {
-      const { result } = renderHook(() =>
-        useRoutineDerivedData(buildParams()),
-      );
+      const { result } = renderHook(() => useRoutineDerivedData(buildParams()));
       const nonNull = result.current.cells.filter((c) => c !== null);
       expect(nonNull).toHaveLength(30);
     });
@@ -309,9 +298,7 @@ describe("useRoutineDerivedData", () => {
 
   describe("monthTitle", () => {
     it("is a non-empty string for June 2026", () => {
-      const { result } = renderHook(() =>
-        useRoutineDerivedData(buildParams()),
-      );
+      const { result } = renderHook(() => useRoutineDerivedData(buildParams()));
       expect(typeof result.current.monthTitle).toBe("string");
       expect(result.current.monthTitle.length).toBeGreaterThan(0);
     });
@@ -320,9 +307,7 @@ describe("useRoutineDerivedData", () => {
   describe("listQuery filtering", () => {
     it("filtered is empty when listQuery matches nothing", () => {
       const routine = mkRoutine({
-        habits: [
-          { id: "h1", name: "Morning run", recurrence: "daily" },
-        ],
+        habits: [{ id: "h1", name: "Morning run", recurrence: "daily" }],
       });
       const { result } = renderHook(() =>
         useRoutineDerivedData(

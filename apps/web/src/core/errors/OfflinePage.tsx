@@ -26,11 +26,14 @@ export function OfflinePage() {
     ? "Зʼєднання відновлено. Натисни «Спробувати ще», щоб продовжити."
     : "Немає інтернет-зʼєднання. Дані збережено локально.";
   return (
-    <main
-      className="min-h-svh flex items-center justify-center bg-bg px-6"
-    >
+    <main className="min-h-svh flex items-center justify-center bg-bg px-6">
       {/* aria-live region announces connectivity changes to screen readers */}
-      <p role="status" aria-live="polite" aria-atomic="true" className="sr-only">
+      <p
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        className="sr-only"
+      >
         {statusMsg}
       </p>
       <EmptyState

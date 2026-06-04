@@ -821,8 +821,16 @@ describe("weekly-digest handler · prompt/response fixture (contract lock)", () 
     expect(res.statusCode).toBe(200);
     const body = res.body as {
       report: {
-        finyk: { summary: string; comment: string; recommendations: string[] } | null;
-        fizruk: { summary: string; comment: string; recommendations: string[] } | null;
+        finyk: {
+          summary: string;
+          comment: string;
+          recommendations: string[];
+        } | null;
+        fizruk: {
+          summary: string;
+          comment: string;
+          recommendations: string[];
+        } | null;
         nutrition: null;
         routine: null;
         overallRecommendations: string[];
@@ -836,7 +844,9 @@ describe("weekly-digest handler · prompt/response fixture (contract lock)", () 
     expect(body.report.fizruk!.summary).toContain("4 тренування");
     expect(body.report.nutrition).toBeNull();
     expect(body.report.routine).toBeNull();
-    expect(body.report.overallRecommendations).toEqual(["Продовжуй поточний темп"]);
+    expect(body.report.overallRecommendations).toEqual([
+      "Продовжуй поточний темп",
+    ]);
     expect(body.generatedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
   });
 
@@ -873,7 +883,7 @@ describe("weekly-digest handler · prompt/response fixture (contract lock)", () 
       ...validReport,
       finyk: {
         summary: "Суперечливі витрати: «кафе» — 800 грн. 🚀 OK.",
-        comment: "Дані \"з лапками\" та \\\\зворотні скосі\\\\ збережені.",
+        comment: 'Дані "з лапками" та \\\\зворотні скосі\\\\ збережені.',
         recommendations: ["Спробуй — не зупиняйся"],
       },
     };

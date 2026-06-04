@@ -35,7 +35,12 @@ import { logger as _logger } from "../../obs/logger.js";
 
 const pool = _pool as unknown as { query: Mock };
 const anthropicMessages = _anthropicMessages as unknown as Mock;
-const logger = _logger as unknown as { warn: Mock; info: Mock; error: Mock; debug: Mock };
+const logger = _logger as unknown as {
+  warn: Mock;
+  info: Mock;
+  error: Mock;
+  debug: Mock;
+};
 
 interface TestRes {
   statusCode: number;
@@ -324,7 +329,11 @@ describe("coachMemoryGet — parseMemory raw-fallback warn", () => {
   });
 
   it("не логує warn коли DB-рядок є валідним JSON рядком", async () => {
-    const memory = { weeklyDigests: [], lastInsightDate: null, lastInsightText: null };
+    const memory = {
+      weeklyDigests: [],
+      lastInsightDate: null,
+      lastInsightText: null,
+    };
     pool.query.mockResolvedValueOnce({
       rows: [{ data: JSON.stringify(memory) }],
     });
@@ -336,7 +345,11 @@ describe("coachMemoryGet — parseMemory raw-fallback warn", () => {
   });
 
   it("не логує warn коли data вже є об'єктом (JSONB автопарс pg-клієнта)", async () => {
-    const memory = { weeklyDigests: [], lastInsightDate: null, lastInsightText: null };
+    const memory = {
+      weeklyDigests: [],
+      lastInsightDate: null,
+      lastInsightText: null,
+    };
     pool.query.mockResolvedValueOnce({
       rows: [{ data: memory }], // pg вже розпарсив JSONB у об'єкт
     });

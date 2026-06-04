@@ -86,9 +86,7 @@ describe("StrategyPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Default: list query returns empty goals
-    mockFetch.mockResolvedValue(
-      makeJsonResponse({ ok: true, goals: [] }),
-    );
+    mockFetch.mockResolvedValue(makeJsonResponse({ ok: true, goals: [] }));
   });
 
   afterEach(cleanup);
@@ -139,7 +137,9 @@ describe("StrategyPage", () => {
       expect(screen.queryByText(messages.strategy.loading)).toBeInTheDocument();
       await waitFor(() => {
         expect(
-          screen.getByText(messages.strategy.emptyStatePrefix, { exact: false }),
+          screen.getByText(messages.strategy.emptyStatePrefix, {
+            exact: false,
+          }),
         ).toBeInTheDocument();
       });
     });
@@ -182,7 +182,9 @@ describe("StrategyPage", () => {
       renderPage();
       await waitFor(() => {
         expect(
-          screen.getByText(messages.strategy.emptyStatePrefix, { exact: false }),
+          screen.getByText(messages.strategy.emptyStatePrefix, {
+            exact: false,
+          }),
         ).toBeInTheDocument();
       });
       act(() => {
@@ -199,7 +201,9 @@ describe("StrategyPage", () => {
       renderPage();
       await waitFor(() => {
         expect(
-          screen.getByText(messages.strategy.emptyStatePrefix, { exact: false }),
+          screen.getByText(messages.strategy.emptyStatePrefix, {
+            exact: false,
+          }),
         ).toBeInTheDocument();
       });
       act(() => {
@@ -216,20 +220,18 @@ describe("StrategyPage", () => {
       // First call (list query) returns empty; second call (create mutation) returns the new goal
       mockFetch
         .mockResolvedValueOnce(makeJsonResponse({ ok: true, goals: [] }))
-        .mockResolvedValueOnce(
-          makeJsonResponse({ ok: true, goal: MOCK_GOAL }),
-        )
+        .mockResolvedValueOnce(makeJsonResponse({ ok: true, goal: MOCK_GOAL }))
         // Subsequent list invalidation returns goal
-        .mockResolvedValue(
-          makeJsonResponse({ ok: true, goals: [MOCK_GOAL] }),
-        );
+        .mockResolvedValue(makeJsonResponse({ ok: true, goals: [MOCK_GOAL] }));
     });
 
     it("clears the textarea after a successful submission", async () => {
       renderPage();
       await waitFor(() => {
         expect(
-          screen.getByText(messages.strategy.emptyStatePrefix, { exact: false }),
+          screen.getByText(messages.strategy.emptyStatePrefix, {
+            exact: false,
+          }),
         ).toBeInTheDocument();
       });
       const textarea = screen.getByRole("textbox") as HTMLTextAreaElement;
@@ -259,7 +261,9 @@ describe("StrategyPage", () => {
       renderPage();
       await waitFor(() => {
         expect(
-          screen.getByText(messages.strategy.emptyStatePrefix, { exact: false }),
+          screen.getByText(messages.strategy.emptyStatePrefix, {
+            exact: false,
+          }),
         ).toBeInTheDocument();
       });
       const textarea = screen.getByRole("textbox");
@@ -288,7 +292,9 @@ describe("StrategyPage", () => {
       renderPage();
       await waitFor(() => {
         expect(
-          screen.getByText(messages.strategy.emptyStatePrefix, { exact: false }),
+          screen.getByText(messages.strategy.emptyStatePrefix, {
+            exact: false,
+          }),
         ).toBeInTheDocument();
       });
       const code = document.querySelector("code");

@@ -342,7 +342,9 @@ describe("no-arbitrary-text-size", () => {
     // `cn` is the in-repo Tailwind merge helper (alongside `clsx`).
     // Confirm an arbitrary size buried a few args deep in `cn` is still
     // walked as a plain Literal.
-    const msgs = lint(`const c = cn("px-3", compact && "text-[14px]", "mt-1");`);
+    const msgs = lint(
+      `const c = cn("px-3", compact && "text-[14px]", "mt-1");`,
+    );
     assert.equal(msgs.length, 1);
     assert.match(msgs[0].message, /text-\[14px\]/);
   });
