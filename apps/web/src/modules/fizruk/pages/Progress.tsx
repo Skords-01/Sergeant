@@ -66,10 +66,7 @@ export function Progress({ onNavigate }: ProgressProps) {
       .sort((a, b) => Date.parse(a.at) - Date.parse(b.at))
       .slice(-8)
       .map((e) => ({
-        value:
-          e["weightKg"] != null && e["weightKg"] !== ""
-            ? Number(e["weightKg"])
-            : null,
+        value: e["weightKg"] != null ? Number(e["weightKg"]) : null,
         label: new Date(e.at).toLocaleDateString("uk-UA", {
           day: "numeric",
           month: "short",
@@ -82,10 +79,7 @@ export function Progress({ onNavigate }: ProgressProps) {
       .sort((a, b) => Date.parse(a.at) - Date.parse(b.at))
       .slice(-8)
       .map((e) => ({
-        value:
-          e["bodyFatPct"] != null && e["bodyFatPct"] !== ""
-            ? Number(e["bodyFatPct"])
-            : null,
+        value: e["bodyFatPct"] != null ? Number(e["bodyFatPct"]) : null,
         label: new Date(e.at).toLocaleDateString("uk-UA", {
           day: "numeric",
           month: "short",

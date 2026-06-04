@@ -25,7 +25,7 @@ import { firstValidValue, lastValidValue } from "./Body/trendUtils";
 import { RecoveryFocusCard } from "../components/RecoveryFocusCard";
 import { safeRemoveLS } from "@shared/lib/storage/storage";
 import { JOURNAL_ENTRY_OPEN_PREFIX } from "./Body/storage";
-import { statusColors, chartHex, chartPalette } from "@shared/charts";
+import { statusColors, chartSeries, chartPalette } from "@shared/charts";
 
 interface BodyProps {
   onOpenMeasurements?: () => void;
@@ -181,9 +181,10 @@ export function Body({ onOpenMeasurements, onOpenAtlas }: BodyProps) {
           setter(next);
           // Move DOM focus to the newly selected button so screen readers
           // announce it and the roving tabIndex stays coherent.
-          const buttons = groupRef.current?.querySelectorAll<HTMLButtonElement>(
-            '[role="radio"]',
-          );
+          const buttons =
+            groupRef.current?.querySelectorAll<HTMLButtonElement>(
+              '[role="radio"]',
+            );
           if (buttons) {
             const target = buttons[next - 1];
             target?.focus();
@@ -383,6 +384,7 @@ export function Body({ onOpenMeasurements, onOpenAtlas }: BodyProps) {
                 ref={energyGroupRef}
                 className="flex gap-1.5"
                 role="radiogroup"
+                tabIndex={-1}
                 aria-label="Рівень енергії"
                 onKeyDown={makeScoreKeyHandler(
                   energyLevel,
@@ -421,6 +423,7 @@ export function Body({ onOpenMeasurements, onOpenAtlas }: BodyProps) {
                 ref={moodGroupRef}
                 className="flex gap-1.5"
                 role="radiogroup"
+                tabIndex={-1}
                 aria-label="Настрій"
                 onKeyDown={makeScoreKeyHandler(
                   moodScore,
@@ -505,7 +508,7 @@ export function Body({ onOpenMeasurements, onOpenAtlas }: BodyProps) {
               ariaLabel: "Динаміка сну",
               data: sleepData,
               unit: "год",
-              color: chartHex.primary,
+              color: chartSeries.fizruk.primary as string,
               metricLabel: "сон",
             },
             {
@@ -523,7 +526,7 @@ export function Body({ onOpenMeasurements, onOpenAtlas }: BodyProps) {
               ariaLabel: "Динаміка настрою",
               data: moodData,
               unit: "/5",
-              color: chartPalette[8],
+              color: chartPalette[8] as string,
               metricLabel: "настрій",
             },
           ] as const

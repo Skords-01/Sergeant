@@ -270,7 +270,13 @@ describe("useOverviewData", () => {
 
     it("hasAnyData is true when manualExpenses has entries", () => {
       const manualExpenses = [
-        { id: "m1", amount: 50, date: "2026-06-04", description: "test", category: "food" },
+        {
+          id: "m1",
+          amount: 50,
+          date: "2026-06-04",
+          description: "test",
+          category: "food",
+        },
       ];
       const { result } = renderHook(() =>
         useOverviewData({
@@ -282,7 +288,9 @@ describe("useOverviewData", () => {
     });
 
     it("hasAnyData is true when realTx has entries", () => {
-      const realTx = [mkTx("t1", -100)] as UseOverviewDataParams["mono"]["realTx"];
+      const realTx = [
+        mkTx("t1", -100),
+      ] as UseOverviewDataParams["mono"]["realTx"];
       const { result } = renderHook(() =>
         useOverviewData({
           mono: buildMono({ realTx }),
@@ -308,7 +316,7 @@ describe("useOverviewData", () => {
       const { result } = renderHook(() =>
         useOverviewData({
           mono: buildMono(),
-          storage: buildStorage({ monthlyPlan: null }),
+          storage: buildStorage({}),
         }),
       );
       expect(result.current.hasExpensePlan).toBe(false);

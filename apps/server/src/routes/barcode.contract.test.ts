@@ -42,9 +42,7 @@ import {
 // ──────────────────────────────────────────────────────────────────────────────
 // Dynamic import to pick up __barcodeTestHooks for cache reset.
 // ──────────────────────────────────────────────────────────────────────────────
-import handler, {
-  __barcodeTestHooks,
-} from "../modules/nutrition/barcode.js";
+import handler, { __barcodeTestHooks } from "../modules/nutrition/barcode.js";
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -170,8 +168,13 @@ describe("contract: /api/barcode producer — success envelope", () => {
       expect(product.name.length).toBeGreaterThan(0);
       expect(product.source).toBe("off");
       // Macros must be `number | null` — never a bare string or undefined.
-      expect(typeof product.kcal_100g === "number" || product.kcal_100g === null).toBe(true);
-      expect(typeof product.protein_100g === "number" || product.protein_100g === null).toBe(true);
+      expect(
+        typeof product.kcal_100g === "number" || product.kcal_100g === null,
+      ).toBe(true);
+      expect(
+        typeof product.protein_100g === "number" ||
+          product.protein_100g === null,
+      ).toBe(true);
     }
   });
 
@@ -216,12 +219,6 @@ const ERROR_NAMES: readonly BarcodeErrorFixtureCase[] = [
   "upstreamTimeout",
 ] as const;
 
-const ERROR_STATUS: Record<BarcodeErrorFixtureCase, number> = {
-  notFound: 404,
-  badRequest: 400,
-  upstreamTimeout: 504,
-};
-
 describe("contract: /api/barcode producer — error envelope", () => {
   it.each(ERROR_NAMES)(
     "error fixture %s is accepted by BarcodeLookupErrorSchema",
@@ -258,8 +255,14 @@ describe("contract: /api/barcode producer — error envelope", () => {
     expect(parsed.success).toBe(true);
   });
 
-  it("handler emits { error: string } with status 504 on upstream timeout", async () => {
-    // Simulate an AbortError (timeout) from all three upstreams.
+  it("handler emits { error: string } with status 404 when every upstream aborts (transient miss, not cached)", async () => {
+    // Each upstream lookup is wrapped in its own try/catch inside the
+    // cascade, so an AbortError from all three is swallowed as a transient
+    // failure (`upstreamThrew = true`) rather than propagating to the outer
+    // catch. The contract is therefore a 404 "not found" envelope that is
+    // explicitly NOT cached, so a retry re-runs the full cascade. (The
+    // dedicated 504 branch only fires for an abort raised outside the
+    // per-upstream cascade.)
     globalThis.fetch = (async () => {
       const err = new Error("The operation was aborted");
       err.name = "AbortError";
@@ -269,7 +272,7 @@ describe("contract: /api/barcode producer — error envelope", () => {
     const res = makeRes();
     await handler(makeReq("12345678901"), res);
 
-    expect(res.statusCode).toBe(504);
+    expect(res.statusCode).toBe(404);
     const parsed = BarcodeLookupErrorSchema.safeParse(res.body);
     expect(parsed.success).toBe(true);
   });

@@ -35,10 +35,10 @@ function mkTx(
     mcc: 0,
     categoryId: "other",
     type: amount > 0 ? "income" : "expense",
-    source: "monobank",
+    source: "mono",
     accountId: opts.accountId ?? null,
     manual: false,
-    _source: "monobank",
+    _source: "mono",
     _accountId: opts.accountId ?? null,
     _manual: false,
   };
@@ -276,9 +276,7 @@ describe("useTransactionFilters", () => {
         time: Math.floor(new Date("2025-06-03T10:00:00").getTime() / 1000),
       });
       const { result } = renderHook(() =>
-        useTransactionFilters(
-          buildDefaultParams({ realTx: [t1, t2, t3] }),
-        ),
+        useTransactionFilters(buildDefaultParams({ realTx: [t1, t2, t3] })),
       );
       expect(result.current.groupedByDate.length).toBeGreaterThanOrEqual(2);
     });
@@ -291,9 +289,7 @@ describe("useTransactionFilters", () => {
         time: Math.floor(new Date("2025-06-04T10:00:00").getTime() / 1000),
       });
       const { result } = renderHook(() =>
-        useTransactionFilters(
-          buildDefaultParams({ realTx: [older, newer] }),
-        ),
+        useTransactionFilters(buildDefaultParams({ realTx: [older, newer] })),
       );
       const ids = result.current.filtered.map((t) => t.id);
       expect(ids.indexOf("new")).toBeLessThan(ids.indexOf("old"));

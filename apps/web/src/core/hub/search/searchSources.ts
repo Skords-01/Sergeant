@@ -307,7 +307,6 @@ function searchNutrition(tokens: string[]): Hit[] {
  * enough that a stale hit for one keystroke is acceptable.
  */
 function storageSnapshot(): string {
-  // eslint-disable-next-line sergeant-design/no-raw-storage-key
   const keys = [
     "finyk_tx_cache",
     "finyk_subs",
@@ -318,7 +317,7 @@ function storageSnapshot(): string {
   ];
   return keys
     .map((k) => {
-      const v = localStorage.getItem(k);
+      const v = safeReadStringLS(k);
       return v === null ? "0" : String(v.length);
     })
     .join(",");

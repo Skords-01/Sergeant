@@ -56,7 +56,7 @@ function mkToast() {
     dismiss: vi.fn(),
     pause: vi.fn(),
     resume: vi.fn(),
-  } as ReturnType<typeof import("@shared/hooks/useToast").useToast>;
+  } as unknown as ReturnType<typeof import("@shared/hooks/useToast").useToast>;
 }
 
 function buildParams(
