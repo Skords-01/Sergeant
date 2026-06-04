@@ -1,7 +1,12 @@
-import { useMemo } from "react";
+import { useSyncExternalStore } from "react";
 import { Icon } from "@shared/components/ui/Icon";
 import { messages } from "@shared/i18n/uk";
-import { getActiveModules, type DashboardModuleId } from "@sergeant/shared";
+import {
+  getActiveModules,
+  type DashboardModuleId,
+  VIBE_PICKS_KEY,
+  ONBOARDING_DONE_KEY,
+} from "@sergeant/shared";
 import { localStorageStore } from "../dashboard/dashboardStore";
 
 export interface ChatEmptyProps {
@@ -61,6 +66,30 @@ const SUGGESTIONS: readonly Suggestion[] = [
 ];
 
 /**
+ * Subscribe to the two KV keys that drive `getActiveModules` and
+ * re-snapshot whenever either changes (e.g. user edits vibe picks in
+ * Hub Settings in another tab, or completes onboarding in the same session).
+ *
+ * `useSyncExternalStore` requires stable `subscribe` + `getSnapshot`
+ * references, so we define them once at module scope.
+ */
+function subscribeActiveModules(onStoreChange: () => void): () => void {
+  const unsubVibe = localStorageStore.onChange(VIBE_PICKS_KEY, onStoreChange);
+  const unsubDone = localStorageStore.onChange(
+    ONBOARDING_DONE_KEY,
+    onStoreChange,
+  );
+  return () => {
+    unsubVibe();
+    unsubDone();
+  };
+}
+
+function snapshotActiveModules(): readonly DashboardModuleId[] {
+  return getActiveModules(localStorageStore);
+}
+
+/**
  * Empty-state placeholder для `/chat`, який рендериться у
  * `HubChatBody`, коли в активній сесії ще немає жодного повідомлення.
  *
@@ -71,12 +100,21 @@ const SUGGESTIONS: readonly Suggestion[] = [
  * `focusInputRef.current?.()` у `HubChat`).
  *
  * §A12 з docs/audits/2026-05-06-ux-roast-pr-plan.md.
+ *
+ * Active-modules are subscribed via `useSyncExternalStore` so the chip
+ * list re-renders live whenever the user's vibe picks or onboarding
+ * state changes, rather than being frozen at mount time.
  */
 export function ChatEmpty({ onPickSuggestion }: ChatEmptyProps) {
-  const visibleSuggestions = useMemo(() => {
-    const active = new Set(getActiveModules(localStorageStore));
-    return SUGGESTIONS.filter((s) => active.size === 0 || active.has(s.id));
-  }, []);
+  const activeModules = useSyncExternalStore(
+    subscribeActiveModules,
+    snapshotActiveModules,
+    snapshotActiveModules,
+  );
+
+  const visibleSuggestions = SUGGESTIONS.filter(
+    (s) => activeModules.length === 0 || activeModules.includes(s.id),
+  );
 
   return (
     <div
