@@ -150,15 +150,15 @@ export function Measurements() {
           <div className="grid grid-cols-2 gap-2">
             {MEASURE_FIELDS.map((f) => (
               <div key={f.id} className="space-y-1">
-                <SectionHeading
-                  as="div"
-                  size="xs"
-                  variant="fizruk"
-                  className="px-1"
+                {/* WCAG 1.3.1: explicit label association via htmlFor/id */}
+                <label
+                  htmlFor={`measure-input-${f.id}`}
+                  className="px-1 block text-xs uppercase tracking-wider font-bold text-fizruk-strong dark:text-fizruk/70"
                 >
                   {f.label} · {f.unit}
-                </SectionHeading>
+                </label>
                 <input
+                  id={`measure-input-${f.id}`}
                   className={inp}
                   type="number"
                   inputMode="decimal"
