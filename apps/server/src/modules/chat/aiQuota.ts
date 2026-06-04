@@ -401,11 +401,6 @@ export async function consumeToolQuota(
     aiQuotaCircuitBreaker.recordSuccess();
     if (!result.ok) {
       try {
-        aiQuotaBlocksTotal.inc({ reason: "tool_limit" });
-      } catch {
-        /* ignore */
-      }
-      try {
         aiQuotaBlocksTotal.inc({
           reason: "tool_limit",
           cost: String(toolCost()),

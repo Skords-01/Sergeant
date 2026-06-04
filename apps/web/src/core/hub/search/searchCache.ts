@@ -31,7 +31,11 @@ class ScoreLru {
 
   get(key: string): unknown | undefined {
     const entry = this.map.get(key);
-    return entry?.hits;
+    if (!entry) return undefined;
+    // Bump recency so eviction is truly least-recently-USED, not FIFO.
+    entry.inserted = ++this.counter;
+    this.map.set(key, entry);
+    return entry.hits;
   }
 
   set(key: string, hits: unknown): void {

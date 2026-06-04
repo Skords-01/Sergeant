@@ -318,7 +318,9 @@ function storageSnapshot(): string {
   return keys
     .map((k) => {
       const v = safeReadStringLS(k);
-      return v === null ? "0" : String(v.length);
+      // Length + head/tail slices: catches same-length edits (e.g. renaming a
+      // habit to another same-length name) that a bare length check would miss.
+      return v === null ? "0" : `${v.length}:${v.slice(0, 24)}:${v.slice(-24)}`;
     })
     .join(",");
 }

@@ -398,6 +398,9 @@ export function Body({ onOpenMeasurements, onOpenAtlas }: BodyProps) {
                     value={v}
                     label={ENERGY_LABELS[v] ?? ""}
                     selected={energyLevel === v}
+                    tabbable={
+                      energyLevel === v || (energyLevel == null && v === 1)
+                    }
                     onClick={(val: number) =>
                       setValue(
                         "energyLevel",
@@ -437,6 +440,7 @@ export function Body({ onOpenMeasurements, onOpenAtlas }: BodyProps) {
                     value={v}
                     label={MOOD_LABELS[v] ?? ""}
                     selected={moodScore === v}
+                    tabbable={moodScore === v || (moodScore == null && v === 1)}
                     onClick={(val: number) =>
                       setValue("moodScore", moodScore === val ? null : val, {
                         shouldDirty: true,

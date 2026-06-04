@@ -95,6 +95,7 @@ export const UK_TO_EN: Record<string, string> = {
   курячий: "chicken",
   свинячий: "pork",
   рибний: "fish",
+  риба: "fish",
   оселедець: "herring",
   скумбрія: "mackerel",
   тріска: "cod",
