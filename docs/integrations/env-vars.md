@@ -1,6 +1,6 @@
 # Environment variables — повний reference
 
-> **Last validated:** 2026-05-14 by @Skords-01. **Next review:** 2026-08-12.
+> **Last validated:** 2026-06-05 by @claude. **Next review:** 2026-09-03.
 > **Status:** Active
 
 Цей документ — канонічний reference усіх змінних оточення Sergeant. Мінімальний `.env` (12 змінних, потрібних для `pnpm dev:web` + `pnpm dev:server`) лежить у [`/.env.example`](../../.env.example) у корені репо. Сюди винесено: повний опис, формати, default-и, наслідки незаповненості, перехресні посилання на код / ADR / hardening-ноти.
@@ -282,6 +282,20 @@ Operator-toggle для n8n WF-30 [`30-ai-memory-daily-digest.json`](../../ops/n8
 ### `METRICS_TOKEN` _(optional)_
 
 Bearer-токен для захисту `/metrics` (Prometheus scrape endpoint). Якщо не заданий — `/metrics` вимкнений. Для Grafana Agent / Railway scraper: `Authorization: Bearer <METRICS_TOKEN>`.
+
+### `GRAFANA_CLOUD_LOKI_URL`, `GRAFANA_CLOUD_LOKI_USERNAME`, `GRAFANA_CLOUD_LOKI_TOKEN` _(optional)_
+
+Grafana Cloud Loki log sink. Коли всі три задані — pino-логи надсилаються **паралельно** у Railway stdout (існуюча поведінка) і у Loki через `pino-loki` worker-transport. Якщо будь-яка з трьох відсутня — Loki-транспорт не ініціалізується (clean no-op, prod не крашиться).
+
+| Змінна                        | Формат                              | Опис                                                                                                                   |
+| ----------------------------- | ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `GRAFANA_CLOUD_LOKI_URL`      | `https://logs-prod-025.grafana.net` | Базовий host Loki-інстансу (без `/loki/api/v1/push` — додається автоматично).                                          |
+| `GRAFANA_CLOUD_LOKI_USERNAME` | числовий рядок, напр. `123456`      | Loki instance id (basic auth username). З Grafana Cloud → Connections → Data sources → Loki → Details.                 |
+| `GRAFANA_CLOUD_LOKI_TOKEN`    | `glc_…`                             | Grafana Cloud API token (basic auth password). Генерувати: Grafana UI → Administration → Service accounts → Add token. |
+
+**Labels:** `job=sergeant-api`, `env=<NODE_ENV>`, `service=sergeant-api`.
+
+**Безпека:** credentials передаються виключно через `basicAuth` і ніколи не вбудовуються у URL. Pino `formatters.log` (`redactKeysRecursively`) та `redact.paths` виконуються у main thread до передачі рекорду у transport-worker — Loki отримує вже редаговані JSON-рядки (PII та секрети відсутні).
 
 ---
 
