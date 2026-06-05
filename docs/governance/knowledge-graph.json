@@ -1,9 +1,9 @@
 {
   "$schema": "./schemas/knowledge-graph.schema.json",
   "version": 1,
-  "generated_at": "2026-06-03",
+  "generated_at": "2026-06-05",
   "counts": {
-    "adr": 58,
+    "adr": 59,
     "audit": 29,
     "hard-rule": 26,
     "initiative": 47,
@@ -656,6 +656,17 @@
       "meta": {
         "number": 61,
         "last_validated": "2026-06-01"
+      }
+    },
+    {
+      "id": "adr:0062",
+      "type": "adr",
+      "title": "ADR-0062: OpenAPI spec source-of-truth — code-first (Zod → OpenAPI)",
+      "path": "docs/adr/0062-openapi-source-of-truth.md",
+      "status": "Accepted",
+      "tier": "core",
+      "meta": {
+        "number": 62
       }
     },
     {
@@ -1584,7 +1595,7 @@
       "type": "initiative",
       "title": "PR-23: OpenAPI spec contract-tested vs runtime",
       "path": "docs/initiatives/stack-pulse-2026-05/pr-23-openapi-contract-tests.md",
-      "status": "Active — Phase 1 (generation + freshness gate) shipped; ADR-0056 + contract roundtrip tests (`tests/contract/`) + Schemathesis property-based testing deferred. Phase 1 закриває drift-detection use-case (spec ↔ runtime Zod); roundtrip/property-based testing активуються коли з'явиться перший contract-bug у production.",
+      "status": "Active — Phase 1 (generation + freshness gate) shipped + [ADR-0062](../../adr/0062-openapi-source-of-truth.md) source-of-truth написаний (2026-06-05); contract roundtrip tests (`tests/contract/`) + Schemathesis property-based testing лишаються deferred. Phase 1 закриває drift-detection use-case (spec ↔ runtime Zod); roundtrip/property-based testing активуються коли з'явиться перший contract-bug у production.",
       "tier": "core",
       "meta": {}
     },
