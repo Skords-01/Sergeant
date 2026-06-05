@@ -1,4 +1,3 @@
-import { useMemo } from "react";
 import { Icon } from "@shared/components/ui/Icon";
 import { messages } from "@shared/i18n/uk";
 import { getActiveModules, type DashboardModuleId } from "@sergeant/shared";
@@ -73,10 +72,10 @@ const SUGGESTIONS: readonly Suggestion[] = [
  * §A12 з docs/audits/2026-05-06-ux-roast-pr-plan.md.
  */
 export function ChatEmpty({ onPickSuggestion }: ChatEmptyProps) {
-  const visibleSuggestions = useMemo(() => {
-    const active = new Set(getActiveModules(localStorageStore));
-    return SUGGESTIONS.filter((s) => active.size === 0 || active.has(s.id));
-  }, []);
+  const active = new Set(getActiveModules(localStorageStore));
+  const visibleSuggestions = SUGGESTIONS.filter(
+    (s) => active.size === 0 || active.has(s.id),
+  );
 
   return (
     <div

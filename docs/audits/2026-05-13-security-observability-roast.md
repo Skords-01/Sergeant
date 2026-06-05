@@ -1,7 +1,7 @@
 # Sergeant — Security & Observability прожарка (2026-05-13)
 
-> **Last validated:** 2026-05-13 by Devin (S6 closeout — PBKDF2 ramp-up 200k → 600k + v=1→v=2 migration). **Next review:** 2026-08-11.
-> **Status:** Active
+> **Last validated:** 2026-06-05 by Skords-01 (all S1–S11 follow-ups resolved in code — verified on disk). **Next review:** 2026-09-03.
+> **Status:** Closed
 
 > **Cross-refs:**
 > [`2026-05-03-web-deep-dive/04-security-observability-testing-devx.md`](./2026-05-03-web-deep-dive/04-security-observability-testing-devx.md) — головне джерело попередніх P0/P1 рекомендацій (CSP, Pino redact, Sentry, contract-тести) ·
