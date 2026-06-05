@@ -1,103 +1,76 @@
+<!-- AUTO-GENERATED -->
 # Audit runner report
 
-> **Last validated:** 2026-06-04 by audits-runner workflow. **Next review:** 2026-09-02.
-> **Status:** Reference
+> **Last validated:** 2026-06-04 by audit-triage routine. **Next review:** 2026-09-02.
+> **Status:** Active
 
-Mode: **triage** · Audits triaged: 21 (input payload truncated after audit #11 — Fizruk Part 2; this report synthesizes the 11 fully-delivered triages plus the truncated Fizruk Part 2 tail. See [Blocked](#5-blocked) for the coverage gap.)
+## Triage digest — 2026-06-04
 
-## 1. TL;DR
+Source: `docs/open-work.md §Аудити й прожарки` (20 open docs) + direct reads of each audit file. Audits with `Closed` / `Archived` status excluded. Sorted by impact within each bucket.
 
-- **Security/correctness first.** The two highest-impact open clusters are the consolidated-audit Theme 7 bug list (health-PII validation, missing internal-API auth, raw-error leak, Sentry-Replay PII, PricingPage open-redirect) and chat F20 PII-bearing backup export. These are `plan-first` / `high` — scope one fix-PR per bug, do not batch.
-- **Cheap wins to clear now.** Flip the `2026-05-07` full-app audit Status header to Closed (all 10 items shipped), and apply the autoSafe Fizruk docs items (F1 lifecycle markers, F25 AI-DANGER markers, F41/F48/F49 comment cleanup) — pure docs/comments, zero behavior change.
-- **Unblock the UX-roast spine.** PR-0 telemetry shipped, so PR-1a base PIN, PR-2/3/6/7 are unblocked — but PR-7 (permissions overview) gates PR-8/PR-9, and PR-3 gates PR-20/PR-22. Land PR-7 + PR-3 to free the chain.
+---
 
-## 2. Execute now
+## A — Security / Correctness
 
-autoSafe + low-risk, mechanical. None require design.
+Highest blast radius; fix before next release.
 
-**2026-05-07 full-app regression UX audit** (recommendation: close-as-stale)
-- [ ] full-app#status — `docs/audits/2026-05-07-full-app-regression-ux-audit.md:4` — all 10 follow-ups verified closed in main; flip Status header Active → Closed/Archived (autoSafe, only remaining action).
+1. **`docs/audits/2026-05-13-consolidated-page-audit.md` C1** — `useChatSend.ts` dispatches AI `tool_calls` with no allow-list or Zod schema validation; prompt injection → arbitrary action execution with full Better Auth cookie context. **Add a Zod-validated tool registry; reject + log unknown tool names before dispatch.**
 
-**page-audit-06 Fizruk Part 1**
-- [ ] f06#F1 — `apps/web/src/modules/fizruk/` (FizrukApp.tsx, route.tsx, pages/*, shell/*) — add Hard Rule #10 lifecycle markers (`@lastValidated`/`@status`); pure JSDoc headers, mechanical across ~13 files (autoSafe).
-- [ ] f06#F25 — `apps/web/src/modules/fizruk/` (zones near F3/F11/F19/F17) — add AI-DANGER markers on rest-timer / retro-tz / uid / voice-commit zones; pure comments (autoSafe). Caveat: re-locate anchor lines first (closures moved cited code).
+2. **`docs/audits/2026-05-13-consolidated-page-audit.md` C2 / `docs/audits/2026-05-13-page-audit-10-errors-pwa-marketing.md`** — Service-worker `Cache` namespace for `/api/*` is keyed by URL only; after user A signs out on a shared device, user B receives A's cached API responses. **Key API cache by hashed session id; flush cache in `signOut` handler; add `Cache-Control: private` on all `/api/*` server responses.**
 
-**page-audit-07 Fizruk Part 2**
-- [ ] f07#F41 — `apps/web/src/modules/fizruk/hooks/useDailyLog.ts` — add `@deprecated` marker on legacy LS journal path (autoSafe). Conditional on the migration actually being planned.
-- [ ] f07#F48 — `apps/web/src/modules/fizruk/pages/Body.tsx:20-39` — rewrite/remove the 18-line JSDoc PR-history block (describes history, not code); pure comment (autoSafe).
-- [ ] f07#F49 — `apps/web/src/modules/fizruk/pages/Progress.tsx:223-227` — remove orphan diff-history comment block; pure comment (autoSafe).
+3. **`docs/audits/2026-05-13-dead-code-hard-rules-roast.md` P1.4** — Four `process.env` callers (`requireAnthropicKey`, `requireGroqKey`, `posthogCapture` ×2, `authTransactionalMail`) bypass the typed `env` object; `lint:env-single-source` budget drifts with each feature PR. **Ship PR(A): migrate `requireAnthropicKey` + refactor `coach.route.test.ts` to `vi.resetModules + vi.stubEnv` pattern** (net −1; establishes canonical test pattern for remaining 3 PRs).
 
-Note: the remaining ~35 Fizruk Part 2 items (F5-F47 a11y/visual/refactor) are real but **not** autoSafe (markup, className, focus, type-narrowing, refactor) — they belong in batched UI/a11y PRs under [Plan first](#3-plan-first), not here.
+4. **`docs/audits/2026-08-XX-openclaw-internal-roast.md`** — Security boundary of 1781-LOC `routes/internal/openclaw.ts` (bearer-token guard coverage, audit-log gaps for write-tools, write-tool approval-gate drift vs ADR-0027) is a stub awaiting Q3 audit. **Assign backend owner and schedule full audit session before 2026-08-11 trigger window.**
 
-## 3. Plan first
+---
 
-Medium/high-risk items needing design, ADR, or a playbook. Sorted by impact (security/correctness → unblockers → polish).
+## B — Cheap AutoSafe Wins
 
-### Security / correctness (high impact)
-1. **consolidated#Theme7 — high** — `apps/web` auth/fizruk/routine/strategy/nutrition + Sentry + PricingPage — per-bug fixes: CelebrationModal Enter/Space hijack, forgot-pw prefill, HubReports stale chart, rest-timer end-cue, Measurements health-PII range validation, Strategy missing internalFetch/bearer auth + raw error.message leak, useRoutineReminders empty catch, Sentry Replay no `maskAllText`, PricingPage open-redirect on `checkout.url`. One PR per bug, each verified.
-2. **chat03#F20 — high** — `apps/web/src/core/hub/hubBackup.ts`, `HubBackupPanel.tsx` — export ships Better-Auth opaque user IDs + free-form manual-debt PII without redaction/disclosure. Product call: redact userId-shaped fields + "safe export" variant, OR explicit PII disclosure. Touches backup payload contract.
-3. **f07#F29 — high** — `useMeasurements.ts`, `useDailyLog.ts:86-88` — dual source-of-truth for weight (Measurements doesn't mirror to Profile biometrics). Domain-invariant violation; audit defers to a separate ADR. **Needs ADR before code.**
+Low-effort, high signal-to-noise; can ship independently.
 
-### Unblockers (UX-roast spine — PR-0 telemetry now shipped)
-4. **uxroast#PR-7 — medium** — `PrivacySection.tsx`, `NotificationsSection.tsx`, fizruk/nutrition reminder storage — permissions overview + dedupe permission toasts + default reminder times. **Blocks PR-8 and PR-9** — highest unblock value.
-5. **uxroast#PR-3 — low** — `HubDashboard.tsx`, `ModuleBentoCard.tsx`, i18n — bento empty-only subtitles. **Prereq for PR-20 and PR-22.**
-6. **uxroast#PR-2 — low** — 4 module headers + `ModuleHeader.tsx` — settings gear-icon deep-link shortcut. UI wiring + snapshot updates.
-7. **uxroast#PR-6 — low** — `HubReports.tsx` + new `EmptyStateIllustrations` — Reports EmptyState with illustration + CTA across 4 cards.
-8. **uxroast#PR-8 — medium** — `NotificationsSection.tsx`, `hubPrefs.schema.ts/.ts` — Hub notifications sub-group (digest/nudge/re-engagement). Depends on PR-7; gates server-side push delivery.
-9. **uxroast#PR-9 — medium** — new `TimeInput.tsx`, nutrition `hh:mm` migration — reminder-time unification + stored-prefs schema migration. Depends on PR-7.
-10. **uxroast#PR-1b — high** — new `BiometricAdapter.ts` (+.web/.capacitor), AppLock, capacitor.config — biometric add-on. Security-sensitive (auth/unlock + native plugin + WebAuthn). Base PIN (PR-1a) already shipped.
+1. **`docs/audits/2026-05-13-testing-devx-roast.md` P1-4 PARTIAL** — Seven Detox e2e specs are authored (`auth-flows`, `nutrition-full`, `nutrition-water-barcode`, `fizruk-full`, `fizruk-measurements`, `deep-link`, `offline-sync`) but not green because component `testID` props are missing in source. **Add missing `testID` attributes to auth/nutrition/fizruk components** to unblock the authored suite without new spec work.
 
-### CI-gate / lint expansions (consolidated + page audits — design-gated)
-11. **consolidated#Theme2 — medium** — touch-target enforcement: global Button as only path + codemod `<button class="w-6 h-6">` + ESLint sub-floor rule (6 high + ~12 medium a11y).
-12. **consolidated#Theme3 — medium** — Tailwind token violations: `text-error`→`text-danger` (renders no color), kill raw -400/-500 + foreign accents + eslint rejection + CI map gate.
-13. **consolidated#Theme5 — low** — Hard Rule #2: inline queryKey arrays + raw LS strings → factories + `no-inline-query-key`/`no-raw-storage-key` rules + codemod. Changes cache identity / LS migration.
-14. **consolidated#Theme6 — medium** — Hard Rule #19: `no-non-null-assertion: error` + replace `!` sites with guards. Will fail repo-wide until all sites resolved.
-15. **consolidated#Theme4 — low** — promote `lint:lifecycle-markers` advisory → required gate + one-time bulk header backfill (mutates hundreds of files).
-16. **uxroast#PR-X1 — medium** — new `no-english-toast-string` ESLint rule. False-positive risk; needs fixture testing before CI enable.
-17. **f01#F1-followup / f02#F1 — low/medium** — `sergeant-design/known-color-tokens` rule + sweep remaining hardcoded LS keys (ExpensesCard/NutritionCard/RoutineCard `:201`, searchSources) onto STORAGE_KEYS + `no-restricted-syntax` guard. LS-migration path.
+2. **`docs/audits/2026-05-13-dead-code-hard-rules-roast.md` P1.5** — Five exported symbols in `apps/mobile-shell/` (`requestNativeBarcode`, `requestPermissions`, `subscribePushTokens`, `isCapacitorReady`, `getPlatform`) have zero JS importers. **Delete or wire into the Capacitor shell entry point** (micro-PR, no test changes needed).
 
-### Perf / observability
-18. **chat03#F16 — medium** — `searchSources.ts`, `searchCache.ts` — LRU(query→ScoredHits) to stop full re-score per keystroke (Android typing lag). Needs snapshot/version key decision.
-19. **uxroast#PR-22 — medium** — `HubDashboard.tsx`, finyk `Overview.tsx`, new `useInViewport.ts` — lazy Insights/Digest + sub-card split (LCP/bundle). Must not double-wrap lazy boundaries. Depends on PR-3, PR-20.
-20. **uxroast#PR-25 — medium** — `sentry.ts`, `analytics.ts`, App boot — defer PostHog/Sentry via dynamic import after `window.load`. Risk of dropped early events.
-21. **f06#F20 — medium** — `FizrukApp.tsx:7`, `useExerciseCatalog.ts` — defer eager catalog payload off Dashboard mount. Validate vs Lighthouse gate.
-22. **uxroast#PR-42 — medium** — chat usage counter + `GET /api/chat/usage`. Money/plan-gating path (Free 5/day vs Pro); ADR-0051 2-tier drift noted.
+3. **`docs/audits/2026-05-13-consolidated-page-audit.md` Theme 2 (touch targets)** — Three surfaces remain below 44×44 px after the audits-runner pass: FTUX 5 components (01 F8 — `DailyNudge`, `DemoModeBanner`, `SoftAuthPromptCard`, `ReEngagementCard`, `FirstRunHintBanner`), Finyk analytics month-nav (05 F5), Fizruk Atlas anterior/posterior toggle (06). ESLint `no-small-button-touch-target` already warns. **Batch-add `min-h-[44px] min-w-[44px]` across the 3 remaining surfaces** (pure CSS, no logic change).
 
-### a11y / phishing / UX (chat03 + page audits)
-23. **chat03#F21 — medium** — `InlineAiRail.tsx`, `AssistantMessageBody.tsx` — route user-sourced text through plain-text escaper (markdown-spoof phishing surface; not XSS).
-24. **chat03#F17/F19/F23/F24/F25 — low** — initial-message re-fire guard, aria-live status sibling + aria-busy, ChatEmpty stale modules, InlineAiRail focus-theft, TypingIndicator reduced-motion. Small behavior changes, each needs targeted QA.
-25. **f02#F4/F7 — low** — HubReports Prev/Next 32x32 < 44x44 touch target; insights missing period chip.
-26. **f06#F5/F13/F17/F26 — low/medium** — load-bearing eslint-disable removal, HeroCard visibilitychange tick, voice-input two-step draft confirm (highest-frequency mutation surface), per-page Suspense + startTransition.
-27. **f07 a11y/visual batch — low/medium** — F8/F9/F10/F12/F13/F14/F15/F17/F27/F34/F35/F37/F39/F42/F43/F44/F45/F46/F47 (touch targets, chart tokens, labels, radiogroup semantics, focus rings, plural, aria). Batch by surface (Measurements / Progress / Body / Programs).
-28. **f07 refactor batch — medium** — F20 (Progress 591/600 LOC decompose), F21 (Body 514 LOC extract form), F26/F30/F32/F33 type/sort/deps cleanup. Hard Rule #18 module-size; design-first.
+4. **`docs/audits/2026-05-13-page-audit-01-auth-onboarding.md`** — 25 findings (0C, 6H, 16M, 3L); no execution PRs beyond F1 (token rename) closed in the audits-runner pass. **Pick the top-H item and ship** (H-class items: a11y hit-area + CSRF/CORS surface + FTUX flow gaps per consolidated §01 cluster).
 
-### Finyk
-29. **f05#F19 — medium** — `AssetsForm.tsx` — Asset/Debt/Receivable required-field validation + useApiForm+zod. **Decision-gated on the useApiForm+zod rollout** (its closure note). Money/data-persistence path.
-30. **f05#F21 — medium** — `budgets/Budgets.tsx:226-250` — StrictMode-fragile deep-link highlight-scroll; merge 3 effects + ref-guard + aria-live + parent-clear contract.
+5. **`docs/audits/2026-05-13-web-frontend-ergonomics-roast.md` F2-II / F4 / F7** — Three ergonomics findings deferred from the 2026-06-02 runner pass. **Review and ship at least one** (F4 is likely smallest; confirm scope from the roast file).
 
-### Tests (large, test-only, not autoSafe)
-31. **chat03#F22, f02#F23, f05#F20, f06#F6, f07#F5, f07#F31 — low/medium** — coverage gaps on highest-regression-prone files (chat sessions/undo/migration, HubReports UI, finyk shells+hooks, fizruk pages, BUILTIN_PROGRAMS integrity). Recommend a standalone test-initiative ticket; needs MSW/fake-timer harness.
-32. **uxroast#PR-X2 — medium** — Playwright FTUX visual-regression (8 goldens). Flaky risk; depends on PR-3/6/20.
+---
 
-### IA / structural / tooling
-33. **uxroast#PR-16 — medium** — Memory Bank → Settings·Асистент + Profile teaser + hash deep-link backward-compat (`#settings-memory`).
-34. **uxroast#PR-14 — low** — extract shared `requestId.ts` + copy-ID UI in ModuleErrorBoundary.
-35. **uxroast#PR-19/PR-24/PR-35 — low** — aria-live conflict ordering, mobile 100dvh + safe-area (needs iOS Safari QA), move SW diagnostics into Experimental.
-36. **deadcode#P1.1 / #P1.3 — medium** — knip residual (`@capacitor/ios` in mobile-shell, 10 unused devDeps each needing per-workspace verify; 38 hoisted false-positives) + 77 unused exports / 51 duplicates (>30 files, deep-import-caller verify). Batch into 3-4 PRs by surface.
-37. **doc-hygiene#scripts / #ci-alias / #hard-rules.md — low** — resolve `scripts/vitest.mjs` orphan (prove external use or delete), add `scripts/ci/test` alias in package.json, decide whether `docs/governance/hard-rules.md` full-text deliverable is still wanted (premise largely stale — AGENTS.md already trimmed; may close instead).
-38. **f04 (Hub Settings/Profile/Assistant Catalogue) — medium** — entire page surface has **zero audit coverage** (VM infra failure blocked the child session). Re-run the static analysis as a fresh audit (see Blocked).
-39. **uxroast#PR-X4 — low** — PostHog UX-roast dashboard-as-code JSONL artifact (config-as-code, so not pure docs).
+## C — Unblock Chains
 
-## 4. Close as stale
+Shipping these removes blockers on downstream work.
 
-- **`2026-05-07-full-app-regression-ux-audit.md`** — recommendation `close-as-stale`. All 10 follow-up queue items verified closed in main; the only action is the autoSafe Status flip (see [Execute now](#2-execute-now)). Residual `/_vercel/insights/script.js` MIME noise is local-tooling console noise only (CSRF half verified exempt at `requireCsrfHeader.ts:73`); may already be resolved — verify opportunistically, do not block.
-- **`2026-05-13-dead-code-hard-rules-roast.md`** — not formally close-as-stale (recommendation `plan-first`) but nearly drained: only P1.1 + P1.3 remain (item 36 above); the rest shipped. Treat the audit body as mostly closed.
+1. **`docs/audits/2026-05-06-ux-roast-pr-plan.md` Sprint 0 PR-0** — Telemetry ADR + PostHog event taxonomy foundation has not started; it blocks A1 (App-lock UX), A4, A8, and ~21 downstream Sprint 2/3 UX PRs (20/41 shipped so far). **Ship PR-0** to unblock roughly half the remaining UX execution plan.
 
-## 5. Blocked
+2. **`docs/audits/2026-05-13-web-architecture-state-roast.md` P1-E** — `fizrukActions`, `finykActions`, and `nutritionActions` still write via `safeWriteLS` (localStorage bypass), violating the state-write-paths doctrine; migration is impossible without server endpoints. **Create `POST /api/v1/finyk/manual-expenses`** as priority-1 domain endpoint to enable the finyk chatActions migration (per P1-E migration plan in the roast).
 
-- **Input payload truncated.** The triage JSON cut off mid Fizruk Part 2 (audit #11 of the stated 21). Audits #12-21 (likely page-audit-08-nutrition, -09-routine-strategy, -10-errors-pwa-marketing, and the remaining roasts present on disk) were **not** in this run's input, so their open items are not represented above. Re-run the runner with the full payload to cover them.
-- **f04 audit gap (consolidated#Scope04).** Hub Settings / Profile / Assistant Catalogue surface has zero findings — hard-blocked by a Devin VM infra failure (missing `/opt/.devin/.realproxy-addr`). Needs an audit **re-run** before its open items can be triaged (item 38).
-- **f01#F4 deletion is time-gated.** `PermissionsPrompt.tsx` + `.test.tsx` carry `@deprecated` with a hard removal date of **2026-07-15**; today is 2026-06-04, so the ~6-week window has NOT elapsed. Deletion is safe only after 2026-07-15.
-- **uxroast#PR-11 (CSV export) + #PR-28 (avatar upload) — paused on S3/R2 credentials.** New server modules + DB migrations (045/046) + object storage. Skeletons possible but not shippable until object-storage creds exist.
-- **f05#F19 — decision-gated** on the useApiForm+zod rollout direction (its own closure note).
-- **consolidated#Theme7 status fidelity** — GitHub fetch was disallowed during triage; per-bug shipped/open status was inferred from in-tree repo state, not the cross-referenced PRs #2744-#2799. Re-confirm each bug against live code before opening a fix-PR.
+3. **`docs/audits/2026-05-13-consolidated-page-audit.md` audit-04 coverage gap** — Hub Settings, Profile & Assistant Catalogue were **never audited** (VM infra failure; 0 findings recorded). **Re-run page-audit-04** to complete the consolidated 10-scope coverage matrix before Sprint 9 planning.
+
+4. **`docs/audits/2026-08-XX-sync-engine-roast.md`** — Atomic-transaction boundaries and DLQ TTL in the 3031-LOC `syncV2.ts` are undocumented; this must be clarified before Stage 8/9 SQLite dual-write is wired. **Trigger Q3 audit session** (gated on sprint-roadmap Спринт 8 closeout, planned 2026-08-11).
+
+---
+
+## D — Blocked / Gated
+
+No immediate action possible without external input or gating milestone.
+
+1. **`docs/audits/2026-05-06-ux-roast-pr-plan.md` PR-11 + PR-28** — CSV export (PR-11) and Avatar upload (PR-28) are explicitly **paused pending S3/R2 credentials** from founder. Skeleton can be started; upload storage half must wait.
+
+2. **`docs/audits/2026-05-13-web-architecture-state-roast.md` P1-E full migration** — chatActions `safeWriteLS` → `apiClient` migration for fizruk/nutrition blocked until their server endpoints exist (no `POST /api/v1/fizruk/workouts`, `POST /api/v1/nutrition/log`). Unblocked incrementally as each domain API ships (see C2 above for finyk priority).
+
+3. **`docs/audits/2026-08-XX-openclaw-internal-roast.md` + `docs/audits/2026-08-XX-sync-engine-roast.md`** — Both are stubs in Draft status, **gated on Q3 2026 backend-roast cycle** (trigger window 2026-08-11). No actionable findings yet.
+
+4. **`docs/audits/2026-05-15-deep-audit-state-of-repo.md`** — Status Active but 0 truly-outstanding items (D1–D4 all closed 2026-06-03); retained for cross-references only. **Candidate for archiving** once cross-ref consumers are updated.
+
+---
+
+## Coverage notes
+
+- **Zero findings — audit-04 (Hub Settings / Profile / Assistant Catalogue):** Never completed due to VM infra failure at the consolidated audit session (2026-05-13). This is an active blind spot covering Settings, Profile, and the Assistant Catalogue pages.
+- **Potential input truncation:** Page audits 06 (fizruk-part1, 27 findings), 07 (fizruk-part2, 50 findings), 08 (nutrition, 25 findings), and 09 (routine-strategy, 23 findings) were not read in detail this pass. Theme 1 (TZ correctness) and Theme 2 (touch targets) are accounted for via the consolidated audit; remaining H/M findings in these four files may have additional open work beyond what this triage captures.
+- **`docs/audits/2026-05-07-full-app-regression-ux-audit.md`:** Active with 7 PR mentions; content not fully read this pass — may contain residual findings beyond the archived `app-audit` cross-refs.
+- **`docs/audits/2026-05-02-doc-hygiene-audit.md`:** Active but all P0 items (ADR gap rule, lifecycle markers, CLAUDE/DEVIN thin-pointer) were closed in the original PR; remaining items appear cosmetic (duplicate `Last validated` dates).

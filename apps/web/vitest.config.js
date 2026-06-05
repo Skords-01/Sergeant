@@ -7,6 +7,23 @@ export default defineConfig({
   plugins: [react()],
   test: {
     environment: "node",
+    // CI runners are intermittently throttled (the whole pipeline has been
+    // observed running 1.5–3× slower than its p95 — every job, not just this
+    // one). At that pace the heavy jsdom + react-test-renderer suites flake on
+    // vitest's default 5s testTimeout / 10s hookTimeout even though they pass
+    // comfortably at normal speed (verified: full suite green locally incl.
+    // CI=true). Raise the ceilings so slow-runner timing alone can't fail an
+    // otherwise-green run; genuine hangs still trip the higher bound.
+    testTimeout: 20000,
+    hookTimeout: 30000,
+    // CI memory guard: the heavy jsdom + react-test-renderer suite (316 files)
+    // spikes peak memory, and on throttled/memory-constrained CI runners the
+    // default worker count gets OOM-killed mid-run — vitest then exits 1 with
+    // no "Test Files …" summary (a process crash, not an assertion failure),
+    // which the raised timeouts above can't help. Cap worker concurrency in CI
+    // to bound peak memory; local dev keeps full parallelism (undefined = auto).
+    maxWorkers: process.env.CI ? 2 : undefined,
+    minWorkers: process.env.CI ? 1 : undefined,
     include: ["src/**/*.test.{js,jsx,ts,tsx}", "server/**/*.test.{js,ts}"],
     passWithNoTests: false,
     setupFiles: ["src/test/setup.ts"],
@@ -44,14 +61,26 @@ export default defineConfig({
         //   surfaces, not in `sw/**` itself. SW is now treated as
         //   e2e-only territory (covered by `tests/a11y/sw-smoke.spec.ts`).
         //
+        // - 2026-06-03 (audit `2026-05-13-testing-devx-roast.md` §P1-6
+        //   closeout): landed module unit suites for the thin
+        //   finyk/fizruk/nutrition slices the drift log called out —
+        //   `finyk/lib/__tests__/upcomingSchedule`,
+        //   `fizruk/lib/__tests__/exerciseProgress`,
+        //   `nutrition/lib/__tests__/nutritionStats` (pure date / stats /
+        //   progress aggregation helpers). Net coverage only moves up, so
+        //   ratchet the floors a modest +1pp toward the audit target
+        //   (lines ≥ 50 long-term): 39 / 32 / 29 / 38. Headroom kept so a
+        //   throttled CI run can't dip under; raise again as the next
+        //   module slices land.
+        //
         // Floors set ~2pp below current actuals — same pattern as
         // `apps/server/vitest.config.ts`. Raise per sprint as the idb /
         // shared-lib-ui tests land (see docs/testing/2026-05-05-tests-
         // pr-plan.md → PR-T03 / PR-T04).
-        lines: 38,
-        branches: 31,
-        functions: 28,
-        statements: 37,
+        lines: 39,
+        branches: 32,
+        functions: 29,
+        statements: 38,
       },
     },
   },

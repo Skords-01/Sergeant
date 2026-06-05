@@ -4,7 +4,7 @@ render_with_liquid: false
 
 # Page Audit — Hub Dashboard, Modules Grid & App shell
 
-> **Last validated:** 2026-05-13 by Devin.
+> **Last validated:** 2026-06-03 (audits-runner closeout — F4/F7/F23 closed; prev 2026-05-13 by Devin).
 > **Status:** Active
 > **Auditor:** child Devin session (parent: <https://app.devin.ai/sessions/7d63e4e64e644012afe8c886eab9fc40>)
 > **Pages in scope:** Hub Dashboard container (`HubDashboard.tsx`), App shell (`App.tsx`, `app/router.tsx`), error surfaces (`ErrorBoundary.tsx`, `ModuleErrorBoundary.tsx`), Hub composition (`HubHeroBlock`, `HubInsightsBlock`, `HubInsightsPanel`, `HubReports`, `HubModulesGrid`, `ValueProgressBar`, `CrossModulePreview`), Hub state hooks (`useHubDashboardState`, `useFinykHubPreview`), Hub aggregation (`hubReports.aggregation`), Hub Bento dashboard (`dashboard/BentoCard`, `dashboard/dashboardCards`, `dashboard/moduleConfigs`, `dashboard/adaptiveSort`, `dashboard/dashboardStore`, `dashboard/useMondayAutoDigest`), shared Hub types (`hub.types.ts`), route prefetch (`lib/useRoutePrefetch`).
@@ -22,7 +22,7 @@ render_with_liquid: false
 
 ### F1 — `HubReports` дублює хардкоднуті ключі замість `STORAGE_KEYS` [severity: high] [perspective: rule]
 
-> 🟡 **Closed partially 2026-05-31** — після split-out `HubReports` оригінального блоку немає. Залишковий літерал `"fizruk_workouts_v1"` у `apps/web/src/core/hub/FitnessCard.tsx:188` замінено на `STORAGE_KEYS.FIZRUK_WORKOUTS`. Решта (ExpensesCard `finyk_tx_cache`, RoutineCard `hub_routine_v1`, NutritionCard `nutrition_log_v1`, `search/searchSources.ts`, `useFinykHubPreview.ts`) лишається open — потрібен окремий sweep + lint-правило.
+> **Lint gate landed 2026-06-03 (audits-runner execute):** ESLint rule `sergeant-design/no-raw-storage-key` (`warn`) now covers all remaining raw-string offenders. The 4 suppressed literals (`finyk_tx_cache` in `ExpensesCard.tsx:201`, `hub_routine_v1` in `RoutineCard.tsx:201`, `nutrition_log_v1` in `NutritionCard.tsx:201`, 4 keys in `search/searchSources.ts`) cannot be replaced with `STORAGE_KEYS.*` today because the hub-layer hits the `no-restricted-syntax` retirement guard (`STORAGE_KEYS.FINYK_*`/`FIZRUK_*`/`NUTRITION_*`/`ROUTINE` are blocked outside module wrappers). Each site carries an `eslint-disable-next-line sergeant-design/no-raw-storage-key` comment as a documented exception; removing the guard exemption is prerequisite for the next sweep. `FitnessCard.tsx` (closed 2026-05-31) and `useFinykHubPreview.ts` remain for a follow-up sweep.
 
 **Page:** Hub Reports
 **File:** `apps/web/src/core/hub/HubReports.tsx`
@@ -149,6 +149,8 @@ Writers (Fizruk-save, Nutrition-meal-add, Routine-toggle, Finyk-tx-save) уже 
 
 ### F4 — Prev/Next period кнопки нижче 44×44 (WCAG 2.5.5) [severity: high] [perspective: a11y]
 
+> ✅ **Closed 2026-06-03 (audits-runner execute):** Prev/next кнопки переведено на `Button` primitive (`variant="ghost" size="sm" iconOnly`), що авто-застосовує `pointer-coarse:min-h-[44px]/min-w-[44px]`, плюс `focus-visible:ring-2`; `aria-label` («Попередній»/«Наступний») і `disabled`-логіка збережені — `HubReports.tsx:144-193`. Regression-assertions у `HubReports.test.tsx` (F4 aria-label/touch-target).
+
 **Page:** Hub Reports
 **File:** `apps/web/src/core/hub/HubReports.tsx`
 **Lines:** L400–L440 (period-nav)
@@ -261,6 +263,8 @@ const data = useMemo(
 ---
 
 ### F7 — Insights-секція у HubReports ігнорує `period`/`offset` [severity: medium] [perspective: ux]
+
+> ✅ **Closed 2026-06-03 (audits-runner execute):** Активний `period` тепер відображається у кожному insight-title (суфікс «(за тиждень)» / «(за місяць)») — мапінг у presentation-шарі `HubReports.tsx:102-111`, щоб side-effect-free `generateInsights()` engine не чіпати (інакше re-lint legacy-файлу впирається у pre-existing `prefer-kyiv-time` warnings). `offset` навмисно не вплітається в insight-копію — insights крос-модульні, не per-range. Тести — `HubReports.test.tsx` (F7 week→month suffix).
 
 **Page:** Hub Reports
 **File:** `apps/web/src/core/hub/HubReports.tsx`
@@ -853,6 +857,8 @@ const count = items.length;
 ### F23 — Тести: `HubReports.tsx` має тільки aggregation-тести; UI рендер без coverage [severity: medium] [perspective: test]
 
 > 🟡 **Partially closed 2026-05-31** — додано render-smoke `apps/web/src/core/hub/HubReports.test.tsx`, який мокає 4 lazy domain cards + WeeklyDigestCard + billing/useFeatureGate, рендерить компонент із порожнім localStorage і перевіряє, що empty-insights копія «Збери більше даних для інсайтів» з'являється. Повне UI-coverage (period nav, export, paywall flow) лишається open.
+>
+> ✅ **Closed 2026-06-03 (audits-runner execute):** `HubReports.test.tsx` розширено UI-render assertions — F4 (nav aria-labels/touch-target), F7 (period-suffix week→month), F23-c (period-range header змінюється при зміні offset). Разом 10 тестів зелені.
 
 **Page:** Hub Reports
 **File:** missing `apps/web/src/core/hub/HubReports.test.tsx`

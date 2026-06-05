@@ -1,3 +1,7 @@
+/**
+ * Last validated: 2026-06-05
+ * Status: Active
+ */
 import type { Workout } from "@sergeant/fizruk-domain";
 import type { RawExerciseDef } from "@sergeant/fizruk-domain/data";
 import { getKyivDayKey } from "@shared/lib/time/kyivTime";
@@ -112,8 +116,14 @@ export function formatActiveDuration(
   if (!Number.isFinite(start) || !Number.isFinite(end) || end < start)
     return null;
   const sec = Math.floor((end - start) / 1000);
-  const mm = String(Math.floor(sec / 60)).padStart(2, "0");
+  const totalMin = Math.floor(sec / 60);
   const ss = String(sec % 60).padStart(2, "0");
+  if (totalMin >= 60) {
+    const hh = Math.floor(totalMin / 60);
+    const mm = String(totalMin % 60).padStart(2, "0");
+    return `${hh}:${mm}:${ss}`;
+  }
+  const mm = String(totalMin).padStart(2, "0");
   return `${mm}:${ss}`;
 }
 
@@ -124,5 +134,9 @@ export function formatActiveDuration(
  * (page-audit-06 F11). Name kept for call-site stability.
  */
 export function todayLocalDateString(): string {
+  // AI-DANGER: day boundary is Europe/Kyiv, not the device clock or UTC.
+  // Must stay routed through `getKyivDayKey()`. Swapping to
+  // `new Date().toISOString().slice(0,10)` or `toLocaleDateString` silently
+  // shifts the date for late-evening / non-Kyiv hosts and breaks streaks.
   return getKyivDayKey();
 }

@@ -54,7 +54,7 @@
 - **Change** `useRoutineAppState.ts:317` і `NutritionApp.tsx:366` — додано `action: { label: "Повторити", onClick: retry }` (показові first-converts).
 - **Change** [`eslint.config.js`](../../eslint.config.js) — wire rule як `warn` для `apps/web/**/*.{ts,tsx,js,jsx}`.
 
-### F2: Modal a11y «псевдо-діалоги» в API `fixed inset-0` — P1 [PART-1 FIXED, PART-II OUTSTANDING]
+### F2: Modal a11y «псевдо-діалоги» в API `fixed inset-0` — P1 [PART-1 FIXED, PART-II CLOSED 2026-06-03]
 
 **З 2026-05-03 §3.5** — рекомендує ESLint custom rule + axe prop-тест.
 
@@ -81,6 +81,17 @@ $ rg "fixed inset-0" apps/web/src --files-with-matches | wc -l
 
 **Чому part-II не зараз:** rule додано як warn-only, щоб підсвічувати нові регресії; виправлення існуючих файлів потребує risky a11y-зміни (focus-trap може ламати existing flows) — окрема прожарка #2.X — Modal/Dialog a11y.
 
+**UA note 2026-06-03 — PART-II CLOSED:**
+
+Проведено повний інвентар 5 зазначених компонентів; виявлені реальні прогалини та закриті:
+
+- `QuickActionsMenu.tsx` — вже мав `useDialogFocusTrap` + `useBodyScrollLock` + `role="menu"` у тому ж коміті, що додав rule (part-1). Жодних змін не потрібно.
+- `StreakCelebration.tsx` / `FeatureSpotlight.tsx` — файли НЕ існують у репозиторії. Streak-celebration обробляє `CelebrationModal.tsx`, який вже має `role="dialog"` + `aria-modal` + `useFocusTrap`. `FeatureSpotlight` був перспективним placeholder-ом в audit-документі; компонент так і не було створено.
+- `FloatingActionButton.tsx` — **FIXED**: додано `useDialogFocusTrap` (замінює hand-rolled `document.addEventListener("keydown", handleEscape)`) + `useBodyScrollLock` для backdrop-overlay. `role="presentation"` + `aria-hidden` на backdrop вже були. Окремий `menuRef` підключений до `role="menu"` контейнера як root фокус-trap-у.
+- `ModuleSettingsDrawer.tsx` — **FIXED**: вже мав `role="dialog"` + `aria-modal` + `useDialogFocusTrap`. Додано відсутній `useBodyScrollLock(open)`.
+
+Typecheck: ✅ clean. ESLint: ✅ 0 errors. Shared-tests: ✅ 666/666 passed.
+
 ### F3: Keyboard shortcuts — handler-und-coverage — P1 [DOC FIXED]
 
 **З 2026-05-03 §3.11** — рекомендує browser-conflict review + chord-pattern reg.
@@ -99,20 +110,13 @@ $ rg "fixed inset-0" apps/web/src --files-with-matches | wc -l
 - **Add** [`docs/ui/shortcuts.md`](../ui/shortcuts.md) — реєстр + browser-conflict matrix + статус (registered vs TBD) FIX-у-цьому-PR.
 - **Change** (не зараз) — або wire-up missing handler-ів (G-chord pattern, Cmd+/ AI), або прибрати їх з `DEFAULT_SHORTCUTS` до тих пір. Покладемо в окрему прожарку shortcuts-rollout.
 
-### F4: PWA defer update-prompt during streaming — P1
+### F4: PWA defer update-prompt during streaming — P1 ✅ Closed
 
-**З 2026-05-03 §3.7** — рекомендує defer reload-prompt під час активного streaming.
+**Status:** Closed 2026-06-03 (drift — реалізовано, але не позначено у цьому roast-і). `apps/web/src/core/app/useSWUpdate.ts` (hook переїхав з `shared/hooks/` у `core/app/`) тепер містить defer-логіку: `scheduleOrShowUpdateToast()` перевіряє `isHubStreaming()` + `hasMutationsInFlight(queryClient.getMutationCache())` і відкладає toast (polling 1s) поки Hub busy; `HARD_SHOW_TIMEOUT_MS = 10 хв` failsafe (R5) гарантує, що prompt урешті покажеться навіть при «застряглому» streaming-флазі. Gap закрито.
 
-**Поточний стан коду** (2026-05-13):
+**Original concern (2026-05-13):** `apps/web/src/sw.ts` + `useSWUpdate.ts` показували prompt одразу як новий SW активний, без перевірки чи зараз йде Hub-streaming або mutation у `MutationCache` — reload посеред чату розривав streamingResponse (loss-of-context).
 
-- `apps/web/src/sw.ts` + `apps/web/src/shared/hooks/useSWUpdate.ts` показує prompt одразу як новий SW активний, без перевірки чи зараз йде Hub-streaming або mutation у `MutationCache`.
-
-**Дії (не в цьому PR):**
-
-- **Change** `useSWUpdate.ts`: subscribe to `queryClient.getMutationCache().subscribe(...)` + `useStreamingState()` — defer prompt, аж поки stream `idle` AND no in-flight mutations.
-- **Add** test `useSWUpdate.test.ts` що мокає `MutationCache` + `streamingStore` і перевіряє defer.
-
-**Чому не зараз:** потребує знання streaming-state API, не покрите аудитом. Запланувати окремо.
+**Resolution:** реалізовано рекомендовану зміну — subscribe-перевірка streaming-state + mutation-cache, defer аж поки stream idle AND no in-flight mutations, з hard-timeout failsafe.
 
 ### F5: `toast.error(error.message)` без human-mapping — P2 [FIXED]
 
@@ -135,7 +139,7 @@ $ rg "fixed inset-0" apps/web/src --files-with-matches | wc -l
 - **Changed** call-sites — `<PullToRefresh enabled={!cloudPullPending}>` у [`RoutineTimeline.tsx`](../../apps/web/src/modules/routine/RoutineTimeline.tsx), [`NutritionApp.tsx`](../../apps/web/src/modules/nutrition/NutritionApp.tsx), [`TransactionList.tsx`](../../apps/web/src/modules/finyk/pages/transactions/TransactionList.tsx) (фактичний PTR call-site для finyk; `FinykApp.tsx` сам PTR не рендерить).
 - **Tests:** 5 у `useCloudPullPending.test.tsx` (hook happy-path + overlap + timeout + behavior: spy на `HTMLDivElement.prototype.addEventListener` підтверджує, що `<PullToRefresh>` від'єднує touch-listener-и поки cloud-pull pending) + 3 у `cloudPullRequest.test.ts` (subscribe API, counter не йде в негатив на overlapping settles).
 
-### F7: `useApiForm` rollout burndown — P2
+### F7: `useApiForm` rollout burndown — P2 ✅ Closed 2026-06-03
 
 **З 2026-05-03 §3.1** — рекомендує мігрувати всі 10+ форм на foundation `useApiForm` (zod resolver, React Hook Form, mode `onTouched`).
 
@@ -152,13 +156,29 @@ $ rg "fixed inset-0" apps/web/src --files-with-matches | wc -l
 
 - Burndown rollout — мігрувати per-form, кожна = окремий невеликий PR.
 
+**UA note 2026-06-03 — CLOSED:**
+
+Повний статус по кожній формі:
+
+- `PersonalInfoSection.tsx` — **MIGRATED**: name-поле та email-поле переведені на окремі `useApiForm<NameValues>` / `useApiForm<EmailValues>` instances з zod-схемами (`nameSchema` / `emailSchema`). Помилки сервера тепер відображаються inline (через `serverError`) замість `toast.error`. Аватар, верифікація email — залишаються `async`-обробниками (не форми — немає `<form>` + submit, тому `useApiForm` не застосовний). Тест `PersonalInfoSection.test.tsx` оновлено: `error path` перевіряє `role="alert"` inline замість `toast.error`.
+- `MemoryBankSection.tsx` — **SKIPPED (not applicable)**: не має форми з input-submit-flow. Компонент є списком записів з delete/undo, import/export (file-input), та chat-trigger. Жодного `<form>` або submit-callback — `useApiForm` не застосовний.
+- `FinykLoginScreen.tsx` — **MIGRATED**: компонент переписано з prop-drilling (`tokenInput` / `onTokenInputChange` / `showToken` / `onToggleShowToken` / `toast`) на самостійну `useApiForm<TokenValues>` форму з zod-схемою (`token: z.string().trim().min(1)`). `onConnect` сигнатура змінена з `() => void` на `(token: string) => void`. `FinykApp.tsx` оновлено відповідно (видалено `tokenInput` / `showToken` state-клітинки та `toast` prop передачу). Клавіатурна вставка через `setValue` (RHF API) замість `register().onChange`.
+- `WaitlistForm.tsx` — вже було на `useApiForm` (мігровано раніше). Змін не потрібно.
+
+Typecheck: ✅ clean. ESLint: ✅ 0 errors. Form tests (PersonalInfoSection + MemoryBankSection + WaitlistForm): ✅ 18/18 passed.
+
 ## Прогрес виконання
 
-| Item                            | Action                                                                                                                                                                                                                                                                                                                  | Status            |
-| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- |
-| F1 — Toast-policy + ESLint rule | Додано `sergeant-design/require-toast-error-action` з burndown allowlist; додано `docs/ui/toast-policy.md`; виправлено 2 high-traffic PTR-fail callsite-и; решта 14 файлів — у allowlist для burndown.                                                                                                                  | DONE              |
-| F3 — Shortcuts registry doc     | Додано `docs/ui/shortcuts.md` — реєстр + browser-conflict matrix + TBD-handler-и зі `DEFAULT_SHORTCUTS`.                                                                                                                                                                                                                | DONE              |
-| F2 / F4 / F5 / F6 / F7          | Інвентаризовані вище з конкретними `file:line` посиланнями та діями Add/Change. Не закриваються у цьому PR — потребують окремих focused прожарок (Modal a11y, SW-update defer, error-mapping, useApiForm rollout). F5 закрито у follow-up — див. секцію [§ F5](#f5-toasterrorerrormessage-без-human-mapping--p2-fixed). | LOGGED + F5 FIXED |
+| Item                            | Action                                                                                                                                                                                                                                                                                 | Status               |
+| ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- |
+| F1 — Toast-policy + ESLint rule | Додано `sergeant-design/require-toast-error-action` з burndown allowlist; додано `docs/ui/toast-policy.md`; виправлено 2 high-traffic PTR-fail callsite-и; решта 14 файлів — у allowlist для burndown.                                                                                 | DONE                 |
+| F3 — Shortcuts registry doc     | Додано `docs/ui/shortcuts.md` — реєстр + browser-conflict matrix + TBD-handler-и зі `DEFAULT_SHORTCUTS`.                                                                                                                                                                               | DONE                 |
+| F2-part-I — ESLint rule         | `sergeant-design/no-bare-fixed-inset-modal` warn-only rule додано.                                                                                                                                                                                                                     | DONE                 |
+| F2-part-II — a11y fixes         | `FloatingActionButton`: `useDialogFocusTrap` + `useBodyScrollLock` замість hand-rolled listeners. `ModuleSettingsDrawer`: додано `useBodyScrollLock`. `QuickActionsMenu`, `CelebrationModal` (streak/confetti), `FeatureSpotlight` (не існує) — були вже коректними або не застосовні. | DONE 2026-06-03      |
+| F4 — PWA SW defer               | Реалізовано в `useSWUpdate.ts` (defer + hard-timeout failsafe).                                                                                                                                                                                                                        | DONE (drift, closed) |
+| F5 — error mapping              | `mapApiErrorToUserCopy` + 9 callsite-ів у `core/profile/*`.                                                                                                                                                                                                                            | DONE                 |
+| F6 — PTR double-trigger         | `useCloudPullPending` + `enabled` prop wired у PR #2743.                                                                                                                                                                                                                               | DONE                 |
+| F7 — useApiForm rollout         | `PersonalInfoSection` (name + email forms), `FinykLoginScreen` — мігровано. `MemoryBankSection` — не застосовно (немає submit-форм). `WaitlistForm` — вже був мігрований.                                                                                                              | DONE 2026-06-03      |
 
 ## Файли цього PR
 
@@ -177,11 +197,11 @@ apps/web/src/modules/nutrition/NutritionApp.tsx               (PTR-fail toast �
 
 ## Що НЕ зроблено в цьому PR (next prozharkas)
 
-- **Modal a11y inventory + ESLint rule** (`no-bare-fixed-inset-modal`) — потребує detailed inventory ~17 callsite-ів.
-- **SW-update defer-while-streaming** — окрема focused прожарка, бо потрібен deep dive у streaming + mutation-cache state.
-- ~~**`mapApiErrorToUserCopy(error)` централізована функція** — потребує мапи кодів і UA-copy.~~ ✅ Закрито у F5 fix.
-- **`useApiForm` rollout** — 7-10 невеликих PR-ів, бо кожна форма має свої invariant-и (debounced submit, optimistic UI, …).
-- **Keyboard-handler wire-up** (`Cmd+/`, `G H..N`) — окрема прожарка shortcuts-rollout.
+- ~~**Modal a11y inventory + ESLint rule** (`no-bare-fixed-inset-modal`)~~ ✅ Closed F2-part-I + F2-part-II (2026-06-03).
+- ~~**SW-update defer-while-streaming**~~ ✅ Closed F4 (drift — реалізовано в `useSWUpdate.ts`).
+- ~~**`mapApiErrorToUserCopy(error)` централізована функція**~~ ✅ Закрито у F5 fix.
+- ~~**`useApiForm` rollout**~~ ✅ Closed F7 (2026-06-03).
+- **Keyboard-handler wire-up** (`Cmd+/`, `G H..N`) — окрема прожарка shortcuts-rollout. Залишається відкритим.
 
 ## Як перевіряти CI
 

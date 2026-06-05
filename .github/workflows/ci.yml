@@ -200,6 +200,16 @@ jobs:
         # file as void.
         run: bash scripts/check-security-txt-expiry.sh
 
+      - name: Lifecycle marker coverage (Hard Rule #10 — non-blocking)
+        # Theme 4 (consolidated audit 2026-05-13): checks that apps/web/src/**/*.{ts,tsx}
+        # files carry a lifecycle marker (/** @status Active */ or equivalent).
+        # Non-blocking during burn-down (exits 0 even with violations); promoted
+        # to --fail-on-violations once coverage reaches 100%.
+        # See docs/audits/2026-05-13-consolidated-page-audit.md § Theme 4 and
+        # docs/governance/rules/10-lifecycle-markers.md.
+        run: node scripts/docs/check-lifecycle-markers.mjs
+        continue-on-error: true
+
       - name: Format, lint, test, build
         run: pnpm check
 
@@ -611,7 +621,15 @@ jobs:
           echo "Both servers ready."
 
       - name: Run critical-flow E2E suite
-        run: pnpm --filter @sergeant/web exec playwright test -c playwright.smoke.config.ts --grep @critical
+        # Scope to chromium only: this job installs just chromium
+        # (`playwright install … chromium` above), while the smoke config also
+        # declares webkit + mobile-safari projects. Without --project those
+        # engines run too and fail with "Executable doesn't exist …/webkit-*"
+        # on any Playwright-browser cache miss. webkit/mobile-safari coverage
+        # lives in extended-e2e.yml (nightly + `extended-e2e` label), per the
+        # note in playwright.smoke.config.ts. chromium depends on `setup`, so
+        # the auth-state project still runs automatically.
+        run: pnpm --filter @sergeant/web exec playwright test -c playwright.smoke.config.ts --project=chromium --grep @critical
         env:
           CI: "true"
           PW_SKIP_WEBSERVER: "1"

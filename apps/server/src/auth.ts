@@ -8,6 +8,7 @@ import { expo } from "@better-auth/expo";
 import { importPKCS8, SignJWT } from "jose";
 import type { Request } from "express";
 import { env } from "./env/env.js";
+import { startAppleSecretRefresher } from "./auth/appleClientSecretCache.js";
 import { createEncryptingAdapter } from "./auth/encryptingAdapter.js";
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
 import { parseKeyRing } from "./lib/keyRing.js";
@@ -23,6 +24,7 @@ import {
 } from "./obs/metrics.js";
 import { emitSecurityEvent } from "./obs/securityEvents.js";
 import { hashUserId } from "./lib/userIdHash.js";
+import { elapsedMs } from "./lib/timing.js";
 
 /**
  * Короткий fingerprint email-у для логів. Той самий патерн (sha256 → 12 hex),
@@ -182,6 +184,22 @@ async function getSocialProviders(): Promise<
       if (appleBundleId) {
         apple.appBundleIdentifier = appleBundleId;
       }
+      // Schedule periodic re-signing so the token never expires mid-deploy.
+      // Better Auth reads `apple.clientSecret` from the config object at each
+      // OAuth token exchange; mutating it in place keeps the live reference
+      // fresh without re-initialising the auth singleton.
+      startAppleSecretRefresher(
+        () =>
+          generateAppleClientSecret(
+            appleClientId,
+            appleTeamId,
+            appleKeyId,
+            applePrivateKey,
+          ),
+        (jwt) => {
+          apple.clientSecret = jwt;
+        },
+      );
       config.apple = apple;
     } catch (err) {
       // Misformatted `.p8` (e.g. missing PEM headers) — fail-open so the
@@ -653,7 +671,7 @@ export async function getSessionUser(
     outcome = "error";
     throw e;
   } finally {
-    const ms = Number(process.hrtime.bigint() - start) / 1e6;
+    const ms = elapsedMs(start);
     try {
       authSessionLookupDurationMs.observe({ outcome }, ms);
       authAttemptsTotal.inc({ op: "session_check", outcome });

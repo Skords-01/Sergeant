@@ -570,6 +570,20 @@ const envSchema = z.object({
   /** Bearer token для захисту `GET /metrics`. */
   METRICS_TOKEN: z.string().optional(),
 
+  // ── Grafana Cloud / Loki log sink ──────────────────────────────────
+  /**
+   * Base URL Grafana Cloud Loki-інстансу
+   * (e.g. `https://logs-prod-025.grafana.net`).
+   * Без нього Loki-транспорт не ініціалізується (clean no-op).
+   * Всі три `GRAFANA_CLOUD_LOKI_*` мають бути задані разом — часткова
+   * конфігурація ігнорується без помилки.
+   */
+  GRAFANA_CLOUD_LOKI_URL: optionalUrl(),
+  /** Числовий Loki instance id (username для basic auth). */
+  GRAFANA_CLOUD_LOKI_USERNAME: z.string().optional(),
+  /** Grafana Cloud API token (`glc_…`); basic auth password. */
+  GRAFANA_CLOUD_LOKI_TOKEN: z.string().optional(),
+
   // ── OpenTelemetry (Phase 2 з ініціативи 0004) ──────────────────────
   /**
    * OTLP/HTTP collector endpoint (e.g. `https://api.honeycomb.io:443/v1/traces`,
@@ -739,19 +753,15 @@ const envSchema = z.object({
       "STRIPE_PRICE_ID_PRO_MONTHLY must match Stripe `price_*` format",
     )
     .optional(),
+  // ── LiqPay billing (0010 PR-8 scaffold) ─────────────────────────────
   /**
-   * Stripe Price ID for the (currently unused) Plus tier. Kept in the
-   * schema so the dead `getPriceId("plus")` path validates the
-   * format if anyone wires it back up; absence is non-fatal because
-   * the ADR-0051 pricing v3 is single-tier (Pro only).
+   * Feature-flag для LiqPay як другого payment-provider-а (UA-ринок).
+   * Default `false` — scaffold-only до Phase 7. Коли `true`,
+   * `getProviderForCountry({ country: "UA" })` повертає `liqpay` замість
+   * `stripe`. Поки live LiqPay не реалізовано, вмикати лише у dev для
+   * тестування resolver-а — production checkout кине NotImplementedError.
    */
-  STRIPE_PRICE_ID_PLUS_MONTHLY: z
-    .string()
-    .regex(
-      /^price_[A-Za-z0-9]+$/,
-      "STRIPE_PRICE_ID_PLUS_MONTHLY must match Stripe `price_*` format",
-    )
-    .optional(),
+  LIQPAY_ENABLED: boolFromEnv(false),
 
   // ── Nutrition backups ──────────────────────────────────────────────
   /**
