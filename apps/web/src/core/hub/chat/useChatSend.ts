@@ -7,6 +7,7 @@ import { useOnlineStatus } from "@shared/hooks/useOnlineStatus";
 import { hubKeys } from "@shared/lib/api/queryKeys";
 import { perfMark, perfEnd } from "@shared/lib/ui/perf";
 import { safeReadLS, safeWriteLS } from "@shared/lib/storage/storage";
+import { getKyivDayKey } from "@shared/lib/time/kyivTime";
 import {
   CONTEXT_TTL_MS,
   cancelIdle,
@@ -42,19 +43,10 @@ function isAutoTtsEnabled(): boolean {
   return safeReadLS<boolean>(AUTO_TTS_ENABLED_KEY) === true;
 }
 
-function kyivDayKey(date = new Date()): string {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Europe/Kyiv",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(date);
-}
-
 type DailyChatCounter = { day: string; count: number };
 
 function readDailyChatCount(): DailyChatCounter {
-  const today = kyivDayKey();
+  const today = getKyivDayKey();
   const parsed = safeReadLS<DailyChatCounter>(DAILY_CHAT_COUNT_KEY);
   if (parsed?.day === today && typeof parsed.count === "number") {
     return { day: today, count: Math.max(0, parsed.count) };
@@ -529,10 +521,18 @@ export function useChatSend({
   }, []);
   sendRef.current = send;
 
+  // Fired-once guard: prevents re-sending when the user navigates back
+  // to a route that still has `?q=` in the URL (e.g. via the browser
+  // Back button). Without this, every re-mount (strict-mode double-mount
+  // included) would fire a fresh send for the same query.
+  const initialSentRef = useRef(false);
+
   // Initial-message handling — kick off the very first send if
   // `autoSendInitial`, otherwise prefill the input.
   useEffect(() => {
     if (!initialMessage) return;
+    if (initialSentRef.current) return;
+    initialSentRef.current = true;
     if (autoSendInitial) {
       sendRef.current?.(initialMessage);
     } else {

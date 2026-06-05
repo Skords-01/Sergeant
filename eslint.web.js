@@ -443,4 +443,23 @@ export const webBlocks = [
       ],
     },
   },
+  // Theme 6 (consolidated audit 2026-05-13): `@typescript-eslint/no-non-null-assertion`
+  // — warn-level gate for `!` non-null assertions that bypass `noUncheckedIndexedAccess`.
+  // The fizruk module (Dashboard/Atlas/Workouts/Exercise/Progress/Programs) had the most
+  // documented violations (F15 adaptiveSort.ts, F18 hubReports, Measurements.tsx:268,
+  // ExerciseProgressChart.tsx:57, WeeklyVolumeChart.tsx:79, WorkoutTemplatesSection.tsx:491).
+  // Severity `warn` because ~96 existing production assertions remain; the
+  // ones in fizruk are fixed below. Promoted to `error` when count reaches zero.
+  // Burn-down: 2026-Q3. See docs/audits/2026-05-13-consolidated-page-audit.md § Theme 6.
+  {
+    files: ["apps/web/src/**/*.{ts,tsx}"],
+    ignores: [
+      "apps/web/src/**/*.test.{ts,tsx}",
+      "apps/web/src/**/__tests__/**",
+      "apps/web/src/**/*.stories.{ts,tsx}",
+    ],
+    rules: {
+      "@typescript-eslint/no-non-null-assertion": "warn",
+    },
+  },
 ];

@@ -105,13 +105,13 @@
       <span class="chip chip-audit">audit: <b>29</b></span>
       <span class="chip chip-hard-rule">hard-rule: <b>26</b></span>
       <span class="chip chip-initiative">initiative: <b>47</b></span>
-      <span class="chip chip-playbook">playbook: <b>58</b></span>
-      <span class="chip chip-pr">pr: <b>195</b></span>
+      <span class="chip chip-playbook">playbook: <b>61</b></span>
+      <span class="chip chip-pr">pr: <b>199</b></span>
       <span class="chip chip-skill">skill: <b>22</b></span>
     </div>
 
     <details open>
-      <summary>Nodes (234 core)</summary>
+      <summary>Nodes (237 core)</summary>
       <table>
         <thead>
           <tr>
@@ -1119,7 +1119,10 @@
                 (2026-05-13)</a
               >
             </td>
-            <td>Active</td>
+            <td>
+              Closed — усі 11 пунктів (S1–S11) закриті. Документ зберігається як
+              історичний рекорд.
+            </td>
             <td></td>
           </tr>
           <tr>
@@ -1166,7 +1169,10 @@
                 >Deep audit — state of repo (2026-05-15)</a
               >
             </td>
-            <td>Active</td>
+            <td>
+              Active — 0 truly-outstanding items (усі D1–D4 закрито станом на
+              2026-06-03; файл лишається не заархівованим для крос-посилань).
+            </td>
             <td></td>
           </tr>
           <tr>
@@ -2383,11 +2389,18 @@
               files). **Phase 2 scaffolding** (2026-06-01):
               `scripts/eslint-print-config-diff.mjs` + 8 surface snapshots під
               `scripts/__fixtures__/eslint-print-config/` + `pnpm
-              lint:eslint-config-diff` gate. Per-surface extracts (apps/web,
-              apps/server, apps/mobile, apps/mobile-shell, tools/openclaw,
-              packages/\*\*) tracked separately — diff-gate тепер flips на
-              будь-який accidental config drift; extraction PR запускає
-              `--update` після того як intent verified review-ером.
+              lint:eslint-config-diff` gate. **Phase 2a shipped (2026-06-05):**
+              per-surface extraction завершено — surface блоки винесені у
+              `eslint.web.js` / `eslint.server.js` / `eslint.mobile.js` /
+              `eslint.shell.js` / `eslint.openclaw.js` / `eslint.packages.js` /
+              `eslint.cross-surface.js`; root composition manifest 1128 → 37
+              рядків. **Byte-neutral**: `lint:eslint-config-diff` — усі 8
+              fixtures match, нуль зміни снапшотів. **Phase 2b deferred:**
+              справжні per-package standalone `apps/&lt;x&gt;/eslint.config.js`
+              + Turbo parallelism (DoD #2 strict / #3 / #4) — потребують зміни
+              resolution-model + diff-gate cd-per-package + re-baseline
+              снапшотів у CI-env (див. § Implementation notes +
+              `docs/development/eslint-config.md` § Phase 2b).
             </td>
             <td></td>
           </tr>
@@ -2697,10 +2710,32 @@
           </tr>
           <tr>
             <td>playbook</td>
+            <td><code>playbook:author-skill</code></td>
+            <td>
+              <a href="../../docs/playbooks/author-skill.md"
+                >Author or Edit a SKILL.md</a
+              >
+            </td>
+            <td>Active</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td>playbook</td>
             <td><code>playbook:bump-dep-safely</code></td>
             <td>
               <a href="../../docs/playbooks/bump-dep-safely.md"
                 >Bump Dependency Safely</a
+              >
+            </td>
+            <td>Active</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td>playbook</td>
+            <td><code>playbook:change-auth-flow</code></td>
+            <td>
+              <a href="../../docs/playbooks/change-auth-flow.md"
+                >Change an Auth Flow (Better Auth)</a
               >
             </td>
             <td>Active</td>
@@ -3123,6 +3158,17 @@
           </tr>
           <tr>
             <td>playbook</td>
+            <td><code>playbook:write-e2e-test</code></td>
+            <td>
+              <a href="../../docs/playbooks/write-e2e-test.md"
+                >Write or Debug a Playwright E2E Test</a
+              >
+            </td>
+            <td>Active</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td>playbook</td>
             <td><code>playbook:write-postmortem</code></td>
             <td>
               <a href="../../docs/playbooks/write-postmortem.md"
@@ -3492,7 +3538,7 @@
     </details>
 
     <details>
-      <summary>Edges (425 total, first 500 core-to-core)</summary>
+      <summary>Edges (439 total, first 500 core-to-core)</summary>
       <table>
         <thead>
           <tr>
@@ -4076,6 +4122,11 @@
           <tr>
             <td><code>audit:2026-05-13-web-architecture-state-roast</code></td>
             <td>references</td>
+            <td><code>hard-rule:18</code></td>
+          </tr>
+          <tr>
+            <td><code>audit:2026-05-13-web-architecture-state-roast</code></td>
+            <td>references</td>
             <td><code>hard-rule:2</code></td>
           </tr>
           <tr>
@@ -4163,6 +4214,16 @@
             <td><code>playbook:add-react-query-hook</code></td>
             <td>references</td>
             <td><code>hard-rule:2</code></td>
+          </tr>
+          <tr>
+            <td><code>playbook:author-skill</code></td>
+            <td>references</td>
+            <td><code>hard-rule:22</code></td>
+          </tr>
+          <tr>
+            <td><code>playbook:change-auth-flow</code></td>
+            <td>references</td>
+            <td><code>hard-rule:4</code></td>
           </tr>
           <tr>
             <td><code>playbook:cleanup-dead-code</code></td>

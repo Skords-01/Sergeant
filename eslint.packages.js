@@ -39,4 +39,13 @@ export const packageBlocks = [
       "sergeant-design/require-toast-error-action": "off",
     },
   },
+  // The ESLint plugin's own test fixtures contain raw storage key literals and
+  // small-button class strings — disable both new rules on the plugin itself.
+  {
+    files: ["packages/eslint-plugin-sergeant-design/**/*.{js,mjs}"],
+    rules: {
+      "sergeant-design/no-raw-storage-key": "off",
+      "sergeant-design/no-small-button-touch-target": "off",
+    },
+  },
 ];

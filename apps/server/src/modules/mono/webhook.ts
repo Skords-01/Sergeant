@@ -13,6 +13,7 @@ import { enqueueMemoryIngest } from "../ai-memory/ingestQueue.js";
 import { categorizeMcc } from "./mccCategories.js";
 import { webhookSecretHash } from "./crypto.js";
 import { emitSecurityEvent } from "../../obs/securityEvents.js";
+import { elapsedMs } from "../../lib/timing.js";
 
 /**
  * POST /api/mono/webhook/:secret? — public Monobank delivery endpoint.
@@ -282,7 +283,7 @@ export async function webhookHandler(
   // `xmax` is 0, on the UPDATE branch of ON CONFLICT it is the txid of the
   // updating transaction (non-zero). We use this to fire push notifications
   // only on first delivery and stay silent on retries — Monobank can re-send
-  // the same statement item if our 200 response is lost. See AI-DANGER below.
+  // the same statement item if our 200 response is lost.
   // Server-side MCC → category resolution. Returns NULL for MCC 0 / null /
   // unknown — caller stays NULL and the user can override via UI.
   // ON CONFLICT branch refreshes `category_slug` only when the user has not
@@ -436,7 +437,7 @@ export async function webhookHandler(
     } catch {
       /* ignore secondary rollback failure — original error matters more */
     }
-    const ms = Number(process.hrtime.bigint() - start) / 1e6;
+    const ms = elapsedMs(start);
     monoWebhookReceivedTotal.inc({ status: "error" });
     monoWebhookDurationMs.observe({ status: "error" }, ms);
     logger.error({ msg: "mono_webhook_error", err });
@@ -445,7 +446,7 @@ export async function webhookHandler(
     client.release();
   }
 
-  const ms = Number(process.hrtime.bigint() - start) / 1e6;
+  const ms = elapsedMs(start);
   if (autocreated)
     monoWebhookReceivedTotal.inc({ status: "account_autocreated" });
   monoWebhookReceivedTotal.inc({ status: "ok" });

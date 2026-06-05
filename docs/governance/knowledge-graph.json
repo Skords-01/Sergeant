@@ -7,8 +7,8 @@
     "audit": 29,
     "hard-rule": 26,
     "initiative": 47,
-    "playbook": 58,
-    "pr": 195,
+    "playbook": 61,
+    "pr": 199,
     "skill": 22
   },
   "nodes": [
@@ -872,7 +872,7 @@
       "type": "audit",
       "title": "Sergeant — Security & Observability прожарка (2026-05-13)",
       "path": "docs/audits/2026-05-13-security-observability-roast.md",
-      "status": "Active",
+      "status": "Closed — усі 11 пунктів (S1–S11) закриті. Документ зберігається як історичний рекорд.",
       "tier": "core",
       "meta": {}
     },
@@ -908,7 +908,7 @@
       "type": "audit",
       "title": "Deep audit — state of repo (2026-05-15)",
       "path": "docs/audits/2026-05-15-deep-audit-state-of-repo.md",
-      "status": "Active",
+      "status": "Active — 0 truly-outstanding items (усі D1–D4 закрито станом на 2026-06-03; файл лишається не заархівованим для крос-посилань).",
       "tier": "core",
       "meta": {}
     },
@@ -1667,7 +1667,7 @@
       "type": "initiative",
       "title": "PR-31: ESLint config 1073 рядки → split per-app",
       "path": "docs/initiatives/stack-pulse-2026-05/pr-31-eslint-config-split.md",
-      "status": "Phase 1 shipped + Phase 2 scaffolding shipped — baseline extracted into `eslint.baseline.js` (PR-31 phase 1, ~180 рядків, byte-identical `--print-config` output verified on 7 fixture files). **Phase 2 scaffolding** (2026-06-01): `scripts/eslint-print-config-diff.mjs` + 8 surface snapshots під `scripts/__fixtures__/eslint-print-config/` + `pnpm lint:eslint-config-diff` gate. Per-surface extracts (apps/web, apps/server, apps/mobile, apps/mobile-shell, tools/openclaw, packages/\\*\\*) tracked separately — diff-gate тепер flips на будь-який accidental config drift; extraction PR запускає `--update` після того як intent verified review-ером.",
+      "status": "Phase 1 shipped + Phase 2 scaffolding shipped — baseline extracted into `eslint.baseline.js` (PR-31 phase 1, ~180 рядків, byte-identical `--print-config` output verified on 7 fixture files). **Phase 2 scaffolding** (2026-06-01): `scripts/eslint-print-config-diff.mjs` + 8 surface snapshots під `scripts/__fixtures__/eslint-print-config/` + `pnpm lint:eslint-config-diff` gate. **Phase 2a shipped (2026-06-05):** per-surface extraction завершено — surface блоки винесені у `eslint.web.js` / `eslint.server.js` / `eslint.mobile.js` / `eslint.shell.js` / `eslint.openclaw.js` / `eslint.packages.js` / `eslint.cross-surface.js`; root composition manifest 1128 → 37 рядків. **Byte-neutral**: `lint:eslint-config-diff` — усі 8 fixtures match, нуль зміни снапшотів. **Phase 2b deferred:** справжні per-package standalone `apps/<x>/eslint.config.js` + Turbo parallelism (DoD #2 strict / #3 / #4) — потребують зміни resolution-model + diff-gate cd-per-package + re-baseline снапшотів у CI-env (див. § Implementation notes + `docs/development/eslint-config.md` § Phase 2b).",
       "tier": "core",
       "meta": {}
     },
@@ -1843,10 +1843,28 @@
       "meta": {}
     },
     {
+      "id": "playbook:author-skill",
+      "type": "playbook",
+      "title": "Author or Edit a SKILL.md",
+      "path": "docs/playbooks/author-skill.md",
+      "status": "Active",
+      "tier": "core",
+      "meta": {}
+    },
+    {
       "id": "playbook:bump-dep-safely",
       "type": "playbook",
       "title": "Bump Dependency Safely",
       "path": "docs/playbooks/bump-dep-safely.md",
+      "status": "Active",
+      "tier": "core",
+      "meta": {}
+    },
+    {
+      "id": "playbook:change-auth-flow",
+      "type": "playbook",
+      "title": "Change an Auth Flow (Better Auth)",
+      "path": "docs/playbooks/change-auth-flow.md",
       "status": "Active",
       "tier": "core",
       "meta": {}
@@ -2252,6 +2270,15 @@
       "type": "playbook",
       "title": "Tune System Prompt",
       "path": "docs/playbooks/tune-system-prompt.md",
+      "status": "Active",
+      "tier": "core",
+      "meta": {}
+    },
+    {
+      "id": "playbook:write-e2e-test",
+      "type": "playbook",
+      "title": "Write or Debug a Playwright E2E Test",
+      "path": "docs/playbooks/write-e2e-test.md",
       "status": "Active",
       "tier": "core",
       "meta": {}
@@ -3356,6 +3383,16 @@
       }
     },
     {
+      "id": "pr:2660",
+      "type": "pr",
+      "title": "PR #2660",
+      "tier": "extended",
+      "meta": {
+        "number": 2660,
+        "url": "https://github.com/Skords-01/Sergeant/pull/2660"
+      }
+    },
+    {
       "id": "pr:2726",
       "type": "pr",
       "title": "PR #2726",
@@ -3756,6 +3793,16 @@
       }
     },
     {
+      "id": "pr:3363",
+      "type": "pr",
+      "title": "PR #3363",
+      "tier": "extended",
+      "meta": {
+        "number": 3363,
+        "url": "https://github.com/Skords-01/Sergeant/pull/3363"
+      }
+    },
+    {
       "id": "pr:34",
       "type": "pr",
       "title": "PR #34",
@@ -3906,6 +3953,16 @@
       }
     },
     {
+      "id": "pr:57",
+      "type": "pr",
+      "title": "PR #57",
+      "tier": "extended",
+      "meta": {
+        "number": 57,
+        "url": "https://github.com/Skords-01/Sergeant/pull/57"
+      }
+    },
+    {
       "id": "pr:6",
       "type": "pr",
       "title": "PR #6",
@@ -3963,6 +4020,16 @@
       "meta": {
         "number": 708,
         "url": "https://github.com/Skords-01/Sergeant/pull/708"
+      }
+    },
+    {
+      "id": "pr:716",
+      "type": "pr",
+      "title": "PR #716",
+      "tier": "extended",
+      "meta": {
+        "number": 716,
+        "url": "https://github.com/Skords-01/Sergeant/pull/716"
       }
     },
     {
@@ -5019,6 +5086,11 @@
     },
     {
       "from": "audit:2026-05-06-ux-roast-pr-plan",
+      "to": "pr:2660",
+      "type": "touched-by"
+    },
+    {
+      "from": "audit:2026-05-06-ux-roast-pr-plan",
       "to": "pr:51",
       "type": "touched-by"
     },
@@ -5135,6 +5207,11 @@
     {
       "from": "audit:2026-05-13-consolidated-page-audit",
       "to": "pr:2799",
+      "type": "touched-by"
+    },
+    {
+      "from": "audit:2026-05-13-consolidated-page-audit",
+      "to": "pr:3363",
       "type": "touched-by"
     },
     {
@@ -5255,6 +5332,11 @@
     {
       "from": "audit:2026-05-13-page-audit-01-auth-onboarding",
       "to": "pr:2586",
+      "type": "touched-by"
+    },
+    {
+      "from": "audit:2026-05-13-page-audit-01-auth-onboarding",
+      "to": "pr:716",
       "type": "touched-by"
     },
     {
@@ -5698,8 +5780,18 @@
       "type": "touched-by"
     },
     {
+      "from": "audit:2026-05-13-testing-devx-roast",
+      "to": "pr:3363",
+      "type": "touched-by"
+    },
+    {
       "from": "audit:2026-05-13-web-architecture-state-roast",
       "to": "hard-rule:12",
+      "type": "references"
+    },
+    {
+      "from": "audit:2026-05-13-web-architecture-state-roast",
+      "to": "hard-rule:18",
       "type": "references"
     },
     {
@@ -5729,6 +5821,36 @@
     },
     {
       "from": "audit:2026-05-13-web-architecture-state-roast",
+      "to": "pr:2104",
+      "type": "touched-by"
+    },
+    {
+      "from": "audit:2026-05-13-web-architecture-state-roast",
+      "to": "pr:2108",
+      "type": "touched-by"
+    },
+    {
+      "from": "audit:2026-05-13-web-architecture-state-roast",
+      "to": "pr:2541",
+      "type": "touched-by"
+    },
+    {
+      "from": "audit:2026-05-13-web-architecture-state-roast",
+      "to": "pr:2545",
+      "type": "touched-by"
+    },
+    {
+      "from": "audit:2026-05-13-web-architecture-state-roast",
+      "to": "pr:2551",
+      "type": "touched-by"
+    },
+    {
+      "from": "audit:2026-05-13-web-architecture-state-roast",
+      "to": "pr:2570",
+      "type": "touched-by"
+    },
+    {
+      "from": "audit:2026-05-13-web-architecture-state-roast",
       "to": "pr:2607",
       "type": "touched-by"
     },
@@ -5745,6 +5867,11 @@
     {
       "from": "audit:2026-05-13-web-architecture-state-roast",
       "to": "pr:54",
+      "type": "touched-by"
+    },
+    {
+      "from": "audit:2026-05-13-web-architecture-state-roast",
+      "to": "pr:57",
       "type": "touched-by"
     },
     {
@@ -6291,6 +6418,16 @@
       "from": "playbook:add-react-query-hook",
       "to": "pr:729",
       "type": "touched-by"
+    },
+    {
+      "from": "playbook:author-skill",
+      "to": "hard-rule:22",
+      "type": "references"
+    },
+    {
+      "from": "playbook:change-auth-flow",
+      "to": "hard-rule:4",
+      "type": "references"
     },
     {
       "from": "playbook:cleanup-dead-code",

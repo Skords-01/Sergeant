@@ -431,4 +431,137 @@ export const crossSurfaceBlocks = [
       ],
     },
   },
+  // Theme 5 (consolidated audit 2026-05-13): `no-raw-storage-key` — warn-level
+  // gate for raw localStorage key string literals passed to storage helpers.
+  // Use `STORAGE_KEYS.<NAME>` from `@sergeant/shared` instead. The rule is
+  // `warn` because ~50 existing call-sites remain (chatActions, onboarding,
+  // recommendations, weeklyDigest, dailyFinykSummary); they are tracked in
+  // the burn-down documented in the audit. Promoted to `error` when the
+  // count reaches zero. See docs/audits/2026-05-13-consolidated-page-audit.md § Theme 5.
+  // Files that legitimately use raw key strings (migration helpers, seed/cleanup
+  // demo data, the registry itself, searchCache internal cache key) are exempt
+  // inside the rule implementation.
+  {
+    files: [
+      "apps/web/src/**/*.{ts,tsx}",
+      "apps/mobile/src/**/*.{ts,tsx}",
+      "apps/mobile/app/**/*.{ts,tsx}",
+    ],
+    ignores: [
+      "apps/web/src/**/*.test.{ts,tsx}",
+      "apps/web/src/**/__tests__/**",
+      "apps/mobile/src/**/*.test.{ts,tsx}",
+      "apps/mobile/src/**/__tests__/**",
+      "apps/mobile/app/**/*.test.{ts,tsx}",
+      "apps/mobile/app/**/__tests__/**",
+    ],
+    rules: {
+      "sergeant-design/no-raw-storage-key": "warn",
+    },
+  },
+  // Theme 2 (consolidated audit 2026-05-13): `no-small-button-touch-target` —
+  // warn-level gate for raw `<button>` elements with height/size classes below
+  // 44px without a touch-target compensator. WCAG 2.5.5 requires ≥ 44×44px.
+  // Use the `Button` primitive (auto-applies `pointer-coarse:min-h-[44px]`) or
+  // add `min-h-[44px] min-w-[44px]` manually. The rule is `warn` because some
+  // call-sites are data-cell contexts (calendar cells, chart bars) where 44px
+  // would break layout. Burn-down: 2026-Q3.
+  // See docs/audits/2026-05-13-consolidated-page-audit.md § Theme 2.
+  {
+    files: [
+      "apps/web/src/**/*.{ts,tsx}",
+      "apps/mobile/src/**/*.{ts,tsx}",
+      "apps/mobile/app/**/*.{ts,tsx}",
+    ],
+    ignores: [
+      "apps/web/src/**/*.test.{ts,tsx}",
+      "apps/web/src/**/__tests__/**",
+      "apps/web/src/**/*.stories.{ts,tsx}",
+      "apps/mobile/src/**/*.test.{ts,tsx}",
+      "apps/mobile/src/**/__tests__/**",
+    ],
+    rules: {
+      "sergeant-design/no-small-button-touch-target": "warn",
+    },
+  },
+  // Theme 1 (consolidated audit 2026-05-13) — `new Date()` guard.
+  //
+  // `new Date()` with zero arguments returns the current instant anchored to
+  // the host clock. In domain modules (finyk, fizruk, routine, hub-chat, search)
+  // any "today" / "this week" derivation must flow through `getKyivDateParts()`,
+  // `getKyivDayKey()`, or `getKyivWeekStart()` from
+  // `apps/web/src/shared/lib/time/kyivTime.ts` so day boundaries stay anchored
+  // to Europe/Kyiv per the domain-invariants spec (docs/architecture/
+  // domain-invariants.md § timezone).
+  //
+  // `new Date(someValue)` (1+ arguments) is NOT banned — constructing a Date
+  // from a known ISO string or timestamp is a UTC-safe operation that does not
+  // bake in the host timezone.
+  //
+  // Severity: `warn` — ramps to `error` once the burn-down sweep in the
+  // companion tracker (docs/audits/2026-05-13-consolidated-page-audit.md
+  // § Theme 1) closes. Test files and the canonical `kyivTime.ts` are exempt.
+  //
+  // New call-sites added in the scoped paths that genuinely need "current
+  // UTC instant" (e.g. an `updatedAt: new Date().toISOString()` timestamp
+  // record) should add an inline `eslint-disable-next-line` with a WHY
+  // comment so the intent is explicit in review.
+  //
+  // Phase 2b note: this block's `no-restricted-syntax` override is composed
+  // LAST (after the cloud-sync retirement blocks above) to match the original
+  // monolith's append order — flat-config merges `no-restricted-syntax` by
+  // replacement per rule key, so position relative to the retirement blocks
+  // is load-bearing for files that match both.
+  {
+    files: [
+      "apps/web/src/modules/finyk/**/*.{ts,tsx}",
+      "apps/web/src/modules/fizruk/**/*.{ts,tsx}",
+      "apps/web/src/modules/routine/**/*.{ts,tsx}",
+      "apps/web/src/core/hub/chat/**/*.{ts,tsx}",
+      "apps/web/src/core/hub/search/**/*.{ts,tsx}",
+      "apps/web/src/core/app/HubHeader.tsx",
+      "apps/web/src/core/settings/PlanSection.tsx",
+      "apps/web/src/pages/strategy/StrategyPage.tsx",
+    ],
+    ignores: [
+      // Tests use vi.setSystemTime / explicit Date literals — legitimate.
+      "apps/web/src/**/*.test.{ts,tsx}",
+      "apps/web/src/**/__tests__/**",
+      // The canonical Kyiv-time helper is the single place allowed to call
+      // new Date() freely — every other file in the scoped paths must route
+      // through its exports.
+      "apps/web/src/shared/lib/time/kyivTime.ts",
+    ],
+    rules: {
+      "no-restricted-syntax": [
+        "warn",
+        {
+          selector: "NewExpression[callee.name='Date'][arguments.length=0]",
+          message:
+            "Bare `new Date()` is forbidden in domain modules — it returns the " +
+            "host-local instant. Use `getKyivDateParts()`, `getKyivDayKey()`, or " +
+            "`getKyivWeekStart()` from `@shared/lib/time/kyivTime` so day " +
+            "boundaries stay anchored to Europe/Kyiv. If you genuinely need a " +
+            "UTC-anchored wall-clock instant (e.g. `updatedAt` timestamp), add " +
+            "an `eslint-disable-next-line no-restricted-syntax` with a WHY comment. " +
+            "See docs/audits/2026-05-13-consolidated-page-audit.md § Theme 1.",
+        },
+        // Inherit the legacy palette selectors from the top-level block so this
+        // scoped override doesn't accidentally drop them — flat-config merges
+        // rules by replacement per rule key (last matching block wins).
+        {
+          selector:
+            "Literal[value=/\\b(?:bg|text|border|ring|from|to|via|fill|stroke|shadow|outline|divide|placeholder|caret)-(?:forest(?:-grad)?|accent-\\d+)(?:\\/\\d+)?\\b/]",
+          message:
+            "Legacy `forest` / tonal `accent-NNN` retired — use semantic `accent`, `brand-500`, `fizruk`, `routine`, `nutrition`, or `finyk` instead.",
+        },
+        {
+          selector:
+            "TemplateElement[value.raw=/\\b(?:bg|text|border|ring|from|to|via|fill|stroke|shadow|outline|divide|placeholder|caret)-(?:forest(?:-grad)?|accent-\\d+)(?:\\/\\d+)?\\b/]",
+          message:
+            "Legacy `forest` / tonal `accent-NNN` retired — use semantic `accent`, `brand-500`, `fizruk`, `routine`, `nutrition`, or `finyk` instead.",
+        },
+      ],
+    },
+  },
 ];
