@@ -1,7 +1,6 @@
-import { type CSSProperties } from "react";
+import { Suspense, type CSSProperties } from "react";
 import { type User } from "@sergeant/shared";
 import { SkipLink } from "@shared/components/ui/SkipLink";
-import { KeyboardShortcutsModal } from "@shared/components/ui/KeyboardShortcutsModal";
 import { AIPill } from "@shared/components/ui/AIPill";
 import { MeshBackground } from "@shared/components/layout/MeshBackground";
 import { ActiveWorkoutBanner } from "./ActiveWorkoutBanner";
@@ -15,9 +14,18 @@ import { hasAnyRealEntry } from "../onboarding/firstRealEntry";
 import { isFirstRealEntryDone } from "../onboarding/vibePicks";
 import { shouldShowOnboarding } from "../onboarding/onboardingGate";
 import { WhatsNewModal, useWhatsNew } from "../whatsNew";
+import { lazyImport } from "../lib/lazyImport";
 import type { HubNavigation } from "../hooks/useHubNavigation";
 import type { HubUIState } from "../hooks/useHubUIState";
 import { openHubSettingsSection } from "@shared/lib/modules/hubNav";
+
+// The shortcuts modal body is heavy (portal + focus-trap + key grid) and
+// only renders on the `?` hotkey, so it ships as its own chunk and loads
+// on first open instead of inflating the entry bundle (initiative 0017).
+const KeyboardShortcutsModal = lazyImport(
+  () => import("@shared/components/ui/KeyboardShortcutsModalUI"),
+  "KeyboardShortcutsModal",
+);
 
 export interface HubHomeViewProps {
   ui: HubUIState;
@@ -150,7 +158,14 @@ export function HubHomeView(props: HubHomeViewProps) {
         onCloseSearch={ui.closeSearch}
         onOpenModule={openModule}
       />
-      <KeyboardShortcutsModal open={shortcutsOpen} onClose={onCloseShortcuts} />
+      {shortcutsOpen && (
+        <Suspense fallback={null}>
+          <KeyboardShortcutsModal
+            open={shortcutsOpen}
+            onClose={onCloseShortcuts}
+          />
+        </Suspense>
+      )}
       <WhatsNewModal
         open={whatsNew.open}
         release={whatsNew.release}
