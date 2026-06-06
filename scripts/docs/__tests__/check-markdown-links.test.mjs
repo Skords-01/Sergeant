@@ -7,7 +7,7 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { mkdtempSync, writeFileSync, mkdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, relative, resolve } from "node:path";
 
 import {
   extractLinks,
@@ -100,6 +100,10 @@ describe("shouldSkipFile", () => {
     assert.equal(shouldSkipFile(".agents/skills/foo/AGENTS.md"), true);
   });
 
+  it("skips .agents\\skills\\** on Windows paths", () => {
+    assert.equal(shouldSkipFile(".agents\\skills\\foo\\AGENTS.md"), true);
+  });
+
   it("skips _TEMPLATE-*.md files", () => {
     assert.equal(
       shouldSkipFile("docs/playbooks/_TEMPLATE-decision-tree.md"),
@@ -115,22 +119,33 @@ describe("shouldSkipFile", () => {
 
 describe("resolveInternal", () => {
   it("resolves relative target from the source file's directory", () => {
+    const repo = resolve("repo");
     const abs = resolveInternal(
-      "/repo/docs/playbooks/add-foo.md",
+      join(repo, "docs", "playbooks", "add-foo.md"),
       "./bar.md",
-      "/repo",
+      repo,
     );
-    assert.equal(abs, "/repo/docs/playbooks/bar.md");
+    assert.equal(abs, join(repo, "docs", "playbooks", "bar.md"));
   });
 
   it("strips the anchor before resolving", () => {
-    const abs = resolveInternal("/repo/docs/a.md", "./b.md#section", "/repo");
-    assert.equal(abs, "/repo/docs/b.md");
+    const repo = resolve("repo");
+    const abs = resolveInternal(
+      join(repo, "docs", "a.md"),
+      "./b.md#section",
+      repo,
+    );
+    assert.equal(abs, join(repo, "docs", "b.md"));
   });
 
   it("resolves absolute-style paths against the repo root", () => {
-    const abs = resolveInternal("/repo/docs/deep/a.md", "/README.md", "/repo");
-    assert.equal(abs, "/repo/README.md");
+    const repo = resolve("repo");
+    const abs = resolveInternal(
+      join(repo, "docs", "deep", "a.md"),
+      "/README.md",
+      repo,
+    );
+    assert.equal(abs, join(repo, "README.md"));
   });
 });
 
@@ -145,7 +160,9 @@ describe("walkMarkdown", () => {
       writeFileSync(join(dir, "node_modules/foo/ignored.md"), "# ignored");
       writeFileSync(join(dir, "not-md.txt"), "nope");
       const files = walkMarkdown(dir);
-      const rels = files.map((f) => f.replace(dir + "/", "")).sort();
+      const rels = files
+        .map((f) => relative(dir, f).replaceAll("\\", "/"))
+        .sort();
       assert.deepEqual(rels, ["a.md", "sub/b.md"]);
     } finally {
       rmSync(dir, { recursive: true, force: true });

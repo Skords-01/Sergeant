@@ -167,7 +167,8 @@ export function classifyTarget(target) {
 
 /** Is this markdown file skipped entirely by the checker? */
 export function shouldSkipFile(relPath) {
-  return SKIP_FILE_PATTERNS.some((re) => re.test(relPath));
+  const normalized = relPath.replaceAll("\\", "/");
+  return SKIP_FILE_PATTERNS.some((re) => re.test(normalized));
 }
 
 /** Resolve an internal link target to an absolute filesystem path. */
@@ -332,7 +333,13 @@ async function main() {
   for (const file of files) {
     const rel = relative(REPO_ROOT, file);
     if (shouldSkipFile(rel)) continue;
-    const content = readFileSync(file, "utf8");
+    let content;
+    try {
+      content = readFileSync(file, "utf8");
+    } catch (err) {
+      if (err?.code === "ENOENT") continue;
+      throw err;
+    }
     const links = extractLinks(content);
     for (const link of links) {
       const kind = classifyTarget(link.target);
