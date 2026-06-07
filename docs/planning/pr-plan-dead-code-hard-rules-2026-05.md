@@ -1,6 +1,6 @@
 # PR-план — Dead Code + Hard Rules (з прожарки 2026-05-13)
 
-> **Last validated:** 2026-06-01 by server-agent. **Next review:** 2026-08-11.
+> **Last validated:** 2026-06-07 by Codex (docs link-gate hardening follow-up documented). **Next review:** 2026-08-11.
 > **Status:** Active
 
 > **Скоуп:** виконати outstanding items з [`2026-05-13-dead-code-hard-rules-roast.md`](../audits/2026-05-13-dead-code-hard-rules-roast.md) (§ P1 — `pnpm knip` deps sweep, 77 unused exports + 51 duplicate exports, mobile-shell unused exports, env-single-source Phase 2 burn-down, AuthPage re-decomposition) і tightening hard-rule контуру (новий lint-gate проти archive-move depth-drift, який зараз тільки watchlist у § P2). Усе закрите у самій прожарці (P0.1/P0.2/P0.3, P1.2, P1.6 markers, P1.4 partial budget restore) — поза скоупом цього плану.
@@ -173,7 +173,7 @@ Order: DC-1 (XS) → HR-1 (locks canonical test-pattern) → паралельн�
 
 ### HR-4 — `feat(governance): pnpm lint:archive-move-depth — catch archive-move depth-drift`
 
-- **Status:** ✅ Виконано 2026-05-14 у `codex/docs-open-work-drift-cleanup` (`lint:archive-move-depth`, unit tests, root `pnpm lint` wiring, Hard Rule #23 + registry/matrix/AGENTS/CONTRIBUTING sync).
+- **Status:** ✅ Виконано 2026-05-14 у `codex/docs-open-work-drift-cleanup` (`lint:archive-move-depth`, unit tests, root `pnpm lint` wiring, Hard Rule #23 + registry/matrix/AGENTS/CONTRIBUTING sync). Follow-up PR [#3418](https://github.com/Skords-01/Sergeant/pull/3418) hardens the adjacent markdown link gate: nested fenced-code blocks are ignored correctly, `--skip-file` paths normalize on Windows, and `node scripts/docs/check-markdown-links.mjs --skip-external` passed on the full docs tree.
 - **Title:** `feat(governance): new pnpm lint:archive-move-depth gate + Hard Rule #23 (archive-move depth integrity)`
 - **Scope-файли:**
   - `scripts/check-archive-move-depth.mjs` — новий скрипт. Логіка: для кожного `docs/audits/archive/*.md` (і будь-якого `docs/**/archive/**.md`, якщо інший archive-pattern існує), парсить `[text](path)` і fail-stop коли relative `path` resolv-ться у `docs/audits/X/`, який не існує (а існує `docs/X/`); пропонує fix (`bump-depth-by-one`).
@@ -254,7 +254,7 @@ pnpm docs:check-links               # markdown internal links (HR-4 overlap)
 ## Cross-references
 
 - [`docs/audits/2026-05-13-dead-code-hard-rules-roast.md`](../audits/2026-05-13-dead-code-hard-rules-roast.md) — джерело open items.
-- [`docs/audits/2026-05-05-dead-code-and-stale-links-audit.md`](../audits/2026-05-05-dead-code-and-stale-links-audit.md) — попередня dead-code прожарка (origin §3.2 і §3.4).
+- [`docs/audits/2026-05-05-dead-code-and-stale-links-audit.md`](../audits/archive/2026-05-05-dead-code-and-stale-links-audit.md) — попередня dead-code прожарка (origin §3.2 і §3.4).
 - [`docs/audits/archive/2026-05-07-app-audit.md`](../audits/archive/2026-05-07-app-audit.md) — app-audit (web-blocker `db-schema/migrate` umbrella, mobile-shell §1.3).
 - [`docs/governance/hard-rules.json`](../governance/hard-rules.json) — 22-rule registry; HR-4 додає 23-й rule.
 - [`docs/governance/rules/10-lifecycle-markers.md`](../governance/rules/10-lifecycle-markers.md) — canonical body для `@scaffolded` маркерів (use-case у DC-2).
