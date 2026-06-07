@@ -45,6 +45,24 @@ describe("extractLinks", () => {
     );
   });
 
+  it("ignores shorter nested fences inside longer fenced blocks", () => {
+    const c = [
+      "Outside: [a](./a.md)",
+      "````",
+      "```diff",
+      "+Inside: [b](./b.md)",
+      "```",
+      "Still inside: [c](./c.md)",
+      "````",
+      "Outside again: [d](./d.md)",
+    ].join("\n");
+    const links = extractLinks(c);
+    assert.deepEqual(
+      links.map((l) => l.target),
+      ["./a.md", "./d.md"],
+    );
+  });
+
   it("ignores links inside inline backticks", () => {
     const c = "See `[foo](./bar.md)` and [real](./real.md).";
     const links = extractLinks(c);
@@ -100,7 +118,7 @@ describe("shouldSkipFile", () => {
     assert.equal(shouldSkipFile(".agents/skills/foo/AGENTS.md"), true);
   });
 
-  it("skips .agents\\skills\\** on Windows paths", () => {
+  it("skips .agents\\skills\\** on Windows-style relative paths", () => {
     assert.equal(shouldSkipFile(".agents\\skills\\foo\\AGENTS.md"), true);
   });
 
@@ -119,7 +137,7 @@ describe("shouldSkipFile", () => {
 
 describe("resolveInternal", () => {
   it("resolves relative target from the source file's directory", () => {
-    const repo = resolve("repo");
+    const repo = resolve(tmpdir(), "repo-mdlinks");
     const abs = resolveInternal(
       join(repo, "docs", "playbooks", "add-foo.md"),
       "./bar.md",
@@ -129,7 +147,7 @@ describe("resolveInternal", () => {
   });
 
   it("strips the anchor before resolving", () => {
-    const repo = resolve("repo");
+    const repo = resolve(tmpdir(), "repo-mdlinks");
     const abs = resolveInternal(
       join(repo, "docs", "a.md"),
       "./b.md#section",
@@ -139,7 +157,7 @@ describe("resolveInternal", () => {
   });
 
   it("resolves absolute-style paths against the repo root", () => {
-    const repo = resolve("repo");
+    const repo = resolve(tmpdir(), "repo-mdlinks");
     const abs = resolveInternal(
       join(repo, "docs", "deep", "a.md"),
       "/README.md",
@@ -161,7 +179,7 @@ describe("walkMarkdown", () => {
       writeFileSync(join(dir, "not-md.txt"), "nope");
       const files = walkMarkdown(dir);
       const rels = files
-        .map((f) => relative(dir, f).replaceAll("\\", "/"))
+        .map((f) => relative(dir, f).replace(/\\/g, "/"))
         .sort();
       assert.deepEqual(rels, ["a.md", "sub/b.md"]);
     } finally {
