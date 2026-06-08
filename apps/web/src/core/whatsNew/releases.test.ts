@@ -75,7 +75,13 @@ describe("whatsNew/releases — schema gates", () => {
     // process.cwd() === apps/web during vitest run; resolve repo root upward.
     const repoRoot = resolve(process.cwd(), "..", "..");
     for (const r of RELEASES) {
-      const expected = resolve(repoRoot, "docs", "whats-new", `${r.id}.md`);
+      const expected = resolve(
+        repoRoot,
+        "docs",
+        "01-product",
+        "whats-new",
+        `${r.id}.md`,
+      );
       expect(
         existsSync(expected),
         `markdown source missing: docs/whats-new/${r.id}.md`,
