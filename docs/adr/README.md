@@ -1,6 +1,6 @@
 # Architecture Decision Records (ADR) — реєстр рішень
 
-> **Last validated:** 2026-06-07 by @claude (added ADR-0065 row — sync_op_log retention + multi-instance fan-out / PR-050 plan; bumped next-ADR note 0065 → 0066). **Next review:** 2026-09-07.
+> **Last validated:** 2026-06-08 by @claude (added ADR-0066 row — agent semantic retrieval over the knowledge graph; bumped next-ADR note 0066 → 0067). **Next review:** 2026-09-06.
 > **Status:** Active
 
 > Архітектурні рішення Sergeant. Кожен ADR фіксує **рішення з контекстом і альтернативами**, щоб через рік не довелось гадати «чому ми тут зробили так, а не інакше».
