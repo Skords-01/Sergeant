@@ -3,13 +3,13 @@
   "version": 1,
   "generated_at": "2026-06-08",
   "sourceHashes": {
-    "knowledge-graph": "cc930032234d69360b8215c42c4920ddcf13d4e89511cdd07cc3affe3183187c",
-    "symbol-index": "54f587f8b3471999b47e603839b273a9d1601d92f608c7b44897def570df61ed"
+    "knowledge-graph": "b20f707d5fc57af473a2106f8211c71bd7f99a15438ee3def626f914801bd709",
+    "symbol-index": "ae7b173b39225d16c75ef734dba02106914cd369745464dc88ebbbf66baefb13"
   },
   "counts": {
     "adr": 63,
-    "audit": 17,
-    "export": 298,
+    "audit": 18,
+    "export": 297,
     "hard-rule": 26,
     "initiative": 48,
     "playbook": 61,
@@ -617,8 +617,8 @@
       "title": "ADR-0058: Knowledge graph schema and storage format",
       "tier": "core",
       "status": "Active",
-      "text": "ADR-0058: Knowledge graph schema and storage format · adr:0058 · adr · Active · 58 · 2026-06-01 · Context and Problem Statement · Considered Options · Decision · Rationale · Consequences · Positive · Negative · Neutral · Compliance · Links · Recent PRs",
-      "contentHash": "8354ca62114b1691a8dcd1144553eb6989c6926c87d480a7e047938c550876ec"
+      "text": "ADR-0058: Knowledge graph schema and storage format · adr:0058 · adr · Active · 58 · 2026-06-08 · Context and Problem Statement · Considered Options · Decision · Rationale · Consequences · Positive · Negative · Neutral · Compliance · Links · Recent PRs",
+      "contentHash": "af9ab76a26f70f5ee71434f995bcf3499f42c4cb1c7c56fad18ee2121bcde1e3"
     },
     {
       "id": "adr:0059",
@@ -628,8 +628,8 @@
       "title": "ADR-0059: Symbol extraction via TypeScript compiler API (no ts-morph)",
       "tier": "core",
       "status": "Active",
-      "text": "ADR-0059: Symbol extraction via TypeScript compiler API (no ts-morph) · adr:0059 · adr · Active · 59 · 2026-06-01 · Context and Problem Statement · Considered Options · Decision · Rationale · Consequences · Positive · Negative · Neutral · Compliance · Links · Recent PRs",
-      "contentHash": "27ad7fa2f80aa1c89e3bad5f10b8ba6847f3ed5983c02fd621f17cfc1dc1dae7"
+      "text": "ADR-0059: Symbol extraction via TypeScript compiler API (no ts-morph) · adr:0059 · adr · Active · 59 · 2026-06-08 · Context and Problem Statement · Considered Options · Decision · Rationale · Consequences · Positive · Negative · Neutral · Compliance · Links · Recent PRs",
+      "contentHash": "b874cb7fdd211e8ec25a76deff3693198e5756f363e9fdf2c53b10fef9cba25a"
     },
     {
       "id": "adr:0060",
@@ -639,8 +639,8 @@
       "title": "ADR-0060: Architecture diagrams — automation scope (workspace graph only)",
       "tier": "core",
       "status": "Active",
-      "text": "ADR-0060: Architecture diagrams — automation scope (workspace graph only) · adr:0060 · adr · Active · 60 · 2026-06-01 · Context and Problem Statement · Considered Options · Decision · Rationale · Consequences · Positive · Negative · Neutral · Compliance · Links · Recent PRs",
-      "contentHash": "abe0a564ace8fddc6c05593db60d48ddc9666dfa8e27f50e9866ea9c7e2ee58c"
+      "text": "ADR-0060: Architecture diagrams — automation scope (workspace graph only) · adr:0060 · adr · Active · 60 · 2026-06-08 · Context and Problem Statement · Considered Options · Decision · Rationale · Consequences · Positive · Negative · Neutral · Compliance · Links · Recent PRs",
+      "contentHash": "07175714cb4cb87a29aa902d47b215d0a8b27906f543e0d885ff5d52d66e7b6d"
     },
     {
       "id": "adr:0061",
@@ -650,8 +650,8 @@
       "title": "ADR-0061: PR ↔ doc backlinks — hybrid storage (ledger + in-doc block)",
       "tier": "core",
       "status": "Active",
-      "text": "ADR-0061: PR ↔ doc backlinks — hybrid storage (ledger + in-doc block) · adr:0061 · adr · Active · 61 · 2026-06-01 · Context and Problem Statement · Considered Options · Decision · Rationale · Consequences · Positive · Negative · Neutral · Compliance · Links · Recent PRs",
-      "contentHash": "5fd8bb1a4d3b2ec75470b8e007a60df7216f62f71dce03ea97528c3fb2cb0b1e"
+      "text": "ADR-0061: PR ↔ doc backlinks — hybrid storage (ledger + in-doc block) · adr:0061 · adr · Active · 61 · 2026-06-08 · Context and Problem Statement · Considered Options · Decision · Rationale · Consequences · Positive · Negative · Neutral · Compliance · Links · Recent PRs",
+      "contentHash": "a15836fbe3dc1511e22ce8232106c40660d29633528e64e6bdec6d3a5815ed8a"
     },
     {
       "id": "adr:0062",
@@ -737,9 +737,9 @@
       "line": 1,
       "title": "Прожарка #9/10 — Dead Code, Stale Links & Hard Rules (2026-05-13)",
       "tier": "core",
-      "status": "Active",
-      "text": "Прожарка #9/10 — Dead Code, Stale Links & Hard Rules (2026-05-13) · audit:2026-05-13-dead-code-hard-rules-roast · audit · Active · TL;DR · P0 — Closed у цьому PR · P0.1 — 11 unmarked unused-файлів (Hard Rule #10, dead-code:files gate red) · Skipped 18 file(s) with @scaffolded/@deprecated/@experimental markers · No unmarked unused files. ✓ · P0.2 — 53 broken internal markdown-links (docs:check-links gate red) · Scanning 540 markdown files… · → 3810 internal links, 2065 external links. · ✅ All markdown links resolve. · P0.3 — knip.json redundant entries (Configuration hints 21 → 5) · P1 — Outstanding (Tracked у 2026-05-13-dead-code-hard-rules-roast.md) · P1.1 — unused deps sweep — ✅ Closed (2026-06-03) · P1.2 — .github/workflows/lighthouse-ci.yml workflow-файл відсутній — ✅ Closed · P1.3 — unused exports + duplicate exports — ✅ Closed (partial-with-residual, 2026-06-03) · P1.4 — process.env budget burn-down (Hard Rule violation, ratchet-baseline restored) · P1.5 — App-audit §1.3 mobile-shell knip — 5 unused exports · P1.6 — AuthPage re-decomposition (Hard Rule #18 regression) — ✅ Closed · P2 — Cosmetic / Watchlist · Прогрес виконання (цей PR) · Follow-up 2026-05-16 — claude/identify-critical-issues-3IgIx (PR [#2933](https://github.com/Skords-01/Sergeant/pull/2933)) · Verification matrix · Cross-references",
-      "contentHash": "8e8414f5ae68d5ff7976ffb83eb6c2f5d74c3c2f69619fa3ddcda1a3452c4ae0"
+      "status": "Closed (2026-06-08 — 17/17 implemented, 0 actionable outstanding; residual = knip false-positive watchlist, не actionable)",
+      "text": "Прожарка #9/10 — Dead Code, Stale Links & Hard Rules (2026-05-13) · audit:2026-05-13-dead-code-hard-rules-roast · audit · Closed (2026-06-08 — 17/17 implemented, 0 actionable outstanding; residual = knip false-positive watchlist, не actionable) · TL;DR · P0 — Closed у цьому PR · P0.1 — 11 unmarked unused-файлів (Hard Rule #10, dead-code:files gate red) · Skipped 18 file(s) with @scaffolded/@deprecated/@experimental markers · No unmarked unused files. ✓ · P0.2 — 53 broken internal markdown-links (docs:check-links gate red) · Scanning 540 markdown files… · → 3810 internal links, 2065 external links. · ✅ All markdown links resolve. · P0.3 — knip.json redundant entries (Configuration hints 21 → 5) · P1 — Outstanding (Tracked у 2026-05-13-dead-code-hard-rules-roast.md) · P1.1 — unused deps sweep — ✅ Closed (2026-06-03) · P1.2 — .github/workflows/lighthouse-ci.yml workflow-файл відсутній — ✅ Closed · P1.3 — unused exports + duplicate exports — ✅ Closed (partial-with-residual, 2026-06-03) · P1.4 — process.env budget burn-down (Hard Rule violation, ratchet-baseline restored) · P1.5 — App-audit §1.3 mobile-shell knip — 5 unused exports · P1.6 — AuthPage re-decomposition (Hard Rule #18 regression) — ✅ Closed · P2 — Cosmetic / Watchlist · Прогрес виконання (цей PR) · Follow-up 2026-05-16 — claude/identify-critical-issues-3IgIx (PR [#2933](https://github.com/Skords-01/Sergeant/pull/2933)) · Verification matrix · Cross-references",
+      "contentHash": "1c2ca0db82bf2f4d1bf3701b873ef21b6866a856d176c76b1af13f6c64a4fb1a"
     },
     {
       "id": "audit:2026-05-13-page-audit-01-auth-onboarding",
@@ -748,9 +748,9 @@
       "line": 1,
       "title": "Page Audit — Auth & Onboarding pages",
       "tier": "core",
-      "status": "Active",
-      "text": "Page Audit — Auth & Onboarding pages · audit:2026-05-13-page-audit-01-auth-onboarding · audit · Active · Summary · Findings · F1 — text-error / bg-error / border-error token does not exist [severity: high] [perspective: tailwind/ux/bug] · F2 — AuthPage.tsx exceeds Hard Rule #18 max-lines budget [severity: high] [perspective: rule] · F3 — Scaffolded auth decomposition is dead code [severity: high] [perspective: rule/code-quality] · F4 — PermissionsPrompt.tsx is unwired dead code [severity: high] [perspective: code-quality] · F5 — CelebrationModal hijacks global Enter/Space keydowns [severity: high] [perspective: bug/a11y] · F6 — \"Забули пароль?\" never pre-fills the email the user typed [severity: high] [perspective: bug] · F7 — DailyNudge close X is w-6 h-6 (24×24) — half the touch-target floor [severity: medium] [perspective: a11y] · F8 — DailyNudge popover trigger is w-8 h-8 (32×32) — below touch-target floor [severity: medium] [perspective: a11y] · F9 — DemoModeBanner CTA forces min-h-[40px] below touch-target floor [severity: medium] [perspective: a11y] · F10 — SoftAuthPromptCard \"Пізніше\" plain button is ~28 px tall [severity: medium] [perspective: a11y] · F11 — ReEngagementCard \"Пізніше\" plain button is ~28 px tall [severity: medium] [perspective: a11y] · F12 — FirstRunHintBanner CTA px-2.5 py-1 is ~26 px tall [severity: medium] [perspective: a11y] · F13 — ReEngagementCard pluralization breaks for 11–14 [severity: medium] [perspective: i18n/bug] · F14 — Lifecycle markers missing on every file in scope [severity: medium] [perspective: lifecycle] · F15 — AI markers under-used in high-risk auth code [severity: medium] [perspective: ai-marker] · F16 — presetApply.ts bypasses module storage public API [severity: medium] [perspective: code-quality] · F17 — seedDemoData.ts bypasses storage allowlist [severity: medium] [perspective: code-quality] · F18 — CelebrationModal auto-dismiss timer races user input [severity: medium] [perspective: ux/race] · F19 — ResetPasswordPage.tsx mixes broken and correct error tokens in same file [severity: medium] [perspective: tailwind/code-quality] · F20 — Test coverage targets dead LoginForm.tsx / RegisterForm.tsx [severity: medium] [perspective: test] · F21 — Better Auth client type-extension via as ReturnType<...> & {...} cast [severity: medium] [perspective: ts]",
-      "contentHash": "e01691c2bda6b5164b6603572ac8e01de93903bf662c22623ba368155979355d"
+      "status": "Closed (2026-06-08 — ~24/25 implemented, 0 outstanding; F4 dead-code already deleted)",
+      "text": "Page Audit — Auth & Onboarding pages · audit:2026-05-13-page-audit-01-auth-onboarding · audit · Closed (2026-06-08 — ~24/25 implemented, 0 outstanding; F4 dead-code already deleted) · Summary · Findings · F1 — text-error / bg-error / border-error token does not exist [severity: high] [perspective: tailwind/ux/bug] · F2 — AuthPage.tsx exceeds Hard Rule #18 max-lines budget [severity: high] [perspective: rule] · F3 — Scaffolded auth decomposition is dead code [severity: high] [perspective: rule/code-quality] · F4 — PermissionsPrompt.tsx is unwired dead code [severity: high] [perspective: code-quality] · F5 — CelebrationModal hijacks global Enter/Space keydowns [severity: high] [perspective: bug/a11y] · F6 — \"Забули пароль?\" never pre-fills the email the user typed [severity: high] [perspective: bug] · F7 — DailyNudge close X is w-6 h-6 (24×24) — half the touch-target floor [severity: medium] [perspective: a11y] · F8 — DailyNudge popover trigger is w-8 h-8 (32×32) — below touch-target floor [severity: medium] [perspective: a11y] · F9 — DemoModeBanner CTA forces min-h-[40px] below touch-target floor [severity: medium] [perspective: a11y] · F10 — SoftAuthPromptCard \"Пізніше\" plain button is ~28 px tall [severity: medium] [perspective: a11y] · F11 — ReEngagementCard \"Пізніше\" plain button is ~28 px tall [severity: medium] [perspective: a11y] · F12 — FirstRunHintBanner CTA px-2.5 py-1 is ~26 px tall [severity: medium] [perspective: a11y] · F13 — ReEngagementCard pluralization breaks for 11–14 [severity: medium] [perspective: i18n/bug] · F14 — Lifecycle markers missing on every file in scope [severity: medium] [perspective: lifecycle] · F15 — AI markers under-used in high-risk auth code [severity: medium] [perspective: ai-marker] · F16 — presetApply.ts bypasses module storage public API [severity: medium] [perspective: code-quality] · F17 — seedDemoData.ts bypasses storage allowlist [severity: medium] [perspective: code-quality] · F18 — CelebrationModal auto-dismiss timer races user input [severity: medium] [perspective: ux/race] · F19 — ResetPasswordPage.tsx mixes broken and correct error tokens in same file [severity: medium] [perspective: tailwind/code-quality] · F20 — Test coverage targets dead LoginForm.tsx / RegisterForm.tsx [severity: medium] [perspective: test] · F21 — Better Auth client type-extension via as ReturnType<...> & {...} cast [severity: medium] [perspective: ts]",
+      "contentHash": "7a2dd777d41626a13dde898601d065dbb6bf8d3c1e9c0a036557b9983ead9a60"
     },
     {
       "id": "audit:2026-05-13-page-audit-02-hub-dashboard",
@@ -872,6 +872,17 @@
       "status": "Open",
       "text": "HubSettings lazy boundaries — CLS + chunk-load follow-up · audit:2026-05-25-hubsettings-cls-chunk-load · audit · Open · Контекст · Знахідки · MEDIUM #1 — chunk-load failure = white screen · MEDIUM #2 — Suspense fallback minH занижений → CLS jump · Виконання · LOW-знахідки (не блокуючі, optional) · Closure",
       "contentHash": "ff7a7c6aafe99ef0aaa2ac161b75626318974699a74903c84f6dce3aa07ec6af"
+    },
+    {
+      "id": "audit:2026-06-08-codebase-cleanup-audit",
+      "type": "audit",
+      "path": "docs/audits/2026-06-08-codebase-cleanup-audit.md",
+      "line": 1,
+      "title": "Codebase Cleanup Audit — мертвий код, застарілі рішення та інфра-дрейф",
+      "tier": "core",
+      "status": "Active (4 founder-decisions executed 2026-06-08; залишок — lint-debt / tombstones / інфра-питання — outstanding)",
+      "text": "Codebase Cleanup Audit — мертвий код, застарілі рішення та інфра-дрейф · audit:2026-06-08-codebase-cleanup-audit · audit · Active (4 founder-decisions executed 2026-06-08; залишок — lint-debt / tombstones / інфра-питання — outstanding) · Виконано в цьому PR (2026-06-08) · TL;DR · Тема 1 — console → openclaw rename (напів-зроблений) · 🔴 Реальний баг (не косметика) · 🟡 Stale-посилання, що збивають агентів (low-risk, high-clarity) · 🟡 Незавершений rename (потребує координації — це деплой) · Тема 2 — Audits/initiatives «Active», але робота закрита · Тема 3 — Застарілі рішення / ADR-дрейф · 🔴 P0-пастка: grammy-deletion (Locked Decision #17) — НЕ виконувати · 🟡 ADR-дрейф · Тема 4 — Lint / tech-debt suppressions без власника · Інфра / стек — інші знахідки (потребують рішення власника) · Свідома інфраструктура — НЕ чіпати · Запропонований план (окремими PR-ами за класом боргу) · Рішення власника (узгоджено 2026-06-08)",
+      "contentHash": "e5b8e23e9cbfbae3cd0c3384bac4c9764cc792a40c4a28a2733f8f0353663353"
     },
     {
       "id": "audit:2026-08-XX-openclaw-internal-roast",
@@ -2644,11 +2655,11 @@
     {
       "id": "export:@sergeant/db-schema:*",
       "type": "export",
-      "path": "packages/db-schema/src/shared/index.js",
+      "path": "packages/db-schema/dist/shared/index.js",
       "title": "* (re-export-star)",
       "tier": "extended",
-      "text": "* · re-export-star · @sergeant/db-schema · packages/db-schema/src/shared/index.js · used 0× · dead export unused",
-      "contentHash": "99ad781d880053d2991cf2d577a0550feca45573a3b20a515765afcb6419be94"
+      "text": "* · re-export-star · @sergeant/db-schema · packages/db-schema/dist/shared/index.js · used 0× · dead export unused",
+      "contentHash": "55712d07ee302d783c1862e8517c26efdb012763814669177177e8dc18e9588e"
     },
     {
       "id": "export:@sergeant/design-tokens:BrandColor",
@@ -3117,15 +3128,6 @@
       "tier": "extended",
       "text": "ToolResult · re-export · @sergeant/openclaw-plugin · packages/openclaw-plugin/src/shortcuts/types.js · used 0× · dead export unused",
       "contentHash": "4f6de5595aec270dfbcc012ef2fe0764b74ccf8b05fac94ac17a6aece5cae7a7"
-    },
-    {
-      "id": "export:@sergeant/openclaw:HELP_TEXT",
-      "type": "export",
-      "path": "tools/openclaw/src/help-text.js",
-      "title": "HELP_TEXT (re-export)",
-      "tier": "extended",
-      "text": "HELP_TEXT · re-export · @sergeant/openclaw · tools/openclaw/src/help-text.js · used 0× · dead export unused",
-      "contentHash": "e38651fd33be19b17e44b7e2d96366fd1e8ff6f7d9fe45ebe2b10504b8fecdcb"
     },
     {
       "id": "export:@sergeant/routine-domain:*",
@@ -3888,9 +3890,9 @@
       "line": 1,
       "title": "0017 — Hub Settings & Reports mount perf",
       "tier": "core",
-      "status": "In progress — code-complete, RUM review pending (2026-06-01). Sprint 0 + Sprint 1 + Sprint 2 merged. Sprint 3 (Web Worker) explicitly skipped pending next 30-day RUM cut on `aggregateReport` P95 > 50 ms — re-opens as a discrete follow-up only if the threshold trips. See § Outcome / § Sprint 3 decision. **Sprint 1 done:** per-section lazy wiring landed on main — the 4 heavy module-scoped sections (`routine`/`fizruk`/`finyk`/`nutrition`) are `lazy()` + `<Suspense fallback={<SectionSkeleton minH={72}/>}>` in `HubSettingsPage.tsx` (`lazy?:{minH}` opt-in field). The 10 lightweight sections stay static **by design** (a per-chunk for a tiny section is net overhead). PR-1.2 cross-module defer landed for **Finyk only** ([#3102](https://github.com/Skords-01/Sergeant/pull/3102), `useInView` gate on the Monobank sync-state query + backfill poller) — it was the only section with off-screen _network_ cost; `fizruk`/`nutrition`/`routine` carry only local-state hydration (no `enabled:inView`-gatable queries), already mitigated by the lazy chunk. **Sprint 2 done (2026-05-24):** HubReports per-card lazy decomposition merged via [#3094](https://github.com/Skords-01/Sergeant/pull/3094) (squash on main as `5c98b41e`); remote branch `feat/0017-reports-per-card-lazy` auto-deleted. **Remaining:** Sprint 3 conditional on post-merge PostHog `aggregateReport` P95 metrics (cut window — only if > 50 ms); Finalize PR — bundle gate update + tech-debt watchlist drain + Outcome.",
-      "text": "0017 — Hub Settings & Reports mount perf · initiative:0017 · initiative · In progress — code-complete, RUM review pending (2026-06-01). Sprint 0 + Sprint 1 + Sprint 2 merged. Sprint 3 (Web Worker) explicitly skipped pending next 30-day RUM cut on `aggregateReport` P95 > 50 ms — re-opens as a discrete follow-up only if the threshold trips. See § Outcome / § Sprint 3 decision. **Sprint 1 done:** per-section lazy wiring landed on main — the 4 heavy module-scoped sections (`routine`/`fizruk`/`finyk`/`nutrition`) are `lazy()` + `<Suspense fallback={<SectionSkeleton minH={72}/>}>` in `HubSettingsPage.tsx` (`lazy?:{minH}` opt-in field). The 10 lightweight sections stay static **by design** (a per-chunk for a tiny section is net overhead). PR-1.2 cross-module defer landed for **Finyk only** ([#3102](https://github.com/Skords-01/Sergeant/pull/3102), `useInView` gate on the Monobank sync-state query + backfill poller) — it was the only section with off-screen _network_ cost; `fizruk`/`nutrition`/`routine` carry only local-state hydration (no `enabled:inView`-gatable queries), already mitigated by the lazy chunk. **Sprint 2 done (2026-05-24):** HubReports per-card lazy decomposition merged via [#3094](https://github.com/Skords-01/Sergeant/pull/3094) (squash on main as `5c98b41e`); remote branch `feat/0017-reports-per-card-lazy` auto-deleted. **Remaining:** Sprint 3 conditional on post-merge PostHog `aggregateReport` P95 metrics (cut window — only if > 50 ms); Finalize PR — bundle gate update + tech-debt watchlist drain + Outcome. · 17 · @Skords-01 · P1 (Sprint 1 candidate after [0016](./archive/_0016-changelog-release-cut.md)) · TL;DR · Чому зараз · Скоуп · Метрики успіху · План змін · Sprint 0 — Observability baseline (1 PR) — shipped 2026-05-20 · Sprint 1 — Per-section lazy у Settings (2 PR-и) · Sprint 2 — HubReports per-card lazy (1 PR) · Sprint 3 — Web Worker for aggregation (stretch, conditional) · Finalize (включається у PR-3 або окремий PR-4 якщо Sprint 3 skipped) · Sprint 3 decision (2026-06-01) · Outcome (2026-06-01, code-complete; 2026-06-02 tech-debt watchlist drained) · Carry-over → successor · Bundle-size findings 2026-06-06 · Критерії DONE · Ризики та митиґація · Власник, ревʼюери · Зв'язки",
-      "contentHash": "b883730275c5a8d20c03959fdbc185a9a9c8a2af4d79db90b47033d283da5155"
+      "status": "Closed (2026-06-08 — code-complete; Sprint 0 + Sprint 1 + Sprint 2 merged). Sprint 3 (Web Worker) is a **discrete conditional follow-up** — re-opens ТІЛЬКИ якщо post-merge PostHog `aggregateReport` P95 > 50 ms (next 30-day RUM cut); not tracked as open work here. See § Outcome / § Sprint 3 decision. **Sprint 1 done:** per-section lazy wiring landed on main — the 4 heavy module-scoped sections (`routine`/`fizruk`/`finyk`/`nutrition`) are `lazy()` + `<Suspense fallback={<SectionSkeleton minH={72}/>}>` in `HubSettingsPage.tsx` (`lazy?:{minH}` opt-in field). The 10 lightweight sections stay static **by design** (a per-chunk for a tiny section is net overhead). PR-1.2 cross-module defer landed for **Finyk only** ([#3102](https://github.com/Skords-01/Sergeant/pull/3102), `useInView` gate on the Monobank sync-state query + backfill poller) — it was the only section with off-screen _network_ cost; `fizruk`/`nutrition`/`routine` carry only local-state hydration (no `enabled:inView`-gatable queries), already mitigated by the lazy chunk. **Sprint 2 done (2026-05-24):** HubReports per-card lazy decomposition merged via [#3094](https://github.com/Skords-01/Sergeant/pull/3094) (squash on main as `5c98b41e`); remote branch `feat/0017-reports-per-card-lazy` auto-deleted. **Remaining:** Sprint 3 conditional on post-merge PostHog `aggregateReport` P95 metrics (cut window — only if > 50 ms); Finalize PR — bundle gate update + tech-debt watchlist drain + Outcome.",
+      "text": "0017 — Hub Settings & Reports mount perf · initiative:0017 · initiative · Closed (2026-06-08 — code-complete; Sprint 0 + Sprint 1 + Sprint 2 merged). Sprint 3 (Web Worker) is a **discrete conditional follow-up** — re-opens ТІЛЬКИ якщо post-merge PostHog `aggregateReport` P95 > 50 ms (next 30-day RUM cut); not tracked as open work here. See § Outcome / § Sprint 3 decision. **Sprint 1 done:** per-section lazy wiring landed on main — the 4 heavy module-scoped sections (`routine`/`fizruk`/`finyk`/`nutrition`) are `lazy()` + `<Suspense fallback={<SectionSkeleton minH={72}/>}>` in `HubSettingsPage.tsx` (`lazy?:{minH}` opt-in field). The 10 lightweight sections stay static **by design** (a per-chunk for a tiny section is net overhead). PR-1.2 cross-module defer landed for **Finyk only** ([#3102](https://github.com/Skords-01/Sergeant/pull/3102), `useInView` gate on the Monobank sync-state query + backfill poller) — it was the only section with off-screen _network_ cost; `fizruk`/`nutrition`/`routine` carry only local-state hydration (no `enabled:inView`-gatable queries), already mitigated by the lazy chunk. **Sprint 2 done (2026-05-24):** HubReports per-card lazy decomposition merged via [#3094](https://github.com/Skords-01/Sergeant/pull/3094) (squash on main as `5c98b41e`); remote branch `feat/0017-reports-per-card-lazy` auto-deleted. **Remaining:** Sprint 3 conditional on post-merge PostHog `aggregateReport` P95 metrics (cut window — only if > 50 ms); Finalize PR — bundle gate update + tech-debt watchlist drain + Outcome. · 17 · @Skords-01 · P1 (Sprint 1 candidate after [0016](./archive/_0016-changelog-release-cut.md)) · TL;DR · Чому зараз · Скоуп · Метрики успіху · План змін · Sprint 0 — Observability baseline (1 PR) — shipped 2026-05-20 · Sprint 1 — Per-section lazy у Settings (2 PR-и) · Sprint 2 — HubReports per-card lazy (1 PR) · Sprint 3 — Web Worker for aggregation (stretch, conditional) · Finalize (включається у PR-3 або окремий PR-4 якщо Sprint 3 skipped) · Sprint 3 decision (2026-06-01) · Outcome (2026-06-01, code-complete; 2026-06-02 tech-debt watchlist drained) · Carry-over → successor · Bundle-size findings 2026-06-06 · Критерії DONE · Ризики та митиґація · Власник, ревʼюери · Зв'язки",
+      "contentHash": "09d06ffdb6e449208cfd83231e404011afd2f611af191aab537eb4c58907a779"
     },
     {
       "id": "initiative:0018",

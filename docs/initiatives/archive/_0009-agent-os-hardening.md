@@ -667,6 +667,6 @@ Phase 1.2 reviewer прогоняє цей список і звіряє з ре�
 - [`docs/agents/agent-skills-catalog.md`](../../agents/agent-skills-catalog.md) (renamed з `docs/superpowers/` у фазі 2.2).
 - [`docs/agents/agent-workflows.md`](../../agents/agent-workflows.md) (те саме).
 - [`docs/playbooks/README.md`](../../playbooks/README.md), [`playbook-catalog.md`](../../playbooks/playbook-catalog.md), [`INDEX.md`](../../playbooks/INDEX.md).
-- [`tools/openclaw/src/agents/dispatcher.ts`](../../../tools/openclaw/src/agents/dispatcher.ts) — `SpecialistAgent` enum.
+- `tools/openclaw/src/agents/dispatcher.ts` — `SpecialistAgent` enum.
 - [Initiative 0001 — Module decomposition](./_0001-module-decomposition.md) — пов'язано з Hard Rule #18.
 - [Initiative 0008 — Platform hardening](./_0008-platform-hardening.md) — близький operational scope (Renovate, supply-chain).
