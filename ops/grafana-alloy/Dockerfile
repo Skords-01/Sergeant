@@ -4,7 +4,7 @@
 #
 # Build context is `ops/grafana-alloy/`.
 
-FROM grafana/alloy:v1.4.2
+FROM grafana/alloy:v1.16.2
 
 COPY config.alloy /etc/alloy/config.alloy
 
