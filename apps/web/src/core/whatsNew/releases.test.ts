@@ -84,7 +84,7 @@ describe("whatsNew/releases — schema gates", () => {
       );
       expect(
         existsSync(expected),
-        `markdown source missing: docs/whats-new/${r.id}.md`,
+        `markdown source missing: docs/01-product/whats-new/${r.id}.md`,
       ).toBe(true);
       // Sanity: markdown file mentions the same id (caught typo guard).
       const md = readFileSync(expected, "utf8");
