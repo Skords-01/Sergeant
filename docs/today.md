@@ -1,6 +1,6 @@
 # Сьогодні в роботі
 
-> **Last validated:** 2026-06-07 by docs:gen-today. **Next review:** 2026-06-07.
+> **Last validated:** 2026-06-09 by docs:gen-today. **Next review:** 2026-06-16.
 > **Status:** Reference
 
 <!-- AUTO-GENERATED FILE. Do not edit by hand. Regenerate via `pnpm docs:gen-today`. -->
@@ -9,9 +9,7 @@ Daily brief — згенеровано з [`open-work.md`](./open-work.md) + fre
 
 ## Топ-7 на сьогодні
 
-Sorted: `blocked` items first, потім за `mtime` desc (свіже = warm context).
-
-- [`initiatives/0006-frontend-routing-and-code-split.md`](./initiatives/0006-frontend-routing-and-code-split.md) — 0006 — Frontend routing migration + route-based code-split → **Phase 5 blocked 🚧** _(Ініціативи)_
+_Нема items з `Phase X next` / `Stage X IN PROGRESS` / `Phase X blocked` маркерами. Або все закрито, або status headers потребують уточнення (Rule #10)._
 
 ## Прострочений review (0)
 
@@ -24,6 +22,6 @@ _Жодного документа не пропустило `Next review:` да
 ## Quick links
 
 - [`open-work.md`](./open-work.md) — повний rollup усіх 7 trackers
-- [`governance/freshness-dashboard.html`](./governance/freshness-dashboard.html) — повний freshness огляд
+- [`governance/freshness-dashboard.html`](./04-governance/governance/freshness-dashboard.html) — повний freshness огляд
 - [`AGENTS.md`](../AGENTS.md) — repo policy + hard rules + routing
 - [`README.md`](./README.md) — docs index (genre-grouped)

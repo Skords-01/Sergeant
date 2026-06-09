@@ -21,7 +21,10 @@ import {
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(__dirname, "../../..");
-const REGISTRY_PATH = resolve(REPO_ROOT, "docs/governance/hard-rules.json");
+const REGISTRY_PATH = resolve(
+  REPO_ROOT,
+  "docs/04-governance/governance/hard-rules.json",
+);
 
 // Fixture used across tests: minimum valid registry shape (canonical schema).
 const FIXTURE = {
@@ -229,7 +232,7 @@ test("renderMatrixRaw: links — agents refs link back to AGENTS.md", () => {
   const md = renderMatrixRaw(FIXTURE, { now: FROZEN_NOW });
   assert.match(
     md,
-    /AGENTS #1\]\(\.\.\/\.\.\/AGENTS\.md#hard-rules-do-not-break/,
+    /AGENTS #1\]\(\.\.\/\.\.\/\.\.\/AGENTS\.md#hard-rules-do-not-break/,
   );
 });
 
@@ -278,7 +281,7 @@ test("renderMatrixRaw: category legend section enumerates the three buckets", ()
 test("renderMatrixRaw: How-to-add-a-rule section references the playbook", () => {
   const md = renderMatrixRaw(FIXTURE, { now: FROZEN_NOW });
   assert.match(md, /## How to add a rule/);
-  assert.match(md, /docs\/playbooks\/add-hard-rule\.md/);
+  assert.match(md, /docs\/00-start\/playbooks\/add-hard-rule\.md/);
 });
 
 // ── renderMatrix (Prettier integration) ──────────────────────────────────────
