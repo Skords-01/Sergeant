@@ -1,7 +1,7 @@
 # HubSettings lazy boundaries — CLS + chunk-load follow-up
 
-> **Last validated:** 2026-06-09 by @Skords-01. **Next review:** 2026-07-09.
-> **Status:** Active — MEDIUM #1 ChunkErrorBoundary shipped; MEDIUM #2 per-section minH values updated (2026-06-09).
+> **Last validated:** 2026-06-09.
+> **Status:** Closed
 > **Source:** Code review of merged batch `chore/orchestrated-batch-2026-05-22` (рebase виявив, що всі коміти вже в main; знахідки актуальні для поточного main).
 > **Initiative:** [0017 — hub tabs mount perf](../initiatives/0017-hub-tabs-mount-perf.md) — Sprint 1 PR-1.2 closeout.
 
@@ -62,4 +62,8 @@ Sprint 1 PR-1.2 ([apps/web/src/core/hub/HubSettingsPage.tsx](../../../apps/web/s
 
 ## Closure
 
-Коли PR merge'нутий — `Status:` → `Closed`, дописати link на PR.
+Closed: PR [ChunkErrorBoundary] landed 2026-06-09.
+
+MEDIUM #1 — chunk-load failure = white screen — fixed. `ChunkErrorBoundary` wraps each of the four lazy sections (`FinykSection`, `FizrukSection`, `NutritionSection`, `RoutineSection`) in `HubSettingsPage`. Chunk-load failures now show a localized retry card (`SectionSkeleton` footprint + reload button) instead of propagating to the global boundary and blanking the entire Settings tab.
+
+MEDIUM #2 — Suspense fallback minH CLS — deferred. Requires live browser measurement (ResizeObserver or Lighthouse CLS trace). Tracked separately; not addressed in this PR.

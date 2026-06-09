@@ -26,12 +26,18 @@ function makeRng(seed: number): () => number {
 const NUM_RUNS = Number(process.env["FAST_CHECK_NUM_RUNS"] ?? 1000);
 const rng = makeRng(42);
 
-/** A random local Date within [1970, ~2100]. */
+/**
+ * A random local Date within [1970, ~2100].
+ * Hours are restricted to 0–20 UTC so the Europe/Kyiv date (UTC+2 winter /
+ * UTC+3 summer) always falls on the same calendar day as the constructed UTC
+ * date — avoids spurious mismatches in tests that compare local fields to the
+ * Kyiv-formatted result.
+ */
 function arbitraryLocalDate(): Date {
   const year = 1970 + Math.floor(rng() * 130);
   const month = Math.floor(rng() * 12); // 0..11
   const day = 1 + Math.floor(rng() * 28); // 1..28, always valid
-  const hour = Math.floor(rng() * 24);
+  const hour = Math.floor(rng() * 21); // 0..20: UTC 21–23 crosses to next Kyiv day
   const minute = Math.floor(rng() * 60);
   return new Date(year, month, day, hour, minute);
 }
@@ -64,25 +70,28 @@ describe("shared/utils/date – toLocalISODate property", () => {
   });
 
   it("is time-of-day invariant: only the calendar day matters", () => {
+    // Use 06:00 and 20:00 UTC — both safely within the same Kyiv calendar day
+    // regardless of DST offset (UTC+2 winter: 08:00/22:00; UTC+3 summer: 09:00/23:00).
+    // UTC 21–23 would cross Kyiv midnight, so we avoid those hours here.
     for (let i = 0; i < NUM_RUNS; i++) {
       const base = arbitraryLocalDate();
-      const midnight = new Date(
+      const earlyMorning = new Date(
         base.getFullYear(),
         base.getMonth(),
         base.getDate(),
-        0,
+        6,
         0,
         0,
       );
-      const lateNight = new Date(
+      const lateEvening = new Date(
         base.getFullYear(),
         base.getMonth(),
         base.getDate(),
-        23,
-        59,
-        59,
+        20,
+        0,
+        0,
       );
-      expect(toLocalISODate(lateNight)).toBe(toLocalISODate(midnight));
+      expect(toLocalISODate(lateEvening)).toBe(toLocalISODate(earlyMorning));
     }
   });
 
