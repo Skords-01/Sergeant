@@ -16,7 +16,7 @@
 #   1. `builder`  — node:alpine + full deps + `pnpm build`.
 #   2. `deps`     — node:alpine + `pnpm install --prod` + cleanup CVE-
 #      noisy optional peers (потребує shell, distroless його не має).
-#   3. `runtime`  — `gcr.io/distroless/nodejs20-debian12:nonroot`. NO
+#   3. `runtime`  — `gcr.io/distroless/nodejs22-debian13:nonroot`. NO
 #      shell, NO `npm` / `pnpm` / `corepack`. Trivy attack surface
 #      shrinks ~90% порівняно з alpine + cleanup-based hardening.
 #
@@ -27,7 +27,7 @@
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Stage 1: builder
-FROM --platform=linux/amd64 node:20.20.2-alpine AS builder
+FROM --platform=linux/amd64 node:22.16.0-alpine AS builder
 WORKDIR /app
 
 RUN corepack enable && corepack prepare pnpm@9.15.1 --activate
@@ -60,7 +60,7 @@ RUN pnpm build
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Stage 2: deps — production-only deps + CVE-cleanup
-FROM --platform=linux/amd64 node:20.20.2-alpine AS deps
+FROM --platform=linux/amd64 node:22.16.0-alpine AS deps
 WORKDIR /app
 
 RUN corepack enable && corepack prepare pnpm@9.15.1 --activate
@@ -89,7 +89,7 @@ RUN find node_modules -maxdepth 3 -type d \
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Stage 3: runtime — distroless. Жодного shell-у, жодного package manager-у.
-FROM --platform=linux/amd64 gcr.io/distroless/nodejs20-debian12:nonroot AS runtime
+FROM --platform=linux/amd64 gcr.io/distroless/nodejs22-debian13:nonroot AS runtime
 WORKDIR /app
 
 ENV NODE_ENV=production
