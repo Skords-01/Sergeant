@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // scripts/agent/build-retrieval-index.mjs
 //
-// Build the agent retrieval manifest (`docs/governance/retrieval-index.json`)
+// Build the agent retrieval manifest (`docs/04-governance/governance/retrieval-index.json`)
 // that powers `pnpm agent:find`. One chunk per knowledge-graph node + one per
 // package export from the symbol index, each enriched with the source file's
 // markdown headings so lexical (and, in Phase 2, semantic) search has real
@@ -11,11 +11,11 @@
 // content-hash cache (Phase 2). This is the queryable source of truth.
 //
 // Sources:
-//   docs/governance/knowledge-graph.json   (adr / initiative / playbook / skill / hard-rule / audit nodes)
-//   docs/governance/symbol-index.json       (per-package exports → `export:` chunks)
+//   docs/04-governance/governance/knowledge-graph.json   (adr / initiative / playbook / skill / hard-rule / audit nodes)
+//   docs/04-governance/governance/symbol-index.json       (per-package exports → `export:` chunks)
 //
-// Schema: docs/governance/schemas/retrieval-index.schema.json
-// ADR:    docs/adr/0066-agent-semantic-retrieval-over-knowledge-graph.md
+// Schema: docs/04-governance/governance/schemas/retrieval-index.schema.json
+// ADR:    docs/04-governance/adr/0066-agent-semantic-retrieval-over-knowledge-graph.md
 //
 // Usage:
 //   node scripts/agent/build-retrieval-index.mjs           # write
@@ -27,15 +27,23 @@ import { createHash } from "node:crypto";
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, posix, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
-import prettier from "prettier";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const REPO_ROOT = resolve(__dirname, "../..");
 
-const GRAPH_PATH = resolve(REPO_ROOT, "docs/governance/knowledge-graph.json");
-const SYMBOLS_PATH = resolve(REPO_ROOT, "docs/governance/symbol-index.json");
-const OUT_JSON = resolve(REPO_ROOT, "docs/governance/retrieval-index.json");
+const GRAPH_PATH = resolve(
+  REPO_ROOT,
+  "docs/04-governance/governance/knowledge-graph.json",
+);
+const SYMBOLS_PATH = resolve(
+  REPO_ROOT,
+  "docs/04-governance/governance/symbol-index.json",
+);
+const OUT_JSON = resolve(
+  REPO_ROOT,
+  "docs/04-governance/governance/retrieval-index.json",
+);
 
 const SCHEMA_VERSION = 1;
 
@@ -202,9 +210,13 @@ function buildManifest() {
 
 // ── CLI ──────────────────────────────────────────────────────────────────────
 
-async function formatJson(obj, filepath) {
-  const opts = (await prettier.resolveConfig(filepath)) ?? {};
-  return prettier.format(JSON.stringify(obj), { ...opts, parser: "json" });
+// Deterministic JSON formatting: 2-space indent + trailing newline. This is
+// byte-for-byte what Prettier produced for this manifest (verified against the
+// committed file), but without importing `prettier` — the docs-automation CI
+// lane that runs retrieval.test.mjs has no node_modules, so a top-level
+// `import prettier` crashed the `--check` gate (ERR_MODULE_NOT_FOUND).
+function formatJson(obj) {
+  return `${JSON.stringify(obj, null, 2)}\n`;
 }
 
 async function main() {
@@ -213,7 +225,7 @@ async function main() {
   // `generated_at` is a clock value, so the committed manifest may carry a
   // different date than today; compare everything except that field.
   const manifest = buildManifest();
-  const next = await formatJson(manifest, OUT_JSON);
+  const next = formatJson(manifest);
 
   if (wantsCheck) {
     const current = readSafe(OUT_JSON);
