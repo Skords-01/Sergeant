@@ -1,10 +1,10 @@
 # pnpm Overrides Rationale
 
-> **Last validated:** 2026-06-05 by @claude. **Next review:** 2026-09-03.
+> **Last validated:** 2026-06-09 by @claude. **Next review:** 2026-09-07.
 > **Status:** Active
 
 Документація кожного запису в `pnpm.overrides` кореневого `package.json`.
-Правила: [`docs/governance/pnpm-overrides-policy.md`](docs/governance/pnpm-overrides-policy.md).
+Правила: [`docs/04-governance/governance/pnpm-overrides-policy.md`](docs/04-governance/governance/pnpm-overrides-policy.md).
 
 ---
 
@@ -75,7 +75,7 @@ Vite / postcss-loader тягнуть різні patch-рівні; override га�
 
 **Why:** Деякі transitive залежники підтягували `uuid@v1`–`v8` (CJS-only, без `crypto`
 failsafe). UUID v14 — мажор з ESM-first, покращеним RNG та видаленням deprecated v1/v6 API.
-Пов'язано з hardening card L1 (`docs/security/hardening/L1-uuid-override.md`).
+Пов'язано з hardening card L1 (`docs/04-governance/security/hardening/L1-uuid-override.md`).
 
 **Drop when:** Всі workspaces явно залежать від `uuid@^14` або мігрують на `crypto.randomUUID()`
 (native, без пакету).
