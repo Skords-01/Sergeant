@@ -1,6 +1,6 @@
 # C3 — Workspace dependency graph
 
-> **Last validated:** 2026-06-08 by @Skords-01. **Next review:** 2026-09-06.
+> **Last validated:** 2026-06-09 by @Skords-01. **Next review:** 2026-09-07.
 > **Status:** Active
 
 <!-- AUTO-GENERATED FILE. Do not edit by hand. Regenerate via `pnpm docs:gen-architecture-diagrams`. -->
@@ -18,9 +18,6 @@ flowchart LR
         apps_mobile_shell["@sergeant/mobile-shell"]
         apps_server["@sergeant/server"]
         apps_web["@sergeant/web"]
-    end
-    subgraph tools["tools"]
-        tools_openclaw["@sergeant/openclaw"]
     end
     subgraph packages["packages"]
         packages_api_client["@sergeant/api-client"]
@@ -65,13 +62,12 @@ flowchart LR
     classDef tool fill:#b45309,stroke:#7c2d12,color:#fff
     classDef package fill:#15803d,stroke:#166534,color:#fff
     class apps_mobile,apps_mobile_shell,apps_server,apps_web app
-    class tools_openclaw tool
     class packages_api_client,packages_config,packages_db_schema,packages_design_tokens,packages_eslint_plugin_sergeant_design,packages_finyk_domain,packages_fizruk_domain,packages_insights,packages_nutrition_domain,packages_openclaw_plugin,packages_routine_domain,packages_shared package
 ```
 
 ## Stats
 
-- **17** workspaces total — 4 apps, 12 packages, 1 tool.
+- **16** workspaces total — 4 apps, 12 packages, 0 tools.
 - **24** cross-workspace import edges.
 
 ## Top imported workspaces
