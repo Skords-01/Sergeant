@@ -1,12 +1,12 @@
 {
   "$schema": "./schemas/knowledge-graph.schema.json",
   "version": 1,
-  "generated_at": "2026-06-09",
+  "generated_at": "2026-06-10",
   "counts": {
     "adr": 63,
     "audit": 18,
     "hard-rule": 26,
-    "initiative": 51,
+    "initiative": 52,
     "playbook": 61,
     "pr": 164,
     "skill": 33
@@ -1347,6 +1347,17 @@
       }
     },
     {
+      "id": "initiative:0021",
+      "type": "initiative",
+      "title": "0021 — React-hooks v7 ESLint cleanup",
+      "path": "docs/90-work/initiatives/0021-react-hooks-v7-cleanup.md",
+      "status": "Proposed",
+      "tier": "core",
+      "meta": {
+        "number": 21
+      }
+    },
+    {
       "id": "initiative:follow-ups",
       "type": "initiative",
       "title": "Initiative follow-ups",
@@ -1648,7 +1659,7 @@
       "type": "initiative",
       "title": "PR-30: Dockerfile post-install cleanup CVE-shrink fragility",
       "path": "docs/90-work/initiatives/stack-pulse-2026-05/pr-30-dockerfile-cleanup-cve.md",
-      "status": "Done — multi-stage distroless shipped via PR [#2543](https://github.com/Skords-01/Sergeant/pull/2543) (commit [`51b6fee0`](https://github.com/Skords-01/Sergeant/commit/51b6fee0), 2026-05-13); shared base layer + console-side Trivy scan tracked as follow-up.",
+      "status": "Done — multi-stage distroless shipped via PR [#2543](https://github.com/Skords-01/Sergeant/pull/2543) (commit [`51b6fee0`](https://github.com/Skords-01/Sergeant/commit/51b6fee0), 2026-05-13). Console-side Trivy follow-up landed in commit [`120ec9d94`](https://github.com/Skords-01/Sergeant/commit/120ec9d944eebf8bbc15c5360c4f1e8dbd15ae1d) on 2026-06-09.",
       "tier": "core",
       "meta": {}
     },
