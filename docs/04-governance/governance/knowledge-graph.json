@@ -1,14 +1,14 @@
 {
   "$schema": "./schemas/knowledge-graph.schema.json",
   "version": 1,
-  "generated_at": "2026-06-11",
+  "generated_at": "2026-06-12",
   "counts": {
     "adr": 63,
     "audit": 19,
     "hard-rule": 26,
     "initiative": 52,
     "playbook": 61,
-    "pr": 169,
+    "pr": 181,
     "skill": 23
   },
   "nodes": [
@@ -3493,26 +3493,6 @@
       }
     },
     {
-      "id": "pr:3472",
-      "type": "pr",
-      "title": "PR #3472",
-      "tier": "extended",
-      "meta": {
-        "number": 3472,
-        "url": "https://github.com/Skords-01/Sergeant/pull/3472"
-      }
-    },
-    {
-      "id": "pr:3489",
-      "type": "pr",
-      "title": "PR #3489",
-      "tier": "extended",
-      "meta": {
-        "number": 3489,
-        "url": "https://github.com/Skords-01/Sergeant/pull/3489"
-      }
-    },
-    {
       "id": "pr:3491",
       "type": "pr",
       "title": "PR #3491",
@@ -3523,16 +3503,6 @@
       }
     },
     {
-      "id": "pr:3492",
-      "type": "pr",
-      "title": "PR #3492",
-      "tier": "extended",
-      "meta": {
-        "number": 3492,
-        "url": "https://github.com/Skords-01/Sergeant/pull/3492"
-      }
-    },
-    {
       "id": "pr:3498",
       "type": "pr",
       "title": "PR #3498",
@@ -3540,6 +3510,156 @@
       "meta": {
         "number": 3498,
         "url": "https://github.com/Skords-01/Sergeant/pull/3498"
+      }
+    },
+    {
+      "id": "pr:3499",
+      "type": "pr",
+      "title": "PR #3499",
+      "tier": "extended",
+      "meta": {
+        "number": 3499,
+        "url": "https://github.com/Skords-01/Sergeant/pull/3499"
+      }
+    },
+    {
+      "id": "pr:3500",
+      "type": "pr",
+      "title": "PR #3500",
+      "tier": "extended",
+      "meta": {
+        "number": 3500,
+        "url": "https://github.com/Skords-01/Sergeant/pull/3500"
+      }
+    },
+    {
+      "id": "pr:3501",
+      "type": "pr",
+      "title": "PR #3501",
+      "tier": "extended",
+      "meta": {
+        "number": 3501,
+        "url": "https://github.com/Skords-01/Sergeant/pull/3501"
+      }
+    },
+    {
+      "id": "pr:3502",
+      "type": "pr",
+      "title": "PR #3502",
+      "tier": "extended",
+      "meta": {
+        "number": 3502,
+        "url": "https://github.com/Skords-01/Sergeant/pull/3502"
+      }
+    },
+    {
+      "id": "pr:3503",
+      "type": "pr",
+      "title": "PR #3503",
+      "tier": "extended",
+      "meta": {
+        "number": 3503,
+        "url": "https://github.com/Skords-01/Sergeant/pull/3503"
+      }
+    },
+    {
+      "id": "pr:3507",
+      "type": "pr",
+      "title": "PR #3507",
+      "tier": "extended",
+      "meta": {
+        "number": 3507,
+        "url": "https://github.com/Skords-01/Sergeant/pull/3507"
+      }
+    },
+    {
+      "id": "pr:3509",
+      "type": "pr",
+      "title": "PR #3509",
+      "tier": "extended",
+      "meta": {
+        "number": 3509,
+        "url": "https://github.com/Skords-01/Sergeant/pull/3509"
+      }
+    },
+    {
+      "id": "pr:3510",
+      "type": "pr",
+      "title": "PR #3510",
+      "tier": "extended",
+      "meta": {
+        "number": 3510,
+        "url": "https://github.com/Skords-01/Sergeant/pull/3510"
+      }
+    },
+    {
+      "id": "pr:3511",
+      "type": "pr",
+      "title": "PR #3511",
+      "tier": "extended",
+      "meta": {
+        "number": 3511,
+        "url": "https://github.com/Skords-01/Sergeant/pull/3511"
+      }
+    },
+    {
+      "id": "pr:3512",
+      "type": "pr",
+      "title": "PR #3512",
+      "tier": "extended",
+      "meta": {
+        "number": 3512,
+        "url": "https://github.com/Skords-01/Sergeant/pull/3512"
+      }
+    },
+    {
+      "id": "pr:3514",
+      "type": "pr",
+      "title": "PR #3514",
+      "tier": "extended",
+      "meta": {
+        "number": 3514,
+        "url": "https://github.com/Skords-01/Sergeant/pull/3514"
+      }
+    },
+    {
+      "id": "pr:3515",
+      "type": "pr",
+      "title": "PR #3515",
+      "tier": "extended",
+      "meta": {
+        "number": 3515,
+        "url": "https://github.com/Skords-01/Sergeant/pull/3515"
+      }
+    },
+    {
+      "id": "pr:3516",
+      "type": "pr",
+      "title": "PR #3516",
+      "tier": "extended",
+      "meta": {
+        "number": 3516,
+        "url": "https://github.com/Skords-01/Sergeant/pull/3516"
+      }
+    },
+    {
+      "id": "pr:3519",
+      "type": "pr",
+      "title": "PR #3519",
+      "tier": "extended",
+      "meta": {
+        "number": 3519,
+        "url": "https://github.com/Skords-01/Sergeant/pull/3519"
+      }
+    },
+    {
+      "id": "pr:3522",
+      "type": "pr",
+      "title": "PR #3522",
+      "tier": "extended",
+      "meta": {
+        "number": 3522,
+        "url": "https://github.com/Skords-01/Sergeant/pull/3522"
       }
     },
     {
@@ -5396,47 +5516,12 @@
     },
     {
       "from": "audit:2026-06-11-fable5-independent-audit",
-      "to": "hard-rule:18",
-      "type": "references"
-    },
-    {
-      "from": "audit:2026-06-11-fable5-independent-audit",
-      "to": "hard-rule:20",
-      "type": "references"
-    },
-    {
-      "from": "audit:2026-06-11-fable5-independent-audit",
-      "to": "hard-rule:21",
-      "type": "references"
-    },
-    {
-      "from": "audit:2026-06-11-fable5-independent-audit",
       "to": "hard-rule:26",
       "type": "references"
     },
     {
       "from": "audit:2026-06-11-fable5-independent-audit",
-      "to": "initiative:0010",
-      "type": "references"
-    },
-    {
-      "from": "audit:2026-06-11-fable5-independent-audit",
-      "to": "pr:3472",
-      "type": "touched-by"
-    },
-    {
-      "from": "audit:2026-06-11-fable5-independent-audit",
-      "to": "pr:3489",
-      "type": "touched-by"
-    },
-    {
-      "from": "audit:2026-06-11-fable5-independent-audit",
       "to": "pr:3491",
-      "type": "touched-by"
-    },
-    {
-      "from": "audit:2026-06-11-fable5-independent-audit",
-      "to": "pr:3492",
       "type": "touched-by"
     },
     {
@@ -5446,7 +5531,77 @@
     },
     {
       "from": "audit:2026-06-11-fable5-independent-audit",
-      "to": "pr:708",
+      "to": "pr:3499",
+      "type": "touched-by"
+    },
+    {
+      "from": "audit:2026-06-11-fable5-independent-audit",
+      "to": "pr:3500",
+      "type": "touched-by"
+    },
+    {
+      "from": "audit:2026-06-11-fable5-independent-audit",
+      "to": "pr:3501",
+      "type": "touched-by"
+    },
+    {
+      "from": "audit:2026-06-11-fable5-independent-audit",
+      "to": "pr:3502",
+      "type": "touched-by"
+    },
+    {
+      "from": "audit:2026-06-11-fable5-independent-audit",
+      "to": "pr:3503",
+      "type": "touched-by"
+    },
+    {
+      "from": "audit:2026-06-11-fable5-independent-audit",
+      "to": "pr:3507",
+      "type": "touched-by"
+    },
+    {
+      "from": "audit:2026-06-11-fable5-independent-audit",
+      "to": "pr:3509",
+      "type": "touched-by"
+    },
+    {
+      "from": "audit:2026-06-11-fable5-independent-audit",
+      "to": "pr:3510",
+      "type": "touched-by"
+    },
+    {
+      "from": "audit:2026-06-11-fable5-independent-audit",
+      "to": "pr:3511",
+      "type": "touched-by"
+    },
+    {
+      "from": "audit:2026-06-11-fable5-independent-audit",
+      "to": "pr:3512",
+      "type": "touched-by"
+    },
+    {
+      "from": "audit:2026-06-11-fable5-independent-audit",
+      "to": "pr:3514",
+      "type": "touched-by"
+    },
+    {
+      "from": "audit:2026-06-11-fable5-independent-audit",
+      "to": "pr:3515",
+      "type": "touched-by"
+    },
+    {
+      "from": "audit:2026-06-11-fable5-independent-audit",
+      "to": "pr:3516",
+      "type": "touched-by"
+    },
+    {
+      "from": "audit:2026-06-11-fable5-independent-audit",
+      "to": "pr:3519",
+      "type": "touched-by"
+    },
+    {
+      "from": "audit:2026-06-11-fable5-independent-audit",
+      "to": "pr:3522",
       "type": "touched-by"
     },
     {
