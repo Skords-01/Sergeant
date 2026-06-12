@@ -1,8 +1,19 @@
 {
   "$schema": "../governance/schemas/pr-ledger.schema.json",
   "version": 1,
-  "generated_at": "2026-05-15",
+  "generated_at": "2026-06-12",
   "prs": [
+    {
+      "number": 3536,
+      "title": "docs(docs): doc-layer wave 2 — genre contract, monolith splits, hardening matrix",
+      "merged_at": "2026-06-12T11:11:37Z",
+      "author": "@Skords-01",
+      "touchedDocs": [
+        "docs/04-governance/governance/rules/16-typography-scale-12px-floor.md",
+        "docs/04-governance/governance/rules/17-animation-budget.md",
+        "docs/90-work/initiatives/hardening-matrix.md"
+      ]
+    },
     {
       "number": 3486,
       "title": "chore(server,config): hard rule #18 server max-lines, OTel align, distroless docs",
