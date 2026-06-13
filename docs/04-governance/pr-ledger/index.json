@@ -1,8 +1,17 @@
 {
   "$schema": "../governance/schemas/pr-ledger.schema.json",
   "version": 1,
-  "generated_at": "2026-05-15",
+  "generated_at": "2026-06-13",
   "prs": [
+    {
+      "number": 3555,
+      "title": "fix(web): correct recommendation icon rendering and design checkbox a11y",
+      "merged_at": "2026-06-13T18:41:22Z",
+      "author": "@Skords-01",
+      "touchedDocs": [
+        "docs/04-governance/adr/0003-refund-and-dispute-handling.md"
+      ]
+    },
     {
       "number": 3486,
       "title": "chore(server,config): hard rule #18 server max-lines, OTel align, distroless docs",
