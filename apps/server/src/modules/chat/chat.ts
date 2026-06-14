@@ -14,7 +14,12 @@ import {
   recordAnthropicUsage,
 } from "../../lib/anthropic.js";
 import type { WithAiQuotaRefund } from "./aiQuota.js";
-import { TOOLS, SYSTEM_PREFIX, SYSTEM_PROMPT_VERSION } from "./tools.js";
+import { SYSTEM_PROMPT_VERSION } from "./tools.js";
+import {
+  applyMessagesCacheBreakpoint,
+  buildSystem,
+  TOOLS_WITH_CACHE,
+} from "./promptCache.js";
 import { recordToolProposals, recordToolExecutions } from "./toolMetrics.js";
 import { truncateToolResults } from "./toolResultTruncation.js";
 import { wrapAndScanToolResults } from "./toolOutputWrapping.js";
@@ -37,66 +42,10 @@ type WithAnthropicKey = Request & { anthropicKey?: string };
  */
 const CHAT_TOOL_TIMEOUT_MS = 30_000;
 
-/**
- * Anthropic prompt-caching, дві кажові точки (cache breakpoints):
- *
- * 1. **SYSTEM_PREFIX** як окремий `text`-блок з `cache_control`. Сьогодні сам префікс
- *    ~987 токенів — рівно під мінімумом Anthropic 1024 для Sonnet, тому слот
- *    фактично не реєструється. Позначаємо forward-looking: як тільки
- *    SYSTEM_PREFIX виросте понад поріг — кеш ввімкнеться автоматично.
- *
- * 2. **Останній tool** в `tools` (див. `applyToolsCacheBreakpoint`). Оскільки cache
- *    breakpoint охоплює все ДО себе в порядку system → tools → messages, це
- *    реально кешує ~6000+ токенів (system + всі 19+ tools). TTL ephemeral = 5хв.
- *
- * Per-user `context` рендериться другим блоком system — **без** `cache_control`,
- * щоб не створювати власного cache slot per-user-ом. Але оскільки cache key
- * охоплює весь system, різний context між юзерами все одно фрагментує кеш (один слот
- * на user). Це ОК: юзер в межах своєї сесії (5хв) отримує багато cache_read.
- *
- * Коли `context` порожній, Anthropic API відхиляє `text`-блоки з empty `text`,
- * тому під cap-ом повертаємо лише самий cached prefix.
- */
-interface AnthropicSystemBlock {
-  type: "text";
-  text: string;
-  cache_control?: { type: "ephemeral" };
-}
-
-function buildSystem(context: string): AnthropicSystemBlock[] {
-  const cached: AnthropicSystemBlock = {
-    type: "text",
-    text: SYSTEM_PREFIX,
-    cache_control: { type: "ephemeral" },
-  };
-  if (!context) return [cached];
-  return [cached, { type: "text", text: context }];
-}
-
-/**
- * Клонує `TOOLS` і додає `cache_control: ephemeral` до останнього tool. Не
- * мутує імпортований масив, бо він реєкспортиться в інших місцях.
- *
- * Anthropic бачить останній cache_control в порядку system → tools → messages
- * як "кешуй все до цього блоку включно". Це реальний вин кешування сьогодні — без
- * цього cache_control на SYSTEM_PREFIX самостійно не ввімкнеться.
- */
-function applyToolsCacheBreakpoint(
-  tools: typeof TOOLS,
-): Array<(typeof TOOLS)[number] & { cache_control?: { type: "ephemeral" } }> {
-  if (tools.length === 0) return tools;
-  const cloned = tools.slice();
-  const last = cloned[cloned.length - 1];
-  cloned[cloned.length - 1] = {
-    ...last,
-    cache_control: { type: "ephemeral" },
-  } as typeof last & { cache_control: { type: "ephemeral" } };
-  return cloned as Array<
-    (typeof TOOLS)[number] & { cache_control?: { type: "ephemeral" } }
-  >;
-}
-
-const TOOLS_WITH_CACHE = applyToolsCacheBreakpoint(TOOLS);
+// Anthropic prompt-caching хелпери (buildSystem / TOOLS_WITH_CACHE /
+// applyMessagesCacheBreakpoint) винесені в `./promptCache.ts` — три cache
+// breakpoint-и (system prefix, останній tool, останнє повідомлення) задокументовані
+// там. Винесення тримає chat.ts під module-size cap (Hard Rule #18).
 
 /**
  * Якщо Anthropic повернув не-2xx або виклик упав (timeout/abort), викликаємо
@@ -542,7 +491,9 @@ export default async function handler(
         max_tokens: 1500,
         system: buildSystem(augmentedContext),
         tools: TOOLS_WITH_CACHE,
-        messages: cleaned,
+        // 3-й cache breakpoint: кешуємо префікс історії діалогу, щоб наступний
+        // тур читав попередні повідомлення з кешу замість повного re-білінгу.
+        messages: applyMessagesCacheBreakpoint(cleaned),
       },
       {
         timeoutMs: CHAT_TOOL_TIMEOUT_MS,
