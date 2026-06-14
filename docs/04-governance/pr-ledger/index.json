@@ -4,6 +4,13 @@
   "generated_at": "2026-06-14",
   "prs": [
     {
+      "number": 3577,
+      "title": "fix(docs): heal CI-on-main drift — pr-ledger JSON, archived links, regen generated docs",
+      "merged_at": "2026-06-14T21:05:10Z",
+      "author": "@Skords-01",
+      "touchedDocs": ["docs/90-work/initiatives/0020-agent-decisions-log.md"]
+    },
+    {
       "number": 3560,
       "title": "fix: heal governance/format drift + dualWrite logger lint debt",
       "merged_at": "2026-06-14T09:08:03Z",
