@@ -1,6 +1,6 @@
 # 0018 — Agent semantic retrieval (agent:find)
 
-> **Last touched:** 2026-06-14 by @Skords-01. **Next review:** 2026-09-12.
+> **Last touched:** 2026-06-14 by @github-actions[bot]. **Next review:** 2026-09-12.
 > **Status:** In progress — **Phases 1–4 code-complete; усі 7 DONE-критеріїв закриті.** **Lexical** заміряно 2026-06-08 ([session-log](./session-log-0018-agent-find-measurement-2026-06-08.md)); **semantic (Voyage)** заміряно 2026-06-14 ([session-log](./session-log-0018-semantic-measurement-2026-06-14.md)): 548 чанків ембеджено, усі 12 golden-кейсів у semantic-режимі без degradation — recall@5=1.0 (= lexical), MRR 0.917→0.958. Залишок — лише рішення про archive (як з 0019).
 > **Agent-ready:** yes
 
@@ -104,3 +104,15 @@ Sergeant має багатий машино-читабельний індекс 
 - [`docs/04-governance/governance/knowledge-graph.json`](../../04-governance/governance/knowledge-graph.json) — головне джерело нод для індексу
 - [`docs/04-governance/governance/symbol-index.json`](../../04-governance/governance/symbol-index.json) — export-пойнтери
 - Rule #24 [`catalog-check-generator.md`](../../04-governance/governance/rules/24-catalog-check-generator.md), Rule #25 [`auto-generated-marker.md`](../../04-governance/governance/rules/25-auto-generated-marker.md)
+
+<!-- AUTO-GENERATED: PR-BACKLINKS-START -->
+
+## Recent PRs
+
+| PR                                                       | Title                                                                        | Merged     |
+| -------------------------------------------------------- | ---------------------------------------------------------------------------- | ---------- |
+| [#3567](https://github.com/Skords-01/Sergeant/pull/3567) | docs(agents): record 0018 semantic measurement + drop orphan 0019 README row | 2026-06-14 |
+
+_Auto-derived from `docs/04-governance/pr-ledger/index.json`. Top 1 most recent PRs touching this file._
+
+<!-- AUTO-GENERATED: PR-BACKLINKS-END -->
