@@ -47,15 +47,3 @@ For JSON outputs (e.g. `knowledge-graph.json`, `repo-map.auto.json`), JSON has n
 
 - Initiative — [`docs/90-work/initiatives/archive/_0014-knowledge-graph-and-catalogs.md`](../../../90-work/initiatives/archive/_0014-knowledge-graph-and-catalogs.md).
 - ADR-0058 — [`docs/04-governance/adr/0058-knowledge-graph-schema.md`](../../adr/0058-knowledge-graph-schema.md) (schema-first principle).
-
-<!-- AUTO-GENERATED: PR-BACKLINKS-START -->
-
-## Recent PRs
-
-| PR                                                       | Title                                                              | Merged     |
-| -------------------------------------------------------- | ------------------------------------------------------------------ | ---------- |
-| [#2900](https://github.com/Skords-01/Sergeant/pull/2900) | docs(docs): hard rules 24/25/26 for Initiative 0014 (HR follow-up) | 2026-05-15 |
-
-_Auto-derived from `docs/04-governance/pr-ledger/index.json`. Top 1 most recent PRs touching this file._
-
-<!-- AUTO-GENERATED: PR-BACKLINKS-END -->
