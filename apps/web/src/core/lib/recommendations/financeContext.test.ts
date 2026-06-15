@@ -1,9 +1,22 @@
 // @vitest-environment jsdom
+//
+// `buildFinanceContext` derives `monthStart` from host-local `Date` methods
+// (`setDate(1)` + `setHours(0,0,0,0)`). The product's canonical month/day
+// boundary is Europe/Kyiv (docs/02-engineering/architecture/domain-invariants.md),
+// so the result is only meaningful when host-local == Kyiv. Pin the process TZ
+// to Europe/Kyiv so the absolute `monthStart` instant is deterministic across
+// hosts (CI runs UTC; dev machines vary). In April, Kyiv is EEST (UTC+3), so
+// the first-of-month at 00:00 Kyiv is `2026-03-31T21:00:00.000Z` — asserting
+// the UTC string only holds once the TZ is pinned.
+process.env["TZ"] = "Europe/Kyiv";
+
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { buildFinanceContext } from "./financeContext";
 
 // Fixed clock so monthStart is deterministic across runs.
 const FIXED_NOW = new Date("2026-04-15T10:30:00.000Z");
+// Apr 1 2026 00:00 in Kyiv-local time (EEST, UTC+3) expressed as a UTC instant.
+const MONTH_START_UTC = "2026-03-31T21:00:00.000Z";
 
 beforeEach(() => {
   localStorage.clear();
@@ -20,7 +33,7 @@ describe("buildFinanceContext — defaults", () => {
   it("returns sane empty defaults when no LS data is present", () => {
     const ctx = buildFinanceContext();
     expect(ctx.now.toISOString()).toBe(FIXED_NOW.toISOString());
-    expect(ctx.monthStart.toISOString()).toBe("2026-04-01T00:00:00.000Z");
+    expect(ctx.monthStart.toISOString()).toBe(MONTH_START_UTC);
     expect(ctx.transactions).toEqual([]);
     expect(ctx.manualExpenses).toEqual([]);
     expect(ctx.budgets).toEqual([]);
