@@ -152,6 +152,7 @@ describe("AuthContext", () => {
     requestPasswordReset.mockClear();
     useUserMock.mockReset();
     trackEventMock.mockClear();
+    localStorage.clear();
   });
 
   it("drives `user`/`status` off useUser() — not better-auth/useSession", () => {
@@ -269,18 +270,39 @@ describe("AuthContext", () => {
     );
   });
 
-  it("invalidates apiQueryKeys.me.current() on logout, even if signOut throws", async () => {
+  it("clears the whole query cache on logout, even if signOut throws", async () => {
     setUser({ data: { user: SAMPLE_USER } });
     signOut.mockRejectedValueOnce(new Error("network down"));
-    const { Wrapper, invalidateSpy } = makeWrapper();
+    const { Wrapper, client } = makeWrapper();
+    const clearSpy = vi.spyOn(client, "clear");
     const { result } = renderHook(() => useAuth(), { wrapper: Wrapper });
     await act(async () => {
       await result.current.logout();
     });
     expect(signOut).toHaveBeenCalled();
-    expect(invalidateSpy).toHaveBeenCalledWith({
-      queryKey: apiQueryKeys.me.current(),
+    // Logout drops ALL cached queries — not just `me` — so no stale
+    // authenticated data (greeting, balances) survives until reload.
+    expect(clearSpy).toHaveBeenCalled();
+  });
+
+  it("wipes app-owned localStorage on logout but preserves foreign keys", async () => {
+    setUser({ data: { user: SAMPLE_USER } });
+    localStorage.setItem("finyk_tx_cache", '[{"amount":1}]');
+    localStorage.setItem("nutrition_water_v1", "1500");
+    localStorage.setItem("kvvfs-local-0", "sqlite-mirror-row");
+    localStorage.setItem("ph_phc_project", "posthog-distinct-id");
+    localStorage.setItem("theme", "dark");
+    const { Wrapper } = makeWrapper();
+    const { result } = renderHook(() => useAuth(), { wrapper: Wrapper });
+    await act(async () => {
+      await result.current.logout();
     });
+    expect(localStorage.getItem("finyk_tx_cache")).toBeNull();
+    expect(localStorage.getItem("nutrition_water_v1")).toBeNull();
+    expect(localStorage.getItem("kvvfs-local-0")).toBeNull();
+    // Foreign / infra keys untouched.
+    expect(localStorage.getItem("ph_phc_project")).toBe("posthog-distinct-id");
+    expect(localStorage.getItem("theme")).toBe("dark");
   });
 
   it("refresh() invalidates apiQueryKeys.me.current()", async () => {

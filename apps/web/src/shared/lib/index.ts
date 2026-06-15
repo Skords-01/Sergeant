@@ -62,6 +62,7 @@ export type {
 } from "./storage/createModuleStorage";
 
 export {
+  clearAppOwnedLocalStorage,
   safeReadLS,
   safeReadStringLS,
   safeRemoveLS,

@@ -19,7 +19,7 @@ import {
 } from "./authClient";
 import { identifyPostHogUser, resetPostHog } from "../observability/posthog";
 import { swClearCaches, swSetActiveUser } from "../app/swControl";
-import { logger } from "@shared/lib";
+import { clearAppOwnedLocalStorage, logger } from "@shared/lib";
 import { buildIdentifyTraits } from "../observability/identifyTraits";
 import { trackEvent, ANALYTICS_EVENTS } from "../observability/analytics";
 import { messages } from "../../shared/i18n/uk";
@@ -348,8 +348,25 @@ export function AuthProvider({ children }: AuthProviderProps) {
     } catch (err) {
       logger.warn("[auth.logout] sqlite wipe/reset failed", err);
     }
-    await invalidateMe();
-  }, [invalidateMe]);
+    // Privacy defect (b): the SW + SQLite wipes above don't reach the plain
+    // localStorage layer, where the previous account's `finyk_tx_cache`
+    // (plaintext tx JSON), `nutrition_*` log, hub chat history and the
+    // `kvvfs-local-*` SQLite mirror linger and are readable by the next user
+    // on a shared device. Clear only allowlisted app-owned namespaces —
+    // foreign domains (`ph_*`) and infra/UI-pref keys are preserved.
+    try {
+      clearAppOwnedLocalStorage();
+    } catch (err) {
+      logger.warn("[auth.logout] clearAppOwnedLocalStorage failed", err);
+    }
+    // Defect (a): invalidating only `me` leaves every other authed query in
+    // cache, so the previous user's personal data (greeting, balances) keeps
+    // rendering until a manual reload. Drop the whole React Query cache so no
+    // stale authenticated data survives; the mounted `useUser` observer
+    // refetches `/api/v1/me`, which now resolves to the signed-out (401) state
+    // and flips the UI to the guest surface without a reload.
+    queryClient.clear();
+  }, [queryClient]);
 
   // Привʼязуємо/відвʼязуємо аналітику до userId. Ref тримає попередній
   // userId, щоб `reset()` викликався тільки на реальному переході

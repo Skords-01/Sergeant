@@ -244,6 +244,147 @@ export function safeRemoveLS(key: string): boolean {
   return true;
 }
 
+// ─── Logout privacy wipe ─────────────────────────────────────────────────────
+// On a shared device, signing out must not leave the previous account's data
+// readable by the next person (page-audit privacy defect: `finyk_tx_cache`
+// plaintext tx JSON + 165 `kvvfs-local-*` SQLite-mirror keys survived logout).
+// We clear ONLY app-owned, user-scoped namespaces via an explicit allowlist —
+// never a blind wipe — so foreign domains (PostHog `ph_*`, third-party SDKs)
+// and harness/infra keys (theme, storage-migration ledger, UI-preference flags)
+// stay intact. The Service-Worker caches and the OPFS SQLite partition are wiped
+// separately in `AuthContext.logout` (`swClearCaches` + `wipeSqliteDb`); this
+// helper covers the localStorage layer those two don't reach.
+
+/**
+ * Exact keys and key-prefixes owned by the app that hold a signed-in user's
+ * private data. Anything matching is removed on logout. Keep this list
+ * conservative: add a namespace here only when it stores user-scoped content,
+ * not UI chrome or device-level preferences.
+ */
+const APP_OWNED_USER_DATA: { readonly prefixes: readonly string[] } = {
+  prefixes: [
+    // Finyk — financial data (transactions, balances, tokens, budgets, debts).
+    "finyk_",
+    // Nutrition — food log, water log, meals, pantries, recipes.
+    "nutrition_",
+    // Hub user-content caches (chat history, per-user nutrition DBs).
+    "hub_nutrition_",
+    "hub_chat_history",
+    // sqlite-wasm kvvfs fallback slot (`JsStorageDb("local")`) — the full
+    // local SQLite DB mirror. Wiped wholesale here so the kvvfs-path data of a
+    // prior session never lingers when the current session uses OPFS instead.
+    "kvvfs-local-",
+  ],
+};
+
+/**
+ * Keys that match an allowlisted prefix but must be PRESERVED across logout —
+ * device-level preferences and infra ledgers that carry no user-private data.
+ * Checked after the prefix match so a single overlapping key can opt out.
+ */
+const LOGOUT_PRESERVE_EXACT: ReadonlySet<string> = new Set<string>([
+  // (none today — all `finyk_`/`nutrition_`/`hub_nutrition_` keys are
+  // user-scoped. Listed explicitly so future additions are a one-line change.)
+]);
+
+function isAppOwnedUserDataKey(key: string): boolean {
+  if (LOGOUT_PRESERVE_EXACT.has(key)) return false;
+  return APP_OWNED_USER_DATA.prefixes.some((p) => key.startsWith(p));
+}
+
+/**
+ * Remove every app-owned, user-scoped localStorage namespace on logout.
+ *
+ * Walks both storage layers because they hold different key sets:
+ *   - the active `webKVStore` (SQLite warm-cache overlay once bootstrapped, or
+ *     plain `localStorage` before that) holds `finyk_*` / `nutrition_*` / hub
+ *     caches written through our typed helpers;
+ *   - the raw `localStorage` adapter additionally holds the `kvvfs-local-*`
+ *     SQLite-mirror keys, which sqlite-wasm writes directly and which never
+ *     enter the SQLite KV overlay.
+ *
+ * Best-effort and never throws — logout must complete even if a remove fails.
+ * Foreign domains and infra keys are untouched.
+ */
+export function clearAppOwnedLocalStorage(): void {
+  for (const key of webKVStore.listKeys()) {
+    if (isAppOwnedUserDataKey(key)) {
+      try {
+        webKVStore.remove(key);
+      } catch {
+        /* best-effort */
+      }
+    }
+  }
+  // Raw-localStorage sweep for keys that bypass the KV overlay (kvvfs mirror).
+  const ls = resolveLsStore();
+  if (ls) {
+    for (const key of ls.listKeys()) {
+      if (isAppOwnedUserDataKey(key)) {
+        try {
+          ls.remove(key);
+        } catch {
+          /* best-effort */
+        }
+      }
+    }
+  }
+}
+
+// ─── Boot-critical durable helpers ──────────────────────────────────────────
+// The default `webKVStore` write path resolves to the SQLite warm-cache once
+// `bootstrapKvStore()` has loaded — durable, but the write-back to the OPFS
+// SQLite DB is fire-and-forget (see `createSqliteKVStore` in
+// `@sergeant/shared`). A value written and then immediately followed by a hard
+// reload can lose that async upsert before it flushes, so the post-reload
+// warm-cache scan no longer sees it. For tiny, boot-critical, first-paint keys
+// (the theme choice), that race surfaces as a visible regression (the chosen
+// theme silently reverts on reload).
+//
+// These helpers eliminate the race by ALSO writing synchronously to the
+// `localStorage` fallback adapter. `bootstrapKvStore()` already seeds the
+// warm-cache from `localStorage` for any key absent from SQLite (the
+// "SQLite empty but LS has data" recovery path), so a synchronous LS mirror is
+// re-read deterministically on the next boot regardless of OPFS flush timing.
+// No raw `localStorage.*` access — both reads and writes go through the same
+// `resolveLsStore()` KVStore adapter that backs `webKVStore`'s LS fallback.
+
+/**
+ * Write a string value durably: through the active store (SQLite warm-cache
+ * once booted) AND synchronously to the `localStorage` fallback adapter so the
+ * value survives a hard reload that races the async SQLite write-back. Use for
+ * boot-critical first-paint keys (e.g. the theme choice). Returns `true` once
+ * the active-store write was attempted; the LS mirror is best-effort.
+ */
+export function safeWriteStringLSDurable(key: string, value: string): boolean {
+  webKVStore.setString(key, value);
+  resolveLsStore()?.setString(key, value);
+  return true;
+}
+
+/**
+ * Read a boot-critical string value, preferring the durable `localStorage`
+ * mirror written by {@link safeWriteStringLSDurable}. Falls back to the active
+ * store (SQLite warm-cache), then `fallback`. Reading LS first means a value
+ * whose async SQLite write-back was lost to a reload race is still recovered.
+ */
+export function safeReadStringLSDurable(
+  key: string,
+  fallback: string | null = null,
+): string | null {
+  const mirrored = resolveLsStore()?.getString(key);
+  if (mirrored !== null && mirrored !== undefined) return mirrored;
+  const raw = webKVStore.getString(key);
+  return raw === null ? fallback : raw;
+}
+
+/** Remove a key from both the active store and the durable LS mirror. */
+export function safeRemoveLSDurable(key: string): boolean {
+  webKVStore.remove(key);
+  resolveLsStore()?.remove(key);
+  return true;
+}
+
 /**
  * Enumerate every key currently in localStorage.
  *
