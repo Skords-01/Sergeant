@@ -1,8 +1,13 @@
+/**
+ * @status Active
+ * @owner @Skords-01
+ */
 import { useEffect, useRef, useState } from "react";
 import { useDialogFocusTrap } from "@shared/hooks/useDialogFocusTrap";
 import { Button } from "@shared/components/ui/Button";
 import { Icon } from "@shared/components/ui/Icon";
 import { messages } from "@shared/i18n/uk";
+import { useAuth } from "../auth/AuthContext";
 import { type LockState } from "./useAppLock";
 import { savePinHash } from "./lockStorage";
 
@@ -118,6 +123,9 @@ function PinSetupFlow({ onDone, onCancel }: PinSetupFlowProps) {
   const [first, setFirst] = useState("");
   const [second, setSecond] = useState("");
   const [error, setError] = useState("");
+  // Audit F16: persist the credential under the current user's partition so
+  // it matches the slot `useAppLock` reads on unlock. Signed-out → "anon".
+  const { user } = useAuth();
 
   const handleFirstNext = () => {
     if (first.length < PIN_MIN) {
@@ -134,7 +142,7 @@ function PinSetupFlow({ onDone, onCancel }: PinSetupFlowProps) {
       setSecond("");
       return;
     }
-    await savePinHash(first);
+    await savePinHash(first, user?.id ?? null);
     onDone();
   };
 

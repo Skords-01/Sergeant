@@ -1,3 +1,7 @@
+/**
+ * Last validated: 2026-06-15
+ * Status: Active
+ */
 import {
   useCallback,
   useEffect,
@@ -26,6 +30,7 @@ import {
   parseLoosePantryText,
   type PantryItem,
 } from "../lib/pantryTextParser";
+import { gramsToUnitQty } from "../lib/pantryConsume";
 import type {
   PantryForm,
   PantryFormMode,
@@ -270,7 +275,10 @@ export function useNutritionPantries({
     setItemEdit((s) => ({ ...s, open: false }));
   };
 
-  // AI-CONTEXT: deducts gramsConsumed from a mass-based pantry item (г/кг only); non-mass units are intentionally skipped to avoid unit-mismatch bugs
+  // AI-CONTEXT: deducts gramsConsumed from a pantry item, converting the eaten
+  // grams into the item's own unit (г/кг/мл/л/шт) via `gramsToUnitQty`
+  // (density + per-piece-weight table). Units with no fixed gram equivalence
+  // (уп/пач) yield `null` and the item is left untouched (page-audit-08 F15).
   const consumePantryItem = (name: string, gramsConsumed: number) => {
     const norm = normalizeFoodName(name);
     if (!norm) return;
@@ -283,16 +291,13 @@ export function useNutritionPantries({
         if (!item) return p;
         const qty = Number(item.qty);
         if (!Number.isFinite(qty) || qty <= 0) return p;
-        const unit = String(item.unit || "г")
-          .toLowerCase()
-          .trim();
-        // Only deduct from mass-based units (грами/кілограми). Inventory in
-        // штуках, мл/л, чи будь-яких інших одиницях не має одно-однозначної
-        // конверсії з "грамів спожитого", тому лишаємо позицію як є —
-        // інакше "200г молока" з'їдало б всю пляшку "2 л" (див. H2 з аудиту).
-        if (unit !== "г" && unit !== "кг") return p;
-        const remaining =
-          unit === "кг" ? qty - gramsConsumed / 1000 : qty - gramsConsumed;
+        const consumedInUnit = gramsToUnitQty(
+          gramsConsumed,
+          item.unit,
+          item.name,
+        );
+        if (consumedInUnit == null) return p;
+        const remaining = qty - consumedInUnit;
         if (remaining <= 0) {
           items.splice(idx, 1);
         } else {

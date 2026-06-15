@@ -28,11 +28,22 @@ vi.mock("../lib/featureFlags", () => ({
   setFlag: vi.fn(),
 }));
 
+// Mock the auth context so the hook can read `user.id` without an
+// AuthProvider. Defaults to signed-out (null) → the "anon" lock partition,
+// matching the credentials the existing tests save with no userId.
+const { useAuth } = vi.hoisted(() => ({
+  useAuth: vi.fn().mockReturnValue({ user: null }),
+}));
+vi.mock("../auth/AuthContext", () => ({
+  useAuth,
+}));
+
 import { useFlag } from "../lib/featureFlags";
 import { savePinHash, clearPinHash } from "./lockStorage";
 import { useAppLock } from "./useAppLock";
 
 const mockUseFlag = useFlag as unknown as MockInstance;
+const mockUseAuth = useAuth as unknown as MockInstance;
 
 const originalIndexedDB = (globalThis as { indexedDB?: unknown }).indexedDB;
 
@@ -44,6 +55,7 @@ describe("useAppLock", () => {
   beforeEach(() => {
     installFakeIDB();
     mockUseFlag.mockReturnValue(false);
+    mockUseAuth.mockReturnValue({ user: null });
   });
 
   afterEach(async () => {
@@ -143,5 +155,35 @@ describe("useAppLock", () => {
     const { result } = renderHook(() => useAppLock());
     act(() => result.current.lock());
     expect(result.current.state).toBe("locked");
+  });
+
+  // Audit F16 — the hook must read the credential partition of the active
+  // Better-Auth user, so a PIN set by user A never locks user B.
+  it("only locks for the user whose partition holds the PIN", async () => {
+    // User A enrolls a PIN.
+    await savePinHash("1234", "user_a");
+    mockUseFlag.mockReturnValue(true);
+
+    mockUseAuth.mockReturnValue({ user: { id: "user_a" } });
+    const { result } = renderHook(() => useAppLock());
+    await waitFor(() => expect(result.current.state).toBe("locked"));
+  });
+
+  it("does not lock a different signed-in user who never enrolled", async () => {
+    await savePinHash("1234", "user_a");
+    mockUseFlag.mockReturnValue(true);
+
+    // User B has no credential under its partition → stays idle.
+    mockUseAuth.mockReturnValue({ user: { id: "user_b" } });
+    const { result } = renderHook(() => useAppLock());
+    await act(async () => {});
+    expect(result.current.state).toBe("idle");
+
+    // And A's PIN must not unlock under B's session.
+    let ok = true;
+    await act(async () => {
+      ok = await result.current.unlock("1234");
+    });
+    expect(ok).toBe(false);
   });
 });

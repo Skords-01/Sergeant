@@ -1,7 +1,12 @@
+/**
+ * @status Active
+ * @owner @Skords-01
+ */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ANALYTICS_EVENTS } from "@sergeant/shared";
 import { capturePostHogEvent } from "../observability/posthog";
 import { useFlag } from "../lib/featureFlags";
+import { useAuth } from "../auth/AuthContext";
 import { hasPinSet, verifyPinAttempt } from "./lockStorage";
 
 export type LockState = "idle" | "locked" | "setup" | "change";
@@ -30,40 +35,50 @@ export interface UseAppLockReturn {
 
 export function useAppLock(): UseAppLockReturn {
   const enabled = useFlag("app-lock-enabled");
+  // Audit F16: AppLock credentials are partitioned by Better-Auth user id so
+  // account-switching on a shared device cannot inherit a previous user's
+  // PIN. The signed-out partition ("anon") is used until auth resolves.
+  const { user } = useAuth();
+  const userId = user?.id ?? null;
   const [state, setState] = useState<LockState>("idle");
   const idleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastIdleResetRef = useRef(0);
   const setupModeRef = useRef<"setup" | "change">("setup");
 
-  // On mount (and whenever the flag is toggled on) check if a PIN is already
-  // configured — if yes, lock immediately (cold-start protection).
+  // On mount (and whenever the flag is toggled on, or the active user
+  // changes) check if a PIN is already configured for the current user — if
+  // yes, lock immediately (cold-start protection). Re-running on a user-id
+  // change is the F16 "rotate on logout" boundary: after a logout/switch the
+  // lock state is re-evaluated against the new user's partition rather than
+  // carrying the previous user's locked/unlocked state.
   useEffect(() => {
     if (!enabled) {
       setState("idle");
       return;
     }
     let cancelled = false;
-    hasPinSet().then((has) => {
+    setState("idle");
+    hasPinSet(userId).then((has) => {
       if (!cancelled && has) setState("locked");
     });
     return () => {
       cancelled = true;
     };
-  }, [enabled]);
+  }, [enabled, userId]);
 
   // visibilitychange → lock when tab returns to foreground while a PIN is set.
   useEffect(() => {
     if (!enabled) return;
     const handleVisibility = () => {
       if (document.visibilityState !== "visible") return;
-      hasPinSet().then((has) => {
+      hasPinSet(userId).then((has) => {
         if (has) setState("locked");
       });
     };
     document.addEventListener("visibilitychange", handleVisibility);
     return () =>
       document.removeEventListener("visibilitychange", handleVisibility);
-  }, [enabled]);
+  }, [enabled, userId]);
 
   // Idle timer — reset on any user interaction; lock after IDLE_TIMEOUT_MS.
   // Throttled by IDLE_RESET_THROTTLE_MS so capture-phase scroll/pointer
@@ -75,11 +90,11 @@ export function useAppLock(): UseAppLockReturn {
     lastIdleResetRef.current = now;
     if (idleTimer.current) clearTimeout(idleTimer.current);
     idleTimer.current = setTimeout(() => {
-      hasPinSet().then((has) => {
+      hasPinSet(userId).then((has) => {
         if (has) setState("locked");
       });
     }, IDLE_TIMEOUT_MS);
-  }, [enabled]);
+  }, [enabled, userId]);
 
   useEffect(() => {
     if (!enabled) return;
@@ -127,7 +142,7 @@ export function useAppLock(): UseAppLockReturn {
 
   const unlock = useCallback(
     async (pin: string): Promise<boolean> => {
-      const result = await verifyPinAttempt(pin);
+      const result = await verifyPinAttempt(pin, userId);
       if (result.ok) {
         setState("idle");
         capturePostHogEvent(ANALYTICS_EVENTS.APP_LOCK_UNLOCK_SUCCESS, {
@@ -155,7 +170,7 @@ export function useAppLock(): UseAppLockReturn {
       }
       return false;
     },
-    [resetIdleTimer],
+    [resetIdleTimer, userId],
   );
 
   return { state, startSetup, startChange, unlock, finishSetup, lock };
