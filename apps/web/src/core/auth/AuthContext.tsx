@@ -19,7 +19,7 @@ import {
 } from "./authClient";
 import { identifyPostHogUser, resetPostHog } from "../observability/posthog";
 import { swClearCaches, swSetActiveUser } from "../app/swControl";
-import { clearAppOwnedLocalStorage, logger } from "@shared/lib";
+import { logger } from "@shared/lib";
 import { buildIdentifyTraits } from "../observability/identifyTraits";
 import { trackEvent, ANALYTICS_EVENTS } from "../observability/analytics";
 import { messages } from "../../shared/i18n/uk";
@@ -348,23 +348,26 @@ export function AuthProvider({ children }: AuthProviderProps) {
     } catch (err) {
       logger.warn("[auth.logout] sqlite wipe/reset failed", err);
     }
-    // Privacy defect (b): the SW + SQLite wipes above don't reach the plain
-    // localStorage layer, where the previous account's `finyk_tx_cache`
-    // (plaintext tx JSON), `nutrition_*` log, hub chat history and the
-    // `kvvfs-local-*` SQLite mirror linger and are readable by the next user
-    // on a shared device. Clear only allowlisted app-owned namespaces —
-    // foreign domains (`ph_*`) and infra/UI-pref keys are preserved.
+    // Browser-QA 2026-06-15: logout used to leave the previous user's
+    // local-first data behind (plaintext `finyk_tx_cache`, `nutrition_water_v1`,
+    // the `kvvfs-*` SQLite store, the RQ persister snapshot, and the in-memory
+    // warm cache) — all readable by the next user on a shared device. Purge the
+    // app-owned slices of every physical store. Allowlist-scoped, so foreign
+    // keys (PostHog/Sentry) are never touched. Dynamic import keeps the helper
+    // (and its kv/idb deps) out of the eager auth chunk.
     try {
-      clearAppOwnedLocalStorage();
+      const { purgeAppOwnedLocalData } =
+        await import("../../shared/lib/storage/purgeLocalData");
+      await purgeAppOwnedLocalData();
     } catch (err) {
-      logger.warn("[auth.logout] clearAppOwnedLocalStorage failed", err);
+      logger.warn("[auth.logout] local-first data purge failed", err);
     }
-    // Defect (a): invalidating only `me` leaves every other authed query in
-    // cache, so the previous user's personal data (greeting, balances) keeps
-    // rendering until a manual reload. Drop the whole React Query cache so no
-    // stale authenticated data survives; the mounted `useUser` observer
-    // refetches `/api/v1/me`, which now resolves to the signed-out (401) state
-    // and flips the UI to the guest surface without a reload.
+    // Drop the whole in-memory query cache. `invalidateMe()` alone only marks
+    // `me` stale and refetches — but the refetch 401s and React Query *retains*
+    // the last-good `me` payload on error, so `user` stayed populated and the
+    // UI stayed logged-in until a manual reload (browser-QA finding (a)).
+    // `clear()` removes the cached user (and every authed module query)
+    // immediately, so `useUser` re-renders with no data → `unauthenticated`.
     queryClient.clear();
   }, [queryClient]);
 

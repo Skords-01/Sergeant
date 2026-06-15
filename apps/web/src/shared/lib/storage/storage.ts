@@ -107,7 +107,22 @@ function createWebMemoryFallback(): KVStore {
   };
 }
 
-function resolveLsStore(): KVStore | null {
+/**
+ * Build a {@link KVStore} bound to **raw `window.localStorage`** — i.e. it
+ * deliberately bypasses the SQLite warm-cache overlay that {@link resolveStore}
+ * prefers post-bootstrap. Returns `null` when no `localStorage` is available.
+ *
+ * `resolveStore()` (and therefore `webKVStore`) routes reads/writes through the
+ * SQLite `kv_store` table once `bootstrapKvStore()` has run, so its `listKeys()`
+ * reflects the SQLite table — **not** the physical `localStorage` keyspace. The
+ * logout data-purge (`purgeLocalData.ts`) needs the physical keyspace so it can
+ * see and remove the LS-only fallback copies (`finyk_tx_cache`, …) and the
+ * sqlite-wasm `kvvfs-*` backing store that never travel through `webKVStore`.
+ * This accessor gives it that raw view while still going through the sanctioned
+ * `createWebKVStore` adapter (no direct `localStorage.*` calls → keeps the
+ * `sergeant-design/no-raw-local-storage` budget at 0).
+ */
+export function resolveLsStore(): KVStore | null {
   let storage: StorageLike | undefined;
   try {
     const candidate = (globalThis as { localStorage?: unknown }).localStorage;
@@ -242,93 +257,6 @@ export function safeWriteLS(key: string, value: unknown): boolean {
 export function safeRemoveLS(key: string): boolean {
   webKVStore.remove(key);
   return true;
-}
-
-// ─── Logout privacy wipe ─────────────────────────────────────────────────────
-// On a shared device, signing out must not leave the previous account's data
-// readable by the next person (page-audit privacy defect: `finyk_tx_cache`
-// plaintext tx JSON + 165 `kvvfs-local-*` SQLite-mirror keys survived logout).
-// We clear ONLY app-owned, user-scoped namespaces via an explicit allowlist —
-// never a blind wipe — so foreign domains (PostHog `ph_*`, third-party SDKs)
-// and harness/infra keys (theme, storage-migration ledger, UI-preference flags)
-// stay intact. The Service-Worker caches and the OPFS SQLite partition are wiped
-// separately in `AuthContext.logout` (`swClearCaches` + `wipeSqliteDb`); this
-// helper covers the localStorage layer those two don't reach.
-
-/**
- * Exact keys and key-prefixes owned by the app that hold a signed-in user's
- * private data. Anything matching is removed on logout. Keep this list
- * conservative: add a namespace here only when it stores user-scoped content,
- * not UI chrome or device-level preferences.
- */
-const APP_OWNED_USER_DATA: { readonly prefixes: readonly string[] } = {
-  prefixes: [
-    // Finyk — financial data (transactions, balances, tokens, budgets, debts).
-    "finyk_",
-    // Nutrition — food log, water log, meals, pantries, recipes.
-    "nutrition_",
-    // Hub user-content caches (chat history, per-user nutrition DBs).
-    "hub_nutrition_",
-    "hub_chat_history",
-    // sqlite-wasm kvvfs fallback slot (`JsStorageDb("local")`) — the full
-    // local SQLite DB mirror. Wiped wholesale here so the kvvfs-path data of a
-    // prior session never lingers when the current session uses OPFS instead.
-    "kvvfs-local-",
-  ],
-};
-
-/**
- * Keys that match an allowlisted prefix but must be PRESERVED across logout —
- * device-level preferences and infra ledgers that carry no user-private data.
- * Checked after the prefix match so a single overlapping key can opt out.
- */
-const LOGOUT_PRESERVE_EXACT: ReadonlySet<string> = new Set<string>([
-  // (none today — all `finyk_`/`nutrition_`/`hub_nutrition_` keys are
-  // user-scoped. Listed explicitly so future additions are a one-line change.)
-]);
-
-function isAppOwnedUserDataKey(key: string): boolean {
-  if (LOGOUT_PRESERVE_EXACT.has(key)) return false;
-  return APP_OWNED_USER_DATA.prefixes.some((p) => key.startsWith(p));
-}
-
-/**
- * Remove every app-owned, user-scoped localStorage namespace on logout.
- *
- * Walks both storage layers because they hold different key sets:
- *   - the active `webKVStore` (SQLite warm-cache overlay once bootstrapped, or
- *     plain `localStorage` before that) holds `finyk_*` / `nutrition_*` / hub
- *     caches written through our typed helpers;
- *   - the raw `localStorage` adapter additionally holds the `kvvfs-local-*`
- *     SQLite-mirror keys, which sqlite-wasm writes directly and which never
- *     enter the SQLite KV overlay.
- *
- * Best-effort and never throws — logout must complete even if a remove fails.
- * Foreign domains and infra keys are untouched.
- */
-export function clearAppOwnedLocalStorage(): void {
-  for (const key of webKVStore.listKeys()) {
-    if (isAppOwnedUserDataKey(key)) {
-      try {
-        webKVStore.remove(key);
-      } catch {
-        /* best-effort */
-      }
-    }
-  }
-  // Raw-localStorage sweep for keys that bypass the KV overlay (kvvfs mirror).
-  const ls = resolveLsStore();
-  if (ls) {
-    for (const key of ls.listKeys()) {
-      if (isAppOwnedUserDataKey(key)) {
-        try {
-          ls.remove(key);
-        } catch {
-          /* best-effort */
-        }
-      }
-    }
-  }
 }
 
 // ─── Boot-critical durable helpers ──────────────────────────────────────────

@@ -147,6 +147,8 @@ WCAG 2.4.11 (Focus Not Obscured, 2.2 AA) і 2.4.7 (Focus Visible, A) обидв�
 
 ### F6 — Hard Rule #10 (lifecycle markers) практично відсутні у всьому модулі [severity: high] [perspective: lifecycle]
 
+> ◐ **Частково закрито 2026-06-15** — lifecycle-marker `/** Last validated: 2026-06-15 / Status: Active */` додано до файлів модуля, які `scripts/docs/check-lifecycle-markers.mjs --json` позначав як missing **і які проходять `eslint --max-warnings=0` чисто** (інжект у наявний leading JSDoc зі збереженням `@scaffolded`/`@owner`/`@nextStep`, або свіжий JSDoc-prefix перед кодом). **~10 файлів навмисно виключено** — вони несуть pre-existing Q3-deferred lint-debt (warnings, що ще не burn-down'нуто), а repo-політика «burn-down on touch» вимагає 0 warnings на кожному staged-файлі; маркери до них додамо разом із їхнім burn-down-проходом. Зміни суто механічні — логіки не торкалися; `pnpm --filter @sergeant/web typecheck` чистий.
+
 **Page:** All 4 pages + всі supporting файли
 **File:** Module-wide
 **Lines:** N/A
@@ -343,6 +345,8 @@ Pages — high-level integration boundary. Без render-smoke-test регрес
 
 ### F13 — Імперативні setTimeout через scheduleTransient у production code [severity: medium] [perspective: bug]
 
+> ✅ **Closed 2026-06-15** — прибрано `scheduleTransient`-бакет таймерів і обидва magic-80ms guess-и. Замість них — детермінований pending-action state-machine у `NutritionApp.tsx`: `PendingNutritionAction = { kind: "open-add-meal" } | { kind: "open-photo-picker" } | null`. Два `useEffect`-и резолвлять follow-up, коли цільова сторінка/стан фактично закомічені — `open-add-meal` чекає `activePage === "log"` (відкриває AddMealSheet), `open-photo-picker` чекає `activePage === "start" && photoCardForceOpen` і робить один `requestAnimationFrame` перед `fileRef.click()` (rAF-handle чиститься на unmount). `NutritionStartPage` більше не володіє timing-ом: prop `scheduleTransient` замінено на `onRequestAddMeal()`, а батько ставить дату + навігацію + pending-action. Тест `NutritionStartPage.test.tsx` оновлено під новий контракт; вся nutrition-suite (411 тестів) зелена, typecheck чистий.
+
 **Page:** Start, Log
 **File:** `apps/web/src/modules/nutrition/NutritionApp.tsx`
 **Lines:** 116–136, 240–261
@@ -405,6 +409,8 @@ return { page, subTab: validSub };
 
 ### F15 — Hardcoded magic-numbers у consume-pantry без uom-conversion test [severity: medium] [perspective: bug]
 
+> ✅ **Closed 2026-06-15** — uom-конверсію винесено в DOM-free доменний модуль `packages/nutrition-domain/src/pantryConsume.ts` (`gramsToUnitQty` + грубі таблиці `DENSITY_G_PER_ML` 1.0 г/мл за замовчуванням і `PIECE_WEIGHT_G` 100 г/шт за замовчуванням, з канонізацією назви через `canonicalFoodKey`). `consumePantryItem` у `useNutritionPantries.ts` тепер списує через `gramsToUnitQty` для всіх масово-відображуваних одиниць: г/кг (1:1), мл/л (через густину), шт (через вагу штуки); `уп`/невідомі одиниці повертають `null` і лишаються без змін. Кейс H2 коректний: «200 г молока» зі «2 л» ≈ 0.19 л, а не вся пляшка. Покриття: 14 доменних unit-кейсів (`pantryConsume.test.ts`: г/кг/мл/л/шт/без-одиниці/уп/non-finite/нормалізація/канонізація) + 8 hook-інтеграційних (`useNutritionPantries.consume.test.tsx`: г/кг/мл/л/шт + уп-no-op + drain-to-empty + unknown-name no-op). Таблиці навмисно грубі — розширювати лише на запит продукту щодо точнішого обліку.
+
 **Page:** Log, Menu (через `addMealFromPlan` → `wrappedSaveMeal` → consume hook)
 **File:** `apps/web/src/modules/nutrition/hooks/useNutritionPantries.ts`
 **Lines:** 269–298
@@ -424,6 +430,8 @@ User-perceived correctness: типовий кейс — "1 кг рису", "2 л
 ---
 
 ### F16 — Empty-state copy непослідовний (i18n / UX) [severity: medium] [perspective: ux]
+
+> ✅ **Closed 2026-06-15 (verified-already-done)** — flagged outlier у `LogCard.tsx` уже на «ти»: `title="Поки немає записів"` + `description="Додай перший прийом їжі, щоб почати вести журнал."` (було «Додайте»). Перевірено решту empty-state/CTA-копій модуля: `ShoppingListCard` («Вибери джерело і натисни кнопку генерації.»), `PantryManagerSheet` («Введи нову назву та збережи.»), `DailyPlanCard` («Постав ккал/Б/Ж/В…»), `RecipesCard.Generator` («Спробуй натиснути…») — усі на «ти». Grep на формальні «ви»-імперативи (`-іть`/`-айте`/`-іте`) у JSX-літералах модуля → 0 збігів. Тональність консистентна, додаткових змін коду не потрібно.
 
 **Page:** Pantry, Log
 **File:** `LogCard.tsx` L167–169, `PantryCard.tsx`, `ShoppingListCard.tsx`

@@ -117,6 +117,7 @@ function makeWrapper() {
     defaultOptions: { queries: { retry: false } },
   });
   const invalidateSpy = vi.spyOn(client, "invalidateQueries");
+  const clearSpy = vi.spyOn(client, "clear");
   function Wrapper({ children }: { children: ReactNode }) {
     return (
       <QueryClientProvider client={client}>
@@ -124,7 +125,7 @@ function makeWrapper() {
       </QueryClientProvider>
     );
   }
-  return { Wrapper, client, invalidateSpy };
+  return { Wrapper, client, invalidateSpy, clearSpy };
 }
 
 const SAMPLE_USER: {
@@ -152,7 +153,6 @@ describe("AuthContext", () => {
     requestPasswordReset.mockClear();
     useUserMock.mockReset();
     trackEventMock.mockClear();
-    localStorage.clear();
   });
 
   it("drives `user`/`status` off useUser() — not better-auth/useSession", () => {
@@ -271,38 +271,50 @@ describe("AuthContext", () => {
   });
 
   it("clears the whole query cache on logout, even if signOut throws", async () => {
+    // Regression for browser-QA finding (a): `invalidateQueries({me})` only
+    // marked `me` stale and refetched — the 401 refetch retains the last-good
+    // `me` payload, so the UI stayed authenticated until a manual reload.
+    // `clear()` drops the cached user (and every authed module query) so the
+    // logged-out state surfaces immediately.
     setUser({ data: { user: SAMPLE_USER } });
     signOut.mockRejectedValueOnce(new Error("network down"));
-    const { Wrapper, client } = makeWrapper();
-    const clearSpy = vi.spyOn(client, "clear");
+    const { Wrapper, clearSpy } = makeWrapper();
     const { result } = renderHook(() => useAuth(), { wrapper: Wrapper });
     await act(async () => {
       await result.current.logout();
     });
     expect(signOut).toHaveBeenCalled();
-    // Logout drops ALL cached queries — not just `me` — so no stale
-    // authenticated data (greeting, balances) survives until reload.
     expect(clearSpy).toHaveBeenCalled();
   });
 
-  it("wipes app-owned localStorage on logout but preserves foreign keys", async () => {
+  it("purges app-owned localStorage on logout but preserves foreign keys", async () => {
+    // Browser-QA finding (b): logout left the previous user's local-first data
+    // (transactions, water log, hub prefs, the sqlite-wasm kvvfs store)
+    // readable by the next user on a shared device. Logout must remove the
+    // app-owned slices but leave third-party origins (PostHog/Sentry) alone.
+    localStorage.setItem("finyk_tx_cache", "[{secret tx}]");
+    localStorage.setItem("nutrition_water_v1", "{}");
+    localStorage.setItem("hub_user_profile_v1", "[]");
+    localStorage.setItem("kvvfs-local-0", "page-blob");
+    localStorage.setItem("ph_phc_project_posthog", "distinct-id");
+    localStorage.setItem("sentry_session", "trace");
+
     setUser({ data: { user: SAMPLE_USER } });
-    localStorage.setItem("finyk_tx_cache", '[{"amount":1}]');
-    localStorage.setItem("nutrition_water_v1", "1500");
-    localStorage.setItem("kvvfs-local-0", "sqlite-mirror-row");
-    localStorage.setItem("ph_phc_project", "posthog-distinct-id");
-    localStorage.setItem("theme", "dark");
     const { Wrapper } = makeWrapper();
     const { result } = renderHook(() => useAuth(), { wrapper: Wrapper });
     await act(async () => {
       await result.current.logout();
     });
+
     expect(localStorage.getItem("finyk_tx_cache")).toBeNull();
     expect(localStorage.getItem("nutrition_water_v1")).toBeNull();
+    expect(localStorage.getItem("hub_user_profile_v1")).toBeNull();
     expect(localStorage.getItem("kvvfs-local-0")).toBeNull();
-    // Foreign / infra keys untouched.
-    expect(localStorage.getItem("ph_phc_project")).toBe("posthog-distinct-id");
-    expect(localStorage.getItem("theme")).toBe("dark");
+    // Foreign keys are out of the allowlist — never touched.
+    expect(localStorage.getItem("ph_phc_project_posthog")).toBe("distinct-id");
+    expect(localStorage.getItem("sentry_session")).toBe("trace");
+
+    localStorage.clear();
   });
 
   it("refresh() invalidates apiQueryKeys.me.current()", async () => {
