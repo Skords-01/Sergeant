@@ -28,15 +28,13 @@ vi.mock("../lib/featureFlags", () => ({
   setFlag: vi.fn(),
 }));
 
-// Mock the auth context so the hook can read `user.id` without an
-// AuthProvider. Defaults to signed-out (null) → the "anon" lock partition,
-// matching the credentials the existing tests save with no userId.
+// Mock auth — `useAppLock` reads `user?.id` to partition the credential
+// store per user (audit F16). Default to signed-out (`anon`); individual
+// tests override with a concrete user id.
 const { useAuth } = vi.hoisted(() => ({
   useAuth: vi.fn().mockReturnValue({ user: null }),
 }));
-vi.mock("../auth/AuthContext", () => ({
-  useAuth,
-}));
+vi.mock("../auth/AuthContext", () => ({ useAuth }));
 
 import { useFlag } from "../lib/featureFlags";
 import { savePinHash, clearPinHash } from "./lockStorage";
@@ -157,33 +155,42 @@ describe("useAppLock", () => {
     expect(result.current.state).toBe("locked");
   });
 
-  // Audit F16 — the hook must read the credential partition of the active
-  // Better-Auth user, so a PIN set by user A never locks user B.
-  it("only locks for the user whose partition holds the PIN", async () => {
-    // User A enrolls a PIN.
-    await savePinHash("1234", "user_a");
-    mockUseFlag.mockReturnValue(true);
-
-    mockUseAuth.mockReturnValue({ user: { id: "user_a" } });
-    const { result } = renderHook(() => useAppLock());
-    await waitFor(() => expect(result.current.state).toBe("locked"));
-  });
-
-  it("does not lock a different signed-in user who never enrolled", async () => {
-    await savePinHash("1234", "user_a");
-    mockUseFlag.mockReturnValue(true);
-
-    // User B has no credential under its partition → stays idle.
-    mockUseAuth.mockReturnValue({ user: { id: "user_b" } });
-    const { result } = renderHook(() => useAppLock());
-    await act(async () => {});
-    expect(result.current.state).toBe("idle");
-
-    // And A's PIN must not unlock under B's session.
-    let ok = true;
-    await act(async () => {
-      ok = await result.current.unlock("1234");
+  describe("F16 — per-user credential partitioning", () => {
+    it("locks when the PIN belongs to the signed-in user", async () => {
+      // PIN stored in user-x's partition...
+      await savePinHash("1234", "user-x");
+      mockUseAuth.mockReturnValue({ user: { id: "user-x" } });
+      mockUseFlag.mockReturnValue(true);
+      const { result } = renderHook(() => useAppLock());
+      // ...and the hook bound to user-x sees it → locked.
+      await waitFor(() => expect(result.current.state).toBe("locked"));
     });
-    expect(ok).toBe(false);
+
+    it("does NOT lock when the PIN belongs to a different user", async () => {
+      await savePinHash("1234", "user-x");
+      // A different user signed in — must not inherit user-x's lock.
+      mockUseAuth.mockReturnValue({ user: { id: "user-y" } });
+      mockUseFlag.mockReturnValue(true);
+      const { result } = renderHook(() => useAppLock());
+      await act(async () => {});
+      expect(result.current.state).toBe("idle");
+    });
+
+    it("savePin / hasPin / disablePin round-trip the signed-in user's slot", async () => {
+      mockUseAuth.mockReturnValue({ user: { id: "user-z" } });
+      const { result } = renderHook(() => useAppLock());
+
+      expect(await result.current.hasPin()).toBe(false);
+      await result.current.savePin("4242");
+      expect(await result.current.hasPin()).toBe(true);
+      // The credential really landed in user-z's partition, not anon.
+      const { hasPinSet } = await import("./lockStorage");
+      expect(await hasPinSet("user-z")).toBe(true);
+      expect(await hasPinSet(null)).toBe(false);
+
+      await result.current.disablePin();
+      expect(await result.current.hasPin()).toBe(false);
+      expect(await hasPinSet("user-z")).toBe(false);
+    }, 30_000);
   });
 });

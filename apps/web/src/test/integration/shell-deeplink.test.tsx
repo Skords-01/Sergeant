@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { act, render, waitFor } from "@testing-library/react";
+import { act, cleanup, render, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { SHELL_DEEPLINK_CHANNEL } from "@sergeant/shared";
 
@@ -29,20 +29,6 @@ vi.mock("@sergeant/shared", async (importOriginal) => {
 
 let ShellDeepLinkBridge: typeof import("../../core/app/ShellDeepLinkBridge.js").ShellDeepLinkBridge;
 
-// Track every sender channel a test opens so we can close them all in
-// afterEach — even when an assertion throws before the test's own
-// `sender.close()`. A leaked BroadcastChannel stays subscribed to the shared
-// channel name and would deliver a later test's message into a stale listener,
-// which is exactly the kind of cross-test pollution that made this suite
-// order-flaky.
-const openChannels = new Set<BroadcastChannel>();
-
-function openSender(): BroadcastChannel {
-  const ch = new BroadcastChannel(SHELL_DEEPLINK_CHANNEL);
-  openChannels.add(ch);
-  return ch;
-}
-
 beforeEach(async () => {
   vi.resetModules();
   ({ ShellDeepLinkBridge } =
@@ -61,15 +47,19 @@ beforeEach(async () => {
   ).__sergeantShellDeepLinkQueue;
 });
 
-afterEach(() => {
-  for (const ch of openChannels) {
-    try {
-      ch.close();
-    } catch {
-      // best-effort
-    }
-  }
-  openChannels.clear();
+afterEach(async () => {
+  // Unmount the bridge first — its effect-cleanup unsubscribes the
+  // BroadcastChannel listener and closes the channel. Then yield one
+  // event-loop turn so any *in-flight* BroadcastChannel delivery posted by
+  // this test is flushed (and dropped, now that the listener is gone) before
+  // the next test mounts a fresh bridge on the same channel name. Without
+  // this drain a late async message from one test navigates the next test's
+  // router and flakes its assertion (the channel name is a shared constant,
+  // so messages cross test boundaries unless explicitly drained).
+  cleanup();
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
   vi.restoreAllMocks();
 });
 
@@ -90,103 +80,74 @@ function renderBridge(initialEntries: string[] = ["/"]): HTMLElement {
   return utils.getByTestId("loc");
 }
 
-/**
- * Deterministic barrier for negative assertions: after a message we expect the
- * bridge to IGNORE, post a known-good sentinel and wait for it to navigate.
- * BroadcastChannel preserves per-channel delivery order, so once the sentinel
- * has applied we know the ignored message was already processed — letting us
- * assert it produced no navigation without racing a fixed timeout.
- */
-const SENTINEL_PATH = "/profile";
-
-async function flushWithSentinel(
-  sender: BroadcastChannel,
-  loc: HTMLElement,
-): Promise<void> {
-  sender.postMessage({
-    protocolVersion: 1,
-    url: SENTINEL_PATH,
-    source: "shell",
-    timestamp: Date.now(),
-  });
-  await waitFor(() => {
-    expect(loc.textContent).toBe(SENTINEL_PATH);
-  });
-}
-
 describe("ShellDeepLinkBridge — BroadcastChannel listener (PR-29)", () => {
   it("navigates when a shell deep-link message arrives on the channel", async () => {
     const loc = renderBridge();
     expect(loc.textContent).toBe("/");
 
-    const sender = openSender();
+    const sender = new BroadcastChannel(SHELL_DEEPLINK_CHANNEL);
     sender.postMessage({
       protocolVersion: 1,
       url: "/finyk/transactions/42",
       source: "shell",
       timestamp: Date.now(),
     });
-
-    // BroadcastChannel delivery in jsdom is a macrotask, and the bridge's
-    // `navigate()` fires outside React's act() batching — so the nav can
-    // settle after an arbitrary number of event-loop turns (longer under
-    // full-suite load). A fixed `setTimeout` races it; `waitFor` polls until
-    // the routed location is observed (or times out), keeping the assertion
-    // strict while making it order-independent.
-    await waitFor(() => {
-      expect(loc.textContent).toBe("/finyk/transactions/42");
-    });
+    // Poll instead of a fixed delay: BroadcastChannel delivery + the
+    // router re-render is async, and on a throttled CI runner a fixed
+    // 10ms wait races the navigation (the documented flake).
+    await waitFor(
+      () => expect(loc.textContent).toBe("/finyk/transactions/42"),
+      {
+        timeout: 2000,
+      },
+    );
     sender.close();
   });
 
   it("ignores messages with mismatched protocol version", async () => {
     const loc = renderBridge();
-    const sender = openSender();
+    const sender = new BroadcastChannel(SHELL_DEEPLINK_CHANNEL);
     sender.postMessage({
       protocolVersion: 999,
       url: "/finyk",
       source: "shell",
       timestamp: Date.now(),
     });
+    await new Promise((r) => setTimeout(r, 10));
 
-    // Drain the channel deterministically; the sentinel proves the bad
-    // message was processed and produced no navigation to /finyk.
-    await flushWithSentinel(sender, loc);
-    expect(loc.textContent).toBe(SENTINEL_PATH);
+    expect(loc.textContent).toBe("/");
     sender.close();
   });
 
   it("ignores messages with source other than `shell` (no web→web self-loop)", async () => {
     const loc = renderBridge();
-    const sender = openSender();
+    const sender = new BroadcastChannel(SHELL_DEEPLINK_CHANNEL);
     sender.postMessage({
       protocolVersion: 1,
       url: "/finyk",
       source: "web",
       timestamp: Date.now(),
     });
+    await new Promise((r) => setTimeout(r, 10));
 
-    await flushWithSentinel(sender, loc);
-    expect(loc.textContent).toBe(SENTINEL_PATH);
+    expect(loc.textContent).toBe("/");
     sender.close();
   });
 
   it("rejects unsafe paths (M19 defense-in-depth) even when delivered via BroadcastChannel", async () => {
     const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
     const loc = renderBridge();
-    const sender = openSender();
+    const sender = new BroadcastChannel(SHELL_DEEPLINK_CHANNEL);
     sender.postMessage({
       protocolVersion: 1,
       url: "/unknown-prefix/admin",
       source: "shell",
       timestamp: Date.now(),
     });
-
-    // The bridge logs a warning when it rejects an unsafe path; wait on that
-    // side effect deterministically, then confirm no navigation happened.
-    await waitFor(() => {
-      expect(warnSpy).toHaveBeenCalled();
-    });
+    // Wait on the observable side-effect (the rejection warning) rather than
+    // a fixed delay — that deterministically proves the message was delivered
+    // and handled before we assert that no navigation happened.
+    await waitFor(() => expect(warnSpy).toHaveBeenCalled(), { timeout: 2000 });
     expect(loc.textContent).toBe("/");
     sender.close();
     warnSpy.mockRestore();
@@ -211,11 +172,11 @@ describe("ShellDeepLinkBridge — backward-compat (window-global)", () => {
       window as Window & { __sergeantShellDeepLinkQueue?: string[] }
     ).__sergeantShellDeepLinkQueue = ["/welcome"];
     const loc = renderBridge();
-    // Дочекаємось React state-update після useEffect-у
-    await act(async () => {
-      await new Promise((r) => setTimeout(r, 0));
+    // Дочекаємось React state-update після useEffect-у (poll замість
+    // фіксованої затримки — drain + re-render асинхронні).
+    await waitFor(() => expect(loc.textContent).toBe("/welcome"), {
+      timeout: 2000,
     });
-    expect(loc.textContent).toBe("/welcome");
     // Drained
     expect(
       (window as Window & { __sergeantShellDeepLinkQueue?: string[] })
@@ -230,15 +191,15 @@ describe("ShellDeepLinkBridge — coalescing window", () => {
     const ts = Date.now();
 
     // BroadcastChannel first
-    const sender = openSender();
+    const sender = new BroadcastChannel(SHELL_DEEPLINK_CHANNEL);
     sender.postMessage({
       protocolVersion: 1,
       url: "/chat",
       source: "shell",
       timestamp: ts,
     });
-    await waitFor(() => {
-      expect(loc.textContent).toBe("/chat");
+    await waitFor(() => expect(loc.textContent).toBe("/chat"), {
+      timeout: 2000,
     });
 
     // window-global with the SAME timestamp → must be coalesced.

@@ -1,13 +1,14 @@
-/**
- * @status Active
- * @owner @Skords-01
- */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ANALYTICS_EVENTS } from "@sergeant/shared";
 import { capturePostHogEvent } from "../observability/posthog";
 import { useFlag } from "../lib/featureFlags";
 import { useAuth } from "../auth/AuthContext";
-import { hasPinSet, verifyPinAttempt } from "./lockStorage";
+import {
+  clearPinHash,
+  hasPinSet,
+  savePinHash,
+  verifyPinAttempt,
+} from "./lockStorage";
 
 export type LockState = "idle" | "locked" | "setup" | "change";
 
@@ -31,13 +32,26 @@ export interface UseAppLockReturn {
   finishSetup: () => void;
   /** Force-lock immediately (e.g. from PrivacySection "Lock now"). */
   lock: () => void;
+  /**
+   * Persist a new PIN hash scoped to the current user (audit F16). Called
+   * by the `AppLock` setup/change flow so the credential lands in the
+   * signed-in user's partition, not `anon`.
+   */
+  savePin: (pin: string) => Promise<void>;
+  /** Whether the current user has a PIN configured (called by PrivacySection). */
+  hasPin: () => Promise<boolean>;
+  /**
+   * Clear the current user's PIN credential (called by PrivacySection when
+   * disabling the lock). Scoped to `user?.id` so the right slot is wiped.
+   */
+  disablePin: () => Promise<void>;
 }
 
 export function useAppLock(): UseAppLockReturn {
   const enabled = useFlag("app-lock-enabled");
-  // Audit F16: AppLock credentials are partitioned by Better-Auth user id so
-  // account-switching on a shared device cannot inherit a previous user's
-  // PIN. The signed-out partition ("anon") is used until auth resolves.
+  // Audit F16: the credential store is partitioned per Better-Auth user id.
+  // Resolve it once here so every storage call below — and the closures we
+  // hand to `AppLock` / `PrivacySection` — target the right partition.
   const { user } = useAuth();
   const userId = user?.id ?? null;
   const [state, setState] = useState<LockState>("idle");
@@ -45,19 +59,14 @@ export function useAppLock(): UseAppLockReturn {
   const lastIdleResetRef = useRef(0);
   const setupModeRef = useRef<"setup" | "change">("setup");
 
-  // On mount (and whenever the flag is toggled on, or the active user
-  // changes) check if a PIN is already configured for the current user — if
-  // yes, lock immediately (cold-start protection). Re-running on a user-id
-  // change is the F16 "rotate on logout" boundary: after a logout/switch the
-  // lock state is re-evaluated against the new user's partition rather than
-  // carrying the previous user's locked/unlocked state.
+  // On mount (and whenever the flag is toggled on) check if a PIN is already
+  // configured — if yes, lock immediately (cold-start protection).
   useEffect(() => {
     if (!enabled) {
       setState("idle");
       return;
     }
     let cancelled = false;
-    setState("idle");
     hasPinSet(userId).then((has) => {
       if (!cancelled && has) setState("locked");
     });
@@ -173,5 +182,25 @@ export function useAppLock(): UseAppLockReturn {
     [resetIdleTimer, userId],
   );
 
-  return { state, startSetup, startChange, unlock, finishSetup, lock };
+  // Audit F16 closures — bind the storage helpers to the resolved `userId`
+  // so consumers (`AppLock` setup flow, `PrivacySection`) never have to
+  // know the partitioning scheme or import `lockStorage` themselves.
+  const savePin = useCallback(
+    (pin: string) => savePinHash(pin, userId),
+    [userId],
+  );
+  const hasPin = useCallback(() => hasPinSet(userId), [userId]);
+  const disablePin = useCallback(() => clearPinHash(userId), [userId]);
+
+  return {
+    state,
+    startSetup,
+    startChange,
+    unlock,
+    finishSetup,
+    lock,
+    savePin,
+    hasPin,
+    disablePin,
+  };
 }

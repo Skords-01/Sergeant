@@ -242,6 +242,14 @@ const preset = {
           hover: brandColors.emerald[600],
           strong: brandColors.emerald[700],
           ring: brandColors.emerald[200],
+          // Dark-mode subtitle companion. The DEFAULT emerald-500 clears AA
+          // for full-opacity dark text (≈6.7:1 on `--c-panel`), but the
+          // de-emphasised `/70` subtitle slot dips to ≈3.9:1 — sub-AA for
+          // normal text. `text-finyk-300` (emerald-300) is the lighter tier
+          // used ONLY in the `dark:` `/70` subtitle slot (emerald-300/70 ≈
+          // 6.05:1). Mirrors the `fizruk-300` precedent; do NOT use it for
+          // full-opacity finyk text — the DEFAULT already passes AA there.
+          300: brandColors.emerald[300],
           // `soft` / `soft-border` / `soft-hover` are now theme-adaptive
           // via `--c-finyk-soft*` (Wave 1b). Light values mirror the
           // legacy hex (`emerald[50]` / `[200]` / `[100]`); dark values
@@ -250,6 +258,11 @@ const preset = {
           soft: "rgb(var(--c-finyk-soft) / <alpha-value>)",
           "soft-border": "rgb(var(--c-finyk-soft-border) / <alpha-value>)",
           "soft-hover": "rgb(var(--c-finyk-soft-hover) / <alpha-value>)",
+          // Theme-aware foreground for soft-fill controls (`Button`
+          // `finyk-soft`). Light = emerald-700 ink; dark = emerald-300 so
+          // text clears WCAG AA on `bg-finyk/15` over the dark panel.
+          // Backed by `--c-finyk-soft-fg` (light/dark/HC in theme.css).
+          "soft-fg": "rgb(var(--c-finyk-soft-fg) / <alpha-value>)",
         },
 
         /** Фізрук — Cyan fitness tracker (v2 redesign 2026-05; was teal). */
@@ -275,6 +288,12 @@ const preset = {
           soft: "rgb(var(--c-fizruk-soft) / <alpha-value>)",
           "soft-border": "rgb(var(--c-fizruk-soft-border) / <alpha-value>)",
           "soft-hover": "rgb(var(--c-fizruk-soft-hover) / <alpha-value>)",
+          // Theme-aware foreground for soft-fill controls (`Button`
+          // `fizruk-soft`). Light = cyan-800 ink; dark = cyan-300 so text
+          // clears WCAG AA on `bg-fizruk/15` over the dark panel/hero (the
+          // prior cyan-700 ink measured ~1.77:1). Backed by
+          // `--c-fizruk-soft-fg`.
+          "soft-fg": "rgb(var(--c-fizruk-soft-fg) / <alpha-value>)",
           // `tile` + `tile-border` — subtle stat-tile wash on the
           // fizruk hero gradient (Wave 2a). Light=teal-800,
           // dark=white. Apply with the registered opacity scale,
@@ -301,10 +320,20 @@ const preset = {
           ring: brandColors.coral[300],
           done: brandColors.coral[700],
           nav: brandColors.coral[500],
+          // Dark-mode subtitle companion — same rationale as `finyk.300`.
+          // coral-500/70 ≈ 3.6:1 (sub-AA for normal text); coral-300/70 ≈
+          // 5.5:1. Used ONLY in the `dark:` `/70` subtitle slot — the DEFAULT
+          // coral-500 already clears AA for full-opacity dark text.
+          300: brandColors.coral[300],
           // Theme-adaptive soft tint trio (Wave 1b).
           soft: "rgb(var(--c-routine-soft) / <alpha-value>)",
           "soft-border": "rgb(var(--c-routine-soft-border) / <alpha-value>)",
           "soft-hover": "rgb(var(--c-routine-soft-hover) / <alpha-value>)",
+          // Theme-aware foreground for soft-fill controls (`Button`
+          // `routine-soft`). Light = coral-700 ink; dark = coral-300 so text
+          // clears WCAG AA on `bg-routine/15` over the dark panel. Backed by
+          // `--c-routine-soft-fg`.
+          "soft-fg": "rgb(var(--c-routine-soft-fg) / <alpha-value>)",
         },
 
         /** Харчування — Fresh lime nutrition tracker */
@@ -320,6 +349,11 @@ const preset = {
           soft: "rgb(var(--c-nutrition-soft) / <alpha-value>)",
           "soft-border": "rgb(var(--c-nutrition-soft-border) / <alpha-value>)",
           "soft-hover": "rgb(var(--c-nutrition-soft-hover) / <alpha-value>)",
+          // Theme-aware foreground for soft-fill controls (`Button`
+          // `nutrition-soft`). Light = lime-800 ink; dark = lime-300 so text
+          // clears WCAG AA on `bg-nutrition/15` over the dark panel. Backed
+          // by `--c-nutrition-soft-fg`.
+          "soft-fg": "rgb(var(--c-nutrition-soft-fg) / <alpha-value>)",
         },
 
         // ═══════════════════════════════════════════════════════════════════

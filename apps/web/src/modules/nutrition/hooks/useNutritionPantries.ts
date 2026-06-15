@@ -1,7 +1,3 @@
-/**
- * Last validated: 2026-06-15
- * Status: Active
- */
 import {
   useCallback,
   useEffect,
@@ -30,7 +26,7 @@ import {
   parseLoosePantryText,
   type PantryItem,
 } from "../lib/pantryTextParser";
-import { gramsToUnitQty } from "../lib/pantryConsume";
+import { gramsToUnitQty } from "@sergeant/nutrition-domain";
 import type {
   PantryForm,
   PantryFormMode,
@@ -275,10 +271,13 @@ export function useNutritionPantries({
     setItemEdit((s) => ({ ...s, open: false }));
   };
 
-  // AI-CONTEXT: deducts gramsConsumed from a pantry item, converting the eaten
-  // grams into the item's own unit (г/кг/мл/л/шт) via `gramsToUnitQty`
-  // (density + per-piece-weight table). Units with no fixed gram equivalence
-  // (уп/пач) yield `null` and the item is left untouched (page-audit-08 F15).
+  // AI-CONTEXT: списує gramsConsumed зі складської позиції, конвертуючи грами
+  // в її одиницю через `gramsToUnitQty` (@sergeant/nutrition-domain): г/кг —
+  // маса 1:1, мл/л — через грубу таблицю густин, шт — через вагу однієї штуки.
+  // `null` означає одиницю без масового відображення (напр. уп) — лишаємо
+  // позицію без змін. Раніше тут пропускались усі немасові одиниці; конверсія
+  // закриває inventory-drift із F15 (page-audit-08-nutrition) і коректно
+  // обробляє кейс H2 ("200 г молока" зі "2 л" ≈ 0.19 л, а не вся пляшка).
   const consumePantryItem = (name: string, gramsConsumed: number) => {
     const norm = normalizeFoodName(name);
     if (!norm) return;
@@ -291,13 +290,9 @@ export function useNutritionPantries({
         if (!item) return p;
         const qty = Number(item.qty);
         if (!Number.isFinite(qty) || qty <= 0) return p;
-        const consumedInUnit = gramsToUnitQty(
-          gramsConsumed,
-          item.unit,
-          item.name,
-        );
-        if (consumedInUnit == null) return p;
-        const remaining = qty - consumedInUnit;
+        const deduct = gramsToUnitQty(gramsConsumed, item.unit, item.name);
+        if (deduct == null) return p;
+        const remaining = qty - deduct;
         if (remaining <= 0) {
           items.splice(idx, 1);
         } else {

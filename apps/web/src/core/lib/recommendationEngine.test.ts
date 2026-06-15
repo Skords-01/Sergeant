@@ -1,18 +1,4 @@
 // @vitest-environment jsdom
-//
-// The engine reads the wall clock via host-local `Date` methods
-// (`getHours()`, `getDay()`, and `localDateKey()` built from
-// `getFullYear/getMonth/getDate`). The product's canonical day boundary is
-// Europe/Kyiv (see docs/02-engineering/architecture/domain-invariants.md), so
-// these time-gated rules are only correct when host-local == Kyiv. Pin the
-// process TZ to Europe/Kyiv so the suite is deterministic regardless of the
-// host (CI runs UTC; dev machines vary) — otherwise UTC→Kyiv hour/day drift
-// (incl. the EET↔EEST DST shift) silently flips the 21:00 / 13:00 /
-// Monday-7-12 windows and the day-key arithmetic. With the TZ pinned, every
-// time-pinned scenario constructs its instant as a Kyiv-local wall clock
-// (`new Date(y, m, d, h, …)`), so the intended hour/weekday is unambiguous.
-process.env["TZ"] = "Europe/Kyiv";
-
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { generateRecommendations } from "./recommendationEngine";
 
@@ -24,14 +10,31 @@ function setLS(key: string, value: unknown) {
   localStorage.setItem(key, JSON.stringify(value));
 }
 
-// Kyiv-local day key matching the engine's `localDateKey` — built from
-// host-local parts (which == Kyiv after the TZ pin above).
-function localDayKey(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-}
-
 function clearAll() {
   localStorage.clear();
+}
+
+// Fixed fake-clock anchor built from *local* calendar components.
+//
+// `recommendationEngine` reads the host-local wall clock directly
+// (`new Date().getHours()` / `getDay()`, and `localDateKey()` via local
+// Y/M/D), so every time-gated rule — 21:00 streak-at-risk, 13:00
+// no-meals-today, the Monday 07:00–12:00 weekly digest — depends on the
+// host timezone. CI runs in `Europe/Kyiv` (the repo's domain timezone, see
+// docs/02-engineering/architecture/domain-invariants.md), where a UTC `…Z`
+// literal lands +2/+3 h off and trips these gate boundaries (e.g. 22:00Z →
+// 01:00 Kyiv, 09:00Z → 12:00 Kyiv). Anchoring from local components keeps
+// the engine's local-time math identical in any host TZ — a UTC dev box and
+// a Kyiv CI runner both read the intended wall-clock hour. `month` is
+// 1-indexed for readability (April = 4).
+function localClock(
+  year: number,
+  month: number,
+  day: number,
+  hour = 0,
+  minute = 0,
+): Date {
+  return new Date(year, month - 1, day, hour, minute, 0, 0);
 }
 
 // ---------------------------------------------------------------------------
@@ -325,8 +328,8 @@ describe("generateRecommendations", () => {
 
   it("НЕ генерує fizruk_no_week_workout на початку тижня (пн/вт)", () => {
     vi.useFakeTimers();
-    // Monday 2026-04-27 10:00 UTC
-    vi.setSystemTime(new Date("2026-04-27T10:00:00Z"));
+    // Monday 2026-04-27 10:00 host-local
+    vi.setSystemTime(localClock(2026, 4, 27, 10));
 
     const old = new Date("2026-04-18T10:00:00Z");
     setLS("fizruk_workouts_v1", [
@@ -535,17 +538,17 @@ describe("generateRecommendations", () => {
 
   it("генерує streak_at_risk після 21:00 при серії 7+ і незавершених звичках", () => {
     vi.useFakeTimers();
-    // 22:00 Kyiv (after the 21:00 gate) on Monday 2026-04-27.
-    vi.setSystemTime(new Date(2026, 3, 27, 22, 0, 0));
+    vi.setSystemTime(localClock(2026, 4, 27, 22));
 
     const habits = [{ id: "h1" }];
     const completions: Record<string, string[]> = {};
     completions["h1"] = [];
     // 7-day streak — today NOT completed → streak at risk
     for (let i = 1; i <= 7; i++) {
-      const d = new Date(2026, 3, 27, 22, 0, 0);
+      const d = localClock(2026, 4, 27, 22);
       d.setDate(d.getDate() - i);
-      completions["h1"].push(localDayKey(d));
+      const dk = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      completions["h1"].push(dk);
     }
 
     setLS("hub_routine_v1", { habits, completions });
@@ -559,15 +562,16 @@ describe("generateRecommendations", () => {
 
   it("routine_streak_at_risk використовує правильну форму множини для 1 звички", () => {
     vi.useFakeTimers();
-    vi.setSystemTime(new Date(2026, 3, 27, 22, 0, 0));
+    vi.setSystemTime(localClock(2026, 4, 27, 22));
 
     const habits = [{ id: "h1" }];
     const completions: Record<string, string[]> = {};
     completions["h1"] = [];
     for (let i = 1; i <= 7; i++) {
-      const d = new Date(2026, 3, 27, 22, 0, 0);
+      const d = localClock(2026, 4, 27, 22);
       d.setDate(d.getDate() - i);
-      completions["h1"].push(localDayKey(d));
+      const dk = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      completions["h1"].push(dk);
     }
 
     setLS("hub_routine_v1", { habits, completions });
@@ -581,16 +585,17 @@ describe("generateRecommendations", () => {
 
   it("routine_streak_at_risk використовує множину для >1 звичок", () => {
     vi.useFakeTimers();
-    vi.setSystemTime(new Date(2026, 3, 27, 22, 0, 0));
+    vi.setSystemTime(localClock(2026, 4, 27, 22));
 
     const habits = [{ id: "h1" }, { id: "h2" }, { id: "h3" }];
     const completions: Record<string, string[]> = {};
     for (const h of habits) {
       completions[h.id] = [];
       for (let i = 1; i <= 7; i++) {
-        const d = new Date(2026, 3, 27, 22, 0, 0);
+        const d = localClock(2026, 4, 27, 22);
         d.setDate(d.getDate() - i);
-        completions[h.id]!.push(localDayKey(d));
+        const dk = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+        completions[h.id]!.push(dk);
       }
     }
 
@@ -605,17 +610,16 @@ describe("generateRecommendations", () => {
 
   it("НЕ генерує streak_at_risk якщо серія < 7 днів", () => {
     vi.useFakeTimers();
-    // 22:00 Kyiv — hour gate satisfied, so the absence is driven by the
-    // 5-day (< 7) streak, not by the clock.
-    vi.setSystemTime(new Date(2026, 3, 27, 22, 0, 0));
+    vi.setSystemTime(localClock(2026, 4, 27, 22));
 
     const habits = [{ id: "h1" }];
     const completions: Record<string, string[]> = {};
     completions["h1"] = [];
     for (let i = 1; i <= 5; i++) {
-      const d = new Date(2026, 3, 27, 22, 0, 0);
+      const d = localClock(2026, 4, 27, 22);
       d.setDate(d.getDate() - i);
-      completions["h1"].push(localDayKey(d));
+      const dk = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      completions["h1"].push(dk);
     }
 
     setLS("hub_routine_v1", { habits, completions });
@@ -643,8 +647,7 @@ describe("generateRecommendations", () => {
 
   it("НЕ генерує nutrition_no_meals_today до 13:00", () => {
     vi.useFakeTimers();
-    // 10:00 Kyiv — before the 13:00 gate.
-    vi.setSystemTime(new Date(2026, 3, 27, 10, 0, 0));
+    vi.setSystemTime(localClock(2026, 4, 27, 10));
 
     setLS("nutrition_log_v1", {});
 
@@ -834,8 +837,8 @@ describe("generateRecommendations", () => {
 
   it("генерує weekly_digest у понеділок 7-12 якщо є дані за минулий тиждень", () => {
     vi.useFakeTimers();
-    // Monday 2026-04-27 09:00 Kyiv (inside the 7:00–12:00 window).
-    vi.setSystemTime(new Date(2026, 3, 27, 9, 0, 0));
+    // Monday 2026-04-27 09:00 host-local
+    vi.setSystemTime(localClock(2026, 4, 27, 9));
 
     // Workout last week (Monday-Sunday: Apr 20-26)
     const lastWeek = new Date("2026-04-23T10:00:00Z");
@@ -858,8 +861,8 @@ describe("generateRecommendations", () => {
 
   it("НЕ генерує weekly_digest у вівторок", () => {
     vi.useFakeTimers();
-    // Tuesday 2026-04-28 09:00 Kyiv
-    vi.setSystemTime(new Date(2026, 3, 28, 9, 0, 0));
+    // Tuesday 2026-04-28 09:00 UTC
+    vi.setSystemTime(new Date("2026-04-28T09:00:00Z"));
 
     const lastWeek = new Date("2026-04-23T10:00:00Z");
     setLS("fizruk_workouts_v1", [
@@ -879,8 +882,7 @@ describe("generateRecommendations", () => {
 
   it("НЕ генерує weekly_digest у понеділок після 12:00", () => {
     vi.useFakeTimers();
-    // 14:00 Kyiv Monday — past the 12:00 upper bound.
-    vi.setSystemTime(new Date(2026, 3, 27, 14, 0, 0));
+    vi.setSystemTime(new Date("2026-04-27T14:00:00Z"));
 
     const lastWeek = new Date("2026-04-23T10:00:00Z");
     setLS("fizruk_workouts_v1", [
@@ -900,11 +902,12 @@ describe("generateRecommendations", () => {
 
   it("weekly_digest включає витрати та звички", () => {
     vi.useFakeTimers();
-    // Monday 2026-04-27 09:00 Kyiv → last week = Mon Apr 20 .. Sun Apr 26.
-    vi.setSystemTime(new Date(2026, 3, 27, 9, 0, 0));
+    vi.setSystemTime(localClock(2026, 4, 27, 9));
 
-    // Spend on Wed Apr 22 12:00 Kyiv — inside the prev-week window.
-    const txTime = Math.floor(new Date(2026, 3, 22, 12, 0, 0).getTime() / 1000);
+    // Mon prev = Apr 20, Sun prev = Apr 26 23:59:59
+    const txTime = Math.floor(
+      new Date("2026-04-22T12:00:00Z").getTime() / 1000,
+    );
     setLS("finyk_tx_cache", {
       txs: [
         { id: "tx1", amount: -500000, time: txTime, description: "Покупки" },
@@ -912,14 +915,15 @@ describe("generateRecommendations", () => {
     });
     setLS("finyk_tx_cats", { tx1: "shopping" });
 
-    // Habits: 1 habit, completed all 7 days of last week (Apr 20–26 Kyiv).
+    // Habits: 1 habit, completed all 7 days of last week
     const habits = [{ id: "h1" }];
     const completions: Record<string, string[]> = {};
     completions["h1"] = [];
     for (let i = 0; i < 7; i++) {
-      const _d = new Date(2026, 3, 20, 12, 0, 0);
+      const _d = new Date("2026-04-20T12:00:00Z");
       _d.setDate(_d.getDate() + i);
-      completions["h1"].push(localDayKey(_d));
+      const dk = `${_d.getFullYear()}-${String(_d.getMonth() + 1).padStart(2, "0")}-${String(_d.getDate()).padStart(2, "0")}`;
+      completions["h1"].push(dk);
     }
     setLS("hub_routine_v1", { habits, completions });
 

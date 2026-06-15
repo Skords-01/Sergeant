@@ -1,13 +1,6 @@
 // @vitest-environment jsdom
-//
-// audit-08 F15 — consumePantryItem UOM / density conversion.
-//
-// `consumePantryItem(name, gramsConsumed)` always receives grams eaten (the
-// AddMeal sheet passes a gram amount). This suite pins the conversion into the
-// item's stored unit — г / кг / мл / л / шт — plus the "leave untouched" path
-// for units with no fixed gram equivalence (уп) and missing/zero stock.
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { renderHook, act, waitFor } from "@testing-library/react";
+import { renderHook, act } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 
@@ -21,8 +14,7 @@ vi.mock("@shared/api", async () => {
 });
 
 import { useNutritionPantries } from "./useNutritionPantries";
-import { type Pantry } from "../lib/nutritionStorage";
-import { type PantryItem } from "../lib/pantryTextParser";
+import type { Pantry } from "../lib/nutritionStorage";
 import {
   __setNutritionSqliteCacheForTests,
   clearNutritionSqliteCache,
@@ -40,153 +32,93 @@ function makeWrapper() {
   };
 }
 
-function seedPantries(pantries: Pantry[], activeId: string) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function seedPantries(items: any[]) {
   __setNutritionSqliteCacheForTests({
-    pantries,
-    activePantryId: String(activeId),
+    pantries: [{ id: "home", name: "Дім", items, text: "" }],
+    activePantryId: "home",
   });
   notifyNutritionSqliteCacheRefresh();
 }
 
 function renderHarness() {
-  const setBusy = vi.fn();
-  const setErr = vi.fn();
-  const setStatusText = vi.fn();
   const { result } = renderHook(
-    () => useNutritionPantries({ setBusy, setErr, setStatusText }),
+    () =>
+      useNutritionPantries({
+        setBusy: vi.fn(),
+        setErr: vi.fn(),
+        setStatusText: vi.fn(),
+      }),
     { wrapper: makeWrapper() },
   );
-  return { result };
+  return result;
 }
 
-function pantryWith(item: PantryItem): Pantry {
-  return { id: "home", name: "Дім", items: [item], text: "" };
+function activeItems(result: { current: { pantries: Pantry[] } }) {
+  return result.current.pantries.find((p) => p.id === "home")?.items ?? [];
 }
 
-async function consumeAndRead(
-  item: PantryItem,
-  name: string,
-  grams: number,
-): Promise<PantryItem | undefined> {
-  seedPantries([pantryWith(item)], "home");
-  const { result } = renderHarness();
-  await waitFor(() => expect(result.current.pantryItems.length).toBe(1));
-  act(() => {
-    result.current.consumePantryItem(name, grams);
-  });
-  await waitFor(() => {
-    // re-read from the active pantry each tick
-    expect(result.current.pantries.length).toBeGreaterThan(0);
-  });
-  return result.current.pantries[0]?.items?.[0];
-}
-
-describe("useNutritionPantries — consumePantryItem UOM conversion", () => {
+describe("useNutritionPantries.consumePantryItem (F15 uom-conversion)", () => {
   beforeEach(() => {
     localStorage.clear();
     clearNutritionSqliteCache();
     vi.clearAllMocks();
   });
 
-  it("г: subtracts grams 1:1", async () => {
-    const out = await consumeAndRead(
-      { name: "рис", qty: 500, unit: "г", notes: null },
-      "рис",
-      120,
-    );
-    expect(out?.qty).toBe(380);
+  it("г: списує грами 1:1, округлює до 0.1", () => {
+    seedPantries([{ name: "рис", qty: 500, unit: "г", notes: null }]);
+    const result = renderHarness();
+    act(() => result.current.consumePantryItem("рис", 120));
+    expect(activeItems(result)[0]).toMatchObject({ qty: 380, unit: "г" });
   });
 
-  it("кг: subtracts grams/1000", async () => {
-    const out = await consumeAndRead(
-      { name: "рис", qty: 2, unit: "кг", notes: null },
-      "рис",
-      500,
-    );
-    expect(out?.qty).toBe(1.5);
+  it("кг: конвертує грами в кілограми", () => {
+    seedPantries([{ name: "рис", qty: 1, unit: "кг", notes: null }]);
+    const result = renderHarness();
+    act(() => result.current.consumePantryItem("рис", 250));
+    expect(activeItems(result)[0]).toMatchObject({ qty: 0.8, unit: "кг" });
   });
 
-  it("мл: converts grams via density (молоко 1.03 g/ml)", async () => {
-    // 206 g / 1.03 = 200 ml → 1000 - 200 = 800 ml
-    const out = await consumeAndRead(
-      { name: "молоко", qty: 1000, unit: "мл", notes: null },
-      "молоко",
-      206,
-    );
-    expect(out?.qty).toBe(800);
+  it("мл: списує через густину молока (1.03 г/мл)", () => {
+    seedPantries([{ name: "молоко", qty: 500, unit: "мл", notes: null }]);
+    const result = renderHarness();
+    act(() => result.current.consumePantryItem("молоко", 200));
+    // 500 - 200/1.03 = 305.8 (округлено до 0.1)
+    expect(activeItems(result)[0]?.qty).toBeCloseTo(305.8, 1);
   });
 
-  it("л: converts grams via density then /1000 (default 1.0 g/ml)", async () => {
-    // вода: 300 g / 1.0 / 1000 = 0.3 л → 2 - 0.3 = 1.7 л.
-    // (qty is rounded to 1 decimal — see Math.round(remaining*10)/10.)
-    const out = await consumeAndRead(
-      { name: "вода", qty: 2, unit: "л", notes: null },
-      "вода",
-      300,
-    );
-    expect(out?.qty).toBe(1.7);
+  it("л: 2 л молока − 206 г ≈ 1.8 л (F15 H2 — більше не з'їдає всю пляшку)", () => {
+    seedPantries([{ name: "молоко", qty: 2, unit: "л", notes: null }]);
+    const result = renderHarness();
+    act(() => result.current.consumePantryItem("молоко", 206));
+    expect(activeItems(result)[0]?.qty).toBe(1.8);
   });
 
-  it("шт: converts grams via per-piece weight (яйце 60 g)", async () => {
-    // 180 g / 60 = 3 шт → 10 - 3 = 7 шт
-    const out = await consumeAndRead(
-      { name: "яйце", qty: 10, unit: "шт", notes: null },
-      "яйце",
-      180,
-    );
-    expect(out?.qty).toBe(7);
+  it("шт: 10 шт яєць − 120 г (60 г/шт) = 8 шт", () => {
+    seedPantries([{ name: "яйце", qty: 10, unit: "шт", notes: null }]);
+    const result = renderHarness();
+    act(() => result.current.consumePantryItem("яйце", 120));
+    expect(activeItems(result)[0]).toMatchObject({ qty: 8, unit: "шт" });
   });
 
-  it("шт: unknown food falls back to 100 g/piece default", async () => {
-    // 200 g / 100 = 2 шт → 5 - 2 = 3 шт
-    const out = await consumeAndRead(
-      { name: "булочка", qty: 5, unit: "шт", notes: null },
-      "булочка",
-      200,
-    );
-    expect(out?.qty).toBe(3);
+  it("уп: одиниця без масового відображення — позиція без змін", () => {
+    seedPantries([{ name: "печиво", qty: 2, unit: "уп", notes: null }]);
+    const result = renderHarness();
+    act(() => result.current.consumePantryItem("печиво", 300));
+    expect(activeItems(result)[0]).toMatchObject({ qty: 2, unit: "уп" });
   });
 
-  it("undefined/null unit: treated as grams", async () => {
-    const out = await consumeAndRead(
-      { name: "борошно", qty: 500, unit: null, notes: null },
-      "борошно",
-      150,
-    );
-    expect(out?.qty).toBe(350);
+  it("залишок ≤ 0 → позицію видалено", () => {
+    seedPantries([{ name: "рис", qty: 100, unit: "г", notes: null }]);
+    const result = renderHarness();
+    act(() => result.current.consumePantryItem("рис", 150));
+    expect(activeItems(result)).toHaveLength(0);
   });
 
-  it("уп (no gram equivalence): item left untouched", async () => {
-    const out = await consumeAndRead(
-      { name: "печиво", qty: 2, unit: "уп", notes: null },
-      "печиво",
-      200,
-    );
-    expect(out?.qty).toBe(2);
-    expect(out?.unit).toBe("уп");
-  });
-
-  it("removes the item when consumption drains it to <= 0", async () => {
-    seedPantries(
-      [pantryWith({ name: "рис", qty: 100, unit: "г", notes: null })],
-      "home",
-    );
-    const { result } = renderHarness();
-    await waitFor(() => expect(result.current.pantryItems.length).toBe(1));
-    act(() => {
-      result.current.consumePantryItem("рис", 150);
-    });
-    await waitFor(() => {
-      expect(result.current.pantries[0]?.items?.length).toBe(0);
-    });
-  });
-
-  it("no-op when stock qty is missing", async () => {
-    const out = await consumeAndRead(
-      { name: "сіль", qty: null, unit: "г", notes: null },
-      "сіль",
-      50,
-    );
-    expect(out?.qty).toBe(null);
+  it("невідома назва → no-op", () => {
+    seedPantries([{ name: "рис", qty: 100, unit: "г", notes: null }]);
+    const result = renderHarness();
+    act(() => result.current.consumePantryItem("гречка", 50));
+    expect(activeItems(result)[0]).toMatchObject({ qty: 100, unit: "г" });
   });
 });

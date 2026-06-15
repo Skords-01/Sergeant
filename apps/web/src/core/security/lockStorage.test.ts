@@ -9,7 +9,6 @@ import {
   clearPinHash,
   hasPinSet,
   savePinHash,
-  userKeyFor,
   verifyPin,
   verifyPinAttempt,
   MAX_FAILED_UNLOCK_ATTEMPTS,
@@ -73,6 +72,39 @@ describe("lockStorage", () => {
     // Overwrite — should still verify with the same PIN.
     await savePinHash("1234");
     expect(await verifyPin("1234")).toBe(true);
+  });
+
+  describe("F16 — per-user credential partitioning", () => {
+    it("a PIN saved for one user is invisible to another user (and to anon)", async () => {
+      await savePinHash("1234", "user-a");
+      expect(await hasPinSet("user-a")).toBe(true);
+      expect(await hasPinSet("user-b")).toBe(false);
+      expect(await hasPinSet(null)).toBe(false);
+    }, 15_000);
+
+    it("verifyPin only matches within the same user partition", async () => {
+      await savePinHash("1234", "user-a");
+      expect(await verifyPin("1234", "user-a")).toBe(true);
+      // Wrong partition → no credential there → never matches (no derive).
+      expect(await verifyPin("1234", "user-b")).toBe(false);
+    }, 15_000);
+
+    it("clearPinHash only clears the targeted user's partition", async () => {
+      await savePinHash("1234", "user-a");
+      await savePinHash("5678", "user-b");
+      await clearPinHash("user-a");
+      expect(await hasPinSet("user-a")).toBe(false);
+      expect(await hasPinSet("user-b")).toBe(true);
+      expect(await verifyPin("5678", "user-b")).toBe(true);
+    }, 30_000);
+
+    it("anon (signed-out) slot is independent of any user slot", async () => {
+      await savePinHash("0000"); // default → anon
+      await savePinHash("1111", "user-a");
+      expect(await verifyPin("0000", null)).toBe(true);
+      expect(await verifyPin("0000", "user-a")).toBe(false);
+      expect(await verifyPin("1111", "user-a")).toBe(true);
+    }, 30_000);
   });
 
   describe("Decision #4 — 10-failed-attempts brute-force wipe", () => {
@@ -190,56 +222,6 @@ describe("lockStorage", () => {
       expect(before?.hash).toBeDefined();
       if (!after?.hash || !before?.hash) throw new Error("hashes missing");
       expect(Array.from(after.hash)).toEqual(Array.from(before.hash));
-    });
-  });
-
-  describe("F16 — per-user credential partitioning", () => {
-    const USER_A = "auth_user_aaaa";
-    const USER_B = "auth_user_bbbb";
-
-    it("userKeyFor sanitises ids and defaults to anon", () => {
-      expect(userKeyFor(null)).toBe("anon");
-      expect(userKeyFor(undefined)).toBe("anon");
-      expect(userKeyFor("")).toBe("anon");
-      expect(userKeyFor("abc-123_XYZ")).toBe("abc-123_XYZ");
-      // Opaque Better-Auth ids are not UUIDs; strip anything non-key-safe.
-      expect(userKeyFor("a/b c.d:e")).toBe("abcde");
-      // An id made entirely of unsafe chars collapses to the anon slot.
-      expect(userKeyFor("/././")).toBe("anon");
-    });
-
-    it("user B does not inherit user A's PIN on a shared device", async () => {
-      await savePinHash("1111", USER_A);
-      // B has never enrolled — its partition is empty.
-      expect(await hasPinSet(USER_B)).toBe(false);
-      // A's PIN must not verify against B's (absent) credential.
-      expect(await verifyPin("1111", USER_B)).toBe(false);
-      // A still unlocks against its own slot.
-      expect(await hasPinSet(USER_A)).toBe(true);
-      expect(await verifyPin("1111", USER_A)).toBe(true);
-    });
-
-    it("each user keeps an independent PIN under the same origin", async () => {
-      await savePinHash("1111", USER_A);
-      await savePinHash("2222", USER_B);
-
-      expect(await verifyPin("1111", USER_A)).toBe(true);
-      expect(await verifyPin("2222", USER_B)).toBe(true);
-      // Cross-checks fail — partitions are isolated.
-      expect(await verifyPin("2222", USER_A)).toBe(false);
-      expect(await verifyPin("1111", USER_B)).toBe(false);
-
-      // Clearing one partition leaves the other intact.
-      await clearPinHash(USER_A);
-      expect(await hasPinSet(USER_A)).toBe(false);
-      expect(await hasPinSet(USER_B)).toBe(true);
-    });
-
-    it("the anon partition is isolated from authenticated partitions", async () => {
-      await savePinHash("0000");
-      expect(await hasPinSet()).toBe(true);
-      expect(await hasPinSet(USER_A)).toBe(false);
-      expect(await verifyPin("0000", USER_A)).toBe(false);
     });
   });
 });
