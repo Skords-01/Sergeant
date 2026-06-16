@@ -1,8 +1,15 @@
 {
   "$schema": "../governance/schemas/pr-ledger.schema.json",
   "version": 1,
-  "generated_at": "2026-06-14",
+  "generated_at": "2026-06-16",
   "prs": [
+    {
+      "number": 3611,
+      "title": "fix(web): clear a11y gate",
+      "merged_at": "2026-06-16T07:25:39Z",
+      "author": "@Skords-01",
+      "touchedDocs": ["docs/00-start/playbooks/cutover-openclaw-gateway.md"]
+    },
     {
       "number": 3560,
       "title": "fix: heal governance/format drift + dualWrite logger lint debt",
