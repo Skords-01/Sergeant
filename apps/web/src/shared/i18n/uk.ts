@@ -23,6 +23,8 @@
  * Roadmap: див. `docs/i18n/readiness.md` § «Покрокова міграція».
  */
 
+import { fizrukPageMessages } from "./uk.fizruk";
+
 export const messages = {
   auth: {
     // Generic fallback — використовується, коли не вдалося визначити
@@ -430,6 +432,25 @@ export const messages = {
     workoutRest: "Відпочинок",
     // PrBadge weight-unit suffix on the Fizruk hero PR pill.
     kgUnit: "кг",
+    // Strength PR leaderboard on the Progress page (`Progress/PrBoard.tsx`).
+    prBoard: {
+      heading: "Рекорди (PR)",
+      shownSuffix: "показано",
+      filterAll: "Всі",
+      emptyTitle: "Поки немає силових PR",
+      emptyFilteredTitle: "Немає PR для цієї групи мʼязів",
+      emptyDescription:
+        "Заверши сети з вагою — рекорди зʼявляться тут автоматично.",
+      emptyFilteredDescription: "Спробуй іншу групу або скинь фільтр.",
+    },
+    // Shared Fizruk unit suffixes (composed at call-site as `${n} ${unit}`).
+    hoursUnit: "год",
+    secondsUnit: "с",
+
+    // Per-page Fizruk strings live in `uk.fizruk.ts` (split out for the
+    // 600-line module-size guardrail, Hard Rule #18) and are spread here so
+    // call-sites keep referencing `messages.fizruk.<page>.<key>`.
+    ...fizrukPageMessages,
   },
 
   nutrition: {

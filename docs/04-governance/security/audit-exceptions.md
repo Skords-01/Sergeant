@@ -1,6 +1,6 @@
 # Audit-винятки
 
-> **Last validated:** 2026-06-11 by @Skords-01. **Next review:** 2026-09-09.
+> **Last touched:** 2026-06-16 by @Skords-01. **Next review:** 2026-09-14.
 > **Status:** Active
 
 > Відстежені вразливості, які тимчасово допускаються через машинно-читаний
@@ -38,10 +38,23 @@ high-и одразу; тепер кожен виняток таргетован�
 
 ## Поточні винятки
 
-> `pnpm audit --audit-level=high` (prod + full tree) — проходить чисто.
-> Запис нижче — `moderate` зі щоночного full-репорту (`pnpm audit` без
-> `--audit-level=high` + OSV-Scanner SARIF), записаний для трекінгу, не як
-> blocker для CI.
+> `pnpm audit --audit-level=high` (prod + full tree) має проходити чисто або
+> тільки з dated exception нижче. `moderate` записи зі щоночного full-репорту
+> (`pnpm audit` без `--audit-level=high` + OSV-Scanner SARIF) трекаються тут
+> окремо, не як blocker для CI.
+
+### form-data CRLF injection in multipart field names (GHSA-hmw2-7cc7-3qxx)
+
+| Field      | Value                                                                                                                                                                                                                                                                                                             |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Advisory   | https://github.com/advisories/GHSA-hmw2-7cc7-3qxx (CVE-2026-12143)                                                                                                                                                                                                                                                |
+| Package    | `form-data@3.0.4` / `form-data@4.0.5` (vulnerable range `<=4.0.5`; Trivy lists fixed versions `2.5.6`, `3.0.5`, `4.0.6`)                                                                                                                                                                                          |
+| Severity   | high — CRLF injection through attacker-controlled multipart field names / filenames                                                                                                                                                                                                                               |
+| Path       | Transitive production dependency reported by `pnpm audit --prod` and Trivy image scan; exact consumer is registry-derived and can move with lockfile refreshes.                                                                                                                                                   |
+| Reason     | Patch is announced but not yet published to npm (`pnpm view form-data versions --json` on 2026-06-16 still lists `4.0.5` as latest and has no `2.5.6` / `3.0.5` / `4.0.6`). Cannot bump or override until a fixed package is available.                                                                           |
+| Mitigation | Sergeant server code does not construct outbound multipart requests from attacker-controlled field names or filenames. Existing upload paths validate inbound uploads and do not forward user-supplied multipart part names to another backend. `.trivyignore` suppresses `CVE-2026-12143` only until 2026-06-23. |
+| Due date   | 2026-06-23 (one-week registry follow-up; if still unpublished, re-check advisory and upstream package status).                                                                                                                                                                                                    |
+| Owner      | @Skords-01                                                                                                                                                                                                                                                                                                        |
 
 ### ajv ReDoS via expo-dev-launcher (CVE-2025-69873)
 
@@ -203,16 +216,19 @@ all three rules to `error` as a follow-up under M11.
 > guard у CI: `pnpm lint:pnpm-overrides`
 > ([`scripts/check-pnpm-overrides.mjs`](../../../scripts/check-pnpm-overrides.mjs)).
 
-| Override               | Range      | Чому форсуємо                                                                                                                                                                                                                            |
-| ---------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `cookie`               | `>=0.7.0`  | CVE-2024-47764 — старі `cookie@<0.7` приймали недійсний `name`/`path` в `Set-Cookie` (XSS-vector через transitive `express` → `csurf`). Fix у 0.7.0.                                                                                     |
-| `tar-fs`               | `>=2.1.4`  | CVE-2024-12905 — symlink-traversal у `tar-fs<2.1.4` (transitive через `prebuild-install`). Patch у 2.1.4 валідує destination paths.                                                                                                      |
-| `nanoid`               | `>=5.0.9`  | CVE-2024-55565 — non-constant-time UUID alphabet permitted side-channel reconstruction. Fix у 5.0.9.                                                                                                                                     |
-| `@xmldom/xmldom`       | `>=0.8.13` | CVE-2024-39338 — XML parser confused by `<!DOCTYPE>` allowed XXE-extension через transitive `react-native-svg`. Fix у 0.8.13.                                                                                                            |
-| `serialize-javascript` | `>=7.0.5`  | CVE-2024-59083 — improper escape of `</script>` у вкладеному JSON. Fix у 7.0.5.                                                                                                                                                          |
-| `postcss`              | `>=8.5.10` | CVE-2024-31472 — line-return parsing issue в `<` 8.5. Fix у 8.5.10.                                                                                                                                                                      |
-| `uuid`                 | `^14.0.0`  | Transitive `uuid` floor через `xcode@3.0.1` (Expo native) залишався на `<14`. v14 — uuid-with-typed-arrays і ESM-only. Pin у `^14` гарантує одну major у tree (раніше `>=14` був loose; перевіряється через `pnpm lint:pnpm-overrides`). |
-| `@tootallnate/once`    | `>=3.0.1`  | Memory leak у `@tootallnate/once<3.0.1` (transitive через `agent-base`). Fix у 3.0.1 не вимагає bump-у consumer-а.                                                                                                                       |
+| Override                    | Range      | Чому форсуємо                                                                                                                                                                                                                            |
+| --------------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `cookie`                    | `>=0.7.0`  | CVE-2024-47764 — старі `cookie@<0.7` приймали недійсний `name`/`path` в `Set-Cookie` (XSS-vector через transitive `express` → `csurf`). Fix у 0.7.0.                                                                                     |
+| `tar-fs`                    | `>=2.1.4`  | CVE-2024-12905 — symlink-traversal у `tar-fs<2.1.4` (transitive через `prebuild-install`). Patch у 2.1.4 валідує destination paths.                                                                                                      |
+| `nanoid`                    | `>=5.0.9`  | CVE-2024-55565 — non-constant-time UUID alphabet permitted side-channel reconstruction. Fix у 5.0.9.                                                                                                                                     |
+| `@xmldom/xmldom`            | `>=0.8.13` | CVE-2024-39338 — XML parser confused by `<!DOCTYPE>` allowed XXE-extension через transitive `react-native-svg`. Fix у 0.8.13.                                                                                                            |
+| `serialize-javascript`      | `>=7.0.5`  | CVE-2024-59083 — improper escape of `</script>` у вкладеному JSON. Fix у 7.0.5.                                                                                                                                                          |
+| `postcss`                   | `>=8.5.10` | CVE-2024-31472 — line-return parsing issue в `<` 8.5. Fix у 8.5.10.                                                                                                                                                                      |
+| `uuid`                      | `^14.0.0`  | Transitive `uuid` floor через `xcode@3.0.1` (Expo native) залишався на `<14`. v14 — uuid-with-typed-arrays і ESM-only. Pin у `^14` гарантує одну major у tree (раніше `>=14` був loose; перевіряється через `pnpm lint:pnpm-overrides`). |
+| `@tootallnate/once`         | `>=3.0.1`  | Memory leak у `@tootallnate/once<3.0.1` (transitive через `agent-base`). Fix у 3.0.1 не вимагає bump-у consumer-а.                                                                                                                       |
+| `protobufjs@>=7.0.0 <7.6.4` | `^7.6.4`   | GHSA-wcpc-wj8m-hjx6 — uncontrolled recursion DoS in protobuf `Any` JSON / `toObject()` conversion. Keeps 7.x consumers on the patched 7.x line.                                                                                          |
+| `protobufjs@>=8.0.0 <8.4.1` | `>=8.4.1`  | GHSA-wcpc-wj8m-hjx6 plus earlier protobufjs 8.x advisories; patch stays within the active 8.x line for any 8.x transitive consumers.                                                                                                     |
+| `ws@<=8.20.1`               | `>=8.21.0` | GHSA-96hv-2xvq-fx4p — DoS у vulnerable `ws` ranges. Patch є semver-compatible для поточних websocket consumers і прибирає production audit blocker.                                                                                      |
 
 Якщо bump новій версії пакета вирішує security-issue без overrides
 (тобто consumer-package сам перевів на patched-major), drop override

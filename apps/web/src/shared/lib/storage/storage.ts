@@ -107,7 +107,22 @@ function createWebMemoryFallback(): KVStore {
   };
 }
 
-function resolveLsStore(): KVStore | null {
+/**
+ * Build a {@link KVStore} bound to **raw `window.localStorage`** — i.e. it
+ * deliberately bypasses the SQLite warm-cache overlay that {@link resolveStore}
+ * prefers post-bootstrap. Returns `null` when no `localStorage` is available.
+ *
+ * `resolveStore()` (and therefore `webKVStore`) routes reads/writes through the
+ * SQLite `kv_store` table once `bootstrapKvStore()` has run, so its `listKeys()`
+ * reflects the SQLite table — **not** the physical `localStorage` keyspace. The
+ * logout data-purge (`purgeLocalData.ts`) needs the physical keyspace so it can
+ * see and remove the LS-only fallback copies (`finyk_tx_cache`, …) and the
+ * sqlite-wasm `kvvfs-*` backing store that never travel through `webKVStore`.
+ * This accessor gives it that raw view while still going through the sanctioned
+ * `createWebKVStore` adapter (no direct `localStorage.*` calls → keeps the
+ * `sergeant-design/no-raw-local-storage` budget at 0).
+ */
+export function resolveLsStore(): KVStore | null {
   let storage: StorageLike | undefined;
   try {
     const candidate = (globalThis as { localStorage?: unknown }).localStorage;
@@ -241,6 +256,60 @@ export function safeWriteLS(key: string, value: unknown): boolean {
  */
 export function safeRemoveLS(key: string): boolean {
   webKVStore.remove(key);
+  return true;
+}
+
+// ─── Boot-critical durable helpers ──────────────────────────────────────────
+// The default `webKVStore` write path resolves to the SQLite warm-cache once
+// `bootstrapKvStore()` has loaded — durable, but the write-back to the OPFS
+// SQLite DB is fire-and-forget (see `createSqliteKVStore` in
+// `@sergeant/shared`). A value written and then immediately followed by a hard
+// reload can lose that async upsert before it flushes, so the post-reload
+// warm-cache scan no longer sees it. For tiny, boot-critical, first-paint keys
+// (the theme choice), that race surfaces as a visible regression (the chosen
+// theme silently reverts on reload).
+//
+// These helpers eliminate the race by ALSO writing synchronously to the
+// `localStorage` fallback adapter. `bootstrapKvStore()` already seeds the
+// warm-cache from `localStorage` for any key absent from SQLite (the
+// "SQLite empty but LS has data" recovery path), so a synchronous LS mirror is
+// re-read deterministically on the next boot regardless of OPFS flush timing.
+// No raw `localStorage.*` access — both reads and writes go through the same
+// `resolveLsStore()` KVStore adapter that backs `webKVStore`'s LS fallback.
+
+/**
+ * Write a string value durably: through the active store (SQLite warm-cache
+ * once booted) AND synchronously to the `localStorage` fallback adapter so the
+ * value survives a hard reload that races the async SQLite write-back. Use for
+ * boot-critical first-paint keys (e.g. the theme choice). Returns `true` once
+ * the active-store write was attempted; the LS mirror is best-effort.
+ */
+export function safeWriteStringLSDurable(key: string, value: string): boolean {
+  webKVStore.setString(key, value);
+  resolveLsStore()?.setString(key, value);
+  return true;
+}
+
+/**
+ * Read a boot-critical string value, preferring the durable `localStorage`
+ * mirror written by {@link safeWriteStringLSDurable}. Falls back to the active
+ * store (SQLite warm-cache), then `fallback`. Reading LS first means a value
+ * whose async SQLite write-back was lost to a reload race is still recovered.
+ */
+export function safeReadStringLSDurable(
+  key: string,
+  fallback: string | null = null,
+): string | null {
+  const mirrored = resolveLsStore()?.getString(key);
+  if (mirrored !== null && mirrored !== undefined) return mirrored;
+  const raw = webKVStore.getString(key);
+  return raw === null ? fallback : raw;
+}
+
+/** Remove a key from both the active store and the durable LS mirror. */
+export function safeRemoveLSDurable(key: string): boolean {
+  webKVStore.remove(key);
+  resolveLsStore()?.remove(key);
   return true;
 }
 

@@ -16,7 +16,7 @@
 
 ## Cross-refs
 
-- [`docs/90-work/audits/2026-05-13-web-architecture-state-roast.md`](../audits/2026-05-13-web-architecture-state-roast.md) — прожарка #3/10 (architecture + state).
+- [`docs/90-work/audits/2026-05-13-web-architecture-state-roast.md`](../audits/archive/2026-05-13-web-architecture-state-roast.md) — прожарка #3/10 (architecture + state).
 - [`docs/90-work/audits/2026-05-13-web-frontend-ergonomics-roast.md`](../audits/archive/2026-05-13-web-frontend-ergonomics-roast.md) — прожарка #2/10 (frontend ergonomics).
 - [`docs/02-engineering/architecture/repo-map.md`](../../02-engineering/architecture/repo-map.md) — per-app stack matrix, `apps/web` runtime: Vite 8 + React 18 + TanStack Query + Tailwind 4 + size-limit gate.
 - [`docs/04-governance/governance/rules/18-module-size-discipline-600.md`](../../04-governance/governance/rules/18-module-size-discipline-600.md) — Hard Rule #18 (`max-lines: 600` для `apps/web/src/**`); декомпозиція 0013 Sprint 2 (A4 нижче) — це burndown цього правила.
@@ -40,7 +40,7 @@
 
 ## Architecture / state (cards A1–A7)
 
-Закривають outstanding-items з [`2026-05-13-web-architecture-state-roast.md § P1`](../audits/2026-05-13-web-architecture-state-roast.md) + P2-A/P2-B/P2-D/P2-E.
+Закривають outstanding-items з [`2026-05-13-web-architecture-state-roast.md § P1`](../audits/archive/2026-05-13-web-architecture-state-roast.md) + P2-A/P2-B/P2-D/P2-E.
 
 ### A1 — `feat(web): finish initiative 0006 phase 3 — useHashRouter codemod`
 
@@ -190,6 +190,7 @@
 
 ### E3 — `fix(web): defer PWA update-prompt while Hub streaming or mutations in-flight`
 
+- **Status:** ✅ Виконано (2026-06-15, перевірено на `main`) — defer-логіка живе у [`apps/web/src/core/app/useSWUpdate.ts`](../../../apps/web/src/core/app/useSWUpdate.ts) (фактичний шлях, не запланований `shared/hooks/`): prompt тримається поки `isHubStreaming()` AND `getMutationCache()` має `pending`-мутації, hard-timeout 10 хв як R5-failsafe. `streamingStore.ts` виставляється з [`useChatSend.ts`](../../../apps/web/src/core/hub/chat/useChatSend.ts) (`setHubStreaming(true)` на старті send, `false` у `finally`), читається у `useSWUpdate`; hook змонтований у `RootLayout.tsx`. Регрес-suite [`useSWUpdate.test.ts`](../../../apps/web/src/core/app/useSWUpdate.test.ts) — 8 тестів (idle-show, defer-while-streaming, defer-while-mutations, R5 hard-timeout, no-double-show). Shipped у [PR #3291](https://github.com/Skords-01/Sergeant/pull/3291).
 - **Surface:**
   - `apps/web/src/shared/hooks/useSWUpdate.ts` (показ prompt-у).
   - `apps/web/src/sw.ts` (SW lifecycle).
@@ -258,6 +259,7 @@
 
 ### E7 — `feat(web): wire-up missing keyboard shortcuts (Cmd+/, Cmd+S, G H..N chord)`
 
+- **Status:** ✅ Виконано (2026-06-15, перевірено на `main`) — [`useHubKeyboardShortcuts.ts`](../../../apps/web/src/core/hooks/useHubKeyboardShortcuts.ts) реєструє `Cmd/Ctrl+/` (`onOpenAssistant`), context-aware `Cmd/Ctrl+S` (`form.requestSubmit()` лише у `<form>`-контексті, R6-mitigation), `G H..N` chord (`G_CHORD_MAP` + 1 s window); усі handler-и пропхані з `RootLayout.tsx` (`onOpenAssistant: openAssistantChat`, `onNavigate: handleNavigateChord`). Browser-conflict matrix у [`shortcuts.md`](../../05-design/ui/shortcuts.md) оновлена — усі E7-handler-и `Registered`, без `TBD`. Unit-coverage [`useHubKeyboardShortcuts.test.tsx`](../../../apps/web/src/core/hooks/useHubKeyboardShortcuts.test.tsx) — 19 тестів (Cmd+K/Cmd+//Cmd+S, G-chord, editable-target guard, no-form no-op). Shipped у [PR #3291](https://github.com/Skords-01/Sergeant/pull/3291). _Note:_ acceptance-пункт про окремий Playwright `tests/smoke/keyboard-shortcuts.spec.ts` закритий unit-suite-ом замість browser-smoke (handler-логіка — pure `keydown`, без DOM-rendering залежностей).
 - **Surface:**
   - `apps/web/src/core/hooks/useHubKeyboardShortcuts.ts` (поточно registers тільки `?` + `Cmd/Ctrl+K`).
   - `apps/web/src/shared/components/ui/KeyboardShortcutsModal.tsx:101-143` (DEFAULT_SHORTCUTS).
