@@ -60,6 +60,18 @@ test("validatePlaybook accepts a well-formed playbook", () => {
   assert.deepEqual(errors, []);
 });
 
+test("validatePlaybook accepts the migrated `Last touched:` freshness label", () => {
+  // The freshness corpus is migrating `Last validated:` → `Last touched:`
+  // (scripts/docs/bump-last-validated.mjs rewrites the label on every edit;
+  // all freshness read-sites accept both labels during the transition). A
+  // bumped playbook must not be flagged as malformed by the schema parser.
+  const errors = validatePlaybook(
+    validPlaybook.replace("**Last validated:**", "**Last touched:**"),
+    { today: TODAY },
+  );
+  assert.deepEqual(errors, [], errors.join("; "));
+});
+
 test("validatePlaybook flags missing H1", () => {
   const errors = validatePlaybook(
     validPlaybook.replace(/^# Playbook: Example\n\n/, ""),

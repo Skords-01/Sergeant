@@ -98,8 +98,15 @@ export function validatePlaybook(content, opts = {}) {
   if (!validated) {
     errors.push("missing freshness header (`> **Last validated:** …`)");
   } else {
+    // Accept both the legacy `Last validated:` label and the canonical
+    // `Last touched:` one. The freshness corpus is mid-migration to
+    // `Last touched:` (see scripts/docs/bump-last-validated.mjs — every doc
+    // edit rewrites the label via the lint-staged hook), and that hook's
+    // docs state all freshness read-sites accept both labels during the
+    // transition. The detector above already matches both; this parser must
+    // too, otherwise a bumped playbook trips a false "malformed" violation.
     const m = validated.match(
-      /Last validated:\*\*\s+(\d{4}-\d{2}-\d{2})\s+by\s+@([\w-]+)\.\s+\*\*Next review:\*\*\s+(\d{4}-\d{2}-\d{2})/,
+      /Last (?:validated|touched):\*\*\s+(\d{4}-\d{2}-\d{2})\s+by\s+@([\w-]+)\.\s+\*\*Next review:\*\*\s+(\d{4}-\d{2}-\d{2})/,
     );
     if (!m) {
       errors.push(
