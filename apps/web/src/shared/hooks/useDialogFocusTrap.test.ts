@@ -232,3 +232,82 @@ describe("useDialogFocusTrap — focus restoration", () => {
     unmount();
   });
 });
+
+/**
+ * Spec: the keyboard trap only stops Tab. A screen-reader virtual cursor can
+ * still swipe through the background unless it is marked inert. These lock in
+ * that the open dialog hides its background siblings (WCAG 4.1.2 / 1.3.1) and
+ * cleanly restores them — including the portal-branch and stacked-dialog cases.
+ */
+describe("useDialogFocusTrap — background inert", () => {
+  afterEach(() => {
+    document.body.innerHTML = "";
+  });
+
+  it("marks background siblings inert on open and restores them on close", () => {
+    const bg = document.createElement("div");
+    bg.appendChild(document.createElement("button"));
+    document.body.appendChild(bg);
+
+    const panel = document.createElement("div");
+    panel.appendChild(document.createElement("button"));
+    document.body.appendChild(panel);
+
+    const ref = createRef<HTMLDivElement>();
+    Object.defineProperty(ref, "current", { value: panel, writable: true });
+
+    const { rerender, unmount } = renderHook(
+      ({ open }) => useDialogFocusTrap(open, ref),
+      { initialProps: { open: true } },
+    );
+
+    expect(bg.hasAttribute("inert")).toBe(true);
+    expect(bg.getAttribute("aria-hidden")).toBe("true");
+    // The panel itself must stay reachable.
+    expect(panel.hasAttribute("inert")).toBe(false);
+
+    rerender({ open: false });
+    expect(bg.hasAttribute("inert")).toBe(false);
+    expect(bg.hasAttribute("aria-hidden")).toBe(false);
+    unmount();
+  });
+
+  it("does not inert a top-level element that contains the panel (portal branch)", () => {
+    const portalRoot = document.createElement("div");
+    const panel = document.createElement("div");
+    panel.appendChild(document.createElement("button"));
+    portalRoot.appendChild(panel);
+    document.body.appendChild(portalRoot);
+
+    const ref = createRef<HTMLDivElement>();
+    Object.defineProperty(ref, "current", { value: panel, writable: true });
+
+    const { unmount } = renderHook(() => useDialogFocusTrap(true, ref));
+    // portalRoot is an ancestor of the panel → must remain reachable.
+    expect(portalRoot.hasAttribute("inert")).toBe(false);
+    unmount();
+  });
+
+  it("leaves a pre-existing inert sibling untouched on close (stacked dialogs)", () => {
+    // Simulates a lower dialog that already inerted this sibling; the upper
+    // dialog must not strip an inert it did not add.
+    const lower = document.createElement("div");
+    lower.setAttribute("inert", "");
+    document.body.appendChild(lower);
+
+    const panel = document.createElement("div");
+    panel.appendChild(document.createElement("button"));
+    document.body.appendChild(panel);
+
+    const ref = createRef<HTMLDivElement>();
+    Object.defineProperty(ref, "current", { value: panel, writable: true });
+
+    const { rerender, unmount } = renderHook(
+      ({ open }) => useDialogFocusTrap(open, ref),
+      { initialProps: { open: true } },
+    );
+    rerender({ open: false });
+    expect(lower.hasAttribute("inert")).toBe(true);
+    unmount();
+  });
+});

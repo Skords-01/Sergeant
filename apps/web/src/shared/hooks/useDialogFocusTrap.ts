@@ -59,6 +59,39 @@ export function useDialogFocusTrap(
     previouslyFocusedRef.current =
       active instanceof HTMLElement && active !== document.body ? active : null;
 
+    // Hide everything outside the dialog's DOM branch from assistive tech.
+    // The keyboard trap below only stops Tab; a screen-reader virtual cursor
+    // (swipe navigation) would otherwise roam the background behind the modal.
+    // Mark every top-level <body> child that does NOT contain the panel as
+    // `inert` (plus `aria-hidden` for engines without inert support), then
+    // restore them on close. WCAG 4.1.2 / 1.3.1. Portal-aware: the branch
+    // holding the panel (its ancestor chain up to <body>) is skipped, so the
+    // dialog stays reachable; stacked dialogs each inert the layer(s) below
+    // and undo it on their own close.
+    const inerted: HTMLElement[] = [];
+    {
+      const branch = new Set<Element>();
+      for (
+        let a: Element | null = panel;
+        a && a !== document.body;
+        a = a.parentElement
+      ) {
+        branch.add(a);
+      }
+      for (const child of Array.from(document.body.children)) {
+        if (
+          child instanceof HTMLElement &&
+          !branch.has(child) &&
+          !child.contains(panel) &&
+          !child.hasAttribute("inert")
+        ) {
+          child.setAttribute("inert", "");
+          child.setAttribute("aria-hidden", "true");
+          inerted.push(child);
+        }
+      }
+    }
+
     const getFocusable = (): HTMLElement[] =>
       Array.from(
         panel.querySelectorAll<HTMLElement>(
@@ -100,9 +133,9 @@ export function useDialogFocusTrap(
       }
       if (e.key !== "Tab") return;
       const nodes = getFocusable();
-      if (nodes.length === 0) return;
-      const first = nodes[0]!;
-      const last = nodes[nodes.length - 1]!;
+      const first = nodes[0];
+      const last = nodes[nodes.length - 1];
+      if (!first || !last) return;
       // If focus has somehow escaped the panel (programmatic blur, an
       // unmount that re-parented the focused node, an Esc-cancelled
       // close handler, etc.), pull it back to the appropriate edge of
@@ -126,6 +159,11 @@ export function useDialogFocusTrap(
     document.addEventListener("keydown", onKeyDown);
     return () => {
       document.removeEventListener("keydown", onKeyDown);
+      // Un-hide the background siblings this trap made inert.
+      for (const node of inerted) {
+        node.removeAttribute("inert");
+        node.removeAttribute("aria-hidden");
+      }
       const el = previouslyFocusedRef.current;
       previouslyFocusedRef.current = null;
       if (!el) return;
