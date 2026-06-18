@@ -79,8 +79,8 @@ The packages most other workspaces depend on. `Importers` = unique file count ac
 | ---- | ---------------------------- | --------- | ------- |
 | 1    | `@sergeant/shared`           | 342       | 1       |
 | 2    | `@sergeant/nutrition-domain` | 84        | 1       |
-| 3    | `@sergeant/fizruk-domain`    | 63        | 1       |
-| 4    | `@sergeant/routine-domain`   | 54        | 1       |
+| 3    | `@sergeant/fizruk-domain`    | 64        | 1       |
+| 4    | `@sergeant/routine-domain`   | 56        | 1       |
 | 5    | `@sergeant/api-client`       | 38        | 200     |
 
 ## Drift detection
