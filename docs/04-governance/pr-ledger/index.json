@@ -1,8 +1,17 @@
 {
   "$schema": "../governance/schemas/pr-ledger.schema.json",
   "version": 1,
-  "generated_at": "2026-06-16",
+  "generated_at": "2026-06-18",
   "prs": [
+    {
+      "number": 3640,
+      "title": "fix(docs): accept \"Last touched\" label + bot handles in playbook schema check",
+      "merged_at": "2026-06-18T17:59:09Z",
+      "author": "@Skords-01",
+      "touchedDocs": [
+        "docs/90-work/initiatives/0006-frontend-routing-and-code-split.md"
+      ]
+    },
     {
       "number": 3610,
       "title": "chore(config): per-package eslint configs — PR-31 Phase 2b",
