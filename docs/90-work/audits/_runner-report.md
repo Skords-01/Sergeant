@@ -1,8 +1,9 @@
 <!-- AUTO-GENERATED -->
+<!-- AI-GENERATED: audits-runner -->
 
 # Audit runner report
 
-> **Last validated:** 2026-06-18 by audit-triage routine. **Next review:** 2026-09-16.
+> **Last validated:** 2026-06-18 by audits-runner workflow. **Next review:** 2026-09-16.
 > **Status:** Reference
 
 ## Triage digest — 2026-06-18
