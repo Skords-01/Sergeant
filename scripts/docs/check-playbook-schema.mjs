@@ -99,7 +99,7 @@ export function validatePlaybook(content, opts = {}) {
     errors.push("missing freshness header (`> **Last validated:** …`)");
   } else {
     const m = validated.match(
-      /Last validated:\*\*\s+(\d{4}-\d{2}-\d{2})\s+by\s+@([\w-]+)\.\s+\*\*Next review:\*\*\s+(\d{4}-\d{2}-\d{2})/,
+      /Last (?:validated|touched):\*\*\s+(\d{4}-\d{2}-\d{2})\s+by\s+@([\w-]+)\.\s+\*\*Next review:\*\*\s+(\d{4}-\d{2}-\d{2})/,
     );
     if (!m) {
       errors.push(
