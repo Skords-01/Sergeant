@@ -1,14 +1,14 @@
 {
   "$schema": "./schemas/knowledge-graph.schema.json",
   "version": 1,
-  "generated_at": "2026-06-18",
+  "generated_at": "2026-06-19",
   "counts": {
     "adr": 63,
-    "audit": 15,
+    "audit": 16,
     "hard-rule": 26,
     "initiative": 51,
     "playbook": 61,
-    "pr": 206,
+    "pr": 208,
     "skill": 23
   },
   "nodes": [
@@ -756,7 +756,7 @@
       "type": "audit",
       "title": "Page Audit — Hub Chat, Search & Backup panel",
       "path": "docs/90-work/audits/2026-05-13-page-audit-03-hub-chat-search.md",
-      "status": "Active",
+      "status": "Closed — 2026-06-19: усі знахідки верифіковано реалізованими/закритими в коді (reconciliation).",
       "tier": "core",
       "meta": {}
     },
@@ -765,7 +765,7 @@
       "type": "audit",
       "title": "Page Audit — Fizruk module Part 2 (Progress, Measurements, Programs, Body)",
       "path": "docs/90-work/audits/2026-05-13-page-audit-07-fizruk-part2.md",
-      "status": "Active",
+      "status": "Closed — 2026-06-19: усі знахідки верифіковано реалізованими/закритими в коді (reconciliation).",
       "tier": "core",
       "meta": {}
     },
@@ -774,7 +774,7 @@
       "type": "audit",
       "title": "Page Audit — Nutrition module — 4 pages (start/pantry/log/menu)",
       "path": "docs/90-work/audits/2026-05-13-page-audit-08-nutrition.md",
-      "status": "Active",
+      "status": "Closed — 2026-06-19: усі знахідки закриті або в tracked burn-down (reconciliation).",
       "tier": "core",
       "meta": {}
     },
@@ -828,6 +828,15 @@
       "type": "audit",
       "title": "Independent Audit — Sergeant — 2026-06-11",
       "path": "docs/90-work/audits/2026-06-11-fable5-independent-audit.md",
+      "status": "Active",
+      "tier": "core",
+      "meta": {}
+    },
+    {
+      "id": "audit:2026-06-19-design-system-audit",
+      "type": "audit",
+      "title": "Аудит дизайн-системи та візуалу — 2026-06-19",
+      "path": "docs/90-work/audits/2026-06-19-design-system-audit.md",
       "status": "Active",
       "tier": "core",
       "meta": {}
@@ -3912,6 +3921,26 @@
       }
     },
     {
+      "id": "pr:3659",
+      "type": "pr",
+      "title": "PR #3659",
+      "tier": "extended",
+      "meta": {
+        "number": 3659,
+        "url": "https://github.com/Skords-01/Sergeant/pull/3659"
+      }
+    },
+    {
+      "id": "pr:3660",
+      "type": "pr",
+      "title": "PR #3660",
+      "tier": "extended",
+      "meta": {
+        "number": 3660,
+        "url": "https://github.com/Skords-01/Sergeant/pull/3660"
+      }
+    },
+    {
       "id": "pr:369",
       "type": "pr",
       "title": "PR #369",
@@ -5606,6 +5635,36 @@
     {
       "from": "audit:2026-06-11-fable5-independent-audit",
       "to": "pr:3522",
+      "type": "touched-by"
+    },
+    {
+      "from": "audit:2026-06-19-design-system-audit",
+      "to": "hard-rule:12",
+      "type": "references"
+    },
+    {
+      "from": "audit:2026-06-19-design-system-audit",
+      "to": "hard-rule:14",
+      "type": "references"
+    },
+    {
+      "from": "audit:2026-06-19-design-system-audit",
+      "to": "hard-rule:17",
+      "type": "references"
+    },
+    {
+      "from": "audit:2026-06-19-design-system-audit",
+      "to": "hard-rule:18",
+      "type": "references"
+    },
+    {
+      "from": "audit:2026-06-19-design-system-audit",
+      "to": "pr:3659",
+      "type": "touched-by"
+    },
+    {
+      "from": "audit:2026-06-19-design-system-audit",
+      "to": "pr:3660",
       "type": "touched-by"
     },
     {

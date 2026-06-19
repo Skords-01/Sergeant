@@ -56,6 +56,19 @@ high-и одразу; тепер кожен виняток таргетован�
 | Due date   | 2026-06-23 (one-week registry follow-up; if still unpublished, re-check advisory and upstream package status).                                                                                                                                                                                                    |
 | Owner      | @Skords-01                                                                                                                                                                                                                                                                                                        |
 
+### undici WebSocket DoS via fragment count bypass (GHSA-vxpw-j846-p89q)
+
+| Field      | Value                                                                                                                                                                                                                                                         |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Advisory   | https://github.com/advisories/GHSA-vxpw-j846-p89q                                                                                                                                                                                                             |
+| Package    | `undici@6.25.0` (vulnerable range `<6.27.0`; patched in `>=6.27.0`)                                                                                                                                                                                           |
+| Severity   | high (CVSS 7.5) — DoS у WebSocket-клієнті через fragment count bypass                                                                                                                                                                                         |
+| Path       | `apps/mobile > @better-auth/expo > better-auth > @better-auth/drizzle-adapter > drizzle-orm > expo-sqlite > expo > @expo/cli > undici@6.25.0` (dev-tooling chain). Також top-level `undici@6.25.0` через `@types/node`.                                       |
+| Reason     | Upstream `expo` ще не bump-нув `undici` past 6.25.0 (трекаємо expo SDK 53 cadence). Наш production-server використовує `undici@7.28.0` (override з #3642, GHSA-vmh5-mc38-953g fixed); 6.x гілка тут не зачіпається.                                           |
+| Mitigation | WebSocket-клієнт `undici` не використовується ані server-ом (Fastify `undici@7`), ані web/mobile runtime-кодом — 6.25.0 присутня тільки у dev-tooling ланцюгу `@expo/cli`. Production-tree (`pnpm audit --prod`) підтверджує відсутність цього шляху у проді. |
+| Due date   | 2026-09-30 (Q3 2026 — наступне expo SDK 53/54 вікно). Якщо не закрито — підняти у `security:high` issue та override.                                                                                                                                          |
+| Owner      | @Skords-01                                                                                                                                                                                                                                                    |
+
 ### ajv ReDoS via expo-dev-launcher (CVE-2025-69873)
 
 | Field      | Value                                                                                                                                                                                                                                |

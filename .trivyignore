@@ -28,3 +28,12 @@
 # Remove this once a fixed form-data release is available and the lockfile is
 # bumped/overridden.
 CVE-2026-12143 exp:2026-06-23
+
+# undici WebSocket DoS via fragment count bypass (GHSA-vxpw-j846-p89q). Patched
+# in undici >= 6.27.0 / >= 7.28.0 / >= 8.5.0. The dev-tooling chain
+# `@expo/cli > undici@6.25.0` still ships the vulnerable 6.x because upstream
+# `expo` (SDK 53 cadence) hasn't bumped yet. Production runtime uses
+# `undici@7.28.0` via the #3642 override (Fastify stack), and the WebSocket
+# client itself is not invoked by any prod code path. Tracked in
+# `docs/04-governance/security/audit-exceptions.md` (Due date 2026-09-30).
+CVE-2026-12151 exp:2026-09-30
