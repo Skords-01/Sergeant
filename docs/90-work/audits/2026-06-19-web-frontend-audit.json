@@ -1,0 +1,455 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema#",
+  "audit_id": "2026-06-19-web-frontend-audit",
+  "auditor": "Toast-polecat-9de6c57e@70204a6e",
+  "rig_id": "9de6c57e-f15c-4732-8281-1de3c25745f0",
+  "convoy_id": "4b592256-0cc3-4596-973f-d90b6a65ff94",
+  "feature_branch": "convoy/sergeant-frontend-audit-web-ios-android/4b592256/gt/toast/cf534912",
+  "date": "2026-06-19",
+  "scope": "apps/web",
+  "method": "5-parallel-explore-fanout",
+  "read_only": true,
+  "code_changes": false,
+  "companion_md": "docs/90-work/audits/2026-06-19-web-frontend-audit.md",
+  "summary": {
+    "total_findings": 31,
+    "by_severity": {
+      "P0": 5,
+      "P1": 12,
+      "P2": 14
+    },
+    "by_surface": {
+      "architecture": 6,
+      "performance": 6,
+      "a11y": 5,
+      "pwa": 5,
+      "i18n": 5,
+      "tests_and_ci": 4
+    },
+    "hard_rules_compliance": {
+      "pass": 13,
+      "fail": 1,
+      "warn": 2,
+      "n_a": 9
+    },
+    "tldr": {
+      "architecture": "A-",
+      "performance": "B+",
+      "a11y": "A-",
+      "pwa": "B+",
+      "i18n": "B-"
+    }
+  },
+  "findings": [
+    {
+      "id": "P0-01",
+      "title": "Validate push.data.module before write to notification.data",
+      "severity": "P0",
+      "surface": "pwa",
+      "file": "apps/web/src/sw.ts",
+      "line": 125,
+      "category": "security",
+      "effort": "1-2 hours",
+      "rationale": "notificationclick filters URL via ALLOWED_NOTIFICATION_MODULES, but postMessage({type: 'OPEN_MODULE', module: payload.module}) on sw.ts:69 is NOT filtered. Adversary push payload can postMessage arbitrary module string into SPA message handler.",
+      "remediation": "Apply ALLOWED_NOTIFICATION_MODULES.has(payload.module) to data.module before assignment, or pass already-validated const from sw.ts:56."
+    },
+    {
+      "id": "P0-02",
+      "title": "Add aria-modal + aria-labelledby + useDialogFocusTrap to 4 hand-rolled dialogs",
+      "severity": "P0",
+      "surface": "a11y",
+      "files": [
+        "apps/web/src/shared/components/ui/InputDialog.tsx:117",
+        "apps/web/src/shared/components/ui/KeyboardShortcutsModalUI.tsx:115",
+        "apps/web/src/modules/routine/components/settings/HabitForm.tsx:191",
+        "apps/web/src/modules/nutrition/components/meal-sheet/MacrosEditor.tsx:145"
+      ],
+      "category": "a11y-aria",
+      "effort": "1-2 days",
+      "rationale": "These dialogs declare role='dialog' or role='alertdialog' but omit aria-modal, aria-labelledby, and any focus-trap hook. Screen reader users get trapped; all keyboard input is intercepted.",
+      "remediation": "Add aria-modal='true', aria-labelledby pointing to title id, and useDialogFocusTrap. Wire apps/web/src/test/helpers/expectDialogA11y.ts:4-60 into unit tests."
+    },
+    {
+      "id": "P0-03",
+      "title": "Wire /offline route + add to OFFLINE_SHELL_CANDIDATES",
+      "severity": "P0",
+      "surface": "pwa",
+      "files": [
+        "apps/web/src/core/errors/OfflinePage.tsx:2-7",
+        "apps/web/src/core/app/StandaloneRoutes.tsx",
+        "apps/web/src/sw/offlineFallback.ts:18-22"
+      ],
+      "category": "pwa-offline",
+      "effort": "0.5 day",
+      "rationale": "OfflinePage is @scaffolded with @nextStep instructions in file header but not registered in router; SW setCatchHandler returns precached index.html which boots SPA without 'you're offline' UX.",
+      "remediation": "Register /offline in StandaloneRoutes.tsx; add to OFFLINE_SHELL_CANDIDATES. Drop the @scaffolded/@nextStep tags."
+    },
+    {
+      "id": "P0-04",
+      "title": "Add in-app language switcher UI",
+      "severity": "P0",
+      "surface": "i18n",
+      "files": [
+        "apps/web/src/shared/i18n/useLocale.ts:80-96",
+        "apps/web/src/core/settings/GeneralSection.tsx",
+        "apps/web/src/core/hub/HubSettingsPage.tsx"
+      ],
+      "category": "i18n-ux",
+      "effort": "0.5 day",
+      "rationale": "useLocale().setLocale is exposed but never wired to any UI control. Users have no in-app way to switch language; only ?lang= URL parameter (set by external marketing link) toggles it.",
+      "remediation": "Add a LocaleSwitcher control in GeneralSection or HubSettingsPage with setLocale handler. Persist to localStorage[sergeant:locale]."
+    },
+    {
+      "id": "P0-05",
+      "title": "Leaf-level key-parity test (en vs uk) — EN catalog 9 keys short",
+      "severity": "P0",
+      "surface": "i18n",
+      "files": [
+        "apps/web/src/shared/i18n/uk.ts",
+        "apps/web/src/shared/i18n/en.ts",
+        "apps/web/src/shared/i18n/index.test.ts:86-114"
+      ],
+      "category": "i18n-correctness",
+      "effort": "0.5 day",
+      "rationale": "EN catalog has 354 leaf keys vs UK 363. Current test locks only top-level group shape, not leaf coverage. EN silently falls through to UK for any missing leaf inside a declared group.",
+      "remediation": "Add keysDeepEqual(messagesEn, uk) test (or build-time codegen). Iterate EN to 363 keys."
+    },
+    {
+      "id": "P1-06",
+      "title": "memo(TxRow) — 598 LOC, no memo wrapper",
+      "severity": "P1",
+      "surface": "performance",
+      "file": "apps/web/src/modules/finyk/components/TxRow.tsx",
+      "category": "render-perf",
+      "effort": "0.5 day",
+      "rationale": "Used in Finyk transactions list. Without memo, re-renders on every setTransactions/scroll event. Highest-impact perf gap in hot list."
+    },
+    {
+      "id": "P1-07",
+      "title": "Add ExpirationPlugin to navigations NetworkFirst",
+      "severity": "P1",
+      "surface": "pwa",
+      "file": "apps/web/src/sw/cache.ts",
+      "line_range": "130-142",
+      "category": "cache-bounds",
+      "effort": "0.5 day",
+      "rationale": "navigations-v<build> has no ExpirationPlugin. Every visited URL persists until build bump. PWA sessions living weeks accumulate dozens of stale entries."
+    },
+    {
+      "id": "P1-08",
+      "title": "Add CacheFirst for /assets/, /icon-* + image hosts",
+      "severity": "P1",
+      "surface": "pwa",
+      "file": "apps/web/src/sw/cache.ts",
+      "category": "cache-missing",
+      "effort": "1 day",
+      "rationale": "No CacheFirst/StaleWhileRevalidate for images, fonts, static assets. Orphan google-fonts-css/google-fonts-woff references in clearAppCaches:228-229 but nothing populates them."
+    },
+    {
+      "id": "P1-09",
+      "title": "Dialog-interaction E2E pass (axe + focus trap + Esc + focus restore)",
+      "severity": "P1",
+      "surface": "a11y",
+      "files": [
+        "apps/web/tests/a11y/axe.spec.ts:87-101"
+      ],
+      "category": "a11y-test-coverage",
+      "effort": "1-2 days",
+      "rationale": "test:a11y scans closed DOM only. No Sheet/Modal/Popover/Dropdown/CommandPalette is opened during axe scan; focus-trap, aria-modal, inert behavior unverified."
+    },
+    {
+      "id": "P1-10",
+      "title": "Differentiate <nav> and <header> landmarks with aria-label",
+      "severity": "P1",
+      "surface": "a11y",
+      "files": [
+        "apps/web/src/shared/components/ui/ModuleBottomNav.tsx:116",
+        "apps/web/src/core/app/HubBottomNav.tsx:317",
+        "apps/web/src/core/legal/LegalLinks.tsx:27",
+        "apps/web/src/core/DesignShowcase/_shared/Sidebar.tsx:52",
+        "apps/web/src/core/app/HubHeader.tsx:99"
+      ],
+      "category": "a11y-landmarks",
+      "effort": "0.5 day",
+      "rationale": "Multiple <nav> in same DOM trip axe landmark-unique. HubHeader and HubBottomNav lack distinguishing labels."
+    },
+    {
+      "id": "P1-11",
+      "title": "Add apple-touch-startup-image + apple-mobile-web-app-title",
+      "severity": "P1",
+      "surface": "pwa",
+      "file": "apps/web/index.html",
+      "category": "ios-pwa",
+      "effort": "0.5 day",
+      "rationale": "iOS PWA cold-start flashes white before first paint because no startup image declared. <title> is 47 chars; iOS uses it instead of truncated short_name for home-screen label."
+    },
+    {
+      "id": "P1-12",
+      "title": "Land LCP tightening PR (3000 ms warn → error)",
+      "severity": "P1",
+      "surface": "performance",
+      "files": [
+        "apps/web/lighthouserc.json:21-35",
+        ".github/workflows/lighthouse-ci.yml"
+      ],
+      "category": "ci-gate",
+      "effort": "0.5 day + manual",
+      "rationale": "Current LCP threshold 3000 ms equals the planned error level. Regression to 3001 ms logs warning but passes workflow. Tightening flips gate to error and adds branch-protection."
+    },
+    {
+      "id": "P1-13",
+      "title": "Remove DM Sans fallback font (saves woff2 + CSS)",
+      "severity": "P1",
+      "surface": "performance",
+      "files": [
+        "apps/web/src/index.css:37-39",
+        "apps/web/src/styles/theme.css:10,24"
+      ],
+      "category": "bundle-fonts",
+      "effort": "0.5 day",
+      "rationale": "DM Sans is the legacy fallback kept 'until PR-8 polish decides'. Removing saves one variable woff2 + matching CSS @font-face block."
+    },
+    {
+      "id": "P1-14",
+      "title": "Tighten Workbox pin ~7.4.0 (caret allows minor bumps)",
+      "severity": "P1",
+      "surface": "pwa",
+      "file": "apps/web/package.json",
+      "line_range": "78-83",
+      "category": "precache-stability",
+      "effort": "5 min",
+      "rationale": "Caret pin allows minor bumps that change precache hashes. Byte-exact precache stability risk."
+    },
+    {
+      "id": "P1-15",
+      "title": "Verify tree-shaking of en.ts via build:analyze; dynamic-import per-locale if not",
+      "severity": "P1",
+      "surface": "performance",
+      "files": [
+        "apps/web/src/shared/i18n/index.ts:28-29",
+        "apps/web/src/main.tsx:39"
+      ],
+      "category": "entry-chunk-bloat",
+      "effort": "1 day",
+      "rationale": "shared/i18n/uk.ts (869 LOC) + en.ts (639 LOC) eagerly pulled by main.tsx:39. EN is only used when locale is en. Tree-shaking may not drop messagesEn because index re-exports it."
+    },
+    {
+      "id": "P1-16",
+      "title": "Currency formatter locale-aware (formatMoney ignores useLocale)",
+      "severity": "P1",
+      "surface": "i18n",
+      "file": "packages/shared/src/lib/formatMoney.ts",
+      "line_range": "73-91",
+      "category": "i18n-locale-aware-formatting",
+      "effort": "0.5 day",
+      "rationale": "formatMoney always uses 'uk-UA' regardless of useLocale(). EN visitor sees '1 250 ₴' instead of '1 250 UAH' (or '₴1,250'). Entry point for multi-currency paywall promise."
+    },
+    {
+      "id": "P1-17",
+      "title": "<html lang> runtime-sync via useLayoutEffect",
+      "severity": "P1",
+      "surface": "i18n",
+      "file": "apps/web/src/shared/i18n/useLocale.ts",
+      "category": "i18n-html-lang",
+      "effort": "0.5 day",
+      "rationale": "apps/web/index.html:2 hard-codes lang='uk'; apps/web/src/shared/lib/ui/export.ts:140 same. No useEffect updates it to match resolved locale. Screen readers, search crawlers, browser translation prompt all see lang='uk' for EN visitors."
+    },
+    {
+      "id": "P2-18",
+      "title": "Decompose FinykApp.tsx (620) and NutritionApp.tsx (623) under Hard Rule #18",
+      "severity": "P2",
+      "surface": "architecture",
+      "files": [
+        "apps/web/src/modules/finyk/FinykApp.tsx",
+        "apps/web/src/modules/nutrition/NutritionApp.tsx"
+      ],
+      "category": "module-size",
+      "effort": "1 sprint",
+      "rationale": "Both exceed 600-line max-lines cap. God-orchestrators mounting 8-15 hooks + 5-8 local useState. RoutineApp.tsx (109 LOC) decomposition (initiative 0001 Phase 2) is the template."
+    },
+    {
+      "id": "P2-19",
+      "title": "Verify useMemo on HubShellProvider value",
+      "severity": "P2",
+      "surface": "architecture",
+      "file": "apps/web/src/core/app/RootLayout.tsx",
+      "line_range": "80+",
+      "category": "context-blast-radius",
+      "effort": "1 day",
+      "rationale": "HubShellContext (core/app/HubShellContext.tsx:24-64) carries 21 fields. If RootLayout doesn't useMemo the value prop, every state change in 12+ side-effect hooks re-renders the entire hub."
+    },
+    {
+      "id": "P2-20",
+      "title": "De-duplicate dual-write boot (RootLayout + modules)",
+      "severity": "P2",
+      "surface": "architecture",
+      "files": [
+        "apps/web/src/core/app/RootLayout.tsx:34-43",
+        "apps/web/src/modules/nutrition/NutritionApp.tsx:92-93",
+        "apps/web/src/modules/fizruk/FizrukApp.tsx:53,57"
+      ],
+      "category": "duplicate-execution",
+      "effort": "1 day",
+      "rationale": "useNutritionDualWriteBoot + useNutritionSqliteReadBoot called both in RootLayout.AuthenticatedNutritionBoot and NutritionApp. Same for Fizruk. If hooks are not idempotent, event listeners double and risk leaks on module unmount."
+    },
+    {
+      "id": "P2-21",
+      "title": "Move FinanceCard/FitnessCard/NutritionCard/ExpensesCard from core/hub/ to modules/<m>/hubCard/",
+      "severity": "P2",
+      "surface": "architecture",
+      "files": [
+        "apps/web/src/core/hub/FinanceCard.tsx",
+        "apps/web/src/core/hub/FitnessCard.tsx",
+        "apps/web/src/core/hub/NutritionCard.tsx",
+        "apps/web/src/core/hub/ExpensesCard.tsx"
+      ],
+      "category": "module-boundary",
+      "effort": "1-2 days",
+      "rationale": "Module-specific dashboard cards live in core/hub/ which violates the symmetric principle of Hard Rule #12. Move to modules/<m>/hubCard/ to tighten the containment story."
+    },
+    {
+      "id": "P2-22",
+      "title": "useApiForm rollout completion (auth/profile/pricing/finyk/fizruk/routine)",
+      "severity": "P2",
+      "surface": "architecture",
+      "file": "apps/web/src/shared/forms/index.ts",
+      "line_range": "2-8",
+      "category": "debt-scaffolded",
+      "effort": "1 sprint",
+      "rationale": "Barrel @scaffolded; auth/profile/pricing/finyk/fizruk/routine form call-sites still deep-import useApiForm. Pattern solid; rollout incomplete."
+    },
+    {
+      "id": "P2-23",
+      "title": "EN pluralization + hreflang SEO infra",
+      "severity": "P2",
+      "surface": "i18n",
+      "files": [
+        "apps/web/src/shared/i18n/en.ts",
+        "apps/web/index.html"
+      ],
+      "category": "i18n-seo",
+      "effort": "1-2 sprints",
+      "rationale": "pluralTimes/pluralDays/pluralUa are UA-only. EN catalog has no one/other variants. Count-bearing EN strings render ungrammatical. No <link rel='alternate' hreflang='uk|en'> SEO infrastructure."
+    },
+    {
+      "id": "P2-24",
+      "title": "Vitest coverage firing validation errors + asserting aria-invalid + aria-describedby",
+      "severity": "P2",
+      "surface": "a11y",
+      "file": "apps/web/src/shared/components/ui/Input.test.tsx",
+      "category": "a11y-test-coverage",
+      "effort": "1-2 days",
+      "rationale": "No Vitest test fires validation errors and asserts aria-invalid='true' + aria-describedby → role='alert' on errors. Module forms hand-roll inputs and risk breaking the contract."
+    },
+    {
+      "id": "P2-25",
+      "title": "VisuallyHidden primitive + useLiveRegion hook (consolidate sr-only)",
+      "severity": "P2",
+      "surface": "a11y",
+      "directory": "apps/web/src/shared/components/ui/",
+      "category": "a11y-primitives",
+      "effort": "1 day",
+      "rationale": "27 files write sr-only independently with slight variations. Centralize as VisuallyHidden wrapper (with as prop) + useLiveRegion('polite'|'assertive') hook."
+    },
+    {
+      "id": "P2-26",
+      "title": "Rename dashboardStore.ts → dashboardOrderStorage.ts",
+      "severity": "P2",
+      "surface": "architecture",
+      "file": "apps/web/src/shared/lib/storage/dashboardStore.ts",
+      "category": "naming",
+      "effort": "5 min",
+      "rationale": "34 LOC but exports are loadDashboardOrder/saveDashboardOrder/resetDashboardOrder + re-export of webKVStore. Not a state store; it's a KV adapter. Rename to avoid future confusion."
+    },
+    {
+      "id": "P2-27",
+      "title": "pruneOldNotifiedKeys should also fire on SW boot, not only from checkReminders",
+      "severity": "P2",
+      "surface": "pwa",
+      "files": [
+        "apps/web/src/sw/notifiedKeys.ts:124-140",
+        "apps/web/src/sw.ts:84-95"
+      ],
+      "category": "sw-memory-leak",
+      "effort": "0.5 day",
+      "rationale": "pruneOldNotifiedKeys called only from checkReminders (reminders.ts:219). If *_STATE_UPDATE messages never arrive, IDB Set grows unbounded."
+    },
+    {
+      "id": "P2-28",
+      "title": "Switch sm 36×20 → pointer-coarse bump to 44×44",
+      "severity": "P2",
+      "surface": "a11y",
+      "file": "apps/web/src/shared/components/ui/Switch.tsx",
+      "line_range": "73-76",
+      "category": "touch-target",
+      "effort": "0.5 day",
+      "rationale": "sm track 36×20 < 44×44 hit-area on touch. md is 44×26 — only long edge meets 44."
+    },
+    {
+      "id": "P2-29",
+      "title": "Add aria-label to sync status pills (HubChatHeader, SyncStatusBadge, SyncIndicator)",
+      "severity": "P2",
+      "surface": "a11y",
+      "files": [
+        "apps/web/src/core/hub/chat/HubChatHeader.tsx",
+        "apps/web/src/modules/finyk/components/SyncStatusBadge.tsx",
+        "apps/web/src/modules/finyk/components/SyncIndicator.tsx"
+      ],
+      "category": "color-only-info",
+      "effort": "1 day",
+      "rationale": "8/5/4 colour hits respectively. May rely solely on colour to convey sync state — needs manual color-blind review (deuteranopia + protanopia)."
+    },
+    {
+      "id": "P2-30",
+      "title": "Manifest completeness (categories, screenshots, id, scope, display_override)",
+      "severity": "P2",
+      "surface": "pwa",
+      "file": "apps/web/vite.config.js",
+      "line_range": "103-163",
+      "category": "pwa-manifest",
+      "effort": "0.5 day",
+      "rationale": "Missing: categories, id, scope, prefer_related_applications=false, display_override, screenshots, launch_handler, handle_links, protocol_handlers, share_target, file_handlers."
+    },
+    {
+      "id": "P2-31",
+      "title": "iOS PWA format-detection telephone=no",
+      "severity": "P2",
+      "surface": "pwa",
+      "file": "apps/web/index.html",
+      "category": "ios-pwa",
+      "effort": "5 min",
+      "rationale": "Phone-number auto-linking not suppressed. iOS Safari may auto-link numbers in transaction lists (Finyk)."
+    }
+  ],
+  "hard_rules_compliance": {
+    "rule_2_rq_keys_factories": "PASS",
+    "rule_11_no_arbitrary_hex": "PASS",
+    "rule_14_focus_visible": "PASS",
+    "rule_15_governance_ua_docs": "PASS",
+    "rule_18_max_lines_600": "FAIL: FinykApp.tsx=620, NutritionApp.tsx=623",
+    "rule_25_auto_generated_marker": "PASS",
+    "rule_12_module_accent_containment": "WARN: FinanceCard/FitnessCard/NutritionCard/ExpensesCard in core/hub/ violate symmetric containment",
+    "rule_10_lifecycle_markers": "WARN: OfflinePage @scaffolded, shared/forms barrel @scaffolded"
+  },
+  "metrics": {
+    "shared_primitives_audited": 27,
+    "dialogs_fully_a11y_compliant": 19,
+    "dialogs_with_aria_modal_gap": 4,
+    "focus_match_total": 101,
+    "focus_match_violations": 0,
+    "raw_cyrillic_in_allowlist_files": 238,
+    "raw_cyrillic_jsx_text_count_lower_bound": 225,
+    "en_catalog_keys": 354,
+    "uk_catalog_keys": 363,
+    "i18n_top_level_groups": 34,
+    "lazy_surfaces": 23,
+    "eager_entry_surfaces": 8,
+    "heavy_deps_isolated_in_chunks": 10,
+    "sw_cache_strategies": 3,
+    "sw_cache_strategies_missing": ["CacheFirst", "StaleWhileRevalidate"],
+    "lighthouse_routes": 4,
+    "lighthouse_budgets_warn_only": 3
+  },
+  "next_review": "2026-09-19",
+  "status": "active"
+}
