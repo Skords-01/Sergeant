@@ -1,6 +1,6 @@
 # Sergeant — Панель керування
 
-> **Last validated:** 2026-06-18 by docs:gen-status. **Next review:** 2026-06-18.
+> **Last validated:** 2026-06-19 by docs:gen-status. **Next review:** 2026-06-19.
 > **Status:** Reference
 
 <!-- AUTO-GENERATED, ОКРІМ блоку FOCUS. Редагуй лише між `<!-- FOCUS:START -->` / `<!-- FOCUS:END -->`; решту регенеруй через `pnpm docs:gen-status`. -->
@@ -30,20 +30,21 @@
 - [#2896](https://github.com/Skords-01/Sergeant/pull/2896) — feat(docs): auto-derived repo-map + service-catalog (Initiative 0014 Phase 3) _(2026-05-15)_
 - [#2889](https://github.com/Skords-01/Sergeant/pull/2889) — feat(docs): per-package symbol catalog (Initiative 0014 Phase 2) _(2026-05-15)_
 
-## 🔵 В роботі — 61 відкритих
+## 🔵 В роботі — 58 відкритих
 
 | Трекер                           | Відкрито |
 | -------------------------------- | -------- |
 | Ініціативи                       | 16       |
-| Планування                       | 10       |
+| Планування                       | 9        |
 | Launch / запуск                  | 17       |
-| Аудити й прожарки                | 12       |
+| Аудити й прожарки                | 10       |
 | Security hardening               | 2        |
 | Техборг                          | 4        |
 | Superpowers — плани впровадження | 0        |
 
 **Найактивніше (8, за останніми PR):**
 
+- [`90-work/audits/2026-06-19-design-system-audit.md`](./90-work/audits/2026-06-19-design-system-audit.md) — Аудит дизайн-системи та візуалу — 2026-06-19 — Active _(Аудити й прожарки)_
 - [`90-work/initiatives/0006-frontend-routing-and-code-split.md`](./90-work/initiatives/0006-frontend-routing-and-code-split.md) — 0006 — Frontend routing migration + route-based code-split — In progress — Phases 1–4 done; Phase 5 **RootLayout + Outlet fix implemented** (2026-06-07): `RootLayout.tsx` + `HubShel _(Ініціативи)_
 - [`90-work/initiatives/0021-react-hooks-v7-cleanup.md`](./90-work/initiatives/0021-react-hooks-v7-cleanup.md) — 0021 — React-hooks v7 ESLint cleanup — In progress _(Ініціативи)_
 - [`90-work/initiatives/0015-docs-automation-daily-ops.md`](./90-work/initiatives/0015-docs-automation-daily-ops.md) — 0015 — Docs automation for daily ops — In progress — **Phase 1 + Phase 2 code-complete.** Phase 2 (Bundle Beta) shipped: skill+playbook columns + `agent-ready` _(Ініціативи)_
@@ -51,7 +52,6 @@
 - [`90-work/audits/2026-06-08-codebase-cleanup-audit.md`](./90-work/audits/2026-06-08-codebase-cleanup-audit.md) — Codebase Cleanup Audit — мертвий код, застарілі рішення та інфра-дрейф — Active — all 4 audit themes executed (console-rename, grammy deletion #3470, doc-status reconcile, ai-marker gate). Resi _(Аудити й прожарки)_
 - [`90-work/planning/pr-plan-testing-devx-2026-05.md`](./90-work/planning/pr-plan-testing-devx-2026-05.md) — PR-план Testing & DevX 2026-05 — зі зрізу 2026-05-13 — Active _(Планування)_
 - [`90-work/tech-debt/frontend.md`](./90-work/tech-debt/frontend.md) — Frontend Tech Debt — Sergeant Web — Active _(Техборг)_
-- [`90-work/initiatives/stack-pulse-2026-05/pr-25-two-production-origins.md`](./90-work/initiatives/stack-pulse-2026-05/pr-25-two-production-origins.md) — PR-25: Consolidate `fizruk.vercel.app` + `sergeant.vercel.app` → один production origin — Active — PR-1 shipped (#3392: 301 fizruk→sergeant redirect + Sentry release unification); PR-2 (drop fizruk from apps/se _(Ініціативи)_
 
 ## ⏭️ Наступний крок / заблоковано
 
