@@ -6,7 +6,7 @@ import {
 } from "@finyk/lib/finykStorage";
 import { fizrukStorage } from "@fizruk/lib/fizrukStorageInstance";
 import { nutritionStorage } from "@nutrition/lib/nutritionStorageInstance";
-import { routineStorage } from "@routine/lib/routineStorageInstance";
+import { createHabit, loadRoutineState } from "@routine/lib/routineStorage";
 
 // Writes a single preset entry directly into the matching module's
 // localStorage key. This is how the FTUX PresetSheet turns "tap a tile"
@@ -31,8 +31,6 @@ import { routineStorage } from "@routine/lib/routineStorageInstance";
 
 const FINYK_MANUAL_EXPENSES_KEY = "finyk_manual_expenses_v1";
 const FINYK_MANUAL_ONLY_KEY = "finyk_manual_only_v1";
-const ROUTINE_STATE_KEY = "hub_routine_v1";
-const ROUTINE_EVENT = "hub-routine-storage";
 const FIZRUK_WORKOUTS_KEY = "fizruk_workouts_v1";
 const NUTRITION_LOG_KEY = "nutrition_log_v1";
 const NUTRITION_LOG_EVENT = "nutrition-log-storage";
@@ -57,41 +55,6 @@ export type NutritionPreset = {
   name: string;
   kcal: number;
   mealType?: string;
-};
-
-type RoutineHabit = {
-  id: string;
-  demo: boolean;
-  name: string;
-  emoji: string;
-  tagIds: string[];
-  categoryId: string | null;
-  createdAt: string;
-  archived: boolean;
-  recurrence: string;
-  startDate: string;
-  endDate: string | null;
-  timeOfDay: string;
-  reminderTimes: string[];
-  weekdays: number[];
-};
-
-type RoutinePrefs = {
-  showFizrukInCalendar: boolean;
-  showFinykSubscriptionsInCalendar: boolean;
-  routineRemindersEnabled: boolean;
-};
-
-type RoutineState = {
-  schemaVersion?: number;
-  prefs?: RoutinePrefs;
-  tags?: unknown[];
-  categories?: unknown[];
-  habits?: RoutineHabit[];
-  completions?: Record<string, unknown>;
-  pushupsByDate?: Record<string, unknown>;
-  habitOrder?: string[];
-  completionNotes?: Record<string, unknown>;
 };
 
 type FizrukWorkout = {
@@ -187,52 +150,18 @@ function applyFinykPreset(preset: FinykPreset) {
 // ─── Routine ─────────────────────────────────────────────────────────────
 
 function applyRoutinePreset(preset: RoutinePreset) {
-  const state = routineStorage.readJSON<RoutineState>(ROUTINE_STATE_KEY, null);
-  const today = toLocalISODate();
-  const habit: RoutineHabit = {
-    id: uid("hab"),
-    // Explicit false — `hasNonDemoItem` flags anything without `demo:true`
-    // as real, but being explicit keeps `routineBackup` round-trips safe.
-    demo: false,
+  // FTUX preset creates a real (non-demo) habit. Stage 8 PR #057r-tombstone
+  // retired the `hub_routine_v1` LS write — `loadRoutineState`/`saveRoutineState`
+  // are SQLite-backed now, so poking the LS key directly produced a habit the
+  // module never reads. Route through the canonical `createHabit` persist: its
+  // `applyCreateHabit` defaults (daily recurrence, every weekday, today's start,
+  // `✓` emoji fallback) match the old preset shape, and `saveRoutineState`'s
+  // synchronous cache write-through keeps the habit visible on the next Hub
+  // render — the debounced-LS-write reason for bypassing this API is gone.
+  createHabit(loadRoutineState(), {
     name: preset.name,
     emoji: preset.emoji || "✓",
-    tagIds: [],
-    categoryId: null,
-    createdAt: new Date().toISOString(),
-    archived: false,
-    recurrence: "daily",
-    startDate: today,
-    endDate: null,
-    timeOfDay: "",
-    reminderTimes: [],
-    weekdays: [0, 1, 2, 3, 4, 5, 6],
-  };
-
-  const base: RoutineState =
-    state && typeof state === "object" && !Array.isArray(state) ? state : {};
-  const nextHabits = Array.isArray(base.habits)
-    ? [...base.habits, habit]
-    : [habit];
-  const nextOrder = Array.isArray(base.habitOrder)
-    ? [...base.habitOrder, habit.id]
-    : [habit.id];
-
-  routineStorage.writeJSON(ROUTINE_STATE_KEY, {
-    schemaVersion: 3,
-    prefs: base.prefs || {
-      showFizrukInCalendar: true,
-      showFinykSubscriptionsInCalendar: true,
-      routineRemindersEnabled: false,
-    },
-    tags: Array.isArray(base.tags) ? base.tags : [],
-    categories: Array.isArray(base.categories) ? base.categories : [],
-    habits: nextHabits,
-    completions: base.completions || {},
-    pushupsByDate: base.pushupsByDate || {},
-    habitOrder: nextOrder,
-    completionNotes: base.completionNotes || {},
   });
-  dispatch(ROUTINE_EVENT);
 }
 
 // ─── Fizruk ──────────────────────────────────────────────────────────────

@@ -14,23 +14,25 @@ import {
   __setNutritionSqliteCacheForTests,
   clearNutritionSqliteCache,
 } from "@nutrition/lib/sqliteReader";
-import { performSearch } from "./searchSources";
-import type { Hit } from "./searchTypes";
-
-// Each test seeds a *distinct* localStorage payload before calling
-// `performSearch`. Both the module-level `parseCache` and the `scoreLru`
-// (searchCache.ts) key on a snapshot built from the raw stored strings, so
-// different fixture content always produces a fresh snapshot → no cross-test
-// cache bleed even though those caches persist for the module's lifetime.
-beforeEach(() => {
-  localStorage.clear();
-  // Routine / Fizruk / Nutrition are SQLite-cache-backed now — reset the warm
-  // caches so seeded fixtures never leak across specs.
-  clearSqliteRoutineStateCache();
-  clearSqliteCompletionsCache();
-  clearFizrukSqliteCache();
-  clearNutritionSqliteCache();
 });
+
+/**
+ * Seed the canonical SQLite-backed routine state that `searchRoutine` now reads
+ * via `loadRoutineState`. Replaces the pre-tombstone
+ * `localStorage.setItem("hub_routine_v1", …)` round-trip.
+ */
+function seedRoutine(state: {
+  habits: Array<{ id: string; name?: string; emoji?: string }>;
+  completions: Record<string, string[]>;
+}): void {
+  __setRoutineSqliteStateCacheForTests({
+    habits: state.habits as unknown as Habit[],
+    habitOrder: state.habits.map((h) => h.id),
+  });
+  __setRoutineSqliteCompletionsCacheForTests({
+    completions: state.completions,
+  });
+}
 
 function finykHit(results: Hit[]): Hit | undefined {
   return results.find((r) => r.module === "finyk" && r.id.startsWith("finyk_"));

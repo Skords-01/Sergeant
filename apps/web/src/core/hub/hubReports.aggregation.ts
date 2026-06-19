@@ -167,7 +167,7 @@ export function aggregateSpending(
 
 interface Habit {
   id: string;
-  archived?: boolean;
+  archived?: boolean | undefined;
 }
 
 export interface RoutineState {

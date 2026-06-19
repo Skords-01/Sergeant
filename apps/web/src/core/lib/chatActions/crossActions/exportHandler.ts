@@ -6,8 +6,7 @@ export function exportModuleData(action: ExportModuleDataAction): string {
   const { module, format } = (action as ExportModuleDataAction).input;
   const mod = (module || "").toLowerCase().trim();
   const fmt = (format || "text").toLowerCase().trim();
-  const exportData = (key: string, label: string) => {
-    const raw = safeReadStringLS(key);
+  const formatExport = (raw: string | null, label: string) => {
     if (!raw) return `${label}: немає даних.`;
     if (fmt === "json")
       return `${label} (JSON):\n${raw.slice(0, 3000)}${raw.length > 3000 ? "\n\u2026(обрізано)" : ""}`;

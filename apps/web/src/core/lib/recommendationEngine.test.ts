@@ -16,73 +16,6 @@ import {
   __setNutritionSqliteCacheForTests,
   clearNutritionSqliteCache,
 } from "@nutrition/lib/sqliteReader";
-import { generateRecommendations } from "./recommendationEngine";
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-// Stage 8 tombstone: hub_routine_v1 / fizruk_workouts_v1 / nutrition_log_v1 /
-// nutrition_prefs_v1 are drained on boot and read from the SQLite warm caches.
-// Route those seeds into the warm caches so the existing fixtures keep working
-// unchanged; every other key (finyk_*) stays real localStorage. Nutrition log +
-// prefs accumulate because the seeder replaces the whole cache on each call.
-let nutritionSeed: { log?: unknown; prefs?: unknown } = {};
-
-function setLS(key: string, value: unknown) {
-  switch (key) {
-    case "hub_routine_v1": {
-      const v = (value ?? {}) as {
-        habits?: Array<{ id: string }>;
-        completions?: Record<string, string[]>;
-      };
-      const habits = v.habits ?? [];
-      __setRoutineSqliteStateCacheForTests({
-        habits: habits as unknown as Habit[],
-        habitOrder: habits.map((h) => h.id),
-      });
-      __setRoutineSqliteCompletionsCacheForTests({
-        completions: v.completions ?? {},
-      });
-      return;
-    }
-    case "fizruk_workouts_v1": {
-      const workouts = Array.isArray(value)
-        ? value
-        : ((value as { workouts?: unknown[] } | null)?.workouts ?? []);
-      __setFizrukSqliteCacheForTests({
-        workouts: workouts as unknown as Workout[],
-      });
-      return;
-    }
-    case "nutrition_log_v1":
-      nutritionSeed.log = value;
-      __setNutritionSqliteCacheForTests(
-        nutritionSeed as unknown as Parameters<
-          typeof __setNutritionSqliteCacheForTests
-        >[0],
-      );
-      return;
-    case "nutrition_prefs_v1":
-      nutritionSeed.prefs = value;
-      __setNutritionSqliteCacheForTests(
-        nutritionSeed as unknown as Parameters<
-          typeof __setNutritionSqliteCacheForTests
-        >[0],
-      );
-      return;
-    default:
-      localStorage.setItem(key, JSON.stringify(value));
-  }
-}
-
-function clearAll() {
-  localStorage.clear();
-  nutritionSeed = {};
-  clearSqliteRoutineStateCache();
-  clearSqliteCompletionsCache();
-  clearFizrukSqliteCache();
-  clearNutritionSqliteCache();
 }
 
 // Fixed fake-clock anchor built from *local* calendar components.
@@ -499,14 +432,14 @@ describe("generateRecommendations", () => {
   });
 
   it("не генерує routine рекомендацій якщо немає звичок", () => {
-    setLS("hub_routine_v1", { habits: [], completions: {} });
+    seedRoutine({ habits: [], completions: {} });
     const recs = generateRecommendations();
     const routineRecs = recs.filter((r) => r.module === "routine");
     expect(routineRecs).toHaveLength(0);
   });
 
   it("не рахує архівовані звички", () => {
-    setLS("hub_routine_v1", {
+    seedRoutine({
       habits: [{ id: "h1", archived: true }],
       completions: {},
     });
@@ -530,7 +463,7 @@ describe("generateRecommendations", () => {
       completions["h1"].push(dk);
     }
 
-    setLS("hub_routine_v1", { habits, completions });
+    seedRoutine({ habits, completions });
 
     const recs = generateRecommendations();
     const streakRec = recs.find((r) => r.id === "routine_streak_7");
@@ -553,7 +486,7 @@ describe("generateRecommendations", () => {
       completions["h1"].push(dk);
     }
 
-    setLS("hub_routine_v1", { habits, completions });
+    seedRoutine({ habits, completions });
 
     const recs = generateRecommendations();
     expect(recs.find((r) => r.id === "routine_streak_3")).toBeDefined();
@@ -573,7 +506,7 @@ describe("generateRecommendations", () => {
       completions["h1"].push(dk);
     }
 
-    setLS("hub_routine_v1", { habits, completions });
+    seedRoutine({ habits, completions });
 
     const recs = generateRecommendations();
     // 5 is not in MILESTONE_STREAKS [3,7,14,30,60,100]
@@ -585,7 +518,7 @@ describe("generateRecommendations", () => {
     vi.setSystemTime(new Date("2026-04-27T19:00:00Z"));
 
     const today = "2026-04-27";
-    setLS("hub_routine_v1", {
+    seedRoutine({
       habits: [{ id: "h1" }, { id: "h2" }],
       completions: { h1: [today] },
     });
@@ -602,7 +535,7 @@ describe("generateRecommendations", () => {
     vi.setSystemTime(new Date("2026-04-27T14:00:00Z"));
 
     const today = "2026-04-27";
-    setLS("hub_routine_v1", {
+    seedRoutine({
       habits: [{ id: "h1" }, { id: "h2" }],
       completions: { h1: [today] },
     });
@@ -628,7 +561,7 @@ describe("generateRecommendations", () => {
       completions["h1"].push(dk);
     }
 
-    setLS("hub_routine_v1", { habits, completions });
+    seedRoutine({ habits, completions });
 
     const recs = generateRecommendations();
     const atRisk = recs.find((r) => r.id === "routine_streak_at_risk");
@@ -651,7 +584,7 @@ describe("generateRecommendations", () => {
       completions["h1"].push(dk);
     }
 
-    setLS("hub_routine_v1", { habits, completions });
+    seedRoutine({ habits, completions });
 
     const recs = generateRecommendations();
     const atRisk = recs.find((r) => r.id === "routine_streak_at_risk");
@@ -676,7 +609,7 @@ describe("generateRecommendations", () => {
       }
     }
 
-    setLS("hub_routine_v1", { habits, completions });
+    seedRoutine({ habits, completions });
 
     const recs = generateRecommendations();
     const atRisk = recs.find((r) => r.id === "routine_streak_at_risk");
@@ -699,7 +632,7 @@ describe("generateRecommendations", () => {
       completions["h1"].push(dk);
     }
 
-    setLS("hub_routine_v1", { habits, completions });
+    seedRoutine({ habits, completions });
 
     const recs = generateRecommendations();
     expect(recs.find((r) => r.id === "routine_streak_at_risk")).toBeUndefined();
@@ -981,7 +914,7 @@ describe("generateRecommendations", () => {
       const dk = `${_d.getFullYear()}-${String(_d.getMonth() + 1).padStart(2, "0")}-${String(_d.getDate()).padStart(2, "0")}`;
       completions["h1"].push(dk);
     }
-    setLS("hub_routine_v1", { habits, completions });
+    seedRoutine({ habits, completions });
 
     const recs = generateRecommendations();
     const digest = recs.find((r) => r.id?.startsWith("weekly_digest_"));
