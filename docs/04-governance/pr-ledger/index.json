@@ -1,8 +1,15 @@
 {
   "$schema": "../governance/schemas/pr-ledger.schema.json",
   "version": 1,
-  "generated_at": "2026-06-16",
+  "generated_at": "2026-06-19",
   "prs": [
+    {
+      "number": 3638,
+      "title": "Audit triage digest (auto, twice-weekly)",
+      "merged_at": "2026-06-19T06:52:35Z",
+      "author": "@Skords-01",
+      "touchedDocs": ["docs/00-start/playbooks/cutover-openclaw-gateway.md"]
+    },
     {
       "number": 3610,
       "title": "chore(config): per-package eslint configs — PR-31 Phase 2b",
