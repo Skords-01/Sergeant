@@ -8,7 +8,7 @@
 
 <!-- AUTO-GENERATED:end -->
 
-> **Last validated:** 2026-06-19 by @Birch. **Next review:** 2026-09-19.
+> **Last touched:** 2026-06-19 by @toast. **Next review:** 2026-09-19.
 > **Status:** Active
 > **Scope:** `packages/design-tokens/`, `apps/web/src/shared/components/ui/`, `apps/web/src/styles/`, `apps/web/src/modules/**` (visual hotspots).
 > **Method:** Static analysis (grep / Read / catalogue review). No runtime profiling, no Lighthouse run, no Storybook smoke.
@@ -306,7 +306,7 @@ Hard Rules #8, #9, #14 покривають:
 | **P2**    | Розширити `contrast.test.js` на `-soft × -soft-fg × theme` permutations                                                     | `packages/design-tokens/contrast.test.js`                                                                   | M         |
 | **P2**    | Додати Stories для: `IconButton`, `Prose`, `ScreenReaderAnnouncer`, `SkipLink`, `SuspenseWithMinDelay`                      | `apps/web/src/shared/components/ui/`                                                                        | S         |
 | **P2**    | Підняти test coverage для критичних компонентів до ≥ 50 % (Button, Modal, Tabs, Input, Sheet, FormField, Toast)             | `apps/web/src/shared/components/ui/`                                                                        | M         |
-| **P3**    | Додати runtime counter для Hard Rule #17 motion budget (≤ 2 concurrent)                                                     | `apps/web/src/shared/lib/motion-budget.ts`                                                                  | M         |
+| **P3**    | Додати runtime counter для Hard Rule #17 motion budget (≤ 2 concurrent)                                                     | `apps/web/src/shared/lib/`                                                                                  | M         |
 | **P3**    | Auto-lint `rounded-lg / rounded-md / rounded-DEFAULT` заборонити поза illustration blob                                     | `packages/eslint-plugin-sergeant-design/`                                                                   | S         |
 | **P3**    | Auto-lint elevation ↔ z-tier pair (Hard Rule #18 adjacent)                                                                  | `packages/eslint-plugin-sergeant-design/`                                                                   | S         |
 
