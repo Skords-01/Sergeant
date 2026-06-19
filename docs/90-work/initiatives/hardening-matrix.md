@@ -1,6 +1,6 @@
 # Зведена матриця hardening-карток
 
-> **Last touched:** 2026-06-19 by @Skords-01. **Next review:** 2026-09-17.
+> **Last touched:** 2026-06-19 by @github-actions[bot]. **Next review:** 2026-09-17.
 > **Status:** Active
 
 > **Попередження:** Ручний знімок станом на 2026-06-12; source of truth — самі картки, цей файл НЕ auto-generated і може дрейфувати.
@@ -128,3 +128,15 @@ Agent-OS hardening: lint-гейти проти дрейфу, уніфікаці�
 | 0009-5.3  | n8n smoke contract test (dispatcher ↔ n8n workflow drift)                                          | [`archive/_0009-agent-os-hardening.md`](./archive/_0009-agent-os-hardening.md) | Merged                                | [#1910](https://github.com/Skords-01/Sergeant/pull/1910)                                                                                                                     |
 
 > Примітка: картки `0009-5.1b` (Plop `new-package`) та `0009-5.1b extras` (`new-n8n-workflow`) об'єднано з `0009-5.1` як складові однієї теми генераторів.
+
+<!-- AUTO-GENERATED: PR-BACKLINKS-START -->
+
+## Recent PRs
+
+| PR                                                       | Title                                                                | Merged     |
+| -------------------------------------------------------- | -------------------------------------------------------------------- | ---------- |
+| [#3649](https://github.com/Skords-01/Sergeant/pull/3649) | chore(root): fizruk a11y/UX tidy + reconcile stale tracked-task docs | 2026-06-19 |
+
+_Auto-derived from `docs/04-governance/pr-ledger/index.json`. Top 1 most recent PRs touching this file._
+
+<!-- AUTO-GENERATED: PR-BACKLINKS-END -->

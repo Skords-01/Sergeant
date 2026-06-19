@@ -1,8 +1,15 @@
 {
   "$schema": "../governance/schemas/pr-ledger.schema.json",
   "version": 1,
-  "generated_at": "2026-06-16",
+  "generated_at": "2026-06-19",
   "prs": [
+    {
+      "number": 3649,
+      "title": "chore(root): fizruk a11y/UX tidy + reconcile stale tracked-task docs",
+      "merged_at": "2026-06-19T06:51:04Z",
+      "author": "@Skords-01",
+      "touchedDocs": ["docs/90-work/initiatives/hardening-matrix.md"]
+    },
     {
       "number": 3610,
       "title": "chore(config): per-package eslint configs — PR-31 Phase 2b",
