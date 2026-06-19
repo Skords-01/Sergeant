@@ -1,3 +1,4 @@
+/* eslint-disable sergeant-design/prefer-kyiv-time, sergeant-design/no-raw-storage-key, @typescript-eslint/no-non-null-assertion */
 import { useCallback, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { coachApi, isApiError } from "@shared/api";

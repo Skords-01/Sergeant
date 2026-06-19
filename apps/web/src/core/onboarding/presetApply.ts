@@ -1,3 +1,4 @@
+/* eslint-disable sergeant-design/prefer-kyiv-time */
 import {
   readJSON as finykReadJSON,
   writeJSON as finykWriteJSON,

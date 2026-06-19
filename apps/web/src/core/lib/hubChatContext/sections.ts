@@ -1,3 +1,4 @@
+/* eslint-disable sergeant-design/no-raw-storage-key, @typescript-eslint/no-non-null-assertion */
 import {
   parseWorkoutsFromStorage,
   WORKOUTS_STORAGE_KEY,

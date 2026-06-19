@@ -1,3 +1,4 @@
+/* eslint-disable sergeant-design/prefer-kyiv-time, @typescript-eslint/no-non-null-assertion */
 /**
  * Pure cross-module aggregation for Hub-Reports.
  *

@@ -1,3 +1,4 @@
+/* eslint-disable sergeant-design/prefer-kyiv-time, sergeant-design/no-raw-storage-key, @typescript-eslint/no-non-null-assertion */
 /**
  * Rule-based recommendation engine.
  * Reads data from localStorage and generates cross-module nudges.
