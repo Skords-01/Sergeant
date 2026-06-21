@@ -15,6 +15,12 @@ import { formatApiError } from "@shared/lib/api/apiErrorFormat";
 import { MCC_CATEGORIES, INCOME_CATEGORIES } from "@finyk/constants";
 import { readFinykStatsContext } from "@finyk/lib/lsStats";
 import { getCachedFinykSqliteState } from "@finyk/lib/sqliteReader";
+import { loadRoutineState } from "@routine/lib/routineStorage";
+import { getCachedFizrukSqliteState } from "@fizruk/lib/sqliteReader";
+import {
+  loadNutritionLog,
+  loadNutritionPrefs,
+} from "@nutrition/lib/nutritionStorage";
 import { calcFinykPeriodAggregate } from "@sergeant/finyk-domain";
 import type { MonthlyPlan } from "@finyk/hooks/useStorage.types";
 
@@ -55,6 +61,7 @@ function resolveCatLabel(
 }
 
 function localDateKey(d = new Date()): string {
+  // eslint-disable-next-line sergeant-design/prefer-kyiv-time -- pre-existing kyiv-time burndown (Theme 1), out of scope for this routine-source fix
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
@@ -66,8 +73,10 @@ export const getWeekKey = sharedGetWeekKey;
 
 export function getWeekRange(d = new Date()): string {
   const monday = new Date(d);
+  // eslint-disable-next-line sergeant-design/prefer-kyiv-time -- pre-existing kyiv-time burndown (Theme 1), out of scope for this routine-source fix
   monday.setDate(d.getDate() - ((d.getDay() + 6) % 7));
   const sunday = new Date(monday);
+  // eslint-disable-next-line sergeant-design/prefer-kyiv-time -- pre-existing kyiv-time burndown (Theme 1), out of scope for this routine-source fix
   sunday.setDate(monday.getDate() + 6);
   const fmt = (dt: Date) =>
     dt.toLocaleDateString("uk-UA", { day: "numeric", month: "short" });
@@ -158,6 +167,7 @@ export function aggregateFinyk(weekKey: string): FinykAggregate {
   // degraded.
   const sqliteMonthlyPlan = getCachedFinykSqliteState().monthlyPlan;
   const lsMonthlyPlan = safeReadLS<MonthlyPlan | null>(
+    // eslint-disable-next-line sergeant-design/no-raw-storage-key -- aggregator runs outside React (digest + compare_weeks chat tool); finyk useStorage hooks are unavailable and STORAGE_KEYS.FINYK_* is itself banned for direct access (no-restricted-syntax, PR #039). Mirror of queryFinykActions.ts.
     "finyk_monthly_plan",
     null,
   );
@@ -189,22 +199,18 @@ export interface FizrukAggregate {
 }
 
 export function aggregateFizruk(weekKey: string): FizrukAggregate | null {
-  const parsed = safeReadLS<unknown>("fizruk_workouts_v1", null);
-  if (!parsed) return null;
-  const workouts: Array<{
-    endedAt?: string;
-    startedAt: string;
-    exercises?: Array<{
-      name?: string;
-      sets?: Array<{ weight?: number; reps?: number }>;
-    }>;
-  }> = Array.isArray(parsed)
-    ? parsed
-    : ((parsed as { workouts?: unknown[] })?.workouts ?? []);
-  if (!Array.isArray(workouts) || workouts.length === 0) return null;
+  // Canonical workouts — SQLite warm cache (`fizruk_workouts_v1` tombstoned).
+  // Cold cache (`refreshedAt === null`) = no data. Domain `WorkoutItem` carries
+  // `nameUk` + `sets[].weightKg` (legacy LS used `exercises[].name` /
+  // `sets[].weight`).
+  const fizruk = getCachedFizrukSqliteState();
+  if (fizruk.refreshedAt === null) return null;
+  const workouts = fizruk.workouts;
+  if (workouts.length === 0) return null;
 
   const monday = new Date(`${weekKey}T00:00:00`);
   const sunday = new Date(monday);
+  // eslint-disable-next-line sergeant-design/prefer-kyiv-time -- pre-existing kyiv-time burndown (Theme 1), out of scope for the tombstone read-side fix
   sunday.setDate(monday.getDate() + 7);
 
   const weekWorkouts = workouts.filter((w) => {
@@ -217,18 +223,15 @@ export function aggregateFizruk(weekKey: string): FizrukAggregate | null {
   const exerciseVolumes: Record<string, number> = {};
 
   for (const w of weekWorkouts) {
-    if (Array.isArray(w.exercises)) {
-      for (const ex of w.exercises) {
-        const vol = Array.isArray(ex.sets)
-          ? ex.sets.reduce(
-              (s, set) => s + (set.weight ?? 0) * (set.reps ?? 0),
-              0,
-            )
-          : 0;
-        totalVolume += vol;
-        if (ex.name) {
-          exerciseVolumes[ex.name] = (exerciseVolumes[ex.name] ?? 0) + vol;
-        }
+    for (const item of w.items) {
+      const vol = (item.sets ?? []).reduce(
+        (s, set) => s + set.weightKg * set.reps,
+        0,
+      );
+      totalVolume += vol;
+      if (item.nameUk) {
+        exerciseVolumes[item.nameUk] =
+          (exerciseVolumes[item.nameUk] ?? 0) + vol;
       }
     }
   }
@@ -270,26 +273,11 @@ export interface NutritionAggregate {
 }
 
 export function aggregateNutrition(weekKey: string): NutritionAggregate | null {
-  const log = safeReadLS<
-    Record<
-      string,
-      {
-        meals?: Array<{
-          macros?: {
-            kcal?: number;
-            protein_g?: number;
-            fat_g?: number;
-            carbs_g?: number;
-          };
-        }>;
-      }
-    >
-  >("nutrition_log_v1", {});
-  const prefs = safeReadLS<{ dailyTargetKcal?: number } | null>(
-    "nutrition_prefs_v1",
-    null,
-  );
-  const targetKcal = prefs?.dailyTargetKcal ?? 2000;
+  // Canonical log + prefs — SQLite warm cache (`nutrition_log_v1` /
+  // `nutrition_prefs_v1` tombstoned).
+  const log = loadNutritionLog();
+  const prefs = loadNutritionPrefs();
+  const targetKcal = prefs.dailyTargetKcal ?? 2000;
 
   const monday = new Date(`${weekKey}T00:00:00`);
   let totalKcal = 0,
@@ -300,6 +288,7 @@ export function aggregateNutrition(weekKey: string): NutritionAggregate | null {
 
   for (let i = 0; i < 7; i++) {
     const d = new Date(monday);
+    // eslint-disable-next-line sergeant-design/prefer-kyiv-time -- pre-existing kyiv-time burndown (Theme 1), out of scope for this routine-source fix
     d.setDate(monday.getDate() + i);
     const dk = localDateKey(d);
     const dayData = log?.[dk];
@@ -341,37 +330,35 @@ export interface RoutineAggregate {
 }
 
 export function aggregateRoutine(weekKey: string): RoutineAggregate | null {
-  const state = safeReadLS<{
-    habits?: Array<{
-      id: string;
-      name?: string;
-      title?: string;
-      archived?: boolean;
-    }>;
-    completions?: Record<string, string[]>;
-  } | null>("hub_routine_v1", null);
-  if (!state) return null;
+  // Stage 8 PR #057r-tombstone retired the legacy `hub_routine_v1` LS key — it
+  // is deleted on boot after the one-time SQLite import (`residualImport.ts`)
+  // and `saveRoutineState()` no longer writes it. Reading that key here
+  // returned `null` in production, so the weekly digest (and the `compare_weeks`
+  // chat tool, which calls this) reported zero habits even for users who had
+  // them. Read `loadRoutineState()` — the canonical SQLite-backed source the
+  // Routine UI and `queryRoutineActions` use — so digest and module UI agree.
+  const state = loadRoutineState();
 
-  const habits = Array.isArray(state.habits)
-    ? state.habits.filter((h) => !h.archived)
-    : [];
+  const habits = state.habits.filter((h) => !h.archived);
   if (!habits.length) return null;
 
-  const completions = state.completions ?? {};
+  const completions = state.completions;
   const monday = new Date(`${weekKey}T00:00:00`);
 
   const habitStats: HabitStat[] = habits.map((h) => {
     let done = 0;
     for (let i = 0; i < 7; i++) {
       const d = new Date(monday);
+      // eslint-disable-next-line sergeant-design/prefer-kyiv-time -- pre-existing kyiv-time burndown (Theme 1), out of scope for this routine-source fix
       d.setDate(monday.getDate() + i);
       const dk = localDateKey(d);
-      if (Array.isArray(completions[h.id]) && completions[h.id]!.includes(dk)) {
+      const dayList = completions[h.id];
+      if (Array.isArray(dayList) && dayList.includes(dk)) {
         done++;
       }
     }
     return {
-      name: h.name || h.title || "Звичка",
+      name: h.name || "Звичка",
       done,
       total: 7,
       completionRate: Math.round((done / 7) * 100),

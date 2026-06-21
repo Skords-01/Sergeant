@@ -1,10 +1,42 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import type { Workout as FizrukWorkout } from "@sergeant/fizruk-domain";
+
+// Spy on the dual-write trigger so the tombstoned measurements key (and the
+// daily-log mirror) are guarded: a regression back to raw `lsSet` would leave
+// the trigger uncalled and fail these assertions.
+vi.mock("../../../modules/fizruk/lib/dualWrite/index", () => ({
+  triggerFizrukDualWrite: vi.fn(),
+  isFizrukDualWriteRegistered: () => false,
+}));
+
+// In-memory workout store: `fizruk_workouts_v1` is tombstoned, so the real
+// `readFizrukWorkouts`/`persistFizrukWorkouts` go through the SQLite cache
+// (empty in jsdom). Fake just those two so chat mutators read/write a
+// deterministic list; daily-log helpers stay real (importOriginal) so the
+// wellbeing dual-write spy still fires.
+const mem = vi.hoisted(() => ({ workouts: [] as FizrukWorkout[] }));
+
+vi.mock("./fizrukActions/shared", async (orig) => {
+  const actual = await orig<typeof import("./fizrukActions/shared")>();
+  return {
+    ...actual,
+    readFizrukWorkouts: vi.fn(() => mem.workouts),
+    persistFizrukWorkouts: vi.fn((w: FizrukWorkout[]) => {
+      mem.workouts = w;
+    }),
+  };
+});
+
 import { handleFizrukAction } from "./fizrukActions";
+import { triggerFizrukDualWrite } from "../../../modules/fizruk/lib/dualWrite/index";
+import { persistFizrukWorkouts } from "./fizrukActions/shared";
 import type { ChatAction } from "./types";
 
 beforeEach(() => {
   localStorage.clear();
+  mem.workouts = [];
+  vi.clearAllMocks();
   vi.useFakeTimers();
   vi.setSystemTime(new Date("2026-04-22T12:00:00"));
 });
@@ -164,6 +196,13 @@ describe("finish_workout", () => {
 // log_measurement
 // ---------------------------------------------------------------------------
 describe("log_measurement", () => {
+  it("canonical: mirrors to SQLite via dual-write (tombstoned LS key)", () => {
+    call({ name: "log_measurement", input: { weight_kg: 85 } });
+    expect(triggerFizrukDualWrite).toHaveBeenCalled();
+    const next = vi.mocked(triggerFizrukDualWrite).mock.calls[0]?.[1];
+    expect(next?.measurements).toHaveLength(1);
+  });
+
   it("happy: logs body measurements", () => {
     const out = call({
       name: "log_measurement",
@@ -241,6 +280,13 @@ describe("add_program_day", () => {
 // log_wellbeing
 // ---------------------------------------------------------------------------
 describe("log_wellbeing", () => {
+  it("mirrors daily-log entry to SQLite via dual-write", () => {
+    call({ name: "log_wellbeing", input: { sleep_hours: 8 } });
+    expect(triggerFizrukDualWrite).toHaveBeenCalled();
+    const next = vi.mocked(triggerFizrukDualWrite).mock.calls[0]?.[1];
+    expect(next?.dailyLog?.length).toBeGreaterThanOrEqual(1);
+  });
+
   it("happy: logs wellbeing entries", () => {
     const out = call({
       name: "log_wellbeing",
@@ -304,40 +350,37 @@ describe("suggest_workout", () => {
 // ---------------------------------------------------------------------------
 describe("copy_workout", () => {
   it("happy: copies last completed workout", () => {
-    localStorage.setItem(
-      "fizruk_workouts_v1",
-      JSON.stringify({
-        schemaVersion: 1,
-        workouts: [
+    mem.workouts = [
+      {
+        id: "w_src",
+        startedAt: "2026-04-20T10:00:00.000Z",
+        endedAt: "2026-04-20T11:00:00.000Z",
+        items: [
           {
-            id: "w_src",
-            startedAt: "2026-04-20T10:00:00.000Z",
-            endedAt: "2026-04-20T11:00:00.000Z",
-            items: [
-              {
-                id: "i_1",
-                nameUk: "Присідання",
-                type: "strength",
-                musclesPrimary: [],
-                musclesSecondary: [],
-                sets: [{ weightKg: 60, reps: 10 }],
-                durationSec: 0,
-                distanceM: 0,
-              },
-            ],
-            groups: [],
-            warmup: null,
-            cooldown: null,
-            note: "",
-            planned: false,
+            id: "i_1",
+            exerciseId: "",
+            nameUk: "Присідання",
+            primaryGroup: "",
+            type: "strength",
+            musclesPrimary: [],
+            musclesSecondary: [],
+            sets: [{ weightKg: 60, reps: 10 }],
+            durationSec: 0,
+            distanceM: 0,
           },
         ],
-      }),
-    );
+        groups: [],
+        warmup: null,
+        cooldown: null,
+        note: "",
+        planned: false,
+      },
+    ];
     const out = call({ name: "copy_workout", input: {} });
     expect(typeof out).toBe("string");
     expect(out).toContain("скопійовано");
     expect(out).toContain("1 вправ");
+    expect(persistFizrukWorkouts).toHaveBeenCalled();
   });
 
   it("error: no completed workouts returns error", () => {
@@ -347,25 +390,19 @@ describe("copy_workout", () => {
   });
 
   it("shape: result contains workout id", () => {
-    localStorage.setItem(
-      "fizruk_workouts_v1",
-      JSON.stringify({
-        schemaVersion: 1,
-        workouts: [
-          {
-            id: "w_x",
-            startedAt: "2026-04-20T10:00:00.000Z",
-            endedAt: "2026-04-20T11:00:00.000Z",
-            items: [],
-            groups: [],
-            warmup: null,
-            cooldown: null,
-            note: "",
-            planned: false,
-          },
-        ],
-      }),
-    );
+    mem.workouts = [
+      {
+        id: "w_x",
+        startedAt: "2026-04-20T10:00:00.000Z",
+        endedAt: "2026-04-20T11:00:00.000Z",
+        items: [],
+        groups: [],
+        warmup: null,
+        cooldown: null,
+        note: "",
+        planned: false,
+      },
+    ];
     const out = call({ name: "copy_workout", input: {} });
     expect(out).toMatch(/id:w_/);
   });
@@ -376,36 +413,32 @@ describe("copy_workout", () => {
 // ---------------------------------------------------------------------------
 describe("compare_progress", () => {
   it("happy: returns progress when workouts exist", () => {
-    localStorage.setItem(
-      "fizruk_workouts_v1",
-      JSON.stringify({
-        schemaVersion: 1,
-        workouts: [
+    mem.workouts = [
+      {
+        id: "w1",
+        startedAt: "2026-04-10T10:00:00.000Z",
+        endedAt: "2026-04-10T11:00:00.000Z",
+        items: [
           {
-            id: "w1",
-            startedAt: "2026-04-10T10:00:00.000Z",
-            endedAt: "2026-04-10T11:00:00.000Z",
-            items: [
-              {
-                id: "i1",
-                nameUk: "Жим",
-                type: "strength",
-                musclesPrimary: ["chest"],
-                musclesSecondary: [],
-                sets: [{ weightKg: 60, reps: 8 }],
-                durationSec: 0,
-                distanceM: 0,
-              },
-            ],
-            groups: [],
-            warmup: null,
-            cooldown: null,
-            note: "",
-            planned: false,
+            id: "i1",
+            exerciseId: "",
+            nameUk: "Жим",
+            primaryGroup: "",
+            type: "strength",
+            musclesPrimary: ["chest"],
+            musclesSecondary: [],
+            sets: [{ weightKg: 60, reps: 8 }],
+            durationSec: 0,
+            distanceM: 0,
           },
         ],
-      }),
-    );
+        groups: [],
+        warmup: null,
+        cooldown: null,
+        note: "",
+        planned: false,
+      },
+    ];
     const out = call({
       name: "compare_progress",
       input: { exercise_name: "Жим", period_days: 30 },
@@ -421,25 +454,19 @@ describe("compare_progress", () => {
   });
 
   it("shape: result is a non-empty string", () => {
-    localStorage.setItem(
-      "fizruk_workouts_v1",
-      JSON.stringify({
-        schemaVersion: 1,
-        workouts: [
-          {
-            id: "w2",
-            startedAt: "2026-04-15T10:00:00.000Z",
-            endedAt: "2026-04-15T11:00:00.000Z",
-            items: [],
-            groups: [],
-            warmup: null,
-            cooldown: null,
-            note: "",
-            planned: false,
-          },
-        ],
-      }),
-    );
+    mem.workouts = [
+      {
+        id: "w2",
+        startedAt: "2026-04-15T10:00:00.000Z",
+        endedAt: "2026-04-15T11:00:00.000Z",
+        items: [],
+        groups: [],
+        warmup: null,
+        cooldown: null,
+        note: "",
+        planned: false,
+      },
+    ];
     const out = call({ name: "compare_progress", input: {} });
     expect(typeof out).toBe("string");
     expect(out.length).toBeGreaterThan(0);
