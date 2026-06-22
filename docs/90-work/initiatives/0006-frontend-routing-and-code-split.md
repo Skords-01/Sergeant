@@ -272,9 +272,10 @@ DOR для Phase 1 (`feat-react-router-setup`): після введення `<Ro
 
 | PR                                                       | Title                                                                         | Merged     |
 | -------------------------------------------------------- | ----------------------------------------------------------------------------- | ---------- |
+| [#3698](https://github.com/Skords-01/Sergeant/pull/3698) | docs(docs): consolidate 8 conflicting PR-backlink ledger updates              | 2026-06-22 |
 | [#3640](https://github.com/Skords-01/Sergeant/pull/3640) | fix(docs): accept "Last touched" label + bot handles in playbook schema check | 2026-06-18 |
 | [#3610](https://github.com/Skords-01/Sergeant/pull/3610) | chore(config): per-package eslint configs — PR-31 Phase 2b                    | 2026-06-16 |
 
-_Auto-derived from `docs/04-governance/pr-ledger/index.json`. Top 2 most recent PRs touching this file._
+_Auto-derived from `docs/04-governance/pr-ledger/index.json`. Top 3 most recent PRs touching this file._
 
 <!-- AUTO-GENERATED: PR-BACKLINKS-END -->
