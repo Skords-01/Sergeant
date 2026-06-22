@@ -3,7 +3,7 @@
 
 # Audit runner report
 
-> **Last validated:** 2026-06-22 by audit-triage routine. **Next review:** 2026-09-20.
+> **Last validated:** 2026-06-22 by audits-runner workflow. **Next review:** 2026-09-20.
 > **Status:** Reference
 
 ## Triage digest — 2026-06-22
@@ -50,7 +50,7 @@ Shipping these removes blockers on downstream work.
 
 2. **`docs/90-work/audits/2026-05-13-consolidated-page-audit.md`** (audit-04 gap) — Hub Settings, Profile & Assistant Catalogue was **never audited** (VM infra failure 2026-05-13); estimated 30–40 H/M findings — the largest single blind spot in the 10-scope coverage matrix. **Re-run page-audit-04 before Sprint 9 planning (2026-07-07) to close this gap.**
 
-3. **`docs/90-work/audits/2026-05-13-consolidated-page-audit.md`** (page audits 07 + 08) — Fizruk Part 2 has 50 findings (6H + 25M + 19L); Nutrition has 25 (6H + 13M + 6L); H-severity items not individually triaged. Fizruk F3 (`Measurements.tsx` accepts `weightKg=99999` with no range guard) is the highest-value untracked H-severity item. **Triage H-severity findings in audit-07 and audit-08; prioritize Fizruk F3 PII validation first.**
+3. **`docs/90-work/audits/2026-05-13-consolidated-page-audit.md`** (page audits 07 + 08) — Fizruk Part 2 has 50 findings (6H + 25M + 19L); Nutrition has 25 (6H + 13M + 6L); H-severity items not individually triaged. Fizruk F3 (`Measurements.tsx` accepts `weightKg=99999` with no range guard) is the highest-value untracked H-severity item. **Triage H-severity findings in audit-07 and audit-08; prioritize Fizruk F3 range validation first.**
 
 4. **`docs/90-work/audits/2026-06-08-codebase-cleanup-audit.md`** (`@removeBy 2026-09-01` tombstones) — legacy KV→SQLite tombstone references expire 2026-09-01; planning now avoids a September crunch. **Schedule tombstone batch pass; add to Sprint 9 backlog.**
 
