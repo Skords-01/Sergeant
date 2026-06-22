@@ -3,7 +3,7 @@
   "version": 1,
   "generated_at": "2026-06-22",
   "sourceHashes": {
-    "knowledge-graph": "49bfef2dbcbe5196806a0fef187e2bc8e94eee3ddb74062bee8cff229371bbcf",
+    "knowledge-graph": "01078d438a827eb828bb5b352a2175b2817988eb6cff3a9e085f33c8257edcc4",
     "symbol-index": "342f96ffaeb45ee4b211eac1907c6245cb67c9f42839cf3c5145a85a1fad6f63"
   },
   "counts": {
@@ -705,8 +705,8 @@
       "title": "ADR-0066: Agent semantic retrieval over the knowledge graph",
       "tier": "core",
       "status": "Active",
-      "text": "ADR-0066: Agent semantic retrieval over the knowledge graph · adr:0066 · adr · Active · 66 · 2026-06-14 · Context and Problem Statement · Considered Options · Decision · Rationale · Consequences · Positive · Negative · Neutral · Compliance · Links · Recent PRs",
-      "contentHash": "19bdc9201b70729818a69ceac8360237968797ad7f3f6ab29203be04027c91ed"
+      "text": "ADR-0066: Agent semantic retrieval over the knowledge graph · adr:0066 · adr · Active · 66 · 2026-06-22 · Context and Problem Statement · Considered Options · Decision · Rationale · Consequences · Positive · Negative · Neutral · Compliance · Links · Recent PRs",
+      "contentHash": "613e6745d6258c7ff27cff6496698993962027159ea4329ae3813592a509f704"
     },
     {
       "id": "adr:0067",
@@ -716,8 +716,8 @@
       "title": "ADR-0067: Standardize Hub engagement mechanisms (signals / reminders / dismiss-state)",
       "tier": "core",
       "status": "Active",
-      "text": "ADR-0067: Standardize Hub engagement mechanisms (signals / reminders / dismiss-state) · adr:0067 · adr · Active · 67 · 2026-06-19 · Context and Problem Statement · Шар 1 — compute (engagement-сигнали) · Шар 2 — reminders (планування нотифікацій) · Шар 3 — dismiss / snooze state · Чому це ADR, а не просто рефактор · Considered Options · Decision · Цільова архітектура (3 шари) · Поетапність (4 кроки, кожен окремим PR) · Що НЕ чіпаємо (явні non-goals) · Rationale · Consequences · Positive · Negative · Neutral · Compliance · Links · Recent PRs",
-      "contentHash": "a2d71a06c4be64d06bf2aae286c2686efa2bd613ca07bd4365584f2d7e70d9e6"
+      "text": "ADR-0067: Standardize Hub engagement mechanisms (signals / reminders / dismiss-state) · adr:0067 · adr · Active · 67 · 2026-06-20 · Context and Problem Statement · Шар 1 — compute (engagement-сигнали) · Шар 2 — reminders (планування нотифікацій) · Шар 3 — dismiss / snooze state · Чому це ADR, а не просто рефактор · Considered Options · Decision · Цільова архітектура (3 шари) · Поетапність (4 кроки, кожен окремим PR) · Що НЕ чіпаємо (явні non-goals) · Rationale · Consequences · Positive · Negative · Neutral · Compliance · Links · Recent PRs",
+      "contentHash": "f84d30c0b1c1cebcd1dc28a742568ff96905d2a931bbad71c2bee79d7ab31013"
     },
     {
       "id": "audit:2026-05-06-ux-roast-pr-plan",
