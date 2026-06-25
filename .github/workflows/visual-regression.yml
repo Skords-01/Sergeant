@@ -35,6 +35,12 @@ name: Visual Regression (Argos)
 # See `.github/workflows/visual-regression.yml` history + the
 # "Argos snapshot strategy" follow-up in the open-work tracker.
 on:
+  # Reverted to workflow_dispatch-only until the Argos baseline is
+  # bulk-approved in the Argos UI. With no approved baseline every web PR
+  # produced a cosmetic red "Visual regression (Argos)" check and burned
+  # ~6 min of runner time for zero signal. Re-add the `pull_request` trigger
+  # (paths: apps/web/**, packages/design-tokens/**) once a stable 0-diff
+  # green baseline exists, and flip `continue-on-error` back to false then.
   workflow_dispatch:
 
 permissions:
@@ -49,6 +55,10 @@ jobs:
     name: Visual regression (Argos)
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    # Non-blocking: Argos creates its own commit status ("argos/sergeant");
+    # this job may be flaky until the baseline is bulk-approved in Argos UI.
+    # Re-enable continue-on-error: false once 0-diff green baseline is stable.
+    continue-on-error: true
 
     services:
       # pgvector/pgvector:pg17 — Postgres 17 + the `vector` extension
