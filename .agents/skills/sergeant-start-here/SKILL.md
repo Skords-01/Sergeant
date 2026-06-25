@@ -53,6 +53,7 @@ lang-reason: Agent-runtime SKILL — body kept EN to maximize tool-calling stabi
 | Повний QA по всіх surfaces паралельно                            | `sergeant-qa-squad`                |
 | Валідація ідеї / рішення з кількох точок зору, «гублюсь»        | `sergeant-council`                 |
 | Батч N тасків з `docs/90-work/planning/*` через паралельні агенти       | `sergeant-planning-batch`          |
+| Дослідити відкрите питання (ринок, тех, вибір бібліотеки, конкурент)    | `sergeant-research-pipeline`       |
 
 ## Політика generic-skill-ів
 

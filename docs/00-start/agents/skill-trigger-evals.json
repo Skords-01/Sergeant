@@ -796,6 +796,39 @@
       ],
       "forbiddenSkills": [],
       "complianceChecks": ["start-here-first", "exactly-one-specialist"]
+    },
+    {
+      "id": "sergeant-research-pipeline-trigger-framework-choice",
+      "skill": "sergeant-research-pipeline",
+      "kind": "trigger",
+      "prompt": "Research which AI agent framework the team should adopt in 2026 — LangGraph, CrewAI, or Agno — and save the findings to the repo.",
+      "expectedSkills": ["sergeant-start-here", "sergeant-research-pipeline"],
+      "forbiddenSkills": []
+    },
+    {
+      "id": "sergeant-research-pipeline-trigger-competitor-scan",
+      "skill": "sergeant-research-pipeline",
+      "kind": "trigger",
+      "prompt": "Investigate the competitive landscape for personal-finance coaching apps and record a durable writeup we can reuse next sprint.",
+      "expectedSkills": ["sergeant-start-here", "sergeant-research-pipeline"],
+      "forbiddenSkills": []
+    },
+    {
+      "id": "sergeant-research-pipeline-anti-server-fix",
+      "skill": "sergeant-research-pipeline",
+      "kind": "anti-trigger",
+      "prompt": "Coerce the bigint balance to a number in the /sync server serializer and add the matching contract test.",
+      "expectedSkills": ["sergeant-start-here", "sergeant-server-api"],
+      "forbiddenSkills": ["sergeant-research-pipeline"]
+    },
+    {
+      "id": "sergeant-research-pipeline-workflow-start-here",
+      "skill": "sergeant-research-pipeline",
+      "kind": "workflow",
+      "prompt": "Before investigating a library choice, load the repo startup rules first then only the research-pipeline specialist.",
+      "expectedSkills": ["sergeant-start-here", "sergeant-research-pipeline"],
+      "forbiddenSkills": [],
+      "complianceChecks": ["start-here-first", "exactly-one-specialist"]
     }
   ]
 }
