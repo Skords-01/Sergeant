@@ -123,3 +123,15 @@ Sergeant не має Storybook (свідоме рішення: компонен�
 - Audit row: [`docs/90-work/audits/archive/2026-04-28-sergeant-comprehensive-audit.md`](../../90-work/audits/archive/2026-04-28-sergeant-comprehensive-audit.md) §P3-1.
 - Argos docs: <https://argos-ci.com/docs>.
 - Playwright visual comparisons: <https://playwright.dev/docs/test-snapshots>.
+
+<!-- AUTO-GENERATED: PR-BACKLINKS-START -->
+
+## Recent PRs
+
+| PR                                                       | Title                                                            | Merged     |
+| -------------------------------------------------------- | ---------------------------------------------------------------- | ---------- |
+| [#3731](https://github.com/Skords-01/Sergeant/pull/3731) | chore(ci): pause Argos visual-regression until baseline approved | 2026-06-25 |
+
+_Auto-derived from `docs/04-governance/pr-ledger/index.json`. Top 1 most recent PRs touching this file._
+
+<!-- AUTO-GENERATED: PR-BACKLINKS-END -->
