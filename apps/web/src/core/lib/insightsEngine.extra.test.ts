@@ -225,8 +225,10 @@ describe("generateInsights — cross-module insights", () => {
 
     // Span ~6 recent weeks of calendar days so the engine's Kyiv week buckets
     // are fully populated. Days in the most-recent ~18 days are 100% completed
-    // (high-habit weeks); older days have no completions (low-habit weeks).
-    // kcal is higher on completed days so the correlation is non-trivial.
+    // (high-habit weeks, habitPct ≥ 0.7). Older days have only 1 completion per
+    // 7-day window (low-habit weeks, habitPct ≈ 0.14 < 0.7). The engine requires
+    // habitDone > 0 to include a week in weekStats, so low-habit weeks MUST have
+    // at least one completion — zero completions are skipped by the engine guard.
     for (let daysAgo = 0; daysAgo < 42; daysAgo++) {
       const dk = dayKey(daysAgo);
       const high = daysAgo < 18;
@@ -234,6 +236,17 @@ describe("generateInsights — cross-module insights", () => {
         completions.h1.push(dk);
         log[dk] = { meals: [{ macros: { kcal: 2800 } }] };
       } else {
+        // Add one completion per ~7-day window to keep habitPct well below 0.7
+        // while satisfying the engine guard that requires habitDone > 0 to
+        // include a week in weekStats (line 378 of insightsEngine.ts).
+        if (
+          daysAgo === 21 ||
+          daysAgo === 24 ||
+          daysAgo === 28 ||
+          daysAgo === 35
+        ) {
+          completions.h1.push(dk);
+        }
         log[dk] = { meals: [{ macros: { kcal: 2000 } }] };
       }
     }
