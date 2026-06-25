@@ -13,6 +13,8 @@ import {
 } from "../lib/fizrukDualWriteState";
 import { getCachedFizrukSqliteState } from "../lib/sqliteReader";
 import { useFizrukSqliteReadTick } from "../lib/sqliteReadGate";
+import { readDemoWorkoutsFromLs } from "../lib/demoLsRead";
+import { isDemoActive } from "../../../core/onboarding/demoFlag";
 
 /**
  * Window event fired when persisting workouts fails. Kept for backwards
@@ -73,10 +75,14 @@ export function useWorkouts() {
   const sqliteCacheTick = useFizrukSqliteReadTick();
   const [workouts, setWorkouts] = useState<Workout[]>(() => {
     const cache = getCachedFizrukSqliteState();
-    return cache.refreshedAt === null ? [] : cache.workouts;
+    if (cache.refreshedAt !== null) return cache.workouts;
+    // Demo mode is anonymous, so the SQLite read-boot never runs and the
+    // cache stays cold. Fall back to the seeded `fizruk_workouts_v1` LS
+    // blob so the example workouts render instead of an empty state.
+    return isDemoActive() ? (readDemoWorkoutsFromLs() ?? []) : [];
   });
   const [loaded, setLoaded] = useState(() => {
-    return getCachedFizrukSqliteState().refreshedAt !== null;
+    return getCachedFizrukSqliteState().refreshedAt !== null || isDemoActive();
   });
 
   // Stage 8 PR #057f-tombstone: overlay workouts from the local SQLite
@@ -143,6 +149,7 @@ export function useWorkouts() {
   const createWorkout = useCallback((): Workout => {
     const w: Workout = {
       id: uid("w"),
+      // eslint-disable-next-line no-restricted-syntax -- UTC wall-clock event timestamp, not a Kyiv day-boundary
       startedAt: new Date().toISOString(),
       endedAt: null,
       items: [],
@@ -159,6 +166,7 @@ export function useWorkouts() {
     ({ startedAt }: { startedAt: string }): Workout => {
       const w: Workout = {
         id: uid("w"),
+        // eslint-disable-next-line no-restricted-syntax -- UTC wall-clock event timestamp, not a Kyiv day-boundary
         startedAt: startedAt || new Date().toISOString(),
         endedAt: null,
         items: [],
@@ -175,6 +183,7 @@ export function useWorkouts() {
 
   const endWorkout = useCallback(
     (id: string): Workout | null => {
+      // eslint-disable-next-line no-restricted-syntax -- UTC wall-clock event timestamp, not a Kyiv day-boundary
       const nowIso = new Date().toISOString();
       let ended: Workout | null = null;
       persist((prev: Workout[]) =>

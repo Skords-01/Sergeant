@@ -9,6 +9,8 @@ import {
   clearSqliteCompletionsCache,
   clearSqliteRoutineStateCache,
 } from "./sqliteReader";
+import { safeWriteLS } from "@shared/lib/storage/storage";
+import { DEMO_FLAG_KEY } from "../../../core/onboarding/seedDemoData/keys";
 
 beforeEach(() => {
   // Stage 8 PR #057r-tombstone — load/persist now read from the
@@ -16,6 +18,7 @@ beforeEach(() => {
   // from a known-cold cache.
   clearSqliteCompletionsCache();
   clearSqliteRoutineStateCache();
+  localStorage.clear();
 });
 
 describe("routine/routineStorage", () => {
@@ -53,6 +56,41 @@ describe("routine/routineStorage", () => {
     expect(s.habits[0]!.name).toBe("Cached habit");
     expect(s.completions).toEqual({ h1: ["2026-01-02"] });
     expect(s.habitOrder).toEqual(["h1"]);
+  });
+
+  it("falls back to the seeded LS blob in demo mode when caches are cold", () => {
+    // Demo is anonymous → no SQLite boot → caches stay cold. The seeded
+    // `hub_routine_v1` blob must surface instead of an empty board.
+    safeWriteLS(DEMO_FLAG_KEY, "1");
+    safeWriteLS("hub_routine_v1", {
+      habits: [
+        {
+          id: "demo_h1",
+          name: "Ранкова пробіжка",
+          archived: false,
+          paused: false,
+          recurrence: "daily",
+          startDate: "2026-06-01",
+          weekdays: [0, 1, 2, 3, 4, 5, 6],
+          reminderTimes: [],
+          createdAt: "2026-06-01T00:00:00.000Z",
+        },
+      ],
+      completions: { demo_h1: ["2026-06-20"] },
+      habitOrder: ["demo_h1"],
+    });
+
+    const s = loadRoutineState();
+    expect(s.habits.map((h) => h.id)).toEqual(["demo_h1"]);
+    expect(s.completions).toEqual({ demo_h1: ["2026-06-20"] });
+  });
+
+  it("ignores the seeded LS blob when demo is NOT active", () => {
+    safeWriteLS("hub_routine_v1", {
+      habits: [{ id: "ls_only", name: "x", recurrence: "daily" }],
+    });
+    const s = loadRoutineState();
+    expect(s.habits).toHaveLength(0);
   });
 
   it("saveRoutineState succeeds without touching localStorage", () => {
