@@ -9,7 +9,7 @@
     "initiative": 51,
     "playbook": 61,
     "pr": 219,
-    "skill": 23
+    "skill": 24
   },
   "nodes": [
     {
@@ -4604,6 +4604,16 @@
       }
     },
     {
+      "id": "skill:sergeant-research-pipeline",
+      "type": "skill",
+      "title": "sergeant-research-pipeline",
+      "path": ".agents/skills/sergeant-research-pipeline/SKILL.md",
+      "tier": "core",
+      "meta": {
+        "description": "Use when investigating an open question (market, tech, library choice, competitor) and want a repeatable fan-out → analyze → save-to-repo pipeline instead of ad-hoc tabs; UA: дослідити тему / зроби рисьорч."
+      }
+    },
+    {
       "id": "skill:sergeant-review-and-merge",
       "type": "skill",
       "title": "sergeant-review-and-merge",
@@ -6764,6 +6774,16 @@
       "from": "skill:sergeant-qa-squad",
       "to": "pr:1848",
       "type": "touched-by"
+    },
+    {
+      "from": "skill:sergeant-research-pipeline",
+      "to": "hard-rule:10",
+      "type": "references"
+    },
+    {
+      "from": "skill:sergeant-research-pipeline",
+      "to": "hard-rule:15",
+      "type": "references"
     },
     {
       "from": "skill:sergeant-review-and-merge",
