@@ -7,7 +7,9 @@ import {
   clearFizrukSqliteCache,
 } from "../lib/sqliteReader";
 import { notifyFizrukSqliteCacheRefresh } from "../lib/sqliteReadGate";
-import type { Workout } from "@sergeant/fizruk-domain";
+import { WORKOUTS_STORAGE_KEY, type Workout } from "@sergeant/fizruk-domain";
+import { safeWriteLS } from "@shared/lib/storage/storage";
+import { DEMO_FLAG_KEY } from "../../../core/onboarding/seedDemoData/keys";
 
 type CreatedWorkout = ReturnType<
   ReturnType<typeof useWorkouts>["createWorkout"]
@@ -66,6 +68,41 @@ describe("useWorkouts – finish flow edge cases", () => {
     });
     const after = result.current.workouts.find((w) => w.id === created!.id);
     expect(after?.endedAt).toBe(firstEndedAt);
+  });
+
+  it("falls back to the seeded LS blob in demo mode when the cache is cold", async () => {
+    // Demo is anonymous → the SQLite read-boot never runs, so the cache
+    // stays cold. With the demo flag set, the seeded `fizruk_workouts_v1`
+    // blob must surface instead of an empty state.
+    safeWriteLS(DEMO_FLAG_KEY, "1");
+    safeWriteLS(WORKOUTS_STORAGE_KEY, {
+      schemaVersion: 1,
+      workouts: [
+        {
+          id: "demo_wo_1",
+          startedAt: new Date("2026-06-20T18:30:00Z").toISOString(),
+          endedAt: new Date("2026-06-20T19:25:00Z").toISOString(),
+          items: [],
+          groups: [],
+          warmup: null,
+          cooldown: null,
+          note: "",
+        },
+      ],
+    });
+
+    const { result } = renderHook(() => useWorkouts());
+    expect(result.current.loaded).toBe(true);
+    expect(result.current.workouts.map((w) => w.id)).toEqual(["demo_wo_1"]);
+  });
+
+  it("stays empty when the cache is cold and demo is NOT active", () => {
+    safeWriteLS(WORKOUTS_STORAGE_KEY, {
+      schemaVersion: 1,
+      workouts: [{ id: "ls_only", startedAt: "", items: [] }],
+    });
+    const { result } = renderHook(() => useWorkouts());
+    expect(result.current.workouts).toHaveLength(0);
   });
 
   it("endWorkout is a no-op for an unknown id", async () => {

@@ -7,6 +7,8 @@ import {
 } from "../lib/fizrukDualWriteState";
 import { getCachedFizrukSqliteState } from "../lib/sqliteReader";
 import { useFizrukSqliteReadTick } from "../lib/sqliteReadGate";
+import { readDemoMeasurementsFromLs } from "../lib/demoLsRead";
+import { isDemoActive } from "../../../core/onboarding/demoFlag";
 
 export type MeasurementFieldId =
   | "weightKg"
@@ -84,9 +86,11 @@ export function useMeasurements() {
   const sqliteCacheTick = useFizrukSqliteReadTick();
   const [entries, setEntries] = useState<MeasurementEntry[]>(() => {
     const cache = getCachedFizrukSqliteState();
-    return cache.refreshedAt === null
-      ? []
-      : (cache.measurements as MeasurementEntry[]);
+    if (cache.refreshedAt !== null)
+      return cache.measurements as MeasurementEntry[];
+    // Demo is anonymous → no SQLite boot. Surface the seeded
+    // `fizruk_measurements_v1` LS blob instead of an empty list.
+    return isDemoActive() ? (readDemoMeasurementsFromLs() ?? []) : [];
   });
 
   // Overlay measurements from the SQLite cache once it's warm.
@@ -127,6 +131,7 @@ export function useMeasurements() {
       const e: MeasurementEntry = {
         ...sanitised,
         id: uid(),
+        // eslint-disable-next-line no-restricted-syntax -- UTC wall-clock event timestamp, not a Kyiv day-boundary
         at: new Date().toISOString(),
       };
       persist([e, ...entries]);
