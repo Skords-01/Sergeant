@@ -125,6 +125,10 @@
     {
       "pattern": "^https?://docs\\.railway\\.app/reference/security$",
       "reason": "Cited in docs/04-governance/security/secret-rotation.md as a Railway security reference. Railway reorganized their docs tree and this path now returns 404; the citation is preserved as a historical reference to Railway's security practices at the time of writing."
+    },
+    {
+      "pattern": "^https?://medium\\.com/better-dev-nextjs-react/tanstack-query-v6-breaking-changes-that-actually-improve-your-app-",
+      "reason": "Medium returns 403 to non-browser User-Agents (anti-scraping); page renders in browsers. Cited in docs/90-work/research/2026-06-25-tanstack-query-v6-react.md ОДНОЗНАЧНО як low-confidence / misleading source (заголовок вводить в оману для React) — посилання збережене навмисно, щоб майбутній читач не сприйняв цю статтю як підставу для рішення."
     }
   ]
 }
