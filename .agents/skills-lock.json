@@ -54,7 +54,7 @@
     "sergeant-start-here": {
       "source": "local",
       "sourceType": "local",
-      "computedHash": "ac6d75a026e0a643844832ea6a7d8dd9985446533ef7e6a3114b9e1622c476ce"
+      "computedHash": "a175f20840d576554307a0aee32ea35b09efef5383d21a32daba2e1597df59d3"
     },
     "sergeant-web-ui": {
       "source": "local",
@@ -115,6 +115,11 @@
       "source": "local",
       "sourceType": "local",
       "computedHash": "b64c2b89b3bb50650e7dcc1963e8e28f70d8ef39429ed1d5ad2afccc23a02567"
+    },
+    "sergeant-research-pipeline": {
+      "source": "local",
+      "sourceType": "local",
+      "computedHash": "95c7716ecad30626090aae1f97332159076e4b98218812285ab0124c4d9c0354"
     }
   }
 }
