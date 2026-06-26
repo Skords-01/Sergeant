@@ -134,6 +134,21 @@ jobs:
           git checkout -B "$BRANCH"
           git add -- "${REFRESH_PATHS[@]}"
           git commit -m "chore(docs): daily brief refresh"
+          # The Husky pre-commit hook (`bump-last-validated.mjs`) re-stamps
+          # `Last validated:` on the staged `.md` AFTER `docs:gen-daily` already
+          # rendered the freshness dashboard, so the committed dashboard lags one
+          # day for whichever doc got bumped. That makes the PR's
+          # `generate-freshness-dashboard --check` gate (run inside the
+          # "Markdown link checker" job) fail, which silently blocked the daily
+          # auto-merge. Regenerate the dashboard once more (post-bump) and fold
+          # it into a follow-up commit. This second commit stages only the
+          # `.html` artifact, so the bump hook finds no `.md` to re-stamp and the
+          # result is stable.
+          pnpm docs:freshness-dashboard
+          if ! git diff --quiet -- docs/04-governance/governance/freshness-dashboard.html; then
+            git add -- docs/04-governance/governance/freshness-dashboard.html
+            git commit -m "chore(docs): resync freshness dashboard post Last-validated bump"
+          fi
           git push --force-with-lease origin "$BRANCH"
           # Reuse existing PR for the same day if one is already open.
           PR_URL="$(gh pr list --head "$BRANCH" --state open --json url --jq '.[0].url // ""')"
