@@ -93,7 +93,12 @@ export async function importRoutineResidualFromLs(
 // present but content was malformed / already empty".
 // -----------------------------------------------------------------------
 
-function readRoutineStateFromLs(): RoutineState | null {
+/**
+ * Read the seeded/residual routine state straight from LS. Exported so
+ * the demo read-path (anonymous, no SQLite boot) can surface the seeded
+ * `hub_routine_v1` blob — see `loadRoutineState`.
+ */
+export function readRoutineStateFromLs(): RoutineState | null {
   try {
     const raw = routineStorage.readJSON<unknown>(ROUTINE_STORAGE_KEY, null);
     if (raw == null) return null;
