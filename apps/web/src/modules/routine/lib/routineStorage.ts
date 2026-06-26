@@ -57,6 +57,8 @@ import {
   setCachedSqliteRoutineState,
 } from "./sqliteReader.js";
 import { emitHubBus } from "@shared/lib/modules/hubBus";
+import { readRoutineStateFromLs } from "./residualImport.js";
+import { isDemoActive } from "../../../core/onboarding/demoFlag";
 
 // Re-export key constants so web callers can keep their existing imports.
 export { ROUTINE_STORAGE_KEY, ROUTINE_EVENT, ROUTINE_STORAGE_ERROR };
@@ -95,6 +97,17 @@ export function loadRoutineState(): RoutineState {
   const completionsCache = getCachedSqliteCompletions();
 
   let next: RoutineState = base;
+
+  // Demo mode is anonymous, so neither SQLite cache ever warms. Surface
+  // the seeded `hub_routine_v1` LS blob as the base so the example
+  // habits/completions render instead of an empty board.
+  if (
+    fullState.refreshedAt === null &&
+    completionsCache.refreshedAt === null &&
+    isDemoActive()
+  ) {
+    next = readRoutineStateFromLs() ?? base;
+  }
 
   if (fullState.refreshedAt !== null) {
     next = {
@@ -364,6 +377,7 @@ export function buildRoutineBackupPayload() {
   return {
     kind: "hub-routine-backup" as const,
     schemaVersion: ROUTINE_SCHEMA_VERSION,
+    // eslint-disable-next-line no-restricted-syntax -- UTC wall-clock export timestamp, not a Kyiv day-boundary
     exportedAt: new Date().toISOString(),
     data: loadRoutineState(),
   };
