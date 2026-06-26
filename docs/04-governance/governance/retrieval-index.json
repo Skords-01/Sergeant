@@ -3,7 +3,7 @@
   "version": 1,
   "generated_at": "2026-06-26",
   "sourceHashes": {
-    "knowledge-graph": "d6c2c052882703726f67063fd14cb53f26148c8dce00fe8eb427a4ab696329aa",
+    "knowledge-graph": "56518ff5298b361103986ae622eb4b0de6fa95315be634698ba96546b4a19faa",
     "symbol-index": "7f81b312418c70410aac8ff73257b27ff20cf652820cd20896dade440c436a00"
   },
   "counts": {
@@ -13,8 +13,8 @@
     "hard-rule": 26,
     "initiative": 51,
     "playbook": 61,
-    "skill": 23,
-    "total": 543
+    "skill": 24,
+    "total": 544
   },
   "chunks": [
     {
@@ -5252,6 +5252,16 @@
       "tier": "core",
       "text": "sergeant-qa-squad · skill:sergeant-qa-squad · skill · Use when running full QA across all Sergeant surfaces — spawns qa-server, qa-web, qa-mobile, qa-openclaw as Agent Team in parallel and synthesizes per-surface results; UA: повний QA по всіх surfaces. · QA squad для повного coverage · Коли завантажувати · Spawn рецепт · Synthesis protocol · Завжди покривай · Червоні прапорці · Playbooks",
       "contentHash": "6e58f04a53125aa68ec4981ac3ccf04cf894abfc0eaa987dc9746064b5af1eb0"
+    },
+    {
+      "id": "skill:sergeant-research-pipeline",
+      "type": "skill",
+      "path": ".agents/skills/sergeant-research-pipeline/SKILL.md",
+      "line": 1,
+      "title": "sergeant-research-pipeline",
+      "tier": "core",
+      "text": "sergeant-research-pipeline · skill:sergeant-research-pipeline · skill · Use when investigating an open question (market, tech, library choice, competitor) and want a repeatable fan-out → analyze → save-to-repo pipeline instead of ad-hoc tabs; UA: дослідити тему / зроби рисьорч. · Research pipeline for Sergeant · Layer mapping (do not reinvent the external stack) · Pipeline · Artifact format · <Тема дослідження> · Питання · Висновок · Деталі · Джерела · Невідоме / наступні кроки · What does NOT port (and why) · Red flags · Playbooks",
+      "contentHash": "12f1b560ad19080eab01041abac0a0fa93d7d2d7deb44d51da160d64c5ad4504"
     },
     {
       "id": "skill:sergeant-review-and-merge",
