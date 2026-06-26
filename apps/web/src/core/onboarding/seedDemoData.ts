@@ -48,12 +48,9 @@ import { seedFizruk } from "./seedDemoData/seedFizruk";
 import { seedHubQuickStats } from "./seedDemoData/seedHubQuickStats";
 import { seedNutrition } from "./seedDemoData/seedNutrition";
 import { seedRoutine } from "./seedDemoData/seedRoutine";
-import {
-  safeReadStringLS,
-  safeRemoveLS,
-  safeWriteLS,
-} from "@shared/lib/storage/storage";
+import { safeRemoveLS, safeWriteLS } from "@shared/lib/storage/storage";
 import { trackEvent, ANALYTICS_EVENTS } from "../observability/analytics";
+import { isDemoActive } from "./demoFlag";
 
 const SEEDED_KEYS = [
   DEMO_FLAG_KEY,
@@ -151,7 +148,7 @@ export function exitDemoToWizard(): void {
  * same way every other storage read does.
  */
 export function isDemoMode(): boolean {
-  return safeReadStringLS(DEMO_FLAG_KEY) === "1";
+  return isDemoActive();
 }
 
 /**
