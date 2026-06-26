@@ -17,8 +17,7 @@ import {
   markOnboardingDone as sharedMarkOnboardingDone,
   shouldShowOnboarding as sharedShouldShowOnboarding,
 } from "@sergeant/shared";
-import { safeReadStringLS, webKVStore } from "@shared/lib/storage/storage";
-import { DEMO_FLAG_KEY } from "./seedDemoData/keys";
+import { webKVStore } from "@shared/lib/storage/storage";
 
 /**
  * True when the onboarding splash should render on this cold start.
@@ -64,9 +63,11 @@ export function isOnboardingCompletedFired(): boolean {
  * seeding bundle into the entry chunk — mirrors `maybeRunOnboarding`'s
  * cheap `inDemo` probe. Used to suppress returning-user chrome (e.g. the
  * "What's new" modal) while the visitor is just exploring the example.
+ *
+ * Re-exported from the `./demoFlag` leaf so the read has a single
+ * implementation; low-level module-storage code imports it from there
+ * to avoid pulling this onboarding barrel into its graph.
  */
-export function isDemoActive(): boolean {
-  return safeReadStringLS(DEMO_FLAG_KEY) === "1";
-}
+export { isDemoActive } from "./demoFlag";
 
 export { sharedBuildFinalPicks as buildFinalPicks };
