@@ -17,8 +17,8 @@
     "reencrypt:tokens": "node --env-file-if-exists=.env --import tsx scripts/token-reencrypt-rollover.ts"
   },
   "dependencies": {
-    "@better-auth/drizzle-adapter": "^1.6.20",
-    "@better-auth/expo": "^1.6.20",
+    "@better-auth/drizzle-adapter": "^1.7.10",
+    "@better-auth/expo": "^1.7.10",
     "@opentelemetry/api": "^1.9.0",
     "@opentelemetry/auto-instrumentations-node": "^0.76.0",
     "@opentelemetry/core": "^2.8.0",
