@@ -1,8 +1,17 @@
 {
   "$schema": "../governance/schemas/pr-ledger.schema.json",
   "version": 1,
-  "generated_at": "2026-06-20",
+  "generated_at": "2026-06-25",
   "prs": [
+    {
+      "number": 3731,
+      "title": "chore(ci): pause Argos visual-regression until baseline approved",
+      "merged_at": "2026-06-25T20:53:30Z",
+      "author": "@Skords-01",
+      "touchedDocs": [
+        "docs/04-governance/adr/0034-visual-regression-testing.md"
+      ]
+    },
     {
       "number": 3665,
       "title": "docs(web): add ADR-0067 engagement mechanism standardization",
