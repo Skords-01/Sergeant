@@ -24,7 +24,7 @@
   },
   "dependencies": {
     "@sergeant/design-tokens": "workspace:*",
-    "zod": "^4.3.6",
+    "zod": "^4.6.6",
     "zod-openapi": "^5.4.6"
   },
   "devDependencies": {
